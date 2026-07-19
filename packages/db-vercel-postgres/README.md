@@ -1,6 +1,6 @@
 # @frogbotai/db-vercel-postgres
 
-Vercel Postgres adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+Vercel Postgres adapter for [FrogBot](https://github.com/frogbotai/frogbot).
 
 ## Installation
 

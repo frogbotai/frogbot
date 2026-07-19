@@ -1,6 +1,6 @@
 # @frogbotai/storage-s3
 
-S3 storage adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+S3 storage adapter for [FrogBot](https://github.com/frogbotai/frogbot).
 
 ## Installation
 

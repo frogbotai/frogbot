@@ -1,6 +1,6 @@
 # @frogbotai/storage-vercel-blob
 
-Vercel Blob storage adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+Vercel Blob storage adapter for [FrogBot](https://github.com/frogbotai/frogbot).
 
 ## Installation
 

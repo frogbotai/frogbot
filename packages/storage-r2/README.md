@@ -1,6 +1,6 @@
 # @frogbotai/storage-r2
 
-Cloudflare R2 storage adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+Cloudflare R2 storage adapter for [FrogBot](https://github.com/frogbotai/frogbot).
 
 ## Installation
 

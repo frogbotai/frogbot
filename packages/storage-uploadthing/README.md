@@ -1,6 +1,6 @@
 # @frogbotai/storage-uploadthing
 
-UploadThing storage adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+UploadThing storage adapter for [FrogBot](https://github.com/frogbotai/frogbot).
 
 ## Installation
 

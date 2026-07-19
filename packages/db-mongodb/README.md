@@ -1,6 +1,6 @@
 # @frogbotai/db-mongodb
 
-MongoDB adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+MongoDB adapter for [FrogBot](https://github.com/frogbotai/frogbot).
 
 ## Installation
 

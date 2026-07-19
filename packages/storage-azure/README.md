@@ -1,6 +1,6 @@
 # @frogbotai/storage-azure
 
-Azure Blob Storage adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+Azure Blob Storage adapter for [FrogBot](https://github.com/frogbotai/frogbot).
 
 ## Installation
 
