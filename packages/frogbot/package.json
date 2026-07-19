@@ -31,14 +31,15 @@
     }
   },
   "bin": {
-    "frogbot": "./dist/bin/index.js"
+    "frogbot": "./bin.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "bin.js"
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsc -p tsconfig.json && chmod +x dist/bin/index.js",
+    "build": "tsc -p tsconfig.json && chmod +x bin.js",
     "clean": "rm -rf dist",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit"

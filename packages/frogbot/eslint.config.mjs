@@ -17,7 +17,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
  */
 export const index = [
   {
-    ignores: ['dist/', 'node_modules/'],
+    ignores: ['dist/', 'node_modules/', 'bin.js'],
   },
   ...rootEslintConfig,
   {
