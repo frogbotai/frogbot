@@ -1,0 +1,23 @@
+{
+  "name": "frogbot-example-basic-agent",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Minimal FrogBot example: one agent, one tool, SQLite storage. No Docker required.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "frogbot dev",
+    "start": "frogbot start",
+    "generate:types": "frogbot generate:types",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@frogbotai/db-sqlite": "workspace:*",
+    "frogbot": "workspace:*",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "5.6.2"
+  }
+}
