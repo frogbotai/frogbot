@@ -6,7 +6,6 @@
 import { existsSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { tsImport } from 'tsx/esm/api';
 
 import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
 import type { InitOptions } from '../frogbot.js';
@@ -55,7 +54,7 @@ export async function loadConfig(cwd: string): Promise<InitOptions['config']> {
 
   let mod: { default?: unknown };
   try {
-    mod = (await tsImport(pathToFileURL(configPath).href, import.meta.url)) as {
+    mod = (await import(pathToFileURL(configPath).href)) as {
       default?: unknown;
     };
   } catch (cause) {

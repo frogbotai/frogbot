@@ -1,6 +1,7 @@
 import type { Frogbot } from './frogbot.js';
 
-const instances = new WeakMap<object, Frogbot>();
+const globalRef = globalThis as { _frogbotInstances?: WeakMap<object, Frogbot> };
+const instances = (globalRef._frogbotInstances ??= new WeakMap());
 
 export function registerFrogbotInstance(payload: object, frogbot: Frogbot): void {
   instances.set(payload, frogbot);

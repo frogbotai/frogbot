@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 export function dev() {
   const cwd = process.cwd();
-  const binPath = fileURLToPath(new URL('./index.js', import.meta.url));
+  const binPath = fileURLToPath(new URL('../../bin.js', import.meta.url));
 
   console.log('[frogbot] dev mode — watching for config changes');
 
