@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mongooseAdapter } from '@frogbot/db-mongodb';
+import { mongooseAdapter } from '@frogbotai/db-mongodb';
 import { buildConfig } from 'frogbot';
 import type { FrogbotConfig, FrogbotPlugin } from 'frogbot';
 

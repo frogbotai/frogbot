@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'frogbot'
 
-import { s3Storage } from '@frogbot/storage-s3'
+import { s3Storage } from '@frogbotai/storage-s3'
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js'
 import { mediaSlug, usersSlug } from './shared.js'
 

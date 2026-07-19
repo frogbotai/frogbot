@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { eq, and, sql } from './drizzle'
 
-describe('@frogbot/db-sqlite drizzle subpath', () => {
+describe('@frogbotai/db-sqlite drizzle subpath', () => {
   it('exports eq as a function', () => {
     expect(typeof eq).toBe('function')
   })

@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'frogbot'
 
-import { vercelBlobStorage } from '@frogbot/storage-vercel-blob'
+import { vercelBlobStorage } from '@frogbotai/storage-vercel-blob'
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js'
 import { mediaSlug, usersSlug } from './shared.js'
 

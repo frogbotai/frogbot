@@ -116,7 +116,7 @@ export type {
 } from './types/operations.js';
 export type { AuthConfig } from './types/auth.js';
 export type { FrogbotRequest } from './types/request.js';
-export type { Plugin } from './types/plugin.js';
+export type { Plugin, Plugin as FrogbotPlugin } from './types/plugin.js';
 export type { DatabaseAdapter } from './types/database.js';
 
 // ---------------------------------------------------------------------------
