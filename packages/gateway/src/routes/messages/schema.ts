@@ -278,7 +278,7 @@ export const messagesRequestSchema = z.object({
 
   // Tools
   tools: z.array(toolDefinitionSchema).nullish(),
-  tool_choice: z.unknown(),
+  tool_choice: z.unknown().nullish(),
 }).loose();
 
 export type MessagesRequest = z.infer<typeof messagesRequestSchema>;

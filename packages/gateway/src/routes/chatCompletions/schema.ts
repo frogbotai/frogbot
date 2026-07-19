@@ -190,7 +190,7 @@ const toolDefinitionSchema = z.object({
 // Loosened to z.unknown() so extended values pass through to the forwarding
 // path without causing 400s from clients that send provider-specific
 // tool_choice shapes (e.g. OpenRouter's `{ type: 'function', function: {...}, disable_parallel_tool_use: true }`).
-const toolChoiceSchema = z.unknown();
+const toolChoiceSchema = z.unknown().nullish();
 
 // ---------------------------------------------------------------------------
 // Top-level request
@@ -240,7 +240,7 @@ export const chatCompletionRequestSchema = z.object({
   // Providers send extended shapes
   // (e.g. `{ type: 'json_schema', json_schema: {...} }`) that would 400
   // with a tight enum.
-  response_format: z.unknown(),
+  response_format: z.unknown().nullish(),
   logit_bias: z.record(z.string(), z.number()).nullish(),
   logprobs: z.boolean().nullish(),
 }).loose();
