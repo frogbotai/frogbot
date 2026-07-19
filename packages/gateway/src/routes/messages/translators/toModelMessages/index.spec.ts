@@ -9,7 +9,6 @@
 import { describe, expect, test } from 'vitest';
 
 import { UnsupportedModalityError } from '../../../../errors/gatewayError.js';
-import type { AnthropicMessage } from '../types.js';
 
 import { toModelMessages } from './index.js';
 
@@ -188,7 +187,7 @@ describe('user messages', () => {
     expect(() =>
       toModelMessages({
         messages: [
-          { role: 'user', content: [{ type: 'video' } as unknown as never] } as AnthropicMessage,
+          { role: 'user', content: [{ type: 'video' } as unknown as never] },
         ],
       }),
     ).toThrow(UnsupportedModalityError);

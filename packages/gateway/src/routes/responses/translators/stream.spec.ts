@@ -119,18 +119,18 @@ describe('createResponsesStreamTransform', () => {
         type: 'tool-input-start',
         id: 'call_1',
         toolName: 'get_weather',
-      } as TextStreamPart<ToolSet>,
+      },
       {
         type: 'tool-input-delta',
         id: 'call_1',
         delta: '{"city":',
-      } as TextStreamPart<ToolSet>,
+      },
       {
         type: 'tool-input-delta',
         id: 'call_1',
         delta: '"Paris"}',
-      } as TextStreamPart<ToolSet>,
-      { type: 'tool-input-end', id: 'call_1' } as TextStreamPart<ToolSet>,
+      },
+      { type: 'tool-input-end', id: 'call_1' },
       {
         type: 'tool-call',
         toolCallId: 'call_1',
@@ -211,14 +211,14 @@ describe('createResponsesStreamTransform', () => {
 
   it('emits the reasoning item lifecycle with correct event names', async () => {
     const events = await collectEvents([
-      { type: 'reasoning-start', id: 'r1' } as TextStreamPart<ToolSet>,
+      { type: 'reasoning-start', id: 'r1' },
       {
         type: 'reasoning-delta',
         id: 'r1',
         text: 'thinking',
         providerMetadata: { anthropic: { signature: 'sig_123' } },
       } as unknown as TextStreamPart<ToolSet>,
-      { type: 'reasoning-end', id: 'r1' } as TextStreamPart<ToolSet>,
+      { type: 'reasoning-end', id: 'r1' },
       { type: 'text-delta', text: 'answer' } as TextStreamPart<ToolSet>,
       finishStep('stop'),
     ]);

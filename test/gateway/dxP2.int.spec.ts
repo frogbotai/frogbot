@@ -69,12 +69,12 @@ function makeMockModel(): LanguageModelV4 {
               inputTokens: { total: 2, noCache: 2 },
               outputTokens: { total: 1, text: 1 },
             },
-          } as unknown as LanguageModelV4StreamPart);
+          });
           controller.close();
         },
       }),
     }),
-  } as unknown as LanguageModelV4;
+  };
 }
 
 function makeApp() {

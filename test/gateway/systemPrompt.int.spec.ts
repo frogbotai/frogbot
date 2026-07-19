@@ -57,7 +57,7 @@ function createRecordingModel(opts?: {
     doStream: async () => {
       throw new Error('not used');
     },
-  } as unknown as LanguageModelV4;
+  };
 }
 
 function makeAppWithModel(providerName: string, model: LanguageModelV4) {

@@ -91,7 +91,9 @@ export function createTracingHooks(options: TracingOptions = {}): Hooks {
         let body: unknown;
         try {
           body = await args.request.clone().json();
-        } catch {}
+        } catch {
+          // Not valid JSON — leave `body` undefined.
+        }
         args.context[traceOverrideKey] = signalLevelFromBody(body);
       },
     ],

@@ -114,7 +114,7 @@ describe('responsesRoute', () => {
       expect.objectContaining({ type: 'function_call', name: 'get_weather', call_id: 'call_1' }),
     ]));
 
-    const call = doGenerate.mock.calls[0]![0] as Record<string, any>;
+    const call = doGenerate.mock.calls[0][0] as Record<string, any>;
     expect(call.tools).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'function', name: 'get_weather' }),
     ]));
@@ -399,7 +399,7 @@ describe('responsesRoute param forwarding (non-streaming)', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const call = doGenerate.mock.calls[0]![0] as Record<string, unknown>;
+    const call = doGenerate.mock.calls[0][0] as Record<string, unknown>;
     expect(call).toMatchObject({
       temperature: 0.4,
       topP: 0.8,
@@ -428,7 +428,7 @@ describe('responsesRoute param forwarding (non-streaming)', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const call = doGenerate.mock.calls[0]![0] as { providerOptions?: Record<string, unknown> };
+    const call = doGenerate.mock.calls[0][0] as { providerOptions?: Record<string, unknown> };
     expect(call.providerOptions).toMatchObject({
       openai: {
         previousResponseId: 'resp_prev',
@@ -454,7 +454,7 @@ describe('responsesRoute param forwarding (non-streaming)', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const call = doGenerate.mock.calls[0]![0] as { providerOptions?: Record<string, unknown> };
+    const call = doGenerate.mock.calls[0][0] as { providerOptions?: Record<string, unknown> };
     expect(call.providerOptions ?? {}).toEqual({});
   });
 });
@@ -499,7 +499,7 @@ describe('responsesRoute param forwarding (streaming)', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const call = doStream.mock.calls[0]![0] as Record<string, unknown> & { providerOptions?: Record<string, unknown> };
+    const call = doStream.mock.calls[0][0] as Record<string, unknown> & { providerOptions?: Record<string, unknown> };
     expect(call).toMatchObject({ temperature: 0.4, topK: 20, stopSequences: ['STOP'] });
     expect(call.providerOptions).toMatchObject({
       openai: { previousResponseId: 'resp_prev', serviceTier: 'flex' },
@@ -524,7 +524,7 @@ describe('responsesRoute param forwarding (streaming)', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const call = doStream.mock.calls[0]![0] as { providerOptions?: Record<string, unknown> };
+    const call = doStream.mock.calls[0][0] as { providerOptions?: Record<string, unknown> };
     expect(call.providerOptions ?? {}).toEqual({});
   });
 

@@ -67,7 +67,7 @@ describe('forwardLanguageParams', () => {
       unknown: { cache_control: { type: 'ephemeral' } },
     };
     forwardLanguageParams(opts, 'anthropic');
-    expect(opts['anthropic']!['cacheControl']).toEqual({ type: 'persistent' });
+    expect(opts['anthropic']['cacheControl']).toEqual({ type: 'persistent' });
   });
 
   it('drops unknown namespace for bedrock providers', () => {

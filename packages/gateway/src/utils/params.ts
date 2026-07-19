@@ -156,7 +156,9 @@ export function forwardMessageProviderOptions(messages: unknown[], providerName:
     forwardProviderOptions(message, providerName);
     const content = (message as { content?: unknown }).content;
     if (Array.isArray(content)) {
-      for (const part of content) forwardProviderOptions(part, providerName);
+      for (const part of content) {
+        forwardProviderOptions(part, providerName);
+      }
     }
   }
 }

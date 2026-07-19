@@ -70,7 +70,7 @@ describe('frogbot sanitize', () => {
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
     for (const col of (payloadConfig as any).collections) {
-      // eslint-disable-line @typescript-eslint/no-explicit-any
+       
       for (const marker of ROLE_MARKERS) {
         expect((col as Record<string, unknown>)[marker]).toBeUndefined();
       }

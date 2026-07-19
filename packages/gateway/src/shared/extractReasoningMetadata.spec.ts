@@ -43,7 +43,7 @@ describe('extractReasoningMetadata', () => {
   it('ignores non-string values for signature/redactedData', () => {
     const result = extractReasoningMetadata({
       anthropic: { signature: 123, redactedData: null },
-    } as unknown as Record<string, Record<string, unknown>>);
+    });
     expect(result).toEqual({});
   });
 });

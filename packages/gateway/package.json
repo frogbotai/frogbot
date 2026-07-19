@@ -1,8 +1,10 @@
 {
   "name": "@frogbotai/gateway",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "The open-source, self-hostable AI gateway built on the Vercel AI SDK. The server side of what Vercel kept closed-source.",
   "license": "MIT",
+  "author": "Colby Gilbert",
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
@@ -90,7 +92,7 @@
     "@ai-sdk/moonshotai": "^3.0.0",
     "@ai-sdk/openai": "^4.0.0",
     "@ai-sdk/openai-compatible": "^3.0.3",
-    "@ai-sdk/otel": "1.0.4",
+    "@ai-sdk/otel": "^1.0.31",
     "@ai-sdk/perplexity": "^4.0.0",
     "@ai-sdk/prodia": "^2.0.2",
     "@ai-sdk/provider": "^4.0.0",
@@ -143,7 +145,7 @@
     }
   },
   "devDependencies": {
-    "@frogbot/eslint-config": "workspace:*",
+    "@frogbotai/eslint-config": "workspace:*",
     "@opentelemetry/context-async-hooks": "^2.0.1",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.203.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.203.0",

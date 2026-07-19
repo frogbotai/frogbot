@@ -29,7 +29,7 @@ export function headersForError(err: unknown, status: number): Record<string, st
 
   const cause = unwrapRetryError(err);
   if (APICallError.isInstance(cause)) {
-    upstreamHeaders = cause.responseHeaders as Record<string, string> | undefined;
+    upstreamHeaders = cause.responseHeaders;
   }
 
   const filtered = filterResponseHeaders(upstreamHeaders);

@@ -139,14 +139,14 @@ function messageToModelMessage(message: ResponsesInputMessage, messageIndex: num
             reject('provider file references', `${path}.file_id`);
           }
           if (part.file_url)
-            return {
+            {return {
               type: 'file',
               mediaType: 'application/pdf',
               data: {
                 type: 'url',
                 url: parseUrl(part.file_url, `${path}.file_url`),
               },
-            };
+            };}
           if (!part.file_data) {
             reject('missing file_data', `${path}.file_data`);
           }

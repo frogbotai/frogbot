@@ -78,13 +78,13 @@ function makeLanguageModel(opts?: { error?: unknown }): LanguageModelV4 {
                 inputTokens: { total: 2, noCache: 2 },
                 outputTokens: { total: 1, text: 1 },
               },
-            } as unknown as LanguageModelV4StreamPart);
+            });
           }
           controller.close();
         },
       }),
     }),
-  } as unknown as LanguageModelV4;
+  };
 }
 
 function makeAppWithModel(model: LanguageModelV4, hooks?: Hooks) {

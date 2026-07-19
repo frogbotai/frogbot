@@ -154,7 +154,9 @@ async function existing(paths: string[]): Promise<string[]> {
     try {
       await access(path);
       out.push(path);
-    } catch {}
+    } catch {
+      // Not readable / doesn't exist — skip it.
+    }
   }
   return out;
 }

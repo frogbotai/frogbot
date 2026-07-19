@@ -64,7 +64,7 @@ async function runThroughSdk(
     // real `standardizePrompt` throws InvalidPromptError on the system message.
     allowSystemInMessages: true,
   });
-  return model.doGenerateCalls[0]!.prompt;
+  return model.doGenerateCalls[0].prompt;
 }
 
 const SYSTEM_TEXT = 'You are terse. Answer in one word.';

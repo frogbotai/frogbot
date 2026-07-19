@@ -368,13 +368,13 @@ describe('toOpenAIErrorResponse — unknown throws', () => {
   });
 
   it('handles string throws', () => {
-    const { body, status } = toOpenAIErrorResponse('oops' as unknown);
+    const { body, status } = toOpenAIErrorResponse('oops');
     expect(status).toBe(500);
     expect(body.error.message).toBe('Internal server error');
   });
 
   it('handles number throws', () => {
-    const { body, status } = toOpenAIErrorResponse(42 as unknown);
+    const { body, status } = toOpenAIErrorResponse(42);
     expect(status).toBe(500);
     expect(body.error.message).toBe('Internal server error');
   });

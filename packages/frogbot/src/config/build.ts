@@ -32,7 +32,6 @@ function validate(config: FrogbotConfig): void {
     if (matches.length > 1) {
       const slugs = matches.map((c) => c.slug).join(', ');
       console.warn(
-        // eslint-disable-line no-console
         `[frogbot] multiple collections marked \`${marker}: true\` (${slugs}). ` +
           `In v0 this is a warning; future versions will reject it.`,
       );

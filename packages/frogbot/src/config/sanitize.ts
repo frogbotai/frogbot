@@ -38,7 +38,7 @@ const noopEmailAdapter: PayloadEmailAdapter<void> = ({ payload }) => ({
   defaultFromName: 'FrogBot',
   sendEmail(message) {
     payload.logger.warn(
-      `[frogbot] Email attempted without a configured adapter. To: '${String(message.to)}', Subject: '${String(message.subject)}'. ` + // eslint-disable-line @typescript-eslint/no-base-to-string
+      `[frogbot] Email attempted without a configured adapter. To: '${String(message.to)}', Subject: '${String(message.subject)}'. ` +  
         `Configure an email adapter to send real emails.`,
     );
     return Promise.resolve();
@@ -49,7 +49,7 @@ function bootstrapBeforeOperation(args: { req: PayloadRequest }): void {
   const frogbot = getFrogbotInstance(args.req.payload);
   if (frogbot) {
     (args.req as any).frogbot = frogbot;
-  } // eslint-disable-line @typescript-eslint/no-explicit-any
+  }  
 }
 
 function wrapEndpointHandler(handler: PayloadHandler): PayloadHandler {
@@ -57,7 +57,7 @@ function wrapEndpointHandler(handler: PayloadHandler): PayloadHandler {
     const frogbot = getFrogbotInstance(req.payload);
     if (frogbot) {
       (req as any).frogbot = frogbot;
-    } // eslint-disable-line @typescript-eslint/no-explicit-any
+    }  
     return handler(req);
   };
 }
@@ -364,7 +364,7 @@ function buildPayloadConfig(config: FrogbotConfig): PayloadConfig {
   if (!config.email) {
     out.email = noopEmailAdapter;
     console.warn(
-      // eslint-disable-line no-console
+       
       '[frogbot] No email adapter provided. Emails will be logged but not sent. ' +
         'Pass an `email` adapter to enable delivery.',
     );

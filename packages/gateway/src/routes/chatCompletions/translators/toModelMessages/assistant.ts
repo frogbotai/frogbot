@@ -61,7 +61,7 @@ export function parseAssistantMessage(msg: OpenAIAssistantMessage, messageIndex:
 
   if (hasToolCalls) {
     for (let j = 0; j < msg.tool_calls!.length; j++) {
-      const tc = msg.tool_calls![j]!;
+      const tc = msg.tool_calls![j];
       const path = `messages[${messageIndex}].tool_calls[${j}].function.arguments`;
       parts.push({
         type: 'tool-call',

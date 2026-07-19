@@ -279,7 +279,7 @@ export function parseChatCompletionRequest(body: unknown): ChatCompletionRequest
       (i) => i.path[0] !== 'messages' || i.path.length === 1,
     );
     if (nonMessageIssues.length > 0) {
-      const first = nonMessageIssues[0]!;
+      const first = nonMessageIssues[0];
       const path = formatZodPath(first.path);
       const message =
         nonMessageIssues.length === 1
@@ -304,7 +304,7 @@ export function parseChatCompletionRequest(body: unknown): ChatCompletionRequest
       // Known role — validate strictly for precise per-field errors.
       const r = knownMessageSchema.safeParse(msg);
       if (!r.success) {
-        const first = r.error.issues[0]!;
+        const first = r.error.issues[0];
         const path = formatZodPath([...first.path.slice(0, 0), 'messages', i, ...first.path]);
         const message = first.message;
         throw new RequestValidationError({ message, param: path });
@@ -314,7 +314,7 @@ export function parseChatCompletionRequest(body: unknown): ChatCompletionRequest
 
   if (!outerResult.success) {
     // Remaining issues are message-array-level (e.g. empty array).
-    const first = outerResult.error.issues[0]!;
+    const first = outerResult.error.issues[0];
     const path = formatZodPath(first.path);
     throw new RequestValidationError({ message: first.message, param: path });
   }

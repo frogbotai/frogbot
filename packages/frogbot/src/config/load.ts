@@ -41,7 +41,7 @@ function isSanitizedConfig(value: unknown): value is FrogbotSanitizedConfig {
     typeof value === 'object' &&
     value !== null &&
     Array.isArray((value as { collections?: unknown }).collections) &&
-    '_internal' in (value as object)
+    '_internal' in (value)
   );
 }
 

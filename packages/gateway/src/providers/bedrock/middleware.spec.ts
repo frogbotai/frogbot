@@ -34,7 +34,7 @@ describe('bedrockCachePoint', () => {
     expect(args.providerOptions['bedrock']).toEqual({
       cachePoint: { type: 'default' },
     });
-    expect(args.providerOptions['unknown']!['cache_control']).toBeUndefined();
+    expect(args.providerOptions['unknown']['cache_control']).toBeUndefined();
   });
 
   it('fires for models containing "claude" in the ID', () => {

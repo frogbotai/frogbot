@@ -53,7 +53,7 @@ describe('resolveProvider', () => {
       resolveProvider({
         modelId: 'openai/gpt-4o',
         operation: 'chat.completions',
-        providers: {} as ProviderRegistry,
+        providers: {},
       }),
     ).toThrow(NoProvidersError);
   });

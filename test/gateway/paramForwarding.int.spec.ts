@@ -93,7 +93,7 @@ function createRecordingModel(opts?: {
         }),
       };
     },
-  } as unknown as LanguageModelV4;
+  };
 }
 
 function makeAppWithModel(providerName: string, model: LanguageModelV4) {

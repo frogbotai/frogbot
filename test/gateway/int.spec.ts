@@ -120,13 +120,15 @@ function createMockLanguageModel(opts?: {
       return {
         stream: new ReadableStream({
           start(controller) {
-            for (const part of parts) controller.enqueue(part);
+            for (const part of parts) {
+              controller.enqueue(part);
+            }
             controller.close();
           },
         }),
       };
     },
-  } as unknown as LanguageModelV4;
+  };
 }
 
 /**
@@ -179,7 +181,7 @@ function createDelayedStreamModel(opts: {
         },
       }),
     }),
-  } as unknown as LanguageModelV4;
+  };
 }
 
 /**
@@ -201,7 +203,7 @@ function createMidStreamErrorModel(error: unknown): LanguageModelV4 {
         },
       }),
     }),
-  } as unknown as LanguageModelV4;
+  };
 }
 
 function createMockEmbeddingModel(opts?: {
