@@ -39,9 +39,16 @@
 - **If there's a name collision** with a Payload type, import the Payload type with a `Payload*` alias rather than prefixing our type
 - Current valid prefixed types: `FrogbotConfig`, `FrogbotRequest`, `FrogbotInstance`, `FrogbotTypes`, `UntypedFrogbotTypes`
 
+## Type Generation (`packages/frogbot`)
+
+- FrogBot is the **sole** type generator (`frogbot generate:types` → `frogbot-types.ts`). It already includes Payload's shapes via `configToJSONSchema` — there is no separate "Payload types" output.
+- Payload's own boot-time auto-generate (`typescript.autoGenerate`, spawns a child process, writes `payload-types.ts`) must always be force-disabled on the Payload config built in `config/sanitize.ts`. Never fix this by telling users to set `typescript: { autoGenerate: false }` in their `frogbot.config.ts`.
+- The user-facing `typescript.autoGenerate` in `frogbot.config.ts` controls **FrogBot's** generation only (`FrogbotSanitizedConfig.typescript.autoGenerate`), wired to a boot-time call in `Frogbot.init()`.
+- Known related bugs: Payload's auto-generate breaks under Turbopack (vercel/next.js#66723) and trips a tsx/Node `module.registerHooks` bug on Node ≥23.5 (payloadcms/payload#16949, fixed in Payload's own `bin.js`). `config/load.ts` applies the same `registerHooks` guard before calling `tsImport`.
+
 ## What NOT to do
 
-- Don't add comments unless requested
+- **Don't add comments unless explicitly requested.** Zero comments is the default, even for "explaining why this weird workaround exists." No comment blocks, no citations, no rationale — write it in the chat response instead, not the code. This has been a repeat mistake — check every edit before writing it.
 - Don't assume libraries are available - check first
 - Don't over-engineer solutions
 - Don't keep buggy legacy code "just in case"
