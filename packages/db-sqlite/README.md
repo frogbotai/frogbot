@@ -1,18 +1,18 @@
-# @frogbot/db-sqlite
+# @frogbotai/db-sqlite
 
 SQLite adapter for [FrogBot](https://github.com/firmware-ai/firmware).
 
 ## Installation
 
 ```bash
-pnpm add @frogbot/db-sqlite
+pnpm add @frogbotai/db-sqlite
 ```
 
 ## Usage
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { sqliteAdapter } from '@frogbot/db-sqlite'
+import { sqliteAdapter } from '@frogbotai/db-sqlite'
 
 export default buildConfig({
   db: sqliteAdapter({

@@ -1,18 +1,18 @@
-# @frogbot/storage-azure
+# @frogbotai/storage-azure
 
 Azure Blob Storage adapter for [FrogBot](https://github.com/firmware-ai/firmware).
 
 ## Installation
 
 ```bash
-pnpm add @frogbot/storage-azure
+pnpm add @frogbotai/storage-azure
 ```
 
 ## Usage
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { azureStorage } from '@frogbot/storage-azure'
+import { azureStorage } from '@frogbotai/storage-azure'
 
 export default buildConfig({
   storage: [

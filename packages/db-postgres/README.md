@@ -1,18 +1,18 @@
-# @frogbot/db-postgres
+# @frogbotai/db-postgres
 
 Postgres adapter for [FrogBot](https://github.com/firmware-ai/firmware).
 
 ## Installation
 
 ```bash
-pnpm add @frogbot/db-postgres
+pnpm add @frogbotai/db-postgres
 ```
 
 ## Usage
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { postgresAdapter } from '@frogbot/db-postgres'
+import { postgresAdapter } from '@frogbotai/db-postgres'
 
 export default buildConfig({
   db: postgresAdapter({

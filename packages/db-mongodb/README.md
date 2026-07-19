@@ -1,18 +1,18 @@
-# @frogbot/db-mongodb
+# @frogbotai/db-mongodb
 
 MongoDB adapter for [FrogBot](https://github.com/firmware-ai/firmware).
 
 ## Installation
 
 ```bash
-pnpm add @frogbot/db-mongodb
+pnpm add @frogbotai/db-mongodb
 ```
 
 ## Usage
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { mongooseAdapter } from '@frogbot/db-mongodb'
+import { mongooseAdapter } from '@frogbotai/db-mongodb'
 
 export default buildConfig({
   db: mongooseAdapter({

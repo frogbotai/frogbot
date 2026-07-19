@@ -81,8 +81,8 @@ test/
    Payload auto-runs `generate:types` on boot in non-production envs, which
    spawns a child process that hits pre-existing import errors. Disabling it
    keeps test boot clean.
-7. **Adapters via `@frogbot/*` packages.** Never import `@payloadcms/db-*`
-   directly in tests. Use `@frogbot/db-mongodb` (or future adapters).
+7. **Adapters via `@frogbotai/*` packages.** Never import `@payloadcms/db-*`
+   directly in tests. Use `@frogbotai/db-mongodb` (or future adapters).
    Version is enforced by `pnpm test:versions`.
 8. **Graceful skipping.** Tests that require Docker services skip with a
    clear message if the service is unreachable. You can run the full suite
@@ -136,7 +136,7 @@ This mirrors Payload's adapter swap pattern from their test infrastructure.
 
 ### Storage Plugin Pipeline
 
-Storage adapters are wrapped in `@frogbot/storage-*` packages (thin cast from Payload plugin to `FrogbotPlugin` type — same function at runtime). The execution flow:
+Storage adapters are wrapped in `@frogbotai/storage-*` packages (thin cast from Payload plugin to `Plugin` type — same function at runtime). The execution flow:
 
 1. `runPlugins` (frogbot) executes plugins on `FrogbotConfig`
 2. Storage plugins inject `upload.handlers` into collections
@@ -256,7 +256,7 @@ describe('my-feature', () => {
 
 ```ts
 import { describe, it, expect } from 'vitest';
-import { mongooseAdapter } from '@frogbot/db-mongodb';
+import { mongooseAdapter } from '@frogbotai/db-mongodb';
 import { buildConfig } from 'frogbot';
 import type { FrogbotConfig } from 'frogbot';
 
@@ -423,7 +423,7 @@ This test infrastructure is modeled after Payload's (v3.85.1). Key differences:
 - Payload tests against their own API directly; we test through the `FrogbotInstance` facade
 - Payload uses a monorepo with per-package test configs; we use a centralized `test/` directory
 - Payload has MongoDB replica set + Atlas search tests; we skip those (not needed for v0)
-- Our storage plugins are wrapped (cast to `FrogbotPlugin` type) rather than using Payload's plugin system directly
+- Our storage plugins are wrapped (cast to `Plugin` type) rather than using Payload's plugin system directly
 
 ## First-run caveats
 
