@@ -1,0 +1,76 @@
+---
+title: "Installation"
+sidebarTitle: "Installation"
+description: "Get a FrogBot project running with create-frogbot-app, Docker, or a contributor checkout."
+---
+
+There are three supported ways to run FrogBot.
+
+## Quickstart with create-frogbot-app
+
+Scaffold a new FrogBot project with everything wired up:
+
+```bash
+npx create-frogbot-app my-agent-platform
+cd my-agent-platform
+```
+
+This creates a project with `frogbot.config.ts`, `.env`, default content directories, and a `docker-compose.yml`.
+
+Then start the platform:
+
+```bash
+docker compose up
+```
+
+To configure the platform, edit `frogbot.config.ts`. See [Configuration](/configuration/overview) for the full schema.
+
+## Docker
+
+For a pure Docker deploy, use the published image and `docker-compose.yml`:
+
+```bash
+docker compose up -d
+```
+
+The default Compose file runs:
+
+```txt
+api      Next.js + FrogBot, headless API server
+proxy    Python/FastAPI LLM routing and token accounting
+web      Vite React client
+redis    BullMQ queues, pub/sub, rate limits, cache
+mongo    Persistent data store
+```
+
+## Contributor checkout
+
+Work directly from the FrogBot monorepo to hack on the platform:
+
+```bash
+git clone https://github.com/frogbot/frogbot
+cd frogbot
+pnpm install
+pnpm dev
+```
+
+Use this path when contributing to FrogBot itself or building features that need full source access.
+
+## Software requirements
+
+- Node.js compatible with the FrogBot version you install
+- A package manager (`pnpm` is recommended)
+- A supported database (MongoDB or Postgres) — see [Database](/database/overview)
+- Optional: Redis for queues, WebSocket pub/sub, rate limits, and ephemeral cache
+- Optional: an object store (S3, GCS, Azure, R2, Vercel Blob, or Uploadthing) — see [Configuration](/configuration/overview#storage)
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="settings" href="/configuration/overview">
+    Configure app identity, auth, models, pieces, storage, and plugins.
+  </Card>
+  <Card title="Database" icon="database" href="/database/overview">
+    Choose a database adapter and review the core collections FrogBot registers.
+  </Card>
+</CardGroup>

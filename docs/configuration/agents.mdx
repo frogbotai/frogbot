@@ -1,0 +1,240 @@
+---
+title: "Agents"
+sidebarTitle: "Agents"
+description: "Build tool-using loops for local and HTTP calls."
+keywords: ["agents", "tools", "ToolLoopAgent", "HTTP", "access", "hooks"]
+---
+
+Agents wrap AI SDK v7 `ToolLoopAgent` with FrogBot model resolution, request context, access, and hooks. Register code-defined `AgentConfig` objects in the root configuration.
+
+---
+
+## Define one
+
+Provide a URL-safe `slug`, a provider-prefixed model ID or router alias, and instructions.
+
+```ts
+import { isStepCount } from 'frogbot'
+import type { AgentConfig } from 'frogbot'
+
+export const supportAgent: AgentConfig = {
+  slug: 'support',
+  model: 'fast',
+  instructions: 'Answer support questions and use tools when needed.',
+  stopWhen: isStepCount(8),
+  access: ({ req }) => Boolean(req.user)
+}
+```
+
+```ts
+type AgentConfig = {
+  slug: string
+  model: ModelId
+  instructions: string
+  tools?: readonly AnyTool[]
+  stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[]
+  access?: AgentAccess
+}
+```
+
+`stopWhen` defaults to the AI SDK's `isStepCount(20)`. If provided, `tools` and `stopWhen` arrays must be non-empty.
+
+---
+
+## Add tools
+
+Agents accept FrogBot `Tool` objects, not raw AI SDK tools. FrogBot converts them internally and supplies request, runtime, slug, and run ID context to every execution.
+
+```ts
+import type { Tool } from 'frogbot'
+import { z } from 'zod'
+
+const lookupInput = z.object({
+  ticket: z.string()
+})
+
+export const lookupTicket: Tool<
+  typeof lookupInput,
+  { ticket: string; status: string }
+> = {
+  slug: 'lookup-ticket',
+  description: 'Look up the current status of a support ticket',
+  inputSchema: lookupInput,
+  execute: async ({ ticket }, ctx) => {
+    ctx.frogbot.logger.info(`Looking up ${ticket}`)
+
+    return {
+      ticket,
+      status: 'open'
+    }
+  }
+}
+```
+
+The execution context has this exact shape.
+
+```ts
+type ToolCtx = {
+  req: FrogbotRequest
+  frogbot: Frogbot
+  agent: {
+    slug: string
+    runId: string
+  }
+}
+```
+
+Attach tools directly to the worker.
+
+```ts
+export const supportAgent: AgentConfig = {
+  slug: 'support',
+  model: 'fast',
+  instructions: 'Use lookup-ticket before reporting ticket status.',
+  tools: [lookupTicket]
+}
+```
+
+Inference runs through the embedded gateway. Each model step can request tools, FrogBot executes them with `ToolCtx`, and the loop continues until a stop condition matches.
+
+---
+
+## Organize files
+
+Use folders for organization, then import every config explicitly. FrogBot v0 does not scan a directory or load `AGENT.md` files.
+
+```text
+src/
+├── agents/
+│   ├── index.ts
+│   └── support.ts
+└── tools/
+    └── lookup-ticket.ts
+frogbot.config.ts
+```
+
+```ts
+// src/agents/index.ts
+import { supportAgent } from './support'
+
+export const agents = [supportAgent]
+```
+
+```ts
+// frogbot.config.ts
+import { buildConfig } from 'frogbot'
+import { agents } from './src/agents'
+
+export default buildConfig({
+  // secret, db, collections, and ai omitted
+  agents
+})
+```
+
+Slugs must be unique and URL-safe. Run `pnpm frogbot generate:types` to augment `GeneratedTypes` with configured agent slugs, matching collection typing; each configured model must resolve to a provider enabled under `ai.providers`.
+
+---
+
+## Invoke locally
+
+Registered instances live at `frogbot.agents[slug]` and expose `generate` and `stream`.
+
+```ts
+const result = await frogbot.agents.support.generate({
+  prompt: 'What is the status of ticket SUP-42?'
+})
+
+console.log(result.text)
+```
+
+Pass either a `prompt` or `messages`. Messages may be AI SDK `UIMessage[]` or `ModelMessage[]`; UI messages are converted before inference.
+
+```ts
+const result = await frogbot.agents.support.stream({
+  messages: [
+    {
+      id: 'message-1',
+      role: 'user',
+      parts: [{ type: 'text', text: 'Help with ticket SUP-42' }]
+    }
+  ]
+})
+
+for await (const text of result.textStream) {
+  process.stdout.write(text)
+}
+```
+
+Local calls default to `overrideAccess: true`. To enforce the configured rule, pass a request and `overrideAccess: false`.
+
+```ts
+await frogbot.agents.support.generate({
+  prompt: 'Review ticket SUP-42',
+  req,
+  overrideAccess: false
+})
+```
+
+---
+
+## Invoke over HTTP
+
+Configuring at least one worker mounts two Payload root endpoints. They are served under the normal `/api` prefix.
+
+| Method | Path | Result |
+| --- | --- | --- |
+| `GET` | `/api/agents` | Accessible slugs as `{ agents: [{ slug }] }` |
+| `POST` | `/api/agents/:slug` | Generated JSON or an AI SDK UI message stream |
+
+POST exactly one non-empty `prompt` or non-empty `messages` array. Without an explicit event-stream accept header, the response is `{ text, usage, finishReason }`.
+
+```bash
+curl http://localhost:3000/api/agents/support \
+  --request POST \
+  --header "Authorization: Bearer $FROGBOT_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{ "prompt": "Help with ticket SUP-42" }'
+```
+
+Request an AI SDK UI stream with `Accept: text/event-stream`.
+
+```bash
+curl http://localhost:3000/api/agents/support \
+  --request POST \
+  --header "Authorization: Bearer $FROGBOT_TOKEN" \
+  --header "Content-Type: application/json" \
+  --header "Accept: text/event-stream" \
+  --data '{ "prompt": "Help with ticket SUP-42" }'
+```
+
+Malformed input returns `400`, an unknown slug returns `404`, and an aborted request returns a bodyless `499`.
+
+---
+
+## Control access
+
+`access` receives `{ req }` and may return a boolean or promise. Its default is `Boolean(req.user)`.
+
+```ts
+access: ({ req }) => Boolean(req.user)
+```
+
+HTTP POST calls always set `overrideAccess: false`. The GET endpoint evaluates each worker's rule and omits denied entries or entries whose rule throws.
+
+Custom rules may allow anonymous requests by returning `true`. Local calls bypass the rule unless you explicitly set `overrideAccess: false` with a request.
+
+---
+
+## Follow hooks
+
+Worker runs use the five hooks configured under `ai.hooks`. Every hook receives `agent: { slug, runId }`, plus `req` and `user` when available.
+
+`beforeOperation` and `afterOperation` run once for the whole generate or stream call. Agent HTTP calls use that same lifecycle rather than adding another one.
+
+`beforeUpstream`, `afterUpstream`, and `afterError` run around each model's `doGenerate` or `doStream` call, so a tool loop can produce multiple upstream phase pairs.
+
+Access is checked before `beforeOperation`, so denied calls run no hooks. Stream completion, failure, and abort each finalize `afterOperation` at most once.
+
+Tool execution has no separate lifecycle hook in v0. Match `ToolCtx.agent.runId` with the hook argument's `agent.runId` to correlate tool work.
+
+See [AI hooks](/configuration/ai#observe-calls) for phase arguments, mutation rules, and failure isolation.

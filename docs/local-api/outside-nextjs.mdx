@@ -1,0 +1,84 @@
+---
+title: Using FrogBot outside Next.js
+sidebarTitle: Outside Next.js
+description: FrogBot can be used outside of Next.js within standalone scripts or in other frameworks like Remix, SvelteKit, Nuxt, and similar.
+keywords: local api, config, configuration, documentation, Content Management System, cms, headless, javascript, node, react, express
+---
+
+FrogBot can be used completely outside of Next.js which is helpful in cases like running scripts, using FrogBot in a separate backend service, or using FrogBot's Local API to fetch your data directly from your database in other frontend frameworks like SvelteKit, Remix, Nuxt, and similar.
+
+<Note>
+  FrogBot and all of its official packages are fully ESM. If you want to use
+  FrogBot within your own projects, make sure you are writing your scripts in
+  ESM format or dynamically importing the FrogBot Config.
+</Note>
+
+## Importing the FrogBot Config outside of Next.js
+
+FrogBot provides a convenient way to run standalone scripts, which can be useful for tasks like seeding your database or performing one-off operations.
+
+In standalone scripts, you can simply import the FrogBot Config and use it right away. If you need an initialized copy of FrogBot, you can then use the `getPayload` function. This can be useful for tasks like seeding your database or performing other one-off operations.
+
+```ts
+import { getPayload } from 'frogbot'
+import config from '@frogbot-config'
+
+const seed = async () => {
+  // Get a local copy of FrogBot by passing your config
+  const frogbot = await getPayload({ config })
+
+  const user = await frogbot.create({
+    collection: 'users',
+    data: {
+      email: 'dev@frogbot.com',
+      password: 'some-password',
+    },
+  })
+
+  const page = await frogbot.create({
+    collection: 'pages',
+    data: {
+      title: 'My Homepage',
+      // other data to seed here
+    },
+  })
+}
+
+// Call the function here to run your seed script
+await seed()
+```
+
+You can then execute the script using `frogbot run`. Example: if you placed this standalone script in `src/seed.ts`, you would execute it like this:
+
+```sh
+frogbot run src/seed.ts
+```
+
+The `frogbot run` command does two things for you:
+
+1. It loads the environment variables the same way Next.js loads them, eliminating the need for additional dependencies like `dotenv`. The usage of `dotenv` is not recommended, as Next.js loads environment variables differently. By using `frogbot run`, you ensure consistent environment variable handling across your FrogBot and Next.js setup.
+2. It initializes tsx, allowing direct execution of TypeScript files manually installing tools like tsx or ts-node.
+
+### Troubleshooting
+
+If you encounter import-related errors, you have 2 options:
+
+#### Option 1: enable swc mode by appending `--use-swc` to the `frogbot` command:
+
+Example:
+
+```sh
+frogbot run src/seed.ts --use-swc
+```
+
+Note: Install @swc-node/register in your project first. While swc mode is faster than the default tsx mode, it might break for some imports.
+
+#### Option 2: use an alternative runtime like bun
+
+While we do not guarantee support for alternative runtimes, you are free to use them and disable FrogBot's own transpilation by appending the `--disable-transpile` flag to the `frogbot` command:
+
+```sh
+bunx --bun frogbot run src/seed.ts --disable-transpile
+```
+
+You will need to have bun installed on your system for this to work.

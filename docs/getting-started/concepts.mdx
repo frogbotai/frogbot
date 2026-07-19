@@ -1,0 +1,169 @@
+---
+title: "FrogBot Concepts"
+sidebarTitle: "Concepts"
+description: "The high-level concepts FrogBot is built around — config, runtime, content, pieces, plugins, and clients."
+---
+
+FrogBot is built around a small set of concepts. Understanding these makes the rest of the docs easier to follow.
+
+<CardGroup cols={2}>
+  <Card title="Config" icon="file-cog" href="/configuration/overview">
+    A typed `frogbot.config.ts` file that drives the platform. It is the only file users edit to configure FrogBot.
+  </Card>
+  <Card title="Database" icon="database" href="/database/overview">
+    A database adapter wires FrogBot to MongoDB or Postgres. The database is the runtime source of truth.
+  </Card>
+  <Card title="Models" icon="cpu" href="/configuration/overview#models">
+    Model providers configured per deployment. Self-hosted users bring their own API keys.
+  </Card>
+  <Card title="Pieces" icon="puzzle" href="/configuration/overview#pieces">
+    Integrations such as Slack, Gmail, Notion, and GitHub. Each piece is a scoped npm package.
+  </Card>
+  <Card title="Skills" icon="sparkles" href="/getting-started/concepts#skills">
+    Reusable instruction sets agents load on demand. Authored as Markdown with frontmatter.
+  </Card>
+  <Card title="Agents" icon="bot" href="/getting-started/concepts#agents">
+    Personas with model preferences, skill access, and MCP connections.
+  </Card>
+  <Card title="MCPs" icon="plug" href="/getting-started/concepts#mcps">
+    Local or remote MCP servers exposing tools to agents.
+  </Card>
+  <Card title="Flows" icon="workflow" href="/getting-started/concepts#flows">
+    Visual automations made of triggers and steps that call pieces and agents.
+  </Card>
+  <Card title="Plugins" icon="package" href="/getting-started/concepts#plugins">
+    Functions that take the config and return a modified config. Extend the platform without forking it.
+  </Card>
+</CardGroup>
+
+## Runtime model
+
+Files are the source-controlled defaults. The database is the runtime source of truth.
+
+On boot, FrogBot loads configured skills, agents, MCPs, and flows into the database. After boot, the filesystem is never read again. Users create and edit content through the UI, and changes are persisted to the database.
+
+## Project layout
+
+A FrogBot project scaffolded by `npx create-frogbot-app` looks like this:
+
+```txt
+my-agent-platform/
+├── frogbot.config.ts
+├── .env
+├── package.json
+├── docker-compose.yml
+├── Dockerfile
+├── skills/
+├── agents/
+├── mcps/
+├── flows/
+└── public/
+```
+
+## Skills
+
+Skills are reusable instruction sets that agents load on demand. They are not code. They tell an agent how to accomplish a specific task using its tools.
+
+```markdown
+---
+name: seo-research
+description: Research keywords and analyze SEO opportunities for a given topic
+model: anthropic/claude-sonnet-4-20250514
+mcps:
+  - dataforseo
+  - perplexity
+---
+
+## What you do
+
+1. Take a topic from the user
+2. Use DataForSEO for keyword volume and difficulty
+3. Use Perplexity to research top-ranking content
+4. Return a structured report
+```
+
+## Agents
+
+Agents are personas with instructions, model preferences, skill access, and MCP connections.
+
+```markdown
+---
+name: marketing-agent
+description: SEO research, content creation, and social scheduling
+model: anthropic/claude-sonnet-4-20250514
+skills:
+  - seo-research
+mcps:
+  - buffer
+  - dataforseo
+---
+
+You are a marketing specialist for {{firm.name}}.
+```
+
+## MCPs
+
+MCP servers are external tool connections. They can be local subprocesses or remote URLs.
+
+```json
+{
+  "name": "dataforseo",
+  "type": "remote",
+  "url": "https://mcp.dataforseo.com",
+  "headers": {
+    "Authorization": "Bearer ${DATAFORSEO_API_KEY}"
+  }
+}
+```
+
+```json
+{
+  "name": "local-browser",
+  "type": "local",
+  "command": ["npx", "-y", "@playwright/mcp-server"]
+}
+```
+
+## Flows
+
+Flows are visual automation definitions exported from the flow builder. Each flow has a trigger and a list of steps that call pieces or agents.
+
+```json
+{
+  "name": "weekly-seo-report",
+  "trigger": { "type": "schedule", "cron": "0 9 * * 1" },
+  "steps": [
+    { "piece": "frogbot-agent", "action": "run-skill", "input": { "skill": "seo-research" } },
+    { "piece": "gmail", "action": "send", "input": { "to": "owner@acme.com" } }
+  ]
+}
+```
+
+## Pieces
+
+Pieces are integrations. Each piece is its own npm package. If a piece is installed and imported in `frogbot.config.ts`, it is available to flows and agents in that deployment.
+
+```ts
+import { slack } from '@frogbot/piece-slack'
+import { gmail } from '@frogbot/piece-gmail'
+
+export default buildConfig({
+  pieces: [slack, gmail],
+})
+```
+
+A piece connector handles managed OAuth so admins do not need to register an OAuth app for every integration.
+
+## Plugins
+
+A plugin is a function that takes the config and returns a modified config:
+
+```ts
+type FrogbotPlugin = (config: FrogbotConfig) => FrogbotConfig
+```
+
+Plugins can add collections, endpoints, hooks, views, settings pages, tasks, and cron jobs. Enterprise features are implemented as plugins with no special treatment.
+
+## Clients
+
+Web, desktop, and browser extension clients all mount the same shared React app package. They talk to the FrogBot API server over HTTP and WebSocket.

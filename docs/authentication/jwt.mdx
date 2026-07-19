@@ -1,0 +1,74 @@
+---
+title: JWT Strategy
+sidebarTitle: JWT Strategy
+description: Enable JSON Web Token based authentication to interface with FrogBot.
+keywords: authentication, config, configuration, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
+---
+
+FrogBot offers the ability to [Authenticate](/authentication/overview) via JSON Web Tokens (JWT). These can be read from the responses of `login`, `logout`, `refresh`, and `me` auth operations.
+
+<Tip>
+  **Tip:** You can access the logged-in user from within [Access
+  Control](/access-control/overview) and [Hooks](/hooks/overview) through
+  the `req.user` argument. [More details](/authentication/token-data).
+</Tip>
+
+### Identifying Users Via The Authorization Header
+
+In addition to authenticating via an HTTP-only cookie, you can also identify users via the `Authorization` header on an HTTP request.
+
+Example:
+
+```ts
+const user = await fetch('http://localhost:3000/api/users/login', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    email: 'dev@frogbot.com',
+    password: 'password',
+  }),
+}).then((req) => await req.json())
+
+const request = await fetch('http://localhost:3000', {
+  headers: {
+    Authorization: `JWT ${user.token}`,
+  },
+})
+```
+
+### Omitting The Token
+
+In some cases you may want to prevent the token from being returned from the auth operations. You can do that by setting `removeTokenFromResponses` to `true` like so:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const UsersWithoutJWTs: CollectionConfig = {
+  slug: 'users-without-jwts',
+  auth: {
+    removeTokenFromResponses: true,
+  },
+}
+```
+
+## External JWT Validation
+
+When validating FrogBot-generated JWT tokens in external services, use the processed secret rather than your original secret key:
+
+```ts
+import crypto from 'node:crypto'
+
+const secret = crypto
+  .createHash('sha256')
+  .update(process.env.PAYLOAD_SECRET)
+  .digest('hex')
+  .slice(0, 32)
+```
+
+<Note>
+  **Note:** FrogBot processes your secret using SHA-256 hash and takes the first
+  32 characters. This processed value is what's used for JWT operations, not
+  your original secret.
+</Note>
