@@ -33,21 +33,17 @@ importers:
         specifier: 4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(vite@6.4.3(@types/node@22.20.1)(tsx@4.23.1))
 
-  example:
-    dependencies:
-      '@frogbotai/db-sqlite':
-        specifier: workspace:*
-        version: link:../packages/db-sqlite
-      frogbot:
-        specifier: workspace:*
-        version: link:../packages/frogbot
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
+  packages/create-frogbot-app:
     devDependencies:
+      '@frogbotai/eslint-config':
+        specifier: workspace:*
+        version: link:../frogbot-eslint-config
       '@types/node':
         specifier: ^22.10.2
         version: 22.20.1
+      eslint:
+        specifier: ^9.16.0
+        version: 9.39.5
       typescript:
         specifier: 5.6.2
         version: 5.6.2
@@ -491,6 +487,25 @@ importers:
       frogbot:
         specifier: workspace:*
         version: link:../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  templates/blank:
+    dependencies:
+      '@frogbotai/db-sqlite':
+        specifier: workspace:*
+        version: link:../../packages/db-sqlite
+      frogbot:
+        specifier: workspace:*
+        version: link:../../packages/frogbot
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
       typescript:
         specifier: 5.6.2
         version: 5.6.2
@@ -3550,7 +3565,6 @@ packages:
 
   libsql@0.4.7:
     resolution: {integrity: sha512-T9eIRCs6b0J1SHKYIvD8+KCJMcWZ900iZyxdnSCdqxN12Z1ijzT+jY5nrk72Jw4B0HGzms2NgpryArlJqvc3Lw==}
-    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lines-and-columns@1.2.4:

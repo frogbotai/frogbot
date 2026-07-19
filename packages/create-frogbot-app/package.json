@@ -1,0 +1,33 @@
+{
+  "name": "create-frogbot-app",
+  "version": "0.0.1",
+  "description": "Scaffold a new FrogBot app.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/create-frogbot-app"
+  },
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
+  "type": "module",
+  "bin": {
+    "create-frogbot-app": "./bin.js"
+  },
+  "files": [
+    "dist",
+    "bin.js"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/pack-templates.mjs && chmod +x bin.js",
+    "clean": "rm -rf dist",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@frogbotai/eslint-config": "workspace:*",
+    "@types/node": "^22.10.2",
+    "eslint": "^9.16.0",
+    "typescript": "5.6.2"
+  }
+}
