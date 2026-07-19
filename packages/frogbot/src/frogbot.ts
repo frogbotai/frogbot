@@ -18,6 +18,7 @@ import { generateTextOperation } from './ai/operations/generateText.js';
 import { generateVideoOperation } from './ai/operations/generateVideo.js';
 import { rerankOperation } from './ai/operations/rerank.js';
 import { streamTextOperation } from './ai/operations/streamText.js';
+import { writeGeneratedTypes } from './bin/generateTypes.js';
 import { transcribeOperation } from './ai/operations/transcribe.js';
 import { registerFrogbotInstance } from './instanceRegistry.js';
 import { createFrogbotLocalAPI } from './localAPI.js';
@@ -161,6 +162,16 @@ export class Frogbot {
         continue;
       }
       this.collections[c.slug] = this.toCollection(c);
+    }
+
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      this.config.typescript?.autoGenerate !== false &&
+      !options.disableOnInit
+    ) {
+      void writeGeneratedTypes(this.config, process.cwd()).catch((err: unknown) => {
+        this.logger.warn(`[frogbot] type generation failed: ${err instanceof Error ? err.message : String(err)}`);
+      });
     }
 
     // Run onInit callbacks.

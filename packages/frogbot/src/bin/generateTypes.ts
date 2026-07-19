@@ -23,6 +23,7 @@ import { configToJSONSchema } from 'payload';
 
 import type { SanitizedConfig } from 'payload';
 import { loadConfig } from '../config/load.js';
+import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
 
 const BANNER = `/* tslint:disable */
 /* eslint-disable */
@@ -99,27 +100,39 @@ async function compileTypes(config: SanitizedConfig, agentSlugs: readonly string
   return `${compiled.trimEnd()}\n\n\n${buildGeneratedTypesFooter(agentSlugs)}\n`;
 }
 
+export async function writeGeneratedTypes(
+  frogbotConfig: FrogbotSanitizedConfig,
+  cwd: string,
+): Promise<{ outputPath: string; changed: boolean }> {
+  const config = await frogbotConfig._internal.payloadConfig;
+  const outputPath = resolveOutputPath(config, cwd);
+  const compiled = await compileTypes(config, frogbotConfig.agents?.map((agent) => agent.slug) ?? []);
+
+  try {
+    const existing = await fs.readFile(outputPath, 'utf-8');
+    if (existing === compiled) {
+      return { outputPath, changed: false };
+    }
+  } catch {
+    // No existing file — fall through to write.
+  }
+
+  await fs.writeFile(outputPath, compiled);
+  return { outputPath, changed: true };
+}
+
 export async function generateTypes(): Promise<void> {
   const cwd = process.cwd();
 
   try {
     const frogbotConfig = await loadConfig(cwd);
-    const config = await frogbotConfig._internal.payloadConfig;
-    const outputPath = resolveOutputPath(config, cwd);
-    const compiled = await compileTypes(config, frogbotConfig.agents?.map((agent) => agent.slug) ?? []);
+    const { outputPath, changed } = await writeGeneratedTypes(frogbotConfig, cwd);
 
-    try {
-      const existing = await fs.readFile(outputPath, 'utf-8');
-      if (existing === compiled) {
-        console.log(`[frogbot] types unchanged at ${outputPath}`); // eslint-disable-line no-console
-        return;
-      }
-    } catch {
-      // No existing file — fall through to write.
+    if (changed) {
+      console.log(`[frogbot] types written to ${outputPath}`); // eslint-disable-line no-console
+    } else {
+      console.log(`[frogbot] types unchanged at ${outputPath}`); // eslint-disable-line no-console
     }
-
-    await fs.writeFile(outputPath, compiled);
-    console.log(`[frogbot] types written to ${outputPath}`); // eslint-disable-line no-console
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[frogbot] ${message}`); // eslint-disable-line no-console

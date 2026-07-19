@@ -370,6 +370,11 @@ function buildPayloadConfig(config: FrogbotConfig): PayloadConfig {
     );
   }
 
+  out.typescript = {
+    ...(config as { typescript?: Record<string, unknown> }).typescript,
+    autoGenerate: false,
+  };
+
   // Drop FrogBot-only keys before handing to Payload.
   delete out.plugins;
   delete out.onInit;
@@ -408,6 +413,9 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
     onInit: (config as any).onInit, // eslint-disable-line @typescript-eslint/no-explicit-any
     ai: sanitizedAI,
     agents,
+    typescript: {
+      autoGenerate: (config as { typescript?: { autoGenerate?: boolean } }).typescript?.autoGenerate !== false,
+    },
     _internal: {
       payloadConfig: payloadSanitizedPromise,
     },
