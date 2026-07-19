@@ -9,16 +9,10 @@ work, scoped down to a single starting example for FrogBot core.
 
 ## Quick Start
 
-From the repo root:
+From this directory:
 
 ```bash
 pnpm install
-```
-
-Then, from this directory:
-
-```bash
-cd example
 cp .env.example .env
 # edit .env and set OPENAI_API_KEY
 
@@ -71,10 +65,10 @@ Everything lives in [`frogbot.config.ts`](./frogbot.config.ts):
 - **`agents`** — a single agent (`assistant`) with a model, instructions, and
   one tool (`get_time`). FrogBot registers `GET /api/agents` and
   `POST /api/agents/:slug` automatically — you never write routing code.
-- **`collections`** — empty here. This example is agent-only; add
-  `CollectionConfig` entries when you need FrogBot's data layer too (see
-  `test/frogbot-instance/config.ts` in the repo root for a worked example
-  with auth, versions, and role markers).
+- **`collections`** — a single `users` auth collection, the minimum FrogBot
+  needs for authentication. Add more `CollectionConfig` entries when you need
+  FrogBot's data layer too (see `test/frogbot-instance/config.ts` in the repo
+  root for a worked example with auth, versions, and role markers).
 
 The `access: () => true` on the agent is dev-only — it makes `curl` work
 without authentication. Restrict it (e.g. `({ req }) => !!req.user`) before

@@ -12,8 +12,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@frogbotai/db-sqlite": "workspace:*",
-    "frogbot": "workspace:*",
+    "@frogbotai/db-sqlite": "^0.0.1",
+    "frogbot": "^0.0.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {

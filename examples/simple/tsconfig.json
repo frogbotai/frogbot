@@ -1,11 +1,18 @@
 {
-  "extends": "../tsconfig.base.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": ".",
-    "baseUrl": ".",
-    "noEmit": true
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "lib": ["es2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022"
   },
-  "include": ["frogbot.config.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["frogbot.config.ts", "frogbot-types.ts"],
+  "exclude": ["node_modules"]
 }
