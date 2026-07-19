@@ -1,0 +1,183 @@
+---
+title: "RAG"
+sidebarTitle: "RAG"
+description: "Attach chunking, embedding, and retrieval to any FrogBot collection. The first-class example of a plugin that extends your collections rather than owning them."
+---
+
+The RAG plugin (`@frogbot/plugin-rag`) attaches retrieval-augmented generation to **your** collections. Point it at a collection that has text fields and the plugin handles chunking, embedding, vector storage, and retrieval. Embedding and synthesis route through your [AI config](/configuration/ai) — the plugin never owns model choice.
+
+```ts
+import { buildConfig } from 'frogbot'
+import { rag } from '@frogbot/plugin-rag'
+
+export default buildConfig({
+  ai: {
+    providers: {
+      openai:    { apiKey: process.env.OPENAI_API_KEY },
+      anthropic: { apiKey: process.env.ANTHROPIC_API_KEY },
+    },
+    routers: {
+      'rag-embedding': {
+        models: ['text-embedding-3-small'],
+        access: () => true,
+      },
+      'deep-thinker': {
+        models: ['claude-sonnet-4-5', 'gpt-5'],
+        access: ({ req }) => req.user.role !== 'guest',
+      },
+    },
+  },
+
+  plugins: [
+    rag({
+      embeddingRouter:   'rag-embedding',
+      synthesizerRouter: 'deep-thinker',
+      collections: {
+        files:    { textField: 'extractedText' },
+        articles: { textFields: ['body', 'summary'], chunking: { size: 800 } },
+      },
+    }),
+  ],
+})
+```
+
+## How it extends your collections
+
+The plugin does not introduce a `documents` collection or any other user-facing schema. It does two things:
+
+1. **Attaches to collections you specify** — adds hooks that detect text changes and queue chunk + embed jobs for those documents.
+2. **Owns its own internal collections** — `_rag_chunks` and `_rag_vectors`, both hidden from the admin UI. These hold the chunked text and vector indexes that make retrieval work.
+
+Concretely, when you list a collection in the plugin config, the plugin:
+
+- Adds a sidebar `ragStatus` field to that collection (`pending` / `processing` / `ready` / `failed`).
+- Hooks `afterChange` to queue a chunk + embed job whenever the listed text field(s) change.
+- Hooks `afterDelete` to remove the document's chunks and vectors.
+- Registers retrieval endpoints scoped to that collection.
+
+You retain full ownership of the collection's schema, access control, and lifecycle. The plugin just rides along.
+
+## Why this shape
+
+A plugin that *owns* a `documents` collection forces every user to either accept its schema or fight it. Most teams already have a content collection (`Files`, `Articles`, `KnowledgeBase`, `HelpDocs`, ...) — RAG should plug into those, not duplicate them.
+
+The plugin's internal collections (`_rag_chunks`, `_rag_vectors`) are genuinely implementation detail. You never query them directly; the plugin's API does.
+
+## Configuration
+
+```ts
+rag({
+  embeddingRouter:   'rag-embedding',
+  synthesizerRouter: 'deep-thinker',
+  chunking: { size: 512, overlap: 64 },                         // global default
+  collections: {
+    files: {
+      textField: 'extractedText',                               // single-field shortcut
+    },
+    articles: {
+      textFields: ['body', 'summary'],                          // concatenated in order
+      chunking: { size: 800, overlap: 100 },                    // per-collection override
+      filter: ({ doc }) => doc.status === 'published',          // only index published rows
+    },
+  },
+  access: {
+    search: () => true,
+    answer: ({ req }) => !!req.user,
+  },
+})
+```
+
+| Option                       | Description                                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| **`embeddingRouter`** \*     | Router slug used to embed chunks and queries.                                                     |
+| **`synthesizerRouter`** \*   | Router slug used to synthesize answers from retrieved chunks.                                     |
+| **`collections`** \*         | Map of collection slug → attachment config. Each entry tells the plugin which field(s) to chunk and how. |
+| `collections[slug].textField` | Single text field to chunk. Use this *or* `textFields`.                                          |
+| `collections[slug].textFields` | Array of text fields concatenated and chunked together.                                          |
+| `collections[slug].chunking` | Per-collection chunking override. Falls back to the top-level `chunking`.                         |
+| `collections[slug].filter`   | Function returning `true` if a given document should be indexed. Useful for status gates.         |
+| `chunking.size`              | Default tokens per chunk. Default: `512`.                                                         |
+| `chunking.overlap`           | Default token overlap between chunks. Default: `64`.                                              |
+| `access.search`              | Access control for `search` calls. Defaults to authenticated.                                     |
+| `access.answer`              | Access control for `answer` calls. Defaults to authenticated.                                     |
+| `vectorStore`                | Optional override. Auto-selected from your `db` adapter when omitted (see below).                 |
+
+## Internal collections (plugin-owned)
+
+The plugin registers two hidden, locked-schema collections:
+
+| Collection      | Holds                                                                                                              |
+| --------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `_rag_chunks`   | One row per chunk. Includes source collection slug, source doc id, chunk index, text, token count, and project ref. |
+| `_rag_vectors`  | One row per chunk. Holds the embedding vector. Indexed by the configured vector store. Joined to `_rag_chunks` by id. |
+
+You don't import these or configure their fields. They exist; the plugin queries them.
+
+## Vector storage
+
+The plugin auto-selects a vector store based on your `db` adapter:
+
+| Database adapter      | Vector store              |
+| --------------------- | ------------------------- |
+| `mongooseAdapter`     | MongoDB Atlas Vector Search |
+| `postgresAdapter`     | pgvector                  |
+
+The plugin creates the necessary indexes on first boot. No additional config required.
+
+<Note>
+  Custom vector stores will be supported through a stable adapter API in a future release. The current `vectorStore` option accepts a custom implementation but the contract may change.
+</Note>
+
+## Project scoping
+
+Every chunk and vector row carries a `project` reference matching its source document. All retrieval calls are scoped to the requesting user's current project automatically — no flag, no escape hatch. Cross-project retrieval is impossible by design.
+
+## API surface
+
+Once installed, the plugin extends `req.frogbot` with a `rag` namespace:
+
+```ts
+// Search across all attached collections in the current project
+const { results } = await req.frogbot.rag.search({
+  query: 'What is our refund policy?',
+  topK:  8,
+})
+
+// Search a specific collection
+const { results } = await req.frogbot.rag.search({
+  query:      'How do I reset my password?',
+  collection: 'articles',
+  topK:       5,
+})
+
+// Search and synthesize
+const { answer, sources } = await req.frogbot.rag.answer({
+  query:      'Summarize our refund policy.',
+  collection: 'files',
+})
+
+// Force re-index of a document (after manual content change)
+await req.frogbot.rag.reindex({ collection: 'files', id: fileId })
+```
+
+`answer` runs `search`, builds a synthesis prompt from the retrieved chunks, and routes through `synthesizerRouter`. The router's fallback chain and access control apply.
+
+## REST endpoints
+
+```
+POST  /api/rag/search                Retrieve top-K chunks
+POST  /api/rag/answer                Retrieve + synthesize
+POST  /api/rag/reindex/:slug/:id     Force re-index a single document
+```
+
+Ingest doesn't have its own endpoint — documents flow into the index automatically when their collection rows are created or updated. To ingest external content, write to the appropriate collection (typically `Files`).
+
+## What's not in v1
+
+- **Hybrid search** (BM25 + vector).
+- **Query rewriting / multi-step retrieval.**
+- **Reranking** as a built-in step. Call `req.frogbot.rerank` between `search` and synthesis if needed.
+- **Cross-project retrieval.** Project boundary is hard.
+- **Custom vector store adapters** beyond MongoDB Atlas and pgvector.
+
+These are tracked for follow-up releases.

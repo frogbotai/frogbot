@@ -1,0 +1,385 @@
+---
+title: "AI"
+sidebarTitle: "AI"
+description: "Configure providers, inference, access, hooks, and HTTP routes."
+keywords: ["AI", "providers", "models", "routers", "hooks", "gateway"]
+---
+
+The `ai` block creates an embedded `@frogbotai/gateway` instance when FrogBot starts. Local operations use AI SDK v7 against that in-process gateway, so no separate proxy service is required.
+
+---
+
+## Configure providers
+
+Add at least one provider with the credentials its SDK requires.
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  // secret, db, and collections omitted
+  ai: {
+    providers: {
+      openai: { apiKey: process.env.OPENAI_API_KEY! },
+      anthropic: { apiKey: process.env.ANTHROPIC_API_KEY! },
+      bedrock: {
+        region: 'us-east-1',
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
+      }
+    }
+  }
+})
+```
+
+Built-in keys are `openai`, `anthropic`, `google`, `bedrock`, `groq`, `mistral`, `cohere`, `together`, `fireworks`, `deepinfra`, `xai`, `perplexity`, `cerebras`, `voyage`, and `replicate`.
+
+Model IDs use `<provider>/<model>`, such as `openai/gpt-4o`. Use `amazon-bedrock/...` for a configured `bedrock` provider and `togetherai/...` for `together`; Replicate's `apiKey` maps to its `apiToken` option.
+
+Add an OpenAI-compatible endpoint with any non-built-in key. Its `models` list is required for validation, and calls use the custom key as the provider prefix.
+
+```ts
+ai: {
+  providers: {
+    internal: {
+      type: 'openai-compatible',
+      baseUrl: 'https://models.internal.example/v1',
+      apiKey: process.env.INTERNAL_AI_KEY,
+      headers: { 'x-deployment': 'production' },
+      models: [
+        {
+          id: 'legal-summary-v2',
+          mode: 'chat',
+          limit: { context: 128_000, output: 8_000 },
+          modalities: { input: ['text'], output: ['text'] },
+          tool_call: true,
+          structured_output: true
+        }
+      ]
+    }
+  }
+}
+```
+
+Invoke that model as `internal/legal-summary-v2`. Built-in provider entries accept only their credential fields; they do not accept a `models` override in v0.
+
+---
+
+## Add aliases
+
+Routers are pure aliases from a stable slug to one model ID.
+
+```ts
+ai: {
+  providers: {
+    openai: { apiKey: process.env.OPENAI_API_KEY! }
+  },
+  routers: {
+    fast: { model: 'openai/gpt-4o-mini' },
+    careful: { model: 'openai/o3' }
+  },
+  defaultRouter: 'fast'
+}
+```
+
+An alias has no fallback chain or access rule. `hidden` exists on `RouterConfig` but is reserved for future admin integration.
+
+`defaultRouter` must name a configured alias, but v0 operations still require `model`. Local operations and agents resolve aliases; the mounted gateway HTTP routes expect provider-prefixed model IDs.
+
+---
+
+## Call operations
+
+Call methods on a `Frogbot` instance or `req.frogbot`. Text generation accepts either `prompt` or `messages`, never both.
+
+```ts
+const { text, usage, finishReason } = await req.frogbot.generateText({
+  model: 'fast',
+  prompt: 'Summarize the latest support request',
+  req
+})
+```
+
+These are the public v0 operation signatures.
+
+```ts
+generateText(opts: GenerateTextOpts)
+streamText(opts: StreamTextOpts)
+embed(opts: EmbedOpts)
+embedMany(opts: EmbedManyOpts)
+generateImage(opts: GenerateImageOpts)
+generateSpeech(opts: GenerateSpeechOpts)
+transcribe(opts: TranscribeOpts)
+generateVideo(opts: GenerateVideoOpts)
+rerank(opts: RerankOpts)
+```
+
+Every options type includes this base.
+
+```ts
+type BaseAIOpts = {
+  model: ModelId
+  req?: FrogbotRequest
+  overrideAccess?: boolean
+}
+```
+
+Generation uses the AI SDK v7 option names exposed below.
+
+```ts
+type GenerateTextOpts = BaseAIOpts & (
+  | { prompt: string; messages?: never }
+  | { prompt?: never; messages: ModelMessage[] }
+) & {
+  instructions?: string
+  tools?: Tool[]
+  toolChoice?: ToolChoice<ToolSet>
+  output?: AIOutput
+  stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[]
+  maxOutputTokens?: number
+  temperature?: number
+  topP?: number
+  topK?: number
+  presencePenalty?: number
+  frequencyPenalty?: number
+  seed?: number
+  maxRetries?: number
+  timeout?: number
+  stopSequences?: string[]
+  providerOptions?: Record<string, unknown>
+  abortSignal?: AbortSignal
+  headers?: Record<string, string>
+  onStepEnd?: (event: unknown) => void | Promise<void>
+}
+
+type StreamTextOpts = GenerateTextOpts & {
+  onFinish?: (event: unknown) => void | Promise<void>
+  onEnd?: (event: unknown) => void | Promise<void>
+}
+```
+
+The remaining operations expose only the fields implemented by their corresponding AI SDK functions.
+
+```ts
+type EmbedOpts = BaseAIOpts & {
+  value: string
+  abortSignal?: AbortSignal
+  headers?: Record<string, string>
+}
+
+type EmbedManyOpts = BaseAIOpts & {
+  values: string[]
+  maxParallelCalls?: number
+  abortSignal?: AbortSignal
+  headers?: Record<string, string>
+}
+
+type GenerateImageOpts = BaseAIOpts & {
+  prompt: string
+  n?: number
+  size?: string
+  providerOptions?: Record<string, unknown>
+  abortSignal?: AbortSignal
+  headers?: Record<string, string>
+}
+
+type GenerateSpeechOpts = BaseAIOpts & {
+  text: string
+  voice?: string
+  speed?: number
+  providerOptions?: Record<string, unknown>
+  abortSignal?: AbortSignal
+}
+
+type TranscribeOpts = BaseAIOpts & {
+  audio: Blob | ArrayBuffer | ReadableStream
+  language?: string
+  providerOptions?: Record<string, unknown>
+  abortSignal?: AbortSignal
+}
+
+type GenerateVideoOpts = BaseAIOpts & {
+  prompt: string
+  providerOptions?: Record<string, unknown>
+  abortSignal?: AbortSignal
+}
+
+type RerankOpts = BaseAIOpts & {
+  query: string
+  documents: string[]
+  topN?: number
+  abortSignal?: AbortSignal
+}
+```
+
+Each method returns the result from its AI SDK v7 counterpart. `streamText` performs asynchronous access and hook setup, so await it before consuming `textStream` or another result stream.
+
+---
+
+## Request output
+
+AI SDK v7 handles structured data through `generateText` and an `Output` specification. Read the validated value from `result.output`; there is no `generateObject` method.
+
+```ts
+import { Output } from 'frogbot'
+import { z } from 'zod'
+
+const result = await req.frogbot.generateText({
+  model: 'fast',
+  prompt: 'Extract the ticket number and priority',
+  output: Output.object({
+    schema: z.object({
+      ticket: z.string(),
+      priority: z.enum(['low', 'medium', 'high'])
+    })
+  }),
+  req
+})
+
+const ticket = result.output
+```
+
+FrogBot also re-exports `Output.text`, `Output.array`, `Output.choice`, and `Output.json` through the same `Output` object.
+
+---
+
+## Control access
+
+Configure access by operation category. Every category defaults to `Boolean(req.user)`.
+
+```ts
+ai: {
+  providers: {
+    openai: { apiKey: process.env.OPENAI_API_KEY! }
+  },
+  access: {
+    generate: ({ req }) => Boolean(req.user),
+    embed: ({ req }) => Boolean(req.user),
+    transcribe: ({ req }) => Boolean(req.user),
+    rerank: ({ req }) => Boolean(req.user)
+  }
+}
+```
+
+| Category | Operations |
+| --- | --- |
+| `generate` | `generateText`, `streamText`, `generateImage`, `generateSpeech`, `generateVideo` |
+| `embed` | `embed`, `embedMany` |
+| `transcribe` | `transcribe` |
+| `rerank` | `rerank` |
+
+An in-process call with `req` enforces access unless `overrideAccess: true` is set. A server-side call without `req` bypasses access by default, following the Local API convention.
+
+---
+
+## Observe calls
+
+Register arrays of hooks for the five-phase lifecycle. FrogBot creates one lifecycle for each direct operation, local agent run, agent HTTP call, and mounted `/api/ai/v1/*` request.
+
+```ts
+ai: {
+  providers: {
+    openai: { apiKey: process.env.OPENAI_API_KEY! }
+  },
+  hooks: {
+    beforeOperation: [({ context, user }) => {
+      context.authenticated = Boolean(user)
+    }],
+    beforeUpstream: [({ headers }) => {
+      headers.set('x-application', 'support')
+    }],
+    afterOperation: [({ durationMs, error }) => {
+      console.info({ durationMs, failed: Boolean(error) })
+    }]
+  }
+}
+```
+
+| Phase | Runs |
+| --- | --- |
+| `beforeOperation` | Once after alias resolution and access checks, before the AI SDK call |
+| `beforeUpstream` | Before each model's `doGenerate`, `doStream`, or equivalent call |
+| `afterUpstream` | After each successful model call |
+| `afterError` | After a failed model call, with `failedPhase` and `error` |
+| `afterOperation` | Once when the full operation succeeds, fails, ends, or is aborted |
+
+All phases share `requestId`, `operation`, `startedAt`, mutable `context`, and mutable `otel`. FrogBot intersects every hook argument with this context.
+
+```ts
+type AIHookContext = {
+  req?: FrogbotRequest
+  user?: FrogbotRequest['user']
+  agent?: {
+    slug: string
+    runId: string
+  }
+}
+```
+
+FrogBot executes `beforeOperation` and `afterOperation` and does not pass them into the embedded gateway. It passes only `beforeUpstream`, `afterUpstream`, and `afterError` to `createGateway`.
+
+Gateway HTTP handlers continue to execute upstream hooks inline. In-process model resolvers execute them around the returned model's `doGenerate`, `doStream`, or equivalent calls.
+
+Mutate `messages`, `params`, `headers`, and `providerOptions` in place during `beforeUpstream`; `system` and `tools` are read-only. `afterUpstream`, `afterError`, and `afterOperation` isolate hook failures so later hooks still run.
+
+Access failures happen before the lifecycle and run no hooks. A thrown `beforeOperation` stops the call before an operation lifecycle is returned, so `afterOperation` does not run for that failure.
+
+---
+
+## Trace calls
+
+Telemetry is enabled by default and registers `@ai-sdk/otel` when that optional peer dependency is installed. Set a deployment ID or add span attributes without replacing FrogBot's defaults.
+
+```ts
+ai: {
+  providers: {
+    openai: { apiKey: process.env.OPENAI_API_KEY! }
+  },
+  deploymentId: 'support-production',
+  telemetry: {
+    enabled: true,
+    enrichSpan: ({ operationId }) => ({
+      'app.operation_id': operationId
+    })
+  }
+}
+```
+
+`deploymentId` defaults to `FROGBOT_DEPLOYMENT_ID`, then `local`. When `@ai-sdk/otel` is absent, registration quietly does nothing.
+
+---
+
+## Call over HTTP
+
+The standalone server mounts the embedded gateway at `/api/ai`. Canonical `/api/ai/v1/*` requests are authenticated through `frogbot.auth`, and requests without a resolved user receive `401` before reaching the gateway.
+
+Each accepted request gets one FrogBot lifecycle around the gateway handler. FrogBot runs the operation hooks, while the gateway handler runs the configured upstream hooks inline.
+
+| Method | Path |
+| --- | --- |
+| `GET` | `/api/ai/v1/models` |
+| `GET` | `/api/ai/v1/health` |
+| `POST` | `/api/ai/v1/chat/completions` |
+| `POST` | `/api/ai/v1/messages` |
+| `POST` | `/api/ai/v1/responses` |
+| `POST` | `/api/ai/v1/embeddings` |
+| `POST` | `/api/ai/v1/images/generations` |
+| `POST` | `/api/ai/v1/audio/speech` |
+| `POST` | `/api/ai/v1/audio/transcriptions` |
+| `POST` | `/api/ai/v1/videos/generations` |
+| `POST` | `/api/ai/v1/rerank` |
+
+Pass credentials accepted by your configured auth collection. HTTP bodies use provider-prefixed model IDs because router aliases are resolved by FrogBot's local operation layer, not by the gateway handler.
+
+The `ai.access` category callbacks also apply only to local operations. Mounted routes use the authenticated-user gate shown above and do not evaluate those callbacks.
+
+```bash
+curl http://localhost:3000/api/ai/v1/chat/completions \
+  --request POST \
+  --header "Authorization: Bearer $FROGBOT_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "model": "openai/gpt-4o-mini",
+    "messages": [{ "role": "user", "content": "Hello" }]
+  }'
+```

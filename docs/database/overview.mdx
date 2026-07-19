@@ -1,0 +1,141 @@
+---
+title: "Database"
+sidebarTitle: "Overview"
+description: "FrogBot is database agnostic. Plug in MongoDB or Postgres behind shared core collections via a database adapter."
+---
+
+FrogBot is database agnostic. You bring your own database and own your data. FrogBot interacts with the database through a database adapter — a thin layer that translates platform operations into your database's native data structures.
+
+The database adapter is configured through the `db` property in your [FrogBot Config](/configuration/overview):
+
+```ts
+import { buildConfig } from 'frogbot'
+import { mongooseAdapter } from '@frogbot/db-mongodb'
+
+export default buildConfig({
+  // ...
+  db: mongooseAdapter({
+    url: process.env.DATABASE_URL,
+  }),
+})
+```
+
+<Warning>
+  The database adapter is an external dependency. Install it in your project separately from `frogbot`.
+</Warning>
+
+## Supported adapters
+
+FrogBot officially supports the following database adapters. Each is a thin wrapper around the matching FrogBot adapter:
+
+| Adapter                         | Wraps                       |
+| ------------------------------- | --------------------------- |
+| `@frogbot/db-mongodb`           | `@payloadcms/db-mongodb`    |
+| `@frogbot/db-postgres`          | `@frogbot/db-postgres`   |
+
+Self-hosted Docker installs are expected to start with MongoDB.
+
+## Selecting a database
+
+There are two main categories of databases to choose from. FrogBot has no opinion on which one you choose.
+
+### Non-relational (MongoDB)
+
+Each FrogBot record is stored as a single document. The shape of your data in the database closely mirrors the shape of your collections, with minimal mapping overhead.
+
+Prefer MongoDB if:
+
+- You want simple schema evolution
+- You do not want to manage DDL changes between staging and production
+- Most of your data leverages arrays, blocks, or `hasMany` relationships
+
+### Relational (Postgres)
+
+Postgres is a strong fit when you want strict, enforced schemas and relationships at the database level.
+
+Prefer Postgres if:
+
+- You are comfortable with [Migrations](https://frogbot.com/docs/database/migrations)
+- You require database-level data consistency
+- You have many relationships across collections that should be enforced
+
+## Default storage
+
+Docker-based installs are expected to start with MongoDB:
+
+```ts
+import { mongooseAdapter } from '@frogbot/db-mongodb'
+
+export default buildConfig({
+  db: mongooseAdapter({ url: process.env.DATABASE_URL }),
+})
+```
+
+Postgres support is configured the same way through its adapter:
+
+```ts
+import { postgresAdapter } from '@frogbot/db-postgres'
+
+export default buildConfig({
+  db: postgresAdapter({ url: process.env.DATABASE_URL }),
+})
+```
+
+## Core collections
+
+FrogBot always registers a fixed set of core collections, regardless of database choice. These collections are the platform:
+
+```txt
+Users
+Firms
+Chats
+Messages
+Agents
+Skills
+Abilities
+Flows
+FlowRuns
+Connections
+Files
+FileChunks
+Media
+Mcps
+McpTools
+McpRuns
+Docs
+Prompts
+ApiKeys
+AuthTokens
+OAuthStates
+Integrations
+WebhookTokens
+SampleData
+TriggerSources
+TriggerEvents
+AppEventRouting
+StoreEntries
+Waitpoints
+AgentRuns
+```
+
+Plugins can add collections by extending `_collections` during config resolution. Enterprise features such as `Billing`, `Subscriptions`, `Plans`, `Invoices`, and `ApiUsageLogs` are contributed by the enterprise plugin and are not part of core.
+
+## Boot-loaded content
+
+Several config values point at default content directories that are loaded into the database on boot:
+
+```ts
+export default buildConfig({
+  skills: './skills',
+  agents: './agents',
+  mcps: './mcps',
+  flows: './flows',
+})
+```
+
+- `skills/*/SKILL.md` is parsed and upserted into the Skills collection
+- `agents/*/AGENT.md` is parsed and upserted into Agents
+- `mcps/*.json` is upserted into MCPs
+- `flows/*.json` is upserted into Flows
+
+After boot, the filesystem is never read again. All edits happen in the UI and are persisted to the database.

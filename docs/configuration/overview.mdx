@@ -1,0 +1,215 @@
+---
+title: "Configuration"
+sidebarTitle: "Overview"
+description: "Define runtime behavior with one typed configuration file."
+keywords: ["configuration", "buildConfig", "FrogbotConfig", "runtime"]
+---
+
+FrogBot reads `frogbot.config.ts`, `frogbot.config.mjs`, or `frogbot.config.js` from the current directory or a parent. Set `FROGBOT_CONFIG_PATH` to use another location.
+
+---
+
+## Create the file
+
+Export the result of `buildConfig` from your project root.
+
+```ts
+import { sqliteAdapter } from '@frogbot/db-sqlite'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: sqliteAdapter({
+    client: {
+      url: process.env.DATABASE_URL ?? 'file:./frogbot.db'
+    }
+  }),
+  collections: []
+})
+```
+
+`buildConfig` validates the FrogBot surface, runs plugins, and returns a sanitized configuration. Run type generation to add configured agent slugs to `GeneratedTypes`.
+
+---
+
+## Set core options
+
+`FrogbotConfig` requires `secret`, `db`, and `collections`. It extends Payload's server configuration while replacing the options FrogBot owns.
+
+| Option | Required | Purpose |
+| --- | --- | --- |
+| `secret` | Yes | Signs tokens and cookies |
+| `db` | Yes | Configures a FrogBot database adapter |
+| `collections` | Yes | Registers FrogBot collection configs |
+| `ai` | No | Configures providers, aliases, access, hooks, and telemetry |
+| `agents` | No | Registers an array of code-defined agent configs |
+| `plugins` | No | Transforms the config serially before sanitization |
+| `admin` | No | Sets `user`, `meta`, or `theme` for the root admin surface |
+| `endpoints` | No | Registers root handlers that receive `FrogbotRequest` |
+
+Other non-overridden Payload server options pass through. `globals` are forbidden; use collections instead.
+
+---
+
+## Assemble an app
+
+Keep collections and agents in separate modules, then register their exported arrays.
+
+```ts
+import { sqliteAdapter } from '@frogbot/db-sqlite'
+import { buildConfig } from 'frogbot'
+
+import { agents } from './src/agents'
+import { Posts, Users } from './src/collections'
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: sqliteAdapter({
+    client: {
+      url: process.env.DATABASE_URL ?? 'file:./frogbot.db'
+    }
+  }),
+  collections: [Users, Posts],
+  admin: {
+    user: 'users',
+    theme: 'all',
+    meta: {
+      title: 'Support workspace',
+      titleSuffix: '- Acme'
+    }
+  },
+  ai: {
+    providers: {
+      openai: { apiKey: process.env.OPENAI_API_KEY! }
+    },
+    routers: {
+      fast: { model: 'openai/gpt-4o-mini' }
+    },
+    defaultRouter: 'fast'
+  },
+  agents,
+  cors: ['http://localhost:3000']
+})
+```
+
+`agents` is an array of `AgentConfig` objects, not a directory path. FrogBot v0 does not scan `AGENT.md` files or upsert them into a collection.
+
+---
+
+## Configure inference
+
+Provider credentials are converted into an embedded gateway during initialization. Aliases map one slug to one provider-prefixed model ID and do not add fallback or per-alias access rules.
+
+```ts
+ai: {
+  providers: {
+    openai: { apiKey: process.env.OPENAI_API_KEY! },
+    internal: {
+      type: 'openai-compatible',
+      baseUrl: 'https://models.internal.example/v1',
+      models: [{ id: 'support-v1', mode: 'chat' }]
+    }
+  },
+  routers: {
+    fast: { model: 'openai/gpt-4o-mini' },
+    internal: { model: 'internal/support-v1' }
+  },
+  access: {
+    generate: ({ req }) => Boolean(req.user)
+  }
+}
+```
+
+See [AI](/configuration/ai) for operation signatures, AI SDK v7 output, hooks, and the authenticated `/api/ai/v1/*` mount.
+
+---
+
+## Register workers
+
+Each entry supplies a URL-safe slug, model or alias, instructions, optional tools, an optional stop condition, and optional access.
+
+```ts
+import { isStepCount } from 'frogbot'
+import type { AgentConfig } from 'frogbot'
+
+export const supportAgent: AgentConfig = {
+  slug: 'support',
+  model: 'fast',
+  instructions: 'Resolve support questions using the available tools.',
+  stopWhen: isStepCount(8),
+  access: ({ req }) => Boolean(req.user)
+}
+```
+
+An `ai` block is required when `agents` is present. See [Agents](/configuration/agents) for tools and invocation.
+
+---
+
+## Add endpoints
+
+Root endpoint handlers receive `FrogbotRequest`, including `req.frogbot`.
+
+```ts
+import { buildConfig } from 'frogbot'
+import type { Endpoint } from 'frogbot'
+
+const summarize: Endpoint = {
+  path: '/summarize',
+  method: 'post',
+  handler: async req => {
+    const result = await req.frogbot.generateText({
+      model: 'fast',
+      prompt: 'Summarize the request',
+      req
+    })
+
+    return Response.json({ text: result.text })
+  }
+}
+
+export default buildConfig({
+  // required options omitted
+  endpoints: [summarize]
+})
+```
+
+FrogBot reserves `/agents` and `/agents/*` for its agent API. A collection cannot use the `agents` slug.
+
+---
+
+## Run plugins
+
+Plugins receive and return `FrogbotConfig`, synchronously or asynchronously. They run one at a time in array order before sanitization.
+
+```ts
+import { buildConfig } from 'frogbot'
+import type { Plugin } from 'frogbot'
+
+const addCors: Plugin = config => ({
+  ...config,
+  cors: ['https://app.example.com']
+})
+
+export default buildConfig({
+  // required options omitted
+  plugins: [addCors]
+})
+```
+
+A plugin failure stops the build and reports its array index.
+
+---
+
+## Follow startup
+
+Startup applies the configuration in this order.
+
+1. Validate `secret`, `db`, `collections`, and the absence of `globals`.
+2. Run plugins serially.
+3. Sanitize collections, endpoints, AI, and workers.
+4. Initialize Payload and attach `req.frogbot` to supported request paths.
+5. Create the embedded gateway and register optional AI telemetry.
+6. Build the typed worker registry.
+7. Run configured `onInit` callbacks.
+
+When workers are configured, sanitization also mounts `GET /api/agents` and `POST /api/agents/:slug`. The standalone server mounts authenticated gateway traffic under `/api/ai/v1/*` before forwarding other `/api/*` requests to Payload.

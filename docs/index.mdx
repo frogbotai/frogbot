@@ -1,0 +1,32 @@
+---
+title: "What is FrogBot?"
+sidebarTitle: "What is FrogBot?"
+description: "FrogBot is an open-source AI agent platform that ships as a configurable framework or Docker image."
+---
+
+Write a `frogbot.config.ts` and instantly get a hosted UI, agent runtime, chat, skills, flows, integrations, model routing, file storage, authentication, REST and GraphQL APIs, and a job system — all in one MIT open-source TypeScript codebase you own and deploy anywhere.
+
+<CardGroup cols={2}>
+  <Card title="Concepts" icon="lightbulb" href="/getting-started/concepts">
+    The high-level building blocks: config, models, pieces, skills, agents, flows, plugins, and content directories.
+  </Card>
+  <Card title="Installation" icon="download" href="/getting-started/installation">
+    Spin up a project with `npx create-frogbot-app` or run the Docker image.
+  </Card>
+  <Card title="Configuration" icon="settings" href="/configuration/overview">
+    The `frogbot.config.ts` file that controls every part of the platform.
+  </Card>
+  <Card title="Database" icon="database" href="/database/overview">
+    Bring your own database. MongoDB and Postgres adapters are first-class, with shared core collections.
+  </Card>
+</CardGroup>
+
+## What it gives you
+
+- An AI workspace UI for chats, agents, skills, flows, and connections
+- A file-based defaults system for skills, agents, MCPs, and flows
+- A pieces system for integrations (Slack, Gmail, Notion, GitHub, and more)
+- A piece connector layer that handles managed OAuth without per-piece OAuth apps
+- A job system for triggers, polling, scheduled flows, and waitpoints
+- Web, desktop, and browser extension clients sharing the same React app shell
+  - A plugin system that extends the platform through config transforms

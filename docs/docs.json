@@ -1,0 +1,196 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "aspen",
+  "name": "Frogbot Docs",
+  "api": {
+    "mdx": {
+      "server": "https://app.frogbot.ai/api",
+      "auth": {
+        "method": "bearer"
+      }
+    }
+  },
+  "colors": {
+    "primary": "#030712",
+    "light": "#F9FAFB",
+    "dark": "#2f964f"
+  },
+  "favicon": "/favicon.svg",
+  "styling": {
+    "codeblocks": {
+      "theme": "tokyo-night"
+    }
+  },
+  "navigation": {
+    "global": {},
+    "tabs": [
+      {
+        "tab": "General",
+        "groups": [
+          {
+            "group": "Basic",
+            "pages": [
+              {
+                "group": "Getting started",
+                "expanded": false,
+                "pages": [
+                  "index",
+                  "getting-started/concepts",
+                  "getting-started/installation"
+                ]
+              },
+              {
+                "group": "Configuration",
+                "expanded": false,
+                "pages": [
+                  "configuration/overview",
+                  "configuration/collections",
+                  "configuration/environment-vars",
+                  "configuration/ai",
+                  "configuration/agents"
+                ]
+              },
+              {
+                "group": "Database",
+                "expanded": false,
+                "pages": [
+                  "database/overview",
+                  "database/mongodb",
+                  "database/postgres",
+                  "database/sqlite",
+                  "database/migrations",
+                  "database/transactions",
+                  "database/indexes"
+                ]
+              },
+              {
+                "group": "Access Control",
+                "expanded": false,
+                "pages": [
+                  "access-control/overview",
+                  "access-control/collections",
+                  "access-control/fields",
+                  "access-control/globals"
+                ]
+              },
+              {
+                "group": "Hooks",
+                "expanded": false,
+                "pages": [
+                  "hooks/overview",
+                  "hooks/collections",
+                  "hooks/fields",
+                  "hooks/globals",
+                  "hooks/context"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Managing Data",
+            "pages": [
+              {
+                "group": "Local API",
+                "expanded": false,
+                "pages": [
+                  "local-api/overview",
+                  "local-api/access-control",
+                  "local-api/server-functions",
+                  "local-api/outside-nextjs"
+                ]
+              },
+              {
+                "group": "REST API",
+                "expanded": false,
+                "pages": ["rest-api/overview"]
+              },
+              {
+                "group": "GraphQL",
+                "expanded": false,
+                "pages": [
+                  "graphql/overview",
+                  "graphql/graphql-schema",
+                  "graphql/extending"
+                ]
+              },
+              {
+                "group": "Queries",
+                "expanded": false,
+                "pages": [
+                  "queries/overview",
+                  "queries/depth",
+                  "queries/pagination",
+                  "queries/select",
+                  "queries/sort"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              { "group": "Authentication", "expanded": false, "pages": ["authentication/overview", "authentication/operations", "authentication/jwt", "authentication/cookies", "authentication/email", "authentication/api-keys", "authentication/token-data", "authentication/custom-strategies"]},
+              { "group": "Versions", "expanded": false, "pages": ["versions/overview", "versions/drafts", "versions/autosave"]},
+              { "group": "Email", "expanded": false, "pages": ["email/overview"]},
+              { "group": "Trash", "expanded": false, "pages": ["trash/overview"]},
+              { "group": "Troubleshooting", "expanded": false, "pages": ["troubleshooting/troubleshooting"]},
+              { "group": "Typescript", "expanded": false, "pages": ["typescript/overview", "typescript/generating-types", "typescript/ts-plugin"]}
+           ]
+          },
+          {
+            "group": "Ecosystem",
+            "pages": [
+              { "group": "Plugins", "expanded": false, "pages": ["plugins/overview", "plugins/rag", "plugins/build-your-own", "plugins/plugin-api"]}
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "background": {
+    "color": {
+      "dark": "#101828",
+      "light": "#F9FAFB"
+    }
+  },
+  "logo": {
+    "light": "/logo/FrogBotLongGreen.svg",
+    "dark": "/logo/FrogBotLongGreen.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "icon":"discord",
+        "label": "Discord",
+        "href": "https://discord.gg/JBZF7syAnU"
+      },
+      {
+        "label": "Support",
+        "href": "https://x.com/cgilly2fast"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.frogbot.ai"
+    }
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/frogbot_ai",
+      "linkedin": "https://www.linkedin.com/company/frogbotai"
+    }
+  }
+}
