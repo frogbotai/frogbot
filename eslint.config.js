@@ -15,6 +15,8 @@ export const defaultESLintIgnores = [
   '**/node_modules/',
   '**/temp/',
   '**/*.e2e.spec.ts',
+  '**/frogbot-types.ts',
+  'packages/frogbot/bin.js',
 ]
 
 // Re-export so consuming packages can spread it and set only `tsconfigRootDir`

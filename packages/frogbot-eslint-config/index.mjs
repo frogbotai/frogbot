@@ -173,6 +173,13 @@ export const rootEslintConfig = [
     files: ['**/*.spec.ts'],
     ignores: ['**/*.e2e.spec.ts'],
   },
+  {
+    name: 'FrogBot config files',
+    rules: {
+      'no-restricted-exports': 'off',
+    },
+    files: ['**/frogbot.config.ts'],
+  },
 ]
 
 export default rootEslintConfig
