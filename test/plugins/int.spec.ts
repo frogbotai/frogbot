@@ -62,7 +62,12 @@ describe('plugins', () => {
         plugins: [stampCreatedBy],
       };
       const sanitized = await buildConfig(testConfig);
-      const projects = sanitized.collections.find((c) => c.slug === projectsSlug);
+      // `FrogbotSanitizedConfig.collections` intentionally exposes only
+      // FrogBot-vocab metadata (slug/auth/roleMarkers), not Payload field
+      // shapes — dig into the internal Payload config to verify the plugin's
+      // field mutation actually reached the underlying collection.
+      const payloadConfig = await sanitized._internal.payloadConfig;
+      const projects = payloadConfig.collections.find((c) => c.slug === projectsSlug);
       const hasCreatedBy = (projects?.fields ?? []).some(
         (f) => (f as { name?: string }).name === 'createdBy',
       );

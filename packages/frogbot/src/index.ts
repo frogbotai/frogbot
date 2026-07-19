@@ -13,6 +13,9 @@
 
 export { Frogbot } from './frogbot.js';
 export type { InitOptions, Logger } from './frogbot.js';
+// Vocab alias — the `Frogbot` class instance, referred to as `FrogbotInstance`
+// throughout docs/comments and test helpers.
+export type { Frogbot as FrogbotInstance } from './frogbot.js';
 export { getFrogbot, getCachedFrogbot } from './getFrogbot.js';
 export { buildConfig } from './config/build.js';
 export type { FrogbotSanitizedConfig } from './types/sanitized.js';
