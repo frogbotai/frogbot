@@ -1,5 +1,5 @@
 {
-  "name": "@frogbot/eslint-config-flat",
+  "name": "@frogbot/eslint-config",
   "version": "0.0.0",
   "private": true,
   "description": "Payload-CMS-style flat ESLint config (ESLint 9 + typescript-eslint) for FrogBot library packages.",
