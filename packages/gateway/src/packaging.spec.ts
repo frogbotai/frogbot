@@ -27,7 +27,7 @@ describe('G104 — publishing readiness metadata', () => {
 
   it('declares repository.url for npm provenance signing', () => {
     expect(pkg.repository?.type).toBe('git');
-    expect(pkg.repository?.url).toBe('git+https://github.com/frogbotai/firmware.git');
+    expect(pkg.repository?.url).toBe('git+https://github.com/frogbotai/frogbot.git');
     expect(pkg.repository?.directory).toBe('packages/gateway');
   });
 });
