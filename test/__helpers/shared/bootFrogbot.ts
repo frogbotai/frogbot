@@ -1,8 +1,7 @@
 import path from 'path'
 import { pathToFileURL } from 'url'
 import {
-  bootPayload,
-  createFrogbotInstance,
+  Frogbot,
   createServer,
   listen,
 } from 'frogbot/test'
@@ -55,9 +54,9 @@ export async function bootFrogbot(dirname: string, suiteNameOverride?: string): 
   }
   const config = await mod.default
 
-  const payload = await bootPayload(config)
-  const frogbot = createFrogbotInstance(payload)
-  const app = createServer(payload)
+  const frogbot: FrogbotInstance = await new Frogbot().init({ config })
+  const payload = (frogbot as unknown as { payload: Payload }).payload
+  const app = createServer(frogbot)
   const port = await getEphemeralPort()
   const closeServer = await listen(app, port)
   const baseUrl = `http://127.0.0.1:${port}`
