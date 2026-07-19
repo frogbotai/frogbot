@@ -1,18 +1,18 @@
-# @frogbot/email-resend
+# @frogbotai/email-resend
 
 Resend email adapter for [FrogBot](https://github.com/firmware-ai/firmware).
 
 ## Installation
 
 ```bash
-pnpm add @frogbot/email-resend
+pnpm add @frogbotai/email-resend
 ```
 
 ## Usage
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { resendAdapter } from '@frogbot/email-resend'
+import { resendAdapter } from '@frogbotai/email-resend'
 
 export default buildConfig({
   email: resendAdapter({

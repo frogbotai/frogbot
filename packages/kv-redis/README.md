@@ -1,18 +1,18 @@
-# @frogbot/kv-redis
+# @frogbotai/kv-redis
 
 Redis KV store adapter for [FrogBot](https://github.com/firmware-ai/firmware).
 
 ## Installation
 
 ```bash
-pnpm add @frogbot/kv-redis
+pnpm add @frogbotai/kv-redis
 ```
 
 ## Usage
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { redisKVAdapter } from '@frogbot/kv-redis'
+import { redisKVAdapter } from '@frogbotai/kv-redis'
 
 export default buildConfig({
   kv: redisKVAdapter({

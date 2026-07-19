@@ -1,18 +1,18 @@
-# @frogbot/email-nodemailer
+# @frogbotai/email-nodemailer
 
 Nodemailer email adapter for [FrogBot](https://github.com/firmware-ai/firmware).
 
 ## Installation
 
 ```bash
-pnpm add @frogbot/email-nodemailer
+pnpm add @frogbotai/email-nodemailer
 ```
 
 ## Usage
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { nodemailerAdapter } from '@frogbot/email-nodemailer'
+import { nodemailerAdapter } from '@frogbotai/email-nodemailer'
 
 export default buildConfig({
   email: await nodemailerAdapter({

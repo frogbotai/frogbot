@@ -1,18 +1,18 @@
-# @frogbot/storage-vercel-blob
+# @frogbotai/storage-vercel-blob
 
 Vercel Blob storage adapter for [FrogBot](https://github.com/firmware-ai/firmware).
 
 ## Installation
 
 ```bash
-pnpm add @frogbot/storage-vercel-blob
+pnpm add @frogbotai/storage-vercel-blob
 ```
 
 ## Usage
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { vercelBlobStorage } from '@frogbot/storage-vercel-blob'
+import { vercelBlobStorage } from '@frogbotai/storage-vercel-blob'
 
 export default buildConfig({
   storage: [

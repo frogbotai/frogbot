@@ -1,18 +1,18 @@
-# @frogbot/storage-s3
+# @frogbotai/storage-s3
 
 S3 storage adapter for [FrogBot](https://github.com/firmware-ai/firmware).
 
 ## Installation
 
 ```bash
-pnpm add @frogbot/storage-s3
+pnpm add @frogbotai/storage-s3
 ```
 
 ## Usage
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { s3Storage } from '@frogbot/storage-s3'
+import { s3Storage } from '@frogbotai/storage-s3'
 
 export default buildConfig({
   storage: [

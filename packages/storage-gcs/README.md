@@ -1,18 +1,18 @@
-# @frogbot/storage-gcs
+# @frogbotai/storage-gcs
 
 Google Cloud Storage adapter for [FrogBot](https://github.com/firmware-ai/firmware).
 
 ## Installation
 
 ```bash
-pnpm add @frogbot/storage-gcs
+pnpm add @frogbotai/storage-gcs
 ```
 
 ## Usage
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { gcsStorage } from '@frogbot/storage-gcs'
+import { gcsStorage } from '@frogbotai/storage-gcs'
 
 export default buildConfig({
   storage: [
