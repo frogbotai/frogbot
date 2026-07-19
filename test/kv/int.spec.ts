@@ -2,7 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 
-import { RedisKVAdapter } from '@frogbot/kv-redis'
+import { RedisKVAdapter } from '@frogbotai/kv-redis'
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot'
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot'
 import { isServiceReachable } from '../__helpers/shared/storage/storageServices'

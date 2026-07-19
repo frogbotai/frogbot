@@ -30,7 +30,7 @@ export const dbAdapters = {
     label: 'MongoDB',
     profile: 'mongodb',
     source: `
-  import { mongooseAdapter } from '@frogbot/db-mongodb'
+  import { mongooseAdapter } from '@frogbotai/db-mongodb'
 
   export const databaseAdapter = mongooseAdapter({
     ensureIndexes: true,
@@ -40,7 +40,7 @@ export const dbAdapters = {
   postgres: {
     ...POSTGRES,
     source: `
-  import { postgresAdapter } from '@frogbot/db-postgres'
+  import { postgresAdapter } from '@frogbotai/db-postgres'
 
   export const databaseAdapter = postgresAdapter({
     pool: {
@@ -51,7 +51,7 @@ export const dbAdapters = {
   sqlite: {
     label: 'SQLite (file-based)',
     source: `
-  import { sqliteAdapter } from '@frogbot/db-sqlite'
+  import { sqliteAdapter } from '@frogbotai/db-sqlite'
 
   export const databaseAdapter = sqliteAdapter({
     client: {

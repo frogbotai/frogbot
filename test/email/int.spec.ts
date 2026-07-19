@@ -2,9 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi, type Mock } from 'vitest'
 
-import { resendAdapter } from '@frogbot/email-resend'
-import { nodemailerAdapter } from '@frogbot/email-nodemailer'
-import type { NodemailerAdapterArgs } from '@frogbot/email-nodemailer'
+import { resendAdapter } from '@frogbotai/email-resend'
+import { nodemailerAdapter } from '@frogbotai/email-nodemailer'
+import type { NodemailerAdapterArgs } from '@frogbotai/email-nodemailer'
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot'
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot'
 
@@ -21,7 +21,7 @@ describe('Email Adapters', () => {
     if (booted) await booted.shutdown()
   })
 
-  describe('@frogbot/email-resend', () => {
+  describe('@frogbotai/email-resend', () => {
     const apiKey = 'test-api-key'
     const defaultFromAddress = 'dev@frogbot.local'
     const defaultFromName = 'FrogBot'
@@ -102,7 +102,7 @@ describe('Email Adapters', () => {
     })
   })
 
-  describe('@frogbot/email-nodemailer', () => {
+  describe('@frogbotai/email-nodemailer', () => {
     it('sends email via frogbot.email.sendEmail with mocked transport', async () => {
       const sentMessages: unknown[] = []
       const mockedTransport = {

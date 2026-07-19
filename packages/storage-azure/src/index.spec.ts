@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { azureStorage, getStorageClient } from './index'
 
-describe('@frogbot/storage-azure exports', () => {
+describe('@frogbotai/storage-azure exports', () => {
   it('exports azureStorage as a function', () => {
     expect(typeof azureStorage).toBe('function')
   })

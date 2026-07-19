@@ -1,7 +1,15 @@
 {
-  "name": "@frogbot/storage-uploadthing",
-  "version": "0.0.0",
+  "name": "@frogbotai/storage-uploadthing",
+  "version": "0.0.1",
   "description": "UploadThing storage adapter for FrogBot.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/storage-uploadthing"
+  },
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -12,16 +20,9 @@
       "default": "./src/index.ts"
     }
   },
-  "publishConfig": {
-    "exports": {
-      ".": {
-        "import": "./dist/index.js",
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      }
-    }
-  },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -37,5 +38,17 @@
   "devDependencies": {
     "frogbot": "workspace:*",
     "typescript": "5.6.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "import": "./dist/index.js",
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
   }
 }
