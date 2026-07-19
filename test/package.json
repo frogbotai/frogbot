@@ -1,0 +1,30 @@
+{
+  "name": "frogbot-test-suite",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Firmware integration + e2e test suite. Mirrors Payload's `test/` package layout — owns its own `\"type\": \"module\"` so config files load as ESM, owns test-only devDependencies, and exposes thin proxy scripts back to the root.",
+  "type": "module",
+  "scripts": {
+    "test": "pnpm -C \"../\" run test",
+    "test:int": "pnpm -C \"../\" run test:int",
+    "test:unit": "pnpm -C \"../\" run test:unit",
+    "test:e2e": "pnpm -C \"../\" run test:e2e"
+  },
+  "devDependencies": {
+    "@frogbot/db-mongodb": "workspace:*",
+    "@frogbot/db-postgres": "workspace:*",
+    "@frogbot/db-sqlite": "workspace:*",
+    "@frogbot/email-nodemailer": "workspace:*",
+    "@frogbot/email-resend": "workspace:*",
+    "@frogbot/kv-redis": "workspace:*",
+    "@frogbot/storage-azure": "workspace:*",
+    "@frogbot/storage-gcs": "workspace:*",
+    "@frogbot/storage-r2": "workspace:*",
+    "@frogbot/storage-s3": "workspace:*",
+    "@frogbot/storage-uploadthing": "workspace:*",
+    "@frogbot/storage-vercel-blob": "workspace:*",
+    "@types/node": "^22.9.1",
+    "@vercel/blob": "^2.5.0",
+    "frogbot": "workspace:^"
+  }
+}

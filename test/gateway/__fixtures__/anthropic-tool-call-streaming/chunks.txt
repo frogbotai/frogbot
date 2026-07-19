@@ -1,0 +1,6 @@
+{"type":"step-start","request":{},"warnings":[],"messageId":"msg-1"}
+{"type":"tool-call-streaming-start","toolCallId":"toolu_abc","toolName":"get_weather"}
+{"type":"tool-call-delta","toolCallId":"toolu_abc","toolName":"get_weather","argsTextDelta":"{\"city\":\"SF\"}"}
+{"type":"tool-call","toolCallId":"toolu_abc","toolName":"get_weather","args":{"city":"SF"}}
+{"type":"step-finish","messageId":"msg-1","finishReason":"tool-calls","isContinued":false,"usage":{"promptTokens":12,"completionTokens":8,"totalTokens":20},"response":{"id":"msg_golden","modelId":"claude-sonnet-4-20250514","timestamp":"2026-01-01T00:00:00.000Z"},"providerMetadata":null,"request":{},"warnings":[]}
+{"type":"finish","finishReason":"tool-calls","usage":{"promptTokens":12,"completionTokens":8,"totalTokens":20},"response":{"id":"msg_golden","modelId":"claude-sonnet-4-20250514","timestamp":"2026-01-01T00:00:00.000Z"},"providerMetadata":null}

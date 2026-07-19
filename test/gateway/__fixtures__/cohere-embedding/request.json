@@ -1,0 +1,5 @@
+{
+  "model": "cohere/embed-english-v3.0",
+  "input": ["one", "two"],
+  "encoding_format": "float"
+}

@@ -1,0 +1,65 @@
+{
+  "name": "frogbot",
+  "version": "0.0.0",
+  "description": "FrogBot core: typed configuration surface that wraps Payload.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/exports/server.d.ts",
+      "import": "./dist/exports/server.js",
+      "default": "./dist/exports/server.js"
+    },
+    "./test": {
+      "types": "./dist/exports/test.d.ts",
+      "import": "./dist/exports/test.js",
+      "default": "./dist/exports/test.js"
+    }
+  },
+  "bin": {
+    "frogbot": "./dist/bin/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/bin/index.js",
+    "clean": "rm -rf dist",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@frogbotai/gateway": "workspace:*",
+    "@hono/node-server": "^1.13.7",
+    "@payloadcms/translations": "3.85.1",
+    "ai": "^7.0.4",
+    "hono": "^4.6.14",
+    "json-schema-to-typescript": "^15.0.3",
+    "payload": "3.85.1",
+    "tsx": "^4.19.2",
+    "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "@ai-sdk/otel": "^1.0.4",
+    "next": "^15.4.10"
+  },
+  "peerDependenciesMeta": {
+    "@ai-sdk/otel": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@frogbot/eslint-config-flat": "workspace:*",
+    "@types/node": "^22.10.2",
+    "eslint": "^9.16.0",
+    "next": "15.4.10",
+    "typescript": "5.6.2"
+  }
+}

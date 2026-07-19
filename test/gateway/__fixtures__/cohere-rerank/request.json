@@ -1,0 +1,1 @@
+{"model":"cohere/rerank-v3.5","query":"frog","documents":["robot","frog robot"],"return_documents":true}

@@ -1,0 +1,9 @@
+[
+  {
+    "url": "https://api.openai.com/v1/audio/speech",
+    "method": "POST",
+    "status": 200,
+    "headers": { "content-type": "audio/mpeg" },
+    "bodyBase64": "//uQZA=="
+  }
+]

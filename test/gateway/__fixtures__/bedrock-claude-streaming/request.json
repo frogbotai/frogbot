@@ -1,0 +1,1 @@
+{"model":"amazon-bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0","messages":[{"role":"user","content":"Hello Claude on Bedrock"}],"stream":true}

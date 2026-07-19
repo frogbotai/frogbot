@@ -1,0 +1,41 @@
+{
+  "name": "@frogbot/storage-r2",
+  "version": "0.0.0",
+  "description": "Cloudflare R2 storage adapter for FrogBot.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "import": "./dist/index.js",
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@payloadcms/storage-r2": "3.85.1"
+  },
+  "peerDependencies": {
+    "frogbot": "workspace:*"
+  },
+  "devDependencies": {
+    "frogbot": "workspace:*",
+    "typescript": "5.6.2"
+  }
+}

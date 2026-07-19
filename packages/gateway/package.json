@@ -1,0 +1,159 @@
+{
+  "name": "@frogbotai/gateway",
+  "version": "0.0.0",
+  "description": "The open-source, self-hostable AI gateway built on the Vercel AI SDK. The server side of what Vercel kept closed-source.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/gateway"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "import": "./dist/errors/index.js",
+      "default": "./dist/errors/index.js"
+    },
+    "./hooks": {
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/hooks/index.js",
+      "default": "./dist/hooks/index.js"
+    },
+    "./setup": {
+      "types": "./dist/observability/setup.d.ts",
+      "import": "./dist/observability/setup.js",
+      "default": "./dist/observability/setup.js"
+    }
+  },
+  "bin": {
+    "frogbotai-gateway": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/cli/index.js 2>/dev/null || true",
+    "clean": "rm -rf dist",
+    "lint": "cd ../.. && eslint --config packages/gateway/eslint.config.mjs packages/gateway/src test/gateway --max-warnings=0",
+    "test": "vitest run --root ../.. --project=gateway-unit --project=gateway-integration --project=gateway-golden",
+    "test:unit": "vitest run --root ../.. --project=gateway-unit",
+    "test:integration": "vitest run --root ../.. --project=gateway-integration",
+    "test:golden": "vitest run --root ../.. --project=gateway-golden",
+    "test:e2e": "RUN_E2E=1 vitest run --root ../.. --project=gateway-e2e",
+    "test:e2e:matrix": "RUN_E2E=1 vitest run --root ../.. --project=gateway-e2e test/gateway/live/matrix.e2e.spec.ts",
+    "test:e2e:scenarios": "RUN_E2E=1 vitest run --root ../.. --project=gateway-e2e test/gateway/live/scenarios.e2e.spec.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/alibaba": "^2.0.0",
+    "@ai-sdk/amazon-bedrock": "^4.0.0",
+    "@ai-sdk/anthropic": "^4.0.0",
+    "@ai-sdk/anthropic-aws": "^2.0.0",
+    "@ai-sdk/assemblyai": "^3.0.1",
+    "@ai-sdk/azure": "^4.0.0",
+    "@ai-sdk/baseten": "^2.0.0",
+    "@ai-sdk/black-forest-labs": "^2.0.0",
+    "@ai-sdk/bytedance": "^2.0.0",
+    "@ai-sdk/cerebras": "^3.0.0",
+    "@ai-sdk/cohere": "^4.0.0",
+    "@ai-sdk/deepgram": "^3.0.1",
+    "@ai-sdk/deepinfra": "^3.0.0",
+    "@ai-sdk/deepseek": "^3.0.0",
+    "@ai-sdk/elevenlabs": "^3.0.6",
+    "@ai-sdk/fal": "^3.0.0",
+    "@ai-sdk/fireworks": "^3.0.0",
+    "@ai-sdk/gladia": "^3.0.1",
+    "@ai-sdk/google": "^4.0.0",
+    "@ai-sdk/google-vertex": "^4.0.0",
+    "@ai-sdk/groq": "^4.0.0",
+    "@ai-sdk/huggingface": "^2.0.0",
+    "@ai-sdk/hume": "^3.0.5",
+    "@ai-sdk/klingai": "^4.0.0",
+    "@ai-sdk/lmnt": "^3.0.5",
+    "@ai-sdk/luma": "^3.0.0",
+    "@ai-sdk/mistral": "^4.0.0",
+    "@ai-sdk/moonshotai": "^3.0.0",
+    "@ai-sdk/openai": "^4.0.0",
+    "@ai-sdk/openai-compatible": "^3.0.3",
+    "@ai-sdk/otel": "1.0.4",
+    "@ai-sdk/perplexity": "^4.0.0",
+    "@ai-sdk/prodia": "^2.0.2",
+    "@ai-sdk/provider": "^4.0.0",
+    "@ai-sdk/provider-utils": "^5.0.0",
+    "@ai-sdk/replicate": "^3.0.0",
+    "@ai-sdk/togetherai": "^3.0.0",
+    "@ai-sdk/vercel": "^3.0.0",
+    "@ai-sdk/voyage": "^2.0.0",
+    "@ai-sdk/xai": "^4.0.0",
+    "@hono/node-server": "^1.13.7",
+    "@opentelemetry/api": "^1.9.0",
+    "ai": "^7.0.4",
+    "hono": "^4.6.14",
+    "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "@opentelemetry/context-async-hooks": "^2.0.1",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.203.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.203.0",
+    "@opentelemetry/resources": "^2.0.1",
+    "@opentelemetry/sdk-metrics": "^2.0.1",
+    "@opentelemetry/sdk-trace-base": "^2.0.1",
+    "@opentelemetry/sdk-trace-node": "^2.0.1",
+    "pino": "^9.14.0"
+  },
+  "peerDependenciesMeta": {
+    "@opentelemetry/context-async-hooks": {
+      "optional": true
+    },
+    "@opentelemetry/exporter-metrics-otlp-http": {
+      "optional": true
+    },
+    "@opentelemetry/exporter-trace-otlp-http": {
+      "optional": true
+    },
+    "@opentelemetry/resources": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-metrics": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-trace-base": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-trace-node": {
+      "optional": true
+    },
+    "pino": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@frogbot/eslint-config-flat": "workspace:*",
+    "@opentelemetry/context-async-hooks": "^2.0.1",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.203.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.203.0",
+    "@opentelemetry/resources": "^2.0.1",
+    "@opentelemetry/sdk-metrics": "^2.0.1",
+    "@opentelemetry/sdk-trace-base": "^2.0.1",
+    "@opentelemetry/sdk-trace-node": "^2.0.1",
+    "@types/node": "^22.10.2",
+    "eslint": "^9.16.0",
+    "pino": "^9.14.0",
+    "typescript": "5.6.2"
+  }
+}

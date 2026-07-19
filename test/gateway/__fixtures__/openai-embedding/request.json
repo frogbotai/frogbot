@@ -1,0 +1,5 @@
+{
+  "model": "openai/text-embedding-3-small",
+  "input": "hello",
+  "encoding_format": "float"
+}

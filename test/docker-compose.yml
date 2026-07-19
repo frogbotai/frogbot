@@ -1,0 +1,134 @@
+name: frogbot-test
+
+# Docker Compose for frogbot adapter integration tests.
+# Adapted from Payload's test/docker-compose.yml.
+#
+# Usage:
+#   docker compose -f test/docker-compose.yml --profile <name> up -d
+#   docker compose -f test/docker-compose.yml down -v
+#
+# Profiles:
+#   --profile postgres   - PostgreSQL only
+#   --profile storage    - LocalStack (S3/R2), Azurite, fake-gcs-server, Vercel Blob
+#   --profile redis      - Redis (kv-redis adapter)
+#   --profile all        - Everything
+
+services:
+  # ── MongoDB (replica set for transaction support) ────────────
+  # Connection: mongodb://localhost:27018/frogbot-test?directConnection=true&replicaSet=rs0
+  mongodb:
+    profiles: [all, mongodb]
+    image: mongo:8
+    container_name: mongodb-frogbot-test
+    ports:
+      - '27018:27017'
+    volumes:
+      - mongodb_data:/data/db
+    command: ['--replSet', 'rs0']
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "try { rs.status() } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}) }"]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+      start_period: 2s
+    restart: unless-stopped
+
+  # ── PostgreSQL (PostGIS + pgvector) ──────────────────────────
+  # Connection: postgres://frogbot:frogbot@localhost:5433/frogbot
+  postgres:
+    profiles: [all, postgres]
+    image: ghcr.io/payloadcms/postgis-vector:latest
+    container_name: postgres-frogbot-test
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: frogbot
+      POSTGRES_PASSWORD: frogbot
+      POSTGRES_DB: frogbot
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U frogbot -d frogbot']
+      interval: 1s
+      timeout: 5s
+      retries: 30
+      start_period: 2s
+    restart: unless-stopped
+
+  # ── LocalStack (S3 + R2 emulator) ───────────────────────────
+  localstack:
+    profiles: [all, storage]
+    image: ghcr.io/payloadcms/localstack:4.14.0
+    container_name: localstack-frogbot-test
+    ports:
+      - '4566:4566'
+    environment:
+      - SERVICES=s3
+      - DEBUG=0
+      - DATA_DIR=/tmp/localstack/data
+    volumes:
+      - localstack_data:/var/lib/localstack
+
+  # ── Azure Storage (Azurite emulator) ────────────────────────
+  azure-storage:
+    profiles: [all, storage]
+    image: ghcr.io/payloadcms/azurite:3.35.0
+    platform: linux/amd64
+    container_name: azurite-frogbot-test
+    restart: always
+    command: 'azurite --loose --blobHost 0.0.0.0 --skipApiVersionCheck'
+    ports:
+      - '10000:10000'
+    volumes:
+      - azurite_data:/data
+
+  # ── Google Cloud Storage (fake-gcs-server) ──────────────────
+  google-cloud-storage:
+    profiles: [all, storage]
+    image: ghcr.io/payloadcms/fake-gcs-server:1.54.0
+    container_name: fake-gcs-frogbot-test
+    restart: always
+    command:
+      [
+        '-scheme', 'http',
+        '-port', '4443',
+        '-public-host', 'http://localhost:4443',
+        '-external-url', 'http://localhost:4443',
+        '-backend', 'memory',
+      ]
+    ports:
+      - '4443:4443'
+
+  # ── Vercel Blob (emulator) ──────────────────────────────────
+  vercel-blob:
+    profiles: [all, storage]
+    image: ghcr.io/payloadcms/vercel-blob-emulator:latest
+    container_name: vercel-blob-frogbot-test
+    restart: always
+    ports:
+      - '3100:3000'
+    environment:
+      BLOB_STORE_ID: emulator
+      EMULATOR_BASE_URL: 'http://localhost:3100'
+
+  # ── Redis (kv-redis adapter) ────────────────────────────────
+  # Connection: redis://localhost:6379
+  redis:
+    profiles: [all, redis]
+    image: ghcr.io/payloadcms/redis:7.4.9-alpine
+    container_name: redis-frogbot-test
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 1s
+      timeout: 5s
+      retries: 30
+      start_period: 2s
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+  postgres_data:
+  localstack_data:
+  azurite_data:

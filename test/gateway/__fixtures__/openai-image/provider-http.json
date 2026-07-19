@@ -1,0 +1,9 @@
+[
+  {
+    "url": "https://api.openai.com/v1/images/generations",
+    "method": "POST",
+    "status": 200,
+    "headers": { "content-type": "application/json" },
+    "bodyBase64": "eyJjcmVhdGVkIjoxNzY3MjI1NjAwLCJkYXRhIjpbeyJiNjRfanNvbiI6ImFXMWhaMlV0TUE9PSJ9XX0="
+  }
+]

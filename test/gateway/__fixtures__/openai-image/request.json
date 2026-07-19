@@ -1,0 +1,6 @@
+{
+  "model": "openai/dall-e-3",
+  "prompt": "a small frog robot",
+  "n": 1,
+  "response_format": "b64_json"
+}

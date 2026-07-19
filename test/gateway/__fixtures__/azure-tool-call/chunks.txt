@@ -1,0 +1,7 @@
+{"type":"step-start","request":{},"warnings":[],"messageId":"msg-azure-1"}
+{"type":"tool-call-streaming-start","toolCallId":"call_abc123","toolName":"get_weather"}
+{"type":"tool-call-delta","toolCallId":"call_abc123","toolName":"get_weather","argsTextDelta":"{\"city\""}
+{"type":"tool-call-delta","toolCallId":"call_abc123","toolName":"get_weather","argsTextDelta":":\"NYC\"}"}
+{"type":"tool-call","toolCallId":"call_abc123","toolName":"get_weather","args":{"city":"NYC"}}
+{"type":"step-finish","messageId":"msg-azure-1","finishReason":"tool-calls","isContinued":false,"usage":{"promptTokens":15,"completionTokens":10,"totalTokens":25},"response":{"id":"chatcmpl-azure-golden","modelId":"gpt-4o","timestamp":"2026-01-01T00:00:00.000Z"},"providerMetadata":null,"request":{},"warnings":[]}
+{"type":"finish","finishReason":"tool-calls","usage":{"promptTokens":15,"completionTokens":10,"totalTokens":25},"response":{"id":"chatcmpl-azure-golden","modelId":"gpt-4o","timestamp":"2026-01-01T00:00:00.000Z"},"providerMetadata":null}

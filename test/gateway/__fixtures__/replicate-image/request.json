@@ -1,0 +1,6 @@
+{
+  "model": "replicate/black-forest-labs/flux-schnell",
+  "prompt": "minimal robot icon",
+  "n": 1,
+  "response_format": "b64_json"
+}

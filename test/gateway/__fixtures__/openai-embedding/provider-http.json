@@ -1,0 +1,9 @@
+[
+  {
+    "url": "https://api.openai.com/v1/embeddings",
+    "method": "POST",
+    "status": 200,
+    "headers": { "content-type": "application/json" },
+    "bodyBase64": "eyJkYXRhIjpbeyJlbWJlZGRpbmciOlswLjEsMC4yLDAuM119XSwidXNhZ2UiOnsicHJvbXB0X3Rva2VucyI6M319"
+  }
+]

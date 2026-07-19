@@ -1,0 +1,6 @@
+{"type":"step-start","request":{},"warnings":[],"messageId":"msg-1"}
+{"type":"text-start","textId":"text-0"}
+{"type":"text-delta","textDelta":"Hello!","textId":"text-0"}
+{"type":"text-end","textId":"text-0"}
+{"type":"step-finish","messageId":"msg-1","finishReason":"stop","isContinued":false,"usage":{"promptTokens":5,"completionTokens":2,"totalTokens":7},"response":{"id":"chatcmpl-golden","modelId":"gpt-4o-mini","timestamp":"2026-01-01T00:00:00.000Z"},"providerMetadata":null,"request":{},"warnings":[]}
+{"type":"finish","finishReason":"stop","usage":{"promptTokens":5,"completionTokens":2,"totalTokens":7},"response":{"id":"chatcmpl-golden","modelId":"gpt-4o-mini","timestamp":"2026-01-01T00:00:00.000Z"},"providerMetadata":null}

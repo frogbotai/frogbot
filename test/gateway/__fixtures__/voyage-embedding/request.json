@@ -1,0 +1,6 @@
+{
+  "model": "voyage/voyage-3-large",
+  "input": ["one", "two"],
+  "encoding_format": "base64",
+  "dimensions": 2
+}
