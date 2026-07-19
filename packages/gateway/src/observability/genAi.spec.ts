@@ -53,7 +53,7 @@ describe('genAi metrics', () => {
 
   it('skips recording when signal level is below recommended', async () => {
     const createHistogram = vi.fn(() => ({ record: vi.fn() }));
-    metrics.setGlobalMeterProvider({ getMeter: () => ({ createHistogram }) as unknown as Meter } as unknown as MeterProvider);
+    metrics.setGlobalMeterProvider({ getMeter: () => ({ createHistogram }) as unknown as Meter });
 
     const { createGenAiHooks } = await import('./genAi.js');
     const hooks = createGenAiHooks('required');

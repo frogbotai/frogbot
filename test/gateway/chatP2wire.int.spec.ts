@@ -68,17 +68,19 @@ function createRecordingModel(opts?: {
         { type: 'text-delta', id: 'text-0', delta: text },
         { type: 'text-end', id: 'text-0' },
         { type: 'finish', finishReason, usage: DEFAULT_USAGE },
-      ] as unknown as LanguageModelV4StreamPart[]);
+      ]);
       return {
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
-            for (const part of parts) controller.enqueue(part);
+            for (const part of parts) {
+              controller.enqueue(part);
+            }
             controller.close();
           },
         }),
       };
     },
-  } as unknown as LanguageModelV4;
+  };
 }
 
 function makeAppWithModel(providerName: string, model: LanguageModelV4) {
@@ -149,7 +151,7 @@ describe('G47 — tool-input-delta id fallback corrupts wrong tool-call index', 
 
       // The corrupted delta should NOT appear at index 0 (tool_calls[0] belongs to call_a)
       const corruptedOnZero = chunks.some((c) => {
-        const d = JSON.parse(c.data as string) as Record<string, unknown>;
+        const d = JSON.parse(c.data) as Record<string, unknown>;
         const calls = ((d.choices as Array<Record<string, unknown>>)[0]?.delta as Record<string, unknown>)?.tool_calls as Array<Record<string, unknown>>;
         return calls?.some((tc) => tc.index === 0 && (tc.function as Record<string, unknown>)?.arguments === '"corrupted"');
       });
@@ -181,12 +183,12 @@ describe('G48 — service_tier missing from streaming SSE output', () => {
     };
 
     const streamParts: LanguageModelV4StreamPart[] = [
-      { type: 'stream-start', warnings: [] } as unknown as LanguageModelV4StreamPart,
-      { type: 'raw', rawValue: rawChunk } as unknown as LanguageModelV4StreamPart,
-      { type: 'text-start', id: 'text-0' } as unknown as LanguageModelV4StreamPart,
-      { type: 'text-delta', id: 'text-0', delta: 'hi' } as unknown as LanguageModelV4StreamPart,
-      { type: 'text-end', id: 'text-0' } as unknown as LanguageModelV4StreamPart,
-      { type: 'finish', finishReason: STOP_FINISH, usage: DEFAULT_USAGE } as unknown as LanguageModelV4StreamPart,
+      { type: 'stream-start', warnings: [] },
+      { type: 'raw', rawValue: rawChunk },
+      { type: 'text-start', id: 'text-0' },
+      { type: 'text-delta', id: 'text-0', delta: 'hi' },
+      { type: 'text-end', id: 'text-0' },
+      { type: 'finish', finishReason: STOP_FINISH, usage: DEFAULT_USAGE },
     ];
 
     const app = makeAppWithModel('openai', createRecordingModel({ streamParts }));
@@ -401,9 +403,9 @@ describe('G54 — refusal finish_reason: content_filter instead of stop', () => 
     };
 
     const streamParts: LanguageModelV4StreamPart[] = [
-      { type: 'stream-start', warnings: [] } as unknown as LanguageModelV4StreamPart,
-      { type: 'raw', rawValue: refusalRaw } as unknown as LanguageModelV4StreamPart,
-      { type: 'finish', finishReason: STOP_FINISH, usage: DEFAULT_USAGE } as unknown as LanguageModelV4StreamPart,
+      { type: 'stream-start', warnings: [] },
+      { type: 'raw', rawValue: refusalRaw },
+      { type: 'finish', finishReason: STOP_FINISH, usage: DEFAULT_USAGE },
     ];
 
     const app = makeAppWithModel('openai', createRecordingModel({ streamParts }));
@@ -422,7 +424,7 @@ describe('G54 — refusal finish_reason: content_filter instead of stop', () => 
       (c) => Array.isArray(c.choices) && (c.choices as Array<Record<string, unknown>>).some((ch) => ch.finish_reason !== null),
     );
     expect(finishChunk).toBeDefined();
-    const finishReason = (finishChunk!.choices as Array<Record<string, unknown>>)[0]!.finish_reason;
+    const finishReason = (finishChunk!.choices as Array<Record<string, unknown>>)[0].finish_reason;
     // OpenAI spec: refusal → 'stop', not 'content_filter'
     expect(finishReason, 'refusal should map to stop not content_filter').toBe('stop');
   });
@@ -508,11 +510,11 @@ describe('G57 — mapFinishReason masks error/unknown as stop', () => {
   it('streaming: error finish reason appears as error not stop on wire', async () => {
     const errorFinish = { unified: 'error', raw: 'error' };
     const streamParts: LanguageModelV4StreamPart[] = [
-      { type: 'stream-start', warnings: [] } as unknown as LanguageModelV4StreamPart,
-      { type: 'text-start', id: 'text-0' } as unknown as LanguageModelV4StreamPart,
-      { type: 'text-delta', id: 'text-0', delta: 'partial' } as unknown as LanguageModelV4StreamPart,
-      { type: 'text-end', id: 'text-0' } as unknown as LanguageModelV4StreamPart,
-      { type: 'finish', finishReason: errorFinish, usage: DEFAULT_USAGE } as unknown as LanguageModelV4StreamPart,
+      { type: 'stream-start', warnings: [] },
+      { type: 'text-start', id: 'text-0' },
+      { type: 'text-delta', id: 'text-0', delta: 'partial' },
+      { type: 'text-end', id: 'text-0' },
+      { type: 'finish', finishReason: errorFinish, usage: DEFAULT_USAGE },
     ];
 
     const app = makeAppWithModel('openai', createRecordingModel({ streamParts }));
@@ -531,7 +533,7 @@ describe('G57 — mapFinishReason masks error/unknown as stop', () => {
       (c) => Array.isArray(c.choices) && (c.choices as Array<Record<string, unknown>>).some((ch) => ch.finish_reason !== null),
     );
     expect(finishChunk).toBeDefined();
-    const finishReason = (finishChunk!.choices as Array<Record<string, unknown>>)[0]!.finish_reason;
+    const finishReason = (finishChunk!.choices as Array<Record<string, unknown>>)[0].finish_reason;
     expect(finishReason, 'error finishReason masked as stop').not.toBe('stop');
     expect(finishReason).toBe('error');
   });
@@ -613,7 +615,7 @@ describe('G59 — non-streaming refusal surfaced', () => {
     const choice = (body as Record<string, unknown>).choices as Array<Record<string, unknown>>;
     // OpenAI spec: refusal response should have message.refusal set
     expect(choice[0]).toBeDefined();
-    const message = choice[0]!.message as Record<string, unknown>;
+    const message = choice[0].message as Record<string, unknown>;
     // When a model returns a refusal, message.refusal should be a string, not missing
     expect(message).toHaveProperty('refusal');
     expect(message.refusal).toBe('I cannot help with that.');
@@ -641,7 +643,7 @@ describe('G59 — non-streaming refusal surfaced', () => {
 
     expect(status).toBe(200);
     const choice = (body as Record<string, unknown>).choices as Array<Record<string, unknown>>;
-    const message = choice[0]!.message as Record<string, unknown>;
+    const message = choice[0].message as Record<string, unknown>;
     expect(message).not.toHaveProperty('refusal');
     expect(message.content).toBe('Hello');
   });

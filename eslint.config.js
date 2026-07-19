@@ -1,4 +1,4 @@
-import frogbotEslintConfig, { rootParserOptions } from '@frogbot/eslint-config'
+import frogbotEslintConfig, { rootParserOptions } from '@frogbotai/eslint-config'
 
 /** @typedef {import('eslint').Linter.Config} Config */
 

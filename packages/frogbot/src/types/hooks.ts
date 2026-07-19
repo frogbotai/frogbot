@@ -90,7 +90,7 @@ export type AfterLoginHook<T extends TypeWithID = any> = (args: {
   user: T;
 }) => any;
 
-export type AfterLogoutHook<T extends TypeWithID = any> = (args: {
+export type AfterLogoutHook<_T extends TypeWithID = any> = (args: {
   collection: SanitizedCollectionConfig;
   context: RequestContext;
   req: FrogbotRequest;

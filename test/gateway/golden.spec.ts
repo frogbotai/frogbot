@@ -19,7 +19,6 @@ import { cohereProvider } from '../../packages/gateway/src/providers/cohere/inde
 import { openaiProvider } from '../../packages/gateway/src/providers/openai/index.js';
 import { createOpenAIStreamTransform } from '../../packages/gateway/src/routes/chatCompletions/translators/stream.js';
 import { createAnthropicStreamTransform } from '../../packages/gateway/src/routes/messages/translators/stream.js';
-import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { createProviderFixtureFetch, shouldUpdateFixtures } from '../__helpers/gateway/provider-http-fixtures.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
@@ -63,7 +62,7 @@ function makeOpenAIHttpFixtureApp(scenario: string) {
       update: shouldUpdateFixtures(),
     }),
   } as never);
-  return createApp({ registry: { openai } as ProviderRegistry });
+  return createApp({ registry: { openai } });
 }
 
 function makeCohereHttpFixtureApp(scenario: string) {
@@ -74,7 +73,7 @@ function makeCohereHttpFixtureApp(scenario: string) {
       update: shouldUpdateFixtures(),
     }),
   } as never);
-  return createApp({ registry: { cohere } as ProviderRegistry });
+  return createApp({ registry: { cohere } });
 }
 
 function getScenarios(): string[] {
@@ -90,7 +89,9 @@ async function runThroughTransform(
 ): Promise<string> {
   const readable = new ReadableStream<TextStreamPart<ToolSet>>({
     start(controller) {
-      for (const part of parts) controller.enqueue(part);
+      for (const part of parts) {
+        controller.enqueue(part);
+      }
       controller.close();
     },
   });
@@ -117,36 +118,36 @@ const m4FixtureProviders = {
 
 describe('gateway golden tests', () => {
   if (scenarios.length === 0) {
-    it.skip('no fixtures found — add fixtures to test/gateway/__fixtures__/', () => {});
+    it.todo('no fixtures found — add fixtures to test/gateway/__fixtures__/');
     return;
   }
 
   for (const scenario of scenarios) {
-    describe(scenario, () => {
+    describe(`${scenario}`, () => {
       const fixture = loadFixture(scenario);
       if (!fixture || fixture.chunks.length === 0) {
-        it.skip('fixture missing chunks.txt', () => {});
+        it.todo('fixture missing chunks.txt');
         return;
       }
 
       if (fixture.expectedOpenAI) {
         it('OpenAI SSE output matches fixture', async () => {
           const transform = createOpenAIStreamTransform({ model: 'test-model' });
-          const output = await runThroughTransform(fixture!.chunks, transform);
-          expect(output).toBe(fixture!.expectedOpenAI);
+          const output = await runThroughTransform(fixture.chunks, transform);
+          expect(output).toBe(fixture.expectedOpenAI);
         });
       } else {
-        it.skip('OpenAI expected fixture not yet recorded', () => {});
+        it.todo('OpenAI expected fixture not yet recorded');
       }
 
       if (fixture.expectedAnthropic) {
         it('Anthropic SSE output matches fixture', async () => {
           const transform = createAnthropicStreamTransform({ model: 'test-model' });
-          const output = await runThroughTransform(fixture!.chunks, transform);
-          expect(output).toBe(fixture!.expectedAnthropic);
+          const output = await runThroughTransform(fixture.chunks, transform);
+          expect(output).toBe(fixture.expectedAnthropic);
         });
       } else {
-        it.skip('Anthropic expected fixture not yet recorded', () => {});
+        it.todo('Anthropic expected fixture not yet recorded');
       }
     });
   }

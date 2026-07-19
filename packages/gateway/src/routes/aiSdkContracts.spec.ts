@@ -7,7 +7,7 @@ import type {
   SpeechModelV4,
   TranscriptionModelV4,
 } from '@ai-sdk/provider';
-import {
+import type {
   embed,
   experimental_generateVideo,
   generateImage,

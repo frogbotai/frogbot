@@ -218,7 +218,7 @@ export function buildProviderRegistry(
       registry[entry.name] = buildOpenAICompatibleProvider(entry);
     }
   }
-  return registry as ProviderRegistry;
+  return registry;
 }
 
 // ---------------------------------------------------------------------------

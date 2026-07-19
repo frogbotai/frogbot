@@ -619,7 +619,7 @@ describe('audio format coverage', () => {
         content: [
           {
             type: 'input_audio',
-            input_audio: { data: 'AAAA', format: format as 'wav' },
+            input_audio: { data: 'AAAA', format },
           },
         ],
       },

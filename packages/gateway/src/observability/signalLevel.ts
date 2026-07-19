@@ -61,5 +61,5 @@ export function signalLevelFromBody(body: unknown): SignalLevelInput {
   if (!trace || typeof trace !== 'object') return undefined;
   return Object.fromEntries(
     Object.entries(trace).filter(([key, value]) => key in defaultSignalLevels && typeof value === 'string' && value in order),
-  ) as SignalLevels;
+  );
 }

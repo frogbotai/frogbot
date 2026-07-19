@@ -140,7 +140,7 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
       // Parse top-level prompt caching options → providerOptions.unknown
       const cachingOpts = parsePromptCachingOptions(body as Record<string, unknown>);
       const unknownOpts: Record<string, JSONValue> = {
-        ...collectPassthroughChatParams(body as Record<string, unknown>),
+        ...collectPassthroughChatParams(body),
         ...(cachingOpts ?? {}),
       };
       // Producer for the vendor reasoning-translation chain: stash the raw

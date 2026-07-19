@@ -5,7 +5,7 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-export async function dev() {
+export function dev() {
   const cwd = process.cwd();
   const binPath = fileURLToPath(new URL('./index.js', import.meta.url));
 

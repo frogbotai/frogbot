@@ -234,7 +234,7 @@ function looseJson(input: unknown): Record<string, unknown> | undefined {
       try {
         const reparsed = JSON.parse(innerMessage) as unknown;
         if (typeof reparsed === 'object' && reparsed !== null && 'error' in reparsed) {
-          return reparsed as Record<string, unknown>;
+          return reparsed;
         }
       } catch {
         /* not double-encoded — fall through to obj */

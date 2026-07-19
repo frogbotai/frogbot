@@ -80,17 +80,19 @@ function createRecordingModel(opts?: {
         { type: 'text-delta', id: 'text-0', delta: text },
         { type: 'text-end', id: 'text-0' },
         { type: 'finish', finishReason: STOP_FINISH, usage: DEFAULT_USAGE },
-      ] as unknown as LanguageModelV4StreamPart[]);
+      ]);
       return {
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
-            for (const part of parts) controller.enqueue(part);
+            for (const part of parts) {
+              controller.enqueue(part);
+            }
             controller.close();
           },
         }),
       };
     },
-  } as unknown as LanguageModelV4;
+  };
 }
 
 function makeAppWithModel(providerName: string, model: LanguageModelV4) {
@@ -549,7 +551,7 @@ describe('streaming preserves reasoning_details metadata', () => {
       { type: 'text-delta', id: 'text-0', delta: 'the answer' },
       { type: 'text-end', id: 'text-0' },
       { type: 'finish', finishReason: STOP_FINISH, usage: DEFAULT_USAGE },
-    ] as unknown as LanguageModelV4StreamPart[];
+    ];
   }
 
   it('thinking signature survives to the streaming wire', async () => {

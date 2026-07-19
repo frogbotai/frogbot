@@ -5,7 +5,7 @@ import type { CollectionConfig } from '../types/collection.js';
 import type { Plugin } from '../types/plugin.js';
 
 vi.mock('payload', () => ({
-  buildConfig: vi.fn(async (config: unknown) => config),
+  buildConfig: vi.fn((config: unknown) => config),
   handleEndpoints: vi.fn(),
 }));
 

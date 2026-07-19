@@ -152,5 +152,7 @@ export async function gracefulShutdown(provider: ShutdownProvider, timeoutMs: nu
   }
   try {
     await provider.shutdown();
-  } catch {}
+  } catch {
+    // Best-effort shutdown — nothing to do if it fails.
+  }
 }

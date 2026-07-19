@@ -101,7 +101,7 @@ export function mergeConfigs(base: GatewayConfig, overlay: GatewayConfig): Gatew
     const existing = (providers as Record<string, unknown>)[name];
     (providers as Record<string, unknown>)[name] =
       existing && typeof existing === 'object' && typeof cfg === 'object'
-        ? { ...(existing as object), ...(cfg as object) }
+        ? { ...(existing), ...(cfg as object) }
         : cfg;
   }
 
@@ -127,7 +127,7 @@ export function mergeConfigs(base: GatewayConfig, overlay: GatewayConfig): Gatew
 function shallowMerge<T>(base: T | undefined, overlay: T | undefined): T | undefined {
   if (overlay == null) return base;
   if (!isPlainObject(base) || !isPlainObject(overlay)) return overlay;
-  return { ...base, ...overlay } as T;
+  return { ...base, ...overlay };
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

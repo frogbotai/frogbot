@@ -41,7 +41,7 @@ describe('cache_control on messages', () => {
       };
       const result = parseUserMessage(msg, 0);
       const parts = result.content as Array<{ type: string; providerOptions?: unknown }>;
-      expect(parts[0]!.providerOptions).toEqual({ unknown: { cache_control: { type: 'ephemeral' } } });
+      expect(parts[0].providerOptions).toEqual({ unknown: { cache_control: { type: 'ephemeral' } } });
     });
 
     it('omits providerOptions on parts without cache_control', () => {
@@ -51,7 +51,7 @@ describe('cache_control on messages', () => {
       };
       const result = parseUserMessage(msg, 0);
       const parts = result.content as Array<{ type: string; providerOptions?: unknown }>;
-      expect(parts[0]!.providerOptions).toBeUndefined();
+      expect(parts[0].providerOptions).toBeUndefined();
     });
   });
 

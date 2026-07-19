@@ -13,10 +13,14 @@
     "test:int:pg": "FROGBOT_DATABASE=postgres vitest run --project int",
     "test:int:sqlite": "FROGBOT_DATABASE=sqlite vitest run --project int",
     "docker:start": "docker compose -f test/docker-compose.yml --profile",
-    "docker:clean": "docker compose -f test/docker-compose.yml down -v --remove-orphans"
+    "docker:clean": "docker compose -f test/docker-compose.yml down -v --remove-orphans",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish"
   },
   "devDependencies": {
-    "@frogbot/eslint-config": "workspace:*",
+    "@changesets/cli": "^2.31.1",
+    "@frogbotai/eslint-config": "workspace:*",
     "@types/node": "^22.10.2",
     "eslint": "^9.16.0",
     "prettier": "^3.2.5",

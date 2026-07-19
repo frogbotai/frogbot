@@ -117,22 +117,24 @@ function createRecordingModel(opts?: {
       onCall?.(options);
       if (error) throw error;
       const parts: LanguageModelV4StreamPart[] = streamParts ?? [
-        { type: 'stream-start', warnings: [] } as unknown as LanguageModelV4StreamPart,
+        { type: 'stream-start', warnings: [] },
         { type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart,
         { type: 'text-delta', id: 'text-0', delta: text } as LanguageModelV4StreamPart,
         { type: 'text-end', id: 'text-0' } as LanguageModelV4StreamPart,
-        { type: 'finish', finishReason, usage } as unknown as LanguageModelV4StreamPart,
+        { type: 'finish', finishReason, usage },
       ];
       return {
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
-            for (const part of parts) controller.enqueue(part);
+            for (const part of parts) {
+              controller.enqueue(part);
+            }
             controller.close();
           },
         }),
       };
     },
-  } as unknown as LanguageModelV4;
+  };
 }
 
 function makeAppWithModel(providerName: string, model: LanguageModelV4) {
@@ -180,7 +182,7 @@ describe('messages content-filter → stop_reason refusal', () => {
     };
     const app = makeAppWithModel('anthropic', createRecordingModel({
       streamParts: [
-        { type: 'stream-start', warnings: [] } as unknown as LanguageModelV4StreamPart,
+        { type: 'stream-start', warnings: [] },
         { type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart,
         { type: 'text-delta', id: 'text-0', delta: 'nope' } as LanguageModelV4StreamPart,
         { type: 'text-end', id: 'text-0' } as LanguageModelV4StreamPart,
@@ -188,7 +190,7 @@ describe('messages content-filter → stop_reason refusal', () => {
           type: 'finish',
           finishReason: { unified: 'content-filter', raw: 'refusal' },
           usage,
-        } as unknown as LanguageModelV4StreamPart,
+        },
       ],
     }));
 
@@ -207,7 +209,7 @@ describe('messages content-filter → stop_reason refusal', () => {
     const sse = await res.text();
     const deltaMatch = sse.match(/^event: message_delta\ndata: (.+)$/m);
     expect(deltaMatch).not.toBeNull();
-    const delta = JSON.parse(deltaMatch![1]!) as { delta: { stop_reason: string } };
+    const delta = JSON.parse(deltaMatch![1]) as { delta: { stop_reason: string } };
     expect(delta.delta.stop_reason).toBe('refusal');
   });
 });
@@ -391,7 +393,7 @@ describe('messages Anthropic error envelope fidelity', () => {
         {
           type: 'error',
           error: Object.assign(new Error('Overloaded'), { statusCode: 529 }),
-        } as unknown as LanguageModelV4StreamPart,
+        },
       ],
     }));
 

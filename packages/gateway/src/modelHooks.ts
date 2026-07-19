@@ -193,7 +193,7 @@ function directUsage(value: unknown): HookUsage | undefined {
     typeof usage.outputTokens !== 'number' &&
     typeof usage.totalTokens !== 'number'
   )
-    return undefined;
+    {return undefined;}
   const inputTokens = usage.inputTokens ?? 0;
   const outputTokens = usage.outputTokens ?? 0;
   return {

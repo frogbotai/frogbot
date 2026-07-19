@@ -1,7 +1,15 @@
 {
   "name": "frogbot",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "FrogBot core: typed configuration surface that wraps Payload.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/frogbot"
+  },
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -47,7 +55,7 @@
     "zod": "^4.3.6"
   },
   "peerDependencies": {
-    "@ai-sdk/otel": "^1.0.4",
+    "@ai-sdk/otel": "^1.0.31",
     "next": "^15.4.10"
   },
   "peerDependenciesMeta": {
@@ -56,7 +64,7 @@
     }
   },
   "devDependencies": {
-    "@frogbot/eslint-config": "workspace:*",
+    "@frogbotai/eslint-config": "workspace:*",
     "@types/node": "^22.10.2",
     "eslint": "^9.16.0",
     "next": "15.4.10",
