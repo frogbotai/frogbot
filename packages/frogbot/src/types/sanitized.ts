@@ -22,6 +22,9 @@ export type FrogbotSanitizedConfig = {
   onInit?: (frogbot: Frogbot) => Promise<void> | void;
   ai?: SanitizedAIConfig;
   agents?: AgentConfig[];
+  typescript?: {
+    autoGenerate?: boolean;
+  };
 
   /** @internal — not part of the public API. */
   _internal: {
