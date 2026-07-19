@@ -1,0 +1,6 @@
+{
+  "model": "fal/imagen4/preview",
+  "prompt": "minimal robot icon",
+  "n": 1,
+  "response_format": "b64_json"
+}

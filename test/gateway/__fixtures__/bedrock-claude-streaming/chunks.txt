@@ -1,0 +1,10 @@
+{"type":"step-start","request":{},"warnings":[],"messageId":"msg-bedrock-1"}
+{"type":"text-start","textId":"text-0"}
+{"type":"text-delta","textDelta":"Hello","textId":"text-0"}
+{"type":"text-delta","textDelta":"! I'm","textId":"text-0"}
+{"type":"text-delta","textDelta":" Claude","textId":"text-0"}
+{"type":"text-delta","textDelta":" on","textId":"text-0"}
+{"type":"text-delta","textDelta":" Bedrock.","textId":"text-0"}
+{"type":"text-end","textId":"text-0"}
+{"type":"step-finish","messageId":"msg-bedrock-1","finishReason":"stop","isContinued":false,"usage":{"promptTokens":8,"completionTokens":6,"totalTokens":14},"response":{"id":"msg-bedrock-golden","modelId":"anthropic.claude-3-5-sonnet-20241022-v2:0","timestamp":"2026-01-01T00:00:00.000Z"},"providerMetadata":null,"request":{},"warnings":[]}
+{"type":"finish","finishReason":"stop","usage":{"promptTokens":8,"completionTokens":6,"totalTokens":14},"response":{"id":"msg-bedrock-golden","modelId":"anthropic.claude-3-5-sonnet-20241022-v2:0","timestamp":"2026-01-01T00:00:00.000Z"},"providerMetadata":null}

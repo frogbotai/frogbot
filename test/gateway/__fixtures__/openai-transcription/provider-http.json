@@ -1,0 +1,9 @@
+[
+  {
+    "url": "https://api.openai.com/v1/audio/transcriptions",
+    "method": "POST",
+    "status": 200,
+    "headers": { "content-type": "application/json" },
+    "bodyBase64": "eyJ0ZXh0IjoiZnJvZyByb2JvdCIsImxhbmd1YWdlIjoiZW5nbGlzaCIsImR1cmF0aW9uIjoxLCJ3b3JkcyI6W3sid29yZCI6ImZyb2ciLCJzdGFydCI6MCwiZW5kIjowLjV9LHsid29yZCI6InJvYm90Iiwic3RhcnQiOjAuNSwiZW5kIjoxfV0sInNlZ21lbnRzIjpbeyJpZCI6MCwic2VlayI6MCwic3RhcnQiOjAsImVuZCI6MSwidGV4dCI6ImZyb2cgcm9ib3QiLCJ0b2tlbnMiOlsxLDJdLCJ0ZW1wZXJhdHVyZSI6MCwiYXZnX2xvZ3Byb2IiOi0wLjEsImNvbXByZXNzaW9uX3JhdGlvIjoxLCJub19zcGVlY2hfcHJvYiI6MH1dfQ=="
+  }
+]

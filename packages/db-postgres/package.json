@@ -1,0 +1,52 @@
+{
+  "name": "@frogbot/db-postgres",
+  "version": "0.0.0",
+  "description": "FrogBot Postgres adapter.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./drizzle": {
+      "import": "./src/drizzle.ts",
+      "types": "./src/drizzle.ts",
+      "default": "./src/drizzle.ts"
+    }
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "import": "./dist/index.js",
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./drizzle": {
+        "import": "./dist/drizzle.js",
+        "types": "./dist/drizzle.d.ts",
+        "default": "./dist/drizzle.js"
+      }
+    }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@payloadcms/db-postgres": "3.85.1",
+    "drizzle-orm": "0.45.2"
+  },
+  "peerDependencies": {
+    "frogbot": "workspace:*"
+  },
+  "devDependencies": {
+    "frogbot": "workspace:*",
+    "typescript": "5.6.2"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "object": "list",
+  "data": [
+    { "object": "embedding", "embedding": [0.25, 0.5], "index": 0 },
+    { "object": "embedding", "embedding": [1.25, 1.5], "index": 1 }
+  ],
+  "model": "cohere/embed-english-v3.0",
+  "usage": { "prompt_tokens": 8, "total_tokens": 8 }
+}

@@ -1,0 +1,415 @@
+// Sanitize a FrogBot config into two outputs:
+//   1. A `FrogbotSanitizedConfig` — FrogBot's own metadata preserved.
+//   2. A Payload-shaped config stored in `_internal.payloadConfig`.
+//
+// Concerns:
+//   1. Reject `globals` at runtime with a clear `[frogbot]` error.
+//   2. Strip role markers (`project`, `file`, `thread`, `message`) from
+//      collections before they reach Payload. Capture them into metadata.
+//   3. Inject the `req.frogbot` bootstrap into every collection's
+//      `beforeOperation` hooks.
+//   4. Wrap every custom endpoint handler (root and per-collection) so
+//      `req.frogbot` is attached before the user's handler executes.
+
+import { buildConfig as payloadBuildConfig } from 'payload';
+import type {
+  CollectionConfig as PayloadCollectionConfig,
+  Config as PayloadConfig,
+  Endpoint as PayloadEndpoint,
+  PayloadEmailAdapter,
+  PayloadHandler,
+  PayloadRequest,
+} from 'payload';
+
+import type { CollectionConfig } from '../types/collection.js';
+import { ROLE_MARKERS } from '../types/collection.js';
+import type { FrogbotConfig } from '../types/config.js';
+import type { Endpoint } from '../types/endpoint.js';
+import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from '../types/sanitized.js';
+import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../types/ai.js';
+import type { AgentConfig } from '../types/agent.js';
+import type { FrogbotRequest } from '../types/request.js';
+import { buildAgentEndpoints } from '../agents/endpoints.js';
+import { getFrogbotInstance } from '../instanceRegistry.js';
+
+const noopEmailAdapter: PayloadEmailAdapter<void> = ({ payload }) => ({
+  name: 'frogbot-noop',
+  defaultFromAddress: 'noop@frogbot.local',
+  defaultFromName: 'FrogBot',
+  sendEmail(message) {
+    payload.logger.warn(
+      `[frogbot] Email attempted without a configured adapter. To: '${String(message.to)}', Subject: '${String(message.subject)}'. ` + // eslint-disable-line @typescript-eslint/no-base-to-string
+        `Configure an email adapter to send real emails.`,
+    );
+    return Promise.resolve();
+  },
+});
+
+function bootstrapBeforeOperation(args: { req: PayloadRequest }): void {
+  const frogbot = getFrogbotInstance(args.req.payload);
+  if (frogbot) {
+    (args.req as any).frogbot = frogbot;
+  } // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+function wrapEndpointHandler(handler: PayloadHandler): PayloadHandler {
+  return (req) => {
+    const frogbot = getFrogbotInstance(req.payload);
+    if (frogbot) {
+      (req as any).frogbot = frogbot;
+    } // eslint-disable-line @typescript-eslint/no-explicit-any
+    return handler(req);
+  };
+}
+
+function wrapEndpoints(endpoints: Endpoint[] | false | undefined): PayloadEndpoint[] | false | undefined {
+  if (!endpoints) return endpoints;
+  return endpoints.map((e) => ({
+    ...e,
+    handler: wrapEndpointHandler(e.handler as unknown as PayloadHandler),
+  }));
+}
+
+function sanitizeCollection(c: CollectionConfig): PayloadCollectionConfig {
+  const out: Record<string, unknown> = {
+    ...(c as unknown as Record<string, unknown>),
+  };
+
+  // Capture role markers + auth state into `custom.frogbot` BEFORE
+  // stripping markers.
+  const roleMarkers = ROLE_MARKERS.filter((marker) => (c as unknown as Record<string, unknown>)[marker] === true);
+  const auth = c.auth !== undefined && c.auth !== false;
+  const existingCustom = (c.custom ?? {}) as Record<string, unknown>;
+  out.custom = {
+    ...existingCustom,
+    frogbot: { roleMarkers, auth },
+  };
+
+  // Strip role markers.
+  for (const marker of ROLE_MARKERS) {
+    delete out[marker];
+  }
+
+  // Inject `req.frogbot` bootstrap as the first `beforeOperation`.
+  const existingHooks = (c.hooks ?? {}) as Record<string, unknown[]>;
+  const existingBeforeOp = (existingHooks.beforeOperation as unknown[] | undefined) ?? [];
+  out.hooks = {
+    ...existingHooks,
+    beforeOperation: [bootstrapBeforeOperation, ...existingBeforeOp],
+  };
+
+  // Wrap per-collection custom endpoints.
+  if (c.endpoints !== undefined) {
+    out.endpoints = wrapEndpoints(c.endpoints);
+  }
+
+  return out as unknown as PayloadCollectionConfig;
+}
+
+// ─── AI Config Sanitization ──────────────────────────────────────────────────
+
+const BUILT_IN_PROVIDERS = new Set([
+  'openai',
+  'anthropic',
+  'google',
+  'bedrock',
+  'groq',
+  'mistral',
+  'cohere',
+  'together',
+  'fireworks',
+  'deepinfra',
+  'xai',
+  'perplexity',
+  'cerebras',
+  'voyage',
+  'replicate',
+]);
+
+const defaultAccessFn = ({ req }: { req: FrogbotRequest }) => !!req.user;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function sanitizeAI(ai: AIConfig): SanitizedAIConfig {
+  // Validate providers.
+  if (!isRecord(ai.providers)) {
+    throw new Error('[frogbot] `ai.providers` is required and must be an object.');
+  }
+  const configured = Object.values(ai.providers).filter((entry) => entry != null);
+  if (configured.length === 0) {
+    throw new Error('[frogbot] At least one AI provider must be configured under `ai.providers`.');
+  }
+  for (const [key, entry] of Object.entries(ai.providers)) {
+    if (!entry) {
+      continue;
+    }
+    if (!key.trim()) {
+      throw new Error('[frogbot] AI provider names must not be empty.');
+    }
+    if (!isRecord(entry)) {
+      throw new Error(`[frogbot] Provider '${key}' must be an object.`);
+    }
+    const provider: Record<string, unknown> = entry;
+    if (BUILT_IN_PROVIDERS.has(key)) {
+      if (key === 'bedrock') {
+        if (
+          typeof provider.region !== 'string' ||
+          !provider.region.trim() ||
+          typeof provider.accessKeyId !== 'string' ||
+          !provider.accessKeyId.trim() ||
+          typeof provider.secretAccessKey !== 'string' ||
+          !provider.secretAccessKey.trim()
+        ) {
+          throw new Error(`[frogbot] Provider '${key}' requires region, accessKeyId, and secretAccessKey.`);
+        }
+      } else if (typeof provider.apiKey !== 'string' || !provider.apiKey.trim()) {
+        throw new Error(`[frogbot] Provider '${key}' requires an apiKey.`);
+      }
+    } else {
+      const custom = provider;
+      if (custom.type !== 'openai-compatible') {
+        throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
+      }
+      if (typeof custom.baseUrl !== 'string' || !custom.baseUrl.trim()) {
+        throw new Error(`[frogbot] Custom provider '${key}' requires a baseUrl.`);
+      }
+      if (!custom.models || !Array.isArray(custom.models) || custom.models.length === 0) {
+        throw new Error(`[frogbot] Custom provider '${key}' requires a non-empty models array.`);
+      }
+      for (const model of custom.models) {
+        if (!isRecord(model) || typeof model.id !== 'string' || !model.id.trim() || !model.mode) {
+          throw new Error(`[frogbot] Every model for custom provider '${key}' requires an id and mode.`);
+        }
+      }
+    }
+  }
+
+  // Validate routers.
+  if (ai.routers !== undefined && !isRecord(ai.routers)) {
+    throw new Error('[frogbot] `ai.routers` must be an object.');
+  }
+  const routers: Record<string, RouterConfig> = ai.routers ?? {};
+  if (ai.defaultRouter && !routers[ai.defaultRouter]) {
+    throw new Error(`[frogbot] defaultRouter '${ai.defaultRouter}' does not exist in ai.routers.`);
+  }
+
+  for (const [slug, router] of Object.entries(routers)) {
+    if (!isRecord(router) || typeof router.model !== 'string' || !router.model.trim()) {
+      throw new Error(`[frogbot] Router '${slug}' requires a model.`);
+    }
+  }
+
+  // Normalize hooks to arrays.
+  const hooks = {
+    beforeOperation: ai.hooks?.beforeOperation ?? [],
+    beforeUpstream: ai.hooks?.beforeUpstream ?? [],
+    afterUpstream: ai.hooks?.afterUpstream ?? [],
+    afterError: ai.hooks?.afterError ?? [],
+    afterOperation: ai.hooks?.afterOperation ?? [],
+  };
+
+  // Apply access defaults.
+  const access = {
+    generate: ai.access?.generate ?? defaultAccessFn,
+    embed: ai.access?.embed ?? defaultAccessFn,
+    transcribe: ai.access?.transcribe ?? defaultAccessFn,
+    rerank: ai.access?.rerank ?? defaultAccessFn,
+  };
+
+  // Deployment identifier for telemetry spans.
+  const _internal = {
+    deploymentId: ai.deploymentId ?? process.env.FROGBOT_DEPLOYMENT_ID ?? 'local',
+  };
+
+  // Telemetry — default enabled, user opts out via { enabled: false }.
+  const telemetry = {
+    enabled: ai.telemetry?.enabled !== false,
+    enrichSpan: ai.telemetry?.enrichSpan,
+  };
+
+  return {
+    providers: ai.providers,
+    routers,
+    defaultRouter: ai.defaultRouter,
+    hooks,
+    access,
+    telemetry,
+    _internal,
+  };
+}
+
+function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined): AgentConfig[] {
+  if (!ai) {
+    throw new Error('[frogbot] `agents` requires an `ai` configuration block.');
+  }
+  if (!Array.isArray(agents) || agents.length === 0) {
+    throw new Error('[frogbot] `agents` must be a non-empty array when configured.');
+  }
+
+  const providers = new Set(
+    Object.entries(ai.providers)
+      .filter(([, entry]) => entry != null)
+      .map(([provider]) =>
+        provider === 'bedrock' ? 'amazon-bedrock' : provider === 'together' ? 'togetherai' : provider,
+      ),
+  );
+  const slugs = new Set<string>();
+
+  return agents.map((agent) => {
+    if (!isRecord(agent) || typeof agent.slug !== 'string' || !agent.slug.trim()) {
+      throw new Error('[frogbot] Every agent must have a `slug`.');
+    }
+    if (agent.slug !== agent.slug.trim() || encodeURIComponent(agent.slug) !== agent.slug) {
+      throw new Error(`[frogbot] Agent slug '${agent.slug}' is not URL-safe.`);
+    }
+    if (slugs.has(agent.slug)) {
+      throw new Error(`[frogbot] Duplicate agent slug: '${agent.slug}'.`);
+    }
+    slugs.add(agent.slug);
+
+    if (typeof agent.model !== 'string' || !agent.model.trim()) {
+      throw new Error(`[frogbot] Agent '${agent.slug}' requires a \`model\`.`);
+    }
+    if (typeof agent.instructions !== 'string' || !agent.instructions.trim()) {
+      throw new Error(`[frogbot] Agent '${agent.slug}' requires \`instructions\`.`);
+    }
+    if (agent.access !== undefined && typeof agent.access !== 'function') {
+      throw new Error(`[frogbot] Agent '${agent.slug}' access must be a function.`);
+    }
+    if (
+      agent.stopWhen !== undefined &&
+      typeof agent.stopWhen !== 'function' &&
+      (!Array.isArray(agent.stopWhen) ||
+        agent.stopWhen.length === 0 ||
+        agent.stopWhen.some((condition) => typeof condition !== 'function'))
+    ) {
+      throw new Error(`[frogbot] Agent '${agent.slug}' stopWhen must contain at least one condition.`);
+    }
+
+    const model = ai.routers[agent.model]?.model ?? agent.model;
+    const separator = model.indexOf('/');
+    const provider = separator > 0 ? model.slice(0, separator) : '';
+    if (!provider || !providers.has(provider)) {
+      throw new Error(
+        `[frogbot] Agent '${agent.slug}' model '${agent.model}' does not resolve to a configured provider.`,
+      );
+    }
+
+    if (agent.tools !== undefined) {
+      if (!Array.isArray(agent.tools) || agent.tools.length === 0) {
+        throw new Error(`[frogbot] Agent '${agent.slug}' tools must be a non-empty array when configured.`);
+      }
+      const toolSlugs = new Set<string>();
+      for (const tool of agent.tools) {
+        if (!isRecord(tool) || typeof tool.slug !== 'string' || !tool.slug.trim()) {
+          throw new Error(`[frogbot] A tool in agent '${agent.slug}' is missing a \`slug\`.`);
+        }
+        if (toolSlugs.has(tool.slug)) {
+          throw new Error(`[frogbot] Duplicate tool slug '${tool.slug}' in agent '${agent.slug}'.`);
+        }
+        if (typeof tool.description !== 'string' || !tool.description.trim()) {
+          throw new Error(`[frogbot] Tool '${tool.slug}' in agent '${agent.slug}' requires a description.`);
+        }
+        if (!tool.inputSchema || typeof tool.execute !== 'function') {
+          throw new Error(`[frogbot] Tool '${tool.slug}' in agent '${agent.slug}' requires inputSchema and execute.`);
+        }
+        toolSlugs.add(tool.slug);
+      }
+    }
+
+    return { ...agent, access: agent.access ?? defaultAccessFn };
+  });
+}
+
+function validateAgentPathReservations(config: Pick<FrogbotConfig, 'collections' | 'endpoints'>): void {
+  if (config.collections.some((collection) => collection.slug === 'agents')) {
+    throw new Error("[frogbot] Collection slug 'agents' is reserved for the agent API.");
+  }
+
+  const endpoints = (config as { endpoints?: Endpoint[] | false }).endpoints;
+  if (endpoints !== undefined && endpoints !== false && !Array.isArray(endpoints)) {
+    throw new Error('[frogbot] `endpoints` must be an array or false.');
+  }
+
+  for (const endpoint of Array.isArray(endpoints) ? endpoints : []) {
+    if (endpoint.path === '/agents' || endpoint.path.startsWith('/agents/')) {
+      throw new Error(`[frogbot] Endpoint path '${endpoint.path}' is reserved for the agent API.`);
+    }
+  }
+}
+
+// ─── Payload Config Building ─────────────────────────────────────────────────
+
+function buildPayloadConfig(config: FrogbotConfig): PayloadConfig {
+  const out: Record<string, unknown> = {
+    ...(config as unknown as Record<string, unknown>),
+    collections: config.collections.map(sanitizeCollection),
+  };
+
+  const userEndpoints = config.endpoints as Endpoint[] | false | undefined;
+  const agentEndpoints = config.agents?.length ? buildAgentEndpoints() : [];
+  const allEndpoints = [...(Array.isArray(userEndpoints) ? userEndpoints : []), ...agentEndpoints];
+
+  if (allEndpoints.length > 0) {
+    out.endpoints = wrapEndpoints(allEndpoints);
+  } else if (userEndpoints === false) {
+    out.endpoints = false;
+  } else if (userEndpoints !== undefined) {
+    out.endpoints = wrapEndpoints(userEndpoints);
+  }
+
+  // Inject noop email adapter if none provided.
+  if (!config.email) {
+    out.email = noopEmailAdapter;
+    console.warn(
+      // eslint-disable-line no-console
+      '[frogbot] No email adapter provided. Emails will be logged but not sent. ' +
+        'Pass an `email` adapter to enable delivery.',
+    );
+  }
+
+  // Drop FrogBot-only keys before handing to Payload.
+  delete out.plugins;
+  delete out.onInit;
+  delete out.port;
+  delete out.ai;
+  delete out.agents;
+
+  return out as unknown as PayloadConfig;
+}
+
+export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
+  if ((config as unknown as Record<string, unknown>).globals !== undefined) {
+    throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections with role markers instead.');
+  }
+  validateAgentPathReservations(config);
+
+  // Build collection metadata for FrogBot's sanitized config.
+  const collectionsMeta: SanitizedCollectionMeta[] = config.collections.map((c) => {
+    const roleMarkers = ROLE_MARKERS.filter((marker) => (c as unknown as Record<string, unknown>)[marker] === true);
+    const auth = c.auth !== undefined && c.auth !== false;
+    return { slug: c.slug, roleMarkers, auth };
+  });
+
+  // Sanitize AI config if present.
+  const sanitizedAI = config.ai ? sanitizeAI(config.ai) : undefined;
+  const agents = config.agents !== undefined ? sanitizeAgents(config.agents, sanitizedAI) : undefined;
+
+  // Build the Payload config and pass it through Payload's buildConfig.
+  const payloadConfig = buildPayloadConfig({ ...config, agents });
+  const payloadSanitizedPromise = payloadBuildConfig(payloadConfig);
+
+  return {
+    collections: collectionsMeta,
+    secret: config.secret,
+    port: (config as any).port, // eslint-disable-line @typescript-eslint/no-explicit-any
+    onInit: (config as any).onInit, // eslint-disable-line @typescript-eslint/no-explicit-any
+    ai: sanitizedAI,
+    agents,
+    _internal: {
+      payloadConfig: payloadSanitizedPromise,
+    },
+  };
+}

@@ -1,0 +1,1 @@
+{"id":"rerank_1","results":[{"index":1,"relevance_score":0.9,"document":{"text":"frog robot"}},{"index":0,"relevance_score":0.4,"document":{"text":"robot"}}],"meta":{"billed_units":{"search_units":1}}}

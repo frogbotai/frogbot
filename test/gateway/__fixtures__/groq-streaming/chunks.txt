@@ -1,0 +1,10 @@
+{"type":"step-start","request":{},"warnings":[],"messageId":"msg-groq-1"}
+{"type":"text-start","textId":"text-0"}
+{"type":"text-delta","textDelta":"2","textId":"text-0"}
+{"type":"text-delta","textDelta":" + ","textId":"text-0"}
+{"type":"text-delta","textDelta":"2","textId":"text-0"}
+{"type":"text-delta","textDelta":" = ","textId":"text-0"}
+{"type":"text-delta","textDelta":"4","textId":"text-0"}
+{"type":"text-end","textId":"text-0"}
+{"type":"step-finish","messageId":"msg-groq-1","finishReason":"stop","isContinued":false,"usage":{"promptTokens":10,"completionTokens":5,"totalTokens":15},"response":{"id":"chatcmpl-groq-golden","modelId":"llama-3.3-70b-versatile","timestamp":"2026-01-01T00:00:00.000Z"},"providerMetadata":null,"request":{},"warnings":[]}
+{"type":"finish","finishReason":"stop","usage":{"promptTokens":10,"completionTokens":5,"totalTokens":15},"response":{"id":"chatcmpl-groq-golden","modelId":"llama-3.3-70b-versatile","timestamp":"2026-01-01T00:00:00.000Z"},"providerMetadata":null}

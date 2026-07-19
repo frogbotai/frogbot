@@ -1,0 +1,1 @@
+{"model":"azure/my-gpt4o-deployment","messages":[{"role":"user","content":"What is the weather?"}],"stream":true,"tools":[{"type":"function","function":{"name":"get_weather","parameters":{"type":"object","properties":{"city":{"type":"string"}}}}}]}

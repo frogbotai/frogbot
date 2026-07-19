@@ -1,0 +1,1 @@
+{"task":"transcribe","text":"frog robot","language":"english","duration":1,"words":[{"word":"frog","start":0,"end":0.5},{"word":"robot","start":0.5,"end":1}],"segments":[{"id":0,"seek":0,"start":0,"end":1,"text":"frog robot","tokens":[1,2],"temperature":0,"avg_logprob":-0.1,"compression_ratio":1,"no_speech_prob":0}]}

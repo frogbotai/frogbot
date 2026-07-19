@@ -1,0 +1,9 @@
+[
+  {
+    "url": "https://api.cohere.com/v2/rerank",
+    "method": "POST",
+    "status": 200,
+    "headers": { "content-type": "application/json" },
+    "bodyBase64": "eyJpZCI6InJlcmFua18xIiwicmVzdWx0cyI6W3siaW5kZXgiOjEsInJlbGV2YW5jZV9zY29yZSI6MC45fSx7ImluZGV4IjowLCJyZWxldmFuY2Vfc2NvcmUiOjAuNH1dLCJtZXRhIjp7ImJpbGxlZF91bml0cyI6eyJzZWFyY2hfdW5pdHMiOjF9fX0="
+  }
+]

@@ -1,0 +1,39 @@
+{
+  "name": "frogbot-monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:int": "vitest run --project int",
+    "test:int:mongo": "FROGBOT_DATABASE=mongodb vitest run --project int",
+    "test:int:pg": "FROGBOT_DATABASE=postgres vitest run --project int",
+    "test:int:sqlite": "FROGBOT_DATABASE=sqlite vitest run --project int",
+    "docker:start": "docker compose -f test/docker-compose.yml --profile",
+    "docker:clean": "docker compose -f test/docker-compose.yml down -v --remove-orphans"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "prettier": "^3.2.5",
+    "tsx": "^4.22.4",
+    "typescript": "5.6.2",
+    "vite": "^6.0.0",
+    "vitest": "4.1.2"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "esbuild"
+    ],
+    "overrides": {
+      "zod": "^4.3.6"
+    }
+  }
+}

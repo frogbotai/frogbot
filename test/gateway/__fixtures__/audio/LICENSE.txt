@@ -1,0 +1,1 @@
+Public domain / CC0 test fixture. The WAV file is synthetic silence generated for gateway transcription tests and contains no third-party recording.

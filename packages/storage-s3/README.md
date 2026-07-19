@@ -1,0 +1,35 @@
+# @frogbot/storage-s3
+
+S3 storage adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+
+## Installation
+
+```bash
+pnpm add @frogbot/storage-s3
+```
+
+## Usage
+
+```ts
+import { buildConfig } from 'frogbot'
+import { s3Storage } from '@frogbot/storage-s3'
+
+export default buildConfig({
+  storage: [
+    s3Storage({
+      bucket: process.env.S3_BUCKET,
+      config: {
+        region: process.env.S3_REGION,
+        credentials: {
+          accessKeyId: process.env.S3_ACCESS_KEY_ID,
+          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+        },
+      },
+      collections: {
+        media: true,
+      },
+    }),
+  ],
+  // ...rest of config
+})
+```

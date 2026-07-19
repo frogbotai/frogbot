@@ -1,0 +1,1 @@
+{"model":"openai/tts-1","input":"hello frog","voice":"alloy","response_format":"mp3"}

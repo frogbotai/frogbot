@@ -1,0 +1,1 @@
+{"model":"groq/llama-3.3-70b-versatile","messages":[{"role":"user","content":"What is 2+2?"}],"stream":true}

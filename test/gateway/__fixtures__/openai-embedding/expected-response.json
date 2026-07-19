@@ -1,0 +1,6 @@
+{
+  "object": "list",
+  "data": [{ "object": "embedding", "embedding": [0.1, 0.2, 0.3], "index": 0 }],
+  "model": "openai/text-embedding-3-small",
+  "usage": { "prompt_tokens": 3, "total_tokens": 3 }
+}
