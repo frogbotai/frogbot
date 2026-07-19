@@ -1,6 +1,6 @@
 # @frogbotai/db-postgres
 
-Postgres adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+Postgres adapter for [FrogBot](https://github.com/frogbotai/frogbot).
 
 ## Installation
 

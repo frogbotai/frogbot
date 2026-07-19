@@ -1,6 +1,6 @@
 # @frogbotai/storage-gcs
 
-Google Cloud Storage adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+Google Cloud Storage adapter for [FrogBot](https://github.com/frogbotai/frogbot).
 
 ## Installation
 

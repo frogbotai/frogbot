@@ -1,6 +1,6 @@
 # @frogbotai/email-resend
 
-Resend email adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+Resend email adapter for [FrogBot](https://github.com/frogbotai/frogbot).
 
 ## Installation
 

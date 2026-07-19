@@ -1,6 +1,6 @@
 # @frogbotai/kv-redis
 
-Redis KV store adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+Redis KV store adapter for [FrogBot](https://github.com/frogbotai/frogbot).
 
 ## Installation
 

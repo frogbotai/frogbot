@@ -1,6 +1,6 @@
 # @frogbotai/db-d1-sqlite
 
-Cloudflare D1 SQLite adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+Cloudflare D1 SQLite adapter for [FrogBot](https://github.com/frogbotai/frogbot).
 
 ## Installation
 

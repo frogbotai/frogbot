@@ -1,6 +1,6 @@
 # @frogbotai/db-sqlite
 
-SQLite adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+SQLite adapter for [FrogBot](https://github.com/frogbotai/frogbot).
 
 ## Installation
 

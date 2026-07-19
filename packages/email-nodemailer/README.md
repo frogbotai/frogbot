@@ -1,6 +1,6 @@
 # @frogbotai/email-nodemailer
 
-Nodemailer email adapter for [FrogBot](https://github.com/firmware-ai/firmware).
+Nodemailer email adapter for [FrogBot](https://github.com/frogbotai/frogbot).
 
 ## Installation
 
