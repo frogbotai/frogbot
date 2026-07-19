@@ -121,7 +121,7 @@ const toolSchema = z.union([functionToolSchema, unknownToolSchema]);
 // Loosened to z.unknown() — Responses tool_choice accepts strings
 // (`none`/`auto`/`required`) and named/hosted objects. Translation lives in
 // the handler's toResponsesToolChoice.
-const toolChoiceSchema = z.unknown();
+const toolChoiceSchema = z.unknown().nullish();
 
 // Structured output — `text.format` carries the json_schema config. Loosened
 // so hosted/verbosity fields survive; translation lives in the handler.
