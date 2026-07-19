@@ -16,7 +16,9 @@
     "docker:clean": "docker compose -f test/docker-compose.yml down -v --remove-orphans"
   },
   "devDependencies": {
+    "@frogbot/eslint-config": "workspace:*",
     "@types/node": "^22.10.2",
+    "eslint": "^9.16.0",
     "prettier": "^3.2.5",
     "tsx": "^4.22.4",
     "typescript": "5.6.2",

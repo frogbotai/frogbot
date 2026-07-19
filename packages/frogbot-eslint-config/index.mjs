@@ -22,7 +22,8 @@ export const baseRules = {
   'no-restricted-syntax': [
     'warn',
     {
-      selector: ':matches(ForStatement, ForInStatement, ForOfStatement, WhileStatement, DoWhileStatement)[body.type!="BlockStatement"]',
+      selector:
+        ':matches(ForStatement, ForInStatement, ForOfStatement, WhileStatement, DoWhileStatement)[body.type!="BlockStatement"]',
       message: 'Use braces around loop bodies.',
     },
   ],
@@ -91,38 +92,47 @@ export const typescriptRules = {
 
 /** @typedef {import('eslint').Linter.Config} Config */
 
+/**
+ * Shared parser options. Mirrors Payload's `rootParserOptions` export so
+ * consuming packages can spread it and set only `tsconfigRootDir` (and, where
+ * the build tsconfig excludes spec files, an explicit `project`).
+ *
+ * Note on `projectService` vs `project`: Payload can use `projectService: true`
+ * everywhere because its build tsconfig covers all files. FrogBot's build
+ * tsconfigs exclude spec files, so packages that lint specs pass an explicit
+ * `project` (their `tsconfig.eslint.json`) and set `projectService: false`.
+ */
+export const rootParserOptions = {
+  sourceType: 'module',
+  ecmaVersion: 'latest',
+  projectService: true,
+}
+
 /** @type {FlatConfig} */
 const baseExtends = js.configs.recommended
 
 /**
- * Build the shared flat config array.
+ * The shared flat config array. Mirrors Payload's `rootEslintConfig` export
+ * shape: a static array consumed via spread, with parser options layered in by
+ * each package's own `eslint.config.mjs`.
  *
- * @param {Object} [options]
- * @param {string} [options.tsconfigRootDir] - Root dir for tsconfig discovery.
- *   Each consuming package should pass `import.meta.dirname`.
- * @param {string[]} [options.files] - Override the TS block `files` globs.
- *   Defaults to `['**\/*.ts']`. Useful for packages that lint files outside their own dir.
- * @param {boolean} [options.projectService] - Use typescript-eslint's projectService
- *   (auto-discovers the nearest tsconfig.json). Defaults to `true`. Set to `false`
- *   and pass `project` when the build tsconfig excludes files that must be linted
- *   (e.g. spec files), which projectService cannot cover.
- * @param {string | string[]} [options.project] - Explicit tsconfig path(s) for the
- *   parser (classic `parserOptions.project`). Used when `projectService` is `false`.
- * @returns {Config[]}
+ * @type {Config[]}
  */
-export const createRootConfig = ({
-  tsconfigRootDir,
-  files = ['**/*.ts'],
-  projectService = true,
-  project,
-} = {}) => [
-  {
-    name: 'Ignores',
-    // Tooling / config files are not type-checked or linted here.
-    ignores: ['**/*.mjs', '**/*.cjs', '**/*.js', '**/*.jsx'],
-  },
+export const rootEslintConfig = [
   {
     name: 'Settings',
+    languageOptions: {
+      parserOptions: {
+        ...rootParserOptions,
+        tsconfigRootDir: import.meta.dirname,
+      },
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+      },
+      parser: typescriptParser,
+    },
     linterOptions: {
       reportUnusedDisableDirectives: 'error',
     },
@@ -137,25 +147,13 @@ export const createRootConfig = ({
       tseslint.configs.recommendedTypeChecked[2],
       eslintConfigPrettier,
       {
-        languageOptions: {
-          parserOptions: {
-            ...(project ? { project, projectService: false } : { projectService }),
-            tsconfigRootDir,
-          },
-          ecmaVersion: 'latest',
-          sourceType: 'module',
-          globals: {
-            ...globals.node,
-          },
-          parser: typescriptParser,
-        },
         rules: {
           ...baseRules,
           ...typescriptRules,
         },
       },
     ),
-    files,
+    files: ['**/*.ts'],
   },
   {
     name: 'Unit and Integration Tests',
@@ -176,15 +174,5 @@ export const createRootConfig = ({
     ignores: ['**/*.e2e.spec.ts'],
   },
 ]
-
-/**
- * Default export mirrors Payload's `rootEslintConfig` export shape.
- * Note: consumers should prefer `createRootConfig({ tsconfigRootDir })` so
- * projectService resolves each package's tsconfig. This default uses this
- * package's own dir as the root and is provided for parity/spread use.
- *
- * @type {Config[]}
- */
-export const rootEslintConfig = createRootConfig({ tsconfigRootDir: import.meta.dirname })
 
 export default rootEslintConfig
