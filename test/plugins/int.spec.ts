@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mongooseAdapter } from '@frogbotai/db-mongodb';
 import { buildConfig } from 'frogbot';
-import type { FrogbotConfig, FrogbotPlugin } from 'frogbot';
+import type { FrogbotConfig, Plugin } from 'frogbot';
 
 import { projectsSlug } from './shared.js';
 
@@ -9,8 +9,8 @@ describe('plugins', () => {
   describe('lifecycle', () => {
     it('plugins run serially in array order', async () => {
       const order: number[] = [];
-      const plugin1: FrogbotPlugin = (config) => { order.push(1); return config; };
-      const plugin2: FrogbotPlugin = (config) => { order.push(2); return config; };
+      const plugin1: Plugin = (config) => { order.push(1); return config; };
+      const plugin2: Plugin = (config) => { order.push(2); return config; };
 
       const testConfig: FrogbotConfig = {
         secret: 'serial-test',
@@ -23,7 +23,7 @@ describe('plugins', () => {
     });
 
     it('plugin can register a new collection', async () => {
-      const addCollection: FrogbotPlugin = (config) => ({
+      const addCollection: Plugin = (config) => ({
         ...config,
         collections: [
           ...config.collections,
@@ -43,7 +43,7 @@ describe('plugins', () => {
     });
 
     it('plugin can mutate existing collection fields', async () => {
-      const stampCreatedBy: FrogbotPlugin = (config) => ({
+      const stampCreatedBy: Plugin = (config) => ({
         ...config,
         collections: config.collections.map((c) =>
           c.slug === projectsSlug

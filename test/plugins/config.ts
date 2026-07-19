@@ -1,4 +1,4 @@
-import type { CollectionConfig, FrogbotPlugin } from 'frogbot';
+import type { CollectionConfig, Plugin } from 'frogbot';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 import { projectsSlug, usersSlug } from './shared.js';
@@ -16,7 +16,7 @@ const Projects: CollectionConfig = {
   fields: [{ name: 'title', type: 'text', required: true }],
 };
 
-export const stampCreatedBy: FrogbotPlugin = (config) => ({
+export const stampCreatedBy: Plugin = (config) => ({
   ...config,
   collections: config.collections.map((c) =>
     c.slug === projectsSlug
