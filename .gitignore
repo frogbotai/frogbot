@@ -42,3 +42,5 @@ test/databaseAdapter.js
 
 # Live e2e oversized-prompt fixture
 test/gateway/live/fixtures/huge-prompt.txt
+
+.idea
