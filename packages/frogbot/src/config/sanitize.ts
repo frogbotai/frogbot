@@ -4,11 +4,9 @@
 //
 // Concerns:
 //   1. Reject `globals` at runtime with a clear `[frogbot]` error.
-//   2. Strip role markers (`project`, `file`, `thread`, `message`) from
-//      collections before they reach Payload. Capture them into metadata.
-//   3. Inject the `req.frogbot` bootstrap into every collection's
+//   2. Inject the `req.frogbot` bootstrap into every collection's
 //      `beforeOperation` hooks.
-//   4. Wrap every custom endpoint handler (root and per-collection) so
+//   3. Wrap every custom endpoint handler (root and per-collection) so
 //      `req.frogbot` is attached before the user's handler executes.
 
 import { buildConfig as payloadBuildConfig } from 'payload';
@@ -22,7 +20,7 @@ import type {
 } from 'payload';
 
 import type { CollectionConfig } from '../types/collection.js';
-import { ROLE_MARKERS } from '../types/collection.js';
+import { CHAT_ROLE_MARKERS } from '../types/collection.js';
 import type { FrogbotConfig } from '../types/config.js';
 import type { Endpoint } from '../types/endpoint.js';
 import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from '../types/sanitized.js';
@@ -30,6 +28,7 @@ import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../types/ai.js';
 import type { AgentConfig } from '../types/agent.js';
 import type { FrogbotRequest } from '../types/request.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
+import { resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { getFrogbotInstance } from '../instanceRegistry.js';
 
 const noopEmailAdapter: PayloadEmailAdapter<void> = ({ payload }) => ({
@@ -75,20 +74,18 @@ function sanitizeCollection(c: CollectionConfig): PayloadCollectionConfig {
     ...(c as unknown as Record<string, unknown>),
   };
 
-  // Capture role markers + auth state into `custom.frogbot` BEFORE
-  // stripping markers.
-  const roleMarkers = ROLE_MARKERS.filter((marker) => (c as unknown as Record<string, unknown>)[marker] === true);
+  // Strip chat role markers — FrogBot-only keys.
+  for (const marker of CHAT_ROLE_MARKERS) {
+    delete out[marker];
+  }
+
+  // Capture auth state into `custom.frogbot`.
   const auth = c.auth !== undefined && c.auth !== false;
   const existingCustom = (c.custom ?? {}) as Record<string, unknown>;
   out.custom = {
     ...existingCustom,
-    frogbot: { roleMarkers, auth },
+    frogbot: { auth },
   };
-
-  // Strip role markers.
-  for (const marker of ROLE_MARKERS) {
-    delete out[marker];
-  }
 
   // Inject `req.frogbot` bootstrap as the first `beforeOperation`.
   const existingHooks = (c.hooks ?? {}) as Record<string, unknown[]>;
@@ -387,23 +384,25 @@ function buildPayloadConfig(config: FrogbotConfig): PayloadConfig {
 
 export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
   if ((config as unknown as Record<string, unknown>).globals !== undefined) {
-    throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections with role markers instead.');
+    throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections instead.');
   }
   validateAgentPathReservations(config);
-
-  // Build collection metadata for FrogBot's sanitized config.
-  const collectionsMeta: SanitizedCollectionMeta[] = config.collections.map((c) => {
-    const roleMarkers = ROLE_MARKERS.filter((marker) => (c as unknown as Record<string, unknown>)[marker] === true);
-    const auth = c.auth !== undefined && c.auth !== false;
-    return { slug: c.slug, roleMarkers, auth };
-  });
 
   // Sanitize AI config if present.
   const sanitizedAI = config.ai ? sanitizeAI(config.ai) : undefined;
   const agents = config.agents !== undefined ? sanitizeAgents(config.agents, sanitizedAI) : undefined;
 
+  // Resolve chat persistence — adopt marked collections or inject defaults.
+  const { collections, chat } = resolveChatCollections({ ...config, agents });
+
+  // Build collection metadata for FrogBot's sanitized config.
+  const collectionsMeta: SanitizedCollectionMeta[] = collections.map((c) => ({
+    slug: c.slug,
+    auth: c.auth !== undefined && c.auth !== false,
+  }));
+
   // Build the Payload config and pass it through Payload's buildConfig.
-  const payloadConfig = buildPayloadConfig({ ...config, agents });
+  const payloadConfig = buildPayloadConfig({ ...config, agents, collections });
   const payloadSanitizedPromise = payloadBuildConfig(payloadConfig);
 
   return {
@@ -413,6 +412,7 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
     onInit: (config as any).onInit, // eslint-disable-line @typescript-eslint/no-explicit-any
     ai: sanitizedAI,
     agents,
+    chat,
     typescript: {
       autoGenerate: (config as { typescript?: { autoGenerate?: boolean } }).typescript?.autoGenerate !== false,
     },

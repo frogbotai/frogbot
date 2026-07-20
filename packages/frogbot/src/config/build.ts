@@ -6,7 +6,6 @@
 // export resolves to.
 
 import { sanitize } from './sanitize.js';
-import { ROLE_MARKERS } from '../types/collection.js';
 import type { FrogbotConfig } from '../types/config.js';
 import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
 
@@ -23,19 +22,7 @@ function validate(config: FrogbotConfig): void {
     throw new Error('[frogbot] `collections` is required and must be an array.');
   }
   if ((config as unknown as Record<string, unknown>).globals !== undefined) {
-    throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections with role markers instead.');
-  }
-
-  // Role-marker uniqueness — v0 warns instead of throwing.
-  for (const marker of ROLE_MARKERS) {
-    const matches = config.collections.filter((c) => (c as unknown as Record<string, unknown>)[marker] === true);
-    if (matches.length > 1) {
-      const slugs = matches.map((c) => c.slug).join(', ');
-      console.warn(
-        `[frogbot] multiple collections marked \`${marker}: true\` (${slugs}). ` +
-          `In v0 this is a warning; future versions will reject it.`,
-      );
-    }
+    throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections instead.');
   }
 }
 
@@ -59,10 +46,10 @@ async function runPlugins(config: FrogbotConfig): Promise<FrogbotConfig> {
  *
  * Pipeline:
  *   1. Validate required fields (`secret`, `db`, `collections`), reject
- *      `globals`, warn on duplicate role markers.
+ *      `globals`.
  *   2. Run plugins serially in array order.
- *   3. Sanitize — strip role markers, inject the `req.frogbot` bootstrap
- *      hook, wrap endpoints, produce FrogbotSanitizedConfig.
+ *   3. Sanitize — inject the `req.frogbot` bootstrap hook, wrap
+ *      endpoints, produce FrogbotSanitizedConfig.
  */
 export async function buildConfig(config: FrogbotConfig): Promise<FrogbotSanitizedConfig> {
   validate(config);

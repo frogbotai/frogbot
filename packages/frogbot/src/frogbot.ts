@@ -36,7 +36,7 @@ import type {
   StreamTextOpts,
   TranscribeOpts,
 } from './types/ai.js';
-import type { Collection, RoleMarker } from './types/collection.js';
+import type { Collection } from './types/collection.js';
 import type { CollectionSlug, TypedCollection } from './types/generated.js';
 import type { FrogbotRequest } from './types/request.js';
 import type { FrogbotSanitizedConfig } from './types/sanitized.js';
@@ -90,7 +90,6 @@ export type InitOptions = {
 };
 
 type FrogbotCustom = {
-  roleMarkers?: RoleMarker[];
   auth?: boolean;
 };
 
@@ -400,7 +399,6 @@ export class Frogbot {
     return {
       slug: c.slug,
       auth: fb.auth ?? false,
-      roleMarkers: fb.roleMarkers ?? [],
     };
   }
 }

@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { FrogbotConfig } from '../types/config.js';
 import type { CollectionConfig } from '../types/collection.js';
-import { ROLE_MARKERS } from '../types/collection.js';
 import { registerFrogbotInstance } from '../instanceRegistry.js';
 
 vi.mock('payload', () => ({
@@ -38,13 +37,13 @@ describe('frogbot sanitize', () => {
     const config = makeConfig({
       collections: [
         { slug: 'users', auth: true, fields: [] },
-        { slug: 'projects', project: true, fields: [] },
+        { slug: 'projects', fields: [] },
       ],
     });
     const result = sanitize(config);
     expect(result.collections).toEqual([
-      { slug: 'users', roleMarkers: [], auth: true },
-      { slug: 'projects', roleMarkers: ['project'], auth: false },
+      { slug: 'users', auth: true },
+      { slug: 'projects', auth: false },
     ]);
   });
 
@@ -58,38 +57,6 @@ describe('frogbot sanitize', () => {
     const config = makeConfig();
     const result = sanitize(config);
     expect(result._internal.payloadConfig).toBeInstanceOf(Promise);
-  });
-
-  it('the payload config strips role markers from collections', async () => {
-    const config = makeConfig({
-      collections: [
-        { slug: 'projects', project: true, fields: [] },
-        { slug: 'files', file: true, fields: [] },
-      ],
-    });
-    const result = sanitize(config);
-    const payloadConfig = await result._internal.payloadConfig;
-    for (const col of (payloadConfig as any).collections) {
-       
-      for (const marker of ROLE_MARKERS) {
-        expect((col as Record<string, unknown>)[marker]).toBeUndefined();
-      }
-    }
-  });
-
-  it('captures role markers into custom.frogbot.roleMarkers in the payload config', async () => {
-    const config = makeConfig({
-      collections: [
-        { slug: 'projects', project: true, fields: [] },
-        { slug: 'files', file: true, thread: true, fields: [] },
-      ],
-    });
-    const result = sanitize(config);
-    const payloadConfig = await result._internal.payloadConfig;
-    const projects = (payloadConfig as any).collections.find((c: any) => c.slug === 'projects'); // eslint-disable-line @typescript-eslint/no-explicit-any
-    const files = (payloadConfig as any).collections.find((c: any) => c.slug === 'files'); // eslint-disable-line @typescript-eslint/no-explicit-any
-    expect(projects.custom.frogbot.roleMarkers).toEqual(['project']);
-    expect(files.custom.frogbot.roleMarkers).toEqual(['file', 'thread']);
   });
 
   it('captures auth boolean state into custom.frogbot.auth in the payload config', async () => {
@@ -112,7 +79,6 @@ describe('frogbot sanitize', () => {
       collections: [
         {
           slug: 'projects',
-          project: true,
           custom: { myKey: 'hello' },
           fields: [],
         },
@@ -207,7 +173,6 @@ describe('frogbot sanitize', () => {
     const collections: CollectionConfig[] = [
       {
         slug: 'projects',
-        project: true,
         fields: [{ name: 'title', type: 'text' }],
       },
     ];
@@ -383,6 +348,78 @@ describe('frogbot sanitize', () => {
           }),
         ),
       ).toThrow("[frogbot] Agent slug 'support/admin' is not URL-safe.");
+    });
+  });
+
+  describe('chat', () => {
+    const ai = { providers: { openai: { apiKey: 'sk-test' } } };
+    const agents = [{ slug: 'support', model: 'openai/test', instructions: 'Help the user' }];
+
+    it('is disabled when neither markers nor agents are configured', () => {
+      const result = sanitize(makeConfig());
+      expect(result.chat).toEqual({ enabled: false });
+    });
+
+    it('is enabled with default slugs when agents are configured', () => {
+      const result = sanitize(makeConfig({ ai, agents }));
+      expect(result.chat).toEqual({ enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' });
+    });
+
+    it('resolves slugs from thread/message markers', () => {
+      const result = sanitize(
+        makeConfig({
+          collections: [
+            { slug: 'users', auth: true, fields: [] },
+            { slug: 'conversations', thread: true, fields: [] },
+            { slug: 'turns', message: true, fields: [] },
+          ],
+        }),
+      );
+      expect(result.chat).toEqual({ enabled: true, threadsSlug: 'conversations', messagesSlug: 'turns' });
+    });
+
+    it('strips markers from adopted collections in the payload config', async () => {
+      const result = sanitize(
+        makeConfig({
+          collections: [
+            { slug: 'users', auth: true, fields: [] },
+            { slug: 'conversations', thread: true, fields: [] },
+          ],
+        }),
+      );
+      const payloadConfig = await result._internal.payloadConfig;
+      const conversations = (payloadConfig as any).collections.find((c: any) => c.slug === 'conversations'); // eslint-disable-line @typescript-eslint/no-explicit-any
+      expect(conversations.thread).toBeUndefined();
+    });
+
+    it('injects chat collections into the payload config and collections metadata', async () => {
+      const result = sanitize(makeConfig({ ai, agents }));
+      expect(result.collections.map((c) => c.slug)).toEqual(['users', 'threads', 'messages']);
+      const payloadConfig = await result._internal.payloadConfig;
+      const payloadSlugs = (payloadConfig as any).collections.map((c: any) => c.slug); // eslint-disable-line @typescript-eslint/no-explicit-any
+      expect(payloadSlugs).toEqual(['users', 'threads', 'messages']);
+    });
+
+    it('injected chat collections get the bootstrap beforeOperation hook', async () => {
+      const result = sanitize(makeConfig({ ai, agents }));
+      const payloadConfig = await result._internal.payloadConfig;
+      const threads = (payloadConfig as any).collections.find((c: any) => c.slug === 'threads'); // eslint-disable-line @typescript-eslint/no-explicit-any
+      expect(threads.hooks?.beforeOperation?.length).toBeGreaterThan(0);
+    });
+
+    it('throws when an unmarked collection occupies a default chat slug', () => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai,
+            agents,
+            collections: [
+              { slug: 'users', auth: true, fields: [] },
+              { slug: 'threads', fields: [] },
+            ],
+          }),
+        ),
+      ).toThrow("[frogbot] Collection slug 'threads' conflicts with the default chat thread collection.");
     });
   });
 
