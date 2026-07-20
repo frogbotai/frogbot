@@ -1,17 +1,16 @@
 // FrogBot's sanitized config shape — the output of `buildConfig`.
 //
-// Preserves FrogBot metadata (role markers, auth flags, onInit) through
-// the sanitization boundary. The Payload config is stored internally and
+// Preserves FrogBot metadata (auth flags, onInit) through the
+// sanitization boundary. The Payload config is stored internally and
 // never exposed to users.
 
 import type { Frogbot } from '../frogbot.js';
 import type { AgentConfig } from './agent.js';
 import type { SanitizedAIConfig } from './ai.js';
-import type { RoleMarker } from './collection.js';
+import type { SanitizedChatConfig } from './chat.js';
 
 export type SanitizedCollectionMeta = {
   slug: string;
-  roleMarkers: ReadonlyArray<RoleMarker>;
   auth: boolean;
 };
 
@@ -22,6 +21,7 @@ export type FrogbotSanitizedConfig = {
   onInit?: (frogbot: Frogbot) => Promise<void> | void;
   ai?: SanitizedAIConfig;
   agents?: AgentConfig[];
+  chat: SanitizedChatConfig;
   typescript?: {
     autoGenerate?: boolean;
   };

@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-import { buildGeneratedTypesFooter } from './generateTypes.js';
+import { afterAll, describe, expect, it } from 'vitest';
+
+import { buildGeneratedTypesFooter, writeGeneratedTypes } from './generateTypes.js';
 
 describe('frogbot generate:types', () => {
   it.todo('loads config from cwd via loadConfig');
@@ -28,5 +32,36 @@ describe('frogbot generate:types', () => {
 
   it('emits an empty agent map when no agents are configured', () => {
     expect(buildGeneratedTypesFooter([])).toContain('agents: {};');
+  });
+
+  describe('generated output', () => {
+    let dir: string;
+
+    afterAll(async () => {
+      await rm(dir, { recursive: true, force: true });
+    });
+
+    it('emits Thread/Message interfaces with UIMessage-typed parts for injected chat collections', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-types-'));
+      const { buildConfig } = await import('../config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [{ slug: 'users', auth: true, fields: [] }],
+        ai: { providers: { openai: { apiKey: 'sk-test' } } },
+        agents: [{ slug: 'assistant', model: 'openai/gpt-4o-mini', instructions: 'Assist.' }],
+      });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const output = await readFile(outputPath, 'utf-8');
+
+      expect(output).toContain('export interface Thread {');
+      expect(output).toContain('export interface Message {');
+      expect(output).toContain("parts: import('frogbot').UIMessage['parts'];");
+      expect(output).toContain('threads: Thread;');
+      expect(output).toContain('messages: Message;');
+      expect(output).toContain("role: 'user' | 'assistant' | 'system';");
+      expect(output).toContain('"assistant": unknown;');
+    });
   });
 });

@@ -59,38 +59,6 @@ describe('frogbot buildConfig', () => {
         '[frogbot] `globals` is not a FrogBot concept',
       );
     });
-
-    it('warns (does not throw) when two collections share a role marker', async () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const config = makeConfig({
-        collections: [
-          { slug: 'users', auth: true, fields: [] },
-          { slug: 'proj-a', project: true, fields: [] },
-          { slug: 'proj-b', project: true, fields: [] },
-        ],
-      });
-      await buildConfig(config);
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('multiple collections marked `project: true`'));
-      warnSpy.mockRestore();
-    });
-
-    it('does not warn about role markers when they are unique', async () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const config = makeConfig({
-        collections: [
-          { slug: 'users', auth: true, fields: [] },
-          { slug: 'projects', project: true, fields: [] },
-          { slug: 'files', file: true, fields: [] },
-        ],
-      });
-      await buildConfig(config);
-      // The email adapter warning may fire; we only assert no role marker warning.
-      const roleMarkerWarnings = warnSpy.mock.calls.filter(
-        (call) => typeof call[0] === 'string' && call[0].includes('multiple collections marked'),
-      );
-      expect(roleMarkerWarnings).toHaveLength(0);
-      warnSpy.mockRestore();
-    });
   });
 
   describe('plugin pipeline', () => {
@@ -196,19 +164,6 @@ describe('frogbot buildConfig', () => {
       expect(result._internal.payloadConfig).toBeInstanceOf(Promise);
     });
 
-    it('strips role markers from the payload config collections', async () => {
-      const config = makeConfig({
-        collections: [
-          { slug: 'users', auth: true, fields: [] },
-          { slug: 'projects', project: true, fields: [] },
-        ],
-      });
-      const result = await buildConfig(config);
-      const payloadConfig = await result._internal.payloadConfig;
-      const projects = (payloadConfig as any).collections.find((c: any) => c.slug === 'projects');
-      expect(projects.project).toBeUndefined();
-    });
-
     it('FrogBot `plugins` key is not present in payload config', async () => {
       const config = makeConfig({ plugins: [(c) => c] });
       const result = await buildConfig(config);
@@ -220,8 +175,8 @@ describe('frogbot buildConfig', () => {
       const config = makeConfig({
         collections: [
           { slug: 'users', auth: true, fields: [] },
-          { slug: 'projects', project: true, fields: [] },
-          { slug: 'files', file: true, fields: [] },
+          { slug: 'projects', fields: [] },
+          { slug: 'files', fields: [] },
         ],
       });
       const result = await buildConfig(config);
@@ -243,7 +198,6 @@ describe('frogbot buildConfig', () => {
       const collections: CollectionConfig[] = [
         {
           slug: 'projects',
-          project: true,
           fields: [{ name: 'title', type: 'text' }],
         },
         { slug: 'users', auth: true, fields: [] },
@@ -273,32 +227,6 @@ describe('frogbot buildConfig', () => {
       const config = makeConfig({ collections: [] });
       const result = await buildConfig(config);
       expect(result.collections).toEqual([]);
-    });
-
-    it('handles collection with all four role markers', async () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const config = makeConfig({
-        collections: [
-          {
-            slug: 'everything',
-            project: true,
-            file: true,
-            thread: true,
-            message: true,
-            fields: [],
-          },
-        ],
-      });
-      const result = await buildConfig(config);
-      expect(result.collections[0].roleMarkers).toEqual(['project', 'file', 'thread', 'message']);
-      const payloadConfig = await result._internal.payloadConfig;
-      const col = (payloadConfig as any).collections.find((c: any) => c.slug === 'everything');
-      expect(col.project).toBeUndefined();
-      expect(col.file).toBeUndefined();
-      expect(col.thread).toBeUndefined();
-      expect(col.message).toBeUndefined();
-      expect(col.custom.frogbot.roleMarkers).toEqual(['project', 'file', 'thread', 'message']);
-      warnSpy.mockRestore();
     });
   });
 });

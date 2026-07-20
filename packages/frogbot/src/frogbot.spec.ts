@@ -20,7 +20,7 @@ function createMockPayload() {
       collections: [
         {
           slug: 'posts',
-          custom: { frogbot: { roleMarkers: ['editor'], auth: false } },
+          custom: { frogbot: { auth: false } },
         },
         { slug: 'users', custom: { frogbot: { auth: true } } },
         { slug: 'payload-preferences', custom: {} },
@@ -73,10 +73,11 @@ function createMockPayload() {
 function makeConfig(): FrogbotSanitizedConfig {
   return {
     collections: [
-      { slug: 'posts', roleMarkers: ['editor'] as any, auth: false }, // eslint-disable-line @typescript-eslint/no-explicit-any
-      { slug: 'users', roleMarkers: [], auth: true },
+      { slug: 'posts', auth: false },
+      { slug: 'users', auth: true },
     ],
     secret: 'test-secret-min-32-chars-long-for-jwt',
+    chat: { enabled: false },
     _internal: {
       payloadConfig: Promise.resolve({} as any), // eslint-disable-line @typescript-eslint/no-explicit-any
     },
@@ -123,12 +124,6 @@ describe('Frogbot class', () => {
       const frogbot = await setup();
       expect(frogbot.collections['payload-preferences']).toBeUndefined();
       expect(frogbot.collections['payload-migrations']).toBeUndefined();
-    });
-
-    it('copies custom.frogbot.roleMarkers onto each Collection entry', async () => {
-      const frogbot = await setup();
-      expect(frogbot.collections['posts'].roleMarkers).toEqual(['editor']);
-      expect(frogbot.collections['users'].roleMarkers).toEqual([]);
     });
 
     it('copies custom.frogbot.auth onto each Collection entry', async () => {

@@ -1,0 +1,51 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`defaultThreadsCollection > produces the base config shape 1`] = `
+{
+  "access": {
+    "create": [Function],
+    "delete": [Function],
+    "read": [Function],
+    "update": [Function],
+  },
+  "admin": {
+    "defaultColumns": [
+      "title",
+      "user",
+      "agent",
+      "lastMessageAt",
+    ],
+    "group": "Chat",
+    "useAsTitle": "title",
+  },
+  "fields": [
+    {
+      "name": "title",
+      "type": "text",
+    },
+    {
+      "hooks": {
+        "beforeChange": [
+          [Function],
+        ],
+      },
+      "index": true,
+      "name": "user",
+      "relationTo": "users",
+      "type": "relationship",
+    },
+    {
+      "index": true,
+      "name": "agent",
+      "type": "text",
+    },
+    {
+      "index": true,
+      "name": "lastMessageAt",
+      "type": "date",
+    },
+  ],
+  "slug": "threads",
+  "trash": true,
+}
+`;

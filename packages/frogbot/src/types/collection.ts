@@ -34,18 +34,18 @@ export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {
   /** Field definitions with frogbot's hook/access types. */
   fields: Field[];
 
-  /** Role markers — first-class typed booleans. Sanitization strips these
-   *  before the config reaches Payload. Field contribution per role lands
-   *  in a later version. */
-  project?: boolean;
-  file?: boolean;
+  /** Marks this collection as the chat thread collection. FrogBot merges
+   *  its base thread fields in; the slug stays yours. At most one. */
   thread?: boolean;
+
+  /** Marks this collection as the chat message collection. FrogBot merges
+   *  its base message fields in; the slug stays yours. At most one. */
   message?: boolean;
 };
 
-/** The four FrogBot role markers. Internal helpers use this list. */
-export const ROLE_MARKERS = ['project', 'file', 'thread', 'message'] as const;
-export type RoleMarker = (typeof ROLE_MARKERS)[number];
+/** Chat role markers. Sanitization strips these before Payload. */
+export const CHAT_ROLE_MARKERS = ['thread', 'message'] as const;
+export type ChatRoleMarker = (typeof CHAT_ROLE_MARKERS)[number];
 
 /**
  * Runtime view of a registered collection. Parallel to `CollectionConfig`
@@ -53,14 +53,12 @@ export type RoleMarker = (typeof ROLE_MARKERS)[number];
  * FrogBot instance). Surfaced via `FrogbotInstance.collections`.
  *
  * Intentionally mirrors Payload's `Collection`/`CollectionConfig` split —
- * same concept, FrogBot vocabulary (role markers, simple auth boolean)
- * instead of Payload's sanitized internals.
+ * same concept, FrogBot vocabulary (simple auth boolean) instead of
+ * Payload's sanitized internals.
  */
 export type Collection = {
   /** Collection slug. Also the key in `FrogbotInstance.collections`. */
   slug: string;
   /** True if this collection was authored with auth enabled. */
   auth: boolean;
-  /** Role markers carried by this collection at config time. */
-  roleMarkers: ReadonlyArray<RoleMarker>;
 };

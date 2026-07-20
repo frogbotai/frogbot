@@ -1,0 +1,91 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`defaultMessagesCollection > produces the base config shape 1`] = `
+{
+  "access": {
+    "create": [Function],
+    "delete": [Function],
+    "read": [Function],
+    "update": [Function],
+  },
+  "admin": {
+    "defaultColumns": [
+      "thread",
+      "role",
+      "createdAt",
+    ],
+    "group": "Chat",
+  },
+  "fields": [
+    {
+      "index": true,
+      "name": "thread",
+      "relationTo": "threads",
+      "required": true,
+      "type": "relationship",
+    },
+    {
+      "name": "role",
+      "options": [
+        "user",
+        "assistant",
+        "system",
+      ],
+      "required": true,
+      "type": "select",
+    },
+    {
+      "name": "parts",
+      "required": true,
+      "type": "json",
+      "typescriptSchema": [
+        [Function],
+      ],
+    },
+    {
+      "name": "metadata",
+      "type": "json",
+    },
+    {
+      "access": {
+        "create": [Function],
+        "update": [Function],
+      },
+      "fields": [
+        {
+          "name": "inputTokens",
+          "type": "number",
+        },
+        {
+          "name": "outputTokens",
+          "type": "number",
+        },
+        {
+          "name": "totalTokens",
+          "type": "number",
+        },
+        {
+          "name": "reasoningTokens",
+          "type": "number",
+        },
+        {
+          "name": "cachedInputTokens",
+          "type": "number",
+        },
+        {
+          "name": "model",
+          "type": "text",
+        },
+        {
+          "name": "provider",
+          "type": "text",
+        },
+      ],
+      "name": "usage",
+      "type": "group",
+    },
+  ],
+  "slug": "messages",
+  "trash": true,
+}
+`;

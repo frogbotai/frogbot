@@ -20,8 +20,6 @@ export { getFrogbot, getCachedFrogbot } from './getFrogbot.js';
 export { buildConfig } from './config/build.js';
 export type { FrogbotSanitizedConfig } from './types/sanitized.js';
 
-export { ROLE_MARKERS } from './types/collection.js';
-
 // ---------------------------------------------------------------------------
 // Owned types
 // ---------------------------------------------------------------------------
@@ -71,12 +69,12 @@ export type {
   AgentRegistry,
 } from './types/agent.js';
 export { isStepCount, stepCountIs, Output } from 'ai';
-export type { StopCondition } from 'ai';
+export type { StopCondition, UIMessage } from 'ai';
 export type {
   RootAdminConfig,
   RootAdminMetaConfig,
 } from './types/admin.js';
-export type { CollectionConfig, Collection, RoleMarker } from './types/collection.js';
+export type { CollectionConfig, Collection } from './types/collection.js';
 export type {
   GeneratedTypes,
   UntypedFrogbotTypes,
