@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -35,24 +35,59 @@ if (!current) throw new Error('Root package.json has no "version" field')
 
 const next = inc(current, bump)
 
-const targets = [{ path: rootPath, json: root, name: root.name }]
 const packagesDir = path.join(ROOT, 'packages')
-for (const dir of readdirSync(packagesDir)) {
-  const pkgPath = path.join(packagesDir, dir, 'package.json')
-  let json
-  try {
-    json = readJSON(pkgPath)
-  } catch {
-    continue
+const packageDirs = readdirSync(packagesDir).map((dir) => path.join(packagesDir, dir))
+
+const workspaceNames = new Set()
+for (const dir of packageDirs) {
+  const pkgPath = path.join(dir, 'package.json')
+  if (!existsSync(pkgPath)) continue
+  workspaceNames.add(readJSON(pkgPath).name)
+}
+
+const consumerDirs = []
+for (const group of ['examples', 'templates']) {
+  const groupDir = path.join(ROOT, group)
+  if (!existsSync(groupDir)) continue
+  for (const dir of readdirSync(groupDir)) {
+    consumerDirs.push(path.join(groupDir, dir))
   }
-  if (json.private) continue
+}
+
+const targets = [{ path: rootPath, json: root, name: root.name }]
+for (const dir of [...packageDirs, ...consumerDirs]) {
+  const pkgPath = path.join(dir, 'package.json')
+  if (!existsSync(pkgPath)) continue
+  const json = readJSON(pkgPath)
   targets.push({ path: pkgPath, json, name: json.name })
+}
+
+const DEP_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies']
+
+function pinWorkspaceDeps(json) {
+  const changed = []
+  for (const field of DEP_FIELDS) {
+    const deps = json[field]
+    if (!deps) continue
+    for (const [name, range] of Object.entries(deps)) {
+      if (!workspaceNames.has(name)) continue
+      if (typeof range !== 'string' || range.startsWith('workspace:')) continue
+      if (range === next) continue
+      changed.push(`${name}@${range}->${next}`)
+      deps[name] = next
+    }
+  }
+  return changed
 }
 
 console.log(`\nBumping ${current} -> ${next} (${bump})\n`)
 for (const { path: file, json, name } of targets) {
-  console.log(`  ${name.padEnd(36)} ${json.version} -> ${next}`)
+  const from = json.version
   json.version = next
+  const deps = pinWorkspaceDeps(json)
+  const rel = path.relative(ROOT, file)
+  console.log(`  ${(name ?? rel).padEnd(36)} ${from} -> ${next}`)
+  for (const d of deps) console.log(`      dep ${d}`)
   writeJSON(file, json)
 }
 console.log(`\nDone. ${targets.length} package.json files updated.\n`)
