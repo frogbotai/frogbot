@@ -20,6 +20,7 @@
 //   HOST  → bind host (default 0.0.0.0)
 
 import { serve, type ServerType } from '@hono/node-server';
+import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 import { createGateway } from '../gateway.js';
@@ -182,7 +183,22 @@ async function main() {
   installGracefulShutdown({ server, flush: flushTracing });
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+export function isCliEntry(
+  moduleUrl: string,
+  argvPath: string | undefined,
+  realpath: (path: string) => string = realpathSync,
+): boolean {
+  if (!argvPath) return false;
+  let resolved = argvPath;
+  try {
+    resolved = realpath(argvPath);
+  } catch {
+    resolved = argvPath;
+  }
+  return moduleUrl === pathToFileURL(resolved).href;
+}
+
+if (isCliEntry(import.meta.url, process.argv[1])) {
   main().catch((err) => {
     console.error(err instanceof Error ? err.message : String(err));
     process.exit(1);
