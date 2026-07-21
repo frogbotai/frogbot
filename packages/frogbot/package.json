@@ -1,6 +1,6 @@
 {
   "name": "frogbot",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "FrogBot core: typed configuration surface that wraps Payload.",
   "license": "MIT",
   "author": "Colby Gilbert",

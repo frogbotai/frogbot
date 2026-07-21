@@ -1,6 +1,6 @@
 {
   "name": "frogbot-example-basic-agent",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "Minimal FrogBot example: one agent, one tool, SQLite storage. No Docker required.",
   "license": "MIT",
