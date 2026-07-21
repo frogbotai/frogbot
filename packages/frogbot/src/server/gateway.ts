@@ -5,6 +5,12 @@ type HandleGatewayRequestArgs = {
   request: Request;
 };
 
+export type GatewayHandler = (request: Request) => Promise<Response>;
+
+export function createGatewayHandler(frogbot: Frogbot): GatewayHandler {
+  return (request) => handleGatewayRequest({ frogbot, request });
+}
+
 export async function handleGatewayRequest({ frogbot, request }: HandleGatewayRequestArgs): Promise<Response> {
   const gateway = frogbot.gateway;
   const ai = frogbot.config.ai;
