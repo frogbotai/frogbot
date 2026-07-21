@@ -1,19 +1,18 @@
 // Provider definition: generic OpenAI-compatible endpoints.
 //
-// Unlike the fixed vendors in `providers/registry.ts`, openai-compatible
-// providers are declared as an array of named configs in the gateway config:
+// Any key in the gateway config's `providers` map that isn't one of the
+// built-in provider names is treated as a generic OpenAI-compatible endpoint.
+// The map key becomes the provider name and `<name>/<model>` dispatch prefix:
 //
 //   {
-//     openaiCompatible: [
-//       { name: 'ollama',  baseURL: 'http://localhost:11434/v1' },
-//       { name: 'lm-studio', baseURL: 'http://localhost:1234/v1' },
-//     ]
+//     providers: {
+//       ollama: { baseURL: 'http://localhost:11434/v1' },
+//       'lm-studio': { baseURL: 'http://localhost:1234/v1' },
+//     }
 //   }
 //
-// Each entry becomes a first-class provider under its declared `name`, and
-// is dispatched via the usual `<name>/<model>` canonical id. Names that
-// shadow a built-in provider (e.g. `openai`, `groq`) are rejected at
-// config-parse time.
+// `baseURL` is required — it's what distinguishes a deliberate custom endpoint
+// from a typo of a built-in provider name.
 //
 // This provider is intentionally NOT part of env auto-discovery — there's
 // no reasonable way to derive a base URL from env alone, and multi-endpoint
@@ -25,12 +24,10 @@ import {
 } from '@ai-sdk/openai-compatible';
 
 /**
- * A single openai-compatible endpoint declaration. The `name` becomes the
- * canonical prefix (`<name>/<model>`) in the gateway's dispatch table.
+ * A single openai-compatible endpoint declaration. The provider name comes
+ * from the `providers` map key it's declared under.
  */
 export type OpenAICompatibleConfig = {
-  /** Unique provider name — becomes the `<name>/<model>` dispatch prefix. */
-  name: string;
   /** Base URL of the OpenAI-compatible API (typically ending in `/v1`). */
   baseURL: string;
   /** Optional API key sent as `Authorization: Bearer <apiKey>`. */
@@ -46,10 +43,11 @@ export type OpenAICompatibleConfig = {
  * Called by the registry builder — not intended for direct use.
  */
 export function buildOpenAICompatibleProvider(
+  name: string,
   cfg: OpenAICompatibleConfig,
 ): OpenAICompatibleProvider {
   return createOpenAICompatible({
-    name: cfg.name,
+    name,
     baseURL: cfg.baseURL,
     ...(cfg.apiKey !== undefined && { apiKey: cfg.apiKey }),
     ...(cfg.headers !== undefined && { headers: cfg.headers }),

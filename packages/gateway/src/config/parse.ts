@@ -105,11 +105,8 @@ export function mergeConfigs(base: GatewayConfig, overlay: GatewayConfig): Gatew
         : cfg;
   }
 
-  const openaiCompatible = dedupeByName([...(base.openaiCompatible ?? []), ...(overlay.openaiCompatible ?? [])]);
-
   return {
     providers,
-    ...(openaiCompatible.length > 0 ? { openaiCompatible } : {}),
     enabled_providers: overlay.enabled_providers ?? base.enabled_providers,
     disabled_providers: overlay.disabled_providers ?? base.disabled_providers,
     maxBodyBytes: overlay.maxBodyBytes ?? base.maxBodyBytes,
@@ -139,14 +136,6 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
-function dedupeByName<T extends { name: string }>(entries: T[]): T[] {
-  const map = new Map<string, T>();
-  for (const e of entries) {
-    map.set(e.name, e);
-  } // later wins
-  return [...map.values()];
-}
-
 // ---------------------------------------------------------------------------
 // Allow/deny filtering
 // ---------------------------------------------------------------------------
@@ -158,9 +147,6 @@ function applyAllowDeny(config: GatewayConfig): GatewayConfig {
   const validNames = new Set<string>(PROVIDER_NAMES);
   for (const name of Object.keys(config.providers ?? {})) {
     validNames.add(name);
-  }
-  for (const entry of config.openaiCompatible ?? []) {
-    validNames.add(entry.name);
   }
 
   const issues: string[] = [];
@@ -188,7 +174,6 @@ function applyAllowDeny(config: GatewayConfig): GatewayConfig {
       (providers as Record<string, unknown>)[name] = cfg;
     }
   }
-  const openaiCompatible = (config.openaiCompatible ?? []).filter((e) => keep(e.name));
 
   const rest = { ...config };
   delete rest.enabled_providers;
@@ -196,7 +181,6 @@ function applyAllowDeny(config: GatewayConfig): GatewayConfig {
   return {
     ...rest,
     providers,
-    openaiCompatible: openaiCompatible.length > 0 ? openaiCompatible : undefined,
   };
 }
 

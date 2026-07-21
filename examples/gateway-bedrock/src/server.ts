@@ -28,13 +28,10 @@ const bedrock = bedrockFromEnv();
 const gateway = createGateway({
   providers: {
     ...(bedrock ? { 'amazon-bedrock': bedrock } : {}),
-  },
-  openaiCompatible: [
-    {
-      name: 'ollama',
+    ollama: {
       baseURL: process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434/v1',
     },
-  ],
+  },
   hooks: {
     afterOperation: [
       ({ operation, model, usage, durationMs }) => {
@@ -48,7 +45,7 @@ const gateway = createGateway({
 
 const port = Number(process.env.PORT ?? 3939);
 
-serve({ fetch: (request: Request) => gateway.handler(request), port }, (info) => {
+serve({ fetch: gateway.handler, port }, (info) => {
   console.log(`gateway listening on http://localhost:${info.port}/v1`);
   console.log(`providers: ${[bedrock ? 'amazon-bedrock' : null, 'ollama'].filter(Boolean).join(', ')}`);
 });

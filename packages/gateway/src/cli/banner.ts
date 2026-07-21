@@ -32,10 +32,9 @@ export function startupBanner(args: StartupBannerArgs): string {
 }
 
 function configuredProviders(config: GatewayConfig): string[] {
-  return [
-    ...Object.keys(config.providers).filter((key) => config.providers[key as keyof ProviderConfigMap] != null),
-    ...(config.openaiCompatible ?? []).map((entry) => entry.name),
-  ];
+  return Object.keys(config.providers).filter(
+    (key) => config.providers[key as keyof ProviderConfigMap] != null,
+  );
 }
 
 function modalities(config: GatewayConfig): string[] {

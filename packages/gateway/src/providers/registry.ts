@@ -158,15 +158,45 @@ export type AIProvider = {
 };
 
 /**
- * Per-provider config map. Each key accepts either the provider's typed
- * shorthand config (built for you) or a pre-built AI SDK provider instance
- * (used as-is — the escape hatch for custom `fetch`, middleware, etc.).
- * Instance passthrough is `.ts`-config-only; JSON configs cannot express it.
+ * Per-provider config map — the loose *runtime* representation used internally
+ * (merge, validation, registry build). Known provider keys carry their precise
+ * config or a pre-built instance; any other key is a generic OpenAI-compatible
+ * endpoint. The public entry points (`createGateway`, `defineConfig`) apply the
+ * stricter per-key {@link ProvidersInput} constraint so authoring a config
+ * literal gets exact known-key checking that an index signature can't express
+ * (see microsoft/TypeScript#17867).
  */
-export type ProviderConfigMap = { [K in ProviderName]?: ConfigOf<K> | InstanceOf<K> };
+export type ProviderConfigMap = { [K in ProviderName]?: ConfigOf<K> | InstanceOf<K> } & {
+  [name: string]: OpenAICompatibleConfig | AIProvider | undefined;
+};
+
+/**
+ * Authoring constraint for a `providers` object literal. Applied via a generic
+ * on the public entry points. For each key the caller actually writes:
+ *   - a known provider name → that provider's typed config or a pre-built instance;
+ *   - any other key → a generic {@link OpenAICompatibleConfig} (`baseURL` required)
+ *     or a pre-built provider instance (duck-typed via {@link ProviderInstanceShape}).
+ * This is the per-key branch a string index signature cannot do. The unknown-key
+ * branch intentionally uses the minimal instance shape rather than {@link AIProvider}:
+ * the full union of built-in instance types can contain an `any`, which would
+ * collapse the branch and defeat the `baseURL`-required check.
+ */
+export type ProvidersInput<C> = {
+  [K in keyof C]: K extends ProviderName
+    ? ConfigOf<K> | InstanceOf<K>
+    : OpenAICompatibleConfig | ProviderInstanceShape;
+};
+
+/** Minimal duck-typed provider instance — mirrors {@link isProviderInstance}. */
+export type ProviderInstanceShape = {
+  languageModel: (modelId: string) => unknown;
+  embeddingModel: (modelId: string) => unknown;
+};
 
 /** Constructed registry: each key carries that provider's specific instance type. */
-export type ProviderRegistry = { [K in ProviderName]?: InstanceOf<K> };
+export type ProviderRegistry = { [K in ProviderName]?: InstanceOf<K> } & {
+  [name: string]: AIProvider | undefined;
+};
 
 // ---------------------------------------------------------------------------
 // Builder (eager — used by createGateway)
@@ -191,16 +221,13 @@ export function isProviderInstance(value: unknown): value is AIProvider {
   );
 }
 
-export function buildProviderRegistry(
-  configProviders: ProviderConfigMap,
-  openaiCompatible?: OpenAICompatibleConfig[],
-): ProviderRegistry {
+export function buildProviderRegistry(configProviders: ProviderConfigMap): ProviderRegistry {
   // Null prototype: prevents prototype-chain lookups (`constructor`, `__proto__`,
   // `toString`, ...) from resolving to Object.prototype members, and prevents a
-  // hostile openai-compatible `name` from mutating Object.prototype.
+  // hostile provider `name` from mutating Object.prototype.
   const registry: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
-  for (const name of PROVIDER_NAMES) {
-    const cfg = configProviders[name];
+  const knownNames = new Set<string>(PROVIDER_NAMES);
+  for (const [name, cfg] of Object.entries(configProviders)) {
     if (cfg === undefined) {
       continue;
     }
@@ -209,16 +236,15 @@ export function buildProviderRegistry(
     // constructed and configured it.
     if (isProviderInstance(cfg)) {
       registry[name] = cfg;
+    } else if (knownNames.has(name)) {
+      registry[name] = buildOne(name as ProviderName, cfg as ConfigOf<ProviderName>);
     } else {
-      registry[name] = buildOne(name, cfg as ConfigOf<typeof name>);
+      // Any key that isn't a built-in provider is a generic OpenAI-compatible
+      // endpoint. The map key supplies the provider name.
+      registry[name] = buildOpenAICompatibleProvider(name, cfg as OpenAICompatibleConfig);
     }
   }
-  if (openaiCompatible) {
-    for (const entry of openaiCompatible) {
-      registry[entry.name] = buildOpenAICompatibleProvider(entry);
-    }
-  }
-  return registry;
+  return registry as ProviderRegistry;
 }
 
 // ---------------------------------------------------------------------------
@@ -320,7 +346,7 @@ export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
   return {
     providerName,
     modelName: canonicalIdResolvers.get(providerName)?.(modelName) ?? modelName,
-    instance: instance as AIProvider,
+    instance,
   };
 }
 

@@ -26,6 +26,7 @@ import {
   type GatewaySpeechModel,
   type GatewayTranscriptionModel,
   type ProviderRegistry,
+  type ProvidersInput,
 } from './providers/registry.js';
 import type { Hooks, HookOperation, HookUsage, OperationBase } from './hooks.js';
 import { runHooks } from './hooks.js';
@@ -151,12 +152,14 @@ export type Gateway = {
  * app.mount('/v1', gw.handler)
  * ```
  */
-export function createGateway(config: GatewayConfig): Gateway {
+export function createGateway<const P extends ProvidersInput<P>>(
+  config: Omit<GatewayConfig, 'providers'> & { providers: P },
+): Gateway {
   // finalizeConfig applies enabled_providers / disabled_providers filtering
   // before validation. Idempotent (kParsed), so the CLI's own finalizeConfig
   // call is a no-op here.
-  const validated = finalizeConfig(config);
-  const registry = buildProviderRegistry(validated.providers, validated.openaiCompatible);
+  const validated = finalizeConfig(config as GatewayConfig);
+  const registry = buildProviderRegistry(validated.providers);
 
   // Shared modality resolvers — one per operation kind, closed over `registry`.
   // Both the public `gateway.xModel(id)` getters and `gateway.operation(...)`

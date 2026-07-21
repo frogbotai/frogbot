@@ -4,8 +4,7 @@ import { buildOpenAICompatibleProvider } from './index.js';
 
 describe('buildOpenAICompatibleProvider', () => {
   it('builds a provider instance exposing languageModel()', () => {
-    const provider = buildOpenAICompatibleProvider({
-      name: 'ollama',
+    const provider = buildOpenAICompatibleProvider('ollama', {
       baseURL: 'http://localhost:11434/v1',
     });
     expect(typeof provider.languageModel).toBe('function');
@@ -14,8 +13,7 @@ describe('buildOpenAICompatibleProvider', () => {
   });
 
   it('supports apiKey + headers passthrough', () => {
-    const provider = buildOpenAICompatibleProvider({
-      name: 'custom',
+    const provider = buildOpenAICompatibleProvider('custom', {
       baseURL: 'https://example.com/v1',
       apiKey: 'secret',
       headers: { 'x-custom': '1' },
