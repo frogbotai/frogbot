@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/storage-azure",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Azure Blob Storage adapter for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

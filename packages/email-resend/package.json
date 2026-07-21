@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/email-resend",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Resend email adapter for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
