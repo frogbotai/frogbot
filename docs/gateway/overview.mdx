@@ -1,0 +1,92 @@
+---
+title: "Gateway"
+sidebarTitle: "Overview"
+description: "One OpenAI-compatible endpoint, every provider — standalone, self-hostable, and MIT licensed."
+keywords: ["gateway", "@frogbotai/gateway", "AI SDK", "OpenAI-compatible", "self-hosted"]
+---
+
+`@frogbotai/gateway` is a standalone AI gateway built on the Vercel AI SDK. Point any OpenAI-compatible client at it and route to OpenAI, Anthropic, Google, Groq, Bedrock, Vertex, or 30+ other providers through one endpoint. It has zero FrogBot dependencies — run it from the CLI, or embed it as a fetch handler inside any server you already have.
+
+---
+
+## Run it standalone
+
+```bash
+OPENAI_API_KEY=sk-... npx @frogbotai/gateway
+```
+
+The CLI auto-discovers providers from environment variables and listens on `0.0.0.0:3939` by default. If no providers are found, it exits with an error listing every env var it checked. See [Configuration](/gateway/configuration) for `--port`, `--config`, and the `init` scaffolding command.
+
+Model IDs are namespaced as `<provider>/<model>` — the prefix tells the gateway which provider to dispatch to.
+
+```ts
+import OpenAI from 'openai'
+
+const client = new OpenAI({
+  apiKey: 'unused', // the gateway holds the upstream keys
+  baseURL: 'http://localhost:3939/v1'
+})
+
+const res = await client.chat.completions.create({
+  model: 'anthropic/claude-sonnet-4-5',
+  messages: [{ role: 'user', content: 'Hello' }]
+})
+```
+
+---
+
+## Embed it
+
+`createGateway()` returns a WinterCG fetch handler — mount it in Hono, Next.js, Bun, Deno, or Cloudflare Workers.
+
+```ts
+import { serve } from '@hono/node-server'
+import { createGateway } from '@frogbotai/gateway'
+
+const gw = createGateway({
+  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } }
+})
+
+serve({ fetch: gw.handler, port: 3939 })
+```
+
+See [Embedding](/gateway/embedding) for framework-specific examples.
+
+---
+
+## Routes
+
+| Route | Compatibility | Streaming |
+| --- | --- | --- |
+| `POST /v1/chat/completions` | OpenAI Chat Completions | Yes |
+| `POST /v1/responses` | OpenAI Responses API | Yes |
+| `POST /v1/messages` | Anthropic Messages API | Yes |
+| `POST /v1/embeddings` | OpenAI Embeddings | — |
+| `POST /v1/images/generations` | OpenAI Images | — |
+| `POST /v1/audio/speech` | OpenAI Speech | — |
+| `POST /v1/audio/transcriptions` | OpenAI Transcriptions | — |
+| `POST /v1/rerank` | Reranking | — |
+| `POST /v1/videos/generations` | Video generation | — |
+| `GET /v1/models` | OpenAI Models (catalog discovery) | — |
+| `GET /health` | Liveness probe | — |
+
+Routes are also served at their bare paths (`/chat/completions`), so mounting the handler under any prefix keeps both the prefixed and bare paths working.
+
+---
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Providers" href="/gateway/providers">
+    36+ built-in providers, plus any self-hosted OpenAI-compatible endpoint.
+  </Card>
+  <Card title="Configuration" href="/gateway/configuration">
+    `gateway.config.ts`, CLI flags, and allow/deny lists.
+  </Card>
+  <Card title="Hooks" href="/gateway/hooks">
+    The five-phase lifecycle for auth, billing, and logging.
+  </Card>
+  <Card title="Observability" href="/gateway/observability">
+    Structured logging and OpenTelemetry tracing.
+  </Card>
+</CardGroup>

@@ -141,7 +141,8 @@
           {
             "group": "Ecosystem",
             "pages": [
-              { "group": "Plugins", "expanded": false, "pages": ["plugins/overview", "plugins/rag", "plugins/build-your-own", "plugins/plugin-api"]}
+              { "group": "Plugins", "expanded": false, "pages": ["plugins/overview", "plugins/rag", "plugins/build-your-own", "plugins/plugin-api"]},
+              { "group": "Gateway", "expanded": false, "pages": ["gateway/overview", "gateway/providers", "gateway/configuration", "gateway/embedding", "gateway/hooks", "gateway/observability", "gateway/errors"]}
             ]
           }
         ]

@@ -1,0 +1,104 @@
+---
+title: "Embedding"
+sidebarTitle: "Embedding"
+description: "Mount the gateway's fetch handler in any runtime that speaks WinterCG."
+keywords: ["embedding", "fetch handler", "Hono", "Next.js", "Cloudflare Workers", "Bun", "Deno"]
+---
+
+`createGateway()` returns a `Gateway` object whose `handler` is a plain `(request: Request) => Response | Promise<Response>` function — the WinterCG fetch signature every modern runtime accepts.
+
+```ts
+import { createGateway } from '@frogbotai/gateway'
+
+const gw = createGateway({
+  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } }
+})
+```
+
+---
+
+## Node, via Hono
+
+```ts
+import { serve } from '@hono/node-server'
+
+serve({ fetch: gw.handler, port: 3939 })
+```
+
+Inside an existing Hono app, mount it under a prefix — bare paths keep working too, so `app.mount` and direct `/v1/...` calls both resolve.
+
+```ts
+app.mount('/v1', gw.handler)
+```
+
+---
+
+## Next.js route handler
+
+```ts
+// app/api/gateway/[...slug]/route.ts
+import { createGateway } from '@frogbotai/gateway'
+
+const gw = createGateway({
+  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } }
+})
+
+export const POST = gw.handler
+export const GET = gw.handler
+```
+
+---
+
+## Bun and Deno
+
+```ts
+// Bun
+Bun.serve({ fetch: gw.handler, port: 3939 })
+
+// Deno
+Deno.serve({ port: 3939 }, gw.handler)
+```
+
+---
+
+## Cloudflare Workers
+
+```ts
+export default { fetch: gw.handler }
+```
+
+---
+
+## Seed hook context from a request
+
+The handler's second argument seeds the mutable `context` bag every [hook](/gateway/hooks) receives — useful for passing an already-authenticated user into `beforeOperation` without re-deriving it from headers.
+
+```ts
+app.post('/v1/*', (c) =>
+  gw.handler(c.req.raw, { context: { user: c.get('user') } })
+)
+```
+
+This argument only exists on the in-process call — wire traffic hitting the gateway directly can never set it.
+
+---
+
+## Selective route mounting
+
+Mount individual routes instead of the full handler, keyed by bare HTTP path.
+
+```ts
+app.mount('/v1/chat', gw.routes['/chat/completions'].handler)
+```
+
+---
+
+## In-process model calls
+
+Skip HTTP entirely and resolve a model for direct AI SDK calls — useful when you already have a `generateText`/`streamText` call site and just want the gateway's provider resolution and hooks.
+
+```ts
+const model = gw.chatModel('anthropic/claude-sonnet-4-5')
+```
+
+`gw.operation({ operation, ... })` exposes the full lifecycle (model resolution, hooks, usage aggregation) for building custom in-process call sites — see [Hooks](/gateway/hooks).
