@@ -1,0 +1,22 @@
+{
+  "name": "frogbot-example-gateway-bedrock",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Gateway example: AWS Bedrock plus self-hosted inference (Ollama) behind one OpenAI-compatible gateway, embedded in a tiny Hono server.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@frogbotai/gateway": "^0.0.1",
+    "@hono/node-server": "^1.13.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "5.6.2"
+  }
+}
