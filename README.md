@@ -4,7 +4,7 @@
 
 <h1 align="center">FrogBot</h1>
 
-<p align="center"><strong>The config-first AI agent framework, built on the Vercel AI SDK.</strong></p>
+<p align="center"><strong>The config-first AI agent framework</strong></p>
 
 <p align="center">
   <a href="https://github.com/frogbotai/frogbot/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=flat-square" /></a>
