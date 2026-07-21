@@ -4,8 +4,8 @@
 // FrogBot's provider keys mostly match the gateway's provider table; the
 // two renames (`bedrock` → `amazon-bedrock`, `together` → `togetherai`) and
 // replicate's `apiKey` → `apiToken` are normalized here. Custom
-// `openai-compatible` entries become gateway `openaiCompatible` providers
-// under their configured key.
+// `openai-compatible` entries become gateway providers under their configured
+// key.
 
 import { createGateway } from '@frogbotai/gateway';
 import type { Gateway, GatewayConfig } from '@frogbotai/gateway';
@@ -32,19 +32,17 @@ function isCustomProvider(
 }
 
 export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
-  const providers: Record<string, unknown> = {};
-  const openaiCompatible: NonNullable<GatewayConfig['openaiCompatible']> = [];
+  const providers = {} as GatewayConfig['providers'];
 
   for (const [key, entry] of Object.entries(config.providers)) {
     if (!entry) continue;
 
     if (isCustomProvider(entry)) {
-      openaiCompatible.push({
-        name: key,
+      providers[key] = {
         baseURL: entry.baseUrl,
         ...(entry.apiKey !== undefined && { apiKey: entry.apiKey }),
         ...(entry.headers !== undefined && { headers: entry.headers }),
-      });
+      };
       continue;
     }
 
@@ -55,12 +53,11 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
       continue;
     }
 
-    providers[PROVIDER_NAME_MAP[key] ?? key] = entry;
+    Object.assign(providers, { [PROVIDER_NAME_MAP[key] ?? key]: entry });
   }
 
   return {
     providers,
-    ...(openaiCompatible.length > 0 && { openaiCompatible }),
     hooks: toGatewayHooks(config.hooks),
   };
 }
@@ -91,7 +88,8 @@ function toGatewayLogger(logger: Logger): NonNullable<GatewayConfig['logger']> {
 }
 
 export function createAIGateway(config: SanitizedAIConfig, logger?: Logger): Gateway {
-  return createGateway({
+  const create = createGateway as (config: GatewayConfig) => Gateway;
+  return create({
     ...buildGatewayConfig(config),
     ...(logger && { logger: toGatewayLogger(logger) }),
   });
