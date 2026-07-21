@@ -25,7 +25,6 @@ import { pathToFileURL } from 'node:url';
 import { createGateway } from '../gateway.js';
 import { loadLayeredConfig } from '../config/layered.js';
 import { finalizeConfig } from '../config/parse.js';
-import { setupTracing } from '../observability/setup.js';
 import type { GatewayConfig } from '../config/schema.js';
 import { PROVIDER_NAMES, providers, type ProviderConfigMap } from '../providers/registry.js';
 import { helpText, parseCliArgs, parsePort } from './args.js';
@@ -153,6 +152,12 @@ async function main() {
     process.env.OTEL_EXPORTER_OTLP_ENDPOINT ??
     process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
   ) {
+    const { setupTracing } = await import('../observability/setup.js').catch((err: unknown) => {
+      const cause = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `tracing endpoint configured but the OpenTelemetry setup module failed to load — install the optional @opentelemetry/* peer dependencies of @frogbotai/gateway (${cause})`,
+      );
+    });
     flushTracing = setupTracing({ endpoint: finalized.tracing?.endpoint });
   }
 
