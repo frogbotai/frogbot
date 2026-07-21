@@ -2,15 +2,20 @@ import { createAgentUIStreamResponse, generateId, validateUIMessages } from 'ai'
 import type { UIMessage } from 'ai';
 import { z } from 'zod';
 
+import { resolveThreadContext } from '../chat/threadContext.js';
 import type { InternalAgentInstance } from '../types/agent.js';
+import type { DocID } from '../types/operations.js';
 import type { FrogbotRequest } from '../types/request.js';
 
+const threadIdSchema = z.union([z.string(), z.number()]).optional();
+
 const bodySchema = z.union([
-  z.object({ prompt: z.string().min(1), messages: z.never().optional() }).strict(),
+  z.object({ prompt: z.string().min(1), messages: z.never().optional(), threadId: threadIdSchema }).strict(),
   z
     .object({
       messages: z.array(z.unknown()).min(1),
       prompt: z.never().optional(),
+      threadId: threadIdSchema,
     })
     .strict(),
 ]);
@@ -29,10 +34,12 @@ export function buildAgentEndpoints() {
         if (!agent) return Response.json({ error: `Agent '${slug ?? ''}' not found` }, { status: 404 });
 
         let body: AgentRequestBody;
+        let requestedThreadId: DocID | undefined;
         try {
-          const parsed = bodySchema.parse(await req.json!());
+          const { threadId, ...parsed } = bodySchema.parse(await req.json!());
+          requestedThreadId = threadId;
           body =
-            'messages' in parsed
+            'messages' in parsed && parsed.messages
               ? {
                   messages: await validateUIMessages({
                     messages: parsed.messages,
@@ -49,18 +56,31 @@ export function buildAgentEndpoints() {
           );
         }
 
+        if (requestedThreadId !== undefined && !req.user) {
+          return Response.json({ error: 'Authentication required to use threads' }, { status: 401 });
+        }
+
         try {
+          const { threadId, uiMessages } = await resolveThreadContext({
+            req,
+            agentSlug: agent.slug,
+            threadId: requestedThreadId,
+            incoming: toUIMessages(body),
+            tools: agent.aiAgent.tools,
+          });
+
           if (acceptsEventStream(req.headers.get('accept'))) {
             return await createAgentUIStreamResponse({
               agent: agent.aiAgent,
-              uiMessages: toUIMessages(body),
+              uiMessages,
               options: { req, overrideAccess: false },
               abortSignal: req.signal ?? undefined,
+              headers: threadId !== undefined ? { 'X-Frogbot-Thread-Id': String(threadId) } : undefined,
             });
           }
 
           const result = await agent.generate({
-            ...body,
+            messages: uiMessages,
             req,
             overrideAccess: false,
             abortSignal: req.signal ?? undefined,
@@ -70,6 +90,7 @@ export function buildAgentEndpoints() {
             text: result.text,
             usage: result.totalUsage,
             finishReason: result.finishReason,
+            ...(threadId !== undefined ? { threadId } : {}),
           });
         } catch (error) {
           if (req.signal?.aborted) return new Response(null, { status: 499 });

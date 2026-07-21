@@ -37,14 +37,26 @@ function makeRequest({
   accept,
   agent = makeAgent(),
   body = { prompt: 'Hello' },
+  create = vi.fn(() => Promise.resolve({ id: 'thread-1' })),
+  find = vi.fn(() =>
+    Promise.resolve({
+      docs: [{ id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+    }),
+  ),
+  findByID = vi.fn(() => Promise.resolve({ id: 'thread-1' })),
   signal,
   slug = 'support',
+  user = { id: 'user-1' },
 }: {
   accept?: string;
   agent?: InternalAgentInstance;
   body?: unknown;
+  create?: ReturnType<typeof vi.fn>;
+  find?: ReturnType<typeof vi.fn>;
+  findByID?: ReturnType<typeof vi.fn>;
   signal?: AbortSignal;
   slug?: string;
+  user?: { id: string } | null;
 } = {}): FrogbotRequest {
   const headers = new Headers({ 'content-type': 'application/json' });
   if (accept) {
@@ -58,8 +70,15 @@ function makeRequest({
   });
   return Object.assign(request, {
     routeParams: { slug },
-    frogbot: { agents: { support: agent } },
-    user: { id: 'user-1' },
+    frogbot: {
+      agents: { support: agent },
+      config: { chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' } },
+      create,
+      find,
+      findByID,
+    },
+    payload: { db: {} },
+    user,
   }) as unknown as FrogbotRequest;
 }
 
@@ -127,5 +146,107 @@ describe('agent endpoints', () => {
   it('returns 404 for unknown agent slugs', async () => {
     const response = await postHandler()(makeRequest({ slug: 'missing' }));
     expect(response.status).toBe(404);
+  });
+
+  it('creates a thread and echoes threadId in the JSON body', async () => {
+    const create = vi.fn(() => Promise.resolve({ id: 'thread-9' }));
+    const request = makeRequest({ create });
+    const response = await postHandler()(request);
+
+    expect(create).toHaveBeenCalledWith({
+      collection: 'threads',
+      data: { user: 'user-1', agent: 'support' },
+      req: request,
+      overrideAccess: false,
+    });
+    expect(await response.json()).toMatchObject({ threadId: 'thread-9' });
+  });
+
+  it('sets X-Frogbot-Thread-Id on streamed responses', async () => {
+    const create = vi.fn(() => Promise.resolve({ id: 'thread-9' }));
+    await postHandler()(makeRequest({ create, accept: 'text/event-stream' }));
+
+    expect(createAgentUIStreamResponse).toHaveBeenCalledWith(
+      expect.objectContaining({ headers: { 'X-Frogbot-Thread-Id': 'thread-9' } }),
+    );
+  });
+
+  it('loads an existing thread with overrideAccess false and echoes its id', async () => {
+    const create = vi.fn(() => Promise.resolve({ id: 'msg-1' }));
+    const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7' }));
+    const request = makeRequest({ create, findByID, body: { prompt: 'Hello', threadId: 'thread-7' } });
+    const response = await postHandler()(request);
+
+    expect(findByID).toHaveBeenCalledWith({
+      collection: 'threads',
+      id: 'thread-7',
+      req: request,
+      overrideAccess: false,
+    });
+    expect(create).not.toHaveBeenCalledWith(expect.objectContaining({ collection: 'threads' }));
+    expect(await response.json()).toMatchObject({ threadId: 'thread-7' });
+  });
+
+  it('propagates thread load failures as their status', async () => {
+    const findByID = vi.fn(() => Promise.reject(Object.assign(new Error('not found'), { status: 404 })));
+    const response = await postHandler()(makeRequest({ findByID, body: { prompt: 'Hello', threadId: 'gone' } }));
+
+    expect(response.status).toBe(404);
+  });
+
+  it('runs stateless for anonymous callers without touching threads', async () => {
+    const create = vi.fn();
+    const find = vi.fn();
+    const findByID = vi.fn();
+    const response = await postHandler()(makeRequest({ create, find, findByID, user: null }));
+
+    expect(create).not.toHaveBeenCalled();
+    expect(find).not.toHaveBeenCalled();
+    expect(findByID).not.toHaveBeenCalled();
+    expect(await response.json()).not.toHaveProperty('threadId');
+  });
+
+  it('persists the user message and runs the agent on server history', async () => {
+    const agent = makeAgent();
+    const create = vi.fn(() => Promise.resolve({ id: 'thread-9' }));
+    const find = vi.fn(() =>
+      Promise.resolve({
+        docs: [
+          { id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Earlier' }] },
+          { id: 'm2', role: 'assistant', parts: [{ type: 'text', text: 'Reply' }] },
+          { id: 'm3', role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
+        ],
+      }),
+    );
+    const request = makeRequest({ agent, create, find });
+    await postHandler()(request);
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'messages',
+        data: expect.objectContaining({
+          thread: 'thread-9',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Hello' }],
+        }),
+        overrideAccess: false,
+      }),
+    );
+    expect(create.mock.invocationCallOrder[0]).toBeLessThan((agent.generate as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]);
+    expect(agent.generate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({ id: 'm1', role: 'user' }),
+          expect.objectContaining({ id: 'm2', role: 'assistant' }),
+          expect.objectContaining({ id: 'm3', role: 'user' }),
+        ],
+      }),
+    );
+  });
+
+  it('rejects anonymous requests that supply a threadId', async () => {
+    const response = await postHandler()(makeRequest({ user: null, body: { prompt: 'Hello', threadId: 'thread-7' } }));
+
+    expect(response.status).toBe(401);
   });
 });
