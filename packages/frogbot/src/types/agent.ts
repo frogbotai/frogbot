@@ -47,12 +47,9 @@ export type AgentCallOptions = {
 export type AgentInstance = {
   slug: string;
   config: AgentConfig;
+  aiAgent: Agent<AgentCallOptions, ToolSet, Record<string, unknown>, never>;
   generate: (opts: AgentGenerateOpts) => Promise<AgentGenerateResult>;
   stream: (opts: AgentStreamOpts) => Promise<AgentStreamResult>;
-};
-
-export type InternalAgentInstance = AgentInstance & {
-  aiAgent: Agent<AgentCallOptions, ToolSet, Record<string, unknown>, never>;
 };
 
 export type AgentRegistry = Record<AgentSlug, AgentInstance>;

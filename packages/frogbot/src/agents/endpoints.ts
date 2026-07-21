@@ -3,7 +3,7 @@ import type { UIMessage } from 'ai';
 import { z } from 'zod';
 
 import { resolveThreadContext } from '../chat/threadContext.js';
-import type { InternalAgentInstance } from '../types/agent.js';
+import type { AgentInstance } from '../types/agent.js';
 import type { DocID } from '../types/operations.js';
 import type { FrogbotRequest } from '../types/request.js';
 
@@ -29,7 +29,7 @@ export function buildAgentEndpoints() {
       method: 'post' as const,
       handler: async (req: FrogbotRequest) => {
         const slug = req.routeParams?.slug as string | undefined;
-        const agent = slug ? (req.frogbot.agents[slug] as InternalAgentInstance | undefined) : undefined;
+        const agent: AgentInstance | undefined = slug ? req.frogbot.agents[slug] : undefined;
 
         if (!agent) return Response.json({ error: `Agent '${slug ?? ''}' not found` }, { status: 404 });
 

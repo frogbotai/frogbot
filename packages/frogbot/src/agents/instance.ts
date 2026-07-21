@@ -12,7 +12,7 @@ import type {
   AgentGenerateResult,
   AgentStreamOpts,
   AgentStreamResult,
-  InternalAgentInstance,
+  AgentInstance,
 } from '../types/agent.js';
 import type { SanitizedAIConfig } from '../types/ai.js';
 import type { ToolCtx } from '../types/tool.js';
@@ -24,7 +24,7 @@ export type AgentInstanceDeps = {
   frogbot: Frogbot;
 };
 
-export function createAgentInstance(agentConfig: AgentConfig, deps: AgentInstanceDeps): InternalAgentInstance {
+export function createAgentInstance(agentConfig: AgentConfig, deps: AgentInstanceDeps): AgentInstance {
   const { gateway, config, frogbot } = deps;
   const tools = toAISDKTools(agentConfig.tools);
   const access = agentConfig.access ?? (({ req }) => !!req.user);
@@ -143,7 +143,7 @@ export function createAgentInstance(agentConfig: AgentConfig, deps: AgentInstanc
     tools,
     generate: runGenerate,
     stream: runStream,
-  } as InternalAgentInstance['aiAgent'];
+  } as AgentInstance['aiAgent'];
 
   const generate = async (opts: AgentGenerateOpts): Promise<AgentGenerateResult> =>
     aiAgent.generate(await buildCall(opts));
