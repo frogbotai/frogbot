@@ -169,6 +169,20 @@ describe('frogbot sanitize', () => {
     expect((payloadConfig as any).plugins).toBeUndefined(); // eslint-disable-line @typescript-eslint/no-explicit-any
   });
 
+  it('rewrites @payloadcms component paths in the sanitized payload config', async () => {
+    const config = makeConfig({
+      admin: {
+        dashboard: {
+          widgets: [{ slug: 'collections', Component: '@payloadcms/next/rsc#CollectionCards', minWidth: 'full' }],
+        },
+      },
+    } as unknown as Partial<FrogbotConfig>);
+    const result = sanitize(config);
+    const payloadConfig = await result._internal.payloadConfig;
+    expect((payloadConfig as any).admin.dashboard.widgets[0].Component) // eslint-disable-line @typescript-eslint/no-explicit-any
+      .toBe('@frogbotai/next/rsc#CollectionCards');
+  });
+
   it('does not mutate the caller\u2019s input config or collection objects', () => {
     const collections: CollectionConfig[] = [
       {

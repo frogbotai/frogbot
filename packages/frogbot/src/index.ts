@@ -18,6 +18,9 @@ export type { InitOptions, Logger } from './frogbot.js';
 export type { Frogbot as FrogbotInstance } from './frogbot.js';
 export { getFrogbot, getCachedFrogbot } from './getFrogbot.js';
 export { buildConfig } from './config/build.js';
+export { getPayloadConfig } from './config/getPayloadConfig.js';
+export { createGatewayHandler } from './server/gateway.js';
+export type { GatewayHandler } from './server/gateway.js';
 export type { FrogbotSanitizedConfig } from './types/sanitized.js';
 
 // ---------------------------------------------------------------------------

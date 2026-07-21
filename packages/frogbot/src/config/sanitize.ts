@@ -30,6 +30,7 @@ import type { FrogbotRequest } from '../types/request.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { getFrogbotInstance } from '../instanceRegistry.js';
+import { rewriteComponentPaths } from './rewriteComponentPaths.js';
 
 const noopEmailAdapter: PayloadEmailAdapter<void> = ({ payload }) => ({
   name: 'frogbot-noop',
@@ -403,7 +404,7 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
 
   // Build the Payload config and pass it through Payload's buildConfig.
   const payloadConfig = buildPayloadConfig({ ...config, agents, collections });
-  const payloadSanitizedPromise = payloadBuildConfig(payloadConfig);
+  const payloadSanitizedPromise = payloadBuildConfig(payloadConfig).then(rewriteComponentPaths);
 
   return {
     collections: collectionsMeta,
