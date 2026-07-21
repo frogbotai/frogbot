@@ -48,6 +48,7 @@
 
 ## What NOT to do
 
+- **🚨 NEVER run the bump script (`scripts/bump.mjs`, `pnpm bump`, `npm run bump`, or any version-bumping command).** This applies to you AND every subagent you spawn. Do NOT run it, invoke it, delegate it, or suggest running it — UNLESS the user has EXPLICITLY said "run the bump script" or "bump the version" and given clear permission in the current session. An agent once bumped `0.1.0` → `1.0.0`, which is catastrophically wrong. When in doubt, STOP and ASK. Never assume permission. Never bump "to be helpful." Never bump as a side effect of another task.
 - **Don't add comments unless explicitly requested.** Zero comments is the default, even for "explaining why this weird workaround exists." No comment blocks, no citations, no rationale — write it in the chat response instead, not the code. This has been a repeat mistake — check every edit before writing it.
 - Don't assume libraries are available - check first
 - Don't over-engineer solutions
