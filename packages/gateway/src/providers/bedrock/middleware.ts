@@ -4,6 +4,7 @@
 // for models that support prompt caching (Claude on Bedrock).
 
 import type { BeforeUpstreamHook } from '../../hooks.js';
+import { calculateReasoningBudgetFromEffort } from '../../utils/params.js';
 
 /**
  * Injects Bedrock cache point markers into providerOptions when the model
@@ -62,4 +63,29 @@ export const bedrockEmbedDimensions: BeforeUpstreamHook = (args) => {
   delete unknown.dimensions;
 };
 
-export const bedrockBeforeUpstream: BeforeUpstreamHook[] = [bedrockCachePoint, bedrockEmbedDimensions];
+/**
+ * Translates the cross-provider `reasoning_effort` param into Bedrock's native
+ * `reasoningConfig`. Runs before `forwardLanguageParams` drains the `unknown`
+ * namespace for Bedrock. Only fires for Claude; explicit `reasoningConfig` wins.
+ */
+export const bedrockThinkingEffort: BeforeUpstreamHook = (args) => {
+  if (!args.model.includes('claude') && !args.model.includes('anthropic.')) return;
+
+  const bedrockOpts = args.providerOptions['bedrock'] as { reasoningConfig?: unknown } | undefined;
+  const amazonBedrockOpts = args.providerOptions['amazonBedrock'] as { reasoningConfig?: unknown } | undefined;
+  if (bedrockOpts?.reasoningConfig || amazonBedrockOpts?.reasoningConfig) return;
+
+  const unknown = args.providerOptions['unknown'];
+  const effort = unknown?.['reasoning_effort'];
+  if (typeof effort !== 'string') return;
+
+  const budgetTokens = calculateReasoningBudgetFromEffort(effort, args.params?.maxOutputTokens);
+  if (budgetTokens <= 0) return;
+
+  args.providerOptions['bedrock'] = {
+    ...(args.providerOptions['bedrock'] ?? {}),
+    reasoningConfig: { type: 'enabled', budgetTokens },
+  };
+};
+
+export const bedrockBeforeUpstream: BeforeUpstreamHook[] = [bedrockThinkingEffort, bedrockCachePoint, bedrockEmbedDimensions];
