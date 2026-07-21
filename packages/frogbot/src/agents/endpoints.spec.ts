@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as AI from 'ai';
 
-import type { InternalAgentInstance } from '../types/agent.js';
+import type { AgentInstance } from '../types/agent.js';
 import type { FrogbotRequest } from '../types/request.js';
 
 const { createAgentUIStreamResponse } = vi.hoisted(() => ({
@@ -23,13 +23,13 @@ function makeAgent(
       finishReason: 'stop',
     }),
   ),
-): InternalAgentInstance {
+): AgentInstance {
   return {
     slug: 'support',
     config: { slug: 'support', model: 'openai/test', instructions: 'Help' },
-    aiAgent: { tools: {} } as InternalAgentInstance['aiAgent'],
-    generate: generate as InternalAgentInstance['generate'],
-    stream: vi.fn() as InternalAgentInstance['stream'],
+    aiAgent: { tools: {} } as AgentInstance['aiAgent'],
+    generate: generate as AgentInstance['generate'],
+    stream: vi.fn() as AgentInstance['stream'],
   };
 }
 
@@ -49,7 +49,7 @@ function makeRequest({
   user = { id: 'user-1' },
 }: {
   accept?: string;
-  agent?: InternalAgentInstance;
+  agent?: AgentInstance;
   body?: unknown;
   create?: ReturnType<typeof vi.fn>;
   find?: ReturnType<typeof vi.fn>;

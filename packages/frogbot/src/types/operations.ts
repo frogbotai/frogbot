@@ -10,7 +10,7 @@
 
 import type { Sort, Where } from './payload.js';
 
-import type { CollectionSlug, TypedCollection } from './generated.js';
+import type { CollectionSlug, TypedCollection, TypeWithID } from './generated.js';
 import type { FrogbotRequest } from './request.js';
 
 // ── Version wrapper ───────────────────────────────────────────────────
@@ -244,5 +244,5 @@ export type AuthArgs = {
 export type AuthResult = {
   permissions: Record<string, unknown>;
   responseHeaders?: Headers;
-  user: unknown;
+  user: (Record<string, unknown> & TypeWithID) | null;
 };

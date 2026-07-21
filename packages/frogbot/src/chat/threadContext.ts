@@ -97,13 +97,13 @@ async function resolveThreadId({ req, agentSlug, threadId, threadsSlug }: Resolv
   const thread = await req.frogbot.create({
     collection: threadsSlug,
     data: {
-      user: (req.user as { id?: DocID }).id,
+      user: req.user?.id,
       agent: agentSlug,
     },
     req,
     overrideAccess: false,
   });
-  return (thread as { id: DocID }).id;
+  return thread.id;
 }
 
 function toUIMessage(doc: unknown): UIMessage {

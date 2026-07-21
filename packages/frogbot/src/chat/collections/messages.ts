@@ -7,7 +7,7 @@ export type DefaultMessagesCollectionProps = {
 };
 
 const threadOwner: Access = ({ req }) => {
-  const id = (req.user as { id?: number | string } | null)?.id;
+  const id = req.user?.id;
   return id !== undefined ? { 'thread.user': { equals: id } } : false;
 };
 

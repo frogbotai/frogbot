@@ -5,13 +5,18 @@
 //
 // Pre-codegen, `UntypedFrogbotTypes` provides permissive fallbacks.
 
+/** Minimum shape every stored document satisfies. */
+export type TypeWithID = {
+  id: string | number;
+};
+
 /** Permissive fallback. Used when no augmentation is present. */
 export interface UntypedFrogbotTypes {
   agents: {
     [slug: string]: unknown;
   };
   collections: {
-    [slug: string]: unknown;
+    [slug: string]: Record<string, unknown> & TypeWithID;
   };
 }
 

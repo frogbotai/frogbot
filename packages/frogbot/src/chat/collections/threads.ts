@@ -8,7 +8,7 @@ export type DefaultThreadsCollectionProps = {
 };
 
 function userID(req: FrogbotRequest): number | string | undefined {
-  return (req.user as { id?: number | string } | null)?.id;
+  return req.user?.id;
 }
 
 const owner: Access = ({ req }) => {

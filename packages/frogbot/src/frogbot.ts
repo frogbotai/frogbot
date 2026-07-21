@@ -23,7 +23,7 @@ import { transcribeOperation } from './ai/operations/transcribe.js';
 import { registerFrogbotInstance } from './instanceRegistry.js';
 import { createFrogbotLocalAPI } from './localAPI.js';
 import type { FrogbotLocalAPI } from './localAPI.js';
-import type { AgentInstance, AgentRegistry } from './types/agent.js';
+import type { AgentRegistry } from './types/agent.js';
 import type {
   EmbedManyOpts,
   EmbedOpts,
@@ -150,7 +150,7 @@ export class Frogbot {
         frogbot: this,
       };
       for (const agentConfig of this.config.agents) {
-        (this.agents as Record<string, AgentInstance>)[agentConfig.slug] = createAgentInstance(agentConfig, agentDeps);
+        this.agents[agentConfig.slug] = createAgentInstance(agentConfig, agentDeps);
       }
     }
 
