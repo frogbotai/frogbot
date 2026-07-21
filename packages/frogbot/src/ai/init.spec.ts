@@ -36,7 +36,6 @@ describe('buildGatewayConfig', () => {
       openai: { apiKey: 'sk-1' },
       anthropic: { apiKey: 'sk-2' },
     });
-    expect(config.openaiCompatible).toBeUndefined();
   });
 
   it('renames bedrock → amazon-bedrock', () => {
@@ -55,7 +54,7 @@ describe('buildGatewayConfig', () => {
     expect(config.providers).toEqual({ replicate: { apiToken: 'r8-key' } });
   });
 
-  it('maps custom openai-compatible entries to openaiCompatible providers', () => {
+  it('maps custom openai-compatible entries to providers', () => {
     const config = buildGatewayConfig(
       makeAIConfig({
         ollama: {
@@ -66,14 +65,12 @@ describe('buildGatewayConfig', () => {
         },
       }),
     );
-    expect(config.providers).toEqual({});
-    expect(config.openaiCompatible).toEqual([
-      {
-        name: 'ollama',
+    expect(config.providers).toEqual({
+      ollama: {
         baseURL: 'http://localhost:11434/v1',
         headers: { 'x-custom': '1' },
       },
-    ]);
+    });
   });
 
   it('skips undefined provider entries', () => {
@@ -118,5 +115,19 @@ describe('createAIGateway', () => {
     const gw = createAIGateway(makeAIConfig({ openai: { apiKey: 'sk-test' } }));
     const model = gw.chatModel('openai/gpt-4o');
     expect(model.modelId).toBe('gpt-4o');
+  });
+
+  it('resolves an in-process chat model for a custom provider', () => {
+    const gw = createAIGateway(
+      makeAIConfig({
+        ollama: {
+          type: 'openai-compatible',
+          baseUrl: 'http://localhost:11434/v1',
+          models: [{ id: 'llama3', mode: 'chat' }],
+        },
+      }),
+    );
+    const model = gw.chatModel('ollama/llama3');
+    expect(model.modelId).toBe('llama3');
   });
 });
