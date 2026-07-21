@@ -6,6 +6,7 @@ import {
   listen,
 } from 'frogbot/test'
 import type { FrogbotSanitizedConfig } from 'frogbot/test'
+import type { MongooseAdapter } from '@frogbotai/db-mongodb'
 import type { FrogbotInstance } from 'frogbot'
 import type { Payload } from 'payload'
 
@@ -56,6 +57,10 @@ export async function bootFrogbot(dirname: string, suiteNameOverride?: string): 
 
   const frogbot: FrogbotInstance = await new Frogbot().init({ config })
   const payload = (frogbot as unknown as { payload: Payload }).payload
+  if (payload.db.name === 'mongoose') {
+    const db = payload.db as MongooseAdapter
+    await Promise.all(Object.values(db.connection.models).map((model) => model.init()))
+  }
   const app = createServer(frogbot)
   const port = await getEphemeralPort()
   const closeServer = await listen(app, port)
@@ -64,9 +69,7 @@ export async function bootFrogbot(dirname: string, suiteNameOverride?: string): 
 
   const shutdown = async () => {
     await closeServer()
-    if (payload.db && typeof payload.db.destroy === 'function') {
-      await payload.db.destroy()
-    }
+    await frogbot.destroy()
   }
 
   return { frogbot, payload, restClient, baseUrl, shutdown }
