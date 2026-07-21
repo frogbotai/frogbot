@@ -1,5 +1,7 @@
 export type CliArgs = {
+  command?: 'init';
   configPath?: string;
+  dir?: string;
   help: boolean;
   port?: number;
   quiet: boolean;
@@ -21,8 +23,12 @@ export function parseCliArgs(argv: string[]): CliArgs {
       out.port = parsePort(requiredValue(arg, argv[++i]), arg);
     } else if (arg?.startsWith('--port=')) {
       out.port = parsePort(equalsValue('--port', arg.slice('--port='.length)), '--port');
+    } else if (arg === 'init' && out.command === undefined) {
+      out.command = 'init';
+    } else if (out.command === 'init' && out.dir === undefined && arg !== undefined && !arg.startsWith('-')) {
+      out.dir = arg;
     } else {
-      throw new Error(`unknown flag: ${arg}`);
+      throw new Error(`unknown ${arg?.startsWith('-') ? 'flag' : 'command'}: ${arg}`);
     }
   }
   return out;
@@ -39,7 +45,11 @@ export function parsePort(raw: string | undefined, name = 'PORT'): number | unde
 
 export function helpText(): string {
   return [
-    'Usage: frogbotai-gateway [options]',
+    'Usage: frogbotai-gateway [command] [options]',
+    '',
+    'Commands:',
+    '  (default)              Start the gateway server',
+    '  init [dir]             Scaffold a standalone gateway server project',
     '',
     'Options:',
     '  -p, --port <port>      Port to listen on (default: 3939 or PORT)',

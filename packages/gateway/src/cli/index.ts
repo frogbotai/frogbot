@@ -127,6 +127,12 @@ async function main() {
     return;
   }
 
+  if (args.command === 'init') {
+    const { runInit } = await import('./init.js');
+    runInit({ dir: args.dir });
+    return;
+  }
+
   const envConfig: GatewayConfig = { providers: buildProvidersFromEnv() };
   const { config: merged, sources } = await loadLayeredConfig({
     defaults: envConfig,

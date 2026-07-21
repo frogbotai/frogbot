@@ -103,6 +103,16 @@ export type GatewayOperation = {
   rerankModel: () => GatewayRerankingModel;
 };
 
+/**
+ * WinterCG-compatible fetch handler. The 1-arg call signature keeps it
+ * assignable to every runtime's fetch callback (Hono node-server, Bun, Deno,
+ * Cloudflare Workers) regardless of what extra arguments they pass.
+ */
+export interface GatewayHandler {
+  (request: Request): Response | Promise<Response>;
+  (request: Request, opts: { context?: Record<string, unknown> }): Response | Promise<Response>;
+}
+
 export type Gateway = {
   /**
    * WinterCG-compatible fetch handler. Mount on any framework. In-process
@@ -110,7 +120,7 @@ export type Gateway = {
    * `gateway.handler(req, { context: { req, user } })`. External wire traffic
    * can never set it — it only comes from this argument.
    */
-  handler: (request: Request, opts?: { context?: Record<string, unknown> }) => Response | Promise<Response>;
+  handler: GatewayHandler;
   /**
    * Per-endpoint handlers for selective mounting. Keyed by bare HTTP path, e.g.
    * `app.mount('/v1/chat', gw.routes['/chat/completions'].handler)`.
