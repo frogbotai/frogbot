@@ -99,7 +99,7 @@ Routes are also served at their bare paths (`/chat/completions`), so mounting th
 
 ## Providers
 
-Alibaba, Anthropic, Anthropic (AWS), AssemblyAI, Azure, Baseten, Amazon Bedrock, Black Forest Labs, ByteDance, Cerebras, Cohere, Deepgram, DeepInfra, DeepSeek, ElevenLabs, fal, Fireworks, Gladia, Google, Google Vertex, Groq, Hugging Face, Hume, Kling AI, LMNT, Luma, Mistral, Moonshot AI, OpenAI, Perplexity, Prodia, Replicate, Together AI, Vercel, Voyage, xAI — plus any number of custom OpenAI-compatible endpoints via `openaiCompatible`.
+Alibaba, Anthropic, Anthropic (AWS), AssemblyAI, Azure, Baseten, Amazon Bedrock, Black Forest Labs, ByteDance, Cerebras, Cohere, Deepgram, DeepInfra, DeepSeek, ElevenLabs, fal, Fireworks, Gladia, Google, Google Vertex, Groq, Hugging Face, Hume, Kling AI, LMNT, Luma, Mistral, Moonshot AI, OpenAI, Perplexity, Prodia, Replicate, Together AI, Vercel, Voyage, xAI — plus any number of custom OpenAI-compatible endpoints under any other key in `providers` (Ollama, LM Studio, vLLM, ...).
 
 ## Configuration
 
@@ -112,10 +112,8 @@ export default defineConfig({
   providers: {
     openai: { apiKey: process.env.OPENAI_API_KEY! },
     anthropic: { apiKey: process.env.ANTHROPIC_API_KEY! },
+    ollama: { baseURL: 'http://localhost:11434/v1' },
   },
-  openaiCompatible: [
-    { name: 'ollama', baseURL: 'http://localhost:11434/v1' },
-  ],
   upstreamTimeoutMs: 60_000,
   hooks: {
     afterOperation: [

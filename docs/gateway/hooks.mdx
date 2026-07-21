@@ -1,0 +1,103 @@
+---
+title: "Hooks"
+sidebarTitle: "Hooks"
+description: "The five-phase request lifecycle for auth, billing, rate limiting, and audit logging."
+keywords: ["hooks", "beforeOperation", "beforeUpstream", "afterUpstream", "afterError", "afterOperation"]
+---
+
+Every route — HTTP and in-process — runs the same lifecycle: `beforeOperation` → `beforeUpstream` → `afterUpstream` or `afterError` → `afterOperation`. Register arrays of hooks per phase; each hook runs in array order.
+
+```ts
+import { createGateway } from '@frogbotai/gateway'
+
+const gw = createGateway({
+  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } },
+  hooks: {
+    beforeOperation: [
+      ({ context, request }) => {
+        context.startedBy = request?.headers.get('x-user-id') ?? 'internal'
+      }
+    ],
+    beforeUpstream: [
+      ({ headers }) => {
+        headers.set('x-application', 'support')
+      }
+    ],
+    afterOperation: [
+      ({ operation, model, usage, durationMs, error }) => {
+        console.log(operation, model, usage?.totalTokens, durationMs, Boolean(error))
+      }
+    ]
+  }
+})
+```
+
+---
+
+## Phases
+
+| Phase | Runs |
+| --- | --- |
+| `beforeOperation` | Once, before the AI SDK call. `request` is present for HTTP-originated calls, absent for in-process calls. |
+| `beforeUpstream` | Before each model's `doGenerate`/`doStream` call — once per round of a tool loop. |
+| `afterUpstream` | After each successful model call. |
+| `afterError` | After a failed model call, with `failedPhase` naming where it happened. |
+| `afterOperation` | Once, when the operation succeeds, fails, or is aborted — with `usage` aggregated across every round. |
+
+Every phase shares `requestId`, `operation`, `startedAt`, a mutable `context` bag, and mutable `otel` attributes (flushed to spans and metrics — low-cardinality only, no user or session IDs).
+
+---
+
+## Mutate the upstream call
+
+`beforeUpstream` is the last chance to inspect or change a call before it reaches the provider. Mutation is in-place only — reassigning a field is a no-op, because the handler holds the original reference.
+
+```ts
+hooks: {
+  beforeUpstream: [
+    ({ messages, params, headers, providerOptions }) => {
+      params.temperature = 0.2
+      headers.set('x-trace-id', crypto.randomUUID())
+      providerOptions.anthropic = { cacheControl: { type: 'ephemeral' } }
+    }
+  ]
+}
+```
+
+`messages` and `params` are present on the language routes (chat, messages, responses) and absent on modality routes (embeddings, images, speech, transcriptions, rerank, video) — those operations have no messages or language params. `headers` and `providerOptions` are honored on every route. `system` and `tools` are read-only.
+
+---
+
+## Track usage
+
+`afterOperation`'s `usage` is summed across every round of a tool loop, not just the final one — use it for billing without re-implementing aggregation.
+
+```ts
+hooks: {
+  afterOperation: [
+    ({ model, usage, durationMs }) => {
+      billUsage({ model, tokens: usage?.totalTokens ?? 0, durationMs })
+    }
+  ]
+}
+```
+
+`HookUsage` also reports `cachedInputTokens`, `cacheWriteTokens`, and `reasoningTokens` when the provider surfaces them.
+
+---
+
+## Failure isolation
+
+`afterError` and `afterOperation` isolate hook failures — a throwing hook doesn't stop the remaining hooks in that phase from running. A throwing `beforeOperation` hook stops the call before the lifecycle starts, so `afterOperation` never runs for that failure.
+
+---
+
+## Combine hook sets
+
+`mergeHooks` concatenates hook arrays from multiple sources — first-party provider middleware, plugins, and your own config — with a defined precedence order.
+
+```ts
+import { mergeHooks } from '@frogbotai/gateway/hooks'
+
+const combined = mergeHooks(providerDefaults, userConfig)
+```

@@ -1,0 +1,89 @@
+---
+title: "Providers"
+sidebarTitle: "Providers"
+description: "36+ built-in providers, plus any self-hosted OpenAI-compatible endpoint, in one providers map."
+keywords: ["providers", "openai-compatible", "ollama", "bedrock", "vertex", "baseURL"]
+---
+
+Every provider — built-in or self-hosted — lives under the same `providers` key. There is no separate list for custom endpoints.
+
+```ts
+import { createGateway } from '@frogbotai/gateway'
+
+const gw = createGateway({
+  providers: {
+    openai: { apiKey: process.env.OPENAI_API_KEY! },
+    'amazon-bedrock': { region: 'us-east-1', apiKey: process.env.AWS_BEARER_TOKEN_BEDROCK! },
+    ollama: { baseURL: 'http://localhost:11434/v1' }
+  }
+})
+```
+
+`openai` and `amazon-bedrock` are recognized provider names, so they take that provider's typed config. `ollama` isn't a built-in name, so it's treated as a generic OpenAI-compatible endpoint — the key becomes its dispatch prefix (`ollama/llama3.2`).
+
+---
+
+## Built-in providers
+
+Alibaba, Anthropic, Anthropic (AWS), AssemblyAI, Azure, Baseten, Amazon Bedrock, Black Forest Labs, ByteDance, Cerebras, Cohere, Deepgram, DeepInfra, DeepSeek, ElevenLabs, fal, Fireworks, Gladia, Google, Google Vertex, Groq, Hugging Face, Hume, Kling AI, LMNT, Luma, Mistral, Moonshot AI, OpenAI, Perplexity, Prodia, Replicate, Together AI, Vercel, Voyage, xAI.
+
+Each ships its own credential shape (`apiKey`, `region`, `accessKeyId`, ...) and its `envVars` list, used by the CLI's env auto-discovery. See [Configuration](/gateway/configuration#auto-discover-from-env) for the full env var reference.
+
+---
+
+## Custom OpenAI-compatible endpoints
+
+Any key that isn't a built-in provider name is a generic OpenAI-compatible endpoint. `baseURL` is required — it's what tells the gateway a key is a deliberate custom endpoint rather than a typo of a built-in name.
+
+```ts
+providers: {
+  ollama: { baseURL: 'http://localhost:11434/v1' },
+  'lm-studio': { baseURL: 'http://localhost:1234/v1' },
+  vllm: {
+    baseURL: 'https://vllm.internal.example/v1',
+    apiKey: process.env.VLLM_API_KEY,
+    headers: { 'x-deployment': 'production' }
+  }
+}
+```
+
+<Note>
+  A key without `baseURL` fails validation at startup: `providers.ollama.baseURL must be a non-empty string`. This is the safety net for a mistyped built-in name (`openia` instead of `openai`) — it fails loudly instead of silently becoming an unreachable custom provider.
+</Note>
+
+Custom endpoint config accepts:
+
+| Field | Required | Purpose |
+| --- | --- | --- |
+| `baseURL` | Yes | Base URL of the OpenAI-compatible API, typically ending in `/v1` |
+| `apiKey` | No | Sent as `Authorization: Bearer <apiKey>` |
+| `headers` | No | Extra request headers on every call |
+| `queryParams` | No | Extra query params appended to every request URL |
+
+---
+
+## Pre-built instances
+
+Any provider key — built-in or custom — also accepts a pre-built AI SDK provider instance instead of a config object. Use this for a custom `fetch`, middleware, or anything the shorthand config can't express.
+
+```ts
+import { createOpenAI } from '@ai-sdk/openai'
+import { createGateway } from '@frogbotai/gateway'
+
+const customOpenAI = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+  fetch: myLoggingFetch
+})
+
+const gw = createGateway({
+  providers: { openai: customOpenAI }
+})
+```
+
+For a known key, the instance is checked against that provider's real AI SDK type. For a custom key, TypeScript can only confirm it looks like a provider (`languageModel` and `embeddingModel` present) — the specific instance type isn't known ahead of time.
+
+---
+
+## Model IDs
+
+Every route dispatches on a canonical `<provider>/<model>` ID. Bedrock, Anthropic-on-Bedrock, and Azure additionally resolve friendly aliases to the exact ID the upstream API requires — for example `amazon-bedrock/claude-4-sonnet` resolves to `anthropic.claude-sonnet-4-20250514-v1:0` before the AI SDK sees it. Full IDs pass through unchanged.

@@ -1,0 +1,66 @@
+---
+title: "Errors"
+sidebarTitle: "Errors"
+description: "OpenAI's error envelope on every route, with matching helpers for embedders."
+keywords: ["errors", "error envelope", "GatewayError", "toOpenAIErrorResponse"]
+---
+
+Every error response uses OpenAI's envelope shape, regardless of which route or provider produced it.
+
+```json
+{
+  "error": {
+    "message": "...",
+    "type": "invalid_request_error",
+    "code": "string | null",
+    "param": "string | null"
+  }
+}
+```
+
+Same-provider upstream errors — an invalid OpenAI key on an OpenAI call, for example — are forwarded verbatim with the upstream's original HTTP status. Gateway-originated errors (bad config, unknown model, unconfigured provider) use the same envelope shape with the gateway's own `code` values.
+
+---
+
+## Gateway error codes
+
+| Code | Cause |
+| --- | --- |
+| `config_invalid` | Config failed validation (missing provider, malformed entry) |
+| `no_providers` | Zero providers configured — nothing to route to |
+| `invalid_model_id` | Malformed model ID (missing or misplaced `/`) |
+| `model_not_found` | Provider segment isn't a known or configured name |
+| `provider_not_configured` | Known provider name, but not present in the registry |
+| `model_unsupported_operation` | Catalog says the model doesn't support the requested operation |
+| `unsupported_modality` | Provider has no model for the requested modality (e.g. no `videoModel`) |
+| `invalid_request_body` | Request body failed shape validation |
+| `request_entity_too_large` | Request exceeded `maxBodyBytes` |
+| `invalid_tool_arguments` | Tool call arguments failed to parse |
+| `resource_not_found` | Unknown route |
+
+---
+
+## Build matching envelopes
+
+Import error classes and envelope builders from the `./errors` subpath for custom handlers or embedding hosts that need to produce gateway-compatible error responses.
+
+```ts
+import { GatewayError, toOpenAIErrorResponse, isGatewayError } from '@frogbotai/gateway/errors'
+
+try {
+  await handleRequest(req)
+} catch (err) {
+  if (isGatewayError(err)) {
+    return toOpenAIErrorResponse(err)
+  }
+  throw err
+}
+```
+
+`toAnthropicErrorResponse` produces the equivalent envelope for the `/v1/messages` route's wire format.
+
+---
+
+## Error classes
+
+`ConfigError`, `ModelIdError`, `ProviderNotConfiguredError`, `UnsupportedModalityError`, `RequestValidationError`, `BodyTooLargeError`, `InvalidToolArgumentsError`, `ModelNotFoundError`, `ModelUnsupportedOperationError`, `NotFoundError`, and `NoProvidersError` all extend `GatewayError` and carry a `code` matching the table above.

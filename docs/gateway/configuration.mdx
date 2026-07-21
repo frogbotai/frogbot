@@ -1,0 +1,108 @@
+---
+title: "Configuration"
+sidebarTitle: "Configuration"
+description: "gateway.config.ts, CLI flags, environment auto-discovery, and allow/deny lists."
+keywords: ["configuration", "gateway.config.ts", "defineConfig", "CLI", "enabled_providers", "disabled_providers"]
+---
+
+The CLI loads `gateway.config.{ts,mjs,js,json}` from the current directory, or a path passed with `--config`. Embedders skip the file entirely and pass a config object straight to `createGateway`.
+
+---
+
+## Write a config file
+
+Use `defineConfig` for autocomplete and compile-time checking of the `providers` map.
+
+```ts
+import { defineConfig } from '@frogbotai/gateway'
+
+export default defineConfig({
+  providers: {
+    openai: { apiKey: process.env.OPENAI_API_KEY! },
+    anthropic: { apiKey: process.env.ANTHROPIC_API_KEY! },
+    ollama: { baseURL: 'http://localhost:11434/v1' }
+  },
+  upstreamTimeoutMs: 60_000,
+  hooks: {
+    afterOperation: [
+      ({ operation, model, usage }) => {
+        console.log(operation, model, usage?.totalTokens)
+      }
+    ]
+  }
+})
+```
+
+Known provider keys are checked against that provider's exact config or instance type; any other key must supply a `baseURL` (see [Providers](/gateway/providers)). A config with no providers at all fails validation on startup.
+
+---
+
+## Auto-discover from env
+
+Running the CLI with no config file discovers providers from environment variables — each built-in provider defines its own list, checked in order.
+
+```bash
+OPENAI_API_KEY=sk-... ANTHROPIC_API_KEY=sk-ant-... npx @frogbotai/gateway
+```
+
+| Provider | Env vars |
+| --- | --- |
+| `openai` | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_ORGANIZATION`, `OPENAI_PROJECT` |
+| `anthropic` | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL` |
+| `amazon-bedrock` | `AWS_BEARER_TOKEN_BEDROCK`, or `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` + `AWS_REGION` (+ optional `AWS_SESSION_TOKEN`) |
+
+Every built-in provider has an equivalent list. If none resolve, the CLI exits with an error naming every env var it checked. A config file merges on top of env-discovered providers rather than replacing them — the file wins on conflicts.
+
+Custom OpenAI-compatible endpoints are never auto-discovered — there's no reasonable way to derive a base URL from env alone, so they always need an explicit `providers` entry.
+
+---
+
+## CLI flags
+
+```bash
+Usage: frogbotai-gateway [command] [options]
+
+Commands:
+  (default)              Start the gateway server
+  init [dir]              Scaffold a standalone gateway server project
+
+Options:
+  -p, --port <port>      Port to listen on (default: 3939 or PORT)
+  -c, --config <path>    Load config at the explicit config layer
+  -q, --quiet            Suppress startup banner
+  -h, --help             Show this help
+```
+
+`npx @frogbotai/gateway init` scaffolds a standalone project — `src/server.ts`, `package.json`, `tsconfig.json`, `.env.example`, and a `.gitignore` — for embedding the gateway behind your own Hono server instead of running the bundled CLI server.
+
+---
+
+## Allow and deny lists
+
+Filter the merged provider set without removing entries from the config itself.
+
+```ts
+export default defineConfig({
+  providers: {
+    openai: { apiKey: process.env.OPENAI_API_KEY! },
+    groq: { apiKey: process.env.GROQ_API_KEY! }
+  },
+  disabled_providers: ['groq']
+})
+```
+
+`enabled_providers` is an allow list — when set and non-empty, only those names survive. `disabled_providers` is a deny list, evaluated after the allow list. Both apply to built-in and custom provider names alike. An unknown name in either list fails validation.
+
+---
+
+## Other options
+
+| Option | Purpose |
+| --- | --- |
+| `basePath` | Extra path prefix routes are also served under (default `/v1`). Bare paths always work. |
+| `catalog` | Custom model catalog for `GET /v1/models` and operation validation. Discovery-only — unlisted models still route. |
+| `maxBodyBytes` | Request body size cap, enforced on every route. Defaults to 10 MB (25 MB for audio transcriptions). |
+| `upstreamTimeoutMs` | Server-side deadline per upstream call. A fired deadline surfaces as `504 gateway_timeout`. Requires Node ≥ 20. |
+| `logger` | A ready logger instance (pino-compatible) or options for the built-in console logger. |
+| `tracing` | OpenTelemetry endpoint options. See [Observability](/gateway/observability). |
+| `tracer` | A host-provided OpenTelemetry `Tracer`, used instead of the global tracer. |

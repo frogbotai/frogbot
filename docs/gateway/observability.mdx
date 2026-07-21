@@ -1,0 +1,93 @@
+---
+title: "Observability"
+sidebarTitle: "Observability"
+description: "Structured logging and OpenTelemetry tracing, on by default and bring-your-own."
+keywords: ["observability", "logging", "OpenTelemetry", "tracing", "OTLP"]
+---
+
+## Logging
+
+Pass any pino-compatible logger, or anything satisfying `GatewayLogger`. Without one, the gateway creates its own console logger.
+
+```ts
+import pino from 'pino'
+import { createGateway } from '@frogbotai/gateway'
+
+const gw = createGateway({
+  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } },
+  logger: pino({ level: 'info' })
+})
+```
+
+Or configure the built-in console logger directly:
+
+```ts
+createGateway({
+  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } },
+  logger: { level: 'debug' }
+})
+```
+
+---
+
+## Tracing
+
+The gateway records spans through `trace.getTracer()` by default — a no-op unless something has registered a global tracer provider. Pass a host-provided `Tracer` to use one explicitly.
+
+```ts
+import { trace } from '@opentelemetry/api'
+
+createGateway({
+  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } },
+  tracer: trace.getTracer('my-app')
+})
+```
+
+### Bootstrap tracing yourself
+
+The Node-only `@frogbotai/gateway/setup` export registers a `NodeTracerProvider` and an OTLP exporter — use it in a standalone deployment that doesn't already have OpenTelemetry wired up. It's a separate entry point specifically so the core gateway path never eagerly imports the OTel SDK (which pulls in `node:async_hooks` and friends).
+
+```ts
+import { setupTracing } from '@frogbotai/gateway/setup'
+
+const flush = setupTracing({ endpoint: 'http://otel-collector:4318/v1/traces' })
+
+// on shutdown
+await flush()
+```
+
+Omit `endpoint` to fall back to the exporter's own env handling: `OTEL_EXPORTER_OTLP_ENDPOINT` (with `/v1/traces` appended) or `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` verbatim.
+
+The CLI calls `setupTracing` automatically when `OTEL_EXPORTER_OTLP_ENDPOINT` is set — no extra setup needed for the standalone server.
+
+<Warning>
+  `@opentelemetry/*` packages are optional peer dependencies. If a tracing endpoint is configured but the peers aren't installed, the CLI reports which packages to add rather than crashing on boot.
+</Warning>
+
+### Metrics
+
+`setupTracing`'s `metrics` option also registers a `MeterProvider` with a periodic OTLP exporter, sharing the same service resource as traces. Pass `metrics: false` to skip it.
+
+```ts
+setupTracing({
+  endpoint: 'http://otel-collector:4318/v1/traces',
+  metrics: { endpoint: 'http://otel-collector:4318/v1/metrics' }
+})
+```
+
+---
+
+## What gets traced
+
+Hooks contribute low-cardinality `otel` attributes that get flushed to spans and metrics — every entry becomes a metric dimension, so avoid user or session IDs there.
+
+```ts
+hooks: {
+  beforeUpstream: [
+    ({ otel, provider, model }) => {
+      otel['gateway.provider'] = provider
+      otel['gateway.model'] = model
+    }
+  ]
+}
+```
