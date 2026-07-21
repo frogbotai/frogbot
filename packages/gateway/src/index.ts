@@ -7,7 +7,7 @@
 
 // Gateway factory — the primary entry point
 export { createGateway } from './gateway.js';
-export type { Gateway, GatewayOperation, GatewayOperationOptions } from './gateway.js';
+export type { Gateway, GatewayHandler, GatewayOperation, GatewayOperationOptions } from './gateway.js';
 
 // Config
 export { defineConfig } from './config/schema.js';

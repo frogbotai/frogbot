@@ -8,7 +8,7 @@ import {
   MockVideoModelV4,
 } from 'ai/test';
 import { generateText } from 'ai';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { createGateway } from './gateway.js';
 
@@ -30,7 +30,7 @@ describe('createGateway', () => {
       speechModel: () => speech,
       transcriptionModel: () => transcription,
       rerankingModel: () => rerank,
-    } as typeof gw.registry.openai;
+    } as unknown as typeof gw.registry.openai;
 
     expect(gw.chatModel('openai/chat').modelId).toBe(chat.modelId);
     expect(gw.embedModel('openai/embed').modelId).toBe(embed.modelId);
@@ -64,11 +64,24 @@ describe('createGateway', () => {
       providers: { openai: { apiKey: 'test-key' } },
       hooks: { beforeUpstream: [beforeUpstream], afterUpstream: [afterUpstream] },
     });
-    gw.registry.openai = { languageModel: () => model } as typeof gw.registry.openai;
+    gw.registry.openai = { languageModel: () => model } as unknown as typeof gw.registry.openai;
 
     await generateText({ model: gw.chatModel('openai/chat'), prompt: 'hi' });
 
     expect(beforeUpstream).toHaveBeenCalledOnce();
     expect(afterUpstream).toHaveBeenCalledOnce();
+  });
+
+  it('handler is assignable to runtime fetch callbacks (G-handler-overload)', () => {
+    const gw = createGateway({ providers: { openai: { apiKey: 'test-key' } } });
+
+    expectTypeOf(gw.handler).toExtend<(request: Request) => Response | Promise<Response>>();
+    expectTypeOf(gw.handler).toExtend<
+      (request: Request, env: { incoming: unknown; outgoing: unknown }) => Response | Promise<Response>
+    >();
+    expectTypeOf(gw.handler).toExtend<
+      (request: Request, env: unknown, ctx: unknown) => Response | Promise<Response>
+    >();
+    expectTypeOf(gw.handler).toBeCallableWith(new Request('http://x'), { context: { user: 'u1' } });
   });
 });

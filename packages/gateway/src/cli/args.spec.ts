@@ -38,7 +38,23 @@ describe('parseCliArgs', () => {
   });
 
   it('prints clean help text', () => {
-    expect(helpText()).toContain('Usage: frogbotai-gateway [options]');
+    expect(helpText()).toContain('Usage: frogbotai-gateway [command] [options]');
     expect(helpText()).toContain('--quiet');
+    expect(helpText()).toContain('init [dir]');
+  });
+
+  it('parses the init command with and without a directory', () => {
+    expect(parseCliArgs(['init'])).toEqual({ command: 'init', help: false, quiet: false });
+    expect(parseCliArgs(['init', 'my-gateway'])).toEqual({
+      command: 'init',
+      dir: 'my-gateway',
+      help: false,
+      quiet: false,
+    });
+  });
+
+  it('rejects unknown commands and extra init positionals', () => {
+    expect(() => parseCliArgs(['star'])).toThrow('unknown command: star');
+    expect(() => parseCliArgs(['init', 'a', 'b'])).toThrow('unknown command: b');
   });
 });

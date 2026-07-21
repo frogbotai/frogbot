@@ -28,7 +28,7 @@ function makeGateway(hooks: Hooks, doGenerate = okGenerate()): Gateway {
   const gw = createGateway({ providers: { openai: { apiKey: 'test-key' } }, hooks });
   gw.registry.openai = {
     languageModel: () => new MockLanguageModelV4({ doGenerate }),
-  } as typeof gw.registry.openai;
+  } as unknown as typeof gw.registry.openai;
   return gw;
 }
 
