@@ -1,19 +1,21 @@
-# Gateway example: AWS Bedrock + self-hosted inference
+# Gateway example: multi-provider AI gateway
 
-One `@frogbotai/gateway` instance — embedded in a ~50-line Hono server (`src/server.ts`) — fronting two very different backends through a single OpenAI-compatible API:
+One `@frogbotai/gateway` instance — embedded in a ~65-line Hono server (`src/server.ts`) — fronting several very different backends through a single OpenAI-compatible API:
 
-- **AWS Bedrock** — managed models (Claude, Nova, Llama, ...) using your AWS credentials
+- **Managed providers** — AWS Bedrock, Anthropic, OpenAI, and Fireworks, each enabled independently by whichever API keys you set
 - **Ollama** — real self-hosted inference running on your machine, standing in for any OpenAI-compatible endpoint (vLLM, TGI, SGLang, ...) you run on your own GPUs
 
+> This example runs `@frogbotai/gateway` standalone, with zero FrogBot dependencies. FrogBot's core framework embeds this exact package internally to power its own `ai` config block — see [Configure AI in FrogBot](https://docs.frogbot.ai/configuration/ai) if that's what you're looking for instead.
+
 ```
-                          ┌──────────────────────┐
-  opencode / OpenAI SDK   │  @frogbotai/gateway  │──── amazon-bedrock/... ──▶ AWS Bedrock
-  curl / any client  ────▶│  localhost:3939/v1   │
-                          │                      │──── ollama/... ──────────▶ Ollama (:11434)
-                          └──────────────────────┘
+                          ┌──────────────────────┐──── amazon-bedrock/... ───▶ AWS Bedrock
+  opencode / OpenAI SDK   │  @frogbotai/gateway  │──── anthropic/... ───────▶ Anthropic
+  curl / any client  ────▶│  localhost:3939/v1   │──── openai/... ──────────▶ OpenAI
+                          │                      │──── fireworks/... ──────▶ Fireworks
+                          └──────────────────────┘──── ollama/... ──────────▶ Ollama (:11434)
 ```
 
-Clients pick the backend with the model prefix: `amazon-bedrock/<model>` or `ollama/<model>`. Nothing else about the request changes.
+Clients pick the backend with the model prefix: `amazon-bedrock/<model>`, `anthropic/<model>`, `openai/<model>`, `fireworks/<model>`, or `ollama/<model>`. Nothing else about the request changes.
 
 ## Setup
 
@@ -28,7 +30,7 @@ For the self-hosted side, [install Ollama](https://ollama.com/download) and pull
 ollama pull llama3.2
 ```
 
-Fill in the AWS slots in `.env`. Two auth modes are supported — use one:
+Fill in whichever provider slots you want in `.env`. AWS Bedrock supports two auth modes — use one:
 
 | Variable | Purpose |
 | --- | --- |
@@ -47,11 +49,11 @@ Every provider slot is optional and independent: leave a slot empty and that pro
 pnpm dev
 ```
 
-The gateway starts on `:3939` (`pnpm start` for no file watching). Everything lives in `src/server.ts`: it loads `.env`, builds the Bedrock provider from the AWS env vars (bearer or SigV4), registers Ollama as an OpenAI-compatible endpoint, logs token usage after every request via an `afterOperation` hook, and serves `createGateway().handler` with `@hono/node-server`. Fully typed — your editor autocompletes the whole config.
+The gateway starts on `:3939` (`pnpm start` for no file watching). Everything lives in `src/server.ts`: it loads `.env`, builds each managed provider from its env vars when present, registers Ollama as an OpenAI-compatible endpoint, logs token usage after every request via an `afterOperation` hook, and serves `createGateway().handler` with `@hono/node-server`. Fully typed — your editor autocompletes the whole config.
 
 ## Try it
 
-Self-hosted route (no AWS credentials needed):
+Self-hosted route (no cloud credentials needed):
 
 ```bash
 curl http://localhost:3939/v1/chat/completions \
@@ -90,26 +92,27 @@ Models available under the `frogbot-gateway` provider:
 - `amazon-bedrock/us.amazon.nova-pro-v1:0` — Nova Pro via Bedrock
 - `ollama/llama3.2` — local inference via Ollama
 
-opencode never sees an AWS credential — it talks plain OpenAI wire format to `localhost:3939/v1` and the gateway holds the upstream keys. Any other OpenAI-compatible client (OpenAI SDK, LangChain, LiteLLM, curl) works the same way.
+opencode never sees an upstream credential — it talks plain OpenAI wire format to `localhost:3939/v1` and the gateway holds the provider keys. Any other OpenAI-compatible client (OpenAI SDK, LangChain, LiteLLM, curl) works the same way.
 
 ## Your own GPU cluster instead of Ollama
 
-Ollama is just a stand-in for "an OpenAI-compatible endpoint you run yourself." Against a real cluster, edit the entry in `src/server.ts`:
+Ollama is just a stand-in for "an OpenAI-compatible endpoint you run yourself." Against a real cluster, edit the entry in `src/server.ts` — any key that isn't a built-in provider name is a custom OpenAI-compatible endpoint, and the key becomes its `<name>/<model>` prefix:
 
 ```ts
-openaiCompatible: [
-  {
-    name: 'gpu-cluster',
+providers: {
+  // ...
+  'gpu-cluster': {
     baseURL: 'https://inference.internal.example.com/v1',
     apiKey: process.env.GPU_INFERENCE_API_KEY,
   },
-],
+},
 ```
 
-Anything that speaks the OpenAI chat completions protocol (vLLM, TGI, SGLang, llama.cpp server, ...) works unchanged, and you can declare as many entries as you have clusters — each becomes its own `<name>/<model>` prefix.
+Anything that speaks the OpenAI chat completions protocol (vLLM, TGI, SGLang, llama.cpp server, ...) works unchanged, and you can add as many entries as you have clusters — each becomes its own `<name>/<model>` prefix.
 
 ## Deploying
 
 `src/server.ts` is the deployment unit — it runs anywhere Node ≥ 20 runs (container, VM, `node dist/server.js` after a `tsc` build). To use IAM roles instead of static keys, pass the AWS credential chain to the Bedrock provider: `{ region, credentialProvider: fromNodeProviderChain() }` (from `@aws-sdk/credential-providers`).
 
 Because the gateway is just a fetch handler, the same `createGateway()` call also mounts inside an existing Hono/Next.js/Bun service (`app.mount('/v1', gateway.handler)`) — no separate process required. And for zero-code, env-only setups there's a standalone CLI: `npx @frogbotai/gateway`.
+

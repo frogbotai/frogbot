@@ -7,6 +7,10 @@ keywords: ["gateway", "@frogbotai/gateway", "AI SDK", "OpenAI-compatible", "self
 
 `@frogbotai/gateway` is a standalone AI gateway built on the Vercel AI SDK. Point any OpenAI-compatible client at it and route to OpenAI, Anthropic, Google, Groq, Bedrock, Vertex, or 30+ other providers through one endpoint. It has zero FrogBot dependencies — run it from the CLI, or embed it as a fetch handler inside any server you already have.
 
+<Info>
+  FrogBot's core framework embeds this exact package internally to power its [`ai` config block](/configuration/ai) — that's the gateway running in-process, with router aliases and access control layered on top. This page and the rest of this section cover using the package standalone, outside of FrogBot.
+</Info>
+
 ---
 
 ## Run it standalone
