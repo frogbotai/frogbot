@@ -34,9 +34,12 @@ Fill in the AWS slots in `.env`. Two auth modes are supported — use one:
 | --- | --- |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` | SigV4 credentials (add `AWS_SESSION_TOKEN` for temporary/SSO creds) |
 | `AWS_BEARER_TOKEN_BEDROCK` | Bedrock API key (bearer) mode — simplest path, region defaults to `us-east-1` |
+| `ANTHROPIC_API_KEY` | Direct Anthropic provider — enables `anthropic/...` routes |
+| `OPENAI_API_KEY` | Direct OpenAI provider — enables `openai/...` routes |
+| `FIREWORKS_API_KEY` | Fireworks provider — enables `fireworks/...` routes |
 | `OLLAMA_BASE_URL` | Ollama's OpenAI-compatible endpoint (defaults to `http://localhost:11434/v1`) |
 
-Either side is optional: leave the AWS slots empty and the Bedrock provider is simply skipped; skip Ollama and the `ollama/...` routes return an upstream error while everything else keeps working.
+Every provider slot is optional and independent: leave a slot empty and that provider is simply skipped — the startup log prints exactly which providers registered. Reasoning (`reasoning_effort`) is translated to native extended-thinking for Claude on both `amazon-bedrock/...` and `anthropic/...`.
 
 ## Run
 
