@@ -13,7 +13,7 @@
   "colors": {
     "primary": "#030712",
     "light": "#F9FAFB",
-    "dark": "#2f964f"
+    "dark": "#3acf6a"
   },
   "favicon": "/favicon.svg",
   "styling": {
@@ -156,7 +156,7 @@
     }
   },
   "logo": {
-    "light": "/logo/FrogBotLongGreen.svg",
+    "light": "/logo/FrogBotLightGreen.svg",
     "dark": "/logo/FrogBotLongGreen.svg"
   },
   "navbar": {

@@ -1,0 +1,72 @@
+/* FrogBot docs — dark mode contrast fixes.
+   Background is a dark navy (#101828), so Mintlify's default gray-400
+   secondary text is too dim. Unify secondary text on one brighter color
+   in dark mode only, so the sidebar/body don't show mismatched tiers. */
+
+/* Sidebar: leaf links AND collapsible group toggles (a + button) */
+.dark #sidebar-content a,
+.dark #sidebar-content button {
+  color: #d1d5db !important;
+}
+.dark #sidebar-content a:hover,
+.dark #sidebar-content button:hover {
+  color: #f9fafb !important;
+}
+
+/* Sidebar group headers (e.g. "Basic", "Managing Data", "Features") */
+.dark .sidebar-group-header {
+  color: #e5e7eb;
+}
+
+/* Brighten all body text in the content area (paragraphs, the lead/page
+   description under the title, list items, spans). Mintlify renders these
+   via several different mechanisms (prose vars, page-description element,
+   data-as="p" spans), so target the content container broadly and then
+   restore emphasis colors below. */
+.dark #content-area,
+.dark #content-area p,
+.dark #content-area li,
+.dark #content-area span,
+.dark #content-area [data-as="p"],
+.dark .prose :where(p, li, span):not(:where(code, code *)) {
+  color: #cbd5e1 !important;
+}
+
+/* Prose CSS variables (covers anything the rules above miss). */
+.dark .prose {
+  --tw-prose-invert-body: #cbd5e1;
+  --tw-prose-invert-lead: #cbd5e1;
+  --tw-prose-invert-bullets: #64748b;
+  --tw-prose-invert-counters: #94a3b8;
+  --tw-prose-invert-quotes: #e2e8f0;
+  --tw-prose-invert-captions: #94a3b8;
+  --tw-prose-invert-headings: #f8fafc;
+  --tw-prose-invert-bold: #f8fafc;
+}
+
+/* Card descriptions render as a span inside data-component-part=card-content. */
+.dark [data-component-part="card-content"],
+.dark [data-component-part="card-content"] * {
+  color: #cbd5e1 !important;
+}
+
+/* Table of contents */
+.dark #table-of-contents a {
+  color: #cbd5e1;
+}
+.dark #table-of-contents a:hover {
+  color: #f1f5f9;
+}
+
+/* Keep headings and card titles crisp white (must beat the broad rule above) */
+.dark #content-area h1,
+.dark #content-area h2,
+.dark #content-area h3,
+.dark #content-area h4,
+.dark #content-area h1 *,
+.dark #content-area h2 *,
+.dark #content-area h3 *,
+.dark #content-area h4 *,
+.dark [data-component-part="card-title"] {
+  color: #f8fafc !important;
+}
