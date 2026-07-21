@@ -30,6 +30,8 @@
 
 One endpoint, every provider. Point any OpenAI-compatible client at the gateway and route to OpenAI, Anthropic, Google, Groq, Mistral, Bedrock, Vertex, and 30+ more providers — with streaming, hooks, and full OpenTelemetry observability. Run it standalone from the CLI, or embed it as a fetch handler inside any server you already have.
 
+> FrogBot's core framework embeds this exact package to power its own `ai` config block — see [Configure AI in FrogBot](https://docs.frogbot.ai/configuration/ai). This package has zero FrogBot dependencies, so it also runs completely on its own: standalone from the CLI, or embedded in any Node/Bun/Deno/Workers server.
+
 ## Features
 
 - **OpenAI-compatible wire formats** — Chat Completions, the Responses API, and Anthropic's Messages API, so existing SDKs and clients work unchanged
@@ -178,7 +180,7 @@ Same-provider upstream errors (e.g. an invalid OpenAI key on an OpenAI call) are
 
 ## Part of FrogBot
 
-The gateway powers [FrogBot](https://github.com/frogbotai/frogbot), the config-first AI agent framework — but it has zero FrogBot dependencies and works great on its own.
+This package has zero FrogBot dependencies and works great entirely on its own. It's also the exact package [FrogBot](https://github.com/frogbotai/frogbot) — the config-first AI agent framework — embeds internally for its `ai` config block. See [Configure AI in FrogBot](https://docs.frogbot.ai/configuration/ai) for that integration.
 
 ## License
 
