@@ -12,8 +12,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@frogbotai/db-sqlite": "^0.0.1",
-    "frogbot": "^0.0.1",
+    "@frogbotai/db-sqlite": "0.1.0",
+    "frogbot": "0.1.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
