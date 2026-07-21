@@ -24,100 +24,56 @@ export default buildConfig({
 
 ## FrogBot collection model
 
-FrogBot ships **no forced user-facing collections**. `create-frogbot-app` scaffolds the collections most apps need into your repo as plain files you own — import them, mark their roles, register them. Edit, rename, or replace them freely; FrogBot upgrades never touch them.
+Collections you configure remain ordinary Payload collections. When agents are present, FrogBot also needs thread and message stores. It injects defaults or lets you adopt those roles into collections you own.
 
 ### Role markers
 
-FrogBot identifies collections by **role**, not slug. Mark the collection that plays each role with a flag on the config object and FrogBot merges in the minimal required fields at sanitization time. Same pattern as Payload's `auth: true`.
+FrogBot identifies chat collections by role, not by a required slug. Mark a collection with `thread: true` or `message: true`; FrogBot keeps its slug and merges in the required schema.
 
 ```ts
-// src/collections/Projects.ts
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'frogbot'
 
-export const Projects: CollectionConfig = {
-  slug: 'projects',
-  project: true,                 // FrogBot role marker
-  fields: [/* yours */],
+export const Conversations: CollectionConfig = {
+  slug: 'conversations',
+  thread: true,
+  fields: [{ name: 'channel', type: 'text' }]
 }
 
-// src/collections/Files.ts
-export const Files: CollectionConfig = {
-  slug: 'files',
-  upload:  true,                 // Payload upload flag
-  file:    true,                 // FrogBot role marker
-  fields: [/* yours */],
+export const Turns: CollectionConfig = {
+  slug: 'turns',
+  message: true,
+  fields: []
 }
 ```
 
-Rename collections to fit your domain (`Workspaces`, `Matters`, `Spaces`, ...) — the role marker does the wiring, slug is whatever you want. Exactly one collection per role is required; sanitization throws if zero or more than one is marked.
+Mark at most one collection per role. With no marker, agents cause FrogBot to inject defaults at `threads` and `messages`. An unmarked collection already using either default slug causes a configuration error rather than implicit adoption.
 
 ### Field contribution per role
 
-When a collection carries a role marker, FrogBot merges in a minimal required set. You own everything else — every field, hook, access rule, and admin component.
+Your compatible field, access, admin, and option values win during the merge. Missing base fields are appended and hooks are combined.
 
-| Role marker     | FrogBot contributes                                                                                                                  |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `auth: true`    | Payload's standard auth. Set to `true` for defaults or pass an auth config object for fine-grained control. FrogBot extends the auth config with `providers`, `allowedDomains`, and `allowSignup`. [More details](/authentication/overview). |
-| `project: true` | `name`, `slug` (indexed unique within tenant), `localSync` group (`enabled`, `path`).                                               |
-| `file: true`    | Requires `upload: true`. Adds `sha256` (indexed), `project` relation, per-project dedup hook.                                       |
-| `thread: true`  | `project` relation, `title`, `summary`, `status`. Default access scoped to project members.                                         |
-| `message: true` | `thread` relation, `attachments` (polymorphic `upload` across file-role collection + `_frogbot_thread_assets`), `role`, `parts`.    |
+| Role marker | FrogBot contributes |
+| --- | --- |
+| `thread: true` | `title`, owner `user` relationship, agent slug, and `lastMessageAt` |
+| `message: true` | Text `id`, thread relationship, role, `UIMessage.parts`, metadata, and usage |
 
-### Scaffolded collections
+FrogBot rejects incompatible base field types. `threads.user` and `messages.id`, `messages.thread`, and `messages.parts` are reserved and cannot be redefined.
 
-`create-frogbot-app` writes these into your repo. You own the files from the first commit.
+### Default collections
 
-| File                            | Role marker     | Purpose                                                                    |
-| ------------------------------- | --------------- | -------------------------------------------------------------------------- |
-| `src/collections/Users.ts`      | `auth: true`    | Auth-enabled identity collection.                                          |
-| `src/collections/Projects.ts`   | `project: true` | Project boundary. Scopes files, threads, agents. Optional local disk sync. |
-| `src/collections/Files.ts`      | `file: true`    | Project-scoped file primitive. All mime types.                             |
-| `src/collections/Threads.ts`    | `thread: true`  | Threads (chat, agent, run) bound to a project.                             |
-| `src/collections/Messages.ts`   | `message: true` | Messages within a thread.                                                  |
+The default collections use soft deletion, appear under **Chat** in the admin panel, and scope access to the authenticated thread owner. The message ID is the AI SDK UI message ID, allowing an interrupted assistant message to be continued in place across database adapters.
 
-### Internal collections
+The thread's `user` relationship resolves as follows:
 
-Locked-schema collections shipped from `frogbot`. Hidden from admin nav, prefixed `_frogbot_`. Never import, edit, or query these directly — they are implementation detail.
+- No auth collection: Payload's default `users` collection.
+- One auth collection: that collection, regardless of slug.
+- Multiple auth collections: the collection selected by `admin.user`.
 
-| Collection                  | Holds                                                                                                                              |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `_frogbot_identity_assets`  | User avatars (and org logos when tenancy is installed). Public-readable for branding purposes.                                     |
-| `_frogbot_thread_assets`    | Browser-agent screenshots, AI intermediates, any artifact produced during a thread but not promoted to the project file tree. Scoped to thread, never expire. |
-
-### File model
-
-`Files`, `_frogbot_identity_assets`, and `_frogbot_thread_assets` are all upload-enabled Payload collections. When a `storage` adapter is configured on the root config, `disableLocalStorage: true` is set automatically and bytes go to the adapter. Without an adapter, files are stored on disk.
-
-Deduplication is per-collection-per-scope via a `sha256` field plus a `beforeOperation` hook:
-
-- **file role** — dedup is per `project`. Re-uploading the same bytes in the same project returns the existing record.
-- **`_frogbot_thread_assets`** — dedup is per `thread`.
-
-When a user attaches a file in chat, the server hashes the bytes and checks the file-role collection for the current project first. A hit means the message attachment references the existing project file — no upload, no new row. A miss creates a thread asset. The user can promote any thread asset into the project tree later, which performs a server-side storage copy (no re-upload from client).
-
-`Messages.attachments` is a polymorphic `upload` field across `[<file-role-slug>, '_frogbot_thread_assets']` so one message can mix project files and thread-only artifacts.
-
-### Tenancy plugin
-
-Multi-tenant deployments install `@frogbot/plugin-tenancy`. It scaffolds an `Orgs` collection (with a `tenant: true` marker), adds a `tenant` relation field to the slugs you specify, scopes all reads and writes per tenant, and exposes `req.frogbot.tenant`. Single-tenant deploys leave the plugin out — no org row, no tenant concept.
-
-```ts
-import { tenancy } from '@frogbot/plugin-tenancy'
-import { Orgs } from './collections/Orgs'
-
-buildConfig({
-  collections: [Users, Orgs, Projects, Files, Threads, Messages],
-  plugins: [
-    tenancy({
-      scope: ['projects', 'files', 'threads', 'messages'],
-    }),
-  ],
-})
-```
+See [Chat persistence](/chat/overview) for request behavior and durability guarantees.
 
 ## Collection config options
 
-The following options are available on any `CollectionConfig`. FrogBot adds `project`, `file`, `thread`, `message`, and `tenant` to Payload's standard set — everything else below is Payload's native API.
+The following options are available on any `CollectionConfig`. FrogBot adds `thread` and `message` to Payload's standard set; everything else below is Payload's native API.
 
 It's best practice to write Collections in separate files and import them into the root config.
 
@@ -148,11 +104,8 @@ The following options are available:
 
 | Option               | Description                                                                                                                                                                                                                                                |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `project`            | **FrogBot** — marks this as the project-boundary collection. Exactly one required. [More details](#role-markers).                                                                                                                                          |
-| `file`               | **FrogBot** — marks this as the file collection. Requires `upload: true`. Exactly one required. [More details](#role-markers).                                                                                                                             |
-| `thread`             | **FrogBot** — marks this as the thread collection. Exactly one required. [More details](#role-markers).                                                                                                                                                    |
-| `message`            | **FrogBot** — marks this as the message collection. Exactly one required. [More details](#role-markers).                                                                                                                                                   |
-| `tenant`             | **FrogBot** — marks this as the tenant collection. Added by `@frogbot/plugin-tenancy`. [More details](#tenancy-plugin).                                                                                                                                    |
+| `thread`             | **FrogBot** — adopts this collection as the thread store. At most one collection may be marked. [More details](#role-markers).                                                                                                                           |
+| `message`            | **FrogBot** — adopts this collection as the message store. At most one collection may be marked. [More details](#role-markers).                                                                                                                         |
 | `admin`              | The configuration options for the Admin Panel. [More details](#admin-options).                                                                                                                                                                             |
 | `access`             | Provide Access Control functions to define exactly who should be able to do what with Documents in this Collection. [More details](/access-control/collections).                                                                                         |
 | `auth`               | Specify options if you would like this Collection to feature authentication. Set to `true` for defaults or pass an auth config object. FrogBot extends auth with `providers`, `allowedDomains`, and `allowSignup`. [More details](/authentication/overview).                                                                                         |

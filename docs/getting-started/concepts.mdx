@@ -1,169 +1,115 @@
 ---
-title: "FrogBot Concepts"
+title: "FrogBot concepts"
 sidebarTitle: "Concepts"
-description: "The high-level concepts FrogBot is built around — config, runtime, content, pieces, plugins, and clients."
+description: "Understand FrogBot configuration, collections, agents, tools, and chat storage."
+keywords: ["concepts", "configuration", "collections", "agents", "tools", "chat"]
 ---
 
-FrogBot is built around a small set of concepts. Understanding these makes the rest of the docs easier to follow.
+FrogBot combines Payload's application and data layer with the AI SDK's model and agent primitives. Your TypeScript configuration defines the runtime; FrogBot does not scan folders or synchronize Markdown definitions into the database.
 
 <CardGroup cols={2}>
-  <Card title="Config" icon="file-cog" href="/configuration/overview">
-    A typed `frogbot.config.ts` file that drives the platform. It is the only file users edit to configure FrogBot.
+  <Card title="Configuration" icon="file-cog" href="/configuration/overview">
+    A typed `frogbot.config.ts` file registers collections, AI providers, agents, plugins, and endpoints.
   </Card>
-  <Card title="Database" icon="database" href="/database/overview">
-    A database adapter wires FrogBot to MongoDB or Postgres. The database is the runtime source of truth.
+  <Card title="Collections" icon="database" href="/configuration/collections">
+    Payload collections provide schemas, access control, hooks, and generated APIs for application data.
   </Card>
-  <Card title="Models" icon="cpu" href="/configuration/overview#models">
-    Model providers configured per deployment. Self-hosted users bring their own API keys.
+  <Card title="AI" icon="cpu" href="/configuration/ai">
+    Providers, model aliases, access rules, hooks, and telemetry run through FrogBot's embedded gateway.
   </Card>
-  <Card title="Pieces" icon="puzzle" href="/configuration/overview#pieces">
-    Integrations such as Slack, Gmail, Notion, and GitHub. Each piece is a scoped npm package.
+  <Card title="Agents" icon="bot" href="/configuration/agents">
+    Code-defined tool loops combine instructions, a model, tools, stopping rules, and access control.
   </Card>
-  <Card title="Skills" icon="sparkles" href="/getting-started/concepts#skills">
-    Reusable instruction sets agents load on demand. Authored as Markdown with frontmatter.
+  <Card title="Chat" icon="messages-square" href="/chat/overview">
+    Owner-scoped threads store AI SDK UI messages and restore server-owned history on later turns.
   </Card>
-  <Card title="Agents" icon="bot" href="/getting-started/concepts#agents">
-    Personas with model preferences, skill access, and MCP connections.
-  </Card>
-  <Card title="MCPs" icon="plug" href="/getting-started/concepts#mcps">
-    Local or remote MCP servers exposing tools to agents.
-  </Card>
-  <Card title="Flows" icon="workflow" href="/getting-started/concepts#flows">
-    Visual automations made of triggers and steps that call pieces and agents.
-  </Card>
-  <Card title="Plugins" icon="package" href="/getting-started/concepts#plugins">
-    Functions that take the config and return a modified config. Extend the platform without forking it.
+  <Card title="Plugins" icon="package" href="/plugins/overview">
+    Config transforms add or adjust application behavior before sanitization.
   </Card>
 </CardGroup>
 
-## Runtime model
+## Configuration drives the runtime
 
-Files are the source-controlled defaults. The database is the runtime source of truth.
-
-On boot, FrogBot loads configured skills, agents, MCPs, and flows into the database. After boot, the filesystem is never read again. Users create and edit content through the UI, and changes are persisted to the database.
-
-## Project layout
-
-A FrogBot project scaffolded by `npx create-frogbot-app` looks like this:
-
-```txt
-my-agent-platform/
-├── frogbot.config.ts
-├── .env
-├── package.json
-├── docker-compose.yml
-├── Dockerfile
-├── skills/
-├── agents/
-├── mcps/
-├── flows/
-└── public/
-```
-
-## Skills
-
-Skills are reusable instruction sets that agents load on demand. They are not code. They tell an agent how to accomplish a specific task using its tools.
-
-```markdown
----
-name: seo-research
-description: Research keywords and analyze SEO opportunities for a given topic
-model: anthropic/claude-sonnet-4-20250514
-mcps:
-  - dataforseo
-  - perplexity
----
-
-## What you do
-
-1. Take a topic from the user
-2. Use DataForSEO for keyword volume and difficulty
-3. Use Perplexity to research top-ranking content
-4. Return a structured report
-```
-
-## Agents
-
-Agents are personas with instructions, model preferences, skill access, and MCP connections.
-
-```markdown
----
-name: marketing-agent
-description: SEO research, content creation, and social scheduling
-model: anthropic/claude-sonnet-4-20250514
-skills:
-  - seo-research
-mcps:
-  - buffer
-  - dataforseo
----
-
-You are a marketing specialist for {{firm.name}}.
-```
-
-## MCPs
-
-MCP servers are external tool connections. They can be local subprocesses or remote URLs.
-
-```json
-{
-  "name": "dataforseo",
-  "type": "remote",
-  "url": "https://mcp.dataforseo.com",
-  "headers": {
-    "Authorization": "Bearer ${DATAFORSEO_API_KEY}"
-  }
-}
-```
-
-```json
-{
-  "name": "local-browser",
-  "type": "local",
-  "command": ["npx", "-y", "@playwright/mcp-server"]
-}
-```
-
-## Flows
-
-Flows are visual automation definitions exported from the flow builder. Each flow has a trigger and a list of steps that call pieces or agents.
-
-```json
-{
-  "name": "weekly-seo-report",
-  "trigger": { "type": "schedule", "cron": "0 9 * * 1" },
-  "steps": [
-    { "piece": "frogbot-agent", "action": "run-skill", "input": { "skill": "seo-research" } },
-    { "piece": "gmail", "action": "send", "input": { "to": "owner@acme.com" } }
-  ]
-}
-```
-
-## Pieces
-
-Pieces are integrations. Each piece is its own npm package. If a piece is installed and imported in `frogbot.config.ts`, it is available to flows and agents in that deployment.
+FrogBot loads one configuration file during startup. `buildConfig` validates the public surface, runs plugins, resolves chat collection roles, initializes Payload, creates the embedded gateway, and builds the agent registry.
 
 ```ts
-import { slack } from '@frogbot/piece-slack'
-import { gmail } from '@frogbot/piece-gmail'
+import { sqliteAdapter } from '@frogbotai/db-sqlite'
+import { buildConfig } from 'frogbot'
 
 export default buildConfig({
-  pieces: [slack, gmail],
+  secret: process.env.FROGBOT_SECRET!,
+  db: sqliteAdapter({
+    client: { url: 'file:./frogbot.db' }
+  }),
+  collections: [],
+  ai: {
+    providers: {
+      openai: { apiKey: process.env.OPENAI_API_KEY! }
+    }
+  },
+  agents: [
+    {
+      slug: 'assistant',
+      model: 'openai/gpt-4.1-mini',
+      instructions: 'Help the user.'
+    }
+  ]
 })
 ```
 
-A piece connector handles managed OAuth so admins do not need to register an OAuth app for every integration.
+## Collections hold application data
 
-## Plugins
+Collections are source-controlled schema definitions. Payload turns them into Local, REST, and GraphQL APIs and applies their access rules and hooks.
 
-A plugin is a function that takes the config and returns a modified config:
+FrogBot adds role markers for chat customization:
+
+- `thread: true` adopts a collection as the thread store.
+- `message: true` adopts a collection as the message store.
+
+If agents are configured and neither role is marked, FrogBot injects default `threads` and `messages` collections. Generated FrogBot types include the final merged schemas.
+
+## Agents run tool loops
+
+An agent is an `AgentConfig` object, not a database document or Markdown file. FrogBot wraps an AI SDK `ToolLoopAgent`, resolves its model through the gateway, checks access, and supplies a request-aware context to tools.
 
 ```ts
-type FrogbotPlugin = (config: FrogbotConfig) => FrogbotConfig
+import { z } from 'zod'
+import type { AgentConfig, Tool } from 'frogbot'
+
+const lookup: Tool = {
+  slug: 'lookup-campaign',
+  description: 'Read campaign performance',
+  inputSchema: z.object({ campaignId: z.string() }),
+  execute: async ({ campaignId }, ctx) => {
+    return ctx.frogbot.findByID({
+      collection: 'campaigns',
+      id: campaignId,
+      req: ctx.req,
+      overrideAccess: false
+    })
+  }
+}
+
+export const mediaBuyer: AgentConfig = {
+  slug: 'media-buyer',
+  model: 'openai/gpt-4.1',
+  instructions: 'Analyze campaign performance before recommending changes.',
+  tools: [lookup]
+}
 ```
 
-Plugins can add collections, endpoints, hooks, views, settings pages, tasks, and cron jobs. Enterprise features are implemented as plugins with no special treatment.
+Each run has a stable `runId` shared by tools and AI lifecycle hooks.
 
-## Clients
+## Chat stores model trajectories
 
-Web, desktop, and browser extension clients all mount the same shared React app package. They talk to the FrogBot API server over HTTP and WebSocket.
+Authenticated agent HTTP calls create or continue owner-scoped threads. Messages retain the complete `UIMessage.parts` structure, including tool calls and results, so later inference sees the same trajectory rather than a flattened transcript.
+
+The server owns history. A continuation request sends `threadId` and only the next user message; FrogBot loads existing messages, validates them against the agent's tools, and persists both sides of the new turn.
+
+Anonymous calls remain stateless. Local `generate()` calls also remain stateless unless you pass an existing `threadId`.
+
+## Requests connect the layers
+
+`FrogbotRequest` extends Payload's request with `req.frogbot`. Pass the same request through Local API operations and agent calls to preserve the authenticated user, transaction, locale, and hook context.
+
+Access is enforced only when `overrideAccess: false`. HTTP agent endpoints always enforce configured agent and collection access. Local operations default to trusted server behavior, so opt into access checks when running on behalf of a user.

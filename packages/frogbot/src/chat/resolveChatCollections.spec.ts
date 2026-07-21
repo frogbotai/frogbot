@@ -121,8 +121,8 @@ describe('resolveChatCollections', () => {
     ).toThrow("[frogbot] Field 'user' on collection 'convos' is reserved by chat persistence.");
   });
 
-  it('throws when a marked message collection redefines `parts` or `thread`', () => {
-    for (const name of ['parts', 'thread']) {
+  it('throws when a marked message collection redefines `id`, `parts`, or `thread`', () => {
+    for (const name of ['id', 'parts', 'thread']) {
       expect(() =>
         resolveChatCollections(make([{ slug: 'turns', message: true, fields: [{ name, type: 'json' }] }])),
       ).toThrow(`[frogbot] Field '${name}' on collection 'turns' is reserved by chat persistence.`);

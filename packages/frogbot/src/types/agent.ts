@@ -10,6 +10,7 @@ import type {
 
 import type { ModelId } from './ai.js';
 import type { AgentSlug } from './generated.js';
+import type { DocID } from './operations.js';
 import type { FrogbotRequest } from './request.js';
 import type { AnyTool } from './tool.js';
 
@@ -24,7 +25,7 @@ export type AgentConfig = {
   access?: AgentAccess;
 };
 
-export type AgentGenerateOpts = (
+type AgentRunOpts = (
   | { prompt: string; messages?: never }
   | { prompt?: never; messages: UIMessage[] | ModelMessage[] }
 ) & {
@@ -33,7 +34,9 @@ export type AgentGenerateOpts = (
   abortSignal?: AbortSignal;
 };
 
-export type AgentStreamOpts = AgentGenerateOpts;
+export type AgentGenerateOpts = AgentRunOpts & { threadId?: DocID };
+
+export type AgentStreamOpts = AgentRunOpts;
 
 export type AgentGenerateResult = GenerateTextResult<ToolSet, Record<string, unknown>, never>;
 export type AgentStreamResult = StreamTextResult<ToolSet, Record<string, unknown>, never>;

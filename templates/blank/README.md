@@ -3,6 +3,8 @@
 The minimum FrogBot setup: a `users` auth collection, SQLite storage, and one
 agent. No Docker, no external database.
 
+The `users` file is an example you can customize, not a framework requirement. Configuring the agent automatically adds `threads` and `messages`; authenticated agent calls persist there, while the anonymous curl below stays stateless.
+
 ## Quick Start
 
 ```bash

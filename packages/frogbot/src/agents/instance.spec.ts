@@ -35,7 +35,10 @@ vi.mock('ai', async (importOriginal) => {
         return {
           text: 'ok',
           finishReason: 'stop',
+          rawFinishReason: 'stop',
           usage: { inputTokens: 2, outputTokens: 1, totalTokens: 3 },
+          totalUsage: { inputTokens: 2, outputTokens: 1, totalTokens: 3 },
+          steps: [{ content: [{ type: 'text', text: 'ok' }] }],
         };
       }
 
@@ -146,10 +149,23 @@ function makeDeps(config: SanitizedAIConfig, req: FrogbotRequest) {
       chatModel: () => ({}),
     };
   });
+  const frogbot = {
+    config: { chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' } },
+    create: vi.fn(() => Promise.resolve({ id: 'message-1' })),
+    find: vi.fn(() =>
+      Promise.resolve({ docs: [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }] }),
+    ),
+    findByID: vi.fn(() => Promise.resolve({ id: 'thread-1' })),
+    update: vi.fn(() => Promise.resolve({ id: 'thread-1' })),
+    createRequest: vi.fn(() => {
+      Object.assign(req, { frogbot });
+      return Promise.resolve(req);
+    }),
+  };
   return {
     gateway: { chatModel: vi.fn(() => ({})), operation },
     config,
-    frogbot: { createRequest: vi.fn(() => Promise.resolve(req)) },
+    frogbot,
   } as never;
 }
 
@@ -226,5 +242,75 @@ describe('agent hook lifecycle', () => {
     });
 
     expect(afterOperation).toHaveBeenCalledOnce();
+  });
+
+  it('finalizes a stream that aborts before the first step completes', async () => {
+    const afterOperation = vi.fn();
+    const hooks = emptyHooks();
+    hooks.afterOperation.push(afterOperation);
+    const config = makeConfig(hooks);
+    const req = { user: { id: 'user-1' } } as FrogbotRequest;
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      makeDeps(config, req),
+    );
+    const controller = new AbortController();
+
+    await agent.aiAgent.stream({
+      prompt: 'Hello',
+      options: { req, overrideAccess: false },
+      abortSignal: controller.signal,
+    });
+    controller.abort(new Error('cancelled'));
+
+    await vi.waitFor(() => {
+      expect(afterOperation).toHaveBeenCalledOnce();
+    });
+    expect(afterOperation).toHaveBeenCalledWith(
+      expect.objectContaining({ finishReason: 'abort', error: expect.any(Error) }),
+    );
+  });
+
+  it('persists local generate calls only when a threadId is supplied', async () => {
+    const config = makeConfig(emptyHooks());
+    const req = { user: { id: 'user-1' }, payload: { db: {} } } as unknown as FrogbotRequest;
+    const deps = makeDeps(config, req) as unknown as {
+      frogbot: {
+        create: ReturnType<typeof vi.fn>;
+        findByID: ReturnType<typeof vi.fn>;
+        update: ReturnType<typeof vi.fn>;
+      };
+    };
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      deps as never,
+    );
+
+    await agent.generate({ prompt: 'Stateless', req });
+    expect(deps.frogbot.create).not.toHaveBeenCalled();
+
+    await agent.generate({ prompt: 'Hello', threadId: 'thread-1', req, overrideAccess: false });
+
+    expect(deps.frogbot.findByID).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'threads', id: 'thread-1', overrideAccess: false }),
+    );
+    expect(deps.frogbot.create).toHaveBeenCalledTimes(2);
+    expect(deps.frogbot.create).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        collection: 'messages',
+        data: expect.objectContaining({ role: 'user', thread: 'thread-1' }),
+      }),
+    );
+    expect(deps.frogbot.create).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        collection: 'messages',
+        data: expect.objectContaining({ role: 'assistant', thread: 'thread-1' }),
+      }),
+    );
+    expect(deps.frogbot.update).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'threads', id: 'thread-1' }),
+    );
   });
 });

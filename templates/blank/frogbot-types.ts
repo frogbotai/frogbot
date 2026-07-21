@@ -164,7 +164,7 @@ export interface Thread {
  * via the `definition` "messages".
  */
 export interface Message {
-  id: number;
+  id: string;
   thread: number | Thread;
   role: 'user' | 'assistant' | 'system';
   parts: import('frogbot').UIMessage['parts'];
@@ -224,7 +224,7 @@ export interface PayloadLockedDocument {
       } | null)
     | ({
         relationTo: 'messages';
-        value: number | Message;
+        value: string | Message;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -309,6 +309,7 @@ export interface ThreadsSelect {
  * via the `definition` "messages_select".
  */
 export interface MessagesSelect {
+  id?: boolean;
   thread?: boolean;
   role?: boolean;
   parts?: boolean;

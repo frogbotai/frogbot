@@ -22,9 +22,9 @@ describe('defaultMessagesCollection', () => {
     expect(thread).toMatchObject({ type: 'relationship', relationTo: 'conversations', required: true, index: true });
   });
 
-  it('defines thread, role, parts, metadata, and usage fields', () => {
+  it('defines id, thread, role, parts, metadata, and usage fields', () => {
     const names = collection.fields.map((f) => ('name' in f ? f.name : undefined));
-    expect(names).toEqual(['thread', 'role', 'parts', 'metadata', 'usage']);
+    expect(names).toEqual(['id', 'thread', 'role', 'parts', 'metadata', 'usage']);
   });
 
   it('types parts as UIMessage parts via typescriptSchema', () => {
@@ -47,6 +47,18 @@ describe('defaultMessagesCollection', () => {
     };
     expect(await usage.access?.create?.({ req: reqWithUser('u1') } as never)).toBe(false);
     expect(await usage.access?.update?.({ req: reqWithUser('u1') } as never)).toBe(false);
+  });
+
+  it('writes framework usage from hook context', async () => {
+    const hook = collection.hooks?.beforeChange?.[0];
+    const usage = { totalTokens: 3 };
+    const data = await hook?.({
+      data: { role: 'assistant' },
+      context: { frogbotMessageUsage: usage },
+      originalDoc: { usage: { totalTokens: 2 } },
+    } as never);
+
+    expect(data).toMatchObject({ usage: { totalTokens: 5 } });
   });
 
   describe('access', () => {
