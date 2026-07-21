@@ -212,11 +212,11 @@ describe('buildProviderRegistry', () => {
     expect(registry.openai).toBeDefined();
   });
 
-  it('includes openai-compatible entries when provided', () => {
-    const registry = buildProviderRegistry(
-      { openai: { apiKey: 'sk-test' } },
-      [{ name: 'ollama', baseURL: 'http://localhost:11434/v1' }],
-    );
+  it('builds an unknown provider key as an openai-compatible endpoint', () => {
+    const registry = buildProviderRegistry({
+      openai: { apiKey: 'sk-test' },
+      ollama: { baseURL: 'http://localhost:11434/v1' },
+    });
     expect(registry.openai).toBeDefined();
     expect((registry as Record<string, unknown>)['ollama']).toBeDefined();
   });
@@ -231,11 +231,14 @@ describe('buildProviderRegistry', () => {
   });
 
   // G36.4
-  it('does not mutate Object.prototype for a hostile openai-compatible name', () => {
+  it('does not mutate Object.prototype for a hostile openai-compatible key', () => {
     const before = Object.getOwnPropertyDescriptor(Object.prototype, '__proto__');
-    const registry = buildProviderRegistry({}, [
-      { name: '__proto__', baseURL: 'http://localhost:11434/v1' },
-    ]);
+    // A JSON-sourced config can carry a genuine own `__proto__` key.
+    const hostile = JSON.parse('{"__proto__": {"baseURL": "http://localhost:11434/v1"}}') as Record<
+      string,
+      unknown
+    >;
+    const registry = buildProviderRegistry(hostile);
     // Object.prototype's native __proto__ accessor is untouched (still an accessor,
     // not a data property holding the provider instance).
     expect(Object.getOwnPropertyDescriptor(Object.prototype, '__proto__')).toEqual(before);

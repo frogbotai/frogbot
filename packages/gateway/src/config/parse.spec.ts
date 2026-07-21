@@ -17,12 +17,12 @@ describe('mergeConfigs', () => {
     expect(merged.providers.openai).toEqual({ apiKey: 'env', baseURL: 'https://x' });
   });
 
-  it('dedupes openaiCompatible by name — later wins', () => {
+  it('shallow-merges openai-compatible providers across layers — later wins', () => {
     const merged = mergeConfigs(
-      { providers: {}, openaiCompatible: [{ name: 'ollama', baseURL: 'http://a' }] },
-      { providers: {}, openaiCompatible: [{ name: 'ollama', baseURL: 'http://b' }] },
+      { providers: { ollama: { baseURL: 'http://a', apiKey: 'k' } } },
+      { providers: { ollama: { baseURL: 'http://b' } } },
     );
-    expect(merged.openaiCompatible).toEqual([{ name: 'ollama', baseURL: 'http://b' }]);
+    expect(merged.providers.ollama).toEqual({ baseURL: 'http://b', apiKey: 'k' });
   });
 
   it('overlay enabled/disabled_providers replace base', () => {
@@ -68,16 +68,15 @@ describe('finalizeConfig', () => {
     expect(Object.keys(out.providers)).toEqual(['openai']);
   });
 
-  it('filters openaiCompatible by allow/deny', () => {
+  it('filters openai-compatible providers by allow/deny', () => {
     const out = finalizeConfig({
-      providers: {},
-      openaiCompatible: [
-        { name: 'ollama', baseURL: 'http://a' },
-        { name: 'lmstudio', baseURL: 'http://b' },
-      ],
+      providers: {
+        ollama: { baseURL: 'http://a' },
+        lmstudio: { baseURL: 'http://b' },
+      },
       disabled_providers: ['lmstudio'],
     });
-    expect(out.openaiCompatible?.map((e) => e.name)).toEqual(['ollama']);
+    expect(Object.keys(out.providers)).toEqual(['ollama']);
   });
 
   it('preserves non-provider keys and drops allow/deny lists', () => {

@@ -138,7 +138,7 @@ curl http://localhost:3939/v1/chat/completions \\
   -d '{ "model": "openai/gpt-4o-mini", "messages": [{ "role": "user", "content": "Hello" }] }'
 \`\`\`
 
-Edit \`src/server.ts\` to add providers (36+ built in, including Amazon Bedrock and Google Vertex), self-hosted OpenAI-compatible endpoints via \`openaiCompatible\` (vLLM, Ollama, ...), hooks, and observability. Docs: https://docs.frogbot.ai
+Edit \`src/server.ts\` to add providers (36+ built in, including Amazon Bedrock and Google Vertex). Any unknown provider key is a self-hosted OpenAI-compatible endpoint — add \`ollama: { baseURL }\` (vLLM, LM Studio, ...) right in the \`providers\` map. Hooks and observability are configured there too. Docs: https://docs.frogbot.ai
 `;
 }
 

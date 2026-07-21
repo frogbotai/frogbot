@@ -139,10 +139,9 @@ async function main() {
     configPath: args.configPath,
   });
 
-  const configured = [
-    ...Object.keys(merged.providers).filter((k) => merged.providers[k as keyof ProviderConfigMap] != null),
-    ...(merged.openaiCompatible ?? []).map((e) => e.name),
-  ];
+  const configured = Object.keys(merged.providers).filter(
+    (k) => merged.providers[k as keyof ProviderConfigMap] != null,
+  );
   if (configured.length === 0) {
     console.error(missingProvidersMessage());
     process.exit(1);
@@ -168,7 +167,7 @@ async function main() {
     flushTracing = setupTracing({ endpoint: finalized.tracing?.endpoint });
   }
 
-  const gw = createGateway(finalized);
+  const gw = createGateway(finalized as never);
 
   if (!args.quiet) {
     console.log(startupBanner({ config: finalized, host, port, sources }));
