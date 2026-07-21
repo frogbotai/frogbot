@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as AI from 'ai';
+import type { UIMessage } from 'ai';
 
 import type { AgentInstance } from '../types/agent.js';
 import type { FrogbotRequest } from '../types/request.js';
@@ -21,6 +22,8 @@ function makeAgent(
       text: 'hello',
       totalUsage: { inputTokens: 1, outputTokens: 2 },
       finishReason: 'stop',
+      rawFinishReason: 'stop',
+      steps: [{ content: [{ type: 'text', text: 'hello' }] }],
     }),
   ),
 ): AgentInstance {
@@ -44,6 +47,7 @@ function makeRequest({
     }),
   ),
   findByID = vi.fn(() => Promise.resolve({ id: 'thread-1' })),
+  update = vi.fn(() => Promise.resolve({ id: 'thread-1' })),
   signal,
   slug = 'support',
   user = { id: 'user-1' },
@@ -54,6 +58,7 @@ function makeRequest({
   create?: ReturnType<typeof vi.fn>;
   find?: ReturnType<typeof vi.fn>;
   findByID?: ReturnType<typeof vi.fn>;
+  update?: ReturnType<typeof vi.fn>;
   signal?: AbortSignal;
   slug?: string;
   user?: { id: string } | null;
@@ -72,10 +77,14 @@ function makeRequest({
     routeParams: { slug },
     frogbot: {
       agents: { support: agent },
-      config: { chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' } },
+      config: {
+        ai: { routers: {} },
+        chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' },
+      },
       create,
       find,
       findByID,
+      update,
     },
     payload: { db: {} },
     user,
@@ -128,6 +137,18 @@ describe('agent endpoints', () => {
     expect(response.status).toBe(403);
   });
 
+  it('checks agent access before writing thread data', async () => {
+    const create = vi.fn();
+    const agent = makeAgent();
+    agent.config.access = () => false;
+
+    const response = await postHandler()(makeRequest({ agent, create }));
+
+    expect(response.status).toBe(403);
+    expect(create).not.toHaveBeenCalled();
+    expect(agent.generate).not.toHaveBeenCalled();
+  });
+
   it('returns a bodyless 499 when the inbound request is aborted', async () => {
     const controller = new AbortController();
     controller.abort();
@@ -171,6 +192,77 @@ describe('agent endpoints', () => {
     );
   });
 
+  it('persists the streamed assistant message with finish usage', async () => {
+    const create = vi.fn()
+      .mockResolvedValueOnce({ id: 'thread-9' })
+      .mockResolvedValue({ id: 'assistant-1' });
+    const update = vi.fn(() => Promise.resolve({ id: 'thread-9' }));
+    const request = makeRequest({ create, update, accept: 'text/event-stream' });
+    await postHandler()(request);
+
+    const options = createAgentUIStreamResponse.mock.calls[0][0] as {
+      consumeSseStream: unknown;
+      messageMetadata: (args: { part: unknown }) => unknown;
+      onFinish: (event: { responseMessage: UIMessage; isContinuation: boolean }) => Promise<void>;
+    };
+    const usage = options.messageMetadata({
+      part: {
+        type: 'finish',
+        finishReason: 'stop',
+        rawFinishReason: undefined,
+        totalUsage: { inputTokens: 2, outputTokens: 1, totalTokens: 3 },
+      },
+    });
+    await options.onFinish({
+      responseMessage: {
+        id: 'assistant-1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Hello' }],
+        metadata: usage,
+      },
+      isContinuation: false,
+    });
+
+    expect(options.consumeSseStream).toEqual(expect.any(Function));
+    expect(create).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        collection: 'messages',
+        data: expect.objectContaining({ id: 'assistant-1', role: 'assistant' }),
+        context: { frogbotMessageUsage: expect.objectContaining({ totalTokens: 3, model: 'openai/test' }) },
+      }),
+    );
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ collection: 'threads', id: 'thread-9' }));
+  });
+
+  it('persists partial assistant parts when the stream ends without usage', async () => {
+    const create = vi.fn()
+      .mockResolvedValueOnce({ id: 'thread-9' })
+      .mockResolvedValue({ id: 'assistant-1' });
+    const request = makeRequest({ create, accept: 'text/event-stream' });
+    await postHandler()(request);
+
+    const options = createAgentUIStreamResponse.mock.calls[0][0] as {
+      onFinish: (event: { responseMessage: UIMessage; isContinuation: boolean; isAborted: boolean }) => Promise<void>;
+    };
+    await options.onFinish({
+      responseMessage: {
+        id: 'assistant-1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Part' }],
+      },
+      isContinuation: false,
+      isAborted: true,
+    });
+
+    expect(create).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        collection: 'messages',
+        data: expect.objectContaining({ parts: [{ type: 'text', text: 'Part' }] }),
+        context: { frogbotMessageUsage: null },
+      }),
+    );
+  });
+
   it('loads an existing thread with overrideAccess false and echoes its id', async () => {
     const create = vi.fn(() => Promise.resolve({ id: 'msg-1' }));
     const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7' }));
@@ -195,10 +287,12 @@ describe('agent endpoints', () => {
   });
 
   it('runs stateless for anonymous callers without touching threads', async () => {
+    const agent = makeAgent();
+    agent.config.access = () => true;
     const create = vi.fn();
     const find = vi.fn();
     const findByID = vi.fn();
-    const response = await postHandler()(makeRequest({ create, find, findByID, user: null }));
+    const response = await postHandler()(makeRequest({ agent, create, find, findByID, user: null }));
 
     expect(create).not.toHaveBeenCalled();
     expect(find).not.toHaveBeenCalled();
@@ -245,7 +339,11 @@ describe('agent endpoints', () => {
   });
 
   it('rejects anonymous requests that supply a threadId', async () => {
-    const response = await postHandler()(makeRequest({ user: null, body: { prompt: 'Hello', threadId: 'thread-7' } }));
+    const agent = makeAgent();
+    agent.config.access = () => true;
+    const response = await postHandler()(
+      makeRequest({ agent, user: null, body: { prompt: 'Hello', threadId: 'thread-7' } }),
+    );
 
     expect(response.status).toBe(401);
   });

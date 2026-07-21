@@ -94,6 +94,8 @@ export default buildConfig({
 
 `agents` is an array of `AgentConfig` objects, not a directory path. FrogBot v0 does not scan `AGENT.md` files or upsert them into a collection.
 
+Configuring an agent also enables chat persistence. FrogBot injects owner-scoped `threads` and `messages` collections unless you adopt those roles with `thread: true` and `message: true`. See [Chat persistence](/chat/overview).
+
 ---
 
 ## Configure inference
@@ -206,10 +208,11 @@ Startup applies the configuration in this order.
 
 1. Validate `secret`, `db`, `collections`, and the absence of `globals`.
 2. Run plugins serially.
-3. Sanitize collections, endpoints, AI, and workers.
-4. Initialize Payload and attach `req.frogbot` to supported request paths.
-5. Create the embedded gateway and register optional AI telemetry.
-6. Build the typed worker registry.
-7. Run configured `onInit` callbacks.
+3. Resolve chat collection roles and inject any missing defaults.
+4. Sanitize collections, endpoints, AI, and workers.
+5. Initialize Payload and attach `req.frogbot` to supported request paths.
+6. Create the embedded gateway and register optional AI telemetry.
+7. Build the typed worker registry.
+8. Run configured `onInit` callbacks.
 
 When workers are configured, sanitization also mounts `GET /api/agents` and `POST /api/agents/:slug`. The standalone server mounts authenticated gateway traffic under `/api/ai/v1/*` before forwarding other `/api/*` requests to Payload.

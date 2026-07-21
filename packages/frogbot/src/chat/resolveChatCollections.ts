@@ -104,7 +104,7 @@ export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
     existing: messageCollection,
     marker: 'message',
     defaultCollection: defaultMessagesCollection({ slug: messagesSlug, threadsSlug }),
-    reservedFields: ['parts', 'thread'],
+    reservedFields: ['id', 'parts', 'thread'],
   });
 
   return { collections, chat: { enabled: true, threadsSlug, messagesSlug } };

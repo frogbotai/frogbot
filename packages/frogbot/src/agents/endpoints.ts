@@ -1,7 +1,10 @@
-import { createAgentUIStreamResponse, generateId, validateUIMessages } from 'ai';
+import { consumeStream, createAgentUIStreamResponse, generateId, validateUIMessages } from 'ai';
 import type { UIMessage } from 'ai';
 import { z } from 'zod';
 
+import { resolveModel } from '../ai/resolve.js';
+import { generateMessage } from '../chat/generateMessage.js';
+import { createMessageUsage, persistAssistantMessage } from '../chat/messagePersistence.js';
 import { resolveThreadContext } from '../chat/threadContext.js';
 import type { AgentInstance } from '../types/agent.js';
 import type { DocID } from '../types/operations.js';
@@ -32,6 +35,12 @@ export function buildAgentEndpoints() {
         const agent: AgentInstance | undefined = slug ? req.frogbot.agents[slug] : undefined;
 
         if (!agent) return Response.json({ error: `Agent '${slug ?? ''}' not found` }, { status: 404 });
+        const access = agent.config.access ?? (({ req: current }: { req: FrogbotRequest }) => !!current.user);
+        try {
+          if (!(await access({ req }))) return Response.json({ error: `Access denied for agent '${agent.slug}'` }, { status: 403 });
+        } catch {
+          return Response.json({ error: `Access denied for agent '${agent.slug}'` }, { status: 403 });
+        }
 
         let body: AgentRequestBody;
         let requestedThreadId: DocID | undefined;
@@ -70,10 +79,22 @@ export function buildAgentEndpoints() {
           });
 
           if (acceptsEventStream(req.headers.get('accept'))) {
+            const model = resolveModel(agent.config.model, req.frogbot.config.ai!);
             return await createAgentUIStreamResponse({
               agent: agent.aiAgent,
               uiMessages,
-              options: { req, overrideAccess: false },
+              originalMessages: uiMessages as never,
+              generateMessageId: generateId,
+              consumeSseStream: consumeStream,
+              sendSources: true,
+              messageMetadata: ({ part }) =>
+                part.type === 'finish' ? { usage: createMessageUsage(part.totalUsage, model) } : undefined,
+              onFinish:
+                threadId === undefined
+                  ? undefined
+                  : ({ responseMessage, isContinuation }) =>
+                      persistAssistantMessage({ req, threadId, message: responseMessage, isContinuation }),
+              options: { req, overrideAccess: true },
               abortSignal: req.signal ?? undefined,
               headers: threadId !== undefined ? { 'X-Frogbot-Thread-Id': String(threadId) } : undefined,
             });
@@ -82,9 +103,18 @@ export function buildAgentEndpoints() {
           const result = await agent.generate({
             messages: uiMessages,
             req,
-            overrideAccess: false,
+            overrideAccess: true,
             abortSignal: req.signal ?? undefined,
           });
+          if (threadId !== undefined) {
+            const message = await generateMessage({
+              result,
+              originalMessages: uiMessages,
+              tools: agent.aiAgent.tools,
+              model: resolveModel(agent.config.model, req.frogbot.config.ai!),
+            });
+            await persistAssistantMessage({ req, threadId, message, isContinuation: false });
+          }
 
           return Response.json({
             text: result.text,

@@ -130,6 +130,7 @@
             "group": "Features",
             "pages": [
               { "group": "Authentication", "expanded": false, "pages": ["authentication/overview", "authentication/operations", "authentication/jwt", "authentication/cookies", "authentication/email", "authentication/api-keys", "authentication/token-data", "authentication/custom-strategies"]},
+              { "group": "Chat", "expanded": false, "pages": ["chat/overview"]},
               { "group": "Versions", "expanded": false, "pages": ["versions/overview", "versions/drafts", "versions/autosave"]},
               { "group": "Email", "expanded": false, "pages": ["email/overview"]},
               { "group": "Trash", "expanded": false, "pages": ["trash/overview"]},

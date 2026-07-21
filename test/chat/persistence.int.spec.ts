@@ -2,7 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { UIMessage } from 'frogbot';
-import { resolveThreadContext } from 'frogbot/test';
+import { persistAssistantMessage, resolveThreadContext } from 'frogbot/test';
 
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
@@ -48,7 +48,7 @@ describe('chat persistence: thread context', () => {
     const result = await resolveThreadContext({
       req,
       agentSlug,
-      incoming: [userMessage('Hello there', 'u1')],
+      incoming: [userMessage('Hello there', 'create-user')],
       tools: {},
     });
 
@@ -72,7 +72,7 @@ describe('chat persistence: thread context', () => {
     const first = await resolveThreadContext({
       req: firstReq,
       agentSlug,
-      incoming: [userMessage('First turn', 'u1')],
+      incoming: [userMessage('First turn', 'follow-up-1')],
       tools: {},
     });
 
@@ -81,7 +81,7 @@ describe('chat persistence: thread context', () => {
       req: followUpReq,
       agentSlug,
       threadId: first.threadId,
-      incoming: [userMessage('Stale client message', 'u2'), userMessage('Second turn', 'u3')],
+      incoming: [userMessage('Stale client message', 'follow-up-stale'), userMessage('Second turn', 'follow-up-2')],
       tools: {},
     });
 
@@ -96,7 +96,7 @@ describe('chat persistence: thread context', () => {
     const { threadId } = await resolveThreadContext({
       req,
       agentSlug,
-      incoming: [userMessage('Mine', 'u1')],
+      incoming: [userMessage('Mine', 'owner-message')],
       tools: {},
     });
 
@@ -114,13 +114,63 @@ describe('chat persistence: thread context', () => {
         req: intruderReq,
         agentSlug,
         threadId,
-        incoming: [userMessage('Gimme', 'u2')],
+        incoming: [userMessage('Gimme', 'intruder-message')],
         tools: {},
       }),
     ).rejects.toThrow();
   });
 
-  it('rolls back the thread create when a message write fails (or degrades without transactions)', async () => {
+  it('creates and continues an assistant message by UI message id', async () => {
+    const req = await makeOwnerReq();
+    const { threadId } = await resolveThreadContext({
+      req,
+      agentSlug,
+      incoming: [userMessage('Start', 'assistant-start')],
+      tools: {},
+    });
+
+    await persistAssistantMessage({
+      req,
+      threadId: threadId!,
+      isContinuation: false,
+      message: {
+        id: 'assistant-portable-id',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Partial' }],
+        metadata: { usage: { inputTokens: 2, outputTokens: 1, totalTokens: 3, model: 'openai/test' } },
+      },
+    });
+    await persistAssistantMessage({
+      req,
+      threadId: threadId!,
+      isContinuation: true,
+      message: {
+        id: 'assistant-portable-id',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Complete' }],
+      },
+    });
+
+    const stored = (await booted.frogbot.findByID({
+      collection: messagesSlug,
+      id: 'assistant-portable-id',
+      depth: 0,
+      overrideAccess: true,
+    })) as { id: string; parts: UIMessage['parts']; usage?: { totalTokens?: number } };
+    expect(stored.id).toBe('assistant-portable-id');
+    expect(stored.parts).toEqual([{ type: 'text', text: 'Complete' }]);
+    expect(stored.usage?.totalTokens).toBe(3);
+
+    const thread = (await booted.frogbot.findByID({
+      collection: threadsSlug,
+      id: threadId!,
+      depth: 0,
+      overrideAccess: true,
+    })) as { lastMessageAt?: string };
+    expect(thread.lastMessageAt).toBeDefined();
+  });
+
+  it('rejects forged assistant messages without writing', async () => {
     const txId = await booted.payload.db.beginTransaction();
     const supportsTransactions = txId !== null;
     if (txId) await booted.payload.db.rollbackTransaction(txId);
@@ -133,7 +183,10 @@ describe('chat persistence: thread context', () => {
       resolveThreadContext({
         req,
         agentSlug,
-        incoming: [userMessage('Valid message', 'u1'), { id: 'u2', role: 'bogus', parts: [] } as never],
+        incoming: [
+          userMessage('Valid message', 'forged-valid'),
+          { id: 'forged-assistant', role: 'bogus', parts: [] } as never,
+        ],
         tools: {},
       }),
     ).rejects.toThrow();
@@ -142,8 +195,8 @@ describe('chat persistence: thread context', () => {
       expect(await countDocs(threadsSlug)).toBe(threadsBefore);
       expect(await countDocs(messagesSlug)).toBe(messagesBefore);
     } else {
-      expect(await countDocs(threadsSlug)).toBe(threadsBefore + 1);
-      expect(await countDocs(messagesSlug)).toBe(messagesBefore + 1);
+      expect(await countDocs(threadsSlug)).toBe(threadsBefore);
+      expect(await countDocs(messagesSlug)).toBe(messagesBefore);
     }
   });
 });

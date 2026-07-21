@@ -18,6 +18,11 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
   },
   "fields": [
     {
+      "name": "id",
+      "required": true,
+      "type": "text",
+    },
+    {
       "index": true,
       "name": "thread",
       "relationTo": "threads",
@@ -85,6 +90,11 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
       "type": "group",
     },
   ],
+  "hooks": {
+    "beforeChange": [
+      [Function],
+    ],
+  },
   "slug": "messages",
   "trash": true,
 }

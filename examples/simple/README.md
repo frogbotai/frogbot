@@ -66,9 +66,10 @@ Everything lives in [`frogbot.config.ts`](./frogbot.config.ts):
   one tool (`get_time`). FrogBot registers `GET /api/agents` and
   `POST /api/agents/:slug` automatically — you never write routing code.
 - **`collections`** — a single `users` auth collection, the minimum FrogBot
-  needs for authentication. Add more `CollectionConfig` entries when you need
-  FrogBot's data layer too (see `test/frogbot-instance/config.ts` in the repo
-  root for a worked example with auth, versions, and role markers).
+  example for customizing authentication. FrogBot can supply its default user
+  collection when none is configured. The agent also injects `threads` and
+  `messages`; authenticated calls persist automatically, while this example's
+  anonymous calls stay stateless.
 
 The `access: () => true` on the agent is dev-only — it makes `curl` work
 without authentication. Restrict it (e.g. `({ req }) => !!req.user`) before

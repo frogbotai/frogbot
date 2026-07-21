@@ -30,6 +30,13 @@ export async function resolveThreadContext({
   const chat = req.frogbot.config.chat;
   if (!chat.enabled || !req.user) return { uiMessages: incoming };
 
+  const newMessages = threadId !== undefined ? incoming.slice(-1) : incoming;
+  if (newMessages.length === 0) {
+    throw Object.assign(new Error('At least one user message is required'), { status: 400 });
+  }
+  if (newMessages.some((message) => message.role !== 'user')) {
+    throw Object.assign(new Error('Only user messages can be submitted'), { status: 400 });
+  }
   const transactionReq = req as unknown as TransactionReq;
   const ownsTransaction = await initTransaction(transactionReq);
 
@@ -37,11 +44,11 @@ export async function resolveThreadContext({
   try {
     resolvedThreadId = await resolveThreadId({ req, agentSlug, threadId, threadsSlug: chat.threadsSlug });
 
-    const newMessages = threadId !== undefined ? incoming.slice(-1) : incoming;
     for (const message of newMessages) {
       await req.frogbot.create({
         collection: chat.messagesSlug,
         data: {
+          id: message.id,
           thread: resolvedThreadId,
           role: message.role,
           parts: message.parts,

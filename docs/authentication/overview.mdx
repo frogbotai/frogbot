@@ -7,6 +7,8 @@ keywords: authentication, config, configuration, overview, documentation, Conten
 
 Authentication is a critical part of any application. FrogBot provides a secure, portable way to manage user accounts out of the box. FrogBot Authentication is designed to be used in both the [Admin Panel](/admin/overview), as well as your own external applications, completely eliminating the need for paid, third-party platforms and services.
 
+FrogBot does not require you to define a users collection. If no auth collection exists, Payload supplies its default `users` collection. If exactly one auth collection exists, FrogBot uses it as the owner relationship for chat threads regardless of its slug. With multiple auth collections, set `admin.user` to choose one.
+
 Here are some common use cases of Authentication in your own applications:
 
 - Customer accounts for an e-commerce app

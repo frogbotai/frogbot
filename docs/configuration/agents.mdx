@@ -175,6 +175,19 @@ await frogbot.agents.support.generate({
 })
 ```
 
+Local calls are stateless by default. Pass an existing `threadId` to `generate` to persist the new user message and assistant response against server-owned history.
+
+```ts
+await frogbot.agents.support.generate({
+  prompt: 'Review ticket SUP-42 again',
+  threadId,
+  req,
+  overrideAccess: false
+})
+```
+
+Thread persistence accepts prompts or `UIMessage[]`; it does not accept `ModelMessage[]`. Local `stream()` calls remain stateless.
+
 ---
 
 ## Invoke over HTTP
@@ -186,7 +199,7 @@ Configuring at least one worker mounts two Payload root endpoints. They are serv
 | `GET` | `/api/agents` | Accessible slugs as `{ agents: [{ slug }] }` |
 | `POST` | `/api/agents/:slug` | Generated JSON or an AI SDK UI message stream |
 
-POST exactly one non-empty `prompt` or non-empty `messages` array. Without an explicit event-stream accept header, the response is `{ text, usage, finishReason }`.
+POST exactly one non-empty `prompt` or non-empty `messages` array. Authenticated calls create a thread when `threadId` is absent. Without an explicit event-stream accept header, the response is `{ text, usage, finishReason, threadId }`.
 
 ```bash
 curl http://localhost:3000/api/agents/support \
@@ -207,7 +220,21 @@ curl http://localhost:3000/api/agents/support \
   --data '{ "prompt": "Help with ticket SUP-42" }'
 ```
 
+Stream responses return the thread ID in the `X-Frogbot-Thread-Id` header. Continue the conversation by sending that ID with only the next user message.
+
+```bash
+curl http://localhost:3000/api/agents/support \
+  --request POST \
+  --header "Authorization: Bearer $FROGBOT_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{ "prompt": "What changed since then?", "threadId": "THREAD_ID" }'
+```
+
+FrogBot loads stored history, rejects threads owned by another user, and rejects client-supplied assistant or system messages. Anonymous calls allowed by a custom access rule stay stateless; anonymous requests cannot provide `threadId`.
+
 Malformed input returns `400`, an unknown slug returns `404`, and an aborted request returns a bodyless `499`.
+
+See [Chat persistence](/chat/overview) for collection customization and durability behavior.
 
 ---
 
