@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/kv-redis",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Redis KV store adapter for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
