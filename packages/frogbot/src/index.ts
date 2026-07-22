@@ -137,6 +137,7 @@ export type {
   SendEmailOptions,
   EmailAdapter,
   UploadConfig,
+  ImportMap,
   // Collection-level admin block. Renamed for FrogBot vocabulary.
   CollectionAdminOptions as AdminConfig,
 } from 'payload';

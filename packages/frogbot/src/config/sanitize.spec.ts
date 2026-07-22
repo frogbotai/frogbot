@@ -183,6 +183,16 @@ describe('frogbot sanitize', () => {
       .toBe('@frogbotai/next/rsc#CollectionCards');
   });
 
+  it('forces admin.importMap.autoGenerate false while preserving other admin keys', async () => {
+    const config = makeConfig({
+      admin: { theme: 'dark', importMap: { baseDir: '/tmp/base' } },
+    } as unknown as Partial<FrogbotConfig>);
+    const result = sanitize(config);
+    const payloadConfig = await result._internal.payloadConfig;
+    expect((payloadConfig as any).admin.importMap).toEqual({ baseDir: '/tmp/base', autoGenerate: false }); // eslint-disable-line @typescript-eslint/no-explicit-any
+    expect((payloadConfig as any).admin.theme).toBe('dark'); // eslint-disable-line @typescript-eslint/no-explicit-any
+  });
+
   it('does not mutate the caller\u2019s input config or collection objects', () => {
     const collections: CollectionConfig[] = [
       {
