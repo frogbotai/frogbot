@@ -1,6 +1,6 @@
 {
   "name": "frogbot-example-basic-agent",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Minimal FrogBot example: one agent, one tool, SQLite storage, admin panel via Next.js. No Docker required.",
   "license": "MIT",
@@ -14,9 +14,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@frogbotai/db-sqlite": "0.2.0",
-    "@frogbotai/next": "0.2.0",
-    "frogbot": "0.2.0",
+    "@frogbotai/db-sqlite": "0.2.1",
+    "@frogbotai/next": "0.2.1",
+    "frogbot": "0.2.1",
     "graphql": "^16.8.1",
     "next": "15.4.11",
     "react": "19.2.6",

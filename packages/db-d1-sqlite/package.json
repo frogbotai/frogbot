@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/db-d1-sqlite",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "FrogBot Cloudflare D1 SQLite adapter.",
   "license": "MIT",
   "author": "Colby Gilbert",
