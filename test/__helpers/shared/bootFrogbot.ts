@@ -76,6 +76,7 @@ export async function bootFrogbot(dirname: string, suiteNameOverride?: string): 
 
 function createTestServer(frogbot: FrogbotInstance): Hono {
   const app = new Hono()
+  app.get('/', (c) => c.json({ ok: true, name: 'frogbot' }))
   if (frogbot.config.ai) {
     const gatewayHandler = createGatewayHandler(frogbot)
     app.all('/api/ai/*', (c) => gatewayHandler(c.req.raw))
