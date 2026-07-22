@@ -57,7 +57,7 @@
     "*.css"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && cp src/css.css dist/css.css",
+    "build": "tsc -p tsconfig.json && cp src/css.css dist/css.css && mkdir -p dist/assets && cp src/assets/* dist/assets/",
     "clean": "rm -rf dist",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit"
