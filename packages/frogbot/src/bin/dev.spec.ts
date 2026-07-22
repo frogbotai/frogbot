@@ -1,11 +1,21 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+  runNext: vi.fn(),
+}));
+
+vi.mock('./runNext.js', () => ({ runNext: mocks.runNext }));
+
+import { dev } from './dev.js';
 
 describe('frogbot dev command', () => {
-  it.todo('spawns `tsx watch <bin>.js start` against the resolved bin path');
-  it.todo('inherits stdio from the parent process');
-  it.todo('sets FROGBOT_WATCH_MODE=true in the child env');
-  it.todo('forwards SIGINT to kill the child');
-  it.todo('forwards SIGTERM to kill the child');
-  it.todo('exits with the child\u2019s exit code when it terminates');
-  it.todo('exits with code 0 when the child exits with a null code');
+  it('delegates to `next dev` with passthrough args', () => {
+    dev(['-p', '4000']);
+    expect(mocks.runNext).toHaveBeenCalledWith('dev', ['-p', '4000']);
+  });
+
+  it('defaults to no extra args', () => {
+    dev();
+    expect(mocks.runNext).toHaveBeenCalledWith('dev', []);
+  });
 });

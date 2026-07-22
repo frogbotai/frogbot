@@ -4,8 +4,6 @@
 //
 //   1. Runtime — the Frogbot class, singleton accessor, config builder.
 //   2. Types — owned types and re-exports under FrogBot names.
-//
-// HTTP/server concerns live in the `frogbot/server` subpath export.
 
 // ---------------------------------------------------------------------------
 // Runtime

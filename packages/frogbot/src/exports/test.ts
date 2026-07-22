@@ -10,6 +10,4 @@ export type { Frogbot as FrogbotInstance } from '../frogbot.js';
 export { getFrogbot, resetFrogbotCache } from '../getFrogbot.js';
 export { resolveThreadContext } from '../chat/threadContext.js';
 export { persistAssistantMessage } from '../chat/messagePersistence.js';
-export { createServer } from '../server/create.js';
-export { listen } from '../server/listen.js';
 export type { FrogbotSanitizedConfig } from '../types/sanitized.js';
