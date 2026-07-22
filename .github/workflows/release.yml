@@ -1,0 +1,48 @@
+name: release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - package.json
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Read version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Check tag exists
+        id: tag
+        run: |
+          tag="v${{ steps.version.outputs.version }}"
+          if git rev-parse "$tag" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag and release
+        if: steps.tag.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ steps.tag.outputs.tag }}"
+          git tag "$tag"
+          git push origin "$tag"
+          gh release create "$tag" \
+            --title "$tag" \
+            --generate-notes \
+            --verify-tag
