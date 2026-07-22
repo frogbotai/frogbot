@@ -373,6 +373,15 @@ function buildPayloadConfig(config: FrogbotConfig): PayloadConfig {
     autoGenerate: false,
   };
 
+  const admin = (config as { admin?: { importMap?: Record<string, unknown> } }).admin;
+  out.admin = {
+    ...admin,
+    importMap: {
+      ...admin?.importMap,
+      autoGenerate: false,
+    },
+  };
+
   // Drop FrogBot-only keys before handing to Payload.
   delete out.plugins;
   delete out.onInit;
