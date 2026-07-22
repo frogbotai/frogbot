@@ -51,6 +51,31 @@ ${agentSlugs.map((slug) => `      ${JSON.stringify(slug)}: unknown;`).join('\n')
 /** Default output filename, matching Payload's `payload-types.ts` convention. */
 const DEFAULT_FILENAME = 'frogbot-types.ts';
 
+type SchemaGroup = { properties?: Record<string, unknown>; required?: string[] };
+type ConfigJSONSchema = {
+  properties?: Record<string, SchemaGroup | undefined>;
+  definitions?: Record<string, unknown>;
+};
+
+export function stripInternalCollections(schema: ConfigJSONSchema): void {
+  const isInternal = (slug: string) => slug.startsWith('payload-');
+
+  for (const key of ['collections', 'collectionsJoins', 'collectionsSelect']) {
+    const group = schema.properties?.[key];
+    if (!group) continue;
+    for (const slug of Object.keys(group.properties ?? {})) {
+      if (isInternal(slug)) delete group.properties![slug];
+    }
+    if (Array.isArray(group.required)) {
+      group.required = group.required.filter((slug) => !isInternal(slug));
+    }
+  }
+
+  for (const name of Object.keys(schema.definitions ?? {})) {
+    if (isInternal(name)) delete schema.definitions![name];
+  }
+}
+
 function resolveOutputPath(config: SanitizedConfig, cwd: string): string {
   const fromEnv = process.env.FROGBOT_TS_OUTPUT_PATH;
   if (fromEnv) return isAbsolute(fromEnv) ? fromEnv : resolve(cwd, fromEnv);
@@ -79,6 +104,7 @@ async function compileTypes(config: SanitizedConfig, agentSlugs: readonly string
     | { jsonSchema: unknown; typeStringDefinitions?: Set<string> }
     | object;
   const jsonSchema = 'jsonSchema' in result ? (result as { jsonSchema: unknown }).jsonSchema : result;
+  stripInternalCollections(jsonSchema as ConfigJSONSchema);
   const extraTypeStrings =
     'typeStringDefinitions' in result
       ? (result as { typeStringDefinitions?: Set<string> }).typeStringDefinitions

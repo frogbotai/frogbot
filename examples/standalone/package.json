@@ -1,0 +1,26 @@
+{
+  "name": "frogbot-example-standalone",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FrogBot without Next.js: a user-owned Hono server mounting the REST handler and AI gateway.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "generate:types": "frogbot generate:types",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@frogbotai/db-sqlite": "0.1.0",
+    "@hono/node-server": "^1.13.7",
+    "frogbot": "0.1.0",
+    "hono": "^4.6.14",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "5.6.2"
+  }
+}

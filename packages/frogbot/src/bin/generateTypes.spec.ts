@@ -62,6 +62,7 @@ describe('frogbot generate:types', () => {
       expect(output).toContain('messages: Message;');
       expect(output).toContain("role: 'user' | 'assistant' | 'system';");
       expect(output).toContain('"assistant": unknown;');
+      expect(output).not.toMatch(/payload/i);
     });
   });
 });

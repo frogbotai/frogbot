@@ -1,18 +1,22 @@
 // Singleton accessor for the Frogbot instance.
 //
-// Mirrors Payload's `getPayload()` pattern. Caches the instance at
-// module level so repeated calls return the same object.
+// Mirrors Payload's `getPayload()` pattern. Caches the instance on
+// `globalThis` so repeated calls return the same object even when the
+// module graph is re-evaluated (e.g. Next.js dev HMR).
 
 import { Frogbot } from './frogbot.js';
 import type { InitOptions } from './frogbot.js';
 
-let cached: {
+type FrogbotCache = {
   frogbot: Frogbot | null;
   promise: Promise<Frogbot> | null;
-} = {
-  frogbot: null,
-  promise: null,
 };
+
+const globalRef = globalThis as { _frogbot?: FrogbotCache };
+
+function getCache(): FrogbotCache {
+  return (globalRef._frogbot ??= { frogbot: null, promise: null });
+}
 
 /**
  * Get (or create) the singleton Frogbot instance.
@@ -20,6 +24,7 @@ let cached: {
  * First call initializes; subsequent calls return the cached instance.
  */
 export async function getFrogbot(options: InitOptions): Promise<Frogbot> {
+  const cached = getCache();
   if (cached.frogbot) return cached.frogbot;
 
   if (!cached.promise) {
@@ -38,7 +43,7 @@ export async function getFrogbot(options: InitOptions): Promise<Frogbot> {
  * `req.frogbot` without async overhead.
  */
 export function getCachedFrogbot(): Frogbot | null {
-  return cached.frogbot;
+  return getCache().frogbot;
 }
 
 /**
@@ -46,5 +51,5 @@ export function getCachedFrogbot(): Frogbot | null {
  * @internal
  */
 export function resetFrogbotCache(): void {
-  cached = { frogbot: null, promise: null };
+  globalRef._frogbot = { frogbot: null, promise: null };
 }

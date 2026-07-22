@@ -23,8 +23,10 @@
     "@frogbotai/storage-s3": "workspace:*",
     "@frogbotai/storage-uploadthing": "workspace:*",
     "@frogbotai/storage-vercel-blob": "workspace:*",
+    "@hono/node-server": "^1.13.7",
     "@types/node": "^22.9.1",
     "@vercel/blob": "^2.5.0",
-    "frogbot": "workspace:^"
+    "frogbot": "workspace:^",
+    "hono": "^4.6.14"
   }
 }

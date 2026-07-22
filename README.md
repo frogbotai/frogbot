@@ -30,7 +30,7 @@
 
 <hr/>
 
-FrogBot lets you define AI agents, tools, providers, and your entire data layer in one typed `frogbot.config.ts` — then boots a production HTTP server with REST APIs for all of it. No routing code, no glue, no SaaS.
+**Define your AI agents, tools, providers, and your entire data layer in one typed `frogbot.config.ts` — FrogBot boots the production agent backend for all of it.** No routing code, no glue, no SaaS.
 
 It ships with a full data layer (collections, auth, access control, hooks) and its own embeddable, fully MIT open-source [AI gateway](./packages/gateway) built on the [Vercel AI SDK](https://ai-sdk.dev) — the server side of what Vercel kept closed-source.
 
@@ -46,7 +46,27 @@ It ships with a full data layer (collections, auth, access control, hooks) and i
 
 ## Quickstart
 
-Define an agent with a tool, pick a database, and you're done:
+Scaffold a project and talk to a real agent in under a minute:
+
+```bash
+npx create-frogbot-app my-agent
+cd my-agent
+pnpm install
+cp .env.example .env   # set OPENAI_API_KEY
+pnpm dev
+```
+
+That gives you a `users` auth collection, SQLite storage, and one agent — no Docker, no external database. Then talk to it:
+
+```bash
+curl -s http://localhost:3000/api/agents/assistant \
+  -H 'content-type: application/json' \
+  -d '{"prompt":"Hello!"}'
+```
+
+## How it works
+
+Everything lives in one file. Define an agent with a tool, pick a database, and you're done:
 
 ```ts
 // frogbot.config.ts
@@ -89,21 +109,7 @@ export default buildConfig({
 });
 ```
 
-Boot it:
-
-```bash
-frogbot dev
-```
-
-Talk to it:
-
-```bash
-curl -s http://localhost:3000/api/agents/assistant \
-  -H 'content-type: application/json' \
-  -d '{"prompt":"What time is it in Tokyo?"}'
-```
-
-Stream it instead by sending `accept: text/event-stream`. FrogBot registers `GET /api/agents` and `POST /api/agents/:slug` automatically — you never write routing code.
+Boot it with `frogbot dev`, then send a request to `POST /api/agents/:slug`. Ask for `accept: text/event-stream` to stream instead. FrogBot registers `GET /api/agents` and `POST /api/agents/:slug` automatically — you never write routing code.
 
 See the [simple example](./examples/simple) for the full walkthrough.
 

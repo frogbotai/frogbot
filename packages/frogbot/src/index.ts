@@ -4,8 +4,6 @@
 //
 //   1. Runtime — the Frogbot class, singleton accessor, config builder.
 //   2. Types — owned types and re-exports under FrogBot names.
-//
-// HTTP/server concerns live in the `frogbot/server` subpath export.
 
 // ---------------------------------------------------------------------------
 // Runtime
@@ -18,6 +16,9 @@ export type { InitOptions, Logger } from './frogbot.js';
 export type { Frogbot as FrogbotInstance } from './frogbot.js';
 export { getFrogbot, getCachedFrogbot } from './getFrogbot.js';
 export { buildConfig } from './config/build.js';
+export { getPayloadConfig } from './config/getPayloadConfig.js';
+export { createGatewayHandler } from './server/gateway.js';
+export type { GatewayHandler } from './server/gateway.js';
 export type { FrogbotSanitizedConfig } from './types/sanitized.js';
 
 // ---------------------------------------------------------------------------
@@ -134,6 +135,7 @@ export type {
   SendEmailOptions,
   EmailAdapter,
   UploadConfig,
+  ImportMap,
   // Collection-level admin block. Renamed for FrogBot vocabulary.
   CollectionAdminOptions as AdminConfig,
 } from 'payload';

@@ -13,6 +13,8 @@
     "test:int:mongo": "FROGBOT_DATABASE=mongodb vitest run --project int",
     "test:int:pg": "FROGBOT_DATABASE=postgres vitest run --project int",
     "test:int:sqlite": "FROGBOT_DATABASE=sqlite vitest run --project int",
+    "test:e2e": "RUN_E2E=1 vitest run --project e2e",
+    "check:branding": "node scripts/check-branding.mjs",
     "docker:start": "docker compose -f test/docker-compose.yml --profile",
     "docker:clean": "docker compose -f test/docker-compose.yml down -v --remove-orphans",
     "bump": "node scripts/bump.mjs",
@@ -20,9 +22,12 @@
     "release": "pnpm test && pnpm build && pnpm publish-packages"
   },
   "devDependencies": {
+    "@basetenlabs/performance-client": "^0.0.10",
     "@frogbotai/eslint-config": "workspace:*",
     "@types/node": "^22.10.2",
     "eslint": "^9.16.0",
+    "json-schema-to-typescript": "^15.0.3",
+    "libsql": "^0.4.7",
     "prettier": "^3.2.5",
     "typescript": "5.6.2",
     "vite": "^6.0.0",
