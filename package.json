@@ -20,9 +20,12 @@
     "release": "pnpm test && pnpm build && pnpm publish-packages"
   },
   "devDependencies": {
+    "@basetenlabs/performance-client": "^0.0.10",
     "@frogbotai/eslint-config": "workspace:*",
     "@types/node": "^22.10.2",
     "eslint": "^9.16.0",
+    "json-schema-to-typescript": "^15.0.3",
+    "libsql": "^0.4.7",
     "prettier": "^3.2.5",
     "typescript": "5.6.2",
     "vite": "^6.0.0",

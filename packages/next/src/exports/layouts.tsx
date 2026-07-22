@@ -8,6 +8,8 @@ import { getPayloadConfig } from 'frogbot';
 
 import type { FrogbotConfigArg } from '../types.js';
 
+export type { ServerFunctionClient } from 'payload';
+
 type RootLayoutProps = Omit<ComponentProps<typeof PayloadRootLayout>, 'config'> & {
   readonly config: FrogbotConfigArg;
 };
