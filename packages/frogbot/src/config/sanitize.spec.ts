@@ -193,6 +193,64 @@ describe('frogbot sanitize', () => {
     expect((payloadConfig as any).admin.theme).toBe('dark'); // eslint-disable-line @typescript-eslint/no-explicit-any
   });
 
+  it('injects FrogBot branding defaults into the payload config', async () => {
+    const result = sanitize(makeConfig());
+    const payloadConfig = (await result._internal.payloadConfig) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    expect(payloadConfig.admin.components.graphics).toEqual({
+      Icon: '@frogbotai/next/rsc#FrogbotIcon',
+      Logo: '@frogbotai/next/rsc#FrogbotLogo',
+    });
+    expect(payloadConfig.admin.meta.titleSuffix).toBe('- FrogBot');
+    expect(payloadConfig.admin.meta.defaultOGImageType).toBe('static');
+    expect(payloadConfig.admin.meta.openGraph.siteName).toBe('FrogBot');
+    expect(payloadConfig.i18n.translations.en.general.payloadSettings).toBe('FrogBot Settings');
+  });
+
+  it('lets user branding config win over FrogBot defaults', async () => {
+    const config = makeConfig({
+      admin: {
+        components: { graphics: { Logo: '/components/Logo#MyLogo' } },
+        meta: {
+          titleSuffix: '- Acme',
+          defaultOGImageType: 'dynamic',
+          openGraph: { siteName: 'Acme', images: [{ url: '/og.png' }] },
+        },
+      },
+      i18n: { translations: { en: { general: { payloadSettings: 'Acme Settings' } } } },
+    } as unknown as Partial<FrogbotConfig>);
+    const result = sanitize(config);
+    const payloadConfig = (await result._internal.payloadConfig) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    expect(payloadConfig.admin.components.graphics).toEqual({
+      Icon: '@frogbotai/next/rsc#FrogbotIcon',
+      Logo: '/components/Logo#MyLogo',
+    });
+    expect(payloadConfig.admin.meta.titleSuffix).toBe('- Acme');
+    expect(payloadConfig.admin.meta.defaultOGImageType).toBe('dynamic');
+    expect(payloadConfig.admin.meta.openGraph).toEqual({
+      description: expect.stringContaining('FrogBot'),
+      siteName: 'Acme',
+      images: [{ url: '/og.png' }],
+    });
+    expect(payloadConfig.i18n.translations.en.general.payloadSettings).toBe('Acme Settings');
+  });
+
+  it('preserves unrelated user i18n translations when injecting branding', async () => {
+    const config = makeConfig({
+      i18n: {
+        fallbackLanguage: 'en',
+        translations: { en: { general: { dashboard: 'Home' } }, es: { general: { dashboard: 'Inicio' } } },
+      },
+    } as unknown as Partial<FrogbotConfig>);
+    const result = sanitize(config);
+    const payloadConfig = (await result._internal.payloadConfig) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    expect(payloadConfig.i18n.fallbackLanguage).toBe('en');
+    expect(payloadConfig.i18n.translations.en.general).toEqual({
+      dashboard: 'Home',
+      payloadSettings: 'FrogBot Settings',
+    });
+    expect(payloadConfig.i18n.translations.es).toEqual({ general: { dashboard: 'Inicio' } });
+  });
+
   it('does not mutate the caller\u2019s input config or collection objects', () => {
     const collections: CollectionConfig[] = [
       {
