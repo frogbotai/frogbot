@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { Frogbot } from './frogbot.js';
-import { handleGatewayRequest } from './server/gateway.js';
+import { createGatewayHandler } from './server/gateway.js';
 import type { FrogbotSanitizedConfig } from './types/sanitized.js';
 
 vi.mock('payload', () => {
@@ -222,14 +222,13 @@ describe('Frogbot class', () => {
       const handler = vi.fn((request: Request) => Response.json({ path: new URL(request.url).pathname }));
       frogbot.gateway!.handler = handler;
 
-      const response = await handleGatewayRequest({
-        frogbot,
-        request: new Request('http://localhost/api/ai/v1/chat/completions', {
+      const response = await createGatewayHandler(frogbot)(
+        new Request('http://localhost/api/ai/v1/chat/completions', {
           method: 'POST',
           headers: { authorization: 'Bearer token' },
           body: '{}',
         }),
-      });
+      );
 
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual({ path: '/v1/chat/completions' });
@@ -251,10 +250,9 @@ describe('Frogbot class', () => {
       const handler = vi.fn();
       frogbot.gateway!.handler = handler;
 
-      const response = await handleGatewayRequest({
-        frogbot,
-        request: new Request('http://localhost/api/ai/v1/chat/completions', { method: 'POST', body: '{}' }),
-      });
+      const response = await createGatewayHandler(frogbot)(
+        new Request('http://localhost/api/ai/v1/chat/completions', { method: 'POST', body: '{}' }),
+      );
 
       expect(response.status).toBe(401);
       expect(handler).not.toHaveBeenCalled();

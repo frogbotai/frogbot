@@ -7,3 +7,5 @@ frogbot.db-*
 # Dependencies / build output
 node_modules
 dist
+.next
+*.tsbuildinfo

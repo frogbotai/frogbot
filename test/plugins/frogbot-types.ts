@@ -69,22 +69,14 @@ export interface Config {
   collections: {
     users: User;
     projects: Project;
-    'payload-kv': PayloadKv;
-    'payload-locked-documents': PayloadLockedDocument;
-    'payload-preferences': PayloadPreference;
-    'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect;
     projects: ProjectsSelect;
-    'payload-kv': PayloadKvSelect;
-    'payload-locked-documents': PayloadLockedDocumentsSelect;
-    'payload-preferences': PayloadPreferencesSelect;
-    'payload-migrations': PayloadMigrationsSelect;
   };
   db: {
-    defaultIDType: string;
+    defaultIDType: number;
   };
   fallbackLocale: null;
   globals: {};
@@ -122,7 +114,7 @@ export interface UserAuthOperations {
  * via the `definition` "users".
  */
 export interface User {
-  id: string;
+  id: number;
   name?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -148,83 +140,9 @@ export interface User {
  * via the `definition` "projects".
  */
 export interface Project {
-  id: string;
+  id: number;
   title: string;
   createdBy?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-kv".
- */
-export interface PayloadKv {
-  id: string;
-  key: string;
-  data:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-locked-documents".
- */
-export interface PayloadLockedDocument {
-  id: string;
-  document?:
-    | ({
-        relationTo: 'users';
-        value: string | User;
-      } | null)
-    | ({
-        relationTo: 'projects';
-        value: string | Project;
-      } | null);
-  globalSlug?: string | null;
-  user: {
-    relationTo: 'users';
-    value: string | User;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-preferences".
- */
-export interface PayloadPreference {
-  id: string;
-  user: {
-    relationTo: 'users';
-    value: string | User;
-  };
-  key?: string | null;
-  value?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-migrations".
- */
-export interface PayloadMigration {
-  id: string;
-  name?: string | null;
-  batch?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -258,46 +176,6 @@ export interface UsersSelect {
 export interface ProjectsSelect {
   title?: boolean;
   createdBy?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-kv_select".
- */
-export interface PayloadKvSelect {
-  key?: boolean;
-  data?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-locked-documents_select".
- */
-export interface PayloadLockedDocumentsSelect {
-  document?: boolean;
-  globalSlug?: boolean;
-  user?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-preferences_select".
- */
-export interface PayloadPreferencesSelect {
-  user?: boolean;
-  key?: boolean;
-  value?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-migrations_select".
- */
-export interface PayloadMigrationsSelect {
-  name?: boolean;
-  batch?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }

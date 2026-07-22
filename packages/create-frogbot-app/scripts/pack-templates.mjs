@@ -10,14 +10,14 @@ const templateName = 'blank';
 const src = path.join(repoRoot, 'templates', templateName);
 const dest = path.join(packageRoot, 'dist', 'templates', templateName);
 
-const skip = new Set(['node_modules', 'dist', '.env', '.env.local', 'frogbot-types.ts']);
+const skip = new Set(['node_modules', 'dist', '.next', '.env', '.env.local', 'frogbot-types.ts']);
 
 fs.rmSync(dest, { recursive: true, force: true });
 fs.cpSync(src, dest, {
   recursive: true,
   filter: (entry) => {
     const base = path.basename(entry);
-    return !skip.has(base) && !base.startsWith('frogbot.db');
+    return !skip.has(base) && !base.startsWith('frogbot.db') && !base.endsWith('.tsbuildinfo');
   },
 });
 

@@ -30,6 +30,7 @@ import type { FrogbotRequest } from '../types/request.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { getFrogbotInstance } from '../instanceRegistry.js';
+import { rewriteComponentPaths } from './rewriteComponentPaths.js';
 
 const noopEmailAdapter: PayloadEmailAdapter<void> = ({ payload }) => ({
   name: 'frogbot-noop',
@@ -372,6 +373,58 @@ function buildPayloadConfig(config: FrogbotConfig): PayloadConfig {
     autoGenerate: false,
   };
 
+  const admin = (
+    config as {
+      admin?: {
+        components?: { graphics?: Record<string, unknown> } & Record<string, unknown>;
+        importMap?: Record<string, unknown>;
+        meta?: { openGraph?: Record<string, unknown> } & Record<string, unknown>;
+      } & Record<string, unknown>;
+    }
+  ).admin;
+  out.admin = {
+    ...admin,
+    components: {
+      ...admin?.components,
+      graphics: {
+        Icon: '@frogbotai/next/rsc#FrogbotIcon',
+        Logo: '@frogbotai/next/rsc#FrogbotLogo',
+        ...admin?.components?.graphics,
+      },
+    },
+    meta: {
+      defaultOGImageType: 'static',
+      titleSuffix: '- FrogBot',
+      ...admin?.meta,
+      openGraph: {
+        description:
+          'FrogBot is an open-source AI agent framework you configure in one TypeScript file, then deploy anywhere or run as a Docker image.',
+        siteName: 'FrogBot',
+        ...admin?.meta?.openGraph,
+      },
+    },
+    importMap: {
+      ...admin?.importMap,
+      autoGenerate: false,
+    },
+  };
+
+  const i18n = (config as { i18n?: { translations?: Record<string, unknown> } & Record<string, unknown> }).i18n;
+  const en = i18n?.translations?.en as ({ general?: Record<string, unknown> } & Record<string, unknown>) | undefined;
+  out.i18n = {
+    ...i18n,
+    translations: {
+      ...i18n?.translations,
+      en: {
+        ...en,
+        general: {
+          payloadSettings: 'FrogBot Settings',
+          ...en?.general,
+        },
+      },
+    },
+  };
+
   // Drop FrogBot-only keys before handing to Payload.
   delete out.plugins;
   delete out.onInit;
@@ -403,7 +456,7 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
 
   // Build the Payload config and pass it through Payload's buildConfig.
   const payloadConfig = buildPayloadConfig({ ...config, agents, collections });
-  const payloadSanitizedPromise = payloadBuildConfig(payloadConfig);
+  const payloadSanitizedPromise = payloadBuildConfig(payloadConfig).then(rewriteComponentPaths);
 
   return {
     collections: collectionsMeta,

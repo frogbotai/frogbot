@@ -1,0 +1,87 @@
+{
+  "name": "@frogbotai/next",
+  "version": "0.1.0",
+  "description": "Next.js integration for FrogBot: admin app layouts, views, route handlers, and the withFrogbot config wrapper.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/next"
+  },
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./css": {
+      "types": "./dist/exports/css.d.ts",
+      "import": "./dist/css.css",
+      "default": "./dist/css.css"
+    },
+    "./layouts": {
+      "types": "./dist/exports/layouts.d.ts",
+      "import": "./dist/exports/layouts.js",
+      "default": "./dist/exports/layouts.js"
+    },
+    "./views": {
+      "types": "./dist/exports/views.d.ts",
+      "import": "./dist/exports/views.js",
+      "default": "./dist/exports/views.js"
+    },
+    "./routes": {
+      "types": "./dist/exports/routes.d.ts",
+      "import": "./dist/exports/routes.js",
+      "default": "./dist/exports/routes.js"
+    },
+    "./client": {
+      "types": "./dist/exports/client.d.ts",
+      "import": "./dist/exports/client.js",
+      "default": "./dist/exports/client.js"
+    },
+    "./rsc": {
+      "types": "./dist/exports/rsc.d.ts",
+      "import": "./dist/exports/rsc.js",
+      "default": "./dist/exports/rsc.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && cp src/css.css dist/css.css && mkdir -p dist/assets && cp src/assets/* dist/assets/",
+    "clean": "rm -rf dist",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@payloadcms/next": "3.85.1"
+  },
+  "peerDependencies": {
+    "frogbot": "workspace:*",
+    "next": ">=15.2.9 <15.3.0 || >=15.3.9 <15.4.0 || >=15.4.11 <15.5.0 || >=16.2.6 <17.0.0",
+    "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
+    "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
+  },
+  "devDependencies": {
+    "@frogbotai/eslint-config": "workspace:*",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "eslint": "^9.16.0",
+    "frogbot": "workspace:*",
+    "graphql": "^16.8.1",
+    "next": "15.4.11",
+    "payload": "3.85.1",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "typescript": "5.6.2"
+  }
+}

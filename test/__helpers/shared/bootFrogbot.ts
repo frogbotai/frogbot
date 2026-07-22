@@ -1,12 +1,11 @@
 import path from 'path'
 import { pathToFileURL } from 'url'
-import {
-  Frogbot,
-  createServer,
-  listen,
-} from 'frogbot/test'
+import { serve } from '@hono/node-server'
+import { Hono } from 'hono'
+import { Frogbot } from 'frogbot/test'
 import type { FrogbotSanitizedConfig } from 'frogbot/test'
 import type { MongooseAdapter } from '@frogbotai/db-mongodb'
+import { createGatewayHandler } from 'frogbot'
 import type { FrogbotInstance } from 'frogbot'
 import type { Payload } from 'payload'
 
@@ -61,7 +60,7 @@ export async function bootFrogbot(dirname: string, suiteNameOverride?: string): 
     const db = payload.db as MongooseAdapter
     await Promise.all(Object.values(db.connection.models).map((model) => model.init()))
   }
-  const app = createServer(frogbot)
+  const app = createTestServer(frogbot)
   const port = await getEphemeralPort()
   const closeServer = await listen(app, port)
   const baseUrl = `http://127.0.0.1:${port}`
@@ -73,6 +72,32 @@ export async function bootFrogbot(dirname: string, suiteNameOverride?: string): 
   }
 
   return { frogbot, payload, restClient, baseUrl, shutdown }
+}
+
+function createTestServer(frogbot: FrogbotInstance): Hono {
+  const app = new Hono()
+  if (frogbot.config.ai) {
+    const gatewayHandler = createGatewayHandler(frogbot)
+    app.all('/api/ai/*', (c) => gatewayHandler(c.req.raw))
+  }
+  app.all('/api/*', (c) => frogbot.handleRequest(c.req.raw.clone()))
+  return app
+}
+
+function listen(app: Hono, port: number): Promise<() => Promise<void>> {
+  const server = serve({ fetch: app.fetch, port })
+  return Promise.resolve(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        server.close((err) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve()
+          }
+        })
+      }),
+  )
 }
 
 async function getEphemeralPort(): Promise<number> {

@@ -77,10 +77,6 @@ export interface Config {
     'context-flow': ContextFlow;
     'override-access': OverrideAccess;
     users: User;
-    'payload-kv': PayloadKv;
-    'payload-locked-documents': PayloadLockedDocument;
-    'payload-preferences': PayloadPreference;
-    'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {};
   collectionsSelect: {
@@ -94,13 +90,9 @@ export interface Config {
     'context-flow': ContextFlowSelect;
     'override-access': OverrideAccessSelect;
     users: UsersSelect;
-    'payload-kv': PayloadKvSelect;
-    'payload-locked-documents': PayloadLockedDocumentsSelect;
-    'payload-preferences': PayloadPreferencesSelect;
-    'payload-migrations': PayloadMigrationsSelect;
   };
   db: {
-    defaultIDType: string;
+    defaultIDType: number;
   };
   fallbackLocale: null;
   globals: {};
@@ -138,7 +130,7 @@ export interface UserAuthOperations {
  * via the `definition` "hook-order".
  */
 export interface HookOrder {
-  id: string;
+  id: number;
   title: string;
   updatedAt: string;
   createdAt: string;
@@ -148,7 +140,7 @@ export interface HookOrder {
  * via the `definition` "req-access".
  */
 export interface ReqAccess {
-  id: string;
+  id: number;
   title?: string | null;
   hookCount?: number | null;
   updatedAt: string;
@@ -159,7 +151,7 @@ export interface ReqAccess {
  * via the `definition` "access-boolean".
  */
 export interface AccessBoolean {
-  id: string;
+  id: number;
   title?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -169,7 +161,7 @@ export interface AccessBoolean {
  * via the `definition` "access-where".
  */
 export interface AccessWhere {
-  id: string;
+  id: number;
   title?: string | null;
   hidden?: boolean | null;
   updatedAt: string;
@@ -180,7 +172,7 @@ export interface AccessWhere {
  * via the `definition` "field-access".
  */
 export interface FieldAccess {
-  id: string;
+  id: number;
   secret?: string | null;
   public?: string | null;
   updatedAt: string;
@@ -191,7 +183,7 @@ export interface FieldAccess {
  * via the `definition` "validate-ctx".
  */
 export interface ValidateCtx {
-  id: string;
+  id: number;
   title: string;
   mustMatch?: string | null;
   updatedAt: string;
@@ -202,7 +194,7 @@ export interface ValidateCtx {
  * via the `definition` "after-operation".
  */
 export interface AfterOperation {
-  id: string;
+  id: number;
   title: string;
   updatedAt: string;
   createdAt: string;
@@ -212,7 +204,7 @@ export interface AfterOperation {
  * via the `definition` "context-flow".
  */
 export interface ContextFlow {
-  id: string;
+  id: number;
   title?: string | null;
   contextResult?: string | null;
   updatedAt: string;
@@ -223,7 +215,7 @@ export interface ContextFlow {
  * via the `definition` "override-access".
  */
 export interface OverrideAccess {
-  id: string;
+  id: number;
   title?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -233,7 +225,7 @@ export interface OverrideAccess {
  * via the `definition` "users".
  */
 export interface User {
-  id: string;
+  id: number;
   name?: string | null;
   lastLogin?: string | null;
   updatedAt: string;
@@ -256,112 +248,6 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-kv".
- */
-export interface PayloadKv {
-  id: string;
-  key: string;
-  data:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-locked-documents".
- */
-export interface PayloadLockedDocument {
-  id: string;
-  document?:
-    | ({
-        relationTo: 'hook-order';
-        value: string | HookOrder;
-      } | null)
-    | ({
-        relationTo: 'req-access';
-        value: string | ReqAccess;
-      } | null)
-    | ({
-        relationTo: 'access-boolean';
-        value: string | AccessBoolean;
-      } | null)
-    | ({
-        relationTo: 'access-where';
-        value: string | AccessWhere;
-      } | null)
-    | ({
-        relationTo: 'field-access';
-        value: string | FieldAccess;
-      } | null)
-    | ({
-        relationTo: 'validate-ctx';
-        value: string | ValidateCtx;
-      } | null)
-    | ({
-        relationTo: 'after-operation';
-        value: string | AfterOperation;
-      } | null)
-    | ({
-        relationTo: 'context-flow';
-        value: string | ContextFlow;
-      } | null)
-    | ({
-        relationTo: 'override-access';
-        value: string | OverrideAccess;
-      } | null)
-    | ({
-        relationTo: 'users';
-        value: string | User;
-      } | null);
-  globalSlug?: string | null;
-  user: {
-    relationTo: 'users';
-    value: string | User;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-preferences".
- */
-export interface PayloadPreference {
-  id: string;
-  user: {
-    relationTo: 'users';
-    value: string | User;
-  };
-  key?: string | null;
-  value?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-migrations".
- */
-export interface PayloadMigration {
-  id: string;
-  name?: string | null;
-  batch?: number | null;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -474,46 +360,6 @@ export interface UsersSelect {
         createdAt?: boolean;
         expiresAt?: boolean;
       };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-kv_select".
- */
-export interface PayloadKvSelect {
-  key?: boolean;
-  data?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-locked-documents_select".
- */
-export interface PayloadLockedDocumentsSelect {
-  document?: boolean;
-  globalSlug?: boolean;
-  user?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-preferences_select".
- */
-export interface PayloadPreferencesSelect {
-  user?: boolean;
-  key?: boolean;
-  value?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-migrations_select".
- */
-export interface PayloadMigrationsSelect {
-  name?: boolean;
-  batch?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

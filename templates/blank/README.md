@@ -1,7 +1,7 @@
 # FrogBot Blank Template
 
-The minimum FrogBot setup: a `users` auth collection, SQLite storage, and one
-agent. No Docker, no external database.
+The minimum FrogBot setup: a `users` auth collection, SQLite storage, one
+agent, and the admin panel served by Next.js. No Docker, no external database.
 
 The `users` file is an example you can customize, not a framework requirement. Configuring the agent automatically adds `threads` and `messages`; authenticated agent calls persist there, while the anonymous curl below stays stateless.
 
@@ -16,13 +16,8 @@ set -a && source .env && set +a
 pnpm dev
 ```
 
-You should see:
-
-```
-[frogbot] dev mode — watching for config changes
-[frogbot] Ready on http://localhost:3000
-[frogbot] REST API: http://localhost:3000/api
-```
+Then open [http://localhost:3000/admin](http://localhost:3000/admin) to create
+your first user.
 
 ## Try it
 
@@ -31,6 +26,15 @@ curl -s http://localhost:3000/api/agents/assistant \
   -H 'content-type: application/json' \
   -d '{"prompt":"Hello!"}' | jq
 ```
+
+## Project layout
+
+| Path | Description |
+| --- | --- |
+| `frogbot.config.ts` | Your FrogBot config — agents, collections, providers |
+| `app/(frogbot)/` | Admin panel + API routes (owned by FrogBot, safe to leave alone) |
+| `app/(app)/` | Your app — replace the placeholder home page |
+| `frogbot-types.ts` | Generated types (`pnpm generate:types`) |
 
 ## Next steps
 
@@ -44,7 +48,9 @@ curl -s http://localhost:3000/api/agents/assistant \
 
 | Command | Description |
 | --- | --- |
-| `pnpm dev` | Boot the server with file-watching (`frogbot dev`) |
-| `pnpm start` | Boot the server without watching (`frogbot start`) |
+| `pnpm dev` | Start the Next.js dev server (`frogbot dev`) |
+| `pnpm build` | Production build (`next build`) |
+| `pnpm start` | Serve the production build (`frogbot start`) |
 | `pnpm generate:types` | Regenerate `frogbot-types.ts` from this config |
-| `pnpm typecheck` | Type-check `frogbot.config.ts` |
+| `pnpm generate:importmap` | Regenerate `app/(frogbot)/admin/importMap.js` |
+| `pnpm typecheck` | Type-check the project |
