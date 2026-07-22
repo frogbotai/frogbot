@@ -70,20 +70,12 @@ export interface Config {
     users: User;
     threads: Thread;
     messages: Message;
-    'payload-kv': PayloadKv;
-    'payload-locked-documents': PayloadLockedDocument;
-    'payload-preferences': PayloadPreference;
-    'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect;
     threads: ThreadsSelect;
     messages: MessagesSelect;
-    'payload-kv': PayloadKvSelect;
-    'payload-locked-documents': PayloadLockedDocumentsSelect;
-    'payload-preferences': PayloadPreferencesSelect;
-    'payload-migrations': PayloadMigrationsSelect;
   };
   db: {
     defaultIDType: number;
@@ -192,84 +184,6 @@ export interface Message {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-kv".
- */
-export interface PayloadKv {
-  id: number;
-  key: string;
-  data:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-locked-documents".
- */
-export interface PayloadLockedDocument {
-  id: number;
-  document?:
-    | ({
-        relationTo: 'users';
-        value: number | User;
-      } | null)
-    | ({
-        relationTo: 'threads';
-        value: number | Thread;
-      } | null)
-    | ({
-        relationTo: 'messages';
-        value: string | Message;
-      } | null);
-  globalSlug?: string | null;
-  user: {
-    relationTo: 'users';
-    value: number | User;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-preferences".
- */
-export interface PayloadPreference {
-  id: number;
-  user: {
-    relationTo: 'users';
-    value: number | User;
-  };
-  key?: string | null;
-  value?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-migrations".
- */
-export interface PayloadMigration {
-  id: number;
-  name?: string | null;
-  batch?: number | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect {
@@ -328,46 +242,6 @@ export interface MessagesSelect {
   updatedAt?: boolean;
   createdAt?: boolean;
   deletedAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-kv_select".
- */
-export interface PayloadKvSelect {
-  key?: boolean;
-  data?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-locked-documents_select".
- */
-export interface PayloadLockedDocumentsSelect {
-  document?: boolean;
-  globalSlug?: boolean;
-  user?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-preferences_select".
- */
-export interface PayloadPreferencesSelect {
-  user?: boolean;
-  key?: boolean;
-  value?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-migrations_select".
- */
-export interface PayloadMigrationsSelect {
-  name?: boolean;
-  batch?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 const repoRoot = path.resolve(dirname, '..');
-const binPath = path.resolve(repoRoot, 'packages/frogbot/dist/bin/index.js');
+const binPath = path.resolve(repoRoot, 'packages/frogbot/bin.js');
 
 const [targetSuite] = process.argv.slice(2);
 

@@ -68,10 +68,14 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    threads: Thread;
+    messages: Message;
   };
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect;
+    threads: ThreadsSelect;
+    messages: MessagesSelect;
   };
   db: {
     defaultIDType: number;
@@ -135,6 +139,51 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "threads".
+ */
+export interface Thread {
+  id: number;
+  title?: string | null;
+  user?: (number | null) | User;
+  agent?: string | null;
+  lastMessageAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages".
+ */
+export interface Message {
+  id: string;
+  thread: number | Thread;
+  role: 'user' | 'assistant' | 'system';
+  parts: import('frogbot').UIMessage['parts'];
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  usage?: {
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    totalTokens?: number | null;
+    reasoningTokens?: number | null;
+    cachedInputTokens?: number | null;
+    model?: string | null;
+    provider?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect {
@@ -158,6 +207,44 @@ export interface UsersSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "threads_select".
+ */
+export interface ThreadsSelect {
+  title?: boolean;
+  user?: boolean;
+  agent?: boolean;
+  lastMessageAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages_select".
+ */
+export interface MessagesSelect {
+  id?: boolean;
+  thread?: boolean;
+  role?: boolean;
+  parts?: boolean;
+  metadata?: boolean;
+  usage?:
+    | boolean
+    | {
+        inputTokens?: boolean;
+        outputTokens?: boolean;
+        totalTokens?: boolean;
+        reasoningTokens?: boolean;
+        cachedInputTokens?: boolean;
+        model?: boolean;
+        provider?: boolean;
+      };
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -177,6 +264,8 @@ export interface Auth {
 
 declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
-    agents: {};
+    agents: {
+      "support": unknown;
+    };
   }
 }
