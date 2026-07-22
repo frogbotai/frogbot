@@ -29,6 +29,17 @@ export default defineConfig({
       },
       {
         test: {
+          name: 'e2e',
+          include: ['test/e2e/**/*.e2e.spec.ts'],
+          exclude: ['**/node_modules/**', '**/dist/**'],
+          environment: 'node',
+          fileParallelism: false,
+          hookTimeout: 240000,
+          testTimeout: 120000,
+        },
+      },
+      {
+        test: {
           name: 'gateway-unit',
           include: ['packages/gateway/src/**/*.spec.ts'],
           exclude: ['**/node_modules/**', '**/dist/**'],
