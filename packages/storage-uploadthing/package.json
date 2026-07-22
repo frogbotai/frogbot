@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/storage-uploadthing",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "UploadThing storage adapter for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

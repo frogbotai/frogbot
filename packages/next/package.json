@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/next",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Next.js integration for FrogBot: admin app layouts, views, route handlers, and the withFrogbot config wrapper.",
   "license": "MIT",
   "author": "Colby Gilbert",
