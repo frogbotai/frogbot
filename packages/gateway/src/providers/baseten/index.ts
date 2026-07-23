@@ -9,7 +9,7 @@ import {
 import type { ProviderDefinition } from '../types.js';
 
 export type BasetenConfig = Omit<BasetenProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const basetenProvider = {

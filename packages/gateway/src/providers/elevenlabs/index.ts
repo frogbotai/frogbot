@@ -7,7 +7,7 @@ import {
 import type { ProviderDefinition } from '../types.js';
 
 export type ElevenLabsConfig = Omit<ElevenLabsProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const elevenlabsProvider = {

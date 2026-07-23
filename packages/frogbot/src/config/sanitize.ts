@@ -27,7 +27,8 @@ import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from '../types/s
 import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../types/ai.js';
 import type { AgentConfig } from '../types/agent.js';
 import type { FrogbotRequest } from '../types/request.js';
-import { Frogbot, initFrogbotFromPayload } from '../frogbot.js';
+import type { Frogbot } from '../frogbot.js';
+import { initFrogbotFromPayload } from '../frogbot.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
@@ -116,41 +117,6 @@ function sanitizeCollection(c: CollectionConfig): PayloadCollectionConfig {
 
 // ─── AI Config Sanitization ──────────────────────────────────────────────────
 
-const BUILT_IN_PROVIDERS = new Set([
-  'openai',
-  'anthropic',
-  'google',
-  'bedrock',
-  'groq',
-  'mistral',
-  'cohere',
-  'together',
-  'fireworks',
-  'deepinfra',
-  'xai',
-  'perplexity',
-  'cerebras',
-  'voyage',
-  'replicate',
-]);
-
-const PROVIDER_API_KEY_ENV_VARS: Record<string, string> = {
-  openai: 'OPENAI_API_KEY',
-  anthropic: 'ANTHROPIC_API_KEY',
-  google: 'GOOGLE_GENERATIVE_AI_API_KEY',
-  groq: 'GROQ_API_KEY',
-  mistral: 'MISTRAL_API_KEY',
-  cohere: 'COHERE_API_KEY',
-  together: 'TOGETHER_API_KEY',
-  fireworks: 'FIREWORKS_API_KEY',
-  deepinfra: 'DEEPINFRA_API_KEY',
-  xai: 'XAI_API_KEY',
-  perplexity: 'PERPLEXITY_API_KEY',
-  cerebras: 'CEREBRAS_API_KEY',
-  voyage: 'VOYAGE_API_KEY',
-  replicate: 'REPLICATE_API_TOKEN',
-};
-
 const defaultAccessFn = ({ req }: { req: FrogbotRequest }) => !!req.user;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -177,29 +143,7 @@ function sanitizeAI(ai: AIConfig): SanitizedAIConfig {
       throw new Error(`[frogbot] Provider '${key}' must be an object.`);
     }
     const provider: Record<string, unknown> = entry;
-    if (BUILT_IN_PROVIDERS.has(key)) {
-      if (key === 'bedrock') {
-        if (
-          typeof provider.region !== 'string' ||
-          !provider.region.trim() ||
-          typeof provider.accessKeyId !== 'string' ||
-          !provider.accessKeyId.trim() ||
-          typeof provider.secretAccessKey !== 'string' ||
-          !provider.secretAccessKey.trim()
-        ) {
-          throw new Error(`[frogbot] Provider '${key}' requires region, accessKeyId, and secretAccessKey.`);
-        }
-      } else if (provider.apiKey !== undefined) {
-        if (typeof provider.apiKey !== 'string') {
-          throw new Error(`[frogbot] Provider '${key}' apiKey must be a string or undefined.`);
-        }
-        if (!provider.apiKey.trim()) {
-          throw new Error(
-            `[frogbot] Provider '${key}' has an empty apiKey (checked ${PROVIDER_API_KEY_ENV_VARS[key]}? is your .env loaded?)`,
-          );
-        }
-      }
-    } else {
+    if ('type' in provider || 'baseUrl' in provider || 'models' in provider) {
       const custom = provider;
       if (custom.type !== 'openai-compatible') {
         throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);

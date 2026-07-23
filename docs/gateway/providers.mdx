@@ -12,8 +12,8 @@ import { createGateway } from '@frogbotai/gateway'
 
 const gw = createGateway({
   providers: {
-    openai: { apiKey: process.env.OPENAI_API_KEY! },
-    'amazon-bedrock': { region: 'us-east-1', apiKey: process.env.AWS_BEARER_TOKEN_BEDROCK! },
+    openai: {},
+    'amazon-bedrock': {},
     ollama: { baseURL: 'http://localhost:11434/v1' }
   }
 })
@@ -27,7 +27,7 @@ const gw = createGateway({
 
 Alibaba, Anthropic, Anthropic (AWS), AssemblyAI, Azure, Baseten, Amazon Bedrock, Black Forest Labs, ByteDance, Cerebras, Cohere, Deepgram, DeepInfra, DeepSeek, ElevenLabs, fal, Fireworks, Gladia, Google, Google Vertex, Groq, Hugging Face, Hume, Kling AI, LMNT, Luma, Mistral, Moonshot AI, OpenAI, Perplexity, Prodia, Replicate, Together AI, Vercel, Voyage, xAI.
 
-Each ships its own credential shape (`apiKey`, `region`, `accessKeyId`, ...) and its `envVars` list, used by the CLI's env auto-discovery. See [Configuration](/gateway/configuration#auto-discover-from-env) for the full env var reference.
+Each ships its own credential shape (`apiKey`, `region`, `accessKeyId`, ...) and its `envVars` list, used for config fallback and CLI env auto-discovery. Bedrock also supports ambient AWS credentials. See [Configuration](/gateway/configuration#auto-discover-from-env) for the full env var reference.
 
 ---
 
@@ -71,7 +71,6 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { createGateway } from '@frogbotai/gateway'
 
 const customOpenAI = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
   fetch: myLoggingFetch
 })
 

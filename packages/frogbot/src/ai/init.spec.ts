@@ -1,9 +1,13 @@
 // Tests for embedded gateway construction — provider config mapping + boot.
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { buildGatewayConfig, createAIGateway } from './init.js';
 import type { SanitizedAIConfig } from '../types/ai.js';
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 function makeAIConfig(providers: SanitizedAIConfig['providers']): SanitizedAIConfig {
   return {
@@ -54,6 +58,11 @@ describe('buildGatewayConfig', () => {
     expect(config.providers).toEqual({ replicate: { apiToken: 'r8-key' } });
   });
 
+  it('omits Replicate apiToken when apiKey is omitted', () => {
+    const config = buildGatewayConfig(makeAIConfig({ replicate: {} }));
+    expect(Object.hasOwn(config.providers.replicate!, 'apiToken')).toBe(false);
+  });
+
   it('maps custom openai-compatible entries to providers', () => {
     const config = buildGatewayConfig(
       makeAIConfig({
@@ -99,6 +108,12 @@ describe('buildGatewayConfig', () => {
 });
 
 describe('createAIGateway', () => {
+  it('constructs with an omitted API key and the SDK environment fallback', () => {
+    vi.stubEnv('OPENAI_API_KEY', 'sk-env');
+    const gw = createAIGateway(makeAIConfig({ openai: {} }));
+    expect(gw.chatModel('openai/gpt-4o').modelId).toBe('gpt-4o');
+  });
+
   it('boots a gateway exposing per-modality resolvers and a handler', () => {
     const gw = createAIGateway(makeAIConfig({ openai: { apiKey: 'sk-test' } }));
     expect(typeof gw.handler).toBe('function');

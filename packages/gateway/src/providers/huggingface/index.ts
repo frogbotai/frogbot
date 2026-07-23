@@ -13,7 +13,7 @@ import {
 import type { ProviderDefinition } from '../types.js';
 
 export type HuggingFaceConfig = Omit<HuggingFaceProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const huggingfaceProvider = {

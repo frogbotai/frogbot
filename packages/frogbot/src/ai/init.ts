@@ -47,9 +47,8 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
     }
 
     if (key === 'replicate') {
-      Object.assign(providers, {
-        replicate: { apiToken: (entry as BuiltInProviderEntry).apiKey },
-      });
+      const apiKey = 'apiKey' in entry ? entry.apiKey : undefined;
+      providers.replicate = apiKey === undefined ? {} : { apiToken: apiKey };
       continue;
     }
 

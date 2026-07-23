@@ -7,7 +7,7 @@ import {
 import type { ProviderDefinition } from '../types.js';
 
 export type VoyageConfig = Omit<VoyageProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const voyageProvider = {

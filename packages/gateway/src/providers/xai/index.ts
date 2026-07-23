@@ -5,7 +5,7 @@ import { createXai, type XaiProvider, type XaiProviderSettings } from '@ai-sdk/x
 import type { ProviderDefinition } from '../types.js';
 
 export type XaiConfig = Omit<XaiProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const xaiProvider = {

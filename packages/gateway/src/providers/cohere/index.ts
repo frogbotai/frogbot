@@ -9,7 +9,7 @@ import {
 import type { ProviderDefinition } from '../types.js';
 
 export type CohereConfig = Omit<CohereProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const cohereProvider = {

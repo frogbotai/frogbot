@@ -3,8 +3,8 @@ import { createKlingAI, type KlingAIProvider, type KlingAIProviderSettings } fro
 import type { ProviderDefinition } from '../types.js';
 
 export type KlingAIConfig = Omit<KlingAIProviderSettings, 'accessKey' | 'secretKey' | 'fetch'> & {
-  accessKey: string;
-  secretKey: string;
+  accessKey?: string;
+  secretKey?: string;
 };
 
 export const klingaiProvider = {

@@ -13,7 +13,7 @@ import type { ProviderDefinition } from '../types.js';
  * from `@ai-sdk/anthropic`, but with `apiKey` required and `fetch` excluded.
  */
 export type AnthropicConfig = Omit<AnthropicProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const anthropicProvider = {

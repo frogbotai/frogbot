@@ -16,7 +16,7 @@ const config: FrogbotConfig = {
   collections: [Users],
   ai: {
     providers: {
-      openai: { apiKey: process.env.OPENAI_API_KEY },
+      openai: {},
     },
   },
   agents: [

@@ -3,7 +3,7 @@ import { createFal, type FalProvider, type FalProviderSettings } from '@ai-sdk/f
 import type { ProviderDefinition } from '../types.js';
 
 export type FalConfig = Omit<FalProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const falProvider = {

@@ -3,7 +3,7 @@ import { createProdia, type ProdiaProvider, type ProdiaProviderSettings } from '
 import type { ProviderDefinition } from '../types.js';
 
 export type ProdiaConfig = Omit<ProdiaProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const prodiaProvider = {

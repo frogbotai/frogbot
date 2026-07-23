@@ -14,7 +14,7 @@ import pino from 'pino'
 import { createGateway } from '@frogbotai/gateway'
 
 const gw = createGateway({
-  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } },
+  providers: { openai: {} },
   logger: pino({ level: 'info' })
 })
 ```
@@ -23,7 +23,7 @@ Or configure the built-in console logger directly:
 
 ```ts
 createGateway({
-  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } },
+  providers: { openai: {} },
   logger: { level: 'debug' }
 })
 ```
@@ -38,7 +38,7 @@ The gateway records spans through `trace.getTracer()` by default — a no-op unl
 import { trace } from '@opentelemetry/api'
 
 createGateway({
-  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } },
+  providers: { openai: {} },
   tracer: trace.getTracer('my-app')
 })
 ```

@@ -11,7 +11,7 @@ Every route — HTTP and in-process — runs the same lifecycle: `beforeOperatio
 import { createGateway } from '@frogbotai/gateway'
 
 const gw = createGateway({
-  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } },
+  providers: { openai: {} },
   hooks: {
     beforeOperation: [
       ({ context, request }) => {

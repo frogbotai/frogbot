@@ -5,7 +5,7 @@ import { createGroq, type GroqProvider, type GroqProviderSettings } from '@ai-sd
 import type { ProviderDefinition } from '../types.js';
 
 export type GroqConfig = Omit<GroqProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const groqProvider = {
