@@ -15,7 +15,8 @@ cp .env.example .env
 pnpm dev
 ```
 
-FrogBot commands load `.env*` files automatically.
+FrogBot commands load `.env`, `.env.local`, and mode-specific `.env*` files with Next.js
+precedence. Existing shell variables take priority.
 
 Then open [http://localhost:3000/admin](http://localhost:3000/admin) to create
 your first user.
