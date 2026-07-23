@@ -9,7 +9,7 @@ import {
 import type { ProviderDefinition } from '../types.js';
 
 export type DeepInfraConfig = Omit<DeepInfraProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const deepinfraProvider = {

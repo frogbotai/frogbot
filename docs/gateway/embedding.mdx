@@ -11,7 +11,7 @@ keywords: ["embedding", "fetch handler", "Hono", "Next.js", "Cloudflare Workers"
 import { createGateway } from '@frogbotai/gateway'
 
 const gw = createGateway({
-  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } }
+  providers: { openai: {} }
 })
 ```
 
@@ -40,7 +40,7 @@ app.mount('/v1', gw.handler)
 import { createGateway } from '@frogbotai/gateway'
 
 const gw = createGateway({
-  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } }
+  providers: { openai: {} }
 })
 
 export const POST = gw.handler

@@ -1,8 +1,7 @@
 // Provider definition: OpenAI.
 //
 // Sources the config type directly from `@ai-sdk/openai`'s exported
-// `OpenAIProviderSettings`, requiring `apiKey` (the SDK makes it optional,
-// falling back to env — we require it explicitly at the gateway boundary).
+// `OpenAIProviderSettings`, excluding custom fetch from shorthand config.
 
 import { createOpenAI, type OpenAIProvider, type OpenAIProviderSettings } from '@ai-sdk/openai';
 
@@ -10,12 +9,10 @@ import type { ProviderDefinition } from '../types.js';
 
 /**
  * Gateway config for the OpenAI provider. Same shape as `OpenAIProviderSettings`
- * from `@ai-sdk/openai`, but with `apiKey` required and `fetch` excluded
+ * from `@ai-sdk/openai`, but with `fetch` excluded
  * (custom fetch is an escape hatch via pre-built provider instances, not config).
  */
-export type OpenAIConfig = Omit<OpenAIProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
-};
+export type OpenAIConfig = Omit<OpenAIProviderSettings, 'fetch'>;
 
 export const openaiProvider = {
   name: 'openai',

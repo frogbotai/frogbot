@@ -64,7 +64,6 @@ import { vercelProvider } from './vercel/index.js';
 import { vertexProvider } from './vertex/index.js';
 import { voyageProvider } from './voyage/index.js';
 import { xaiProvider } from './xai/index.js';
-import type { ProviderDefinition } from './types.js';
 import { resolveAnthropicAwsModelId } from './anthropic-aws/canonical.js';
 import { resolveAzureModelId } from './azure/canonical.js';
 import { resolveBedrockModelId } from './bedrock/canonical.js';
@@ -131,18 +130,14 @@ export type GatewayTranscriptionModel = TranscriptionModelV4 | TranscriptionMode
 export type GatewayRerankingModel = RerankingModelV4 | RerankingModelV3;
 
 // ---------------------------------------------------------------------------
-// Derived types — extracted from each entry's `ProviderDefinition` generics.
+// Derived types.
 // ---------------------------------------------------------------------------
 
 /** The config shape required by provider `K`. */
-type ConfigOf<K extends ProviderName> =
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (typeof providers)[K] extends ProviderDefinition<string, infer TConfig, any> ? TConfig : never;
+type ConfigOf<K extends ProviderName> = Parameters<(typeof providers)[K]['build']>[0];
 
 /** The AI SDK instance type returned by provider `K`'s `build`. */
-type InstanceOf<K extends ProviderName> =
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (typeof providers)[K] extends ProviderDefinition<string, any, infer TInstance> ? TInstance : never;
+type InstanceOf<K extends ProviderName> = ReturnType<(typeof providers)[K]['build']>;
 
 /** Union of every provider's AI SDK instance type. Grows automatically with the table. */
 export type AIProvider = {

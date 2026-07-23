@@ -3,7 +3,7 @@ import { createHume, type HumeProvider, type HumeProviderSettings } from '@ai-sd
 import type { ProviderDefinition } from '../types.js';
 
 export type HumeConfig = Omit<HumeProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const humeProvider = {

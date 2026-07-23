@@ -7,7 +7,7 @@ import {
 import type { ProviderDefinition } from '../types.js';
 
 export type ReplicateConfig = Omit<ReplicateProviderSettings, 'apiToken' | 'fetch'> & {
-  apiToken: string;
+  apiToken?: string;
 };
 
 export const replicateProvider = {

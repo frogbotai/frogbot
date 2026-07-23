@@ -19,9 +19,11 @@ export type BuiltInProviderEntry = {
 };
 
 export type BedrockProviderEntry = {
-  region: string;
-  accessKeyId: string;
-  secretAccessKey: string;
+  apiKey?: string;
+  region?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  sessionToken?: string;
 };
 
 export type CustomProviderEntry = {

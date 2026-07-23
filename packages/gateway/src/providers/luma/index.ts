@@ -3,7 +3,7 @@ import { createLuma, type LumaProvider, type LumaProviderSettings } from '@ai-sd
 import type { ProviderDefinition } from '../types.js';
 
 export type LumaConfig = Omit<LumaProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const lumaProvider = {

@@ -13,8 +13,8 @@ import { rag } from '@frogbot/plugin-rag'
 export default buildConfig({
   ai: {
     providers: {
-      openai:    { apiKey: process.env.OPENAI_API_KEY },
-      anthropic: { apiKey: process.env.ANTHROPIC_API_KEY },
+      openai: {},
+      anthropic: {},
     },
     routers: {
       'rag-embedding': {

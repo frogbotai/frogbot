@@ -3,7 +3,7 @@ import { createDeepgram, type DeepgramProvider, type DeepgramProviderSettings } 
 import type { ProviderDefinition } from '../types.js';
 
 export type DeepgramConfig = Omit<DeepgramProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const deepgramProvider = {

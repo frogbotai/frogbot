@@ -7,7 +7,7 @@ import {
 import type { ProviderDefinition } from '../types.js';
 
 export type AssemblyAIConfig = Omit<AssemblyAIProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const assemblyaiProvider = {

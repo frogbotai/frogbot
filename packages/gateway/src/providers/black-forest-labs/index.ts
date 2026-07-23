@@ -7,7 +7,7 @@ import {
 import type { ProviderDefinition } from '../types.js';
 
 export type BlackForestLabsConfig = Omit<BlackForestLabsProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const blackForestLabsProvider = {

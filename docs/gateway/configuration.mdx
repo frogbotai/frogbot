@@ -18,8 +18,8 @@ import { defineConfig } from '@frogbotai/gateway'
 
 export default defineConfig({
   providers: {
-    openai: { apiKey: process.env.OPENAI_API_KEY! },
-    anthropic: { apiKey: process.env.ANTHROPIC_API_KEY! },
+    openai: {},
+    anthropic: {},
     ollama: { baseURL: 'http://localhost:11434/v1' }
   },
   upstreamTimeoutMs: 60_000,
@@ -33,7 +33,7 @@ export default defineConfig({
 })
 ```
 
-Known provider keys are checked against that provider's exact config or instance type; any other key must supply a `baseURL` (see [Providers](/gateway/providers)). A config with no providers at all fails validation on startup.
+Known provider keys are checked against that provider's exact config or instance type. Omitted credentials use the provider definition's standard environment variables and are validated at startup; explicit empty values are rejected. Any other key must supply a `baseURL` (see [Providers](/gateway/providers)). A config with no providers at all fails validation on startup.
 
 ---
 
@@ -84,8 +84,8 @@ Filter the merged provider set without removing entries from the config itself.
 ```ts
 export default defineConfig({
   providers: {
-    openai: { apiKey: process.env.OPENAI_API_KEY! },
-    groq: { apiKey: process.env.GROQ_API_KEY! }
+    openai: {},
+    groq: {}
   },
   disabled_providers: ['groq']
 })

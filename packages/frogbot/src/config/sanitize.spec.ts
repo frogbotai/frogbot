@@ -410,18 +410,24 @@ describe('frogbot sanitize', () => {
       expect(result.ai?.providers.openai?.apiKey).toBeUndefined();
     });
 
-    it('names the provider environment variable for an empty apiKey', () => {
-      const config = makeConfig({ ai: { providers: { openai: { apiKey: '' } } } });
-      expect(() => sanitize(config)).toThrow(
-        "[frogbot] Provider 'openai' has an empty apiKey (checked OPENAI_API_KEY? is your .env loaded?)",
-      );
+    it('accepts an omitted apiKey for SDK environment fallback', () => {
+      const result = sanitize(makeConfig({ ai: { providers: { openai: {} } } }));
+      expect(result.ai?.providers.openai).toEqual({});
     });
 
-    it('names the provider environment variable for a whitespace apiKey', () => {
+    it('leaves empty apiKey validation to the gateway boundary', () => {
+      const config = makeConfig({ ai: { providers: { openai: { apiKey: '' } } } });
+      expect(() => sanitize(config)).not.toThrow();
+    });
+
+    it('leaves whitespace apiKey validation to the gateway boundary', () => {
       const config = makeConfig({ ai: { providers: { anthropic: { apiKey: '   ' } } } });
-      expect(() => sanitize(config)).toThrow(
-        "[frogbot] Provider 'anthropic' has an empty apiKey (checked ANTHROPIC_API_KEY? is your .env loaded?)",
-      );
+      expect(() => sanitize(config)).not.toThrow();
+    });
+
+    it('accepts Bedrock ambient credentials without static keys', () => {
+      const config = makeConfig({ ai: { providers: { bedrock: {} } } });
+      expect(() => sanitize(config)).not.toThrow();
     });
 
     it('throws when a custom provider has an empty models array', () => {

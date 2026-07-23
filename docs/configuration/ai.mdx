@@ -11,7 +11,7 @@ The `ai` block creates an embedded `@frogbotai/gateway` instance when FrogBot st
 
 ## Configure providers
 
-Add at least one provider with the credentials its SDK requires.
+Add at least one provider. Omitted credentials use the provider SDK's standard environment variables.
 
 ```ts
 import { buildConfig } from 'frogbot'
@@ -20,13 +20,9 @@ export default buildConfig({
   // secret, db, and collections omitted
   ai: {
     providers: {
-      openai: { apiKey: process.env.OPENAI_API_KEY },
-      anthropic: { apiKey: process.env.ANTHROPIC_API_KEY },
-      bedrock: {
-        region: 'us-east-1',
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
-      }
+      openai: {},
+      anthropic: {},
+      bedrock: {}
     }
   }
 })
@@ -34,7 +30,7 @@ export default buildConfig({
 
 Built-in keys are `openai`, `anthropic`, `google`, `bedrock`, `groq`, `mistral`, `cohere`, `together`, `fireworks`, `deepinfra`, `xai`, `perplexity`, `cerebras`, `voyage`, and `replicate`.
 
-Model IDs use `<provider>/<model>`, such as `openai/gpt-4o`. Use `amazon-bedrock/...` for a configured `bedrock` provider and `togetherai/...` for `together`; Replicate's `apiKey` maps to its `apiToken` option.
+Model IDs use `<provider>/<model>`, such as `openai/gpt-4o`. Use `amazon-bedrock/...` for a configured `bedrock` provider and `togetherai/...` for `together`; Replicate's `apiKey` maps to its `apiToken` option. Bedrock supports bearer-token, explicit SigV4, and ambient AWS credentials.
 
 Add an OpenAI-compatible endpoint with any non-built-in key. Its `models` list is required for validation, and calls use the custom key as the provider prefix.
 
@@ -72,7 +68,7 @@ Routers are pure aliases from a stable slug to one model ID.
 ```ts
 ai: {
   providers: {
-    openai: { apiKey: process.env.OPENAI_API_KEY }
+    openai: {}
   },
   routers: {
     fast: { model: 'openai/gpt-4o-mini' },
@@ -250,7 +246,7 @@ Configure access by operation category. Every category defaults to `Boolean(req.
 ```ts
 ai: {
   providers: {
-    openai: { apiKey: process.env.OPENAI_API_KEY }
+    openai: {}
   },
   access: {
     generate: ({ req }) => Boolean(req.user),
@@ -279,7 +275,7 @@ Register arrays of hooks for the five-phase lifecycle. FrogBot creates one lifec
 ```ts
 ai: {
   providers: {
-    openai: { apiKey: process.env.OPENAI_API_KEY }
+    openai: {}
   },
   hooks: {
     beforeOperation: [({ context, user }) => {
@@ -333,7 +329,7 @@ Telemetry is enabled by default and registers `@ai-sdk/otel` when that optional 
 ```ts
 ai: {
   providers: {
-    openai: { apiKey: process.env.OPENAI_API_KEY }
+    openai: {}
   },
   deploymentId: 'support-production',
   telemetry: {

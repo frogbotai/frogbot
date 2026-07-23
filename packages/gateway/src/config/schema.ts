@@ -152,12 +152,16 @@ export function parseGatewayConfig(input: GatewayConfig): GatewayConfig {
     if (!requiredKeys || requiredKeys.length === 0) {
       continue;
     }
-    for (const key of requiredKeys) {
+    for (const [index, key] of requiredKeys.entries()) {
       const value = (cfg as Record<string, unknown>)[key];
-      if (typeof value !== 'string' || value.length === 0) {
-        issues.push(
-          `providers.${name}.${key} must be a non-empty string (received: ${value === undefined ? 'undefined' : typeof value})`,
-        );
+      const envVar = def.envVars[index] ?? def.envVars[0];
+      const source = `providers.${name}.${key} or ${envVar}`;
+      if (value === undefined) {
+        if (typeof process.env[envVar] !== 'string' || !process.env[envVar].trim()) {
+          issues.push(`${source} must be a non-empty string`);
+        }
+      } else if (typeof value !== 'string' || !value.trim()) {
+        issues.push(`${source} must be a non-empty string`);
       }
     }
   }

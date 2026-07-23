@@ -112,8 +112,8 @@ import { defineConfig } from '@frogbotai/gateway';
 
 export default defineConfig({
   providers: {
-    openai: { apiKey: process.env.OPENAI_API_KEY! },
-    anthropic: { apiKey: process.env.ANTHROPIC_API_KEY! },
+    openai: {},
+    anthropic: {},
     ollama: { baseURL: 'http://localhost:11434/v1' },
   },
   upstreamTimeoutMs: 60_000,
@@ -138,7 +138,7 @@ import { serve } from '@hono/node-server';
 import { createGateway } from '@frogbotai/gateway';
 
 const gw = createGateway({
-  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } },
+  providers: { openai: {} },
 });
 
 serve({ fetch: gw.handler, port: 3939 });

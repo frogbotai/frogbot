@@ -3,7 +3,7 @@ import { createLMNT, type LMNTProvider, type LMNTProviderSettings } from '@ai-sd
 import type { ProviderDefinition } from '../types.js';
 
 export type LMNTConfig = Omit<LMNTProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const lmntProvider = {

@@ -3,7 +3,7 @@ import { createGladia, type GladiaProvider, type GladiaProviderSettings } from '
 import type { ProviderDefinition } from '../types.js';
 
 export type GladiaConfig = Omit<GladiaProviderSettings, 'apiKey' | 'fetch'> & {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export const gladiaProvider = {

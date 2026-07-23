@@ -48,7 +48,7 @@ import { serve } from '@hono/node-server'
 import { createGateway } from '@frogbotai/gateway'
 
 const gw = createGateway({
-  providers: { openai: { apiKey: process.env.OPENAI_API_KEY! } }
+  providers: { openai: {} }
 })
 
 serve({ fetch: gw.handler, port: 3939 })

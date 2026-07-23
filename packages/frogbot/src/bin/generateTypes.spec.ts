@@ -131,5 +131,18 @@ describe('frogbot generate:types', () => {
       expect(output).toContain('"assistant": unknown;');
       expect(output).not.toMatch(/payload/i);
     });
+
+    it('generates types without provider credentials', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-types-no-credentials-'));
+      const { buildConfig } = await import('../config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [{ slug: 'users', auth: true, fields: [] }],
+        ai: { providers: { openai: {} } },
+      });
+
+      await expect(writeGeneratedTypes(config, dir)).resolves.toBeDefined();
+    });
   });
 });
