@@ -1,9 +1,20 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 
+import type * as GenerateTypesModule from './generateTypes.js';
+
+const mocks = vi.hoisted(() => ({ generateTypes: vi.fn() }));
+
+vi.mock('./generateTypes.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof GenerateTypesModule>()),
+  generateTypes: mocks.generateTypes,
+}));
+
+import { bin } from './index.js';
 import { buildGeneratedTypesFooter, writeGeneratedTypes } from './generateTypes.js';
 
 describe('frogbot generate:types', () => {
@@ -22,6 +33,39 @@ describe('frogbot generate:types', () => {
   });
   it.todo('skips the write when output matches the existing file (deterministic)');
   it.todo('exits non-zero on any failure with a `[frogbot]` prefixed message');
+
+  it('loads .env before importing the config', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'frogbot-types-env-'));
+    const cwd = process.cwd();
+    const argv = process.argv;
+    const original = process.env.FROGBOT_TEST_KEY;
+
+    await writeFile(join(dir, '.env'), 'FROGBOT_TEST_KEY=sk-test\n');
+    await writeFile(
+      join(dir, 'frogbot.config.mjs'),
+      'export default { apiKey: process.env.FROGBOT_TEST_KEY };\n',
+    );
+
+    delete process.env.FROGBOT_TEST_KEY;
+    process.chdir(dir);
+    process.argv = ['node', 'frogbot', 'generate:types'];
+    mocks.generateTypes.mockImplementationOnce(async () => {
+      const config = (await import(pathToFileURL(join(dir, 'frogbot.config.mjs')).href)) as {
+        default: { apiKey?: string };
+      };
+      expect(config.default.apiKey).toBe('sk-test');
+    });
+
+    try {
+      await bin();
+    } finally {
+      process.chdir(cwd);
+      process.argv = argv;
+      if (original === undefined) delete process.env.FROGBOT_TEST_KEY;
+      else process.env.FROGBOT_TEST_KEY = original;
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 
   it('emits agent slugs in the GeneratedTypes augmentation', () => {
     expect(buildGeneratedTypesFooter(['media-buyer', 'support'])).toContain(`agents: {

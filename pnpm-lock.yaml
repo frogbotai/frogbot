@@ -168,6 +168,9 @@ importers:
       '@frogbotai/gateway':
         specifier: workspace:*
         version: link:../gateway
+      '@next/env':
+        specifier: 15.4.10
+        version: 15.4.10
       '@payloadcms/translations':
         specifier: 3.85.1
         version: 3.85.1

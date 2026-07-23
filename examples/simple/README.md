@@ -13,9 +13,10 @@ pnpm install
 cp .env.example .env
 # edit .env and set OPENAI_API_KEY
 
-set -a && source .env && set +a
 pnpm dev
 ```
+
+FrogBot commands load `.env*` files automatically.
 
 Then open [http://localhost:3000/admin](http://localhost:3000/admin) to create
 your first user and browse the admin panel.
