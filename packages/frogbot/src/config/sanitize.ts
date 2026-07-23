@@ -216,12 +216,15 @@ function sanitizeAI(ai: AIConfig): SanitizedAIConfig {
   };
 }
 
-function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined): AgentConfig[] {
+function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined): AgentConfig[] | undefined {
+  if (!Array.isArray(agents)) {
+    throw new Error('[frogbot] `agents` must be an array.');
+  }
+  if (agents.length === 0) {
+    return undefined;
+  }
   if (!ai) {
     throw new Error('[frogbot] `agents` requires an `ai` configuration block.');
-  }
-  if (!Array.isArray(agents) || agents.length === 0) {
-    throw new Error('[frogbot] `agents` must be a non-empty array when configured.');
   }
 
   const providers = new Set(

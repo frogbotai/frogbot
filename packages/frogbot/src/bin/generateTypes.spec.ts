@@ -144,5 +144,21 @@ describe('frogbot generate:types', () => {
 
       await expect(writeGeneratedTypes(config, dir)).resolves.toBeDefined();
     });
+
+    it('generates an empty agent map from an explicit empty agents array without AI', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-types-empty-agents-'));
+      const { buildConfig } = await import('../config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [{ slug: 'users', auth: true, fields: [] }],
+        agents: [],
+      });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const output = await readFile(outputPath, 'utf-8');
+
+      expect(output).toContain('agents: {};');
+    });
   });
 });
