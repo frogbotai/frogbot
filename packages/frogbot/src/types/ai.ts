@@ -15,7 +15,7 @@ export type AIOutput = ReturnType<(typeof Output)[keyof typeof Output]>;
 // ─── Provider Configuration ──────────────────────────────────────────────────
 
 export type BuiltInProviderEntry = {
-  apiKey: string;
+  apiKey?: string;
 };
 
 export type BedrockProviderEntry = {

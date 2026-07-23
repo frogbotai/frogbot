@@ -124,6 +124,23 @@ const BUILT_IN_PROVIDERS = new Set([
   'replicate',
 ]);
 
+const PROVIDER_API_KEY_ENV_VARS: Record<string, string> = {
+  openai: 'OPENAI_API_KEY',
+  anthropic: 'ANTHROPIC_API_KEY',
+  google: 'GOOGLE_GENERATIVE_AI_API_KEY',
+  groq: 'GROQ_API_KEY',
+  mistral: 'MISTRAL_API_KEY',
+  cohere: 'COHERE_API_KEY',
+  together: 'TOGETHER_API_KEY',
+  fireworks: 'FIREWORKS_API_KEY',
+  deepinfra: 'DEEPINFRA_API_KEY',
+  xai: 'XAI_API_KEY',
+  perplexity: 'PERPLEXITY_API_KEY',
+  cerebras: 'CEREBRAS_API_KEY',
+  voyage: 'VOYAGE_API_KEY',
+  replicate: 'REPLICATE_API_TOKEN',
+};
+
 const defaultAccessFn = ({ req }: { req: FrogbotRequest }) => !!req.user;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -162,8 +179,15 @@ function sanitizeAI(ai: AIConfig): SanitizedAIConfig {
         ) {
           throw new Error(`[frogbot] Provider '${key}' requires region, accessKeyId, and secretAccessKey.`);
         }
-      } else if (typeof provider.apiKey !== 'string' || !provider.apiKey.trim()) {
-        throw new Error(`[frogbot] Provider '${key}' requires an apiKey.`);
+      } else if (provider.apiKey !== undefined) {
+        if (typeof provider.apiKey !== 'string') {
+          throw new Error(`[frogbot] Provider '${key}' apiKey must be a string or undefined.`);
+        }
+        if (!provider.apiKey.trim()) {
+          throw new Error(
+            `[frogbot] Provider '${key}' has an empty apiKey (checked ${PROVIDER_API_KEY_ENV_VARS[key]}? is your .env loaded?)`,
+          );
+        }
       }
     } else {
       const custom = provider;
