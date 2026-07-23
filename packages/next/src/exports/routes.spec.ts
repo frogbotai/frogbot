@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type * as Frogbot from 'frogbot';
 import type { FrogbotSanitizedConfig } from 'frogbot';
 
 const mocks = vi.hoisted(() => ({
   handlerBuilder: vi.fn((config: unknown) => config),
+  getFrogbot: vi.fn(() => Promise.resolve({})),
 }));
 
 vi.mock('@payloadcms/next/routes', () => ({
@@ -13,6 +15,11 @@ vi.mock('@payloadcms/next/routes', () => ({
   REST_PATCH: mocks.handlerBuilder,
   REST_POST: mocks.handlerBuilder,
   REST_PUT: mocks.handlerBuilder,
+}));
+
+vi.mock('frogbot', async (importOriginal) => ({
+  ...(await importOriginal<typeof Frogbot>()),
+  getFrogbot: mocks.getFrogbot,
 }));
 
 const routes = await import('./routes.js');
@@ -31,18 +38,33 @@ describe('@frogbotai/next routes', () => {
     async (name) => {
       const { config, payloadConfig } = makeConfig();
 
-      const result = routes[name](config) as unknown as Promise<unknown>;
+      routes[name](config);
 
       expect(mocks.handlerBuilder).toHaveBeenCalled();
-      await expect(result).resolves.toBe(payloadConfig);
+      await expect(mocks.handlerBuilder.mock.lastCall?.[0]).resolves.toBe(payloadConfig);
     },
   );
 
   it('accepts a promise of the frogbot config', async () => {
     const { config, payloadConfig } = makeConfig();
 
-    const result = routes.REST_GET(Promise.resolve(config)) as unknown as Promise<unknown>;
+    routes.REST_GET(Promise.resolve(config));
 
-    await expect(result).resolves.toBe(payloadConfig);
+    await expect(mocks.handlerBuilder.mock.lastCall?.[0]).resolves.toBe(payloadConfig);
+  });
+
+  it('initializes frogbot before delegating a cold REST request to payload', async () => {
+    const { config } = makeConfig();
+    const payloadHandler = vi.fn(() => Promise.resolve(new Response('ok')));
+    mocks.handlerBuilder.mockReturnValueOnce(payloadHandler);
+
+    const handler = routes.REST_POST(config);
+    const response = await handler(new Request('http://localhost/api/agents/support', { method: 'POST' }), {
+      params: Promise.resolve({ slug: ['agents', 'support'] }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.getFrogbot).toHaveBeenCalledWith({ config });
+    expect(mocks.getFrogbot.mock.invocationCallOrder[0]).toBeLessThan(payloadHandler.mock.invocationCallOrder[0]);
   });
 });
