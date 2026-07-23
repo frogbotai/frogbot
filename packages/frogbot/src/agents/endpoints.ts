@@ -6,6 +6,7 @@ import { resolveModel } from '../ai/resolve.js';
 import { generateMessage } from '../chat/generateMessage.js';
 import { createMessageUsage, persistAssistantMessage } from '../chat/messagePersistence.js';
 import { resolveThreadContext } from '../chat/threadContext.js';
+import { getCachedFrogbot } from '../getFrogbot.js';
 import type { AgentInstance } from '../types/agent.js';
 import type { DocID } from '../types/operations.js';
 import type { FrogbotRequest } from '../types/request.js';
@@ -25,12 +26,27 @@ const bodySchema = z.union([
 
 type AgentRequestBody = { prompt: string; messages?: never } | { messages: UIMessage[]; prompt?: never };
 
+function ensureFrogbot(req: FrogbotRequest): Response | undefined {
+  if (req.frogbot) return undefined;
+  const cached = getCachedFrogbot();
+  if (!cached) {
+    return Response.json(
+      { error: 'Frogbot is not initialized. Run `await getFrogbot({ config })` before handling requests.' },
+      { status: 500 },
+    );
+  }
+  req.frogbot = cached;
+  return undefined;
+}
+
 export function buildAgentEndpoints() {
   return [
     {
       path: '/agents/:slug',
       method: 'post' as const,
       handler: async (req: FrogbotRequest) => {
+        const uninitialized = ensureFrogbot(req);
+        if (uninitialized) return uninitialized;
         const slug = req.routeParams?.slug as string | undefined;
         const agent: AgentInstance | undefined = slug ? req.frogbot.agents[slug] : undefined;
 
@@ -137,6 +153,8 @@ export function buildAgentEndpoints() {
       path: '/agents',
       method: 'get' as const,
       handler: async (req: FrogbotRequest) => {
+        const uninitialized = ensureFrogbot(req);
+        if (uninitialized) return uninitialized;
         const agents: { slug: string }[] = [];
 
         for (const instance of Object.values(req.frogbot.agents)) {
