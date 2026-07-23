@@ -21,7 +21,7 @@ import { streamTextOperation } from './ai/operations/streamText.js';
 import { writeGeneratedTypes } from './bin/generateTypes.js';
 import { generateImportMap } from './importMap/index.js';
 import { transcribeOperation } from './ai/operations/transcribe.js';
-import { registerFrogbotInstance } from './instanceRegistry.js';
+import { getFrogbotInstance, registerFrogbotInstance } from './instanceRegistry.js';
 import { createFrogbotLocalAPI } from './localAPI.js';
 import type { FrogbotLocalAPI } from './localAPI.js';
 import type { AgentRegistry } from './types/agent.js';
@@ -94,6 +94,16 @@ type FrogbotCustom = {
   auth?: boolean;
 };
 
+const initFromPayload = Symbol();
+
+export function initFrogbotFromPayload(
+  payload: Payload,
+  config: FrogbotSanitizedConfig,
+  options: Pick<InitOptions, 'disableOnInit' | 'onInit'> = {},
+): Promise<Frogbot> {
+  return new Frogbot()[initFromPayload](payload, config, options);
+}
+
 export class Frogbot {
   private payload!: Payload;
   private local!: FrogbotLocalAPI;
@@ -123,15 +133,28 @@ export class Frogbot {
 
   async init(options: InitOptions): Promise<Frogbot> {
     const config = await options.config;
-    this.config = config;
-
     const payloadConfig = config._internal.payloadConfig;
-
-    this.payload = await getPayload({
+    const payload = await getPayload({
       config: payloadConfig,
       disableDBConnect: options.disableDBConnect,
       disableOnInit: true,
     });
+    const registered = getFrogbotInstance(payload);
+    if (registered) return registered;
+
+    return this[initFromPayload](payload, config, options);
+  }
+
+  async [initFromPayload](
+    payload: Payload,
+    config: FrogbotSanitizedConfig,
+    options: Pick<InitOptions, 'disableOnInit' | 'onInit'> = {},
+  ): Promise<Frogbot> {
+    const registered = getFrogbotInstance(payload);
+    if (registered) return registered;
+
+    this.config = config;
+    this.payload = payload;
     this.local = createFrogbotLocalAPI(this.payload);
     registerFrogbotInstance(this.payload, this);
 

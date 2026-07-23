@@ -46,6 +46,11 @@ export function getCachedFrogbot(): Frogbot | null {
   return getCache().frogbot;
 }
 
+export function seedFrogbotCache(frogbot: Frogbot): void {
+  const cached = getCache();
+  cached.frogbot ??= frogbot;
+}
+
 /**
  * Reset the singleton cache. Used in tests.
  * @internal

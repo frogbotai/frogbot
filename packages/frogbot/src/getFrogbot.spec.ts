@@ -53,4 +53,15 @@ describe('getFrogbot', () => {
     const second = await getFrogbot(options);
     expect(second).not.toBe(first);
   });
+
+  it('accepts a lifecycle-created instance without replacing it', async () => {
+    const lifecycleInstance = {};
+    const module = await import('./getFrogbot.js');
+    const seed = (module as unknown as { seedFrogbotCache: (instance: unknown) => void }).seedFrogbotCache;
+
+    seed(lifecycleInstance);
+
+    expect(getCachedFrogbot()).toBe(lifecycleInstance);
+    expect(await getFrogbot(options)).toBe(lifecycleInstance);
+  });
 });

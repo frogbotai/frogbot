@@ -2,15 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { FrogbotConfig } from '../types/config.js';
 import type { CollectionConfig } from '../types/collection.js';
-import { registerFrogbotInstance } from '../instanceRegistry.js';
+import type { Frogbot } from '../frogbot.js';
+import { getFrogbotInstance, registerFrogbotInstance } from '../instanceRegistry.js';
+import { getCachedFrogbot, resetFrogbotCache } from '../getFrogbot.js';
 
 vi.mock('payload', () => ({
   buildConfig: vi.fn((config: unknown) => Promise.resolve(config)),
   handleEndpoints: vi.fn(),
-}));
-
-vi.mock('../getFrogbot.js', () => ({
-  getCachedFrogbot: vi.fn(() => null),
 }));
 
 const { sanitize } = await import('./sanitize.js');
@@ -21,6 +19,24 @@ function makeConfig(overrides?: Partial<FrogbotConfig>): FrogbotConfig {
     db: {} as FrogbotConfig['db'],
     collections: [{ slug: 'users', auth: true, fields: [{ name: 'name', type: 'text' }] }],
     ...overrides,
+  };
+}
+
+function makePayload(config: unknown) {
+  return {
+    config,
+    secret: 'test-secret',
+    logger: {
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      trace: vi.fn(),
+      fatal: vi.fn(),
+    },
+    db: {},
+    kv: {},
+    email: {},
   };
 }
 
@@ -151,7 +167,8 @@ describe('frogbot sanitize', () => {
       }),
     );
     const payloadConfig = await result._internal.payloadConfig;
-    const endpoint = (payloadConfig as any).endpoints[0]; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const endpoint = (payloadConfig as unknown as { endpoints: { handler: (req: unknown) => Promise<Response> }[] })
+      .endpoints[0];
     const payload = {};
     const frogbot = { agents: {} };
     registerFrogbotInstance(payload, frogbot as any); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -159,6 +176,75 @@ describe('frogbot sanitize', () => {
     await endpoint.handler({ payload });
 
     expect(handler).toHaveBeenCalledWith(expect.objectContaining({ frogbot }));
+    expect(payload).not.toHaveProperty('frogbot');
+  });
+
+  it('registers and caches Frogbot during Payload initialization', async () => {
+    resetFrogbotCache();
+    const onInit = vi.fn();
+    const result = sanitize(makeConfig({ onInit }));
+    const payloadConfig = await result._internal.payloadConfig;
+    const payload = makePayload(payloadConfig);
+
+    await payloadConfig.onInit?.(payload as never);
+
+    const frogbot = getFrogbotInstance(payload);
+    expect(frogbot).toBeDefined();
+    expect(getCachedFrogbot()).toBe(frogbot);
+    expect(onInit).toHaveBeenCalledOnce();
+  });
+
+  it('initializes a Payload instance idempotently', async () => {
+    resetFrogbotCache();
+    const onInit = vi.fn();
+    const result = sanitize(makeConfig({ onInit }));
+    const payloadConfig = await result._internal.payloadConfig;
+    const payload = makePayload(payloadConfig);
+
+    await payloadConfig.onInit?.(payload as never);
+    const first = getFrogbotInstance(payload);
+    await payloadConfig.onInit?.(payload as never);
+
+    expect(first).toBeDefined();
+    expect(getFrogbotInstance(payload)).toBe(first);
+    expect(onInit).toHaveBeenCalledOnce();
+  });
+
+  it('rejects endpoint requests when lifecycle registration is missing', async () => {
+    const handler = vi.fn(() => new Response('ok'));
+    const result = sanitize(makeConfig({ endpoints: [{ path: '/health', method: 'get', handler }] }));
+    const payloadConfig = await result._internal.payloadConfig;
+    const endpoint = (payloadConfig as any).endpoints[0]; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+    expect(() => endpoint.handler({ payload: {} })).toThrow('[frogbot]');
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('rejects operations when lifecycle registration is missing', async () => {
+    const result = sanitize(makeConfig());
+    const payloadConfig = await result._internal.payloadConfig;
+    const collection = payloadConfig.collections[0];
+    const bootstrap = collection.hooks.beforeOperation[0];
+
+    expect(() => bootstrap({ req: { payload: {} } })).toThrow('[frogbot]');
+  });
+
+  it('binds root afterError requests without nesting Frogbot on Payload', async () => {
+    const hookResult = { status: 418 };
+    const afterError = vi.fn(() => hookResult);
+    const result = sanitize(makeConfig({ hooks: { afterError: [afterError] } }));
+    const payloadConfig = await result._internal.payloadConfig;
+    const payload = makePayload(payloadConfig);
+    const frogbot = { agents: {} };
+    registerFrogbotInstance(payload, frogbot as unknown as Frogbot);
+    const req = { payload };
+
+    const args = { req, context: {}, error: new Error('test'), result: { errors: [] } };
+    const hookResponse = await payloadConfig.hooks.afterError[0](args);
+
+    expect(afterError).toHaveBeenCalledWith({ ...args, req: expect.objectContaining({ frogbot }) });
+    expect(hookResponse).toBe(hookResult);
+    expect(payload).not.toHaveProperty('frogbot');
   });
 
   it('drops the FrogBot plugins key from the payload config', async () => {
@@ -319,7 +405,7 @@ describe('frogbot sanitize', () => {
     it('accepts an undefined apiKey for SDK environment fallback', () => {
       const config = makeConfig({
         ai: { providers: { openai: { apiKey: undefined } } },
-      } as unknown as Partial<FrogbotConfig>);
+      });
       const result = sanitize(config);
       expect(result.ai?.providers.openai?.apiKey).toBeUndefined();
     });

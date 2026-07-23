@@ -7,21 +7,14 @@ import {
   REST_PUT as PAYLOAD_REST_PUT,
 } from '@payloadcms/next/routes';
 
-import { getFrogbot, getPayloadConfig } from 'frogbot';
+import { getPayloadConfig } from 'frogbot';
 
 import type { FrogbotConfigArg } from '../types.js';
 
 type PayloadRestHandlerBuilder = typeof PAYLOAD_REST_GET;
-type PayloadRestHandler = ReturnType<PayloadRestHandlerBuilder>;
-
 function withFrogbotConfig(handlerBuilder: PayloadRestHandlerBuilder) {
-  return (config: FrogbotConfigArg): PayloadRestHandler => {
-    const handler = handlerBuilder(getPayloadConfig(config));
-    return async (...args: Parameters<PayloadRestHandler>) => {
-      await getFrogbot({ config });
-      return handler(...args);
-    };
-  };
+  return (config: FrogbotConfigArg): ReturnType<PayloadRestHandlerBuilder> =>
+    handlerBuilder(getPayloadConfig(config));
 }
 
 export const REST_DELETE = withFrogbotConfig(PAYLOAD_REST_DELETE);
