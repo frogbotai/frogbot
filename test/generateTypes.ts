@@ -11,7 +11,10 @@ const binPath = path.resolve(repoRoot, 'packages/frogbot/bin.js');
 const [targetSuite] = process.argv.slice(2);
 
 function generateForSuite(suiteDir: string): Promise<number> {
-  const configPath = path.resolve(suiteDir, 'config.ts');
+  const configPath = ['config.ts', 'frogbot.config.ts']
+    .map((name) => path.resolve(suiteDir, name))
+    .find(fs.existsSync);
+  if (!configPath) return Promise.resolve(1);
   const outputPath = path.resolve(suiteDir, 'frogbot-types.ts');
 
   console.log(`[generate:types] ${path.basename(suiteDir)}`);
@@ -42,11 +45,16 @@ async function run() {
     process.exit(code);
   }
 
-  const suites = fs
+  const testSuites = fs
     .readdirSync(dirname, { withFileTypes: true })
     .filter((f) => f.isDirectory() && !f.name.startsWith('_') && !f.name.startsWith('.'))
     .map((f) => path.resolve(dirname, f.name))
     .filter((dir) => fs.existsSync(path.resolve(dir, 'config.ts')));
+  const suites = [
+    ...testSuites,
+    path.resolve(repoRoot, 'examples/simple'),
+    path.resolve(repoRoot, 'templates/blank'),
+  ];
 
   console.log(`[generate:types] found ${suites.length} suites\n`);
 

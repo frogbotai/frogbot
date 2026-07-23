@@ -8,17 +8,18 @@ import type {
   UIMessage,
 } from 'ai';
 
-import type { ModelId } from './ai.js';
-import type { AgentSlug } from './generated.js';
+import type { AgentSlug, FrogbotTypes } from './generated.js';
 import type { DocID } from './operations.js';
 import type { FrogbotRequest } from './request.js';
 import type { AnyTool } from './tool.js';
 
 export type AgentAccess = (args: { req: FrogbotRequest }) => boolean | Promise<boolean>;
 
+export type AgentModelId = FrogbotTypes['models'] | (string & {});
+
 export type AgentConfig = {
   slug: string;
-  model: ModelId;
+  model: AgentModelId;
   instructions: string;
   tools?: readonly AnyTool[];
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];

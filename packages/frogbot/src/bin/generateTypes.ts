@@ -22,7 +22,9 @@ import { compile } from 'json-schema-to-typescript';
 import { configToJSONSchema } from 'payload';
 
 import type { SanitizedConfig } from 'payload';
+import { catalog } from '../ai/catalog.js';
 import { loadConfig } from '../config/load.js';
+import type { CustomProviderEntry, SanitizedAIConfig } from '../types/ai.js';
 import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
 
 const BANNER = `/* tslint:disable */
@@ -33,17 +35,53 @@ const BANNER = `/* tslint:disable */
  * and re-run \`frogbot generate:types\` to regenerate this file.
  */`;
 
-export function buildGeneratedTypesFooter(agentSlugs: readonly string[]): string {
+const PROVIDER_NAME_MAP: Record<string, string> = {
+  bedrock: 'amazon-bedrock',
+  together: 'togetherai',
+};
+
+function getConfiguredModelIds(ai: SanitizedAIConfig | undefined): string[] {
+  if (!ai) return [];
+
+  const modelIds = new Set<string>();
+  for (const [provider, entry] of Object.entries(ai.providers)) {
+    if (!entry) continue;
+    const runtimeProvider = PROVIDER_NAME_MAP[provider] ?? provider;
+
+    for (const model of catalog) {
+      if (model.provider === runtimeProvider) {
+        modelIds.add(`${runtimeProvider}/${model.id.slice(model.id.indexOf('/') + 1)}`);
+      }
+    }
+
+    if ((entry as CustomProviderEntry).type === 'openai-compatible') {
+      for (const model of (entry as CustomProviderEntry).models) {
+        modelIds.add(`${provider}/${model.id}`);
+      }
+    }
+  }
+
+  for (const slug of Object.keys(ai.routers)) modelIds.add(slug);
+  return [...modelIds].sort();
+}
+
+export function buildGeneratedTypesFooter(
+  agentSlugs: readonly string[],
+  ai?: SanitizedAIConfig,
+): string {
   const agents =
     agentSlugs.length === 0
       ? '{}'
       : `{
 ${agentSlugs.map((slug) => `      ${JSON.stringify(slug)}: unknown;`).join('\n')}
     }`;
+  const modelIds = getConfiguredModelIds(ai);
+  const models = modelIds.length === 0 ? 'never' : modelIds.map((id) => JSON.stringify(id)).join(' | ');
 
   return `declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: ${agents};
+    models: ${models};
   }
 }`;
 }
@@ -89,7 +127,11 @@ function resolveOutputPath(config: SanitizedConfig, cwd: string): string {
   return join(cwd, DEFAULT_FILENAME);
 }
 
-async function compileTypes(config: SanitizedConfig, agentSlugs: readonly string[]): Promise<string> {
+async function compileTypes(
+  config: SanitizedConfig,
+  agentSlugs: readonly string[],
+  ai?: SanitizedAIConfig,
+): Promise<string> {
   const languages = Object.keys(config.i18n.supportedLanguages) as AcceptedLanguages[];
   const language = languages.includes('en') ? 'en' : config.i18n.fallbackLanguage;
   const i18n = await initI18n({
@@ -123,7 +165,7 @@ async function compileTypes(config: SanitizedConfig, agentSlugs: readonly string
     compiled = `${compiled.trimEnd()}\n\n${[...extraTypeStrings].join('\n\n')}\n`;
   }
 
-  return `${compiled.trimEnd()}\n\n\n${buildGeneratedTypesFooter(agentSlugs)}\n`;
+  return `${compiled.trimEnd()}\n\n\n${buildGeneratedTypesFooter(agentSlugs, ai)}\n`;
 }
 
 export async function writeGeneratedTypes(
@@ -132,7 +174,11 @@ export async function writeGeneratedTypes(
 ): Promise<{ outputPath: string; changed: boolean }> {
   const config = await frogbotConfig._internal.payloadConfig;
   const outputPath = resolveOutputPath(config, cwd);
-  const compiled = await compileTypes(config, frogbotConfig.agents?.map((agent) => agent.slug) ?? []);
+  const compiled = await compileTypes(
+    config,
+    frogbotConfig.agents?.map((agent) => agent.slug) ?? [],
+    frogbotConfig.ai,
+  );
 
   try {
     const existing = await fs.readFile(outputPath, 'utf-8');

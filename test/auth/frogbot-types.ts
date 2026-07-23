@@ -74,7 +74,7 @@ export interface Config {
     users: UsersSelect;
   };
   db: {
-    defaultIDType: number;
+    defaultIDType: string;
   };
   fallbackLocale: null;
   globals: {};
@@ -112,7 +112,7 @@ export interface UserAuthOperations {
  * via the `definition` "users".
  */
 export interface User {
-  id: number;
+  id: string;
   name?: string | null;
   role?: ('admin' | 'member') | null;
   updatedAt: string;
@@ -180,5 +180,6 @@ export interface Auth {
 declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {};
+    models: never;
   }
 }

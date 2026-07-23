@@ -92,7 +92,7 @@ export interface Config {
     users: UsersSelect;
   };
   db: {
-    defaultIDType: number;
+    defaultIDType: string;
   };
   fallbackLocale: null;
   globals: {};
@@ -130,7 +130,7 @@ export interface UserAuthOperations {
  * via the `definition` "hook-order".
  */
 export interface HookOrder {
-  id: number;
+  id: string;
   title: string;
   updatedAt: string;
   createdAt: string;
@@ -140,7 +140,7 @@ export interface HookOrder {
  * via the `definition` "req-access".
  */
 export interface ReqAccess {
-  id: number;
+  id: string;
   title?: string | null;
   hookCount?: number | null;
   updatedAt: string;
@@ -151,7 +151,7 @@ export interface ReqAccess {
  * via the `definition` "access-boolean".
  */
 export interface AccessBoolean {
-  id: number;
+  id: string;
   title?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -161,7 +161,7 @@ export interface AccessBoolean {
  * via the `definition` "access-where".
  */
 export interface AccessWhere {
-  id: number;
+  id: string;
   title?: string | null;
   hidden?: boolean | null;
   updatedAt: string;
@@ -172,7 +172,7 @@ export interface AccessWhere {
  * via the `definition` "field-access".
  */
 export interface FieldAccess {
-  id: number;
+  id: string;
   secret?: string | null;
   public?: string | null;
   updatedAt: string;
@@ -183,7 +183,7 @@ export interface FieldAccess {
  * via the `definition` "validate-ctx".
  */
 export interface ValidateCtx {
-  id: number;
+  id: string;
   title: string;
   mustMatch?: string | null;
   updatedAt: string;
@@ -194,7 +194,7 @@ export interface ValidateCtx {
  * via the `definition` "after-operation".
  */
 export interface AfterOperation {
-  id: number;
+  id: string;
   title: string;
   updatedAt: string;
   createdAt: string;
@@ -204,7 +204,7 @@ export interface AfterOperation {
  * via the `definition` "context-flow".
  */
 export interface ContextFlow {
-  id: number;
+  id: string;
   title?: string | null;
   contextResult?: string | null;
   updatedAt: string;
@@ -215,7 +215,7 @@ export interface ContextFlow {
  * via the `definition` "override-access".
  */
 export interface OverrideAccess {
-  id: number;
+  id: string;
   title?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -225,7 +225,7 @@ export interface OverrideAccess {
  * via the `definition` "users".
  */
 export interface User {
-  id: number;
+  id: string;
   name?: string | null;
   lastLogin?: string | null;
   updatedAt: string;
@@ -383,5 +383,6 @@ export interface Auth {
 declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {};
+    models: never;
   }
 }
