@@ -1,3 +1,5 @@
+import type { CatalogModelId } from '../ai/generated.js';
+
 // FrogBot's generated-types contract.
 //
 // `GeneratedTypes` is the augmentation point for the generated Config,
@@ -18,6 +20,7 @@ export interface UntypedFrogbotTypes {
   collections: {
     [slug: string]: Record<string, unknown> & TypeWithID;
   };
+  models: CatalogModelId;
 }
 
 /**

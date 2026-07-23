@@ -98,6 +98,22 @@ describe('frogbot generate:types', () => {
   describe('generated output', () => {
     let dir: string;
 
+    async function generateModelTypes(args: {
+      providers: Record<string, unknown>;
+      routers?: Record<string, { model: string }>;
+    }): Promise<string> {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-model-types-'));
+      const { buildConfig } = await import('../config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [{ slug: 'users', auth: true, fields: [] }],
+        ai: args as never,
+      });
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      return readFile(outputPath, 'utf-8');
+    }
+
     afterAll(async () => {
       await rm(dir, { recursive: true, force: true });
     });
@@ -159,6 +175,56 @@ describe('frogbot generate:types', () => {
       const output = await readFile(outputPath, 'utf-8');
 
       expect(output).toContain('agents: {};');
+    });
+
+    it('emits only models from configured built-in providers', async () => {
+      const output = await generateModelTypes({ providers: { openai: {} } });
+
+      expect(output).toContain('"openai/gpt-4o"');
+      expect(output).not.toContain('anthropic/claude-sonnet-4-5');
+    });
+
+    it('combines models from multiple configured built-in providers', async () => {
+      const output = await generateModelTypes({
+        providers: { anthropic: {}, openai: {} },
+      });
+
+      expect(output).toContain('"anthropic/claude-sonnet-4-5"');
+      expect(output).toContain('"openai/gpt-4o"');
+    });
+
+    it('emits custom provider models and router slugs', async () => {
+      const output = await generateModelTypes({
+        providers: {
+          internal: {
+            type: 'openai-compatible',
+            baseUrl: 'https://models.test/v1',
+            models: [{ id: 'chat-v1', mode: 'chat' }],
+          },
+        },
+        routers: { fast: { model: 'internal/chat-v1' } },
+      });
+
+      expect(output).toContain('"internal/chat-v1"');
+      expect(output).toContain('"fast"');
+    });
+
+    it('uses runtime provider prefixes for aliased built-ins', async () => {
+      const output = await generateModelTypes({
+        providers: { bedrock: {}, together: {} },
+      });
+
+      expect(output).toContain('"togetherai/meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"');
+      expect(output).not.toContain('"together/meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"');
+    });
+
+    it('removes stale models when configured providers change', async () => {
+      const openai = await generateModelTypes({ providers: { openai: {} } });
+      const anthropic = await generateModelTypes({ providers: { anthropic: {} } });
+
+      expect(openai).toContain('"openai/gpt-4o"');
+      expect(anthropic).not.toContain('"openai/gpt-4o"');
+      expect(anthropic).toContain('"anthropic/claude-sonnet-4-5"');
     });
   });
 });

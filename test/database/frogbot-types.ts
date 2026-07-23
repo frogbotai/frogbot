@@ -76,7 +76,7 @@ export interface Config {
     posts: PostsSelect;
   };
   db: {
-    defaultIDType: number;
+    defaultIDType: string;
   };
   fallbackLocale: null;
   globals: {};
@@ -114,7 +114,7 @@ export interface UserAuthOperations {
  * via the `definition` "users".
  */
 export interface User {
-  id: number;
+  id: string;
   name?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -140,7 +140,7 @@ export interface User {
  * via the `definition` "posts".
  */
 export interface Post {
-  id: number;
+  id: string;
   title: string;
   content?: string | null;
   priority?: number | null;
@@ -207,5 +207,6 @@ export interface Auth {
 declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {};
+    models: never;
   }
 }

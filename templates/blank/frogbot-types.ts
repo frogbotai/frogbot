@@ -267,5 +267,6 @@ declare module 'frogbot' {
     agents: {
       "assistant": unknown;
     };
+    models: "openai/dall-e-3" | "openai/gpt-4-turbo" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-4.1-nano" | "openai/gpt-4o" | "openai/gpt-4o-mini" | "openai/gpt-image-1" | "openai/o1" | "openai/o1-mini" | "openai/o3" | "openai/o3-mini" | "openai/o4-mini" | "openai/text-embedding-3-large" | "openai/text-embedding-3-small" | "openai/tts-1" | "openai/tts-1-hd" | "openai/whisper-1";
   }
 }
