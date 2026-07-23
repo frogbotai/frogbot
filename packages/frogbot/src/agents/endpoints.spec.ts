@@ -5,17 +5,14 @@ import type { UIMessage } from 'ai';
 import type { AgentInstance } from '../types/agent.js';
 import type { FrogbotRequest } from '../types/request.js';
 
-const { createAgentUIStreamResponse, getCachedFrogbot } = vi.hoisted(() => ({
+const { createAgentUIStreamResponse } = vi.hoisted(() => ({
   createAgentUIStreamResponse: vi.fn(() => Promise.resolve(new Response('stream'))),
-  getCachedFrogbot: vi.fn((): unknown => null),
 }));
 
 vi.mock('ai', async (importOriginal) => ({
   ...(await importOriginal<typeof AI>()),
   createAgentUIStreamResponse,
 }));
-
-vi.mock('../getFrogbot.js', () => ({ getCachedFrogbot }));
 
 const { buildAgentEndpoints } = await import('./endpoints.js');
 
@@ -105,7 +102,6 @@ function listHandler() {
 describe('agent endpoints', () => {
   beforeEach(() => {
     createAgentUIStreamResponse.mockClear();
-    getCachedFrogbot.mockClear();
   });
 
   it('returns JSON unless text/event-stream is explicitly accepted', async () => {
@@ -356,38 +352,4 @@ describe('agent endpoints', () => {
     expect(response.status).toBe(401);
   });
 
-  describe('cold start without req.frogbot', () => {
-    it('returns a structured 500 from the run handler when no instance is available', async () => {
-      const request = makeRequest();
-      delete (request as { frogbot?: unknown }).frogbot;
-
-      const response = await postHandler()(request);
-
-      expect(response.status).toBe(500);
-      expect(await response.json()).toMatchObject({ error: expect.stringContaining('getFrogbot') });
-    });
-
-    it('returns a structured 500 from the list handler when no instance is available', async () => {
-      const request = makeRequest();
-      delete (request as { frogbot?: unknown }).frogbot;
-
-      const response = await listHandler()(request);
-
-      expect(response.status).toBe(500);
-      expect(await response.json()).toMatchObject({ error: expect.stringContaining('getFrogbot') });
-    });
-
-    it('recovers via the cached instance when req.frogbot is missing', async () => {
-      const agent = makeAgent();
-      const request = makeRequest({ agent });
-      const frogbot = (request as { frogbot?: unknown }).frogbot;
-      delete (request as { frogbot?: unknown }).frogbot;
-      getCachedFrogbot.mockReturnValueOnce(frogbot);
-
-      const response = await postHandler()(request);
-
-      expect(response.status).toBe(200);
-      expect(agent.generate).toHaveBeenCalledOnce();
-    });
-  });
 });

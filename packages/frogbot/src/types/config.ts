@@ -16,6 +16,17 @@ import type { CollectionConfig } from './collection.js';
 import type { DatabaseAdapter } from './database.js';
 import type { Endpoint } from './endpoint.js';
 import type { Plugin } from './plugin.js';
+import type { FrogbotRequest } from './request.js';
+
+type PayloadAfterErrorHook = NonNullable<NonNullable<PayloadConfig['hooks']>['afterError']>[number];
+
+export type AfterErrorHook = (
+  args: Omit<Parameters<PayloadAfterErrorHook>[0], 'req'> & { req: FrogbotRequest },
+) => ReturnType<PayloadAfterErrorHook>;
+
+export type RootHooks = {
+  afterError?: AfterErrorHook[];
+};
 
 /** Root config keys FrogBot overrides or forbids. Excluded from the
  *  Payload pass-through so FrogBot can declare its own shape for them. */
@@ -25,6 +36,7 @@ type FrogbotOverridden =
   | 'db'
   | 'endpoints'
   | 'globals'
+  | 'hooks'
   | 'plugins'
   | 'secret';
 
@@ -43,6 +55,7 @@ export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   admin?: RootAdminConfig;
   /** Root-level custom endpoints. Handler receives FrogbotRequest. */
   endpoints?: Endpoint[];
+  hooks?: RootHooks;
   /** AI configuration — providers, routers, hooks, and access control. */
   ai?: AIConfig;
 };

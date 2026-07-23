@@ -1,13 +1,8 @@
-// Cold REST e2e — boots `templates/blank` and makes the agent REST
-// endpoint the FIRST API request the server sees, proving the cold-start
-// path works with zero warm-up (issue #9). Readiness is polled via
-// /admin/login only, which never initializes the Frogbot singleton.
-// Gated by RUN_E2E=1 (`pnpm test:e2e`).
-
 import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { connect } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -15,6 +10,17 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
+
+function isListening(port: number): Promise<boolean> {
+  return new Promise((resolveListening) => {
+    const socket = connect({ host: '127.0.0.1', port });
+    socket.once('connect', () => {
+      socket.destroy();
+      resolveListening(true);
+    });
+    socket.once('error', () => resolveListening(false));
+  });
+}
 
 describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () => {
   const templateDir = join(repoRoot, 'templates', 'blank');
@@ -44,12 +50,7 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
 
     const deadline = Date.now() + 210000;
     for (;;) {
-      try {
-        const res = await fetch(`${baseURL}/admin/login`);
-        if (res.ok) break;
-      } catch {
-        // Server not up yet.
-      }
+      if (await isListening(port)) break;
       if (Date.now() > deadline) throw new Error('cold REST dev server did not become ready');
       await new Promise((r) => setTimeout(r, 2000));
     }
@@ -66,7 +67,7 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
     rmSync(dataDir, { recursive: true, force: true });
   });
 
-  it('serves POST /api/agents/:slug as the very first API request', async () => {
+  it('serves agent REST endpoints when POST /api/agents/:slug is the first HTTP request', async () => {
     const res = await fetch(`${baseURL}/api/agents/assistant`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
@@ -83,8 +84,8 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
   });
 
   it('lists agents at GET /api/agents after the cold request', async () => {
-    const res = await fetch(`${baseURL}/api/agents`);
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ agents: [{ slug: 'assistant' }] });
+    const listResponse = await fetch(`${baseURL}/api/agents`);
+    expect(listResponse.status).toBe(200);
+    expect(await listResponse.json()).toEqual({ agents: [{ slug: 'assistant' }] });
   });
 });

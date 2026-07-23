@@ -27,8 +27,10 @@ import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from '../types/s
 import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../types/ai.js';
 import type { AgentConfig } from '../types/agent.js';
 import type { FrogbotRequest } from '../types/request.js';
+import { Frogbot, initFrogbotFromPayload } from '../frogbot.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
+import { seedFrogbotCache } from '../getFrogbot.js';
 import { getFrogbotInstance } from '../instanceRegistry.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
 
@@ -45,20 +47,28 @@ const noopEmailAdapter: PayloadEmailAdapter<void> = ({ payload }) => ({
   },
 });
 
+function attachFrogbot(req: PayloadRequest): FrogbotRequest {
+  const frogbot = getFrogbotInstance(req.payload);
+  if (!frogbot) throw new Error('[frogbot] Request created before Frogbot lifecycle initialization.');
+  (req as PayloadRequest & { frogbot: Frogbot }).frogbot = frogbot;
+  return req as unknown as FrogbotRequest;
+}
+
 function bootstrapBeforeOperation(args: { req: PayloadRequest }): void {
-  const frogbot = getFrogbotInstance(args.req.payload);
-  if (frogbot) {
-    (args.req as any).frogbot = frogbot;
-  }  
+  attachFrogbot(args.req);
 }
 
 function wrapEndpointHandler(handler: PayloadHandler): PayloadHandler {
   return (req) => {
-    const frogbot = getFrogbotInstance(req.payload);
-    if (frogbot) {
-      (req as any).frogbot = frogbot;
-    }  
+    attachFrogbot(req);
     return handler(req);
+  };
+}
+
+function wrapRootHooks(hooks: FrogbotConfig['hooks']): PayloadConfig['hooks'] {
+  if (!hooks?.afterError) return hooks as PayloadConfig['hooks'];
+  return {
+    afterError: hooks.afterError.map((hook) => (args) => hook({ ...args, req: attachFrogbot(args.req) })),
   };
 }
 
@@ -364,10 +374,11 @@ function validateAgentPathReservations(config: Pick<FrogbotConfig, 'collections'
 
 // ─── Payload Config Building ─────────────────────────────────────────────────
 
-function buildPayloadConfig(config: FrogbotConfig): PayloadConfig {
+function buildPayloadConfig(config: FrogbotConfig, onInit: NonNullable<PayloadConfig['onInit']>): PayloadConfig {
   const out: Record<string, unknown> = {
     ...(config as unknown as Record<string, unknown>),
     collections: config.collections.map(sanitizeCollection),
+    hooks: wrapRootHooks(config.hooks),
   };
 
   const userEndpoints = config.endpoints as Endpoint[] | false | undefined;
@@ -455,6 +466,7 @@ function buildPayloadConfig(config: FrogbotConfig): PayloadConfig {
   delete out.port;
   delete out.ai;
   delete out.agents;
+  out.onInit = onInit;
 
   return out as unknown as PayloadConfig;
 }
@@ -479,10 +491,17 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
   }));
 
   // Build the Payload config and pass it through Payload's buildConfig.
-  const payloadConfig = buildPayloadConfig({ ...config, agents, collections });
+  const sanitizedConfigRef: { current?: FrogbotSanitizedConfig } = {};
+  const payloadConfig = buildPayloadConfig({ ...config, agents, collections }, async (payload) => {
+    const registered = getFrogbotInstance(payload);
+    const sanitizedConfig = sanitizedConfigRef.current;
+    if (!sanitizedConfig) throw new Error('[frogbot] Payload initialized before config sanitization completed.');
+    const frogbot = registered ?? (await initFrogbotFromPayload(payload, sanitizedConfig));
+    seedFrogbotCache(frogbot);
+  });
   const payloadSanitizedPromise = payloadBuildConfig(payloadConfig).then(rewriteComponentPaths);
 
-  return {
+  const sanitizedConfig: FrogbotSanitizedConfig = {
     collections: collectionsMeta,
     secret: config.secret,
     port: (config as any).port, // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -497,4 +516,6 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
       payloadConfig: payloadSanitizedPromise,
     },
   };
+  sanitizedConfigRef.current = sanitizedConfig;
+  return sanitizedConfig;
 }

@@ -25,7 +25,7 @@ export type { FrogbotSanitizedConfig } from './types/sanitized.js';
 // Owned types
 // ---------------------------------------------------------------------------
 
-export type { FrogbotConfig } from './types/config.js';
+export type { AfterErrorHook, FrogbotConfig, RootHooks } from './types/config.js';
 export type {
   AIConfig,
   ModelId,

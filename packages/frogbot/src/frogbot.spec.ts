@@ -1,16 +1,19 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { Frogbot } from './frogbot.js';
 import { createGatewayHandler } from './server/gateway.js';
 import type { FrogbotSanitizedConfig } from './types/sanitized.js';
 
 vi.mock('payload', () => {
-  const mockPayload = createMockPayload();
+  let mockPayload = createMockPayload();
   return {
     getPayload: vi.fn(() => mockPayload),
     createLocalReq: vi.fn(({ req }) => ({ ...req, payload: mockPayload })),
     handleEndpoints: vi.fn(() => new Response('ok')),
-    __mockPayload: mockPayload,
+    __getMockPayload: () => mockPayload,
+    __resetMockPayload: () => {
+      mockPayload = createMockPayload();
+    },
   };
 });
 
@@ -113,6 +116,11 @@ async function setup() {
   return frogbot;
 }
 
+beforeEach(async () => {
+  const payloadMod = await import('payload');
+  (payloadMod as unknown as { __resetMockPayload: () => void }).__resetMockPayload();
+});
+
 describe('Frogbot class', () => {
   describe('init + collections registry', () => {
     it('builds a collections registry keyed by slug', async () => {
@@ -155,6 +163,26 @@ describe('Frogbot class', () => {
       expect(frogbot.gateway).toBeDefined();
       expect(typeof frogbot.gateway!.chatModel).toBe('function');
     });
+
+    it('returns the lifecycle-created instance when Payload initialization wins', async () => {
+      const payloadMod = await import('payload');
+      const payload = (payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> })
+        .__getMockPayload();
+      const lifecycleFrogbot = new Frogbot();
+      const { registerFrogbotInstance } = await import('./instanceRegistry.js');
+      registerFrogbotInstance(payload, lifecycleFrogbot);
+
+      const result = await new Frogbot().init({ config: makeConfig(), disableOnInit: true });
+
+      expect(result).toBe(lifecycleFrogbot);
+    });
+
+    it('keeps Payload initialization off the public instance API', () => {
+      type HasInitFromPayload = 'initFromPayload' extends keyof Frogbot ? true : false;
+
+      expectTypeOf<HasInitFromPayload>().toEqualTypeOf<false>();
+      expect(new Frogbot()).not.toHaveProperty('initFromPayload');
+    });
   });
 
   describe('onInit', () => {
@@ -195,7 +223,9 @@ describe('Frogbot class', () => {
       const frogbot = await setup();
       await frogbot.find({ collection: 'posts' as any }); // eslint-disable-line @typescript-eslint/no-explicit-any
       const payloadMod = await import('payload');
-      expect((payloadMod as any).__mockPayload.find).toHaveBeenCalled(); // eslint-disable-line @typescript-eslint/no-explicit-any
+      const payload = (payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> })
+        .__getMockPayload();
+      expect(payload.find).toHaveBeenCalled();
     });
   });
 
@@ -214,7 +244,8 @@ describe('Frogbot class', () => {
       const frogbot = new Frogbot();
       await frogbot.init({ config, disableOnInit: true });
       const payloadMod = await import('payload');
-      const payload = (payloadMod as any).__mockPayload; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const payload = (payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> })
+        .__getMockPayload();
       payload.auth.mockResolvedValue({
         user: { id: 'user-1' },
         permissions: {},
@@ -245,7 +276,8 @@ describe('Frogbot class', () => {
       const frogbot = new Frogbot();
       await frogbot.init({ config, disableOnInit: true });
       const payloadMod = await import('payload');
-      const payload = (payloadMod as any).__mockPayload; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const payload = (payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> })
+        .__getMockPayload();
       payload.auth.mockResolvedValue({ user: null, permissions: {} });
       const handler = vi.fn();
       frogbot.gateway!.handler = handler;
@@ -260,6 +292,14 @@ describe('Frogbot class', () => {
   });
 
   describe('utilities', () => {
+    it('creates requests with top-level Frogbot only', async () => {
+      const frogbot = await setup();
+      const request = await frogbot.createRequest();
+
+      expect(request.frogbot).toBe(frogbot);
+      expect((request as unknown as { payload: object }).payload).not.toHaveProperty('frogbot');
+    });
+
     it('encrypt/decrypt work', async () => {
       const frogbot = await setup();
       expect(frogbot.encrypt('hello')).toBe('enc_hello');
@@ -278,7 +318,9 @@ describe('Frogbot class', () => {
       const frogbot = await setup();
       await frogbot.destroy();
       const payloadMod = await import('payload');
-      expect((payloadMod as any).__mockPayload.destroy).toHaveBeenCalled(); // eslint-disable-line @typescript-eslint/no-explicit-any
+      const payload = (payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> })
+        .__getMockPayload();
+      expect(payload.destroy).toHaveBeenCalled();
     });
   });
 
