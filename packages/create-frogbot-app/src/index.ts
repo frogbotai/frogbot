@@ -5,6 +5,36 @@ import { fileURLToPath } from 'node:url';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
+export function scaffold({
+  dest,
+  projectName,
+  templateDir,
+}: {
+  dest: string;
+  projectName: string;
+  templateDir: string;
+}): void {
+  if (fs.existsSync(dest)) {
+    throw new Error(`Directory "${projectName}" already exists.`);
+  }
+
+  fs.cpSync(templateDir, dest, { recursive: true });
+
+  const gitignore = path.join(dest, 'gitignore');
+  if (fs.existsSync(gitignore)) {
+    fs.renameSync(gitignore, path.join(dest, '.gitignore'));
+  }
+
+  const pkgPath = path.join(dest, 'package.json');
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { name: string };
+  pkg.name = projectName;
+  fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+  fs.writeFileSync(
+    path.join(dest, 'pnpm-workspace.yaml'),
+    'allowBuilds:\n  sharp: true\n  esbuild: true\n',
+  );
+}
+
 export async function main(): Promise<void> {
   let projectName = process.argv[2]?.trim();
 
@@ -26,17 +56,7 @@ export async function main(): Promise<void> {
   }
 
   const templateDir = path.join(dirname, 'templates', 'blank');
-  fs.cpSync(templateDir, dest, { recursive: true });
-
-  const gitignore = path.join(dest, 'gitignore');
-  if (fs.existsSync(gitignore)) {
-    fs.renameSync(gitignore, path.join(dest, '.gitignore'));
-  }
-
-  const pkgPath = path.join(dest, 'package.json');
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { name: string };
-  pkg.name = projectName;
-  fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+  scaffold({ dest, projectName, templateDir });
 
   console.log(`
 Created ${projectName}.
