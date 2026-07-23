@@ -316,6 +316,28 @@ describe('frogbot sanitize', () => {
       );
     });
 
+    it('accepts an undefined apiKey for SDK environment fallback', () => {
+      const config = makeConfig({
+        ai: { providers: { openai: { apiKey: undefined } } },
+      } as unknown as Partial<FrogbotConfig>);
+      const result = sanitize(config);
+      expect(result.ai?.providers.openai?.apiKey).toBeUndefined();
+    });
+
+    it('names the provider environment variable for an empty apiKey', () => {
+      const config = makeConfig({ ai: { providers: { openai: { apiKey: '' } } } });
+      expect(() => sanitize(config)).toThrow(
+        "[frogbot] Provider 'openai' has an empty apiKey (checked OPENAI_API_KEY? is your .env loaded?)",
+      );
+    });
+
+    it('names the provider environment variable for a whitespace apiKey', () => {
+      const config = makeConfig({ ai: { providers: { anthropic: { apiKey: '   ' } } } });
+      expect(() => sanitize(config)).toThrow(
+        "[frogbot] Provider 'anthropic' has an empty apiKey (checked ANTHROPIC_API_KEY? is your .env loaded?)",
+      );
+    });
+
     it('throws when a custom provider has an empty models array', () => {
       const config = makeConfig({
         ai: {

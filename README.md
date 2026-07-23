@@ -94,7 +94,7 @@ export default buildConfig({
   db: sqliteAdapter({ client: { url: 'file:./frogbot.db' } }),
   ai: {
     providers: {
-      openai: { apiKey: process.env.OPENAI_API_KEY! },
+      openai: { apiKey: process.env.OPENAI_API_KEY },
     },
   },
   agents: [
