@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@frogbotai/gateway": "workspace:*",
+    "@next/env": "15.4.10",
     "@payloadcms/translations": "3.85.1",
     "ai": "^7.0.4",
     "json-schema-to-typescript": "^15.0.3",

@@ -1,9 +1,11 @@
 import { dev } from './dev.js';
 import { generateImportMap } from './generateImportMap.js';
 import { generateTypes } from './generateTypes.js';
+import { loadEnv } from './loadEnv.js';
 import { start } from './start.js';
 
 export async function bin() {
+  loadEnv();
   const command = process.argv[2]?.toLowerCase();
   const args = process.argv.slice(3);
 
