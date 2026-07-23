@@ -465,9 +465,48 @@ describe('frogbot sanitize', () => {
         .toEqual(['/agents/:slug', '/agents']);
     });
 
-    it('rejects an empty agents array', () => {
-      expect(() => sanitize(makeConfig({ ai, agents: [] }))).toThrow(
-        '[frogbot] `agents` must be a non-empty array when configured.',
+    it('normalizes an empty agents array without AI to the omitted state', () => {
+      const omitted = sanitize(makeConfig());
+      const empty = sanitize(makeConfig({ agents: [] }));
+
+      expect(empty.agents).toBeUndefined();
+      expect(empty.chat).toEqual(omitted.chat);
+    });
+
+    it('normalizes an empty agents array with AI without enabling chat or agent endpoints', async () => {
+      const result = sanitize(makeConfig({ ai, agents: [] }));
+      const payloadConfig = await result._internal.payloadConfig;
+
+      expect(result.agents).toBeUndefined();
+      expect(result.chat.enabled).toBe(false);
+      expect((payloadConfig as { endpoints?: unknown }).endpoints).toBeUndefined();
+    });
+
+    it.each([
+      { endpoints: false as const, expected: false },
+      {
+        endpoints: [{ path: '/health', method: 'get' as const, handler: vi.fn() }],
+        expected: ['/health'],
+      },
+    ])('preserves user endpoint configuration for empty agents', async ({ endpoints, expected }) => {
+      const result = sanitize(makeConfig({ agents: [], endpoints }));
+      const payloadConfig = await result._internal.payloadConfig;
+      const payloadEndpoints = (payloadConfig as { endpoints?: false | { path: string }[] }).endpoints;
+
+      expect(Array.isArray(payloadEndpoints) ? payloadEndpoints.map(({ path }) => path) : payloadEndpoints).toEqual(
+        expected,
+      );
+    });
+
+    it('rejects non-array agents before requiring AI', () => {
+      expect(() => sanitize(makeConfig({ agents: null as never }))).toThrow(
+        '[frogbot] `agents` must be an array.',
+      );
+    });
+
+    it('requires AI for a non-empty agents array', () => {
+      expect(() => sanitize(makeConfig({ agents: [agent] }))).toThrow(
+        '[frogbot] `agents` requires an `ai` configuration block.',
       );
     });
 
