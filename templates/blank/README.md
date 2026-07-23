@@ -7,6 +7,9 @@ The `users` file is an example you can customize, not a framework requirement. C
 
 ## Quick Start
 
+This project requires pnpm 10.26 or newer so its approved dependency build scripts run
+during installation.
+
 ```bash
 pnpm install
 cp .env.example .env
@@ -37,6 +40,10 @@ curl -s http://localhost:3000/api/agents/assistant \
 | `app/(frogbot)/` | Admin panel + API routes (owned by FrogBot, safe to leave alone) |
 | `app/(app)/` | Your app — replace the placeholder home page |
 | `frogbot-types.ts` | Generated types (`pnpm generate:types`) |
+
+Root `app/` is the standard layout. To use a `src/` layout, move only `app/` to
+`src/app/`. Leave `frogbot.config.ts` at the project root; no config, TypeScript alias,
+import-map, or type-generation changes are needed.
 
 ## Next steps
 
