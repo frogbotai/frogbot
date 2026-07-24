@@ -23,7 +23,7 @@ import { configToJSONSchema } from 'payload';
 
 import type { SanitizedConfig } from 'payload';
 import { catalog } from '../ai/catalog.js';
-import { getGatewayProviderName } from '../ai/providerNames.js';
+import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
 import { loadConfig } from '../config/load.js';
 import type { CustomProviderEntry, SanitizedAIConfig } from '../types/ai.js';
 import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
@@ -42,7 +42,7 @@ function getConfiguredModelIds(ai: SanitizedAIConfig | undefined): string[] {
   const modelIds = new Set<string>();
   for (const [provider, entry] of Object.entries(ai.providers)) {
     if (!entry) continue;
-    const runtimeProvider = getGatewayProviderName(provider);
+    const runtimeProvider = isProviderName(provider) ? getGatewayProviderName(provider) : provider;
 
     for (const model of catalog) {
       if (model.provider === runtimeProvider) {

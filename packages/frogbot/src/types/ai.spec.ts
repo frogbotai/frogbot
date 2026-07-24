@@ -1,18 +1,25 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
 import type { AgentConfig, AgentModelId } from './agent.js';
-import type { BedrockProviderEntry, BuiltInProviderEntry, ModelId } from './ai.js';
+import type { BedrockProviderEntry, BuiltInProviderEntry, ModelId, ProviderConfig } from './ai.js';
 import type { CatalogModelId } from '../ai/generated.js';
 import type { FrogbotTypes } from './generated.js';
 
 describe('AI config types', () => {
-  it('accepts an environment apiKey for a built-in provider', () => {
+  it('accepts true or an explicit apiKey for built-in providers', () => {
+    expectTypeOf<true>().toMatchTypeOf<ProviderConfig['openai']>();
     expectTypeOf<{ apiKey: string | undefined }>().toMatchTypeOf<BuiltInProviderEntry>();
+    expectTypeOf<false>().not.toMatchTypeOf<ProviderConfig['openai']>();
   });
 
-  it('accepts omitted API keys and ambient Bedrock credentials', () => {
-    expectTypeOf<{}>().toMatchTypeOf<BuiltInProviderEntry>();
-    expectTypeOf<{}>().toMatchTypeOf<BedrockProviderEntry>();
+  it('accepts ambient or explicit Bedrock credentials', () => {
+    expectTypeOf<true>().toMatchTypeOf<ProviderConfig['bedrock']>();
+    expectTypeOf<{ region: string }>().toMatchTypeOf<BedrockProviderEntry>();
+    expectTypeOf<{
+      accessKeyId: string;
+      secretAccessKey: string;
+      sessionToken?: string;
+    }>().toMatchTypeOf<BedrockProviderEntry>();
   });
 
   it('uses the catalog as the pre-generation agent model fallback', () => {

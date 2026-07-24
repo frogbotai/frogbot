@@ -402,32 +402,54 @@ describe('frogbot sanitize', () => {
       );
     });
 
-    it('accepts an undefined apiKey for SDK environment fallback', () => {
+    it('rejects an undefined explicit apiKey', () => {
       const config = makeConfig({
         ai: { providers: { openai: { apiKey: undefined } } },
       });
-      const result = sanitize(config);
-      expect(result.ai?.providers.openai?.apiKey).toBeUndefined();
+      expect(() => sanitize(config)).toThrow(
+        "[frogbot] Provider 'openai' requires a non-empty apiKey when configured with an object.",
+      );
     });
 
-    it('accepts an omitted apiKey for SDK environment fallback', () => {
-      const result = sanitize(makeConfig({ ai: { providers: { openai: {} } } }));
-      expect(result.ai?.providers.openai).toEqual({});
+    it('accepts true for SDK environment fallback', () => {
+      const result = sanitize(makeConfig({ ai: { providers: { openai: true } } }));
+      expect(result.ai?.providers.openai).toBe(true);
     });
 
-    it('leaves empty apiKey validation to the gateway boundary', () => {
+    it('rejects false provider entries', () => {
+      const config = makeConfig({ ai: { providers: { openai: false } } } as never);
+      expect(() => sanitize(config)).toThrow("Provider 'openai' must be true or an object");
+    });
+
+    it('rejects true for custom providers', () => {
+      const config = makeConfig({ ai: { providers: { internal: true } } } as never);
+      expect(() => sanitize(config)).toThrow(
+        "Custom provider 'internal' must have type: 'openai-compatible'",
+      );
+    });
+
+    it('rejects an empty explicit apiKey', () => {
       const config = makeConfig({ ai: { providers: { openai: { apiKey: '' } } } });
-      expect(() => sanitize(config)).not.toThrow();
+      expect(() => sanitize(config)).toThrow("Provider 'openai' requires a non-empty apiKey");
     });
 
-    it('leaves whitespace apiKey validation to the gateway boundary', () => {
+    it('rejects a whitespace explicit apiKey', () => {
       const config = makeConfig({ ai: { providers: { anthropic: { apiKey: '   ' } } } });
-      expect(() => sanitize(config)).not.toThrow();
+      expect(() => sanitize(config)).toThrow("Provider 'anthropic' requires a non-empty apiKey");
     });
 
     it('accepts Bedrock ambient credentials without static keys', () => {
-      const config = makeConfig({ ai: { providers: { bedrock: {} } } });
+      const config = makeConfig({ ai: { providers: { bedrock: true } } });
       expect(() => sanitize(config)).not.toThrow();
+    });
+
+    it('rejects incomplete explicit Bedrock credentials', () => {
+      const config = makeConfig({
+        ai: { providers: { bedrock: { accessKeyId: 'ak' } } },
+      } as never);
+      expect(() => sanitize(config)).toThrow(
+        "Provider 'bedrock' requires both accessKeyId and secretAccessKey",
+      );
     });
 
     it('throws when a custom provider has an empty models array', () => {

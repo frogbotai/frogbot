@@ -12,27 +12,42 @@ import type { Gateway, GatewayConfig } from '@frogbotai/gateway';
 
 import type { Logger } from '../frogbot.js';
 import type {
-  BedrockProviderEntry,
-  BuiltInProviderEntry,
   CustomProviderEntry,
   SanitizedAIConfig,
 } from '../types/ai.js';
 import { toGatewayHooks } from './hooks.js';
-import { getGatewayProviderName } from './providerNames.js';
+import { getGatewayProviderName, isProviderName } from './providerNames.js';
 
-function isCustomProvider(
-  entry: BuiltInProviderEntry | BedrockProviderEntry | CustomProviderEntry,
-): entry is CustomProviderEntry {
-  return (entry as CustomProviderEntry).type === 'openai-compatible';
+function isCustomProvider(entry: object): entry is CustomProviderEntry {
+  return 'type' in entry && entry.type === 'openai-compatible';
+}
+
+function setGatewayProvider<K extends keyof GatewayConfig['providers']>(
+  providers: GatewayConfig['providers'],
+  provider: K,
+  entry: GatewayConfig['providers'][K],
+): void {
+  providers[provider] = entry;
 }
 
 export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
   const providers = {} as GatewayConfig['providers'];
 
   for (const [key, entry] of Object.entries(config.providers)) {
-    if (!entry) continue;
+    if (entry === undefined) continue;
 
-    if (isCustomProvider(entry)) {
+    if (entry === true) {
+      if (!isProviderName(key)) {
+        throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
+      }
+      setGatewayProvider(providers, getGatewayProviderName(key), {});
+      continue;
+    }
+
+    if (!isProviderName(key)) {
+      if (!isCustomProvider(entry)) {
+        throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
+      }
       providers[key] = {
         baseURL: entry.baseUrl,
         ...(entry.apiKey !== undefined && { apiKey: entry.apiKey }),
@@ -42,12 +57,26 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
     }
 
     if (key === 'replicate') {
-      const apiKey = 'apiKey' in entry ? entry.apiKey : undefined;
-      providers.replicate = apiKey === undefined ? {} : { apiToken: apiKey };
+      if (!('apiKey' in entry) || typeof entry.apiKey !== 'string' || !entry.apiKey.trim()) {
+        throw new Error(
+          "[frogbot] Provider 'replicate' requires a non-empty apiKey when configured with an object.",
+        );
+      }
+      providers.replicate = { apiToken: entry.apiKey };
       continue;
     }
 
-    Object.assign(providers, { [getGatewayProviderName(key)]: entry });
+    if (key === 'bedrock') {
+      providers['amazon-bedrock'] = entry;
+      continue;
+    }
+
+    if (!('apiKey' in entry) || typeof entry.apiKey !== 'string' || !entry.apiKey.trim()) {
+      throw new Error(
+        `[frogbot] Provider '${key}' requires a non-empty apiKey when configured with an object.`,
+      );
+    }
+    setGatewayProvider(providers, getGatewayProviderName(key), { apiKey: entry.apiKey });
   }
 
   return {

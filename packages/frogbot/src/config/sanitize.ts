@@ -30,7 +30,7 @@ import type { FrogbotRequest } from '../types/request.js';
 import type { Frogbot } from '../frogbot.js';
 import { initFrogbotFromPayload } from '../frogbot.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
-import { getGatewayProviderName } from '../ai/providerNames.js';
+import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
 import { getFrogbotInstance } from '../instanceRegistry.js';
@@ -134,14 +134,20 @@ function sanitizeAI(ai: AIConfig): SanitizedAIConfig {
     throw new Error('[frogbot] At least one AI provider must be configured under `ai.providers`.');
   }
   for (const [key, entry] of Object.entries(ai.providers)) {
-    if (!entry) {
+    if (entry === undefined) {
       continue;
     }
     if (!key.trim()) {
       throw new Error('[frogbot] AI provider names must not be empty.');
     }
+    if (entry === true) {
+      if (!isProviderName(key)) {
+        throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
+      }
+      continue;
+    }
     if (!isRecord(entry)) {
-      throw new Error(`[frogbot] Provider '${key}' must be an object.`);
+      throw new Error(`[frogbot] Provider '${key}' must be true or an object.`);
     }
     const provider: Record<string, unknown> = entry;
     if ('type' in provider || 'baseUrl' in provider || 'models' in provider) {
@@ -160,6 +166,30 @@ function sanitizeAI(ai: AIConfig): SanitizedAIConfig {
           throw new Error(`[frogbot] Every model for custom provider '${key}' requires an id and mode.`);
         }
       }
+      continue;
+    }
+    if (!isProviderName(key)) {
+      throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
+    }
+    if (key === 'bedrock') {
+      const hasRegion = typeof provider.region === 'string' && !!provider.region.trim();
+      const hasAccessKey = typeof provider.accessKeyId === 'string' && !!provider.accessKeyId.trim();
+      const hasSecretKey =
+        typeof provider.secretAccessKey === 'string' && !!provider.secretAccessKey.trim();
+      if (!hasRegion && !hasAccessKey && !hasSecretKey) {
+        throw new Error(`[frogbot] Provider 'bedrock' requires a region or explicit AWS credentials.`);
+      }
+      if (hasAccessKey !== hasSecretKey) {
+        throw new Error(
+          `[frogbot] Provider 'bedrock' requires both accessKeyId and secretAccessKey when either is set.`,
+        );
+      }
+      continue;
+    }
+    if (typeof provider.apiKey !== 'string' || !provider.apiKey.trim()) {
+      throw new Error(
+        `[frogbot] Provider '${key}' requires a non-empty apiKey when configured with an object.`,
+      );
     }
   }
 
@@ -228,10 +258,12 @@ function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined
     throw new Error('[frogbot] `agents` requires an `ai` configuration block.');
   }
 
-  const providers = new Set(
+  const providers = new Set<string>(
     Object.entries(ai.providers)
       .filter(([, entry]) => entry != null)
-      .map(([provider]) => getGatewayProviderName(provider)),
+      .map(([provider]) =>
+        isProviderName(provider) ? getGatewayProviderName(provider) : provider,
+      ),
   );
   const slugs = new Set<string>();
 

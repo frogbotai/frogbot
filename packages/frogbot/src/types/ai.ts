@@ -6,6 +6,7 @@
 import type { ModelMessage, Output, StopCondition, ToolChoice, ToolSet } from 'ai';
 
 import type { CatalogModelId } from '../ai/generated.js';
+import type { ProviderName } from '../ai/providerNames.js';
 import type { FrogbotRequest } from './request.js';
 import type { AIHooks, SanitizedAIHooks } from './hooks-ai.js';
 import type { Tool } from './tool.js';
@@ -15,16 +16,26 @@ export type AIOutput = ReturnType<(typeof Output)[keyof typeof Output]>;
 // ─── Provider Configuration ──────────────────────────────────────────────────
 
 export type BuiltInProviderEntry = {
-  apiKey?: string;
+  apiKey: string | undefined;
 };
 
-export type BedrockProviderEntry = {
-  apiKey?: string;
-  region?: string;
-  accessKeyId?: string;
-  secretAccessKey?: string;
-  sessionToken?: string;
-};
+export type BedrockProviderEntry =
+  | {
+      region: string;
+      accessKeyId?: never;
+      secretAccessKey?: never;
+      sessionToken?: never;
+    }
+  | {
+      region?: string;
+      accessKeyId: string;
+      secretAccessKey: string;
+      sessionToken?: string;
+    };
+
+type ProviderEntry = true | BuiltInProviderEntry;
+
+type BedrockEntry = true | BedrockProviderEntry;
 
 export type CustomProviderEntry = {
   type: 'openai-compatible';
@@ -35,22 +46,9 @@ export type CustomProviderEntry = {
 };
 
 export type ProviderConfig = {
-  openai?: BuiltInProviderEntry;
-  anthropic?: BuiltInProviderEntry;
-  google?: BuiltInProviderEntry;
-  bedrock?: BedrockProviderEntry;
-  groq?: BuiltInProviderEntry;
-  mistral?: BuiltInProviderEntry;
-  cohere?: BuiltInProviderEntry;
-  together?: BuiltInProviderEntry;
-  fireworks?: BuiltInProviderEntry;
-  deepinfra?: BuiltInProviderEntry;
-  xai?: BuiltInProviderEntry;
-  perplexity?: BuiltInProviderEntry;
-  cerebras?: BuiltInProviderEntry;
-  voyage?: BuiltInProviderEntry;
-  replicate?: BuiltInProviderEntry;
-  [customKey: string]: BuiltInProviderEntry | BedrockProviderEntry | CustomProviderEntry | undefined;
+  [K in ProviderName]?: K extends 'bedrock' ? BedrockEntry : ProviderEntry;
+} & {
+  [customKey: string]: ProviderEntry | BedrockEntry | CustomProviderEntry | undefined;
 };
 
 // ─── Model Configuration ─────────────────────────────────────────────────────
