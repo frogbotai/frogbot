@@ -23,6 +23,7 @@ import { configToJSONSchema } from 'payload';
 
 import type { SanitizedConfig } from 'payload';
 import { catalog } from '../ai/catalog.js';
+import { getGatewayProviderName } from '../ai/providerNames.js';
 import { loadConfig } from '../config/load.js';
 import type { CustomProviderEntry, SanitizedAIConfig } from '../types/ai.js';
 import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
@@ -35,18 +36,13 @@ const BANNER = `/* tslint:disable */
  * and re-run \`frogbot generate:types\` to regenerate this file.
  */`;
 
-const PROVIDER_NAME_MAP: Record<string, string> = {
-  bedrock: 'amazon-bedrock',
-  together: 'togetherai',
-};
-
 function getConfiguredModelIds(ai: SanitizedAIConfig | undefined): string[] {
   if (!ai) return [];
 
   const modelIds = new Set<string>();
   for (const [provider, entry] of Object.entries(ai.providers)) {
     if (!entry) continue;
-    const runtimeProvider = PROVIDER_NAME_MAP[provider] ?? provider;
+    const runtimeProvider = getGatewayProviderName(provider);
 
     for (const model of catalog) {
       if (model.provider === runtimeProvider) {
