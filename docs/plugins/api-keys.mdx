@@ -1,0 +1,82 @@
+---
+title: "API keys"
+sidebarTitle: "API keys"
+description: "Create and authenticate multiple named API keys with the API keys plugin."
+keywords: ["API keys", "authentication", "plugins", "security"]
+---
+
+The API keys plugin adds an `api-keys` collection, API-key authentication, and admin controls for creating and revoking keys. Each user can own multiple named keys, and each key can be revoked independently.
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-api-keys
+```
+
+## Configure
+
+Add the plugin to your FrogBot config. By default, it associates keys with the auth-enabled `users` collection.
+
+```ts
+import { apiKeysPlugin } from '@frogbotai/plugin-api-keys'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  collections: [
+    {
+      slug: 'users',
+      auth: true,
+      fields: [],
+    },
+  ],
+  plugins: [apiKeysPlugin()],
+})
+```
+
+The API Keys collection appears in the admin panel. Create a named key there and copy the token when it is displayed. The plaintext token cannot be retrieved again.
+
+## Authenticate requests
+
+Send the key as a Bearer token or through the `X-API-Key` header:
+
+```http
+Authorization: Bearer fbt_...
+```
+
+```http
+X-API-Key: fbt_...
+```
+
+The request authenticates as the user who owns the key. Revoked, malformed, and unknown keys do not authenticate.
+
+## Configuration options
+
+```ts
+apiKeysPlugin({
+  authCollection: 'accounts',
+  collectionSlug: 'credentials',
+  tokenPrefix: 'acme',
+  headerNames: ['x-service-key'],
+  collection: {
+    admin: { group: 'Security' },
+    fields: [{ name: 'environment', type: 'text' }],
+  },
+})
+```
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `authCollection` | `users` | Auth-enabled collection whose users own the keys. |
+| `collectionSlug` | `api-keys` | Slug for the generated API-key collection. |
+| `tokenPrefix` | `fbt` | Prefix placed before generated key values. |
+| `headerNames` | `['x-api-key']` | Additional request headers accepted for authentication. |
+| `collection` | — | Collection overrides, including fields, access, hooks, endpoints, and admin configuration. |
+
+Collection overrides merge with the generated configuration and changes made by other plugins. The admin controls use the default admin design system without plugin-specific CSS, so your global admin styles continue to apply.
+
+## Security behavior
+
+- Plaintext keys are returned only when created.
+- The collection stores a SHA-256 hash and a short display prefix, not the plaintext key.
+- Collection reads are scoped to the authenticated owner by default.
+- Keys are revoked individually without affecting the owning user's other authentication methods.

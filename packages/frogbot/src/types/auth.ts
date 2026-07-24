@@ -2,6 +2,8 @@
 // v0 exposes only Payload's plain options. FrogBot extensions
 // (`providers`, `allowedDomains`, `allowSignup`) land in a later stage.
 
+import type { IncomingAuthType } from 'payload';
+
 export interface AuthConfig {
   tokenExpiration?: number;
   verify?: boolean | { generateEmailHTML?: (args: { token: string; user: unknown }) => string | Promise<string> };
@@ -14,4 +16,5 @@ export interface AuthConfig {
     domain?: string;
   };
   useSessions?: boolean;
+  strategies?: IncomingAuthType['strategies'];
 }

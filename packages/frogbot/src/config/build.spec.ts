@@ -194,6 +194,17 @@ describe('frogbot buildConfig', () => {
       expect(users.auth).toBeTruthy();
     });
 
+    it('preserves custom authentication strategies', async () => {
+      const strategy = { name: 'custom', authenticate: () => ({ user: null }) };
+      const config = makeConfig({
+        collections: [{ slug: 'users', auth: { strategies: [strategy] }, fields: [] }],
+      });
+      const result = await buildConfig(config);
+      const payloadConfig = await result._internal.payloadConfig;
+      const users = (payloadConfig as any).collections.find((c: any) => c.slug === 'users');
+      expect(users.auth.strategies).toEqual([strategy]);
+    });
+
     it('does not mutate the caller\u2019s input config object', async () => {
       const collections: CollectionConfig[] = [
         {

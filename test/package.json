@@ -17,6 +17,7 @@
     "@frogbotai/email-nodemailer": "workspace:*",
     "@frogbotai/email-resend": "workspace:*",
     "@frogbotai/kv-redis": "workspace:*",
+    "@frogbotai/plugin-api-keys": "workspace:*",
     "@frogbotai/storage-azure": "workspace:*",
     "@frogbotai/storage-gcs": "workspace:*",
     "@frogbotai/storage-r2": "workspace:*",
