@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/email-nodemailer",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Nodemailer email adapter for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
