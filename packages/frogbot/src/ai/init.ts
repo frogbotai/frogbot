@@ -18,12 +18,7 @@ import type {
   SanitizedAIConfig,
 } from '../types/ai.js';
 import { toGatewayHooks } from './hooks.js';
-
-/** FrogBot provider key → gateway provider name, where they differ. */
-const PROVIDER_NAME_MAP: Record<string, string> = {
-  bedrock: 'amazon-bedrock',
-  together: 'togetherai',
-};
+import { getGatewayProviderName } from './providerNames.js';
 
 function isCustomProvider(
   entry: BuiltInProviderEntry | BedrockProviderEntry | CustomProviderEntry,
@@ -52,7 +47,7 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
       continue;
     }
 
-    Object.assign(providers, { [PROVIDER_NAME_MAP[key] ?? key]: entry });
+    Object.assign(providers, { [getGatewayProviderName(key)]: entry });
   }
 
   return {

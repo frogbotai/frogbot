@@ -30,6 +30,7 @@ import type { FrogbotRequest } from '../types/request.js';
 import type { Frogbot } from '../frogbot.js';
 import { initFrogbotFromPayload } from '../frogbot.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
+import { getGatewayProviderName } from '../ai/providerNames.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
 import { getFrogbotInstance } from '../instanceRegistry.js';
@@ -230,9 +231,7 @@ function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined
   const providers = new Set(
     Object.entries(ai.providers)
       .filter(([, entry]) => entry != null)
-      .map(([provider]) =>
-        provider === 'bedrock' ? 'amazon-bedrock' : provider === 'together' ? 'togetherai' : provider,
-      ),
+      .map(([provider]) => getGatewayProviderName(provider)),
   );
   const slugs = new Set<string>();
 
