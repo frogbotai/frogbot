@@ -1,6 +1,6 @@
 {
   "name": "create-frogbot-app",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Scaffold a new FrogBot app.",
   "license": "MIT",
   "author": "Colby Gilbert",
