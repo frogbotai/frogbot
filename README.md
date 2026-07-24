@@ -133,6 +133,13 @@ This monorepo publishes the following packages:
 | [`frogbot`](./packages/frogbot) | FrogBot core: typed configuration surface, agent runtime, CLI, and HTTP server |
 | [`@frogbotai/gateway`](./packages/gateway) | The embeddable, self-hostable AI gateway built on the Vercel AI SDK — fully MIT open source. Run it standalone or drop it into any existing server |
 
+**Plugins**
+
+| Package | Description |
+| --- | --- |
+| [`@frogbotai/plugin-api-keys`](./packages/plugin-api-keys) | Multiple named, independently revocable API keys |
+| [`@frogbotai/plugin-oauth`](./packages/plugin-oauth) | Owner-scoped OAuth connections with encrypted credentials, refresh, and revocation |
+
 **Database adapters**
 
 | Package | Description |

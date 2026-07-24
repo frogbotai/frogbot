@@ -34,7 +34,7 @@ function createEndpoints({ collectionSlug, tokenPrefix }: Pick<CollectionOptions
         const owner = getOwnerID(req);
         if (owner === null) return Response.json({ error: 'Authentication required' }, { status: 401 });
 
-        const body = (await req.json().catch(() => null)) as { name?: unknown } | null;
+        const body = (await req.json?.().catch(() => null) ?? null) as { name?: unknown } | null;
         const name = typeof body?.name === 'string' ? body.name.trim() : '';
         if (!name) return Response.json({ error: 'Name is required' }, { status: 400 });
 

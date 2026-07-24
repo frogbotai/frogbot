@@ -1,0 +1,155 @@
+---
+title: "OAuth connections"
+sidebarTitle: "OAuth connections"
+description: "Connect external accounts with encrypted OAuth credentials, refresh, and revocation."
+keywords: ["OAuth", "connections", "plugins", "Google", "Microsoft", "Stripe", "Zoom", "Xero"]
+---
+
+The OAuth plugin connects authenticated users to external services and stores credentials for later server-side API calls. It does not use OAuth to log users in.
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-oauth
+```
+
+## Configure
+
+Add provider objects to `oauthPlugin`. The default owner is a user from the auth-enabled `users` collection.
+
+```ts
+import { googleProvider, oauthPlugin } from '@frogbotai/plugin-oauth'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  collections: [{ slug: 'users', auth: true, fields: [] }],
+  plugins: [
+    oauthPlugin({
+      providers: [
+        googleProvider({
+          clientId: process.env.GOOGLE_CLIENT_ID!,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        }),
+      ],
+    }),
+  ],
+})
+```
+
+Register this callback URL in the provider console, replacing the host and provider ID:
+
+```text
+https://your-app.example/api/users/oauth/google/callback
+```
+
+Start a connection from an authenticated browser session:
+
+```http
+GET /api/users/oauth/google/authorize?returnUrl=/settings
+```
+
+The relative `returnUrl` receives `oauth_connection` after success or `oauth_error` after failure. Absolute return URLs are rejected unless their origin appears in `allowedReturnOrigins`.
+
+## Built-in providers
+
+| Factory | Provider ID | Default behavior |
+| --- | --- | --- |
+| `googleProvider` | `google` | Offline access, account profile, refresh, and revoke |
+| `microsoftProvider` | `microsoft` | Common tenant by default, account profile, and refresh |
+| `stripeProvider` | `stripe` | Stripe Connect account exchange, refresh, and deauthorization |
+| `zoomProvider` | `zoom` | HTTP Basic token exchange, account profile, refresh, and revoke |
+| `xeroProvider` | `xero` | HTTP Basic token exchange, JWT account identity, refresh, and revoke |
+
+Every factory accepts `clientId`, `clientSecret`, optional `scopes`, and optional `fetch`. Microsoft also accepts `tenant`.
+
+## Endpoints
+
+The plugin mounts these endpoints on the configured auth collection:
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/users/oauth/:provider/authorize` | Create state and redirect to provider consent |
+| `GET` or `POST` | `/api/users/oauth/:provider/callback` | Consume state and save the connection |
+| `POST` | `/api/users/oauth/:provider/refresh` | Refresh a connection by `connectionId` |
+| `POST` | `/api/users/oauth/:provider/revoke` | Revoke a connection by `connectionId` |
+
+Use `paths` to change endpoint suffixes and `authCollection` to change the `/api/users` prefix.
+
+## Ownership and collections
+
+The plugin creates `oauth-connections` and `oauth-states` by default. Connection reads are scoped to the authenticated owner. State records deny public access and callbacks consume them once.
+
+```ts
+oauthPlugin({
+  providers,
+  authCollection: 'accounts',
+  connectionsSlug: 'connections',
+  statesSlug: 'connection-states',
+  ownerField: { name: 'account', relationTo: 'accounts' },
+  connectionsCollection: {
+    admin: { group: 'Integrations' },
+    fields: [{ name: 'environment', type: 'text' }],
+  },
+})
+```
+
+Collection overrides merge with generated fields, access, endpoints, hooks, admin settings, and changes from other plugins.
+
+## Read credentials on the server
+
+Configure an encryption adapter explicitly when another server module needs to decrypt credentials:
+
+```ts
+import { oauthPlugin } from '@frogbotai/plugin-oauth'
+import {
+  createOAuthEncryption,
+  getOAuthConnectionCredentials,
+} from '@frogbotai/plugin-oauth/server'
+
+const encryption = createOAuthEncryption({ secret: process.env.FROGBOT_SECRET! })
+
+oauthPlugin({ providers, encryption })
+
+const credentials = await getOAuthConnectionCredentials({
+  req,
+  connectionId,
+  encryption,
+})
+```
+
+The helper returns `null` when the request is unauthenticated or the connection belongs to another owner.
+
+## Custom providers
+
+A custom provider implements the exported `OAuthProvider` interface. `authorize`, `exchange`, and `getAccount` are required. Add `refresh` or `revoke` when the service supports them.
+
+```ts
+import type { OAuthProvider } from '@frogbotai/plugin-oauth'
+
+const serviceProvider: OAuthProvider = {
+  id: 'service',
+  authorizationUrl: 'https://service.example/oauth/authorize',
+  tokenUrl: 'https://service.example/oauth/token',
+  scopes: ['profile'],
+  authorize: ({ callbackUrl, codeChallenge, state }) => buildAuthorizeUrl({
+    callbackUrl,
+    codeChallenge,
+    state,
+  }),
+  exchange: ({ code, codeVerifier }) => exchangeCode({ code, codeVerifier }),
+  getAccount: ({ tokens }) => getAccount({ accessToken: tokens.accessToken }),
+}
+```
+
+## Security behavior
+
+- Authorization requires an authenticated owner.
+- State and PKCE values use cryptographically secure randomness.
+- State expires after ten minutes and is consumed before token exchange.
+- Credentials use authenticated AES-256-GCM encryption by default.
+- Credential fields are hidden from collection reads and admin forms.
+- Refresh preserves an existing refresh token when the provider omits a replacement.
+- Refresh and revoke lookups include the authenticated owner.
+- External errors do not expose provider response bodies.
+
+The plugin does not schedule background refreshes, provide integration catalog UI, or turn provider accounts into FrogBot login sessions.

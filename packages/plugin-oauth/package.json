@@ -1,0 +1,61 @@
+{
+  "name": "@frogbotai/plugin-oauth",
+  "version": "0.3.0",
+  "description": "OAuth connections for FrogBot.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/plugin-oauth"
+  },
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./server": {
+      "import": "./src/server.ts",
+      "types": "./src/server.ts",
+      "default": "./src/server.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "frogbot": "workspace:*"
+  },
+  "devDependencies": {
+    "frogbot": "workspace:*",
+    "typescript": "5.6.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "import": "./dist/index.js",
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./server": {
+        "import": "./dist/server.js",
+        "types": "./dist/server.d.ts",
+        "default": "./dist/server.js"
+      }
+    }
+  }
+}

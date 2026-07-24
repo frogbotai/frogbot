@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, TextInput, useConfig, useListQuery } from '@payloadcms/ui';
-import { useState } from 'react';
+import { type ChangeEvent, useState } from 'react';
 
 type ApiKeyDoc = {
   id: string | number;
@@ -66,7 +66,7 @@ export function ApiKeysManager() {
         label="Key name"
         path="api-key-name"
         value={name}
-        onChange={(event) => setName(event.target.value)}
+        onChange={(event: ChangeEvent<HTMLInputElement>) => setName(event.target.value)}
       />
       <Button disabled={loading || !name.trim()} onClick={createKey} type="button">
         Create API key
