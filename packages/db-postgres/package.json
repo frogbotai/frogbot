@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/db-postgres",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "FrogBot Postgres adapter.",
   "license": "MIT",
   "author": "Colby Gilbert",

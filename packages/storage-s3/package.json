@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/storage-s3",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "S3 storage adapter for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

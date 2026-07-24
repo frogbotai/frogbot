@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/storage-r2",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Cloudflare R2 storage adapter for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
