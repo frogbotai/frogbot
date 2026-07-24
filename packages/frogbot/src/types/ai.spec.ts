@@ -8,12 +8,15 @@ import type { FrogbotTypes } from './generated.js';
 describe('AI config types', () => {
   it('accepts true or an explicit apiKey for built-in providers', () => {
     expectTypeOf<true>().toMatchTypeOf<ProviderConfig['openai']>();
+    expectTypeOf<{}>().not.toMatchTypeOf<ProviderConfig['openai']>();
+    expectTypeOf({ apiKey: process.env.TEST_KEY }).toMatchTypeOf<ProviderConfig['openai']>();
     expectTypeOf<{ apiKey: string | undefined }>().toMatchTypeOf<BuiltInProviderEntry>();
     expectTypeOf<false>().not.toMatchTypeOf<ProviderConfig['openai']>();
   });
 
   it('accepts ambient or explicit Bedrock credentials', () => {
     expectTypeOf<true>().toMatchTypeOf<ProviderConfig['bedrock']>();
+    expectTypeOf<{ apiKey: string }>().not.toMatchTypeOf<ProviderConfig['bedrock']>();
     expectTypeOf<{ region: string }>().toMatchTypeOf<BedrockProviderEntry>();
     expectTypeOf<{
       accessKeyId: string;
