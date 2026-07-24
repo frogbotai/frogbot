@@ -80,7 +80,7 @@ export default buildConfig({
   },
   ai: {
     providers: {
-      openai: {}
+      openai: true
     },
     routers: {
       fast: { model: 'openai/gpt-4o-mini' }
@@ -105,7 +105,7 @@ Provider credentials are converted into an embedded gateway during initializatio
 ```ts
 ai: {
   providers: {
-    openai: {},
+    openai: true,
     internal: {
       type: 'openai-compatible',
       baseUrl: 'https://models.internal.example/v1',

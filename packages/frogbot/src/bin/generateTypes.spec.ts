@@ -155,7 +155,7 @@ describe('frogbot generate:types', () => {
         secret: 'test-secret',
         db: { defaultIDType: 'number' } as never,
         collections: [{ slug: 'users', auth: true, fields: [] }],
-        ai: { providers: { openai: {} } },
+        ai: { providers: { openai: true } },
       });
 
       await expect(writeGeneratedTypes(config, dir)).resolves.toBeDefined();
@@ -178,7 +178,7 @@ describe('frogbot generate:types', () => {
     });
 
     it('emits only models from configured built-in providers', async () => {
-      const output = await generateModelTypes({ providers: { openai: {} } });
+      const output = await generateModelTypes({ providers: { openai: true } });
 
       expect(output).toContain('"openai/gpt-4o"');
       expect(output).not.toContain('anthropic/claude-sonnet-4-5');
@@ -186,7 +186,7 @@ describe('frogbot generate:types', () => {
 
     it('combines models from multiple configured built-in providers', async () => {
       const output = await generateModelTypes({
-        providers: { anthropic: {}, openai: {} },
+        providers: { anthropic: true, openai: true },
       });
 
       expect(output).toContain('"anthropic/claude-sonnet-4-5"');
@@ -211,7 +211,7 @@ describe('frogbot generate:types', () => {
 
     it('uses runtime provider prefixes for aliased built-ins', async () => {
       const output = await generateModelTypes({
-        providers: { bedrock: {}, together: {} },
+        providers: { bedrock: true, together: true },
       });
 
       expect(output).toContain('"togetherai/meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"');
@@ -219,8 +219,8 @@ describe('frogbot generate:types', () => {
     });
 
     it('removes stale models when configured providers change', async () => {
-      const openai = await generateModelTypes({ providers: { openai: {} } });
-      const anthropic = await generateModelTypes({ providers: { anthropic: {} } });
+      const openai = await generateModelTypes({ providers: { openai: true } });
+      const anthropic = await generateModelTypes({ providers: { anthropic: true } });
 
       expect(openai).toContain('"openai/gpt-4o"');
       expect(anthropic).not.toContain('"openai/gpt-4o"');

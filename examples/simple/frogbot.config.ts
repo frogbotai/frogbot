@@ -39,7 +39,7 @@ const config: FrogbotConfig = {
   collections: [Users],
   ai: {
     providers: {
-      openai: {},
+      openai: true,
     },
   },
   agents: [

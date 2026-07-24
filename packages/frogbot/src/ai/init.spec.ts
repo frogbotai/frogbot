@@ -32,6 +32,11 @@ function makeAIConfig(providers: SanitizedAIConfig['providers']): SanitizedAICon
 }
 
 describe('buildGatewayConfig', () => {
+  it('maps true to SDK environment fallback config', () => {
+    const config = buildGatewayConfig(makeAIConfig({ openai: true }));
+    expect(config.providers).toEqual({ openai: {} });
+  });
+
   it('passes matching built-in providers through under the same name', () => {
     const config = buildGatewayConfig(
       makeAIConfig({ openai: { apiKey: 'sk-1' }, anthropic: { apiKey: 'sk-2' } }),
@@ -48,6 +53,11 @@ describe('buildGatewayConfig', () => {
     expect(config.providers).toEqual({ 'amazon-bedrock': entry });
   });
 
+  it('maps true Bedrock to ambient AWS config', () => {
+    const config = buildGatewayConfig(makeAIConfig({ bedrock: true }));
+    expect(config.providers).toEqual({ 'amazon-bedrock': {} });
+  });
+
   it('renames together → togetherai', () => {
     const config = buildGatewayConfig(makeAIConfig({ together: { apiKey: 'sk-t' } }));
     expect(config.providers).toEqual({ togetherai: { apiKey: 'sk-t' } });
@@ -58,8 +68,8 @@ describe('buildGatewayConfig', () => {
     expect(config.providers).toEqual({ replicate: { apiToken: 'r8-key' } });
   });
 
-  it('omits Replicate apiToken when apiKey is omitted', () => {
-    const config = buildGatewayConfig(makeAIConfig({ replicate: {} }));
+  it('maps true Replicate to its environment fallback', () => {
+    const config = buildGatewayConfig(makeAIConfig({ replicate: true }));
     expect(Object.hasOwn(config.providers.replicate!, 'apiToken')).toBe(false);
   });
 
@@ -87,6 +97,12 @@ describe('buildGatewayConfig', () => {
     expect(Object.keys(config.providers)).toEqual(['openai']);
   });
 
+  it.each([undefined, '', '   '])('rejects an invalid explicit API key: %j', (apiKey) => {
+    expect(() => buildGatewayConfig(makeAIConfig({ openai: { apiKey } }))).toThrow(
+      "[frogbot] Provider 'openai' requires a non-empty apiKey when configured with an object.",
+    );
+  });
+
   it('forwards all five hook phases into the gateway', () => {
     const config = makeAIConfig({ openai: { apiKey: 'sk' } });
     config.hooks = {
@@ -110,7 +126,7 @@ describe('buildGatewayConfig', () => {
 describe('createAIGateway', () => {
   it('constructs with an omitted API key and the SDK environment fallback', () => {
     vi.stubEnv('OPENAI_API_KEY', 'sk-env');
-    const gw = createAIGateway(makeAIConfig({ openai: {} }));
+    const gw = createAIGateway(makeAIConfig({ openai: true }));
     expect(gw.chatModel('openai/gpt-4o').modelId).toBe('gpt-4o');
   });
 
