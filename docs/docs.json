@@ -162,6 +162,10 @@
   "navbar": {
     "links": [
       {
+        "type": "github",
+        "href": "https://github.com/frogbotai/frogbot"
+      },
+      {
         "icon":"discord",
         "label": "Discord",
         "href": "https://discord.gg/JBZF7syAnU"
