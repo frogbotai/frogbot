@@ -22,7 +22,8 @@ const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
 describe('frogbot generate:types', () => {
   it.todo('loads config from cwd via loadConfig');
   it.todo('honors FROGBOT_CONFIG_PATH when set');
-  it.todo('writes to <cwd>/frogbot-types.ts by default');
+  it.todo('writes to <cwd>/src/frogbot-types.ts when a src directory exists');
+  it.todo('writes to <cwd>/frogbot-types.ts otherwise');
   it.todo(
     "redirects Payload's default outputFile (payload-types.ts) to frogbot-types.ts",
   );

@@ -24,7 +24,7 @@ afterEach(() => {
 });
 
 describe('scaffold', () => {
-  it('creates the packed blank template with the project identity and root app layout', () => {
+  it('creates the packed blank template with the project identity and src layout', () => {
     const options = createDest('frog.test-app');
 
     scaffold({ ...options, templateDir });
@@ -37,12 +37,13 @@ describe('scaffold', () => {
     expect(pkg.private).toBeUndefined();
     expect(fs.existsSync(path.join(options.dest, '.gitignore'))).toBe(true);
     expect(fs.existsSync(path.join(options.dest, 'gitignore'))).toBe(false);
-    expect(fs.existsSync(path.join(options.dest, 'app'))).toBe(true);
-    expect(fs.existsSync(path.join(options.dest, 'src'))).toBe(false);
+    expect(fs.existsSync(path.join(options.dest, 'src', 'app'))).toBe(true);
+    expect(fs.existsSync(path.join(options.dest, 'src', 'frogbot.config.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(options.dest, 'app'))).toBe(false);
     const readme = fs.readFileSync(path.join(options.dest, 'README.md'), 'utf8');
     expect(readme).toContain('pnpm 10.26 or newer');
-    expect(readme).toContain('move only `app/` to\n`src/app/`');
-    expect(readme).toContain('Leave `frogbot.config.ts` at the project root');
+    expect(readme).toContain('`src/frogbot.config.ts`');
+    expect(readme).toContain('To use a root layout instead');
   });
 
   it('does not expose Payload branding in generated source files', () => {

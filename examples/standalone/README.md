@@ -60,5 +60,5 @@ the example.
 | --- | --- |
 | `pnpm dev` | Run the server with file-watching (`tsx watch`) |
 | `pnpm start` | Run the server once |
-| `pnpm generate:types` | Regenerate `frogbot-types.ts` from this config |
+| `pnpm generate:types` | Regenerate `src/frogbot-types.ts` from this config |
 | `pnpm typecheck` | Type-check the project |

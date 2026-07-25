@@ -2,6 +2,7 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "allowJs": true,
+    "baseUrl": ".",
     "esModuleInterop": true,
     "incremental": true,
     "isolatedModules": true,
@@ -12,7 +13,8 @@
     "moduleResolution": "Bundler",
     "noEmit": true,
     "paths": {
-      "@frogbot-config": ["./frogbot.config.ts"]
+      "@/*": ["./src/*"],
+      "@frogbot-config": ["./src/frogbot.config.ts"]
     },
     "plugins": [{ "name": "next" }],
     "resolveJsonModule": true,

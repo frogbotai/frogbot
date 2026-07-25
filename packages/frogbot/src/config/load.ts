@@ -25,9 +25,11 @@ function resolveEnvConfigPath(cwd: string): string | null {
 function findConfigFile(startDir: string): string | null {
   let dir = resolve(startDir);
   for (;;) {
-    for (const name of CONFIG_FILENAMES) {
-      const candidate = join(dir, name);
-      if (existsSync(candidate)) return candidate;
+    for (const subDir of ['src', '.']) {
+      for (const name of CONFIG_FILENAMES) {
+        const candidate = join(dir, subDir, name);
+        if (existsSync(candidate)) return candidate;
+      }
     }
     const parent = dirname(dir);
     if (parent === dir) return null;
@@ -48,7 +50,7 @@ export async function loadConfig(cwd: string): Promise<InitOptions['config']> {
   const configPath = resolveEnvConfigPath(cwd) ?? findConfigFile(cwd);
   if (!configPath) {
     throw new Error(
-      `[frogbot] could not find frogbot.config.{ts,js,mjs} in ${cwd} or any parent directory (set FROGBOT_CONFIG_PATH to override)`,
+      `[frogbot] could not find frogbot.config.{ts,js,mjs} in ${cwd}, ${join(cwd, 'src')}, or any parent directory (set FROGBOT_CONFIG_PATH to override)`,
     );
   }
 

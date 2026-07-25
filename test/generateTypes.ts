@@ -11,11 +11,11 @@ const binPath = path.resolve(repoRoot, 'packages/frogbot/bin.js');
 const [targetSuite] = process.argv.slice(2);
 
 function generateForSuite(suiteDir: string): Promise<number> {
-  const configPath = ['config.ts', 'frogbot.config.ts']
+  const configPath = ['config.ts', 'frogbot.config.ts', 'src/frogbot.config.ts']
     .map((name) => path.resolve(suiteDir, name))
     .find(fs.existsSync);
   if (!configPath) return Promise.resolve(1);
-  const outputPath = path.resolve(suiteDir, 'frogbot-types.ts');
+  const outputPath = path.resolve(path.dirname(configPath), 'frogbot-types.ts');
 
   console.log(`[generate:types] ${path.basename(suiteDir)}`);
 

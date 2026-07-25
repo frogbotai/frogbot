@@ -25,6 +25,7 @@ import type { SanitizedConfig } from 'payload';
 import { catalog } from '../ai/catalog.js';
 import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
 import { loadConfig } from '../config/load.js';
+import { resolveSourceDir } from '../config/sourceDir.js';
 import type { CustomProviderEntry, SanitizedAIConfig } from '../types/ai.js';
 import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
 
@@ -120,7 +121,7 @@ function resolveOutputPath(config: SanitizedConfig, cwd: string): string {
   // FrogBot's filename so we don't litter `payload-types.ts` next to
   // the user's config. Otherwise honor whatever they explicitly set.
   if (fromConfig && !fromConfig.endsWith('/payload-types.ts')) return fromConfig;
-  return join(cwd, DEFAULT_FILENAME);
+  return join(resolveSourceDir(cwd), DEFAULT_FILENAME);
 }
 
 async function compileTypes(

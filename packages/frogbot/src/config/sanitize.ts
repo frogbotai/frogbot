@@ -35,6 +35,7 @@ import { resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
 import { getFrogbotInstance } from '../instanceRegistry.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
+import { resolveSourceDir } from './sourceDir.js';
 
 const noopEmailAdapter: PayloadEmailAdapter<void> = ({ payload }) => ({
   name: 'frogbot-noop',
@@ -417,6 +418,7 @@ function buildPayloadConfig(config: FrogbotConfig, onInit: NonNullable<PayloadCo
       },
     },
     importMap: {
+      baseDir: resolveSourceDir(process.cwd()),
       ...admin?.importMap,
       autoGenerate: false,
     },

@@ -7,7 +7,7 @@ if (existsSync('.env')) {
   process.loadEnvFile('.env');
 }
 
-const { default: config } = await import('../frogbot.config.js');
+const { default: config } = await import('./frogbot.config.js');
 
 const frogbot = await getFrogbot({ config });
 const gatewayHandler = createGatewayHandler(frogbot);
