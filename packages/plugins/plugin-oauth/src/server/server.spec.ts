@@ -1,3 +1,4 @@
+import { createCipheriv, createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -40,6 +41,16 @@ describe('OAuth server primitives', () => {
     const parts = encrypted.split('.');
     parts[2] = `${parts[2]?.startsWith('A') ? 'B' : 'A'}${parts[2]?.slice(1)}`;
     expect(() => encryption.decrypt(parts.join('.'))).toThrow(OAuthCryptoError);
+  });
+
+  it('decrypts ciphertext written with the legacy plugin label', async () => {
+    const secret = 'secret';
+    const key = createHash('sha256').update('frogbot:plugin-oauth:').update(secret).digest();
+    const iv = Buffer.alloc(12, 1);
+    const cipher = createCipheriv('aes-256-gcm', key, iv);
+    const encrypted = Buffer.concat([cipher.update('credentials', 'utf8'), cipher.final()]);
+    const legacy = ['v1', iv.toString('base64url'), cipher.getAuthTag().toString('base64url'), encrypted.toString('base64url')].join('.');
+    expect(await createOAuthEncryption({ secret }).decrypt(legacy)).toBe('credentials');
   });
 
   it('normalizes and merges token responses without dropping refresh tokens', () => {

@@ -9,7 +9,6 @@ import { getProvider } from './shared.js';
 type LifecycleEndpointOptions = {
   paths: { refresh: string; revoke: string };
   connectionsSlug: string;
-  ownerField: string;
   providers: Map<string, OAuthProvider>;
   encryption: OAuthEncryption;
 };
@@ -20,7 +19,14 @@ async function getConnectionId(req: Parameters<Endpoint['handler']>[0]): Promise
 }
 
 function serialize(tokens: OAuthTokenSet): string {
-  return JSON.stringify({ ...tokens, expiresAt: tokens.expiresAt?.toISOString() });
+  return JSON.stringify({
+    access_token: tokens.accessToken,
+    refresh_token: tokens.refreshToken,
+    scope: tokens.scopes?.join(' '),
+    token_type: tokens.tokenType,
+    id_token: tokens.idToken,
+    data: tokens.metadata,
+  });
 }
 
 export function createLifecycleEndpoints(options: LifecycleEndpointOptions): Endpoint[] {
@@ -38,17 +44,16 @@ export function createLifecycleEndpoints(options: LifecycleEndpointOptions): End
           req,
           connectionId,
           collectionSlug: options.connectionsSlug,
-          ownerField: options.ownerField,
           encryption: options.encryption,
         });
-        if (!connection || connection.provider !== provider.id) return Response.json({ error: 'OAuth connection not found' }, { status: 404 });
+        if (!connection || connection.sourceKey !== provider.id) return Response.json({ error: 'OAuth connection not found' }, { status: 404 });
         try {
           const next = mergeOAuthTokenSets({ current: connection.tokens, next: await provider.refresh({ tokens: connection.tokens, req }) });
           await req.frogbot.update({
             collection: options.connectionsSlug,
             id: connection.id as never,
             data: {
-              encryptedTokens: await options.encryption.encrypt(serialize(next)),
+              encryptedCredentials: await options.encryption.encrypt(serialize(next)),
               expiresAt: next.expiresAt?.toISOString(),
               scopes: next.scopes,
               status: 'active',
@@ -75,10 +80,9 @@ export function createLifecycleEndpoints(options: LifecycleEndpointOptions): End
           req,
           connectionId,
           collectionSlug: options.connectionsSlug,
-          ownerField: options.ownerField,
           encryption: options.encryption,
         });
-        if (!connection || connection.provider !== provider.id) return Response.json({ error: 'OAuth connection not found' }, { status: 404 });
+        if (!connection || connection.sourceKey !== provider.id) return Response.json({ error: 'OAuth connection not found' }, { status: 404 });
         let providerRevoked = true;
         try {
           await provider.revoke?.({ tokens: connection.tokens, req });
@@ -88,7 +92,7 @@ export function createLifecycleEndpoints(options: LifecycleEndpointOptions): End
         await req.frogbot.update({
           collection: options.connectionsSlug,
           id: connection.id as never,
-          data: { status: 'revoked' },
+          data: { status: 'revoked', encryptedCredentials: '' },
           overrideAccess: true,
           req,
         });

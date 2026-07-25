@@ -6,7 +6,7 @@ export function zoomProvider(options: OAuthProviderOptions): OAuthProvider {
   const scopes = options.scopes ?? [];
   const headers = { Authorization: basicCredentials(options.clientId, options.clientSecret) };
   return {
-    id: 'zoom', authorizationUrl: 'https://zoom.us/oauth/authorize', tokenUrl: 'https://zoom.us/oauth/token', scopes,
+    id: 'zoom', service: 'zoom', authorizationUrl: 'https://zoom.us/oauth/authorize', tokenUrl: 'https://zoom.us/oauth/token', scopes,
     authorize: (context) => authorizationUrl({ url: 'https://zoom.us/oauth/authorize', clientId: options.clientId, scopes, context }),
     exchange: async ({ code, callbackUrl, codeVerifier }) => (await tokenRequest({ fetch: request, url: 'https://zoom.us/oauth/token', headers, body: { grant_type: 'authorization_code', code, redirect_uri: callbackUrl, code_verifier: codeVerifier } })).tokens,
     getAccount: async ({ tokens }) => {

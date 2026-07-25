@@ -7,6 +7,7 @@ import type { OAuthProvider } from '../index.js';
 function provider(): OAuthProvider {
   return {
     id: 'custom',
+    service: 'custom-service',
     authorizationUrl: 'https://provider.test/authorize',
     tokenUrl: 'https://provider.test/token',
     scopes: ['profile'],
@@ -64,7 +65,13 @@ describe('OAuth authorize and callback endpoints', () => {
     } as unknown as FrogbotRequest;
     const result = await callback.handler(callbackReq);
     expect(result.headers.get('location')).toBe('https://app.test/settings?oauth_connection=connection-1');
-    expect(create.mock.calls[1][0].data.encryptedTokens).not.toContain('access');
+    expect(create.mock.calls[1][0].data).toMatchObject({ service: 'custom-service', source: 'oauth', sourceKey: 'custom', credentialType: 'oauth2', accountId: 'account-1' });
+    expect(create.mock.calls[1][0].data.encryptedCredentials).not.toContain('access');
+    expect(callbackReq.frogbot.find).toHaveBeenCalledWith(expect.objectContaining({ where: { and: [
+      { owner: { equals: 'user-1' } },
+      { sourceKey: { equals: 'custom' } },
+      { accountId: { equals: 'account-1' } },
+    ] } }));
     expect((currentProvider.exchange as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(expect.objectContaining({ codeVerifier: stateData.codeVerifier }));
     expect((await callback.handler(callbackReq)).status).toBe(400);
   });

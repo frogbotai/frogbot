@@ -6,6 +6,7 @@ import type { OAuthProvider } from '../index.js';
 
 const provider: OAuthProvider = {
   id: 'custom',
+  service: 'custom-service',
   authorizationUrl: 'https://provider.test/authorize',
   tokenUrl: 'https://provider.test/token',
   scopes: [],
@@ -19,36 +20,28 @@ function config(): FrogbotConfig {
 }
 
 describe('OAuth collections', () => {
-  it('keeps states server-only and connections owner-scoped', async () => {
+  it('keeps states server-only and does not inject a connections collection', async () => {
     const result = await oauthPlugin({ providers: [provider] })(config());
     const states = result.collections.find((collection) => collection.slug === 'oauth-states')!;
-    const connections = result.collections.find((collection) => collection.slug === 'oauth-connections')!;
     expect(await states.access?.read?.({ req: {} as FrogbotRequest })).toBe(false);
-    expect(await connections.access?.read?.({ req: { user: { id: 'user-1' } } as FrogbotRequest })).toEqual({
-      owner: { equals: 'user-1' },
-    });
-    expect(await connections.access?.read?.({ req: {} as FrogbotRequest })).toBe(false);
-    expect(connections.fields.find((field) => 'name' in field && field.name === 'encryptedTokens')).toMatchObject({
-      access: { read: expect.any(Function) },
-      admin: { hidden: true },
-    });
+    expect(result.collections.some((collection) => collection.slug === 'oauth-connections')).toBe(false);
   });
 
-  it('merges transformed collections and custom owner fields', async () => {
+  it('merges transformed state collections and custom owner fields', async () => {
     const input = config();
     input.collections.push({
-      slug: 'oauth-connections',
+      slug: 'oauth-states',
       fields: [{ name: 'tenantMarker', type: 'text' }],
       endpoints: [{ method: 'get', path: '/tenant', handler: () => Response.json({}) }],
     });
     const result = await oauthPlugin({
       providers: [provider],
       ownerField: { name: 'tenant', relationTo: 'users' },
-      connectionsCollection: { fields: [{ name: 'custom', type: 'json' }] },
+      statesCollection: { fields: [{ name: 'custom', type: 'json' }] },
     })(input);
-    const connections = result.collections.find((collection) => collection.slug === 'oauth-connections')!;
-    const names = connections.fields.map((field) => ('name' in field ? field.name : null));
+    const states = result.collections.find((collection) => collection.slug === 'oauth-states')!;
+    const names = states.fields.map((field) => ('name' in field ? field.name : null));
     expect(names).toEqual(expect.arrayContaining(['tenant', 'tenantMarker', 'custom']));
-    expect(connections.endpoints?.map((endpoint) => endpoint.path)).toContain('/tenant');
+    expect(states.endpoints?.map((endpoint) => endpoint.path)).toContain('/tenant');
   });
 });

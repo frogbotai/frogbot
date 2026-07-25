@@ -5,7 +5,7 @@ description: "Connect external accounts with encrypted OAuth credentials, refres
 keywords: ["OAuth", "connections", "plugins", "Google", "Microsoft", "Stripe", "Zoom", "Xero"]
 ---
 
-The OAuth plugin connects authenticated users to external services and stores credentials for later server-side API calls. It does not use OAuth to log users in.
+The OAuth plugin registers providers as credential sources for pieces. It handles the OAuth protocol while FrogBot core stores and resolves credentials. It does not use OAuth to log users in.
 
 ## Install
 
@@ -75,49 +75,37 @@ The plugin mounts these endpoints on the configured auth collection:
 
 Use `paths` to change endpoint suffixes and `authCollection` to change the `/api/users` prefix.
 
-## Ownership and collections
+## Credential storage
 
-The plugin creates `oauth-connections` and `oauth-states` by default. Connection reads are scoped to the authenticated owner. State records deny public access and callbacks consume them once.
+The plugin creates `oauth-states` and writes credentials to the core `connections` collection with `source: 'oauth'`. Connection reads are scoped to the authenticated owner. State records deny public access and callbacks consume them once.
 
 ```ts
 oauthPlugin({
   providers,
   authCollection: 'accounts',
-  connectionsSlug: 'connections',
   statesSlug: 'connection-states',
   ownerField: { name: 'account', relationTo: 'accounts' },
-  connectionsCollection: {
+  statesCollection: {
     admin: { group: 'Integrations' },
-    fields: [{ name: 'environment', type: 'text' }],
+    fields: [{ name: 'tenant', type: 'text' }],
   },
 })
 ```
 
-Collection overrides merge with generated fields, access, endpoints, hooks, admin settings, and changes from other plugins.
+Adopt or extend core connection storage with a `connections: true` collection. See [Connections](/configuration/connections).
 
-## Read credentials on the server
+## Resolve credentials
 
-Configure an encryption adapter explicitly when another server module needs to decrypt credentials:
+Resolve a piece-compatible OAuth2 value through core:
 
 ```ts
-import { oauthPlugin } from '@frogbotai/plugin-oauth'
-import {
-  createOAuthEncryption,
-  getOAuthConnectionCredentials,
-} from '@frogbotai/plugin-oauth/server'
-
-const encryption = createOAuthEncryption({ secret: process.env.FROGBOT_SECRET! })
-
-oauthPlugin({ providers, encryption })
-
-const credentials = await getOAuthConnectionCredentials({
-  req,
-  connectionId,
-  encryption,
+const credentials = await frogbot.connections.resolve({
+  service: 'google',
+  owner: req.user,
 })
 ```
 
-The helper returns `null` when the request is unauthenticated or the connection belongs to another owner.
+Expired credentials refresh during resolution when the provider implements `refresh`. A failed refresh marks the connection as `error`. Concurrent refresh calls are not yet coalesced.
 
 ## Custom providers
 
@@ -128,6 +116,7 @@ import type { OAuthProvider } from '@frogbotai/plugin-oauth'
 
 const serviceProvider: OAuthProvider = {
   id: 'service',
+  service: 'service',
   authorizationUrl: 'https://service.example/oauth/authorize',
   tokenUrl: 'https://service.example/oauth/token',
   scopes: ['profile'],
@@ -149,6 +138,7 @@ const serviceProvider: OAuthProvider = {
 - Credentials use authenticated AES-256-GCM encryption by default.
 - Credential fields are hidden from collection reads and admin forms.
 - Refresh preserves an existing refresh token when the provider omits a replacement.
+- Core resolution refreshes expired credentials and reports refresh failures with the `error` connection code.
 - Refresh and revoke lookups include the authenticated owner.
 - External errors do not expose provider response bodies.
 

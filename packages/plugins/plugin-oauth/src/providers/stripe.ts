@@ -9,7 +9,7 @@ export function stripeProvider(options: OAuthProviderOptions): OAuthProvider {
     return { ...result.tokens, metadata: { stripeAccountId: result.value.stripe_user_id } };
   };
   return {
-    id: 'stripe', authorizationUrl: 'https://connect.stripe.com/oauth/authorize', tokenUrl: 'https://connect.stripe.com/oauth/token', scopes,
+    id: 'stripe', service: 'stripe', authorizationUrl: 'https://connect.stripe.com/oauth/authorize', tokenUrl: 'https://connect.stripe.com/oauth/token', scopes,
     authorize: (context) => authorizationUrl({ url: 'https://connect.stripe.com/oauth/authorize', clientId: options.clientId, scopes, context }),
     exchange: ({ code }) => token({ grant_type: 'authorization_code', code }),
     getAccount: async ({ tokens }) => {

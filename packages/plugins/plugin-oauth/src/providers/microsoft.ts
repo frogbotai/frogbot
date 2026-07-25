@@ -10,7 +10,7 @@ export function microsoftProvider(options: MicrosoftProviderOptions): OAuthProvi
   const token = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`;
   const scopes = options.scopes ?? ['openid', 'email', 'profile', 'offline_access'];
   return {
-    id: 'microsoft', authorizationUrl: authorization, tokenUrl: token, scopes,
+    id: 'microsoft', service: 'microsoft', authorizationUrl: authorization, tokenUrl: token, scopes,
     authorize: (context) => authorizationUrl({ url: authorization, clientId: options.clientId, scopes, context, params: { prompt: 'select_account' } }),
     exchange: async ({ code, callbackUrl, codeVerifier }) => (await tokenRequest({ fetch: request, url: token, body: { grant_type: 'authorization_code', code, redirect_uri: callbackUrl, code_verifier: codeVerifier, client_id: options.clientId, client_secret: options.clientSecret } })).tokens,
     getAccount: async ({ tokens }) => {

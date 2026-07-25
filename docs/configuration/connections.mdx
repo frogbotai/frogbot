@@ -69,7 +69,7 @@ await frogbot.connections.revoke({
 })
 ```
 
-`list` returns service, source, status, account, scope, expiration, and metadata fields. It never returns plaintext or encrypted credentials. Missing, revoked, and expired credentials throw `ConnectionError` with distinct `code` values.
+`list` returns service, source, status, account, scope, expiration, and metadata fields. It never returns plaintext or encrypted credentials. Missing, revoked, expired, and source-refresh failures throw `ConnectionError` with distinct `code` values.
 
 ## Encryption and rotation
 

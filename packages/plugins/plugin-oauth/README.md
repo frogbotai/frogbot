@@ -1,6 +1,6 @@
 # @frogbotai/plugin-oauth
 
-Add owner-scoped OAuth connections with encrypted credentials, refresh, and revocation to a FrogBot application.
+Register OAuth providers as credential sources for FrogBot pieces. The plugin handles authorization, refresh, and revocation while core owns encrypted connection storage and resolution.
 
 ```ts
 import { googleProvider, oauthPlugin } from '@frogbotai/plugin-oauth';
@@ -29,7 +29,7 @@ Register `https://your-app.example/api/users/oauth/google/callback` with Google.
 GET /api/users/oauth/google/authorize?returnUrl=/settings
 ```
 
-The plugin adds server-only `oauth-states` and owner-scoped `oauth-connections` collections. State is single-use and expires after ten minutes. Access tokens, refresh tokens, and ID tokens are encrypted with AES-256-GCM before storage and are hidden from collection reads.
+The plugin adds the server-only `oauth-states` collection and writes credentials to FrogBot's core `connections` collection. State is single-use and expires after ten minutes. Core encrypts credentials with AES-256-GCM and resolves them for pieces. Expired credentials refresh during resolution when the provider supports refresh.
 
 ## Providers
 
@@ -44,6 +44,7 @@ import type { OAuthProvider } from '@frogbotai/plugin-oauth';
 
 const provider: OAuthProvider = {
   id: 'service',
+  service: 'service',
   authorizationUrl: 'https://service.example/oauth/authorize',
   tokenUrl: 'https://service.example/oauth/token',
   scopes: ['profile'],
@@ -62,24 +63,19 @@ const provider: OAuthProvider = {
 };
 ```
 
-Optional `refresh` and `revoke` methods enable those lifecycle operations.
+`id` identifies the provider instance and becomes the connection `sourceKey`. `service` must match the canonical service ID declared by the piece. Optional `refresh` and `revoke` methods enable those lifecycle operations.
 
 ## Server credentials
 
-Use the same encryption adapter for plugin storage and server-side retrieval:
+Pieces resolve credentials through core:
 
 ```ts
-import { createOAuthEncryption, getOAuthConnectionCredentials } from '@frogbotai/plugin-oauth/server';
-
-const encryption = createOAuthEncryption({ secret: process.env.FROGBOT_SECRET! });
-
-const credentials = await getOAuthConnectionCredentials({
-  req,
-  connectionId,
-  encryption,
+const credentials = await frogbot.connections.resolve({
+  service: 'google',
+  owner: req.user,
 });
 ```
 
-The helper returns credentials only when the connection belongs to `req.user`.
+Resolution is owner-scoped. Concurrent refresh calls are not yet coalesced, so multiple calls may refresh the same expired connection.
 
 OAuth connections do not log users in, create users, schedule background refreshes, or provide provider catalog UI.

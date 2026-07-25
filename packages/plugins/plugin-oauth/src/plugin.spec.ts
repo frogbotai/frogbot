@@ -6,6 +6,7 @@ import type { OAuthProvider } from './index.js';
 
 const provider: OAuthProvider = {
   id: 'custom',
+  service: 'custom-service',
   authorizationUrl: 'https://provider.test/authorize',
   tokenUrl: 'https://provider.test/token',
   scopes: ['profile'],
@@ -30,13 +31,14 @@ describe('oauthPlugin', () => {
     const result = await plugin(config);
     expect(result.collections.map((collection) => collection.slug)).toEqual([
       'users',
-      'oauth-connections',
       'oauth-states',
     ]);
+    expect(result.credentialSources).toEqual([expect.objectContaining({ key: 'custom', services: ['custom-service'], credentialTypes: ['oauth2'] })]);
   });
 
   it('rejects duplicate and empty provider IDs', () => {
     expect(() => oauthPlugin({ providers: [provider, provider] })).toThrow("Provider ID 'custom' must be unique");
     expect(() => oauthPlugin({ providers: [{ ...provider, id: '' }] })).toThrow('Provider IDs must not be empty');
+    expect(() => oauthPlugin({ providers: [{ ...provider, service: '' }] })).toThrow('Provider service IDs must not be empty');
   });
 });

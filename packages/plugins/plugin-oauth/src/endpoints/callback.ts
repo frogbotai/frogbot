@@ -47,7 +47,15 @@ async function extractCallback(req: FrogbotRequest): Promise<{ code?: string; st
 }
 
 function serializeTokens(tokens: OAuthTokenSet): string {
-  return JSON.stringify({ ...tokens, expiresAt: tokens.expiresAt?.toISOString() });
+  return JSON.stringify({
+    access_token: tokens.accessToken,
+    refresh_token: tokens.refreshToken,
+    expires_in: tokens.expiresAt ? Math.max(0, Math.floor((tokens.expiresAt.getTime() - Date.now()) / 1000)) : undefined,
+    scope: tokens.scopes?.join(' '),
+    token_type: tokens.tokenType,
+    id_token: tokens.idToken,
+    data: tokens.metadata,
+  });
 }
 
 export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpoint[] {
@@ -79,18 +87,20 @@ export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpo
         overrideAccess: true,
         req,
         where: { and: [
-          { [options.ownerField]: { equals: owner } },
-          { provider: { equals: provider.id } },
-          { providerAccountId: { equals: account.id } },
+          { owner: { equals: owner } },
+          { sourceKey: { equals: provider.id } },
+          { accountId: { equals: account.id } },
         ] },
       });
       const data = {
-        [options.ownerField]: owner,
-        provider: provider.id,
-        providerAccountId: account.id,
-        accountEmail: account.email,
-        accountName: account.name,
-        encryptedTokens: await options.encryption.encrypt(serializeTokens(tokens)),
+        owner,
+        service: provider.service,
+        source: 'oauth',
+        sourceKey: provider.id,
+        credentialType: 'oauth2',
+        accountId: account.id,
+        accountLabel: account.name ?? account.email,
+        encryptedCredentials: await options.encryption.encrypt(serializeTokens(tokens)),
         expiresAt: tokens.expiresAt?.toISOString(),
         scopes: tokens.scopes,
         status: 'active',

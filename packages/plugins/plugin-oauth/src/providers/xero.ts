@@ -13,7 +13,7 @@ export function xeroProvider(options: OAuthProviderOptions): OAuthProvider {
   const scopes = options.scopes ?? ['openid', 'profile', 'email', 'offline_access', 'accounting.transactions'];
   const headers = { Authorization: basicCredentials(options.clientId, options.clientSecret) };
   return {
-    id: 'xero', authorizationUrl: 'https://login.xero.com/identity/connect/authorize', tokenUrl: 'https://identity.xero.com/connect/token', scopes,
+    id: 'xero', service: 'xero', authorizationUrl: 'https://login.xero.com/identity/connect/authorize', tokenUrl: 'https://identity.xero.com/connect/token', scopes,
     authorize: (context) => authorizationUrl({ url: 'https://login.xero.com/identity/connect/authorize', clientId: options.clientId, scopes, context }),
     exchange: async ({ code, callbackUrl, codeVerifier }) => (await tokenRequest({ fetch: request, url: 'https://identity.xero.com/connect/token', headers, body: { grant_type: 'authorization_code', code, redirect_uri: callbackUrl, code_verifier: codeVerifier } })).tokens,
     getAccount: ({ tokens }) => {

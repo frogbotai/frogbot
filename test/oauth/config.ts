@@ -4,6 +4,7 @@ import type { FrogbotConfig, Plugin } from 'frogbot';
 
 export const provider: OAuthProvider = {
   id: 'custom',
+  service: 'custom-service',
   authorizationUrl: 'https://provider.test/authorize',
   tokenUrl: 'https://provider.test/token',
   scopes: ['profile'],
@@ -25,14 +26,15 @@ export const config: FrogbotConfig = {
   secret: 'oauth-test',
   serverURL: 'https://app.test',
   db: {} as FrogbotConfig['db'],
-  collections: [{ slug: 'accounts', auth: true, fields: [] }],
+  collections: [
+    { slug: 'accounts', auth: true, fields: [] },
+    { slug: 'connections', connections: true, fields: [{ name: 'environment', type: 'text' }] },
+  ],
   plugins: [
     oauthPlugin({
       providers: [provider],
       authCollection: 'accounts',
-      connectionsSlug: 'connections',
       statesSlug: 'states',
-      connectionsCollection: { fields: [{ name: 'environment', type: 'text' }] },
     }),
     addTenant,
   ],
