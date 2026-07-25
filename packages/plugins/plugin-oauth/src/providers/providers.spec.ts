@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { googleProvider, microsoftProvider, stripeProvider, xeroProvider, zoomProvider } from '../index.js';
+import { dropboxProvider, githubProvider, googleProvider, microsoftProvider, notionProvider, slackProvider, stripeProvider, xeroProvider, zoomProvider } from '../index.js';
 import type { OAuthProvider } from '../index.js';
 
 function jwt(value: Record<string, unknown>): string {
@@ -12,6 +12,10 @@ const cases: { name: string; create: (request: typeof fetch) => OAuthProvider; a
   { name: 'microsoft', create: (request) => microsoftProvider({ clientId: 'id', clientSecret: 'secret', fetch: request }), account: { id: 'microsoft-1', mail: 'microsoft@test' }, id: 'microsoft-1' },
   { name: 'zoom', create: (request) => zoomProvider({ clientId: 'id', clientSecret: 'secret', fetch: request }), account: { id: 'zoom-1', email: 'zoom@test' }, id: 'zoom-1' },
   { name: 'stripe', create: (request) => stripeProvider({ clientId: 'id', clientSecret: 'secret', fetch: request }), account: { id: 'stripe-1', email: 'stripe@test' }, id: 'acct_1' },
+  { name: 'github', create: (request) => githubProvider({ clientId: 'id', clientSecret: 'secret', fetch: request }), account: { id: 'github-1', login: 'frog' }, id: 'github-1' },
+  { name: 'notion', create: (request) => notionProvider({ clientId: 'id', clientSecret: 'secret', fetch: request }), account: { id: 'notion-1', name: 'Frog' }, id: 'notion-1' },
+  { name: 'dropbox', create: (request) => dropboxProvider({ clientId: 'id', clientSecret: 'secret', fetch: request }), account: { account_id: 'dropbox-1', email: 'dropbox@test' }, id: 'dropbox-1' },
+  { name: 'slack', create: (request) => slackProvider({ clientId: 'id', clientSecret: 'secret', fetch: request }), account: { team_id: 'slack-1', team: 'Frog' }, id: 'slack-1' },
 ];
 
 describe.each(cases)('$name provider', ({ create, account, id }) => {
@@ -30,6 +34,13 @@ describe.each(cases)('$name provider', ({ create, account, id }) => {
     expect((await provider.getAccount({ tokens, req: {} as never })).id).toBe(id);
     expect((await provider.refresh!({ tokens, req: {} as never })).accessToken).toBe('next');
     if (provider.revoke) await provider.revoke({ tokens, req: {} as never });
+  });
+});
+
+describe('google provider service', () => {
+  it('can claim a Google piece service', () => {
+    const provider = googleProvider({ clientId: 'id', clientSecret: 'secret', service: 'google-sheets' });
+    expect(provider).toMatchObject({ id: 'google-sheets', service: 'google-sheets' });
   });
 });
 

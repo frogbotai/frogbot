@@ -5,7 +5,7 @@ description: "Install and connect the integration pieces available for FrogBot a
 keywords: ["pieces", "integrations", "API keys", "Basic Auth", "connections"]
 ---
 
-FrogBot provides 26 piece packages. Install a wrapper, register it in `pieces`, and select its tools on an agent as described in [Pieces](/configuration/pieces).
+FrogBot provides 37 piece packages. Install a wrapper, register it in `pieces`, and select its tools on an agent as described in [Pieces](/configuration/pieces).
 
 ## Connect an API-key piece
 
@@ -63,8 +63,43 @@ curl --request POST http://localhost:3000/api/connections/secret \
 | Twilio | `@frogbotai/piece-twilio` | `twilio` | Account SID | Auth token |
 | Trello | `@frogbotai/piece-trello` | `trello` | API key | Token, not the API secret |
 
+## Connect an OAuth piece
+
+Install `@frogbotai/plugin-oauth` with the wrapper package. Register the provider factory with the scopes below. The callback URL is `https://<host>/api/<auth-collection>/oauth/<service>/callback`; the default auth collection is `users`.
+
+Google and Microsoft factories must set `service` to the piece service shown in the table. This creates a separate provider registration and connection for each integration.
+
+| Piece | Package | Service | Provider | Scopes |
+| --- | --- | --- | --- | --- |
+| Google Sheets | `@frogbotai/piece-google-sheets` | `google-sheets` | `googleProvider` | `https://www.googleapis.com/auth/spreadsheets`, `https://www.googleapis.com/auth/drive.readonly`, `https://www.googleapis.com/auth/drive` |
+| Google Calendar | `@frogbotai/piece-google-calendar` | `google-calendar` | `googleProvider` | `https://www.googleapis.com/auth/calendar.events`, `https://www.googleapis.com/auth/calendar.readonly` |
+| Google Drive | `@frogbotai/piece-google-drive` | `google-drive` | `googleProvider` | `https://www.googleapis.com/auth/drive` |
+| Gmail | `@frogbotai/piece-gmail` | `gmail` | `googleProvider` | `https://www.googleapis.com/auth/gmail.send`, `https://www.googleapis.com/auth/gmail.readonly`, `https://www.googleapis.com/auth/gmail.compose`, `email` |
+| Zoom | `@frogbotai/piece-zoom` | `zoom` | `zoomProvider` | Configure the meeting and registrant scopes required by the enabled Zoom actions in the Zoom app |
+| Microsoft Teams | `@frogbotai/piece-microsoft-teams` | `microsoft-teams` | `microsoftProvider` | `openid`, `email`, `profile`, `offline_access`, `User.Read`, `Channel.Create`, `Channel.ReadBasic.All`, `ChannelMessage.Send`, `Team.ReadBasic.All`, `Chat.ReadWrite`, `ChannelMessage.Read.All`, `TeamMember.Read.All`, `User.ReadBasic.All` |
+| Xero | `@frogbotai/piece-xero` | `xero` | `xeroProvider` | `openid`, `profile`, `email`, `offline_access`, `accounting.contacts`, `accounting.transactions`, `accounting.reports.read`, `accounting.journals.read`, `accounting.budgets.read`, `accounting.attachments`, `accounting.settings`, `projects` |
+| GitHub | `@frogbotai/piece-github` | `github` | `githubProvider` | `admin:repo_hook`, `admin:org`, `repo`, `gist` |
+| Notion | `@frogbotai/piece-notion` | `notion` | `notionProvider` | Configure capabilities on the Notion integration; Notion does not accept a scope query parameter |
+| Dropbox | `@frogbotai/piece-dropbox` | `dropbox` | `dropboxProvider` | `files.metadata.write`, `files.metadata.read`, `files.content.write`, `files.content.read` |
+| Slack | `@frogbotai/piece-slack` | `slack` | `slackProvider` | `channels:read`, `channels:manage`, `channels:history`, `chat:write`, `groups:read`, `groups:write`, `groups:history`, `im:read`, `im:write`, `im:history`, `users:read`, `users:read.email`, `files:read`, `files:write`, `reactions:read`, `reactions:write` |
+
+```ts
+googleProvider({
+  clientId: process.env.GOOGLE_CLIENT_ID!,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+  service: 'google-sheets',
+  scopes: [
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive.readonly',
+    'https://www.googleapis.com/auth/drive'
+  ]
+})
+```
+
+Gmail restricted scopes can require Google verification and a security assessment for production access. None of these integrations can be considered live-accepted until its provider console, redirect URL, credentials, consent flow, and at least one real action have been verified in the target deployment.
+
 ## Pieces without connections
 
 The no-auth packages are `piece-text-helper`, `piece-math-helper`, `piece-date-helper`, `piece-crypto`, `piece-csv`, `piece-xml`, `piece-qrcode`, `piece-data-summarizer`, `piece-http`, `piece-graphql`, `piece-file-helper`, `piece-image-helper`, and `piece-pdf`, all under the `@frogbotai` scope.
 
-Triggers are not exposed as tools. The first release also has no real `custom`-auth piece, so the custom credential path remains without a provider-backed consumer until the deferred CustomAuth batch.
+Triggers are not exposed as tools. The current release also has no real `custom`-auth piece, so the custom credential path remains without a provider-backed consumer until the deferred CustomAuth batch.

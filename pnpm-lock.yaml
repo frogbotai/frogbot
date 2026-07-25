@@ -556,6 +556,19 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/pieces/piece-dropbox:
+    dependencies:
+      '@activepieces/piece-dropbox':
+        specifier: 0.7.4
+        version: 0.7.4
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/pieces/piece-file-helper:
     dependencies:
       '@activepieces/piece-file-helper':
@@ -574,6 +587,71 @@ importers:
       '@activepieces/piece-front':
         specifier: 0.1.5
         version: 0.1.5
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-github:
+    dependencies:
+      '@activepieces/piece-github':
+        specifier: 0.8.5
+        version: 0.8.5
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-gmail:
+    dependencies:
+      '@activepieces/piece-gmail':
+        specifier: 0.12.8
+        version: 0.12.8
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-google-calendar:
+    dependencies:
+      '@activepieces/piece-google-calendar':
+        specifier: 0.9.5
+        version: 0.9.5
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-google-drive:
+    dependencies:
+      '@activepieces/piece-google-drive':
+        specifier: 0.7.10
+        version: 0.7.10
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-google-sheets:
+    dependencies:
+      '@activepieces/piece-google-sheets':
+        specifier: 0.16.3
+        version: 0.16.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -647,11 +725,37 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/pieces/piece-microsoft-teams:
+    dependencies:
+      '@activepieces/piece-microsoft-teams':
+        specifier: 0.6.0
+        version: 0.6.0
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/pieces/piece-monday:
     dependencies:
       '@activepieces/piece-monday':
         specifier: 0.3.5
         version: 0.3.5
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-notion:
+    dependencies:
+      '@activepieces/piece-notion':
+        specifier: 0.6.6
+        version: 0.6.6
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -725,6 +829,19 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/pieces/piece-slack:
+    dependencies:
+      '@activepieces/piece-slack':
+        specifier: 0.17.3
+        version: 0.17.3
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/pieces/piece-stripe:
     dependencies:
       '@activepieces/piece-stripe':
@@ -790,11 +907,37 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/pieces/piece-xero:
+    dependencies:
+      '@activepieces/piece-xero':
+        specifier: 0.6.8
+        version: 0.6.8
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/pieces/piece-xml:
     dependencies:
       '@activepieces/piece-xml':
         specifier: 0.1.15
         version: 0.1.15(bufferutil@4.1.0)
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-zoom:
+    dependencies:
+      '@activepieces/piece-zoom':
+        specifier: 0.7.0
+        version: 0.7.0
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -1034,11 +1177,29 @@ packages:
   '@activepieces/piece-discord@0.5.4':
     resolution: {integrity: sha512-xKQbj+k+G5JR82ELdBz5EkFztrFd/00i44axJ3AjstWjcFTGAcD/yJzspFvTJoR7GdRIOzUYOceE1AGCCqnmqg==}
 
+  '@activepieces/piece-dropbox@0.7.4':
+    resolution: {integrity: sha512-m44T52nENlkXwEYZoOlgu4dMtNvd/kbDFfoUsLeFX5CsL2v+OnqJVyXUpzZngbqaOPbEOo3DOSuq6GHy8huJ4Q==}
+
   '@activepieces/piece-file-helper@0.1.24':
     resolution: {integrity: sha512-I6x/7xQ6jluwrmXnWB+NvF5QNIcSYOyheHyX2uDLzYu9V+QbZj/LIC8XgLdcAqhjNjYv+WLwQftAiIbobWi95A==}
 
   '@activepieces/piece-front@0.1.5':
     resolution: {integrity: sha512-SP3sRFXuqMETOX3qGx9PgNHPAicSfDj+HaoCfbpkVO3mhYdBHOGpGo3OzT8q0CXnZlXBnBWl4h5PZmk4haafxQ==}
+
+  '@activepieces/piece-github@0.8.5':
+    resolution: {integrity: sha512-527hiVL9Yn21IMpzcCcNpTs7dOsmlH0juDsGixsx/w77imQ6lDaINGwIOSGTQt+x/81FA7oWF4Q4abZ3BGO3Pg==}
+
+  '@activepieces/piece-gmail@0.12.8':
+    resolution: {integrity: sha512-0Y7v7OFV/CW/uM8amz/Xmf2R8Ijk1AfOcz/5+evEpyLXA1mOAukbIiqF5/wZG9QFCyWVJLq9VWH0DOE+ivhZQw==}
+
+  '@activepieces/piece-google-calendar@0.9.5':
+    resolution: {integrity: sha512-WBYlqZtSU0KltAKklP3YxyenbcqfnV0ulpX7nSkbLLWMEoOwAR7Vg8FxxouhEFlNBy6PQrsnkCZlTPFSwyzq/g==}
+
+  '@activepieces/piece-google-drive@0.7.10':
+    resolution: {integrity: sha512-U1uVy37YJ0qz7LdQgNRViGEgbPolNr7NOhwLU2r0esSaKjOTTntxbPO6gsNaC1Q2u9iZBiQHaXPuWrXkL7dZNw==}
+
+  '@activepieces/piece-google-sheets@0.16.3':
+    resolution: {integrity: sha512-nSOQmwMN/koDcfRBY3LRTQ/VIu69T+ODjjPb0NEBf3BNTwqp2Zx8sdTrKOU8BIO38uBXZqbGTvtzqaJ1SHx7zw==}
 
   '@activepieces/piece-graphql@0.0.13':
     resolution: {integrity: sha512-DEOAXrSoh/gqRw+cc+q2xJTVYiqSpPyPYeFT/wTAKR2BAC+oQiz3z/Z8d5AEH1ElXCy5oawl8KFAABFWc1KhYg==}
@@ -1055,8 +1216,14 @@ packages:
   '@activepieces/piece-math-helper@0.0.24':
     resolution: {integrity: sha512-JvvtYQA8OlMeWIWOLAwPNvBmfT14VWZYpZ0NGA01SFuUIAG32r3w2oGPME5O6ZLDoVB2L/5KQ9aUbRCPdGdCfQ==}
 
+  '@activepieces/piece-microsoft-teams@0.6.0':
+    resolution: {integrity: sha512-Z3Az013dmbhPAtOYoaU8PXrEBi0q4StLTeMN3e93mlcvMtvqFYyMLdotJlPdeDzveuGROqrUDGMSGlWfdi2evQ==}
+
   '@activepieces/piece-monday@0.3.5':
     resolution: {integrity: sha512-iTOcuvsufM4P0ak8rZFQPtrSmobQUV29fklI/I+6z8smy+h1y4cLvGdS6AuNWby7qaFIQgDU6k6dOn5padrWOQ==}
+
+  '@activepieces/piece-notion@0.6.6':
+    resolution: {integrity: sha512-XciVyvHZS3/l2hb/cqL+iUinyovNsmbpPqjtRbhr3Osr6ZLIvrzf+Rqt8oUpY6sPtMhNK1WvdXVV6UFfhONu6w==}
 
   '@activepieces/piece-pagerduty@0.1.3':
     resolution: {integrity: sha512-jNdeuH+9i284vzkohFawdaJSSicjtjbew5X1H6p4Yx+1qci2TxAO8KyMLyQ37LVqPw1rBbKS2tmZDjMieSRkJg==}
@@ -1073,6 +1240,9 @@ packages:
   '@activepieces/piece-resend@0.4.3':
     resolution: {integrity: sha512-EZFC2qUlHcf59E2p17qoi+QgPaLWFs2taZB/FW9/VIx9rBePgEuFScaN46w+1+7xZc5JU5sUdpq4yPKosaMLZg==}
 
+  '@activepieces/piece-slack@0.17.3':
+    resolution: {integrity: sha512-KVCQrcm8mmVDcPWNe4hPKdkyGZDhSeltgY9TaVDjDB8+2hJ7C+qH5I65J0NxJQ9j1Jig7FoTc1nYJiOsQU5SbQ==}
+
   '@activepieces/piece-stripe@0.6.10':
     resolution: {integrity: sha512-vpxwAYsAdksBfAScoxaTnC1ewDgAFCCeZXXX/WkmrRMcys940t8u8dtKIfadX/kff2FULU/VI7mfoMykHG47AQ==}
 
@@ -1088,8 +1258,14 @@ packages:
   '@activepieces/piece-twilio@0.4.7':
     resolution: {integrity: sha512-KsZtb3so++3IEE/uR7Sj/52wqwgf8rL4i7tzRKmu8Ot7t/5Ozs6NyeNst8snBXk0+BNhOZ0EFq5uOYD/3f8DEw==}
 
+  '@activepieces/piece-xero@0.6.8':
+    resolution: {integrity: sha512-JTD288lgChTlVbFdvZEK8BlQcygPzvK7VOO1fifCHSG00ExDCytfy/DLuy+eMS0Pft6ndT9hxaFHLAdnbGzszQ==}
+
   '@activepieces/piece-xml@0.1.15':
     resolution: {integrity: sha512-/d7sw9YfV2rzFv4oknM6eWcEfsB6hOlcP5U7ra4VdnSjTb8TI2gxhschEaGQB2vKi6YAxg7KFDYPInrWDFOJiQ==}
+
+  '@activepieces/piece-zoom@0.7.0':
+    resolution: {integrity: sha512-E7Wn4+xs9RH2lqlzF9bGzO4Y0mLcl43VwcD20QuNc1dhaIEEW0NOo/iIUecbGl+odLaOZbddsJCLLgvXtwqHiw==}
 
   '@activepieces/pieces-common@0.11.6':
     resolution: {integrity: sha512-bqSEjkdLNYgpVr4xR0vydiYogcNFuYhNUwJvytsMIdG6fXdSzi3tdVZr6Lbjv5hmmflATzUpAOxV+pJhtpxUZw==}
@@ -2910,6 +3086,9 @@ packages:
     resolution: {integrity: sha512-7pJzOWzPm6oJUxml+PCDRzYQ4A1hTMHAciTAHfFK4fkbDZX33nWPVG7Y3vqdKtslcwAzwmrNDc6sXy2nwWnbiw==}
     cpu: [x64]
     os: [win32]
+
+  '@microsoft/microsoft-graph-types@2.40.0':
+    resolution: {integrity: sha512-1fcPVrB/NkbNcGNfCy+Cgnvwxt6/sbIEEFgZHFBJ670zYLegENYJF8qMo7x3LqBjWX2/Eneq5BVVRCLTmlJN+g==}
 
   '@mixmark-io/domino@2.2.0':
     resolution: {integrity: sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw==}
@@ -6314,6 +6493,8 @@ snapshots:
 
   '@activepieces/piece-discord@0.5.4': {}
 
+  '@activepieces/piece-dropbox@0.7.4': {}
+
   '@activepieces/piece-file-helper@0.1.24(bufferutil@4.1.0)':
     dependencies:
       '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
@@ -6329,6 +6510,20 @@ snapshots:
       - utf-8-validate
 
   '@activepieces/piece-front@0.1.5': {}
+
+  '@activepieces/piece-github@0.8.5': {}
+
+  '@activepieces/piece-gmail@0.12.8':
+    dependencies:
+      dayjs: 1.11.9
+
+  '@activepieces/piece-google-calendar@0.9.5': {}
+
+  '@activepieces/piece-google-drive@0.7.10': {}
+
+  '@activepieces/piece-google-sheets@0.16.3':
+    dependencies:
+      lodash: 4.18.1
 
   '@activepieces/piece-graphql@0.0.13': {}
 
@@ -6349,7 +6544,13 @@ snapshots:
 
   '@activepieces/piece-math-helper@0.0.24': {}
 
+  '@activepieces/piece-microsoft-teams@0.6.0':
+    dependencies:
+      '@microsoft/microsoft-graph-types': 2.40.0
+
   '@activepieces/piece-monday@0.3.5': {}
+
+  '@activepieces/piece-notion@0.6.6': {}
 
   '@activepieces/piece-pagerduty@0.1.3': {}
 
@@ -6409,6 +6610,8 @@ snapshots:
 
   '@activepieces/piece-resend@0.4.3': {}
 
+  '@activepieces/piece-slack@0.17.3': {}
+
   '@activepieces/piece-stripe@0.6.10': {}
 
   '@activepieces/piece-telegram-bot@0.6.5': {}
@@ -6436,6 +6639,8 @@ snapshots:
 
   '@activepieces/piece-twilio@0.4.7': {}
 
+  '@activepieces/piece-xero@0.6.8': {}
+
   '@activepieces/piece-xml@0.1.15(bufferutil@4.1.0)':
     dependencies:
       '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
@@ -6449,6 +6654,8 @@ snapshots:
       - debug
       - supports-color
       - utf-8-validate
+
+  '@activepieces/piece-zoom@0.7.0': {}
 
   '@activepieces/pieces-common@0.11.6(bufferutil@4.1.0)':
     dependencies:
@@ -8462,6 +8669,8 @@ snapshots:
 
   '@libsql/win32-x64-msvc@0.4.7':
     optional: true
+
+  '@microsoft/microsoft-graph-types@2.40.0': {}
 
   '@mixmark-io/domino@2.2.0': {}
 

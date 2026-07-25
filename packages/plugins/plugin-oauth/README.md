@@ -33,7 +33,7 @@ The plugin adds the server-only `oauth-states` collection and writes credentials
 
 ## Providers
 
-The package exports `googleProvider`, `microsoftProvider`, `stripeProvider`, `zoomProvider`, and `xeroProvider`. Each factory accepts `clientId`, `clientSecret`, optional `scopes`, and an optional `fetch` implementation.
+The package exports `dropboxProvider`, `githubProvider`, `googleProvider`, `microsoftProvider`, `notionProvider`, `slackProvider`, `stripeProvider`, `zoomProvider`, and `xeroProvider`. Each factory accepts `clientId`, `clientSecret`, optional `scopes`, and an optional `fetch` implementation. Google and Microsoft also accept `service` so separate piece services can use the shared provider protocol.
 
 ## Custom providers
 

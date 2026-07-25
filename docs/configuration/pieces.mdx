@@ -54,3 +54,7 @@ The HTTP and GraphQL pieces can request arbitrary URLs without an allowlist. Onl
 ## File output
 
 Pieces that create files buffer the complete result in memory. Configure an upload collection with `pieceFiles: { collection: 'media' }` and set upload size limits appropriate for your deployment.
+
+## Gmail verification
+
+Gmail uses restricted Google OAuth scopes. Production apps may require Google verification and a security assessment before users outside the test project can connect. Treat Gmail as an optional integration and complete Google's current approval requirements before enabling it.

@@ -5,6 +5,7 @@ export type OAuthProviderOptions = {
   clientId: string;
   clientSecret: string;
   scopes?: string[];
+  service?: string;
   fetch?: typeof fetch;
 };
 
