@@ -108,22 +108,23 @@ The earlier "runtime as auto-applied plugin" idea is dropped: the runtime is col
 
 Rationale for pieces-in-core restated: agents are core, tools are core, and a piece's tools must be referenceable from `AgentConfig.tools` with zero additional installation.
 
-## Decision 6a — Repo Layout: `packages/plugins/`
+## Decision 6a — Repo Layout: `packages/pieces/` and `packages/plugins/`
 
-Piece wrapper packages do not go in `packages/`. At 40–50+ wrappers they would bury the 22 real packages (`frogbot`, `gateway`, `next`, db/storage/email/kv adapters).
+Piece wrapper packages do not go in `packages/`. At 40–50+ wrappers they would bury the 22 real packages (`frogbot`, `gateway`, `next`, db/storage/email/kv adapters). They also do not go in `packages/plugins/` — pieces and plugins are distinct concepts and each gets its own directory.
 
 ```
 packages/
   frogbot/  gateway/  next/  db-*/  storage-*/  email-*/  kv-*/
-  plugins/
-    plugin-api-keys/        (moved)
-    plugin-oauth/           (moved)
+  pieces/
     piece-text-helper/
     piece-linear/
     ...
+  plugins/
+    plugin-api-keys/        (moved)
+    plugin-oauth/           (moved)
 ```
 
-Requires adding `"packages/plugins/*"` to `pnpm-workspace.yaml`. Package names are unchanged (`@frogbotai/plugin-oauth`, `@frogbotai/piece-linear`) — this is a directory move only, so no consumer impact. Moving the two existing plugins in the same pass keeps the rule simple: anything installable alongside Frogbot lives in `packages/plugins/`.
+Requires adding `"packages/pieces/*"` and `"packages/plugins/*"` to `pnpm-workspace.yaml`. Package names are unchanged (`@frogbotai/plugin-oauth`, `@frogbotai/piece-linear`) — this is a directory move only, so no consumer impact. The rule: piece wrappers live in `packages/pieces/`, installable plugins live in `packages/plugins/`.
 
 ## Decision 7 — Tool Granularity: Per-Action Tools, Agent-Level Opt-In
 
@@ -166,10 +167,10 @@ Evidence: the 13 Batch 0 wrappers were loaded through the local agent-tool contr
 | Built-in `secret` source + endpoint | `packages/frogbot` | connections, crypto |
 | `frogbot.connections.resolve/list/revoke` | `packages/frogbot` | all above |
 | Piece contract + `pieces` config array | `packages/frogbot` | — |
-| Workspace glob + move existing plugins | `pnpm-workspace.yaml`, `packages/plugins/` | — |
+| Workspace globs + move existing plugins | `pnpm-workspace.yaml`, `packages/pieces/`, `packages/plugins/` | — |
 | Refactor `plugin-oauth` to source model | `packages/plugins/plugin-oauth` | registration hook |
 | `plugin-api-keys` | directory move only, no code change | — |
-| Batch 0 wrappers | `packages/plugins/piece-*` | piece contract only |
+| Batch 0 wrappers | `packages/pieces/piece-*` | piece contract only |
 
 Batch 0 depends only on the piece contract and tool exposure — none of the connections machinery — so it can start as soon as the contract lands, in parallel with the connections work. Batch 1 gates on connections + the `secret` source. Batch 2 gates on the `plugin-oauth` refactor.
 

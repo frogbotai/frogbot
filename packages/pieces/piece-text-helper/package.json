@@ -4,7 +4,7 @@
   "description": "Text processing tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
-  "repository": { "type": "git", "url": "git+https://github.com/frogbotai/frogbot.git", "directory": "packages/plugins/piece-text-helper" },
+  "repository": { "type": "git", "url": "git+https://github.com/frogbotai/frogbot.git", "directory": "packages/pieces/piece-text-helper" },
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

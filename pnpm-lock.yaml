@@ -465,7 +465,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/plugins/piece-crypto:
+  packages/pieces/piece-crypto:
     dependencies:
       '@activepieces/piece-crypto':
         specifier: 0.0.22
@@ -478,7 +478,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/plugins/piece-csv:
+  packages/pieces/piece-csv:
     dependencies:
       '@activepieces/piece-csv':
         specifier: 0.4.15
@@ -491,7 +491,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/plugins/piece-data-summarizer:
+  packages/pieces/piece-data-summarizer:
     dependencies:
       '@activepieces/piece-data-summarizer':
         specifier: 0.0.11
@@ -504,7 +504,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/plugins/piece-date-helper:
+  packages/pieces/piece-date-helper:
     dependencies:
       '@activepieces/piece-date-helper':
         specifier: 0.1.28
@@ -517,7 +517,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/plugins/piece-file-helper:
+  packages/pieces/piece-file-helper:
     dependencies:
       '@activepieces/piece-file-helper':
         specifier: 0.1.24
@@ -530,7 +530,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/plugins/piece-graphql:
+  packages/pieces/piece-graphql:
     dependencies:
       '@activepieces/piece-graphql':
         specifier: 0.0.13
@@ -543,7 +543,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/plugins/piece-http:
+  packages/pieces/piece-http:
     dependencies:
       '@activepieces/piece-http':
         specifier: 0.11.11
@@ -556,7 +556,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/plugins/piece-image-helper:
+  packages/pieces/piece-image-helper:
     dependencies:
       '@activepieces/piece-image-helper':
         specifier: 0.1.15
@@ -569,7 +569,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/plugins/piece-math-helper:
+  packages/pieces/piece-math-helper:
     dependencies:
       '@activepieces/piece-math-helper':
         specifier: 0.0.24
@@ -582,7 +582,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/plugins/piece-pdf:
+  packages/pieces/piece-pdf:
     dependencies:
       '@activepieces/piece-pdf':
         specifier: 0.5.5
@@ -595,7 +595,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/plugins/piece-qrcode:
+  packages/pieces/piece-qrcode:
     dependencies:
       '@activepieces/piece-qrcode':
         specifier: 0.0.13
@@ -608,7 +608,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/plugins/piece-text-helper:
+  packages/pieces/piece-text-helper:
     dependencies:
       '@activepieces/piece-text-helper':
         specifier: 0.4.15
@@ -621,7 +621,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/plugins/piece-xml:
+  packages/pieces/piece-xml:
     dependencies:
       '@activepieces/piece-xml':
         specifier: 0.1.15
