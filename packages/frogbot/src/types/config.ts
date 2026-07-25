@@ -16,6 +16,7 @@ import type { CollectionConfig } from './collection.js';
 import type { DatabaseAdapter } from './database.js';
 import type { Endpoint } from './endpoint.js';
 import type { Plugin } from './plugin.js';
+import type { Piece } from './piece.js';
 import type { FrogbotRequest } from './request.js';
 
 type PayloadAfterErrorHook = NonNullable<NonNullable<PayloadConfig['hooks']>['afterError']>[number];
@@ -49,6 +50,7 @@ export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   collections: CollectionConfig[];
   /** Agent configs registered at boot and exposed via frogbot.agents. */
   agents?: AgentConfig[];
+  pieces?: Piece[];
   /** Plugin pipeline — runs serially, in order, before sanitization. */
   plugins?: Plugin[];
   /** Root-level admin configuration. */

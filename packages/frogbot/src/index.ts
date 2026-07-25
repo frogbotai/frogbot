@@ -60,6 +60,13 @@ export type {
 export type { CatalogModelId } from './ai/generated.js';
 export type { Tool, ToolCtx } from './types/tool.js';
 export type {
+  CredentialType,
+  Piece,
+  PieceConfig,
+  PieceToolsOptions,
+  SanitizedPiecesConfig,
+} from './types/piece.js';
+export type {
   AgentConfig,
   AgentAccess,
   AgentGenerateOpts,

@@ -8,6 +8,7 @@ import type { Frogbot } from '../frogbot.js';
 import type { AgentConfig } from './agent.js';
 import type { SanitizedAIConfig } from './ai.js';
 import type { SanitizedChatConfig } from './chat.js';
+import type { SanitizedPiecesConfig } from './piece.js';
 
 export type SanitizedCollectionMeta = {
   slug: string;
@@ -22,6 +23,7 @@ export type FrogbotSanitizedConfig = {
   ai?: SanitizedAIConfig;
   agents?: AgentConfig[];
   chat: SanitizedChatConfig;
+  pieces: SanitizedPiecesConfig;
   typescript?: {
     autoGenerate?: boolean;
   };

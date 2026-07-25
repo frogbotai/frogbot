@@ -47,7 +47,8 @@
                   "configuration/collections",
                   "configuration/environment-vars",
                   "configuration/ai",
-                  "configuration/agents"
+                  "configuration/agents",
+                  "configuration/pieces"
                 ]
               },
               {

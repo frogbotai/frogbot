@@ -1,13 +1,13 @@
 {
-  "name": "@frogbotai/plugin-api-keys",
+  "name": "@frogbotai/plugin-oauth",
   "version": "0.4.0",
-  "description": "Multiple named API keys for FrogBot.",
+  "description": "OAuth connections for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/frogbotai/frogbot.git",
-    "directory": "packages/plugin-api-keys"
+    "directory": "packages/plugins/plugin-oauth"
   },
   "homepage": "https://github.com/frogbotai/frogbot#readme",
   "type": "module",
@@ -19,10 +19,10 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./client": {
-      "import": "./src/client.ts",
-      "types": "./src/client.ts",
-      "default": "./src/client.ts"
+    "./server": {
+      "import": "./src/server.ts",
+      "types": "./src/server.ts",
+      "default": "./src/server.ts"
     }
   },
   "files": [
@@ -35,17 +35,10 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@payloadcms/ui": "3.85.1",
-    "frogbot": "workspace:*",
-    "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
-    "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
+    "frogbot": "workspace:*"
   },
   "devDependencies": {
-    "@payloadcms/ui": "3.85.1",
-    "@types/react": "19.2.14",
     "frogbot": "workspace:*",
-    "react": "19.2.6",
-    "react-dom": "19.2.6",
     "typescript": "5.6.2"
   },
   "publishConfig": {
@@ -58,10 +51,10 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       },
-      "./client": {
-        "import": "./dist/client.js",
-        "types": "./dist/client.d.ts",
-        "default": "./dist/client.js"
+      "./server": {
+        "import": "./dist/server.js",
+        "types": "./dist/server.d.ts",
+        "default": "./dist/server.js"
       }
     }
   }

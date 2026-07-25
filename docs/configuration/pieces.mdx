@@ -1,0 +1,48 @@
+---
+title: "Pieces"
+sidebarTitle: "Pieces"
+description: "Add integration actions to FrogBot agents as tools."
+keywords: ["pieces", "tools", "agents", "Activepieces", "text helper"]
+---
+
+Pieces package related actions as FrogBot tools. Register each piece once in the root `pieces` array, then select its tools for individual agents.
+
+## Install a piece
+
+Install the wrapper package for the integration you need.
+
+```bash
+pnpm add @frogbotai/piece-text-helper
+```
+
+## Register and select tools
+
+```ts
+import { textHelper } from '@frogbotai/piece-text-helper'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  // secret, db, collections, and ai omitted
+  pieces: [textHelper],
+  agents: [
+    {
+      slug: 'assistant',
+      model: 'openai/gpt-4o-mini',
+      instructions: 'Use text tools when transforming user input.',
+      tools: textHelper.tools()
+    }
+  ]
+})
+```
+
+`tools()` returns the piece's curated default action set. Select a smaller set by action name when an agent has a narrower job.
+
+```ts
+tools: textHelper.tools({ actions: ['concat', 'split'] })
+```
+
+Tool slugs are namespaced by service and action, such as `text_helper_concat`, so tools from different pieces do not collide.
+
+## Keep tool sets focused
+
+Configure only the tools an agent needs. About 20 to 40 tools per agent is a practical ceiling for reliable selection by the model. Prefer explicit action subsets when combining several pieces.

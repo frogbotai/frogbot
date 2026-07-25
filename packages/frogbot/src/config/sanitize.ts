@@ -27,6 +27,7 @@ import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from '../types/s
 import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../types/ai.js';
 import type { AgentConfig } from '../types/agent.js';
 import type { FrogbotRequest } from '../types/request.js';
+import type { Piece, SanitizedPiecesConfig } from '../types/piece.js';
 import type { Frogbot } from '../frogbot.js';
 import { initFrogbotFromPayload } from '../frogbot.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
@@ -334,6 +335,40 @@ function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined
   });
 }
 
+function sanitizePieces(pieces: Piece[] | undefined): SanitizedPiecesConfig {
+  if (pieces === undefined) return { enabled: false, pieces: [] };
+  if (!Array.isArray(pieces)) throw new Error('[frogbot] `pieces` must be an array.');
+  if (pieces.length === 0) return { enabled: false, pieces: [] };
+
+  const services = new Set<string>();
+  for (const piece of pieces) {
+    if (!isRecord(piece) || typeof piece.service !== 'string' || !piece.service.trim()) {
+      throw new Error('[frogbot] Every piece must have a `service`.');
+    }
+    if (services.has(piece.service)) {
+      throw new Error(`[frogbot] Duplicate piece service: '${piece.service}'.`);
+    }
+    services.add(piece.service);
+
+    if (!Array.isArray(piece.actions) || piece.actions.some((action) => typeof action !== 'string' || !action.trim())) {
+      throw new Error(`[frogbot] Piece '${piece.service}' actions must be non-empty strings.`);
+    }
+    const actions = new Set(piece.actions);
+    if (actions.size !== piece.actions.length) {
+      throw new Error(`[frogbot] Piece '${piece.service}' declares duplicate actions.`);
+    }
+    for (const tool of piece.tools()) {
+      const prefix = `${piece.service}_`;
+      const action = tool.slug.startsWith(prefix) ? tool.slug.slice(prefix.length) : '';
+      if (!actions.has(action)) {
+        throw new Error(`[frogbot] Piece '${piece.service}' exposes unknown action '${action || tool.slug}'.`);
+      }
+    }
+  }
+
+  return { enabled: true, pieces };
+}
+
 function validateAgentPathReservations(config: Pick<FrogbotConfig, 'collections' | 'endpoints'>): void {
   if (config.collections.some((collection) => collection.slug === 'agents')) {
     throw new Error("[frogbot] Collection slug 'agents' is reserved for the agent API.");
@@ -446,6 +481,7 @@ function buildPayloadConfig(config: FrogbotConfig, onInit: NonNullable<PayloadCo
   delete out.port;
   delete out.ai;
   delete out.agents;
+  delete out.pieces;
   out.onInit = onInit;
 
   return out as unknown as PayloadConfig;
@@ -460,6 +496,7 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
   // Sanitize AI config if present.
   const sanitizedAI = config.ai ? sanitizeAI(config.ai) : undefined;
   const agents = config.agents !== undefined ? sanitizeAgents(config.agents, sanitizedAI) : undefined;
+  const pieces = sanitizePieces(config.pieces);
 
   // Resolve chat persistence — adopt marked collections or inject defaults.
   const { collections, chat } = resolveChatCollections({ ...config, agents });
@@ -489,6 +526,7 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
     ai: sanitizedAI,
     agents,
     chat,
+    pieces,
     typescript: {
       autoGenerate: (config as { typescript?: { autoGenerate?: boolean } }).typescript?.autoGenerate !== false,
     },
