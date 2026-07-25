@@ -137,8 +137,8 @@ This monorepo publishes the following packages:
 
 | Package | Description |
 | --- | --- |
-| [`@frogbotai/plugin-api-keys`](./packages/plugin-api-keys) | Multiple named, independently revocable API keys |
-| [`@frogbotai/plugin-oauth`](./packages/plugin-oauth) | Owner-scoped OAuth connections with encrypted credentials, refresh, and revocation |
+| [`@frogbotai/plugin-api-keys`](./packages/plugins/plugin-api-keys) | Multiple named, independently revocable API keys |
+| [`@frogbotai/plugin-oauth`](./packages/plugins/plugin-oauth) | Owner-scoped OAuth connections with encrypted credentials, refresh, and revocation |
 
 **Database adapters**
 
