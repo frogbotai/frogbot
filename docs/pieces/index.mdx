@@ -1,0 +1,70 @@
+---
+title: "Available pieces"
+sidebarTitle: "Available pieces"
+description: "Install and connect the integration pieces available for FrogBot agents."
+keywords: ["pieces", "integrations", "API keys", "Basic Auth", "connections"]
+---
+
+FrogBot provides 26 piece packages. Install a wrapper, register it in `pieces`, and select its tools on an agent as described in [Pieces](/configuration/pieces).
+
+## Connect an API-key piece
+
+Install the package and submit the provider credential to the built-in secret connection endpoint.
+
+```bash
+pnpm add @frogbotai/piece-linear
+
+curl --request POST http://localhost:3000/api/connections/secret \
+  --header "Authorization: Bearer $TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "service": "linear",
+    "credentials": { "value": "lin_api_..." },
+    "accountLabel": "Production"
+  }'
+```
+
+Use the service value and provider credential shown below.
+
+| Piece | Package | Service | Credential |
+| --- | --- | --- | --- |
+| Resend | `@frogbotai/piece-resend` | `resend` | API key |
+| Linear | `@frogbotai/piece-linear` | `linear` | Personal API key |
+| PostHog | `@frogbotai/piece-posthog` | `posthog` | Personal API key |
+| monday.com | `@frogbotai/piece-monday` | `monday` | Personal API token |
+| Telegram Bot | `@frogbotai/piece-telegram-bot` | `telegram_bot` | Bot token from BotFather |
+| PagerDuty | `@frogbotai/piece-pagerduty` | `pagerduty` | API token |
+| Airtable | `@frogbotai/piece-airtable` | `airtable` | Personal access token |
+| Discord | `@frogbotai/piece-discord` | `discord` | Bot token |
+| Attio | `@frogbotai/piece-attio` | `attio` | Access token |
+| Stripe | `@frogbotai/piece-stripe` | `stripe` | Secret API key |
+| Front | `@frogbotai/piece-front` | `front` | API token |
+
+## Connect a Basic Auth piece
+
+Basic Auth connections use `username` and `password` instead of `value`.
+
+```bash
+curl --request POST http://localhost:3000/api/connections/secret \
+  --header "Authorization: Bearer $TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "service": "twilio",
+    "credentials": {
+      "username": "AC...",
+      "password": "your-auth-token"
+    },
+    "accountLabel": "Production"
+  }'
+```
+
+| Piece | Package | Service | Username | Password |
+| --- | --- | --- | --- | --- |
+| Twilio | `@frogbotai/piece-twilio` | `twilio` | Account SID | Auth token |
+| Trello | `@frogbotai/piece-trello` | `trello` | API key | Token, not the API secret |
+
+## Pieces without connections
+
+The no-auth packages are `piece-text-helper`, `piece-math-helper`, `piece-date-helper`, `piece-crypto`, `piece-csv`, `piece-xml`, `piece-qrcode`, `piece-data-summarizer`, `piece-http`, `piece-graphql`, `piece-file-helper`, `piece-image-helper`, and `piece-pdf`, all under the `@frogbotai` scope.
+
+Triggers are not exposed as tools. The first release also has no real `custom`-auth piece, so the custom credential path remains without a provider-backed consumer until the deferred CustomAuth batch.

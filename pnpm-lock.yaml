@@ -465,6 +465,32 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/pieces/piece-airtable:
+    dependencies:
+      '@activepieces/piece-airtable':
+        specifier: 0.6.10
+        version: 0.6.10
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-attio:
+    dependencies:
+      '@activepieces/piece-attio':
+        specifier: 0.1.20
+        version: 0.1.20
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/pieces/piece-crypto:
     dependencies:
       '@activepieces/piece-crypto':
@@ -517,11 +543,37 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/pieces/piece-discord:
+    dependencies:
+      '@activepieces/piece-discord':
+        specifier: 0.5.4
+        version: 0.5.4
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/pieces/piece-file-helper:
     dependencies:
       '@activepieces/piece-file-helper':
         specifier: 0.1.24
         version: 0.1.24(bufferutil@4.1.0)
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-front:
+    dependencies:
+      '@activepieces/piece-front':
+        specifier: 0.1.5
+        version: 0.1.5
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -569,11 +621,50 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/pieces/piece-linear:
+    dependencies:
+      '@activepieces/piece-linear':
+        specifier: 0.4.4
+        version: 0.4.4
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/pieces/piece-math-helper:
     dependencies:
       '@activepieces/piece-math-helper':
         specifier: 0.0.24
         version: 0.0.24
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-monday:
+    dependencies:
+      '@activepieces/piece-monday':
+        specifier: 0.3.5
+        version: 0.3.5
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-pagerduty:
+    dependencies:
+      '@activepieces/piece-pagerduty':
+        specifier: 0.1.3
+        version: 0.1.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -595,6 +686,19 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/pieces/piece-posthog:
+    dependencies:
+      '@activepieces/piece-posthog':
+        specifier: 0.4.4
+        version: 0.4.4(bufferutil@4.1.0)
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/pieces/piece-qrcode:
     dependencies:
       '@activepieces/piece-qrcode':
@@ -608,11 +712,76 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/pieces/piece-resend:
+    dependencies:
+      '@activepieces/piece-resend':
+        specifier: 0.4.3
+        version: 0.4.3
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-stripe:
+    dependencies:
+      '@activepieces/piece-stripe':
+        specifier: 0.6.10
+        version: 0.6.10
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-telegram-bot:
+    dependencies:
+      '@activepieces/piece-telegram-bot':
+        specifier: 0.6.5
+        version: 0.6.5
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/pieces/piece-text-helper:
     dependencies:
       '@activepieces/piece-text-helper':
         specifier: 0.4.15
         version: 0.4.15(bufferutil@4.1.0)
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-trello:
+    dependencies:
+      '@activepieces/piece-trello':
+        specifier: 0.4.10
+        version: 0.4.10
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-twilio:
+    dependencies:
+      '@activepieces/piece-twilio':
+        specifier: 0.4.7
+        version: 0.4.7
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -844,6 +1013,12 @@ importers:
 
 packages:
 
+  '@activepieces/piece-airtable@0.6.10':
+    resolution: {integrity: sha512-n7MRUrteLvgQ53D4DQd5y9gHK6OYQ021CPWzynl14XOeSPHG92nKOYMShlTySguyGqDEMYS60wqzxu6CnXVESg==}
+
+  '@activepieces/piece-attio@0.1.20':
+    resolution: {integrity: sha512-KSNAdfgWnRtqVNZ1fn9e9asg2lNZLG9PdCL2NGB0sWRU9E3U96WSj+7s56pAbhk1hS/WXPphH1qs5aCIoYK4zA==}
+
   '@activepieces/piece-crypto@0.0.22':
     resolution: {integrity: sha512-4qYZCA6xoadXTZPbZMA6uNC61ecaqOx8rDbih8Gw5ZgHz1VjIdQ84JCn+unKUGOB8KWut6PBz3Z7aUZWTKMRZQ==}
 
@@ -856,8 +1031,14 @@ packages:
   '@activepieces/piece-date-helper@0.1.28':
     resolution: {integrity: sha512-aC2MAEsyW5/MgVO7frwy2ZoWoVgVgSTJuntGCBlL0nQeczeKx92MHbg7X+sh+QjGdSHKJiRMvq2+rkb6TwaoXg==}
 
+  '@activepieces/piece-discord@0.5.4':
+    resolution: {integrity: sha512-xKQbj+k+G5JR82ELdBz5EkFztrFd/00i44axJ3AjstWjcFTGAcD/yJzspFvTJoR7GdRIOzUYOceE1AGCCqnmqg==}
+
   '@activepieces/piece-file-helper@0.1.24':
     resolution: {integrity: sha512-I6x/7xQ6jluwrmXnWB+NvF5QNIcSYOyheHyX2uDLzYu9V+QbZj/LIC8XgLdcAqhjNjYv+WLwQftAiIbobWi95A==}
+
+  '@activepieces/piece-front@0.1.5':
+    resolution: {integrity: sha512-SP3sRFXuqMETOX3qGx9PgNHPAicSfDj+HaoCfbpkVO3mhYdBHOGpGo3OzT8q0CXnZlXBnBWl4h5PZmk4haafxQ==}
 
   '@activepieces/piece-graphql@0.0.13':
     resolution: {integrity: sha512-DEOAXrSoh/gqRw+cc+q2xJTVYiqSpPyPYeFT/wTAKR2BAC+oQiz3z/Z8d5AEH1ElXCy5oawl8KFAABFWc1KhYg==}
@@ -868,20 +1049,50 @@ packages:
   '@activepieces/piece-image-helper@0.1.15':
     resolution: {integrity: sha512-cwcCyVfetyWNVqS7BttkPV2hrzKdX7EkvVXbe4VZjZgRuU5VRL0tdpgLnBQU82ckGxMgY7hEu0vVffUQYg2h5g==}
 
+  '@activepieces/piece-linear@0.4.4':
+    resolution: {integrity: sha512-P2LH6xT9zzKlgMPBJ3hWBnmJETzAlhPPTAwV6eVg4D2c5AOUe301kmEHbPSaNV0hbbuFgwmoxqoRs4SlX0g7UQ==}
+
   '@activepieces/piece-math-helper@0.0.24':
     resolution: {integrity: sha512-JvvtYQA8OlMeWIWOLAwPNvBmfT14VWZYpZ0NGA01SFuUIAG32r3w2oGPME5O6ZLDoVB2L/5KQ9aUbRCPdGdCfQ==}
+
+  '@activepieces/piece-monday@0.3.5':
+    resolution: {integrity: sha512-iTOcuvsufM4P0ak8rZFQPtrSmobQUV29fklI/I+6z8smy+h1y4cLvGdS6AuNWby7qaFIQgDU6k6dOn5padrWOQ==}
+
+  '@activepieces/piece-pagerduty@0.1.3':
+    resolution: {integrity: sha512-jNdeuH+9i284vzkohFawdaJSSicjtjbew5X1H6p4Yx+1qci2TxAO8KyMLyQ37LVqPw1rBbKS2tmZDjMieSRkJg==}
 
   '@activepieces/piece-pdf@0.5.5':
     resolution: {integrity: sha512-Gc7Km01jmjcgxVJqHTUeKhCpWmnvFEt1or/x7Vhfqcz9nmbmXObIV7OP/c41/LOwcx79u3AI4WBaZHH0zLuI4A==}
 
+  '@activepieces/piece-posthog@0.4.4':
+    resolution: {integrity: sha512-6la8XXsjEU2Z0eSIW6s4sTf9onKebrdi1VYg1+ked1GTLfCcI1XB/CG51zZCANzdhgAiGQ4sSA2TjNGWysSu6A==}
+
   '@activepieces/piece-qrcode@0.0.13':
     resolution: {integrity: sha512-zu85zmTFZ3+kfKiwAB4SdO78i4ZwqGNO20L5ZyETQZsrHm7KkduXUWy7UwtN60Ovhmo+hpuS6U8RqSXng+C9YQ==}
+
+  '@activepieces/piece-resend@0.4.3':
+    resolution: {integrity: sha512-EZFC2qUlHcf59E2p17qoi+QgPaLWFs2taZB/FW9/VIx9rBePgEuFScaN46w+1+7xZc5JU5sUdpq4yPKosaMLZg==}
+
+  '@activepieces/piece-stripe@0.6.10':
+    resolution: {integrity: sha512-vpxwAYsAdksBfAScoxaTnC1ewDgAFCCeZXXX/WkmrRMcys940t8u8dtKIfadX/kff2FULU/VI7mfoMykHG47AQ==}
+
+  '@activepieces/piece-telegram-bot@0.6.5':
+    resolution: {integrity: sha512-7Q42X2IAlVHNRTkQ3pneCQAKoB8W39Os5fka0oPUiq/7gEiRXayHRAiFKdecj3kFVy45YTittjfGkvgs9lWX6Q==}
 
   '@activepieces/piece-text-helper@0.4.15':
     resolution: {integrity: sha512-YLpQyGo7Vgc4GVAxKA34gLOaDSfWYtyfci9nb7bd7qLbUJ9p1MwgYUohRUG3JFuTay11BWBEfivy6984OC6+6w==}
 
+  '@activepieces/piece-trello@0.4.10':
+    resolution: {integrity: sha512-qIsrUvQ5MGMRY7snmNRf32a53WrRo2NmhXjnzx07q4/YBsseZtCoSVWOizYtd2yxR3/12YC1KvCRhWYwOmkZaQ==}
+
+  '@activepieces/piece-twilio@0.4.7':
+    resolution: {integrity: sha512-KsZtb3so++3IEE/uR7Sj/52wqwgf8rL4i7tzRKmu8Ot7t/5Ozs6NyeNst8snBXk0+BNhOZ0EFq5uOYD/3f8DEw==}
+
   '@activepieces/piece-xml@0.1.15':
     resolution: {integrity: sha512-/d7sw9YfV2rzFv4oknM6eWcEfsB6hOlcP5U7ra4VdnSjTb8TI2gxhschEaGQB2vKi6YAxg7KFDYPInrWDFOJiQ==}
+
+  '@activepieces/pieces-common@0.11.6':
+    resolution: {integrity: sha512-bqSEjkdLNYgpVr4xR0vydiYogcNFuYhNUwJvytsMIdG6fXdSzi3tdVZr6Lbjv5hmmflATzUpAOxV+pJhtpxUZw==}
 
   '@activepieces/pieces-common@0.12.0':
     resolution: {integrity: sha512-5X0A+o0DJGkSeLSFpmCBP9Pbt0+CMUljW8jV6D3Nou3ClDZRcTvMkXcTtB9sRktBu0lsUZybrjbGusBmDG+0fw==}
@@ -889,11 +1100,17 @@ packages:
   '@activepieces/pieces-common@0.12.4':
     resolution: {integrity: sha512-ZLtqODGsifDPHOE64tHA855AY7CcnfTuSTp31izRzWGxQi73x19r06JTvwv5JQ08uZtpTv2J82sQFWEEOfQkkg==}
 
+  '@activepieces/pieces-framework@0.25.4':
+    resolution: {integrity: sha512-sF0VgeJPOeIGvWovvnGSMt/Y9jumKcSfd5ZS/xXHlMGxZleZb1KjC4P2FkNjvolCljuYox3QhXsBLkfNKhWWYg==}
+
   '@activepieces/pieces-framework@0.26.0':
     resolution: {integrity: sha512-Ot5cZuKel+I+ZfO8/QjRCCvUiICQHjr0QiyTW7TtsiSMDvjhydEPq75btTvE/WQ+BartUvLmZhtsWRmjPboUIg==}
 
   '@activepieces/pieces-framework@0.30.0':
     resolution: {integrity: sha512-XebtyIqamIv53xebc9wxl25mbjOH3eo1rZR88yolWLBeg1ix5COKAU304lAPwkMnYdR7WA6qITr57V8HyR8p/w==}
+
+  '@activepieces/shared@0.37.0':
+    resolution: {integrity: sha512-hI3cw2iQFjpQt6lAZSB6UWcoBo/Qc2BHePjdGxAyF1ZQBhpK+jcVtdr3Wt+BWB5703JhliLDEV5lPq4azprrzg==}
 
   '@activepieces/shared@0.42.0':
     resolution: {integrity: sha512-z/A/Bp9/MfE7v1Le0fvNhNc9perW/EVyv15WlNbKa1gQOJsh9m5bM2WLk6uX6q40AX2Q7E4EU+Yz3W1/JCIqRg==}
@@ -3169,6 +3386,9 @@ packages:
     resolution: {integrity: sha512-BfzEnDJOt9T8M989/lA37EcJgat01wLRnoi5dQf3QzOH7jzpqTAzdDbVfRljVr5r+jzKqpbHeyOfAaXxAd0PAA==}
     cpu: [x64]
     os: [win32]
+
+  '@sinclair/typebox@0.34.11':
+    resolution: {integrity: sha512-zE9pWGVSG82z+sFO+oUmqmqRVm8Wg5sVhmljYi1fDhLOSphBBy939QmC/qXcKFWqTiRJ6keyG4y75bIoTPRBAw==}
 
   '@smithy/core@3.29.5':
     resolution: {integrity: sha512-i0dk2t5B+CwV/dcJdUHILYkOQF5lof8f44dFCfDWToGCxjT9YQ+CgHqTAvJxzc3+zqQwm2QtVoJ5IqiNar/CnQ==}
@@ -6031,6 +6251,10 @@ packages:
 
 snapshots:
 
+  '@activepieces/piece-airtable@0.6.10': {}
+
+  '@activepieces/piece-attio@0.1.20': {}
+
   '@activepieces/piece-crypto@0.0.22(bufferutil@4.1.0)':
     dependencies:
       '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
@@ -6088,6 +6312,8 @@ snapshots:
       - supports-color
       - utf-8-validate
 
+  '@activepieces/piece-discord@0.5.4': {}
+
   '@activepieces/piece-file-helper@0.1.24(bufferutil@4.1.0)':
     dependencies:
       '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
@@ -6101,6 +6327,8 @@ snapshots:
       - debug
       - supports-color
       - utf-8-validate
+
+  '@activepieces/piece-front@0.1.5': {}
 
   '@activepieces/piece-graphql@0.0.13': {}
 
@@ -6117,7 +6345,13 @@ snapshots:
       - debug
       - encoding
 
+  '@activepieces/piece-linear@0.4.4': {}
+
   '@activepieces/piece-math-helper@0.0.24': {}
+
+  '@activepieces/piece-monday@0.3.5': {}
+
+  '@activepieces/piece-pagerduty@0.1.3': {}
 
   '@activepieces/piece-pdf@0.5.5(bufferutil@4.1.0)':
     dependencies:
@@ -6137,6 +6371,29 @@ snapshots:
       - supports-color
       - utf-8-validate
 
+  '@activepieces/piece-posthog@0.4.4(bufferutil@4.1.0)':
+    dependencies:
+      '@activepieces/pieces-common': 0.11.6(bufferutil@4.1.0)
+      '@activepieces/pieces-framework': 0.25.4(bufferutil@4.1.0)(zod@4.4.3)
+      '@activepieces/shared': 0.37.0(bufferutil@4.1.0)
+      '@sinclair/typebox': 0.34.11
+      ai: 6.0.235(zod@4.4.3)
+      axios: 1.13.5
+      axios-retry: 4.4.1(axios@1.13.5)
+      deepmerge-ts: 7.1.0
+      form-data: 4.0.4
+      mime-types: 2.1.35
+      nanoid: 3.3.8
+      semver: 7.6.0
+      socket.io-client: 4.8.1(bufferutil@4.1.0)
+      tslib: 2.6.2
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - supports-color
+      - utf-8-validate
+
   '@activepieces/piece-qrcode@0.0.13(bufferutil@4.1.0)':
     dependencies:
       '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
@@ -6149,6 +6406,12 @@ snapshots:
       - debug
       - supports-color
       - utf-8-validate
+
+  '@activepieces/piece-resend@0.4.3': {}
+
+  '@activepieces/piece-stripe@0.6.10': {}
+
+  '@activepieces/piece-telegram-bot@0.6.5': {}
 
   '@activepieces/piece-text-helper@0.4.15(bufferutil@4.1.0)':
     dependencies:
@@ -6169,6 +6432,10 @@ snapshots:
       - supports-color
       - utf-8-validate
 
+  '@activepieces/piece-trello@0.4.10': {}
+
+  '@activepieces/piece-twilio@0.4.7': {}
+
   '@activepieces/piece-xml@0.1.15(bufferutil@4.1.0)':
     dependencies:
       '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
@@ -6177,6 +6444,28 @@ snapshots:
       fast-xml-parser: 5.7.0
       json2xml: 0.1.3
       tslib: 2.6.2
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - supports-color
+      - utf-8-validate
+
+  '@activepieces/pieces-common@0.11.6(bufferutil@4.1.0)':
+    dependencies:
+      '@activepieces/pieces-framework': 0.25.4(bufferutil@4.1.0)(zod@4.4.3)
+      '@activepieces/shared': 0.37.0(bufferutil@4.1.0)
+      '@sinclair/typebox': 0.34.11
+      ai: 6.0.235(zod@4.4.3)
+      axios: 1.13.5
+      axios-retry: 4.4.1(axios@1.13.5)
+      deepmerge-ts: 7.1.0
+      form-data: 4.0.4
+      mime-types: 2.1.35
+      nanoid: 3.3.8
+      semver: 7.6.0
+      socket.io-client: 4.8.1(bufferutil@4.1.0)
+      tslib: 2.6.2
+      zod: 4.4.3
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -6217,6 +6506,22 @@ snapshots:
       - supports-color
       - utf-8-validate
 
+  '@activepieces/pieces-framework@0.25.4(bufferutil@4.1.0)(zod@4.4.3)':
+    dependencies:
+      '@activepieces/shared': 0.37.0(bufferutil@4.1.0)
+      '@sinclair/typebox': 0.34.11
+      ai: 6.0.235(zod@4.4.3)
+      deepmerge-ts: 7.1.0
+      nanoid: 3.3.8
+      semver: 7.6.0
+      socket.io-client: 4.8.1(bufferutil@4.1.0)
+      tslib: 2.6.2
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+      - zod
+
   '@activepieces/pieces-framework@0.26.0(bufferutil@4.1.0)':
     dependencies:
       '@activepieces/shared': 0.42.0(bufferutil@4.1.0)
@@ -6236,6 +6541,19 @@ snapshots:
       semver: 7.6.0
       tslib: 2.6.2
       zod: 4.4.3
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  '@activepieces/shared@0.37.0(bufferutil@4.1.0)':
+    dependencies:
+      '@sinclair/typebox': 0.34.11
+      deepmerge-ts: 7.1.0
+      nanoid: 3.3.8
+      semver: 7.6.0
+      socket.io-client: 4.8.1(bufferutil@4.1.0)
+      tslib: 2.6.2
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -8932,6 +9250,8 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.62.2':
     optional: true
+
+  '@sinclair/typebox@0.34.11': {}
 
   '@smithy/core@3.29.5':
     dependencies:
