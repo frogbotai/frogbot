@@ -33,6 +33,9 @@ import { initFrogbotFromPayload } from '../frogbot.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
 import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
+import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
+import { resolveCredentialSources } from '../connections/sources.js';
+import { buildSecretEndpoints, builtInSecretSource } from '../connections/secret.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
 import { getFrogbotInstance } from '../instanceRegistry.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
@@ -388,7 +391,7 @@ function validateAgentPathReservations(config: Pick<FrogbotConfig, 'collections'
 
 // ─── Payload Config Building ─────────────────────────────────────────────────
 
-function buildPayloadConfig(config: FrogbotConfig, onInit: NonNullable<PayloadConfig['onInit']>): PayloadConfig {
+function buildPayloadConfig(config: FrogbotConfig, onInit: NonNullable<PayloadConfig['onInit']>, internalEndpoints: Endpoint[] = []): PayloadConfig {
   const out: Record<string, unknown> = {
     ...(config as unknown as Record<string, unknown>),
     collections: config.collections.map(sanitizeCollection),
@@ -397,7 +400,7 @@ function buildPayloadConfig(config: FrogbotConfig, onInit: NonNullable<PayloadCo
 
   const userEndpoints = config.endpoints as Endpoint[] | false | undefined;
   const agentEndpoints = config.agents?.length ? buildAgentEndpoints() : [];
-  const allEndpoints = [...(Array.isArray(userEndpoints) ? userEndpoints : []), ...agentEndpoints];
+  const allEndpoints = [...(Array.isArray(userEndpoints) ? userEndpoints : []), ...agentEndpoints, ...internalEndpoints];
 
   if (allEndpoints.length > 0) {
     out.endpoints = wrapEndpoints(allEndpoints);
@@ -482,6 +485,8 @@ function buildPayloadConfig(config: FrogbotConfig, onInit: NonNullable<PayloadCo
   delete out.ai;
   delete out.agents;
   delete out.pieces;
+  delete out.connections;
+  delete out.credentialSources;
   delete out.pieceFiles;
   out.onInit = onInit;
 
@@ -498,9 +503,21 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
   const sanitizedAI = config.ai ? sanitizeAI(config.ai) : undefined;
   const agents = config.agents !== undefined ? sanitizeAgents(config.agents, sanitizedAI) : undefined;
   const pieces = sanitizePieces(config.pieces);
+  const secretSource = builtInSecretSource(pieces.pieces);
+  const credentialSources = [
+    ...(secretSource.services.length ? [secretSource] : []),
+    ...(config.credentialSources ?? []),
+  ];
 
   // Resolve chat persistence — adopt marked collections or inject defaults.
-  const { collections, chat } = resolveChatCollections({ ...config, agents });
+  const chatResult = resolveChatCollections({ ...config, agents });
+  const { collections, connections } = resolveConnectionsCollections({ ...config, agents, credentialSources, collections: chatResult.collections }, pieces);
+  connections.assignments = resolveCredentialSources({
+    sources: connections.sources,
+    assignments: connections.assignments,
+    pieces: pieces.pieces,
+  });
+  const chat = chatResult.chat;
 
   // Build collection metadata for FrogBot's sanitized config.
   const collectionsMeta: SanitizedCollectionMeta[] = collections.map((c) => ({
@@ -516,7 +533,7 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
     if (!sanitizedConfig) throw new Error('[frogbot] Payload initialized before config sanitization completed.');
     const frogbot = registered ?? (await initFrogbotFromPayload(payload, sanitizedConfig));
     seedFrogbotCache(frogbot);
-  });
+  }, buildSecretEndpoints({ connections, pieces: pieces.pieces }));
   const payloadSanitizedPromise = payloadBuildConfig(payloadConfig).then(rewriteComponentPaths);
 
   const sanitizedConfig: FrogbotSanitizedConfig = {
@@ -527,6 +544,7 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
     ai: sanitizedAI,
     agents,
     chat,
+    connections,
     pieces,
     pieceFiles: config.pieceFiles,
     typescript: {

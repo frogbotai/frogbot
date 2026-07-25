@@ -8,6 +8,7 @@ import type { Frogbot } from '../frogbot.js';
 import type { AgentConfig } from './agent.js';
 import type { SanitizedAIConfig } from './ai.js';
 import type { SanitizedChatConfig } from './chat.js';
+import type { SanitizedConnectionsConfig } from './connections.js';
 import type { SanitizedPiecesConfig } from './piece.js';
 
 export type SanitizedCollectionMeta = {
@@ -23,6 +24,7 @@ export type FrogbotSanitizedConfig = {
   ai?: SanitizedAIConfig;
   agents?: AgentConfig[];
   chat: SanitizedChatConfig;
+  connections: SanitizedConnectionsConfig;
   pieces: SanitizedPiecesConfig;
   pieceFiles?: { collection: string };
   typescript?: {

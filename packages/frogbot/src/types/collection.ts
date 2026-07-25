@@ -41,10 +41,12 @@ export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {
   /** Marks this collection as the chat message collection. FrogBot merges
    *  its base message fields in; the slug stays yours. At most one. */
   message?: boolean;
+
+  connections?: boolean;
 };
 
 /** Chat role markers. Sanitization strips these before Payload. */
-export const CHAT_ROLE_MARKERS = ['thread', 'message'] as const;
+export const CHAT_ROLE_MARKERS = ['thread', 'message', 'connections'] as const;
 export type ChatRoleMarker = (typeof CHAT_ROLE_MARKERS)[number];
 
 /**

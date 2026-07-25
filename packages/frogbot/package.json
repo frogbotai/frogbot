@@ -33,6 +33,11 @@
       "types": "./src/exports/pieces-test.ts",
       "import": "./src/exports/pieces-test.ts",
       "default": "./src/exports/pieces-test.ts"
+    },
+    "./connections": {
+      "types": "./src/exports/connections.ts",
+      "import": "./src/exports/connections.ts",
+      "default": "./src/exports/connections.ts"
     }
   },
   "bin": {
@@ -85,7 +90,8 @@
       ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "default": "./dist/index.js" },
       "./test": { "types": "./dist/exports/test.d.ts", "import": "./dist/exports/test.js", "default": "./dist/exports/test.js" },
       "./pieces": { "types": "./dist/exports/pieces.d.ts", "import": "./dist/exports/pieces.js", "default": "./dist/exports/pieces.js" },
-      "./pieces/test": { "types": "./dist/exports/pieces-test.d.ts", "import": "./dist/exports/pieces-test.js", "default": "./dist/exports/pieces-test.js" }
+      "./pieces/test": { "types": "./dist/exports/pieces-test.d.ts", "import": "./dist/exports/pieces-test.js", "default": "./dist/exports/pieces-test.js" },
+      "./connections": { "types": "./dist/exports/connections.d.ts", "import": "./dist/exports/connections.js", "default": "./dist/exports/connections.js" }
     }
   }
 }

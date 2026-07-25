@@ -11,6 +11,7 @@ export type Piece = {
   credentialType: CredentialType;
   actions: readonly string[];
   tools: (options?: PieceToolsOptions) => AnyTool[];
+  credentialFields?: Readonly<Record<string, { secret?: boolean }>>;
 };
 
 export type PieceConfig = Piece;

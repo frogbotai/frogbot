@@ -20,6 +20,11 @@ export { getPayloadConfig } from './config/getPayloadConfig.js';
 export { createGatewayHandler } from './server/gateway.js';
 export type { GatewayHandler } from './server/gateway.js';
 export type { FrogbotSanitizedConfig } from './types/sanitized.js';
+export { CredentialCryptoError, createCredentialEncryption } from './connections/encryption.js';
+export type { CredentialEncryption } from './connections/encryption.js';
+export type { ConnectionsConfig, CredentialSource, SanitizedConnectionsConfig } from './types/connections.js';
+export { ConnectionError, Connections } from './connections/api.js';
+export type { AppConnectionValue, ConnectionInfo } from './connections/api.js';
 
 // ---------------------------------------------------------------------------
 // Owned types

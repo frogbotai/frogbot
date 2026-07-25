@@ -1,0 +1,84 @@
+---
+title: "Connections"
+sidebarTitle: "Connections"
+description: "Store and resolve outbound credentials for FrogBot pieces."
+keywords: ["connections", "credentials", "secrets", "encryption", "pieces"]
+---
+
+Connections store credentials that pieces use to call external services. FrogBot injects the `connections` collection when a registered piece requires credentials or a credential source is configured.
+
+## Connect with a secret
+
+The built-in secret source supports `secret_text`, `basic_auth`, and `custom` credentials. Requests must be authenticated. FrogBot always assigns the connection to the authenticated user.
+
+```bash
+curl --request POST http://localhost:3000/api/connections/secret \
+  --header "Authorization: Bearer $TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "service": "resend",
+    "credentials": { "value": "re_..." },
+    "accountLabel": "Production"
+  }'
+```
+
+Use `PUT /api/connections/secret` with the same body to replace an existing credential. Use `DELETE /api/connections/secret` with `{ "service": "resend" }` to revoke it.
+
+Credential bodies match the piece's credential type:
+
+| Type | `credentials` shape |
+| --- | --- |
+| `secret_text` | `{ "value": "..." }` |
+| `basic_auth` | `{ "username": "...", "password": "..." }` |
+| `custom` | The fields declared by the piece |
+| `oauth2` | Supplied by an OAuth credential source |
+
+## Adopt the collection
+
+Mark one collection with `connections: true` to use another slug or add application fields.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Accounts: CollectionConfig = {
+  slug: 'service-accounts',
+  connections: true,
+  fields: [
+    { name: 'tenant', type: 'relationship', relationTo: 'tenants' }
+  ]
+}
+```
+
+You can add fields and define `metadata` as JSON. The following fields are reserved: `owner`, `service`, `source`, `credentialType`, `sourceKey`, `encryptedCredentials`, `scopes`, `status`, `accountId`, `accountLabel`, and `expiresAt`.
+
+## Resolve connections
+
+Use the server API when application code needs a piece-compatible credential value.
+
+```ts
+const credential = await frogbot.connections.resolve({
+  service: 'resend',
+  owner: req.user
+})
+
+const connections = await frogbot.connections.list({ owner: req.user })
+
+await frogbot.connections.revoke({
+  service: 'resend',
+  owner: req.user
+})
+```
+
+`list` returns service, source, status, account, scope, expiration, and metadata fields. It never returns plaintext or encrypted credentials. Missing, revoked, and expired credentials throw `ConnectionError` with distinct `code` values.
+
+## Encryption and rotation
+
+The default adapter encrypts one JSON document per connection with AES-256-GCM. It derives its key from the root `secret` and authenticates the ciphertext against modification. Changing `secret` prevents the default adapter from reading existing connections.
+
+Provide `connections.encryption` when credentials must use KMS or support key rotation. Its `encrypt` and `decrypt` methods may be synchronous or asynchronous. During rotation, keep `decrypt` able to read the previous key until all credentials have been replaced.
+
+## Access boundaries
+
+Collection reads are restricted to the connection owner. Creates, updates, and deletes are disabled through ordinary collection operations; connection endpoints and `frogbot.connections` perform the required owner-scoped operations internally. The encrypted credential field is hidden and denies field-level reads.
+
+`@frogbotai/plugin-api-keys` serves a different boundary. It authenticates inbound callers to FrogBot and stores non-recoverable token hashes. Use connections for recoverable outbound credentials that pieces send to external services.

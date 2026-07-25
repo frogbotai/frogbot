@@ -13,6 +13,7 @@ import type { AgentConfig } from './agent.js';
 import type { AIConfig } from './ai.js';
 import type { RootAdminConfig } from './admin.js';
 import type { CollectionConfig } from './collection.js';
+import type { ConnectionsConfig, CredentialSource } from './connections.js';
 import type { DatabaseAdapter } from './database.js';
 import type { Endpoint } from './endpoint.js';
 import type { Plugin } from './plugin.js';
@@ -51,6 +52,8 @@ export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   /** Agent configs registered at boot and exposed via frogbot.agents. */
   agents?: AgentConfig[];
   pieces?: Piece[];
+  connections?: ConnectionsConfig;
+  credentialSources?: CredentialSource[];
   pieceFiles?: { collection: string };
   /** Plugin pipeline — runs serially, in order, before sanitization. */
   plugins?: Plugin[];

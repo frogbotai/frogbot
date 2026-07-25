@@ -23,6 +23,7 @@ import { generateImportMap } from './importMap/index.js';
 import { transcribeOperation } from './ai/operations/transcribe.js';
 import { getFrogbotInstance, registerFrogbotInstance } from './instanceRegistry.js';
 import { createFrogbotLocalAPI } from './localAPI.js';
+import { Connections } from './connections/api.js';
 import type { FrogbotLocalAPI } from './localAPI.js';
 import type { AgentRegistry } from './types/agent.js';
 import type {
@@ -118,6 +119,7 @@ export class Frogbot {
 
   /** Registered agents keyed by slug. */
   agents: AgentRegistry = {};
+  connections!: Connections;
 
   get db() {
     return this.payload.db;
@@ -160,6 +162,7 @@ export class Frogbot {
 
     this.secret = this.payload.secret;
     this.logger = this.payload.logger;
+    this.connections = new Connections(this, this.config.connections);
 
     // Initialize the embedded AI gateway if AI is configured.
     if (this.config.ai) {

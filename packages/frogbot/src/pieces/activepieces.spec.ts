@@ -75,4 +75,17 @@ describe('Activepieces adapter', () => {
       ctx: { frogbot: { config: {} } } as never,
     })).rejects.toThrow('pieceFiles.collection');
   });
+
+  it('resolves connections by service key', async () => {
+    const resolve = vi.fn().mockResolvedValue('token');
+    await expect(executeActivepiecesAction({
+      action: {
+        name: 'connection', displayName: 'Connection', description: 'Connection', props: {},
+        run: async (context) => (context.connections as { get: (key: string) => Promise<unknown> }).get('linear'),
+      },
+      propsValue: {},
+      ctx: { req: { user: { id: 'owner' } }, frogbot: { connections: { resolve } } } as never,
+    })).resolves.toBe('token');
+    expect(resolve).toHaveBeenCalledWith({ service: 'linear', owner: { id: 'owner' } });
+  });
 });
