@@ -3,11 +3,12 @@ import { executeActivepiecesAction, loadActivepiecesPiece, propertiesSchema } fr
 
 export { UnsupportedPieceContextError } from '../pieces/activepieces.js';
 
-export function createActivepiecesPiece({ module, service, credentialType, defaultActions }: {
+export function createActivepiecesPiece({ module, service, credentialType, defaultActions, errorsAsResults = false }: {
   module: Record<string, unknown>;
   service: string;
   credentialType: CredentialType;
   defaultActions: readonly string[];
+  errorsAsResults?: boolean;
 }): Piece {
   const activepiecesPiece = loadActivepiecesPiece(module);
   const availableActions = Object.keys(activepiecesPiece.actions());
@@ -22,7 +23,14 @@ export function createActivepiecesPiece({ module, service, credentialType, defau
         slug: `${service}_${actionName}`,
         description: action.description || action.displayName,
         inputSchema: propertiesSchema(action.props),
-        execute: (input: Record<string, unknown>) => executeActivepiecesAction({ action, propsValue: input }),
+        execute: async (input: Record<string, unknown>, ctx) => {
+          try {
+            return await executeActivepiecesAction({ action, propsValue: input, ctx });
+          } catch (error) {
+            if (!errorsAsResults) throw error;
+            return { error: error instanceof Error ? error.message : String(error) };
+          }
+        },
       };
     }),
   };

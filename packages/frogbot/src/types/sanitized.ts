@@ -24,6 +24,7 @@ export type FrogbotSanitizedConfig = {
   agents?: AgentConfig[];
   chat: SanitizedChatConfig;
   pieces: SanitizedPiecesConfig;
+  pieceFiles?: { collection: string };
   typescript?: {
     autoGenerate?: boolean;
   };

@@ -64,6 +64,14 @@ export type CreateArgs<TSlug extends CollectionSlug> = CommonArgs & {
   collection: TSlug;
   data: Partial<TypedCollection<TSlug>>;
   draft?: boolean;
+  file?: {
+    data: Buffer;
+    mimetype: string;
+    name: string;
+    size: number;
+    tempFilePath?: string;
+  };
+  filePath?: string;
 };
 
 export type UpdateByIDArgs<TSlug extends CollectionSlug> = CommonArgs & {

@@ -51,6 +51,7 @@ export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   /** Agent configs registered at boot and exposed via frogbot.agents. */
   agents?: AgentConfig[];
   pieces?: Piece[];
+  pieceFiles?: { collection: string };
   /** Plugin pipeline — runs serially, in order, before sanitization. */
   plugins?: Plugin[];
   /** Root-level admin configuration. */

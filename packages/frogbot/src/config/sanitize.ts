@@ -482,6 +482,7 @@ function buildPayloadConfig(config: FrogbotConfig, onInit: NonNullable<PayloadCo
   delete out.ai;
   delete out.agents;
   delete out.pieces;
+  delete out.pieceFiles;
   out.onInit = onInit;
 
   return out as unknown as PayloadConfig;
@@ -527,6 +528,7 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
     agents,
     chat,
     pieces,
+    pieceFiles: config.pieceFiles,
     typescript: {
       autoGenerate: (config as { typescript?: { autoGenerate?: boolean } }).typescript?.autoGenerate !== false,
     },

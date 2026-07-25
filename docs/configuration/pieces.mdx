@@ -46,3 +46,11 @@ Tool slugs are namespaced by service and action, such as `text_helper_concat`, s
 ## Keep tool sets focused
 
 Configure only the tools an agent needs. About 20 to 40 tools per agent is a practical ceiling for reliable selection by the model. Prefer explicit action subsets when combining several pieces.
+
+## Network access
+
+The HTTP and GraphQL pieces can request arbitrary URLs without an allowlist. Only assign them to trusted agents and treat access to private network addresses and cloud metadata endpoints as an intentional SSRF risk.
+
+## File output
+
+Pieces that create files buffer the complete result in memory. Configure an upload collection with `pieceFiles: { collection: 'media' }` and set upload size limits appropriate for your deployment.

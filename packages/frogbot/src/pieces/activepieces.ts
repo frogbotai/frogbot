@@ -1,11 +1,14 @@
 import { z } from 'zod';
 
+import type { ToolCtx } from '../types/tool.js';
+
 type ActivepiecesProperty = {
   type: string;
   displayName?: string;
   description?: string;
   required?: boolean;
   properties?: Record<string, ActivepiecesProperty>;
+  options?: { options?: { value: string | number | boolean | null }[] };
 };
 
 type ActivepiecesAction = {
@@ -45,6 +48,12 @@ export function loadActivepiecesPiece(module: Record<string, unknown>): Activepi
   return matches[0];
 }
 
+function optionSchema(values: (string | number | boolean | null)[], fallback: z.ZodType): z.ZodType {
+  if (values.length === 0) return fallback;
+  if (values.length === 1) return z.literal(values[0]!);
+  return z.union([z.literal(values[0]!), z.literal(values[1]!), ...values.slice(2).map((value) => z.literal(value))]);
+}
+
 function propertySchema(property: ActivepiecesProperty): z.ZodType {
   let schema: z.ZodType;
   switch (property.type) {
@@ -63,9 +72,19 @@ function propertySchema(property: ActivepiecesProperty): z.ZodType {
     case 'JSON':
       schema = z.unknown();
       break;
+    case 'DYNAMIC':
+      schema = z.record(z.string(), z.unknown());
+      break;
+    case 'STATIC_DROPDOWN': {
+      const values = property.options?.options?.map((option) => option.value) ?? [];
+      schema = optionSchema(values, z.string());
+      break;
+    }
     case 'MULTI_SELECT_DROPDOWN':
     case 'STATIC_MULTI_SELECT_DROPDOWN':
-      schema = z.array(z.string());
+      schema = property.options?.options?.length
+        ? z.array(optionSchema(property.options.options.map((option) => option.value), z.string()))
+        : z.array(z.string());
       break;
     default:
       schema = z.string();
@@ -78,21 +97,59 @@ export function propertiesSchema(properties: Record<string, ActivepiecesProperty
   return z.object(Object.fromEntries(Object.entries(properties).map(([name, property]) => [name, propertySchema(property)])));
 }
 
+async function resolveProps(properties: Record<string, ActivepiecesProperty>, values: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const resolved = { ...values };
+  for (const [name, property] of Object.entries(properties)) {
+    const value = values[name];
+    if (property.type === 'FILE' && typeof value === 'string') {
+      const response = await fetch(value);
+      if (!response.ok) throw new Error(`[frogbot] Failed to download piece file '${value}': ${response.status}.`);
+      const fileName = new URL(value).pathname.split('/').pop() || 'file';
+      resolved[name] = {
+        data: Buffer.from(await response.arrayBuffer()),
+        filename: fileName,
+        extension: fileName.includes('.') ? fileName.split('.').pop() : undefined,
+      };
+    }
+  }
+  return resolved;
+}
+
 export async function executeActivepiecesAction({
   action,
   propsValue,
   auth,
+  ctx,
 }: {
   action: ActivepiecesAction;
   propsValue: Record<string, unknown>;
   auth?: unknown;
+  ctx?: ToolCtx;
 }): Promise<unknown> {
   return action.run({
     auth,
-    propsValue,
+    propsValue: await resolveProps(action.props, propsValue),
     executionType: 'BEGIN',
     store: unsupported('store'),
-    files: unsupported('files'),
+    files: {
+      write: async ({ fileName, data }: { fileName: string; data: Buffer }) => {
+        const collection = ctx?.frogbot.config.pieceFiles?.collection;
+        if (!ctx || !collection) {
+          throw new Error('[frogbot] Piece file output requires `pieceFiles.collection` to be configured.');
+        }
+        const doc = await ctx.frogbot.create({
+          collection,
+          data: {},
+          file: { data, mimetype: 'application/octet-stream', name: fileName, size: data.length },
+          overrideAccess: true,
+        });
+        const url = (doc as Record<string, unknown>).url;
+        if (typeof url !== 'string' || !url) {
+          throw new Error(`[frogbot] Upload collection '${collection}' did not return a file URL.`);
+        }
+        return url;
+      },
+    },
     connections: unsupported('connections'),
     server: unsupported('server'),
     flows: unsupported('flows'),
