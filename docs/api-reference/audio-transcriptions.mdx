@@ -1,0 +1,157 @@
+---
+title: "Audio transcriptions"
+description: "Transcribe audio files to text"
+api: "POST https://app.frogbot.ai/api/v1/audio/transcriptions"
+---
+
+Transcribe audio from a file into text. Accepts multipart form data.
+
+---
+
+## Authenticate
+
+Use an API key in the `Authorization` header.
+
+```bash
+curl https://app.frogbot.ai/api/v1/audio/transcriptions \
+  -H "Authorization: Bearer $FROGBOT_API_KEY"
+```
+
+---
+
+## Request body
+
+<ParamField body="model" type="string" required>
+  Transcription model ID to use. See [available transcription models](/api-reference/models#audio-transcription) for the full list.
+
+  Examples: `whisper-1`, `elevenlabs-scribe-v1`
+</ParamField>
+
+<ParamField body="file" type="file" required>
+  The audio file to transcribe. Supported formats: `mp3`, `mp4`, `mpeg`, `mpga`, `m4a`, `wav`, `webm`.
+</ParamField>
+
+<ParamField body="language" type="string">
+  Language of the audio in ISO-639-1 format (e.g. `en`, `fr`, `es`). Providing this improves accuracy and latency.
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  Optional text to guide the model's style or provide context. Should match the language of the audio.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="json">
+  Format of the transcription output. Options: `json`, `text`, `srt`, `verbose_json`, `vtt`.
+</ParamField>
+
+<ParamField body="temperature" type="number" default="0">
+  Sampling temperature between 0 and 1. Higher values produce more varied output.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="text" type="string">
+  The transcribed text.
+</ResponseField>
+
+<ResponseField name="task" type="string">
+  Always `transcribe`.
+</ResponseField>
+
+<ResponseField name="language" type="string">
+  Detected or specified language of the audio.
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  Duration of the audio in seconds.
+</ResponseField>
+
+<ResponseField name="words" type="array">
+  Word-level timestamps, if supported by the model.
+
+  <Expandable title="Word object">
+    <ResponseField name="word" type="string">
+      The transcribed word.
+    </ResponseField>
+    <ResponseField name="start" type="number">
+      Start time in seconds.
+    </ResponseField>
+    <ResponseField name="end" type="number">
+      End time in seconds.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+```bash curl
+curl https://app.frogbot.ai/api/v1/audio/transcriptions \
+  -H "Authorization: Bearer $FROGBOT_API_KEY" \
+  -F file="@audio.mp3" \
+  -F model="whisper-1"
+```
+
+```bash With options
+curl https://app.frogbot.ai/api/v1/audio/transcriptions \
+  -H "Authorization: Bearer $FROGBOT_API_KEY" \
+  -F file="@audio.mp3" \
+  -F model="whisper-1" \
+  -F language="en" \
+  -F response_format="verbose_json"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://app.frogbot.ai/api/v1",
+    api_key="YOUR_API_KEY"
+)
+
+with open("audio.mp3", "rb") as f:
+    response = client.audio.transcriptions.create(
+        model="whisper-1",
+        file=f,
+        language="en"
+    )
+
+print(response.text)
+```
+
+```typescript TypeScript
+import OpenAI from "openai";
+import fs from "fs";
+
+const client = new OpenAI({
+  baseURL: "https://app.frogbot.ai/api/v1",
+  apiKey: "YOUR_API_KEY",
+});
+
+const response = await client.audio.transcriptions.create({
+  model: "whisper-1",
+  file: fs.createReadStream("audio.mp3"),
+  language: "en",
+});
+
+console.log(response.text);
+```
+</CodeGroup>
+
+<ResponseExample>
+```json 200
+{
+  "text": "Hello, this is a sample transcription.",
+  "task": "transcribe",
+  "language": "en",
+  "duration": 3.5,
+  "words": [
+    { "word": "Hello", "start": 0.0, "end": 0.4 },
+    { "word": "this", "start": 0.5, "end": 0.7 }
+  ]
+}
+```
+</ResponseExample>

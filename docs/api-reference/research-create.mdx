@@ -1,0 +1,119 @@
+---
+title: "Create deep research"
+description: "Start a deep research job on a topic"
+api: "POST https://app.frogbot.ai/api/v1/research"
+---
+
+Start a **deep research** job — the same multi-step research experience you get from Perplexity Deep Research, OpenAI Deep Research, or Gemini Deep Research, now available via API.
+
+Give it a topic and the agent will search the web, read pages, extract insights, and follow up with deeper queries. After a few minutes you get back a comprehensive report with sources.
+
+Deep research runs asynchronously (typically 2-5 minutes). Use the returned `id` to poll for status and results.
+
+---
+
+## Authenticate
+
+Use an API key in the `Authorization` header.
+
+```bash
+curl https://app.frogbot.ai/api/v1/research \
+  -H "Authorization: Bearer $FROGBOT_API_KEY"
+```
+
+---
+
+## Request body
+
+<ParamField body="topic" type="string" required>
+  The research topic or question to investigate. Be specific for better results.
+
+```json
+"What are the latest advancements in quantum computing and their practical applications?"
+```
+
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique identifier for the research job. Use this to poll for status and results.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Initial status of the research job. Always `queued` on creation.
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+```bash cURL
+curl https://app.frogbot.ai/api/v1/research \
+  -H "Authorization: Bearer $FROGBOT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic": "What are the latest advancements in quantum computing?"
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://app.frogbot.ai/api/v1/research",
+    headers={
+        "Authorization": "Bearer YOUR_API_KEY",
+        "Content-Type": "application/json"
+    },
+    json={
+        "topic": "What are the latest advancements in quantum computing?"
+    }
+)
+
+data = response.json()
+research_id = data["id"]
+print(f"Research started: {research_id}")
+```
+
+```typescript TypeScript
+const response = await fetch("https://app.frogbot.ai/api/v1/research", {
+  method: "POST",
+  headers: {
+    "Authorization": "Bearer YOUR_API_KEY",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    topic: "What are the latest advancements in quantum computing?",
+  }),
+});
+
+const data = await response.json();
+console.log(`Research started: ${data.id}`);
+```
+
+</CodeGroup>
+
+<ResponseExample>
+```json 202
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "queued"
+}
+```
+
+```json 400
+{
+  "error": "Missing required field: topic"
+}
+```
+
+```json 401
+{
+  "error": "Unauthorized"
+}
+```
+</ResponseExample>

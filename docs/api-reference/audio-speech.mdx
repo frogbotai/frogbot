@@ -1,0 +1,117 @@
+---
+title: "Audio speech"
+description: "Generate spoken audio from text"
+api: "POST https://app.frogbot.ai/api/v1/audio/speech"
+---
+
+Generate audio from a text input. Returns an audio file stream.
+
+---
+
+## Authenticate
+
+Use an API key in the `Authorization` header.
+
+```bash
+curl https://app.frogbot.ai/api/v1/audio/speech \
+  -H "Authorization: Bearer $FROGBOT_API_KEY"
+```
+
+---
+
+## Request body
+
+<ParamField body="model" type="string" required>
+  TTS model ID to use. See [available speech models](/api-reference/models#audio-speech) for the full list.
+
+  Examples: `gpt-4o-mini-tts`, `elevenlabs-tts-multilingual-v2`
+</ParamField>
+
+<ParamField body="input" type="string" required>
+  The text to synthesize. Maximum length is 4096 characters.
+</ParamField>
+
+<ParamField body="voice" type="string" required>
+  Voice to use for synthesis. OpenAI voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`. ElevenLabs voices map automatically from these names or accept raw voice IDs.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="mp3">
+  Audio format for the output. Options: `mp3`, `opus`, `aac`, `flac`, `pcm`, `wav`.
+</ParamField>
+
+<ParamField body="speed" type="number" default="1.0">
+  Playback speed of the generated audio. Range: `0.25` to `4.0`.
+</ParamField>
+
+---
+
+## Response
+
+Returns the audio file as a binary stream with `Content-Type: audio/mpeg` (or the appropriate MIME type for the requested format).
+
+---
+
+## Examples
+
+<CodeGroup>
+```bash curl
+curl https://app.frogbot.ai/api/v1/audio/speech \
+  -H "Authorization: Bearer $FROGBOT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tts-1",
+    "input": "Hello, welcome to Frogbot.",
+    "voice": "alloy"
+  }' \
+  --output speech.mp3
+```
+
+```bash ElevenLabs
+curl https://app.frogbot.ai/api/v1/audio/speech \
+  -H "Authorization: Bearer $FROGBOT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "elevenlabs/eleven_multilingual_v2",
+    "input": "Hello, welcome to Frogbot.",
+    "voice": "alloy"
+  }' \
+  --output speech.mp3
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://app.frogbot.ai/api/v1",
+    api_key="YOUR_API_KEY"
+)
+
+response = client.audio.speech.create(
+    model="tts-1",
+    input="Hello, welcome to Frogbot.",
+    voice="alloy"
+)
+
+with open("speech.mp3", "wb") as f:
+    f.write(response.content)
+```
+
+```typescript TypeScript
+import OpenAI from "openai";
+import fs from "fs";
+
+const client = new OpenAI({
+  baseURL: "https://app.frogbot.ai/api/v1",
+  apiKey: "YOUR_API_KEY",
+});
+
+const response = await client.audio.speech.create({
+  model: "tts-1",
+  input: "Hello, welcome to Frogbot.",
+  voice: "alloy",
+});
+
+const buffer = Buffer.from(await response.arrayBuffer());
+fs.writeFileSync("speech.mp3", buffer);
+```
+</CodeGroup>

@@ -1,0 +1,137 @@
+---
+title: "Browser Agent MCP"
+description: "Control your browser from any AI coding agent via MCP"
+---
+
+Use the Frogbot Browser MCP server to let AI agents browse the web through your Chrome browser. Agents get their own isolated tab group — you can watch what they do in real time.
+
+---
+
+## Prerequisites
+
+- A [Frogbot account](https://app.frogbot.ai/signup) with an API key
+- The [Frogbot Chrome extension](https://chromewebstore.google.com/detail/frogbot) installed and logged in
+- Chrome open with the extension active
+
+---
+
+## Connect your agent
+
+Add the Frogbot Browser MCP server to your agent's configuration. The endpoint is:
+
+```
+https://app.frogbot.ai/api/mcp/browser
+```
+
+<CodeGroup>
+
+```json OpenCode
+{
+  "mcpServers": {
+    "frogbot-browser": {
+      "type": "remote",
+      "url": "https://app.frogbot.ai/api/mcp/browser",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+```json Cursor
+{
+  "mcpServers": {
+    "frogbot-browser": {
+      "url": "https://app.frogbot.ai/api/mcp/browser",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+```json Claude Desktop
+{
+  "mcpServers": {
+    "frogbot-browser": {
+      "type": "streamableHttp",
+      "url": "https://app.frogbot.ai/api/mcp/browser",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+Replace `YOUR_API_KEY` with your Frogbot API key from [Account > API Keys](https://app.frogbot.ai).
+
+---
+
+## How it works
+
+When an agent calls a browser tool:
+
+1. The MCP server creates a **session** tied to the agent's connection
+2. The Frogbot extension opens a **"FrogBot Agent" tab group** in your Chrome window
+3. All browser actions (navigation, clicks, typing) happen inside that tab group
+4. The tab group stays open so you can inspect results after the agent finishes
+
+Each agent connection gets its own isolated tab group. Multiple agents can run simultaneously without interfering with each other or your personal browsing.
+
+---
+
+## Available tools
+
+| Tool | Description |
+| --- | --- |
+| `readPage` | Get a screenshot and all visible text/elements from the current page |
+| `goToWebsite` | Navigate to a URL |
+| `click` | Click an element by its ID from the page DOM |
+| `fillOrType` | Fill form fields — text inputs, dropdowns, checkboxes, etc. |
+| `scrollPage` | Scroll the page or a specific container |
+| `pressKey` | Press keyboard keys or combinations |
+| `openNewTab` | Open a new tab with an optional URL |
+| `switchTab` | Switch to a different tab by ID |
+| `getOpenTabs` | List all open tabs in the session |
+| `closeThisTab` | Close the current tab |
+| `closeTabById` | Close a specific tab by ID |
+| `refreshPage` | Refresh the current page |
+| `waitForPage` | Wait for the page to finish loading |
+| `endBrowserSession` | Close the tab group and clean up the session |
+
+---
+
+## Session lifecycle
+
+- **Automatic creation** — The first tool call creates a new tab group in Chrome
+- **Persistent** — The tab group stays open between tool calls and after the agent disconnects
+- **Resumable** — Reconnecting with the same session picks up the existing tab group
+- **Manual cleanup** — Call `endBrowserSession` or close the tab group manually in Chrome
+
+---
+
+## Troubleshooting
+
+**"Browser extension not connected"**
+
+The Frogbot Chrome extension isn't connected. Make sure:
+- Chrome is open
+- The Frogbot extension is installed
+- You're logged in to Frogbot in the extension
+
+**"Tool timed out"**
+
+The extension didn't respond within 30 seconds. The page may be loading slowly or the extension became unresponsive. Try refreshing the extension or restarting Chrome.
+
+**"No active window found"**
+
+Chrome has no focused window. Click on any Chrome window and retry.
+
+**"Unauthorized"**
+
+Your API key is invalid or missing. Check that the `Authorization` header is set correctly with a valid API key.

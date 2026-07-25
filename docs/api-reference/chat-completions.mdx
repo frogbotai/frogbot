@@ -1,0 +1,310 @@
+---
+title: "Chat completions"
+description: "Create completions with streaming and tool calling"
+api: "POST https://app.frogbot.ai/api/v1/chat/completions"
+---
+
+Create a chat completion. Supports streaming, tool calling, and MCP server integration across all providers.
+
+---
+
+## Authenticate
+
+Use an API key in the `Authorization` header.
+
+```bash
+curl https://app.frogbot.ai/api/v1/chat/completions \
+  -H "Authorization: Bearer $FROGBOT_API_KEY"
+```
+
+---
+
+## Request body
+
+<ParamField body="model" type="string" required>
+  Model ID to use for completion. See [available chat models](/api-reference/models) for the full list.
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  Conversation history as an array of message objects.
+
+```json
+[
+  { "role": "system", "content": "You are a helpful assistant." },
+  { "role": "user", "content": "Hello!" }
+]
+```
+
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  Enable Server-Sent Events streaming for the response.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  Sampling temperature between 0 and 2. Higher values make output more random.
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  Maximum tokens to generate in the completion.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  List of tools the model may call. Supports OpenAI function tools.
+
+```json
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "get_weather",
+      "description": "Get current weather for a location",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "location": { "type": "string" }
+        },
+        "required": ["location"]
+      }
+    }
+  }
+]
+```
+
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  Controls tool calling. Options: `auto`, `none`, `required`, or a specific
+  tool.
+</ParamField>
+
+<ParamField body="mcp_servers" type="array">
+  MCP server addresses for server-side tool execution.
+
+```json
+["dedalus-labs/brave-search", "dedalus-labs/github-api"]
+```
+
+</ParamField>
+
+<ParamField body="thinking" type="object">
+  Extended thinking configuration for Anthropic models.
+
+```json
+{ "type": "enabled", "budget_tokens": 2048 }
+```
+
+</ParamField>
+
+<ParamField body="reasoning_effort" type="string">
+  Constrains effort on reasoning for supported reasoning models. Higher values use more compute, improving quality at the cost of latency and tokens.
+
+Options: `low`, `medium`, `high`
+
+```json
+"medium"
+```
+
+</ParamField>
+
+<ParamField body="generation_config" type="object">
+  Google generationConfig object. Merged with auto-generated config. Use for Google-specific params like `candidateCount` or `responseMimeType`.
+
+```json
+{
+  "candidateCount": 2,
+  "responseMimeType": "application/json"
+}
+```
+
+</ParamField>
+
+<ParamField body="safety_settings" type="array">
+  Google safety settings for harm categories and thresholds.
+
+```json
+[
+  {
+    "category": "HARM_CATEGORY_HARASSMENT",
+    "threshold": "BLOCK_NONE"
+  }
+]
+```
+
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique identifier for the completion.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  Always `chat.completion`.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  Unix timestamp of when the completion was created.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  The model used for the completion.
+</ResponseField>
+
+<ResponseField name="choices" type="array">
+  Array of completion choices.
+
+  <Expandable title="Choice object">
+    <ResponseField name="index" type="integer">
+      Index of the choice.
+    </ResponseField>
+    <ResponseField name="message" type="object">
+      The generated message with `role` and `content`.
+    </ResponseField>
+    <ResponseField name="finish_reason" type="string">
+      Why generation stopped: `stop`, `length`, `tool_calls`, or `content_filter`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Token usage statistics.
+
+  <Expandable title="Usage object">
+    <ResponseField name="prompt_tokens" type="integer">
+      Tokens in the prompt.
+    </ResponseField>
+    <ResponseField name="completion_tokens" type="integer">
+      Tokens in the completion.
+    </ResponseField>
+    <ResponseField name="total_tokens" type="integer">
+      Total tokens used.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="tools_executed" type="array">
+  List of MCP tools executed server-side, if any.
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+```bash Basic request
+curl https://app.frogbot.ai/api/v1/chat/completions \
+  -H "Authorization: Bearer $FROGBOT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "user", "content": "What is the capital of France?"}
+    ]
+  }'
+```
+
+```bash Streaming
+curl https://app.frogbot.ai/api/v1/chat/completions \
+  -H "Authorization: Bearer $FROGBOT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-5-20250929",
+    "stream": true,
+    "messages": [
+      {"role": "user", "content": "Write a haiku about coding"}
+    ]
+  }'
+```
+
+```bash With tools
+curl https://app.frogbot.ai/api/v1/chat/completions \
+  -H "Authorization: Bearer $FROGBOT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "user", "content": "What is the weather in Tokyo?"}
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_weather",
+          "description": "Get weather for a location",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "location": {"type": "string"}
+            },
+            "required": ["location"]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://app.frogbot.ai/api/v1",
+    api_key="YOUR_API_KEY"
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "Hello!"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+```typescript TypeScript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "https://app.frogbot.ai/api/v1",
+  apiKey: "YOUR_API_KEY",
+});
+
+const response = await client.chat.completions.create({
+  model: "gpt-4o",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+</CodeGroup>
+
+<ResponseExample>
+```json 200
+{
+  "id": "chatcmpl-123",
+  "object": "chat.completion",
+  "created": 1677652288,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The capital of France is Paris."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 12,
+    "completion_tokens": 8,
+    "total_tokens": 20
+  }
+}
+```
+</ResponseExample>

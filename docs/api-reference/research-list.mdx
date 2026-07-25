@@ -1,0 +1,239 @@
+---
+title: "List deep research"
+description: "List all deep research jobs with filtering and sorting"
+api: "GET https://app.frogbot.ai/api/v1/research"
+---
+
+Retrieve a list of all your deep research jobs. Filter by status, date, or topic to find what you need.
+
+---
+
+## Authenticate
+
+Use an API key in the `Authorization` header.
+
+```bash
+curl https://app.frogbot.ai/api/v1/research \
+  -H "Authorization: Bearer $FROGBOT_API_KEY"
+```
+
+---
+
+## Query parameters
+
+<ParamField query="limit" type="integer" default="20">
+  Maximum number of results to return. Max 100.
+</ParamField>
+
+<ParamField query="sort" type="string" default="-createdAt">
+  Field to sort by. Prefix with `-` for descending order.
+
+  Examples: `-createdAt`, `title`, `-updatedAt`
+</ParamField>
+
+<ParamField query="where" type="string">
+  JSON-encoded filter query using FrogBot's query syntax.
+
+  Supports operators: `equals`, `not_equals`, `contains`, `exists`, `greater_than`, `less_than`, `in`, `not_in`, and more.
+
+  Use `and` / `or` for complex queries.
+
+```json
+{
+  "metadata.research.status": {
+    "equals": "succeeded"
+  }
+}
+```
+
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="docs" type="array">
+  Array of research job summaries.
+
+  <Expandable title="Research object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the research job.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Current status: `queued`, `running`, `succeeded`, or `failed`.
+    </ResponseField>
+    <ResponseField name="title" type="string">
+      Title of the research report.
+    </ResponseField>
+    <ResponseField name="topic" type="string">
+      The original research topic.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO timestamp of when the research was created.
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      ISO timestamp of the last update.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="totalDocs" type="integer">
+  Total number of research jobs matching the query.
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+```bash List all
+curl "https://app.frogbot.ai/api/v1/research" \
+  -H "Authorization: Bearer $FROGBOT_API_KEY"
+```
+
+```bash With limit
+curl "https://app.frogbot.ai/api/v1/research?limit=10" \
+  -H "Authorization: Bearer $FROGBOT_API_KEY"
+```
+
+```bash Filter by status
+curl "https://app.frogbot.ai/api/v1/research?where=%7B%22status%22%3A%7B%22equals%22%3A%22succeeded%22%7D%7D" \
+  -H "Authorization: Bearer $FROGBOT_API_KEY"
+```
+
+```python Python
+import requests
+import json
+
+# List all research
+response = requests.get(
+    "https://app.frogbot.ai/api/v1/research",
+    headers={"Authorization": "Bearer YOUR_API_KEY"}
+)
+data = response.json()
+print(f"Total: {data['totalDocs']}")
+
+# Filter by status
+where = json.dumps({"status": {"equals": "succeeded"}})
+response = requests.get(
+    "https://app.frogbot.ai/api/v1/research",
+    headers={"Authorization": "Bearer YOUR_API_KEY"},
+    params={"where": where, "limit": 10}
+)
+```
+
+```typescript TypeScript
+// List all research
+const response = await fetch(
+  "https://app.frogbot.ai/api/v1/research",
+  {
+    headers: { Authorization: "Bearer YOUR_API_KEY" },
+  }
+);
+const data = await response.json();
+console.log(`Total: ${data.totalDocs}`);
+
+// Filter by status
+const where = JSON.stringify({
+  status: { equals: "succeeded" },
+});
+const filtered = await fetch(
+  `https://app.frogbot.ai/api/v1/research?where=${encodeURIComponent(where)}&limit=10`,
+  {
+    headers: { Authorization: "Bearer YOUR_API_KEY" },
+  }
+);
+```
+
+</CodeGroup>
+
+<ResponseExample>
+```json 200
+{
+  "docs": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "status": "succeeded",
+      "title": "Latest Advancements in Quantum Computing",
+      "topic": "What are the latest advancements in quantum computing?",
+      "createdAt": "2026-01-20T14:30:00.000Z",
+      "updatedAt": "2026-01-20T14:35:00.000Z"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440001",
+      "status": "running",
+      "title": "Researching...",
+      "topic": "Compare React vs Vue for enterprise applications",
+      "createdAt": "2026-01-20T14:25:00.000Z",
+      "updatedAt": "2026-01-20T14:25:00.000Z"
+    }
+  ],
+  "totalDocs": 2
+}
+```
+
+```json 401
+{
+  "error": "Unauthorized"
+}
+```
+
+```json 400
+{
+  "error": "Invalid where parameter - must be valid JSON"
+}
+```
+</ResponseExample>
+
+---
+
+## Where query examples
+
+### Filter by status
+
+```json
+{
+  "status": {
+    "equals": "succeeded"
+  }
+}
+```
+
+### Filter by date range
+
+```json
+{
+  "createdAt": {
+    "greater_than": "2026-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### Complex query with AND/OR
+
+```json
+{
+  "or": [
+    {
+      "status": {
+        "equals": "succeeded"
+      }
+    },
+    {
+      "status": {
+        "equals": "running"
+      }
+    }
+  ]
+}
+```
+
+### Search by topic
+
+```json
+{
+  "topic": {
+    "contains": "quantum"
+  }
+}
+```

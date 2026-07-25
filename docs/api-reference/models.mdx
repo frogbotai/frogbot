@@ -1,0 +1,227 @@
+---
+title: "Models"
+description: "List supported model IDs for inference"
+api: "GET https://app.frogbot.ai/api/v1/models"
+---
+
+List available model IDs across all inference endpoints.
+
+---
+
+## Chat models
+
+Use these model IDs with [chat completions](/api-reference/chat-completions) and [messages](/api-reference/messages).
+
+| Model ID | Provider | Context | Token multiplier |
+|---|---|---|---|
+| `claude-opus-4-7` | Anthropic | 200k | `2` |
+| `claude-opus-4-6` | Anthropic | 1M | `2` |
+| `claude-opus-4-5` | Anthropic | 200k | `2` |
+| `claude-sonnet-4-6` | Anthropic | 1M | `1.2` |
+| `claude-sonnet-4-5` | Anthropic | 200k | `1.2` |
+| `claude-sonnet-4` | Anthropic | 200k | `1.2` |
+| `claude-haiku-4-5` | Anthropic | 200k | `0.4` |
+| `claude-haiku-3-5` | Anthropic | 200k | `0.3` |
+| `gpt-5-5` | OpenAI | 1050k | `0.7` |
+| `gpt-5-4` | OpenAI | 272k | `0.7` |
+| `gpt-5.2` | OpenAI | 400k | `0.7` |
+| `gpt-5-3-codex` | OpenAI | 400k | `0.7` |
+| `gpt-5` | OpenAI | 400k | `0.75` |
+| `gpt-5-4-mini` | OpenAI | 400k | `0.15` |
+| `gpt-5-4-nano` | OpenAI | 400k | `0.1` |
+| `gpt-4o` | OpenAI | 128k | `0.8` |
+| `gpt-4o-mini` | OpenAI | 128k | `0.1` |
+| `gpt-4.1` | OpenAI | 1M | `0.6` |
+| `grok-4-3` | xAI | 1M | `0.2` |
+| `grok-4-1-fast-reasoning` | xAI | 2M | `0.2` |
+| `grok-4-1-fast-non-reasoning` | xAI | 2M | `0.2` |
+| `grok-code-fast-1` | xAI | 256k | `0.2` |
+| `gemini-3-1-pro-preview` | Google | 1M | `0.8` |
+| `gemini-3-pro-preview` | Google | 1M | `0.8` |
+| `gemini-3-flash-preview` | Google | 1M | `0.2` |
+| `gemini-2.5-pro` | Google | 1M | `0.75` |
+| `gemini-2.5-flash` | Google | 1M | `0.15` |
+| `gemini-2.5-flash-lite` | Google | 1M | `0.1` |
+| `gemini-3-1-flash-lite-preview` | Google | 1M | `0.15` |
+| `deepseek-v4-pro` | Fireworks AI | 1M | `0.22` |
+| `deepseek-r1` | Bedrock | 128k | `0.4` |
+| `gpt-oss-120b` | Bedrock | 128k | `0.15` |
+| `gpt-oss-20b` | Bedrock | 128k | `0.1` |
+| `minimax-m2.5` | Fireworks AI | 192k | `.2` |
+| `minimax-m2-7` | Fireworks AI | 196k | `0.1` |
+| `kimi-k2.5` | Fireworks AI | 262k | `0.3` |
+| `kimi-k2-6` | Fireworks AI | 262k | `0.4` |
+| `kimi-k2-thinking` | Bedrock | 262k | `0.7` |
+| `zai-glm-5-1` | Fireworks AI | 202k | `1` |
+| `qwen-3-6-plus` | Fireworks AI | 128k | `1` |
+| `zai-glm-4.7-flash` | Bedrock | 128k | `0.1` |
+| `f1` | Frogbot | 128k | `0.2` |
+| `f1-flash` | Frogbot | 1M | `0.15` |
+| `f1-pro` | Frogbot | 1M | `0.8` |
+
+---
+
+## Embedding models
+
+Use these model IDs with [embeddings](/api-reference/embeddings).
+
+| Model ID | Provider | Credit price per 1M tokens |
+|---|---|---|
+| `text-embedding-3-small` | OpenAI | 9.6 credits |
+| `text-embedding-3-large` | OpenAI | 62.4 credits |
+| `text-embedding-ada-002` | OpenAI | 48 credits |
+| `text-embedding-004` | Google | Free |
+| `voyage-4-large` | Voyage AI | 57.6 credits |
+| `voyage-4` | Voyage AI | 28.8 credits |
+| `voyage-4-lite` | Voyage AI | 9.6 credits |
+| `voyage-context-3` | Voyage AI | 86.4 credits |
+| `voyage-code-3` | Voyage AI | 86.4 credits |
+| `voyage-finance-2` | Voyage AI | 57.6 credits |
+| `voyage-law-2` | Voyage AI | 57.6 credits |
+| `voyage-code-2` | Voyage AI | 57.6 credits |
+
+---
+
+## Rerank models
+
+Use these model IDs with [rerank](/api-reference/rerank).
+
+| Model ID | Provider | Credit price per 1M tokens |
+|---|---|---|
+| `rerank-2.5` | Voyage AI | 24 credits |
+| `rerank-2.5-lite` | Voyage AI | 9.6 credits |
+
+---
+
+## Audio transcription models
+
+Use these model IDs with [audio transcriptions](/api-reference/audio-transcriptions).
+
+| Model ID | Provider | Credit price |
+|---|---|---|
+| `whisper-1` | OpenAI | 2.88 credits/min |
+| `elevenlabs-scribe-v2` | ElevenLabs | 192 credits/hr |
+
+---
+
+## Audio speech models
+
+Use these model IDs with [audio speech](/api-reference/audio-speech).
+
+| Model ID | Provider | Credit price per 1M chars |
+|---|---|---|
+| `elevenlabs-tts-multilingual-v2` | ElevenLabs | 81,600 credits |
+| `elevenlabs-tts-v3` | ElevenLabs | 81,600 credits |
+
+---
+
+## Image generation models
+
+Use these model IDs with [image generation](/api-reference/images-generations).
+
+| Model ID | Provider | Credit price |
+|---|---|---|
+| `dall-e-3` | OpenAI | 19.2-57.6 credits per image |
+| `imagen-4` | Google | 19.2 credits per image |
+| `imagen-4-ultra` | Google | 28.8 credits per image |
+| `imagen-4-fast` | Google | 9.6 credits per image |
+| `gemini-3-pro-image-preview` | Google | 960 input / 57,600 output credits per 1M tokens |
+| `gemini-3-1-flash-image-preview` | Google | 144 input / 14,400 output credits per 1M tokens |
+| `gemini-2.5-flash-image` | Google | 144 input / 14,400 output credits per 1M tokens |
+
+---
+
+## Call endpoint
+
+Send a `GET` request with your Frogbot API key.
+
+---
+
+## Authenticate
+
+Use an API key in the `Authorization` header.
+
+```bash
+curl https://app.frogbot.ai/api/v1/models \
+  -H "Authorization: Bearer $FROGBOT_API_KEY"
+```
+
+---
+
+## Understand response
+
+Returns an OpenAI-compatible list object.
+Each entry is a supported model object.
+
+<ResponseField name="object" type="string">
+  Always `list`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of model objects.
+
+  <Expandable title="Model object">
+    <ResponseField name="id" type="string">
+      Provider-prefixed model ID like `openai/gpt-4o-mini`.
+    </ResponseField>
+
+    <ResponseField name="object" type="string">
+      Typically `model`.
+    </ResponseField>
+
+    <ResponseField name="created" type="integer">
+      Unix timestamp, if provided by upstream.
+    </ResponseField>
+
+    <ResponseField name="owned_by" type="string">
+      Provider name like `openai`.
+    </ResponseField>
+
+    <ResponseField name="provider" type="string">
+      Provider name, if included.
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      ISO timestamp, if included.
+    </ResponseField>
+
+    <ResponseField name="provider_info" type="object">
+      Provider metadata like status, if included.
+    </ResponseField>
+
+    <ResponseField name="..." type="any">
+      Additional fields may be present.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## See example
+
+Example response shape.
+Fields may vary by provider.
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "openai/gpt-4o-mini",
+      "object": "model",
+      "created": 1735689600,
+      "owned_by": "openai",
+      "provider_info": {
+        "status": "enabled"
+      }
+    }
+  ]
+}
+```
+
+---
+
+## Handle errors
+
+`401` means the API key is missing or invalid.
+`429` means you hit a usage or plan limit.

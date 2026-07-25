@@ -1,0 +1,149 @@
+---
+title: "Image generation"
+description: "Generate images from a text prompt"
+api: "POST https://app.frogbot.ai/api/v1/images/generations"
+---
+
+Generate images from a text prompt. Supports OpenAI, Google Gemini, and Imagen models.
+
+---
+
+## Authenticate
+
+Use an API key in the `Authorization` header.
+
+```bash
+curl https://app.frogbot.ai/api/v1/images/generations \
+  -H "Authorization: Bearer $FROGBOT_API_KEY"
+```
+
+---
+
+## Request body
+
+<ParamField body="model" type="string" required>
+  Image generation model ID to use. See [available image models](/api-reference/models#image-generation) for the full list.
+
+  Examples: `dall-e-3`, `imagen-4`, `imagen-4-ultra`, `gemini-3-pro-image-preview`
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Text description of the image to generate.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  Number of images to generate. Most models support `1`.
+</ParamField>
+
+<ParamField body="size" type="string" default="1024x1024">
+  Dimensions of the generated image. Supported sizes vary by model.
+
+  DALL-E 3: `1024x1024`, `1024x1792`, `1792x1024`
+</ParamField>
+
+<ParamField body="quality" type="string" default="standard">
+  Image quality. Options: `standard`, `hd`. Supported on DALL-E 3.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  Format of the returned image. Options: `url`, `b64_json`.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="created" type="integer">
+  Unix timestamp of when the image was created.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of generated image objects.
+
+  <Expandable title="Image object">
+    <ResponseField name="url" type="string">
+      URL of the generated image. Present when `response_format` is `url`.
+    </ResponseField>
+    <ResponseField name="b64_json" type="string">
+      Base64-encoded image data. Present when `response_format` is `b64_json`.
+    </ResponseField>
+    <ResponseField name="revised_prompt" type="string">
+      The prompt used after any safety rewrites, if applicable.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+```bash curl
+curl https://app.frogbot.ai/api/v1/images/generations \
+  -H "Authorization: Bearer $FROGBOT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "dall-e-3",
+    "prompt": "A photorealistic mountain landscape at sunrise",
+    "size": "1024x1024"
+  }'
+```
+
+```bash Imagen 4
+curl https://app.frogbot.ai/api/v1/images/generations \
+  -H "Authorization: Bearer $FROGBOT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "imagen-4",
+    "prompt": "A photorealistic mountain landscape at sunrise"
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://app.frogbot.ai/api/v1",
+    api_key="YOUR_API_KEY"
+)
+
+response = client.images.generate(
+    model="dall-e-3",
+    prompt="A photorealistic mountain landscape at sunrise",
+    size="1024x1024"
+)
+
+print(response.data[0].url)
+```
+
+```typescript TypeScript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "https://app.frogbot.ai/api/v1",
+  apiKey: "YOUR_API_KEY",
+});
+
+const response = await client.images.generate({
+  model: "dall-e-3",
+  prompt: "A photorealistic mountain landscape at sunrise",
+  size: "1024x1024",
+});
+
+console.log(response.data[0].url);
+```
+</CodeGroup>
+
+<ResponseExample>
+```json 200
+{
+  "created": 1709123456,
+  "data": [
+    {
+      "url": "https://...",
+      "revised_prompt": "A photorealistic mountain landscape at sunrise with golden light"
+    }
+  ]
+}
+```
+</ResponseExample>

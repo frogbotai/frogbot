@@ -1,0 +1,164 @@
+---
+title: "Embeddings"
+description: "Generate vector embeddings from text"
+api: "POST https://app.frogbot.ai/api/v1/embeddings"
+---
+
+Create an embedding vector from a text input. Compatible with the OpenAI embeddings API.
+
+---
+
+## Authenticate
+
+Use an API key in the `Authorization` header.
+
+```bash
+curl https://app.frogbot.ai/api/v1/embeddings \
+  -H "Authorization: Bearer $FROGBOT_API_KEY"
+```
+
+---
+
+## Request body
+
+<ParamField body="model" type="string" required>
+  Embedding model ID to use. See [available embedding models](/api-reference/models#embeddings) for the full list.
+
+  Examples: `text-embedding-3-small`, `text-embedding-3-large`, `voyage-4`, `voyage-4-large`
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  Text to embed. Pass a string for a single input or an array of strings for batch embedding.
+
+```json
+["The quick brown fox", "jumped over the lazy dog"]
+```
+
+</ParamField>
+
+<ParamField body="encoding_format" type="string" default="float">
+  Format for the returned embeddings. Options: `float`, `base64`.
+</ParamField>
+
+<ParamField body="dimensions" type="integer">
+  Number of dimensions for the output embedding. Supported on `text-embedding-3-small` and `text-embedding-3-large`.
+</ParamField>
+
+---
+
+## Response
+
+<ResponseField name="object" type="string">
+  Always `list`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of embedding objects.
+
+  <Expandable title="Embedding object">
+    <ResponseField name="index" type="integer">
+      Index of the input this embedding corresponds to.
+    </ResponseField>
+    <ResponseField name="object" type="string">
+      Always `embedding`.
+    </ResponseField>
+    <ResponseField name="embedding" type="array">
+      The embedding vector as an array of floats.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  The model used to generate the embeddings.
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Token usage statistics.
+
+  <Expandable title="Usage object">
+    <ResponseField name="prompt_tokens" type="integer">
+      Tokens in the input.
+    </ResponseField>
+    <ResponseField name="total_tokens" type="integer">
+      Total tokens used.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Examples
+
+<CodeGroup>
+```bash Single input
+curl https://app.frogbot.ai/api/v1/embeddings \
+  -H "Authorization: Bearer $FROGBOT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "text-embedding-3-small",
+    "input": "The quick brown fox jumped over the lazy dog"
+  }'
+```
+
+```bash Batch input
+curl https://app.frogbot.ai/api/v1/embeddings \
+  -H "Authorization: Bearer $FROGBOT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "voyage-4",
+    "input": ["First document", "Second document", "Third document"]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://app.frogbot.ai/api/v1",
+    api_key="YOUR_API_KEY"
+)
+
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input="The quick brown fox jumped over the lazy dog"
+)
+
+print(response.data[0].embedding)
+```
+
+```typescript TypeScript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "https://app.frogbot.ai/api/v1",
+  apiKey: "YOUR_API_KEY",
+});
+
+const response = await client.embeddings.create({
+  model: "text-embedding-3-small",
+  input: "The quick brown fox jumped over the lazy dog",
+});
+
+console.log(response.data[0].embedding);
+```
+</CodeGroup>
+
+<ResponseExample>
+```json 200
+{
+  "object": "list",
+  "data": [
+    {
+      "index": 0,
+      "object": "embedding",
+      "embedding": [0.0023064255, -0.009327292, 0.015797347]
+    }
+  ],
+  "model": "text-embedding-3-small",
+  "usage": {
+    "prompt_tokens": 9,
+    "total_tokens": 9
+  }
+}
+```
+</ResponseExample>

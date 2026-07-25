@@ -1,0 +1,97 @@
+---
+title: "Codex"
+description: "Use Frogbot as a custom OpenAI provider"
+---
+
+Codex CLI can talk to Frogbot by setting a custom base URL.
+This lets you use models from multiple providers with one key.
+
+---
+
+## Acknowledge
+
+Setup notes are adapted from guidance by [AlexGS74](https://github.com/AlexGS74).
+Big thanks for sharing the original walkthrough.
+
+---
+
+## Install
+
+Install the Codex CLI.
+
+```bash
+npm install -g @openai/codex
+```
+
+Confirm it’s on your PATH.
+
+```bash
+codex --version
+```
+
+---
+
+## Configure
+
+Create or edit `~/.codex/config.toml`.
+Set a provider that points to Frogbot.
+
+```toml
+[model_providers.frogbot]
+name = "Frogbot"
+base_url = "https://app.frogbot.ai/api/v1"
+env_key = "FROGBOT_API_KEY"
+
+[profiles.frogbot]
+model_provider = "frogbot"
+model = "gpt-4o"
+```
+
+Export your API key in your shell.
+
+```bash
+export FROGBOT_API_KEY="fw_api_..."
+```
+
+---
+
+## Pick a model
+
+Choose a model ID from the [models list](/).
+You can set it in the profile or pass `--model` per run.
+
+---
+
+## Run
+
+Use the Frogbot profile for any session.
+
+```bash
+codex --profile frogbot
+```
+
+Override the model when you need to.
+
+```bash
+codex --profile frogbot --model "claude-opus-4-5"
+```
+
+---
+
+## Troubleshoot
+
+If you get a 401, double-check the `FROGBOT_API_KEY` value.
+If you get a 404, make sure `base_url` ends with `/v1`.
+
+---
+
+## Learn more
+
+<CardGroup cols={2}>
+  <Card title="Models" icon="list" href="/">
+    Pick a supported model ID
+  </Card>
+  <Card title="Codex repo" icon="github" href="https://github.com/openai/codex">
+    View the CLI docs and config options
+  </Card>
+</CardGroup>

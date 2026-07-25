@@ -1,0 +1,70 @@
+---
+title: "API reference"
+description: "OpenAI-compatible inference endpoints"
+---
+
+Frogbot exposes an OpenAI-compatible API. If you're already using OpenAI's SDK, you can switch to Frogbot by changing the base URL and API key.
+
+```
+https://app.frogbot.ai/api/v1
+```
+
+---
+
+## Chat and messages
+
+<Card
+  title="POST /v1/chat/completions"
+  icon="message"
+  href="/api-reference/chat-completions"
+>
+  Create a chat completion with streaming, tool calling, and MCP support
+</Card>
+
+<Card title="POST /v1/messages" icon="message" href="/api-reference/messages">
+  Anthropic-compatible messages API with streaming support
+</Card>
+
+---
+
+## Embeddings and retrieval
+
+<Card title="POST /v1/embeddings" icon="vector-square" href="/api-reference/embeddings">
+  Generate vector embeddings from text
+</Card>
+
+<Card title="POST /v1/rerank" icon="arrow-up-wide-short" href="/api-reference/rerank">
+  Rerank documents by relevance to a query
+</Card>
+
+---
+
+## Audio
+
+<Card title="POST /v1/audio/transcriptions" icon="microphone" href="/api-reference/audio-transcriptions">
+  Transcribe audio files to text
+</Card>
+
+<Card title="POST /v1/audio/speech" icon="volume-high" href="/api-reference/audio-speech">
+  Generate spoken audio from text
+</Card>
+
+---
+
+## Images
+
+<Card title="POST /v1/images/generations" icon="image" href="/api-reference/images-generations">
+  Generate images from a text prompt
+</Card>
+
+---
+
+## Platform
+
+<Card title="GET /v1/models" icon="list" href="/api-reference/models">
+  Return supported model metadata
+</Card>
+
+<Card title="GET /v1/quota" icon="gauge" href="/api-reference/quota">
+  Check current 5-hour spend window usage
+</Card>

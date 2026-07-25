@@ -1,0 +1,60 @@
+---
+title: "Kilo Code"
+description: "Connect VS Code to Frogbot models"
+---
+
+Kilo Code can use Frogbot via an OpenAI-compatible provider.
+You’ll configure a base URL and paste in your API key.
+
+---
+
+## Acknowledge
+
+This guide was contributed by [amarkic1](https://github.com/amarkic1).
+Big thanks for sharing it.
+
+---
+
+## Install
+
+Install **Kilo Code** from the VS Code Extensions marketplace.
+Reload VS Code after the install finishes.
+
+---
+
+## Configure
+
+Open Kilo Code settings and add a new profile.
+Pick **OpenAI compatible** as the provider.
+
+Use these values:
+
+- Base URL: `https://app.frogbot.ai/api/v1`
+- API key: your Frogbot API key
+- Model: any model from the [models list](/)
+
+If a model isn’t in the dropdown, type it in manually.
+A good first check is `gpt-4o`.
+
+---
+
+## Pick a model
+
+Pick a model ID from the [models list](/).
+If you want a safe default, start with `gpt-4o`.
+
+---
+
+## Run
+
+Open the Kilo Code chat panel and start a prompt.
+Switch profiles if you want different default models.
+
+---
+
+## Troubleshoot
+
+A 401 usually means the API key is missing or incorrect.
+A "model not found" error means the model ID doesn’t match the list.
+
+

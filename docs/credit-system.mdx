@@ -1,0 +1,57 @@
+---
+title: "Credit system"
+description: "How credits and token multipliers are calculated"
+---
+
+Firmware uses a credit-based billing system with per-model multipliers.
+
+---
+
+## Overview
+
+In FrogBot:
+
+`1 credit = 2500 standard tokens`
+
+Standard tokens are counted like this:
+
+- `1 input token = 1 standard token`
+- `1 output token = 1 standard token`
+- `10 cached tokens = 1 standard token`
+
+Per-model pricing then applies a multiplier. See the [models endpoint](/api-reference/models) for the current model multipliers.
+
+---
+
+## Formula
+
+```text
+standard tokens = input tokens + output tokens + cached tokens / 10
+
+credits used = (standard tokens / 2500) * model multiplier
+```
+
+A `1.0` model would use `1` credit for every `2500` standard tokens. Cheaper models land below that, and more expensive models land above it.
+
+---
+
+## Examples
+
+These examples use current multiplier values.
+
+- `claude-sonnet-4-6` (`1.2`)
+  - Usage: `4000` input + `1000` output + `5000` cached
+  - Standard tokens: `4000 + 1000 + 5000 / 10 = 5500`
+  - Credits: `5500 / 2500 * 1.2 = 2.64`
+
+- `gpt-5-4-mini` (`0.15`)
+  - Usage: `10000` input + `2000` output
+  - Standard tokens: `12000`
+  - Credits: `12000 / 2500 * 0.15 = 0.72`
+
+- `claude-opus-4-6` (`2`)
+  - Usage: `12000` input + `3000` output + `10000` cached
+  - Standard tokens: `12000 + 3000 + 10000 / 10 = 16000`
+  - Credits: `16000 / 2500 * 2 = 12.8`
+
+---

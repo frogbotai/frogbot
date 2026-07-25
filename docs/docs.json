@@ -146,6 +146,55 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Cloud",
+        "groups": [
+          {
+            "group": "Hosted API",
+            "pages": ["subscription-intro", "api-keys"]
+          },
+          {
+            "group": "Pricing",
+            "pages": ["credit-system"]
+          },
+          {
+            "group": "Browser Agent MCP",
+            "pages": ["browser-mcp"]
+          },
+          {
+            "group": "Agent providers",
+            "pages": [
+              "agents/opencode",
+              "agents/claude-code-router",
+              "agents/codex",
+              "agents/kilo-code"
+            ]
+          },
+          {
+            "group": "Inference API",
+            "pages": [
+              "api-reference/index",
+              "api-reference/chat-completions",
+              "api-reference/messages",
+              "api-reference/embeddings",
+              "api-reference/rerank",
+              "api-reference/audio-transcriptions",
+              "api-reference/audio-speech",
+              "api-reference/images-generations",
+              "api-reference/models",
+              "api-reference/quota"
+            ]
+          },
+          {
+            "group": "Deep Research API",
+            "pages": [
+              "api-reference/research-create",
+              "api-reference/research-get",
+              "api-reference/research-list"
+            ]
+          }
+        ]
       }
     ]
   },

@@ -1,0 +1,55 @@
+---
+title: "API keys"
+description: "Generate credentials to access all models"
+---
+
+Your API key unlocks access to all supported models through a single subscription. Choose between a fixed monthly rate or pay-as-you-go.
+
+---
+
+## Create a key
+
+1. Go to [Account](https://app.frogbot.ai) in the dashboard
+2. Click **API Keys** in the sidebar
+3. Click **Create API**
+4. Select a pricing model: **Subscription** or **API**
+5. Click **Generate**
+
+<Frame>
+  <img
+    src="/images/api_key_pricing_model_select.png"
+    alt="API key pricing model selection"
+  />
+</Frame>
+
+---
+
+## Use the key
+
+Include your API key in the `Authorization` header or `x-api-key` header.
+
+<CodeGroup>
+```bash Authorization header
+curl https://app.frogbot.ai/api/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-4o", "messages": [{"role": "user", "content": "Hello"}]}'
+```
+
+```bash x-api-key header
+curl https://app.frogbot.ai/api/v1/chat/completions \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-4o", "messages": [{"role": "user", "content": "Hello"}]}'
+```
+
+</CodeGroup>
+
+---
+
+## Pricing models
+
+| Model        | Description                            |
+| ------------ | -------------------------------------- |
+| Subscription | Fixed monthly rate with included usage |
+| API          | Pay per token based on model pricing   |

@@ -1,0 +1,472 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenAPI Plant Store",
+    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
+    "license": {
+      "name": "MIT"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://sandbox.mintlify.com"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/messages": {
+      "post": {
+        "description": "Anthropic-compatible Messages API. Sends structured input messages and returns the next assistant message. Supports server-sent events streaming when stream=true.",
+        "requestBody": {
+          "description": "Messages request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessagesCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Message response (or SSE stream if stream=true)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              },
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plants": {
+      "get": {
+        "description": "Returns all plants from the system that the user has access to",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The maximum number of results to return",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plant response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Plant"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates a new plant in the store",
+        "requestBody": {
+          "description": "Plant to add to the store",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPlant"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "plant response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Plant"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plants/{id}": {
+      "delete": {
+        "description": "Deletes a single plant based on the ID supplied",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID of plant to delete",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Plant deleted",
+            "content": {}
+          },
+          "400": {
+            "description": "unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {
+    "/plant/webhook": {
+      "post": {
+        "description": "Information about a new plant added to the store",
+        "requestBody": {
+          "description": "Plant added to the store",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPlant"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Return a 200 status to indicate that the data was received successfully"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "MessagesCreateRequest": {
+        "type": "object",
+        "required": [
+          "model",
+          "max_tokens",
+          "messages"
+        ],
+        "properties": {
+          "model": {
+            "description": "Model identifier",
+            "type": "string"
+          },
+          "max_tokens": {
+            "description": "Maximum number of tokens to generate",
+            "type": "integer",
+            "format": "int32"
+          },
+          "messages": {
+            "description": "Conversation turns (user/assistant)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageParam"
+            }
+          },
+          "stream": {
+            "description": "Stream the response as server-sent events",
+            "type": "boolean"
+          },
+          "system": {
+            "description": "System prompt",
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/TextBlock" }
+              }
+            ]
+          },
+          "temperature": {
+            "description": "Sampling temperature",
+            "type": "number"
+          },
+          "stop_sequences": {
+            "description": "Custom stop sequences",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "tools": {
+            "description": "Tool definitions",
+            "type": "array",
+            "items": { "type": "object" }
+          },
+          "tool_choice": {
+            "description": "Tool choice configuration",
+            "type": "object"
+          },
+          "metadata": {
+            "description": "Request metadata",
+            "type": "object"
+          }
+        }
+      },
+      "MessageParam": {
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/ContentBlock" }
+              }
+            ]
+          }
+        }
+      },
+      "ContentBlock": {
+        "oneOf": [
+          { "$ref": "#/components/schemas/TextBlock" },
+          { "$ref": "#/components/schemas/ImageBlock" },
+          { "$ref": "#/components/schemas/ToolUseBlock" },
+          { "$ref": "#/components/schemas/ToolResultBlock" }
+        ]
+      },
+      "TextBlock": {
+        "type": "object",
+        "required": [
+          "type",
+          "text"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["text"]
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "ImageBlock": {
+        "type": "object",
+        "required": [
+          "type",
+          "source"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["image"]
+          },
+          "source": {
+            "type": "object"
+          }
+        }
+      },
+      "ToolUseBlock": {
+        "type": "object",
+        "required": [
+          "type",
+          "id",
+          "name",
+          "input"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["tool_use"]
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "input": {
+            "type": "object"
+          }
+        }
+      },
+      "ToolResultBlock": {
+        "type": "object",
+        "required": [
+          "type",
+          "tool_use_id"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["tool_result"]
+          },
+          "tool_use_id": {
+            "type": "string"
+          },
+          "content": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/ContentBlock" }
+              }
+            ]
+          },
+          "is_error": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "role",
+          "model",
+          "content"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["message"] },
+          "role": { "type": "string", "enum": ["assistant"] },
+          "model": { "type": "string" },
+          "content": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ContentBlock" }
+          },
+          "stop_reason": { "type": "string" },
+          "stop_sequence": { "type": "string" },
+          "usage": { "type": "object" }
+        }
+      },
+      "Plant": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The name of the plant",
+            "type": "string"
+          },
+          "tag": {
+            "description": "Tag to specify the type",
+            "type": "string"
+          }
+        }
+      },
+      "NewPlant": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Plant"
+          },
+          {
+            "required": [
+              "id"
+            ],
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "Identification number of the plant",
+                "type": "integer",
+                "format": "int64"
+              }
+            }
+          }
+        ]
+      },
+      "Error": {
+        "required": [
+          "error",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

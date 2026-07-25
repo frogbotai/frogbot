@@ -1,0 +1,129 @@
+---
+title: "Messages"
+description: "Create messages with streaming and tool calling"
+api: "POST https://app.frogbot.ai/api/v1/messages"
+---
+
+Send a structured list of input messages with text and/or image content, and the model will generate the next message in the conversation.
+
+The Messages API can be used for either single queries or stateless multi-turn conversations.
+
+---
+
+## Authenticate
+
+Use an API key in the `Authorization` header.
+
+```bash
+curl https://app.frogbot.ai/api/v1/messages \
+  -H "Authorization: Bearer $FROGBOT_API_KEY"
+```
+
+---
+
+## Request body
+
+<ParamField body="model" type="string" required>
+  Anthropic model ID to use. See [available models](/) for the full list.
+</ParamField>
+
+<ParamField body="max_tokens" type="integer" required>
+  The maximum number of tokens to generate before stopping.
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  Conversation turns as an array of `{ role, content }` objects.
+
+```json
+[
+  { "role": "user", "content": "Hello, Claude" }
+]
+```
+
+`content` may be a string or an array of content blocks (e.g. `{ "type": "text", "text": "..." }`).
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  Enable Server-Sent Events streaming for the response.
+</ParamField>
+
+<ParamField body="system" type="string | array">
+  System prompt.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  Sampling temperature.
+</ParamField>
+
+<ParamField body="stop_sequences" type="array">
+  Custom stop sequences.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  List of tools the model may call.
+</ParamField>
+
+<ParamField body="tool_choice" type="object">
+  Controls tool calling behavior.
+</ParamField>
+
+---
+
+## Examples
+
+<CodeGroup>
+```bash Basic request
+curl https://app.frogbot.ai/api/v1/messages \
+  -H "Authorization: Bearer $FROGBOT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-3-5-sonnet-20241022",
+    "max_tokens": 256,
+    "messages": [
+      {"role": "user", "content": "Hello!"}
+    ]
+  }'
+```
+
+```bash Streaming
+curl -N https://app.frogbot.ai/api/v1/messages \
+  -H "Authorization: Bearer $FROGBOT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-3-5-sonnet-20241022",
+    "max_tokens": 256,
+    "stream": true,
+    "messages": [
+      {"role": "user", "content": "Write a haiku about proxies"}
+    ]
+  }'
+```
+</CodeGroup>
+
+---
+
+## Response
+
+Returns an Anthropic-compatible `message` object. If `stream=true`, the response is an SSE stream (`text/event-stream`).
+
+<ResponseExample>
+```json 200
+{
+  "id": "msg_01XFDUDYJgAACzvnptvVoYEL",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-3-5-sonnet-20241022",
+  "content": [
+    {
+      "type": "text",
+      "text": "Hello! How can I help you today?"
+    }
+  ],
+  "stop_reason": "end_turn",
+  "usage": {
+    "input_tokens": 10,
+    "output_tokens": 12
+  }
+}
+```
+</ResponseExample>

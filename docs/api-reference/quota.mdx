@@ -1,0 +1,54 @@
+---
+title: "Get Quota"
+description: "Check your credit balance"
+api: "GET https://app.frogbot.ai/api/v1/quota"
+---
+
+Check your current credit balance. **Monthly credits are used before top-up credits.**
+
+---
+
+## Authenticate
+
+```bash
+curl https://app.frogbot.ai/api/v1/quota \
+  -H "Authorization: Bearer $FROGBOT_API_KEY"
+```
+
+---
+
+## Response fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `monthly` | number | Credits from your current subscription period |
+| `topUp` | number | Purchased top-up credits (do not expire) |
+| `reset` | string | Date when monthly credits reset
+
+---
+
+## Examples
+
+```json 200
+{
+  "monthly": 8000,
+  "topUp": 2500,
+  "reset": "2026-05-01"
+}
+```
+
+```json 401
+{
+  "error": "Unauthorized"
+}
+```
+
+---
+
+## Understand response
+
+`monthly` credits come from your subscription and reset each billing period.
+
+`topUp` credits where purchased separately on top of your subscription and never expire.
+
+`reset` is included when a billing period end date is available.

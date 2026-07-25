@@ -1,0 +1,114 @@
+---
+title: "Claude Code Router"
+description: "Route requests through Frogbot-backed models"
+---
+
+claude-code-router lets you run Claude Code while routing requests to Frogbot.
+It’s handy when you want one API key for many models.
+
+---
+
+## Acknowledge
+
+Setup notes are adapted from guidance by [AlexGS74](https://github.com/AlexGS74).
+Big thanks for sharing the original walkthrough.
+
+---
+
+## Install
+
+Install Claude Code and the router.
+
+```bash
+npm install -g @anthropic-ai/claude-code
+npm install -g @musistudio/claude-code-router
+```
+
+Verify the router is available.
+
+```bash
+ccr --help
+```
+
+---
+
+## Configure
+
+Edit `~/.claude-code-router/config.json` and add a Frogbot provider.
+Keep `api_base_url` pointed at the chat completions endpoint.
+
+```json
+{
+  "HOST": "127.0.0.1",
+  "PORT": 3456,
+  "Providers": [
+    {
+      "name": "frogbot",
+      "api_base_url": "https://app.frogbot.ai/api/v1/chat/completions",
+      "api_key": "YOUR_FROGBOT_API_KEY",
+      "models": ["gpt-4o", "claude-opus-4-5"]
+    }
+  ],
+  "Router": {
+    "default": "frogbot,gpt-4o"
+  }
+}
+```
+
+Restart after you change the config.
+
+```bash
+ccr restart
+```
+
+---
+
+## Pick a model
+
+Use any model ID from the [models list](/).
+If you want separate defaults, add router keys like `think` or `background`.
+
+```json
+{
+  "Router": {
+    "default": "frogbot,gpt-4o",
+    "think": "frogbot,claude-opus-4-5"
+  }
+}
+```
+
+---
+
+## Run
+
+Start the router, then launch Claude Code through it.
+
+```bash
+ccr start
+ccr code
+```
+
+Use the interactive model picker to switch models.
+
+```bash
+ccr model
+```
+
+---
+
+## Troubleshoot
+
+Use `ccr status` to confirm the server is running.
+Check `~/.claude-code-router/logs/` if requests fail.
+
+---
+
+## Learn more
+
+<Card
+  title="claude-code-router"
+  icon="github"
+  href="https://github.com/musistudio/claude-code-router"
+>
+  View upstream install and config details
+</Card>
