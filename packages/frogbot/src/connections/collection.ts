@@ -9,7 +9,7 @@ export function defaultConnectionsCollection({ slug, userSlug }: { slug: string;
     admin: {
       group: 'Connections',
       useAsTitle: 'accountLabel',
-      defaultColumns: ['service', 'accountLabel', 'status', 'updatedAt'],
+      defaultColumns: ['services', 'accountLabel', 'status', 'updatedAt'],
     },
     access: {
       create: () => false,

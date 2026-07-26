@@ -6,7 +6,7 @@ import { ConnectionError, Connections } from './api.js';
 async function setup(doc: Record<string, unknown> | undefined, sources: ConstructorParameters<typeof Connections>[1]['sources'] = []) {
   const encryption = createCredentialEncryption({ secret: 'secret' });
   const encryptedCredentials = await encryption.encrypt(JSON.stringify(doc?.credentials ?? {}));
-  const stored = doc ? { id: 'id', service: 'service', source: 'secret', sourceKey: 'secret', status: 'active', ...doc, encryptedCredentials } : undefined;
+  const stored = doc ? { id: 'id', services: ['service'], source: 'secret', sourceKey: 'secret', status: 'active', ...doc, encryptedCredentials } : undefined;
   const find = vi.fn(async () => ({ docs: stored ? [stored] : [] }));
   const update = vi.fn(async ({ data }) => Object.assign(stored ?? {}, data));
   const api = new Connections({ find, update } as never, {

@@ -7,8 +7,7 @@ import { adaptCredential } from './adapters.js';
 
 export type ConnectionRecord = {
   id: number | string;
-  service: string;
-  services?: string[];
+  services: string[];
   source: 'oauth' | 'secret';
   sourceKey: string;
   credentialType: Exclude<CredentialType, 'none'>;
@@ -64,14 +63,14 @@ export class Connections {
       }
       const refreshed = await this.findConnection(service, owner!);
       if (!refreshed || refreshed.status === 'error') throw new ConnectionError(`Connection for '${service}' could not be refreshed.`, 'error');
-      return this.resolveCredentials(refreshed);
+      return this.resolveCredentials({ doc: refreshed, service });
     }
     if (doc.status === 'error') throw new ConnectionError(`Connection for '${service}' is in an error state.`, 'error');
-    return this.resolveCredentials(doc);
+    return this.resolveCredentials({ doc, service });
   }
 
-  private async resolveCredentials(doc: ConnectionRecord): Promise<AppConnectionValue> {
-    if (!doc.encryptedCredentials) throw new ConnectionError(`No connection found for '${doc.service}'.`, 'missing');
+  private async resolveCredentials({ doc, service }: { doc: ConnectionRecord; service: string }): Promise<AppConnectionValue> {
+    if (!doc.encryptedCredentials) throw new ConnectionError(`No connection found for '${service}'.`, 'missing');
     const credentials = JSON.parse(await this.config.encryption.decrypt(doc.encryptedCredentials)) as Record<string, unknown>;
     return adaptCredential(doc.credentialType, doc.credentialType === 'custom' ? { ...credentials, ...(doc.metadata ?? {}) } : credentials);
   }

@@ -87,5 +87,5 @@ export function getCurrentDatabaseAdapter(): DatabaseAdapterType {
   if (dbAdapter && dbAdapter in dbAdapters) {
     return dbAdapter
   }
-  return 'mongodb'
+  return 'sqlite'
 }

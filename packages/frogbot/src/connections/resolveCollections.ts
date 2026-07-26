@@ -10,7 +10,7 @@ export const DEFAULT_CONNECTIONS_SLUG = 'connections';
 
 const RESERVED_FIELDS = [
   'owner',
-  'service',
+  'services',
   'source',
   'credentialType',
   'sourceKey',

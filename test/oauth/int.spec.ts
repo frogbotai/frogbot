@@ -39,7 +39,7 @@ describe('OAuth plugin integration', () => {
     expect(callbackResponse.headers.get('location')).toBe('https://app.test/settings?oauth_connection=connection-1');
 
     const connection = { id: 'connection-1', ...create.mock.calls[1][0].data };
-    expect(connection).toMatchObject({ service: 'custom-service', source: 'oauth', sourceKey: 'custom', accountId: 'account-1' });
+    expect(connection).toMatchObject({ services: ['custom-service'], source: 'oauth', sourceKey: 'custom', accountId: 'account-1' });
 
     const connectionAPI = new Connections({
       find: vi.fn().mockResolvedValue({ docs: [connection] }),

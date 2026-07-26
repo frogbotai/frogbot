@@ -25,7 +25,7 @@ export type BootedFrogbot = {
  *
  * The database adapter is determined by the FROGBOT_DATABASE env var
  * and loaded from the generated `test/databaseAdapter.js` file. The
- * corresponding Docker service must already be running.
+ * Non-file adapters require their corresponding service to be running.
  *
  * Each test file gets its own database to prevent cross-contamination
  * when vitest runs files in parallel. Pass `suiteNameOverride` when
@@ -39,7 +39,7 @@ export type BootedFrogbot = {
  */
 export async function bootFrogbot(dirname: string, suiteNameOverride?: string): Promise<BootedFrogbot> {
   const suiteName = suiteNameOverride ?? path.basename(dirname)
-  const dbType = process.env.FROGBOT_DATABASE || 'mongodb'
+  const dbType = process.env.FROGBOT_DATABASE || 'sqlite'
 
   if (dbType === 'mongodb') {
     const baseUri = process.env.MONGODB_URI || 'mongodb://localhost:27018?directConnection=true&replicaSet=rs0'

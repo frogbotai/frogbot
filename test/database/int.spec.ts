@@ -8,7 +8,7 @@ import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import { postsSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
-const adapterLabel = process.env.FROGBOT_DATABASE || 'mongodb';
+const adapterLabel = process.env.FROGBOT_DATABASE || 'sqlite';
 
 describe(`database contract [${adapterLabel}]`, () => {
   let booted: BootedFrogbot;

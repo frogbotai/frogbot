@@ -79,6 +79,7 @@ export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpo
     try {
       const callbackUrl = new URL(options.path.replace(':provider', provider.id), options.baseUrl).toString();
       const tokens = await provider.exchange({ callbackUrl, code: callback.code, codeVerifier: state.codeVerifier, req });
+      const scopes = tokens.scopes ?? provider.scopes;
       const account = await provider.getAccount({ tokens, req });
       const owner = state[options.ownerField];
       const existing = await req.frogbot.find({
@@ -100,9 +101,9 @@ export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpo
         credentialType: 'oauth2',
         accountId: account.id,
         accountLabel: account.name ?? account.email,
-        encryptedCredentials: await options.encryption.encrypt(serializeTokens(tokens)),
+        encryptedCredentials: await options.encryption.encrypt(serializeTokens({ ...tokens, scopes })),
         expiresAt: tokens.expiresAt?.toISOString(),
-        scopes: tokens.scopes,
+        scopes,
         status: 'active',
         metadata: account.metadata,
       };

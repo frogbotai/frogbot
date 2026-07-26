@@ -11,7 +11,7 @@ process.env.PAYLOAD_DISABLE_ADMIN = 'true'
 process.env.PAYLOAD_DROP_DATABASE = 'true'
 
 if (!process.env.FROGBOT_DATABASE) {
-  process.env.FROGBOT_DATABASE = 'mongodb'
+  process.env.FROGBOT_DATABASE = 'sqlite'
 }
 
 const adapter = getCurrentDatabaseAdapter()
@@ -20,8 +20,7 @@ await assertDbReachable(adapter)
 generateDatabaseAdapter(adapter)
 
 /**
- * TCP-ping the adapter's host:port. Skips file-based adapters (sqlite).
- * For mongodb, skips because we use in-memory (no Docker needed).
+ * TCP-ping the adapter's host:port. Skips file-based adapters.
  */
 async function assertDbReachable(adapterName: DatabaseAdapterType): Promise<void> {
   const entry = dbAdapters[adapterName]
@@ -49,8 +48,8 @@ async function assertDbReachable(adapterName: DatabaseAdapterType): Promise<void
     `  \x1b[2mStart the service:\x1b[0m`,
     `    \x1b[36mdocker compose -f test/docker-compose.yml --profile ${entry.profile} up -d\x1b[0m`,
     '',
-    `  \x1b[2mOr use mongodb (no Docker needed):\x1b[0m`,
-    `    \x1b[36mFROGBOT_DATABASE=mongodb pnpm test:int\x1b[0m`,
+    `  \x1b[2mOr use SQLite (no Docker needed):\x1b[0m`,
+    `    \x1b[36mFROGBOT_DATABASE=sqlite pnpm test:int\x1b[0m`,
     '\x1b[31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m',
     '',
   ]

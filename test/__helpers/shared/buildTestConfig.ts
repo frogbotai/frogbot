@@ -21,8 +21,7 @@ type TestConfigOverrides = Omit<FrogbotConfig, 'secret' | 'db'> & {
 /**
  * Build a test config using the database adapter selected by FROGBOT_DATABASE.
  * The adapter is loaded from the generated `test/databaseAdapter.js` file
- * (written by vitest.setup.ts). Falls back to in-memory MongoDB via env var
- * when FROGBOT_DATABASE=mongodb (default).
+ * (written by vitest.setup.ts). SQLite is the default.
  */
 export async function buildTestConfig(overrides: TestConfigOverrides) {
   // Dynamic import of the generated adapter file
