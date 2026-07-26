@@ -100,4 +100,37 @@ describe('rewriteComponentPaths', () => {
     const config = {} as SanitizedConfig;
     expect(() => rewriteComponentPaths(config)).not.toThrow();
   });
+
+  it('rewrites Payload folder field components', () => {
+    const config = {
+      collections: [{
+        fields: [{
+          name: 'folder',
+          type: 'relationship',
+          admin: {
+            components: {
+              Cell: '@payloadcms/next/rsc#FolderTableCell',
+              Field: '@payloadcms/next/rsc#FolderField',
+            },
+          },
+        }],
+      }],
+    } as unknown as SanitizedConfig;
+
+    rewriteComponentPaths(config);
+
+    expect(config.collections[0]?.fields[0]?.admin?.components).toEqual({
+      Cell: '@frogbotai/next/rsc#FolderTableCell',
+      Field: '@frogbotai/next/rsc#FolderField',
+    });
+  });
+
+  it('does not traverse arbitrary circular custom data', () => {
+    const custom: Record<string, unknown> = { component: '@payloadcms/next/rsc#FolderField' };
+    custom.self = custom;
+    const config = makeConfig({ custom });
+
+    expect(() => rewriteComponentPaths(config)).not.toThrow();
+    expect(custom.component).toBe('@payloadcms/next/rsc#FolderField');
+  });
 });

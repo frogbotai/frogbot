@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CollectionConfig } from '../types/collection.js';
-import { mergeChatCollection } from './mergeCollection.js';
+import { mergeCollection as merge } from './mergeCollection.js';
+
+const mergeChatCollection = (props: Omit<Parameters<typeof merge>[0], 'feature'>) =>
+  merge({ ...props, feature: 'chat persistence' });
 
 const baseHook = () => 'base';
 const userHook = () => 'user';
@@ -23,7 +26,7 @@ function makeBase(overrides?: Partial<CollectionConfig>): CollectionConfig {
   };
 }
 
-describe('mergeChatCollection', () => {
+describe('mergeCollection', () => {
   it('appends base fields missing from the user collection', () => {
     const merged = mergeChatCollection({
       user: { slug: 'threads', fields: [{ name: 'department', type: 'text' }] },

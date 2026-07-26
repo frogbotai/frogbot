@@ -92,6 +92,25 @@ type ConfigJSONSchema = {
   definitions?: Record<string, unknown>;
 };
 
+function stripRefs(schema: unknown, stripped: ReadonlySet<string>): void {
+  if (!schema || typeof schema !== 'object') return;
+  if (Array.isArray(schema)) {
+    for (const item of schema) stripRefs(item, stripped);
+    return;
+  }
+  const obj = schema as Record<string, unknown>;
+  if (typeof obj.$ref === 'string') {
+    const match = /#\/definitions\/(.+)/.exec(obj.$ref);
+    if (match && stripped.has(match[1])) {
+      delete obj.$ref;
+      obj.type = 'null';
+    }
+  }
+  for (const value of Object.values(obj)) {
+    stripRefs(value, stripped);
+  }
+}
+
 export function stripInternalCollections(schema: ConfigJSONSchema): void {
   const isInternal = (slug: string) => slug.startsWith('payload-');
 
@@ -106,9 +125,15 @@ export function stripInternalCollections(schema: ConfigJSONSchema): void {
     }
   }
 
-  for (const name of Object.keys(schema.definitions ?? {})) {
-    if (isInternal(name)) delete schema.definitions![name];
+  const internalDefs = new Set(
+    Object.keys(schema.definitions ?? {}).filter(isInternal),
+  );
+  if (internalDefs.size === 0) return;
+
+  for (const name of internalDefs) {
+    delete schema.definitions![name];
   }
+  stripRefs(schema, internalDefs);
 }
 
 function resolveOutputPath(config: SanitizedConfig, cwd: string): string {

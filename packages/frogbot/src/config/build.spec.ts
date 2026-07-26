@@ -176,7 +176,7 @@ describe('frogbot buildConfig', () => {
         collections: [
           { slug: 'users', auth: true, fields: [] },
           { slug: 'projects', fields: [] },
-          { slug: 'files', fields: [] },
+          { slug: 'assets', fields: [] },
         ],
       });
       const result = await buildConfig(config);
@@ -234,10 +234,10 @@ describe('frogbot buildConfig', () => {
       expect(result).toBeDefined();
     });
 
-    it('handles empty collections array', async () => {
+    it('injects default collections for empty input', async () => {
       const config = makeConfig({ collections: [] });
       const result = await buildConfig(config);
-      expect(result.collections).toEqual([]);
+      expect(result.collections.map((c) => c.slug)).toEqual(['files']);
     });
   });
 });

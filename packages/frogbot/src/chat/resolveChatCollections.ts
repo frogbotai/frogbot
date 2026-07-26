@@ -12,7 +12,7 @@ import type { FrogbotConfig } from '../types/config.js';
 import type { SanitizedChatConfig } from '../types/chat.js';
 import { defaultMessagesCollection } from './collections/messages.js';
 import { defaultThreadsCollection } from './collections/threads.js';
-import { mergeChatCollection } from './mergeCollection.js';
+import { mergeCollection } from '../collections/mergeCollection.js';
 import { resolveUserSlug } from './resolveUserSlug.js';
 
 export const CHAT_ASSETS_SLUG = '_frogbot_chat_assets';
@@ -53,7 +53,12 @@ function resolveChatCollection({
 }: ResolveChatCollectionProps): CollectionConfig[] {
   if (existing) {
     const out = [...collections];
-    out[collections.indexOf(existing)] = mergeChatCollection({ user: existing, base: defaultCollection, reservedFields });
+    out[collections.indexOf(existing)] = mergeCollection({
+      user: existing,
+      base: defaultCollection,
+      reservedFields,
+      feature: 'chat persistence',
+    });
     return out;
   }
 

@@ -1,0 +1,53 @@
+---
+title: "Files"
+sidebarTitle: "Files"
+description: "Use FrogBot's default upload collection or adopt your own."
+keywords: ["files", "uploads", "folders", "storage", "collections"]
+---
+
+FrogBot adds a `files` collection to every app. It supports uploads, soft deletion, and Payload's folder browser without additional configuration.
+
+The default collection appears under **Files** in the admin panel and defines no custom fields. Payload supplies upload metadata such as the filename, MIME type, size, and URL.
+
+## Adopt your collection
+
+Mark one upload collection with `file: true` to use its slug and configuration instead of injecting `files`.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Documents: CollectionConfig = {
+  slug: 'documents',
+  file: true,
+  upload: {
+    mimeTypes: ['application/pdf']
+  },
+  fields: [
+    { name: 'category', type: 'text' }
+  ]
+}
+```
+
+Your fields, access rules, upload options, and other collection settings take precedence. A collection marked `file: true` must not set `upload: false`.
+
+Mark only one collection as `file: true`. A collection cannot hold another FrogBot role, such as `thread: true`, at the same time.
+
+## Folders
+
+Folders are enabled on the default collection. Set `folders: false` on an adopted collection if you do not want the Browse-by-folder view.
+
+## Storage
+
+Payload stores uploads on local disk unless you configure a storage adapter. For production and serverless deployments, configure an [upload storage adapter](/upload/storage-adapters) for the resolved collection slug, `files` by default.
+
+## Access
+
+The default collection requires an authenticated user to create, read, update, or delete files. Adopt a collection and provide `access` rules to change those defaults.
+
+<Warning>
+  Files do not have per-user ownership or sharing rules. Authenticated users can access every file allowed by the collection's access rules.
+</Warning>
+
+## Piece output
+
+Pieces that produce files write to the resolved files collection automatically. Set `pieceFiles.collection` only when piece output must use a different upload collection.

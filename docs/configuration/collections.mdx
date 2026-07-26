@@ -24,11 +24,11 @@ export default buildConfig({
 
 ## FrogBot collection model
 
-Collections you configure remain ordinary Payload collections. When agents are present, FrogBot also needs thread and message stores. It injects defaults or lets you adopt those roles into collections you own.
+Collections you configure remain ordinary Payload collections. FrogBot injects a files collection, and agents also need thread and message stores. You can adopt those roles into collections you own.
 
 ### Role markers
 
-FrogBot identifies chat collections by role, not by a required slug. Mark a collection with `thread: true` or `message: true`; FrogBot keeps its slug and merges in the required schema.
+FrogBot identifies managed collections by role, not by a required slug. Mark a collection with `thread: true`, `message: true`, or `file: true`; FrogBot keeps its slug and merges in the required configuration.
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -56,6 +56,7 @@ Your compatible field, access, admin, and option values win during the merge. Mi
 | --- | --- |
 | `thread: true` | `title`, owner `user` relationship, agent slug, and `lastMessageAt` |
 | `message: true` | Text `id`, thread relationship, role, `UIMessage.parts`, metadata, and usage |
+| `file: true` | Uploads, folders, soft deletion, admin defaults, and authenticated access |
 
 FrogBot rejects incompatible base field types. `threads.user` and `messages.id`, `messages.thread`, and `messages.parts` are reserved and cannot be redefined.
 
@@ -73,7 +74,7 @@ See [Chat persistence](/chat/overview) for request behavior and durability guara
 
 ## Collection config options
 
-The following options are available on any `CollectionConfig`. FrogBot adds `thread` and `message` to Payload's standard set; everything else below is Payload's native API.
+The following options are available on any `CollectionConfig`. FrogBot adds `thread`, `message`, `connections`, and `file` to Payload's standard set; everything else below is Payload's native API.
 
 It's best practice to write Collections in separate files and import them into the root config.
 
@@ -106,6 +107,7 @@ The following options are available:
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `thread`             | **FrogBot** — adopts this collection as the thread store. At most one collection may be marked. [More details](#role-markers).                                                                                                                           |
 | `message`            | **FrogBot** — adopts this collection as the message store. At most one collection may be marked. [More details](#role-markers).                                                                                                                         |
+| `file`               | **FrogBot** — adopts this collection as the files store. At most one collection may be marked. [More details](/configuration/files).                                                                                                                    |
 | `admin`              | The configuration options for the Admin Panel. [More details](#admin-options).                                                                                                                                                                             |
 | `access`             | Provide Access Control functions to define exactly who should be able to do what with Documents in this Collection. [More details](/access-control/collections).                                                                                         |
 | `auth`               | Specify options if you would like this Collection to feature authentication. Set to `true` for defaults or pass an auth config object. FrogBot extends auth with `providers`, `allowedDomains`, and `allowSignup`. [More details](/authentication/overview).                                                                                         |

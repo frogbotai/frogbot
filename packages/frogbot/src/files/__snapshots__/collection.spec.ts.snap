@@ -1,0 +1,27 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`defaultFilesCollection > produces the base config shape 1`] = `
+{
+  "access": {
+    "create": [Function],
+    "delete": [Function],
+    "read": [Function],
+    "update": [Function],
+  },
+  "admin": {
+    "defaultColumns": [
+      "filename",
+      "mimeType",
+      "filesize",
+      "updatedAt",
+    ],
+    "group": "Files",
+    "useAsTitle": "filename",
+  },
+  "fields": [],
+  "folders": true,
+  "slug": "files",
+  "trash": true,
+  "upload": true,
+}
+`;

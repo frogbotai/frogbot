@@ -9,6 +9,7 @@ import type { AgentConfig } from './agent.js';
 import type { SanitizedAIConfig } from './ai.js';
 import type { SanitizedChatConfig } from './chat.js';
 import type { SanitizedConnectionsConfig } from './connections.js';
+import type { SanitizedFilesConfig } from './files.js';
 import type { SanitizedPiecesConfig } from './piece.js';
 
 export type SanitizedCollectionMeta = {
@@ -25,8 +26,9 @@ export type FrogbotSanitizedConfig = {
   agents?: AgentConfig[];
   chat: SanitizedChatConfig;
   connections: SanitizedConnectionsConfig;
+  files: SanitizedFilesConfig;
   pieces: SanitizedPiecesConfig;
-  pieceFiles?: { collection: string };
+  pieceFiles: { collection: string };
   typescript?: {
     autoGenerate?: boolean;
   };

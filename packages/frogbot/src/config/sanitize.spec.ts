@@ -60,6 +60,7 @@ describe('frogbot sanitize', () => {
     expect(result.collections).toEqual([
       { slug: 'users', auth: true },
       { slug: 'projects', auth: false },
+      { slug: 'files', auth: false },
     ]);
   });
 
@@ -67,6 +68,30 @@ describe('frogbot sanitize', () => {
     const config = makeConfig();
     const result = sanitize(config);
     expect(result.secret).toBe('test-secret');
+  });
+
+  it('injects and configures the default files collection', () => {
+    const result = sanitize(makeConfig());
+    expect(result.collections.map((collection) => collection.slug)).toContain('files');
+    expect(result.files).toEqual({ slug: 'files' });
+    expect(result.pieceFiles).toEqual({ collection: 'files' });
+  });
+
+  it('uses explicit pieceFiles config', () => {
+    const result = sanitize(makeConfig({ pieceFiles: { collection: 'exports' } }));
+    expect(result.pieceFiles).toEqual({ collection: 'exports' });
+  });
+
+  it('propagates an adopted files collection slug', () => {
+    const result = sanitize(makeConfig({
+      collections: [
+        { slug: 'users', auth: true, fields: [] },
+        { slug: 'documents', file: true, fields: [] },
+      ],
+    }));
+    expect(result.files).toEqual({ slug: 'documents' });
+    expect(result.pieceFiles).toEqual({ collection: 'documents' });
+    expect(result.collections.map((collection) => collection.slug)).not.toContain('files');
   });
 
   it('stores a payloadConfig promise in _internal', () => {
@@ -384,7 +409,7 @@ describe('frogbot sanitize', () => {
     });
     const result = sanitize(config);
     const slugs = result.collections.map((c) => c.slug);
-    expect(slugs).toEqual(['alpha', 'beta', 'gamma']);
+    expect(slugs).toEqual(['alpha', 'beta', 'gamma', 'files']);
   });
 
   describe('ai.providers', () => {
@@ -651,10 +676,10 @@ describe('frogbot sanitize', () => {
 
     it('injects chat collections into the payload config and collections metadata', async () => {
       const result = sanitize(makeConfig({ ai, agents }));
-      expect(result.collections.map((c) => c.slug)).toEqual(['users', 'threads', 'messages']);
+      expect(result.collections.map((c) => c.slug)).toEqual(['users', 'threads', 'messages', 'files']);
       const payloadConfig = await result._internal.payloadConfig;
       const payloadSlugs = (payloadConfig as any).collections.map((c: any) => c.slug); // eslint-disable-line @typescript-eslint/no-explicit-any
-      expect(payloadSlugs).toEqual(['users', 'threads', 'messages']);
+      expect(payloadSlugs).toEqual(['users', 'threads', 'messages', 'files']);
     });
 
     it('injected chat collections get the bootstrap beforeOperation hook', async () => {

@@ -1,4 +1,4 @@
-// Merge a base chat collection into a user-authored collection with the
+// Merge a base collection into a user-authored collection with the
 // same slug — FrogBot's mirror of Payload's `mergeBaseFields` semantics
 // (the `auth: true` machinery, not exported from Payload):
 //
@@ -50,13 +50,13 @@ function fieldType(field: Field): string | undefined {
   return 'type' in field && typeof field.type === 'string' ? field.type : undefined;
 }
 
-function mergeField(base: Field, user: Field, slug: string): Field {
+function mergeField(base: Field, user: Field, slug: string, feature: string): Field {
   const baseType = fieldType(base);
   const userType = fieldType(user);
   if (baseType !== undefined && userType !== undefined && baseType !== userType) {
     throw new Error(
       `[frogbot] Field '${fieldName(base)}' on collection '${slug}' has type '${baseType}' required by ` +
-        `chat persistence and cannot be changed to '${userType}'.`,
+        `${feature} and cannot be changed to '${userType}'.`,
     );
   }
 
@@ -68,12 +68,12 @@ function mergeField(base: Field, user: Field, slug: string): Field {
     );
   }
   if (hasSubFields(base) && hasSubFields(user)) {
-    (merged as { fields: Field[] }).fields = mergeFields(user.fields, base.fields, slug);
+    (merged as { fields: Field[] }).fields = mergeFields(user.fields, base.fields, slug, feature);
   }
   return merged;
 }
 
-function mergeFields(userFields: Field[], baseFields: Field[], slug: string): Field[] {
+function mergeFields(userFields: Field[], baseFields: Field[], slug: string, feature: string): Field[] {
   const out = [...userFields];
   for (const baseField of baseFields) {
     const name = fieldName(baseField);
@@ -81,23 +81,24 @@ function mergeFields(userFields: Field[], baseFields: Field[], slug: string): Fi
     if (idx === -1) {
       out.push(baseField);
     } else {
-      out[idx] = mergeField(baseField, out[idx], slug);
+      out[idx] = mergeField(baseField, out[idx], slug, feature);
     }
   }
   return out;
 }
 
-export type MergeChatCollectionProps = {
+export type MergeCollectionProps = {
   user: CollectionConfig;
   base: CollectionConfig;
   reservedFields: string[];
+  feature: string;
 };
 
-export function mergeChatCollection({ user, base, reservedFields }: MergeChatCollectionProps): CollectionConfig {
+export function mergeCollection({ user, base, reservedFields, feature }: MergeCollectionProps): CollectionConfig {
   for (const reserved of reservedFields) {
     if (user.fields.some((f) => fieldName(f) === reserved)) {
       throw new Error(
-        `[frogbot] Field '${reserved}' on collection '${user.slug}' is reserved by chat persistence.`,
+        `[frogbot] Field '${reserved}' on collection '${user.slug}' is reserved by ${feature}.`,
       );
     }
   }
@@ -105,7 +106,7 @@ export function mergeChatCollection({ user, base, reservedFields }: MergeChatCol
   return {
     ...base,
     ...user,
-    fields: mergeFields(user.fields, base.fields, user.slug),
+    fields: mergeFields(user.fields, base.fields, user.slug, feature),
     access: { ...base.access, ...user.access },
     admin: { ...base.admin, ...user.admin },
     hooks: concatHooks(base.hooks, user.hooks),

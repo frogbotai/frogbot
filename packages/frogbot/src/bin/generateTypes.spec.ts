@@ -10,6 +10,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import {
   buildGeneratedTypesFooter,
+  stripInternalCollections,
   writeGeneratedTypes,
 } from './generateTypes.js';
 
@@ -20,6 +21,41 @@ const binURL = pathToFileURL(
 const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
 
 describe('frogbot generate:types', () => {
+  it('cleans a direct root ref to a stripped internal definition', () => {
+    const schema = {
+      properties: { internal: { $ref: '#/definitions/payload-folders' } },
+      definitions: { 'payload-folders': { type: 'object' } },
+    };
+
+    stripInternalCollections(schema);
+
+    expect(schema.properties.internal).toEqual({ type: 'null' });
+    expect(schema.definitions).toEqual({});
+  });
+
+  it('cleans nested root refs to stripped internal definitions', () => {
+    const schema = {
+      properties: {
+        result: {
+          oneOf: [
+            { $ref: '#/definitions/public' },
+            { items: { $ref: '#/definitions/payload-folders' }, type: 'array' },
+          ],
+        },
+      },
+      definitions: {
+        public: { type: 'object' },
+        'payload-folders': { type: 'object' },
+      },
+    };
+
+    stripInternalCollections(schema);
+
+    expect(schema.properties.result.oneOf[0]).toEqual({ $ref: '#/definitions/public' });
+    expect(schema.properties.result.oneOf[1]).toEqual({ items: { type: 'null' }, type: 'array' });
+    expect(schema.definitions).toEqual({ public: { type: 'object' } });
+  });
+
   it.todo('loads config from cwd via loadConfig');
   it.todo('honors FROGBOT_CONFIG_PATH when set');
   it.todo('writes to <cwd>/src/frogbot-types.ts when a src directory exists');

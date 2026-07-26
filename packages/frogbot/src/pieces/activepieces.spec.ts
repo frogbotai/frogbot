@@ -65,6 +65,19 @@ describe('Activepieces adapter', () => {
     expect(create).toHaveBeenCalledWith(expect.objectContaining({ collection: 'media', overrideAccess: true }));
   });
 
+  it('writes files through the default files collection', async () => {
+    const create = vi.fn().mockResolvedValue({ url: '/files/result.txt' });
+    await executeActivepiecesAction({
+      action: {
+        name: 'write', displayName: 'Write', description: 'Write', props: {},
+        run: async (context) => (context.files as { write: (value: unknown) => Promise<string> }).write({ fileName: 'result.txt', data: Buffer.from('result') }),
+      },
+      propsValue: {},
+      ctx: { frogbot: { config: { pieceFiles: { collection: 'files' } }, create } } as never,
+    });
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ collection: 'files', data: {}, overrideAccess: true }));
+  });
+
   it('rejects file writes without an upload collection', async () => {
     await expect(executeActivepiecesAction({
       action: {

@@ -20,7 +20,7 @@ import type {
 } from 'payload';
 
 import type { CollectionConfig } from '../types/collection.js';
-import { CHAT_ROLE_MARKERS } from '../types/collection.js';
+import { COLLECTION_MARKERS } from '../types/collection.js';
 import type { FrogbotConfig } from '../types/config.js';
 import type { Endpoint } from '../types/endpoint.js';
 import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from '../types/sanitized.js';
@@ -34,6 +34,7 @@ import { buildAgentEndpoints } from '../agents/endpoints.js';
 import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
+import { resolveFilesCollection } from '../files/resolveCollections.js';
 import { resolveCredentialSources } from '../connections/sources.js';
 import { buildSecretEndpoints, builtInSecretSource } from '../connections/secret.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
@@ -93,7 +94,7 @@ function sanitizeCollection(c: CollectionConfig): PayloadCollectionConfig {
   };
 
   // Strip chat role markers — FrogBot-only keys.
-  for (const marker of CHAT_ROLE_MARKERS) {
+  for (const marker of COLLECTION_MARKERS) {
     delete out[marker];
   }
 
@@ -511,7 +512,9 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
 
   // Resolve chat persistence — adopt marked collections or inject defaults.
   const chatResult = resolveChatCollections({ ...config, agents });
-  const { collections, connections } = resolveConnectionsCollections({ ...config, agents, credentialSources, collections: chatResult.collections }, pieces);
+  const connectionsResult = resolveConnectionsCollections({ ...config, agents, credentialSources, collections: chatResult.collections }, pieces);
+  const { collections, files } = resolveFilesCollection({ collections: connectionsResult.collections });
+  const connections = connectionsResult.connections;
   connections.assignments = resolveCredentialSources({
     sources: connections.sources,
     assignments: connections.assignments,
@@ -545,8 +548,9 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
     agents,
     chat,
     connections,
+    files,
     pieces,
-    pieceFiles: config.pieceFiles,
+    pieceFiles: config.pieceFiles ?? { collection: files.slug },
     typescript: {
       autoGenerate: (config as { typescript?: { autoGenerate?: boolean } }).typescript?.autoGenerate !== false,
     },
