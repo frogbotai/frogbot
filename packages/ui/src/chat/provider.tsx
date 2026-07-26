@@ -3,6 +3,9 @@
 import { createContext, use, useEffect, useState, type ReactNode } from 'react'
 import type { ChatPlatformAdapter } from './adapter'
 import { resolveChatHeaders } from './rest'
+import type { ToolRenderer } from './tool-registry'
+import { ArtifactProvider } from './artifact'
+import type { ArtifactPersistence, ArtifactRegistryItem } from './artifact-registry'
 
 export type ChatManifest = {
   chat: { enabled: false } | { enabled: true; threadsSlug: string; messagesSlug: string }
@@ -14,12 +17,13 @@ export type ChatProviderValue = {
   manifest?: ChatManifest
   error?: Error
   loading: boolean
+  toolRenderers: readonly ToolRenderer[]
 }
 
 const ChatContext = createContext<ChatProviderValue | undefined>(undefined)
 
-export function ChatProvider({ adapter, children, manifestURL = '/api/frogbot' }: { adapter: ChatPlatformAdapter; children: ReactNode; manifestURL?: string }) {
-  const [state, setState] = useState<Omit<ChatProviderValue, 'adapter'>>({ loading: true })
+export function ChatProvider({ adapter, artifactKinds = [], artifactPersistence, children, manifestURL = '/api/frogbot', toolRenderers = [] }: { adapter: ChatPlatformAdapter; artifactKinds?: readonly ArtifactRegistryItem[]; artifactPersistence?: ArtifactPersistence; children: ReactNode; manifestURL?: string; toolRenderers?: readonly ToolRenderer[] }) {
+  const [state, setState] = useState<Omit<ChatProviderValue, 'adapter' | 'toolRenderers'>>({ loading: true })
 
   useEffect(() => {
     const controller = new AbortController()
@@ -32,7 +36,7 @@ export function ChatProvider({ adapter, children, manifestURL = '/api/frogbot' }
     return () => controller.abort()
   }, [adapter, manifestURL])
 
-  return <ChatContext value={{ adapter, ...state }}>{children}</ChatContext>
+  return <ChatContext value={{ adapter, ...state, toolRenderers }}><ArtifactProvider persistence={artifactPersistence} registry={artifactKinds}>{children}</ArtifactProvider></ChatContext>
 }
 
 export function useChatProvider(): ChatProviderValue | undefined {

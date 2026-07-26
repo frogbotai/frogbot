@@ -1,4 +1,6 @@
 import { getToolName, type DynamicToolUIPart, type ToolUIPart, type UITools } from 'ai'
+import { useChatProvider } from './provider'
+import { resolveToolRenderer } from './tool-registry'
 
 function serialize(value: unknown) {
   if (typeof value === 'string') return value
@@ -6,6 +8,8 @@ function serialize(value: unknown) {
 }
 
 export function ToolPart({ part }: { part: DynamicToolUIPart | ToolUIPart<UITools> }) {
+  const renderer = resolveToolRenderer(useChatProvider()?.toolRenderers ?? [], getToolName(part))
+  if (renderer) return <renderer.render part={part} />
   const content = part.state === 'output-available' ? part.output : part.state === 'output-error' ? part.errorText : part.state === 'output-denied' ? part.approval.reason || 'Denied' : part.input
   return <div data-part="tool" data-state={part.state} className="rounded-lg border border-border p-3 text-sm">
     <div className="flex justify-between gap-3"><strong>{getToolName(part)}</strong><span className="text-xs text-muted-foreground">{part.state}</span></div>
