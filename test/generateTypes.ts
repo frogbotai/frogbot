@@ -52,6 +52,7 @@ async function run() {
     .filter((dir) => fs.existsSync(path.resolve(dir, 'config.ts')));
   const suites = [
     ...testSuites,
+    path.resolve(repoRoot, 'examples/business-qa'),
     path.resolve(repoRoot, 'examples/simple'),
     path.resolve(repoRoot, 'templates/blank'),
   ];

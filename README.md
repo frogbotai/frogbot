@@ -174,6 +174,7 @@ This monorepo publishes the following packages:
 The [`examples/`](./examples) directory shows how to set up FrogBot in different ways:
 
 - [**Simple**](./examples/simple) — the smallest possible setup: one config, one agent, one tool, SQLite. No Docker, no external database.
+- [**Business QA**](./examples/business-qa) — a comprehensive release-readiness showcase with authenticated agents, curated integration tools, OAuth, API keys, uploads, and connections.
 
 ## Development
 

@@ -1,0 +1,49 @@
+{
+  "name": "frogbot-example-business-qa",
+  "version": "0.4.0",
+  "private": true,
+  "description": "Comprehensive FrogBot release-readiness assistant showcase.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "frogbot dev",
+    "build": "next build",
+    "start": "frogbot start",
+    "generate:types": "frogbot generate:types",
+    "generate:importmap": "frogbot generate:importmap",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@activepieces/piece-data-summarizer": "0.0.11",
+    "@activepieces/piece-date-helper": "0.1.28",
+    "@activepieces/piece-google-calendar": "0.9.5",
+    "@activepieces/piece-google-drive": "0.7.10",
+    "@activepieces/piece-google-sheets": "0.16.3",
+    "@activepieces/piece-linear": "0.4.4",
+    "@activepieces/piece-pdf": "0.5.5",
+    "@activepieces/piece-resend": "0.4.3",
+    "@frogbotai/db-sqlite": "0.4.0",
+    "@frogbotai/next": "0.4.0",
+    "@frogbotai/piece-data-summarizer": "0.4.0",
+    "@frogbotai/piece-date-helper": "0.4.0",
+    "@frogbotai/piece-google-calendar": "0.4.0",
+    "@frogbotai/piece-google-drive": "0.4.0",
+    "@frogbotai/piece-google-sheets": "0.4.0",
+    "@frogbotai/piece-linear": "0.4.0",
+    "@frogbotai/piece-pdf": "0.4.0",
+    "@frogbotai/piece-resend": "0.4.0",
+    "@frogbotai/plugin-api-keys": "0.4.0",
+    "@frogbotai/plugin-oauth": "0.4.0",
+    "frogbot": "0.4.0",
+    "graphql": "^16.8.1",
+    "next": "15.4.11",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "typescript": "5.6.2"
+  }
+}

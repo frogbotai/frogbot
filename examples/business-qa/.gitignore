@@ -1,0 +1,9 @@
+frogbot.db
+frogbot.db-*
+.env
+.env.local
+node_modules
+dist
+.next
+*.tsbuildinfo
+media

@@ -25,19 +25,19 @@
       "default": "./dist/exports/test.js"
     },
     "./pieces": {
-      "types": "./src/exports/pieces.ts",
-      "import": "./src/exports/pieces.ts",
-      "default": "./src/exports/pieces.ts"
+      "types": "./dist/exports/pieces.d.ts",
+      "import": "./dist/exports/pieces.js",
+      "default": "./dist/exports/pieces.js"
     },
     "./pieces/test": {
-      "types": "./src/exports/pieces-test.ts",
-      "import": "./src/exports/pieces-test.ts",
-      "default": "./src/exports/pieces-test.ts"
+      "types": "./dist/exports/pieces-test.d.ts",
+      "import": "./dist/exports/pieces-test.js",
+      "default": "./dist/exports/pieces-test.js"
     },
     "./connections": {
-      "types": "./src/exports/connections.ts",
-      "import": "./src/exports/connections.ts",
-      "default": "./src/exports/connections.ts"
+      "types": "./dist/exports/connections.d.ts",
+      "import": "./dist/exports/connections.js",
+      "default": "./dist/exports/connections.js"
     }
   },
   "bin": {
