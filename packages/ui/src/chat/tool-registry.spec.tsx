@@ -18,4 +18,12 @@ describe('tool registry', () => {
     expect(screen.getByText('external')).toBeTruthy()
     expect(screen.getByText(/frog/)).toBeTruthy()
   })
+
+  it('can add and remove direct renderers without changing provider hook order', () => {
+    const part = { type: 'dynamic-tool' as const, toolName: 'search', toolCallId: '1', state: 'input-available' as const, input: {} }
+    const { rerender } = render(<ToolPart part={part} renderers={[{ kind: 'search', render: First }]} />)
+    expect(screen.getByText('first')).toBeTruthy()
+    rerender(<ToolPart part={part} />)
+    expect(screen.getByText('search')).toBeTruthy()
+  })
 })

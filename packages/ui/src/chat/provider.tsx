@@ -6,11 +6,9 @@ import { resolveChatHeaders } from './rest'
 import type { ToolRenderer } from './tool-registry'
 import { ArtifactProvider } from './artifact'
 import type { ArtifactPersistence, ArtifactRegistryItem } from './artifact-registry'
+import type { ManifestResponse } from 'frogbot'
 
-export type ChatManifest = {
-  chat: { enabled: false } | { enabled: true; threadsSlug: string; messagesSlug: string }
-  agents: { slug: string }[]
-}
+export type ChatManifest = ManifestResponse
 
 export type ChatProviderValue = {
   adapter: ChatPlatformAdapter

@@ -22,15 +22,16 @@ export async function loadThread({ adapter, messagesSlug, threadId, apiBase = '/
 
 export function useThread(options: UseThreadOptions) {
   const [messages, setMessages] = useState<UIMessage[]>([])
+  const [loadedThreadId, setLoadedThreadId] = useState<string | number>()
   const [error, setError] = useState<Error>()
   const [loading, setLoading] = useState(options.threadId !== undefined)
 
   useEffect(() => {
     let active = true
     setLoading(options.threadId !== undefined)
-    void loadThread(options).then((next) => { if (active) { setMessages(next); setError(undefined); setLoading(false) } }).catch((value: unknown) => { if (active) { setError(value instanceof Error ? value : new Error(String(value))); setLoading(false) } })
+    void loadThread(options).then((next) => { if (active) { setMessages(next); setLoadedThreadId(options.threadId); setError(undefined); setLoading(false) } }).catch((value: unknown) => { if (active) { setError(value instanceof Error ? value : new Error(String(value))); setLoading(false) } })
     return () => { active = false }
   }, [options.adapter, options.apiBase, options.messagesSlug, options.threadId])
 
-  return { messages, error, loading }
+  return { messages, loadedThreadId, error, loading }
 }

@@ -1,0 +1,134 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const state = vi.hoisted(() => ({
+  status: 'ready',
+  error: undefined as Error | undefined,
+  messages: [] as import('ai').UIMessage[],
+  sendMessage: vi.fn(),
+  stop: vi.fn(),
+  setMessages: vi.fn(),
+  addToolOutput: vi.fn(),
+  options: undefined as import('@ai-sdk/react').UseChatOptions | undefined,
+  refresh: vi.fn(),
+  adapter: { fetch: vi.fn(), buildMetadata: vi.fn(() => ({ source: 'ui' })), executeClientTool: vi.fn() },
+  history: { messages: [] as import('ai').UIMessage[], loadedThreadId: undefined as string | undefined, loading: false },
+}))
+
+vi.mock('@ai-sdk/react', () => ({ useChat: (options: import('@ai-sdk/react').UseChatOptions) => { state.options = options; return state } }))
+vi.mock('./provider', () => ({ useChatProvider: () => ({
+  adapter: state.adapter,
+  loading: false,
+  manifest: { chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' }, agents: [] },
+}) }))
+vi.mock('./use-thread', () => ({ useThread: () => state.history }))
+vi.mock('./use-threads', () => ({ useThreads: () => ({ docs: [{ id: 'one', agent: 'support', title: 'One' }, { id: 'two', agent: 'support', title: null }], loading: false, refresh: state.refresh }) }))
+
+import { Chat } from './chat'
+
+const props = { agent: 'support', submitContent: 'Send', stopContent: 'Stop', fallbackTitle: 'Untitled', emptyContent: 'Empty', errorContent: (error: Error) => error.message, abortedContent: 'Aborted' }
+
+describe('Chat', () => {
+  beforeEach(() => {
+    state.status = 'ready'
+    state.error = undefined
+    state.messages = []
+    state.sendMessage.mockReset()
+    state.stop.mockReset()
+    state.setMessages.mockReset()
+    state.addToolOutput.mockReset()
+    state.refresh.mockReset()
+    state.adapter.executeClientTool.mockReset()
+    state.adapter.fetch.mockReset()
+    state.history = { messages: [], loadedThreadId: undefined, loading: false }
+  })
+
+  it('submits metadata and updates uncontrolled history', async () => {
+    const onThreadIdChange = vi.fn()
+    render(<Chat {...props} defaultThreadId="one" onThreadIdChange={onThreadIdChange} />)
+    fireEvent.click(screen.getByText('Untitled'))
+    expect(onThreadIdChange).toHaveBeenCalledWith('two')
+    expect(screen.getByText('Untitled').getAttribute('aria-current')).toBe('page')
+    const input = screen.getByRole('textbox')
+    fireEvent.change(input, { target: { value: 'Hello' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledWith({ text: 'Hello', metadata: { source: 'ui' } }))
+  })
+
+  it('reports controlled changes without replacing the active thread', () => {
+    const onThreadIdChange = vi.fn()
+    render(<Chat {...props} threadId="one" onThreadIdChange={onThreadIdChange} />)
+    fireEvent.click(screen.getByText('Untitled'))
+    expect(onThreadIdChange).toHaveBeenCalledWith('two')
+    expect(screen.getByText('One').getAttribute('aria-current')).toBe('page')
+  })
+
+  it('works with only an agent and derives an untitled active thread', () => {
+    state.messages = [{ id: 'user', role: 'user', parts: [{ type: 'text', text: 'Derived conversation title' }] }]
+    render(<Chat agent="support" defaultThreadId="two" />)
+    expect(screen.getByRole('button', { name: 'Derived conversation title' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByText('Send')).toBeTruthy()
+  })
+
+  it('executes client tools and records their output', async () => {
+    state.adapter.executeClientTool.mockResolvedValue('complete')
+    render(<Chat agent="support" />)
+    await state.options?.onToolCall?.({ toolCall: { type: 'dynamic-tool', toolName: 'lookup', toolCallId: 'call', state: 'input-available', input: { id: 1 } } })
+    expect(state.adapter.executeClientTool).toHaveBeenCalledWith('lookup', { id: 1 })
+    expect(state.addToolOutput).toHaveBeenCalledWith({ tool: 'lookup', toolCallId: 'call', output: 'complete' })
+  })
+
+  it('does not replace live messages when a new thread ID arrives', async () => {
+    state.messages = [{ id: 'live', role: 'assistant', parts: [{ type: 'text', text: 'Live response' }] }]
+    state.adapter.fetch.mockResolvedValue(new Response(new ReadableStream({ start: (controller) => controller.close() }), { headers: { 'X-Frogbot-Thread-Id': 'created' } }))
+    const { rerender } = render(<Chat agent="support" />)
+    const transport = (state.options as import('ai').ChatInit<import('ai').UIMessage>).transport
+    await transport?.sendMessages({ trigger: 'submit-message', chatId: 'new:support', messageId: undefined, messages: state.messages, abortSignal: undefined })
+    state.options?.onFinish?.({ message: state.messages[0], messages: state.messages, isAbort: false, isDisconnect: false, isError: false })
+    state.history = { messages: [{ id: 'stale', role: 'user', parts: [{ type: 'text', text: 'Stale history' }] }], loadedThreadId: 'created', loading: false }
+    rerender(<Chat agent="support" />)
+    expect(state.setMessages).not.toHaveBeenCalled()
+    expect(state.refresh).toHaveBeenCalledOnce()
+  })
+
+  it('refreshes history after rename and delete', async () => {
+    state.messages = [{ id: 'old', role: 'user', parts: [{ type: 'text', text: 'Old thread' }] }]
+    state.adapter.fetch.mockImplementation(async (input) => String(input).startsWith('/api/messages?') ? Response.json({ docs: [] }) : Response.json({}))
+    render(<Chat agent="support" defaultThreadId="one" renderThreadActions={(thread, actions) => <><button onClick={() => void actions.rename('Renamed')}>Rename {thread.id}</button><button onClick={() => void actions.delete()}>Delete {thread.id}</button></>} />)
+    fireEvent.click(screen.getByText('Rename one'))
+    await waitFor(() => expect(state.refresh).toHaveBeenCalledTimes(1))
+    fireEvent.click(screen.getByText('Delete one'))
+    await waitFor(() => expect(state.refresh).toHaveBeenCalledTimes(2))
+    expect(state.setMessages).toHaveBeenCalledWith([])
+  })
+
+  it('treats an explicit undefined threadId as controlled and clears the conversation', async () => {
+    state.messages = [{ id: 'old', role: 'user', parts: [{ type: 'text', text: 'Old thread' }] }]
+    const onThreadIdChange = vi.fn()
+    const { rerender } = render(<Chat agent="support" threadId="one" onThreadIdChange={onThreadIdChange} />)
+    state.setMessages.mockClear()
+    rerender(<Chat agent="support" threadId={undefined} onThreadIdChange={onThreadIdChange} />)
+    await waitFor(() => expect(state.setMessages).toHaveBeenCalledWith([]))
+    expect(onThreadIdChange).not.toHaveBeenCalled()
+  })
+
+  it('clears the active thread and messages when the agent changes', async () => {
+    state.messages = [{ id: 'old', role: 'user', parts: [{ type: 'text', text: 'Old agent' }] }]
+    const onThreadIdChange = vi.fn()
+    const { rerender } = render(<Chat agent="support" defaultThreadId="one" onThreadIdChange={onThreadIdChange} />)
+    state.setMessages.mockClear()
+    rerender(<Chat agent="sales" defaultThreadId="one" onThreadIdChange={onThreadIdChange} />)
+    await waitFor(() => expect(state.setMessages).toHaveBeenCalledWith([]))
+    expect(onThreadIdChange).toHaveBeenCalledWith(undefined)
+  })
+
+  it('stops and renders injected abort and stream error content', () => {
+    state.status = 'streaming'
+    state.error = new Error('Stream failed')
+    render(<Chat {...props} />)
+    expect(screen.getByText('Stream failed')).toBeTruthy()
+    fireEvent.click(screen.getByText('Stop'))
+    expect(state.stop).toHaveBeenCalledOnce()
+    expect(screen.getByText('Aborted')).toBeTruthy()
+  })
+})
