@@ -180,7 +180,7 @@ describe('frogbot sanitize', () => {
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
     const endpoints = (payloadConfig as any).endpoints as any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
-    expect(endpoints).toHaveLength(1);
+    expect(endpoints).toHaveLength(2);
     expect(endpoints[0].handler).not.toBe(handler);
   });
 
@@ -509,7 +509,7 @@ describe('frogbot sanitize', () => {
       expect(result.agents?.[0].access).toBeTypeOf('function');
       expect((payloadConfig as any).agents).toBeUndefined(); // eslint-disable-line @typescript-eslint/no-explicit-any
       expect((payloadConfig as any).endpoints.map((endpoint: any) => endpoint.path)) // eslint-disable-line @typescript-eslint/no-explicit-any
-        .toEqual(['/agents/:slug', '/agents']);
+        .toEqual(['/frogbot', '/agents/:slug', '/agents']);
     });
 
     it('normalizes an empty agents array without AI to the omitted state', () => {
@@ -526,14 +526,16 @@ describe('frogbot sanitize', () => {
 
       expect(result.agents).toBeUndefined();
       expect(result.chat.enabled).toBe(false);
-      expect((payloadConfig as { endpoints?: unknown }).endpoints).toBeUndefined();
+      expect((payloadConfig as { endpoints?: { path: string }[] }).endpoints?.map(({ path }) => path)).toEqual([
+        '/frogbot',
+      ]);
     });
 
     it.each([
-      { endpoints: false as const, expected: false },
+      { endpoints: false as const, expected: ['/frogbot'] },
       {
         endpoints: [{ path: '/health', method: 'get' as const, handler: vi.fn() }],
-        expected: ['/health'],
+        expected: ['/health', '/frogbot'],
       },
     ])('preserves user endpoint configuration for empty agents', async ({ endpoints, expected }) => {
       const result = sanitize(makeConfig({ agents: [], endpoints }));
@@ -619,6 +621,26 @@ describe('frogbot sanitize', () => {
           }),
         ),
       ).toThrow("[frogbot] Endpoint path '/agents/custom' is reserved for the agent API.");
+    });
+
+    it('reserves the manifest collection slug', () => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            collections: [{ slug: 'frogbot', fields: [] }],
+          }),
+        ),
+      ).toThrow("[frogbot] Collection slug 'frogbot' is reserved for the manifest API.");
+    });
+
+    it.each(['/frogbot', '/frogbot/custom'])('reserves manifest endpoint path %s', (path) => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            endpoints: [{ path, method: 'get', handler: () => new Response() }],
+          }),
+        ),
+      ).toThrow(`[frogbot] Endpoint path '${path}' is reserved for the manifest API.`);
     });
 
     it('rejects non-URL-safe agent slugs', () => {

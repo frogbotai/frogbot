@@ -1,0 +1,55 @@
+---
+title: "Chat manifest"
+sidebarTitle: "Manifest"
+description: "Discover chat collection slugs and accessible agents from a FrogBot deployment."
+keywords: ["chat", "manifest", "agents", "collections", "API"]
+api: "GET /api/frogbot"
+---
+
+The chat manifest gives clients the runtime configuration they need before starting a conversation. Use it instead of hard-coding collection slugs, because FrogBot preserves renamed thread and message collections.
+
+```bash
+curl http://localhost:3000/api/frogbot \
+  --header "Authorization: Bearer $FROGBOT_TOKEN"
+```
+
+An enabled chat configuration returns the resolved collection slugs and the agents available to the caller.
+
+```json
+{
+  "chat": {
+    "enabled": true,
+    "threadsSlug": "conversations",
+    "messagesSlug": "turns"
+  },
+  "agents": [{ "slug": "support" }]
+}
+```
+
+When chat persistence is disabled, `chat` contains only `enabled`.
+
+```json
+{
+  "chat": { "enabled": false },
+  "agents": []
+}
+```
+
+## Access behavior
+
+The endpoint is available without authentication so a client can bootstrap before login. Each agent still runs its configured access rule for the current request. Anonymous callers see only agents that explicitly permit anonymous access, and an access rule that throws hides that agent.
+
+The response includes `Cache-Control: private, no-store`. Do not retain it across users or sessions because agent visibility can change with authentication and custom access rules.
+
+## Type the response
+
+Import the public response contract when your client uses TypeScript.
+
+```ts
+import type { ManifestResponse } from 'frogbot'
+
+const response = await fetch('/api/frogbot')
+const manifest: ManifestResponse = await response.json()
+```
+
+The manifest intentionally excludes branding, upload targets, fixed internal collection slugs, and API-base metadata. Configure those concerns in the client until FrogBot provides a dedicated public contract for them.

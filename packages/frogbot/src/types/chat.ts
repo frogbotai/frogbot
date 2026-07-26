@@ -5,3 +5,8 @@
 export type SanitizedChatConfig =
   | { enabled: false }
   | { enabled: true; threadsSlug: string; messagesSlug: string };
+
+export type ManifestResponse = {
+  chat: SanitizedChatConfig;
+  agents: { slug: string }[];
+};

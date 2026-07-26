@@ -33,6 +33,7 @@ import { initFrogbotFromPayload } from '../frogbot.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
 import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
+import { buildManifestEndpoint } from '../chat/manifest.js';
 import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
 import { resolveFilesCollection } from '../files/resolveCollections.js';
 import { resolveCredentialSources } from '../connections/sources.js';
@@ -373,9 +374,11 @@ function sanitizePieces(pieces: Piece[] | undefined): SanitizedPiecesConfig {
   return { enabled: true, pieces };
 }
 
-function validateAgentPathReservations(config: Pick<FrogbotConfig, 'collections' | 'endpoints'>): void {
-  if (config.collections.some((collection) => collection.slug === 'agents')) {
-    throw new Error("[frogbot] Collection slug 'agents' is reserved for the agent API.");
+function validateInternalPathReservations(config: Pick<FrogbotConfig, 'collections' | 'endpoints'>): void {
+  for (const [slug, api] of [['agents', 'agent'], ['frogbot', 'manifest']] as const) {
+    if (config.collections.some((collection) => collection.slug === slug)) {
+      throw new Error(`[frogbot] Collection slug '${slug}' is reserved for the ${api} API.`);
+    }
   }
 
   const endpoints = (config as { endpoints?: Endpoint[] | false }).endpoints;
@@ -386,6 +389,9 @@ function validateAgentPathReservations(config: Pick<FrogbotConfig, 'collections'
   for (const endpoint of Array.isArray(endpoints) ? endpoints : []) {
     if (endpoint.path === '/agents' || endpoint.path.startsWith('/agents/')) {
       throw new Error(`[frogbot] Endpoint path '${endpoint.path}' is reserved for the agent API.`);
+    }
+    if (endpoint.path === '/frogbot' || endpoint.path.startsWith('/frogbot/')) {
+      throw new Error(`[frogbot] Endpoint path '${endpoint.path}' is reserved for the manifest API.`);
     }
   }
 }
@@ -401,7 +407,12 @@ function buildPayloadConfig(config: FrogbotConfig, onInit: NonNullable<PayloadCo
 
   const userEndpoints = config.endpoints as Endpoint[] | false | undefined;
   const agentEndpoints = config.agents?.length ? buildAgentEndpoints() : [];
-  const allEndpoints = [...(Array.isArray(userEndpoints) ? userEndpoints : []), ...agentEndpoints, ...internalEndpoints];
+  const allEndpoints = [
+    ...(Array.isArray(userEndpoints) ? userEndpoints : []),
+    buildManifestEndpoint(),
+    ...agentEndpoints,
+    ...internalEndpoints,
+  ];
 
   if (allEndpoints.length > 0) {
     out.endpoints = wrapEndpoints(allEndpoints);
@@ -498,7 +509,7 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
   if ((config as unknown as Record<string, unknown>).globals !== undefined) {
     throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections instead.');
   }
-  validateAgentPathReservations(config);
+  validateInternalPathReservations(config);
 
   // Sanitize AI config if present.
   const sanitizedAI = config.ai ? sanitizeAI(config.ai) : undefined;
