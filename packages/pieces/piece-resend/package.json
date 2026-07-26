@@ -1,1 +1,53 @@
-{"name":"@frogbotai/piece-resend","version":"0.4.0","description":"Resend tools for FrogBot.","license":"MIT","author":"Colby Gilbert","repository":{"type":"git","url":"git+https://github.com/frogbotai/frogbot.git","directory":"packages/pieces/piece-resend"},"type":"module","main":"./dist/index.js","types":"./dist/index.d.ts","exports":{".":{"import":"./dist/index.js","types":"./dist/index.d.ts","default":"./dist/index.js"}},"files":["dist"],"sideEffects":false,"scripts":{"build":"tsc -p tsconfig.json","clean":"rm -rf dist","typecheck":"tsc --noEmit"},"dependencies":{"@activepieces/piece-resend":"0.4.3"},"peerDependencies":{"frogbot":"workspace:*"},"devDependencies":{"frogbot":"workspace:*","typescript":"5.6.2"},"publishConfig":{"access":"public","main":"./dist/index.js","types":"./dist/index.d.ts","exports":{".":{"import":"./dist/index.js","types":"./dist/index.d.ts","default":"./dist/index.js"}}}}
+{
+  "name": "@frogbotai/piece-resend",
+  "version": "0.5.0",
+  "description": "Resend tools for FrogBot.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/pieces/piece-resend"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@activepieces/piece-resend": "0.4.3"
+  },
+  "peerDependencies": {
+    "frogbot": "workspace:*"
+  },
+  "devDependencies": {
+    "frogbot": "workspace:*",
+    "typescript": "5.6.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "import": "./dist/index.js",
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  }
+}

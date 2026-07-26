@@ -1,6 +1,6 @@
 {
   "name": "frogbot",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "FrogBot core: typed configuration surface that wraps Payload.",
   "license": "MIT",
   "author": "Colby Gilbert",
@@ -87,11 +87,31 @@
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {
-      ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "default": "./dist/index.js" },
-      "./test": { "types": "./dist/exports/test.d.ts", "import": "./dist/exports/test.js", "default": "./dist/exports/test.js" },
-      "./pieces": { "types": "./dist/exports/pieces.d.ts", "import": "./dist/exports/pieces.js", "default": "./dist/exports/pieces.js" },
-      "./pieces/test": { "types": "./dist/exports/pieces-test.d.ts", "import": "./dist/exports/pieces-test.js", "default": "./dist/exports/pieces-test.js" },
-      "./connections": { "types": "./dist/exports/connections.d.ts", "import": "./dist/exports/connections.js", "default": "./dist/exports/connections.js" }
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./test": {
+        "types": "./dist/exports/test.d.ts",
+        "import": "./dist/exports/test.js",
+        "default": "./dist/exports/test.js"
+      },
+      "./pieces": {
+        "types": "./dist/exports/pieces.d.ts",
+        "import": "./dist/exports/pieces.js",
+        "default": "./dist/exports/pieces.js"
+      },
+      "./pieces/test": {
+        "types": "./dist/exports/pieces-test.d.ts",
+        "import": "./dist/exports/pieces-test.js",
+        "default": "./dist/exports/pieces-test.js"
+      },
+      "./connections": {
+        "types": "./dist/exports/connections.d.ts",
+        "import": "./dist/exports/connections.js",
+        "default": "./dist/exports/connections.js"
+      }
     }
   }
 }

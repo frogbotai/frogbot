@@ -1,1 +1,48 @@
-{"name":"@frogbotai/piece-data-summarizer","version":"0.4.0","description":"Data summarization tools for FrogBot.","license":"MIT","author":"Colby Gilbert","type":"module","main":"./dist/index.js","types":"./dist/index.d.ts","exports":{".":{"import":"./dist/index.js","types":"./dist/index.d.ts","default":"./dist/index.js"}},"files":["dist"],"sideEffects":false,"scripts":{"build":"tsc -p tsconfig.json","clean":"rm -rf dist","typecheck":"tsc --noEmit"},"dependencies":{"@activepieces/piece-data-summarizer":"0.0.11"},"peerDependencies":{"frogbot":"workspace:*"},"devDependencies":{"frogbot":"workspace:*","typescript":"5.6.2"},"publishConfig":{"access":"public","main":"./dist/index.js","types":"./dist/index.d.ts","exports":{".":{"import":"./dist/index.js","types":"./dist/index.d.ts","default":"./dist/index.js"}}}}
+{
+  "name": "@frogbotai/piece-data-summarizer",
+  "version": "0.5.0",
+  "description": "Data summarization tools for FrogBot.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@activepieces/piece-data-summarizer": "0.0.11"
+  },
+  "peerDependencies": {
+    "frogbot": "workspace:*"
+  },
+  "devDependencies": {
+    "frogbot": "workspace:*",
+    "typescript": "5.6.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "import": "./dist/index.js",
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  }
+}
