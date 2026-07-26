@@ -1,10 +1,15 @@
-import { Placeholder } from '@frogbotai/ui';
+import { Button, Card, CardContent, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Sidebar, SidebarInset, SidebarProvider } from '@frogbotai/ui';
+import { ThemeProvider } from '@frogbotai/ui/theme';
 
 export default function HomePage() {
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', padding: '4rem 2rem', maxWidth: '40rem', margin: '0 auto' }}>
+    <ThemeProvider mode="dark" theme={{ '--primary': 'oklch(0.7 0.2 40)' }}>
+    <SidebarProvider>
+      <Sidebar>Navigation</Sidebar>
+      <SidebarInset style={{ fontFamily: 'system-ui, sans-serif', padding: '4rem 2rem', maxWidth: '40rem', margin: '0 auto' }}>
       <h1>FrogBot is running</h1>
-      <Placeholder />
+      <Card><CardContent><Input aria-label="Message" /><Button>Send</Button></CardContent></Card>
+      <Select defaultValue="one"><SelectTrigger aria-label="Choice"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="one">One</SelectItem></SelectContent></Select>
       <p>
         Head to the <a href="/admin">admin panel</a> to create your first user, or talk to the default agent:
       </p>
@@ -13,6 +18,8 @@ export default function HomePage() {
   -H 'content-type: application/json' \\
   -d '{"prompt":"Hello!"}'`}
       </pre>
-    </main>
+      </SidebarInset>
+    </SidebarProvider>
+    </ThemeProvider>
   );
 }

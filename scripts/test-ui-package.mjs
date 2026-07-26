@@ -9,7 +9,7 @@ const packageRoot = path.join(repoRoot, 'packages/ui');
 const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'frogbot-ui-'));
 const appRoot = path.join(temporaryRoot, 'app');
 const extractedRoot = path.join(temporaryRoot, 'package');
-const subpaths = ['.', './icons', './theme', './chat', './chat/tools', './chat/artifacts'];
+const subpaths = ['.', './icons', './icons/*', './theme', './chat', './chat/tools', './chat/artifacts'];
 
 const run = (command, args, cwd = repoRoot) => {
   execFileSync(command, args, { cwd, stdio: 'inherit' });
@@ -29,6 +29,7 @@ try {
   for (const subpath of subpaths) {
     const entry = packageJSON.exports[subpath];
     assert.equal(typeof entry, 'object');
+    if (subpath.includes('*')) continue;
     assert.ok(fs.statSync(path.join(extractedRoot, entry.import)).isFile());
     assert.ok(fs.statSync(path.join(extractedRoot, entry.types)).isFile());
   }
@@ -38,8 +39,8 @@ try {
   assert.deepEqual(cssFiles, ['dist/styles.css']);
   assert.ok(fs.statSync(path.join(extractedRoot, 'dist/styles.css')).size > 0);
   const css = fs.readFileSync(path.join(extractedRoot, 'dist/styles.css'), 'utf8');
-  assert.match(css, /\.text-frogbot-ui/);
-  assert.match(css, /var\(--frogbot-ui-foreground\)/);
+  assert.match(css, /\.bg-background/);
+  assert.match(css, /var\(--background\)/);
 
   const clientEntry = fs.readFileSync(path.join(extractedRoot, 'dist/placeholder.js'), 'utf8');
   assert.equal(clientEntry.split('\n')[0], "'use client';");
@@ -74,17 +75,20 @@ try {
     },
     include: ['src'],
   }, null, 2)}\n`);
-  fs.writeFileSync(path.join(appRoot, 'src/main.tsx'), `import { Placeholder } from '@frogbotai/ui'
+  fs.writeFileSync(path.join(appRoot, 'src/main.tsx'), `import { Button, Card, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Sidebar, SidebarInset, SidebarProvider } from '@frogbotai/ui'
 import * as artifacts from '@frogbotai/ui/chat/artifacts'
 import * as chat from '@frogbotai/ui/chat'
-import * as icons from '@frogbotai/ui/icons'
-import * as theme from '@frogbotai/ui/theme'
+import { ThemeProvider } from '@frogbotai/ui/theme'
 import * as tools from '@frogbotai/ui/chat/tools'
 import '@frogbotai/ui/styles.css'
 import { createRoot } from 'react-dom/client'
 
-void [artifacts, chat, icons, theme, tools]
-createRoot(document.getElementById('root')!).render(<Placeholder />)
+void [artifacts, chat, tools]
+createRoot(document.getElementById('root')!).render(
+  <ThemeProvider mode="dark" theme={{ '--primary': 'oklch(0.7 0.2 40)' }}>
+    <SidebarProvider><Sidebar>Navigation</Sidebar><SidebarInset><Card><Input aria-label="Message" /><Button>Send</Button></Card><Select defaultValue="one"><SelectTrigger aria-label="Choice"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="one">One</SelectItem></SelectContent></Select></SidebarInset></SidebarProvider>
+  </ThemeProvider>,
+)
 `);
 
   run('pnpm', ['install', '--ignore-scripts'], appRoot);
@@ -94,10 +98,20 @@ createRoot(document.getElementById('root')!).render(<Placeholder />)
     .filter((file) => file.endsWith('.js'))
     .map((file) => fs.readFileSync(path.join(appRoot, 'dist/assets', file), 'utf8'))
     .join('\n');
-  assert.match(bundle, /FrogBot UI/);
+  assert.match(bundle, /Navigation/);
+  assert.match(bundle, /oklch\(0\.7 0\.2 40\)/);
   for (const forbidden of ['process.env', '@payloadcms/', 'next/']) {
     assert.ok(!bundle.includes(forbidden));
   }
+
+  fs.writeFileSync(path.join(appRoot, 'src/icon.ts'), `export { CheckIcon } from '@frogbotai/ui/icons/check'\n`);
+  fs.writeFileSync(path.join(appRoot, 'vite.icon.config.js'), `import { defineConfig } from 'vite'
+export default defineConfig({ build: { lib: { entry: 'src/icon.ts', formats: ['es'] }, rollupOptions: { external: ['react', 'react/jsx-runtime'] } } })
+`);
+  run('pnpm', ['vite', 'build', '--config', 'vite.icon.config.js'], appRoot);
+  const iconBundle = fs.readdirSync(path.join(appRoot, 'dist')).find((file) => file.endsWith('.js'));
+  assert.ok(iconBundle);
+  assert.ok(fs.statSync(path.join(appRoot, 'dist', iconBundle)).size < 4000);
 
   console.log('[test-ui-package] Packed exports, types, CSS, client directive, and Vite consumption passed.');
 } finally {

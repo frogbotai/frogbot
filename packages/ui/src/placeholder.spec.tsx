@@ -7,6 +7,6 @@ describe('Placeholder', () => {
   it('renders', () => {
     render(<Placeholder />)
 
-    expect(screen.getByText('FrogBot UI')).toBeTruthy()
+    expect(screen.getByText('UI preview')).toBeTruthy()
   })
 })

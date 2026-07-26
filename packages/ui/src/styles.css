@@ -2,10 +2,195 @@
 
 @source "./**/*.{ts,tsx}";
 
-:root {
-  --frogbot-ui-foreground: #171717;
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
 }
 
-@theme inline {
-  --color-frogbot-ui: var(--frogbot-ui-foreground);
+[data-fb-ui] {
+  --fb-neutral-0: oklch(1 0 0);
+  --fb-neutral-50: oklch(0.985 0.002 247.84);
+  --fb-neutral-100: oklch(0.967 0.003 264.54);
+  --fb-neutral-200: oklch(0.928 0.006 264.53);
+  --fb-neutral-300: oklch(0.872 0.01 258.34);
+  --fb-neutral-500: oklch(0.551 0.023 264.36);
+  --fb-neutral-700: oklch(0.373 0.034 259.73);
+  --fb-neutral-900: oklch(0.21 0.034 264.67);
+  --fb-neutral-1000: oklch(0.13 0.028 261.69);
+  --fb-brand-100: oklch(0.962 0.044 156.74);
+  --fb-brand-300: oklch(0.82 0.13 151.71);
+  --fb-brand-500: oklch(0.68 0.17 148.2);
+  --fb-brand-600: oklch(0.58 0.15 148.9);
+  --fb-brand-700: oklch(0.48 0.12 150.2);
+  --fb-brand-900: oklch(0.29 0.07 151.7);
+  --fb-red-100: oklch(0.936 0.032 17.72);
+  --fb-red-500: oklch(0.637 0.237 25.33);
+  --fb-red-700: oklch(0.505 0.213 27.52);
+  --fb-green-100: oklch(0.962 0.044 156.74);
+  --fb-green-500: oklch(0.723 0.219 149.58);
+  --fb-green-700: oklch(0.527 0.154 150.07);
+  --fb-yellow-100: oklch(0.973 0.071 103.19);
+  --fb-yellow-500: oklch(0.795 0.184 86.05);
+  --fb-yellow-700: oklch(0.554 0.135 66.44);
+  --background: var(--fb-neutral-0);
+  --foreground: var(--fb-neutral-900);
+  --card: var(--fb-neutral-0);
+  --card-foreground: var(--fb-neutral-900);
+  --popover: var(--fb-neutral-0);
+  --popover-foreground: var(--fb-neutral-900);
+  --primary: var(--fb-brand-600);
+  --primary-foreground: var(--fb-neutral-0);
+  --secondary: var(--fb-neutral-100);
+  --secondary-foreground: var(--fb-neutral-900);
+  --muted: var(--fb-neutral-100);
+  --muted-foreground: var(--fb-neutral-500);
+  --accent: var(--fb-brand-100);
+  --accent-foreground: var(--fb-brand-900);
+  --destructive: var(--fb-red-500);
+  --destructive-foreground: var(--fb-neutral-0);
+  --success: var(--fb-green-500);
+  --success-foreground: var(--fb-neutral-1000);
+  --warning: var(--fb-yellow-500);
+  --warning-foreground: var(--fb-neutral-1000);
+  --border: var(--fb-neutral-200);
+  --input: var(--fb-neutral-300);
+  --ring: var(--fb-brand-600);
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --sidebar: var(--fb-neutral-50);
+  --sidebar-foreground: var(--fb-neutral-900);
+  --sidebar-primary: var(--fb-brand-600);
+  --sidebar-primary-foreground: var(--fb-neutral-0);
+  --sidebar-accent: var(--fb-brand-100);
+  --sidebar-accent-foreground: var(--fb-brand-900);
+  --sidebar-border: var(--fb-neutral-200);
+  --sidebar-ring: var(--fb-brand-600);
+  color: var(--foreground);
+}
+
+[data-fb-theme="dark"] [data-fb-ui][data-theme="system"],
+[data-fb-ui].dark,
+[data-fb-ui][data-theme="dark"] {
+  --background: var(--fb-neutral-1000);
+  --foreground: var(--fb-neutral-50);
+  --card: var(--fb-neutral-900);
+  --card-foreground: var(--fb-neutral-50);
+  --popover: var(--fb-neutral-900);
+  --popover-foreground: var(--fb-neutral-50);
+  --primary: var(--fb-brand-500);
+  --primary-foreground: var(--fb-neutral-1000);
+  --secondary: var(--fb-neutral-700);
+  --secondary-foreground: var(--fb-neutral-50);
+  --muted: var(--fb-neutral-900);
+  --muted-foreground: var(--fb-neutral-300);
+  --accent: var(--fb-brand-900);
+  --accent-foreground: var(--fb-brand-100);
+  --border: var(--fb-neutral-700);
+  --input: var(--fb-neutral-700);
+  --ring: var(--fb-brand-500);
+  --sidebar: var(--fb-neutral-900);
+  --sidebar-foreground: var(--fb-neutral-50);
+  --sidebar-primary: var(--fb-brand-500);
+  --sidebar-primary-foreground: var(--fb-neutral-1000);
+  --sidebar-accent: var(--fb-brand-900);
+  --sidebar-accent-foreground: var(--fb-brand-100);
+  --sidebar-border: var(--fb-neutral-700);
+  --sidebar-ring: var(--fb-brand-500);
+  color-scheme: dark;
+}
+
+[data-fb-theme="light"] [data-fb-ui][data-theme="system"] {
+  --background: var(--fb-neutral-0);
+  --foreground: var(--fb-neutral-900);
+  --card: var(--fb-neutral-0);
+  --card-foreground: var(--fb-neutral-900);
+  --popover: var(--fb-neutral-0);
+  --popover-foreground: var(--fb-neutral-900);
+  --primary: var(--fb-brand-600);
+  --primary-foreground: var(--fb-neutral-0);
+  --secondary: var(--fb-neutral-100);
+  --secondary-foreground: var(--fb-neutral-900);
+  --muted: var(--fb-neutral-100);
+  --muted-foreground: var(--fb-neutral-500);
+  --accent: var(--fb-brand-100);
+  --accent-foreground: var(--fb-brand-900);
+  --border: var(--fb-neutral-200);
+  --input: var(--fb-neutral-300);
+  --ring: var(--fb-brand-600);
+  --sidebar: var(--fb-neutral-50);
+  --sidebar-foreground: var(--fb-neutral-900);
+  --sidebar-primary: var(--fb-brand-600);
+  --sidebar-primary-foreground: var(--fb-neutral-0);
+  --sidebar-accent: var(--fb-brand-100);
+  --sidebar-accent-foreground: var(--fb-brand-900);
+  --sidebar-border: var(--fb-neutral-200);
+  --sidebar-ring: var(--fb-brand-600);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-fb-ui][data-theme="system"] {
+    --background: var(--fb-neutral-1000);
+    --foreground: var(--fb-neutral-50);
+    --card: var(--fb-neutral-900);
+    --card-foreground: var(--fb-neutral-50);
+    --popover: var(--fb-neutral-900);
+    --popover-foreground: var(--fb-neutral-50);
+    --primary: var(--fb-brand-500);
+    --primary-foreground: var(--fb-neutral-1000);
+    --secondary: var(--fb-neutral-700);
+    --secondary-foreground: var(--fb-neutral-50);
+    --muted: var(--fb-neutral-900);
+    --muted-foreground: var(--fb-neutral-300);
+    --accent: var(--fb-brand-900);
+    --accent-foreground: var(--fb-brand-100);
+    --border: var(--fb-neutral-700);
+    --input: var(--fb-neutral-700);
+    --ring: var(--fb-brand-500);
+    --sidebar: var(--fb-neutral-900);
+    --sidebar-foreground: var(--fb-neutral-50);
+    --sidebar-primary: var(--fb-brand-500);
+    --sidebar-primary-foreground: var(--fb-neutral-1000);
+    --sidebar-accent: var(--fb-brand-900);
+    --sidebar-accent-foreground: var(--fb-brand-100);
+    --sidebar-border: var(--fb-neutral-700);
+    --sidebar-ring: var(--fb-brand-500);
+    color-scheme: dark;
+  }
 }

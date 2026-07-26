@@ -1,5 +1,5 @@
 'use client'
 
 export function Placeholder() {
-  return <div className="text-frogbot-ui">FrogBot UI</div>
+  return <div className="bg-background text-foreground">UI preview</div>
 }

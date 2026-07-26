@@ -9,15 +9,21 @@ execFileSync('pnpm', ['--filter', 'blank...', 'build'], { stdio: 'inherit' });
 
 const html = fs.readFileSync(path.join(nextRoot, 'server/app/index.html'), 'utf8');
 
-assert.match(html, />FrogBot UI</);
-assert.match(html, /class="text-frogbot-ui"/);
+assert.match(html, /data-fb-ui=""/);
+assert.match(html, /data-theme="dark"/);
+assert.match(html, /--primary:oklch\(0\.7 0\.2 40\)/);
+assert.match(html, />Send</);
+assert.match(html, />Navigation</);
+assert.match(html, /aria-label="Choice"/);
+assert.match(html, /localStorage\.getItem/);
 
 const href = html.match(/href="(\/_next\/static\/css\/[^"?]+\.css)"/)?.[1];
 assert.ok(href);
 
 const css = fs.readFileSync(path.join(nextRoot, href.replace('/_next/', '')), 'utf8');
 assert.ok(css.length > 0);
-assert.match(css, /\.text-frogbot-ui/);
-assert.match(css, /var\(--frogbot-ui-foreground\)/);
+assert.match(css, /\.bg-background/);
+assert.match(css, /var\(--background\)/);
+assert.match(css, /data-fb-theme/);
 
-console.log('[test-ui-next] Next rendered FrogBot UI with its compiled stylesheet.');
+console.log('[test-ui-next] Next rendered the UI package with its compiled stylesheet.');

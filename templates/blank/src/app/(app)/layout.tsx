@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import React from 'react';
 import '@frogbotai/ui/styles.css';
+import { ThemeScript } from '@frogbotai/ui/theme';
 
 export const metadata: Metadata = {
   title: 'FrogBot',
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head><ThemeScript /></head>
       <body>{children}</body>
     </html>
   );
