@@ -16,6 +16,15 @@ export default defineConfig({
       },
       {
         test: {
+          name: 'ui',
+          include: ['packages/ui/src/**/*.spec.tsx'],
+          exclude: ['**/node_modules/**', '**/dist/**'],
+          environment: 'jsdom',
+          setupFiles: ['./packages/ui/src/vitest.setup.ts'],
+        },
+      },
+      {
+        test: {
           name: 'int',
           include: ['test/**/*int.spec.ts'],
           exclude: ['**/node_modules/**', '**/dist/**'],

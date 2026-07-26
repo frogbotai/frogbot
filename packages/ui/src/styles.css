@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+@source "./**/*.{ts,tsx}";
+
+:root {
+  --frogbot-ui-foreground: #171717;
+}
+
+@theme inline {
+  --color-frogbot-ui: var(--frogbot-ui-foreground);
+}
