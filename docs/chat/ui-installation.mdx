@@ -1,0 +1,24 @@
+---
+title: "Install the chat UI"
+sidebarTitle: "UI installation"
+description: "Install the FrogBot chat component package and its stylesheet."
+keywords: ["chat UI", "React", "installation", "CSS"]
+---
+
+Install the UI package with its React and AI SDK peer dependencies.
+
+```bash
+pnpm add @frogbotai/ui ai react react-dom
+```
+
+Import the compiled stylesheet once in your application root. Consumers do not need Tailwind or a content-source configuration.
+
+```tsx
+import '@frogbotai/ui/styles.css'
+```
+
+The package supports React 19 and can be bundled by Next.js or Vite. It does not require environment-variable shims or platform SDKs.
+
+<Warning>
+  Internal utility class names are not public API. Do not target them from application CSS. Use theme tokens, component props, and documented data attributes instead.
+</Warning>

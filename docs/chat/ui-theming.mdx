@@ -1,0 +1,31 @@
+---
+title: "Theme and white-label the chat UI"
+sidebarTitle: "Theming"
+description: "Apply build-time and runtime brand tokens without editing components."
+keywords: ["theme", "white-label", "CSS variables", "ThemeProvider"]
+---
+
+Wrap the UI in `ThemeProvider` and pass semantic CSS tokens. `--primary` controls the brand color used by primary surfaces.
+
+```tsx
+import { ThemeProvider, ThemeScript } from '@frogbotai/ui/theme'
+
+export function AppTheme({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <ThemeScript />
+      <ThemeProvider theme={{ '--primary': 'oklch(0.58 0.18 250)' }}>
+        {children}
+      </ThemeProvider>
+    </>
+  )
+}
+```
+
+Change the `theme` or `brand` prop at runtime to apply tenant-specific values without rebuilding. Explicit `theme` values override matching `brand.tokens` values.
+
+Place `ThemeScript` before themed content during server rendering. It reads the stored `light`, `dark`, or `system` preference before hydration to avoid a mode flash. Pass the same `storageKey` to `ThemeScript` and `ThemeProvider` when using a custom key.
+
+<Warning>
+  Internal utility classes can change between releases and are not public API. Do not use them for white-label overrides.
+</Warning>

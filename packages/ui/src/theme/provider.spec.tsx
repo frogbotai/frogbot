@@ -32,4 +32,16 @@ describe('ThemeProvider', () => {
     expect(container.querySelector('script')?.textContent).toContain('custom-theme')
     expect(container.querySelector('script')?.textContent).toContain('dataset.fbTheme')
   })
+
+  it('re-skins from config and runtime tokens without component changes', () => {
+    vi.stubGlobal('matchMedia', () => ({ addEventListener: vi.fn(), matches: false, removeEventListener: vi.fn() }))
+    const { container, rerender } = render(<ThemeProvider mode="light" theme={{ '--primary': 'red' }}><button>Action</button></ThemeProvider>)
+    const surface = container.firstElementChild
+    const action = screen.getByRole('button')
+
+    expect(surface?.getAttribute('style')).toContain('--primary: red')
+    rerender(<ThemeProvider mode="light" theme={{ '--primary': 'blue' }}><button>Action</button></ThemeProvider>)
+    expect(surface?.getAttribute('style')).toContain('--primary: blue')
+    expect(screen.getByRole('button')).toBe(action)
+  })
 })

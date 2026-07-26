@@ -1,0 +1,38 @@
+---
+title: "Register tools and artifacts"
+sidebarTitle: "Tools and artifacts"
+description: "Render application-specific tools and artifact kinds through public registries."
+keywords: ["tools", "artifacts", "registry", "custom renderer"]
+---
+
+Pass tool renderers and artifact kinds to `ChatProvider`. Registration uses exact, case-sensitive `kind` values.
+
+```tsx
+import { ChatProvider } from '@frogbotai/ui/chat'
+import type { ArtifactRendererProps } from '@frogbotai/ui/chat/artifacts'
+import type { ToolRendererProps } from '@frogbotai/ui/chat/tools'
+
+function SearchResult({ part }: ToolRendererProps) {
+  return <pre>{JSON.stringify('output' in part ? part.output : part.input, null, 2)}</pre>
+}
+
+function Chart({ artifact }: ArtifactRendererProps) {
+  return <pre>{JSON.stringify(artifact.content, null, 2)}</pre>
+}
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <ChatProvider
+      adapter={{ fetch }}
+      toolRenderers={[{ kind: 'search', render: SearchResult }]}
+      artifactKinds={[{ kind: 'chart', render: Chart }]}
+    >
+      {children}
+    </ChatProvider>
+  )
+}
+```
+
+Tool kinds without a registration use the generic tool renderer. Artifact kinds without a registration show their title, kind, and serialized content rather than throwing.
+
+Add `initialize` and `onStreamPart` to an artifact registration when data parts progressively build an artifact. Add `artifactPersistence` to `ChatProvider` to provide application-specific `load` and `save` functions.

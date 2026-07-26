@@ -54,6 +54,8 @@ try {
     scripts: { build: 'tsc --noEmit && vite build' },
     dependencies: {
       '@frogbotai/ui': `./${tarball}`,
+      '@types/json-schema': '^7.0.15',
+      '@types/node': '^22.10.2',
       '@types/react': '19.2.14',
       '@types/react-dom': '19.2.3',
       react: '19.2.6',
@@ -70,6 +72,7 @@ try {
       module: 'ESNext',
       moduleResolution: 'Bundler',
       noEmit: true,
+      skipLibCheck: true,
       strict: true,
       target: 'ES2022',
     },
@@ -83,10 +86,10 @@ import * as tools from '@frogbotai/ui/chat/tools'
 import '@frogbotai/ui/styles.css'
 import { createRoot } from 'react-dom/client'
 
-void [artifacts, chat, tools]
+void [artifacts, tools]
 createRoot(document.getElementById('root')!).render(
   <ThemeProvider mode="dark" theme={{ '--primary': 'oklch(0.7 0.2 40)' }}>
-    <SidebarProvider><Sidebar>Navigation</Sidebar><SidebarInset><Card><Input aria-label="Message" /><Button>Send</Button></Card><Select defaultValue="one"><SelectTrigger aria-label="Choice"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="one">One</SelectItem></SelectContent></Select></SidebarInset></SidebarProvider>
+    <SidebarProvider><Sidebar>Navigation</Sidebar><SidebarInset><chat.MessageList messages={[{ id: '1', role: 'assistant', parts: [{ type: 'text', text: 'Bundled chat' }] }]} /><Card><Input aria-label="Message" /><Button>Send</Button></Card><Select defaultValue="one"><SelectTrigger aria-label="Choice"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="one">One</SelectItem></SelectContent></Select></SidebarInset></SidebarProvider>
   </ThemeProvider>,
 )
 `);
@@ -99,8 +102,9 @@ createRoot(document.getElementById('root')!).render(
     .map((file) => fs.readFileSync(path.join(appRoot, 'dist/assets', file), 'utf8'))
     .join('\n');
   assert.match(bundle, /Navigation/);
+  assert.match(bundle, /Bundled chat/);
   assert.match(bundle, /oklch\(0\.7 0\.2 40\)/);
-  for (const forbidden of ['process.env', '@payloadcms/', 'next/']) {
+  for (const forbidden of ['process.env', '@payloadcms/', '@tauri-apps/', '@capacitor/', 'electron', 'expo-', 'next/', 'FrogBot Pro', 'firmware.ai']) {
     assert.ok(!bundle.includes(forbidden));
   }
 

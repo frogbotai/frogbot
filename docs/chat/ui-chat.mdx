@@ -1,0 +1,28 @@
+---
+title: "Render Chat"
+sidebarTitle: "Chat component"
+description: "Render the complete conversation shell with history and message composition."
+keywords: ["Chat", "conversation", "thread history", "composer"]
+---
+
+Place `<Chat>` under `ChatProvider`. The component loads thread history, streams messages, persists the active thread ID, and exposes slots for application-specific content.
+
+```tsx
+'use client'
+
+import { Chat, ChatProvider, cookieFetch } from '@frogbotai/ui/chat'
+
+const adapter = { fetch: cookieFetch() }
+
+export function SupportChat() {
+  return (
+    <ChatProvider adapter={adapter}>
+      <div style={{ height: '100dvh' }}>
+        <Chat agent="support" />
+      </div>
+    </ChatProvider>
+  )
+}
+```
+
+Use `threadId` and `onThreadIdChange` for controlled routing. Use `defaultThreadId` when the component should manage selection internally. `composerStartSlot`, `composerEndSlot`, `panel`, and `renderThreadActions` add product-specific controls without replacing the shell.

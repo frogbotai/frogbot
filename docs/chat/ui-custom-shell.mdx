@@ -1,0 +1,40 @@
+---
+title: "Build your own chat shell"
+sidebarTitle: "Build your own shell"
+description: "Compose chat primitives around your own AI SDK useChat state."
+keywords: ["useChat", "composition", "MessageList", "Composer"]
+---
+
+Components below `<Chat>` do not require `ChatProvider`. Use them with your own AI SDK `useChat` call when your application owns transport, routing, or state management.
+
+```tsx
+'use client'
+
+import { useChat } from '@ai-sdk/react'
+import { Composer, MessageList } from '@frogbotai/ui/chat'
+
+export function CustomShell() {
+  const chat = useChat()
+
+  return (
+    <main style={{ height: '100dvh' }}>
+      <MessageList messages={chat.messages} />
+      <Composer
+        pending={chat.status === 'submitted' || chat.status === 'streaming'}
+        onStop={() => chat.stop()}
+        onSubmit={(text) => chat.sendMessage({ text })}
+        submitContent="Send"
+        stopContent="Stop"
+      />
+    </main>
+  )
+}
+```
+
+`Message`, `MessagePart`, `TextPart`, `ReasoningPart`, `ToolPart`, `FilePart`, `SourcePart`, `DataPart`, `ThreadHistory`, `ChatShell`, and `ChatStatus` are also exported from `@frogbotai/ui/chat` for deeper composition.
+
+If custom message parts can appear, pass a `fallback` to `MessagePart`. Unknown standard parts otherwise render a safe unsupported-part fallback.
+
+<Warning>
+  Treat component props and package exports as the public composition API. Internal utility class names are not public API and must not be targeted.
+</Warning>

@@ -1,0 +1,34 @@
+---
+title: "Set up the chat provider"
+sidebarTitle: "Provider setup"
+description: "Connect the chat UI to authentication and the FrogBot manifest."
+keywords: ["ChatProvider", "adapter", "authentication", "manifest"]
+---
+
+`ChatProvider` loads `/api/frogbot`, discovers the available agents and collection slugs, and supplies the platform adapter used by `<Chat>`.
+
+```tsx
+'use client'
+
+import { ChatProvider, cookieFetch } from '@frogbotai/ui/chat'
+
+const adapter = { fetch: cookieFetch() }
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return <ChatProvider adapter={adapter}>{children}</ChatProvider>
+}
+```
+
+Use `bearerFetch` when authentication comes from a token instead of a same-origin cookie.
+
+```tsx
+import { bearerFetch, ChatProvider } from '@frogbotai/ui/chat'
+
+const adapter = { fetch: bearerFetch(() => sessionStorage.getItem('token') ?? undefined) }
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return <ChatProvider adapter={adapter}>{children}</ChatProvider>
+}
+```
+
+The manifest carries renamed thread and message collection slugs. Do not duplicate those slugs in consumer code.

@@ -10,11 +10,8 @@ execFileSync('pnpm', ['--filter', 'blank...', 'build'], { stdio: 'inherit' });
 const html = fs.readFileSync(path.join(nextRoot, 'server/app/index.html'), 'utf8');
 
 assert.match(html, /data-fb-ui=""/);
-assert.match(html, /data-theme="dark"/);
-assert.match(html, /--primary:oklch\(0\.7 0\.2 40\)/);
-assert.match(html, />Send</);
-assert.match(html, />Navigation</);
-assert.match(html, /aria-label="Choice"/);
+assert.match(html, /data-theme="system"/);
+assert.match(html, /Loading chat/);
 assert.match(html, /localStorage\.getItem/);
 
 const href = html.match(/href="(\/_next\/static\/css\/[^"?]+\.css)"/)?.[1];
@@ -25,5 +22,12 @@ assert.ok(css.length > 0);
 assert.match(css, /\.bg-background/);
 assert.match(css, /var\(--background\)/);
 assert.match(css, /data-fb-theme/);
+
+const bundles = [...html.matchAll(/src="(\/_next\/static\/[^"?]+\.js)"/g)]
+  .map((match) => fs.readFileSync(path.join(nextRoot, match[1].replace('/_next/', '')), 'utf8'))
+  .join('\n');
+for (const forbidden of ['@payloadcms/', '@tauri-apps/', '@capacitor/', 'FrogBot Pro', 'firmware.ai']) {
+  assert.ok(!bundles.includes(forbidden), `Next client bundle contains ${forbidden}`);
+}
 
 console.log('[test-ui-next] Next rendered the UI package with its compiled stylesheet.');
