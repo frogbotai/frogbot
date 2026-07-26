@@ -34,9 +34,19 @@ function credentialData(piece: Piece, credentials: Record<string, unknown>): { e
 export function builtInSecretSource(pieces: readonly Piece[]) {
   return {
     key: 'secret',
-    services: pieces.filter((piece) => ['secret_text', 'basic_auth', 'custom'].includes(piece.credentialType)).map((piece) => piece.service),
+    services: pieces.filter((piece) => piece.policy.type === 'user' && ['secret_text', 'basic_auth', 'custom', 'service_account'].includes(piece.credentialType)).map((piece) => piece.service),
     credentialTypes: ['secret_text', 'basic_auth', 'custom'] as const,
   };
+}
+
+export function builtInDeveloperSources(pieces: readonly Piece[]) {
+  return pieces.flatMap((piece) => piece.policy.type === 'developer' && piece.credentialType !== 'none' ? [{
+    key: `config:${piece.service}`,
+    services: [piece.service],
+    credentialTypes: [piece.credentialType],
+    policy: 'developer' as const,
+    resolve: () => import('./adapters.js').then(({ adaptCredential }) => adaptCredential(piece.credentialType as Exclude<typeof piece.credentialType, 'none'>, piece.policy.type === 'developer' && typeof piece.policy.credential === 'object' && piece.policy.credential ? piece.policy.credential as Record<string, unknown> : { value: piece.policy.type === 'developer' ? piece.policy.credential : '' })),
+  }] : []);
 }
 
 export function buildSecretEndpoints({ connections, pieces }: { connections: SanitizedConnectionsConfig; pieces: readonly Piece[] }): Endpoint[] {
@@ -61,7 +71,7 @@ export function buildSecretEndpoints({ connections, pieces }: { connections: San
       const encryptedCredentials = await connections.encryption.encrypt(JSON.stringify(values.encrypted));
       const existing = await req.frogbot.find({
         collection: connections.slug as never,
-        where: { and: [{ owner: { equals: req.user.id } }, { service: { equals: body.service } }, { source: { equals: 'secret' } }] },
+        where: { and: [{ owner: { equals: req.user.id } }, { sourceKey: { equals: connections.assignments[body.service] } }] },
         limit: 1,
         overrideAccess: true,
         req,
@@ -69,7 +79,7 @@ export function buildSecretEndpoints({ connections, pieces }: { connections: San
       if (existing.docs.length && !replace) return Response.json({ error: 'Connection already exists' }, { status: 409 });
       const data = {
         owner: req.user.id,
-        service: body.service,
+        services: [body.service],
         source: 'secret',
         sourceKey: 'secret',
         credentialType: piece.credentialType,
@@ -97,7 +107,7 @@ export function buildSecretEndpoints({ connections, pieces }: { connections: San
         if (typeof body?.service !== 'string') return Response.json({ error: 'Service is required' }, { status: 400 });
         const existing = await req.frogbot.find({
           collection: connections.slug as never,
-          where: { and: [{ owner: { equals: req.user.id } }, { service: { equals: body.service } }, { source: { equals: 'secret' } }] },
+          where: { and: [{ owner: { equals: req.user.id } }, { sourceKey: { equals: connections.assignments[body.service] } }] },
           limit: 1,
           overrideAccess: true,
           req,

@@ -3,10 +3,12 @@ import type { TypeWithID } from 'payload';
 import type { Frogbot } from '../frogbot.js';
 import type { CredentialType } from '../types/piece.js';
 import type { SanitizedConnectionsConfig } from '../types/connections.js';
+import { adaptCredential } from './adapters.js';
 
 export type ConnectionRecord = {
   id: number | string;
   service: string;
+  services?: string[];
   source: 'oauth' | 'secret';
   sourceKey: string;
   credentialType: Exclude<CredentialType, 'none'>;
@@ -20,6 +22,13 @@ export type ConnectionRecord = {
 };
 
 export type ConnectionInfo = Omit<ConnectionRecord, 'encryptedCredentials'>;
+export type AuthorizationRequirement = {
+  source: string;
+  services: string[];
+  type: 'oauth' | 'secret';
+  scopes: string[];
+  authorizeUrl?: string;
+};
 export type AppConnectionValue =
   | string
   | { username: string; password: string }
@@ -27,7 +36,7 @@ export type AppConnectionValue =
   | Record<string, unknown>;
 
 export class ConnectionError extends Error {
-  constructor(message: string, public readonly code: 'missing' | 'revoked' | 'expired' | 'error') {
+  constructor(message: string, public readonly code: 'missing' | 'revoked' | 'expired' | 'error' | 'scopes', public readonly missingScopes?: string[]) {
     super(message);
     this.name = 'ConnectionError';
   }
@@ -36,20 +45,24 @@ export class ConnectionError extends Error {
 export class Connections {
   constructor(private readonly frogbot: Frogbot, private readonly config: SanitizedConnectionsConfig) {}
 
-  async resolve({ service, owner }: { service: string; owner: TypeWithID }): Promise<AppConnectionValue> {
-    const doc = await this.findConnection(service, owner);
+  async resolve({ service, owner }: { service: string; owner?: TypeWithID }): Promise<AppConnectionValue> {
+    const source = this.config.sources.find((candidate) => candidate.key === this.config.assignments[service]);
+    const doc = owner ? await this.findConnection(service, owner) : undefined;
+    if (!doc && source?.resolve) return source.resolve({ service, owner });
     if (!doc) throw new ConnectionError(`No connection found for '${service}'.`, 'missing');
+    const missingScopes = (source?.scopes ?? []).filter((scope) => !doc.scopes?.includes(scope));
+    if (missingScopes.length) throw new ConnectionError(`Connection for '${service}' is missing required scopes: ${missingScopes.join(', ')}.`, 'scopes', missingScopes);
     if (doc.status === 'revoked') throw new ConnectionError(`Connection for '${service}' is revoked.`, 'revoked');
     if (doc.expiresAt && new Date(doc.expiresAt).getTime() <= Date.now()) {
       const sourceKey = doc.sourceKey;
       const source = this.config.sources.find((candidate) => candidate.key === sourceKey);
       if (!source?.refresh) throw new ConnectionError(`Connection for '${service}' is expired.`, 'expired');
       try {
-        await source.refresh({ connection: doc, frogbot: this.frogbot, owner });
+        await source.refresh({ connection: doc, frogbot: this.frogbot, owner: owner! });
       } catch {
         throw new ConnectionError(`Connection for '${service}' could not be refreshed.`, 'error');
       }
-      const refreshed = await this.findConnection(service, owner);
+      const refreshed = await this.findConnection(service, owner!);
       if (!refreshed || refreshed.status === 'error') throw new ConnectionError(`Connection for '${service}' could not be refreshed.`, 'error');
       return this.resolveCredentials(refreshed);
     }
@@ -60,13 +73,7 @@ export class Connections {
   private async resolveCredentials(doc: ConnectionRecord): Promise<AppConnectionValue> {
     if (!doc.encryptedCredentials) throw new ConnectionError(`No connection found for '${doc.service}'.`, 'missing');
     const credentials = JSON.parse(await this.config.encryption.decrypt(doc.encryptedCredentials)) as Record<string, unknown>;
-    if (doc.credentialType === 'secret_text') return String(credentials.value ?? '');
-    if (doc.credentialType === 'basic_auth') return {
-      username: String(credentials.username ?? ''),
-      password: String(credentials.password ?? ''),
-    };
-    if (doc.credentialType === 'oauth2') return { type: 'OAUTH2', ...credentials };
-    return { ...credentials, ...(doc.metadata ?? {}) };
+    return adaptCredential(doc.credentialType, doc.credentialType === 'custom' ? { ...credentials, ...(doc.metadata ?? {}) } : credentials);
   }
 
   async list({ owner }: { owner: TypeWithID }): Promise<ConnectionInfo[]> {
@@ -77,6 +84,34 @@ export class Connections {
       overrideAccess: true,
     });
     return (result.docs as unknown as ConnectionRecord[]).map(({ encryptedCredentials: _encryptedCredentials, ...doc }) => doc);
+  }
+
+  async authorizations({ services, owner }: { services: readonly string[]; owner: TypeWithID }): Promise<AuthorizationRequirement[]> {
+    const grouped = new Map<string, AuthorizationRequirement>();
+    for (const service of new Set(services)) {
+      const sourceKey = this.config.assignments[service];
+      const source = this.config.sources.find((candidate) => candidate.key === sourceKey);
+      if (!source || source.policy === 'developer') continue;
+      try {
+        await this.resolve({ service, owner });
+        continue;
+      } catch {
+        const existing = grouped.get(sourceKey);
+        if (existing) {
+          existing.services.push(service);
+          continue;
+        }
+        const oauth = source.credentialTypes.includes('oauth2');
+        grouped.set(sourceKey, {
+          source: sourceKey,
+          services: [service],
+          type: oauth ? 'oauth' : 'secret',
+          scopes: [...(source.scopes ?? [])],
+          ...(oauth ? { authorizeUrl: `/api/users/oauth/${encodeURIComponent(sourceKey)}/authorize` } : {}),
+        });
+      }
+    }
+    return [...grouped.values()];
   }
 
   async revoke({ service, owner }: { service: string; owner: TypeWithID }): Promise<ConnectionInfo> {
@@ -102,8 +137,7 @@ export class Connections {
       where: {
         and: [
           { owner: { equals: owner.id } },
-          { service: { equals: service } },
-          ...(sourceKey ? [{ sourceKey: { equals: sourceKey } }] : []),
+          ...(sourceKey ? [{ sourceKey: { equals: sourceKey } }] : [{ services: { contains: service } }]),
         ],
       },
       limit: 1,

@@ -50,6 +50,7 @@ export type OAuthRevokeContext = {
 export interface OAuthProvider {
   id: string;
   service: string;
+  services?: string[];
   authorizationUrl: string;
   tokenUrl: string;
   scopes: string[];
@@ -61,7 +62,6 @@ export interface OAuthProvider {
 }
 
 export type OAuthPluginOptions = {
-  providers: OAuthProvider[];
   authCollection?: string;
   statesSlug?: string;
   statesCollection?: Partial<CollectionConfig>;

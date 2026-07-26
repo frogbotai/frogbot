@@ -1,7 +1,9 @@
 import * as module from "@activepieces/piece-slack";
 import { pieceContract } from "frogbot/pieces/test";
 import { credentialExecution } from "../../credential-execution.js";
-import { slack, slackActions } from "./index.js";
+import { createSlack, slackActions } from './index.js';
+
+const slack = createSlack();
 pieceContract({
   piece: slack,
   service: "slack",

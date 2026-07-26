@@ -1,7 +1,9 @@
 import * as module from "@activepieces/piece-google-drive";
 import { pieceContract } from "frogbot/pieces/test";
 import { credentialExecution } from "../../credential-execution.js";
-import { googleDrive, googleDriveActions } from "./index.js";
+import { createGoogleDrive, googleDriveActions } from './index.js';
+
+const googleDrive = createGoogleDrive();
 pieceContract({
   piece: googleDrive,
   service: "google-drive",

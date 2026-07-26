@@ -9,7 +9,9 @@ function piece(service: string, toolAction = 'run'): Piece {
   return {
     service,
     credentialType: 'none',
+    policy: { type: 'none' },
     actions: ['run'],
+    tool: () => ({ slug: `${service}_${toolAction}`, description: 'Run', inputSchema: {} as never, execute: () => null }),
     tools: () => [{ slug: `${service}_${toolAction}`, description: 'Run', inputSchema: {} as never, execute: () => null }],
   };
 }
@@ -18,7 +20,7 @@ describe('piece config', () => {
   it('accepts a hand-written piece', () => {
     const example = piece('example');
     const result = sanitize({ secret: 'secret', db, collections: [], pieces: [example] });
-    expect(result.pieces).toEqual({ enabled: true, pieces: [example] });
+    expect(result.pieces).toMatchObject({ enabled: true, pieces: [example], services: { example } });
   });
 
   it('rejects duplicate services', () => {

@@ -1,7 +1,9 @@
 import * as module from "@activepieces/piece-google-calendar";
 import { pieceContract } from "frogbot/pieces/test";
 import { credentialExecution } from "../../credential-execution.js";
-import { googleCalendar, googleCalendarActions } from "./index.js";
+import { createGoogleCalendar, googleCalendarActions } from './index.js';
+
+const googleCalendar = createGoogleCalendar();
 pieceContract({
   piece: googleCalendar,
   service: "google-calendar",

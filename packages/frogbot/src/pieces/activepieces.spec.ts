@@ -7,8 +7,20 @@ import {
   propertiesSchema,
   UnsupportedPieceContextError,
 } from './activepieces.js';
+import { createActivepiecesPiece } from '../exports/pieces.js';
 
 describe('Activepieces adapter', () => {
+  it('derives credential policies and creates one tool', () => {
+    const create = (credentialType: 'none' | 'oauth2' | 'secret_text', auth?: Record<string, unknown>) => createActivepiecesPiece({
+      module: textHelperModule, service: 'text', credentialType, defaultActions: ['concat'], config: auth ? { auth } : undefined,
+    });
+    expect(create('none').policy).toEqual({ type: 'none' });
+    expect(create('secret_text').policy).toEqual({ type: 'user' });
+    expect(create('secret_text', { apiKey: 'key' }).policy).toEqual({ type: 'developer', credential: { apiKey: 'key' } });
+    expect(create('oauth2', { clientId: 'id', clientSecret: 'secret' }).policy).toMatchObject({ type: 'oauth', clientId: 'id', clientSecret: 'secret' });
+    expect(create('none').tool('concat').slug).toBe('text_concat');
+    expect(() => create('secret_text', { apiKey: 'key', allowUserOverride: true })).toThrow('not yet supported');
+  });
   it('loads one real piece and its metadata', () => {
     const piece = loadActivepiecesPiece(textHelperModule);
     expect(piece.metadata().displayName).toBe('Text Helper');
@@ -60,7 +72,7 @@ describe('Activepieces adapter', () => {
         run: async (context) => (context.files as { write: (value: unknown) => Promise<string> }).write({ fileName: 'result.txt', data: Buffer.from('result') }),
       },
       propsValue: {},
-      ctx: { frogbot: { config: { pieceFiles: { collection: 'media' } }, create } } as never,
+      ctx: { frogbot: { config: { files: { slug: 'media' } }, create } } as never,
     })).resolves.toBe('/media/result.txt');
     expect(create).toHaveBeenCalledWith(expect.objectContaining({ collection: 'media', overrideAccess: true }));
   });
@@ -73,7 +85,7 @@ describe('Activepieces adapter', () => {
         run: async (context) => (context.files as { write: (value: unknown) => Promise<string> }).write({ fileName: 'result.txt', data: Buffer.from('result') }),
       },
       propsValue: {},
-      ctx: { frogbot: { config: { pieceFiles: { collection: 'files' } }, create } } as never,
+      ctx: { frogbot: { config: { files: { slug: 'files' } }, create } } as never,
     });
     expect(create).toHaveBeenCalledWith(expect.objectContaining({ collection: 'files', data: {}, overrideAccess: true }));
   });
@@ -86,7 +98,7 @@ describe('Activepieces adapter', () => {
       },
       propsValue: {},
       ctx: { frogbot: { config: {} } } as never,
-    })).rejects.toThrow('pieceFiles.collection');
+    })).rejects.toThrow('files collection');
   });
 
   it('resolves connections by service key', async () => {

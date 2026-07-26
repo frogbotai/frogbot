@@ -19,14 +19,14 @@ export function defaultConnectionsCollection({ slug, userSlug }: { slug: string;
     },
     fields: [
       { name: 'owner', type: 'relationship', relationTo: userSlug, index: true, required: true },
-      { name: 'service', type: 'text', index: true, required: true },
+      { name: 'services', type: 'text', hasMany: true, index: true, required: true },
       {
         name: 'source',
         type: 'select',
         options: ['oauth', 'secret'],
         required: true,
       },
-      { name: 'credentialType', type: 'select', options: ['oauth2', 'secret_text', 'basic_auth', 'custom'], required: true },
+      { name: 'credentialType', type: 'select', options: ['oauth2', 'secret_text', 'basic_auth', 'custom', 'service_account'], required: true },
       { name: 'sourceKey', type: 'text', required: true },
       { name: 'encryptedCredentials', type: 'text', hidden: true, access: { read: () => false }, required: true },
       { name: 'scopes', type: 'text', hasMany: true },

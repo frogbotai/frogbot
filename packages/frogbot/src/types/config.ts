@@ -54,7 +54,6 @@ export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   pieces?: Piece[];
   connections?: ConnectionsConfig;
   credentialSources?: CredentialSource[];
-  pieceFiles?: { collection: string };
   /** Plugin pipeline — runs serially, in order, before sanitization. */
   plugins?: Plugin[];
   /** Root-level admin configuration. */

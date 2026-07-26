@@ -41,6 +41,7 @@ function makeRequest({
   agent = makeAgent(),
   body = { prompt: 'Hello' },
   create = vi.fn(() => Promise.resolve({ id: 'thread-1' })),
+  authorizations,
   find = vi.fn(() =>
     Promise.resolve({
       docs: [{ id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
@@ -53,6 +54,7 @@ function makeRequest({
   user = { id: 'user-1' },
 }: {
   accept?: string;
+  authorizations?: ReturnType<typeof vi.fn>;
   agent?: AgentInstance;
   body?: unknown;
   create?: ReturnType<typeof vi.fn>;
@@ -77,6 +79,7 @@ function makeRequest({
     routeParams: { slug },
     frogbot: {
       agents: { support: agent },
+      connections: authorizations ? { authorizations } : undefined,
       config: {
         ai: { routers: {} },
         chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' },
@@ -96,12 +99,26 @@ function postHandler() {
 }
 
 function listHandler() {
+  return buildAgentEndpoints()[2].handler;
+}
+
+function authorizationsHandler() {
   return buildAgentEndpoints()[1].handler;
 }
 
 describe('agent endpoints', () => {
   beforeEach(() => {
     createAgentUIStreamResponse.mockClear();
+  });
+
+  it('returns authorization preflight requirements and requires authentication', async () => {
+    const authorizations = vi.fn().mockResolvedValue([{ source: 'google', services: ['google-sheets'], type: 'oauth', scopes: ['sheets'] }]);
+    const agent = makeAgent();
+    agent.config.tools = [{ slug: 'google-sheets_find', pieceService: 'google-sheets' } as never];
+    const response = await authorizationsHandler()(makeRequest({ agent, authorizations }));
+    expect(await response.json()).toEqual({ authorizations: [{ source: 'google', services: ['google-sheets'], type: 'oauth', scopes: ['sheets'] }] });
+    expect(authorizations).toHaveBeenCalledWith({ owner: { id: 'user-1' }, services: ['google-sheets'] });
+    expect((await authorizationsHandler()(makeRequest({ user: null }))).status).toBe(401);
   });
 
   it('returns JSON unless text/event-stream is explicitly accepted', async () => {

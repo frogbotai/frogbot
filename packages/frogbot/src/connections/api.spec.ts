@@ -14,7 +14,7 @@ async function setup(doc: Record<string, unknown> | undefined, sources: Construc
     slug: 'connections',
     encryption,
     sources,
-    assignments: { service: 'secret' },
+    assignments: Object.fromEntries(['service', ...sources.flatMap((source) => source.services)].map((service) => [service, 'secret'])),
   });
   return { api, find, update };
 }
@@ -34,6 +34,30 @@ describe('connections API', () => {
     const { api } = await setup({ credentialType: 'secret_text', credentials: { value: 'key' } });
     expect(await api.list({ owner: { id: 'owner' } })).not.toHaveProperty('0.encryptedCredentials');
     expect(await api.revoke({ service: 'service', owner: { id: 'owner' } })).not.toHaveProperty('encryptedCredentials');
+  });
+
+  it('falls back to a direct credential source without an owner', async () => {
+    const { api } = await setup(undefined, [{
+      key: 'secret', services: ['service'], credentialTypes: ['secret_text'], policy: 'developer', resolve: () => 'configured',
+    }]);
+    expect(await api.resolve({ service: 'service' })).toBe('configured');
+  });
+
+  it('reports missing required scopes', async () => {
+    const { api } = await setup(
+      { credentialType: 'oauth2', credentials: { access_token: 'token' }, scopes: ['read'] },
+      [{ key: 'secret', services: ['service'], credentialTypes: ['oauth2'], scopes: ['read', 'write'] }],
+    );
+    await expect(api.resolve({ service: 'service', owner: { id: 'owner' } })).rejects.toMatchObject({ code: 'scopes', missingScopes: ['write'] });
+  });
+
+  it('groups missing authorizations by source and excludes developer credentials', async () => {
+    const { api } = await setup(undefined, [{ key: 'secret', services: ['service', 'other'], credentialTypes: ['oauth2'], scopes: ['read'] }]);
+    await expect(api.authorizations({ services: ['service', 'other'], owner: { id: 'owner' } })).resolves.toEqual([{
+      source: 'secret', services: ['service', 'other'], type: 'oauth', scopes: ['read'], authorizeUrl: '/api/users/oauth/secret/authorize',
+    }]);
+    const developer = await setup(undefined, [{ key: 'secret', services: ['service'], credentialTypes: ['secret_text'], policy: 'developer', resolve: () => 'key' }]);
+    await expect(developer.api.authorizations({ services: ['service'], owner: { id: 'owner' } })).resolves.toEqual([]);
   });
 
   it('distinguishes missing, revoked, and expired connections', async () => {

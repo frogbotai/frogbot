@@ -133,9 +133,9 @@ export async function executeActivepiecesAction({
     store: unsupported('store'),
     files: {
       write: async ({ fileName, data }: { fileName: string; data: Buffer }) => {
-        const collection = ctx?.frogbot.config.pieceFiles?.collection;
+        const collection = ctx?.frogbot.config.files?.slug;
         if (!ctx || !collection) {
-          throw new Error('[frogbot] Piece file output requires `pieceFiles.collection` to be configured.');
+          throw new Error('[frogbot] Piece file output requires the files collection to be configured.');
         }
         const doc = await ctx.frogbot.create({
           collection,

@@ -74,12 +74,6 @@ describe('frogbot sanitize', () => {
     const result = sanitize(makeConfig());
     expect(result.collections.map((collection) => collection.slug)).toContain('files');
     expect(result.files).toEqual({ slug: 'files' });
-    expect(result.pieceFiles).toEqual({ collection: 'files' });
-  });
-
-  it('uses explicit pieceFiles config', () => {
-    const result = sanitize(makeConfig({ pieceFiles: { collection: 'exports' } }));
-    expect(result.pieceFiles).toEqual({ collection: 'exports' });
   });
 
   it('propagates an adopted files collection slug', () => {
@@ -90,7 +84,6 @@ describe('frogbot sanitize', () => {
       ],
     }));
     expect(result.files).toEqual({ slug: 'documents' });
-    expect(result.pieceFiles).toEqual({ collection: 'documents' });
     expect(result.collections.map((collection) => collection.slug)).not.toContain('files');
   });
 
@@ -509,7 +502,7 @@ describe('frogbot sanitize', () => {
       expect(result.agents?.[0].access).toBeTypeOf('function');
       expect((payloadConfig as any).agents).toBeUndefined(); // eslint-disable-line @typescript-eslint/no-explicit-any
       expect((payloadConfig as any).endpoints.map((endpoint: any) => endpoint.path)) // eslint-disable-line @typescript-eslint/no-explicit-any
-        .toEqual(['/frogbot', '/agents/:slug', '/agents']);
+        .toEqual(['/frogbot', '/agents/:slug', '/agents/:slug/authorizations', '/agents']);
     });
 
     it('normalizes an empty agents array without AI to the omitted state', () => {

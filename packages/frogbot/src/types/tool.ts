@@ -14,6 +14,7 @@ export type Tool<
   TResult = unknown,
 > = {
   slug: string;
+  pieceService?: string;
   description: string;
   inputSchema: TSchema;
   execute: (input: z.infer<TSchema>, ctx: ToolCtx) => TResult | Promise<TResult>;

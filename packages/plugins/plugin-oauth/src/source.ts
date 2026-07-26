@@ -39,8 +39,9 @@ export function createOAuthCredentialSource({
 }): CredentialSource {
   return {
     key: provider.id,
-    services: [provider.service],
+    services: provider.services ?? [provider.service],
     credentialTypes: ['oauth2'],
+    scopes: provider.scopes,
     async refresh({ connection, frogbot, owner }) {
       if (!provider.refresh || !connection.encryptedCredentials) throw new Error('OAuth provider does not support refresh.');
       const req = { frogbot, user: owner } as unknown as FrogbotRequest;

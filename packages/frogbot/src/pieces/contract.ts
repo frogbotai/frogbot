@@ -25,7 +25,10 @@ export function pieceContract({ piece, service, credentialType, actions }: {
     });
     it('filters tools by action', () => {
       const action = actions[0];
-      expect(piece.tools({ actions: [action] }).map((tool) => tool.slug)).toEqual([`${service}_${action}`]);
+      expect(piece.tool(action).slug).toBe(`${service}_${action}`);
+    });
+    it('exposes every action as a named tool', () => {
+      expect(Object.values(piece).filter((value) => value && typeof value === 'object' && 'pieceService' in value)).toHaveLength(piece.actions.length);
     });
   });
 }

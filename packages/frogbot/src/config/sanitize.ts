@@ -28,6 +28,7 @@ import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../types/ai.js';
 import type { AgentConfig } from '../types/agent.js';
 import type { FrogbotRequest } from '../types/request.js';
 import type { Piece, SanitizedPiecesConfig } from '../types/piece.js';
+import type { AnyTool } from '../types/tool.js';
 import type { Frogbot } from '../frogbot.js';
 import { initFrogbotFromPayload } from '../frogbot.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
@@ -37,7 +38,7 @@ import { buildManifestEndpoint } from '../chat/manifest.js';
 import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
 import { resolveFilesCollection } from '../files/resolveCollections.js';
 import { resolveCredentialSources } from '../connections/sources.js';
-import { buildSecretEndpoints, builtInSecretSource } from '../connections/secret.js';
+import { buildSecretEndpoints, builtInDeveloperSources, builtInSecretSource } from '../connections/secret.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
 import { getFrogbotInstance } from '../instanceRegistry.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
@@ -254,7 +255,7 @@ function sanitizeAI(ai: AIConfig): SanitizedAIConfig {
   };
 }
 
-function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined): AgentConfig[] | undefined {
+function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined, pieces: SanitizedPiecesConfig): AgentConfig[] | undefined {
   if (!Array.isArray(agents)) {
     throw new Error('[frogbot] `agents` must be an array.');
   }
@@ -319,9 +320,16 @@ function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined
         throw new Error(`[frogbot] Agent '${agent.slug}' tools must be a non-empty array when configured.`);
       }
       const toolSlugs = new Set<string>();
-      for (const tool of agent.tools) {
+      const tools = agent.tools.map((tool) => {
         if (!isRecord(tool) || typeof tool.slug !== 'string' || !tool.slug.trim()) {
           throw new Error(`[frogbot] A tool in agent '${agent.slug}' is missing a \`slug\`.`);
+        }
+        if (typeof tool.pieceService === 'string') {
+          const registered = pieces.services[tool.pieceService];
+          if (!registered) throw new Error(`[frogbot] Agent '${agent.slug}' uses tool '${tool.slug}' but no '${tool.pieceService}' piece is registered in \`pieces\`.`);
+          const resolved = pieces.tools[tool.slug];
+          if (!resolved) throw new Error(`[frogbot] Piece '${tool.pieceService}' has no registered tool '${tool.slug}'.`);
+          tool = resolved;
         }
         if (toolSlugs.has(tool.slug)) {
           throw new Error(`[frogbot] Duplicate tool slug '${tool.slug}' in agent '${agent.slug}'.`);
@@ -333,7 +341,9 @@ function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined
           throw new Error(`[frogbot] Tool '${tool.slug}' in agent '${agent.slug}' requires inputSchema and execute.`);
         }
         toolSlugs.add(tool.slug);
-      }
+        return tool;
+      });
+      agent = { ...agent, tools };
     }
 
     return { ...agent, access: agent.access ?? defaultAccessFn };
@@ -341,11 +351,13 @@ function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined
 }
 
 function sanitizePieces(pieces: Piece[] | undefined): SanitizedPiecesConfig {
-  if (pieces === undefined) return { enabled: false, pieces: [] };
+  if (pieces === undefined) return { enabled: false, pieces: [], services: {}, tools: {} };
   if (!Array.isArray(pieces)) throw new Error('[frogbot] `pieces` must be an array.');
-  if (pieces.length === 0) return { enabled: false, pieces: [] };
+  if (pieces.length === 0) return { enabled: false, pieces: [], services: {}, tools: {} };
 
   const services = new Set<string>();
+  const serviceIndex: Record<string, Piece> = {};
+  const toolIndex: Record<string, AnyTool> = {};
   for (const piece of pieces) {
     if (!isRecord(piece) || typeof piece.service !== 'string' || !piece.service.trim()) {
       throw new Error('[frogbot] Every piece must have a `service`.');
@@ -354,6 +366,7 @@ function sanitizePieces(pieces: Piece[] | undefined): SanitizedPiecesConfig {
       throw new Error(`[frogbot] Duplicate piece service: '${piece.service}'.`);
     }
     services.add(piece.service);
+    serviceIndex[piece.service] = piece;
 
     if (!Array.isArray(piece.actions) || piece.actions.some((action) => typeof action !== 'string' || !action.trim())) {
       throw new Error(`[frogbot] Piece '${piece.service}' actions must be non-empty strings.`);
@@ -368,10 +381,11 @@ function sanitizePieces(pieces: Piece[] | undefined): SanitizedPiecesConfig {
       if (!actions.has(action)) {
         throw new Error(`[frogbot] Piece '${piece.service}' exposes unknown action '${action || tool.slug}'.`);
       }
+      toolIndex[tool.slug] = tool;
     }
   }
 
-  return { enabled: true, pieces };
+  return { enabled: true, pieces, services: serviceIndex, tools: toolIndex };
 }
 
 function validateInternalPathReservations(config: Pick<FrogbotConfig, 'collections' | 'endpoints'>): void {
@@ -499,7 +513,6 @@ function buildPayloadConfig(config: FrogbotConfig, onInit: NonNullable<PayloadCo
   delete out.pieces;
   delete out.connections;
   delete out.credentialSources;
-  delete out.pieceFiles;
   out.onInit = onInit;
 
   return out as unknown as PayloadConfig;
@@ -513,11 +526,12 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
 
   // Sanitize AI config if present.
   const sanitizedAI = config.ai ? sanitizeAI(config.ai) : undefined;
-  const agents = config.agents !== undefined ? sanitizeAgents(config.agents, sanitizedAI) : undefined;
   const pieces = sanitizePieces(config.pieces);
+  const agents = config.agents !== undefined ? sanitizeAgents(config.agents, sanitizedAI, pieces) : undefined;
   const secretSource = builtInSecretSource(pieces.pieces);
   const credentialSources = [
     ...(secretSource.services.length ? [secretSource] : []),
+    ...builtInDeveloperSources(pieces.pieces),
     ...(config.credentialSources ?? []),
   ];
 
@@ -561,7 +575,6 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
     connections,
     files,
     pieces,
-    pieceFiles: config.pieceFiles ?? { collection: files.slug },
     typescript: {
       autoGenerate: (config as { typescript?: { autoGenerate?: boolean } }).typescript?.autoGenerate !== false,
     },

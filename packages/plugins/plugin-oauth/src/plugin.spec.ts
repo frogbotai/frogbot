@@ -41,4 +41,23 @@ describe('oauthPlugin', () => {
     expect(() => oauthPlugin({ providers: [{ ...provider, id: '' }] })).toThrow('Provider IDs must not be empty');
     expect(() => oauthPlugin({ providers: [{ ...provider, service: '' }] })).toThrow('Provider service IDs must not be empty');
   });
+
+  it('groups pieces sharing OAuth credentials and unions scopes', async () => {
+    const auth = { clientId: 'id', clientSecret: 'secret' };
+    const piece = (service: string, scopes: string[]) => ({
+      service,
+      credentialType: 'oauth2' as const,
+      policy: { type: 'oauth' as const, ...auth, source: auth },
+      actions: [],
+      tool: () => { throw new Error('unused'); },
+      tools: () => [],
+      scopes,
+    });
+    const plugin = oauthPlugin();
+    const result = await plugin({
+      secret: 'test', db: {}, collections: [{ slug: 'users', auth: true, fields: [] }],
+      pieces: [piece('google_sheets', ['sheets']), piece('google_drive', ['drive'])],
+    } as FrogbotConfig);
+    expect(result.credentialSources).toEqual([expect.objectContaining({ key: 'google', services: ['google_sheets', 'google_drive'], scopes: ['sheets', 'drive'] })]);
+  });
 });

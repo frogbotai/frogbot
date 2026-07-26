@@ -94,7 +94,7 @@ export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpo
       });
       const data = {
         owner,
-        service: provider.service,
+        services: provider.services ?? [provider.service],
         source: 'oauth',
         sourceKey: provider.id,
         credentialType: 'oauth2',

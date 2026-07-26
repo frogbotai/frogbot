@@ -2,7 +2,9 @@ import { createServer } from 'node:http';
 import { once } from 'node:events';
 import { pieceContract } from 'frogbot/pieces/test';
 import { afterEach, describe, expect, it } from 'vitest';
-import { graphql, graphqlActions } from './index.js';
+import { createGraphql, graphqlActions } from './index.js';
+
+const graphql = createGraphql();
 
 pieceContract({ piece: graphql, service: 'graphql', credentialType: 'none', actions: graphqlActions });
 const servers: ReturnType<typeof createServer>[] = [];

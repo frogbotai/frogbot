@@ -8,7 +8,7 @@ A comprehensive release-readiness assistant built as the second tier beside the 
 - `releases`, authenticated `media` uploads, and an extended `connections` collection
 - A read-oriented `qa-analyst` and a write-oriented `release-manager`
 - Google Sheets, Drive, Calendar, Linear, Resend, date helper, data summarizer, and PDF pieces
-- Three Google OAuth credential sources with service-specific IDs and scopes
+- One Google OAuth consent with scopes derived from all registered Google pieces
 - Named inbound API keys and owner-scoped outbound credentials
 - JSON, SSE, and persisted authenticated thread continuation
 
@@ -58,7 +58,7 @@ Create a `releases` record with:
 | Summary | Ship the release-readiness workflow to the pilot team. |
 | Acceptance criteria | Critical Linear issues closed; QA sheet complete; launch review scheduled. |
 
-Upload a test plan or PDF in `media` and attach it under `artifacts`. Piece-produced files also use this collection through `pieceFiles.collection`.
+Upload a test plan or PDF in `media` and attach it under `artifacts`. Piece-produced files use the same core files collection.
 
 ## Authenticate
 
@@ -86,27 +86,23 @@ Use it as `Authorization: Bearer $FROGBOT_API_KEY` or `X-API-Key: $FROGBOT_API_K
 
 This section requires real Google OAuth credentials. Create a Web application OAuth client, enable the Sheets, Drive, and Calendar APIs, and set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`.
 
-Register all three exact callback URLs:
+Register this callback URL:
 
 ```text
-http://localhost:3000/api/users/oauth/google-sheets/callback
-http://localhost:3000/api/users/oauth/google-drive/callback
-http://localhost:3000/api/users/oauth/google-calendar/callback
+http://localhost:3000/api/users/oauth/google/callback
 ```
 
-While logged into the admin panel in the same browser, open each authorization URL:
+While logged into the admin panel in the same browser, open the authorization URL:
 
 ```text
-http://localhost:3000/api/users/oauth/google-sheets/authorize?returnUrl=/admin
-http://localhost:3000/api/users/oauth/google-drive/authorize?returnUrl=/admin
-http://localhost:3000/api/users/oauth/google-calendar/authorize?returnUrl=/admin
+http://localhost:3000/api/users/oauth/google/authorize?returnUrl=/admin
 ```
 
-The configured service IDs match the pieces exactly. Sheets requests spreadsheet and Drive access, Drive requests Drive access, and Calendar requests Calendar access; each also requests OpenID profile identity used by the provider account lookup.
+The plugin derives one provider from the shared credentials object and unions the scopes declared by Sheets, Drive, and Calendar.
 
 ## Connect Linear and Resend
 
-These steps require real provider API keys. Save each owner-scoped secret with your JWT:
+Linear requires a user-owned API key. Resend uses the deployment's `RESEND_API_KEY` and does not require a user connection:
 
 ```bash
 curl -s http://localhost:3000/api/connections/secret \
@@ -114,13 +110,16 @@ curl -s http://localhost:3000/api/connections/secret \
   -H 'Content-Type: application/json' \
   -d '{"service":"linear","credentials":{"value":"lin_api_replace_me"},"accountLabel":"QA workspace"}' | jq
 
-curl -s http://localhost:3000/api/connections/secret \
-  -H "Authorization: Bearer $FROGBOT_TOKEN" \
-  -H 'Content-Type: application/json' \
-  -d '{"service":"resend","credentials":{"value":"re_replace_me"},"accountLabel":"Release mail"}' | jq
 ```
 
 Credentials are encrypted with a key derived from `FROGBOT_SECRET`. The admin and list APIs never return plaintext credentials.
+
+Check requirements before starting an agent:
+
+```bash
+curl -s http://localhost:3000/api/agents/qa-analyst/authorizations \
+  -H "Authorization: Bearer $FROGBOT_TOKEN" | jq
+```
 
 ## Call the agents
 
@@ -172,8 +171,9 @@ Threads are owner-scoped. SSE responses expose the persisted thread ID in the `X
 - Create a user and confirm anonymous agent calls return forbidden.
 - Create and use a named API key, revoke it, and confirm it no longer authenticates.
 - Create the sample release and upload an artifact.
-- Connect each enabled Google service and confirm its connection is owner-scoped.
-- Add Linear and Resend secrets and confirm plaintext values are never readable.
+- Connect Google once and confirm the connection covers all three services.
+- Add a Linear secret and confirm plaintext values are never readable.
+- Confirm the authorization preflight excludes deployment-provided Resend credentials.
 - Ask `qa-analyst` to use only read-oriented actions.
 - Ask `release-manager` to create one approved Linear item and confirm the mutation.
 - Exercise JSON, SSE, and thread continuation.

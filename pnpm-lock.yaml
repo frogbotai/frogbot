@@ -42,6 +42,100 @@ importers:
         specifier: 4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(jsdom@24.1.3(bufferutil@4.1.0))(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(tsx@4.23.1))
 
+  examples/business-qa:
+    dependencies:
+      '@activepieces/piece-data-summarizer':
+        specifier: 0.0.11
+        version: 0.0.11(bufferutil@4.1.0)
+      '@activepieces/piece-date-helper':
+        specifier: 0.1.28
+        version: 0.1.28(bufferutil@4.1.0)
+      '@activepieces/piece-google-calendar':
+        specifier: 0.9.5
+        version: 0.9.5
+      '@activepieces/piece-google-drive':
+        specifier: 0.7.10
+        version: 0.7.10
+      '@activepieces/piece-google-sheets':
+        specifier: 0.16.3
+        version: 0.16.3
+      '@activepieces/piece-linear':
+        specifier: 0.4.4
+        version: 0.4.4
+      '@activepieces/piece-pdf':
+        specifier: 0.5.5
+        version: 0.5.5(bufferutil@4.1.0)
+      '@activepieces/piece-resend':
+        specifier: 0.4.3
+        version: 0.4.3
+      '@frogbotai/db-sqlite':
+        specifier: workspace:*
+        version: link:../../packages/db-sqlite
+      '@frogbotai/next':
+        specifier: workspace:*
+        version: link:../../packages/next
+      '@frogbotai/piece-data-summarizer':
+        specifier: workspace:*
+        version: link:../../packages/pieces/piece-data-summarizer
+      '@frogbotai/piece-date-helper':
+        specifier: workspace:*
+        version: link:../../packages/pieces/piece-date-helper
+      '@frogbotai/piece-google-calendar':
+        specifier: workspace:*
+        version: link:../../packages/pieces/piece-google-calendar
+      '@frogbotai/piece-google-drive':
+        specifier: workspace:*
+        version: link:../../packages/pieces/piece-google-drive
+      '@frogbotai/piece-google-sheets':
+        specifier: workspace:*
+        version: link:../../packages/pieces/piece-google-sheets
+      '@frogbotai/piece-linear':
+        specifier: workspace:*
+        version: link:../../packages/pieces/piece-linear
+      '@frogbotai/piece-pdf':
+        specifier: workspace:*
+        version: link:../../packages/pieces/piece-pdf
+      '@frogbotai/piece-resend':
+        specifier: workspace:*
+        version: link:../../packages/pieces/piece-resend
+      '@frogbotai/plugin-api-keys':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-api-keys
+      '@frogbotai/plugin-oauth':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-oauth
+      frogbot:
+        specifier: workspace:*
+        version: link:../../packages/frogbot
+      graphql:
+        specifier: ^16.8.1
+        version: 16.14.2
+      next:
+        specifier: 15.4.11
+        version: 15.4.11(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4)
+      react:
+        specifier: 19.2.6
+        version: 19.2.6
+      react-dom:
+        specifier: 19.2.6
+        version: 19.2.6(react@19.2.6)
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/create-frogbot-app:
     devDependencies:
       '@frogbotai/eslint-config':
@@ -5716,7 +5810,6 @@ packages:
 
   libsql@0.4.7:
     resolution: {integrity: sha512-T9eIRCs6b0J1SHKYIvD8+KCJMcWZ900iZyxdnSCdqxN12Z1ijzT+jY5nrk72Jw4B0HGzms2NgpryArlJqvc3Lw==}
-    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lightningcss-android-arm64@1.32.0:

@@ -26,6 +26,10 @@ const bodySchema = z.union([
 type AgentRequestBody = { prompt: string; messages?: never } | { messages: UIMessage[]; prompt?: never };
 
 export function buildAgentEndpoints() {
+  const getAuthorizations = async (req: FrogbotRequest, agent: AgentInstance) => req.frogbot.connections?.authorizations({
+    owner: req.user!,
+    services: [...new Set((agent.config.tools ?? []).flatMap((tool) => tool.pieceService ? [tool.pieceService] : []))],
+  }) ?? [];
   return [
     {
       path: '/agents/:slug',
@@ -120,6 +124,7 @@ export function buildAgentEndpoints() {
             text: result.text,
             usage: result.totalUsage,
             finishReason: result.finishReason,
+            authorizations: req.user ? await getAuthorizations(req, agent) : [],
             ...(threadId !== undefined ? { threadId } : {}),
           });
         } catch (error) {
@@ -131,6 +136,23 @@ export function buildAgentEndpoints() {
             { status: getErrorStatus(error) },
           );
         }
+      },
+    },
+    {
+      path: '/agents/:slug/authorizations',
+      method: 'get' as const,
+      handler: async (req: FrogbotRequest) => {
+        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        const slug = req.routeParams?.slug as string | undefined;
+        const agent = slug ? req.frogbot.agents[slug] : undefined;
+        if (!agent) return Response.json({ error: `Agent '${slug ?? ''}' not found` }, { status: 404 });
+        const access = agent.config.access ?? (({ req: current }: { req: FrogbotRequest }) => !!current.user);
+        try {
+          if (!(await access({ req }))) return Response.json({ error: `Access denied for agent '${agent.slug}'` }, { status: 403 });
+        } catch {
+          return Response.json({ error: `Access denied for agent '${agent.slug}'` }, { status: 403 });
+        }
+        return Response.json({ authorizations: await getAuthorizations(req, agent) });
       },
     },
     {

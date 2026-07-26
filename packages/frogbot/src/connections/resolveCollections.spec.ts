@@ -8,6 +8,8 @@ import { DEFAULT_CONNECTIONS_SLUG, resolveConnectionsCollections } from './resol
 const pieces = {
   enabled: true,
   pieces: [{ service: 'linear', credentialType: 'secret_text', actions: [], tools: () => [] }],
+  services: {},
+  tools: {},
 } as SanitizedPiecesConfig;
 
 function config(collections: CollectionConfig[] = []): FrogbotConfig {
