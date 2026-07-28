@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/db-sqlite",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "FrogBot SQLite adapter.",
   "license": "MIT",
   "author": "Colby Gilbert",
