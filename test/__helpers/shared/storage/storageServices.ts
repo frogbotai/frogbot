@@ -8,7 +8,6 @@ export type StorageService = {
 
 export const storageServices: Record<string, StorageService> = {
   s3: { name: 'LocalStack (S3)', host: 'localhost', port: 4566 },
-  r2: { name: 'LocalStack (R2)', host: 'localhost', port: 4566 },
   gcs: { name: 'fake-gcs-server', host: 'localhost', port: 4443 },
   azure: { name: 'Azurite', host: '127.0.0.1', port: 10000 },
   'vercel-blob': { name: 'Vercel Blob emulator', host: 'localhost', port: 3100 },

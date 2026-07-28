@@ -23,6 +23,9 @@ export function storageContractSuite(adapterName: string, dirname: string, media
       if (service && service.port > 0) {
         const reachable = await isServiceReachable(service)
         if (!reachable) {
+          if (process.env.CI === 'true') {
+            throw new Error(`${service.name} is required in CI but is not reachable at ${service.host}:${service.port}`)
+          }
           skipSuite = true
           console.warn(
             `\x1b[33m⚠ Skipping ${adapterName} storage tests — ` +

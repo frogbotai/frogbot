@@ -57,6 +57,7 @@
     "test:integration": "vitest run --root ../.. --project=gateway-integration",
     "test:golden": "vitest run --root ../.. --project=gateway-golden",
     "test:e2e": "RUN_E2E=1 vitest run --root ../.. --project=gateway-e2e",
+    "test:e2e:zen": "RUN_E2E=1 vitest run --root ../.. --project=gateway-zen",
     "test:e2e:matrix": "RUN_E2E=1 vitest run --root ../.. --project=gateway-e2e test/gateway/live/matrix.e2e.spec.ts",
     "test:e2e:scenarios": "RUN_E2E=1 vitest run --root ../.. --project=gateway-e2e test/gateway/live/scenarios.e2e.spec.ts",
     "typecheck": "tsc --noEmit"

@@ -18,6 +18,9 @@ describe('KV Adapters [Redis]', () => {
   beforeAll(async () => {
     const reachable = await isServiceReachable(redisService)
     if (!reachable) {
+      if (process.env.CI === 'true') {
+        throw new Error('Redis is required in CI but is not reachable at localhost:6379')
+      }
       skipSuite = true
       console.warn(
         '\x1b[33m⚠ Skipping KV Redis tests — Redis not reachable at localhost:6379. ' +

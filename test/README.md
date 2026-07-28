@@ -84,9 +84,8 @@ test/
 7. **Adapters via `@frogbotai/*` packages.** Never import `@payloadcms/db-*`
    directly in tests. Use `@frogbotai/db-mongodb` (or future adapters).
    Version is enforced by `pnpm test:versions`.
-8. **Graceful skipping.** Tests that require Docker services skip with a
-   clear message if the service is unreachable. You can run the full suite
-   without all services — only reachable-service tests execute.
+8. **Graceful local skipping.** Tests that require Docker services skip with a
+   clear message if the service is unreachable locally.
 9. **Per-suite DB isolation.** Each suite gets a unique database name
    (derived from filename) to avoid conflicts when suites run sequentially
    against shared Docker services.
@@ -405,16 +404,6 @@ pnpm test:int:sqlite             # int with SQLite adapter
 pnpm test:e2e                    # Playwright
 pnpm docker:clean                # tear down all containers + volumes
 ```
-
-## CI
-
-The GitHub Actions workflow (`.github/workflows/test.yml`) runs:
-
-1. **Unit tests** — always, no Docker
-2. **DB integration matrix** — `mongodb` and `postgres` in parallel
-3. **Storage + KV integration** — all storage emulators + Redis + MongoDB
-
-SQLite runs without Docker (file-based) but is not in the CI matrix yet since the adapter is experimental.
 
 ## Payload Reference
 

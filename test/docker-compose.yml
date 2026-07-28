@@ -55,7 +55,7 @@ services:
       start_period: 2s
     restart: unless-stopped
 
-  # ── LocalStack (S3 + R2 emulator) ───────────────────────────
+  # ── LocalStack (S3 emulator) ────────────────────────────────
   localstack:
     profiles: [all, storage]
     image: ghcr.io/payloadcms/localstack:4.14.0
@@ -68,6 +68,12 @@ services:
       - DATA_DIR=/tmp/localstack/data
     volumes:
       - localstack_data:/var/lib/localstack
+    healthcheck:
+      test: ['CMD-SHELL', 'awslocal s3api head-bucket --bucket frogbot-test-bucket >/dev/null 2>&1 || awslocal s3api create-bucket --bucket frogbot-test-bucket >/dev/null']
+      interval: 1s
+      timeout: 5s
+      retries: 30
+      start_period: 2s
 
   # ── Azure Storage (Azurite emulator) ────────────────────────
   azure-storage:
@@ -98,6 +104,12 @@ services:
       ]
     ports:
       - '4443:4443'
+    healthcheck:
+      test: ['CMD-SHELL', "wget -qO- http://localhost:4443/storage/v1/b/frogbot-test-bucket >/dev/null 2>&1 || wget -qO- --header='Content-Type: application/json' --post-data='{\"name\":\"frogbot-test-bucket\"}' 'http://localhost:4443/storage/v1/b?project=test' >/dev/null"]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+      start_period: 2s
 
   # ── Vercel Blob (emulator) ──────────────────────────────────
   vercel-blob:

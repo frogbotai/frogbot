@@ -3,14 +3,13 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     watch: false,
-    passWithNoTests: true,
     retry: process.env.CI ? 2 : 0,
     projects: [
       {
         test: {
           name: 'unit',
           include: ['packages/**/*.spec.ts'],
-          exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**'],
+          exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', 'packages/gateway/**'],
           environment: 'node',
         },
       },
@@ -27,7 +26,7 @@ export default defineConfig({
         test: {
           name: 'int',
           include: ['test/**/*int.spec.ts'],
-          exclude: ['**/node_modules/**', '**/dist/**'],
+          exclude: ['**/node_modules/**', '**/dist/**', 'test/gateway/**'],
           environment: 'node',
           fileParallelism: false,
           hookTimeout: 90000,
@@ -58,7 +57,10 @@ export default defineConfig({
       {
         test: {
           name: 'gateway-integration',
-          include: ['test/gateway/**/*.int.spec.ts'],
+          include: [
+            'test/gateway/**/*.int.spec.ts',
+            'packages/gateway/test/**/*.spec.ts',
+          ],
           exclude: ['**/node_modules/**', '**/dist/**'],
           environment: 'node',
           fileParallelism: false,
@@ -80,7 +82,6 @@ export default defineConfig({
           name: 'gateway-e2e',
           include: [
             'test/gateway/e2e.spec.ts',
-            'test/gateway/crossRoute.e2e.spec.ts',
             'test/gateway/live/matrix.e2e.spec.ts',
             'test/gateway/live/scenarios.e2e.spec.ts',
           ],
@@ -88,6 +89,18 @@ export default defineConfig({
           fileParallelism: false,
           setupFiles: ['./test/gateway/live/loadEnv.ts'],
           testTimeout: 30000,
+        },
+      },
+      {
+        test: {
+          name: 'gateway-zen',
+          include: [
+            'test/gateway/crossRoute.e2e.spec.ts',
+            'test/gateway/zen*.e2e.spec.ts',
+          ],
+          environment: 'node',
+          fileParallelism: false,
+          testTimeout: 90000,
         },
       },
     ],
