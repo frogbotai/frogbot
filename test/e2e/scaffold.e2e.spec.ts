@@ -7,6 +7,7 @@ import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { connect } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -14,6 +15,17 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
+
+function isListening(port: number): Promise<boolean> {
+  return new Promise((resolveListening) => {
+    const socket = connect({ host: '127.0.0.1', port });
+    socket.once('connect', () => {
+      socket.destroy();
+      resolveListening(true);
+    });
+    socket.once('error', () => resolveListening(false));
+  });
+}
 
 describe('branding gate', () => {
   it('finds zero Payload references in scaffold + example files', async () => {
@@ -58,12 +70,7 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
 
     const deadline = Date.now() + 210000;
     for (;;) {
-      try {
-        const res = await fetch(`${baseURL}/admin/login`);
-        if (res.ok) break;
-      } catch {
-        // Server not up yet.
-      }
+      if (await isListening(port)) break;
       if (Date.now() > deadline) throw new Error('scaffold dev server did not become ready');
       await new Promise((r) => setTimeout(r, 2000));
     }
