@@ -13,6 +13,8 @@ import { join, resolve } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { FrogbotChatTransport, prepareChatRequest } from '../../packages/ui/src/chat/transport';
+
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
 
@@ -117,6 +119,37 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     const { value } = await reader.read();
     await reader.cancel();
     expect(new TextDecoder().decode(value)).toContain('data:');
+  });
+
+  it('sends homepage chat messages through the FrogBot transport', async () => {
+    const page = await fetch(baseURL);
+    expect(page.status).toBe(200);
+
+    let responseStatus: number | undefined;
+    const transport = new FrogbotChatTransport({
+      agentSlug: 'assistant',
+      apiBase: `${baseURL}/api`,
+      fetch: async (input, init) => {
+        const response = await fetch(input, init);
+        responseStatus = response.status;
+        return response;
+      },
+      prepareSendMessagesRequest: prepareChatRequest(),
+    });
+    try {
+      const stream = await transport.sendMessages({
+        chatId: 'new:assistant',
+        messageId: 'user-1',
+        messages: [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello!' }] }],
+        trigger: 'submit-message',
+      });
+      const { value } = await stream.getReader().read();
+      expect(value).toBeDefined();
+    } catch (error) {
+      expect(String(error)).not.toContain('Body must include');
+    }
+    expect(responseStatus).toBeDefined();
+    expect(responseStatus).not.toBe(400);
   });
 
   it('serves the REST API under /api', async () => {

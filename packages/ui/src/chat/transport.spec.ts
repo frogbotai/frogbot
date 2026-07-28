@@ -1,7 +1,24 @@
 import { describe, expect, it, vi } from 'vitest'
-import { FrogbotChatTransport } from './transport'
+import { FrogbotChatTransport, prepareChatRequest } from './transport'
+
+const message = { id: 'user-1', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Hello' }] }
+
+async function captureBody(threadId?: string) {
+  const fetch = vi.fn(() => Promise.resolve(new Response(new ReadableStream({ start: (controller) => controller.close() }))))
+  const transport = new FrogbotChatTransport({ agentSlug: 'agent', fetch, prepareSendMessagesRequest: prepareChatRequest(threadId), body: { unsupported: true } })
+  await transport.sendMessages({ chatId: 'chat', messageId: message.id, messages: [message], trigger: 'submit-message' })
+  return JSON.parse(fetch.mock.calls[0][1]?.body as string)
+}
 
 describe('FrogbotChatTransport', () => {
+  it('serializes the strict new-thread body', async () => {
+    expect(await captureBody()).toEqual({ messages: [message] })
+  })
+
+  it('serializes the strict existing-thread body', async () => {
+    expect(await captureBody('thread-1')).toEqual({ messages: [message], threadId: 'thread-1' })
+  })
+
   it('targets the agent endpoint and captures the thread id', async () => {
     const onThreadId = vi.fn()
     const fetch = vi.fn(() => Promise.resolve(new Response('data: {"type":"finish"}\n\n', {

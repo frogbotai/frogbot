@@ -27,6 +27,14 @@ vi.mock('./use-threads', () => ({ useThreads: () => ({ docs: [{ id: 'one', agent
 import { Chat } from './chat'
 
 const props = { agent: 'support', submitContent: 'Send', stopContent: 'Stop', fallbackTitle: 'Untitled', emptyContent: 'Empty', errorContent: (error: Error) => error.message, abortedContent: 'Aborted' }
+const message: import('ai').UIMessage = { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }
+
+async function sendTransportMessage() {
+  state.adapter.fetch.mockResolvedValue(new Response(new ReadableStream({ start: (controller) => controller.close() })))
+  const transport = (state.options as import('ai').ChatInit<import('ai').UIMessage>).transport
+  await transport?.sendMessages({ trigger: 'submit-message', chatId: 'chat', messageId: message.id, messages: [message], abortSignal: undefined })
+  return JSON.parse(state.adapter.fetch.mock.calls[0][1].body as string)
+}
 
 describe('Chat', () => {
   beforeEach(() => {
@@ -53,6 +61,16 @@ describe('Chat', () => {
     fireEvent.change(input, { target: { value: 'Hello' } })
     fireEvent.keyDown(input, { key: 'Enter' })
     await waitFor(() => expect(state.sendMessage).toHaveBeenCalledWith({ text: 'Hello', metadata: { source: 'ui' } }))
+  })
+
+  it('sends the strict request body for a new thread', async () => {
+    render(<Chat agent="support" />)
+    expect(await sendTransportMessage()).toEqual({ messages: [message] })
+  })
+
+  it('sends the strict request body for an existing thread', async () => {
+    render(<Chat agent="support" defaultThreadId="thread-1" />)
+    expect(await sendTransportMessage()).toEqual({ messages: [message], threadId: 'thread-1' })
   })
 
   it('reports controlled changes without replacing the active thread', () => {

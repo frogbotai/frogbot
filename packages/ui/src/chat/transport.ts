@@ -1,4 +1,4 @@
-import { DefaultChatTransport, type HttpChatTransportInitOptions, type UIMessage } from 'ai'
+import { DefaultChatTransport, type HttpChatTransportInitOptions, type PrepareSendMessagesRequest, type UIMessage } from 'ai'
 
 export type FrogbotChatTransportOptions<UI_MESSAGE extends UIMessage> = Omit<
   HttpChatTransportInitOptions<UI_MESSAGE>,
@@ -8,6 +8,10 @@ export type FrogbotChatTransportOptions<UI_MESSAGE extends UIMessage> = Omit<
   apiBase?: string
   fetch?: typeof globalThis.fetch
   onThreadId?: (threadId: string) => void
+}
+
+export function prepareChatRequest<UI_MESSAGE extends UIMessage>(threadId?: string | number): PrepareSendMessagesRequest<UI_MESSAGE> {
+  return ({ messages }) => ({ body: { messages, ...(threadId === undefined ? {} : { threadId }) } })
 }
 
 export class FrogbotChatTransport<UI_MESSAGE extends UIMessage = UIMessage> extends DefaultChatTransport<UI_MESSAGE> {

@@ -12,7 +12,7 @@ import { deleteThread, renameThread } from './mutations'
 import { useChatProvider } from './provider'
 import { MessageList } from './message-list'
 import { deriveThreadTitle, ThreadHistory } from './thread-history'
-import { FrogbotChatTransport } from './transport'
+import { FrogbotChatTransport, prepareChatRequest } from './transport'
 import type { ThreadDocument } from './use-threads'
 import { useThread } from './use-thread'
 import { useThreads } from './use-threads'
@@ -74,7 +74,7 @@ function ChatOrchestrator({ abortedContent, adapter, agent, apiBase = '/api', co
     fetch: adapter.fetch,
     headers: adapter.headers ? async () => Object.fromEntries(new Headers(await (typeof adapter.headers === 'function' ? adapter.headers() : adapter.headers)).entries()) : undefined,
     onThreadId: (nextThreadId) => { createdThreadId.current = nextThreadId },
-    prepareSendMessagesRequest: ({ body, ...request }) => ({ ...request, body: { ...body, ...(threadId === undefined ? {} : { threadId }) } }),
+    prepareSendMessagesRequest: prepareChatRequest(threadId),
   }), [adapter, agent, apiBase, threadId])
   let addToolOutput: ReturnType<typeof useChat>['addToolOutput'] | undefined
   const chat = useChat({
