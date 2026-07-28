@@ -4,16 +4,17 @@ import type {
   AfterUpstreamHookArgs,
   BeforeOperationHookArgs,
   BeforeUpstreamHookArgs,
-} from '@frogbotai/gateway/hooks';
+} from "@frogbotai/gateway/hooks";
 
-import type { FrogbotRequest } from './request.js';
+import type { FrogbotRequest } from "./request.js";
 
 export type AIHookContext = {
   req?: FrogbotRequest;
-  user?: FrogbotRequest['user'];
+  user?: FrogbotRequest["user"];
   agent?: {
     slug: string;
     runId: string;
+    threadId?: number | string;
   };
 };
 
@@ -23,11 +24,21 @@ export type AIAfterUpstreamHookArgs = AfterUpstreamHookArgs & AIHookContext;
 export type AIAfterErrorHookArgs = AfterErrorHookArgs & AIHookContext;
 export type AIAfterOperationHookArgs = AfterOperationHookArgs & AIHookContext;
 
-export type AIBeforeOperationHook = (args: AIBeforeOperationHookArgs) => void | Promise<void>;
-export type AIBeforeUpstreamHook = (args: AIBeforeUpstreamHookArgs) => void | Promise<void>;
-export type AIAfterUpstreamHook = (args: AIAfterUpstreamHookArgs) => void | Promise<void>;
-export type AIAfterErrorHook = (args: AIAfterErrorHookArgs) => void | Promise<void>;
-export type AIAfterOperationHook = (args: AIAfterOperationHookArgs) => void | Promise<void>;
+export type AIBeforeOperationHook = (
+  args: AIBeforeOperationHookArgs,
+) => void | Promise<void>;
+export type AIBeforeUpstreamHook = (
+  args: AIBeforeUpstreamHookArgs,
+) => void | Promise<void>;
+export type AIAfterUpstreamHook = (
+  args: AIAfterUpstreamHookArgs,
+) => void | Promise<void>;
+export type AIAfterErrorHook = (
+  args: AIAfterErrorHookArgs,
+) => void | Promise<void>;
+export type AIAfterOperationHook = (
+  args: AIAfterOperationHookArgs,
+) => void | Promise<void>;
 
 export type AIHooks = {
   beforeOperation?: AIBeforeOperationHook[];

@@ -14,7 +14,7 @@
 // Types
 // ---------------------------------------------------------------------------
 
-export type Modality = 'text' | 'image' | 'audio' | 'video' | 'embedding';
+export type Modality = "text" | "image" | "audio" | "video" | "embedding";
 
 export type ModelCapabilities = {
   /** Supports tool/function calling. */
@@ -38,15 +38,22 @@ export type ModelContext = {
   output: number;
 };
 
+export type ModelCost = {
+  input: number;
+  output: number;
+  cache_read?: number;
+  cache_write?: number;
+};
+
 export type Operation =
-  | 'chat.completions'
-  | 'responses'
-  | 'embeddings'
-  | 'images.generations'
-  | 'audio.speech'
-  | 'audio.transcriptions'
-  | 'video.generations'
-  | 'rerank';
+  | "chat.completions"
+  | "responses"
+  | "embeddings"
+  | "images.generations"
+  | "audio.speech"
+  | "audio.transcriptions"
+  | "video.generations"
+  | "rerank";
 
 export type ModelCatalogEntry = {
   /** Canonical model ID (e.g. `openai/gpt-4o`). */
@@ -57,7 +64,7 @@ export type ModelCatalogEntry = {
   created?: string;
   /** Knowledge cutoff ISO date string. */
   knowledge?: string;
-  status?: 'alpha' | 'beta' | 'deprecated';
+  status?: "alpha" | "beta" | "deprecated";
   /** Input/output modalities. */
   modalities: {
     input: Modality[];
@@ -69,9 +76,31 @@ export type ModelCatalogEntry = {
   capabilities: ModelCapabilities;
   /** Context window limits. */
   context: ModelContext;
+  cost?: ModelCost;
   /** Provider IDs that can serve this model (first = preferred). */
   providers: string[];
 };
+
+export type CostUsage = {
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens?: number;
+  cacheWriteTokens?: number;
+  reasoningTokens?: number;
+};
+
+export function calculateCostUSD(usage: CostUsage, cost?: ModelCost): number {
+  if (!cost) return 0;
+  const cached = usage.cachedInputTokens ?? 0;
+  const cacheWrite = usage.cacheWriteTokens ?? 0;
+  return (
+    (Math.max(0, usage.inputTokens - cached - cacheWrite) * cost.input +
+      cached * (cost.cache_read ?? cost.input) +
+      cacheWrite * (cost.cache_write ?? cost.input) +
+      usage.outputTokens * cost.output) /
+    1_000_000
+  );
+}
 
 export type ModelCatalog = Map<string, ModelCatalogEntry>;
 
@@ -93,7 +122,10 @@ export type ModelCatalog = Map<string, ModelCatalogEntry>;
  * })
  * ```
  */
-export function presetFor<Ids extends string, T extends Omit<ModelCatalogEntry, 'id'> = Omit<ModelCatalogEntry, 'id'>>() {
+export function presetFor<
+  Ids extends string,
+  T extends Omit<ModelCatalogEntry, "id"> = Omit<ModelCatalogEntry, "id">,
+>() {
   return (id: Ids, base: T): ModelCatalogEntry => ({
     ...base,
     id,
@@ -112,7 +144,9 @@ export function presetFor<Ids extends string, T extends Omit<ModelCatalogEntry, 
  * const catalog = defineModelCatalog(gpt4o, gpt4oMini, claude4Sonnet, ...)
  * ```
  */
-export function defineModelCatalog(...entries: ModelCatalogEntry[]): ModelCatalog {
+export function defineModelCatalog(
+  ...entries: ModelCatalogEntry[]
+): ModelCatalog {
   const catalog: ModelCatalog = new Map();
   for (const entry of entries) {
     if (catalog.has(entry.id)) {
@@ -126,6 +160,9 @@ export function defineModelCatalog(...entries: ModelCatalogEntry[]): ModelCatalo
 /**
  * Check if a catalog entry supports a given operation.
  */
-export function supportsOperation(entry: ModelCatalogEntry, operation: Operation): boolean {
+export function supportsOperation(
+  entry: ModelCatalogEntry,
+  operation: Operation,
+): boolean {
   return entry.operations.includes(operation);
 }

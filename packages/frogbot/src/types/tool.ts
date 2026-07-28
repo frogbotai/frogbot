@@ -1,23 +1,23 @@
-import type { z } from 'zod';
+import type { z } from "zod";
 
-import type { Frogbot } from '../frogbot.js';
-import type { FrogbotRequest } from './request.js';
+import type { Frogbot } from "../frogbot.js";
+import type { FrogbotRequest } from "./request.js";
 
 export type ToolCtx = {
   req: FrogbotRequest;
   frogbot: Frogbot;
-  agent: { slug: string; runId: string };
+  agent: { slug: string; runId: string; threadId?: number | string };
 };
 
-export type Tool<
-  TSchema extends z.ZodType = z.ZodType,
-  TResult = unknown,
-> = {
+export type Tool<TSchema extends z.ZodType = z.ZodType, TResult = unknown> = {
   slug: string;
   pieceService?: string;
   description: string;
   inputSchema: TSchema;
-  execute: (input: z.infer<TSchema>, ctx: ToolCtx) => TResult | Promise<TResult>;
+  execute: (
+    input: z.infer<TSchema>,
+    ctx: ToolCtx,
+  ) => TResult | Promise<TResult>;
 };
 
 // `any` (not `z.ZodType`/`unknown`) is intentional: this is the type-erased

@@ -25,7 +25,12 @@
         "tool_call": true,
         "structured_output": true,
         "reasoning": true,
-        "cost": { "cache_read": 0.1 }
+        "cost": {
+          "input": 3,
+          "output": 15,
+          "cache_read": 0.1,
+          "cache_write": 3.75
+        }
       }
     }
   },

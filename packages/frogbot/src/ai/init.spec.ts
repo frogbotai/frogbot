@@ -119,7 +119,7 @@ describe('buildGatewayConfig', () => {
     expect(gatewayConfig.hooks?.beforeUpstream).toHaveLength(1);
     expect(gatewayConfig.hooks?.afterUpstream).toHaveLength(1);
     expect(gatewayConfig.hooks?.afterError).toHaveLength(1);
-    expect(gatewayConfig.hooks?.afterOperation).toHaveLength(1);
+    expect(gatewayConfig.hooks?.afterOperation).toHaveLength(2);
   });
 });
 

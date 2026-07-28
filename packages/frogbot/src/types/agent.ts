@@ -6,16 +6,18 @@ import type {
   StreamTextResult,
   ToolSet,
   UIMessage,
-} from 'ai';
+} from "ai";
 
-import type { AgentSlug, FrogbotTypes } from './generated.js';
-import type { DocID } from './operations.js';
-import type { FrogbotRequest } from './request.js';
-import type { AnyTool } from './tool.js';
+import type { AgentSlug, FrogbotTypes } from "./generated.js";
+import type { DocID } from "./operations.js";
+import type { FrogbotRequest } from "./request.js";
+import type { AnyTool } from "./tool.js";
 
-export type AgentAccess = (args: { req: FrogbotRequest }) => boolean | Promise<boolean>;
+export type AgentAccess = (args: {
+  req: FrogbotRequest;
+}) => boolean | Promise<boolean>;
 
-export type AgentModelId = FrogbotTypes['models'] | (string & {});
+export type AgentModelId = FrogbotTypes["models"] | (string & {});
 
 export type AgentConfig = {
   slug: string;
@@ -39,13 +41,22 @@ export type AgentGenerateOpts = AgentRunOpts & { threadId?: DocID };
 
 export type AgentStreamOpts = AgentRunOpts;
 
-export type AgentGenerateResult = GenerateTextResult<ToolSet, Record<string, unknown>, never>;
-export type AgentStreamResult = StreamTextResult<ToolSet, Record<string, unknown>, never>;
+export type AgentGenerateResult = GenerateTextResult<
+  ToolSet,
+  Record<string, unknown>,
+  never
+>;
+export type AgentStreamResult = StreamTextResult<
+  ToolSet,
+  Record<string, unknown>,
+  never
+>;
 
 export type AgentCallOptions = {
   req?: FrogbotRequest;
   overrideAccess?: boolean;
   runId?: string;
+  threadId?: DocID;
 };
 
 export type AgentInstance = {

@@ -1,54 +1,76 @@
 // Catalog unit tests — defineModelCatalog, presetFor, supportsOperation.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
 import {
   defineModelCatalog,
   presetFor,
   supportsOperation,
+  calculateCostUSD,
   type ModelCatalogEntry,
-} from './catalog.js';
+} from "./catalog.js";
 
 // ---------------------------------------------------------------------------
 // presetFor
 // ---------------------------------------------------------------------------
 
-describe('presetFor', () => {
-  it('creates a ModelCatalogEntry with the given id and base', () => {
-    type TestIds = 'openai/gpt-4o' | 'openai/gpt-4o-mini';
+describe("presetFor", () => {
+  it("creates a ModelCatalogEntry with the given id and base", () => {
+    type TestIds = "openai/gpt-4o" | "openai/gpt-4o-mini";
     const preset = presetFor<TestIds>();
-    const entry = preset('openai/gpt-4o', {
-      name: 'GPT-4o',
-      modalities: { input: ['text', 'image'], output: ['text'] },
-      operations: ['chat.completions'],
+    const entry = preset("openai/gpt-4o", {
+      name: "GPT-4o",
+      modalities: { input: ["text", "image"], output: ["text"] },
+      operations: ["chat.completions"],
       capabilities: { toolCalling: true, vision: true, streaming: true },
       context: { input: 128000, output: 16384 },
-      providers: ['openai'],
+      providers: ["openai"],
     });
 
-    expect(entry.id).toBe('openai/gpt-4o');
-    expect(entry.name).toBe('GPT-4o');
-    expect(entry.modalities.input).toContain('image');
+    expect(entry.id).toBe("openai/gpt-4o");
+    expect(entry.name).toBe("GPT-4o");
+    expect(entry.modalities.input).toContain("image");
     expect(entry.capabilities.vision).toBe(true);
     expect(entry.context.input).toBe(128000);
   });
 
-  it('includes optional fields when provided', () => {
-    const preset = presetFor<'anthropic/claude-4-sonnet'>();
-    const entry = preset('anthropic/claude-4-sonnet', {
-      name: 'Claude 4 Sonnet',
-      created: '2025-05-14',
-      knowledge: '2025-04-01',
-      modalities: { input: ['text', 'image'], output: ['text'] },
-      operations: ['chat.completions'],
+  it("includes optional fields when provided", () => {
+    const preset = presetFor<"anthropic/claude-4-sonnet">();
+    const entry = preset("anthropic/claude-4-sonnet", {
+      name: "Claude 4 Sonnet",
+      created: "2025-05-14",
+      knowledge: "2025-04-01",
+      modalities: { input: ["text", "image"], output: ["text"] },
+      operations: ["chat.completions"],
       capabilities: { reasoning: true, promptCaching: true },
       context: { input: 200000, output: 8192 },
-      providers: ['anthropic', 'amazon-bedrock'],
+      providers: ["anthropic", "amazon-bedrock"],
     });
 
-    expect(entry.created).toBe('2025-05-14');
-    expect(entry.knowledge).toBe('2025-04-01');
-    expect(entry.providers).toEqual(['anthropic', 'amazon-bedrock']);
+    expect(entry.created).toBe("2025-05-14");
+    expect(entry.knowledge).toBe("2025-04-01");
+    expect(entry.providers).toEqual(["anthropic", "amazon-bedrock"]);
+  });
+});
+
+describe("calculateCostUSD", () => {
+  it("prices token partitions per million tokens", () => {
+    expect(
+      calculateCostUSD(
+        {
+          inputTokens: 1_200,
+          outputTokens: 500,
+          cachedInputTokens: 100,
+          cacheWriteTokens: 100,
+          reasoningTokens: 50,
+        },
+        { input: 3, output: 15, cache_read: 0.3, cache_write: 3.75 },
+      ),
+    ).toBeCloseTo(0.010605);
+  });
+
+  it("returns zero without pricing", () => {
+    expect(calculateCostUSD({ inputTokens: 100, outputTokens: 50 })).toBe(0);
   });
 });
 
@@ -56,41 +78,43 @@ describe('presetFor', () => {
 // defineModelCatalog
 // ---------------------------------------------------------------------------
 
-describe('defineModelCatalog', () => {
+describe("defineModelCatalog", () => {
   const entry1: ModelCatalogEntry = {
-    id: 'openai/gpt-4o',
-    name: 'GPT-4o',
-    modalities: { input: ['text'], output: ['text'] },
-    operations: ['chat.completions'],
+    id: "openai/gpt-4o",
+    name: "GPT-4o",
+    modalities: { input: ["text"], output: ["text"] },
+    operations: ["chat.completions"],
     capabilities: {},
     context: { input: 128000, output: 16384 },
-    providers: ['openai'],
+    providers: ["openai"],
   };
 
   const entry2: ModelCatalogEntry = {
-    id: 'anthropic/claude-4-sonnet',
-    name: 'Claude 4 Sonnet',
-    modalities: { input: ['text'], output: ['text'] },
-    operations: ['chat.completions'],
+    id: "anthropic/claude-4-sonnet",
+    name: "Claude 4 Sonnet",
+    modalities: { input: ["text"], output: ["text"] },
+    operations: ["chat.completions"],
     capabilities: {},
     context: { input: 200000, output: 8192 },
-    providers: ['anthropic'],
+    providers: ["anthropic"],
   };
 
-  it('builds a Map from entries', () => {
+  it("builds a Map from entries", () => {
     const catalog = defineModelCatalog(entry1, entry2);
     expect(catalog.size).toBe(2);
-    expect(catalog.get('openai/gpt-4o')).toBe(entry1);
-    expect(catalog.get('anthropic/claude-4-sonnet')).toBe(entry2);
+    expect(catalog.get("openai/gpt-4o")).toBe(entry1);
+    expect(catalog.get("anthropic/claude-4-sonnet")).toBe(entry2);
   });
 
-  it('returns empty Map when no entries', () => {
+  it("returns empty Map when no entries", () => {
     const catalog = defineModelCatalog();
     expect(catalog.size).toBe(0);
   });
 
-  it('throws on duplicate IDs', () => {
-    expect(() => defineModelCatalog(entry1, entry1)).toThrow(/Duplicate model catalog entry/);
+  it("throws on duplicate IDs", () => {
+    expect(() => defineModelCatalog(entry1, entry1)).toThrow(
+      /Duplicate model catalog entry/,
+    );
   });
 });
 
@@ -98,24 +122,24 @@ describe('defineModelCatalog', () => {
 // supportsOperation
 // ---------------------------------------------------------------------------
 
-describe('supportsOperation', () => {
+describe("supportsOperation", () => {
   const entry: ModelCatalogEntry = {
-    id: 'openai/gpt-4o',
-    name: 'GPT-4o',
-    modalities: { input: ['text'], output: ['text'] },
-    operations: ['chat.completions', 'embeddings'],
+    id: "openai/gpt-4o",
+    name: "GPT-4o",
+    modalities: { input: ["text"], output: ["text"] },
+    operations: ["chat.completions", "embeddings"],
     capabilities: {},
     context: { input: 128000, output: 16384 },
-    providers: ['openai'],
+    providers: ["openai"],
   };
 
-  it('returns true for supported operations', () => {
-    expect(supportsOperation(entry, 'chat.completions')).toBe(true);
-    expect(supportsOperation(entry, 'embeddings')).toBe(true);
+  it("returns true for supported operations", () => {
+    expect(supportsOperation(entry, "chat.completions")).toBe(true);
+    expect(supportsOperation(entry, "embeddings")).toBe(true);
   });
 
-  it('returns false for unsupported operations', () => {
-    expect(supportsOperation(entry, 'images.generations')).toBe(false);
-    expect(supportsOperation(entry, 'audio.speech')).toBe(false);
+  it("returns false for unsupported operations", () => {
+    expect(supportsOperation(entry, "images.generations")).toBe(false);
+    expect(supportsOperation(entry, "audio.speech")).toBe(false);
   });
 });

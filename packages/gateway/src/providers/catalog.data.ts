@@ -29,6 +29,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 4096
     },
+    "cost": {
+      "input": 0.33,
+      "output": 2.75
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -60,6 +64,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 300000,
       "output": 8192
     },
+    "cost": {
+      "input": 0.06,
+      "output": 0.24,
+      "cache_read": 0.015
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -87,6 +96,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 8192
+    },
+    "cost": {
+      "input": 0.035,
+      "output": 0.14,
+      "cache_read": 0.00875
     },
     "providers": [
       "amazon-bedrock"
@@ -119,6 +133,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 300000,
       "output": 8192
     },
+    "cost": {
+      "input": 0.8,
+      "output": 3.2,
+      "cache_read": 0.2
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -149,6 +168,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 10,
+      "output": 50,
+      "cache_read": 1,
+      "cache_write": 12.5
     },
     "providers": [
       "amazon-bedrock"
@@ -182,6 +207,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 64000
     },
+    "cost": {
+      "input": 1,
+      "output": 5,
+      "cache_read": 0.1,
+      "cache_write": 1.25
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -213,6 +244,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 200000,
       "output": 64000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "amazon-bedrock"
@@ -246,6 +283,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -276,6 +319,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "amazon-bedrock"
@@ -308,6 +357,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -338,6 +393,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "amazon-bedrock"
@@ -371,6 +432,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 64000
     },
+    "cost": {
+      "input": 3,
+      "output": 15,
+      "cache_read": 0.3,
+      "cache_write": 3.75
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -402,6 +469,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 64000
+    },
+    "cost": {
+      "input": 3,
+      "output": 15,
+      "cache_read": 0.3,
+      "cache_write": 3.75
     },
     "providers": [
       "amazon-bedrock"
@@ -435,6 +508,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 2,
+      "output": 10,
+      "cache_read": 0.2,
+      "cache_write": 2.5
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -466,6 +545,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 200000,
       "output": 64000
+    },
+    "cost": {
+      "input": 1,
+      "output": 5,
+      "cache_read": 0.1,
+      "cache_write": 1.25
     },
     "providers": [
       "amazon-bedrock"
@@ -499,6 +584,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 16.5,
+      "output": 82.5,
+      "cache_read": 1.65,
+      "cache_write": 20.625
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -530,6 +621,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -560,6 +657,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "amazon-bedrock"
@@ -593,6 +696,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 64000
     },
+    "cost": {
+      "input": 3,
+      "output": 15,
+      "cache_read": 0.3,
+      "cache_write": 3.75
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -624,6 +733,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 3.3,
+      "output": 16.5,
+      "cache_read": 0.33,
+      "cache_write": 4.125
     },
     "providers": [
       "amazon-bedrock"
@@ -657,6 +772,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 2,
+      "output": 10,
+      "cache_read": 0.2,
+      "cache_write": 2.5
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -684,6 +805,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 32768
+    },
+    "cost": {
+      "input": 1.35,
+      "output": 5.4
     },
     "providers": [
       "amazon-bedrock"
@@ -714,6 +839,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 163840,
       "output": 81920
     },
+    "cost": {
+      "input": 0.58,
+      "output": 1.68
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -742,6 +871,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 163840,
       "output": 81920
+    },
+    "cost": {
+      "input": 0.62,
+      "output": 1.85
     },
     "providers": [
       "amazon-bedrock"
@@ -773,6 +906,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 11,
+      "output": 55,
+      "cache_read": 1.1,
+      "cache_write": 13.75
     },
     "providers": [
       "amazon-bedrock"
@@ -806,6 +945,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 64000
     },
+    "cost": {
+      "input": 1.1,
+      "output": 5.5,
+      "cache_read": 0.11,
+      "cache_write": 1.375
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -837,6 +982,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 200000,
       "output": 64000
+    },
+    "cost": {
+      "input": 5.5,
+      "output": 27.5,
+      "cache_read": 0.55,
+      "cache_write": 6.875
     },
     "providers": [
       "amazon-bedrock"
@@ -870,6 +1021,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 5.5,
+      "output": 27.5,
+      "cache_read": 0.55,
+      "cache_write": 6.875
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -900,6 +1057,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5.5,
+      "output": 27.5,
+      "cache_read": 0.55,
+      "cache_write": 6.875
     },
     "providers": [
       "amazon-bedrock"
@@ -932,6 +1095,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 5.5,
+      "output": 27.5,
+      "cache_read": 0.55,
+      "cache_write": 6.875
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -962,6 +1131,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5.5,
+      "output": 27.5,
+      "cache_read": 0.55,
+      "cache_write": 6.875
     },
     "providers": [
       "amazon-bedrock"
@@ -995,6 +1170,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 64000
     },
+    "cost": {
+      "input": 3.3,
+      "output": 16.5,
+      "cache_read": 0.33,
+      "cache_write": 4.125
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1026,6 +1207,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 64000
+    },
+    "cost": {
+      "input": 3.3,
+      "output": 16.5,
+      "cache_read": 0.33,
+      "cache_write": 4.125
     },
     "providers": [
       "amazon-bedrock"
@@ -1059,6 +1246,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 2.2,
+      "output": 11,
+      "cache_read": 0.22,
+      "cache_write": 2.75
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1089,6 +1282,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 10,
+      "output": 50,
+      "cache_read": 1,
+      "cache_write": 12.5
     },
     "providers": [
       "amazon-bedrock"
@@ -1122,6 +1321,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 64000
     },
+    "cost": {
+      "input": 1,
+      "output": 5,
+      "cache_read": 0.1,
+      "cache_write": 1.25
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1153,6 +1358,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 200000,
       "output": 64000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "amazon-bedrock"
@@ -1186,6 +1397,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1216,6 +1433,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "amazon-bedrock"
@@ -1248,6 +1471,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1278,6 +1507,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "amazon-bedrock"
@@ -1311,6 +1546,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 64000
     },
+    "cost": {
+      "input": 3,
+      "output": 15,
+      "cache_read": 0.3,
+      "cache_write": 3.75
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1342,6 +1583,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 64000
+    },
+    "cost": {
+      "input": 3,
+      "output": 15,
+      "cache_read": 0.3,
+      "cache_write": 3.75
     },
     "providers": [
       "amazon-bedrock"
@@ -1375,6 +1622,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 2,
+      "output": 10,
+      "cache_read": 0.2,
+      "cache_write": 2.5
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1403,6 +1656,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 8192
+    },
+    "cost": {
+      "input": 0.049999999999999996,
+      "output": 0.09999999999999999
     },
     "providers": [
       "amazon-bedrock"
@@ -1434,6 +1691,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 202752,
       "output": 8192
     },
+    "cost": {
+      "input": 0.12,
+      "output": 0.2
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1461,6 +1722,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 4096
+    },
+    "cost": {
+      "input": 0.04,
+      "output": 0.08
     },
     "providers": [
       "amazon-bedrock"
@@ -1494,6 +1759,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 64000
     },
+    "cost": {
+      "input": 1,
+      "output": 5,
+      "cache_read": 0.1,
+      "cache_write": 1.25
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1524,6 +1795,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "amazon-bedrock"
@@ -1556,6 +1833,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1586,6 +1869,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "amazon-bedrock"
@@ -1619,6 +1908,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 64000
     },
+    "cost": {
+      "input": 3,
+      "output": 15,
+      "cache_read": 0.3,
+      "cache_write": 3.75
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1650,6 +1945,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 64000
+    },
+    "cost": {
+      "input": 3,
+      "output": 15,
+      "cache_read": 0.3,
+      "cache_write": 3.75
     },
     "providers": [
       "amazon-bedrock"
@@ -1683,6 +1984,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 2,
+      "output": 10,
+      "cache_read": 0.2,
+      "cache_write": 2.5
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1709,6 +2016,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 4096
+    },
+    "cost": {
+      "input": 0.72,
+      "output": 0.72
     },
     "providers": [
       "amazon-bedrock"
@@ -1737,6 +2048,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 4096
     },
+    "cost": {
+      "input": 0.22,
+      "output": 0.22
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1763,6 +2078,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 4096
+    },
+    "cost": {
+      "input": 0.72,
+      "output": 0.72
     },
     "providers": [
       "amazon-bedrock"
@@ -1793,6 +2112,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 16384
     },
+    "cost": {
+      "input": 0.24,
+      "output": 0.97
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1822,6 +2145,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 3500000,
       "output": 16384
     },
+    "cost": {
+      "input": 0.17,
+      "output": 0.66
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1848,6 +2175,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 204608,
       "output": 128000
+    },
+    "cost": {
+      "input": 0.3,
+      "output": 1.2
     },
     "providers": [
       "amazon-bedrock"
@@ -1876,6 +2207,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 204800,
       "output": 131072
     },
+    "cost": {
+      "input": 0.3,
+      "output": 1.2
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1903,6 +2238,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 196608,
       "output": 98304
     },
+    "cost": {
+      "input": 0.3,
+      "output": 1.2
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1929,6 +2268,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 256000,
       "output": 8192
+    },
+    "cost": {
+      "input": 0.4,
+      "output": 2
     },
     "providers": [
       "amazon-bedrock"
@@ -1960,6 +2303,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 40000
     },
+    "cost": {
+      "input": 0.5,
+      "output": 1.5
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -1986,6 +2333,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 4096
+    },
+    "cost": {
+      "input": 0.2,
+      "output": 0.2
     },
     "providers": [
       "amazon-bedrock"
@@ -2016,6 +2367,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 256000,
       "output": 8192
     },
+    "cost": {
+      "input": 0.1,
+      "output": 0.1
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2042,6 +2397,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 4096
+    },
+    "cost": {
+      "input": 0.15,
+      "output": 0.15
     },
     "providers": [
       "amazon-bedrock"
@@ -2072,6 +2431,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 256000,
       "output": 8192
     },
+    "cost": {
+      "input": 0.5,
+      "output": 1.5
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2099,6 +2462,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 8192
+    },
+    "cost": {
+      "input": 2,
+      "output": 6
     },
     "providers": [
       "amazon-bedrock"
@@ -2129,6 +2496,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 4096
     },
+    "cost": {
+      "input": 0.04,
+      "output": 0.04
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2158,6 +2529,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 32000,
       "output": 8192
     },
+    "cost": {
+      "input": 0.15,
+      "output": 0.35
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2185,6 +2560,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262143,
       "output": 16000
+    },
+    "cost": {
+      "input": 0.6,
+      "output": 2.5
     },
     "providers": [
       "amazon-bedrock"
@@ -2216,6 +2595,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262143,
       "output": 16000
     },
+    "cost": {
+      "input": 0.6,
+      "output": 3
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2245,6 +2628,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 4096
     },
+    "cost": {
+      "input": 0.2,
+      "output": 0.6
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2273,6 +2660,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 4096
     },
+    "cost": {
+      "input": 0.06,
+      "output": 0.24
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2299,6 +2690,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 4096
+    },
+    "cost": {
+      "input": 0.06,
+      "output": 0.23
     },
     "providers": [
       "amazon-bedrock"
@@ -2327,6 +2722,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262144,
       "output": 131072
+    },
+    "cost": {
+      "input": 0.15,
+      "output": 0.65
     },
     "providers": [
       "amazon-bedrock"
@@ -2360,6 +2759,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 272000,
       "output": 128000
     },
+    "cost": {
+      "input": 2.75,
+      "output": 16.5,
+      "cache_read": 0.275
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2391,6 +2795,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 272000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5.5,
+      "output": 33,
+      "cache_read": 0.55
     },
     "providers": [
       "amazon-bedrock"
@@ -2424,6 +2833,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 272000,
       "output": 128000
     },
+    "cost": {
+      "input": 1,
+      "output": 6,
+      "cache_read": 0.1,
+      "cache_write": 1.25
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2455,6 +2870,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 272000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5,
+      "output": 30,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "amazon-bedrock"
@@ -2488,6 +2909,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 272000,
       "output": 128000
     },
+    "cost": {
+      "input": 2.5,
+      "output": 15,
+      "cache_read": 0.25,
+      "cache_write": 3.125
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2515,6 +2942,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 16384
+    },
+    "cost": {
+      "input": 0.15,
+      "output": 0.6
     },
     "providers": [
       "amazon-bedrock"
@@ -2544,6 +2975,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 16384
     },
+    "cost": {
+      "input": 0.15,
+      "output": 0.6
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2571,6 +3006,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 16384
+    },
+    "cost": {
+      "input": 0.07,
+      "output": 0.3
     },
     "providers": [
       "amazon-bedrock"
@@ -2600,6 +3039,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 16384
     },
+    "cost": {
+      "input": 0.07,
+      "output": 0.3
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2626,6 +3069,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 16384
+    },
+    "cost": {
+      "input": 0.15,
+      "output": 0.6
     },
     "providers": [
       "amazon-bedrock"
@@ -2654,6 +3101,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 16384
     },
+    "cost": {
+      "input": 0.07,
+      "output": 0.2
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2681,6 +3132,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262144,
       "output": 131072
+    },
+    "cost": {
+      "input": 0.22,
+      "output": 0.88
     },
     "providers": [
       "amazon-bedrock"
@@ -2711,6 +3166,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 16384,
       "output": 16384
     },
+    "cost": {
+      "input": 0.15,
+      "output": 0.6
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2738,6 +3197,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262144,
       "output": 131072
+    },
+    "cost": {
+      "input": 0.15,
+      "output": 0.6
     },
     "providers": [
       "amazon-bedrock"
@@ -2767,6 +3230,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 65536
     },
+    "cost": {
+      "input": 0.22,
+      "output": 1.8
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2795,6 +3262,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 65536
     },
+    "cost": {
+      "input": 0.22,
+      "output": 1.8
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2821,6 +3292,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262000,
       "output": 262000
+    },
+    "cost": {
+      "input": 0.14,
+      "output": 1.4
     },
     "providers": [
       "amazon-bedrock"
@@ -2850,6 +3325,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262000,
       "output": 262000
+    },
+    "cost": {
+      "input": 0.3,
+      "output": 1.5
     },
     "providers": [
       "amazon-bedrock"
@@ -2881,6 +3360,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 10,
+      "output": 50,
+      "cache_read": 1,
+      "cache_write": 12.5
     },
     "providers": [
       "amazon-bedrock"
@@ -2914,6 +3399,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 64000
     },
+    "cost": {
+      "input": 1,
+      "output": 5,
+      "cache_read": 0.1,
+      "cache_write": 1.25
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2945,6 +3436,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 200000,
       "output": 64000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "amazon-bedrock"
@@ -2978,6 +3475,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -3008,6 +3511,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "amazon-bedrock"
@@ -3040,6 +3549,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -3070,6 +3585,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "amazon-bedrock"
@@ -3103,6 +3624,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 64000
     },
+    "cost": {
+      "input": 3,
+      "output": 15,
+      "cache_read": 0.3,
+      "cache_write": 3.75
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -3134,6 +3661,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 64000
+    },
+    "cost": {
+      "input": 3,
+      "output": 15,
+      "cache_read": 0.3,
+      "cache_write": 3.75
     },
     "providers": [
       "amazon-bedrock"
@@ -3167,6 +3700,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 2,
+      "output": 10,
+      "cache_read": 0.2,
+      "cache_write": 2.5
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -3194,6 +3733,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 32768
+    },
+    "cost": {
+      "input": 1.35,
+      "output": 5.4
     },
     "providers": [
       "amazon-bedrock"
@@ -3224,6 +3767,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 16384
     },
+    "cost": {
+      "input": 0.24,
+      "output": 0.97
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -3253,6 +3800,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 3500000,
       "output": 16384
     },
+    "cost": {
+      "input": 0.17,
+      "output": 0.66
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -3280,6 +3831,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 122880,
       "output": 8192
     },
+    "cost": {
+      "input": 2.5,
+      "output": 10
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -3306,6 +3861,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1040000,
       "output": 8192
+    },
+    "cost": {
+      "input": 0.6,
+      "output": 6
     },
     "providers": [
       "amazon-bedrock"
@@ -3338,6 +3897,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 131072
     },
+    "cost": {
+      "input": 1.25,
+      "output": 2.5,
+      "cache_read": 0.2
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -3366,6 +3930,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 204800,
       "output": 131072
+    },
+    "cost": {
+      "input": 0.6,
+      "output": 2.2
     },
     "providers": [
       "amazon-bedrock"
@@ -3396,6 +3964,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 131072
     },
+    "cost": {
+      "input": 0.07,
+      "output": 0.4
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -3423,6 +3995,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 202752,
       "output": 101376
+    },
+    "cost": {
+      "input": 1,
+      "output": 3.2
     },
     "providers": [
       "amazon-bedrock"
@@ -3454,6 +4030,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 10,
+      "output": 50,
+      "cache_read": 1,
+      "cache_write": 12.5
     },
     "providers": [
       "anthropic"
@@ -3487,6 +4069,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 64000
     },
+    "cost": {
+      "input": 1,
+      "output": 5,
+      "cache_read": 0.1,
+      "cache_write": 1.25
+    },
     "providers": [
       "anthropic"
     ]
@@ -3518,6 +4106,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 200000,
       "output": 64000
+    },
+    "cost": {
+      "input": 1,
+      "output": 5,
+      "cache_read": 0.1,
+      "cache_write": 1.25
     },
     "providers": [
       "anthropic"
@@ -3551,6 +4145,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 64000
     },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
+    },
     "providers": [
       "anthropic"
     ]
@@ -3582,6 +4182,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 200000,
       "output": 64000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "anthropic"
@@ -3615,6 +4221,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
+    },
     "providers": [
       "anthropic"
     ]
@@ -3646,6 +4258,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "anthropic"
@@ -3679,6 +4297,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
+    },
     "providers": [
       "anthropic"
     ]
@@ -3710,6 +4334,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 128000
+    },
+    "cost": {
+      "input": 5,
+      "output": 25,
+      "cache_read": 0.5,
+      "cache_write": 6.25
     },
     "providers": [
       "anthropic"
@@ -3743,6 +4373,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 64000
     },
+    "cost": {
+      "input": 3,
+      "output": 15,
+      "cache_read": 0.3,
+      "cache_write": 3.75
+    },
     "providers": [
       "anthropic"
     ]
@@ -3774,6 +4410,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 64000
+    },
+    "cost": {
+      "input": 3,
+      "output": 15,
+      "cache_read": 0.3,
+      "cache_write": 3.75
     },
     "providers": [
       "anthropic"
@@ -3807,6 +4449,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 3,
+      "output": 15,
+      "cache_read": 0.3,
+      "cache_write": 3.75
+    },
     "providers": [
       "anthropic"
     ]
@@ -3839,6 +4487,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 128000
     },
+    "cost": {
+      "input": 2,
+      "output": 10,
+      "cache_read": 0.2,
+      "cache_write": 2.5
+    },
     "providers": [
       "anthropic"
     ]
@@ -3870,6 +4524,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 40960
     },
+    "cost": {
+      "input": 0.99,
+      "output": 1.49
+    },
     "providers": [
       "cerebras"
     ]
@@ -3897,6 +4555,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 40960
+    },
+    "cost": {
+      "input": 0.35,
+      "output": 0.75
     },
     "providers": [
       "cerebras"
@@ -3927,6 +4589,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 40960
+    },
+    "cost": {
+      "input": 2.25,
+      "output": 2.75,
+      "cache_read": 2.25,
+      "cache_write": 0
     },
     "providers": [
       "cerebras"
@@ -4059,6 +4727,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 256000,
       "output": 8000
     },
+    "cost": {
+      "input": 2.5,
+      "output": 10
+    },
     "providers": [
       "cohere"
     ]
@@ -4090,6 +4762,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 64000
     },
+    "cost": {
+      "input": 2.5,
+      "output": 10
+    },
     "providers": [
       "cohere"
     ]
@@ -4118,6 +4794,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 256000,
       "output": 32000
     },
+    "cost": {
+      "input": 2.5,
+      "output": 10
+    },
     "providers": [
       "cohere"
     ]
@@ -4144,6 +4824,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 8000,
       "output": 8000
+    },
+    "cost": {
+      "input": 2.5,
+      "output": 10
     },
     "providers": [
       "cohere"
@@ -4173,6 +4857,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 8000
     },
+    "cost": {
+      "input": 2.5,
+      "output": 10
+    },
     "providers": [
       "cohere"
     ]
@@ -4199,6 +4887,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 4000
+    },
+    "cost": {
+      "input": 0.15,
+      "output": 0.6
     },
     "providers": [
       "cohere"
@@ -4227,6 +4919,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 4000
     },
+    "cost": {
+      "input": 2.5,
+      "output": 10
+    },
     "providers": [
       "cohere"
     ]
@@ -4254,6 +4950,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 4000
     },
+    "cost": {
+      "input": 0.0375,
+      "output": 0.15
+    },
     "providers": [
       "cohere"
     ]
@@ -4280,6 +4980,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 4000
+    },
+    "cost": {
+      "input": 0.0375,
+      "output": 0.15
     },
     "providers": [
       "cohere"
@@ -4309,6 +5013,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 256000,
       "output": 64000
+    },
+    "cost": {
+      "input": 0,
+      "output": 0
     },
     "providers": [
       "cohere"
@@ -4340,6 +5048,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 163840,
       "output": 64000
     },
+    "cost": {
+      "input": 0.5,
+      "output": 2.15,
+      "cache_read": 0.35
+    },
     "providers": [
       "deepinfra"
     ]
@@ -4369,6 +5082,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 163840,
       "output": 64000
+    },
+    "cost": {
+      "input": 0.26,
+      "output": 0.38,
+      "cache_read": 0.13
     },
     "providers": [
       "deepinfra"
@@ -4400,6 +5118,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 16384
     },
+    "cost": {
+      "input": 0.09,
+      "output": 0.18,
+      "cache_read": 0.018
+    },
     "providers": [
       "deepinfra"
     ]
@@ -4430,6 +5153,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 16384
     },
+    "cost": {
+      "input": 1.3,
+      "output": 2.6,
+      "cache_read": 0.1
+    },
     "providers": [
       "deepinfra"
     ]
@@ -4459,6 +5187,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262144,
       "output": 32768
+    },
+    "cost": {
+      "input": 0.07,
+      "output": 0.34
     },
     "providers": [
       "deepinfra"
@@ -4491,6 +5223,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 32768
     },
+    "cost": {
+      "input": 0.13,
+      "output": 0.38
+    },
     "providers": [
       "deepinfra"
     ]
@@ -4517,6 +5253,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 16384
+    },
+    "cost": {
+      "input": 0.1,
+      "output": 0.32
     },
     "providers": [
       "deepinfra"
@@ -4545,6 +5285,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1048576,
       "output": 16384
+    },
+    "cost": {
+      "input": 0.2,
+      "output": 0.8
     },
     "providers": [
       "deepinfra"
@@ -4575,6 +5319,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 327680,
       "output": 16384
     },
+    "cost": {
+      "input": 0.1,
+      "output": 0.3
+    },
     "providers": [
       "deepinfra"
     ]
@@ -4602,6 +5350,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 196608,
       "output": 131072
+    },
+    "cost": {
+      "input": 0.25,
+      "output": 1,
+      "cache_read": 0.05
     },
     "providers": [
       "deepinfra"
@@ -4633,6 +5386,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 524288,
       "output": 128000
+    },
+    "cost": {
+      "input": 0.3,
+      "output": 1.2,
+      "cache_read": 0.06
     },
     "providers": [
       "deepinfra"
@@ -4667,6 +5425,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 32768
     },
+    "cost": {
+      "input": 0.45,
+      "output": 2.25,
+      "cache_read": 0.07
+    },
     "providers": [
       "deepinfra"
     ]
@@ -4699,6 +5462,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262144,
       "output": 16384
+    },
+    "cost": {
+      "input": 0.75,
+      "output": 3.5,
+      "cache_read": 0.15
     },
     "providers": [
       "deepinfra"
@@ -4733,6 +5501,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 262144
     },
+    "cost": {
+      "input": 0.74,
+      "output": 3.5,
+      "cache_read": 0.15
+    },
     "providers": [
       "deepinfra"
     ]
@@ -4764,6 +5537,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 131072
     },
+    "cost": {
+      "input": 2.7,
+      "output": 13.5,
+      "cache_read": 0.27
+    },
     "providers": [
       "deepinfra"
     ]
@@ -4790,6 +5568,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262144,
       "output": 262144
+    },
+    "cost": {
+      "input": 0.05,
+      "output": 0.2
     },
     "providers": [
       "deepinfra"
@@ -4819,6 +5601,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 16384
     },
+    "cost": {
+      "input": 0.037,
+      "output": 0.17
+    },
     "providers": [
       "deepinfra"
     ]
@@ -4846,6 +5632,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 16384
+    },
+    "cost": {
+      "input": 0.03,
+      "output": 0.14
     },
     "providers": [
       "deepinfra"
@@ -4876,6 +5666,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 40960,
       "output": 16384
     },
+    "cost": {
+      "input": 0.08,
+      "output": 0.28
+    },
     "providers": [
       "deepinfra"
     ]
@@ -4904,6 +5698,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262144,
       "output": 66536
+    },
+    "cost": {
+      "input": 0.3,
+      "output": 1,
+      "cache_read": 0.1
     },
     "providers": [
       "deepinfra"
@@ -4934,6 +5733,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 256000,
       "output": 65536
     },
+    "cost": {
+      "input": 1.2,
+      "output": 6,
+      "cache_read": 0.24
+    },
     "providers": [
       "deepinfra"
     ]
@@ -4961,6 +5765,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262144,
       "output": 32768
+    },
+    "cost": {
+      "input": 0.09,
+      "output": 1.1
     },
     "providers": [
       "deepinfra"
@@ -4995,6 +5803,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 65536
     },
+    "cost": {
+      "input": 0.29,
+      "output": 2.4
+    },
     "providers": [
       "deepinfra"
     ]
@@ -5027,6 +5839,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262144,
       "output": 65536
+    },
+    "cost": {
+      "input": 0.26,
+      "output": 2.6
     },
     "providers": [
       "deepinfra"
@@ -5061,6 +5877,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 81920
     },
+    "cost": {
+      "input": 0.14,
+      "output": 1,
+      "cache_read": 0.05
+    },
     "providers": [
       "deepinfra"
     ]
@@ -5094,6 +5915,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 81920
     },
+    "cost": {
+      "input": 0.45,
+      "output": 3,
+      "cache_read": 0.22
+    },
     "providers": [
       "deepinfra"
     ]
@@ -5124,6 +5950,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262144,
       "output": 65536
+    },
+    "cost": {
+      "input": 0.1,
+      "output": 0.15
     },
     "providers": [
       "deepinfra"
@@ -5158,6 +5988,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 65536
     },
+    "cost": {
+      "input": 0.32,
+      "output": 3.2
+    },
     "providers": [
       "deepinfra"
     ]
@@ -5189,6 +6023,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 81920
     },
+    "cost": {
+      "input": 0.15,
+      "output": 0.95
+    },
     "providers": [
       "deepinfra"
     ]
@@ -5216,6 +6054,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 256000,
       "output": 65536
+    },
+    "cost": {
+      "input": 2.5,
+      "output": 7.5,
+      "cache_read": 0.5
     },
     "providers": [
       "deepinfra"
@@ -5252,6 +6095,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 16384
     },
+    "cost": {
+      "input": 0.4,
+      "output": 2,
+      "cache_read": 0.08
+    },
     "providers": [
       "deepinfra"
     ]
@@ -5284,6 +6132,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 16384
     },
+    "cost": {
+      "input": 1,
+      "output": 3,
+      "cache_read": 0.2
+    },
     "providers": [
       "deepinfra"
     ]
@@ -5313,6 +6166,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 202752,
       "output": 131072
+    },
+    "cost": {
+      "input": 0.5,
+      "output": 2,
+      "cache_read": 0.1
     },
     "providers": [
       "deepinfra"
@@ -5344,6 +6202,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 202752,
       "output": 16384
     },
+    "cost": {
+      "input": 0.4,
+      "output": 1.75,
+      "cache_read": 0.08
+    },
     "providers": [
       "deepinfra"
     ]
@@ -5373,6 +6236,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 202752,
       "output": 16384
+    },
+    "cost": {
+      "input": 0.06,
+      "output": 0.4,
+      "cache_read": 0.01
     },
     "providers": [
       "deepinfra"
@@ -5404,6 +6272,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 202752,
       "output": 16384
     },
+    "cost": {
+      "input": 0.6,
+      "output": 2.08,
+      "cache_read": 0.12
+    },
     "providers": [
       "deepinfra"
     ]
@@ -5434,6 +6307,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 202752,
       "output": 16384
     },
+    "cost": {
+      "input": 1.05,
+      "output": 3.5,
+      "cache_read": 0.205
+    },
     "providers": [
       "deepinfra"
     ]
@@ -5462,6 +6340,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1048576,
       "output": 32768
+    },
+    "cost": {
+      "input": 0.93,
+      "output": 3,
+      "cache_read": 0.18
     },
     "providers": [
       "deepinfra"
@@ -5493,6 +6376,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 384000
     },
+    "cost": {
+      "input": 0.14,
+      "output": 0.28,
+      "cache_read": 0.028
+    },
     "providers": [
       "fireworks"
     ]
@@ -5523,6 +6411,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 384000
     },
+    "cost": {
+      "input": 1.74,
+      "output": 3.48,
+      "cache_read": 0.145
+    },
     "providers": [
       "fireworks"
     ]
@@ -5550,6 +6443,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1048575,
       "output": 131072
+    },
+    "cost": {
+      "input": 1.4,
+      "output": 4.4,
+      "cache_read": 0.14
     },
     "providers": [
       "fireworks"
@@ -5579,6 +6477,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 32768
     },
+    "cost": {
+      "input": 0.15,
+      "output": 0.6,
+      "cache_read": 0.015
+    },
     "providers": [
       "fireworks"
     ]
@@ -5606,6 +6509,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 32768
+    },
+    "cost": {
+      "input": 0.07,
+      "output": 0.3,
+      "cache_read": 0.035
     },
     "providers": [
       "fireworks"
@@ -5637,6 +6545,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262000,
       "output": 262000
     },
+    "cost": {
+      "input": 0.95,
+      "output": 4,
+      "cache_read": 0.16
+    },
     "providers": [
       "fireworks"
     ]
@@ -5666,6 +6579,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262000,
       "output": 262000
+    },
+    "cost": {
+      "input": 0.95,
+      "output": 4,
+      "cache_read": 0.19
     },
     "providers": [
       "fireworks"
@@ -5698,6 +6616,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 131072
     },
+    "cost": {
+      "input": 3,
+      "output": 15,
+      "cache_read": 0.3
+    },
     "providers": [
       "fireworks"
     ]
@@ -5725,6 +6648,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 196608,
       "output": 196608
+    },
+    "cost": {
+      "input": 0.3,
+      "output": 1.2,
+      "cache_read": 0.06
     },
     "providers": [
       "fireworks"
@@ -5757,6 +6685,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 512000,
       "output": 512000
     },
+    "cost": {
+      "input": 0.3,
+      "output": 1.2,
+      "cache_read": 0.06
+    },
     "providers": [
       "fireworks"
     ]
@@ -5787,6 +6720,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 65536
     },
+    "cost": {
+      "input": 0.4,
+      "output": 1.6,
+      "cache_read": 0.08
+    },
     "providers": [
       "fireworks"
     ]
@@ -5814,6 +6752,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1048575,
       "output": 131072
+    },
+    "cost": {
+      "input": 2.1,
+      "output": 6.6,
+      "cache_read": 0.21
     },
     "providers": [
       "fireworks"
@@ -5845,6 +6788,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262000,
       "output": 262000
     },
+    "cost": {
+      "input": 2,
+      "output": 8,
+      "cache_read": 0.3
+    },
     "providers": [
       "fireworks"
     ]
@@ -5874,6 +6822,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262000,
       "output": 262000
+    },
+    "cost": {
+      "input": 2,
+      "output": 8,
+      "cache_read": 0.3
     },
     "providers": [
       "fireworks"
@@ -5905,6 +6858,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262000,
       "output": 262000
     },
+    "cost": {
+      "input": 1.9,
+      "output": 8,
+      "cache_read": 0.38
+    },
     "providers": [
       "fireworks"
     ]
@@ -5935,6 +6893,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1048576,
       "output": 131072
+    },
+    "cost": {
+      "input": 4.5,
+      "output": 22.5,
+      "cache_read": 0.45
     },
     "providers": [
       "fireworks"
@@ -5972,6 +6935,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 65536
     },
+    "cost": {
+      "input": 2,
+      "output": 12,
+      "cache_read": 0.2
+    },
     "providers": [
       "google"
     ]
@@ -6008,6 +6976,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 65536
     },
+    "cost": {
+      "input": 2,
+      "output": 12,
+      "cache_read": 0.2
+    },
     "providers": [
       "google"
     ]
@@ -6037,6 +7010,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 65536
+    },
+    "cost": {
+      "input": 1.25,
+      "output": 10
     },
     "providers": [
       "google"
@@ -6073,6 +7050,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 65536
     },
+    "cost": {
+      "input": 0.3,
+      "output": 2.5,
+      "cache_read": 0.03
+    },
     "providers": [
       "google"
     ]
@@ -6104,6 +7086,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 32768,
       "output": 32768
+    },
+    "cost": {
+      "input": 0.3,
+      "output": 30,
+      "cache_read": 0.075
     },
     "providers": [
       "google"
@@ -6140,6 +7127,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 65536
     },
+    "cost": {
+      "input": 0.1,
+      "output": 0.4,
+      "cache_read": 0.01
+    },
     "providers": [
       "google"
     ]
@@ -6163,6 +7155,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 8192,
       "output": 16384
+    },
+    "cost": {
+      "input": 0.5,
+      "output": 10
     },
     "providers": [
       "google"
@@ -6199,6 +7195,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 65536
     },
+    "cost": {
+      "input": 1.25,
+      "output": 10,
+      "cache_read": 0.125
+    },
     "providers": [
       "google"
     ]
@@ -6222,6 +7223,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 8192,
       "output": 16384
+    },
+    "cost": {
+      "input": 1,
+      "output": 20
     },
     "providers": [
       "google"
@@ -6258,6 +7263,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 65536
     },
+    "cost": {
+      "input": 0.5,
+      "output": 3,
+      "cache_read": 0.05
+    },
     "providers": [
       "google"
     ]
@@ -6289,6 +7299,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 32768
     },
+    "cost": {
+      "input": 2,
+      "output": 120
+    },
     "providers": [
       "google"
     ]
@@ -6319,6 +7333,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 32768
+    },
+    "cost": {
+      "input": 2,
+      "output": 120
     },
     "providers": [
       "google"
@@ -6352,6 +7370,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 65536,
       "output": 65536
     },
+    "cost": {
+      "input": 0.5,
+      "output": 60
+    },
     "providers": [
       "google"
     ]
@@ -6382,6 +7404,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 65536,
       "output": 65536
+    },
+    "cost": {
+      "input": 0.5,
+      "output": 60
     },
     "providers": [
       "google"
@@ -6418,6 +7444,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 65536
     },
+    "cost": {
+      "input": 0.25,
+      "output": 1.5,
+      "cache_read": 0.025
+    },
     "providers": [
       "google"
     ]
@@ -6449,6 +7480,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 65536,
       "output": 65536
+    },
+    "cost": {
+      "input": 0.25,
+      "output": 30
     },
     "providers": [
       "google"
@@ -6485,6 +7520,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 65536
     },
+    "cost": {
+      "input": 0.75,
+      "output": 4.5
+    },
     "providers": [
       "google"
     ]
@@ -6510,6 +7549,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 8192,
       "output": 16384
+    },
+    "cost": {
+      "input": 1,
+      "output": 20
     },
     "providers": [
       "google"
@@ -6546,6 +7589,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 65536
     },
+    "cost": {
+      "input": 2,
+      "output": 12,
+      "cache_read": 0.2
+    },
     "providers": [
       "google"
     ]
@@ -6580,6 +7628,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1048576,
       "output": 65536
+    },
+    "cost": {
+      "input": 2,
+      "output": 12,
+      "cache_read": 0.2
     },
     "providers": [
       "google"
@@ -6616,6 +7669,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 65536
     },
+    "cost": {
+      "input": 1.5,
+      "output": 9,
+      "cache_read": 0.15
+    },
     "providers": [
       "google"
     ]
@@ -6651,6 +7709,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 65536
     },
+    "cost": {
+      "input": 0.3,
+      "output": 2.5,
+      "cache_read": 0.03
+    },
     "providers": [
       "google"
     ]
@@ -6679,6 +7742,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 16384,
       "output": 32768
+    },
+    "cost": {
+      "input": 3.5,
+      "output": 21
     },
     "providers": [
       "google"
@@ -6715,6 +7782,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 65536
     },
+    "cost": {
+      "input": 1.5,
+      "output": 7.5,
+      "cache_read": 0.15
+    },
     "providers": [
       "google"
     ]
@@ -6740,6 +7812,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 2048,
       "output": 1
+    },
+    "cost": {
+      "input": 0.15,
+      "output": 0
     },
     "providers": [
       "google"
@@ -6771,6 +7847,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 8192,
       "output": 1
+    },
+    "cost": {
+      "input": 0.2,
+      "output": 0
     },
     "providers": [
       "google"
@@ -6807,6 +7887,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 65536
     },
+    "cost": {
+      "input": 1.5,
+      "output": 9,
+      "cache_read": 0.15
+    },
     "providers": [
       "google"
     ]
@@ -6842,6 +7927,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 65536
     },
+    "cost": {
+      "input": 0.25,
+      "output": 1.5,
+      "cache_read": 0.025
+    },
     "providers": [
       "google"
     ]
@@ -6869,6 +7959,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 65536
+    },
+    "cost": {
+      "input": 1.5,
+      "output": 17.5
     },
     "providers": [
       "google"
@@ -6903,6 +7997,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 65536
+    },
+    "cost": {
+      "input": 1,
+      "output": 5
     },
     "providers": [
       "google"
@@ -6993,6 +8091,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 65536
     },
+    "cost": {
+      "input": 0,
+      "output": 0
+    },
     "providers": [
       "google"
     ]
@@ -7021,6 +8123,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1048576,
       "output": 65536
+    },
+    "cost": {
+      "input": 0,
+      "output": 0
     },
     "providers": [
       "google"
@@ -7227,6 +8333,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 131072
     },
+    "cost": {
+      "input": 0.05,
+      "output": 0.08
+    },
     "providers": [
       "groq"
     ]
@@ -7253,6 +8363,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 32768
+    },
+    "cost": {
+      "input": 0.59,
+      "output": 0.79
     },
     "providers": [
       "groq"
@@ -7285,6 +8399,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 8192
     },
+    "cost": {
+      "input": 0.11,
+      "output": 0.34
+    },
     "providers": [
       "groq"
     ]
@@ -7311,6 +8429,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 512,
       "output": 512
     },
+    "cost": {
+      "input": 0.03,
+      "output": 0.03
+    },
     "providers": [
       "groq"
     ]
@@ -7336,6 +8458,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 512,
       "output": 512
+    },
+    "cost": {
+      "input": 0.04,
+      "output": 0.04
     },
     "providers": [
       "groq"
@@ -7366,6 +8492,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 65536
     },
+    "cost": {
+      "input": 0.15,
+      "output": 0.6,
+      "cache_read": 0.075
+    },
     "providers": [
       "groq"
     ]
@@ -7394,6 +8525,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 65536
+    },
+    "cost": {
+      "input": 0.075,
+      "output": 0.3,
+      "cache_read": 0.0375
     },
     "providers": [
       "groq"
@@ -7424,6 +8560,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 65536
     },
+    "cost": {
+      "input": 0.075,
+      "output": 0.3
+    },
     "providers": [
       "groq"
     ]
@@ -7451,6 +8591,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 40960
+    },
+    "cost": {
+      "input": 0.29,
+      "output": 0.59
     },
     "providers": [
       "groq"
@@ -7531,6 +8675,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 256000,
       "output": 4096
     },
+    "cost": {
+      "input": 0.3,
+      "output": 0.9
+    },
     "providers": [
       "mistral"
     ]
@@ -7558,6 +8706,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 16384
+    },
+    "cost": {
+      "input": 2,
+      "output": 5
     },
     "providers": [
       "mistral"
@@ -7587,6 +8739,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 128000
     },
+    "cost": {
+      "input": 0.5,
+      "output": 1.5
+    },
     "providers": [
       "mistral"
     ]
@@ -7613,6 +8769,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 128000
+    },
+    "cost": {
+      "input": 0.04,
+      "output": 0.04
     },
     "providers": [
       "mistral"
@@ -7641,6 +8801,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 128000
     },
+    "cost": {
+      "input": 0.1,
+      "output": 0.1
+    },
     "providers": [
       "mistral"
     ]
@@ -7665,6 +8829,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 8000,
       "output": 3072
+    },
+    "cost": {
+      "input": 0.1,
+      "output": 0
     },
     "providers": [
       "mistral"
@@ -7692,6 +8860,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 16384
+    },
+    "cost": {
+      "input": 2,
+      "output": 6
     },
     "providers": [
       "mistral"
@@ -7722,6 +8894,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 262144
     },
+    "cost": {
+      "input": 0.5,
+      "output": 1.5
+    },
     "providers": [
       "mistral"
     ]
@@ -7750,6 +8926,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262144,
       "output": 262144
+    },
+    "cost": {
+      "input": 0.5,
+      "output": 1.5
     },
     "providers": [
       "mistral"
@@ -7780,6 +8960,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 131072
     },
+    "cost": {
+      "input": 0.4,
+      "output": 2
+    },
     "providers": [
       "mistral"
     ]
@@ -7808,6 +8992,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262144,
       "output": 262144
+    },
+    "cost": {
+      "input": 0.4,
+      "output": 2
     },
     "providers": [
       "mistral"
@@ -7839,6 +9027,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 262144
     },
+    "cost": {
+      "input": 1.5,
+      "output": 7.5
+    },
     "providers": [
       "mistral"
     ]
@@ -7869,6 +9061,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 262144
     },
+    "cost": {
+      "input": 1.5,
+      "output": 7.5
+    },
     "providers": [
       "mistral"
     ]
@@ -7895,6 +9091,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 128000
+    },
+    "cost": {
+      "input": 0.15,
+      "output": 0.15
     },
     "providers": [
       "mistral"
@@ -7924,6 +9124,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 16384
+    },
+    "cost": {
+      "input": 0.1,
+      "output": 0.3
     },
     "providers": [
       "mistral"
@@ -7955,6 +9159,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 256000,
       "output": 256000
     },
+    "cost": {
+      "input": 0.15,
+      "output": 0.6
+    },
     "providers": [
       "mistral"
     ]
@@ -7985,6 +9193,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 256000,
       "output": 256000
     },
+    "cost": {
+      "input": 0.15,
+      "output": 0.6
+    },
     "providers": [
       "mistral"
     ]
@@ -8011,6 +9223,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 8000,
       "output": 8000
+    },
+    "cost": {
+      "input": 0.25,
+      "output": 0.25
     },
     "providers": [
       "mistral"
@@ -8039,6 +9255,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 64000,
       "output": 64000
     },
+    "cost": {
+      "input": 2,
+      "output": 6
+    },
     "providers": [
       "mistral"
     ]
@@ -8065,6 +9285,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 32000,
       "output": 32000
+    },
+    "cost": {
+      "input": 0.7,
+      "output": 0.7
     },
     "providers": [
       "mistral"
@@ -8095,6 +9319,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 128000
     },
+    "cost": {
+      "input": 0.15,
+      "output": 0.15
+    },
     "providers": [
       "mistral"
     ]
@@ -8123,6 +9351,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 128000
+    },
+    "cost": {
+      "input": 2,
+      "output": 6
     },
     "providers": [
       "mistral"
@@ -8184,6 +9416,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1047576,
       "output": 32768
     },
+    "cost": {
+      "input": 2,
+      "output": 8,
+      "cache_read": 0.5
+    },
     "providers": [
       "openai"
     ]
@@ -8214,6 +9451,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1047576,
       "output": 32768
+    },
+    "cost": {
+      "input": 0.4,
+      "output": 1.6,
+      "cache_read": 0.1
     },
     "providers": [
       "openai"
@@ -8246,6 +9488,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 16384
     },
+    "cost": {
+      "input": 2.5,
+      "output": 10,
+      "cache_read": 1.25
+    },
     "providers": [
       "openai"
     ]
@@ -8276,6 +9523,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 16384
+    },
+    "cost": {
+      "input": 2.5,
+      "output": 10,
+      "cache_read": 1.25
     },
     "providers": [
       "openai"
@@ -8308,6 +9560,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 16384
     },
+    "cost": {
+      "input": 2.5,
+      "output": 10,
+      "cache_read": 1.25
+    },
     "providers": [
       "openai"
     ]
@@ -8338,6 +9595,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 16384
+    },
+    "cost": {
+      "input": 0.15,
+      "output": 0.6,
+      "cache_read": 0.075
     },
     "providers": [
       "openai"
@@ -8371,6 +9633,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 400000,
       "output": 128000
     },
+    "cost": {
+      "input": 1.25,
+      "output": 10,
+      "cache_read": 0.125
+    },
     "providers": [
       "openai"
     ]
@@ -8402,6 +9669,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 400000,
       "output": 128000
+    },
+    "cost": {
+      "input": 0.25,
+      "output": 2,
+      "cache_read": 0.025
     },
     "providers": [
       "openai"
@@ -8435,6 +9707,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 400000,
       "output": 128000
     },
+    "cost": {
+      "input": 0.05,
+      "output": 0.4,
+      "cache_read": 0.005
+    },
     "providers": [
       "openai"
     ]
@@ -8465,6 +9742,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 400000,
       "output": 272000
+    },
+    "cost": {
+      "input": 15,
+      "output": 120
     },
     "providers": [
       "openai"
@@ -8498,6 +9779,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 400000,
       "output": 128000
     },
+    "cost": {
+      "input": 1.25,
+      "output": 10,
+      "cache_read": 0.125
+    },
     "providers": [
       "openai"
     ]
@@ -8529,6 +9815,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 400000,
       "output": 128000
+    },
+    "cost": {
+      "input": 1.75,
+      "output": 14,
+      "cache_read": 0.175
     },
     "providers": [
       "openai"
@@ -8562,6 +9853,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 16384
     },
+    "cost": {
+      "input": 1.75,
+      "output": 14,
+      "cache_read": 0.175
+    },
     "providers": [
       "openai"
     ]
@@ -8591,6 +9887,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 400000,
       "output": 128000
+    },
+    "cost": {
+      "input": 21,
+      "output": 168
     },
     "providers": [
       "openai"
@@ -8622,6 +9922,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 16384
+    },
+    "cost": {
+      "input": 1.75,
+      "output": 14,
+      "cache_read": 0.175
     },
     "providers": [
       "openai"
@@ -8655,6 +9960,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 400000,
       "output": 128000
     },
+    "cost": {
+      "input": 1.75,
+      "output": 14,
+      "cache_read": 0.175
+    },
     "providers": [
       "openai"
     ]
@@ -8686,6 +9996,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 32000
+    },
+    "cost": {
+      "input": 1.75,
+      "output": 14,
+      "cache_read": 0.175
     },
     "providers": [
       "openai"
@@ -8719,6 +10034,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1050000,
       "output": 128000
     },
+    "cost": {
+      "input": 2.5,
+      "output": 15,
+      "cache_read": 0.25
+    },
     "providers": [
       "openai"
     ]
@@ -8750,6 +10070,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 400000,
       "output": 128000
+    },
+    "cost": {
+      "input": 0.75,
+      "output": 4.5,
+      "cache_read": 0.075
     },
     "providers": [
       "openai"
@@ -8783,6 +10108,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 400000,
       "output": 128000
     },
+    "cost": {
+      "input": 0.2,
+      "output": 1.25,
+      "cache_read": 0.02
+    },
     "providers": [
       "openai"
     ]
@@ -8812,6 +10142,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1050000,
       "output": 128000
+    },
+    "cost": {
+      "input": 30,
+      "output": 180
     },
     "providers": [
       "openai"
@@ -8845,6 +10179,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1050000,
       "output": 128000
     },
+    "cost": {
+      "input": 5,
+      "output": 30,
+      "cache_read": 0.5
+    },
     "providers": [
       "openai"
     ]
@@ -8875,6 +10214,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1050000,
       "output": 128000
+    },
+    "cost": {
+      "input": 30,
+      "output": 180
     },
     "providers": [
       "openai"
@@ -8908,6 +10251,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1050000,
       "output": 128000
     },
+    "cost": {
+      "input": 5,
+      "output": 30,
+      "cache_read": 0.5,
+      "cache_write": 6.25
+    },
     "providers": [
       "openai"
     ]
@@ -8939,6 +10288,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1050000,
       "output": 128000
+    },
+    "cost": {
+      "input": 1,
+      "output": 6,
+      "cache_read": 0.1,
+      "cache_write": 1.25
     },
     "providers": [
       "openai"
@@ -8972,6 +10327,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1050000,
       "output": 128000
     },
+    "cost": {
+      "input": 5,
+      "output": 30,
+      "cache_read": 0.5,
+      "cache_write": 6.25
+    },
     "providers": [
       "openai"
     ]
@@ -9003,6 +10364,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1050000,
       "output": 128000
+    },
+    "cost": {
+      "input": 2.5,
+      "output": 15,
+      "cache_read": 0.25,
+      "cache_write": 3.125
     },
     "providers": [
       "openai"
@@ -9089,6 +10456,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 0,
       "output": 0
     },
+    "cost": {
+      "input": 5,
+      "output": 30,
+      "cache_read": 1.25
+    },
     "providers": [
       "openai"
     ]
@@ -9124,6 +10496,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 32000
     },
+    "cost": {
+      "input": 4,
+      "output": 24,
+      "cache_read": 0.4
+    },
     "providers": [
       "openai"
     ]
@@ -9156,6 +10533,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 100000
     },
+    "cost": {
+      "input": 2,
+      "output": 8,
+      "cache_read": 0.5
+    },
     "providers": [
       "openai"
     ]
@@ -9187,6 +10569,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 200000,
       "output": 100000
     },
+    "cost": {
+      "input": 20,
+      "output": 80
+    },
     "providers": [
       "openai"
     ]
@@ -9212,6 +10598,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 8191,
       "output": 3072
+    },
+    "cost": {
+      "input": 0.13,
+      "output": 0
     },
     "providers": [
       "openai"
@@ -9239,6 +10629,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 8191,
       "output": 1536
     },
+    "cost": {
+      "input": 0.02,
+      "output": 0
+    },
     "providers": [
       "openai"
     ]
@@ -9265,6 +10659,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 8192,
       "output": 1536
     },
+    "cost": {
+      "input": 0.1,
+      "output": 0
+    },
     "providers": [
       "openai"
     ]
@@ -9290,6 +10688,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 128000,
       "output": 4096
+    },
+    "cost": {
+      "input": 1,
+      "output": 1
     },
     "providers": [
       "perplexity"
@@ -9318,6 +10720,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 32768
     },
+    "cost": {
+      "input": 2,
+      "output": 8
+    },
     "providers": [
       "perplexity"
     ]
@@ -9345,6 +10751,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 200000,
       "output": 8192
+    },
+    "cost": {
+      "input": 3,
+      "output": 15
     },
     "providers": [
       "perplexity"
@@ -9375,6 +10785,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 128000,
       "output": 4096
     },
+    "cost": {
+      "input": 2,
+      "output": 8
+    },
     "providers": [
       "perplexity"
     ]
@@ -9400,6 +10814,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 163840,
       "output": 163840
+    },
+    "cost": {
+      "input": 1.25,
+      "output": 1.25
     },
     "providers": [
       "togetherai"
@@ -9430,6 +10848,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 512000,
       "output": 384000
     },
+    "cost": {
+      "input": 1.74,
+      "output": 3.48,
+      "cache_read": 0.2
+    },
     "providers": [
       "togetherai"
     ]
@@ -9455,6 +10878,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 32768,
       "output": 32768
+    },
+    "cost": {
+      "input": 0.06,
+      "output": 0.12
     },
     "providers": [
       "togetherai"
@@ -9487,6 +10914,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 131072
     },
+    "cost": {
+      "input": 0.39,
+      "output": 0.97
+    },
     "providers": [
       "togetherai"
     ]
@@ -9511,6 +10942,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 32768,
       "output": 32768
+    },
+    "cost": {
+      "input": 0.03,
+      "output": 0.12
     },
     "providers": [
       "togetherai"
@@ -9539,6 +10974,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 131072
     },
+    "cost": {
+      "input": 1.04,
+      "output": 1.04
+    },
     "providers": [
       "togetherai"
     ]
@@ -9563,6 +11002,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 8192,
       "output": 8192
+    },
+    "cost": {
+      "input": 0.14,
+      "output": 0.14
     },
     "providers": [
       "togetherai"
@@ -9592,6 +11035,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 202752,
       "output": 131072
+    },
+    "cost": {
+      "input": 0.3,
+      "output": 1.2,
+      "cache_read": 0.06
     },
     "providers": [
       "togetherai"
@@ -9623,6 +11071,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 524288,
       "output": 250000
+    },
+    "cost": {
+      "input": 0.3,
+      "output": 1.2,
+      "cache_read": 0.06
     },
     "providers": [
       "togetherai"
@@ -9657,6 +11110,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 131000
     },
+    "cost": {
+      "input": 1.2,
+      "output": 4.5,
+      "cache_read": 0.2
+    },
     "providers": [
       "togetherai"
     ]
@@ -9685,6 +11143,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262144,
       "output": 131072
+    },
+    "cost": {
+      "input": 0.95,
+      "output": 4,
+      "cache_read": 0.19
     },
     "providers": [
       "togetherai"
@@ -9718,6 +11181,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1048576,
       "output": 131072
     },
+    "cost": {
+      "input": 3,
+      "output": 15,
+      "cache_read": 0.3
+    },
     "providers": [
       "togetherai"
     ]
@@ -9747,6 +11215,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 512300,
       "output": 512300
     },
+    "cost": {
+      "input": 0.6,
+      "output": 3.6,
+      "cache_read": 0.2
+    },
     "providers": [
       "togetherai"
     ]
@@ -9774,6 +11247,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 131072,
       "output": 131072
+    },
+    "cost": {
+      "input": 0.15,
+      "output": 0.6
     },
     "providers": [
       "togetherai"
@@ -9803,6 +11280,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 131072,
       "output": 131072
     },
+    "cost": {
+      "input": 0.05,
+      "output": 0.2
+    },
     "providers": [
       "togetherai"
     ]
@@ -9828,6 +11309,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 32000,
       "output": 32000
+    },
+    "cost": {
+      "input": 0.28,
+      "output": 0.86
     },
     "providers": [
       "togetherai"
@@ -9855,6 +11340,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 32768,
       "output": 32768
+    },
+    "cost": {
+      "input": 0.3,
+      "output": 0.3
     },
     "providers": [
       "togetherai"
@@ -9886,6 +11375,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 262144,
       "output": 65536
     },
+    "cost": {
+      "input": 0.17,
+      "output": 0.25
+    },
     "providers": [
       "togetherai"
     ]
@@ -9913,6 +11406,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 500000
     },
+    "cost": {
+      "input": 0.5,
+      "output": 3
+    },
     "providers": [
       "togetherai"
     ]
@@ -9938,6 +11435,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 500000
+    },
+    "cost": {
+      "input": 1.25,
+      "output": 3.75
     },
     "providers": [
       "togetherai"
@@ -9972,6 +11473,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 524288,
       "output": 131072
     },
+    "cost": {
+      "input": 1,
+      "output": 4.05,
+      "cache_read": 0.17
+    },
     "providers": [
       "togetherai"
     ]
@@ -10000,6 +11506,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 262144,
       "output": 164000
+    },
+    "cost": {
+      "input": 1.4,
+      "output": 4.4,
+      "cache_read": 0.26
     },
     "providers": [
       "togetherai"
@@ -10097,6 +11608,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 30000
     },
+    "cost": {
+      "input": 1.25,
+      "output": 2.5,
+      "cache_read": 0.2
+    },
     "providers": [
       "xai"
     ]
@@ -10128,6 +11644,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 30000
     },
+    "cost": {
+      "input": 1.25,
+      "output": 2.5,
+      "cache_read": 0.2
+    },
     "providers": [
       "xai"
     ]
@@ -10157,6 +11678,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 1000000,
       "output": 30000
+    },
+    "cost": {
+      "input": 1.25,
+      "output": 2.5,
+      "cache_read": 0.2
     },
     "providers": [
       "xai"
@@ -10189,6 +11715,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1000000,
       "output": 30000
     },
+    "cost": {
+      "input": 1.25,
+      "output": 2.5,
+      "cache_read": 0.2
+    },
     "providers": [
       "xai"
     ]
@@ -10220,6 +11751,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 500000,
       "output": 500000
     },
+    "cost": {
+      "input": 2,
+      "output": 6,
+      "cache_read": 0.3
+    },
     "providers": [
       "xai"
     ]
@@ -10250,6 +11786,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "context": {
       "input": 256000,
       "output": 256000
+    },
+    "cost": {
+      "input": 1,
+      "output": 2,
+      "cache_read": 0.2
     },
     "providers": [
       "xai"
