@@ -24,6 +24,7 @@ import type {
   AgentInstance,
 } from "../types/agent.js";
 import type { SanitizedAIConfig } from "../types/ai.js";
+import type { FrogbotRequest } from "../types/request.js";
 import type { ToolCtx } from "../types/tool.js";
 import { toAISDKTools, toAISDKToolsContext } from "./tools.js";
 

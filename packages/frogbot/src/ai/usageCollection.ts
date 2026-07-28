@@ -88,7 +88,7 @@ export function resolveUsageCollection(
     user: existing,
     base,
     reservedFields: base.fields
-      .map((field) => field.name)
+      .map((field) => ("name" in field ? field.name : undefined))
       .filter((name): name is string => !!name),
     feature: "AI usage tracking",
   });

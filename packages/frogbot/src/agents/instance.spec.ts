@@ -53,6 +53,7 @@ vi.mock('ai', async (importOriginal) => {
 
 vi.mock('@frogbotai/gateway', async (importOriginal) => ({
   ...(await importOriginal<typeof Gateway>()),
+  calculateModelCostUSD: () => 0,
   runHooks: async <T>(
     hooks: Array<(args: T) => void | Promise<void>> | undefined,
     args: T,
@@ -297,19 +298,26 @@ describe('agent hook lifecycle', () => {
     expect(deps.frogbot.findByID).toHaveBeenCalledWith(
       expect.objectContaining({ collection: 'threads', id: 'thread-1', overrideAccess: false }),
     );
-    expect(deps.frogbot.create).toHaveBeenCalledTimes(2);
-    expect(deps.frogbot.create).toHaveBeenNthCalledWith(
-      1,
+    const messageCreates = deps.frogbot.create.mock.calls.filter(
+      ([args]) => args.collection === 'messages',
+    );
+    expect(messageCreates).toHaveLength(2);
+    expect(messageCreates[0]?.[0]).toEqual(
       expect.objectContaining({
         collection: 'messages',
         data: expect.objectContaining({ role: 'user', thread: 'thread-1' }),
       }),
     );
-    expect(deps.frogbot.create).toHaveBeenNthCalledWith(
-      2,
+    expect(messageCreates[1]?.[0]).toEqual(
       expect.objectContaining({
         collection: 'messages',
         data: expect.objectContaining({ role: 'assistant', thread: 'thread-1' }),
+      }),
+    );
+    expect(deps.frogbot.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'usage-logs',
+        data: expect.objectContaining({ runId: expect.any(String), thread: 'thread-1' }),
       }),
     );
     expect(deps.frogbot.update).toHaveBeenCalledWith(

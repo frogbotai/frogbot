@@ -9,7 +9,7 @@ describe("logUsage", () => {
     const create = vi.fn().mockResolvedValue({});
     const req = {
       user: { id: "user-1" },
-      payload: { create, logger: { error: vi.fn() } },
+      frogbot: { create, logger: { error: vi.fn() } },
     };
     await logUsage({
       phase: "afterOperation",

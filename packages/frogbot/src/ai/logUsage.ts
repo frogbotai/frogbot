@@ -1,4 +1,4 @@
-import { calculateModelCostUSD } from "@frogbotai/gateway";
+import * as gateway from "@frogbotai/gateway";
 import type { AfterOperationHook } from "@frogbotai/gateway";
 
 import type { AIOperationContext } from "./hooks.js";
@@ -8,10 +8,15 @@ export const logUsage: AfterOperationHook = (args) => {
   const context = args.context as AIOperationContext;
   if (context.trackUsage === false) return;
   const req = context.req;
-  if (!req || typeof req.payload?.create !== "function") return;
+  if (!req) return;
   const usage = args.usage;
+  const calculateModelCostUSD = (
+    gateway as typeof gateway & {
+      calculateModelCostUSD: (model: string, usage: NonNullable<typeof usage>) => number;
+    }
+  ).calculateModelCostUSD;
   const costUSD = usage ? calculateModelCostUSD(args.model, usage) : 0;
-  void req.payload
+  void req.frogbot
     .create({
       collection: USAGE_LOGS_SLUG as never,
       data: {
@@ -37,9 +42,9 @@ export const logUsage: AfterOperationHook = (args) => {
       req,
     })
     .catch((error: unknown) =>
-      req.payload.logger.error(
-        { err: error },
+      req.frogbot.logger.error(
         "[frogbot] Failed to log AI usage",
+        error,
       ),
     );
 };
