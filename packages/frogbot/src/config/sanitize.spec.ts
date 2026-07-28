@@ -552,15 +552,28 @@ describe('frogbot sanitize', () => {
       );
     });
 
-    it('rejects an empty tools array', () => {
+    it.each(['runtime', 'codegen'] as const)('accepts an empty tools array during %s validation', (mode) => {
+      const result = sanitize(
+        makeConfig({
+          ai,
+          agents: [{ ...agent, tools: [] }],
+        }),
+        { mode },
+      );
+
+      expect(result.agents?.[0].tools).toEqual([]);
+      expect(result.agents?.[0].access).toBeTypeOf('function');
+    });
+
+    it('rejects non-array tools', () => {
       expect(() =>
         sanitize(
           makeConfig({
             ai,
-            agents: [{ ...agent, tools: [] }],
+            agents: [{ ...agent, tools: null as never }],
           }),
         ),
-      ).toThrow("[frogbot] Agent 'support' tools must be a non-empty array when configured.");
+      ).toThrow("[frogbot] Agent 'support' tools must be an array when configured.");
     });
 
     it('rejects an empty stopWhen array', () => {

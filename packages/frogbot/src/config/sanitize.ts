@@ -318,8 +318,8 @@ function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined
     }
 
     if (agent.tools !== undefined) {
-      if (!Array.isArray(agent.tools) || agent.tools.length === 0) {
-        throw new Error(`[frogbot] Agent '${agent.slug}' tools must be a non-empty array when configured.`);
+      if (!Array.isArray(agent.tools)) {
+        throw new Error(`[frogbot] Agent '${agent.slug}' tools must be an array when configured.`);
       }
       const toolSlugs = new Set<string>();
       const tools = agent.tools.map((tool) => {
