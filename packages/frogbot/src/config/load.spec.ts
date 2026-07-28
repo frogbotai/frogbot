@@ -25,7 +25,7 @@ describe('frogbot loadConfig', () => {
     await mkdir(join(dir, 'src'));
     await writeFile(join(dir, 'src', 'frogbot.config.mjs'), CONFIG);
 
-    await expect(loadConfig(dir)).resolves.toMatchObject({ collections: [] });
+    await expect(loadConfig({ cwd: dir })).resolves.toMatchObject({ collections: [] });
   });
 
   it('prefers src/ over the project root when both exist', async () => {
@@ -34,13 +34,13 @@ describe('frogbot loadConfig', () => {
     await writeFile(join(dir, 'src', 'frogbot.config.mjs'), 'export default { collections: [1], _internal: {} };\n');
     await writeFile(join(dir, 'frogbot.config.mjs'), 'export default { collections: [2], _internal: {} };\n');
 
-    await expect(loadConfig(dir)).resolves.toMatchObject({ collections: [1] });
+    await expect(loadConfig({ cwd: dir })).resolves.toMatchObject({ collections: [1] });
   });
 
   it('throws when no config exists up the tree', async () => {
     const dir = await makeDir();
 
-    await expect(loadConfig(dir)).rejects.toThrow('could not find frogbot.config');
+    await expect(loadConfig({ cwd: dir })).rejects.toThrow('could not find frogbot.config');
   });
 
   it.todo('finds frogbot.config.ts in the cwd');

@@ -7,6 +7,7 @@ import { generateImportMap as payloadGenerateImportMap } from 'payload';
 import type { SanitizedConfig } from 'payload';
 
 import { buildConfig } from '../config/build.js';
+import { sanitize } from '../config/sanitize.js';
 import type { FrogbotConfig } from '../types/config.js';
 import { generateImportMap } from './index.js';
 import { resolveImportMapFilePath } from './utilities/resolveImportMapFilePath.js';
@@ -90,6 +91,31 @@ describe('frogbot importMap generator', () => {
     expect(output).toContain("from 'my-ui/client'");
     expect(output).not.toContain('@payloadcms');
     expect(output).not.toContain("import('payload')");
+  });
+
+  it('writes an import map when an agent model does not match the configured providers', async () => {
+    const dir = await makeDir('frogbot-importmap-model-mismatch-');
+    const config = sanitize({
+      secret: 'test-secret',
+      db: { defaultIDType: 'number' } as never,
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+      ai: { providers: { anthropic: true } },
+      agents: [
+        {
+          slug: 'assistant',
+          model: 'openai/gpt-4o-mini',
+          instructions: 'Assist.',
+        },
+      ],
+    }, { mode: 'codegen' });
+    const payloadConfig = await config._internal.payloadConfig;
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    const result = await generateImportMap(payloadConfig);
+
+    expect(result).toEqual({ changed: true, outputPath: join(dir, 'importMap.js') });
+    await expect(readFile(join(dir, 'importMap.js'), 'utf-8')).resolves.toContain('export const importMap');
   });
 
   it('skips the write when output matches the existing file, and force overrides', async () => {

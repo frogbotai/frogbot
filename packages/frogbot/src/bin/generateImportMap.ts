@@ -5,7 +5,7 @@ export async function generateImportMap(): Promise<void> {
   const cwd = process.cwd();
 
   try {
-    const frogbotConfig = await loadConfig(cwd);
+    const frogbotConfig = await loadConfig({ cwd, mode: 'codegen' });
     const payloadConfig = await frogbotConfig._internal.payloadConfig;
     const result = await generate(payloadConfig);
 

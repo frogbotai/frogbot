@@ -590,6 +590,38 @@ describe('frogbot sanitize', () => {
       ).toThrow("[frogbot] Agent 'support' model 'openai/test' does not resolve to a configured provider.");
     });
 
+    it('rejects model mismatches at runtime', () => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai: { providers: { anthropic: true } },
+            agents: [agent],
+          }),
+        ),
+      ).toThrow(
+        "[frogbot] Agent 'support' model 'openai/test' does not resolve to a configured provider. Configured providers: anthropic. Update the agent model or configure its provider under `ai.providers`.",
+      );
+    });
+
+    it('warns with model mismatch details during codegen', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai: { providers: { anthropic: true } },
+            agents: [agent],
+          }),
+          { mode: 'codegen' },
+        ),
+      ).not.toThrow();
+      expect(warn).toHaveBeenCalledWith(
+        "[frogbot] Agent 'support' model 'openai/test' does not resolve to a configured provider. Configured providers: anthropic. Update the agent model or configure its provider under `ai.providers`.",
+      );
+
+      warn.mockRestore();
+    });
+
     it('reserves the agent collection slug even when no agents are configured', () => {
       expect(() =>
         sanitize(

@@ -9,6 +9,8 @@ import { pathToFileURL } from 'node:url';
 
 import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
 import type { InitOptions } from '../frogbot.js';
+import { runWithValidationMode } from './validationContext.js';
+import type { ValidationMode } from './validationContext.js';
 
 const CONFIG_FILENAMES = ['frogbot.config.ts', 'frogbot.config.mjs', 'frogbot.config.js'] as const;
 
@@ -46,7 +48,13 @@ function isSanitizedConfig(value: unknown): value is FrogbotSanitizedConfig {
   );
 }
 
-export async function loadConfig(cwd: string): Promise<InitOptions['config']> {
+export async function loadConfig({
+  cwd,
+  mode = 'runtime',
+}: {
+  cwd: string;
+  mode?: ValidationMode;
+}): Promise<InitOptions['config']> {
   const configPath = resolveEnvConfigPath(cwd) ?? findConfigFile(cwd);
   if (!configPath) {
     throw new Error(
@@ -56,9 +64,10 @@ export async function loadConfig(cwd: string): Promise<InitOptions['config']> {
 
   let mod: { default?: unknown };
   try {
-    mod = (await import(pathToFileURL(configPath).href)) as {
-      default?: unknown;
-    };
+    mod = await runWithValidationMode({
+      mode,
+      load: () => import(pathToFileURL(configPath).href) as Promise<{ default?: unknown }>,
+    });
   } catch (cause) {
     throw new Error(`[frogbot] failed to load ${configPath}`, { cause });
   }

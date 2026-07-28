@@ -198,6 +198,31 @@ describe('frogbot generate:types', () => {
       await expect(writeGeneratedTypes(config, dir)).resolves.toBeDefined();
     });
 
+    it('writes types when an agent model does not match the configured providers', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-types-model-mismatch-'));
+      const { sanitize } = await import('../config/sanitize.js');
+      const config = sanitize({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [{ slug: 'users', auth: true, fields: [] }],
+        ai: { providers: { anthropic: true } },
+        agents: [
+          {
+            slug: 'assistant',
+            model: 'openai/gpt-4o-mini',
+            instructions: 'Assist.',
+          },
+        ],
+      }, { mode: 'codegen' });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const output = await readFile(outputPath, 'utf-8');
+
+      expect(output).toContain('"assistant": unknown;');
+      expect(output).toContain('"anthropic/claude-sonnet-4-5"');
+      expect(output).not.toContain('"openai/gpt-4o"');
+    });
+
     it('generates an empty agent map from an explicit empty agents array without AI', async () => {
       dir = await mkdtemp(join(tmpdir(), 'frogbot-types-empty-agents-'));
       const { buildConfig } = await import('../config/build.js');

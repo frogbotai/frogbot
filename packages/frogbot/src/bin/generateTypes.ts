@@ -219,7 +219,7 @@ export async function generateTypes(): Promise<void> {
   const cwd = process.cwd();
 
   try {
-    const frogbotConfig = await loadConfig(cwd);
+    const frogbotConfig = await loadConfig({ cwd, mode: 'codegen' });
     const { outputPath, changed } = await writeGeneratedTypes(frogbotConfig, cwd);
 
     if (changed) {

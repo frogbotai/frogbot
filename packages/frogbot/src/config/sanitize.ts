@@ -43,6 +43,8 @@ import { seedFrogbotCache } from '../getFrogbot.js';
 import { getFrogbotInstance } from '../instanceRegistry.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
 import { resolveSourceDir } from './sourceDir.js';
+import { getValidationMode } from './validationContext.js';
+import type { ValidationMode } from './validationContext.js';
 
 const noopEmailAdapter: PayloadEmailAdapter<void> = ({ payload }) => ({
   name: 'frogbot-noop',
@@ -255,7 +257,7 @@ function sanitizeAI(ai: AIConfig): SanitizedAIConfig {
   };
 }
 
-function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined, pieces: SanitizedPiecesConfig): AgentConfig[] | undefined {
+function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined, pieces: SanitizedPiecesConfig, mode: ValidationMode): AgentConfig[] | undefined {
   if (!Array.isArray(agents)) {
     throw new Error('[frogbot] `agents` must be an array.');
   }
@@ -310,9 +312,9 @@ function sanitizeAgents(agents: AgentConfig[], ai: SanitizedAIConfig | undefined
     const separator = model.indexOf('/');
     const provider = separator > 0 ? model.slice(0, separator) : '';
     if (!provider || !providers.has(provider)) {
-      throw new Error(
-        `[frogbot] Agent '${agent.slug}' model '${agent.model}' does not resolve to a configured provider.`,
-      );
+      const message = `[frogbot] Agent '${agent.slug}' model '${agent.model}' does not resolve to a configured provider. Configured providers: ${[...providers].join(', ')}. Update the agent model or configure its provider under \`ai.providers\`.`;
+      if (mode === 'runtime') throw new Error(message);
+      console.warn(message);
     }
 
     if (agent.tools !== undefined) {
@@ -518,7 +520,10 @@ function buildPayloadConfig(config: FrogbotConfig, onInit: NonNullable<PayloadCo
   return out as unknown as PayloadConfig;
 }
 
-export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
+export function sanitize(
+  config: FrogbotConfig,
+  { mode = getValidationMode() }: { mode?: ValidationMode } = {},
+): FrogbotSanitizedConfig {
   if ((config as unknown as Record<string, unknown>).globals !== undefined) {
     throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections instead.');
   }
@@ -527,7 +532,7 @@ export function sanitize(config: FrogbotConfig): FrogbotSanitizedConfig {
   // Sanitize AI config if present.
   const sanitizedAI = config.ai ? sanitizeAI(config.ai) : undefined;
   const pieces = sanitizePieces(config.pieces);
-  const agents = config.agents !== undefined ? sanitizeAgents(config.agents, sanitizedAI, pieces) : undefined;
+  const agents = config.agents !== undefined ? sanitizeAgents(config.agents, sanitizedAI, pieces, mode) : undefined;
   const secretSource = builtInSecretSource(pieces.pieces);
   const credentialSources = [
     ...(secretSource.services.length ? [secretSource] : []),
