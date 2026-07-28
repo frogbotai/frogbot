@@ -7,10 +7,18 @@ if (existsSync('.env')) {
 }
 
 function bedrockFromEnv() {
-  const { AWS_BEARER_TOKEN_BEDROCK, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_SESSION_TOKEN } =
-    process.env;
+  const {
+    AWS_BEARER_TOKEN_BEDROCK,
+    AWS_ACCESS_KEY_ID,
+    AWS_SECRET_ACCESS_KEY,
+    AWS_REGION,
+    AWS_SESSION_TOKEN,
+  } = process.env;
   if (AWS_BEARER_TOKEN_BEDROCK) {
-    return { apiKey: AWS_BEARER_TOKEN_BEDROCK, region: AWS_REGION ?? 'us-east-1' };
+    return {
+      apiKey: AWS_BEARER_TOKEN_BEDROCK,
+      region: AWS_REGION ?? 'us-east-1',
+    };
   }
   if (AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY && AWS_REGION) {
     return {
@@ -39,7 +47,9 @@ const gateway = createGateway({
   hooks: {
     afterOperation: [
       ({ operation, model, usage, durationMs }) => {
-        const reasoning = usage?.reasoningTokens ? ` reasoningTokens=${usage.reasoningTokens}` : '';
+        const reasoning = usage?.reasoningTokens
+          ? ` reasoningTokens=${usage.reasoningTokens}`
+          : '';
         console.log(
           `[usage] ${operation} model=${model} totalTokens=${usage?.totalTokens ?? 0}${reasoning} durationMs=${Math.round(durationMs)}`,
         );

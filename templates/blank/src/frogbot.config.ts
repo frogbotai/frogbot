@@ -1,12 +1,9 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { buildConfig } from 'frogbot';
-import type { CollectionConfig, FrogbotConfig } from 'frogbot';
+import type { FrogbotConfig } from 'frogbot';
 
-const Users: CollectionConfig = {
-  slug: 'users',
-  auth: true,
-  fields: [{ name: 'name', type: 'text' }],
-};
+import { assistant } from './agents';
+import { Users } from './collections';
 
 const config: FrogbotConfig = {
   secret: process.env.FROGBOT_SECRET ?? 'dev-secret-change-me',
@@ -19,14 +16,7 @@ const config: FrogbotConfig = {
       openai: true,
     },
   },
-  agents: [
-    {
-      slug: 'assistant',
-      model: 'openai/gpt-4o-mini',
-      instructions: 'You are a concise and friendly assistant.',
-      access: () => true,
-    },
-  ],
+  agents: [assistant],
 };
 
 export default buildConfig(config);

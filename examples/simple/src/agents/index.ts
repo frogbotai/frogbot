@@ -1,0 +1,1 @@
+export { assistant } from './assistant';

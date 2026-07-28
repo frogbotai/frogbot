@@ -5,7 +5,12 @@ const authenticated = ({ req }: { req: FrogbotRequest }) => Boolean(req.user);
 export const Media: CollectionConfig = {
   slug: 'media',
   file: true,
-  access: { create: authenticated, delete: authenticated, read: authenticated, update: authenticated },
+  access: {
+    create: authenticated,
+    delete: authenticated,
+    read: authenticated,
+    update: authenticated,
+  },
   fields: [{ name: 'alt', type: 'text' }],
   upload: { staticDir: 'media' },
 };

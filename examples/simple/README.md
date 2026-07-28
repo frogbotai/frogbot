@@ -65,12 +65,12 @@ Your config lives in [`src/frogbot.config.ts`](./src/frogbot.config.ts):
 
 The `src/app/(frogbot)/` directory is the Next.js scaffold that serves everything:
 
-| Path | Description |
-| --- | --- |
-| `src/app/(frogbot)/admin/` | The admin panel (catch-all route + import map) |
-| `src/app/(frogbot)/api/[...slug]/` | The REST API, including agent endpoints |
-| `src/app/(frogbot)/api/ai/[...slug]/` | The OpenAI-compatible AI gateway |
-| `src/app/(app)/` | Your app — replace the placeholder home page |
+| Path                                  | Description                                    |
+| ------------------------------------- | ---------------------------------------------- |
+| `src/app/(frogbot)/admin/`            | The admin panel (catch-all route + import map) |
+| `src/app/(frogbot)/api/[...slug]/`    | The REST API, including agent endpoints        |
+| `src/app/(frogbot)/api/ai/[...slug]/` | The OpenAI-compatible AI gateway               |
+| `src/app/(app)/`                      | Your app — replace the placeholder home page   |
 
 The `access: () => true` on the agent is dev-only — it makes `curl` work
 without authentication. Restrict it (e.g. `({ req }) => !!req.user`) before
@@ -78,14 +78,14 @@ deploying anywhere real.
 
 ## Scripts
 
-| Command | Description |
-| --- | --- |
-| `pnpm dev` | Start the Next.js dev server (`frogbot dev`) |
-| `pnpm build` | Production build (`next build`) |
-| `pnpm start` | Serve the production build (`frogbot start`) |
-| `pnpm generate:types` | Regenerate `src/frogbot-types.ts` from this config |
-| `pnpm generate:importmap` | Regenerate `src/app/(frogbot)/admin/importMap.js` |
-| `pnpm typecheck` | Type-check the project |
+| Command                   | Description                                        |
+| ------------------------- | -------------------------------------------------- |
+| `pnpm dev`                | Start the Next.js dev server (`frogbot dev`)       |
+| `pnpm build`              | Production build (`next build`)                    |
+| `pnpm start`              | Serve the production build (`frogbot start`)       |
+| `pnpm generate:types`     | Regenerate `src/frogbot-types.ts` from this config |
+| `pnpm generate:importmap` | Regenerate `src/app/(frogbot)/admin/importMap.js`  |
+| `pnpm typecheck`          | Type-check the project                             |
 
 ## Next steps
 

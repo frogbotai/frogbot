@@ -1,5 +1,12 @@
 import config from '@frogbot-config';
-import { REST_DELETE, REST_GET, REST_OPTIONS, REST_PATCH, REST_POST, REST_PUT } from '@frogbotai/next/routes';
+import {
+  REST_DELETE,
+  REST_GET,
+  REST_OPTIONS,
+  REST_PATCH,
+  REST_POST,
+  REST_PUT,
+} from '@frogbotai/next/routes';
 
 export const GET = REST_GET(config);
 export const POST = REST_POST(config);

@@ -48,14 +48,14 @@ The first visit to the admin panel creates the first user. No sample data is see
 
 Create a `releases` record with:
 
-| Field | Example |
-| --- | --- |
-| Name | Summer launch |
-| Version | 1.4.0 |
-| Status | QA |
-| Target date | A future date |
-| Owner | Your user |
-| Summary | Ship the release-readiness workflow to the pilot team. |
+| Field               | Example                                                                    |
+| ------------------- | -------------------------------------------------------------------------- |
+| Name                | Summer launch                                                              |
+| Version             | 1.4.0                                                                      |
+| Status              | QA                                                                         |
+| Target date         | A future date                                                              |
+| Owner               | Your user                                                                  |
+| Summary             | Ship the release-readiness workflow to the pilot team.                     |
 | Acceptance criteria | Critical Linear issues closed; QA sheet complete; launch review scheduled. |
 
 Upload a test plan or PDF in `media` and attach it under `artifacts`. Piece-produced files use the same core files collection.
@@ -181,14 +181,14 @@ Threads are owner-scoped. SSE responses expose the persisted thread ID in the `X
 
 ## Scripts
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm dev` | Start local development |
-| `pnpm build` | Build the Next.js application |
-| `pnpm start` | Serve the production build |
-| `pnpm generate:types` | Regenerate `src/frogbot-types.ts` |
+| Command                   | Purpose                                 |
+| ------------------------- | --------------------------------------- |
+| `pnpm dev`                | Start local development                 |
+| `pnpm build`              | Build the Next.js application           |
+| `pnpm start`              | Serve the production build              |
+| `pnpm generate:types`     | Regenerate `src/frogbot-types.ts`       |
 | `pnpm generate:importmap` | Regenerate the tracked admin import map |
-| `pnpm typecheck` | Type-check the example |
+| `pnpm typecheck`          | Type-check the example                  |
 
 ## Security and production
 

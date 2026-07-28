@@ -12,23 +12,15 @@ const config: FrogbotConfig = {
   secret: process.env.FROGBOT_SECRET ?? 'dev-secret-change-me',
   db: sqliteAdapter({
     client: {
-      url: process.env.DATABASE_URL ?? 'file:./frogbot.db'
-    }
+      url: process.env.DATABASE_URL ?? 'file:./frogbot.db',
+    },
   }),
-  collections: [
-    Users,
-    Media,
-    Releases,
-    Connections
-  ],
+  collections: [Users, Media, Releases, Connections],
   pieces,
   ai: {
-    providers: { openai: true }
+    providers: { openai: true },
   },
-  agents: [
-    qaAnalyst,
-    releaseManager
-  ],
+  agents: [qaAnalyst, releaseManager],
   plugins: [
     apiKeysPlugin({ collection: { admin: { group: 'Security' } } }),
     oauthPlugin(),

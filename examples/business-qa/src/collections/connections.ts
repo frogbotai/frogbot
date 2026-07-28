@@ -5,7 +5,11 @@ export const Connections: CollectionConfig = {
   connections: true,
   admin: { group: 'Integrations' },
   fields: [
-    { name: 'environment', type: 'select', options: ['development', 'staging', 'production'] },
+    {
+      name: 'environment',
+      type: 'select',
+      options: ['development', 'staging', 'production'],
+    },
     { name: 'notes', type: 'textarea' },
   ],
 };

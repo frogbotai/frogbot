@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
-import { Chat, ChatProvider, cookieFetch } from '@frogbotai/ui/chat'
-import { ThemeProvider, ThemeScript } from '@frogbotai/ui/theme'
+import { Chat, ChatProvider, cookieFetch } from '@frogbotai/ui/chat';
+import { ThemeProvider, ThemeScript } from '@frogbotai/ui/theme';
 
-const adapter = { fetch: cookieFetch() }
+const adapter = { fetch: cookieFetch() };
 
 export function ChatHarness() {
   return (
@@ -17,5 +17,5 @@ export function ChatHarness() {
         </ChatProvider>
       </ThemeProvider>
     </>
-  )
+  );
 }

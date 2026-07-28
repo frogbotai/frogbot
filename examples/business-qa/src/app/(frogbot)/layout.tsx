@@ -13,5 +13,13 @@ const serverFunction: ServerFunctionClient = async function (args) {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <RootLayout config={config} importMap={importMap} serverFunction={serverFunction}>{children}</RootLayout>;
+  return (
+    <RootLayout
+      config={config}
+      importMap={importMap}
+      serverFunction={serverFunction}
+    >
+      {children}
+    </RootLayout>
+  );
 }

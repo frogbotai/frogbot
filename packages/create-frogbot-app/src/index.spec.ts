@@ -24,20 +24,30 @@ afterEach(() => {
 });
 
 describe('scaffold', () => {
-  it('creates the packed blank template with the project identity and src layout', () => {
+  it('creates the packed blank template with formatting and the canonical src layout', () => {
     const options = createDest('frog.test-app');
 
     scaffold({ ...options, templateDir });
 
     const pkg = JSON.parse(fs.readFileSync(path.join(options.dest, 'package.json'), 'utf8')) as {
+      devDependencies?: Record<string, string>;
       name: string;
       private?: boolean;
+      scripts?: Record<string, string>;
     };
     expect(pkg).toMatchObject({ name: 'frog.test-app' });
     expect(pkg.private).toBeUndefined();
+    expect(pkg.scripts).toMatchObject({
+      format: 'prettier --write .',
+      'format:check': 'prettier --check .',
+    });
+    expect(pkg.devDependencies?.prettier).toBe('^3.2.5');
     expect(fs.existsSync(path.join(options.dest, '.gitignore'))).toBe(true);
+    expect(fs.existsSync(path.join(options.dest, '.prettierrc.json'))).toBe(true);
     expect(fs.existsSync(path.join(options.dest, 'gitignore'))).toBe(false);
+    expect(fs.existsSync(path.join(options.dest, 'src', 'agents', 'index.ts'))).toBe(true);
     expect(fs.existsSync(path.join(options.dest, 'src', 'app'))).toBe(true);
+    expect(fs.existsSync(path.join(options.dest, 'src', 'collections', 'index.ts'))).toBe(true);
     expect(fs.existsSync(path.join(options.dest, 'src', 'frogbot.config.ts'))).toBe(true);
     expect(fs.existsSync(path.join(options.dest, 'app'))).toBe(false);
     const readme = fs.readFileSync(path.join(options.dest, 'README.md'), 'utf8');

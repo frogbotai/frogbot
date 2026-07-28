@@ -32,14 +32,14 @@ ollama pull llama3.2
 
 Fill in whichever provider slots you want in `.env`. AWS Bedrock supports two auth modes — use one:
 
-| Variable | Purpose |
-| --- | --- |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` | SigV4 credentials (add `AWS_SESSION_TOKEN` for temporary/SSO creds) |
-| `AWS_BEARER_TOKEN_BEDROCK` | Bedrock API key (bearer) mode — simplest path, region defaults to `us-east-1` |
-| `ANTHROPIC_API_KEY` | Direct Anthropic provider — enables `anthropic/...` routes |
-| `OPENAI_API_KEY` | Direct OpenAI provider — enables `openai/...` routes |
-| `FIREWORKS_API_KEY` | Fireworks provider — enables `fireworks/...` routes |
-| `OLLAMA_BASE_URL` | Ollama's OpenAI-compatible endpoint (defaults to `http://localhost:11434/v1`) |
+| Variable                                                     | Purpose                                                                       |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` | SigV4 credentials (add `AWS_SESSION_TOKEN` for temporary/SSO creds)           |
+| `AWS_BEARER_TOKEN_BEDROCK`                                   | Bedrock API key (bearer) mode — simplest path, region defaults to `us-east-1` |
+| `ANTHROPIC_API_KEY`                                          | Direct Anthropic provider — enables `anthropic/...` routes                    |
+| `OPENAI_API_KEY`                                             | Direct OpenAI provider — enables `openai/...` routes                          |
+| `FIREWORKS_API_KEY`                                          | Fireworks provider — enables `fireworks/...` routes                           |
+| `OLLAMA_BASE_URL`                                            | Ollama's OpenAI-compatible endpoint (defaults to `http://localhost:11434/v1`) |
 
 Every provider slot is optional and independent: leave a slot empty and that provider is simply skipped — the startup log prints exactly which providers registered. Reasoning (`reasoning_effort`) is translated to native extended-thinking for Claude on both `amazon-bedrock/...` and `anthropic/...`.
 
@@ -115,4 +115,3 @@ Anything that speaks the OpenAI chat completions protocol (vLLM, TGI, SGLang, ll
 `src/server.ts` is the deployment unit — it runs anywhere Node ≥ 20 runs (container, VM, `node dist/server.js` after a `tsc` build). To use IAM roles instead of static keys, pass the AWS credential chain to the Bedrock provider: `{ region, credentialProvider: fromNodeProviderChain() }` (from `@aws-sdk/credential-providers`).
 
 Because the gateway is just a fetch handler, the same `createGateway()` call also mounts inside an existing Hono/Next.js/Bun service (`app.mount('/v1', gateway.handler)`) — no separate process required. And for zero-code, env-only setups there's a standalone CLI: `npx @frogbotai/gateway`.
-

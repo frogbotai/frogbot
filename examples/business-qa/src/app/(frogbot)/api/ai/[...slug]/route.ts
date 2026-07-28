@@ -6,4 +6,11 @@ const handler = async (request: Request): Promise<Response> => {
   return createGatewayHandler(frogbot)(request);
 };
 
-export { handler as DELETE, handler as GET, handler as OPTIONS, handler as PATCH, handler as POST, handler as PUT };
+export {
+  handler as DELETE,
+  handler as GET,
+  handler as OPTIONS,
+  handler as PATCH,
+  handler as POST,
+  handler as PUT,
+};
