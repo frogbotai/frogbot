@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-oauth",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "OAuth connections for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

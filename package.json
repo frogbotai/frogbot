@@ -1,13 +1,13 @@
 {
   "name": "frogbot-monorepo",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "module",
   "scripts": {
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
-    "test": "vitest run --project unit --project ui --project int --project e2e --project gateway-unit --project gateway-integration --project gateway-golden",
+    "test": "vitest run",
     "test:unit": "vitest run --project unit",
     "test:ui": "vitest run --project ui",
     "test:ui:acceptance": "pnpm check:ui-architecture && pnpm test:ui && pnpm test:ui:package && pnpm test:ui:next",
