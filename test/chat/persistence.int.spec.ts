@@ -67,6 +67,34 @@ describe('chat persistence: thread context', () => {
     expect(result.uiMessages[0].parts).toEqual([{ type: 'text', text: 'Hello there' }]);
   });
 
+  it('creates and continues a thread with null ownership', async () => {
+    const createReq = await booted.frogbot.createRequest({});
+    const first = await resolveThreadContext({
+      req: createReq,
+      agentSlug,
+      incoming: [userMessage('Anonymous first', 'anonymous-1')],
+      tools: {},
+    });
+    const continueReq = await booted.frogbot.createRequest({});
+    const second = await resolveThreadContext({
+      req: continueReq,
+      agentSlug,
+      threadId: first.threadId,
+      incoming: [userMessage('Anonymous second', 'anonymous-2')],
+      tools: {},
+    });
+
+    const thread = (await booted.frogbot.findByID({
+      collection: threadsSlug,
+      id: first.threadId!,
+      depth: 0,
+      overrideAccess: true,
+    })) as { user: null };
+    expect(thread.user).toBeNull();
+    expect(second.threadId).toBe(first.threadId);
+    expect(second.uiMessages).toHaveLength(2);
+  });
+
   it('persists only the new message on follow-up turns and returns ordered history', async () => {
     const firstReq = await makeOwnerReq();
     const first = await resolveThreadContext({

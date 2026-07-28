@@ -163,10 +163,7 @@ export function createAgentInstance(agentConfig: AgentConfig, deps: AgentInstanc
 
   const generate = async (opts: AgentGenerateOpts): Promise<AgentGenerateResult> => {
     const { threadId, ...runOpts } = opts;
-    if (threadId === undefined) return aiAgent.generate(await buildCall(runOpts));
-
     const req = await frogbot.createRequest(runOpts.req);
-    if (!req.user) throw Object.assign(new Error('Authentication required to use threads'), { status: 401 });
     if (runOpts.overrideAccess === false && !(await access({ req }))) {
       throw Object.assign(new Error(`Access denied for agent '${agentConfig.slug}'`), { status: 403 });
     }
@@ -192,7 +189,9 @@ export function createAgentInstance(agentConfig: AgentConfig, deps: AgentInstanc
       tools,
       model: resolveModel(agentConfig.model, config),
     });
-    await persistAssistantMessage({ req, threadId, message, isContinuation: false });
+    if (context.threadId !== undefined) {
+      await persistAssistantMessage({ req, threadId: context.threadId, message, isContinuation: false });
+    }
     return result;
   };
 

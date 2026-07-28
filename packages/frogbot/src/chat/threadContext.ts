@@ -28,7 +28,9 @@ export async function resolveThreadContext({
   tools,
 }: ResolveThreadContextProps): Promise<ThreadContext> {
   const chat = req.frogbot.config.chat;
-  if (!chat.enabled || !req.user) return { uiMessages: incoming };
+  if (!chat.enabled) return { uiMessages: incoming };
+
+  const overrideAccess = !req.user;
 
   const newMessages = threadId !== undefined ? incoming.slice(-1) : incoming;
   if (newMessages.length === 0) {
@@ -55,7 +57,7 @@ export async function resolveThreadContext({
           metadata: message.metadata,
         },
         req,
-        overrideAccess: false,
+        overrideAccess,
       });
     }
 
@@ -72,7 +74,7 @@ export async function resolveThreadContext({
     pagination: false,
     depth: 0,
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 
   const uiMessages = await validateUIMessages({
@@ -91,12 +93,13 @@ type ResolveThreadIdProps = {
 };
 
 async function resolveThreadId({ req, agentSlug, threadId, threadsSlug }: ResolveThreadIdProps): Promise<DocID> {
+  const overrideAccess = !req.user;
   if (threadId !== undefined) {
     await req.frogbot.findByID({
       collection: threadsSlug,
       id: threadId,
       req,
-      overrideAccess: false,
+      overrideAccess,
     });
     return threadId;
   }
@@ -104,11 +107,11 @@ async function resolveThreadId({ req, agentSlug, threadId, threadsSlug }: Resolv
   const thread = await req.frogbot.create({
     collection: threadsSlug,
     data: {
-      user: req.user?.id,
+      user: req.user?.id ?? null,
       agent: agentSlug,
     },
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
   return thread.id;
 }

@@ -69,10 +69,6 @@ export function buildAgentEndpoints() {
           );
         }
 
-        if (requestedThreadId !== undefined && !req.user) {
-          return Response.json({ error: 'Authentication required to use threads' }, { status: 401 });
-        }
-
         try {
           const { threadId, uiMessages } = await resolveThreadContext({
             req,

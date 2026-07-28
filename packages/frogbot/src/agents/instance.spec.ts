@@ -177,7 +177,7 @@ describe('agent hook lifecycle', () => {
     hooks.beforeOperation.push(beforeOperation);
     hooks.afterOperation.push(afterOperation);
     const config = makeConfig(hooks);
-    const req = { user: { id: 'user-1' } } as FrogbotRequest;
+    const req = { user: { id: 'user-1' }, payload: { db: {} } } as unknown as FrogbotRequest;
     const tool = {
       slug: 'lookup',
       description: 'Look up data',
@@ -271,7 +271,7 @@ describe('agent hook lifecycle', () => {
     );
   });
 
-  it('persists local generate calls only when a threadId is supplied', async () => {
+  it('persists authenticated local create and continue calls', async () => {
     const config = makeConfig(emptyHooks());
     const req = { user: { id: 'user-1' }, payload: { db: {} } } as unknown as FrogbotRequest;
     const deps = makeDeps(config, req) as unknown as {
@@ -286,9 +286,12 @@ describe('agent hook lifecycle', () => {
       deps as never,
     );
 
-    await agent.generate({ prompt: 'Stateless', req });
-    expect(deps.frogbot.create).not.toHaveBeenCalled();
+    await agent.generate({ prompt: 'Create', req });
+    expect(deps.frogbot.create).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'threads', data: { user: 'user-1', agent: 'support' } }),
+    );
 
+    deps.frogbot.create.mockClear();
     await agent.generate({ prompt: 'Hello', threadId: 'thread-1', req, overrideAccess: false });
 
     expect(deps.frogbot.findByID).toHaveBeenCalledWith(
@@ -311,6 +314,32 @@ describe('agent hook lifecycle', () => {
     );
     expect(deps.frogbot.update).toHaveBeenCalledWith(
       expect.objectContaining({ collection: 'threads', id: 'thread-1' }),
+    );
+  });
+
+  it('persists trusted local create and continue calls without a user', async () => {
+    const config = makeConfig(emptyHooks());
+    const req = { user: null, payload: { db: {} } } as unknown as FrogbotRequest;
+    const deps = makeDeps(config, req) as unknown as {
+      frogbot: {
+        create: ReturnType<typeof vi.fn>;
+        findByID: ReturnType<typeof vi.fn>;
+      };
+    };
+    deps.frogbot.create.mockResolvedValue({ id: 'thread-1' });
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help', access: () => false },
+      deps as never,
+    );
+
+    await agent.generate({ prompt: 'Create', req });
+    await agent.generate({ prompt: 'Continue', threadId: 'thread-1', req });
+
+    expect(deps.frogbot.create).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'threads', data: { user: null, agent: 'support' }, overrideAccess: true }),
+    );
+    expect(deps.frogbot.findByID).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'threads', id: 'thread-1', overrideAccess: true }),
     );
   });
 });

@@ -36,14 +36,18 @@ function makeReq({
 }
 
 describe('resolveThreadContext', () => {
-  it('returns incoming messages untouched for anonymous callers', async () => {
-    const { req, create, find, findByID } = makeReq({ user: null });
+  it('persists incoming messages for callers without a user', async () => {
+    const { req, create } = makeReq({ user: null });
     const result = await resolveThreadContext({ req, agentSlug: 'support', incoming, tools: {} });
 
-    expect(result).toEqual({ uiMessages: incoming });
-    expect(create).not.toHaveBeenCalled();
-    expect(find).not.toHaveBeenCalled();
-    expect(findByID).not.toHaveBeenCalled();
+    expect(result.threadId).toBe('thread-1');
+    expect(create).toHaveBeenNthCalledWith(1, {
+      collection: 'threads',
+      data: { user: null, agent: 'support' },
+      req,
+      overrideAccess: true,
+    });
+    expect(create).toHaveBeenCalledTimes(3);
   });
 
   it('returns incoming messages untouched when chat is disabled', async () => {

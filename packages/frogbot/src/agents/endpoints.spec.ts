@@ -307,18 +307,16 @@ describe('agent endpoints', () => {
     expect(response.status).toBe(404);
   });
 
-  it('runs stateless for anonymous callers without touching threads', async () => {
+  it('persists anonymous calls and returns a threadId', async () => {
     const agent = makeAgent();
     agent.config.access = () => true;
-    const create = vi.fn();
-    const find = vi.fn();
-    const findByID = vi.fn();
-    const response = await postHandler()(makeRequest({ agent, create, find, findByID, user: null }));
+    const create = vi.fn(() => Promise.resolve({ id: 'thread-9' }));
+    const response = await postHandler()(makeRequest({ agent, create, user: null }));
 
-    expect(create).not.toHaveBeenCalled();
-    expect(find).not.toHaveBeenCalled();
-    expect(findByID).not.toHaveBeenCalled();
-    expect(await response.json()).not.toHaveProperty('threadId');
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'threads', data: { user: null, agent: 'support' }, overrideAccess: true }),
+    );
+    expect(await response.json()).toMatchObject({ threadId: 'thread-9' });
   });
 
   it('persists the user message and runs the agent on server history', async () => {
@@ -359,14 +357,30 @@ describe('agent endpoints', () => {
     );
   });
 
-  it('rejects anonymous requests that supply a threadId', async () => {
+  it('continues anonymous threads after agent access succeeds', async () => {
     const agent = makeAgent();
     agent.config.access = () => true;
+    const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7' }));
     const response = await postHandler()(
-      makeRequest({ agent, user: null, body: { prompt: 'Hello', threadId: 'thread-7' } }),
+      makeRequest({ agent, findByID, user: null, body: { prompt: 'Hello', threadId: 'thread-7' } }),
     );
 
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(200);
+    expect(findByID).toHaveBeenCalledWith(expect.objectContaining({ id: 'thread-7', overrideAccess: true }));
+    expect(await response.json()).toMatchObject({ threadId: 'thread-7' });
+  });
+
+  it('checks the target agent access before continuing a thread', async () => {
+    const agent = makeAgent();
+    agent.config.access = () => false;
+    const findByID = vi.fn();
+    const response = await postHandler()(
+      makeRequest({ agent, findByID, user: null, body: { prompt: 'Hello', threadId: 'thread-7' } }),
+    );
+
+    expect(response.status).toBe(403);
+    expect(findByID).not.toHaveBeenCalled();
+    expect(agent.generate).not.toHaveBeenCalled();
   });
 
 });

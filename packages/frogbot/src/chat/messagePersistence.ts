@@ -44,7 +44,9 @@ export async function persistAssistantMessage({
   isContinuation,
 }: PersistAssistantMessageProps): Promise<void> {
   const chat = req.frogbot.config.chat;
-  if (!chat.enabled || !req.user) return;
+  if (!chat.enabled) return;
+
+  const overrideAccess = !req.user;
 
   const { metadata, usage } = splitMetadata(message.metadata);
   const data = {
@@ -62,7 +64,7 @@ export async function persistAssistantMessage({
       data,
       context,
       req,
-      overrideAccess: false,
+      overrideAccess,
     });
   } else {
     await req.frogbot.create({
@@ -70,7 +72,7 @@ export async function persistAssistantMessage({
       data: { id: message.id, ...data },
       context,
       req,
-      overrideAccess: false,
+      overrideAccess,
     });
   }
 
@@ -79,7 +81,7 @@ export async function persistAssistantMessage({
     id: threadId,
     data: { lastMessageAt: new Date().toISOString() },
     req,
-    overrideAccess: false,
+    overrideAccess,
   });
 }
 
