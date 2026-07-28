@@ -308,6 +308,6 @@ declare module 'frogbot' {
     agents: {
       "assistant": unknown;
     };
-    models: "openai/dall-e-3" | "openai/gpt-4-turbo" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-4.1-nano" | "openai/gpt-4o" | "openai/gpt-4o-mini" | "openai/gpt-image-1" | "openai/o1" | "openai/o1-mini" | "openai/o3" | "openai/o3-mini" | "openai/o4-mini" | "openai/text-embedding-3-large" | "openai/text-embedding-3-small" | "openai/tts-1" | "openai/tts-1-hd" | "openai/whisper-1";
+    models: "openai/chatgpt-image-latest" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-4o" | "openai/gpt-4o-2024-08-06" | "openai/gpt-4o-2024-11-20" | "openai/gpt-4o-mini" | "openai/gpt-5" | "openai/gpt-5-mini" | "openai/gpt-5-nano" | "openai/gpt-5-pro" | "openai/gpt-5.1" | "openai/gpt-5.2" | "openai/gpt-5.2-chat-latest" | "openai/gpt-5.2-pro" | "openai/gpt-5.3-chat-latest" | "openai/gpt-5.3-codex" | "openai/gpt-5.3-codex-spark" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.4-pro" | "openai/gpt-5.5" | "openai/gpt-5.5-pro" | "openai/gpt-5.6" | "openai/gpt-5.6-luna" | "openai/gpt-5.6-sol" | "openai/gpt-5.6-terra" | "openai/gpt-image-1-mini" | "openai/gpt-image-1.5" | "openai/gpt-image-2" | "openai/gpt-realtime-2.1" | "openai/o3" | "openai/o3-pro" | "openai/text-embedding-3-large" | "openai/text-embedding-3-small" | "openai/text-embedding-ada-002";
   }
 }

@@ -1,0 +1,35 @@
+[
+  {
+    "id": "voyage/voyage-3",
+    "provider": "voyage",
+    "mode": "embedding",
+    "name": "Voyage 3",
+    "modalities": { "input": ["text"], "output": ["embedding"] },
+    "operations": ["embeddings"],
+    "capabilities": {},
+    "context": { "input": 32000, "output": 1024 },
+    "providers": ["voyage"]
+  },
+  {
+    "id": "voyage/voyage-3-lite",
+    "provider": "voyage",
+    "mode": "embedding",
+    "name": "Voyage 3 Lite",
+    "modalities": { "input": ["text"], "output": ["embedding"] },
+    "operations": ["embeddings"],
+    "capabilities": {},
+    "context": { "input": 32000, "output": 1024 },
+    "providers": ["voyage"]
+  },
+  {
+    "id": "voyage/voyage-code-3",
+    "provider": "voyage",
+    "mode": "embedding",
+    "name": "Voyage Code 3",
+    "modalities": { "input": ["text"], "output": ["embedding"] },
+    "operations": ["embeddings"],
+    "capabilities": {},
+    "context": { "input": 32000, "output": 1024 },
+    "providers": ["voyage"]
+  }
+]

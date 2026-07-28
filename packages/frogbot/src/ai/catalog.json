@@ -1,56 +1,1742 @@
 [
-  { "id": "openai/gpt-4o", "provider": "openai", "mode": "chat" },
-  { "id": "openai/gpt-4o-mini", "provider": "openai", "mode": "chat" },
-  { "id": "openai/gpt-4-turbo", "provider": "openai", "mode": "chat" },
-  { "id": "openai/gpt-4.1", "provider": "openai", "mode": "chat" },
-  { "id": "openai/gpt-4.1-mini", "provider": "openai", "mode": "chat" },
-  { "id": "openai/gpt-4.1-nano", "provider": "openai", "mode": "chat" },
-  { "id": "openai/o1", "provider": "openai", "mode": "chat" },
-  { "id": "openai/o1-mini", "provider": "openai", "mode": "chat" },
-  { "id": "openai/o3", "provider": "openai", "mode": "chat" },
-  { "id": "openai/o3-mini", "provider": "openai", "mode": "chat" },
-  { "id": "openai/o4-mini", "provider": "openai", "mode": "chat" },
-  { "id": "openai/text-embedding-3-small", "provider": "openai", "mode": "embedding" },
-  { "id": "openai/text-embedding-3-large", "provider": "openai", "mode": "embedding" },
-  { "id": "openai/dall-e-3", "provider": "openai", "mode": "image_generation" },
-  { "id": "openai/gpt-image-1", "provider": "openai", "mode": "image_generation" },
-  { "id": "openai/tts-1", "provider": "openai", "mode": "audio_speech" },
-  { "id": "openai/tts-1-hd", "provider": "openai", "mode": "audio_speech" },
-  { "id": "openai/whisper-1", "provider": "openai", "mode": "audio_transcription" },
-  { "id": "anthropic/claude-sonnet-4-5", "provider": "anthropic", "mode": "chat" },
-  { "id": "anthropic/claude-haiku-4-5", "provider": "anthropic", "mode": "chat" },
-  { "id": "anthropic/claude-opus-4", "provider": "anthropic", "mode": "chat" },
-  { "id": "anthropic/claude-3-5-sonnet-20241022", "provider": "anthropic", "mode": "chat" },
-  { "id": "anthropic/claude-3-5-haiku-20241022", "provider": "anthropic", "mode": "chat" },
-  { "id": "google/gemini-2.5-pro", "provider": "google", "mode": "chat" },
-  { "id": "google/gemini-2.5-flash", "provider": "google", "mode": "chat" },
-  { "id": "google/gemini-2.0-flash", "provider": "google", "mode": "chat" },
-  { "id": "google/text-embedding-004", "provider": "google", "mode": "embedding" },
-  { "id": "google/imagen-3.0-generate-002", "provider": "google", "mode": "image_generation" },
-  { "id": "groq/llama-3.3-70b-versatile", "provider": "groq", "mode": "chat" },
-  { "id": "groq/llama-3.1-8b-instant", "provider": "groq", "mode": "chat" },
-  { "id": "groq/whisper-large-v3", "provider": "groq", "mode": "audio_transcription" },
-  { "id": "mistral/mistral-large-latest", "provider": "mistral", "mode": "chat" },
-  { "id": "mistral/mistral-small-latest", "provider": "mistral", "mode": "chat" },
-  { "id": "mistral/codestral-latest", "provider": "mistral", "mode": "chat" },
-  { "id": "mistral/mistral-embed", "provider": "mistral", "mode": "embedding" },
-  { "id": "cohere/command-r-plus", "provider": "cohere", "mode": "chat" },
-  { "id": "cohere/command-r", "provider": "cohere", "mode": "chat" },
-  { "id": "cohere/embed-english-v3.0", "provider": "cohere", "mode": "embedding" },
-  { "id": "cohere/embed-multilingual-v3.0", "provider": "cohere", "mode": "embedding" },
-  { "id": "cohere/rerank-english-v3.0", "provider": "cohere", "mode": "rerank" },
-  { "id": "cohere/rerank-multilingual-v3.0", "provider": "cohere", "mode": "rerank" },
-  { "id": "togetherai/meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo", "provider": "togetherai", "mode": "chat" },
-  { "id": "togetherai/meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo", "provider": "togetherai", "mode": "chat" },
-  { "id": "xai/grok-3", "provider": "xai", "mode": "chat" },
-  { "id": "xai/grok-3-mini", "provider": "xai", "mode": "chat" },
-  { "id": "perplexity/sonar-pro", "provider": "perplexity", "mode": "chat" },
-  { "id": "perplexity/sonar", "provider": "perplexity", "mode": "chat" },
-  { "id": "voyage/voyage-3", "provider": "voyage", "mode": "embedding" },
-  { "id": "voyage/voyage-3-lite", "provider": "voyage", "mode": "embedding" },
-  { "id": "voyage/voyage-code-3", "provider": "voyage", "mode": "embedding" },
-  { "id": "elevenlabs/eleven_multilingual_v2", "provider": "elevenlabs", "mode": "audio_speech" },
-  { "id": "elevenlabs/eleven_v3", "provider": "elevenlabs", "mode": "audio_speech" },
-  { "id": "deepgram/nova-2", "provider": "deepgram", "mode": "audio_transcription" },
-  { "id": "deepgram/aura", "provider": "deepgram", "mode": "audio_speech" }
+  {
+    "id": "amazon-bedrock/amazon.nova-2-lite-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/amazon.nova-lite-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/amazon.nova-micro-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/amazon.nova-pro-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/anthropic.claude-fable-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/anthropic.claude-opus-4-5-20251101-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/anthropic.claude-opus-4-6-v1",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/anthropic.claude-opus-4-7",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/anthropic.claude-opus-4-8",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/anthropic.claude-opus-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/anthropic.claude-sonnet-4-6",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/anthropic.claude-sonnet-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/au.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/au.anthropic.claude-opus-4-6-v1",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/au.anthropic.claude-opus-4-8",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/au.anthropic.claude-opus-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/au.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/au.anthropic.claude-sonnet-4-6",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/au.anthropic.claude-sonnet-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/deepseek.r1-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/deepseek.v3-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/deepseek.v3.2",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/eu.anthropic.claude-fable-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/eu.anthropic.claude-opus-4-5-20251101-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/eu.anthropic.claude-opus-4-6-v1",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/eu.anthropic.claude-opus-4-7",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/eu.anthropic.claude-opus-4-8",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/eu.anthropic.claude-opus-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/eu.anthropic.claude-sonnet-4-6",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/eu.anthropic.claude-sonnet-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/global.anthropic.claude-fable-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/global.anthropic.claude-opus-4-5-20251101-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/global.anthropic.claude-opus-4-6-v1",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/global.anthropic.claude-opus-4-7",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/global.anthropic.claude-opus-4-8",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/global.anthropic.claude-opus-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/global.anthropic.claude-sonnet-4-6",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/global.anthropic.claude-sonnet-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/google.gemma-3-12b-it",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/google.gemma-3-27b-it",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/google.gemma-3-4b-it",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/jp.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/jp.anthropic.claude-opus-4-7",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/jp.anthropic.claude-opus-4-8",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/jp.anthropic.claude-opus-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/jp.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/jp.anthropic.claude-sonnet-4-6",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/jp.anthropic.claude-sonnet-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/meta.llama3-1-70b-instruct-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/meta.llama3-1-8b-instruct-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/meta.llama3-3-70b-instruct-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/meta.llama4-maverick-17b-instruct-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/meta.llama4-scout-17b-instruct-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/minimax.minimax-m2",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/minimax.minimax-m2.1",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/minimax.minimax-m2.5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/mistral.devstral-2-123b",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/mistral.magistral-small-2509",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/mistral.ministral-3-14b-instruct",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/mistral.ministral-3-3b-instruct",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/mistral.ministral-3-8b-instruct",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/mistral.mistral-large-3-675b-instruct",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/mistral.pixtral-large-2502-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/mistral.voxtral-mini-3b-2507",
+    "provider": "amazon-bedrock",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "amazon-bedrock/mistral.voxtral-small-24b-2507",
+    "provider": "amazon-bedrock",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "amazon-bedrock/moonshot.kimi-k2-thinking",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/moonshotai.kimi-k2.5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/nvidia.nemotron-nano-12b-v2",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/nvidia.nemotron-nano-3-30b",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/nvidia.nemotron-nano-9b-v2",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/nvidia.nemotron-super-3-120b",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/openai.gpt-5.4",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/openai.gpt-5.5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/openai.gpt-5.6-luna",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/openai.gpt-5.6-sol",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/openai.gpt-5.6-terra",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/openai.gpt-oss-120b",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/openai.gpt-oss-120b-1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/openai.gpt-oss-20b",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/openai.gpt-oss-20b-1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/openai.gpt-oss-safeguard-120b",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/openai.gpt-oss-safeguard-20b",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/qwen.qwen3-235b-a22b-2507-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/qwen.qwen3-32b-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/qwen.qwen3-coder-30b-a3b-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/qwen.qwen3-coder-480b-a35b-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/qwen.qwen3-coder-next",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/qwen.qwen3-next-80b-a3b",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/qwen.qwen3-vl-235b-a22b",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/us.anthropic.claude-fable-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/us.anthropic.claude-opus-4-5-20251101-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/us.anthropic.claude-opus-4-6-v1",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/us.anthropic.claude-opus-4-7",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/us.anthropic.claude-opus-4-8",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/us.anthropic.claude-opus-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/us.anthropic.claude-sonnet-4-6",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/us.anthropic.claude-sonnet-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/us.deepseek.r1-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/us.meta.llama4-maverick-17b-instruct-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/us.meta.llama4-scout-17b-instruct-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/writer.palmyra-x4-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/writer.palmyra-x5-v1:0",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/xai.grok-4.3",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/zai.glm-4.7",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/zai.glm-4.7-flash",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "amazon-bedrock/zai.glm-5",
+    "provider": "amazon-bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-fable-5",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-haiku-4-5",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-haiku-4-5-20251001",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-opus-4-5",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-opus-4-5-20251101",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-opus-4-6",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-opus-4-7",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-opus-4-8",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-opus-5",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-sonnet-4-5",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-sonnet-4-6",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-sonnet-5",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "cerebras/gemma-4-31b",
+    "provider": "cerebras",
+    "mode": "chat"
+  },
+  {
+    "id": "cerebras/gpt-oss-120b",
+    "provider": "cerebras",
+    "mode": "chat"
+  },
+  {
+    "id": "cerebras/zai-glm-4.7",
+    "provider": "cerebras",
+    "mode": "chat"
+  },
+  {
+    "id": "cohere/c4ai-aya-expanse-32b",
+    "provider": "cohere",
+    "mode": "chat"
+  },
+  {
+    "id": "cohere/c4ai-aya-expanse-8b",
+    "provider": "cohere",
+    "mode": "chat"
+  },
+  {
+    "id": "cohere/c4ai-aya-vision-32b",
+    "provider": "cohere",
+    "mode": "chat"
+  },
+  {
+    "id": "cohere/c4ai-aya-vision-8b",
+    "provider": "cohere",
+    "mode": "chat"
+  },
+  {
+    "id": "cohere/command-a-03-2025",
+    "provider": "cohere",
+    "mode": "chat"
+  },
+  {
+    "id": "cohere/command-a-plus-05-2026",
+    "provider": "cohere",
+    "mode": "chat"
+  },
+  {
+    "id": "cohere/command-a-reasoning-08-2025",
+    "provider": "cohere",
+    "mode": "chat"
+  },
+  {
+    "id": "cohere/command-a-translate-08-2025",
+    "provider": "cohere",
+    "mode": "chat"
+  },
+  {
+    "id": "cohere/command-a-vision-07-2025",
+    "provider": "cohere",
+    "mode": "chat"
+  },
+  {
+    "id": "cohere/command-r-08-2024",
+    "provider": "cohere",
+    "mode": "chat"
+  },
+  {
+    "id": "cohere/command-r-plus-08-2024",
+    "provider": "cohere",
+    "mode": "chat"
+  },
+  {
+    "id": "cohere/command-r7b-12-2024",
+    "provider": "cohere",
+    "mode": "chat"
+  },
+  {
+    "id": "cohere/command-r7b-arabic-02-2025",
+    "provider": "cohere",
+    "mode": "chat"
+  },
+  {
+    "id": "cohere/north-mini-code-1-0",
+    "provider": "cohere",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/deepseek-ai/DeepSeek-R1-0528",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/deepseek-ai/DeepSeek-V3.2",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/deepseek-ai/DeepSeek-V4-Flash",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/deepseek-ai/DeepSeek-V4-Pro",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/google/gemma-4-26B-A4B-it",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/google/gemma-4-31B-it",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/meta-llama/Llama-4-Scout-17B-16E-Instruct",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/MiniMaxAI/MiniMax-M2.7",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/MiniMaxAI/MiniMax-M3",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/moonshotai/Kimi-K2.5",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/moonshotai/Kimi-K2.6",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/moonshotai/Kimi-K2.7-Code",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/moonshotai/Kimi-K3",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/nvidia/Nemotron-3-Nano-30B-A3B",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/openai/gpt-oss-120b",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/openai/gpt-oss-20b",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3-32B",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3-Coder-480B-A35B-Instruct-Turbo",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3-Max",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3-Next-80B-A3B-Instruct",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3.5-122B-A10B",
+    "provider": "deepinfra",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3.5-27B",
+    "provider": "deepinfra",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3.5-35B-A3B",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3.5-397B-A17B",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3.5-9B",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3.6-27B",
+    "provider": "deepinfra",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3.6-35B-A3B",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3.7-Max",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/XiaomiMiMo/MiMo-V2.5",
+    "provider": "deepinfra",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "deepinfra/XiaomiMiMo/MiMo-V2.5-Pro",
+    "provider": "deepinfra",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "deepinfra/zai-org/GLM-4.6",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/zai-org/GLM-4.7",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/zai-org/GLM-4.7-Flash",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/zai-org/GLM-5",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/zai-org/GLM-5.1",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/zai-org/GLM-5.2",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/deepseek-v4-flash",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/deepseek-v4-pro",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/glm-5p2",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/gpt-oss-120b",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/gpt-oss-20b",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/kimi-k2p6",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/kimi-k2p7-code",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/kimi-k3",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/minimax-m2p7",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/minimax-m3",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/qwen3p7-plus",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/routers/glm-5p2-fast",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/routers/kimi-k2p6-fast",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/routers/kimi-k2p6-turbo",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/routers/kimi-k2p7-code-fast",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/routers/kimi-k3-fast",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "google/deep-research-max-preview-04-2026",
+    "provider": "google",
+    "mode": "image_generation"
+  },
+  {
+    "id": "google/deep-research-preview-04-2026",
+    "provider": "google",
+    "mode": "image_generation"
+  },
+  {
+    "id": "google/gemini-2.5-computer-use-preview-10-2025",
+    "provider": "google",
+    "mode": "chat"
+  },
+  {
+    "id": "google/gemini-2.5-flash",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemini-2.5-flash-image",
+    "provider": "google",
+    "mode": "image_generation"
+  },
+  {
+    "id": "google/gemini-2.5-flash-lite",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemini-2.5-flash-preview-tts",
+    "provider": "google",
+    "mode": "audio_speech"
+  },
+  {
+    "id": "google/gemini-2.5-pro",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemini-2.5-pro-preview-tts",
+    "provider": "google",
+    "mode": "audio_speech"
+  },
+  {
+    "id": "google/gemini-3-flash-preview",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemini-3-pro-image",
+    "provider": "google",
+    "mode": "image_generation"
+  },
+  {
+    "id": "google/gemini-3-pro-image-preview",
+    "provider": "google",
+    "mode": "image_generation"
+  },
+  {
+    "id": "google/gemini-3.1-flash-image",
+    "provider": "google",
+    "mode": "image_generation"
+  },
+  {
+    "id": "google/gemini-3.1-flash-image-preview",
+    "provider": "google",
+    "mode": "image_generation"
+  },
+  {
+    "id": "google/gemini-3.1-flash-lite",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemini-3.1-flash-lite-image",
+    "provider": "google",
+    "mode": "image_generation"
+  },
+  {
+    "id": "google/gemini-3.1-flash-live-preview",
+    "provider": "google",
+    "mode": "audio_speech"
+  },
+  {
+    "id": "google/gemini-3.1-flash-tts-preview",
+    "provider": "google",
+    "mode": "audio_speech"
+  },
+  {
+    "id": "google/gemini-3.1-pro-preview",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemini-3.1-pro-preview-customtools",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemini-3.5-flash",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemini-3.5-flash-lite",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemini-3.5-live-translate-preview",
+    "provider": "google",
+    "mode": "audio_speech"
+  },
+  {
+    "id": "google/gemini-3.6-flash",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemini-embedding-001",
+    "provider": "google",
+    "mode": "chat"
+  },
+  {
+    "id": "google/gemini-embedding-2",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemini-flash-latest",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemini-flash-lite-latest",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemini-omni-flash-preview",
+    "provider": "google",
+    "mode": "video_generation"
+  },
+  {
+    "id": "google/gemini-robotics-er-1.6-preview",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemma-4-26b-a4b-it",
+    "provider": "google",
+    "mode": "chat"
+  },
+  {
+    "id": "google/gemma-4-31b-it",
+    "provider": "google",
+    "mode": "chat"
+  },
+  {
+    "id": "google/lyria-3-clip-preview",
+    "provider": "google",
+    "mode": "audio_speech"
+  },
+  {
+    "id": "google/lyria-3-pro-preview",
+    "provider": "google",
+    "mode": "audio_speech"
+  },
+  {
+    "id": "google/veo-3.1-fast-generate-preview",
+    "provider": "google",
+    "mode": "video_generation"
+  },
+  {
+    "id": "google/veo-3.1-generate-preview",
+    "provider": "google",
+    "mode": "video_generation"
+  },
+  {
+    "id": "google/veo-3.1-lite-generate-preview",
+    "provider": "google",
+    "mode": "video_generation"
+  },
+  {
+    "id": "groq/canopylabs/orpheus-arabic-saudi",
+    "provider": "groq",
+    "mode": "audio_speech"
+  },
+  {
+    "id": "groq/canopylabs/orpheus-v1-english",
+    "provider": "groq",
+    "mode": "audio_speech"
+  },
+  {
+    "id": "groq/groq/compound",
+    "provider": "groq",
+    "mode": "chat"
+  },
+  {
+    "id": "groq/groq/compound-mini",
+    "provider": "groq",
+    "mode": "chat"
+  },
+  {
+    "id": "groq/llama-3.1-8b-instant",
+    "provider": "groq",
+    "mode": "chat"
+  },
+  {
+    "id": "groq/llama-3.3-70b-versatile",
+    "provider": "groq",
+    "mode": "chat"
+  },
+  {
+    "id": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+    "provider": "groq",
+    "mode": "chat"
+  },
+  {
+    "id": "groq/meta-llama/llama-prompt-guard-2-22m",
+    "provider": "groq",
+    "mode": "chat"
+  },
+  {
+    "id": "groq/meta-llama/llama-prompt-guard-2-86m",
+    "provider": "groq",
+    "mode": "chat"
+  },
+  {
+    "id": "groq/openai/gpt-oss-120b",
+    "provider": "groq",
+    "mode": "chat"
+  },
+  {
+    "id": "groq/openai/gpt-oss-20b",
+    "provider": "groq",
+    "mode": "chat"
+  },
+  {
+    "id": "groq/openai/gpt-oss-safeguard-20b",
+    "provider": "groq",
+    "mode": "chat"
+  },
+  {
+    "id": "groq/qwen/qwen3-32b",
+    "provider": "groq",
+    "mode": "chat"
+  },
+  {
+    "id": "groq/whisper-large-v3",
+    "provider": "groq",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "groq/whisper-large-v3-turbo",
+    "provider": "groq",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "mistral/codestral-latest",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/magistral-medium-latest",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/magistral-small",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/ministral-3b-latest",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/ministral-8b-latest",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/mistral-embed",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/mistral-large-2411",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/mistral-large-2512",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/mistral-large-latest",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/mistral-medium-2505",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/mistral-medium-2508",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/mistral-medium-2604",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/mistral-medium-latest",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/mistral-nemo",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/mistral-small-2506",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/mistral-small-2603",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/mistral-small-latest",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/open-mistral-7b",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/open-mixtral-8x22b",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/open-mixtral-8x7b",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/pixtral-12b",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/pixtral-large-latest",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/chatgpt-image-latest",
+    "provider": "openai",
+    "mode": "image_generation"
+  },
+  {
+    "id": "openai/gpt-4.1",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-4.1-mini",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-4o",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-4o-2024-08-06",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-4o-2024-11-20",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-4o-mini",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5-mini",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5-nano",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5-pro",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.1",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.2",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.2-chat-latest",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.2-pro",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.3-chat-latest",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.3-codex",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.3-codex-spark",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.4",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.4-mini",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.4-nano",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.4-pro",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.5",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.5-pro",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.6",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.6-luna",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.6-sol",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-5.6-terra",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-image-1-mini",
+    "provider": "openai",
+    "mode": "image_generation"
+  },
+  {
+    "id": "openai/gpt-image-1.5",
+    "provider": "openai",
+    "mode": "image_generation"
+  },
+  {
+    "id": "openai/gpt-image-2",
+    "provider": "openai",
+    "mode": "image_generation"
+  },
+  {
+    "id": "openai/gpt-realtime-2.1",
+    "provider": "openai",
+    "mode": "audio_speech"
+  },
+  {
+    "id": "openai/o3",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/o3-pro",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/text-embedding-3-large",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/text-embedding-3-small",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/text-embedding-ada-002",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "perplexity/sonar",
+    "provider": "perplexity",
+    "mode": "chat"
+  },
+  {
+    "id": "perplexity/sonar-deep-research",
+    "provider": "perplexity",
+    "mode": "chat"
+  },
+  {
+    "id": "perplexity/sonar-pro",
+    "provider": "perplexity",
+    "mode": "chat"
+  },
+  {
+    "id": "perplexity/sonar-reasoning-pro",
+    "provider": "perplexity",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/deepcogito/cogito-v2-1-671b",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/deepseek-ai/DeepSeek-V4-Pro",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/google/gemma-3n-E4B-it",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/google/gemma-4-31B-it",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/LiquidAI/LFM2-24B-A2B",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/meta-llama/Meta-Llama-3-8B-Instruct-Lite",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/MiniMaxAI/MiniMax-M2.7",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/MiniMaxAI/MiniMax-M3",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/moonshotai/Kimi-K2.6",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/moonshotai/Kimi-K2.7-Code",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/moonshotai/Kimi-K3",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/nvidia/nemotron-3-ultra-550b-a55b",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/openai/gpt-oss-120b",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/openai/gpt-oss-20b",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/pearl-ai/gemma-4-31b-it",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/Qwen/Qwen2.5-7B-Instruct-Turbo",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/Qwen/Qwen3.5-9B",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/Qwen/Qwen3.6-Plus",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/Qwen/Qwen3.7-Max",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/thinkingmachines/Inkling",
+    "provider": "togetherai",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "togetherai/zai-org/GLM-5.2",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "voyage/voyage-3",
+    "provider": "voyage",
+    "mode": "embedding"
+  },
+  {
+    "id": "voyage/voyage-3-lite",
+    "provider": "voyage",
+    "mode": "embedding"
+  },
+  {
+    "id": "voyage/voyage-code-3",
+    "provider": "voyage",
+    "mode": "embedding"
+  },
+  {
+    "id": "xai/grok-4.20-0309-non-reasoning",
+    "provider": "xai",
+    "mode": "chat"
+  },
+  {
+    "id": "xai/grok-4.20-0309-reasoning",
+    "provider": "xai",
+    "mode": "chat"
+  },
+  {
+    "id": "xai/grok-4.20-multi-agent-0309",
+    "provider": "xai",
+    "mode": "chat"
+  },
+  {
+    "id": "xai/grok-4.3",
+    "provider": "xai",
+    "mode": "chat"
+  },
+  {
+    "id": "xai/grok-4.5",
+    "provider": "xai",
+    "mode": "chat"
+  },
+  {
+    "id": "xai/grok-build-0.1",
+    "provider": "xai",
+    "mode": "chat"
+  },
+  {
+    "id": "xai/grok-imagine-image",
+    "provider": "xai",
+    "mode": "image_generation"
+  },
+  {
+    "id": "xai/grok-imagine-image-quality",
+    "provider": "xai",
+    "mode": "image_generation"
+  },
+  {
+    "id": "xai/grok-imagine-video",
+    "provider": "xai",
+    "mode": "video_generation"
+  },
+  {
+    "id": "xai/grok-imagine-video-1.5",
+    "provider": "xai",
+    "mode": "video_generation"
+  }
 ]

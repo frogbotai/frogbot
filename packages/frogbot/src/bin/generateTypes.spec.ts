@@ -276,8 +276,8 @@ describe('frogbot generate:types', () => {
         providers: { bedrock: true, together: true },
       });
 
-      expect(output).toContain('"togetherai/meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"');
-      expect(output).not.toContain('"together/meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"');
+      expect(output).toContain('"togetherai/');
+      expect(output).not.toContain('"together/');
     });
 
     it('removes stale models when configured providers change', async () => {

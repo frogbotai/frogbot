@@ -1,0 +1,13 @@
+[
+  {
+    "id": "voyage/voyage-fixture",
+    "provider": "voyage",
+    "mode": "embedding",
+    "name": "Voyage Fixture",
+    "modalities": { "input": ["text"], "output": ["embedding"] },
+    "operations": ["embeddings"],
+    "capabilities": {},
+    "context": { "input": 32000, "output": 1024 },
+    "providers": ["voyage"]
+  }
+]

@@ -57,6 +57,7 @@ export type ModelCatalogEntry = {
   created?: string;
   /** Knowledge cutoff ISO date string. */
   knowledge?: string;
+  status?: 'alpha' | 'beta' | 'deprecated';
   /** Input/output modalities. */
   modalities: {
     input: Modality[];
