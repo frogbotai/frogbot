@@ -1,5 +1,5 @@
 import * as gateway from "@frogbotai/gateway";
-import type { AfterOperationHook } from "@frogbotai/gateway";
+import type { AfterOperationHook, HookUsage } from "@frogbotai/gateway";
 
 import type { AIOperationContext } from "./hooks.js";
 import { USAGE_LOGS_SLUG } from "./usageCollection.js";
@@ -10,11 +10,10 @@ export const logUsage: AfterOperationHook = (args) => {
   const req = context.req;
   if (!req) return;
   const usage = args.usage;
-  const calculateModelCostUSD = (
-    gateway as typeof gateway & {
-      calculateModelCostUSD: (model: string, usage: NonNullable<typeof usage>) => number;
-    }
-  ).calculateModelCostUSD;
+  const calculateModelCostUSD = Reflect.get(gateway, "calculateModelCostUSD") as (
+    model: string,
+    usage: HookUsage,
+  ) => number;
   const costUSD = usage ? calculateModelCostUSD(args.model, usage) : 0;
   void req.frogbot
     .create({

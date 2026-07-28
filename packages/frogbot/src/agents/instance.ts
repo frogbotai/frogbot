@@ -219,8 +219,11 @@ export function createAgentInstance(
       });
     };
     await op.start();
-    if (abortSignal?.aborted) finishAbort();
-    else abortSignal?.addEventListener("abort", finishAbort, { once: true });
+    if (abortSignal?.aborted) {
+      finishAbort();
+    } else {
+      abortSignal?.addEventListener("abort", finishAbort, { once: true });
+    }
 
     try {
       return await baseAgent.stream({

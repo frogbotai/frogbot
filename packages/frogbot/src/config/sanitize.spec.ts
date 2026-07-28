@@ -932,7 +932,7 @@ describe("frogbot sanitize", () => {
       const payloadConfig = await result._internal.payloadConfig;
       const conversations = (payloadConfig as any).collections.find(
         (c: any) => c.slug === "conversations",
-      ); // eslint-disable-line @typescript-eslint/no-explicit-any
+      );
       expect(conversations.thread).toBeUndefined();
     });
 
@@ -948,7 +948,7 @@ describe("frogbot sanitize", () => {
       const payloadConfig = await result._internal.payloadConfig;
       const payloadSlugs = (payloadConfig as any).collections.map(
         (c: any) => c.slug,
-      ); // eslint-disable-line @typescript-eslint/no-explicit-any
+      );
       expect(payloadSlugs).toEqual([
         "users",
         "threads",
@@ -963,7 +963,7 @@ describe("frogbot sanitize", () => {
       const payloadConfig = await result._internal.payloadConfig;
       const threads = (payloadConfig as any).collections.find(
         (c: any) => c.slug === "threads",
-      ); // eslint-disable-line @typescript-eslint/no-explicit-any
+      );
       expect(threads.hooks?.beforeOperation?.length).toBeGreaterThan(0);
     });
 
