@@ -40,6 +40,10 @@ function makePayload(config: unknown) {
   };
 }
 
+function emailWarnings(warn: ReturnType<typeof vi.fn>) {
+  return warn.mock.calls.filter(([message]) => String(message).includes('No email adapter provided'));
+}
+
 describe('frogbot sanitize', () => {
   it('throws `[frogbot] `globals` is not a FrogBot concept` when `globals` is present', () => {
     const config = makeConfig() as unknown as Record<string, unknown>;
@@ -91,6 +95,28 @@ describe('frogbot sanitize', () => {
     const config = makeConfig();
     const result = sanitize(config);
     expect(result._internal.payloadConfig).toBeInstanceOf(Promise);
+  });
+
+  it('keeps repeated sanitization and codegen quiet when email is omitted', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      sanitize(makeConfig());
+      sanitize(makeConfig());
+      sanitize(makeConfig(), { mode: 'codegen' });
+
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('installs the FrogBot noop email adapter when email is omitted', async () => {
+    const result = sanitize(makeConfig());
+    const payloadConfig = await result._internal.payloadConfig;
+    const payload = makePayload(payloadConfig);
+    const email = payloadConfig.email as unknown as (args: unknown) => { name: string };
+
+    expect(email({ payload }).name).toBe('frogbot-noop');
   });
 
   it('captures auth boolean state into custom.frogbot.auth in the payload config', async () => {
@@ -226,6 +252,46 @@ describe('frogbot sanitize', () => {
     expect(first).toBeDefined();
     expect(getFrogbotInstance(payload)).toBe(first);
     expect(onInit).toHaveBeenCalledOnce();
+  });
+
+  it('warns once through the initialized logger when Payload initialization omits email', async () => {
+    resetFrogbotCache();
+    const result = sanitize(makeConfig());
+    const payloadConfig = await result._internal.payloadConfig;
+    const payload = makePayload(payloadConfig);
+
+    await payloadConfig.onInit?.(payload as never);
+    await payloadConfig.onInit?.(payload as never);
+
+    expect(emailWarnings(payload.logger.warn)).toHaveLength(1);
+  });
+
+  it('does not warn during Payload initialization when email is configured', async () => {
+    resetFrogbotCache();
+    const result = sanitize(makeConfig({ email: (() => ({})) as FrogbotConfig['email'] }));
+    const payloadConfig = await result._internal.payloadConfig;
+    const payload = makePayload(payloadConfig);
+
+    await payloadConfig.onInit?.(payload as never);
+
+    expect(emailWarnings(payload.logger.warn)).toHaveLength(0);
+  });
+
+  it('does not warn during production-build Payload initialization', async () => {
+    resetFrogbotCache();
+    const previousPhase = process.env.NEXT_PHASE;
+    process.env.NEXT_PHASE = 'phase-production-build';
+    try {
+      const result = sanitize(makeConfig());
+      const payloadConfig = await result._internal.payloadConfig;
+      const payload = makePayload(payloadConfig);
+
+      await payloadConfig.onInit?.(payload as never);
+
+      expect(emailWarnings(payload.logger.warn)).toHaveLength(0);
+    } finally {
+      process.env.NEXT_PHASE = previousPhase;
+    }
   });
 
   it('rejects endpoint requests when lifecycle registration is missing', async () => {

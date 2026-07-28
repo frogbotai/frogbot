@@ -73,6 +73,10 @@ function createMockPayload() {
   };
 }
 
+function emailWarnings(warn: ReturnType<typeof vi.fn>) {
+  return warn.mock.calls.filter(([message]) => String(message).includes('No email adapter provided'));
+}
+
 function makeConfig(): FrogbotSanitizedConfig {
   return {
     collections: [
@@ -83,6 +87,7 @@ function makeConfig(): FrogbotSanitizedConfig {
     chat: { enabled: false },
     _internal: {
       payloadConfig: Promise.resolve({} as any), // eslint-disable-line @typescript-eslint/no-explicit-any
+      noEmail: true,
     },
   };
 }
@@ -149,6 +154,22 @@ describe('Frogbot class', () => {
       const frogbot = await setup();
       expect(frogbot.logger).toBeDefined();
       expect(typeof frogbot.logger.info).toBe('function');
+    });
+
+    it('warns once through the initialized logger when email is omitted', async () => {
+      const frogbot = await setup();
+
+      expect(emailWarnings(frogbot.logger.warn as ReturnType<typeof vi.fn>)).toHaveLength(1);
+    });
+
+    it('does not warn when email is configured', async () => {
+      const config = makeConfig();
+      config._internal.noEmail = false;
+      const frogbot = new Frogbot();
+
+      await frogbot.init({ config, disableOnInit: true });
+
+      expect(emailWarnings(frogbot.logger.warn as ReturnType<typeof vi.fn>)).toHaveLength(0);
     });
 
     it('leaves gateway undefined when no ai config is present', async () => {

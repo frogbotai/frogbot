@@ -441,11 +441,6 @@ function buildPayloadConfig(config: FrogbotConfig, onInit: NonNullable<PayloadCo
   // Inject noop email adapter if none provided.
   if (!config.email) {
     out.email = noopEmailAdapter;
-    console.warn(
-       
-      '[frogbot] No email adapter provided. Emails will be logged but not sent. ' +
-        'Pass an `email` adapter to enable delivery.',
-    );
   }
 
   out.typescript = {
@@ -585,6 +580,7 @@ export function sanitize(
     },
     _internal: {
       payloadConfig: payloadSanitizedPromise,
+      noEmail: !config.email,
     },
   };
   sanitizedConfigRef.current = sanitizedConfig;

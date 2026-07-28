@@ -162,6 +162,12 @@ export class Frogbot {
 
     this.secret = this.payload.secret;
     this.logger = this.payload.logger;
+    if (this.config._internal.noEmail && process.env.NEXT_PHASE !== 'phase-production-build') {
+      this.logger.warn(
+        '[frogbot] No email adapter provided. Emails will be logged but not sent. ' +
+          'Pass an `email` adapter to enable delivery.',
+      );
+    }
     this.connections = new Connections(this, this.config.connections);
 
     // Initialize the embedded AI gateway if AI is configured.
