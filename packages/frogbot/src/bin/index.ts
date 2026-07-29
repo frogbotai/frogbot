@@ -10,9 +10,9 @@ export async function bin() {
   const args = process.argv.slice(3);
 
   if (command === 'start') {
-    start(args);
+    await start(args);
   } else if (command === 'dev') {
-    dev(args);
+    await dev(args);
   } else if (command === 'generate:types') {
     await generateTypes();
   } else if (command === 'generate:importmap') {

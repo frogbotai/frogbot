@@ -29,6 +29,9 @@ export interface RootAdminComponents {
 }
 
 export interface RootAdminConfig {
+  importMap?: {
+    autoGenerate?: boolean;
+  };
   /**
    * Collection slug that powers admin access. FrogBot may derive this from
    * a role-marked auth collection later; explicit slug stays as the override.

@@ -24,6 +24,7 @@ export type AddToImportMap = (payloadComponent?: PayloadComponent | PayloadCompo
 export async function generateImportMap(
   config: SanitizedConfig,
   options?: {
+    dryRun?: boolean;
     force?: boolean;
     ignoreResolveError?: boolean;
   },
@@ -36,6 +37,7 @@ export async function generateImportMap(
 
   const importMapFilePath = await resolveImportMapFilePath({
     adminRoute: config.routes.admin,
+    create: !options?.dryRun,
     importMapFile: config?.admin?.importMap?.importMapFile,
     rootDir,
   });
@@ -90,6 +92,7 @@ export async function generateImportMap(
 
   const changed = await writeImportMap({
     componentMap: importMap,
+    dryRun: options?.dryRun,
     force: options?.force,
     importMap: imports,
     importMapFilePath,
@@ -100,11 +103,13 @@ export async function generateImportMap(
 
 export async function writeImportMap({
   componentMap,
+  dryRun,
   force,
   importMap,
   importMapFilePath,
 }: {
   componentMap: InternalImportMap;
+  dryRun?: boolean;
   force?: boolean;
   importMap: Imports;
   importMapFilePath: string;
@@ -128,12 +133,14 @@ ${mapKeys.join(',\n')}
 `;
 
   if (!force) {
-    const currentImportMap = await fs.readFile(importMapFilePath, 'utf-8');
+    const currentImportMap = await fs.readFile(importMapFilePath, 'utf-8').catch(() => '');
 
     if (currentImportMap?.trim() === importMapOutputFile?.trim()) {
       return false;
     }
   }
+
+  if (dryRun) return true;
 
   await fs.writeFile(importMapFilePath, importMapOutputFile);
   return true;

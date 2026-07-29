@@ -18,6 +18,11 @@ export type SanitizedCollectionMeta = {
 };
 
 export type FrogbotSanitizedConfig = {
+  admin?: {
+    importMap?: {
+      autoGenerate?: boolean;
+    };
+  };
   collections: SanitizedCollectionMeta[];
   secret: string;
   port?: number;

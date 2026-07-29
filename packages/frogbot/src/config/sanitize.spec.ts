@@ -469,6 +469,22 @@ describe("frogbot sanitize", () => {
     expect((payloadConfig as any).admin.theme).toBe("dark"); // eslint-disable-line @typescript-eslint/no-explicit-any
   });
 
+  it("defaults FrogBot import-map generation to enabled", () => {
+    const result = sanitize(makeConfig());
+
+    expect(result.admin?.importMap?.autoGenerate).toBe(true);
+  });
+
+  it("preserves an explicit FrogBot import-map generation opt-out", async () => {
+    const result = sanitize(makeConfig({
+      admin: { importMap: { autoGenerate: false } },
+    }));
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(result.admin?.importMap?.autoGenerate).toBe(false);
+    expect(payloadConfig.admin.importMap.autoGenerate).toBe(false);
+  });
+
   it("injects FrogBot branding defaults into the payload config", async () => {
     const result = sanitize(makeConfig());
     const payloadConfig = (await result._internal.payloadConfig) as any; // eslint-disable-line @typescript-eslint/no-explicit-any

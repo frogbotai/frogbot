@@ -782,6 +782,11 @@ export function sanitize(
   );
 
   const sanitizedConfig: FrogbotSanitizedConfig = {
+    admin: {
+      importMap: {
+        autoGenerate: config.admin?.importMap?.autoGenerate !== false,
+      },
+    },
     collections: collectionsMeta,
     secret: config.secret,
     port: (config as any).port, // eslint-disable-line @typescript-eslint/no-explicit-any

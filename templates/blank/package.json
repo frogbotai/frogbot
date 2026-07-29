@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "frogbot dev",
+    "prebuild": "frogbot generate:importmap",
     "build": "next build",
     "start": "frogbot start",
     "generate:types": "frogbot generate:types",

@@ -12,17 +12,19 @@ async function pathOrFileExists(path: string): Promise<boolean> {
 
 export async function resolveImportMapFilePath({
   adminRoute = '/admin',
+  create = true,
   importMapFile,
   rootDir,
 }: {
   adminRoute?: string;
+  create?: boolean;
   importMapFile?: string;
   rootDir: string;
 }): Promise<Error | string> {
   let importMapFilePath: string | undefined = undefined;
 
   if (importMapFile?.length) {
-    if (!(await pathOrFileExists(importMapFile))) {
+    if (create && !(await pathOrFileExists(importMapFile))) {
       try {
         await fs.writeFile(importMapFile, '', { flag: 'wx' });
       } catch (err) {
@@ -38,12 +40,12 @@ export async function resolveImportMapFilePath({
 
     if (appLocation && (await pathOrFileExists(appLocation))) {
       importMapFilePath = path.resolve(appLocation, 'importMap.js');
-      if (!(await pathOrFileExists(importMapFilePath))) {
+      if (create && !(await pathOrFileExists(importMapFilePath))) {
         await fs.writeFile(importMapFilePath, '', { flag: 'wx' });
       }
     } else if (srcAppLocation && (await pathOrFileExists(srcAppLocation))) {
       importMapFilePath = path.resolve(srcAppLocation, 'importMap.js');
-      if (!(await pathOrFileExists(importMapFilePath))) {
+      if (create && !(await pathOrFileExists(importMapFilePath))) {
         await fs.writeFile(importMapFilePath, '', { flag: 'wx' });
       }
     } else {

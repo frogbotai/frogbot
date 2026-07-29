@@ -133,6 +133,18 @@ describe('frogbot importMap generator', () => {
     expect(forced?.changed).toBe(true);
   });
 
+  it('reports stale output without writing in dry-run mode', async () => {
+    const dir = await makeDir('frogbot-importmap-dry-run-');
+    const payloadConfig = await makePayloadConfig();
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    const result = await generateImportMap(payloadConfig, { dryRun: true });
+
+    expect(result).toEqual({ changed: true, outputPath: join(dir, 'importMap.js') });
+    await expect(stat(join(dir, 'importMap.js'))).rejects.toThrow();
+  });
+
   it('returns null with ignoreResolveError when no app dir exists', async () => {
     const dir = await makeDir('frogbot-importmap-noresolve-');
     const payloadConfig = await makePayloadConfig();
