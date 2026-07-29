@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/piece-slack",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Slack tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/piece-stripe",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Stripe tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
