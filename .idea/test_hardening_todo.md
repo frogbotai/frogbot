@@ -55,6 +55,10 @@
 - [x] Assert `frogbot dev` generates the import map before starting Next and honors the user-facing opt-out.
 - [x] Verify a plugin admin-component string generates a resolvable import-map entry and keep its build/start documentation accurate.
 
+## Completed with Ticket 26
+
+- [x] Exercise at least one tool-bearing path through a real `Tool.execute`, the real AI SDK tool loop, and persisted transcript read-back.
+
 ## Coverage balance to preserve
 
 - Unit tests for config, validation, translators, adapters, and utilities.
