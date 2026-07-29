@@ -9,6 +9,10 @@ import { usersSlug, testUserEmail, testUserPassword } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
+type MeBody = {
+  user: { email: string } | null;
+};
+
 describe('auth', () => {
   let booted: BootedFrogbot;
 
@@ -37,6 +41,18 @@ describe('auth', () => {
       expect((res.body as any).token).toBeDefined();
     });
 
+    it('POST /api/users/login sets a FrogBot-branded cookie', async () => {
+      await createUser();
+      const res = await booted.restClient.post(`/api/${usersSlug}/login`, {
+        email: testUserEmail,
+        password: testUserPassword,
+      });
+      const cookie = res.headers.get('set-cookie');
+
+      expect(cookie).toMatch(/^frogbot-token=/);
+      expect(cookie).not.toContain('payload-token=');
+    });
+
     it('POST /api/users/login rejects invalid credentials', async () => {
       await createUser();
       const res = await booted.restClient.post(`/api/${usersSlug}/login`, {
@@ -56,17 +72,33 @@ describe('auth', () => {
       });
       const token = (login.body as any).token;
 
-      const res = await booted.restClient.get(`/api/${usersSlug}/me`, {
+      const res = await booted.restClient.get<MeBody>(`/api/${usersSlug}/me`, {
         headers: { Authorization: `JWT ${token}` },
       });
       expect(res.status).toBe(200);
-      expect((res.body as any).user.email).toBe(testUserEmail);
+      expect(res.body.user?.email).toBe(testUserEmail);
+    });
+
+    it('authenticated request succeeds with the FrogBot cookie', async () => {
+      await createUser();
+      const login = await booted.restClient.post(`/api/${usersSlug}/login`, {
+        email: testUserEmail,
+        password: testUserPassword,
+      });
+      const cookie = login.headers.get('set-cookie')?.match(/^(frogbot-token=[^;]+)/)?.[1];
+
+      expect(cookie).toBeDefined();
+      const res = await booted.restClient.get<MeBody>(`/api/${usersSlug}/me`, {
+        headers: { Cookie: cookie! },
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.user?.email).toBe(testUserEmail);
     });
 
     it('unauthenticated request to /me returns null user', async () => {
-      const res = await booted.restClient.get(`/api/${usersSlug}/me`);
+      const res = await booted.restClient.get<MeBody>(`/api/${usersSlug}/me`);
       expect(res.status).toBe(200);
-      expect((res.body as any).user).toBeNull();
+      expect(res.body.user).toBeNull();
     });
   });
 });

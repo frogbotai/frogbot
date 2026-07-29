@@ -500,6 +500,20 @@ describe("frogbot sanitize", () => {
     );
   });
 
+  it("defaults the cookie prefix to FrogBot", async () => {
+    const result = sanitize(makeConfig());
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.cookiePrefix).toBe("frogbot");
+  });
+
+  it("lets a user cookie prefix override the FrogBot default", async () => {
+    const result = sanitize(makeConfig({ cookiePrefix: "acme" }));
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.cookiePrefix).toBe("acme");
+  });
+
   it("lets user branding config win over FrogBot defaults", async () => {
     const config = makeConfig({
       admin: {

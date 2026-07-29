@@ -610,6 +610,7 @@ function buildPayloadConfig(
     ...(config as { typescript?: Record<string, unknown> }).typescript,
     autoGenerate: false,
   };
+  out.cookiePrefix = config.cookiePrefix ?? "frogbot";
 
   const admin = (
     config as {

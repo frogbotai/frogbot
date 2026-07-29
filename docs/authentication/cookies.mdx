@@ -7,6 +7,25 @@ keywords: authentication, config, configuration, documentation, Content Manageme
 
 FrogBot offers the ability to [Authenticate](/authentication/overview) via HTTP-only cookies. These can be read from the responses of `login`, `logout`, `refresh`, and `me` auth operations.
 
+### Cookie names
+
+FrogBot uses the `frogbot` cookie prefix by default. Authentication tokens are stored in `frogbot-token`; language and theme preferences use `frogbot-lng` and `frogbot-theme`.
+
+You can override the prefix with the root `cookiePrefix` configuration option:
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  cookiePrefix: 'acme',
+})
+```
+
+<Warning>
+  Apps upgrading from the previous default invalidate existing `payload-token`
+  sessions. Users must log in once after the upgrade.
+</Warning>
+
 <Tip>
   **Tip:** You can access the logged-in user from within [Access
   Control](/access-control/overview) and [Hooks](/hooks/overview) through
