@@ -31,6 +31,17 @@ export type BedrockProviderEntry =
       accessKeyId: string;
       secretAccessKey: string;
       sessionToken?: string;
+    }
+  | {
+      region?: string;
+      credentialProvider: () => Promise<{
+        accessKeyId: string;
+        secretAccessKey: string;
+        sessionToken?: string;
+      }>;
+      accessKeyId?: never;
+      secretAccessKey?: never;
+      sessionToken?: never;
     };
 
 type ProviderEntry = true | BuiltInProviderEntry;

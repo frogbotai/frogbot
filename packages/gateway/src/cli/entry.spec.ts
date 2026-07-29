@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { pathToFileURL } from 'node:url';
 
-import { isCliEntry } from './index.js';
+import { buildProvidersFromEnv, isCliEntry } from './index.js';
 
 const realFile = '/real/pkg/dist/cli/index.js';
 const moduleUrl = pathToFileURL(realFile).href;
@@ -32,5 +32,23 @@ describe('isCliEntry', () => {
 
   it('returns false for an unrelated entry path', () => {
     expect(isCliEntry(moduleUrl, '/other/tool.js', (p) => p)).toBe(false);
+  });
+});
+
+describe('buildProvidersFromEnv', () => {
+  it('discovers Bedrock from an AWS profile', () => {
+    expect(buildProvidersFromEnv({ AWS_PROFILE: 'dev' })['amazon-bedrock']).toEqual({
+      region: 'us-east-1',
+    });
+  });
+
+  it('discovers Bedrock from web identity', () => {
+    expect(
+      buildProvidersFromEnv({
+        AWS_ROLE_ARN: 'arn:aws:iam::123456789012:role/test',
+        AWS_WEB_IDENTITY_TOKEN_FILE: '/tmp/token',
+        AWS_REGION: 'us-west-2',
+      })['amazon-bedrock'],
+    ).toEqual({ region: 'us-west-2' });
   });
 });

@@ -92,7 +92,7 @@ export function installGracefulShutdown(deps: GracefulShutdownDeps): (signal: st
   return handler;
 }
 
-function buildProvidersFromEnv(env: NodeJS.ProcessEnv = process.env): ProviderConfigMap {
+export function buildProvidersFromEnv(env: NodeJS.ProcessEnv = process.env): ProviderConfigMap {
   const out: ProviderConfigMap = {};
   for (const name of PROVIDER_NAMES) {
     try {

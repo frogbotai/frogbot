@@ -110,6 +110,7 @@
     "zod": "^4.3.6"
   },
   "peerDependencies": {
+    "@aws-sdk/credential-providers": "^3.972.0",
     "@opentelemetry/context-async-hooks": "^2.0.1",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.203.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.203.0",
@@ -120,6 +121,9 @@
     "pino": "^9.14.0"
   },
   "peerDependenciesMeta": {
+    "@aws-sdk/credential-providers": {
+      "optional": true
+    },
     "@opentelemetry/context-async-hooks": {
       "optional": true
     },
@@ -146,6 +150,7 @@
     }
   },
   "devDependencies": {
+    "@aws-sdk/credential-providers": "^3.972.0",
     "@frogbotai/eslint-config": "workspace:*",
     "@opentelemetry/context-async-hooks": "^2.0.1",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.203.0",

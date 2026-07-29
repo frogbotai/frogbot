@@ -58,6 +58,13 @@ describe('buildGatewayConfig', () => {
     expect(config.providers).toEqual({ 'amazon-bedrock': {} });
   });
 
+  it('maps a Bedrock credential provider unchanged', () => {
+    const credentialProvider = () => Promise.resolve({ accessKeyId: 'ak', secretAccessKey: 'sk' });
+    const entry = { region: 'us-east-1', credentialProvider };
+    const config = buildGatewayConfig(makeAIConfig({ bedrock: entry }));
+    expect(config.providers).toEqual({ 'amazon-bedrock': entry });
+  });
+
   it('renames together → togetherai', () => {
     const config = buildGatewayConfig(makeAIConfig({ together: { apiKey: 'sk-t' } }));
     expect(config.providers).toEqual({ togetherai: { apiKey: 'sk-t' } });

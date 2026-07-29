@@ -30,9 +30,9 @@ export default buildConfig({
 
 Built-in keys are `openai`, `anthropic`, `google`, `bedrock`, `groq`, `mistral`, `cohere`, `together`, `fireworks`, `deepinfra`, `xai`, `perplexity`, `cerebras`, `voyage`, and `replicate`.
 
-Model IDs use `<provider>/<model>`, such as `openai/gpt-4o`. Use `amazon-bedrock/...` for a configured `bedrock` provider and `togetherai/...` for `together`; Replicate's `apiKey` maps to its `apiToken` option. Bedrock supports bearer-token, explicit SigV4, and ambient AWS credentials.
+Model IDs use `<provider>/<model>`, such as `openai/gpt-4o`. Use `amazon-bedrock/...` for a configured `bedrock` provider and `togetherai/...` for `together`; Replicate's `apiKey` maps to its `apiToken` option. Bedrock uses bearer tokens first, then explicit SigV4 keys, then the AWS default credential chain.
 
-Use `{ apiKey: process.env.CUSTOM_KEY }` only for an alternate credential. Explicit keys must be non-empty. Bedrock instead accepts `true`, `{ region }`, or paired `{ accessKeyId, secretAccessKey, sessionToken? }` overrides.
+Use `{ apiKey: process.env.CUSTOM_KEY }` only for an alternate credential. Explicit keys must be non-empty. Bedrock accepts `true`, `{ region }`, paired `{ accessKeyId, secretAccessKey, sessionToken? }` overrides, or a custom `credentialProvider`. In Node.js, the default chain supports AWS profiles and IAM Identity Center, web identity, ECS task roles, and EC2 instance profiles. Install the optional `@aws-sdk/credential-providers` peer dependency to use this fallback. Edge runtimes must provide an edge-compatible `credentialProvider` instead.
 
 Add an OpenAI-compatible endpoint with any non-built-in key. Its `models` list is required for validation, and calls use the custom key as the provider prefix.
 

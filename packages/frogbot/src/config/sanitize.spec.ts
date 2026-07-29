@@ -662,6 +662,22 @@ describe("frogbot sanitize", () => {
       expect(() => sanitize(config)).not.toThrow();
     });
 
+    it("accepts a Bedrock credential provider without static keys", () => {
+      const config = makeConfig({
+        ai: {
+          providers: {
+            bedrock: {
+              credentialProvider: () => Promise.resolve({
+                accessKeyId: "ak",
+                secretAccessKey: "sk",
+              }),
+            },
+          },
+        },
+      });
+      expect(() => sanitize(config)).not.toThrow();
+    });
+
     it("rejects incomplete explicit Bedrock credentials", () => {
       const config = makeConfig({
         ai: { providers: { bedrock: { accessKeyId: "ak" } } },

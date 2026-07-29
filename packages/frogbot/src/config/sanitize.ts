@@ -251,7 +251,14 @@ function sanitizeAI(ai: AIConfig): SanitizedAIConfig {
       const hasSecretKey =
         typeof provider.secretAccessKey === "string" &&
         !!provider.secretAccessKey.trim();
-      if (!hasRegion && !hasAccessKey && !hasSecretKey) {
+      const hasCredentialProvider =
+        typeof provider.credentialProvider === "function";
+      if (
+        !hasRegion &&
+        !hasAccessKey &&
+        !hasSecretKey &&
+        !hasCredentialProvider
+      ) {
         throw new Error(
           `[frogbot] Provider 'bedrock' requires a region or explicit AWS credentials.`,
         );

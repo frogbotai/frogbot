@@ -1,6 +1,17 @@
 // Bedrock provider credential validation tests.
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { createAmazonBedrock } = vi.hoisted(() => ({
+  createAmazonBedrock: vi.fn((config: unknown) => config),
+}));
+const { chain, fromNodeProviderChain } = vi.hoisted(() => ({
+  chain: vi.fn(() => Promise.resolve({ accessKeyId: 'AKID', secretAccessKey: 'secret' })),
+  fromNodeProviderChain: vi.fn(),
+}));
+
+vi.mock('@ai-sdk/amazon-bedrock', () => ({ createAmazonBedrock }));
+vi.mock('@aws-sdk/credential-providers', () => ({ fromNodeProviderChain }));
 
 import { bedrockProvider } from './index.js';
 
@@ -83,5 +94,116 @@ describe('bedrockProvider.fromEnv', () => {
       apiKey: 'token-123',
       region: 'us-east-1',
     });
+  });
+
+  it('returns chain-backed config for an AWS profile', () => {
+    expect(bedrockProvider.fromEnv({ AWS_PROFILE: 'dev' })).toEqual({
+      region: 'us-east-1',
+    });
+  });
+
+  it('returns chain-backed config for web identity', () => {
+    expect(
+      bedrockProvider.fromEnv({
+        AWS_ROLE_ARN: 'arn:aws:iam::123456789012:role/test',
+        AWS_WEB_IDENTITY_TOKEN_FILE: '/tmp/token',
+        AWS_REGION: 'us-west-2',
+      }),
+    ).toEqual({ region: 'us-west-2' });
+  });
+
+  it('returns undefined for partial web identity configuration', () => {
+    expect(
+      bedrockProvider.fromEnv({ AWS_ROLE_ARN: 'arn:aws:iam::123456789012:role/test' }),
+    ).toBeUndefined();
+  });
+});
+
+describe('bedrockProvider.build', () => {
+  beforeEach(() => {
+    createAmazonBedrock.mockClear();
+    chain.mockClear();
+    fromNodeProviderChain.mockReset();
+    fromNodeProviderChain.mockReturnValue(chain);
+    for (const name of [
+      'AWS_BEARER_TOKEN_BEDROCK',
+      'AWS_ACCESS_KEY_ID',
+      'AWS_SECRET_ACCESS_KEY',
+      'AWS_PROFILE',
+      'AWS_ROLE_ARN',
+      'AWS_WEB_IDENTITY_TOKEN_FILE',
+    ]) {
+      vi.stubEnv(name, '');
+    }
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('preserves explicit SigV4 environment credentials', () => {
+    vi.stubEnv('AWS_ACCESS_KEY_ID', 'AKID');
+    vi.stubEnv('AWS_SECRET_ACCESS_KEY', 'secret');
+    const config = { region: 'us-east-1' };
+
+    bedrockProvider.build(config);
+
+    expect(createAmazonBedrock).toHaveBeenCalledWith(config);
+  });
+
+  it('preserves bearer token authentication', () => {
+    const config = { apiKey: 'token-123', region: 'us-east-1' };
+
+    bedrockProvider.build(config);
+
+    expect(createAmazonBedrock).toHaveBeenCalledWith(config);
+  });
+
+  it('forwards a configured credential provider by reference', () => {
+    const credentialProvider = vi.fn();
+    const config = { region: 'us-east-1', credentialProvider };
+
+    bedrockProvider.build(config);
+
+    expect(createAmazonBedrock).toHaveBeenCalledWith(config);
+    expect(createAmazonBedrock.mock.calls[0]?.[0]).toHaveProperty(
+      'credentialProvider',
+      credentialProvider,
+    );
+  });
+
+  it('injects default-chain credentials for region-only configuration', async () => {
+    bedrockProvider.build({ region: 'us-east-1' });
+
+    const config = createAmazonBedrock.mock.calls[0]?.[0] as {
+      credentialProvider: () => Promise<unknown>;
+    };
+    await config.credentialProvider();
+    await config.credentialProvider();
+    expect(fromNodeProviderChain).toHaveBeenCalledOnce();
+    expect(chain).toHaveBeenCalledTimes(2);
+  });
+
+  it('injects default-chain credentials for an AWS profile', () => {
+    vi.stubEnv('AWS_PROFILE', 'dev');
+
+    bedrockProvider.build({ region: 'us-east-1' });
+
+    expect(createAmazonBedrock.mock.calls[0]?.[0]).toHaveProperty(
+      'credentialProvider',
+      expect.any(Function),
+    );
+  });
+
+  it('injects default-chain credentials for web identity', () => {
+    vi.stubEnv('AWS_ROLE_ARN', 'arn:aws:iam::123456789012:role/test');
+    vi.stubEnv('AWS_WEB_IDENTITY_TOKEN_FILE', '/tmp/token');
+
+    bedrockProvider.build({ region: 'us-east-1' });
+
+    expect(createAmazonBedrock.mock.calls[0]?.[0]).toHaveProperty(
+      'credentialProvider',
+      expect.any(Function),
+    );
   });
 });
