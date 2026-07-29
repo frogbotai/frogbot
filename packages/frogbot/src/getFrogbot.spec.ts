@@ -1,8 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const initState = vi.hoisted(() => ({
+  calls: 0,
+  outcomes: [] as Array<() => Promise<unknown>>,
+}));
+
 vi.mock('./frogbot.js', () => ({
   Frogbot: class {
-    init = vi.fn(() => Promise.resolve(this));
+    init = vi.fn(() => {
+      initState.calls++;
+      return (initState.outcomes.shift() ?? (() => Promise.resolve(this)))();
+    });
   },
 }));
 
@@ -12,6 +20,8 @@ const options = { config: Promise.resolve({}) } as never;
 
 afterEach(() => {
   resetFrogbotCache();
+  initState.calls = 0;
+  initState.outcomes = [];
 });
 
 describe('getFrogbot', () => {
@@ -24,6 +34,57 @@ describe('getFrogbot', () => {
   it('deduplicates concurrent initialization into one instance', async () => {
     const [first, second] = await Promise.all([getFrogbot(options), getFrogbot(options)]);
     expect(second).toBe(first);
+  });
+
+  it('deduplicates concurrent callers when initialization fails', async () => {
+    const error = new Error('transient init failure');
+    initState.outcomes.push(() => Promise.reject(error));
+
+    const first = getFrogbot(options);
+    const second = getFrogbot(options);
+
+    const results = await Promise.allSettled([first, second]);
+    expect(results).toEqual([
+      { status: 'rejected', reason: error },
+      { status: 'rejected', reason: error },
+    ]);
+    expect(initState.calls).toBe(1);
+  });
+
+  it('retries after rejection and caches the successful retry', async () => {
+    const recovered = {};
+    initState.outcomes.push(
+      () => Promise.reject(new Error('transient init failure')),
+      () => Promise.resolve(recovered),
+    );
+
+    await expect(getFrogbot(options)).rejects.toThrow('transient init failure');
+    await expect(getFrogbot(options)).resolves.toBe(recovered);
+    await expect(getFrogbot(options)).resolves.toBe(recovered);
+    expect(initState.calls).toBe(2);
+  });
+
+  it('keeps a newer pending retry cached after an older rejection', async () => {
+    let resolveRetry!: (value: unknown) => void;
+    const retry = new Promise<unknown>((resolve) => {
+      resolveRetry = resolve;
+    });
+    const recovered = {};
+    initState.outcomes.push(
+      () => Promise.reject(new Error('transient init failure')),
+      () => retry,
+    );
+
+    await expect(getFrogbot(options)).rejects.toThrow('transient init failure');
+    const second = getFrogbot(options);
+    const concurrent = getFrogbot(options);
+    if (initState.calls === 2) resolveRetry(recovered);
+    const results = await Promise.allSettled([second, concurrent]);
+    expect(results).toEqual([
+      { status: 'fulfilled', value: recovered },
+      { status: 'fulfilled', value: recovered },
+    ]);
+    expect(initState.calls).toBe(2);
   });
 
   it('shares the cached instance across module graphs via globalThis', async () => {

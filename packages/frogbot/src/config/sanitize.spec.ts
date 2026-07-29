@@ -324,25 +324,80 @@ describe("frogbot sanitize", () => {
     }
   });
 
-  it("rejects endpoint requests when lifecycle registration is missing", async () => {
-    const handler = vi.fn(() => new Response("ok"));
+  it("recovers endpoint requests when lifecycle registration is missing", async () => {
+    resetFrogbotCache();
+    const handler = vi.fn((req) => Response.json({ attached: Boolean(req.frogbot) }));
     const result = sanitize(
       makeConfig({ endpoints: [{ path: "/health", method: "get", handler }] }),
     );
     const payloadConfig = await result._internal.payloadConfig;
     const endpoint = (payloadConfig as any).endpoints[0]; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const payload = makePayload(payloadConfig);
 
-    expect(() => endpoint.handler({ payload: {} })).toThrow("[frogbot]");
-    expect(handler).not.toHaveBeenCalled();
+    const response = await endpoint.handler({ payload });
+
+    await expect(response.json()).resolves.toEqual({ attached: true });
+    expect(getFrogbotInstance(payload)).toBeDefined();
+    expect(getCachedFrogbot()).toBe(getFrogbotInstance(payload));
   });
 
-  it("rejects operations when lifecycle registration is missing", async () => {
+  it("recovers operations when lifecycle registration is missing", async () => {
     const result = sanitize(makeConfig());
     const payloadConfig = await result._internal.payloadConfig;
     const collection = payloadConfig.collections[0];
     const bootstrap = collection.hooks.beforeOperation[0];
+    const payload = makePayload(payloadConfig);
+    const req = { payload };
 
-    expect(() => bootstrap({ req: { payload: {} } })).toThrow("[frogbot]");
+    await bootstrap({ req });
+
+    expect(req).toHaveProperty("frogbot", getFrogbotInstance(payload));
+  });
+
+  it("deduplicates concurrent lazy registration", async () => {
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const onInit = vi.fn(() => pending);
+    const handler = vi.fn(() => new Response("ok"));
+    const result = sanitize(
+      makeConfig({
+        onInit,
+        endpoints: [{ path: "/health", method: "get", handler }],
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const endpoint = (payloadConfig as any).endpoints[0]; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const payload = makePayload(payloadConfig);
+
+    const first = endpoint.handler({ payload });
+    const second = endpoint.handler({ payload });
+    await vi.waitFor(() => expect(onInit).toHaveBeenCalledOnce());
+    release();
+    await Promise.all([first, second]);
+
+    expect(onInit).toHaveBeenCalledOnce();
+    expect(handler).toHaveBeenCalledTimes(2);
+  });
+
+  it("propagates the real lazy initialization error", async () => {
+    const error = new Error("real initialization failure");
+    const handler = vi.fn(() => new Response("ok"));
+    const result = sanitize(
+      makeConfig({
+        onInit: () => {
+          throw error;
+        },
+        endpoints: [{ path: "/health", method: "get", handler }],
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const endpoint = (payloadConfig as any).endpoints[0]; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const payload = makePayload(payloadConfig);
+
+    await expect(endpoint.handler({ payload })).rejects.toBe(error);
+    expect(handler).not.toHaveBeenCalled();
   });
 
   it("binds root afterError requests without nesting Frogbot on Payload", async () => {

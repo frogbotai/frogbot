@@ -48,7 +48,10 @@ import {
   builtInSecretSource,
 } from "../connections/secret.js";
 import { seedFrogbotCache } from "../getFrogbot.js";
-import { getFrogbotInstance } from "../instanceRegistry.js";
+import {
+  ensureFrogbotInstance,
+  getFrogbotInstance,
+} from "../instanceRegistry.js";
 import { rewriteComponentPaths } from "./rewriteComponentPaths.js";
 import { resolveSourceDir } from "./sourceDir.js";
 import { getValidationMode } from "./validationContext.js";
@@ -67,47 +70,58 @@ const noopEmailAdapter: PayloadEmailAdapter<void> = ({ payload }) => ({
   },
 });
 
-function attachFrogbot(req: PayloadRequest): FrogbotRequest {
-  const frogbot = getFrogbotInstance(req.payload);
-  if (!frogbot)
-    throw new Error(
-      "[frogbot] Request created before Frogbot lifecycle initialization.",
-    );
-  (req as PayloadRequest & { frogbot: Frogbot }).frogbot = frogbot;
-  return req as unknown as FrogbotRequest;
+type AttachFrogbot = (req: PayloadRequest) => Promise<FrogbotRequest>;
+
+async function bootstrapBeforeOperation(
+  args: { req: PayloadRequest },
+  attachFrogbot: AttachFrogbot,
+): Promise<void> {
+  await attachFrogbot(args.req);
 }
 
-function bootstrapBeforeOperation(args: { req: PayloadRequest }): void {
-  attachFrogbot(args.req);
-}
-
-function wrapEndpointHandler(handler: PayloadHandler): PayloadHandler {
-  return (req) => {
-    attachFrogbot(req);
+function wrapEndpointHandler(
+  handler: PayloadHandler,
+  attachFrogbot: AttachFrogbot,
+): PayloadHandler {
+  return async (req) => {
+    await attachFrogbot(req);
     return handler(req);
   };
 }
 
-function wrapRootHooks(hooks: FrogbotConfig["hooks"]): PayloadConfig["hooks"] {
+function wrapRootHooks(
+  hooks: FrogbotConfig["hooks"],
+  attachFrogbot: AttachFrogbot,
+): PayloadConfig["hooks"] {
   if (!hooks?.afterError) return hooks as PayloadConfig["hooks"];
   return {
     afterError: hooks.afterError.map(
-      (hook) => (args) => hook({ ...args, req: attachFrogbot(args.req) }),
+      (hook) => async (args) => {
+        if (!args.req.payload) return hook(args as never);
+        return hook({ ...args, req: await attachFrogbot(args.req) });
+      },
     ),
   };
 }
 
 function wrapEndpoints(
   endpoints: Endpoint[] | false | undefined,
+  attachFrogbot: AttachFrogbot,
 ): PayloadEndpoint[] | false | undefined {
   if (!endpoints) return endpoints;
   return endpoints.map((e) => ({
     ...e,
-    handler: wrapEndpointHandler(e.handler as unknown as PayloadHandler),
+    handler: wrapEndpointHandler(
+      e.handler as unknown as PayloadHandler,
+      attachFrogbot,
+    ),
   }));
 }
 
-function sanitizeCollection(c: CollectionConfig): PayloadCollectionConfig {
+function sanitizeCollection(
+  c: CollectionConfig,
+  attachFrogbot: AttachFrogbot,
+): PayloadCollectionConfig {
   const out: Record<string, unknown> = {
     ...(c as unknown as Record<string, unknown>),
   };
@@ -131,12 +145,16 @@ function sanitizeCollection(c: CollectionConfig): PayloadCollectionConfig {
     (existingHooks.beforeOperation as unknown[] | undefined) ?? [];
   out.hooks = {
     ...existingHooks,
-    beforeOperation: [bootstrapBeforeOperation, ...existingBeforeOp],
+    beforeOperation: [
+      (args: { req: PayloadRequest }) =>
+        bootstrapBeforeOperation(args, attachFrogbot),
+      ...existingBeforeOp,
+    ],
   };
 
   // Wrap per-collection custom endpoints.
   if (c.endpoints !== undefined) {
-    out.endpoints = wrapEndpoints(c.endpoints);
+    out.endpoints = wrapEndpoints(c.endpoints, attachFrogbot);
   }
 
   return out as unknown as PayloadCollectionConfig;
@@ -547,11 +565,14 @@ function buildPayloadConfig(
   config: FrogbotConfig,
   onInit: NonNullable<PayloadConfig["onInit"]>,
   internalEndpoints: Endpoint[] = [],
+  attachFrogbot: AttachFrogbot,
 ): PayloadConfig {
   const out: Record<string, unknown> = {
     ...(config as unknown as Record<string, unknown>),
-    collections: config.collections.map(sanitizeCollection),
-    hooks: wrapRootHooks(config.hooks),
+    collections: config.collections.map((collection) =>
+      sanitizeCollection(collection, attachFrogbot),
+    ),
+    hooks: wrapRootHooks(config.hooks, attachFrogbot),
   };
 
   const userEndpoints = config.endpoints as Endpoint[] | false | undefined;
@@ -564,11 +585,11 @@ function buildPayloadConfig(
   ];
 
   if (allEndpoints.length > 0) {
-    out.endpoints = wrapEndpoints(allEndpoints);
+    out.endpoints = wrapEndpoints(allEndpoints, attachFrogbot);
   } else if (userEndpoints === false) {
     out.endpoints = false;
   } else if (userEndpoints !== undefined) {
-    out.endpoints = wrapEndpoints(userEndpoints);
+    out.endpoints = wrapEndpoints(userEndpoints, attachFrogbot);
   }
 
   // Inject noop email adapter if none provided.
@@ -673,6 +694,23 @@ export function sanitize(
     );
   }
   validateInternalPathReservations(config);
+  const sanitizedConfigRef: { current?: FrogbotSanitizedConfig } = {};
+  const attachFrogbot: AttachFrogbot = async (req) => {
+    let frogbot = getFrogbotInstance(req.payload);
+    if (!frogbot) {
+      const sanitizedConfig = sanitizedConfigRef.current;
+      if (!sanitizedConfig)
+        throw new Error(
+          "[frogbot] Payload initialized before config sanitization completed.",
+        );
+      frogbot = await ensureFrogbotInstance(req.payload, () =>
+        initFrogbotFromPayload(req.payload, sanitizedConfig),
+      );
+      seedFrogbotCache(frogbot);
+    }
+    (req as PayloadRequest & { frogbot: Frogbot }).frogbot = frogbot;
+    return req as unknown as FrogbotRequest;
+  };
 
   // Sanitize AI config if present.
   const sanitizedAI = config.ai ? sanitizeAI(config.ai) : undefined;
@@ -716,21 +754,21 @@ export function sanitize(
   }));
 
   // Build the Payload config and pass it through Payload's buildConfig.
-  const sanitizedConfigRef: { current?: FrogbotSanitizedConfig } = {};
   const payloadConfig = buildPayloadConfig(
     { ...config, agents, collections },
     async (payload) => {
-      const registered = getFrogbotInstance(payload);
       const sanitizedConfig = sanitizedConfigRef.current;
       if (!sanitizedConfig)
         throw new Error(
           "[frogbot] Payload initialized before config sanitization completed.",
         );
-      const frogbot =
-        registered ?? (await initFrogbotFromPayload(payload, sanitizedConfig));
+      const frogbot = await ensureFrogbotInstance(payload, () =>
+        initFrogbotFromPayload(payload, sanitizedConfig),
+      );
       seedFrogbotCache(frogbot);
     },
     buildSecretEndpoints({ connections, pieces: pieces.pieces }),
+    attachFrogbot,
   );
   const payloadSanitizedPromise = payloadBuildConfig(payloadConfig).then(
     rewriteComponentPaths,

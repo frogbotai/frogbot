@@ -28,9 +28,13 @@ export async function getFrogbot(options: InitOptions): Promise<Frogbot> {
   if (cached.frogbot) return cached.frogbot;
 
   if (!cached.promise) {
-    cached.promise = new Frogbot().init(options).then((instance) => {
+    const promise = new Frogbot().init(options).then((instance) => {
       cached.frogbot = instance;
       return instance;
+    });
+    cached.promise = promise;
+    void promise.catch(() => {
+      if (cached.promise === promise) cached.promise = null;
     });
   }
 
