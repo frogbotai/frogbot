@@ -168,7 +168,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function sanitizeAI(ai: AIConfig): SanitizedAIConfig {
+type SanitizedAIBase = Omit<SanitizedAIConfig, "usage">;
+
+function sanitizeAI(ai: AIConfig): SanitizedAIBase {
   // Validate providers.
   if (!isRecord(ai.providers)) {
     throw new Error(
@@ -340,7 +342,7 @@ function sanitizeAI(ai: AIConfig): SanitizedAIConfig {
 
 function sanitizeAgents(
   agents: AgentConfig[],
-  ai: SanitizedAIConfig | undefined,
+  ai: SanitizedAIBase | undefined,
   pieces: SanitizedPiecesConfig,
   mode: ValidationMode,
 ): AgentConfig[] | undefined {
@@ -735,7 +737,7 @@ export function sanitize(
 
   // Resolve chat persistence — adopt marked collections or inject defaults.
   const chatResult = resolveChatCollections({ ...config, agents });
-  const usageCollections = resolveUsageCollection(
+  const { collections: usageCollections, slug: usageSlug } = resolveUsageCollection(
     { ...config, agents, collections: chatResult.collections },
     chatResult.chat.enabled ? chatResult.chat.threadsSlug : undefined,
   );
@@ -791,7 +793,7 @@ export function sanitize(
     secret: config.secret,
     port: (config as any).port, // eslint-disable-line @typescript-eslint/no-explicit-any
     onInit: (config as any).onInit, // eslint-disable-line @typescript-eslint/no-explicit-any
-    ai: sanitizedAI,
+    ai: sanitizedAI && { ...sanitizedAI, usage: { slug: usageSlug } },
     agents,
     chat,
     connections,

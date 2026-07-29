@@ -191,6 +191,9 @@ export type SanitizedAIConfig = {
   hooks: SanitizedAIHooks;
   access: Required<AIAccessConfig>;
   telemetry: SanitizedAITelemetryConfig;
+  usage: {
+    slug: string;
+  };
   _internal: {
     deploymentId: string;
   };

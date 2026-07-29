@@ -13,7 +13,7 @@ export const logUsage: AfterOperationHook = (args) => {
   const costUSD = usage ? calculateModelCostUSD(args.model, usage) : 0;
   void req.frogbot
     .create({
-      collection: USAGE_LOGS_SLUG as never,
+      collection: req.frogbot.config?.ai?.usage?.slug ?? USAGE_LOGS_SLUG,
       data: {
         ...(req.user?.id !== undefined ? { user: req.user.id } : {}),
         ...(context.agent?.threadId !== undefined
@@ -32,7 +32,7 @@ export const logUsage: AfterOperationHook = (args) => {
         costUSD,
         finishReason: args.finishReason,
         requestedAt: new Date(args.startedAt).toISOString(),
-      } as never,
+      },
       overrideAccess: true,
       req,
     })

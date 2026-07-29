@@ -185,6 +185,26 @@ describe('frogbot generate:types', () => {
       expect(output).not.toMatch(/payload/i);
     });
 
+    it('emits the resolved custom usage-log slug', async () => {
+      dir = await mkdtemp(join(process.cwd(), '.idea/tmp/frogbot-usage-types-'));
+      const { buildConfig } = await import('../config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [
+          { slug: 'users', auth: true, fields: [] },
+          { slug: 'ai-usage', usageLog: true, fields: [] },
+        ],
+        ai: { providers: { openai: { apiKey: 'sk-test' } } },
+      });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const output = await readFile(outputPath, 'utf-8');
+
+      expect(output).toContain('ai-usage');
+      expect(output).not.toContain('usage-logs');
+    });
+
     it('generates types without provider credentials', async () => {
       dir = await mkdtemp(join(tmpdir(), 'frogbot-types-no-credentials-'));
       const { buildConfig } = await import('../config/build.js');

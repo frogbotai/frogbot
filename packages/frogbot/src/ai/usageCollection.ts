@@ -22,7 +22,7 @@ export function defaultUsageCollection({
     },
     access: {
       create: () => false,
-      read: () => false,
+      read: ({ req }) => Boolean(req.user),
       update: () => false,
       delete: () => false,
     },
@@ -73,24 +73,40 @@ export function defaultUsageCollection({
 export function resolveUsageCollection(
   config: FrogbotConfig,
   threadsSlug?: string,
-): CollectionConfig[] {
-  if (!config.ai) return config.collections;
+): { collections: CollectionConfig[]; slug: string } {
+  if (!config.ai) {
+    return { collections: config.collections, slug: USAGE_LOGS_SLUG };
+  }
+  const marked = config.collections.filter(
+    (collection) => collection.usageLog === true,
+  );
+  if (marked.length > 1) {
+    throw new Error(
+      `[frogbot] Multiple collections marked \`usageLog: true\` (${marked.map((collection) => collection.slug).join(", ")}). Mark exactly one.`,
+    );
+  }
+  const existing = marked[0];
+  const slug = existing?.slug ?? USAGE_LOGS_SLUG;
   const base = defaultUsageCollection({
     userSlug: resolveUserSlug(config),
     threadsSlug,
   });
-  const existing = config.collections.find(
-    (collection) => collection.slug === USAGE_LOGS_SLUG,
-  );
-  if (!existing) return [...config.collections, base];
-  const collections = [...config.collections];
-  collections[collections.indexOf(existing)] = mergeCollection({
-    user: existing,
-    base,
-    reservedFields: base.fields
-      .map((field) => ("name" in field ? field.name : undefined))
-      .filter((name): name is string => !!name),
-    feature: "AI usage tracking",
-  });
-  return collections;
+  if (existing) {
+    const collections = [...config.collections];
+    collections[collections.indexOf(existing)] = mergeCollection({
+      user: existing,
+      base,
+      reservedFields: base.fields
+        .map((field) => ("name" in field ? field.name : undefined))
+        .filter((name): name is string => !!name),
+      feature: "AI usage tracking",
+    });
+    return { collections, slug };
+  }
+  if (config.collections.some((collection) => collection.slug === slug)) {
+    throw new Error(
+      `[frogbot] Collection slug '${slug}' conflicts with the default AI usage-log collection. Add \`usageLog: true\` to adopt it, or rename it.`,
+    );
+  }
+  return { collections: [...config.collections, base], slug };
 }

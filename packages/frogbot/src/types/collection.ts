@@ -47,10 +47,14 @@ export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {
   /** Marks this collection as the files collection. FrogBot merges its base
    *  upload configuration in; the slug stays yours. At most one. */
   file?: boolean;
+
+  /** Marks this collection as the AI usage-log collection. FrogBot merges its
+   *  base usage-tracking fields in; the slug stays yours. At most one. */
+  usageLog?: boolean;
 };
 
 /** Collection markers. Sanitization strips these before Payload. */
-export const COLLECTION_MARKERS = ['thread', 'message', 'connections', 'file'] as const;
+export const COLLECTION_MARKERS = ['thread', 'message', 'connections', 'file', 'usageLog'] as const;
 export type CollectionMarker = (typeof COLLECTION_MARKERS)[number];
 
 /**

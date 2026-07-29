@@ -50,4 +50,10 @@ describe('resolveFilesCollection', () => {
       collections: [{ slug: 'documents', file: true, thread: true, fields: [] }],
     })).toThrow('marked as multiple roles');
   });
+
+  it('rejects usage-log and file roles on one collection', () => {
+    expect(() => resolveFilesCollection({
+      collections: [{ slug: 'documents', file: true, usageLog: true, fields: [] }],
+    })).toThrow('marked as multiple roles');
+  });
 });
