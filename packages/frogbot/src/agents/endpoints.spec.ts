@@ -30,7 +30,7 @@ function makeAgent(
   return {
     slug: 'support',
     config: { slug: 'support', model: 'openai/test', instructions: 'Help' },
-    aiAgent: { tools: {} } as AgentInstance['aiAgent'],
+    aiAgent: { tools: {}, generate } as unknown as AgentInstance['aiAgent'],
     generate: generate as AgentInstance['generate'],
     stream: vi.fn() as AgentInstance['stream'],
   };
@@ -95,15 +95,11 @@ function makeRequest({
 }
 
 function postHandler() {
-  return buildAgentEndpoints()[0].handler;
-}
-
-function listHandler() {
-  return buildAgentEndpoints()[2].handler;
+  return buildAgentEndpoints().find(({ path, method }) => path === '/agents/:slug' && method === 'post')!.handler;
 }
 
 function authorizationsHandler() {
-  return buildAgentEndpoints()[1].handler;
+  return buildAgentEndpoints().find(({ path, method }) => path === '/agents/:slug/authorizations' && method === 'get')!.handler;
 }
 
 describe('agent endpoints', () => {
@@ -349,10 +345,11 @@ describe('agent endpoints', () => {
     expect(agent.generate).toHaveBeenCalledWith(
       expect.objectContaining({
         messages: [
-          expect.objectContaining({ id: 'm1', role: 'user' }),
-          expect.objectContaining({ id: 'm2', role: 'assistant' }),
-          expect.objectContaining({ id: 'm3', role: 'user' }),
+          expect.objectContaining({ role: 'user' }),
+          expect.objectContaining({ role: 'assistant' }),
+          expect.objectContaining({ role: 'user' }),
         ],
+        options: expect.objectContaining({ threadId: 'thread-9' }),
       }),
     );
   });

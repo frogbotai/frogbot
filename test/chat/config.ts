@@ -14,14 +14,20 @@ export default await buildTestConfig({
   collections: [Users],
   ai: {
     providers: {
-      openai: { apiKey: 'test-key' },
+      test: {
+        type: 'openai-compatible',
+        baseUrl: 'http://127.0.0.1:3988/v1',
+        apiKey: 'test-key',
+        models: [{ id: 'gpt-4.1-mini', mode: 'chat' }],
+      },
     },
   },
   agents: [
     {
       slug: agentSlug,
-      model: 'openai/gpt-4.1-mini',
+      model: 'test/gpt-4.1-mini',
       instructions: 'Help the user.',
+      access: () => true,
     },
   ],
 });

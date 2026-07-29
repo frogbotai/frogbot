@@ -8,6 +8,7 @@ import type { ChildProcess } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { connect } from 'node:net';
+import { DatabaseSync } from 'node:sqlite';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -62,13 +63,14 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        OPENAI_API_KEY: 'sk-e2e-dummy',
+        FROGBOT_E2E_ZEN: '1',
+        FROGBOT_MODEL: 'zen/deepseek-v4-flash-free',
         FROGBOT_SECRET: 'e2e-secret',
         DATABASE_URL: `file:${join(dataDir, 'e2e.db')}`,
       },
     });
     server.stdout?.resume();
-    server.stderr?.resume();
+    server.stderr?.pipe(process.stderr);
 
     const deadline = Date.now() + 210000;
     for (;;) {
@@ -121,6 +123,44 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     expect(new TextDecoder().decode(value)).toContain('data:');
   });
 
+  function expectPersisted(threadId: string | number) {
+    const db = new DatabaseSync(join(dataDir, 'e2e.db'));
+    const thread = db.prepare('SELECT count(*) AS count FROM threads WHERE id = ?').get(threadId) as { count: number };
+    const messages = db.prepare('SELECT role FROM messages WHERE thread_id = ? ORDER BY role').all(threadId) as Array<{ role: string }>;
+    db.close();
+    expect(thread.count).toBe(1);
+    expect(messages.map(({ role }) => role)).toEqual(['assistant', 'user']);
+  }
+
+  it('JSON agent POST returns 200 and persists one complete turn', async () => {
+    const response = await fetch(`${baseURL}/api/agents/assistant`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ prompt: 'Reply with exactly: hello' }),
+    });
+    const body = (await response.json()) as { text: string; finishReason: string; threadId: string | number };
+    expect(response.status, JSON.stringify(body)).toBe(200);
+    expect(body.text).toBe('hello');
+    expect(body.finishReason).toBe('stop');
+    expectPersisted(body.threadId);
+  });
+
+  it('fully consumed SSE agent POST persists one complete turn', async () => {
+    const response = await fetch(`${baseURL}/api/agents/assistant`, {
+      method: 'POST',
+      headers: { accept: 'text/event-stream', 'content-type': 'application/json' },
+      body: JSON.stringify({ prompt: 'Reply with exactly: hello' }),
+    });
+    expect(response.status).toBe(200);
+    const reader = response.body!.getReader();
+    for (;;) {
+      if ((await reader.read()).done) break;
+    }
+    const threadId = response.headers.get('X-Frogbot-Thread-Id');
+    expect(threadId).not.toBeNull();
+    expectPersisted(threadId!);
+  });
+
   it('sends homepage chat messages through the FrogBot transport', async () => {
     const page = await fetch(baseURL);
     expect(page.status).toBe(200);
@@ -136,20 +176,24 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
       },
       prepareSendMessagesRequest: prepareChatRequest(),
     });
-    try {
-      const stream = await transport.sendMessages({
-        chatId: 'new:assistant',
-        messageId: 'user-1',
-        messages: [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello!' }] }],
-        trigger: 'submit-message',
-      });
-      const { value } = await stream.getReader().read();
-      expect(value).toBeDefined();
-    } catch (error) {
-      expect(String(error)).not.toContain('Body must include');
+    const stream = await transport.sendMessages({
+      chatId: 'new:assistant',
+      messageId: 'user-1',
+      messages: [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello!' }] }],
+      trigger: 'submit-message',
+    });
+    const chunks = [];
+    const reader = stream.getReader();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
     }
-    expect(responseStatus).toBeDefined();
-    expect(responseStatus).not.toBe(400);
+    expect(responseStatus).toBe(200);
+    expect(chunks.length).toBeGreaterThan(0);
+    expect(chunks.some((chunk) => chunk.type === 'text-delta'), JSON.stringify(chunks)).toBe(true);
+    expect(transport.threadId).toBeDefined();
+    expectPersisted(transport.threadId!);
   });
 
   it('serves the REST API under /api', async () => {

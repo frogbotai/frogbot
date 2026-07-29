@@ -12,9 +12,16 @@ const config: FrogbotConfig = {
   }),
   collections: [Users],
   ai: {
-    providers: {
-      openai: true,
-    },
+    providers: process.env.FROGBOT_E2E_ZEN
+      ? {
+          zen: {
+            type: 'openai-compatible',
+            baseUrl: 'https://opencode.ai/zen/v1',
+            apiKey: 'public',
+            models: [{ id: 'deepseek-v4-flash-free', mode: 'chat' }],
+          },
+        }
+      : { openai: true },
   },
   agents: [assistant],
 };

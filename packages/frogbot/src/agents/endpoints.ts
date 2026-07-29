@@ -1,14 +1,19 @@
-import { consumeStream, createAgentUIStreamResponse, generateId, validateUIMessages } from 'ai';
+import { createAgentUIStreamResponse, generateId, validateUIMessages } from 'ai';
 import type { UIMessage } from 'ai';
 import { z } from 'zod';
 
-import { resolveModel } from '../ai/resolve.js';
-import { generateMessage } from '../chat/generateMessage.js';
-import { createMessageUsage, persistAssistantMessage } from '../chat/messagePersistence.js';
-import { resolveThreadContext } from '../chat/threadContext.js';
-import type { AgentInstance } from '../types/agent.js';
 import type { DocID } from '../types/operations.js';
 import type { FrogbotRequest } from '../types/request.js';
+import {
+  AgentServiceError,
+  assertAgentAccess,
+  generateAgentRequest,
+  getAgent,
+  getAgentAuthorizations,
+  getAgentStreamOptions,
+  listAgents,
+  prepareAgentRequest,
+} from './service.js';
 
 const threadIdSchema = z.union([z.string(), z.number()]).optional();
 
@@ -26,101 +31,47 @@ const bodySchema = z.union([
 type AgentRequestBody = { prompt: string; messages?: never } | { messages: UIMessage[]; prompt?: never };
 
 export function buildAgentEndpoints() {
-  const getAuthorizations = async (req: FrogbotRequest, agent: AgentInstance) => req.frogbot.connections?.authorizations({
-    owner: req.user!,
-    services: [...new Set((agent.config.tools ?? []).flatMap((tool) => tool.pieceService ? [tool.pieceService] : []))],
-  }) ?? [];
   return [
     {
       path: '/agents/:slug',
       method: 'post' as const,
       handler: async (req: FrogbotRequest) => {
         const slug = req.routeParams?.slug as string | undefined;
-        const agent: AgentInstance | undefined = slug ? req.frogbot.agents[slug] : undefined;
-
-        if (!agent) return Response.json({ error: `Agent '${slug ?? ''}' not found` }, { status: 404 });
-        const access = agent.config.access ?? (({ req: current }: { req: FrogbotRequest }) => !!current.user);
         try {
-          if (!(await access({ req }))) return Response.json({ error: `Access denied for agent '${agent.slug}'` }, { status: 403 });
-        } catch {
-          return Response.json({ error: `Access denied for agent '${agent.slug}'` }, { status: 403 });
-        }
+          const agent = getAgent({ req, slug });
+          await assertAgentAccess({ req, agent });
 
-        let body: AgentRequestBody;
-        let requestedThreadId: DocID | undefined;
-        try {
-          const { threadId, ...parsed } = bodySchema.parse(await req.json!());
-          requestedThreadId = threadId;
-          body =
-            'messages' in parsed && parsed.messages
-              ? {
-                  messages: await validateUIMessages({
-                    messages: parsed.messages,
-                    tools: agent.aiAgent.tools as never,
-                  }),
-                }
-              : parsed;
-        } catch {
-          return Response.json(
-            {
-              error: 'Body must include `prompt` (string) or `messages` (array)',
-            },
-            { status: 400 },
-          );
-        }
+          let body: AgentRequestBody;
+          let requestedThreadId: DocID | undefined;
+          try {
+            const { threadId, ...parsed } = bodySchema.parse(await req.json!());
+            requestedThreadId = threadId;
+            body =
+              'messages' in parsed && parsed.messages
+                ? { messages: await validateUIMessages({ messages: parsed.messages, tools: agent.aiAgent.tools as never }) }
+                : parsed;
+          } catch {
+            return Response.json({ error: 'Body must include `prompt` (string) or `messages` (array)' }, { status: 400 });
+          }
 
-        try {
-          const { threadId, uiMessages } = await resolveThreadContext({
+          const { threadId, uiMessages } = await prepareAgentRequest({
             req,
-            agentSlug: agent.slug,
-            threadId: requestedThreadId,
-            incoming: toUIMessages(body),
-            tools: agent.aiAgent.tools,
+            agent,
+            requestedThreadId,
+            uiMessages: toUIMessages(body),
           });
 
           if (acceptsEventStream(req.headers.get('accept'))) {
-            const model = resolveModel(agent.config.model, req.frogbot.config.ai!);
-            return await createAgentUIStreamResponse({
-              agent: agent.aiAgent,
-              uiMessages,
-              originalMessages: uiMessages as never,
-              generateMessageId: generateId,
-              consumeSseStream: consumeStream,
-              sendSources: true,
-              messageMetadata: ({ part }) =>
-                part.type === 'finish' ? { usage: createMessageUsage(part.totalUsage, model) } : undefined,
-              onFinish:
-                threadId === undefined
-                  ? undefined
-                  : ({ responseMessage, isContinuation }) =>
-                      persistAssistantMessage({ req, threadId, message: responseMessage, isContinuation }),
-              options: { req, overrideAccess: true },
-              abortSignal: req.signal ?? undefined,
-              headers: threadId !== undefined ? { 'X-Frogbot-Thread-Id': String(threadId) } : undefined,
-            });
+            return await createAgentUIStreamResponse(getAgentStreamOptions({ req, agent, threadId, uiMessages }));
           }
 
-          const result = await agent.generate({
-            messages: uiMessages,
-            req,
-            overrideAccess: true,
-            abortSignal: req.signal ?? undefined,
-          });
-          if (threadId !== undefined) {
-            const message = await generateMessage({
-              result,
-              originalMessages: uiMessages,
-              tools: agent.aiAgent.tools,
-              model: resolveModel(agent.config.model, req.frogbot.config.ai!),
-            });
-            await persistAssistantMessage({ req, threadId, message, isContinuation: false });
-          }
+          const result = await generateAgentRequest({ req, agent, threadId, uiMessages });
 
           return Response.json({
             text: result.text,
             usage: result.totalUsage,
             finishReason: result.finishReason,
-            authorizations: req.user ? await getAuthorizations(req, agent) : [],
+            authorizations: req.user ? await getAgentAuthorizations({ req, agent }) : [],
             ...(threadId !== undefined ? { threadId } : {}),
           });
         } catch (error) {
@@ -140,33 +91,21 @@ export function buildAgentEndpoints() {
       handler: async (req: FrogbotRequest) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
         const slug = req.routeParams?.slug as string | undefined;
-        const agent = slug ? req.frogbot.agents[slug] : undefined;
-        if (!agent) return Response.json({ error: `Agent '${slug ?? ''}' not found` }, { status: 404 });
-        const access = agent.config.access ?? (({ req: current }: { req: FrogbotRequest }) => !!current.user);
+        let agent: ReturnType<typeof getAgent>;
         try {
-          if (!(await access({ req }))) return Response.json({ error: `Access denied for agent '${agent.slug}'` }, { status: 403 });
-        } catch {
-          return Response.json({ error: `Access denied for agent '${agent.slug}'` }, { status: 403 });
+          agent = getAgent({ req, slug });
+          await assertAgentAccess({ req, agent });
+        } catch (error) {
+          return Response.json({ error: getErrorMessage(error) }, { status: getErrorStatus(error) });
         }
-        return Response.json({ authorizations: await getAuthorizations(req, agent) });
+        return Response.json({ authorizations: await getAgentAuthorizations({ req, agent }) });
       },
     },
     {
       path: '/agents',
       method: 'get' as const,
       handler: async (req: FrogbotRequest) => {
-        const agents: { slug: string }[] = [];
-
-        for (const instance of Object.values(req.frogbot.agents)) {
-          const access = instance.config.access ?? (({ req: current }) => !!current.user);
-          try {
-            if (await access({ req })) agents.push({ slug: instance.slug });
-          } catch {
-            continue;
-          }
-        }
-
-        return Response.json({ agents });
+        return Response.json({ agents: await listAgents({ req }) });
       },
     },
   ];
@@ -189,7 +128,12 @@ function acceptsEventStream(accept: string | null): boolean {
 }
 
 function getErrorStatus(error: unknown): number {
+  if (error instanceof AgentServiceError) return error.status;
   if (typeof error !== 'object' || error === null) return 500;
   const status = 'status' in error ? error.status : 'statusCode' in error ? error.statusCode : undefined;
   return typeof status === 'number' && status >= 400 && status <= 599 ? status : 500;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Agent request failed';
 }

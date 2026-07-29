@@ -19,9 +19,16 @@ export class FrogbotChatTransport<UI_MESSAGE extends UIMessage = UIMessage> exte
 
   constructor({ agentSlug, apiBase = '/api', fetch = globalThis.fetch, onThreadId, ...options }: FrogbotChatTransportOptions<UI_MESSAGE>) {
     const capture = { threadId: (_threadId: string) => undefined }
+    const configuredHeaders = options.headers
     super({
       ...options,
       api: `${apiBase}/agents/${encodeURIComponent(agentSlug)}`,
+      headers: async () => {
+        const headers = await (typeof configuredHeaders === 'function' ? configuredHeaders() : configuredHeaders)
+        const merged = new Headers({ Accept: 'text/event-stream' })
+        new Headers(headers).forEach((value, key) => merged.set(key, value))
+        return merged
+      },
       fetch: async (input, init) => {
         const response = await fetch(input, init)
         const threadId = response.headers.get('X-Frogbot-Thread-Id')

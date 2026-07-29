@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     threads: Thread;
     messages: Message;
+    'usage-logs': UsageLog;
     files: File;
   };
   collectionsJoins: {};
@@ -77,6 +78,7 @@ export interface Config {
     users: UsersSelect;
     threads: ThreadsSelect;
     messages: MessagesSelect;
+    'usage-logs': UsageLogsSelect;
     files: FilesSelect;
   };
   db: {
@@ -186,6 +188,39 @@ export interface Message {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs".
+ */
+export interface UsageLog {
+  id: number;
+  user?: (number | null) | User;
+  thread?: (number | null) | Thread;
+  requestId: string;
+  runId?: string | null;
+  model: string;
+  operation:
+    | 'chat.completions'
+    | 'messages'
+    | 'responses'
+    | 'embeddings'
+    | 'images'
+    | 'speech'
+    | 'transcriptions'
+    | 'videos'
+    | 'rerank';
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens?: number | null;
+  cacheWriteTokens?: number | null;
+  reasoningTokens?: number | null;
+  totalTokens: number;
+  costUSD: number;
+  finishReason?: string | null;
+  requestedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "files".
  */
 export interface File {
@@ -267,6 +302,29 @@ export interface MessagesSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs_select".
+ */
+export interface UsageLogsSelect {
+  user?: boolean;
+  thread?: boolean;
+  requestId?: boolean;
+  runId?: boolean;
+  model?: boolean;
+  operation?: boolean;
+  inputTokens?: boolean;
+  outputTokens?: boolean;
+  cachedInputTokens?: boolean;
+  cacheWriteTokens?: boolean;
+  reasoningTokens?: boolean;
+  totalTokens?: boolean;
+  costUSD?: boolean;
+  finishReason?: boolean;
+  requestedAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "files_select".
  */
 export interface FilesSelect {
@@ -308,6 +366,6 @@ declare module 'frogbot' {
     agents: {
       "assistant": unknown;
     };
-    models: "openai/chatgpt-image-latest" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-4o" | "openai/gpt-4o-2024-08-06" | "openai/gpt-4o-2024-11-20" | "openai/gpt-4o-mini" | "openai/gpt-5" | "openai/gpt-5-mini" | "openai/gpt-5-nano" | "openai/gpt-5-pro" | "openai/gpt-5.1" | "openai/gpt-5.2" | "openai/gpt-5.2-chat-latest" | "openai/gpt-5.2-pro" | "openai/gpt-5.3-chat-latest" | "openai/gpt-5.3-codex" | "openai/gpt-5.3-codex-spark" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.4-pro" | "openai/gpt-5.5" | "openai/gpt-5.5-pro" | "openai/gpt-5.6" | "openai/gpt-5.6-luna" | "openai/gpt-5.6-sol" | "openai/gpt-5.6-terra" | "openai/gpt-image-1-mini" | "openai/gpt-image-1.5" | "openai/gpt-image-2" | "openai/gpt-realtime-2.1" | "openai/o3" | "openai/o3-pro" | "openai/text-embedding-3-large" | "openai/text-embedding-3-small" | "openai/text-embedding-ada-002";
+    models: "zen/deepseek-v4-flash-free";
   }
 }
