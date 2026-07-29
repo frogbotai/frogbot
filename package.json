@@ -25,6 +25,7 @@
     "generate:ai-types": "node scripts/generate-ai-types.mjs",
     "sync:catalog": "node scripts/sync-catalog.mjs",
     "check:branding": "node scripts/check-branding.mjs",
+    "check:docs-fences": "node scripts/check-docs-fences.mjs",
     "check:ui-architecture": "node scripts/check-ui-architecture.mjs",
     "docker:start": "docker compose -f test/docker-compose.yml --profile",
     "docker:clean": "docker compose -f test/docker-compose.yml down -v --remove-orphans",
