@@ -44,9 +44,9 @@ const TINY_MODEL = 'zen/big-pickle';
 const TEST_TIMEOUT = 90_000;
 
 function makeZenApp() {
-  const registry = buildProviderRegistry({}, [
-    { name: 'zen', baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
-  ]) as ProviderRegistry;
+  const registry = buildProviderRegistry({
+    zen: { baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
+  }) as ProviderRegistry;
   return createApp({ registry });
 }
 
@@ -1082,9 +1082,9 @@ describe.skipIf(!RUN_E2E)('gateway E2E — Zen /v1/chat/completions realistic cl
   it(
     'rejects an oversized real chat request with 413 when maxBodyBytes is configured',
     async () => {
-      const registry = buildProviderRegistry({}, [
-        { name: 'zen', baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
-      ]) as ProviderRegistry;
+      const registry = buildProviderRegistry({
+        zen: { baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
+      }) as ProviderRegistry;
       const app = createApp({ registry, maxBodyBytes: 4096 });
 
       const huge = 'x'.repeat(2 * 1024 * 1024);

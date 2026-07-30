@@ -29,9 +29,9 @@ export function makeLiveApp(entry: LiveProviderEntry): LiveApp {
       (entry.compat.apiKeyEnv ? process.env[entry.compat.apiKeyEnv] : undefined) ??
       entry.compat.apiKeyFallback ??
       'public';
-    const registry = buildProviderRegistry({}, [
-      { name: entry.label, baseURL: entry.compat.baseURL, apiKey },
-    ]);
+    const registry = buildProviderRegistry({
+      [entry.label]: { baseURL: entry.compat.baseURL, apiKey },
+    });
     return createApp({ registry });
   }
 

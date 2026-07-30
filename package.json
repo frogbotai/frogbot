@@ -29,7 +29,7 @@
     "check:ui-architecture": "node scripts/check-ui-architecture.mjs",
     "docker:start": "docker compose -f test/docker-compose.yml --profile",
     "docker:clean": "docker compose -f test/docker-compose.yml down -v --remove-orphans",
-    "bump": "pnpm test && pnpm build && node scripts/bump.mjs",
+    "bump": "RUN_E2E=1 pnpm test && pnpm build && node scripts/bump.mjs",
     "publish-packages": "pnpm -r publish --access public --no-git-checks",
     "release": "pnpm test && pnpm build && pnpm publish-packages"
   },

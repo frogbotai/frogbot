@@ -35,9 +35,9 @@ const MODEL = 'zen/deepseek-v4-flash-free';
 const TEST_TIMEOUT = 90_000;
 
 function makeZenApp() {
-  const registry = buildProviderRegistry({}, [
-    { name: 'zen', baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
-  ]) as ProviderRegistry;
+  const registry = buildProviderRegistry({
+    zen: { baseURL: ZEN_BASE_URL, apiKey: OPENCODE_API_KEY },
+  }) as ProviderRegistry;
   return createApp({ registry });
 }
 
