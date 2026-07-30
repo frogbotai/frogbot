@@ -73,7 +73,10 @@ import type {
 import type { FrogbotRequest } from './types/request.js';
 import type { FrogbotSanitizedConfig } from './types/sanitized.js';
 
-type LogFn = (msg: string, ...args: unknown[]) => void;
+type LogFn = {
+  (obj: Record<string, unknown>, msg?: string): void;
+  (msg: string, ...args: unknown[]): void;
+};
 
 export interface Logger {
   info: LogFn;

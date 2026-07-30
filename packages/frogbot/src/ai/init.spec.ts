@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { Logger } from '../frogbot.js';
 import type { SanitizedAIConfig } from '../types/ai.js';
 import { buildGatewayConfig, createAIGateway } from './init.js';
 
@@ -131,6 +132,33 @@ describe('buildGatewayConfig', () => {
 });
 
 describe('createAIGateway', () => {
+  it('preserves structured fields when gateway errors reach the host logger', async () => {
+    const warn = vi.fn();
+    const logger: Logger = {
+      trace: vi.fn(),
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn,
+      error: vi.fn(),
+      fatal: vi.fn(),
+    };
+    const gw = createAIGateway(makeAIConfig({ openai: { apiKey: 'sk-test' } }), logger);
+
+    const response = await gw.handler(
+      new Request('http://localhost/v1/responses', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{',
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(warn).toHaveBeenCalledWith(
+      expect.objectContaining({ path: '/v1/responses', status: 400 }),
+      'request-error',
+    );
+  });
+
   it('constructs with an omitted API key and the SDK environment fallback', () => {
     vi.stubEnv('OPENAI_API_KEY', 'sk-env');
     const gw = createAIGateway(makeAIConfig({ openai: true }));

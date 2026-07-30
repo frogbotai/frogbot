@@ -101,31 +101,6 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
   };
 }
 
-/**
- * Adapts FrogBot's `Logger` (pino-style `(msg, ...args)`) to the gateway's
- * `GatewayLogger` contract (pino-style `(obj, msg?)` overloads).
- */
-function toGatewayLogger(logger: Logger): NonNullable<GatewayConfig["logger"]> {
-  const adapt =
-    (log: (msg: string, ...args: unknown[]) => void) =>
-    (objOrMsg: Record<string, unknown> | string, msg?: string): void => {
-      if (typeof objOrMsg === "string") {
-        log(objOrMsg);
-      } else {
-        log(msg ?? "", objOrMsg);
-      }
-    };
-
-  return {
-    trace: adapt((msg, ...args) => logger.trace(msg, ...args)),
-    debug: adapt((msg, ...args) => logger.debug(msg, ...args)),
-    info: adapt((msg, ...args) => logger.info(msg, ...args)),
-    warn: adapt((msg, ...args) => logger.warn(msg, ...args)),
-    error: adapt((msg, ...args) => logger.error(msg, ...args)),
-    fatal: adapt((msg, ...args) => logger.fatal(msg, ...args)),
-  };
-}
-
 export function createAIGateway(
   config: SanitizedAIConfig,
   logger?: Logger,
@@ -133,6 +108,6 @@ export function createAIGateway(
   const create = createGateway as (config: GatewayConfig) => Gateway;
   return create({
     ...buildGatewayConfig(config),
-    ...(logger && { logger: toGatewayLogger(logger) }),
+    ...(logger && { logger }),
   });
 }

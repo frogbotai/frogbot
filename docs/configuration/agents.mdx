@@ -61,7 +61,7 @@ export const lookupTicket: Tool<
   description: 'Look up the current status of a support ticket',
   inputSchema: lookupInput,
   execute: async ({ ticket }, ctx) => {
-    ctx.frogbot.logger.info(`Looking up ${ticket}`)
+    ctx.frogbot.logger.info({ ticket }, 'Looking up ticket')
 
     return {
       ticket,
