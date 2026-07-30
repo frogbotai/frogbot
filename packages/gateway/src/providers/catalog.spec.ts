@@ -135,6 +135,7 @@ describe("supportsOperation", () => {
 
   it("returns true for supported operations", () => {
     expect(supportsOperation(entry, "chat.completions")).toBe(true);
+    expect(supportsOperation(entry, "responses")).toBe(true);
     expect(supportsOperation(entry, "embeddings")).toBe(true);
   });
 

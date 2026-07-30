@@ -7,7 +7,7 @@ import { toContentfulStatus,toOpenAIErrorResponse } from '../../errors/envelope.
 import { headersForError } from '../../errors/normalizeAiSdkError.js';
 import { type GatewayEnv, type HookPhase, type Hooks, type HookUsage, type OperationBase,runHooks } from '../../hooks.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { type ProviderRegistry,resolveProvider } from '../../providers/registry.js';
+import { type ProviderModelPolicy, type ProviderRegistry,resolveProvider } from '../../providers/registry.js';
 import { createUpstreamSignal } from '../../shared/upstreamTimeout.js';
 import { prepareForwardHeaders } from '../../utils/headers.js';
 import { parseJsonBody } from '../../utils/parseJsonBody.js';
@@ -16,7 +16,7 @@ import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
 import { parseEmbeddingsRequest } from './schema.js';
 import { toEmbedParams, toOpenAIEmbeddingsResponse } from './translators/index.js';
 
-export type EmbeddingsRouteContext = {
+export type EmbeddingsRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
   maxBodyBytes?: number;
@@ -57,6 +57,8 @@ export function embeddingsRoute(ctx: EmbeddingsRouteContext) {
         modelId: body.model,
         operation,
         providers: ctx.registry,
+        models: ctx.models,
+        allowlists: ctx.allowlists,
       });
       const model = resolved.instance.embeddingModel(resolved.modelName);
       hooks = mergeHooks(getProviderHooks(resolved.providerName), ctx.hooks ?? {});

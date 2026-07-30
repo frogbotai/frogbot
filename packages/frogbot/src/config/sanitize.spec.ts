@@ -708,6 +708,36 @@ describe("frogbot sanitize", () => {
       expect(() => sanitize(config)).not.toThrow();
     });
 
+    it("accepts catalogued built-in model allowlists", () => {
+      const config = makeConfig({
+        ai: {
+          providers: {
+            bedrock: {
+              region: "us-east-1",
+              models: ["zai.glm-4.7-flash"],
+            },
+          },
+        },
+      });
+      expect(() => sanitize(config)).not.toThrow();
+    });
+
+    it("rejects unknown built-in model allowlist entries", () => {
+      const config = makeConfig({
+        ai: {
+          providers: {
+            bedrock: {
+              region: "us-east-1",
+              models: ["not-a-real-model"],
+            },
+          },
+        },
+      } as never);
+      expect(() => sanitize(config)).toThrow(
+        "Provider 'bedrock' models contains unknown model: not-a-real-model",
+      );
+    });
+
     it("rejects incomplete explicit Bedrock credentials", () => {
       const config = makeConfig({
         ai: { providers: { bedrock: { accessKeyId: "ak" } } },

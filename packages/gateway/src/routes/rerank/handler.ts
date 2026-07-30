@@ -7,7 +7,7 @@ import { toContentfulStatus,toOpenAIErrorResponse } from '../../errors/envelope.
 import { headersForError } from '../../errors/normalizeAiSdkError.js';
 import { type GatewayEnv, type HookPhase, type Hooks, type OperationBase,runHooks } from '../../hooks.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { type ProviderRegistry,requireRerankingModel, resolveProvider } from '../../providers/registry.js';
+import { type ProviderModelPolicy, type ProviderRegistry,requireRerankingModel, resolveProvider } from '../../providers/registry.js';
 import { createUpstreamSignal } from '../../shared/upstreamTimeout.js';
 import { prepareForwardHeaders } from '../../utils/headers.js';
 import { parseJsonBody } from '../../utils/parseJsonBody.js';
@@ -16,7 +16,7 @@ import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
 import { parseRerankRequest } from './schema.js';
 import { toOpenAIRerankResponse, toRerankParams } from './translators/index.js';
 
-export type RerankRouteContext = {
+export type RerankRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
   maxBodyBytes?: number;
@@ -60,6 +60,8 @@ export function rerankRoute(ctx: RerankRouteContext) {
         modelId: body.model,
         operation,
         providers: ctx.registry,
+        models: ctx.models,
+        allowlists: ctx.allowlists,
       });
       const model = requireRerankingModel({
         provider: resolved.instance,

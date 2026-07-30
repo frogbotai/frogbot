@@ -24,7 +24,7 @@ import { type GatewayEnv, type HookPhase, type Hooks, type HookUsage, type Opera
 import type { AiSdkTelemetry } from '../../observability/aiSdkTelemetry.js';
 import { otelContextKey } from '../../observability/tracing.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { type ProviderRegistry,resolveProvider } from '../../providers/registry.js';
+import { type ProviderModelPolicy, type ProviderRegistry,resolveProvider } from '../../providers/registry.js';
 import { isProduction } from '../../shared/runtimeDetection.js';
 import { createStreamLifecycle, type StreamLifecycle } from '../../shared/streamLifecycle.js';
 import { toAnthropicReasoning } from '../../shared/toAnthropicReasoning.js';
@@ -47,7 +47,7 @@ import {
 } from './translators/index.js';
 import { toAISDKToolChoice,toAISDKTools } from './translators/tools.js';
 
-export type MessagesRouteContext = {
+export type MessagesRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
   maxBodyBytes?: number;
@@ -98,6 +98,8 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         modelId: body.model,
         operation: 'chat.completions',
         providers: ctx.registry,
+        models: ctx.models,
+        allowlists: ctx.allowlists,
       });
       const model = resolved.instance.languageModel(resolved.modelName);
       hooks = mergeHooks(getProviderHooks(resolved.providerName), ctx.hooks ?? {});

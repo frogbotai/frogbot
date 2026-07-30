@@ -20,6 +20,7 @@ import type {
 import { buildConfig as payloadBuildConfig } from "payload";
 
 import { buildAgentEndpoints } from "../agents/endpoints.js";
+import { isKnownModelId } from "../ai/catalog.js";
 import { getGatewayProviderName, isProviderName } from "../ai/providerNames.js";
 import { resolveUsageCollection } from "../ai/usageCollection.js";
 import { buildManifestEndpoint } from "../chat/manifest.js";
@@ -204,7 +205,7 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
       throw new Error(`[frogbot] Provider '${key}' must be true or an object.`);
     }
     const provider: Record<string, unknown> = entry;
-    if ("type" in provider || "baseUrl" in provider || "models" in provider) {
+    if ("type" in provider || "baseUrl" in provider) {
       const custom = provider;
       if (custom.type !== "openai-compatible") {
         throw new Error(
@@ -243,6 +244,24 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
       throw new Error(
         `[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`,
       );
+    }
+    if (provider.models !== undefined) {
+      if (!Array.isArray(provider.models)) {
+        throw new Error(
+          `[frogbot] Provider '${key}' models must be an array.`,
+        );
+      }
+      const gatewayProvider = getGatewayProviderName(key);
+      for (const model of provider.models) {
+        if (
+          typeof model !== "string" ||
+          !isKnownModelId(`${gatewayProvider}/${model}`, new Set([gatewayProvider]))
+        ) {
+          throw new Error(
+            `[frogbot] Provider '${key}' models contains unknown model: ${String(model)}.`,
+          );
+        }
+      }
     }
     if (key === "bedrock") {
       const hasRegion =

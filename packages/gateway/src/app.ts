@@ -36,7 +36,7 @@ import type { SignalLevelInput } from './observability/signalLevel.js';
 import { createTracingHooks, type TracingOptions } from './observability/tracing.js';
 import type { ModelCatalog } from './providers/catalog.js';
 import { mergeHooks } from './providers/middleware.js';
-import type { ProviderRegistry } from './providers/registry.js';
+import type { ProviderModelAllowlists, ProviderRegistry } from './providers/registry.js';
 import { chatCompletionsRoute } from './routes/chatCompletions/handler.js';
 import { embeddingsRoute } from './routes/embeddings/handler.js';
 import { imagesRoute } from './routes/images/handler.js';
@@ -76,8 +76,9 @@ export const getRoutes = (app: Hono): GatewayRoutes | undefined => routesByApp.g
 
 export type AppContext = {
   registry: ProviderRegistry;
-  /** Model catalog served by `GET /v1/models` (discovery-only; unlisted models still route). */
+  /** Model catalog served by `GET /v1/models`. */
   catalog?: ModelCatalog;
+  allowlists?: ProviderModelAllowlists;
   /** Prefix routes are also served under, in addition to bare paths (default `/v1`). `''` disables the prefixed mount. */
   basePath?: string;
   hooks?: Hooks;
@@ -144,6 +145,8 @@ export function createApp(ctx: AppContext) {
   // `/v1/chat/completions`, so the handler works mounted at any prefix.
   const routeCtx = {
     registry: ctx.registry,
+    models: ctx.catalog,
+    allowlists: ctx.allowlists,
     hooks,
     maxBodyBytes: ctx.maxBodyBytes,
     upstreamTimeoutMs: ctx.upstreamTimeoutMs,
@@ -153,7 +156,7 @@ export function createApp(ctx: AppContext) {
     '/embeddings': embeddingsRoute(routeCtx),
     '/images/generations': imagesRoute(routeCtx),
     '/messages': messagesRoute({ ...routeCtx, telemetry }),
-    '/models': modelsRoute({ registry: ctx.registry, catalog: ctx.catalog }),
+    '/models': modelsRoute({ registry: ctx.registry, catalog: ctx.catalog, allowlists: ctx.allowlists }),
     '/rerank': rerankRoute(routeCtx),
     '/responses': responsesRoute({ ...routeCtx, telemetry }),
     '/audio/speech': speechRoute(routeCtx),

@@ -54,6 +54,32 @@ describe('buildGatewayConfig', () => {
     expect(config.providers).toEqual({ 'amazon-bedrock': entry });
   });
 
+  it('preserves built-in model allowlists', () => {
+    const config = buildGatewayConfig(
+      makeAIConfig({ openai: { apiKey: 'sk-1', models: ['gpt-4o'] } }),
+    );
+    expect(config.providers.openai).toEqual({ apiKey: 'sk-1', models: ['gpt-4o'] });
+  });
+
+  it('preserves Bedrock model allowlists while renaming the provider', () => {
+    const config = buildGatewayConfig(
+      makeAIConfig({
+        bedrock: { region: 'us-east-1', models: ['zai.glm-4.7-flash'] },
+      }),
+    );
+    expect(config.providers['amazon-bedrock']).toEqual({
+      region: 'us-east-1',
+      models: ['zai.glm-4.7-flash'],
+    });
+  });
+
+  it('preserves xAI model allowlists', () => {
+    const config = buildGatewayConfig(
+      makeAIConfig({ xai: { apiKey: 'xai-key', models: ['grok-4.3'] } }),
+    );
+    expect(config.providers.xai).toEqual({ apiKey: 'xai-key', models: ['grok-4.3'] });
+  });
+
   it('maps true Bedrock to ambient AWS config', () => {
     const config = buildGatewayConfig(makeAIConfig({ bedrock: true }));
     expect(config.providers).toEqual({ 'amazon-bedrock': {} });

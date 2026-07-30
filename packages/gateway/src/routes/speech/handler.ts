@@ -7,7 +7,7 @@ import { toContentfulStatus,toOpenAIErrorResponse } from '../../errors/envelope.
 import { headersForError } from '../../errors/normalizeAiSdkError.js';
 import { type GatewayEnv, type HookPhase, type Hooks, type HookUsage, type OperationBase,runHooks } from '../../hooks.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { type ProviderRegistry,requireSpeechModel, resolveProvider } from '../../providers/registry.js';
+import { type ProviderModelPolicy, type ProviderRegistry,requireSpeechModel, resolveProvider } from '../../providers/registry.js';
 import { createUpstreamSignal } from '../../shared/upstreamTimeout.js';
 import { prepareForwardHeaders } from '../../utils/headers.js';
 import { parseJsonBody } from '../../utils/parseJsonBody.js';
@@ -29,7 +29,7 @@ const SPEECH_FORMAT_MEDIA_TYPES: Record<SpeechResponseFormat, string> = {
   pcm: 'audio/pcm',
 };
 
-export type SpeechRouteContext = {
+export type SpeechRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
   maxBodyBytes?: number;
@@ -75,6 +75,8 @@ export function speechRoute(ctx: SpeechRouteContext) {
         modelId: body.model,
         operation: 'audio.speech',
         providers: ctx.registry,
+        models: ctx.models,
+        allowlists: ctx.allowlists,
       });
       const model = requireSpeechModel({
         provider: resolved.instance,

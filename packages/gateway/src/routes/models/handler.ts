@@ -4,8 +4,6 @@
 // (`{ object: 'list', data: [{ id, object, created, owned_by }] }`),
 // filtered to entries servable by at least one configured provider.
 //
-// The catalog is discovery-only: unlisted models still route normally if
-// the provider supports them.
 
 import { Hono } from 'hono';
 
@@ -13,12 +11,13 @@ import { isClientAbort } from '../../errors/clientAbort.js';
 import { toContentfulStatus,toOpenAIErrorResponse } from '../../errors/envelope.js';
 import { headersForError } from '../../errors/normalizeAiSdkError.js';
 import type { ModelCatalog, ModelCatalogEntry } from '../../providers/catalog.js';
-import type { ProviderRegistry } from '../../providers/registry.js';
+import { canonicalizeModelId, type ProviderModelAllowlists, type ProviderRegistry } from '../../providers/registry.js';
 import { ensureRequestId } from '../../utils/requestId.js';
 
 export type ModelsRouteContext = {
   registry: ProviderRegistry;
   catalog?: ModelCatalog;
+  allowlists?: ProviderModelAllowlists;
 };
 
 type OpenAIModelObject = {
@@ -43,8 +42,13 @@ export function modelsRoute(ctx: ModelsRouteContext) {
   app.get('/models', (c) => {
     const isConfigured = (name: string) =>
       ctx.registry[name as keyof ProviderRegistry] != null;
+    const isAvailable = (entry: ModelCatalogEntry) => entry.providers.some((provider) => {
+      if (!isConfigured(provider)) return false;
+      const allowlist = ctx.allowlists?.get(provider);
+      return !allowlist || allowlist.has(canonicalizeModelId(entry.id));
+    });
     const data = Array.from(ctx.catalog?.values() ?? [])
-      .filter((entry) => entry.providers.some(isConfigured))
+      .filter(isAvailable)
       .map(toOpenAIModelObject);
     return c.json({ object: 'list' as const, data });
   });

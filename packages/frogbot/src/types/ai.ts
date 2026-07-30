@@ -15,11 +15,25 @@ export type AIOutput = ReturnType<(typeof Output)[keyof typeof Output]>;
 
 // ─── Provider Configuration ──────────────────────────────────────────────────
 
-export type BuiltInProviderEntry = {
+type GatewayProviderName<P extends ProviderName> = P extends 'bedrock'
+  ? 'amazon-bedrock'
+  : P extends 'together'
+    ? 'togetherai'
+    : P;
+
+type ProviderModelName<
+  P extends ProviderName,
+  Id extends CatalogModelId = CatalogModelId,
+> = Id extends `${GatewayProviderName<P>}/${infer Model}` ? Model : never;
+
+export type BuiltInProviderEntry<P extends ProviderName = ProviderName> = {
   apiKey: string | undefined;
+  models?: ProviderModelName<P>[];
 };
 
-export type BedrockProviderEntry =
+type BedrockModels = { models?: ProviderModelName<'bedrock'>[] };
+
+export type BedrockProviderEntry = (
   | {
       region: string;
       accessKeyId?: never;
@@ -42,9 +56,9 @@ export type BedrockProviderEntry =
       accessKeyId?: never;
       secretAccessKey?: never;
       sessionToken?: never;
-    };
+    }) & BedrockModels;
 
-type ProviderEntry = true | BuiltInProviderEntry;
+type ProviderEntry<P extends ProviderName = ProviderName> = true | BuiltInProviderEntry<P>;
 
 type BedrockEntry = true | BedrockProviderEntry;
 
@@ -57,7 +71,7 @@ export type CustomProviderEntry = {
 };
 
 export type ProviderConfig = {
-  [K in ProviderName]?: K extends 'bedrock' ? BedrockEntry : ProviderEntry;
+  [K in ProviderName]?: K extends 'bedrock' ? BedrockEntry : ProviderEntry<K>;
 } & {
   [customKey: string]: ProviderEntry | BedrockEntry | CustomProviderEntry | undefined;
 };

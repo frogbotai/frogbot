@@ -34,7 +34,7 @@ import {
 import type { AiSdkTelemetry } from '../../observability/aiSdkTelemetry.js';
 import { otelContextKey } from '../../observability/tracing.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { type ProviderRegistry,resolveProvider } from '../../providers/registry.js';
+import { type ProviderModelPolicy, type ProviderRegistry,resolveProvider } from '../../providers/registry.js';
 import { normalizeServiceTier } from '../../shared/normalizeServiceTier.js';
 import { peekStream } from '../../shared/peekStream.js';
 import { isProduction } from '../../shared/runtimeDetection.js';
@@ -59,7 +59,7 @@ import {
 import { createOpenAIStreamTransform } from './translators/stream.js';
 import { toAISDKToolChoice,toAISDKTools } from './translators/tools.js';
 
-export type ChatCompletionsRouteContext = {
+export type ChatCompletionsRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
   maxBodyBytes?: number;
@@ -113,6 +113,8 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
         modelId: body.model,
         operation,
         providers: ctx.registry,
+        models: ctx.models,
+        allowlists: ctx.allowlists,
       });
       const model = resolved.instance.languageModel(resolved.modelName);
       hooks = mergeHooks(getProviderHooks(resolved.providerName), ctx.hooks ?? {});

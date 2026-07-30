@@ -13,7 +13,7 @@ import { toContentfulStatus,toOpenAIErrorResponse } from '../../errors/envelope.
 import { headersForError } from '../../errors/normalizeAiSdkError.js';
 import { type GatewayEnv, type HookPhase, type Hooks, type HookUsage, type OperationBase,runHooks } from '../../hooks.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { type ProviderRegistry,resolveProvider } from '../../providers/registry.js';
+import { type ProviderModelPolicy, type ProviderRegistry,resolveProvider } from '../../providers/registry.js';
 import { createUpstreamSignal } from '../../shared/upstreamTimeout.js';
 import { prepareForwardHeaders } from '../../utils/headers.js';
 import { parseJsonBody } from '../../utils/parseJsonBody.js';
@@ -22,7 +22,7 @@ import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
 import { parseImagesRequest } from './schema.js';
 import { assertSupportedResponseFormat, toGenerateImageParams, toOpenAIImagesResponse } from './translators/index.js';
 
-export type ImagesRouteContext = {
+export type ImagesRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
   maxBodyBytes?: number;
@@ -68,6 +68,8 @@ export function imagesRoute(ctx: ImagesRouteContext) {
         modelId: body.model,
         operation: 'images.generations',
         providers: ctx.registry,
+        models: ctx.models,
+        allowlists: ctx.allowlists,
       });
       const model = resolved.instance.imageModel(resolved.modelName);
       hooks = mergeHooks(getProviderHooks(resolved.providerName), ctx.hooks ?? {});

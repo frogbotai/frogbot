@@ -1,8 +1,7 @@
 // Model catalog — metadata about known models for discovery, validation,
 // and capability checks.
 //
-// The catalog is NOT required for routing (any `provider/model` ID routes
-// through the registry regardless of catalog membership). It exists for:
+// Without a provider allowlist, catalog membership is not required for routing. It exists for:
 //   1. `/v1/models` endpoint — list available models with metadata.
 //   2. Operation validation — reject `chat.completions` for embedding-only models.
 //   3. UI / CLI display — context windows, capabilities, cost info.
@@ -164,5 +163,6 @@ export function supportsOperation(
   entry: ModelCatalogEntry,
   operation: Operation,
 ): boolean {
-  return entry.operations.includes(operation);
+  return entry.operations.includes(operation) ||
+    (operation === "responses" && entry.operations.includes("chat.completions"));
 }

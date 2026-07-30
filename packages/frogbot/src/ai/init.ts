@@ -11,13 +11,26 @@ import type { Gateway, GatewayConfig } from "@frogbotai/gateway";
 import { createGateway } from "@frogbotai/gateway";
 
 import type { Logger } from "../frogbot.js";
-import type { CustomProviderEntry, SanitizedAIConfig } from "../types/ai.js";
+import type {
+  BedrockProviderEntry,
+  BuiltInProviderEntry,
+  CustomProviderEntry,
+  SanitizedAIConfig,
+} from "../types/ai.js";
 import { toGatewayHooks } from "./hooks.js";
 import { logUsage } from "./logUsage.js";
 import { getGatewayProviderName, isProviderName } from "./providerNames.js";
 
 function isCustomProvider(entry: object): entry is CustomProviderEntry {
   return "type" in entry && entry.type === "openai-compatible";
+}
+
+function isBuiltInProvider(entry: object): entry is BuiltInProviderEntry {
+  return "apiKey" in entry;
+}
+
+function isBedrockProvider(entry: object): entry is BedrockProviderEntry {
+  return "region" in entry || "accessKeyId" in entry || "credentialProvider" in entry;
 }
 
 function setGatewayProvider<K extends keyof GatewayConfig["providers"]>(
@@ -44,10 +57,10 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
       continue;
     }
 
-    if (!isProviderName(key)) {
-      if (!isCustomProvider(entry)) {
+    if (isCustomProvider(entry)) {
+      if (isProviderName(key)) {
         throw new Error(
-          `[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`,
+          `[frogbot] Custom provider '${key}' conflicts with a built-in provider name.`,
         );
       }
       providers[key] = {
@@ -58,27 +71,37 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
       continue;
     }
 
+    if (!isProviderName(key)) {
+      throw new Error(
+        `[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`,
+      );
+    }
+
     if (key === "replicate") {
-      if (
-        !("apiKey" in entry) ||
-        typeof entry.apiKey !== "string" ||
-        !entry.apiKey.trim()
-      ) {
+      if (!isBuiltInProvider(entry) || typeof entry.apiKey !== "string" || !entry.apiKey.trim()) {
         throw new Error(
           "[frogbot] Provider 'replicate' requires a non-empty apiKey when configured with an object.",
         );
       }
-      providers.replicate = { apiToken: entry.apiKey };
+      providers.replicate = {
+        apiToken: entry.apiKey,
+        ...(entry.models !== undefined && { models: entry.models }),
+      };
       continue;
     }
 
     if (key === "bedrock") {
+      if (!isBedrockProvider(entry)) {
+        throw new Error(
+          "[frogbot] Provider 'bedrock' requires a region or explicit AWS credentials.",
+        );
+      }
       providers["amazon-bedrock"] = entry;
       continue;
     }
 
     if (
-      !("apiKey" in entry) ||
+      !isBuiltInProvider(entry) ||
       typeof entry.apiKey !== "string" ||
       !entry.apiKey.trim()
     ) {
@@ -88,6 +111,7 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
     }
     setGatewayProvider(providers, getGatewayProviderName(key), {
       apiKey: entry.apiKey,
+      ...(entry.models !== undefined && { models: entry.models }),
     });
   }
 

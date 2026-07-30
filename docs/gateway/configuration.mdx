@@ -35,6 +35,25 @@ export default defineConfig({
 
 Known provider keys are checked against that provider's exact config or instance type. Omitted credentials use the provider definition's standard environment variables and are validated at startup; explicit empty values are rejected. Any other key must supply a `baseURL` (see [Providers](/gateway/providers)). A config with no providers at all fails validation on startup.
 
+### Restrict built-in models
+
+Set `models` on a built-in provider to allow only those models. IDs are unprefixed, exact, per-provider model names.
+
+```ts
+export default defineConfig({
+  providers: {
+    'amazon-bedrock': {
+      models: [
+        'zai.glm-4.7-flash',
+        'us.anthropic.claude-sonnet-5'
+      ]
+    }
+  }
+})
+```
+
+Each entry is validated against the configured catalog at startup. Requests outside the list return `404 model_not_found` on every HTTP and in-process path. Friendly aliases are canonicalized before comparison, and `GET /v1/models` omits blocked models. Without `models`, uncatalogued IDs continue to route in this release.
+
 ---
 
 ## Auto-discover from env
@@ -100,7 +119,7 @@ export default defineConfig({
 | Option | Purpose |
 | --- | --- |
 | `basePath` | Extra path prefix routes are also served under (default `/v1`). Bare paths always work. |
-| `catalog` | Custom model catalog for `GET /v1/models` and operation validation. Discovery-only — unlisted models still route. |
+| `catalog` | Custom model catalog for `GET /v1/models`, operation validation, and built-in provider allowlist validation. Unlisted models still route when no allowlist is configured. |
 | `maxBodyBytes` | Request body size cap, enforced on every route. Defaults to 10 MB (25 MB for audio transcriptions). |
 | `upstreamTimeoutMs` | Server-side deadline per upstream call. A fired deadline surfaces as `504 gateway_timeout`. Requires Node ≥ 20. |
 | `logger` | A ready logger instance (pino-compatible) or options for the built-in console logger. |

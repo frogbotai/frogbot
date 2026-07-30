@@ -116,6 +116,32 @@ describe('parseGatewayConfig — openai-compatible providers', () => {
   });
 });
 
+describe('parseGatewayConfig — model allowlists', () => {
+  it('accepts catalogued built-in models', () => {
+    expect(
+      parseGatewayConfig({
+        providers: { openai: { apiKey: 'sk-test', models: ['gpt-4o'] } },
+      }).providers.openai,
+    ).toEqual({ apiKey: 'sk-test', models: ['gpt-4o'] });
+  });
+
+  it('rejects unknown built-in models', () => {
+    expect(() =>
+      parseGatewayConfig({
+        providers: { openai: { apiKey: 'sk-test', models: ['not-a-real-model'] } },
+      }),
+    ).toThrow('providers.openai.models contains unknown model: not-a-real-model');
+  });
+
+  it('does not reinterpret custom provider config as a built-in allowlist', () => {
+    expect(
+      parseGatewayConfig({
+        providers: { internal: { baseURL: 'https://models.test/v1' } },
+      }).providers.internal,
+    ).toEqual({ baseURL: 'https://models.test/v1' });
+  });
+});
+
 describe('defineConfig — per-key provider typing', () => {
   it('accepts an optional environment API key', () => {
     const config = defineConfig({

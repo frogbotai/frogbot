@@ -15,7 +15,9 @@ import type { GatewayLogger, LoggerOptions } from '../observability/logger.js';
 import type { SignalLevelInput } from '../observability/signalLevel.js';
 import type { TracingOptions } from '../observability/tracing.js';
 import type { ModelCatalog } from '../providers/catalog.js';
+import { DEFAULT_MODEL_CATALOG } from '../providers/catalog.data.js';
 import {
+  canonicalizeModelId,
   isProviderInstance,
   type ProviderConfigMap,
   type ProviderName,
@@ -56,7 +58,7 @@ export type GatewayConfig = {
   /**
    * Model catalog served by `GET /v1/models` (discovery, validation, display).
    * When omitted, a built-in default catalog is used. The catalog is
-   * discovery-only: unlisted models still route if the provider supports them.
+   * Unlisted models still route when the provider has no model allowlist.
    */
   catalog?: ModelCatalog;
   /**
@@ -147,6 +149,23 @@ export function parseGatewayConfig(input: GatewayConfig): GatewayConfig {
         );
       }
       continue;
+    }
+
+    const models = (cfg as Record<string, unknown>).models;
+    if (models !== undefined) {
+      if (!Array.isArray(models)) {
+        issues.push(`providers.${name}.models must be an array`);
+      } else {
+        const catalog = input.catalog ?? DEFAULT_MODEL_CATALOG;
+        for (const model of models) {
+          const canonicalId = typeof model === 'string'
+            ? canonicalizeModelId(`${name}/${model}`)
+            : '';
+          if (!model || typeof model !== 'string' || !catalog.has(canonicalId)) {
+            issues.push(`providers.${name}.models contains unknown model: ${String(model)}`);
+          }
+        }
+      }
     }
 
     const requiredKeys = 'requiredKeys' in def ? def.requiredKeys : undefined;

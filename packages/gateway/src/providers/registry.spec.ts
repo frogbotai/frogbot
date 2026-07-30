@@ -198,6 +198,32 @@ describe('resolveProvider', () => {
     });
     expect(result.providerName).toBe('openai');
   });
+
+  it('enforces allowlists after canonicalizing model aliases', () => {
+    const allowlists = new Map([
+      ['amazon-bedrock', new Set(['amazon-bedrock/anthropic.claude-sonnet-4-20250514-v1:0'])],
+    ]);
+    const bedrockRegistry = {
+      'amazon-bedrock': new MockProviderV4(),
+    } as unknown as ProviderRegistry;
+
+    expect(
+      resolveProvider({
+        modelId: 'amazon-bedrock/claude-4-sonnet',
+        operation: 'chat.completions',
+        providers: bedrockRegistry,
+        allowlists,
+      }).modelName,
+    ).toBe('anthropic.claude-sonnet-4-20250514-v1:0');
+    expect(() =>
+      resolveProvider({
+        modelId: 'amazon-bedrock/claude-4-opus',
+        operation: 'chat.completions',
+        providers: bedrockRegistry,
+        allowlists,
+      }),
+    ).toThrow(ModelNotFoundError);
+  });
 });
 
 // ---------------------------------------------------------------------------

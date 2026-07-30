@@ -16,7 +16,7 @@ import { toContentfulStatus,toOpenAIErrorResponse } from '../../errors/envelope.
 import { headersForError } from '../../errors/normalizeAiSdkError.js';
 import { type GatewayEnv, type HookPhase, type Hooks, type OperationBase,runHooks } from '../../hooks.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { type ProviderRegistry,requireVideoModel, resolveProvider } from '../../providers/registry.js';
+import { type ProviderModelPolicy, type ProviderRegistry,requireVideoModel, resolveProvider } from '../../providers/registry.js';
 import { createUpstreamSignal } from '../../shared/upstreamTimeout.js';
 import { prepareForwardHeaders } from '../../utils/headers.js';
 import { parseJsonBody } from '../../utils/parseJsonBody.js';
@@ -25,7 +25,7 @@ import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
 import { parseVideosRequest } from './schema.js';
 import { assertSupportedResponseFormat, toGenerateVideoParams, toOpenAIVideosResponse } from './translators/index.js';
 
-export type VideosRouteContext = {
+export type VideosRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
   maxBodyBytes?: number;
@@ -70,6 +70,8 @@ export function videosRoute(ctx: VideosRouteContext) {
         modelId: body.model,
         operation: 'video.generations',
         providers: ctx.registry,
+        models: ctx.models,
+        allowlists: ctx.allowlists,
       });
       const model = requireVideoModel({
         provider: resolved.instance,

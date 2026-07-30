@@ -27,6 +27,7 @@ import { DEFAULT_MODEL_CATALOG } from './providers/catalog.data.js';
 import { mergeHooks } from './providers/middleware.js';
 import {
   buildProviderRegistry,
+  buildProviderModelAllowlists,
   type GatewayEmbeddingModel,
   type GatewayLanguageModel,
   type GatewayRerankingModel,
@@ -160,6 +161,8 @@ export function createGateway<const P extends ProvidersInput<P>>(
   // call is a no-op here.
   const validated = finalizeConfig(config as GatewayConfig);
   const registry = buildProviderRegistry(validated.providers);
+  const catalog = validated.catalog ?? DEFAULT_MODEL_CATALOG;
+  const allowlists = buildProviderModelAllowlists(validated.providers);
 
   // Shared modality resolvers — one per operation kind, closed over `registry`.
   // Both the public `gateway.xModel(id)` getters and `gateway.operation(...)`
@@ -168,7 +171,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
   // lifecycle instead of minting a fresh one).
   const resolvers = {
     chatModel: (id: string, hooks?: Hooks, base?: OperationBase): GatewayLanguageModel => {
-      const resolved = resolveProvider({ modelId: id, operation: 'chat.completions', providers: registry });
+      const resolved = resolveProvider({ modelId: id, operation: 'chat.completions', providers: registry, models: catalog, allowlists });
       return withLanguageModelHooks(resolved.instance.languageModel(resolved.modelName), {
         hooks: hooks ?? validated.hooks,
         model: id,
@@ -178,7 +181,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
       });
     },
     embedModel: (id: string, hooks?: Hooks, base?: OperationBase): GatewayEmbeddingModel => {
-      const resolved = resolveProvider({ modelId: id, operation: 'embeddings', providers: registry });
+      const resolved = resolveProvider({ modelId: id, operation: 'embeddings', providers: registry, models: catalog, allowlists });
       return withEmbeddingModelHooks(resolved.instance.embeddingModel(resolved.modelName), {
         hooks: hooks ?? validated.hooks,
         model: id,
@@ -188,7 +191,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
       });
     },
     imageModel: (id: string, hooks?: Hooks, base?: OperationBase): ImageModelV4 => {
-      const resolved = resolveProvider({ modelId: id, operation: 'images.generations', providers: registry });
+      const resolved = resolveProvider({ modelId: id, operation: 'images.generations', providers: registry, models: catalog, allowlists });
       return withImageModelHooks(resolved.instance.imageModel(resolved.modelName), {
         hooks: hooks ?? validated.hooks,
         model: id,
@@ -198,7 +201,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
       });
     },
     videoModel: (id: string, hooks?: Hooks, base?: OperationBase): Experimental_VideoModelV4 => {
-      const resolved = resolveProvider({ modelId: id, operation: 'video.generations', providers: registry });
+      const resolved = resolveProvider({ modelId: id, operation: 'video.generations', providers: registry, models: catalog, allowlists });
       const model = requireVideoModel({
         provider: resolved.instance,
         providerName: resolved.providerName,
@@ -213,7 +216,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
       });
     },
     speechModel: (id: string, hooks?: Hooks, base?: OperationBase): GatewaySpeechModel => {
-      const resolved = resolveProvider({ modelId: id, operation: 'audio.speech', providers: registry });
+      const resolved = resolveProvider({ modelId: id, operation: 'audio.speech', providers: registry, models: catalog, allowlists });
       const model = requireSpeechModel({
         provider: resolved.instance,
         providerName: resolved.providerName,
@@ -228,7 +231,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
       });
     },
     transcribeModel: (id: string, hooks?: Hooks, base?: OperationBase): GatewayTranscriptionModel => {
-      const resolved = resolveProvider({ modelId: id, operation: 'audio.transcriptions', providers: registry });
+      const resolved = resolveProvider({ modelId: id, operation: 'audio.transcriptions', providers: registry, models: catalog, allowlists });
       const model = requireTranscriptionModel({
         provider: resolved.instance,
         providerName: resolved.providerName,
@@ -243,7 +246,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
       });
     },
     rerankModel: (id: string, hooks?: Hooks, base?: OperationBase): GatewayRerankingModel => {
-      const resolved = resolveProvider({ modelId: id, operation: 'rerank', providers: registry });
+      const resolved = resolveProvider({ modelId: id, operation: 'rerank', providers: registry, models: catalog, allowlists });
       const model = requireRerankingModel({
         provider: resolved.instance,
         providerName: resolved.providerName,
@@ -261,7 +264,8 @@ export function createGateway<const P extends ProvidersInput<P>>(
 
   const app = createApp({
     registry,
-    catalog: validated.catalog ?? DEFAULT_MODEL_CATALOG,
+    catalog,
+    allowlists,
     basePath: validated.basePath,
     hooks: validated.hooks,
     maxBodyBytes: validated.maxBodyBytes,

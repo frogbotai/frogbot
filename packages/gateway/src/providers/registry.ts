@@ -134,7 +134,9 @@ export type GatewayRerankingModel = RerankingModelV4 | RerankingModelV3;
 // ---------------------------------------------------------------------------
 
 /** The config shape required by provider `K`. */
-type ConfigOf<K extends ProviderName> = Parameters<(typeof providers)[K]['build']>[0];
+type ConfigOf<K extends ProviderName> = Parameters<(typeof providers)[K]['build']>[0] & {
+  models?: string[];
+};
 
 /** The AI SDK instance type returned by provider `K`'s `build`. */
 type InstanceOf<K extends ProviderName> = ReturnType<(typeof providers)[K]['build']>;
@@ -198,7 +200,8 @@ export type ProviderRegistry = { [K in ProviderName]?: InstanceOf<K> } & {
 // ---------------------------------------------------------------------------
 
 function buildOne<K extends ProviderName>(name: K, cfg: ConfigOf<K>): InstanceOf<K> {
-  return providers[name].build(cfg as never) as InstanceOf<K>;
+  const { models: _, ...providerConfig } = cfg;
+  return providers[name].build(providerConfig as never) as InstanceOf<K>;
 }
 
 /**
@@ -255,6 +258,36 @@ const canonicalIdResolvers = new Map<string, (modelId: string) => string>([
   ['azure', resolveAzureModelId],
 ]);
 
+export function canonicalizeModelId(modelId: string): string {
+  const slashIndex = modelId.indexOf('/');
+  if (slashIndex <= 0 || slashIndex === modelId.length - 1) return modelId;
+  const providerName = modelId.slice(0, slashIndex);
+  const modelName = modelId.slice(slashIndex + 1);
+  return `${providerName}/${canonicalIdResolvers.get(providerName)?.(modelName) ?? modelName}`;
+}
+
+export type ProviderModelAllowlists = ReadonlyMap<string, ReadonlySet<string>>;
+
+export type ProviderModelPolicy = {
+  models?: ModelCatalog;
+  allowlists?: ProviderModelAllowlists;
+};
+
+export function buildProviderModelAllowlists(config: ProviderConfigMap): ProviderModelAllowlists {
+  const allowlists = new Map<string, ReadonlySet<string>>();
+  for (const [providerName, entry] of Object.entries(config)) {
+    if (!Object.hasOwn(providers, providerName) || !entry || isProviderInstance(entry)) continue;
+    const models = (entry as { models?: string[] }).models;
+    if (models) {
+      allowlists.set(
+        providerName,
+        new Set(models.map((modelName) => canonicalizeModelId(`${providerName}/${modelName}`))),
+      );
+    }
+  }
+  return allowlists;
+}
+
 // ---------------------------------------------------------------------------
 // resolveProvider — the canonical M2 resolver
 // ---------------------------------------------------------------------------
@@ -268,6 +301,7 @@ export type ResolveProviderArgs = {
   providers: ProviderRegistry;
   /** Optional model catalog for operation validation. */
   models?: ModelCatalog;
+  allowlists?: ProviderModelAllowlists;
 };
 
 export type ResolvedProvider = {
@@ -295,7 +329,7 @@ export type ResolvedProvider = {
  *      support the requested operation.
  */
 export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
-  const { modelId, operation, providers: registry, models } = args;
+  const { modelId, operation, providers: registry, models, allowlists } = args;
 
   // Guard: at least one provider must be configured.
   const configuredProviders = Object.keys(registry).filter(
@@ -315,7 +349,6 @@ export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
   }
 
   const providerName = modelId.slice(0, slashIndex);
-  const modelName = modelId.slice(slashIndex + 1);
 
   // Look up the provider in the registry. Own-property checks only —
   // prototype keys (`constructor`, `__proto__`, ...) must resolve to
@@ -330,9 +363,15 @@ export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
     throw new ModelNotFoundError(modelId);
   }
 
+  const canonicalModelId = canonicalizeModelId(modelId);
+  const allowlist = allowlists?.get(providerName);
+  if (allowlist && !allowlist.has(canonicalModelId)) {
+    throw new ModelNotFoundError(modelId);
+  }
+
   // If a catalog is provided, validate the operation is supported.
   if (models) {
-    const entry = models.get(modelId);
+    const entry = models.get(canonicalModelId);
     if (entry && !supportsOperation(entry, operation)) {
       throw new ModelUnsupportedOperationError({ modelId, operation });
     }
@@ -340,7 +379,7 @@ export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
 
   return {
     providerName,
-    modelName: canonicalIdResolvers.get(providerName)?.(modelName) ?? modelName,
+    modelName: canonicalModelId.slice(slashIndex + 1),
     instance,
   };
 }

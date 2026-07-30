@@ -49,6 +49,31 @@ describe('createGateway', () => {
     expect(Object.isFrozen(gw.hooks)).toBe(true);
   });
 
+  it('enforces model allowlists for in-process resolvers', () => {
+    const gw = createGateway({
+      providers: { openai: { apiKey: 'test-key', models: ['gpt-4o'] } },
+    });
+
+    expect(() => gw.chatModel('openai/gpt-4o')).not.toThrow();
+    expect(() => gw.chatModel('openai/gpt-4o-mini')).toThrow('Model "openai/gpt-4o-mini" not found');
+  });
+
+  it('enforces model allowlists for HTTP routes', async () => {
+    const gw = createGateway({
+      providers: { openai: { apiKey: 'test-key', models: ['gpt-4o'] } },
+    });
+    const response = await gw.handler(new Request('http://localhost/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'openai/gpt-4o-mini', messages: [{ role: 'user', content: 'hi' }] }),
+    }));
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: 'model_not_found' },
+    });
+  });
+
   it('runs configured upstream hooks for in-process models', async () => {
     const beforeUpstream = vi.fn();
     const afterUpstream = vi.fn();

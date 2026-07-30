@@ -8,7 +8,7 @@ import { BodyTooLargeError, isGatewayError,RequestValidationError } from '../../
 import { headersForError } from '../../errors/normalizeAiSdkError.js';
 import { type GatewayEnv, type HookPhase, type Hooks, type HookUsage, type OperationBase,runHooks } from '../../hooks.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { type ProviderRegistry,requireTranscriptionModel, resolveProvider } from '../../providers/registry.js';
+import { type ProviderModelPolicy, type ProviderRegistry,requireTranscriptionModel, resolveProvider } from '../../providers/registry.js';
 import { createUpstreamSignal } from '../../shared/upstreamTimeout.js';
 import { prepareForwardHeaders } from '../../utils/headers.js';
 import { ensureRequestId } from '../../utils/requestId.js';
@@ -19,7 +19,7 @@ import { toOpenAITranscriptionResponse, toTranscribeParams } from './translators
 
 const DEFAULT_MAX_BODY_BYTES = 25 * 1024 * 1024;
 
-export type TranscriptionsRouteContext = {
+export type TranscriptionsRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
   hooks?: Hooks;
   maxBodyBytes?: number;
@@ -90,6 +90,8 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
         modelId: body.model,
         operation: 'audio.transcriptions',
         providers: ctx.registry,
+        models: ctx.models,
+        allowlists: ctx.allowlists,
       });
       const model = requireTranscriptionModel({
         provider: resolved.instance,
@@ -228,4 +230,3 @@ async function parseMultipartBody(request: Request) {
   }
   return body;
 }
-
