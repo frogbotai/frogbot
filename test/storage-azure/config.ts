@@ -1,6 +1,6 @@
+import { azureStorage } from '@frogbotai/storage-azure'
 import type { CollectionConfig } from 'frogbot'
 
-import { azureStorage } from '@frogbotai/storage-azure'
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js'
 import { mediaSlug, usersSlug } from './shared.js'
 

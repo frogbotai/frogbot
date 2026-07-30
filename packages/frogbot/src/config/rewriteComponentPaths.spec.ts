@@ -1,7 +1,7 @@
+import type { SanitizedConfig } from 'payload';
 import { describe, expect, it } from 'vitest';
 
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
-import type { SanitizedConfig } from 'payload';
 
 function makeConfig(admin: Record<string, unknown>): SanitizedConfig {
   return { admin } as unknown as SanitizedConfig;

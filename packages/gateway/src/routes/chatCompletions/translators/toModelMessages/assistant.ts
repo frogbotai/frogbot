@@ -1,4 +1,5 @@
 import type { AssistantContent, AssistantModelMessage } from '@ai-sdk/provider-utils';
+
 import { InvalidToolArgumentsError } from '../../../../errors/gatewayError.js';
 import type { ProviderMetadata } from '../../../../shared/types.js';
 import type { OpenAIAssistantMessage } from '../types.js';

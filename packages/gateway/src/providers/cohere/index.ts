@@ -1,9 +1,9 @@
 // Provider definition: Cohere.
 
 import {
-  createCohere,
   type CohereProvider,
   type CohereProviderSettings,
+  createCohere,
 } from '@ai-sdk/cohere';
 
 import type { ProviderDefinition } from '../types.js';

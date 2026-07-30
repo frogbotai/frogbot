@@ -1,5 +1,5 @@
-import { consumeStream, convertToModelMessages, generateId } from 'ai';
 import type { createAgentUIStreamResponse, UIMessage } from 'ai';
+import { consumeStream, convertToModelMessages, generateId } from 'ai';
 
 import { resolveModel } from '../ai/resolve.js';
 import { generateMessage } from '../chat/generateMessage.js';

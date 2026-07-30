@@ -1,5 +1,5 @@
-import type { UIMessage } from 'ai'
 import { render } from '@testing-library/react'
+import type { UIMessage } from 'ai'
 import { describe, expect, it } from 'vitest'
 
 import { MessageList } from './message-list'

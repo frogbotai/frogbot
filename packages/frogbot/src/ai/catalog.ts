@@ -2,7 +2,6 @@
 // Filtered at runtime to only include models from configured providers.
 
 import type { ModelMode } from '../types/ai.js';
-
 import catalogData from './catalog.json' with { type: 'json' };
 
 export type CatalogEntry = {

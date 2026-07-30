@@ -2,9 +2,9 @@ import { mkdir, mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { afterAll, describe, expect, it } from 'vitest';
-import { generateImportMap as payloadGenerateImportMap } from 'payload';
 import type { SanitizedConfig } from 'payload';
+import { generateImportMap as payloadGenerateImportMap } from 'payload';
+import { afterAll, describe, expect, it } from 'vitest';
 
 import { buildConfig } from '../config/build.js';
 import { sanitize } from '../config/sanitize.js';

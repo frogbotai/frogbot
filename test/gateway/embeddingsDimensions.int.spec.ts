@@ -12,8 +12,8 @@
 // proven at the provider seam by capturing the providerOptions the resolved
 // model's `doEmbed` actually receives.
 
-import { describe, expect, it } from 'vitest';
 import type { EmbeddingModelV4 } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';

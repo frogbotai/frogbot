@@ -9,7 +9,6 @@
 //   3. Wrap every custom endpoint handler (root and per-collection) so
 //      `req.frogbot` is attached before the user's handler executes.
 
-import { buildConfig as payloadBuildConfig } from "payload";
 import type {
   CollectionConfig as PayloadCollectionConfig,
   Config as PayloadConfig,
@@ -18,44 +17,45 @@ import type {
   PayloadHandler,
   PayloadRequest,
 } from "payload";
+import { buildConfig as payloadBuildConfig } from "payload";
 
-import type { CollectionConfig } from "../types/collection.js";
-import { COLLECTION_MARKERS } from "../types/collection.js";
-import type { FrogbotConfig } from "../types/config.js";
-import type { Endpoint } from "../types/endpoint.js";
-import type {
-  FrogbotSanitizedConfig,
-  SanitizedCollectionMeta,
-} from "../types/sanitized.js";
-import type { AIConfig, RouterConfig, SanitizedAIConfig } from "../types/ai.js";
-import type { AgentConfig } from "../types/agent.js";
-import type { FrogbotRequest } from "../types/request.js";
-import type { Piece, SanitizedPiecesConfig } from "../types/piece.js";
-import type { AnyTool } from "../types/tool.js";
-import type { Frogbot } from "../frogbot.js";
-import { initFrogbotFromPayload } from "../frogbot.js";
 import { buildAgentEndpoints } from "../agents/endpoints.js";
 import { getGatewayProviderName, isProviderName } from "../ai/providerNames.js";
 import { resolveUsageCollection } from "../ai/usageCollection.js";
-import { resolveChatCollections } from "../chat/resolveChatCollections.js";
 import { buildManifestEndpoint } from "../chat/manifest.js";
+import { resolveChatCollections } from "../chat/resolveChatCollections.js";
 import { resolveConnectionsCollections } from "../connections/resolveCollections.js";
-import { resolveFilesCollection } from "../files/resolveCollections.js";
-import { resolveCredentialSources } from "../connections/sources.js";
 import {
   buildSecretEndpoints,
   builtInDeveloperSources,
   builtInSecretSource,
 } from "../connections/secret.js";
+import { resolveCredentialSources } from "../connections/sources.js";
+import { resolveFilesCollection } from "../files/resolveCollections.js";
+import type { Frogbot } from "../frogbot.js";
+import { initFrogbotFromPayload } from "../frogbot.js";
 import { seedFrogbotCache } from "../getFrogbot.js";
 import {
   ensureFrogbotInstance,
   getFrogbotInstance,
 } from "../instanceRegistry.js";
+import type { AgentConfig } from "../types/agent.js";
+import type { AIConfig, RouterConfig, SanitizedAIConfig } from "../types/ai.js";
+import type { CollectionConfig } from "../types/collection.js";
+import { COLLECTION_MARKERS } from "../types/collection.js";
+import type { FrogbotConfig } from "../types/config.js";
+import type { Endpoint } from "../types/endpoint.js";
+import type { Piece, SanitizedPiecesConfig } from "../types/piece.js";
+import type { FrogbotRequest } from "../types/request.js";
+import type {
+  FrogbotSanitizedConfig,
+  SanitizedCollectionMeta,
+} from "../types/sanitized.js";
+import type { AnyTool } from "../types/tool.js";
 import { rewriteComponentPaths } from "./rewriteComponentPaths.js";
 import { resolveSourceDir } from "./sourceDir.js";
-import { getValidationMode } from "./validationContext.js";
 import type { ValidationMode } from "./validationContext.js";
+import { getValidationMode } from "./validationContext.js";
 
 const noopEmailAdapter: PayloadEmailAdapter<void> = ({ payload }) => ({
   name: "frogbot-noop",
@@ -438,14 +438,14 @@ function sanitizeAgents(
         if (typeof tool.pieceService === "string") {
           const registered = pieces.services[tool.pieceService];
           if (!registered)
-            throw new Error(
+            {throw new Error(
               `[frogbot] Agent '${agent.slug}' uses tool '${tool.slug}' but no '${tool.pieceService}' piece is registered in \`pieces\`.`,
-            );
+            );}
           const resolved = pieces.tools[tool.slug];
           if (!resolved)
-            throw new Error(
+            {throw new Error(
               `[frogbot] Piece '${tool.pieceService}' has no registered tool '${tool.slug}'.`,
-            );
+            );}
           tool = resolved;
         }
         if (toolSlugs.has(tool.slug)) {
@@ -475,11 +475,11 @@ function sanitizeAgents(
 
 function sanitizePieces(pieces: Piece[] | undefined): SanitizedPiecesConfig {
   if (pieces === undefined)
-    return { enabled: false, pieces: [], services: {}, tools: {} };
+    {return { enabled: false, pieces: [], services: {}, tools: {} };}
   if (!Array.isArray(pieces))
-    throw new Error("[frogbot] `pieces` must be an array.");
+    {throw new Error("[frogbot] `pieces` must be an array.");}
   if (pieces.length === 0)
-    return { enabled: false, pieces: [], services: {}, tools: {} };
+    {return { enabled: false, pieces: [], services: {}, tools: {} };}
 
   const services = new Set<string>();
   const serviceIndex: Record<string, Piece> = {};
@@ -710,9 +710,9 @@ export function sanitize(
     if (!frogbot) {
       const sanitizedConfig = sanitizedConfigRef.current;
       if (!sanitizedConfig)
-        throw new Error(
+        {throw new Error(
           "[frogbot] Payload initialized before config sanitization completed.",
-        );
+        );}
       frogbot = await ensureFrogbotInstance(req.payload, () =>
         initFrogbotFromPayload(req.payload, sanitizedConfig),
       );
@@ -769,9 +769,9 @@ export function sanitize(
     async (payload) => {
       const sanitizedConfig = sanitizedConfigRef.current;
       if (!sanitizedConfig)
-        throw new Error(
+        {throw new Error(
           "[frogbot] Payload initialized before config sanitization completed.",
-        );
+        );}
       const frogbot = await ensureFrogbotInstance(payload, () =>
         initFrogbotFromPayload(payload, sanitizedConfig),
       );

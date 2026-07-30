@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { messageDocumentToUIMessage, uiMessageToDocument } from './messages'
 
 describe('message mapping', () => {

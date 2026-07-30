@@ -1,6 +1,6 @@
 import type { ChatPlatformAdapter } from './adapter'
-import { chatRequest, type PayloadPage } from './rest'
 import type { MessageDocument } from './messages'
+import { chatRequest, type PayloadPage } from './rest'
 import type { ThreadDocument } from './use-threads'
 
 type ThreadMutationOptions = {

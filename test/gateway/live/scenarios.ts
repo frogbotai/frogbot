@@ -11,7 +11,7 @@
 import { expect } from 'vitest';
 
 import { parseSse } from '../../__helpers/gateway/parse-sse.js';
-import { post, postRaw, type LiveApp } from './routes.js';
+import { type LiveApp,post, postRaw } from './routes.js';
 
 const MAX_TOKENS = 1024;
 

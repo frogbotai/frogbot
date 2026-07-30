@@ -1,14 +1,14 @@
 // transcribe operation — audio-to-text transcription via AI SDK.
 // Uses ProxyTranscriptionModel pointed at the proxy URL.
 
+import type { Gateway } from '@frogbotai/gateway';
 import { transcribe as aiTranscribe } from 'ai';
 
-import type { TranscribeOpts, SanitizedAIConfig } from '../../types/ai.js';
-import type { FrogbotRequest } from '../../types/request.js';
 import type { Logger } from '../../frogbot.js';
-import type { Gateway } from '@frogbotai/gateway';
-import { resolveModel } from '../resolve.js';
+import type { SanitizedAIConfig,TranscribeOpts } from '../../types/ai.js';
+import type { FrogbotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
+import { resolveModel } from '../resolve.js';
 
 export type TranscribeDeps = {
   gateway: Gateway;

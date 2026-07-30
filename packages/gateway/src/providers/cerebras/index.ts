@@ -1,9 +1,9 @@
 // Provider definition: Cerebras.
 
 import {
-  createCerebras,
   type CerebrasProvider,
   type CerebrasProviderSettings,
+  createCerebras,
 } from '@ai-sdk/cerebras';
 
 import type { ProviderDefinition } from '../types.js';

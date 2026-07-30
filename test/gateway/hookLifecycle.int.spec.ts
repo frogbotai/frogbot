@@ -12,13 +12,13 @@
 // Both started as `it.fails(...)` red tests and were flipped green when the
 // findings were fixed.
 
-import { describe, expect, it, vi } from 'vitest';
-import type { Span, Tracer } from '@opentelemetry/api';
 import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
+import type { Span, Tracer } from '@opentelemetry/api';
+import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
-import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import type { AfterErrorHookArgs, AfterOperationHookArgs, Hooks } from '../../packages/gateway/src/hooks.js';
+import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 
 function makeAppWithModel(providerName: string, model: LanguageModelV4, hooks?: Hooks) {
   const registry = { [providerName]: { languageModel: () => model } } as unknown as ProviderRegistry;

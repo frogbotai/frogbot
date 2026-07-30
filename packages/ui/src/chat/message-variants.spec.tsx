@@ -1,9 +1,9 @@
-import type { UIMessage } from 'ai'
 import { render } from '@testing-library/react'
+import type { UIMessage } from 'ai'
 import { describe, expect, it } from 'vitest'
 
-import { messageDocumentToUIMessage } from './messages'
 import { MessagePart, type MessagePartValue } from './message-part'
+import { messageDocumentToUIMessage } from './messages'
 
 const parts: MessagePartValue[] = [
   { type: 'text', text: 'partial', state: 'streaming' },

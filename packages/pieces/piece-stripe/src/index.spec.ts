@@ -1,5 +1,6 @@
 import * as module from '@activepieces/piece-stripe';
 import { pieceContract } from 'frogbot/pieces/test';
+
 import { credentialExecution } from '../../credential-execution.js';
 import { createStripe, stripeActions } from './index.js';
 

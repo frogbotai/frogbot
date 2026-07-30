@@ -1,15 +1,15 @@
 // generateText operation — reference pattern for all AI operations.
 
-import { generateId, generateText as aiGenerateText } from 'ai';
 import type { Gateway } from '@frogbotai/gateway';
+import { generateId, generateText as aiGenerateText } from 'ai';
 
+import { toAISDKTools, toAISDKToolsContext } from '../../agents/tools.js';
+import type { Frogbot, Logger } from '../../frogbot.js';
 import type { GenerateTextOpts, SanitizedAIConfig } from '../../types/ai.js';
 import type { FrogbotRequest } from '../../types/request.js';
-import type { Frogbot, Logger } from '../../frogbot.js';
-import { toAISDKTools, toAISDKToolsContext } from '../../agents/tools.js';
-import { resolveModel } from '../resolve.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
+import { resolveModel } from '../resolve.js';
 
 export type GenerateTextDeps = {
   gateway: Gateway;

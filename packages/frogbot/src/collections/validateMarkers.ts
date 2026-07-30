@@ -1,5 +1,5 @@
-import { COLLECTION_MARKERS } from '../types/collection.js';
 import type { CollectionConfig } from '../types/collection.js';
+import { COLLECTION_MARKERS } from '../types/collection.js';
 
 export function validateCollectionMarkers(collections: CollectionConfig[]): void {
   for (const collection of collections) {

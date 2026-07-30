@@ -1,7 +1,7 @@
 import type { FrogbotRequest } from 'frogbot';
 
-import type { OAuthEncryption } from './crypto.js';
 import type { OAuthTokenSet } from '../types.js';
+import type { OAuthEncryption } from './crypto.js';
 
 export type OAuthConnectionCredentials = {
   id: string | number;

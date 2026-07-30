@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest';
 import type { TextStreamPart, ToolSet } from 'ai';
+import { describe, expect, test } from 'vitest';
 
 import { createAnthropicStreamTransform } from './stream.js';
 

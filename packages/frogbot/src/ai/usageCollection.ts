@@ -1,7 +1,7 @@
+import { resolveUserSlug } from "../chat/resolveUserSlug.js";
+import { mergeCollection } from "../collections/mergeCollection.js";
 import type { CollectionConfig } from "../types/collection.js";
 import type { FrogbotConfig } from "../types/config.js";
-import { mergeCollection } from "../collections/mergeCollection.js";
-import { resolveUserSlug } from "../chat/resolveUserSlug.js";
 
 export const USAGE_LOGS_SLUG = "usage-logs";
 

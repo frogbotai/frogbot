@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parseUserMessage } from './toModelMessages/user.js';
+
 import { parseAssistantMessage } from './toModelMessages/assistant.js';
 import { parseSystemMessage } from './toModelMessages/system.js';
-import type { OpenAIUserMessage, OpenAIAssistantMessage, OpenAISystemMessage } from './types.js';
+import { parseUserMessage } from './toModelMessages/user.js';
+import type { OpenAIAssistantMessage, OpenAISystemMessage,OpenAIUserMessage } from './types.js';
 
 describe('cache_control on messages', () => {
   describe('system message', () => {

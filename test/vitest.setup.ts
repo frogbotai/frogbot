@@ -1,11 +1,11 @@
 import { createConnection } from 'node:net'
 
+import type { DatabaseAdapterType } from './__helpers/shared/db/dbAdapters.js'
 import {
   dbAdapters,
   generateDatabaseAdapter,
   getCurrentDatabaseAdapter,
 } from './__helpers/shared/db/dbAdapters.js'
-import type { DatabaseAdapterType } from './__helpers/shared/db/dbAdapters.js'
 
 process.env.PAYLOAD_DISABLE_ADMIN = 'true'
 process.env.PAYLOAD_DROP_DATABASE = 'true'

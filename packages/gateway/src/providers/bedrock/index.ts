@@ -9,9 +9,9 @@
 // throws (G41).
 
 import {
-  createAmazonBedrock,
   type AmazonBedrockProvider,
   type AmazonBedrockProviderSettings,
+  createAmazonBedrock,
 } from '@ai-sdk/amazon-bedrock';
 
 import { readEnv } from '../../shared/runtimeDetection.js';

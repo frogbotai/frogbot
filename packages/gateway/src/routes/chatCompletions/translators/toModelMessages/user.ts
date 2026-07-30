@@ -1,8 +1,9 @@
 import type { UserContent, UserModelMessage } from '@ai-sdk/provider-utils';
+
 import { UnsupportedModalityError } from '../../../../errors/gatewayError.js';
 import type { CacheControl } from '../../../../shared/types.js';
-import type { OpenAIUserMessage } from '../types.js';
 import { parseDataUrl } from '../../../../utils/parseDataUrl.js';
+import type { OpenAIUserMessage } from '../types.js';
 
 // OpenAI accepts these audio formats on `input_audio` parts. Per OpenAI
 // docs as of 2026-06 the set is `wav | mp3 | flac | opus | pcm16`. The

@@ -19,8 +19,8 @@
 // G107 tests assert the CORRECT behavior (override is blocked), which the
 // gateway now enforces by removing the credential headers from the allowlist.
 
-import { describe, expect, it } from 'vitest';
 import type { LanguageModelV4 } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';

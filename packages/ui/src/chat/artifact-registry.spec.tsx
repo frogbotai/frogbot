@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+
 import { ArtifactProvider, ArtifactStreamPart, ArtifactView } from './artifact'
-import { resolveArtifact, type ArtifactRegistryItem } from './artifact-registry'
+import { type ArtifactRegistryItem,resolveArtifact } from './artifact-registry'
 
 const First = () => <div>first artifact</div>
 const Second = () => <div>second artifact</div>

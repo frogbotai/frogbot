@@ -10,44 +10,42 @@
 // exact point in the handler where it belongs, so the control flow reads
 // top-to-bottom with nothing hidden behind a runner abstraction.
 
-import { context as otelContext, type Attributes, type Context as OtelContext } from '@opentelemetry/api';
+import { type Attributes, type Context as OtelContext,context as otelContext } from '@opentelemetry/api';
+import { generateText, jsonSchema, type JSONValue,Output, streamText } from 'ai';
 import { Hono } from 'hono';
-import { generateText, streamText, jsonSchema, Output, type JSONValue } from 'ai';
 
-import { resolveProvider, type ProviderRegistry } from '../../providers/registry.js';
-import {
-  toModelMessages,
-  toAnthropicResponse,
-  createAnthropicStreamTransform,
-  extractThinkingTokens,
-  extractCacheCreation,
-} from './translators/index.js';
-import { toAISDKTools, toAISDKToolChoice } from './translators/tools.js';
-import { createSseResponse, toSseStream } from '../../shared/toSseStream.js';
-import { toAnthropicErrorResponse, toContentfulStatus } from '../../errors/envelope.js';
-import { statusForAnthropicErrorType } from '../../errors/statusMaps.js';
-import { headersForError } from '../../errors/normalizeAiSdkError.js';
 import { isClientAbort } from '../../errors/clientAbort.js';
-import { maybeMaskMessage } from '../../errors/maskMessage.js';
-import { toAnthropicReasoning } from '../../shared/toAnthropicReasoning.js';
-import { createStreamLifecycle, type StreamLifecycle } from '../../shared/streamLifecycle.js';
-import { isProduction } from '../../shared/runtimeDetection.js';
-import { createUpstreamSignal, upstreamTimeoutError } from '../../shared/upstreamTimeout.js';
-
-import { parseMessagesRequest, type MessagesRequest } from './schema.js';
-import { parseJsonBody } from '../../utils/parseJsonBody.js';
-import { guardedDownload } from '../../utils/downloadGuard.js';
-import { forwardLanguageParams, forwardMessageProviderOptions, parsePromptCachingOptions } from '../../utils/params.js';
-import { prepareForwardHeaders } from '../../utils/headers.js';
-import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
-import { runHooks, type GatewayEnv, type HookPhase, type HookUsage, type Hooks, type OperationBase } from '../../hooks.js';
-import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { otelContextKey } from '../../observability/tracing.js';
-import type { AiSdkTelemetry } from '../../observability/aiSdkTelemetry.js';
-import { ensureRequestId } from '../../utils/requestId.js';
+import { toAnthropicErrorResponse, toContentfulStatus } from '../../errors/envelope.js';
 import { RequestValidationError } from '../../errors/gatewayError.js';
-
+import { maybeMaskMessage } from '../../errors/maskMessage.js';
+import { headersForError } from '../../errors/normalizeAiSdkError.js';
+import { statusForAnthropicErrorType } from '../../errors/statusMaps.js';
+import { type GatewayEnv, type HookPhase, type Hooks, type HookUsage, type OperationBase,runHooks } from '../../hooks.js';
+import type { AiSdkTelemetry } from '../../observability/aiSdkTelemetry.js';
+import { otelContextKey } from '../../observability/tracing.js';
+import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
+import { type ProviderRegistry,resolveProvider } from '../../providers/registry.js';
+import { isProduction } from '../../shared/runtimeDetection.js';
+import { createStreamLifecycle, type StreamLifecycle } from '../../shared/streamLifecycle.js';
+import { toAnthropicReasoning } from '../../shared/toAnthropicReasoning.js';
+import { createSseResponse, toSseStream } from '../../shared/toSseStream.js';
+import { createUpstreamSignal, upstreamTimeoutError } from '../../shared/upstreamTimeout.js';
+import { guardedDownload } from '../../utils/downloadGuard.js';
+import { prepareForwardHeaders } from '../../utils/headers.js';
+import { forwardLanguageParams, forwardMessageProviderOptions, parsePromptCachingOptions } from '../../utils/params.js';
+import { parseJsonBody } from '../../utils/parseJsonBody.js';
+import { ensureRequestId } from '../../utils/requestId.js';
+import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
+import { type MessagesRequest,parseMessagesRequest } from './schema.js';
 import type { AnthropicMessage, AnthropicSystemParam } from './translators/index.js';
+import {
+  createAnthropicStreamTransform,
+  extractCacheCreation,
+  extractThinkingTokens,
+  toAnthropicResponse,
+  toModelMessages,
+} from './translators/index.js';
+import { toAISDKToolChoice,toAISDKTools } from './translators/tools.js';
 
 export type MessagesRouteContext = {
   registry: ProviderRegistry;

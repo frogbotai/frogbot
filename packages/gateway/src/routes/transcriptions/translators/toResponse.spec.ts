@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { TranscriptionResult } from 'ai';
+import { describe, expect, it } from 'vitest';
 
 import { toOpenAITranscriptionResponse } from './toResponse.js';
 

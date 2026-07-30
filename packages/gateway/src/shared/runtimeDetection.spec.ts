@@ -8,8 +8,9 @@
 // (CLI/init-only), and test files.
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { isProduction, readEnv } from './runtimeDetection.js';

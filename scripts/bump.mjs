@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs'
+import { existsSync,readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -14,7 +14,7 @@ if (!BUMPS.includes(bump)) {
 function inc(version, type) {
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version)
   if (!match) throw new Error(`Cannot parse version "${version}" — expected x.y.z`)
-  let [major, minor, patch] = match.slice(1).map(Number)
+  const [major, minor, patch] = match.slice(1).map(Number)
   if (type === 'major') return `${major + 1}.0.0`
   if (type === 'minor') return `${major}.${minor + 1}.0`
   return `${major}.${minor}.${patch + 1}`

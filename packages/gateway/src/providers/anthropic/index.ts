@@ -1,9 +1,9 @@
 // Provider definition: Anthropic.
 
 import {
-  createAnthropic,
   type AnthropicProvider,
   type AnthropicProviderSettings,
+  createAnthropic,
 } from '@ai-sdk/anthropic';
 
 import type { ProviderDefinition } from '../types.js';

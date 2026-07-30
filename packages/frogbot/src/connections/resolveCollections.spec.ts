@@ -58,7 +58,7 @@ describe('resolveConnectionsCollections', () => {
   it('owner-scopes reads and hides encrypted credentials', async () => {
     const result = resolveConnectionsCollections(config(), pieces);
     const collection = result.collections.find((item) => item.slug === 'connections')!;
-    const read = collection.access?.read!;
+    const read = collection.access!.read!;
     expect(await read({ req: { user: { id: 'owner' } } as never })).toEqual({ owner: { equals: 'owner' } });
     expect(await read({ req: { user: null } as never })).toBe(false);
     const encrypted = collection.fields.find((field) => 'name' in field && field.name === 'encryptedCredentials');

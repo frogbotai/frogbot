@@ -13,15 +13,15 @@
 // Output is deterministic — running twice in a row leaves the file
 // unchanged (byte-identical short-circuit before write).
 
-import { isAbsolute, join, resolve } from 'node:path';
 import fs from 'node:fs/promises';
+import { isAbsolute, join, resolve } from 'node:path';
 
-import { initI18n } from '@payloadcms/translations';
 import type { AcceptedLanguages } from '@payloadcms/translations';
+import { initI18n } from '@payloadcms/translations';
 import { compile } from 'json-schema-to-typescript';
+import type { SanitizedConfig } from 'payload';
 import { configToJSONSchema } from 'payload';
 
-import type { SanitizedConfig } from 'payload';
 import { catalog } from '../ai/catalog.js';
 import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
 import { loadConfig } from '../config/load.js';
@@ -223,13 +223,13 @@ export async function generateTypes(): Promise<void> {
     const { outputPath, changed } = await writeGeneratedTypes(frogbotConfig, cwd);
 
     if (changed) {
-      console.log(`[frogbot] types written to ${outputPath}`); // eslint-disable-line no-console
+      console.log(`[frogbot] types written to ${outputPath}`);  
     } else {
-      console.log(`[frogbot] types unchanged at ${outputPath}`); // eslint-disable-line no-console
+      console.log(`[frogbot] types unchanged at ${outputPath}`);  
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[frogbot] ${message}`); // eslint-disable-line no-console
+    console.error(`[frogbot] ${message}`);  
     process.exit(1);
   }
 }

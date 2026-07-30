@@ -14,17 +14,17 @@
 //   - bedrock:   providerOptions.bedrock.cachePoint                 (namespace 'bedrock')
 //   - google:    providerOptions.google.thinkingConfig.thinkingBudget (CORRECT — matches middleware)
 
-import { describe, expect, it } from 'vitest';
 import type { AnthropicProviderOptions } from '@ai-sdk/anthropic';
-import type { OpenAIChatLanguageModelOptions } from '@ai-sdk/openai';
 import type { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google';
+import type { OpenAIChatLanguageModelOptions } from '@ai-sdk/openai';
+import { describe, expect, it } from 'vitest';
 
 import type { BeforeUpstreamHook } from '../hooks.js';
-import { claudeThinkingEffort } from './anthropic/middleware.js';
-import { openaiReasoningEffort } from './openai/middleware.js';
-import { bedrockCachePoint } from './bedrock/middleware.js';
-import { vertexThinkingBudget } from './vertex/middleware.js';
 import { effortFromBudget } from '../utils/params.js';
+import { claudeThinkingEffort } from './anthropic/middleware.js';
+import { bedrockCachePoint } from './bedrock/middleware.js';
+import { openaiReasoningEffort } from './openai/middleware.js';
+import { vertexThinkingBudget } from './vertex/middleware.js';
 
 /** Minimal beforeUpstream args factory for driving a middleware in isolation. */
 function makeArgs(overrides: {

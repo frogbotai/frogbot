@@ -1,5 +1,6 @@
 import { pieceContract } from 'frogbot/pieces/test';
 import { describe, expect, it } from 'vitest';
+
 import { createMathHelper, mathHelperActions } from './index.js';
 
 const mathHelper = createMathHelper();

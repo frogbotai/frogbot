@@ -1,6 +1,6 @@
-import type { UIMessage } from 'ai'
 import { useChat } from '@ai-sdk/react'
 import { render, screen } from '@testing-library/react'
+import type { UIMessage } from 'ai'
 import { describe, expect, it, vi } from 'vitest'
 
 import { MessageList } from './message-list'

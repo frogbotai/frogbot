@@ -14,8 +14,8 @@
 // only checks `Symbol.for('vercel.ai.error.<Name>') === true`, so a stamped
 // error hits the exact `isInstance` branch.
 
-import { describe, expect, it } from 'vitest';
 import type { ImageModelV4, LanguageModelV4 } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';

@@ -1,8 +1,8 @@
 // Internal conversion from frogbot Tool[] → AI SDK ToolSet.
 // Users never import this — the ToolSet record is an implementation detail.
 
-import { tool as aiTool } from 'ai';
 import type { ToolSet } from 'ai';
+import { tool as aiTool } from 'ai';
 import { z } from 'zod';
 
 import type { AnyTool, ToolCtx } from '../types/tool.js';

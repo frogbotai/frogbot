@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { dropboxProvider, githubProvider, googleProvider, microsoftProvider, notionProvider, slackProvider, stripeProvider, xeroProvider, zoomProvider } from '../index.js';
 import type { OAuthProvider } from '../index.js';
+import { dropboxProvider, githubProvider, googleProvider, microsoftProvider, notionProvider, slackProvider, stripeProvider, xeroProvider, zoomProvider } from '../index.js';
 
 function jwt(value: Record<string, unknown>): string {
   return `header.${Buffer.from(JSON.stringify(value)).toString('base64url')}.signature`;

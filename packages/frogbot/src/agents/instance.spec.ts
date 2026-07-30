@@ -1,7 +1,7 @@
+import type * as Gateway from '@frogbotai/gateway';
+import type * as AI from 'ai';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import type * as AI from 'ai';
-import type * as Gateway from '@frogbotai/gateway';
 
 import type { SanitizedAIConfig } from '../types/ai.js';
 import type { FrogbotRequest } from '../types/request.js';

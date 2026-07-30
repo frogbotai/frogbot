@@ -1,5 +1,5 @@
-import { calculateModelCostUSD } from "@frogbotai/gateway";
 import type { AfterOperationHook } from "@frogbotai/gateway";
+import { calculateModelCostUSD } from "@frogbotai/gateway";
 
 import type { AIOperationContext } from "./hooks.js";
 import { USAGE_LOGS_SLUG } from "./usageCollection.js";

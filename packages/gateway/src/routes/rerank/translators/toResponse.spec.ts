@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { RerankResult } from 'ai';
+import { describe, expect, it } from 'vitest';
 
 import { toOpenAIRerankResponse } from './toResponse.js';
 

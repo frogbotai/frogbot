@@ -1,4 +1,5 @@
 import type { ComponentType, Dispatch, ReactNode, SetStateAction } from 'react'
+
 import type { DataPartValue } from './data-part'
 
 export interface Artifact<T = unknown> {

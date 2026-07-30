@@ -1,7 +1,8 @@
 import * as module from '@activepieces/piece-attio';
 import { pieceContract } from 'frogbot/pieces/test';
+
 import { credentialExecution } from '../../credential-execution.js';
-import { createAttio, attioActions } from './index.js';
+import { attioActions,createAttio } from './index.js';
 
 const attio = createAttio();
 pieceContract({ piece: attio, service: 'attio', credentialType: 'secret_text', actions: attioActions });

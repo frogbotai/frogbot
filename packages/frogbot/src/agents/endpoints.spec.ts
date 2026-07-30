@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as AI from 'ai';
 import type { UIMessage } from 'ai';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AgentInstance } from '../types/agent.js';
 import type { FrogbotRequest } from '../types/request.js';

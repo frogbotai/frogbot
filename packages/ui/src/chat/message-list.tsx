@@ -1,7 +1,7 @@
 'use client'
 
 import type { UIMessage } from 'ai'
-import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from 'react'
+import { type HTMLAttributes, type ReactNode,useEffect, useRef, useState } from 'react'
 
 import { cn } from '../lib/utils'
 import { Message } from './message'

@@ -2,16 +2,16 @@ import type { CollectionConfig } from 'frogbot';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 import {
-  hookOrderSlug,
-  reqAccessSlug,
   accessBooleanSlug,
   accessWhereSlug,
-  fieldAccessSlug,
-  validateSlug,
   afterOpSlug,
   contextFlowSlug,
+  fieldAccessSlug,
+  hookOrderSlug,
   overrideAccessSlug,
+  reqAccessSlug,
   usersSlug,
+  validateSlug,
 } from './shared.js';
 
 // ── Side-effect log for hook ordering tests ───────────────────────────
@@ -28,7 +28,7 @@ const HookOrder: CollectionConfig = {
   access: openAccess,
   hooks: {
     beforeValidate: [
-      ({ req }) => {
+      () => {
         hookLog.push('beforeValidate');
       },
     ],
@@ -45,7 +45,7 @@ const HookOrder: CollectionConfig = {
       },
     ],
     beforeRead: [
-      ({ doc }) => {
+      () => {
         hookLog.push('beforeRead');
       },
     ],
@@ -56,7 +56,7 @@ const HookOrder: CollectionConfig = {
       },
     ],
     beforeDelete: [
-      ({ req }) => {
+      () => {
         hookLog.push('beforeDelete');
       },
     ],
@@ -77,7 +77,7 @@ const ReqAccess: CollectionConfig = {
   access: openAccess,
   hooks: {
     beforeChange: [
-      async ({ req, data, operation }) => {
+      async ({ req, data }) => {
         const result = await req.frogbot.find({ collection: reqAccessSlug, limit: 0, req });
         req.context.countAtHookTime = result.totalDocs;
         return data;

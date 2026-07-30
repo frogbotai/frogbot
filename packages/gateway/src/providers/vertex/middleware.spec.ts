@@ -2,8 +2,8 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { vertexThinkingBudget } from './middleware.js';
 import type { BeforeUpstreamHookArgs } from '../../hooks.js';
+import { vertexThinkingBudget } from './middleware.js';
 
 function makeArgs(model: string, overrides: Partial<BeforeUpstreamHookArgs> = {}): BeforeUpstreamHookArgs {
   return {

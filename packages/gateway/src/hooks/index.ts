@@ -4,22 +4,21 @@
 // `mergeHooks` for composing multiple hook sets.
 
 export type {
-  Hooks,
+  AfterErrorHook,
+  AfterErrorHookArgs,
+  AfterOperationHook,
+  AfterOperationHookArgs,
+  AfterUpstreamHook,
+  AfterUpstreamHookArgs,
+  BeforeOperationHook,
+  BeforeOperationHookArgs,
+  BeforeUpstreamHook,
+  BeforeUpstreamHookArgs,
   HookOperation,
   HookPhase,
+  Hooks,
   HookUsage,
   LanguageParams,
   OperationBase,
-  BeforeOperationHookArgs,
-  BeforeOperationHook,
-  BeforeUpstreamHookArgs,
-  BeforeUpstreamHook,
-  AfterUpstreamHookArgs,
-  AfterUpstreamHook,
-  AfterErrorHookArgs,
-  AfterErrorHook,
-  AfterOperationHookArgs,
-  AfterOperationHook,
 } from '../hooks.js';
-
 export { mergeHooks } from '../providers/middleware.js';

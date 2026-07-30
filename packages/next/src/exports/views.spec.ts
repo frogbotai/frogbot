@@ -1,6 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
-
 import type { FrogbotSanitizedConfig } from 'frogbot';
+import { describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   RootPage: vi.fn(() => null),

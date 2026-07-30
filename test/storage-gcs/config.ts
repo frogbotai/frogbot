@@ -1,6 +1,6 @@
+import { gcsStorage } from '@frogbotai/storage-gcs'
 import type { CollectionConfig } from 'frogbot'
 
-import { gcsStorage } from '@frogbotai/storage-gcs'
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js'
 import { mediaSlug, usersSlug } from './shared.js'
 

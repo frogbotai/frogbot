@@ -7,20 +7,21 @@
 // call time. We only guard against the one case TS can't: an empty
 // `providers` object that would produce a gateway with nothing to route to.
 
-import {
-  isProviderInstance,
-  providers,
-  type ProviderConfigMap,
-  type ProviderName,
-  type ProvidersInput,
-} from '../providers/registry.js';
-import type { ModelCatalog } from '../providers/catalog.js';
+import type { Tracer } from '@opentelemetry/api';
+
 import { ConfigError } from '../errors/gatewayError.js';
 import type { Hooks } from '../hooks.js';
 import type { GatewayLogger, LoggerOptions } from '../observability/logger.js';
-import type { TracingOptions } from '../observability/tracing.js';
 import type { SignalLevelInput } from '../observability/signalLevel.js';
-import type { Tracer } from '@opentelemetry/api';
+import type { TracingOptions } from '../observability/tracing.js';
+import type { ModelCatalog } from '../providers/catalog.js';
+import {
+  isProviderInstance,
+  type ProviderConfigMap,
+  type ProviderName,
+  providers,
+  type ProvidersInput,
+} from '../providers/registry.js';
 
 // ---------------------------------------------------------------------------
 // Public config type

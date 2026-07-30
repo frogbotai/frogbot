@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
 import { mongooseAdapter } from '@frogbotai/db-mongodb';
-import { buildConfig } from 'frogbot';
 import type { FrogbotConfig, Plugin } from 'frogbot';
+import { buildConfig } from 'frogbot';
+import { describe, expect,it } from 'vitest';
 
 import { projectsSlug } from './shared.js';
 

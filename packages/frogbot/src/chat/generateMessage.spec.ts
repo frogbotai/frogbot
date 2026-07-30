@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { UIMessage } from 'ai';
+import { describe, expect, it } from 'vitest';
 
 import type { AgentGenerateResult } from '../types/agent.js';
 import { generateMessage } from './generateMessage.js';

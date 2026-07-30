@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { resendAdapter } from './index'
 
 describe('@frogbotai/email-resend exports', () => {

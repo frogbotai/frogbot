@@ -7,11 +7,11 @@
 // G74: CONFIRMED — Reasoning deltas duplicated into both summary and content parts
 // G75: FIXED — include[] forwarded and reasoning encrypted_content now surfaced on output items
 
-import { describe, expect, it } from 'vitest';
 import type {
   LanguageModelV4,
   LanguageModelV4StreamPart,
 } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';

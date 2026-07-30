@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { resolveToolRenderer, type ToolRenderer } from './tool-registry'
+
 import { ToolPart } from './tool-part'
+import { resolveToolRenderer, type ToolRenderer } from './tool-registry'
 
 const First = () => <div>first</div>
 const Second = () => <div>second</div>

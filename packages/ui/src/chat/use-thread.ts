@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import type { UIMessage } from 'ai'
+import { useEffect, useState } from 'react'
+
 import type { ChatPlatformAdapter } from './adapter'
-import { messageDocumentToUIMessage, type MessageDocument } from './messages'
+import { type MessageDocument,messageDocumentToUIMessage } from './messages'
 import { chatRequest, type PayloadPage } from './rest'
 
 export type UseThreadOptions = {

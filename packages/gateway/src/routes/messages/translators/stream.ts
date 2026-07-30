@@ -30,9 +30,9 @@ import {
 } from '../../../shared/extractStreamErrorInfo.js';
 import { peekRawValue } from '../../../shared/rawPeek.js';
 import {
-  mapStopReason,
-  extractThinkingTokens,
   extractCacheCreation,
+  extractThinkingTokens,
+  mapStopReason,
   usageDetailFields,
 } from './toAnthropicResponse.js';
 import type { AnthropicStopReason } from './types.js';

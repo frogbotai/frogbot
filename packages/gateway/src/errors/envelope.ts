@@ -47,7 +47,7 @@ import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { isProduction } from '../shared/runtimeDetection.js';
 import { classifyAiSdkError } from './classifyAiSdkError.js';
 import { isUpstreamAbortError } from './clientAbort.js';
-import { isGatewayError, type GatewayErrorCode } from './gatewayError.js';
+import { type GatewayErrorCode,isGatewayError } from './gatewayError.js';
 import { maybeMaskMessage, redactKeyFragments } from './maskMessage.js';
 import { CONTEXT_OVERFLOW_ENVELOPE, isContextOverflow } from './overflow.js';
 import { statusToAnthropicType, statusToOpenAIType } from './statusMaps.js';

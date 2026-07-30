@@ -10,19 +10,19 @@
 // Golden tests verify that translator output exactly matches the committed fixtures.
 // When upstream wire formats change, re-record gated E2E fixtures with `RUN_E2E=1 ... --update`.
 
-import { describe, expect, it } from 'vitest';
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { existsSync,readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+import type { TextStreamPart, ToolSet } from 'ai';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import { cohereProvider } from '../../packages/gateway/src/providers/cohere/index.js';
 import { openaiProvider } from '../../packages/gateway/src/providers/openai/index.js';
 import { createOpenAIStreamTransform } from '../../packages/gateway/src/routes/chatCompletions/translators/stream.js';
 import { createAnthropicStreamTransform } from '../../packages/gateway/src/routes/messages/translators/stream.js';
-import { createProviderFixtureFetch, shouldUpdateFixtures } from '../__helpers/gateway/provider-http-fixtures.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
-
-import type { TextStreamPart, ToolSet } from 'ai';
+import { createProviderFixtureFetch, shouldUpdateFixtures } from '../__helpers/gateway/provider-http-fixtures.js';
 
 const FIXTURES_DIR = join(import.meta.dirname, '__fixtures__');
 

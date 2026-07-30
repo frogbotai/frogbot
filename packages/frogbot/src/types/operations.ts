@@ -8,9 +8,8 @@
 // draft mode, populate, locale, fallbackLocale). Re-add when needed; the
 // underlying `payload.<op>` accepts all of it via the boundary cast.
 
-import type { Sort, Where } from './payload.js';
-
 import type { CollectionSlug, TypedCollection, TypeWithID } from './generated.js';
+import type { Sort, Where } from './payload.js';
 import type { FrogbotRequest } from './request.js';
 
 // ── Version wrapper ───────────────────────────────────────────────────

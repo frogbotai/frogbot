@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { MessagePart } from './message-part'
 import { ArtifactProvider } from './artifact'
+import { MessagePart } from './message-part'
 
 describe('data and boundary parts', () => {
   it('renders data by default or through a consumer renderer', () => {

@@ -19,15 +19,16 @@
 //   PORT  → bind port (default 3939)
 //   HOST  → bind host (default 0.0.0.0)
 
-import { serve, type ServerType } from '@hono/node-server';
 import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-import { createGateway } from '../gateway.js';
+import { serve, type ServerType } from '@hono/node-server';
+
 import { loadLayeredConfig } from '../config/layered.js';
 import { finalizeConfig } from '../config/parse.js';
 import type { GatewayConfig } from '../config/schema.js';
-import { PROVIDER_NAMES, providers, type ProviderConfigMap } from '../providers/registry.js';
+import { createGateway } from '../gateway.js';
+import { PROVIDER_NAMES, type ProviderConfigMap,providers } from '../providers/registry.js';
 import { helpText, parseCliArgs, parsePort } from './args.js';
 import { startupBanner } from './banner.js';
 

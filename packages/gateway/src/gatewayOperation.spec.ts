@@ -5,8 +5,8 @@
 // requestId/context with upstream hooks, and `finish()` fires afterOperation
 // with accumulated finishReason/usage/error.
 
-import { MockLanguageModelV4 } from 'ai/test';
 import { generateText } from 'ai';
+import { MockLanguageModelV4 } from 'ai/test';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createGateway, type Gateway } from './gateway.js';

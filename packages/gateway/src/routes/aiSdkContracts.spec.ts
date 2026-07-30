@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import type {
   EmbeddingModelV4,
   Experimental_VideoModelV4,
@@ -18,21 +17,22 @@ import type {
   transcribe,
 } from 'ai';
 import type { LanguageModel } from 'ai';
+import { describe, expect, it } from 'vitest';
 
-import { toEmbedParams } from './embeddings/translators/index.js';
 import type { EmbeddingsRequest } from './embeddings/schema.js';
-import { toGenerateImageParams } from './images/translators/index.js';
+import { toEmbedParams } from './embeddings/translators/index.js';
 import type { ImagesRequest } from './images/schema.js';
-import { toRerankParams } from './rerank/translators/index.js';
+import { toGenerateImageParams } from './images/translators/index.js';
 import type { RerankRequest } from './rerank/schema.js';
-import { toModelMessages } from './responses/translators/index.js';
+import { toRerankParams } from './rerank/translators/index.js';
 import type { ResponsesRequest } from './responses/schema.js';
-import { toSpeechParams } from './speech/translators/index.js';
+import { toModelMessages } from './responses/translators/index.js';
 import type { SpeechRequest } from './speech/schema.js';
-import { toTranscribeParams } from './transcriptions/translators/index.js';
+import { toSpeechParams } from './speech/translators/index.js';
 import type { TranscriptionRequest } from './transcriptions/schema.js';
-import { toGenerateVideoParams } from './videos/translators/index.js';
+import { toTranscribeParams } from './transcriptions/translators/index.js';
 import type { VideosRequest } from './videos/schema.js';
+import { toGenerateVideoParams } from './videos/translators/index.js';
 
 const embeddingModel = null as never as EmbeddingModelV4;
 const imageModel = null as never as ImageModelV4;

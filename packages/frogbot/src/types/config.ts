@@ -7,17 +7,16 @@
 // Users import this from `'frogbot'` and never see the underlying Payload
 // type name or import path.
 
-import type { PayloadConfig } from './payload.js';
-
+import type { RootAdminConfig } from './admin.js';
 import type { AgentConfig } from './agent.js';
 import type { AIConfig } from './ai.js';
-import type { RootAdminConfig } from './admin.js';
 import type { CollectionConfig } from './collection.js';
 import type { ConnectionsConfig, CredentialSource } from './connections.js';
 import type { DatabaseAdapter } from './database.js';
 import type { Endpoint } from './endpoint.js';
-import type { Plugin } from './plugin.js';
+import type { PayloadConfig } from './payload.js';
 import type { Piece } from './piece.js';
+import type { Plugin } from './plugin.js';
 import type { FrogbotRequest } from './request.js';
 
 type PayloadAfterErrorHook = NonNullable<NonNullable<PayloadConfig['hooks']>['afterError']>[number];

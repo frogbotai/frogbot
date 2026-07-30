@@ -15,8 +15,8 @@
 
 import { APICallError } from '@ai-sdk/provider';
 
-import { buildRetryHeaders, isRetryableStatus } from './retryHeaders.js';
 import { filterResponseHeaders } from './filterResponseHeaders.js';
+import { buildRetryHeaders, isRetryableStatus } from './retryHeaders.js';
 import { unwrapRetryError } from './unwrapRetryError.js';
 
 /**

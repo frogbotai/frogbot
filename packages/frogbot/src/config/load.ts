@@ -7,10 +7,10 @@ import { existsSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
 import type { InitOptions } from '../frogbot.js';
-import { runWithValidationMode } from './validationContext.js';
+import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
 import type { ValidationMode } from './validationContext.js';
+import { runWithValidationMode } from './validationContext.js';
 
 const CONFIG_FILENAMES = ['frogbot.config.ts', 'frogbot.config.mjs', 'frogbot.config.js'] as const;
 

@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { FrogbotConfig } from "../types/config.js";
-import type { CollectionConfig } from "../types/collection.js";
 import type { Frogbot } from "../frogbot.js";
+import { getCachedFrogbot, resetFrogbotCache } from "../getFrogbot.js";
 import {
   getFrogbotInstance,
   registerFrogbotInstance,
 } from "../instanceRegistry.js";
-import { getCachedFrogbot, resetFrogbotCache } from "../getFrogbot.js";
+import type { CollectionConfig } from "../types/collection.js";
+import type { FrogbotConfig } from "../types/config.js";
 
 vi.mock("payload", () => ({
   buildConfig: vi.fn((config: unknown) => Promise.resolve(config)),
@@ -145,10 +145,10 @@ describe("frogbot sanitize", () => {
     const payloadConfig = await result._internal.payloadConfig;
     const users = (payloadConfig as any).collections.find(
       (c: any) => c.slug === "users",
-    ); // eslint-disable-line @typescript-eslint/no-explicit-any
+    );  
     const posts = (payloadConfig as any).collections.find(
       (c: any) => c.slug === "posts",
-    ); // eslint-disable-line @typescript-eslint/no-explicit-any
+    );  
     expect(users.custom.frogbot.auth).toBe(true);
     expect(posts.custom.frogbot.auth).toBe(false);
   });
@@ -167,7 +167,7 @@ describe("frogbot sanitize", () => {
     const payloadConfig = await result._internal.payloadConfig;
     const projects = (payloadConfig as any).collections.find(
       (c: any) => c.slug === "projects",
-    ); // eslint-disable-line @typescript-eslint/no-explicit-any
+    );  
     expect(projects.custom.myKey).toBe("hello");
     expect(projects.custom.frogbot).toBeDefined();
   });
@@ -188,7 +188,7 @@ describe("frogbot sanitize", () => {
     const payloadConfig = await result._internal.payloadConfig;
     const users = (payloadConfig as any).collections.find(
       (c: any) => c.slug === "users",
-    ); // eslint-disable-line @typescript-eslint/no-explicit-any
+    );  
     const hooks = users.hooks?.beforeOperation ?? [];
     expect(hooks.length).toBe(2);
     expect(hooks[1]).toBe(existingHook);
@@ -210,8 +210,8 @@ describe("frogbot sanitize", () => {
     const payloadConfig = await result._internal.payloadConfig;
     const users = (payloadConfig as any).collections.find(
       (c: any) => c.slug === "users",
-    ); // eslint-disable-line @typescript-eslint/no-explicit-any
-    const endpoints = users.endpoints as any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+    );  
+    const endpoints = users.endpoints as any[];  
     expect(endpoints).toHaveLength(1);
     expect(endpoints[0].handler).not.toBe(handler);
   });
@@ -220,10 +220,10 @@ describe("frogbot sanitize", () => {
     const handler = () => new Response("ok");
     const config = makeConfig({
       endpoints: [{ path: "/health", method: "get", handler }],
-    } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+    } as any);  
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
-    const endpoints = (payloadConfig as any).endpoints as any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const endpoints = (payloadConfig as any).endpoints as any[];  
     expect(endpoints).toHaveLength(2);
     expect(endpoints[0].handler).not.toBe(handler);
   });
@@ -243,7 +243,7 @@ describe("frogbot sanitize", () => {
     ).endpoints[0];
     const payload = {};
     const frogbot = { agents: {} };
-    registerFrogbotInstance(payload, frogbot as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+    registerFrogbotInstance(payload, frogbot as any);  
 
     await endpoint.handler({ payload });
 
@@ -331,7 +331,7 @@ describe("frogbot sanitize", () => {
       makeConfig({ endpoints: [{ path: "/health", method: "get", handler }] }),
     );
     const payloadConfig = await result._internal.payloadConfig;
-    const endpoint = (payloadConfig as any).endpoints[0]; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const endpoint = (payloadConfig as any).endpoints[0];  
     const payload = makePayload(payloadConfig);
 
     const response = await endpoint.handler({ payload });
@@ -368,7 +368,7 @@ describe("frogbot sanitize", () => {
       }),
     );
     const payloadConfig = await result._internal.payloadConfig;
-    const endpoint = (payloadConfig as any).endpoints[0]; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const endpoint = (payloadConfig as any).endpoints[0];  
     const payload = makePayload(payloadConfig);
 
     const first = endpoint.handler({ payload });
@@ -393,7 +393,7 @@ describe("frogbot sanitize", () => {
       }),
     );
     const payloadConfig = await result._internal.payloadConfig;
-    const endpoint = (payloadConfig as any).endpoints[0]; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const endpoint = (payloadConfig as any).endpoints[0];  
     const payload = makePayload(payloadConfig);
 
     await expect(endpoint.handler({ payload })).rejects.toBe(error);
@@ -433,7 +433,7 @@ describe("frogbot sanitize", () => {
     const config = makeConfig({ plugins: [plugin] });
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
-    expect((payloadConfig as any).plugins).toBeUndefined(); // eslint-disable-line @typescript-eslint/no-explicit-any
+    expect((payloadConfig as any).plugins).toBeUndefined();  
   });
 
   it("rewrites @payloadcms component paths in the sanitized payload config", async () => {
@@ -452,7 +452,7 @@ describe("frogbot sanitize", () => {
     } as unknown as Partial<FrogbotConfig>);
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
-    expect((payloadConfig as any).admin.dashboard.widgets[0].Component) // eslint-disable-line @typescript-eslint/no-explicit-any
+    expect((payloadConfig as any).admin.dashboard.widgets[0].Component)  
       .toBe("@frogbotai/next/rsc#CollectionCards");
   });
 
@@ -465,8 +465,8 @@ describe("frogbot sanitize", () => {
     expect((payloadConfig as any).admin.importMap).toEqual({
       baseDir: "/tmp/base",
       autoGenerate: false,
-    }); // eslint-disable-line @typescript-eslint/no-explicit-any
-    expect((payloadConfig as any).admin.theme).toBe("dark"); // eslint-disable-line @typescript-eslint/no-explicit-any
+    });  
+    expect((payloadConfig as any).admin.theme).toBe("dark");  
   });
 
   it("defaults FrogBot import-map generation to enabled", () => {
@@ -487,7 +487,7 @@ describe("frogbot sanitize", () => {
 
   it("injects FrogBot branding defaults into the payload config", async () => {
     const result = sanitize(makeConfig());
-    const payloadConfig = (await result._internal.payloadConfig) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const payloadConfig = (await result._internal.payloadConfig) as any;  
     expect(payloadConfig.admin.components.graphics).toEqual({
       Icon: "@frogbotai/next/rsc#FrogbotIcon",
       Logo: "@frogbotai/next/rsc#FrogbotLogo",
@@ -529,7 +529,7 @@ describe("frogbot sanitize", () => {
       },
     } as unknown as Partial<FrogbotConfig>);
     const result = sanitize(config);
-    const payloadConfig = (await result._internal.payloadConfig) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const payloadConfig = (await result._internal.payloadConfig) as any;  
     expect(payloadConfig.admin.components.graphics).toEqual({
       Icon: "@frogbotai/next/rsc#FrogbotIcon",
       Logo: "/components/Logo#MyLogo",
@@ -557,7 +557,7 @@ describe("frogbot sanitize", () => {
       },
     } as unknown as Partial<FrogbotConfig>);
     const result = sanitize(config);
-    const payloadConfig = (await result._internal.payloadConfig) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const payloadConfig = (await result._internal.payloadConfig) as any;  
     expect(payloadConfig.i18n.fallbackLanguage).toBe("en");
     expect(payloadConfig.i18n.translations.en.general).toEqual({
       dashboard: "Home",
@@ -589,7 +589,7 @@ describe("frogbot sanitize", () => {
     const payloadConfig = await result._internal.payloadConfig;
     const bare = (payloadConfig as any).collections.find(
       (c: any) => c.slug === "bare",
-    ); // eslint-disable-line @typescript-eslint/no-explicit-any
+    );  
     expect(bare.hooks?.beforeOperation).toHaveLength(1);
   });
 
@@ -749,10 +749,10 @@ describe("frogbot sanitize", () => {
 
       expect(result.agents).toHaveLength(1);
       expect(result.agents?.[0].access).toBeTypeOf("function");
-      expect((payloadConfig as any).agents).toBeUndefined(); // eslint-disable-line @typescript-eslint/no-explicit-any
+      expect((payloadConfig as any).agents).toBeUndefined();  
       expect(
         (payloadConfig as any).endpoints.map((endpoint: any) => endpoint.path),
-      ) // eslint-disable-line @typescript-eslint/no-explicit-any
+      )  
         .toEqual([
           "/frogbot",
           "/agents/:slug",

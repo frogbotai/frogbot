@@ -9,7 +9,6 @@
 import { describe, expect, test } from 'vitest';
 
 import { UnsupportedModalityError } from '../../../../errors/gatewayError.js';
-
 import { toModelMessages } from './index.js';
 
 // ---------------------------------------------------------------------------

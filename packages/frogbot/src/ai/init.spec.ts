@@ -2,8 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { buildGatewayConfig, createAIGateway } from './init.js';
 import type { SanitizedAIConfig } from '../types/ai.js';
+import { buildGatewayConfig, createAIGateway } from './init.js';
 
 afterEach(() => {
   vi.unstubAllEnvs();

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+
 import { ArtifactStreamPart } from './artifact'
 
 export interface DataPartValue { data: unknown; id?: string; type: `data-${string}` }

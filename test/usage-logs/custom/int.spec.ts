@@ -1,10 +1,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { logUsage } from '../../../packages/frogbot/src/ai/logUsage.js';
 import type { BootedFrogbot } from '../../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../../__helpers/shared/bootFrogbot';
-import { logUsage } from '../../../packages/frogbot/src/ai/logUsage.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 

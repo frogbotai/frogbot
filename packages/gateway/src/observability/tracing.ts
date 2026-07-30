@@ -1,10 +1,10 @@
 import {
   context,
-  trace,
-  SpanStatusCode,
   type Exception,
   type Span,
   type SpanOptions,
+  SpanStatusCode,
+  trace,
   type Tracer,
 } from '@opentelemetry/api';
 
@@ -21,8 +21,8 @@ import {
   includesSignalLevel,
   resolveSignalLevels,
   signalLevelFromBody,
-  traceOverrideKey,
   type SignalLevelInput,
+  traceOverrideKey,
 } from './signalLevel.js';
 
 export type TracingOptions = {

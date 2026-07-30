@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { nodemailerAdapter } from './index'
 
 describe('@frogbotai/email-nodemailer exports', () => {

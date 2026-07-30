@@ -5,9 +5,9 @@
 // `FrogbotSanitizedConfig`. This is what the config file's default
 // export resolves to.
 
-import { sanitize } from './sanitize.js';
 import type { FrogbotConfig } from '../types/config.js';
 import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
+import { sanitize } from './sanitize.js';
 
 export type { FrogbotSanitizedConfig };
 

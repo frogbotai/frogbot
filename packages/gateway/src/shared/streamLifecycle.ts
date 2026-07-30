@@ -36,7 +36,7 @@
 
 import type { LanguageModelUsage } from 'ai';
 
-import { runHooks, type HookPhase, type HookUsage, type Hooks, type OperationBase } from '../hooks.js';
+import { type HookPhase, type Hooks, type HookUsage, type OperationBase,runHooks } from '../hooks.js';
 
 export type StreamDoneOutcome =
   | { kind: 'done' }

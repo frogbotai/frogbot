@@ -7,8 +7,8 @@
 // rejected up front, and chunked bodies are read through a size-limited
 // stream — both produce 413 `request_entity_too_large`.
 
-import { describe, expect, it } from 'vitest';
 import type { LanguageModelV4 } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';

@@ -1,11 +1,11 @@
+import type { Gateway } from "@frogbotai/gateway";
+import type { AgentCallParameters, AgentStreamParameters, UIMessage } from "ai";
 import {
-  ToolLoopAgent,
   convertToModelMessages,
   generateId,
+  ToolLoopAgent,
   validateUIMessages,
 } from "ai";
-import type { AgentCallParameters, AgentStreamParameters, UIMessage } from "ai";
-import type { Gateway } from "@frogbotai/gateway";
 
 import { toHookUsage } from "../ai/hooks.js";
 import { logUsage } from "../ai/logUsage.js";
@@ -19,9 +19,9 @@ import type {
   AgentConfig,
   AgentGenerateOpts,
   AgentGenerateResult,
+  AgentInstance,
   AgentStreamOpts,
   AgentStreamResult,
-  AgentInstance,
 } from "../types/agent.js";
 import type { SanitizedAIConfig } from "../types/ai.js";
 import type { FrogbotRequest } from "../types/request.js";
@@ -324,7 +324,7 @@ async function buildPrompt(
   | { messages: Awaited<ReturnType<typeof convertToModelMessages>> }
 > {
   if ("prompt" in opts && opts.prompt !== undefined)
-    return { prompt: opts.prompt };
+    {return { prompt: opts.prompt };}
 
   const messages = opts.messages ?? [];
   if (messages.some((message) => "parts" in message)) {

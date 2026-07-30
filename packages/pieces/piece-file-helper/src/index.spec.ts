@@ -1,5 +1,6 @@
 import { pieceContract } from 'frogbot/pieces/test';
 import { describe, expect, it, vi } from 'vitest';
+
 import { createFileHelper, fileHelperActions } from './index.js';
 
 const fileHelper = createFileHelper();

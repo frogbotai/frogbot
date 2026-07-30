@@ -1,6 +1,6 @@
+import { redisKVAdapter } from '@frogbotai/kv-redis'
 import type { CollectionConfig } from 'frogbot'
 
-import { redisKVAdapter } from '@frogbotai/kv-redis'
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js'
 import { usersSlug } from './shared.js'
 

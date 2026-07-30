@@ -1,8 +1,8 @@
 import type { TypeWithID } from 'payload';
 
 import type { Frogbot } from '../frogbot.js';
-import type { CredentialType } from '../types/piece.js';
 import type { SanitizedConnectionsConfig } from '../types/connections.js';
+import type { CredentialType } from '../types/piece.js';
 import { adaptCredential } from './adapters.js';
 
 export type ConnectionRecord = {

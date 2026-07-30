@@ -7,14 +7,14 @@
 // Type-only — no runtime imports.
 
 export type {
-  Config as PayloadConfig,
-  CollectionConfig as PayloadCollectionConfig,
-  Field as PayloadField,
   Payload,
+  CollectionConfig as PayloadCollectionConfig,
+  Config as PayloadConfig,
+  Endpoint as PayloadEndpoint,
+  Field as PayloadField,
   PayloadHandler,
   PayloadRequest,
-  Endpoint as PayloadEndpoint,
   SanitizedConfig,
-  Where,
   Sort,
+  Where,
 } from 'payload';

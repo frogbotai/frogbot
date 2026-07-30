@@ -10,8 +10,8 @@
 // The mock model resolves synchronously (Promise.resolve, no async) so the
 // harness never needs the network; only routing/config behavior is exercised.
 
-import { describe, expect, it } from 'vitest';
 import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 // `hono` lives in the gateway package's own node_modules; import it from there
 // so the host-app half of the mount recipe uses the exact Hono the gateway does.

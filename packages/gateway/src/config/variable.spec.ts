@@ -1,12 +1,12 @@
-import { mkdtempSync, writeFileSync, mkdirSync, symlinkSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, symlinkSync,writeFileSync } from 'node:fs';
 import { realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { interpolateConfigText } from './variable.js';
 import { ConfigError } from '../errors/gatewayError.js';
+import { interpolateConfigText } from './variable.js';
 
 const scratch = () => realpathSync(mkdtempSync(join(tmpdir(), 'frogbotai-gateway-variable-')));
 

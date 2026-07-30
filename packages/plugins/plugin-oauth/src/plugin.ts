@@ -2,19 +2,19 @@ import type { Plugin } from 'frogbot';
 
 import { createOAuthStatesCollection } from './collections/states.js';
 import { createOAuthEndpoints } from './endpoints/index.js';
-import { createOAuthEncryption } from './server/crypto.js';
-import { createOAuthCredentialSource } from './source.js';
-import type { OAuthPluginOptions } from './types.js';
-import type { OAuthProvider } from './types.js';
-import { googleProvider } from './providers/google.js';
-import { githubProvider } from './providers/github.js';
 import { dropboxProvider } from './providers/dropbox.js';
+import { githubProvider } from './providers/github.js';
+import { googleProvider } from './providers/google.js';
 import { microsoftProvider } from './providers/microsoft.js';
 import { notionProvider } from './providers/notion.js';
 import { slackProvider } from './providers/slack.js';
 import { stripeProvider } from './providers/stripe.js';
 import { xeroProvider } from './providers/xero.js';
 import { zoomProvider } from './providers/zoom.js';
+import { createOAuthEncryption } from './server/crypto.js';
+import { createOAuthCredentialSource } from './source.js';
+import type { OAuthPluginOptions } from './types.js';
+import type { OAuthProvider } from './types.js';
 
 function createProvider(id: string, clientId: string, clientSecret: string, scopes: string[]): OAuthProvider {
   const options = { clientId, clientSecret, service: id, scopes };

@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
-import { serve } from '@hono/node-server';
+
 import { createGateway } from '@frogbotai/gateway';
+import { serve } from '@hono/node-server';
 
 if (existsSync('.env')) {
   process.loadEnvFile('.env');

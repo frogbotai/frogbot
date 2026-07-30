@@ -15,7 +15,7 @@ import { OpenTelemetry } from '@ai-sdk/otel';
 import type { Tracer } from '@opentelemetry/api';
 import type { TelemetryOptions } from 'ai';
 
-import { includesSignalLevel, resolveSignalLevels, traceOverrideKey, type SignalLevelInput } from './signalLevel.js';
+import { includesSignalLevel, resolveSignalLevels, type SignalLevelInput,traceOverrideKey } from './signalLevel.js';
 import { createGatewayTracer } from './tracing.js';
 
 /** Subset of the AI SDK `telemetry` option the gateway drives per request. */

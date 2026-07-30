@@ -24,29 +24,41 @@ import type {
   TranscriptionModelV4,
 } from '@ai-sdk/provider';
 
+import {
+  ModelIdError,
+  ModelNotFoundError,
+  ModelUnsupportedOperationError,
+  NoProvidersError,
+  ProviderNotConfiguredError,
+  UnsupportedModalityError,
+} from '../errors/gatewayError.js';
 import { alibabaProvider } from './alibaba/index.js';
 import { anthropicProvider } from './anthropic/index.js';
+import { resolveAnthropicAwsModelId } from './anthropic-aws/canonical.js';
 import { anthropicAwsProvider } from './anthropic-aws/index.js';
 import { assemblyaiProvider } from './assemblyai/index.js';
+import { resolveAzureModelId } from './azure/canonical.js';
 import { azureProvider } from './azure/index.js';
 import { basetenProvider } from './baseten/index.js';
+import { resolveBedrockModelId } from './bedrock/canonical.js';
 import { bedrockProvider } from './bedrock/index.js';
 import { blackForestLabsProvider } from './black-forest-labs/index.js';
 import { bytedanceProvider } from './bytedance/index.js';
+import { type ModelCatalog, type Operation, supportsOperation } from './catalog.js';
 import { cerebrasProvider } from './cerebras/index.js';
 import { cohereProvider } from './cohere/index.js';
 import { deepgramProvider } from './deepgram/index.js';
 import { deepinfraProvider } from './deepinfra/index.js';
 import { deepseekProvider } from './deepseek/index.js';
+import { elevenlabsProvider } from './elevenlabs/index.js';
 import { falProvider } from './fal/index.js';
 import { fireworksProvider } from './fireworks/index.js';
-import { googleProvider } from './google/index.js';
 import { gladiaProvider } from './gladia/index.js';
+import { googleProvider } from './google/index.js';
 import { groqProvider } from './groq/index.js';
-import { humeProvider } from './hume/index.js';
 import { huggingfaceProvider } from './huggingface/index.js';
+import { humeProvider } from './hume/index.js';
 import { klingaiProvider } from './klingai/index.js';
-import { elevenlabsProvider } from './elevenlabs/index.js';
 import { lmntProvider } from './lmnt/index.js';
 import { lumaProvider } from './luma/index.js';
 import { mistralProvider } from './mistral/index.js';
@@ -64,18 +76,6 @@ import { vercelProvider } from './vercel/index.js';
 import { vertexProvider } from './vertex/index.js';
 import { voyageProvider } from './voyage/index.js';
 import { xaiProvider } from './xai/index.js';
-import { resolveAnthropicAwsModelId } from './anthropic-aws/canonical.js';
-import { resolveAzureModelId } from './azure/canonical.js';
-import { resolveBedrockModelId } from './bedrock/canonical.js';
-import {
-  ModelIdError,
-  ModelNotFoundError,
-  ModelUnsupportedOperationError,
-  NoProvidersError,
-  ProviderNotConfiguredError,
-  UnsupportedModalityError,
-} from '../errors/gatewayError.js';
-import { type Operation, type ModelCatalog, supportsOperation } from './catalog.js';
 
 // ---------------------------------------------------------------------------
 // Provider table — the single source of truth for known providers.

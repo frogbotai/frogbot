@@ -8,15 +8,15 @@
 // AWS/Bedrock creds that Zen's free OpenAI-compatible models can't stand in for;
 // the observable seam is "which model id did languageModel() receive".
 
-import { describe, expect, it } from 'vitest';
 import type {
   LanguageModelV4,
   LanguageModelV4CallOptions,
 } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
-import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { BEDROCK_CANONICAL_IDS } from '../../packages/gateway/src/providers/bedrock/canonical.js';
+import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
 function createMockModel(): LanguageModelV4 {

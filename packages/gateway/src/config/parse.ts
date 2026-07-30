@@ -8,12 +8,12 @@
 // returned unchanged. Detected via the `Symbol.for('frogbotai.gateway.parsed')`
 // marker (hebo `kParsed` pattern).
 
-import { pathToFileURL } from 'node:url';
 import { extname, isAbsolute, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { ConfigError } from '../errors/gatewayError.js';
-import { parseGatewayConfig, type GatewayConfig } from './schema.js';
 import { PROVIDER_NAMES, type ProviderConfigMap } from '../providers/registry.js';
+import { type GatewayConfig,parseGatewayConfig } from './schema.js';
 import { interpolateConfigText } from './variable.js';
 
 /** Symbol placed on the parsed config object so we can detect and skip re-parsing. */

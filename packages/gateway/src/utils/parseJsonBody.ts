@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 
-import { BodyTooLargeError, RequestValidationError, isGatewayError } from '../errors/gatewayError.js';
+import { BodyTooLargeError, isGatewayError,RequestValidationError } from '../errors/gatewayError.js';
 import { withStreamBodyLimit } from './streamBodyLimit.js';
 
 /** Default request-body cap for JSON routes (10 MB). */

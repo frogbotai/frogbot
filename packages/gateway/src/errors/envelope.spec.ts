@@ -10,13 +10,13 @@ import {
 import { RetryError } from 'ai';
 import { describe, expect, it } from 'vitest';
 
+import { toAnthropicErrorResponse, toOpenAIErrorResponse } from './envelope.js';
 import {
   ConfigError,
   ModelIdError,
   ProviderNotConfiguredError,
   UnsupportedModalityError,
 } from './gatewayError.js';
-import { toAnthropicErrorResponse, toOpenAIErrorResponse } from './envelope.js';
 
 // ---------------------------------------------------------------------------
 // Test helpers

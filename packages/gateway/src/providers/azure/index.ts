@@ -9,9 +9,9 @@
 // Model IDs are deployment names (e.g. `azure/my-gpt4o-deployment`).
 
 import {
-  createAzure,
   type AzureOpenAIProvider,
   type AzureOpenAIProviderSettings,
+  createAzure,
 } from '@ai-sdk/azure';
 
 import type { ProviderDefinition } from '../types.js';

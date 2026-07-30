@@ -1,13 +1,13 @@
 export { oauthPlugin } from "./plugin.js";
-export { googleProvider } from "./providers/google.js";
-export { githubProvider } from "./providers/github.js";
 export { dropboxProvider } from "./providers/dropbox.js";
-export { microsoftProvider } from "./providers/microsoft.js";
+export { githubProvider } from "./providers/github.js";
+export { googleProvider } from "./providers/google.js";
 export type { MicrosoftProviderOptions } from "./providers/microsoft.js";
-export type { OAuthProviderOptions } from "./providers/shared.js";
-export { stripeProvider } from "./providers/stripe.js";
+export { microsoftProvider } from "./providers/microsoft.js";
 export { notionProvider } from "./providers/notion.js";
+export type { OAuthProviderOptions } from "./providers/shared.js";
 export { slackProvider } from "./providers/slack.js";
+export { stripeProvider } from "./providers/stripe.js";
 export { xeroProvider } from "./providers/xero.js";
 export { zoomProvider } from "./providers/zoom.js";
 export type {

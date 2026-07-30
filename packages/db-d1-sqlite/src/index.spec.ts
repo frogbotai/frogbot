@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { sqliteD1Adapter } from './index'
 
 describe('@frogbotai/db-d1-sqlite exports', () => {

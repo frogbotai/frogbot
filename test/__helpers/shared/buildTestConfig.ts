@@ -1,5 +1,5 @@
-import { buildConfig } from 'frogbot'
 import type { FrogbotConfig } from 'frogbot'
+import { buildConfig } from 'frogbot'
 
 export const testCredentials = {
   email: 'dev@frogbot.local',

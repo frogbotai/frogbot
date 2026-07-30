@@ -10,8 +10,8 @@
 // assert a prompt 504. The test is bounded by a real race so it terminates
 // deterministically and never hangs CI.
 
-import { describe, expect, it } from 'vitest';
 import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';

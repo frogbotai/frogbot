@@ -2,19 +2,19 @@
 
 import { useChat } from '@ai-sdk/react'
 import type { UIMessage } from 'ai'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { type ReactNode,useEffect, useMemo, useRef, useState } from 'react'
 
 import { useControlledState } from '../hooks/use-controlled-state'
 import { ChatShell } from './chat-shell'
 import { ChatStatus } from './chat-status'
 import { Composer } from './composer'
+import { MessageList } from './message-list'
 import { deleteThread, renameThread } from './mutations'
 import { useChatProvider } from './provider'
-import { MessageList } from './message-list'
 import { deriveThreadTitle, ThreadHistory } from './thread-history'
 import { FrogbotChatTransport, prepareChatRequest } from './transport'
-import type { ThreadDocument } from './use-threads'
 import { useThread } from './use-thread'
+import type { ThreadDocument } from './use-threads'
 import { useThreads } from './use-threads'
 
 type ThreadActions = {

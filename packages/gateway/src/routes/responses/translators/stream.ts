@@ -2,7 +2,7 @@ import type { TextStreamPart, ToolSet } from 'ai';
 
 import { extractOpenAIStreamErrorInfo, type StreamErrorMaskOptions } from '../../../shared/extractStreamErrorInfo.js';
 import { peekRawValue } from '../../../shared/rawPeek.js';
-import { echoFields, toResponseUsage, type ResponsesEchoParams } from './toResponse.js';
+import { echoFields, type ResponsesEchoParams,toResponseUsage } from './toResponse.js';
 
 type ResponsesToolCallState = {
   callId: string;

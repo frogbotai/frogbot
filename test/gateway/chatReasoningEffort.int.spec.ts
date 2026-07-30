@@ -6,11 +6,11 @@
 // providerOptions-introspection concern — we must capture what reached the model,
 // which a free OpenAI-compatible model cannot report back over the wire.
 
-import { describe, expect, it } from 'vitest';
 import type {
   LanguageModelV4,
   LanguageModelV4CallOptions,
 } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';

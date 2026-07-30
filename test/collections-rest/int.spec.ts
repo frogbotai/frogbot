@@ -1,11 +1,12 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, beforeAll, beforeEach, describe, it, expect } from 'vitest';
+
+import { afterAll, beforeAll, beforeEach, describe, expect,it } from 'vitest';
 
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
-import { projectsSlug, usersSlug, testUserEmail, testUserPassword } from './shared.js';
+import { projectsSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 

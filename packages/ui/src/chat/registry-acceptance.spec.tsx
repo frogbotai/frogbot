@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { ArtifactProvider, ArtifactView, type ArtifactRendererProps } from '../exports/chat-artifacts'
-import type { ToolRendererProps } from '../exports/chat-tools'
 import { ToolPart } from '../exports/chat'
+import { ArtifactProvider, type ArtifactRendererProps,ArtifactView } from '../exports/chat-artifacts'
+import type { ToolRendererProps } from '../exports/chat-tools'
 
 const CustomTool = ({ part }: ToolRendererProps) => <div>Custom tool: {String(part.output)}</div>
 const CustomArtifact = ({ artifact }: ArtifactRendererProps) => <div>Custom artifact: {String(artifact.content)}</div>

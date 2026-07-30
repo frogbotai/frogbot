@@ -1,14 +1,15 @@
 import type { CollectionConfig, Plugin } from 'frogbot';
+
 import { createApiKeysCollection } from './collection.js';
 import { createApiKeyStrategy } from './strategy.js';
 
+export type { ApiKeyHeaderOptions, ApiKeyTokenOptions } from './server/token.js';
 export {
   createApiKeyToken,
   extractApiKeyToken,
   getApiKeyPrefix,
   hashApiKeyToken,
 } from './server/token.js';
-export type { ApiKeyHeaderOptions, ApiKeyTokenOptions } from './server/token.js';
 
 export type ApiKeysPluginOptions = {
   authCollection?: string;

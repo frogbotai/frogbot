@@ -1,5 +1,5 @@
-import type { Plugin } from 'frogbot'
 import { azureStorage as _azureStorage, getStorageClient } from '@payloadcms/storage-azure'
+import type { Plugin } from 'frogbot'
 
 export { getStorageClient }
 export type { AzureStorageOptions } from '@payloadcms/storage-azure'

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { vercelBlobStorage } from './index'
 
 describe('@frogbotai/storage-vercel-blob exports', () => {

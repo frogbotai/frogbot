@@ -1,7 +1,7 @@
 import {
-  createBlackForestLabs,
   type BlackForestLabsProvider,
   type BlackForestLabsProviderSettings,
+  createBlackForestLabs,
 } from '@ai-sdk/black-forest-labs';
 
 import type { ProviderDefinition } from '../types.js';

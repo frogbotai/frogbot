@@ -1,7 +1,7 @@
 import { createSign } from 'node:crypto';
 
-import type { AppConnectionValue } from './api.js';
 import type { CredentialType } from '../types/piece.js';
+import type { AppConnectionValue } from './api.js';
 
 const serviceAccountCache = new Map<string, { value: AppConnectionValue; expiresAt: number }>();
 

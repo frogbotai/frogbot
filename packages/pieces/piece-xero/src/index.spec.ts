@@ -1,5 +1,6 @@
 import * as module from "@activepieces/piece-xero";
 import { pieceContract } from "frogbot/pieces/test";
+
 import { credentialExecution } from "../../credential-execution.js";
 import { createXero, xeroActions } from './index.js';
 

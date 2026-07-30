@@ -12,9 +12,9 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { azureProvider } from './azure/index.js';
 import { bedrockProvider } from './bedrock/index.js';
 import { vertexProvider } from './vertex/index.js';
-import { azureProvider } from './azure/index.js';
 
 describe('provider fromEnv skips (not throws) on common partial env — G41', () => {
   // AWS_REGION alone is set on virtually every AWS runtime (EC2/ECS/Lambda/CI).

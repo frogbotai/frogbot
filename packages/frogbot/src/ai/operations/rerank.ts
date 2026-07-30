@@ -1,14 +1,14 @@
 // rerank operation — rerank documents by relevance to a query.
 // Uses ProxyRerankingModel pointed at the proxy URL.
 
+import type { Gateway } from '@frogbotai/gateway';
 import { rerank as aiRerank } from 'ai';
 
+import type { Logger } from '../../frogbot.js';
 import type { RerankOpts, SanitizedAIConfig } from '../../types/ai.js';
 import type { FrogbotRequest } from '../../types/request.js';
-import type { Logger } from '../../frogbot.js';
-import type { Gateway } from '@frogbotai/gateway';
-import { resolveModel } from '../resolve.js';
 import { enforceAIAccess } from '../access.js';
+import { resolveModel } from '../resolve.js';
 
 export type RerankDeps = {
   gateway: Gateway;

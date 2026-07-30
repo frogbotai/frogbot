@@ -15,8 +15,8 @@
 //
 // Each failing case is tagged // G## and marks a CONFIRMED bug; flip on fix.
 
-import { describe, expect, it } from 'vitest';
 import { MockProviderV4, MockSpeechModelV4, MockTranscriptionModelV4 } from 'ai/test';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../app.js';
 import type { ProviderRegistry } from '../providers/registry.js';

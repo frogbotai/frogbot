@@ -1,4 +1,4 @@
-import { defineModelCatalog, presetFor, type ModelCatalog } from './catalog.js';
+import { defineModelCatalog, type ModelCatalog,presetFor } from './catalog.js';
 
 const model = presetFor<string>();
 

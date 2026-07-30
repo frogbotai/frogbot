@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import type { UIMessage } from 'ai';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { FrogbotRequest } from '../types/request.js';
 import { MESSAGE_USAGE_CONTEXT_KEY } from './collections/messages.js';

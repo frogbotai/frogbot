@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { pathToFileURL } from 'node:url';
+
+import { describe, expect, it } from 'vitest';
 
 import { buildProvidersFromEnv, isCliEntry } from './index.js';
 

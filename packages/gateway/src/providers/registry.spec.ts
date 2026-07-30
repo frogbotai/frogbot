@@ -1,15 +1,8 @@
 // Registry unit tests — resolveProvider, buildProviderRegistry.
 
-import { describe, expect, it } from 'vitest';
 import { MockProviderV4 } from 'ai/test';
+import { describe, expect, it } from 'vitest';
 
-import {
-  resolveProvider,
-  buildProviderRegistry,
-  PROVIDER_NAMES,
-  providers,
-  type ProviderRegistry,
-} from './registry.js';
 import {
   ModelIdError,
   ModelNotFoundError,
@@ -18,6 +11,13 @@ import {
   ProviderNotConfiguredError,
 } from '../errors/gatewayError.js';
 import { defineModelCatalog, presetFor } from './catalog.js';
+import {
+  buildProviderRegistry,
+  PROVIDER_NAMES,
+  type ProviderRegistry,
+  providers,
+  resolveProvider,
+} from './registry.js';
 
 // ---------------------------------------------------------------------------
 // resolveProvider

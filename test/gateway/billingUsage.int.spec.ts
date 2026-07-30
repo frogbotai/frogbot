@@ -11,12 +11,12 @@
 // Marked `it.fails(...)` because it asserts the CORRECT behavior — a
 // `cacheWriteTokens` field on the hook usage — which does not exist yet.
 
-import { describe, expect, it } from 'vitest';
 import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
-import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import type { AfterOperationHookArgs, Hooks, HookUsage } from '../../packages/gateway/src/hooks.js';
+import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 
 // AI SDK v7 usage partition: `inputTokens.total` includes cache-read AND
 // cache-write; `cacheWrite` maps to `LanguageModelUsage.inputTokenDetails.cacheWriteTokens`.

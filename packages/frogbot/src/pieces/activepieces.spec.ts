@@ -1,13 +1,13 @@
 import * as textHelperModule from '@activepieces/piece-text-helper';
 import { describe, expect, it, vi } from 'vitest';
 
+import { createActivepiecesPiece } from '../exports/pieces.js';
 import {
   executeActivepiecesAction,
   loadActivepiecesPiece,
   propertiesSchema,
   UnsupportedPieceContextError,
 } from './activepieces.js';
-import { createActivepiecesPiece } from '../exports/pieces.js';
 
 describe('Activepieces adapter', () => {
   it('derives credential policies and creates one tool', () => {

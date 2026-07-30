@@ -1,6 +1,6 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
-import { buildConfig } from 'frogbot';
 import type { FrogbotConfig } from 'frogbot';
+import { buildConfig } from 'frogbot';
 
 import { toolDemo } from './agents/toolDemo';
 import { Users } from './collections/users';
