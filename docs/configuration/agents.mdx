@@ -45,6 +45,8 @@ type AgentConfig = {
 
 Agents accept FrogBot `Tool` objects, not raw AI SDK tools. FrogBot converts them internally and supplies request, runtime, slug, and run ID context to every execution.
 
+To connect tools discovered from an external server, use the [MCP server tools recipe](/configuration/mcp).
+
 ```ts
 import type { Tool } from 'frogbot'
 import { z } from 'zod'

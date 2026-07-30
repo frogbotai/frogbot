@@ -11,6 +11,7 @@
     "test:e2e": "pnpm -C \"../\" run test:e2e"
   },
   "devDependencies": {
+    "@ai-sdk/mcp": "^2.0.3",
     "@frogbotai/db-mongodb": "workspace:*",
     "@frogbotai/db-postgres": "workspace:*",
     "@frogbotai/db-sqlite": "workspace:*",

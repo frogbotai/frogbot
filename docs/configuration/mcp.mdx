@@ -1,0 +1,89 @@
+---
+title: "MCP server tools"
+sidebarTitle: "MCP server tools"
+description: "Connect an MCP server and adapt its tools for FrogBot agents."
+keywords: ["MCP", "agents", "tools", "credentials", "AI SDK"]
+---
+
+FrogBot agents can use tools from a remote MCP server through a small config-time adapter. This connects FrogBot to an external MCP server. It is separate from [Browser MCP](/browser-mcp), where FrogBot exposes an MCP server to external agents.
+
+## Install the MCP client
+
+`@ai-sdk/mcp` is a separate package and is not included with `ai` or FrogBot.
+
+```bash
+pnpm add @ai-sdk/mcp
+```
+
+## Connect and adapt tools
+
+Export a promise from `frogbot.config.ts`. FrogBot awaits the config before building agents, so the module can connect, discover tools, and convert the returned record into FrogBot's tool array first.
+
+```ts
+import { createMCPClient } from '@ai-sdk/mcp'
+import type { AgentConfig } from 'frogbot'
+import { buildConfig } from 'frogbot'
+import { z } from 'zod'
+
+export default (async () => {
+  const mcpClient = await createMCPClient({
+    transport: {
+      type: 'http',
+      url: process.env.MCP_SERVER_URL!,
+      headers: {
+        Authorization: `Bearer ${process.env.MCP_API_KEY}`
+      }
+    }
+  })
+
+  const mcpTools = await mcpClient.tools({
+    schemas: {
+      search_docs: {
+        inputSchema: z.object({ query: z.string() })
+      }
+    }
+  })
+
+  const tools: NonNullable<AgentConfig['tools']> = Object.entries(mcpTools).map(
+    ([slug, mcpTool]) => ({
+      slug,
+      description: mcpTool.description ?? `MCP tool: ${slug}`,
+      inputSchema: mcpTool.inputSchema,
+      execute: (input, ctx) =>
+        mcpTool.execute(input, {
+          toolCallId: ctx.agent.runId,
+          messages: []
+        })
+    })
+  )
+
+  return buildConfig({
+    // secret, db, collections, and ai omitted
+    agents: [
+      {
+        slug: 'support',
+        model: 'openai/gpt-4o-mini',
+        instructions: 'Use search_docs when answering documentation questions.',
+        tools
+      }
+    ]
+  })
+})()
+```
+
+Credentials are passed directly to the MCP HTTP transport. FrogBot does not store them. Use the transport's `headers` for other credential formats.
+
+`mcpClient.tools()` returns a record keyed by tool name, not an array of FrogBot tools. `Object.entries().map()` supplies the required `slug`; passing `Object.values(mcpTools)` directly fails config validation.
+
+Explicit schemas are recommended because they type and validate known tools. To discover every server-provided schema automatically, call `await mcpClient.tools()` without `schemas`. The same adapter works, but its inputs are less type-safe.
+
+## Limitations
+
+- **Process lifetime:** The client opens once while the config loads and remains open for the process lifetime. FrogBot has no shutdown hook for closing it, and this recipe is not a per-request connection.
+- **Startup snapshot:** Tool discovery runs once. Server-side additions or removals require a process restart; FrogBot does not refresh tools per request.
+- **Descriptions:** MCP descriptions are optional, but FrogBot requires a non-empty description. Keep the fallback or a descriptionless tool will fail startup.
+- **Execution bridge:** The wrapper converts FrogBot's `(input, ToolCtx)` call into the MCP tool's `(input, ToolExecutionOptions)` call. This works with the current `@ai-sdk/mcp` implementation, but it is not a guaranteed compatibility contract. Its execution options may gain requirements in a future release, so keep this recipe and its dependency current.
+- **Name collisions:** Duplicate slugs fail FrogBot startup. Namespace names yourself when combining servers, such as `${serverName}_${toolName}`.
+- **No native MCP config:** FrogBot does not currently provide a first-class MCP piece or config key. That surface is tracked separately.
+
+For supported integrations, [Pieces](/configuration/pieces) provide the first-class alternative with curated, namespaced tools. See [Agents](/configuration/agents#add-tools) for the FrogBot tool contract.

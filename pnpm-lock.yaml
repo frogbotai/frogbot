@@ -1296,6 +1296,9 @@ importers:
 
   test:
     devDependencies:
+      '@ai-sdk/mcp':
+        specifier: ^2.0.3
+        version: 2.0.3(zod@4.4.3)
       '@frogbotai/db-mongodb':
         specifier: workspace:*
         version: link:../packages/db-mongodb
