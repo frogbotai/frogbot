@@ -32,7 +32,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && pnpm typecheck:types",
+    "typecheck:types": "tsc --noEmit -p tsconfig.typetest.json"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"

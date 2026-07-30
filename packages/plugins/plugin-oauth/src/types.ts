@@ -62,6 +62,7 @@ export interface OAuthProvider {
 }
 
 export type OAuthPluginOptions = {
+  providers?: OAuthProvider[];
   authCollection?: string;
   statesSlug?: string;
   statesCollection?: Partial<CollectionConfig>;

@@ -37,7 +37,7 @@ function providerId(service: string): string {
 }
 
 export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
-  const explicit = (options as OAuthPluginOptions & { providers?: OAuthProvider[] }).providers;
+  const explicit = options.providers;
   if (explicit) {
     const ids = new Set<string>();
     for (const provider of explicit) {
