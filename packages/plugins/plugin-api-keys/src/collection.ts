@@ -101,6 +101,11 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
     { name: 'tokenHash', type: 'text', required: true, unique: true, index: true, access: { read: () => false }, admin: { hidden: true } },
     { name: 'lastUsedAt', type: 'date', admin: { readOnly: true } },
     { name: 'revokedAt', type: 'date', index: true, admin: { readOnly: true } },
+    {
+      name: 'actions',
+      type: 'ui',
+      admin: { components: { Cell: '@frogbotai/plugin-api-keys/client#RevokeApiKey' } },
+    },
   ];
   const endpoints = createEndpoints(options);
 
@@ -122,6 +127,13 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
       useAsTitle: 'name',
       ...existing?.admin,
       ...collection?.admin,
+      defaultColumns: collection?.admin?.defaultColumns ?? existing?.admin?.defaultColumns ?? [
+        'name',
+        'prefix',
+        'lastUsedAt',
+        'revokedAt',
+        'actions',
+      ],
       components: {
         ...existing?.admin?.components,
         ...collection?.admin?.components,

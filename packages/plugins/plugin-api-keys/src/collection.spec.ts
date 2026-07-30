@@ -26,6 +26,7 @@ describe('API keys collection', () => {
       'tokenHash',
       'lastUsedAt',
       'revokedAt',
+      'actions',
     ]);
     expect(await collection.access?.read?.({ req: { user: { id: 'user-1' } } as FrogbotRequest })).toEqual({
       owner: { equals: 'user-1' },
@@ -34,6 +35,11 @@ describe('API keys collection', () => {
     expect(collection.admin?.components?.beforeListTable).toContain(
       '@frogbotai/plugin-api-keys/client#ApiKeysManager',
     );
+    expect(collection.fields.at(-1)).toMatchObject({
+      name: 'actions',
+      admin: { components: { Cell: '@frogbotai/plugin-api-keys/client#RevokeApiKey' } },
+    });
+    expect(collection.admin?.defaultColumns).toEqual(['name', 'prefix', 'lastUsedAt', 'revokedAt', 'actions']);
   });
 
   it('mints multiple keys while storing only hashes', async () => {

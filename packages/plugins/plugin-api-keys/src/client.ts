@@ -1,1 +1,1 @@
-export { ApiKeysManager } from './client/ApiKeysManager.js';
+export { ApiKeysManager, RevokeApiKey } from './client/ApiKeysManager.js';

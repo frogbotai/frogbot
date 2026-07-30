@@ -16,7 +16,10 @@ export default defineConfig({
       {
         test: {
           name: 'ui',
-          include: ['packages/ui/src/**/*.spec.tsx'],
+          include: [
+            'packages/ui/src/**/*.spec.tsx',
+            'packages/plugins/plugin-api-keys/src/**/*.spec.tsx',
+          ],
           exclude: ['**/node_modules/**', '**/dist/**'],
           environment: 'jsdom',
           setupFiles: ['./packages/ui/src/vitest.setup.ts'],
