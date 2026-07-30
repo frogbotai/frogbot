@@ -1,10 +1,4 @@
-// Model catalog — metadata about known models for discovery, validation,
-// and capability checks.
-//
-// Without a provider allowlist, catalog membership is not required for routing. It exists for:
-//   1. `/v1/models` endpoint — list available models with metadata.
-//   2. Operation validation — reject `chat.completions` for embedding-only models.
-//   3. UI / CLI display — context windows, capabilities, cost info.
+// Model catalog — authoritative built-in model routing and metadata.
 //
 // Catalog entries are built with `defineModelCatalog(...presets)` and the
 // `presetFor` helper which provides a type-safe factory for model families.

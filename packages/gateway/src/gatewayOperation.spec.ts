@@ -36,7 +36,7 @@ describe('gateway.operation', () => {
   it('start fires beforeOperation with the seeded context and no request', async () => {
     const beforeOperation = vi.fn();
     const gw = makeGateway({ beforeOperation: [beforeOperation] });
-    const op = gw.operation({ operation: 'chat.completions', model: 'openai/chat', context: { tenant: 'a' } });
+    const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o-mini', context: { tenant: 'a' } });
 
     await op.start();
 
@@ -56,7 +56,7 @@ describe('gateway.operation', () => {
         },
       ],
     });
-    const op = gw.operation({ operation: 'chat.completions', model: 'openai/chat' });
+    const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o-mini' });
 
     await expect(op.start()).rejects.toThrow('denied');
   });
@@ -76,7 +76,7 @@ describe('gateway.operation', () => {
         },
       ],
     });
-    const op = gw.operation({ operation: 'chat.completions', model: 'openai/chat', context: { seed: 1 } });
+    const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o-mini', context: { seed: 1 } });
 
     await op.start();
     await generateText({ model: op.chatModel(), prompt: 'hi' });
@@ -93,7 +93,7 @@ describe('gateway.operation', () => {
   it('accumulates usage across upstream rounds and passes the sum to afterOperation', async () => {
     const afterOperation = vi.fn();
     const gw = makeGateway({ afterOperation: [afterOperation] });
-    const op = gw.operation({ operation: 'chat.completions', model: 'openai/chat' });
+    const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o-mini' });
 
     await op.start();
     const model = op.chatModel();
@@ -107,7 +107,7 @@ describe('gateway.operation', () => {
       phase: 'afterOperation',
       operation: 'chat.completions',
       requestId: op.requestId,
-      model: 'openai/chat',
+      model: 'openai/gpt-4o-mini',
       provider: 'openai',
       finishReason: 'stop',
       usage: { inputTokens: 20, outputTokens: 10, totalTokens: 30 },
@@ -122,7 +122,7 @@ describe('gateway.operation', () => {
       throw new Error('hook boom');
     });
     const gw = makeGateway({ afterOperation: [afterOperation] });
-    const op = gw.operation({ operation: 'chat.completions', model: 'openai/chat' });
+    const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o-mini' });
     const explicitError = new Error('explicit failure');
 
     await op.start();
@@ -150,7 +150,7 @@ describe('gateway.operation', () => {
         throw upstreamError;
       }),
     );
-    const op = gw.operation({ operation: 'chat.completions', model: 'openai/chat' });
+    const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o-mini' });
 
     await op.start();
     await expect(generateText({ model: op.chatModel(), prompt: 'hi', maxRetries: 0 })).rejects.toThrow(
@@ -167,7 +167,7 @@ describe('gateway.operation', () => {
 
 describe('gateway.handler context seed', () => {
   const chatBody = () =>
-    JSON.stringify({ model: 'openai/chat', messages: [{ role: 'user', content: 'hi' }] });
+    JSON.stringify({ model: 'openai/gpt-4o-mini', messages: [{ role: 'user', content: 'hi' }] });
 
   it('seeds hook context from the handler context option', async () => {
     const beforeOperation = vi.fn();
@@ -230,7 +230,7 @@ describe('gateway.chatModel default path', () => {
         },
       ],
     });
-    const model = gw.chatModel('openai/chat');
+    const model = gw.chatModel('openai/gpt-4o-mini');
 
     await generateText({ model, prompt: 'one' });
     await generateText({ model, prompt: 'two' });

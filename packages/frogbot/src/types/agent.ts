@@ -18,7 +18,7 @@ export type AgentAccess = (args: {
   req: FrogbotRequest;
 }) => boolean | Promise<boolean>;
 
-export type AgentModelId = FrogbotTypes["models"] | (string & {});
+export type AgentModelId = FrogbotTypes["models"];
 
 export type AgentSchedule =
   | { every: `${number}${"s" | "m" | "h" | "d"}`; cron?: never; timezone?: never }

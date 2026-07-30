@@ -23,6 +23,7 @@ const config: FrogbotConfig = {
         models: [{ id: model.replace(/^zen\//, ''), mode: 'chat' }],
       },
     },
+    routers: { e2e: { model } },
   },
   agents: [toolDemo],
 };

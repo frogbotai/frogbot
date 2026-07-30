@@ -187,16 +187,28 @@ describe('resolveProvider', () => {
     ).toThrow(ModelUnsupportedOperationError);
   });
 
-  it('allows operations not in catalog (unknown models pass through)', () => {
+  it('rejects models not in the catalog when no allowlist is configured', () => {
     const catalog = defineModelCatalog();
-    // gpt-4o is NOT in the catalog — should pass through
+    expect(() =>
+      resolveProvider({
+        modelId: 'openai/gpt-4o',
+        operation: 'chat.completions',
+        providers: registry,
+        models: catalog,
+      }),
+    ).toThrow(ModelNotFoundError);
+  });
+
+  it('allows uncatalogued models for custom providers', () => {
+    const customRegistry = { internal: new MockProviderV4() } as unknown as ProviderRegistry;
     const result = resolveProvider({
-      modelId: 'openai/gpt-4o',
+      modelId: 'internal/chat-v1',
       operation: 'chat.completions',
-      providers: registry,
-      models: catalog,
+      providers: customRegistry,
+      models: defineModelCatalog(),
     });
-    expect(result.providerName).toBe('openai');
+
+    expect(result.providerName).toBe('internal');
   });
 
   it('enforces allowlists after canonicalizing model aliases', () => {

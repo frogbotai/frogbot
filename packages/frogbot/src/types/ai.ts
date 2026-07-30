@@ -7,6 +7,7 @@ import type { ModelMessage, Output, StopCondition, ToolChoice, ToolSet } from 'a
 
 import type { CatalogModelId } from '../ai/generated.js';
 import type { ProviderName } from '../ai/providerNames.js';
+import type { FrogbotTypes } from './generated.js';
 import type { AIHooks, SanitizedAIHooks } from './hooks-ai.js';
 import type { FrogbotRequest } from './request.js';
 import type { Tool } from './tool.js';
@@ -215,14 +216,7 @@ export type SanitizedAIConfig = {
 
 // ─── Model ID Type ───────────────────────────────────────────────────────────
 //
-// Union of catalog model IDs + router slugs. The `(string & {})` arm allows
-// any string (for custom/unlisted models) while preserving autocomplete for
-// known values. When the build-time generator runs, CatalogModelId will be
-// a comprehensive union of every model from the configured catalog source.
-
-export type ModelId =
-  | CatalogModelId
-  | (string & {});
+export type ModelId = FrogbotTypes['models'];
 
 // ─── Operation Options Types ─────────────────────────────────────────────────
 

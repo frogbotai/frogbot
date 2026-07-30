@@ -22,6 +22,11 @@ const config: FrogbotConfig = {
           },
         }
       : { openai: true },
+    routers: {
+      assistant: {
+        model: process.env.FROGBOT_MODEL ?? 'openai/gpt-4o-mini',
+      },
+    },
   },
   agents: [assistant],
 };

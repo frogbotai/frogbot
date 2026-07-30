@@ -56,9 +56,8 @@ export type GatewayConfig = {
    */
   basePath?: string;
   /**
-   * Model catalog served by `GET /v1/models` (discovery, validation, display).
-   * When omitted, a built-in default catalog is used. The catalog is
-   * Unlisted models still route when the provider has no model allowlist.
+   * Authoritative model catalog used for routing, validation, discovery, and display.
+   * When omitted, a built-in default catalog is used.
    */
   catalog?: ModelCatalog;
   /**

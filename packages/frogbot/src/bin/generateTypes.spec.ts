@@ -294,6 +294,25 @@ describe('frogbot generate:types', () => {
       expect(output).toContain('"openai/gpt-4o"');
     });
 
+    it('narrows built-in models to allowlists while retaining custom models and router slugs', async () => {
+      const output = await generateModelTypes({
+        providers: {
+          openai: { apiKey: 'sk-test', models: ['gpt-4o-mini'] },
+          internal: {
+            type: 'openai-compatible',
+            baseUrl: 'https://models.test/v1',
+            models: [{ id: 'chat-v1', mode: 'chat' }],
+          },
+        },
+        routers: { fast: { model: 'internal/chat-v1' } },
+      });
+
+      expect(output).toContain('"openai/gpt-4o-mini"');
+      expect(output).not.toContain('"openai/gpt-4o"');
+      expect(output).toContain('"internal/chat-v1"');
+      expect(output).toContain('"fast"');
+    });
+
     it('emits custom provider models and router slugs', async () => {
       const output = await generateModelTypes({
         providers: {

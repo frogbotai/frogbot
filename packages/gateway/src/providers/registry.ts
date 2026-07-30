@@ -365,16 +365,17 @@ export function resolveProvider(args: ResolveProviderArgs): ResolvedProvider {
 
   const canonicalModelId = canonicalizeModelId(modelId);
   const allowlist = allowlists?.get(providerName);
-  if (allowlist && !allowlist.has(canonicalModelId)) {
+  const entry = models?.get(canonicalModelId);
+  if (
+    (allowlist && !allowlist.has(canonicalModelId)) ||
+    (models && !allowlist && Object.hasOwn(providers, providerName) && !entry)
+  ) {
     throw new ModelNotFoundError(modelId);
   }
 
   // If a catalog is provided, validate the operation is supported.
-  if (models) {
-    const entry = models.get(canonicalModelId);
-    if (entry && !supportsOperation(entry, operation)) {
-      throw new ModelUnsupportedOperationError({ modelId, operation });
-    }
+  if (entry && !supportsOperation(entry, operation)) {
+    throw new ModelUnsupportedOperationError({ modelId, operation });
   }
 
   return {

@@ -12,7 +12,7 @@ const getSecretCode: Tool<typeof inputSchema, { code: string }> = {
 
 export const toolDemo: AgentConfig = {
   slug: 'tool-demo',
-  model: process.env.E2E_ZEN_MODEL ?? 'zen/deepseek-v4-flash-free',
+  model: 'e2e',
   instructions: 'Call the available tool when asked for the secret code, then report its exact result.',
   tools: [getSecretCode],
 };

@@ -44,10 +44,15 @@ function getConfiguredModelIds(ai: SanitizedAIConfig | undefined): string[] {
   for (const [provider, entry] of Object.entries(ai.providers)) {
     if (!entry) continue;
     const runtimeProvider = isProviderName(provider) ? getGatewayProviderName(provider) : provider;
+    const allowlist =
+      (entry as CustomProviderEntry).type === 'openai-compatible'
+        ? undefined
+        : (entry as { models?: string[] }).models;
 
     for (const model of catalog) {
-      if (model.provider === runtimeProvider) {
-        modelIds.add(`${runtimeProvider}/${model.id.slice(model.id.indexOf('/') + 1)}`);
+      const modelName = model.id.slice(model.id.indexOf('/') + 1);
+      if (model.provider === runtimeProvider && (!allowlist || allowlist.includes(modelName))) {
+        modelIds.add(`${runtimeProvider}/${modelName}`);
       }
     }
 

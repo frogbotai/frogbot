@@ -21,8 +21,8 @@ describe('createGateway', () => {
     const speech = new MockSpeechModelV4();
     const transcription = new MockTranscriptionModelV4();
     const rerank = new MockRerankingModelV4();
-    const gw = createGateway({ providers: { openai: { apiKey: 'test-key' } } });
-    gw.registry.openai = {
+    const gw = createGateway({ providers: { internal: { baseURL: 'https://models.test/v1' } } });
+    gw.registry.internal = {
       languageModel: () => chat,
       embeddingModel: () => embed,
       imageModel: () => image,
@@ -30,15 +30,15 @@ describe('createGateway', () => {
       speechModel: () => speech,
       transcriptionModel: () => transcription,
       rerankingModel: () => rerank,
-    } as unknown as typeof gw.registry.openai;
+    } as unknown as typeof gw.registry.internal;
 
-    expect(gw.chatModel('openai/chat').modelId).toBe(chat.modelId);
-    expect(gw.embedModel('openai/embed').modelId).toBe(embed.modelId);
-    expect(gw.imageModel('openai/image').modelId).toBe(image.modelId);
-    expect(gw.videoModel('openai/video').modelId).toBe(video.modelId);
-    expect(gw.speechModel('openai/speech').modelId).toBe(speech.modelId);
-    expect(gw.transcribeModel('openai/transcription').modelId).toBe(transcription.modelId);
-    expect(gw.rerankModel('openai/rerank').modelId).toBe(rerank.modelId);
+    expect(gw.chatModel('internal/chat').modelId).toBe(chat.modelId);
+    expect(gw.embedModel('internal/embed').modelId).toBe(embed.modelId);
+    expect(gw.imageModel('internal/image').modelId).toBe(image.modelId);
+    expect(gw.videoModel('internal/video').modelId).toBe(video.modelId);
+    expect(gw.speechModel('internal/speech').modelId).toBe(speech.modelId);
+    expect(gw.transcribeModel('internal/transcription').modelId).toBe(transcription.modelId);
+    expect(gw.rerankModel('internal/rerank').modelId).toBe(rerank.modelId);
   });
 
   it('exposes configured hooks read-only', () => {
@@ -91,7 +91,7 @@ describe('createGateway', () => {
     });
     gw.registry.openai = { languageModel: () => model } as unknown as typeof gw.registry.openai;
 
-    await generateText({ model: gw.chatModel('openai/chat'), prompt: 'hi' });
+    await generateText({ model: gw.chatModel('openai/gpt-4o-mini'), prompt: 'hi' });
 
     expect(beforeUpstream).toHaveBeenCalledOnce();
     expect(afterUpstream).toHaveBeenCalledOnce();

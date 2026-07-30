@@ -29,7 +29,7 @@ Alibaba, Anthropic, Anthropic (AWS), AssemblyAI, Azure, Baseten, Amazon Bedrock,
 
 Each ships its own credential shape (`apiKey`, `region`, `accessKeyId`, ...) and its `envVars` list, used for config fallback and CLI env auto-discovery. Bedrock also supports ambient AWS credentials. See [Configuration](/gateway/configuration#auto-discover-from-env) for the full env var reference.
 
-Built-in provider config also accepts an optional `models` allowlist of unprefixed catalog IDs. The list is enforced after alias canonicalization across HTTP routes and in-process model resolvers. See [Restrict built-in models](/gateway/configuration#restrict-built-in-models).
+Built-in providers route only models in the catalog. Config also accepts an optional `models` allowlist of unprefixed catalog IDs to narrow that set. The list is enforced after alias canonicalization across HTTP routes and in-process model resolvers. See [Restrict built-in models](/gateway/configuration#restrict-built-in-models).
 
 ---
 
@@ -89,4 +89,4 @@ For a known key, the instance is checked against that provider's real AI SDK typ
 
 ## Model IDs
 
-Every route dispatches on a canonical `<provider>/<model>` ID. Bedrock, Anthropic-on-Bedrock, and Azure additionally resolve friendly aliases to the exact ID the upstream API requires — for example `amazon-bedrock/claude-4-sonnet` resolves to `anthropic.claude-sonnet-4-20250514-v1:0` before the AI SDK sees it. Full IDs pass through unchanged.
+Every route dispatches on a canonical `<provider>/<model>` ID. Built-in model IDs must exist in the configured catalog. Bedrock, Anthropic-on-Bedrock, and Azure additionally resolve friendly aliases to the exact ID the upstream API requires — for example `amazon-bedrock/claude-4-sonnet` resolves to `anthropic.claude-sonnet-4-20250514-v1:0` before catalog validation and the AI SDK sees it.

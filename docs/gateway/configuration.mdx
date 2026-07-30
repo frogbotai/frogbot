@@ -52,7 +52,7 @@ export default defineConfig({
 })
 ```
 
-Each entry is validated against the configured catalog at startup. Requests outside the list return `404 model_not_found` on every HTTP and in-process path. Friendly aliases are canonicalized before comparison, and `GET /v1/models` omits blocked models. Without `models`, uncatalogued IDs continue to route in this release.
+Each entry is validated against the configured catalog at startup. Requests outside the list return `404 model_not_found` on every HTTP and in-process path. Friendly aliases are canonicalized before comparison, and `GET /v1/models` omits blocked models. Without `models`, the provider's full catalog is allowed and uncatalogued IDs return `404 model_not_found`.
 
 ---
 
@@ -119,7 +119,7 @@ export default defineConfig({
 | Option | Purpose |
 | --- | --- |
 | `basePath` | Extra path prefix routes are also served under (default `/v1`). Bare paths always work. |
-| `catalog` | Custom model catalog for `GET /v1/models`, operation validation, and built-in provider allowlist validation. Unlisted models still route when no allowlist is configured. |
+| `catalog` | Authoritative model catalog for routing, `GET /v1/models`, operation validation, and built-in provider allowlist validation. Unlisted built-in models do not route. |
 | `maxBodyBytes` | Request body size cap, enforced on every route. Defaults to 10 MB (25 MB for audio transcriptions). |
 | `upstreamTimeoutMs` | Server-side deadline per upstream call. A fired deadline surfaces as `504 gateway_timeout`. Requires Node ≥ 20. |
 | `logger` | A ready logger instance (pino-compatible) or options for the built-in console logger. |

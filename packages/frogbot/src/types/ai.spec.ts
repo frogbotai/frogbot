@@ -36,13 +36,15 @@ describe('AI config types', () => {
 
   it('uses the catalog as the pre-generation agent model fallback', () => {
     expectTypeOf<FrogbotTypes['models']>().toEqualTypeOf<CatalogModelId>();
+    expectTypeOf<ModelId>().toEqualTypeOf<CatalogModelId>();
     expectTypeOf<'openai/gpt-4o'>().toMatchTypeOf<AgentModelId>();
     expectTypeOf<'anthropic/claude-sonnet-4-5'>().toMatchTypeOf<AgentConfig['model']>();
   });
 
-  it('allows custom and future agent models without narrowing operation models', () => {
-    expectTypeOf<'internal/chat-v2'>().toMatchTypeOf<AgentModelId>();
-    expectTypeOf<'future/model'>().toMatchTypeOf<AgentConfig['model']>();
+  it('rejects arbitrary model strings', () => {
+    expectTypeOf<'internal/chat-v2'>().not.toMatchTypeOf<AgentModelId>();
+    expectTypeOf<'future/model'>().not.toMatchTypeOf<AgentConfig['model']>();
+    expectTypeOf<'future/model'>().not.toMatchTypeOf<ModelId>();
     expectTypeOf<ModelId>().toEqualTypeOf<import('./ai.js').BaseAIOpts['model']>();
   });
 });
