@@ -230,7 +230,7 @@ curl http://localhost:3000/api/agents/support \
   --data '{ "prompt": "What changed since then?", "threadId": "THREAD_ID" }'
 ```
 
-FrogBot loads stored history, rejects threads owned by another user, and rejects client-supplied assistant or system messages. Anonymous calls allowed by a custom access rule stay stateless; anonymous requests cannot provide `threadId`.
+FrogBot loads stored history, rejects threads owned by another authenticated user, and rejects client-supplied assistant or system messages. Custom access rules can allow anonymous callers to create and continue threads, but those threads are not private to the anonymous caller who created them because there is no anonymous identity to verify. Applications handling sensitive conversations should require authentication.
 
 Malformed input returns `400`, an unknown slug returns `404`, and an aborted request returns a bodyless `499`.
 

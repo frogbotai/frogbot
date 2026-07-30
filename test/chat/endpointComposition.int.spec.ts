@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
-import { agentSlug, messagesSlug, threadsSlug } from './shared.js';
+import { agentSlug, messagesSlug, threadsSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -59,6 +59,35 @@ describe('agent endpoint composition', () => {
     expect(messages.docs.map((message) => message.role).sort()).toEqual(['assistant', 'user']);
   }
 
+  async function createOwnedThread() {
+    const owner = await booted.frogbot.create({
+      collection: usersSlug,
+      data: { email: `owner-${Date.now()}@frogbot.local`, password: 'frogbot-int-password' },
+      overrideAccess: true,
+    });
+    return booted.frogbot.create({
+      collection: threadsSlug,
+      data: { agent: agentSlug, user: owner.id },
+      overrideAccess: true,
+    });
+  }
+
+  async function expectAnonymousRejected(accept?: string) {
+    const thread = await createOwnedThread();
+    const response = await fetch(`${booted.baseUrl}/api/agents/${agentSlug}`, {
+      method: 'POST',
+      headers: { ...(accept ? { accept } : {}), 'content-type': 'application/json' },
+      body: JSON.stringify({ prompt: 'Read private history', threadId: thread.id }),
+    });
+    expect(response.status).toBe(404);
+    const messages = await booted.frogbot.count({
+      collection: messagesSlug,
+      where: { thread: { equals: thread.id } },
+      overrideAccess: true,
+    });
+    expect(messages.totalDocs).toBe(0);
+  }
+
   it('JSON POST persists one thread, one user message, and one assistant message', async () => {
     const response = await booted.restClient.post<{ text: string; threadId: string | number }>(`/api/agents/${agentSlug}`, { prompt: 'Reply with exactly: hello' });
     expect(response.status, JSON.stringify(response.body)).toBe(200);
@@ -78,5 +107,13 @@ describe('agent endpoint composition', () => {
     const threadId = response.headers.get('X-Frogbot-Thread-Id');
     expect(threadId).not.toBeNull();
     await expectPersisted(threadId!);
+  });
+
+  it('anonymous JSON POST cannot read or write an authenticated thread', async () => {
+    await expectAnonymousRejected();
+  });
+
+  it('anonymous SSE POST cannot read or write an authenticated thread', async () => {
+    await expectAnonymousRejected('text/event-stream');
   });
 });

@@ -149,6 +149,41 @@ describe('chat persistence: thread context', () => {
     ).rejects.toThrow();
   });
 
+  it('rejects an anonymous caller without writing to an authenticated thread', async () => {
+    const ownerReq = await makeOwnerReq();
+    const { threadId } = await resolveThreadContext({
+      req: ownerReq,
+      agentSlug,
+      incoming: [userMessage('Private', 'anonymous-bypass-owner')],
+      tools: {},
+    });
+    const before = await booted.frogbot.count({
+      collection: messagesSlug,
+      where: { thread: { equals: threadId } },
+      overrideAccess: true,
+    });
+    const anonymousReq = await booted.frogbot.createRequest({});
+
+    await expect(
+      resolveThreadContext({
+        req: anonymousReq,
+        agentSlug,
+        threadId,
+        incoming: [userMessage('Injected', 'anonymous-bypass-attempt')],
+        tools: {},
+      }),
+    ).rejects.toMatchObject({ status: 404 });
+
+    const after = await booted.frogbot.count({
+      collection: messagesSlug,
+      where: { thread: { equals: threadId } },
+      overrideAccess: true,
+    });
+    expect(after.totalDocs).toBe(before.totalDocs);
+  });
+
+  it.skip('anonymous caller vs. another anonymous caller thread (.idea/issue_triage.md ticket 33)');
+
   it('creates and continues an assistant message by UI message id', async () => {
     const req = await makeOwnerReq();
     const { threadId } = await resolveThreadContext({

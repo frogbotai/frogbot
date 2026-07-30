@@ -1,6 +1,6 @@
 import type { UIMessage } from 'ai';
 import { validateUIMessages } from 'ai';
-import { commitTransaction, initTransaction, killTransaction } from 'payload';
+import { commitTransaction, initTransaction, killTransaction, NotFound } from 'payload';
 
 import type { DocID } from '../types/operations.js';
 import type { FrogbotRequest } from '../types/request.js';
@@ -30,7 +30,7 @@ export async function resolveThreadContext({
   const chat = req.frogbot.config.chat;
   if (!chat.enabled) return { uiMessages: incoming };
 
-  const overrideAccess = !req.user;
+  const overrideAccess = true;
 
   const newMessages = threadId !== undefined ? incoming.slice(-1) : incoming;
   if (newMessages.length === 0) {
@@ -93,14 +93,17 @@ type ResolveThreadIdProps = {
 };
 
 async function resolveThreadId({ req, agentSlug, threadId, threadsSlug }: ResolveThreadIdProps): Promise<DocID> {
-  const overrideAccess = !req.user;
+  const overrideAccess = true;
   if (threadId !== undefined) {
-    await req.frogbot.findByID({
+    const thread = (await req.frogbot.findByID({
       collection: threadsSlug,
       id: threadId,
+      depth: 0,
       req,
       overrideAccess,
-    });
+    })) as { user?: { id: DocID } | DocID | null };
+    const ownerId = typeof thread.user === 'object' && thread.user !== null ? thread.user.id : thread.user;
+    if ((ownerId ?? null) !== (req.user?.id ?? null)) throw new NotFound(req.t);
     return threadId;
   }
 

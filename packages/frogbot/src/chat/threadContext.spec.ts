@@ -17,7 +17,7 @@ function makeReq({
   create = vi.fn(() => Promise.resolve({ id: 'thread-1' })),
   db = {},
   find = vi.fn(() => Promise.resolve({ docs: [historyDoc] })),
-  findByID = vi.fn(() => Promise.resolve({ id: 'thread-1' })),
+  findByID = vi.fn(() => Promise.resolve({ id: 'thread-1', user: 'user-1' })),
   user = { id: 'user-1' },
 }: {
   chat?: SanitizedChatConfig;
@@ -67,14 +67,14 @@ describe('resolveThreadContext', () => {
       collection: 'threads',
       data: { user: 'user-1', agent: 'support' },
       req,
-      overrideAccess: false,
+      overrideAccess: true,
     });
     expect(create).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         collection: 'messages',
         data: expect.objectContaining({ thread: 'thread-1', role: 'user', parts: incoming[0].parts }),
-        overrideAccess: false,
+        overrideAccess: true,
       }),
     );
     expect(result.threadId).toBe('thread-1');
@@ -87,8 +87,9 @@ describe('resolveThreadContext', () => {
     expect(findByID).toHaveBeenCalledWith({
       collection: 'threads',
       id: 'thread-7',
+      depth: 0,
       req,
-      overrideAccess: false,
+      overrideAccess: true,
     });
     expect(create).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledWith(
@@ -97,6 +98,17 @@ describe('resolveThreadContext', () => {
         data: expect.objectContaining({ thread: 'thread-7', parts: incoming[1].parts }),
       }),
     );
+  });
+
+  it('rejects continuing a thread owned by a different user before writing', async () => {
+    const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7', user: { id: 'user-2' } }));
+    const { req, create, find } = makeReq({ findByID });
+
+    await expect(
+      resolveThreadContext({ req, agentSlug: 'support', threadId: 'thread-7', incoming, tools: {} }),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(create).not.toHaveBeenCalled();
+    expect(find).not.toHaveBeenCalled();
   });
 
   it('rejects client-supplied non-user messages before writing', async () => {
@@ -143,7 +155,7 @@ describe('resolveThreadContext', () => {
       pagination: false,
       depth: 0,
       req,
-      overrideAccess: false,
+      overrideAccess: true,
     });
     expect(result.uiMessages).toEqual([
       { id: '42', role: 'user', parts: [{ type: 'text', text: 'Hi' }], metadata: { source: 'web' } },

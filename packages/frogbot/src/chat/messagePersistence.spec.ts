@@ -54,7 +54,7 @@ describe('assistant message persistence', () => {
         [MESSAGE_USAGE_CONTEXT_KEY]: expect.objectContaining({ totalTokens: 5, model: 'openai/test' }),
       },
       req,
-      overrideAccess: false,
+      overrideAccess: true,
     });
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -156,7 +156,7 @@ function makeDeps(config: SanitizedAIConfig, req: FrogbotRequest) {
     find: vi.fn(() =>
       Promise.resolve({ docs: [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }] }),
     ),
-    findByID: vi.fn(() => Promise.resolve({ id: 'thread-1' })),
+    findByID: vi.fn(() => Promise.resolve({ id: 'thread-1', user: req.user?.id ?? null })),
     update: vi.fn(() => Promise.resolve({ id: 'thread-1' })),
     createRequest: vi.fn(() => {
       Object.assign(req, { frogbot });
@@ -296,7 +296,7 @@ describe('agent hook lifecycle', () => {
     await agent.generate({ prompt: 'Hello', threadId: 'thread-1', req, overrideAccess: false });
 
     expect(deps.frogbot.findByID).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'threads', id: 'thread-1', overrideAccess: false }),
+      expect.objectContaining({ collection: 'threads', id: 'thread-1', overrideAccess: true }),
     );
     const messageCreates = deps.frogbot.create.mock.calls.filter(
       ([args]) => args.collection === 'messages',

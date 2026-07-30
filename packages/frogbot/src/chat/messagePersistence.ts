@@ -46,7 +46,7 @@ export async function persistAssistantMessage({
   const chat = req.frogbot.config.chat;
   if (!chat.enabled) return;
 
-  const overrideAccess = !req.user;
+  const overrideAccess = true;
 
   const { metadata, usage } = splitMetadata(message.metadata);
   const data = {

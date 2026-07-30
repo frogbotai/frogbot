@@ -47,7 +47,7 @@ function makeRequest({
       docs: [{ id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
     }),
   ),
-  findByID = vi.fn(() => Promise.resolve({ id: 'thread-1' })),
+  findByID = vi.fn(() => Promise.resolve({ id: 'thread-1', user: user?.id ?? null })),
   update = vi.fn(() => Promise.resolve({ id: 'thread-1' })),
   signal,
   slug = 'support',
@@ -195,7 +195,7 @@ describe('agent endpoints', () => {
       collection: 'threads',
       data: { user: 'user-1', agent: 'support' },
       req: request,
-      overrideAccess: false,
+      overrideAccess: true,
     });
     expect(await response.json()).toMatchObject({ threadId: 'thread-9' });
   });
@@ -280,17 +280,18 @@ describe('agent endpoints', () => {
     );
   });
 
-  it('loads an existing thread with overrideAccess false and echoes its id', async () => {
+  it('loads an owned existing thread with overrideAccess true and echoes its id', async () => {
     const create = vi.fn(() => Promise.resolve({ id: 'msg-1' }));
-    const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7' }));
+    const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7', user: 'user-1' }));
     const request = makeRequest({ create, findByID, body: { prompt: 'Hello', threadId: 'thread-7' } });
     const response = await postHandler()(request);
 
     expect(findByID).toHaveBeenCalledWith({
       collection: 'threads',
       id: 'thread-7',
+      depth: 0,
       req: request,
-      overrideAccess: false,
+      overrideAccess: true,
     });
     expect(create).not.toHaveBeenCalledWith(expect.objectContaining({ collection: 'threads' }));
     expect(await response.json()).toMatchObject({ threadId: 'thread-7' });
@@ -338,7 +339,7 @@ describe('agent endpoints', () => {
           role: 'user',
           parts: [{ type: 'text', text: 'Hello' }],
         }),
-        overrideAccess: false,
+        overrideAccess: true,
       }),
     );
     expect(create.mock.invocationCallOrder[0]).toBeLessThan((agent.generate as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]);
@@ -357,7 +358,7 @@ describe('agent endpoints', () => {
   it('continues anonymous threads after agent access succeeds', async () => {
     const agent = makeAgent();
     agent.config.access = () => true;
-    const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7' }));
+    const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7', user: null }));
     const response = await postHandler()(
       makeRequest({ agent, findByID, user: null, body: { prompt: 'Hello', threadId: 'thread-7' } }),
     );
@@ -365,6 +366,21 @@ describe('agent endpoints', () => {
     expect(response.status).toBe(200);
     expect(findByID).toHaveBeenCalledWith(expect.objectContaining({ id: 'thread-7', overrideAccess: true }));
     expect(await response.json()).toMatchObject({ threadId: 'thread-7' });
+  });
+
+  it('rejects an anonymous caller continuing an authenticated thread', async () => {
+    const agent = makeAgent();
+    agent.config.access = () => true;
+    const create = vi.fn();
+    const find = vi.fn();
+    const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7', user: 'user-1' }));
+    const response = await postHandler()(
+      makeRequest({ agent, create, find, findByID, user: null, body: { prompt: 'Hello', threadId: 'thread-7' } }),
+    );
+
+    expect(response.status).toBe(404);
+    expect(create).not.toHaveBeenCalled();
+    expect(find).not.toHaveBeenCalled();
   });
 
   it('checks the target agent access before continuing a thread', async () => {
