@@ -23,6 +23,8 @@ X-API-Key: fbt_...
 
 Plaintext keys are returned only when created. The collection stores SHA-256 hashes and supports multiple independently revoked keys per user.
 
+With AI configured, usage rows include an optional `apiKey` relationship to the authenticating key. Cookie-authenticated requests omit it, and the relationship follows `collectionSlug`.
+
 Build and start-only workflows must run `frogbot generate:importmap` after adding the plugin. Add it as a `prebuild` step when CI invokes `next build` directly. If the server console suggests `payload generate:importmap`, run `frogbot generate:importmap` instead, or restart `frogbot dev`.
 
 ```ts

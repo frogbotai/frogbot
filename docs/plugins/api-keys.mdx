@@ -51,6 +51,8 @@ X-API-Key: fbt_...
 
 The request authenticates as the user who owns the key. Revoked, malformed, and unknown keys do not authenticate.
 
+When AI is configured, usage rows include an optional `apiKey` relationship identifying the key that authenticated the request. Cookie-authenticated requests omit it, and the relationship follows a custom `collectionSlug`.
+
 ## Configuration options
 
 ```ts

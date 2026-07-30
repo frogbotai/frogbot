@@ -48,6 +48,7 @@ export function createApiKeyStrategy(options: StrategyOptions): NonNullable<Auth
           ...user,
           collection: authCollection,
           _strategy: 'api-key',
+          apiKeyId: key.id,
         },
       };
     },

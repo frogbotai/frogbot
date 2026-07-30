@@ -15,6 +15,7 @@ export const logUsage: AfterOperationHook = (args) => {
     .create({
       collection: req.frogbot.config?.ai?.usage?.slug ?? USAGE_LOGS_SLUG,
       data: {
+        ...(context.usageFields ?? {}),
         ...(req.user?.id !== undefined ? { user: req.user.id } : {}),
         ...(context.agent?.threadId !== undefined
           ? { thread: context.agent.threadId }

@@ -41,23 +41,65 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
       headerNames: options.headerNames,
       tokenPrefix: options.tokenPrefix ?? 'fbt',
     });
+    const usageLog = config.ai
+      ? config.collections.find((item) => item.usageLog === true) ?? {
+          slug: 'usage-logs',
+          usageLog: true,
+          fields: [],
+        }
+      : undefined;
+    const usageField = {
+      name: 'apiKey',
+      type: 'relationship' as const,
+      relationTo: collectionSlug,
+      index: true,
+    };
+    const collections = config.collections.map((item) => {
+      let next = item;
+      if (item.slug === collectionSlug) next = collection;
+      if (item.slug === authCollection) {
+        const authConfig = typeof next.auth === 'object' ? next.auth : {};
+        next = {
+          ...next,
+          auth: {
+            ...authConfig,
+            strategies: [...(authConfig.strategies ?? []), strategy],
+          },
+        };
+      }
+      if (item === usageLog) next = { ...next, fields: [...next.fields, usageField] };
+      return next;
+    });
     return {
       ...config,
       collections: [
-        ...config.collections.map((item) => {
-          if (item.slug === collectionSlug) return collection;
-          if (item.slug !== authCollection) return item;
-          const authConfig = typeof item.auth === 'object' ? item.auth : {};
-          return {
-            ...item,
-            auth: {
-              ...authConfig,
-              strategies: [...(authConfig.strategies ?? []), strategy],
-            },
-          };
-        }),
+        ...collections,
         ...(existing ? [] : [collection]),
+        ...(usageLog && !config.collections.includes(usageLog)
+          ? [{ ...usageLog, fields: [usageField] }]
+          : []),
       ],
+      ...(config.ai
+        ? {
+            ai: {
+              ...config.ai,
+              hooks: {
+                ...config.ai.hooks,
+                beforeOperation: [
+                  ...(config.ai.hooks?.beforeOperation ?? []),
+                  (args) => {
+                    const apiKeyId = args.req?.user?.apiKeyId;
+                    if (apiKeyId === undefined) return;
+                    args.context.usageFields = {
+                      ...(args.context.usageFields as Record<string, unknown> | undefined),
+                      apiKey: apiKeyId,
+                    };
+                  },
+                ],
+              },
+            },
+          }
+        : {}),
     };
   };
 }

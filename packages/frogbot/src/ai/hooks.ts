@@ -18,6 +18,7 @@ export type AIOperationContext = {
   req?: FrogbotRequest;
   agent?: { slug: string; runId: string; threadId?: number | string };
   trackUsage?: boolean;
+  usageFields?: Record<string, unknown>;
 };
 
 /** Lifts FrogBot's seeded context onto top-level hook fields. */

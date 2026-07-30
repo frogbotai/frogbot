@@ -33,6 +33,7 @@ describe('API key authentication strategy', () => {
       email: 'test@example.com',
       collection: 'users',
       _strategy: 'api-key',
+      apiKeyId: 'key-1',
     });
     expect(payload.update).toHaveBeenCalledWith(
       expect.objectContaining({ collection: 'api-keys', id: 'key-1' }),

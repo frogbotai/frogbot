@@ -50,4 +50,37 @@ describe("logUsage", () => {
       }),
     );
   });
+
+  it("composes generic usage fields into the existing write", async () => {
+    const create = vi.fn().mockResolvedValue({});
+    const req = { frogbot: { create, logger: { error: vi.fn() } } };
+    await logUsage({
+      requestId: "req-2",
+      operation: "chat.completions",
+      startedAt: 1,
+      context: { req, usageFields: { apiKey: "key-9", requestId: "wrong" } },
+      model: "openai/gpt-4o",
+    } as never);
+    await Promise.resolve();
+
+    expect(create.mock.calls[0]?.[0].data).toMatchObject({
+      apiKey: "key-9",
+      requestId: "req-2",
+    });
+  });
+
+  it("omits contributor fields when none are supplied", async () => {
+    const create = vi.fn().mockResolvedValue({});
+    const req = { frogbot: { create, logger: { error: vi.fn() } } };
+    await logUsage({
+      requestId: "req-3",
+      operation: "chat.completions",
+      startedAt: 1,
+      context: { req },
+      model: "openai/gpt-4o",
+    } as never);
+    await Promise.resolve();
+
+    expect(create.mock.calls[0]?.[0].data).not.toHaveProperty("apiKey");
+  });
 });
