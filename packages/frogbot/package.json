@@ -59,6 +59,7 @@
     "@next/env": "15.4.10",
     "@payloadcms/translations": "3.85.1",
     "ai": "^7.0.4",
+    "croner": "10.0.1",
     "json-schema-to-typescript": "^15.0.3",
     "payload": "3.85.1",
     "tsx": "^4.19.2",

@@ -849,6 +849,58 @@ describe("frogbot sanitize", () => {
       );
     });
 
+    it.each([
+      [{ prompt: "Run", handler: vi.fn() }, "exactly one of prompt or handler"],
+      [{}, "exactly one of prompt or handler"],
+      [{ prompt: "Run", schedule: { every: "1h", cron: "0 * * * *" } }, "exactly one of every or cron"],
+      [{ prompt: "Run", schedule: { cron: "invalid" } }, "invalid cron expression"],
+      [{ prompt: "Run", schedule: { cron: "0 * * * *", timezone: "UTC" } }, "timezone is not yet supported"],
+    ])("rejects invalid trigger configuration", (trigger, message) => {
+      expect(() => sanitize(makeConfig({
+        ai,
+        agents: [{ ...agent, triggers: [{ type: "schedule", slug: "run", schedule: { every: "1h" }, ...trigger }] }],
+      } as never))).toThrow(message);
+    });
+
+    it("rejects duplicate and unsafe trigger slugs within an agent", () => {
+      expect(() => sanitize(makeConfig({
+        ai,
+        agents: [{ ...agent, triggers: [
+          { type: "schedule", slug: "same", schedule: { every: "1h" }, prompt: "Run" },
+          { type: "schedule", slug: "same", schedule: { every: "1h" }, prompt: "Run" },
+        ] }],
+      }))).toThrow("Duplicate trigger slug 'same'");
+      expect(() => sanitize(makeConfig({
+        ai,
+        agents: [{ ...agent, triggers: [{ type: "schedule", slug: "not safe", schedule: { every: "1h" }, prompt: "Run" }] }],
+      }))).toThrow("is not URL-safe");
+    });
+
+    it("allows the same trigger slug on different agents", () => {
+      expect(() => sanitize(makeConfig({
+        ai,
+        agents: ["one", "two"].map((slug) => ({ ...agent, slug, triggers: [{ type: "schedule" as const, slug: "run", schedule: { every: "1h" as const }, prompt: "Run" }] })),
+      }))).not.toThrow();
+    });
+
+    it("reserves the schedule task slug and merges user jobs", async () => {
+      const scheduled = { ...agent, triggers: [{ type: "schedule" as const, slug: "run", schedule: { every: "1h" as const }, prompt: "Run" }] };
+      const handler = vi.fn();
+      const result = sanitize(makeConfig({
+        ai,
+        agents: [scheduled],
+        jobs: { tasks: [{ slug: "user-task", handler }], autoRun: [{ queue: "user" }] },
+      }));
+      const payloadConfig = await result._internal.payloadConfig;
+      expect(payloadConfig.jobs.tasks.map(({ slug }) => slug)).toEqual(["user-task", "frogbot-run-agent-schedule"]);
+      expect(payloadConfig.jobs.autoRun).toEqual([{ queue: "user" }, { allQueues: true, cron: "* * * * *" }]);
+      expect(() => sanitize(makeConfig({
+        ai,
+        agents: [scheduled],
+        jobs: { tasks: [{ slug: "frogbot-run-agent-schedule", handler }] },
+      }))).toThrow("is reserved for agent schedule triggers");
+    });
+
     it.each(["runtime", "codegen"] as const)(
       "accepts an empty tools array during %s validation",
       (mode) => {

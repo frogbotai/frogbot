@@ -34,6 +34,7 @@ type AgentConfig = {
   tools?: readonly AnyTool[]
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[]
   access?: AgentAccess
+  triggers?: readonly AgentScheduleTrigger[]
 }
 ```
 
@@ -189,6 +190,45 @@ await frogbot.agents.support.generate({
 ```
 
 Thread persistence accepts prompts or `UIMessage[]`; it does not accept `ModelMessage[]`. Local `stream()` calls remain stateless.
+
+---
+
+## Schedule runs
+
+Add schedule triggers next to the agent that owns the recurring work. Each trigger requires a URL-safe slug, exactly one schedule form, and exactly one of `prompt` or `handler`.
+
+```ts
+export const reportingAgent: AgentConfig = {
+  slug: 'reporting',
+  model: 'fast',
+  instructions: 'Analyze account activity and report anomalies.',
+  triggers: [
+    {
+      type: 'schedule',
+      slug: 'frequent-check',
+      schedule: { every: '30m' },
+      prompt: 'Check account activity and report any anomalies.'
+    },
+    {
+      type: 'schedule',
+      slug: 'daily-rollup',
+      schedule: { cron: '0 0 * * *' },
+      handler: async ({ agent, req, job }) => {
+        await agent.generate({
+          prompt: `Prepare the rollup scheduled for ${job.scheduledFor.toISOString()}`,
+          req
+        })
+      }
+    }
+  ]
+}
+```
+
+`every` accepts positive whole durations in seconds, minutes, hours, or days when they divide evenly into the corresponding cron field. Use `cron` for other intervals. Cron expressions use UTC; timezone-specific schedules are not yet supported.
+
+Payload Jobs runs schedules and skips an occurrence while the same trigger already has an active or runnable scheduled job. User-defined jobs, workflows, queues, and automatic runners remain configured alongside FrogBot schedules.
+
+Each prompt trigger creates a fresh thread with `user: null` and persists its user and assistant messages. A handler may invoke the owning agent, another agent, or no agent. Every handler receives `{ frogbot, agent, req, job }`, and `req.context` contains `source`, `agentSlug`, `triggerSlug`, and `jobId`. Removing an agent or trigger makes already-queued work for it complete without running.
 
 ---
 

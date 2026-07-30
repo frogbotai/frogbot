@@ -323,6 +323,9 @@ importers:
       ai:
         specifier: ^7.0.4
         version: 7.0.31(zod@4.4.3)
+      croner:
+        specifier: 10.0.1
+        version: 10.0.1
       json-schema-to-typescript:
         specifier: ^15.0.3
         version: 15.0.4

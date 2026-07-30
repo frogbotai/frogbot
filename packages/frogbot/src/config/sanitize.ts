@@ -18,8 +18,14 @@ import type {
   PayloadRequest,
 } from "payload";
 import { buildConfig as payloadBuildConfig } from "payload";
+import { Cron } from "croner";
 
 import { buildAgentEndpoints } from "../agents/endpoints.js";
+import {
+  AGENT_SCHEDULE_TASK_SLUG,
+  everyToCron,
+  resolveScheduleTasks,
+} from "../agents/resolveScheduleTasks.js";
 import { isKnownModelId } from "../ai/catalog.js";
 import { getGatewayProviderName, isProviderName } from "../ai/providerNames.js";
 import { resolveUsageCollection } from "../ai/usageCollection.js";
@@ -488,6 +494,80 @@ function sanitizeAgents(
       agent = { ...agent, tools };
     }
 
+    if (agent.triggers !== undefined) {
+      if (!Array.isArray(agent.triggers)) {
+        throw new Error(
+          `[frogbot] Agent '${agent.slug}' triggers must be an array when configured.`,
+        );
+      }
+      const triggerSlugs = new Set<string>();
+      for (const trigger of agent.triggers) {
+        if (
+          !isRecord(trigger) ||
+          trigger.type !== "schedule" ||
+          typeof trigger.slug !== "string" ||
+          !trigger.slug.trim()
+        ) {
+          throw new Error(
+            `[frogbot] Every trigger in agent '${agent.slug}' requires type 'schedule' and a slug.`,
+          );
+        }
+        if (
+          trigger.slug !== trigger.slug.trim() ||
+          encodeURIComponent(trigger.slug) !== trigger.slug
+        ) {
+          throw new Error(
+            `[frogbot] Trigger slug '${trigger.slug}' in agent '${agent.slug}' is not URL-safe.`,
+          );
+        }
+        if (triggerSlugs.has(trigger.slug)) {
+          throw new Error(
+            `[frogbot] Duplicate trigger slug '${trigger.slug}' in agent '${agent.slug}'.`,
+          );
+        }
+        triggerSlugs.add(trigger.slug);
+        const hasPrompt = typeof trigger.prompt === "string";
+        const hasHandler = typeof trigger.handler === "function";
+        if (hasPrompt === hasHandler) {
+          throw new Error(
+            `[frogbot] Trigger '${trigger.slug}' in agent '${agent.slug}' requires exactly one of prompt or handler.`,
+          );
+        }
+        if (hasPrompt && !(trigger.prompt as string).trim()) {
+          throw new Error(
+            `[frogbot] Trigger '${trigger.slug}' in agent '${agent.slug}' requires a non-empty prompt.`,
+          );
+        }
+        if (!isRecord(trigger.schedule)) {
+          throw new Error(
+            `[frogbot] Trigger '${trigger.slug}' in agent '${agent.slug}' requires a schedule.`,
+          );
+        }
+        const hasEvery = typeof trigger.schedule.every === "string";
+        const hasCron = typeof trigger.schedule.cron === "string";
+        if (hasEvery === hasCron) {
+          throw new Error(
+            `[frogbot] Trigger '${trigger.slug}' in agent '${agent.slug}' schedule requires exactly one of every or cron.`,
+          );
+        }
+        if (trigger.schedule.timezone !== undefined) {
+          throw new Error(
+            `[frogbot] Trigger '${trigger.slug}' in agent '${agent.slug}' timezone is not yet supported. Cron schedules use UTC.`,
+          );
+        }
+        const cron = hasEvery
+          ? everyToCron(trigger.schedule.every as string)
+          : (trigger.schedule.cron as string);
+        try {
+          new Cron(cron);
+        } catch {
+          throw new Error(
+            `[frogbot] Trigger '${trigger.slug}' in agent '${agent.slug}' has an invalid cron expression: '${cron}'.`,
+          );
+        }
+      }
+    }
+
     return { ...agent, access: agent.access ?? defaultAccessFn };
   });
 }
@@ -748,6 +828,16 @@ export function sanitize(
     config.agents !== undefined
       ? sanitizeAgents(config.agents, sanitizedAI, pieces, mode)
       : undefined;
+  const hasScheduleTriggers = agents?.some((agent) => agent.triggers?.length);
+  if (
+    hasScheduleTriggers &&
+    config.jobs?.tasks?.some((task) => task.slug === AGENT_SCHEDULE_TASK_SLUG)
+  ) {
+    throw new Error(
+      `[frogbot] Job task slug '${AGENT_SCHEDULE_TASK_SLUG}' is reserved for agent schedule triggers.`,
+    );
+  }
+  const jobs = resolveScheduleTasks({ agents, jobs: config.jobs });
   const secretSource = builtInSecretSource(pieces.pieces);
   const credentialSources = [
     ...(secretSource.services.length ? [secretSource] : []),
@@ -784,7 +874,7 @@ export function sanitize(
 
   // Build the Payload config and pass it through Payload's buildConfig.
   const payloadConfig = buildPayloadConfig(
-    { ...config, agents, collections },
+    { ...config, agents, collections, jobs },
     async (payload) => {
       const sanitizedConfig = sanitizedConfigRef.current;
       if (!sanitizedConfig)

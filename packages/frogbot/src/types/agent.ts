@@ -8,6 +8,7 @@ import type {
   UIMessage,
 } from "ai";
 
+import type { Frogbot } from "../frogbot.js";
 import type { AgentSlug, FrogbotTypes } from "./generated.js";
 import type { DocID } from "./operations.js";
 import type { FrogbotRequest } from "./request.js";
@@ -19,6 +20,30 @@ export type AgentAccess = (args: {
 
 export type AgentModelId = FrogbotTypes["models"] | (string & {});
 
+export type AgentSchedule =
+  | { every: `${number}${"s" | "m" | "h" | "d"}`; cron?: never; timezone?: never }
+  | { cron: string; every?: never; timezone?: string };
+
+export type AgentScheduleContext = {
+  frogbot: Frogbot;
+  agent: AgentInstance;
+  req: FrogbotRequest;
+  job: { id: DocID; scheduledFor: Date };
+};
+
+export type AgentScheduleHandler = (
+  context: AgentScheduleContext,
+) => void | Promise<void>;
+
+export type AgentScheduleTrigger = {
+  type: "schedule";
+  slug: string;
+  schedule: AgentSchedule;
+} & (
+  | { prompt: string; handler?: never }
+  | { prompt?: never; handler: AgentScheduleHandler }
+);
+
 export type AgentConfig = {
   slug: string;
   model: AgentModelId;
@@ -26,6 +51,7 @@ export type AgentConfig = {
   tools?: readonly AnyTool[];
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];
   access?: AgentAccess;
+  triggers?: readonly AgentScheduleTrigger[];
 };
 
 type AgentRunOpts = (

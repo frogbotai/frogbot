@@ -42,6 +42,10 @@ export type {
   AgentGenerateResult,
   AgentInstance,
   AgentRegistry,
+  AgentSchedule,
+  AgentScheduleContext,
+  AgentScheduleHandler,
+  AgentScheduleTrigger,
   AgentStreamOpts,
   AgentStreamResult,
 } from './types/agent.js';
