@@ -7,8 +7,8 @@
 // `openai-compatible` entries become gateway providers under their configured
 // key.
 
-import { createGateway } from "@frogbotai/gateway";
 import type { Gateway, GatewayConfig } from "@frogbotai/gateway";
+import { createGateway } from "@frogbotai/gateway";
 
 import type { Logger } from "../frogbot.js";
 import type { CustomProviderEntry, SanitizedAIConfig } from "../types/ai.js";

@@ -1,8 +1,8 @@
 import type { LogWarningsFunction } from 'ai';
 
+import { maybeMaskMessage } from '../errors/maskMessage.js';
 import type { AfterErrorHookArgs, HookOperation, Hooks } from '../hooks.js';
 import { isProduction, readEnv } from '../shared/runtimeDetection.js';
-import { maybeMaskMessage } from '../errors/maskMessage.js';
 
 /**
  * Structural, zero-dependency log function. Overloads mirror pino's `LogFn`

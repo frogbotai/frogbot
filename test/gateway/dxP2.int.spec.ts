@@ -24,15 +24,16 @@
 //            JSON path: GATEWAY_CONFIG_JSON is parsed with JSON.parse (no Zod)
 //            so there is no structural validation beyond isRecord check.
 
-import { describe, expect, it } from 'vitest';
-import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
+
 import { createApp } from '../../packages/gateway/src/app.js';
-import { createGateway } from '../../packages/gateway/src/gateway.js';
 import { loadLayeredConfig } from '../../packages/gateway/src/config/layered.js';
+import { createGateway } from '../../packages/gateway/src/gateway.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { s3Storage } from './index'
 
 describe('@frogbotai/storage-s3 exports', () => {

@@ -4,8 +4,8 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { finalizeConfig, kParsed, loadConfigFile, mergeConfigs } from './parse.js';
 import { ConfigError } from '../errors/gatewayError.js';
+import { finalizeConfig, kParsed, loadConfigFile, mergeConfigs } from './parse.js';
 
 const scratch = () => mkdtempSync(join(tmpdir(), 'frogbotai-gateway-config-'));
 

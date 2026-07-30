@@ -1,6 +1,7 @@
 import { jsonSchema, tool } from 'ai';
-import type { OpenAITool } from './types.js';
+
 import { RequestValidationError } from '../../../errors/gatewayError.js';
+import type { OpenAITool } from './types.js';
 
 export function toAISDKTools(
   tools: OpenAITool[] | null | undefined,

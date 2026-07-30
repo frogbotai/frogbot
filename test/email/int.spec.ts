@@ -1,10 +1,11 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, it, expect, beforeAll, afterAll, afterEach, vi, type Mock } from 'vitest'
 
-import { resendAdapter } from '@frogbotai/email-resend'
-import { nodemailerAdapter } from '@frogbotai/email-nodemailer'
 import type { NodemailerAdapterArgs } from '@frogbotai/email-nodemailer'
+import { nodemailerAdapter } from '@frogbotai/email-nodemailer'
+import { resendAdapter } from '@frogbotai/email-resend'
+import { afterAll, afterEach, beforeAll, describe, expect, it, type Mock,vi } from 'vitest'
+
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot'
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot'
 

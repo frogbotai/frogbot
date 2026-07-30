@@ -3,7 +3,6 @@
 import { describe, expect, test } from 'vitest';
 
 import { RequestValidationError } from '../../errors/gatewayError.js';
-
 import { parseMessagesRequest } from './schema.js';
 
 const valid = {

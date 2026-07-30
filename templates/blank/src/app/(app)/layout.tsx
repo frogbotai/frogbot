@@ -1,7 +1,8 @@
+import '@frogbotai/ui/styles.css';
+
+import { ThemeScript } from '@frogbotai/ui/theme';
 import type { Metadata } from 'next';
 import React from 'react';
-import '@frogbotai/ui/styles.css';
-import { ThemeScript } from '@frogbotai/ui/theme';
 
 export const metadata: Metadata = {
   title: 'FrogBot',

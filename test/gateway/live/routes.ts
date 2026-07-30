@@ -10,11 +10,11 @@ import { expect } from 'vitest';
 import { createApp } from '../../../packages/gateway/src/app.js';
 import {
   buildProviderRegistry,
-  providers,
   type ProviderConfigMap,
+  providers,
 } from '../../../packages/gateway/src/providers/registry.js';
 import { parseSse } from '../../__helpers/gateway/parse-sse.js';
-import { postJson, type JsonResponse } from '../../__helpers/gateway/post-json.js';
+import { type JsonResponse,postJson } from '../../__helpers/gateway/post-json.js';
 import type { LiveProviderEntry } from './matrix.js';
 
 export type LiveApp = Hono;

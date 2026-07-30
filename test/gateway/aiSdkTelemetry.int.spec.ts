@@ -4,9 +4,9 @@
 // (`invoke_agent ...`, step and model-call spans) are actually emitted — and
 // that the resolved signal levels gate them off again.
 
-import { describe, expect, it, vi } from 'vitest';
-import type { Span, Tracer } from '@opentelemetry/api';
 import type { LanguageModelV4 } from '@ai-sdk/provider';
+import type { Span, Tracer } from '@opentelemetry/api';
+import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';

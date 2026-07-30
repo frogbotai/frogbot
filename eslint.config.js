@@ -1,34 +1,64 @@
-import frogbotEslintConfig, { rootParserOptions } from '@frogbotai/eslint-config'
+import eslint from '@eslint/js'
+import vitest from '@vitest/eslint-plugin'
+import simpleImportSort from 'eslint-plugin-simple-import-sort'
+import globals from 'globals'
+import tseslint from 'typescript-eslint'
 
-/** @typedef {import('eslint').Linter.Config} Config */
-
-export const defaultESLintIgnores = [
-  '**/.temp',
-  '**/.*', // ignore all dotfiles
-  '**/.git',
-  '**/tsconfig.tsbuildinfo',
-  '**/README.md',
-  '**/eslint.config.mjs',
-  '**/eslint.config.js',
-  '**/dist/',
-  '**/build/',
-  '**/node_modules/',
-  '**/temp/',
-  '**/*.e2e.spec.ts',
-  '**/frogbot-types.ts',
-  'packages/frogbot/bin.js',
-]
-
-// Re-export so consuming packages can spread it and set only `tsconfigRootDir`
-// (plus, where the build tsconfig excludes specs, an explicit `project`).
-export { rootParserOptions }
-
-/** @type {Config[]} */
-export const rootEslintConfig = [
-  ...frogbotEslintConfig,
+export default tseslint.config(
   {
-    ignores: [...defaultESLintIgnores, 'packages/eslint-config/**'],
+    ignores: [
+      '**/node_modules/*',
+      '**/dist/*',
+      '**/build/*',
+      '**/.next/*',
+      '**/*.tsbuildinfo',
+      '**/frogbot-types.ts',
+      '**/importMap.js',
+      '**/next-env.d.ts',
+      'packages/frogbot/bin.js',
+      '**/*.e2e.spec.ts',
+    ],
   },
-]
-
-export default rootEslintConfig
+  eslint.configs.recommended,
+  tseslint.configs.recommended,
+  {
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
+    },
+    plugins: { 'simple-import-sort': simpleImportSort },
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/consistent-type-imports': 'warn',
+      '@typescript-eslint/triple-slash-reference': 'off',
+      'simple-import-sort/imports': 'warn',
+      'simple-import-sort/exports': 'warn',
+      'no-console': 'warn',
+      'prefer-const': ['error', { ignoreReadBeforeAssign: true }],
+      curly: ['warn', 'multi-line'],
+    },
+  },
+  {
+    files: ['**/*.spec.ts'],
+    plugins: { vitest },
+    rules: {
+      ...vitest.configs.recommended.rules,
+      'vitest/expect-expect': ['error', { assertFunctionNames: ['expect*', 'assertType'] }],
+      'vitest/valid-expect': ['error', { maxArgs: 2 }],
+      'vitest/no-conditional-expect': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      'no-console': 'off',
+    },
+  },
+  {
+    files: ['**/bin/**', '**/cli/**', '**/scripts/**', '**/bin.js'],
+    rules: { 'no-console': 'off' },
+  },
+  {
+    files: ['templates/**', 'examples/**'],
+    rules: { 'no-console': 'off' },
+  },
+)

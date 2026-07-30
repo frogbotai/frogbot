@@ -7,10 +7,11 @@
 // OpenAI role:'tool' messages into one AI SDK tool message in wire order.
 
 import type { ModelMessage, ToolModelMessage, ToolResultPart } from '@ai-sdk/provider-utils';
+
 import type { OpenAIMessage, OpenAIToolMessage } from '../types.js';
+import { parseAssistantMessage } from './assistant.js';
 import { parseSystemMessage, parseUnknownMessage } from './system.js';
 import { parseUserMessage } from './user.js';
-import { parseAssistantMessage } from './assistant.js';
 
 function parseToolRun(
   messages: OpenAIMessage[],

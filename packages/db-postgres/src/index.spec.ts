@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { postgresAdapter } from './index'
 
 describe('@frogbotai/db-postgres exports', () => {

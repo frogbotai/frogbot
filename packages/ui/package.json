@@ -61,7 +61,6 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && tailwindcss -i src/styles.css -o dist/styles.css",
     "clean": "rm -rf dist",
-    "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
@@ -71,7 +70,6 @@
     "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
   },
   "devDependencies": {
-    "@frogbotai/eslint-config": "workspace:*",
     "@tailwindcss/cli": "^4.1.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",

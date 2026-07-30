@@ -8,13 +8,12 @@
 // Users import this from `'frogbot'`. They never see the underlying Payload
 // type name or import path.
 
-import type { PayloadCollectionConfig } from './payload.js';
-
 import type { CollectionAccess } from './access.js';
 import type { AuthConfig } from './auth.js';
 import type { Endpoint } from './endpoint.js';
 import type { Field } from './fields.js';
 import type { CollectionHooks } from './hooks.js';
+import type { PayloadCollectionConfig } from './payload.js';
 
 type Overridden = 'auth' | 'hooks' | 'access' | 'endpoints' | 'fields';
 

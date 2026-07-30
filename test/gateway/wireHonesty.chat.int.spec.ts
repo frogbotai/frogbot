@@ -13,18 +13,18 @@
 // 400 passes, forwarding passes — only a silent drop (200 + field never
 // reaches upstream callOptions) fails.
 
-import { describe, expect, it } from 'vitest';
-import type { Hono } from 'hono';
 import type {
   LanguageModelV4,
   LanguageModelV4CallOptions,
   LanguageModelV4StreamPart,
 } from '@ai-sdk/provider';
+import type { Hono } from 'hono';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
-import { postJson } from '../__helpers/gateway/post-json.js';
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
+import { postJson } from '../__helpers/gateway/post-json.js';
 
 // ---------------------------------------------------------------------------
 // Harness — mirrors paramForwarding.int.spec.ts (batch 1)

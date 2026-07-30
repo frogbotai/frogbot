@@ -14,8 +14,8 @@ import {
   defaultResource,
   detectResources,
   envDetector,
-  resourceFromAttributes,
   type Resource,
+  resourceFromAttributes,
 } from '@opentelemetry/resources';
 import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';

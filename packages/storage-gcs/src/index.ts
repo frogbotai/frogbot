@@ -1,5 +1,5 @@
-import type { Plugin } from 'frogbot'
 import { gcsStorage as _gcsStorage } from '@payloadcms/storage-gcs'
+import type { Plugin } from 'frogbot'
 
 export type { GcsStorageOptions } from '@payloadcms/storage-gcs'
 

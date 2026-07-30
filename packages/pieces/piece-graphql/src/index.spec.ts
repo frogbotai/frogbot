@@ -1,7 +1,9 @@
-import { createServer } from 'node:http';
 import { once } from 'node:events';
+import { createServer } from 'node:http';
+
 import { pieceContract } from 'frogbot/pieces/test';
 import { afterEach, describe, expect, it } from 'vitest';
+
 import { createGraphql, graphqlActions } from './index.js';
 
 const graphql = createGraphql();

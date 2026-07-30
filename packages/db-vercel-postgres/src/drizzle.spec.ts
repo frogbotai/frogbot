@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { eq, and, sql } from './drizzle'
+
+import { and, eq, sql } from './drizzle'
 
 describe('@frogbotai/db-vercel-postgres drizzle subpath', () => {
   it('exports eq as a function', () => {

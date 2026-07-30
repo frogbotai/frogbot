@@ -1,6 +1,6 @@
+import type { FrogbotConfig, Plugin } from 'frogbot';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import type { FrogbotConfig, Plugin } from 'frogbot';
 import { apiKeysPlugin } from './index.js';
 
 describe('apiKeysPlugin', () => {

@@ -1,6 +1,6 @@
+import type { FrogbotConfig, FrogbotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { FrogbotConfig, FrogbotRequest } from 'frogbot';
 import { apiKeysPlugin } from './index.js';
 
 function makeConfig(): FrogbotConfig {
@@ -47,7 +47,7 @@ describe('API keys collection', () => {
       json: () => Promise.resolve({ name: 'Deploy' }),
       frogbot: { create },
     } as unknown as FrogbotRequest;
-    const endpoint = collection.endpoints?.find((item) => item.path === '/mint')!;
+    const endpoint = collection.endpoints!.find((item) => item.path === '/mint')!;
     const first = await endpoint.handler(req);
     const second = await endpoint.handler(req);
     const firstBody = await first.json();
@@ -70,7 +70,7 @@ describe('API keys collection', () => {
         update,
       },
     } as unknown as FrogbotRequest;
-    const endpoint = collection.endpoints?.find((item) => item.path === '/:id/revoke')!;
+    const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
     const response = await endpoint.handler(req);
 
     expect(response.status).toBe(200);

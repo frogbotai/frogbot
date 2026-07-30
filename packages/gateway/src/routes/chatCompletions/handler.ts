@@ -12,53 +12,52 @@
 // exact point in the handler where it belongs, so the control flow reads
 // top-to-bottom with nothing hidden behind a runner abstraction.
 
-import { context as otelContext, type Attributes, type Context as OtelContext } from '@opentelemetry/api';
+import { type Attributes, type Context as OtelContext,context as otelContext } from '@opentelemetry/api';
+import { generateText, type JSONValue,streamText } from 'ai';
 import { Hono } from 'hono';
-import { generateText, streamText, type JSONValue } from 'ai';
 
-import { resolveProvider, type ProviderRegistry } from '../../providers/registry.js';
+import { isClientAbort } from '../../errors/clientAbort.js';
+import { toContentfulStatus,toOpenAIErrorResponse } from '../../errors/envelope.js';
+import { RequestValidationError } from '../../errors/gatewayError.js';
+import { maybeMaskMessage } from '../../errors/maskMessage.js';
+import { headersForError } from '../../errors/normalizeAiSdkError.js';
+import { streamErrorFrameToEnvelope } from '../../errors/streamError.js';
 import {
+  type GatewayEnv,
+  type HookPhase,
+  type Hooks,
+  type HookUsage,
+  type LanguageParams,
+  type OperationBase,
+  runHooks,
+} from '../../hooks.js';
+import type { AiSdkTelemetry } from '../../observability/aiSdkTelemetry.js';
+import { otelContextKey } from '../../observability/tracing.js';
+import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
+import { type ProviderRegistry,resolveProvider } from '../../providers/registry.js';
+import { normalizeServiceTier } from '../../shared/normalizeServiceTier.js';
+import { peekStream } from '../../shared/peekStream.js';
+import { isProduction } from '../../shared/runtimeDetection.js';
+import { createStreamLifecycle, type StreamLifecycle } from '../../shared/streamLifecycle.js';
+import { type ReasoningDetail,toReasoningDetail } from '../../shared/toReasoningDetail.js';
+import { createSseResponse, toSseStream } from '../../shared/toSseStream.js';
+import { createUpstreamSignal, upstreamTimeoutError } from '../../shared/upstreamTimeout.js';
+import { prepareForwardHeaders } from '../../utils/headers.js';
+import { forwardLanguageParams, forwardMessageProviderOptions, parsePromptCachingOptions } from '../../utils/params.js';
+import { parseJsonBody } from '../../utils/parseJsonBody.js';
+import { createRepairToolCall } from '../../utils/repairToolCall.js';
+import { ensureRequestId } from '../../utils/requestId.js';
+import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
+import { type ChatCompletionRequest,parseChatCompletionRequest } from './schema.js';
+import {
+  type OpenAIMessage,
+  type OpenAITool,
   toChatOutput,
   toModelMessages,
   toOpenAIResponse,
-  type OpenAIMessage,
-  type OpenAITool,
 } from './translators/index.js';
 import { createOpenAIStreamTransform } from './translators/stream.js';
-import { toAISDKTools, toAISDKToolChoice } from './translators/tools.js';
-import { createSseResponse, toSseStream } from '../../shared/toSseStream.js';
-import { toOpenAIErrorResponse, toContentfulStatus } from '../../errors/envelope.js';
-import { headersForError } from '../../errors/normalizeAiSdkError.js';
-import { isClientAbort } from '../../errors/clientAbort.js';
-import { streamErrorFrameToEnvelope } from '../../errors/streamError.js';
-import { maybeMaskMessage } from '../../errors/maskMessage.js';
-import { toReasoningDetail, type ReasoningDetail } from '../../shared/toReasoningDetail.js';
-import { peekStream } from '../../shared/peekStream.js';
-import { createStreamLifecycle, type StreamLifecycle } from '../../shared/streamLifecycle.js';
-import { isProduction } from '../../shared/runtimeDetection.js';
-import { normalizeServiceTier } from '../../shared/normalizeServiceTier.js';
-import { createUpstreamSignal, upstreamTimeoutError } from '../../shared/upstreamTimeout.js';
-
-import { parseChatCompletionRequest, type ChatCompletionRequest } from './schema.js';
-import { parseJsonBody } from '../../utils/parseJsonBody.js';
-import { forwardLanguageParams, forwardMessageProviderOptions, parsePromptCachingOptions } from '../../utils/params.js';
-import { prepareForwardHeaders } from '../../utils/headers.js';
-import { createRepairToolCall } from '../../utils/repairToolCall.js';
-import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
-import {
-  type GatewayEnv,
-  runHooks,
-  type HookPhase,
-  type HookUsage,
-  type Hooks,
-  type LanguageParams,
-  type OperationBase,
-} from '../../hooks.js';
-import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { otelContextKey } from '../../observability/tracing.js';
-import type { AiSdkTelemetry } from '../../observability/aiSdkTelemetry.js';
-import { ensureRequestId } from '../../utils/requestId.js';
-import { RequestValidationError } from '../../errors/gatewayError.js';
+import { toAISDKToolChoice,toAISDKTools } from './translators/tools.js';
 
 export type ChatCompletionsRouteContext = {
   registry: ProviderRegistry;

@@ -1,5 +1,5 @@
-import type { OAuthAuthorizeContext, OAuthTokenSet } from '../types.js';
 import { parseOAuthTokenSet } from '../server/tokens.js';
+import type { OAuthAuthorizeContext, OAuthTokenSet } from '../types.js';
 
 export type OAuthProviderOptions = {
   clientId: string;

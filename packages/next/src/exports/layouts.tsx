@@ -2,9 +2,8 @@ import {
   handleServerFunctions as payloadHandleServerFunctions,
   RootLayout as PayloadRootLayout,
 } from '@payloadcms/next/layouts';
-import type { ComponentProps } from 'react';
-
 import { getPayloadConfig } from 'frogbot';
+import type { ComponentProps } from 'react';
 
 import type { FrogbotConfigArg } from '../types.js';
 

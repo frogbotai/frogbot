@@ -1,14 +1,14 @@
 // embed operation — single value embedding.
 
+import type { Gateway } from '@frogbotai/gateway';
 import { embed as aiEmbed } from 'ai';
 
+import type { Logger } from '../../frogbot.js';
 import type { EmbedOpts, SanitizedAIConfig } from '../../types/ai.js';
 import type { FrogbotRequest } from '../../types/request.js';
-import type { Logger } from '../../frogbot.js';
-import type { Gateway } from '@frogbotai/gateway';
-import { resolveModel } from '../resolve.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
+import { resolveModel } from '../resolve.js';
 
 export type EmbedDeps = {
   gateway: Gateway;

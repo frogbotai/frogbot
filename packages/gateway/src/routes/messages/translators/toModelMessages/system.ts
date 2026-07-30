@@ -1,4 +1,5 @@
 import type { SystemModelMessage } from '@ai-sdk/provider-utils';
+
 import type { AnthropicSystemParam } from '../types.js';
 
 /**

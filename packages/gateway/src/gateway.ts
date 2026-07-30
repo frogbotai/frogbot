@@ -9,28 +9,11 @@ import type {
   ImageModelV4,
 } from '@ai-sdk/provider';
 
-import { createApp, getRoutes, type GatewayRoutes } from './app.js';
+import { createApp, type GatewayRoutes,getRoutes } from './app.js';
 import { finalizeConfig } from './config/parse.js';
 import type { GatewayConfig } from './config/schema.js';
-import { DEFAULT_MODEL_CATALOG } from './providers/catalog.data.js';
-import {
-  buildProviderRegistry,
-  requireRerankingModel,
-  requireSpeechModel,
-  requireTranscriptionModel,
-  requireVideoModel,
-  resolveProvider,
-  type GatewayEmbeddingModel,
-  type GatewayLanguageModel,
-  type GatewayRerankingModel,
-  type GatewaySpeechModel,
-  type GatewayTranscriptionModel,
-  type ProviderRegistry,
-  type ProvidersInput,
-} from './providers/registry.js';
-import type { Hooks, HookOperation, HookUsage, OperationBase } from './hooks.js';
+import type { HookOperation, Hooks, HookUsage, OperationBase } from './hooks.js';
 import { runHooks } from './hooks.js';
-import { mergeHooks } from './providers/middleware.js';
 import {
   withEmbeddingModelHooks,
   withImageModelHooks,
@@ -40,6 +23,23 @@ import {
   withTranscriptionModelHooks,
   withVideoModelHooks,
 } from './modelHooks.js';
+import { DEFAULT_MODEL_CATALOG } from './providers/catalog.data.js';
+import { mergeHooks } from './providers/middleware.js';
+import {
+  buildProviderRegistry,
+  type GatewayEmbeddingModel,
+  type GatewayLanguageModel,
+  type GatewayRerankingModel,
+  type GatewaySpeechModel,
+  type GatewayTranscriptionModel,
+  type ProviderRegistry,
+  type ProvidersInput,
+  requireRerankingModel,
+  requireSpeechModel,
+  requireTranscriptionModel,
+  requireVideoModel,
+  resolveProvider,
+} from './providers/registry.js';
 
 function deepFreeze<T extends Record<string, unknown>>(obj: T): Readonly<T> {
   for (const value of Object.values(obj)) {

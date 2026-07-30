@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+
 import type { ChatPlatformAdapter } from './adapter'
 import { chatRequest, type PayloadPage } from './rest'
 

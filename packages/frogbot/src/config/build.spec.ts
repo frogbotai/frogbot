@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { FrogbotConfig } from '../types/config.js';
 import type { CollectionConfig } from '../types/collection.js';
+import type { FrogbotConfig } from '../types/config.js';
 import type { Plugin } from '../types/plugin.js';
 
 vi.mock('payload', () => ({

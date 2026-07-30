@@ -1,6 +1,7 @@
+import { Writable } from 'node:stream';
+
 import type { Logger as PinoLogger } from 'pino';
 import pino from 'pino';
-import { Writable } from 'node:stream';
 import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import type { AfterErrorHookArgs, AfterOperationHookArgs, BeforeUpstreamHookArgs } from '../hooks.js';

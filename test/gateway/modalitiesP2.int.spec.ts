@@ -8,8 +8,8 @@
 // because they require `ai/test` provider mocks, which only resolve in the
 // vitest `unit` project (not `int`).
 
-import { describe, expect, it } from 'vitest';
 import type { ImageModelV4, ImageModelV4CallOptions } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';

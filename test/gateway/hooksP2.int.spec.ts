@@ -29,8 +29,8 @@
 //            (extractOpenAIStreamErrorInfo / extractAnthropicStreamErrorInfo)
 //            now also mask via maybeMaskMessage (G35).
 
-import { describe, expect, it } from 'vitest';
 import type { EmbeddingModelV4, LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import { createGateway } from '../../packages/gateway/src/gateway.js';

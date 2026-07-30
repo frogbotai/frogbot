@@ -51,7 +51,6 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && chmod +x dist/cli/index.js 2>/dev/null || true",
     "clean": "rm -rf dist",
-    "lint": "cd ../.. && eslint --config packages/gateway/eslint.config.mjs packages/gateway/src test/gateway --max-warnings=0",
     "test": "vitest run --root ../.. --project=gateway-unit --project=gateway-integration --project=gateway-golden",
     "test:unit": "vitest run --root ../.. --project=gateway-unit",
     "test:integration": "vitest run --root ../.. --project=gateway-integration",
@@ -151,7 +150,6 @@
   },
   "devDependencies": {
     "@aws-sdk/credential-providers": "^3.972.0",
-    "@frogbotai/eslint-config": "workspace:*",
     "@opentelemetry/context-async-hooks": "^2.0.1",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.203.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.203.0",

@@ -18,7 +18,7 @@ describe('API keys plugin integration', () => {
       findByID: vi.fn().mockResolvedValue({ id: 'account-1' }),
       update: vi.fn().mockResolvedValue({}),
     };
-    const mint = credentials.endpoints?.find((endpoint) => endpoint.path === '/mint')!;
+    const mint = credentials.endpoints!.find((endpoint) => endpoint.path === '/mint')!;
     const create = vi.fn().mockResolvedValue({ id: 'key-1' });
     const response = await mint.handler({
       user: { id: 'account-1' },

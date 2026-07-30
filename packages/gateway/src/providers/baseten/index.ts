@@ -1,9 +1,9 @@
 // Provider definition: Baseten.
 
 import {
-  createBaseten,
   type BasetenProvider,
   type BasetenProviderSettings,
+  createBaseten,
 } from '@ai-sdk/baseten';
 
 import type { ProviderDefinition } from '../types.js';

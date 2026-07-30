@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+
 import { deleteThread, renameThread } from './mutations'
 
 describe('thread mutations', () => {

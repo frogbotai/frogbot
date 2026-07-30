@@ -4,12 +4,12 @@
 // utilities. Framework-agnostic: works in scripts, tests, serverless,
 // and standalone servers.
 
+import type { Gateway } from '@frogbotai/gateway';
 import type { Payload } from 'payload';
 import { createLocalReq, getPayload, handleEndpoints } from 'payload';
-import type { Gateway } from '@frogbotai/gateway';
 
-import { createAIGateway } from './ai/index.js';
 import { createAgentInstance } from './agents/instance.js';
+import { createAIGateway } from './ai/index.js';
 import { embedOperation } from './ai/operations/embed.js';
 import { embedManyOperation } from './ai/operations/embedMany.js';
 import { generateImageOperation } from './ai/operations/generateImage.js';
@@ -18,13 +18,13 @@ import { generateTextOperation } from './ai/operations/generateText.js';
 import { generateVideoOperation } from './ai/operations/generateVideo.js';
 import { rerankOperation } from './ai/operations/rerank.js';
 import { streamTextOperation } from './ai/operations/streamText.js';
-import { writeGeneratedTypes } from './bin/generateTypes.js';
-import { generateImportMap } from './importMap/index.js';
 import { transcribeOperation } from './ai/operations/transcribe.js';
-import { getFrogbotInstance, registerFrogbotInstance } from './instanceRegistry.js';
-import { createFrogbotLocalAPI } from './localAPI.js';
+import { writeGeneratedTypes } from './bin/generateTypes.js';
 import { Connections } from './connections/api.js';
+import { generateImportMap } from './importMap/index.js';
+import { getFrogbotInstance, registerFrogbotInstance } from './instanceRegistry.js';
 import type { FrogbotLocalAPI } from './localAPI.js';
+import { createFrogbotLocalAPI } from './localAPI.js';
 import type { AgentRegistry } from './types/agent.js';
 import type {
   EmbedManyOpts,
@@ -40,8 +40,6 @@ import type {
 } from './types/ai.js';
 import type { Collection } from './types/collection.js';
 import type { CollectionSlug, TypedCollection } from './types/generated.js';
-import type { FrogbotRequest } from './types/request.js';
-import type { FrogbotSanitizedConfig } from './types/sanitized.js';
 import type {
   AuthArgs,
   AuthResult,
@@ -72,6 +70,8 @@ import type {
   UpdateManyArgs,
   VerifyEmailArgs,
 } from './types/operations.js';
+import type { FrogbotRequest } from './types/request.js';
+import type { FrogbotSanitizedConfig } from './types/sanitized.js';
 
 type LogFn = (msg: string, ...args: unknown[]) => void;
 

@@ -3,9 +3,8 @@ import {
   NotFoundPage as PayloadNotFoundPage,
   RootPage as PayloadRootPage,
 } from '@payloadcms/next/views';
-import type { ComponentProps } from 'react';
-
 import { getPayloadConfig } from 'frogbot';
+import type { ComponentProps } from 'react';
 
 import frogbotFavicon from '../assets/frogbot-favicon.png';
 import frogbotOGImage from '../assets/frogbot-og.jpg';

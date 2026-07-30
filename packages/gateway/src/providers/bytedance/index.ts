@@ -1,9 +1,9 @@
 // Provider definition: ByteDance (Doubao / Ark).
 
 import {
-  createByteDance,
   type ByteDanceProvider,
   type ByteDanceProviderSettings,
+  createByteDance,
 } from '@ai-sdk/bytedance';
 
 import type { ProviderDefinition } from '../types.js';

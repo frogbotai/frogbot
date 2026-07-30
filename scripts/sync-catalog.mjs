@@ -45,7 +45,7 @@ function operationsFor(modalities) {
   if (modalities.output.includes("text")) operations.push("chat.completions");
   if (modalities.output.includes("embedding")) operations.push("embeddings");
   if (modalities.output.includes("image"))
-    operations.push("images.generations");
+    {operations.push("images.generations");}
   if (modalities.output.includes("audio")) operations.push("audio.speech");
   if (
     modalities.input.includes("audio") &&
@@ -108,7 +108,7 @@ export function buildCatalogs({ overlays, source }) {
     const models = source[sourceProvider]?.models ?? {};
     for (const model of Object.values(models)) {
       if (model.status !== "deprecated")
-        gateway.push(mapModel({ model, provider }));
+        {gateway.push(mapModel({ model, provider }));}
     }
   }
   for (const overlay of overlays) {
@@ -153,9 +153,9 @@ export function renderGatewayCatalog(gateway) {
 export async function syncCatalog({ fetchImpl = fetch } = {}) {
   const response = await fetchImpl("https://models.dev/api.json");
   if (!response.ok)
-    throw new Error(
+    {throw new Error(
       `models.dev request failed: ${response.status} ${response.statusText}`,
-    );
+    );}
   const source = await response.json();
   const overlays = JSON.parse(await readFile(overlaysPath, "utf8"));
   const { catalog, gateway } = buildCatalogs({ overlays, source });

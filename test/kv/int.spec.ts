@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 
 import { RedisKVAdapter } from '@frogbotai/kv-redis'
+import { afterAll, beforeAll, beforeEach,describe, expect, it } from 'vitest'
+
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot'
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot'
 import { isServiceReachable } from '../__helpers/shared/storage/storageServices'

@@ -9,8 +9,8 @@
 // key-shaped tokens from every upstream-derived message (envelope.ts,
 // streamError.ts) while the rest of the 4xx text passes through.
 
-import { describe, expect, it } from 'vitest';
 import type { LanguageModelV4 } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';

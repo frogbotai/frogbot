@@ -1,5 +1,6 @@
 import * as module from '@activepieces/piece-linear';
 import { pieceContract } from 'frogbot/pieces/test';
+
 import { credentialExecution } from '../../credential-execution.js';
 import { createLinear, linearActions } from './index.js';
 

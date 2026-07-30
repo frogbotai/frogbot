@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+
 import { loadThreads } from './use-threads'
 
 describe('loadThreads', () => {

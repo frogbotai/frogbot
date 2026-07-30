@@ -24,17 +24,17 @@
 // messages/handler.ts, responses/handler.ts); if any regresses, that route's
 // live requests 400 on any system prompt — the defect this tier guards.
 
-import { generateText } from 'ai';
 import type { LanguageModelV4CallOptions } from '@ai-sdk/provider';
+import { generateText } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 import { describe, expect, it } from 'vitest';
 
-import { toModelMessages as chatToModelMessages } from './chatCompletions/translators/index.js';
 import type { OpenAIMessage } from './chatCompletions/translators/index.js';
-import { toModelMessages as messagesToModelMessages } from './messages/translators/index.js';
+import { toModelMessages as chatToModelMessages } from './chatCompletions/translators/index.js';
 import type { AnthropicMessage } from './messages/translators/index.js';
-import { toModelMessages as responsesToModelMessages } from './responses/translators/index.js';
+import { toModelMessages as messagesToModelMessages } from './messages/translators/index.js';
 import type { ResponsesRequest } from './responses/schema.js';
+import { toModelMessages as responsesToModelMessages } from './responses/translators/index.js';
 
 // A mock model that returns a minimal valid non-streaming result and records
 // every `doGenerate` call (MockLanguageModelV4.doGenerateCalls), so we can

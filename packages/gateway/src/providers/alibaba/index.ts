@@ -1,9 +1,9 @@
 // Provider definition: Alibaba (Qwen / DashScope).
 
 import {
-  createAlibaba,
   type AlibabaProvider,
   type AlibabaProviderSettings,
+  createAlibaba,
 } from '@ai-sdk/alibaba';
 
 import type { ProviderDefinition } from '../types.js';

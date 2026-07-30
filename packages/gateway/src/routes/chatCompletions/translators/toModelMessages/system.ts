@@ -1,4 +1,5 @@
 import type { SystemModelMessage } from '@ai-sdk/provider-utils';
+
 import type { OpenAISystemMessage, OpenAIUnknownMessage } from '../types.js';
 
 export function parseSystemMessage(msg: OpenAISystemMessage): SystemModelMessage {

@@ -1,5 +1,5 @@
-import { CredentialCryptoError, createCredentialEncryption } from 'frogbot/connections';
 import type { CredentialEncryption } from 'frogbot/connections';
+import { createCredentialEncryption,CredentialCryptoError } from 'frogbot/connections';
 
 /** @deprecated Use createCredentialEncryption from frogbot/connections. */
 export const createOAuthEncryption = createCredentialEncryption;

@@ -1,5 +1,5 @@
-import type { Plugin } from 'frogbot'
 import { vercelBlobStorage as _vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
+import type { Plugin } from 'frogbot'
 
 export type { VercelBlobStorageOptions } from '@payloadcms/storage-vercel-blob'
 

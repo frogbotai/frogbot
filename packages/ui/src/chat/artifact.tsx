@@ -1,8 +1,9 @@
 'use client'
 
-import { createContext, use, useCallback, useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
+import { createContext, type Dispatch, type ReactNode, type SetStateAction,use, useCallback, useEffect, useState } from 'react'
+
+import { type Artifact, type ArtifactPersistence, type ArtifactRegistryItem,resolveArtifact } from './artifact-registry'
 import type { DataPartValue } from './data-part'
-import { resolveArtifact, type Artifact, type ArtifactPersistence, type ArtifactRegistryItem } from './artifact-registry'
 
 export interface ArtifactContextValue {
   artifact?: Artifact

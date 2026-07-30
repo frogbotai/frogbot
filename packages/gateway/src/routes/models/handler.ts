@@ -9,9 +9,9 @@
 
 import { Hono } from 'hono';
 
-import { toOpenAIErrorResponse, toContentfulStatus } from '../../errors/envelope.js';
-import { headersForError } from '../../errors/normalizeAiSdkError.js';
 import { isClientAbort } from '../../errors/clientAbort.js';
+import { toContentfulStatus,toOpenAIErrorResponse } from '../../errors/envelope.js';
+import { headersForError } from '../../errors/normalizeAiSdkError.js';
 import type { ModelCatalog, ModelCatalogEntry } from '../../providers/catalog.js';
 import type { ProviderRegistry } from '../../providers/registry.js';
 import { ensureRequestId } from '../../utils/requestId.js';

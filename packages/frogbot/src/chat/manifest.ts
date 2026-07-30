@@ -1,5 +1,5 @@
-import type { FrogbotRequest } from '../types/request.js';
 import type { ManifestResponse } from '../types/chat.js';
+import type { FrogbotRequest } from '../types/request.js';
 
 export function buildManifestEndpoint() {
   return {

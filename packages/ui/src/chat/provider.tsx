@@ -1,12 +1,13 @@
 'use client'
 
-import { createContext, use, useEffect, useState, type ReactNode } from 'react'
+import type { ManifestResponse } from 'frogbot'
+import { createContext, type ReactNode,use, useEffect, useState } from 'react'
+
 import type { ChatPlatformAdapter } from './adapter'
-import { resolveChatHeaders } from './rest'
-import type { ToolRenderer } from './tool-registry'
 import { ArtifactProvider } from './artifact'
 import type { ArtifactPersistence, ArtifactRegistryItem } from './artifact-registry'
-import type { ManifestResponse } from 'frogbot'
+import { resolveChatHeaders } from './rest'
+import type { ToolRenderer } from './tool-registry'
 
 export type ChatManifest = ManifestResponse
 

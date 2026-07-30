@@ -1,3 +1,4 @@
+import { generateText } from 'ai';
 import {
   MockEmbeddingModelV4,
   MockImageModelV4,
@@ -7,7 +8,6 @@ import {
   MockTranscriptionModelV4,
   MockVideoModelV4,
 } from 'ai/test';
-import { generateText } from 'ai';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { createGateway } from './gateway.js';

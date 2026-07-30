@@ -1,7 +1,8 @@
 import * as module from '@activepieces/piece-airtable';
 import { pieceContract } from 'frogbot/pieces/test';
+
 import { credentialExecution } from '../../credential-execution.js';
-import { createAirtable, airtableActions } from './index.js';
+import { airtableActions,createAirtable } from './index.js';
 
 const airtable = createAirtable();
 pieceContract({ piece: airtable, service: 'airtable', credentialType: 'secret_text', actions: airtableActions });

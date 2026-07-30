@@ -1,8 +1,8 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { oauthPlugin } from '@frogbotai/plugin-oauth';
-import { buildConfig } from 'frogbot';
 import type { FrogbotConfig } from 'frogbot';
+import { buildConfig } from 'frogbot';
 
 import { qaAnalyst, releaseManager } from './agents';
 import { Connections, Media, Releases, Users } from './collections';

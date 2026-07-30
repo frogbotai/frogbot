@@ -1,7 +1,7 @@
 import type { CredentialSource, FrogbotRequest } from 'frogbot';
 
-import { mergeOAuthTokenSets } from './server/tokens.js';
 import type { OAuthEncryption } from './server/crypto.js';
+import { mergeOAuthTokenSets } from './server/tokens.js';
 import type { OAuthProvider, OAuthTokenSet } from './types.js';
 
 function deserialize(value: string, expiresAt?: string): OAuthTokenSet {

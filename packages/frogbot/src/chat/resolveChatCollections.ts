@@ -7,12 +7,12 @@
 //   - persistence is on whenever agents are configured or a collection
 //     is marked; there is no opt-out
 
+import { mergeCollection } from '../collections/mergeCollection.js';
+import type { SanitizedChatConfig } from '../types/chat.js';
 import type { CollectionConfig } from '../types/collection.js';
 import type { FrogbotConfig } from '../types/config.js';
-import type { SanitizedChatConfig } from '../types/chat.js';
 import { defaultMessagesCollection } from './collections/messages.js';
 import { defaultThreadsCollection } from './collections/threads.js';
-import { mergeCollection } from '../collections/mergeCollection.js';
 import { resolveUserSlug } from './resolveUserSlug.js';
 
 export const CHAT_ASSETS_SLUG = '_frogbot_chat_assets';

@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+
 import { parseAssistantMessage } from './toModelMessages/assistant.js';
 import type { OpenAIAssistantMessage } from './types.js';
 

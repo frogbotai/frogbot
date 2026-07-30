@@ -4,10 +4,9 @@
 // the FrogBot brand consistent in every hook, access function, and
 // custom endpoint.
 
-import type { PayloadRequest } from './payload.js';
-
 import type { Frogbot } from '../frogbot.js';
 import type { TypeWithID } from './generated.js';
+import type { PayloadRequest } from './payload.js';
 
 export interface FrogbotRequest<TUser = Record<string, unknown> & TypeWithID>
   extends Omit<PayloadRequest, 'payload' | 'user'> {

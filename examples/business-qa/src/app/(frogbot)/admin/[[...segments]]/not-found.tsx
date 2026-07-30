@@ -1,6 +1,7 @@
-import type { Metadata } from 'next';
 import config from '@frogbot-config';
 import { generatePageMetadata, NotFoundPage } from '@frogbotai/next/views';
+import type { Metadata } from 'next';
+
 import { importMap } from '../importMap.js';
 
 type Args = {

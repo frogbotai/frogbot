@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { r2Storage } from './index'
 
 describe('@frogbotai/storage-r2 exports', () => {

@@ -7,8 +7,8 @@
 // G83: REJECTED — registry keys ('vertex', 'anthropic-aws') ARE keys the AI SDK reads
 //      (google reads legacy 'vertex'; anthropic reads custom 'anthropic-aws'); no 'google-vertex' key exists
 
-import { describe, expect, it } from 'vitest';
 import type { LanguageModelV4, LanguageModelV4CallOptions } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import { createGateway } from '../../packages/gateway/src/gateway.js';

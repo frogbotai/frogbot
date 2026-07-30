@@ -3,8 +3,8 @@ import type { CollectionConfig } from '../types/collection.js';
 import type { FrogbotConfig } from '../types/config.js';
 import type { SanitizedConnectionsConfig } from '../types/connections.js';
 import type { SanitizedPiecesConfig } from '../types/piece.js';
-import { createCredentialEncryption } from './encryption.js';
 import { defaultConnectionsCollection } from './collection.js';
+import { createCredentialEncryption } from './encryption.js';
 
 export const DEFAULT_CONNECTIONS_SLUG = 'connections';
 

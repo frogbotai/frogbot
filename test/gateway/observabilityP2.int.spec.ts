@@ -10,12 +10,12 @@
 //        can inject an arbitrary string that becomes the span-map key and the
 //        echoed response header.
 
-import { describe, expect, it } from 'vitest';
 import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
+import type { GatewayLogger,LogFn } from '../../packages/gateway/src/observability/logger.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
-import type { LogFn, GatewayLogger } from '../../packages/gateway/src/observability/logger.js';
 
 // ---------------------------------------------------------------------------
 // Shared helpers

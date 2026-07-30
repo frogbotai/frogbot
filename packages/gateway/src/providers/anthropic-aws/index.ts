@@ -17,9 +17,9 @@
 //   2. The canonical ID prefix is `anthropic-aws/` rather than `amazon-bedrock/`.
 
 import {
-  createAnthropicAws,
   type AnthropicAwsProvider,
   type AnthropicAwsProviderSettings,
+  createAnthropicAws,
 } from '@ai-sdk/anthropic-aws';
 
 import type { ProviderDefinition } from '../types.js';

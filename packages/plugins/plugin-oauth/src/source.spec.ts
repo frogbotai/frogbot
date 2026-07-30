@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { OAuthProvider } from './types.js';
 import { createOAuthEncryption } from './server/crypto.js';
 import { createOAuthCredentialSource } from './source.js';
+import type { OAuthProvider } from './types.js';
 
 const encryption = createOAuthEncryption({ secret: 'secret' });
 

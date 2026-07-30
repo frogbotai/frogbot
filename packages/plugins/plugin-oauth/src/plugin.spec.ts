@@ -1,8 +1,8 @@
+import type { FrogbotConfig, Plugin } from 'frogbot';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import type { FrogbotConfig, Plugin } from 'frogbot';
-import { oauthPlugin } from './index.js';
 import type { OAuthProvider } from './index.js';
+import { oauthPlugin } from './index.js';
 
 const provider: OAuthProvider = {
   id: 'custom',

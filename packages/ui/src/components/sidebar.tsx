@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, type ComponentProps, useContext, useState } from 'react'
+import { type ComponentProps, createContext, useContext, useState } from 'react'
 
 import { useHotkey } from '../hooks/use-hotkey'
 import { useIsMobile } from '../hooks/use-mobile'

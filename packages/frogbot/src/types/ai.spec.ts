@@ -1,14 +1,14 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
+import type { CatalogModelId } from '../ai/generated.js';
 import type { AgentConfig, AgentModelId } from './agent.js';
 import type { BedrockProviderEntry, BuiltInProviderEntry, ModelId, ProviderConfig } from './ai.js';
-import type { CatalogModelId } from '../ai/generated.js';
 import type { FrogbotTypes } from './generated.js';
 
 describe('AI config types', () => {
   it('accepts true or an explicit apiKey for built-in providers', () => {
     expectTypeOf<true>().toMatchTypeOf<ProviderConfig['openai']>();
-    expectTypeOf<{}>().not.toMatchTypeOf<ProviderConfig['openai']>();
+    expectTypeOf<Record<string, never>>().not.toMatchTypeOf<ProviderConfig['openai']>();
     expectTypeOf({ apiKey: process.env.TEST_KEY }).toMatchTypeOf<ProviderConfig['openai']>();
     expectTypeOf<{ apiKey: string | undefined }>().toMatchTypeOf<BuiltInProviderEntry>();
     expectTypeOf<false>().not.toMatchTypeOf<ProviderConfig['openai']>();

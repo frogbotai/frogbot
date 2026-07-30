@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+
 import { FrogbotChatTransport, prepareChatRequest } from './transport'
 
 const message = { id: 'user-1', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Hello' }] }

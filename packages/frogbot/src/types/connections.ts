@@ -1,9 +1,9 @@
 import type { TypeWithID } from 'payload';
 
-import type { CredentialEncryption } from '../connections/encryption.js';
 import type { ConnectionRecord } from '../connections/api.js';
-import type { Frogbot } from '../frogbot.js';
 import type { AppConnectionValue } from '../connections/api.js';
+import type { CredentialEncryption } from '../connections/encryption.js';
+import type { Frogbot } from '../frogbot.js';
 import type { CredentialType, PiecePolicy } from './piece.js';
 
 export type CredentialSource = {

@@ -1,14 +1,14 @@
 // embedMany operation — batch embedding for multiple values.
 
+import type { Gateway } from '@frogbotai/gateway';
 import { embedMany as aiEmbedMany } from 'ai';
 
+import type { Logger } from '../../frogbot.js';
 import type { EmbedManyOpts, SanitizedAIConfig } from '../../types/ai.js';
 import type { FrogbotRequest } from '../../types/request.js';
-import type { Logger } from '../../frogbot.js';
-import type { Gateway } from '@frogbotai/gateway';
-import { resolveModel } from '../resolve.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
+import { resolveModel } from '../resolve.js';
 
 export type EmbedManyDeps = {
   gateway: Gateway;

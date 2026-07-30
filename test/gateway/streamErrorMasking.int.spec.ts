@@ -9,8 +9,8 @@
 // factories, so a 5xx error emitted AFTER the first content chunk is masked
 // in production instead of streaming raw internals verbatim.
 
-import { describe, expect, it } from 'vitest';
 import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';

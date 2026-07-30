@@ -1,16 +1,16 @@
 // streamText operation — async pre-checks, then returns the stream.
 
-import { generateId, streamText as aiStreamText } from 'ai';
-import type { LanguageModelUsage } from 'ai';
 import type { Gateway } from '@frogbotai/gateway';
+import type { LanguageModelUsage } from 'ai';
+import { generateId, streamText as aiStreamText } from 'ai';
 
-import type { StreamTextOpts, SanitizedAIConfig } from '../../types/ai.js';
-import type { FrogbotRequest } from '../../types/request.js';
-import type { Frogbot, Logger } from '../../frogbot.js';
 import { toAISDKTools, toAISDKToolsContext } from '../../agents/tools.js';
-import { resolveModel } from '../resolve.js';
+import type { Frogbot, Logger } from '../../frogbot.js';
+import type { SanitizedAIConfig,StreamTextOpts } from '../../types/ai.js';
+import type { FrogbotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
+import { resolveModel } from '../resolve.js';
 
 export type StreamTextDeps = {
   gateway: Gateway;

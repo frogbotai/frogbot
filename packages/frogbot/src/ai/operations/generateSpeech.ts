@@ -1,13 +1,13 @@
 // generateSpeech operation — text-to-speech via AI SDK.
 
+import type { Gateway } from '@frogbotai/gateway';
 import { experimental_generateSpeech as aiGenerateSpeech } from 'ai';
 
+import type { Logger } from '../../frogbot.js';
 import type { GenerateSpeechOpts, SanitizedAIConfig } from '../../types/ai.js';
 import type { FrogbotRequest } from '../../types/request.js';
-import type { Logger } from '../../frogbot.js';
-import type { Gateway } from '@frogbotai/gateway';
-import { resolveModel } from '../resolve.js';
 import { enforceAIAccess } from '../access.js';
+import { resolveModel } from '../resolve.js';
 
 export type GenerateSpeechDeps = {
   gateway: Gateway;

@@ -1,5 +1,4 @@
 import type { Hooks } from '../hooks.js';
-
 import { anthropicBeforeUpstream } from './anthropic/middleware.js';
 import { bedrockBeforeUpstream } from './bedrock/middleware.js';
 import { cohereBeforeUpstream } from './cohere/middleware.js';

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { toGatewayHooks, toHookUsage } from './hooks.js';
 import type { SanitizedAIHooks } from '../types/hooks-ai.js';
 import type { FrogbotRequest } from '../types/request.js';
+import { toGatewayHooks, toHookUsage } from './hooks.js';
 
 function makeHooks(overrides: Partial<SanitizedAIHooks> = {}): SanitizedAIHooks {
   return {

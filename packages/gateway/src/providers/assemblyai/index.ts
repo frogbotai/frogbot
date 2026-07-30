@@ -1,7 +1,7 @@
 import {
-  createAssemblyAI,
   type AssemblyAIProvider,
   type AssemblyAIProviderSettings,
+  createAssemblyAI,
 } from '@ai-sdk/assemblyai';
 
 import type { ProviderDefinition } from '../types.js';

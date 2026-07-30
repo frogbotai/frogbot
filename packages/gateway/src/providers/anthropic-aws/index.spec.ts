@@ -9,8 +9,8 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { anthropicAwsProvider } from './index.js';
 import { bedrockProvider } from '../bedrock/index.js';
+import { anthropicAwsProvider } from './index.js';
 
 describe('anthropicAwsProvider.fromEnv', () => {
   // An operator who reads "anthropic-aws" and sets ANTHROPIC_AWS_API_KEY (the

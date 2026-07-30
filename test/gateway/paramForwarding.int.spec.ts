@@ -5,11 +5,11 @@
 // Confirmed findings are wrapped as `it.fails(...)` so the suite stays green;
 // flip to `it()` when the corresponding fix lands.
 
-import { describe, expect, it } from 'vitest';
 import type {
   LanguageModelV4,
   LanguageModelV4CallOptions,
 } from '@ai-sdk/provider';
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';

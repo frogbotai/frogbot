@@ -6,35 +6,35 @@
 // exact point in the handler where it belongs, so the control flow reads
 // top-to-bottom with nothing hidden behind a runner abstraction.
 
-import { context as otelContext, type Attributes, type Context as OtelContext } from '@opentelemetry/api';
-import { generateText, streamText, type JSONValue } from 'ai';
+import { type Attributes, type Context as OtelContext,context as otelContext } from '@opentelemetry/api';
+import { generateText, type JSONValue,streamText } from 'ai';
 import { Hono } from 'hono';
 
 import { isClientAbort } from '../../errors/clientAbort.js';
-import { toOpenAIErrorResponse, toContentfulStatus } from '../../errors/envelope.js';
+import { toContentfulStatus,toOpenAIErrorResponse } from '../../errors/envelope.js';
 import { maybeMaskMessage } from '../../errors/maskMessage.js';
 import { headersForError } from '../../errors/normalizeAiSdkError.js';
 import { streamErrorFrameToEnvelope } from '../../errors/streamError.js';
 import {
   type GatewayEnv,
-  runHooks,
   type HookPhase,
-  type HookUsage,
   type Hooks,
+  type HookUsage,
   type LanguageParams,
   type OperationBase,
+  runHooks,
 } from '../../hooks.js';
-import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { otelContextKey } from '../../observability/tracing.js';
 import type { AiSdkTelemetry } from '../../observability/aiSdkTelemetry.js';
-import { resolveProvider, type ProviderRegistry } from '../../providers/registry.js';
+import { otelContextKey } from '../../observability/tracing.js';
+import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
+import { type ProviderRegistry,resolveProvider } from '../../providers/registry.js';
 import { peekStream } from '../../shared/peekStream.js';
 import { isProduction } from '../../shared/runtimeDetection.js';
 import { createStreamLifecycle, type StreamLifecycle } from '../../shared/streamLifecycle.js';
-import { createUpstreamSignal, upstreamTimeoutError } from '../../shared/upstreamTimeout.js';
 import { createSseResponse, toSseStream } from '../../shared/toSseStream.js';
-import { prepareForwardHeaders } from '../../utils/headers.js';
+import { createUpstreamSignal, upstreamTimeoutError } from '../../shared/upstreamTimeout.js';
 import { guardedDownload } from '../../utils/downloadGuard.js';
+import { prepareForwardHeaders } from '../../utils/headers.js';
 import { parseJsonBody } from '../../utils/parseJsonBody.js';
 import { ensureRequestId } from '../../utils/requestId.js';
 import { GATEWAY_PACKAGE_VERSION } from '../../version.js';

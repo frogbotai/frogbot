@@ -1,5 +1,5 @@
-import { consumeStream, generateId, toUIMessageStream } from 'ai';
 import type { UIMessage } from 'ai';
+import { consumeStream, generateId, toUIMessageStream } from 'ai';
 
 import type { AgentGenerateResult } from '../types/agent.js';
 import { createMessageUsage } from './messagePersistence.js';

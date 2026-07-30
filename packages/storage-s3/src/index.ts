@@ -1,5 +1,5 @@
-import type { Plugin } from 'frogbot'
 import { s3Storage as _s3Storage } from '@payloadcms/storage-s3'
+import type { Plugin } from 'frogbot'
 
 export type { S3StorageOptions } from '@payloadcms/storage-s3'
 

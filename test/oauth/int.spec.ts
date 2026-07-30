@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
-
 import type { FrogbotRequest } from 'frogbot';
 import { createCredentialEncryption } from 'frogbot/connections';
 import { createActivepiecesPiece } from 'frogbot/pieces';
+import { describe, expect, it, vi } from 'vitest';
+
 import { Connections } from '../../packages/frogbot/src/connections/api.js';
 import { config } from './config.js';
 

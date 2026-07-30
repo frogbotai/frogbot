@@ -1,5 +1,4 @@
 import type { SanitizedConfig, SanitizedGlobalConfig } from 'payload';
-
 import { genImportMapIterateFields } from 'payload';
 
 import type { AddToImportMap, Imports, InternalImportMap } from './index.js';

@@ -1,9 +1,7 @@
 import type { Field, SanitizedConfig } from 'payload';
-
 import { genImportMapIterateFields } from 'payload';
 
 import type { AddToImportMap, Imports, InternalImportMap } from './index.js';
-
 import { iterateCollections } from './iterateCollections.js';
 import { iterateGlobals } from './iterateGlobals.js';
 

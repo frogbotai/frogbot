@@ -2,7 +2,6 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 
 import type { PayloadComponent } from 'payload';
-
 import { parsePayloadComponent } from 'payload/shared';
 
 import type { Imports, InternalImportMap } from '../index.js';

@@ -1,5 +1,5 @@
-import { oauthPlugin } from '@frogbotai/plugin-oauth';
 import type { OAuthProvider } from '@frogbotai/plugin-oauth';
+import { oauthPlugin } from '@frogbotai/plugin-oauth';
 import type { FrogbotConfig, Plugin } from 'frogbot';
 
 export const provider: OAuthProvider = {

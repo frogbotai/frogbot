@@ -1,9 +1,9 @@
-import { metrics, type Attributes, type Histogram } from '@opentelemetry/api';
+import { type Attributes, type Histogram,metrics } from '@opentelemetry/api';
 
 import { httpStatusText, statusForError } from '../errors/envelope.js';
-import type { AfterOperationHookArgs, HookUsage, Hooks } from '../hooks.js';
+import type { AfterOperationHookArgs, Hooks,HookUsage } from '../hooks.js';
 import { createLogger, type GatewayLogger } from './logger.js';
-import { includesSignalLevel, resolveSignalLevels, traceOverrideKey, type SignalLevelInput, type SignalLevels } from './signalLevel.js';
+import { includesSignalLevel, resolveSignalLevels, type SignalLevelInput, type SignalLevels,traceOverrideKey } from './signalLevel.js';
 
 type TracedOperation = Pick<AfterOperationHookArgs, 'operation' | 'model' | 'provider'> & Partial<Pick<AfterOperationHookArgs, 'otel'>>;
 

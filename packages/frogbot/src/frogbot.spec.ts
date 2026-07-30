@@ -86,7 +86,7 @@ function makeConfig(): FrogbotSanitizedConfig {
     secret: 'test-secret-min-32-chars-long-for-jwt',
     chat: { enabled: false },
     _internal: {
-      payloadConfig: Promise.resolve({} as any), // eslint-disable-line @typescript-eslint/no-explicit-any
+      payloadConfig: Promise.resolve({} as any),  
       noEmail: true,
     },
   };
@@ -242,7 +242,7 @@ describe('Frogbot class', () => {
 
     it('find delegates to payload.find', async () => {
       const frogbot = await setup();
-      await frogbot.find({ collection: 'posts' as any }); // eslint-disable-line @typescript-eslint/no-explicit-any
+      await frogbot.find({ collection: 'posts' as any });  
       const payloadMod = await import('payload');
       const payload = (payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> })
         .__getMockPayload();

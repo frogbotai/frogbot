@@ -14,28 +14,28 @@
 // (should not happen in normal operation) and produces OpenAI-shaped errors
 // as a safe default.
 
+import type { Tracer } from '@opentelemetry/api';
 import { Hono } from 'hono';
 
-import { GATEWAY_PACKAGE_VERSION } from './version.js';
-import { toOpenAIErrorResponse, toContentfulStatus } from './errors/envelope.js';
-import { headersForError } from './errors/normalizeAiSdkError.js';
 import { isClientAbort } from './errors/clientAbort.js';
+import { toContentfulStatus,toOpenAIErrorResponse } from './errors/envelope.js';
 import { NotFoundError } from './errors/gatewayError.js';
-import { ensureRequestId } from './utils/requestId.js';
+import { headersForError } from './errors/normalizeAiSdkError.js';
+import type { Hooks } from './hooks.js';
+import { createAiSdkTelemetry } from './observability/aiSdkTelemetry.js';
+import { createGenAiHooks } from './observability/genAi.js';
 import {
+  createAiSdkWarningLogger,
   createLogger,
   createLoggingHooks,
-  createAiSdkWarningLogger,
-  logGatewayError,
   type GatewayLogger,
+  logGatewayError,
   type LoggerOptions,
 } from './observability/logger.js';
-import { createAiSdkTelemetry } from './observability/aiSdkTelemetry.js';
-import { createTracingHooks, type TracingOptions } from './observability/tracing.js';
-import { createGenAiHooks } from './observability/genAi.js';
 import type { SignalLevelInput } from './observability/signalLevel.js';
-import { mergeHooks } from './providers/middleware.js';
+import { createTracingHooks, type TracingOptions } from './observability/tracing.js';
 import type { ModelCatalog } from './providers/catalog.js';
+import { mergeHooks } from './providers/middleware.js';
 import type { ProviderRegistry } from './providers/registry.js';
 import { chatCompletionsRoute } from './routes/chatCompletions/handler.js';
 import { embeddingsRoute } from './routes/embeddings/handler.js';
@@ -47,8 +47,8 @@ import { responsesRoute } from './routes/responses/handler.js';
 import { speechRoute } from './routes/speech/handler.js';
 import { transcriptionsRoute } from './routes/transcriptions/handler.js';
 import { videosRoute } from './routes/videos/handler.js';
-import type { Tracer } from '@opentelemetry/api';
-import type { Hooks } from './hooks.js';
+import { ensureRequestId } from './utils/requestId.js';
+import { GATEWAY_PACKAGE_VERSION } from './version.js';
 
 /** A single selectively-mountable route: a WinterCG fetch handler for one endpoint. */
 export type GatewayRoute = {

@@ -30,7 +30,6 @@
 import type { ModelMessage } from '@ai-sdk/provider-utils';
 
 import type { AnthropicMessage, AnthropicSystemParam } from '../types.js';
-
 import { parseAssistantMessage } from './assistant.js';
 import { parseSystemParam } from './system.js';
 import { parseUserMessage } from './user.js';

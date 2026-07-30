@@ -3,17 +3,18 @@
 // Gated by RUN_E2E=1. Expensive modalities have additional RUN_E2E_* gates.
 // Requires provider API keys in environment.
 
-import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
+
+import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import { cohereProvider } from '../../packages/gateway/src/providers/cohere/index.js';
 import { falProvider } from '../../packages/gateway/src/providers/fal/index.js';
 import { openaiProvider } from '../../packages/gateway/src/providers/openai/index.js';
-import { replicateProvider } from '../../packages/gateway/src/providers/replicate/index.js';
 import { buildProviderRegistry, type ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
-import { createProviderFixtureFetch, shouldUpdateFixtures } from '../__helpers/gateway/provider-http-fixtures.js';
+import { replicateProvider } from '../../packages/gateway/src/providers/replicate/index.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { createProviderFixtureFetch, shouldUpdateFixtures } from '../__helpers/gateway/provider-http-fixtures.js';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const RUN_E2E_IMAGES = process.env.RUN_E2E_IMAGES === '1';

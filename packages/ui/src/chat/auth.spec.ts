@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+
 import { bearerFetch, cookieFetch } from './auth'
 
 describe('chat auth fetches', () => {

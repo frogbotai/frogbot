@@ -1,5 +1,5 @@
-import { createAgentUIStreamResponse, generateId, validateUIMessages } from 'ai';
 import type { UIMessage } from 'ai';
+import { createAgentUIStreamResponse, generateId, validateUIMessages } from 'ai';
 import { z } from 'zod';
 
 import type { DocID } from '../types/operations.js';

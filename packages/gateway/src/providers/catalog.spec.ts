@@ -3,11 +3,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  calculateCostUSD,
   defineModelCatalog,
+  type ModelCatalogEntry,
   presetFor,
   supportsOperation,
-  calculateCostUSD,
-  type ModelCatalogEntry,
 } from "./catalog.js";
 
 // ---------------------------------------------------------------------------

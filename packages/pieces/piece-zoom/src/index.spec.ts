@@ -1,5 +1,6 @@
 import * as module from "@activepieces/piece-zoom";
 import { pieceContract } from "frogbot/pieces/test";
+
 import { credentialExecution } from "../../credential-execution.js";
 import { createZoom, zoomActions } from './index.js';
 

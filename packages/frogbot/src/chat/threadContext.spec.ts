@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import type { UIMessage } from 'ai';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { SanitizedChatConfig } from '../types/chat.js';
 import type { FrogbotRequest } from '../types/request.js';

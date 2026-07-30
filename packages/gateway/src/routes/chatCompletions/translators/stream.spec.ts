@@ -1,5 +1,6 @@
-import { describe, expect, test } from 'vitest';
 import type { TextStreamPart, ToolSet } from 'ai';
+import { describe, expect, test } from 'vitest';
+
 import { createOpenAIStreamTransform, type OpenAIStreamChunk } from './stream.js';
 
 async function collectChunks(

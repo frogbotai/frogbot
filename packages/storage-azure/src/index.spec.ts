@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { azureStorage, getStorageClient } from './index'
 
 describe('@frogbotai/storage-azure exports', () => {

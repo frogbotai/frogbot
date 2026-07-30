@@ -6,40 +6,40 @@
 // are imported directly by the CLI and routes — never re-exported here.
 
 // Gateway factory — the primary entry point
-export { createGateway } from "./gateway.js";
 export type {
   Gateway,
   GatewayHandler,
   GatewayOperation,
   GatewayOperationOptions,
 } from "./gateway.js";
+export { createGateway } from "./gateway.js";
 
 // Config
-export { defineConfig } from "./config/schema.js";
 export type { GatewayConfig } from "./config/schema.js";
+export { defineConfig } from "./config/schema.js";
 
 // Hook lifecycle types (also available via the `./hooks` subpath)
 export type {
-  Hooks,
-  HookOperation,
-  HookPhase,
-  HookUsage,
-  BeforeOperationHook,
-  BeforeUpstreamHook,
-  AfterUpstreamHook,
   AfterErrorHook,
   AfterOperationHook,
+  AfterUpstreamHook,
+  BeforeOperationHook,
+  BeforeUpstreamHook,
+  HookOperation,
+  HookPhase,
+  Hooks,
+  HookUsage,
 } from "./hooks.js";
 
 // Model catalog types — powers GET /v1/models discovery and operation validation
 export type {
-  Operation,
   Modality,
   ModelCapabilities,
   ModelCatalog,
   ModelCatalogEntry,
   ModelContext,
   ModelCost,
+  Operation,
 } from "./providers/catalog.js";
 export { calculateCostUSD } from "./providers/catalog.js";
 export { calculateModelCostUSD } from "./providers/cost.js";

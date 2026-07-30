@@ -1,5 +1,6 @@
 import * as module from "@activepieces/piece-microsoft-teams";
 import { pieceContract } from "frogbot/pieces/test";
+
 import { credentialExecution } from "../../credential-execution.js";
 import { createMicrosoftTeams, microsoftTeamsActions } from './index.js';
 

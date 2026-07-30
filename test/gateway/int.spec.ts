@@ -7,7 +7,6 @@
 // M2 additions: provider-sprawl cases for groq, bedrock, vertex, azure,
 // openai-compatible — validation, credential errors, and mock model injection.
 
-import { describe, expect, it, vi } from 'vitest';
 import type {
   EmbeddingModelV4,
   EmbeddingModelV4CallOptions,
@@ -17,11 +16,12 @@ import type {
   LanguageModelV4CallOptions,
   LanguageModelV4StreamPart,
 } from '@ai-sdk/provider';
+import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import { createGateway } from '../../packages/gateway/src/gateway.js';
-import { buildProviderRegistry, type ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import type { AfterErrorHookArgs, AfterOperationHookArgs, BeforeUpstreamHookArgs, Hooks } from '../../packages/gateway/src/hooks.js';
+import { buildProviderRegistry, type ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
 // ---------------------------------------------------------------------------

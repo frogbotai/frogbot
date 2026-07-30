@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createCredentialEncryption } from './encryption.js';
 import { ConnectionError, Connections } from './api.js';
+import { createCredentialEncryption } from './encryption.js';
 
 async function setup(doc: Record<string, unknown> | undefined, sources: ConstructorParameters<typeof Connections>[1]['sources'] = []) {
   const encryption = createCredentialEncryption({ secret: 'secret' });

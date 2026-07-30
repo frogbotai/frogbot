@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { defineConfig, parseGatewayConfig } from './schema.js';
 import { ConfigError } from '../errors/gatewayError.js';
+import { defineConfig, parseGatewayConfig } from './schema.js';
 
 afterEach(() => {
   vi.unstubAllEnvs();

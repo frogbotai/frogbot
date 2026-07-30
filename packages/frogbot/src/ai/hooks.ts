@@ -71,7 +71,7 @@ export function toHookUsage(usage: unknown): HookUsage | undefined {
     value.outputTokens == null &&
     value.totalTokens == null
   )
-    return undefined;
+    {return undefined;}
   const inputTokens = value.inputTokens ?? 0;
   const outputTokens = value.outputTokens ?? 0;
   return {
