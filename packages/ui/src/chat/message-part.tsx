@@ -15,11 +15,12 @@ export interface MessagePartProps {
   fallback?: (part: MessagePartValue) => ReactNode
   part: MessagePartValue
   renderData?: (part: DataPartValue) => ReactNode
+  role?: 'user' | 'assistant' | 'system'
 }
 
-export function MessagePart({ fallback, part, renderData }: MessagePartProps) {
+export function MessagePart({ fallback, part, renderData, role }: MessagePartProps) {
   const known = part as UIMessagePart<UIDataTypes, UITools>
-  if (isTextUIPart(known)) return <TextPart part={known} />
+  if (isTextUIPart(known)) return <TextPart part={known} role={role} />
   if (isReasoningUIPart(known)) return <ReasoningPart part={known} />
   if (isToolUIPart(known)) return <ToolPart part={known} />
   if (isDataUIPart(known)) return <DataPart part={known} render={renderData} />

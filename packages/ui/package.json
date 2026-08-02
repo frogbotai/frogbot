@@ -76,8 +76,8 @@
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "ai": "^7.0.4",
-    "frogbot": "workspace:*",
     "eslint": "^9.16.0",
+    "frogbot": "workspace:*",
     "jsdom": "^24.1.3",
     "react": "19.2.6",
     "react-dom": "19.2.6",
@@ -138,6 +138,9 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.27.0",
+    "react-markdown": "10.1.0",
+    "remark-breaks": "4.0.0",
+    "remark-gfm": "4.0.1",
     "tailwind-merge": "^3.6.0"
   }
 }
