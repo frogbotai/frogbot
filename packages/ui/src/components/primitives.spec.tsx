@@ -14,7 +14,7 @@ describe('primitives', () => {
   })
 
   it('exposes every button variant', () => {
-    const variants = { default: 'bg-primary', destructive: 'bg-destructive', outline: 'border-border', secondary: 'bg-secondary', ghost: 'hover:bg-accent', link: 'hover:underline' } as const
+    const variants = { default: 'bg-base-1000', destructive: 'bg-red-500', outline: 'border-base-400', secondary: 'bg-base-250', ghost: 'hover:bg-base-400', link: 'hover:underline' } as const
     for (const variant of Object.keys(variants) as Array<keyof typeof variants>) {
       const { unmount } = render(<Button variant={variant}>{variant}</Button>)
       expect(screen.getByRole('button').className).toContain(variants[variant])

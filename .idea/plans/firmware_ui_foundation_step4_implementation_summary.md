@@ -19,3 +19,10 @@
 - Constructed one FrogBot SDK instance in `ChatProvider` and routed manifest, persistence, mutations, and chat transport through it.
 - Preserved custom fetch implementations and static or dynamic adapter headers without relying on `process.env` or framework globals.
 - Added browser-focused coverage for absolute runtime URLs, headers, custom fetch, and existing text chat behavior.
+
+## Stage 4 — Port Firmware Theme Foundations
+
+- Replaced the invented FrogBot OKLCH theme with Firmware's base, brand, semantic, typography, radius, and reciprocal dark-mode foundations.
+- Normalized shared buttons, inputs, selects, and cards to Firmware's control states and geometry.
+- Kept the Firmware composer shell and its expected-failure baseline unchanged for Stage 5.
+- Exact deviations: Satoshi remains loaded from Firmware's `/fonts/*` public URL contract because the UI package does not own application public assets; unused extended color families remain deferred until a canonical FrogBot surface consumes them.
