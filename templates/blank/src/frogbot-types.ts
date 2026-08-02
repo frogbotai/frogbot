@@ -151,6 +151,7 @@ export interface Thread {
   user?: (number | null) | User;
   agent?: string | null;
   lastMessageAt?: string | null;
+  todos?: import('frogbot/tools').TodoItem[];
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
@@ -271,6 +272,7 @@ export interface ThreadsSelect {
   user?: boolean;
   agent?: boolean;
   lastMessageAt?: boolean;
+  todos?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   deletedAt?: boolean;

@@ -22,9 +22,10 @@ describe('defaultThreadsCollection', () => {
     expect(user).toMatchObject({ type: 'relationship', relationTo: 'members', index: true });
   });
 
-  it('defines title, user, agent, and lastMessageAt fields', () => {
+  it('defines title, user, agent, lastMessageAt, and todos fields', () => {
     const names = collection.fields.map((f) => ('name' in f ? f.name : undefined));
-    expect(names).toEqual(['title', 'user', 'agent', 'lastMessageAt']);
+    expect(names).toEqual(['title', 'user', 'agent', 'lastMessageAt', 'todos']);
+    expect(collection.fields.find((f) => 'name' in f && f.name === 'todos')).toMatchObject({ type: 'json' });
   });
 
   it('enables soft delete and the Chat admin group', () => {

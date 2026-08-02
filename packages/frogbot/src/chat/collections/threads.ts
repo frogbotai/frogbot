@@ -44,6 +44,11 @@ export function defaultThreadsCollection({ slug, userSlug }: DefaultThreadsColle
       },
       { name: 'agent', type: 'text', index: true },
       { name: 'lastMessageAt', type: 'date', index: true },
+      {
+        name: 'todos',
+        type: 'json',
+        typescriptSchema: [() => ({ tsType: "import('frogbot/tools').TodoItem[]" })],
+      },
     ],
   };
 }

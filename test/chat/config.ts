@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'frogbot';
+import { todoTools } from 'frogbot/tools';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 import { agentSlug, usersSlug } from './shared.js';
@@ -28,6 +29,7 @@ export default await buildTestConfig({
       model: 'test/gpt-4.1-mini',
       instructions: 'Help the user.',
       access: () => true,
+      tools: [...todoTools],
     },
   ],
 });

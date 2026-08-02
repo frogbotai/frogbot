@@ -38,6 +38,11 @@
       "types": "./dist/exports/connections.d.ts",
       "import": "./dist/exports/connections.js",
       "default": "./dist/exports/connections.js"
+    },
+    "./tools": {
+      "types": "./dist/exports/tools.d.ts",
+      "import": "./dist/exports/tools.js",
+      "default": "./dist/exports/tools.js"
     }
   },
   "bin": {
@@ -112,6 +117,11 @@
         "types": "./dist/exports/connections.d.ts",
         "import": "./dist/exports/connections.js",
         "default": "./dist/exports/connections.js"
+      },
+      "./tools": {
+        "types": "./dist/exports/tools.d.ts",
+        "import": "./dist/exports/tools.js",
+        "default": "./dist/exports/tools.js"
       }
     }
   }

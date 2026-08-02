@@ -1189,6 +1189,26 @@ describe("frogbot sanitize", () => {
       });
     });
 
+    it("merges todos into a marked thread collection", async () => {
+      const result = sanitize(
+        makeConfig({
+          collections: [
+            { slug: "users", auth: true, fields: [] },
+            { slug: "conversations", thread: true, fields: [] },
+          ],
+        }),
+      );
+      const payloadConfig = await result._internal.payloadConfig;
+      const conversations = (payloadConfig as any).collections.find(
+        (collection: any) => collection.slug === "conversations",
+      );
+      expect(conversations.fields).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: "todos", type: "json" }),
+        ]),
+      );
+    });
+
     it("strips markers from adopted collections in the payload config", async () => {
       const result = sanitize(
         makeConfig({

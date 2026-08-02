@@ -1,6 +1,7 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import type { FrogbotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
+import { todoTools } from 'frogbot/tools';
 
 import { assistant } from './agents';
 import { Users } from './collections';
@@ -11,6 +12,7 @@ const config: FrogbotConfig = {
     client: { url: process.env.DATABASE_URL ?? 'file:./frogbot.db' },
   }),
   collections: [Users],
+  tools: [...todoTools],
   ai: {
     providers: process.env.FROGBOT_E2E_ZEN
       ? {

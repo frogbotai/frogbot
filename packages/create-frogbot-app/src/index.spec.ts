@@ -49,6 +49,9 @@ describe('scaffold', () => {
     expect(fs.existsSync(path.join(options.dest, 'src', 'app'))).toBe(true);
     expect(fs.existsSync(path.join(options.dest, 'src', 'collections', 'index.ts'))).toBe(true);
     expect(fs.existsSync(path.join(options.dest, 'src', 'frogbot.config.ts'))).toBe(true);
+    const config = fs.readFileSync(path.join(options.dest, 'src', 'frogbot.config.ts'), 'utf8');
+    expect(config).toContain("import { todoTools } from 'frogbot/tools'");
+    expect(config).toContain('tools: [...todoTools]');
     expect(fs.existsSync(path.join(options.dest, 'app'))).toBe(false);
     const readme = fs.readFileSync(path.join(options.dest, 'README.md'), 'utf8');
     expect(readme).toContain('pnpm 10.26 or newer');

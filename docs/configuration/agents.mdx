@@ -132,6 +132,34 @@ Root tools with `pieceService` use the same validation as agent tools. The match
 
 ---
 
+## Track thread todos
+
+FrogBot provides `write_todos` and `read_todos` as an optional toolkit. `write_todos` replaces the entire list, and `read_todos` returns the current thread's list.
+
+```ts
+import { todoTools } from 'frogbot/tools'
+
+export default buildConfig({
+  tools: [...todoTools],
+  agents: [supportAgent]
+})
+```
+
+Attach the toolkit to one agent instead when todos should not be shared across all agent configurations.
+
+```ts
+export const supportAgent: AgentConfig = {
+  slug: 'support',
+  model: 'fast',
+  instructions: 'Keep the todo list current while completing multi-step work.',
+  tools: [...todoTools]
+}
+```
+
+Each item has `content` and a `status` of `pending`, `in_progress`, or `completed`. Keep one item `in_progress` at a time. Todos are stored on the current thread, survive continuations, and are deleted with that thread. Chat persistence must be enabled and the tool must run within a persisted agent thread.
+
+---
+
 ## Organize files
 
 Use folders for organization, then import every config explicitly. FrogBot v0 does not scan a directory or load `AGENT.md` files.

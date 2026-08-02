@@ -57,6 +57,7 @@ describe('resolveChatCollections', () => {
       'user',
       'agent',
       'lastMessageAt',
+      'todos',
     ]);
   });
 
