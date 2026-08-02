@@ -71,7 +71,7 @@ Accessible profiles appear in both `GET /api/agents` and the [chat manifest](/ch
 
 Agents accept FrogBot `Tool` objects, not raw AI SDK tools. FrogBot converts them internally and supplies request, runtime, slug, and run ID context to every execution.
 
-To connect tools discovered from an external server, use the [MCP server tools recipe](/configuration/mcp).
+To add current web results, use the [web search pieces](/configuration/web-search). To connect tools discovered from an external server, use the [MCP server tools recipe](/configuration/mcp).
 
 ```ts
 import type { Tool } from 'frogbot'

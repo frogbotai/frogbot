@@ -56,12 +56,24 @@ importers:
 
   e2e-fixtures/tool-agent:
     dependencies:
+      '@activepieces/piece-brave-search':
+        specifier: 0.0.5
+        version: 0.0.5
+      '@activepieces/piece-exa':
+        specifier: 0.1.7
+        version: 0.1.7
       '@frogbotai/db-sqlite':
         specifier: workspace:*
         version: link:../../packages/db-sqlite
       '@frogbotai/next':
         specifier: workspace:*
         version: link:../../packages/next
+      '@frogbotai/piece-brave-search':
+        specifier: workspace:*
+        version: link:../../packages/pieces/piece-brave-search
+      '@frogbotai/piece-exa':
+        specifier: workspace:*
+        version: link:../../packages/pieces/piece-exa
       frogbot:
         specifier: workspace:*
         version: link:../../packages/frogbot
@@ -612,6 +624,19 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/pieces/piece-brave-search:
+    dependencies:
+      '@activepieces/piece-brave-search':
+        specifier: 0.0.5
+        version: 0.0.5
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/pieces/piece-crypto:
     dependencies:
       '@activepieces/piece-crypto':
@@ -682,6 +707,19 @@ importers:
       '@activepieces/piece-dropbox':
         specifier: 0.7.4
         version: 0.7.4
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/pieces/piece-exa:
+    dependencies:
+      '@activepieces/piece-exa':
+        specifier: 0.1.7
+        version: 0.1.7
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -1368,6 +1406,9 @@ packages:
   '@activepieces/piece-attio@0.1.20':
     resolution: {integrity: sha512-KSNAdfgWnRtqVNZ1fn9e9asg2lNZLG9PdCL2NGB0sWRU9E3U96WSj+7s56pAbhk1hS/WXPphH1qs5aCIoYK4zA==}
 
+  '@activepieces/piece-brave-search@0.0.5':
+    resolution: {integrity: sha512-AsoMdWcQTCZ1PI0klXxBiBhYoxe4Zxc2PDRrmZ8tyVm/8+2oG6x2VFI+/z3a566MOPF8ejrRO8quJQTXZJ4zoQ==}
+
   '@activepieces/piece-crypto@0.0.22':
     resolution: {integrity: sha512-4qYZCA6xoadXTZPbZMA6uNC61ecaqOx8rDbih8Gw5ZgHz1VjIdQ84JCn+unKUGOB8KWut6PBz3Z7aUZWTKMRZQ==}
 
@@ -1385,6 +1426,9 @@ packages:
 
   '@activepieces/piece-dropbox@0.7.4':
     resolution: {integrity: sha512-m44T52nENlkXwEYZoOlgu4dMtNvd/kbDFfoUsLeFX5CsL2v+OnqJVyXUpzZngbqaOPbEOo3DOSuq6GHy8huJ4Q==}
+
+  '@activepieces/piece-exa@0.1.7':
+    resolution: {integrity: sha512-OJfzhiRP37o05kR2eFypB2HMVklGdTeSsv1M60Sl3Xu6nOULuJBjU9s6Wfm1aAQHBjnzMG2i5JYP4cVHNtQeeg==}
 
   '@activepieces/piece-file-helper@0.1.24':
     resolution: {integrity: sha512-I6x/7xQ6jluwrmXnWB+NvF5QNIcSYOyheHyX2uDLzYu9V+QbZj/LIC8XgLdcAqhjNjYv+WLwQftAiIbobWi95A==}
@@ -5922,7 +5966,6 @@ packages:
 
   libsql@0.4.7:
     resolution: {integrity: sha512-T9eIRCs6b0J1SHKYIvD8+KCJMcWZ900iZyxdnSCdqxN12Z1ijzT+jY5nrk72Jw4B0HGzms2NgpryArlJqvc3Lw==}
-    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lightningcss-android-arm64@1.32.0:
@@ -7493,6 +7536,8 @@ snapshots:
 
   '@activepieces/piece-attio@0.1.20': {}
 
+  '@activepieces/piece-brave-search@0.0.5': {}
+
   '@activepieces/piece-crypto@0.0.22(bufferutil@4.1.0)':
     dependencies:
       '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
@@ -7553,6 +7598,8 @@ snapshots:
   '@activepieces/piece-discord@0.5.4': {}
 
   '@activepieces/piece-dropbox@0.7.4': {}
+
+  '@activepieces/piece-exa@0.1.7': {}
 
   '@activepieces/piece-file-helper@0.1.24(bufferutil@4.1.0)':
     dependencies:

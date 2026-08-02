@@ -40,6 +40,13 @@ describe('Activepieces adapter', () => {
     expect(propertiesSchema({ value: { type, required: false } }).safeParse({}).success).toBe(true);
   });
 
+  it('preserves number defaults and bounds', () => {
+    const schema = propertiesSchema({ count: { type: 'NUMBER', required: false, defaultValue: 10, minimum: 1, maximum: 20 } });
+    expect(schema.parse({})).toEqual({ count: 10 });
+    expect(schema.safeParse({ count: 0 }).success).toBe(false);
+    expect(schema.safeParse({ count: 21 }).success).toBe(false);
+  });
+
   it('throws a named error for unsupported context access', async () => {
     await expect(executeActivepiecesAction({
       action: {

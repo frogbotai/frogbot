@@ -7,6 +7,9 @@ type ActivepiecesProperty = {
   displayName?: string;
   description?: string;
   required?: boolean;
+  defaultValue?: unknown;
+  minimum?: number;
+  maximum?: number;
   properties?: Record<string, ActivepiecesProperty>;
   options?: { options?: { value: string | number | boolean | null }[] };
 };
@@ -59,6 +62,8 @@ function propertySchema(property: ActivepiecesProperty): z.ZodType {
   switch (property.type) {
     case 'NUMBER':
       schema = z.number();
+      if (property.minimum !== undefined) schema = (schema as z.ZodNumber).min(property.minimum);
+      if (property.maximum !== undefined) schema = (schema as z.ZodNumber).max(property.maximum);
       break;
     case 'CHECKBOX':
       schema = z.boolean();
@@ -90,6 +95,7 @@ function propertySchema(property: ActivepiecesProperty): z.ZodType {
       schema = z.string();
   }
   if (property.description) schema = schema.describe(property.description);
+  if (property.defaultValue !== undefined) schema = schema.default(property.defaultValue);
   return property.required ? schema : schema.optional();
 }
 

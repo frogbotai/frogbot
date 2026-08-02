@@ -49,6 +49,7 @@
                   "configuration/ai",
                   "configuration/agents",
                   "configuration/pieces",
+                  "configuration/web-search",
                   "configuration/mcp",
                   "configuration/connections",
                   "configuration/files"

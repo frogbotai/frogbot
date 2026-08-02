@@ -1,0 +1,113 @@
+---
+title: "Web search via pieces"
+sidebarTitle: "Web search"
+description: "Give agents fetch-based web search with Brave Search or Exa."
+keywords: ["web search", "Brave Search", "Exa", "pieces", "agents"]
+---
+
+Use the Brave Search or Exa piece when an agent needs current web results. Both pieces support developer-provided keys and per-user connections.
+
+## Choose a provider
+
+| Provider | Default action | Best fit |
+| --- | --- | --- |
+| Brave Search | `web_search` | General web search against an independent index |
+| Exa | `perform_search` | Semantic search and opt-in content or similarity actions |
+
+Brave exposes its custom API action as an opt-in tool. Exa exposes `get_contents`, `find_similar_links`, and `generate_answer` as opt-in tools, but excludes `custom_api_call` because that upstream action does not support FrogBot's credential shape. Exa's `get_contents` returns text rather than HTML, and `generate_answer` returns only the answer field.
+
+## Install the packages
+
+Install both the FrogBot wrapper and its Activepieces runtime dependency.
+
+```bash
+pnpm add @frogbotai/piece-brave-search @activepieces/piece-brave-search
+```
+
+```bash
+pnpm add @frogbotai/piece-exa @activepieces/piece-exa
+```
+
+## Use a developer key
+
+Pass the provider key when creating the piece, register the piece, and assign its default tool to the agent.
+
+```ts
+import { createBraveSearch } from '@frogbotai/piece-brave-search'
+import { buildConfig } from 'frogbot'
+
+const braveSearch = createBraveSearch({
+  auth: { apiKey: process.env.BRAVE_API_KEY! }
+})
+
+export default buildConfig({
+  pieces: [braveSearch],
+  agents: [
+    {
+      slug: 'researcher',
+      model: 'fast',
+      instructions: 'Search before answering questions about current events.',
+      tools: braveSearch.tools()
+    }
+  ]
+})
+```
+
+For Exa, replace the import and factory with `createExa`, and read `EXA_API_KEY`.
+
+## Use per-user connections
+
+Omit `auth` so authenticated users supply their own provider key through FrogBot connections.
+
+```ts
+const exa = createExa()
+```
+
+Create the connection with service `brave` or `exa` and the provider key as `credentials.value`. See [Connections](/configuration/connections) for the secret connection endpoint.
+
+## Select opt-in Exa actions
+
+`tools()` returns only `perform_search`. Add another Exa action explicitly when the agent needs it.
+
+```ts
+tools: [exa.performSearch, exa.getContents, exa.findSimilarLinks]
+```
+
+## Configure Next.js
+
+List both installed packages as server externals. The consuming app must declare both packages as direct dependencies.
+
+```ts
+import { withFrogbot } from '@frogbotai/next'
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  serverExternalPackages: [
+    '@activepieces/piece-brave-search',
+    '@frogbotai/piece-brave-search'
+  ]
+}
+
+export default withFrogbot(nextConfig)
+```
+
+Use the equivalent `@activepieces/piece-exa` and `@frogbotai/piece-exa` entries for Exa.
+
+## Wrap another vendor
+
+Use a namespace import, provide `defaultActions`, and match the credential type expected by the upstream piece.
+
+```ts
+import * as module from '@activepieces/piece-tavily'
+import { createActivepiecesPiece } from 'frogbot/pieces'
+
+export const tavily = createActivepiecesPiece({
+  module,
+  service: 'tavily',
+  credentialType: 'secret_text',
+  defaultActions: ['search'],
+  config: { auth: { apiKey: process.env.TAVILY_API_KEY! } }
+})
+```
+
+Verify the upstream action's credential handling before deploying an unblessed wrapper.

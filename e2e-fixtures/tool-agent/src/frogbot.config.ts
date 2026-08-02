@@ -3,6 +3,7 @@ import type { FrogbotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
 
 import { toolDemo } from './agents/toolDemo';
+import { braveSearch, braveSearchAgent, exa, exaSearchAgent } from './agents/webSearch';
 import { Users } from './collections/users';
 
 const model = process.env.E2E_ZEN_MODEL ?? 'zen/deepseek-v4-flash-free';
@@ -25,7 +26,8 @@ const config: FrogbotConfig = {
     },
     routers: { e2e: { model } },
   },
-  agents: [toolDemo],
+  pieces: [braveSearch, exa],
+  agents: [toolDemo, braveSearchAgent, exaSearchAgent],
 };
 
 export default buildConfig(config);

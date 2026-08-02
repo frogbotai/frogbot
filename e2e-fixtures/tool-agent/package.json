@@ -9,6 +9,10 @@
   "dependencies": {
     "@frogbotai/db-sqlite": "workspace:*",
     "@frogbotai/next": "workspace:*",
+    "@frogbotai/piece-brave-search": "workspace:*",
+    "@frogbotai/piece-exa": "workspace:*",
+    "@activepieces/piece-brave-search": "0.0.5",
+    "@activepieces/piece-exa": "0.1.7",
     "frogbot": "workspace:*",
     "graphql": "^16.8.1",
     "next": "15.4.11",
