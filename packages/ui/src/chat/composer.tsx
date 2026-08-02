@@ -6,6 +6,7 @@ import { type DragEvent, type FormEvent, type KeyboardEvent, type ReactNode, typ
 
 import { cn } from '../lib/utils'
 import { AttachmentControl, AttachmentPreviews, type FileReference, useAttachments } from './attachments'
+import { MicControl } from './mic-control'
 
 export type ComposerProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'onSubmit' | 'value' | 'defaultValue'> & {
   value?: string
@@ -74,6 +75,11 @@ export function Composer({ className, defaultValue = '', disabled, endSlot, file
           <div className="flex min-w-0 flex-wrap gap-1">{sdk && filesSlug && <AttachmentControl add={attachments.add} disabled={disabled || pending} />}{startSlot}</div>
           <div className="flex items-center justify-end gap-1">
             {endSlot}
+            {!disabled && !pending && <MicControl onText={(text) => {
+              const next = `${currentValue}${text}`
+              if (value === undefined) setInternalValue(next)
+              onValueChange?.(next)
+            }} />}
             {!disabled && (pending
               ? <button type="button" onClick={onStop} className="slide-up-1 clear-button rounded-full bg-base-300 p-1.5 text-base-700 hover:bg-base-400 hover:text-base-1000 active:text-base-1000 sm:p-2" aria-label={typeof stopContent === 'string' ? stopContent : 'Stop response'}><Square className="size-5 fill-current sm:size-6" /><span className="sr-only">{stopContent}</span></button>
               : (currentValue.trim() || attachments.references.length > 0) && !attachments.uploading && <button type="submit" className="slide-up-1 clear-button -ml-1 rounded-full bg-brand-500 p-1.5 text-base-1000 hover:bg-brand-600 active:bg-brand-300 sm:p-2" aria-label={typeof submitContent === 'string' ? submitContent : 'Submit'}><ArrowUp className="size-5 sm:size-6" /><span className="sr-only">{submitContent}</span></button>)}

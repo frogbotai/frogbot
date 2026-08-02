@@ -26,3 +26,11 @@ export function SupportChat() {
 ```
 
 Use `threadId` and `onThreadIdChange` for controlled routing. Use `defaultThreadId` when the component should manage selection internally. `composerStartSlot`, `composerEndSlot`, `panel`, and `renderThreadActions` add product-specific controls without replacing the shell.
+
+## Voice input
+
+The composer shows a microphone when the server manifest advertises a transcription model and the browser supports `MediaRecorder` and microphone access. Tap once to record and again to transcribe. The resulting text is appended to the current draft.
+
+Recording uses the browser's supported audio container: Opus in WebM where available, MP4 on Safari, or the browser default. Audio is sent for batch transcription after recording stops; transcription is not streamed.
+
+Permission, access, network, and empty-audio failures appear beside the microphone without clearing the draft. The recording button retains Firmware's pulse and ripple feedback. The separate live waveform is intentionally omitted because local batch recording does not require Firmware's streaming audio analyzer.
