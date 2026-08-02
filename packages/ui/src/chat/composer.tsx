@@ -1,7 +1,7 @@
 'use client'
 
-import { ArrowUp, Square } from 'lucide-react'
 import type { FrogBotSDK } from '@frogbotai/sdk'
+import { ArrowUp, Square } from 'lucide-react'
 import { type DragEvent, type FormEvent, type KeyboardEvent, type ReactNode, type TextareaHTMLAttributes,useLayoutEffect, useRef, useState } from 'react'
 
 import { cn } from '../lib/utils'
@@ -57,14 +57,15 @@ export function Composer({ className, defaultValue = '', disabled, endSlot, file
     if (!disabled) setDragging(event.type === 'dragenter' || event.type === 'dragover')
   }
 
-  return <form className={cn('gradient-wrapper relative z-10 w-full min-w-0', dragging && 'gradient-wrapper-dragging', disabled && 'opacity-50', className)} onSubmit={submit} onDragEnter={handleDrag} onDragOver={handleDrag} onDragLeave={handleDrag} onDrop={(event) => {
+  return <form className={cn('relative w-full min-w-0', disabled && 'opacity-50', className)} onSubmit={submit} onDragEnter={handleDrag} onDragOver={handleDrag} onDragLeave={handleDrag} onDrop={(event) => {
     event.preventDefault()
     setDragging(false)
     if (!disabled && !pending) attachments.add(Array.from(event.dataTransfer.files))
   }}>
-    <div className="gradient-container block w-full">
+    <AttachmentPreviews items={attachments.items} remove={attachments.remove} retry={attachments.retry} />
+    <div className={cn('gradient-wrapper relative z-10 w-full', dragging && 'gradient-wrapper-dragging')}>
+      <div className="gradient-container block w-full">
       <div className="rounded-[20px] border border-solid border-base-300 bg-base-200 p-3">
-        <AttachmentPreviews items={attachments.items} remove={attachments.remove} retry={attachments.retry} />
         <textarea {...props} ref={textareaRef} disabled={disabled} rows={1} value={currentValue} onChange={(event) => {
           if (value === undefined) setInternalValue(event.target.value)
           onValueChange?.(event.target.value)
@@ -79,6 +80,7 @@ export function Composer({ className, defaultValue = '', disabled, endSlot, file
           </div>
         </div>
       </div>
+    </div>
     </div>
   </form>
 }

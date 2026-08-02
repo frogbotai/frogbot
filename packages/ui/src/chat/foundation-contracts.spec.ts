@@ -50,7 +50,7 @@ describe('Firmware UI foundation contracts', () => {
   it('rejects inline attachment data from the chat request pipeline', async () => {
     const prepare = prepareChatRequest()
 
-    await expect(prepare({
+    expect(() => prepare({
       api: '/api/agents/support',
       body: undefined,
       chatId: 'chat-1',
@@ -60,6 +60,6 @@ describe('Firmware UI foundation contracts', () => {
       messages: [{ id: 'message-1', role: 'user', parts: [{ type: 'file', filename: 'evidence.pdf', mediaType: 'application/pdf', url: 'data:application/pdf;base64,JVBERi0=' }] }],
       requestMetadata: undefined,
       trigger: 'submit-message',
-    })).rejects.toThrow('stable FrogBot file reference')
+    })).toThrow('stable FrogBot file reference')
   })
 })

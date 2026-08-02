@@ -1,4 +1,5 @@
 import { convertToModelMessages, type UIMessage } from 'ai';
+import type * as Payload from 'payload';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FrogbotRequest } from '../types/request.js';
@@ -7,7 +8,7 @@ import { resolveChatAttachments } from './resolveChatAttachments.js';
 const { getFileByPath } = vi.hoisted(() => ({ getFileByPath: vi.fn() }));
 
 vi.mock('payload', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('payload')>()),
+  ...(await importOriginal<typeof Payload>()),
   getFileByPath,
 }));
 
@@ -41,6 +42,7 @@ describe('resolveChatAttachments', () => {
     const converted = await convertToModelMessages(resolved);
 
     expect(findByID).toHaveBeenCalledWith({ collection: 'assets', id: 'file-1', depth: 0, req, overrideAccess: false });
+    expect(getFileByPath).toHaveBeenCalledWith('/files/server.txt');
     expect(resolved[0]?.parts).toEqual([{ type: 'text', text: 'Read this' }, { type: 'file', filename: 'server.txt', mediaType: 'text/plain', url: 'data:text/plain;base64,bG9jYWw=' }]);
     expect(converted[0]).toMatchObject({ role: 'user', content: [{ type: 'text', text: 'Read this' }, { type: 'file', filename: 'server.txt', mediaType: 'text/plain', data: { type: 'url' } }] });
   });
@@ -64,5 +66,11 @@ describe('resolveChatAttachments', () => {
     const headers = fetch.mock.calls[0]?.[1]?.headers as Headers;
     expect(Object.fromEntries(headers)).toEqual({ authorization: 'Bearer token', cookie: 'session=one' });
     expect(resolved[0]?.parts[1]).toMatchObject({ type: 'file', mediaType: 'application/pdf', url: 'data:application/pdf;base64,Y2xvdWQ=' });
+  });
+
+  it('does not read local files outside the configured static directory', async () => {
+    const findByID = vi.fn().mockResolvedValue({ filename: '../secret.txt', mimeType: 'text/plain' });
+    await expect(resolveChatAttachments({ req: request({ findByID }), messages: messages() })).rejects.toMatchObject({ status: 404 });
+    expect(getFileByPath).not.toHaveBeenCalled();
   });
 });

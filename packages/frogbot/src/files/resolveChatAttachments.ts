@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import type { UIMessage } from 'ai';
 import type { UploadConfig } from 'payload';
 import { getFileByPath } from 'payload';
@@ -56,10 +58,12 @@ async function readFile({ req, doc, filename }: { req: FrogbotRequest; doc: File
   const collection = config.collections.find(({ slug }) => slug === req.frogbot.config.files.slug);
   const upload: UploadConfig = collection && typeof collection.upload === 'object' ? collection.upload : {};
   if (!upload.disableLocalStorage) {
-    try {
-      const file = await getFileByPath(`${upload.staticDir || collection?.slug}/${filename}`);
+    const staticDir = path.resolve(upload.staticDir || collection?.slug || '');
+    const filePath = path.resolve(staticDir, filename);
+    if (filePath === staticDir || filePath.startsWith(`${staticDir}${path.sep}`)) {
+      const file = await getFileByPath(filePath).catch(() => undefined);
       if (file?.data) return file.data;
-    } catch {}
+    }
   }
   if (!doc.url) throw new AgentServiceError(`File '${filename}' is unavailable`, 404);
   const url = new URL(doc.url, config.serverURL || req.url);

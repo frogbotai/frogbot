@@ -84,11 +84,12 @@ export function AttachmentControl({ add, disabled }: { add: (files: File[]) => v
 
 export function AttachmentPreviews({ items, remove, retry }: { items: UploadItem[]; remove: (key: number) => void; retry: (key: number) => void }) {
   if (!items.length) return null
-  return <div className="mb-2 flex max-w-full gap-2 overflow-x-auto px-1">{items.map((item) => <div key={item.key} className="relative flex min-w-28 max-w-44 items-center gap-2 rounded-xl border border-base-300 bg-base-200 p-2 text-xs">
-    {item.preview ? <img src={item.preview} alt="" className="size-10 rounded-lg object-cover" /> : <FileIcon className="size-8 shrink-0 text-base-600" />}
-    <span className="min-w-0 truncate">{item.file.name}</span>
-    {item.uploading && <LoaderCircle aria-label={`Uploading ${item.file.name}`} className="size-4 shrink-0 animate-spin" />}
-    {item.error && <button type="button" aria-label={`Retry ${item.file.name}`} title={item.error} onClick={() => retry(item.key)} className="text-error"><RotateCcw className="size-4" /></button>}
-    <button type="button" aria-label={`Remove ${item.file.name}`} onClick={() => remove(item.key)} className="absolute -right-1 -top-1 rounded-full bg-base-300 p-0.5"><X className="size-3" /></button>
-  </div>)}</div>
+  return <div className="relative mb-4 w-full"><div className="flex w-0 min-w-full flex-row items-end gap-2 overflow-x-auto">{items.map((item) => <div key={item.key} className="mb-4 flex flex-col gap-2">
+    <div className="relative flex aspect-video size-[120px] flex-col items-center justify-center rounded-md border border-solid border-muted bg-muted hover:border-border">
+      {item.preview ? <img src={item.preview} alt={item.file.name} className="size-full rounded-md object-cover" /> : <><FileIcon className="size-4" /><p className="max-w-24 truncate text-xs">{item.file.name}</p></>}
+      {item.uploading && <LoaderCircle aria-label={`Uploading ${item.file.name}`} className="absolute size-5 animate-spin text-base-500" />}
+      {item.error && <button type="button" aria-label={`Retry ${item.file.name}`} title={item.error} onClick={() => retry(item.key)} className="absolute bottom-1 left-1 rounded-full bg-base-300 p-1 text-red-500"><RotateCcw className="size-3" /></button>}
+      <button type="button" aria-label={`Remove ${item.file.name}`} onClick={() => remove(item.key)} className="absolute right-0 top-0 mr-1 mt-1 flex size-5 items-center justify-center rounded-full border-0 bg-border p-0 hover:bg-red-500"><X className="size-3" /></button>
+    </div>
+  </div>)}</div></div>
 }

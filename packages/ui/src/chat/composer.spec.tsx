@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react'
 import { createFrogbotSDK } from '@frogbotai/sdk'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { Composer } from './composer'
@@ -37,9 +37,9 @@ describe('Composer', () => {
     const { container, rerender } = render(<Composer aria-label="Message" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />)
     const form = container.querySelector('form') as HTMLFormElement
     fireEvent.dragEnter(form)
-    expect(form.classList).toContain('gradient-wrapper-dragging')
+    expect(container.querySelector('.gradient-wrapper')?.classList).toContain('gradient-wrapper-dragging')
     fireEvent.drop(form, { dataTransfer: { files: [new File(['x'], 'x.txt')] } })
-    expect(form.classList).not.toContain('gradient-wrapper-dragging')
+    expect(container.querySelector('.gradient-wrapper')?.classList).not.toContain('gradient-wrapper-dragging')
 
     rerender(<Composer aria-label="Message" disabled defaultValue="Hello" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />)
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull()

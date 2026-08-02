@@ -71,7 +71,9 @@ export class FrogBotSDK {
       let data: { errors?: FrogBotErrorDetail[]; message?: string } = {}
       try {
         data = await response.clone().json()
-      } catch {}
+      } catch {
+        data = {}
+      }
       const errors = data.errors ?? [{ message: data.message ?? response.statusText }]
       throw new FrogBotSDKError({
         errors,
