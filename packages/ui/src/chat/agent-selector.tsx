@@ -4,7 +4,7 @@ import { memo } from 'react'
 
 import { Button } from '../components/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../components/dropdown-menu'
-import { BotIcon } from '../icons/bot'
+import RobotIcon from '../icons/icons/RobotIcon'
 import { CheckIcon } from '../icons/check'
 import ChevronDownIcon from '../icons/icons/ChevronDownIcon'
 import { useChatProvider } from './provider'
@@ -44,5 +44,5 @@ export const AgentSelector = memo(function AgentSelector({ selectedAgent, onAgen
 
 function AgentAvatar({ agent, name }: { agent?: { profile?: { avatar?: string } }; name: string }) {
   if (agent?.profile?.avatar) return <img src={agent.profile.avatar} alt={name} className="size-5 rounded-full object-cover" />
-  return <BotIcon className="size-5" aria-hidden="true" />
+  return <RobotIcon className="size-5" aria-hidden="true" />
 }
