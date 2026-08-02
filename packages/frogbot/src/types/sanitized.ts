@@ -41,6 +41,5 @@ export type FrogbotSanitizedConfig = {
   _internal: {
     payloadConfig: Promise<import('payload').SanitizedConfig>; // eslint-disable-line @typescript-eslint/consistent-type-imports
     noEmail: boolean;
-    toolCollisions?: { agent: string; slug: string }[];
   };
 };

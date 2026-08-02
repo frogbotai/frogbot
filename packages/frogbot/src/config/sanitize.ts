@@ -518,7 +518,6 @@ function sanitizeAgents(
   pieces: SanitizedPiecesConfig,
   mode: ValidationMode,
   rootTools: AnyTool[],
-  toolCollisions: { agent: string; slug: string }[],
 ): AgentConfig[] | undefined {
   if (!Array.isArray(agents)) {
     throw new Error("[frogbot] `agents` must be an array.");
@@ -620,11 +619,7 @@ function sanitizeAgents(
     }
     if (agent.inheritTools !== false && rootTools.length > 0) {
       const agentToolSlugs = new Set(agentTools?.map(({ slug }) => slug));
-      const inheritedTools = rootTools.filter(({ slug }) => {
-        if (!agentToolSlugs.has(slug)) return true;
-        toolCollisions.push({ agent: agent.slug, slug });
-        return false;
-      });
+      const inheritedTools = rootTools.filter(({ slug }) => !agentToolSlugs.has(slug));
       agent = { ...agent, tools: [...inheritedTools, ...(agentTools ?? [])] };
     } else if (agentTools !== undefined) {
       agent = { ...agent, tools: agentTools };
@@ -995,7 +990,6 @@ export function sanitize(
     throw new Error("[frogbot] Root tools must be an array when configured.");
   }
   const rootTools = sanitizeToolList(config.tools ?? [], pieces, "Root");
-  const toolCollisions: { agent: string; slug: string }[] = [];
   const agents =
     config.agents !== undefined
       ? sanitizeAgents(
@@ -1004,7 +998,6 @@ export function sanitize(
           pieces,
           mode,
           rootTools,
-          toolCollisions,
         )
       : undefined;
   const hasScheduleTriggers = agents?.some((agent) => agent.triggers?.length);
@@ -1096,7 +1089,6 @@ export function sanitize(
     _internal: {
       payloadConfig: payloadSanitizedPromise,
       noEmail: !config.email,
-      ...(toolCollisions.length > 0 ? { toolCollisions } : {}),
     },
   };
   sanitizedConfigRef.current = sanitizedConfig;

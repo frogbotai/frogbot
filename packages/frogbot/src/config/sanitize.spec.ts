@@ -817,10 +817,9 @@ describe("frogbot sanitize", () => {
       ]);
     });
 
-    it("lets agent tools override root tools without warning during sanitize", () => {
+    it("lets agent tools override root tools", () => {
       const rootExecute = vi.fn();
       const agentExecute = vi.fn();
-      const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
       const result = sanitize(makeConfig({
         ai,
         agents: [{ ...agent, tools: [makeTool("shared", { execute: agentExecute })] }],
@@ -829,11 +828,6 @@ describe("frogbot sanitize", () => {
 
       expect(result.agents?.[0].tools).toHaveLength(1);
       expect(result.agents?.[0].tools?.[0].execute).toBe(agentExecute);
-      expect((result._internal as any).toolCollisions).toEqual([
-        { agent: "support", slug: "shared" },
-      ]);
-      expect(warn).not.toHaveBeenCalled();
-      warn.mockRestore();
     });
 
     it("allows agents to opt out of root tools", () => {
