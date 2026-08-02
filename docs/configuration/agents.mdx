@@ -31,6 +31,7 @@ type AgentConfig = {
   slug: string
   model: ModelId
   instructions: string
+  profile?: AgentProfile
   tools?: readonly AnyTool[]
   inheritTools?: false
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[]
@@ -40,6 +41,29 @@ type AgentConfig = {
 ```
 
 `stopWhen` defaults to the AI SDK's `isStepCount(20)`. If provided as an array, `stopWhen` must be non-empty.
+
+---
+
+## Add a profile
+
+Use `profile` for client-facing agent identity. Each field is optional, but provided values must be non-empty strings.
+
+```ts
+export const supportAgent: AgentConfig = {
+  slug: 'support',
+  model: 'fast',
+  instructions: 'Answer support questions.',
+  profile: {
+    name: 'Ada',
+    avatar: '/agents/ada.png',
+    description: 'Answers support questions.'
+  }
+}
+```
+
+`avatar` accepts a URL or app-relative path. It is a plain string rather than an admin component or media-document reference. The chat UI uses `name` for avatar alt text and renders initials when `avatar` is omitted. Without a profile, chat messages render as before.
+
+Accessible profiles appear in both `GET /api/agents` and the [chat manifest](/chat/manifest). An agent rejected by its access rule exposes neither its slug nor its profile.
 
 ---
 
@@ -296,7 +320,7 @@ Configuring at least one worker mounts two Payload root endpoints. They are serv
 
 | Method | Path | Result |
 | --- | --- | --- |
-| `GET` | `/api/agents` | Accessible slugs as `{ agents: [{ slug }] }` |
+| `GET` | `/api/agents` | Accessible agents as `{ agents: [{ slug, profile? }] }` |
 | `POST` | `/api/agents/:slug` | Generated JSON or an AI SDK UI message stream |
 
 POST exactly one non-empty `prompt` or non-empty `messages` array. Authenticated calls create a thread when `threadId` is absent. Without an explicit event-stream accept header, the response is `{ text, usage, finishReason, threadId }`.

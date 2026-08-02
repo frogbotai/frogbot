@@ -8,9 +8,11 @@ import { useControlledState } from '../hooks/use-controlled-state'
 import { ChatShell } from './chat-shell'
 import { ChatStatus } from './chat-status'
 import { Composer } from './composer'
-import { MessageList } from './message-list'
+import { Message } from './message'
+import { MessageList, type MessageListProps } from './message-list'
+import { MessagePart } from './message-part'
 import { deleteThread, renameThread } from './mutations'
-import { useChatProvider } from './provider'
+import { type ChatManifest, useChatProvider } from './provider'
 import { deriveThreadTitle, ThreadHistory } from './thread-history'
 import { FrogbotChatTransport, prepareChatRequest } from './transport'
 import { useThread } from './use-thread'
@@ -40,6 +42,7 @@ export type ChatProps = {
   abortedContent?: ReactNode
   warningContent?: ReactNode
   renderThreadActions?: (thread: ThreadDocument, actions: ThreadActions) => ReactNode
+  renderMessage?: MessageListProps['renderMessage']
   panel?: ReactNode
 }
 
@@ -49,17 +52,18 @@ export function Chat(props: ChatProps) {
   if (provider.loading) return props.loadingContent
   if (provider.error) return props.errorContent?.(provider.error)
   if (!provider.manifest || !provider.manifest.chat.enabled) return props.emptyContent
-  return <ChatOrchestrator {...props} threadIdControlled={Object.prototype.hasOwnProperty.call(props, 'threadId')} adapter={provider.adapter} messagesSlug={provider.manifest.chat.messagesSlug} threadsSlug={provider.manifest.chat.threadsSlug} />
+  return <ChatOrchestrator {...props} threadIdControlled={Object.prototype.hasOwnProperty.call(props, 'threadId')} adapter={provider.adapter} agents={provider.manifest.agents} messagesSlug={provider.manifest.chat.messagesSlug} threadsSlug={provider.manifest.chat.threadsSlug} />
 }
 
 type ChatOrchestratorProps = ChatProps & {
   adapter: NonNullable<ReturnType<typeof useChatProvider>>['adapter']
+  agents: ChatManifest['agents']
   messagesSlug: string
   threadsSlug: string
   threadIdControlled: boolean
 }
 
-function ChatOrchestrator({ abortedContent, adapter, agent, apiBase = '/api', composerEndSlot, composerStartSlot, defaultThreadId, emptyContent, errorContent, fallbackTitle = 'New chat', messagesSlug, onThreadIdChange, panel, renderThreadActions, stopContent = 'Stop', submitContent = 'Send', threadId: controlledThreadId, threadIdControlled, threadsSlug, throttle, warningContent }: ChatOrchestratorProps) {
+function ChatOrchestrator({ abortedContent, adapter, agent, agents, apiBase = '/api', composerEndSlot, composerStartSlot, defaultThreadId, emptyContent, errorContent, fallbackTitle = 'New chat', messagesSlug, onThreadIdChange, panel, renderMessage, renderThreadActions, stopContent = 'Stop', submitContent = 'Send', threadId: controlledThreadId, threadIdControlled, threadsSlug, throttle, warningContent }: ChatOrchestratorProps) {
   const [threadId, setThreadId] = useControlledState<string | number | undefined>({ controlled: threadIdControlled, defaultValue: defaultThreadId, onChange: onThreadIdChange, value: controlledThreadId })
   const [chatId, setChatId] = useState(threadId === undefined ? `new:${agent}` : String(threadId))
   const createdThreadId = useRef<string | undefined>(undefined)
@@ -158,9 +162,13 @@ function ChatOrchestrator({ abortedContent, adapter, agent, apiBase = '/api', co
   }
   const error = history.error ?? threads.error ?? chat.error
   const displayedThreads = (threads.docs ?? []).map((thread) => String(thread.id) === String(threadId) && !thread.title ? { ...thread, title: deriveThreadTitle(chat.messages, fallbackTitle) } : thread)
+  const profile = agents.find(({ slug }) => slug === agent)?.profile
+  const displayName = profile?.name ?? agent
+  const initials = displayName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()
+  const defaultRenderMessage: MessageListProps['renderMessage'] = profile ? (message) => <Message key={message.id} role={message.role} avatar={message.role === 'assistant' ? <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-background">{profile.avatar ? <img src={profile.avatar} alt={displayName} className="size-full object-cover" /> : initials}</div> : undefined}>{message.parts.map((part, index) => <MessagePart key={`${message.id}-${index}`} part={part} />)}</Message> : undefined
 
   return <ChatShell panel={panel} sidebar={<ThreadHistory threads={displayedThreads} activeThreadId={threadId} fallbackTitle={fallbackTitle} onThreadChange={selectThread} renderActions={renderThreadActions ? (thread) => renderThreadActions(thread, mutate(thread)) : undefined} />}>
-    {chat.messages.length === 0 && !history.loading ? emptyContent : <MessageList messages={chat.messages} />}
+    {chat.messages.length === 0 && !history.loading ? emptyContent : <MessageList messages={chat.messages} renderMessage={renderMessage ?? defaultRenderMessage} />}
     <div className="p-4">
       <ChatStatus aborted={aborted} abortedContent={abortedContent} error={error} errorContent={errorContent} warningContent={warningContent} />
       <Composer pending={chat.status === 'submitted' || chat.status === 'streaming'} onStop={stop} onSubmit={submit} startSlot={composerStartSlot} endSlot={composerEndSlot} submitContent={submitContent} stopContent={stopContent} />

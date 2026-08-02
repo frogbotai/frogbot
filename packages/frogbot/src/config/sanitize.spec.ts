@@ -780,6 +780,29 @@ describe("frogbot sanitize", () => {
       ...overrides,
     });
 
+    it("accepts an agent profile", () => {
+      const profile = { name: "Ada", avatar: "/ada.png", description: "Support" };
+      const result = sanitize(makeConfig({ ai, agents: [{ ...agent, profile }] } as never));
+      expect(result.agents?.[0].profile).toEqual(profile);
+    });
+
+    it("accepts an omitted agent profile", () => {
+      const result = sanitize(makeConfig({ ai, agents: [agent] } as never));
+      expect((result.agents?.[0] as typeof agent & { profile?: unknown }).profile).toBeUndefined();
+    });
+
+    it("rejects a non-object agent profile", () => {
+      expect(() => sanitize(makeConfig({ ai, agents: [{ ...agent, profile: "Ada" }] } as never))).toThrow(
+        "[frogbot] Agent 'support' profile must be an object.",
+      );
+    });
+
+    it("rejects blank agent profile fields", () => {
+      expect(() => sanitize(makeConfig({ ai, agents: [{ ...agent, profile: { name: "   " } }] } as never))).toThrow(
+        "[frogbot] Agent 'support' profile name must be a non-empty string.",
+      );
+    });
+
     it("adds root tools to every agent", () => {
       const shared = makeTool("shared");
       const result = sanitize(makeConfig({

@@ -41,6 +41,7 @@ export type {
   AgentGenerateOpts,
   AgentGenerateResult,
   AgentInstance,
+  AgentProfile,
   AgentRegistry,
   AgentSchedule,
   AgentScheduleContext,

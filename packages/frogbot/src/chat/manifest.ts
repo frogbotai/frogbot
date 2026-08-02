@@ -11,7 +11,10 @@ export function buildManifestEndpoint() {
       for (const instance of Object.values(req.frogbot.agents)) {
         const access = instance.config.access ?? (({ req: current }: { req: FrogbotRequest }) => !!current.user);
         try {
-          if (await access({ req })) agents.push({ slug: instance.slug });
+          if (await access({ req })) agents.push({
+            slug: instance.slug,
+            ...(instance.config.profile ? { profile: instance.config.profile } : {}),
+          });
         } catch {
           continue;
         }

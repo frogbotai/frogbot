@@ -44,10 +44,17 @@ export type AgentScheduleTrigger = {
   | { prompt?: never; handler: AgentScheduleHandler }
 );
 
+export type AgentProfile = {
+  name?: string;
+  avatar?: string;
+  description?: string;
+};
+
 export type AgentConfig = {
   slug: string;
   model: AgentModelId;
   instructions: string;
+  profile?: AgentProfile;
   tools?: readonly AnyTool[];
   inheritTools?: false;
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];

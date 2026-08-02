@@ -470,6 +470,19 @@ function sanitizeAgents(
         `[frogbot] Agent '${agent.slug}' requires \`instructions\`.`,
       );
     }
+    if (agent.profile !== undefined) {
+      if (!isRecord(agent.profile)) {
+        throw new Error(`[frogbot] Agent '${agent.slug}' profile must be an object.`);
+      }
+      for (const field of ["name", "avatar", "description"] as const) {
+        const value = agent.profile[field];
+        if (value !== undefined && (typeof value !== "string" || !value.trim())) {
+          throw new Error(
+            `[frogbot] Agent '${agent.slug}' profile ${field} must be a non-empty string.`,
+          );
+        }
+      }
+    }
     if (agent.access !== undefined && typeof agent.access !== "function") {
       throw new Error(
         `[frogbot] Agent '${agent.slug}' access must be a function.`,

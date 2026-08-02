@@ -22,7 +22,16 @@ An enabled chat configuration returns the resolved collection slugs and the agen
     "threadsSlug": "conversations",
     "messagesSlug": "turns"
   },
-  "agents": [{ "slug": "support" }]
+  "agents": [
+    {
+      "slug": "support",
+      "profile": {
+        "name": "Ada",
+        "avatar": "/agents/ada.png",
+        "description": "Answers support questions."
+      }
+    }
+  ]
 }
 ```
 
@@ -52,4 +61,4 @@ const response = await fetch('/api/frogbot')
 const manifest: ManifestResponse = await response.json()
 ```
 
-The manifest intentionally excludes branding, upload targets, fixed internal collection slugs, and API-base metadata. Configure those concerns in the client until FrogBot provides a dedicated public contract for them.
+The manifest includes each accessible agent's configured profile. It excludes app branding, upload targets, fixed internal collection slugs, and API-base metadata. Configure those app-level concerns in the client until FrogBot provides a dedicated public contract for them.

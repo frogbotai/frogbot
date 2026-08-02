@@ -6,6 +6,7 @@ import { generateMessage } from '../chat/generateMessage.js';
 import { createMessageUsage, persistAssistantMessage } from '../chat/messagePersistence.js';
 import { resolveThreadContext } from '../chat/threadContext.js';
 import type { AgentInstance } from '../types/agent.js';
+import type { ManifestResponse } from '../types/chat.js';
 import type { DocID } from '../types/operations.js';
 import type { FrogbotRequest } from '../types/request.js';
 
@@ -31,12 +32,15 @@ export async function assertAgentAccess({ req, agent }: { req: FrogbotRequest; a
   throw new AgentServiceError(`Access denied for agent '${agent.slug}'`, 403);
 }
 
-export async function listAgents({ req }: { req: FrogbotRequest }): Promise<{ slug: string }[]> {
-  const agents: { slug: string }[] = [];
+export async function listAgents({ req }: { req: FrogbotRequest }): Promise<ManifestResponse['agents']> {
+  const agents: ManifestResponse['agents'] = [];
   for (const agent of Object.values(req.frogbot.agents)) {
     try {
       await assertAgentAccess({ req, agent });
-      agents.push({ slug: agent.slug });
+      agents.push({
+        slug: agent.slug,
+        ...(agent.config.profile ? { profile: agent.config.profile } : {}),
+      });
     } catch {
       continue;
     }

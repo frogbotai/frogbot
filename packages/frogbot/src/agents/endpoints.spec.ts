@@ -98,6 +98,10 @@ function postHandler() {
   return buildAgentEndpoints().find(({ path, method }) => path === '/agents/:slug' && method === 'post')!.handler;
 }
 
+function listHandler() {
+  return buildAgentEndpoints().find(({ path, method }) => path === '/agents' && method === 'get')!.handler;
+}
+
 function authorizationsHandler() {
   return buildAgentEndpoints().find(({ path, method }) => path === '/agents/:slug/authorizations' && method === 'get')!.handler;
 }
@@ -105,6 +109,14 @@ function authorizationsHandler() {
 describe('agent endpoints', () => {
   beforeEach(() => {
     createAgentUIStreamResponse.mockClear();
+  });
+
+  it('lists the same agent profile shape as the manifest', async () => {
+    const agent = makeAgent();
+    agent.config = { ...agent.config, profile: { name: 'Ada', avatar: '/ada.png' } } as AgentInstance['config'];
+    const response = await listHandler()(makeRequest({ agent }));
+
+    expect(await response.json()).toEqual({ agents: [{ slug: 'support', profile: agent.config.profile }] });
   });
 
   it('returns authorization preflight requirements and requires authentication', async () => {

@@ -118,6 +118,24 @@ describe('frogbot importMap generator', () => {
     await expect(readFile(join(dir, 'importMap.js'), 'utf-8')).resolves.toContain('export const importMap');
   });
 
+  it('does not import-map an agent profile avatar', async () => {
+    const dir = await makeDir('frogbot-importmap-agent-profile-');
+    const config = sanitize({
+      secret: 'test-secret',
+      db: { defaultIDType: 'number' } as never,
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+      ai: { providers: { openai: true } },
+      agents: [{ slug: 'assistant', model: 'openai/gpt-4o-mini', instructions: 'Assist.', profile: { avatar: '/agents/ada.png' } }],
+    } as never, { mode: 'codegen' });
+    const payloadConfig = await config._internal.payloadConfig;
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+
+    await expect(readFile(join(dir, 'importMap.js'), 'utf-8')).resolves.not.toContain('/agents/ada.png');
+  });
+
   it('skips the write when output matches the existing file, and force overrides', async () => {
     const dir = await makeDir('frogbot-importmap-skip-');
     const payloadConfig = await makePayloadConfig();

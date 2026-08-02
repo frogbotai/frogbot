@@ -4,10 +4,10 @@ import type { AgentInstance } from '../types/agent.js';
 import type { FrogbotRequest } from '../types/request.js';
 import { buildManifestEndpoint } from './manifest.js';
 
-function makeAgent(slug: string, access?: AgentInstance['config']['access']): AgentInstance {
+function makeAgent(slug: string, access?: AgentInstance['config']['access'], profile?: { name?: string; avatar?: string; description?: string }): AgentInstance {
   return {
     slug,
-    config: { slug, model: 'openai/test', instructions: 'Help', access },
+    config: { slug, model: 'openai/test', instructions: 'Help', access, profile } as AgentInstance['config'],
     aiAgent: {} as AgentInstance['aiAgent'],
     generate: vi.fn() as AgentInstance['generate'],
     stream: vi.fn() as AgentInstance['stream'],
@@ -33,6 +33,29 @@ function makeRequest({
 }
 
 describe('manifest endpoint', () => {
+  it('returns configured agent profiles without instructions', async () => {
+    const profile = { name: 'Ada', avatar: '/ada.png', description: 'Support' };
+    const response = await buildManifestEndpoint().handler(makeRequest({ agents: [makeAgent('support', undefined, profile)] }));
+    const body = await response.json();
+
+    expect(body.agents).toEqual([{ slug: 'support', profile }]);
+    expect(JSON.stringify(body)).not.toContain('instructions');
+  });
+
+  it('omits the profile key when no profile is configured', async () => {
+    const response = await buildManifestEndpoint().handler(makeRequest());
+    expect(await response.json()).toEqual(expect.objectContaining({ agents: [{ slug: 'support' }] }));
+  });
+
+  it('does not expose a denied agent profile', async () => {
+    const response = await buildManifestEndpoint().handler(makeRequest({
+      agents: [makeAgent('allowed', undefined, { name: 'Public' }), makeAgent('denied', () => false, { name: 'Secret' })],
+    }));
+    const body = JSON.stringify(await response.json());
+    expect(body).toContain('Public');
+    expect(body).not.toContain('Secret');
+  });
+
   it('returns renamed chat collection slugs', async () => {
     const response = await buildManifestEndpoint().handler(makeRequest());
 

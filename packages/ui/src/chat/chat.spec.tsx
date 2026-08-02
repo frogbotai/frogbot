@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({
   options: undefined as import('@ai-sdk/react').UseChatOptions | undefined,
   refresh: vi.fn(),
   adapter: { fetch: vi.fn(), buildMetadata: vi.fn(() => ({ source: 'ui' })), executeClientTool: vi.fn() },
+  agents: [] as Array<{ slug: string; profile?: { name?: string; avatar?: string } }>,
   history: { messages: [] as import('ai').UIMessage[], loadedThreadId: undefined as string | undefined, loading: false },
 }))
 
@@ -19,7 +20,7 @@ vi.mock('@ai-sdk/react', () => ({ useChat: (options: import('@ai-sdk/react').Use
 vi.mock('./provider', () => ({ useChatProvider: () => ({
   adapter: state.adapter,
   loading: false,
-  manifest: { chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' }, agents: [] },
+  manifest: { chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' }, agents: state.agents },
 }) }))
 vi.mock('./use-thread', () => ({ useThread: () => state.history }))
 vi.mock('./use-threads', () => ({ useThreads: () => ({ docs: [{ id: 'one', agent: 'support', title: 'One' }, { id: 'two', agent: 'support', title: null }], loading: false, refresh: state.refresh }) }))
@@ -49,6 +50,33 @@ describe('Chat', () => {
     state.adapter.executeClientTool.mockReset()
     state.adapter.fetch.mockReset()
     state.history = { messages: [], loadedThreadId: undefined, loading: false }
+    state.agents = []
+  })
+
+  it('forwards custom message rendering', () => {
+    state.messages = [{ id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] }]
+    render(<Chat agent="support" renderMessage={(item) => <div>Custom {item.id}</div>} />)
+    expect(screen.getByText('Custom assistant')).toBeTruthy()
+  })
+
+  it('renders a configured assistant profile avatar', () => {
+    state.agents = [{ slug: 'support', profile: { name: 'Ada', avatar: '/ada.png' } }]
+    state.messages = [{ id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] }]
+    render(<Chat agent="support" />)
+    expect(screen.getByRole('img', { name: 'Ada' }).getAttribute('src')).toBe('/ada.png')
+  })
+
+  it('renders profile initials when the avatar is omitted', () => {
+    state.agents = [{ slug: 'support', profile: { name: 'Ada Lovelace' } }]
+    state.messages = [{ id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] }]
+    render(<Chat agent="support" />)
+    expect(screen.getByText('AL')).toBeTruthy()
+  })
+
+  it('keeps messages unchanged without a profile', () => {
+    state.messages = [{ id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] }]
+    render(<Chat agent="support" />)
+    expect(screen.getByText('Hello').closest('article')?.firstElementChild?.textContent).toBe('Hello')
   })
 
   it('submits metadata and updates uncontrolled history', async () => {
