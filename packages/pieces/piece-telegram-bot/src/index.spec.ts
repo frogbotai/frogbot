@@ -6,4 +6,4 @@ import { createTelegramBot, telegramBotActions } from './index.js';
 
 const telegramBot = createTelegramBot();
 pieceContract({ piece: telegramBot, service: 'telegram_bot', credentialType: 'secret_text', actions: telegramBotActions });
-credentialExecution({ module, piece: telegramBot, service: 'telegram_bot', credential: 'telegram_test_key' });
+credentialExecution({ module, piece: telegramBot, service: 'telegram_bot', credential: { type: 'SECRET_TEXT', secret_text: 'telegram_test_key' } });

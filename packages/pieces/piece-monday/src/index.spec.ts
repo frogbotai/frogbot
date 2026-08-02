@@ -6,4 +6,4 @@ import { createMonday, mondayActions } from './index.js';
 
 const monday = createMonday();
 pieceContract({ piece: monday, service: 'monday', credentialType: 'secret_text', actions: mondayActions });
-credentialExecution({ module, piece: monday, service: 'monday', credential: 'monday_test_key' });
+credentialExecution({ module, piece: monday, service: 'monday', credential: { type: 'SECRET_TEXT', secret_text: 'monday_test_key' } });

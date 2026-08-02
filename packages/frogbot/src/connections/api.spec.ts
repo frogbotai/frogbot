@@ -21,7 +21,7 @@ async function setup(doc: Record<string, unknown> | undefined, sources: Construc
 
 describe('connections API', () => {
   it.each([
-    ['secret_text', { value: 'key' }, 'key'],
+    ['secret_text', { value: 'key' }, { type: 'SECRET_TEXT', secret_text: 'key' }],
     ['basic_auth', { username: 'user', password: 'pass' }, { username: 'user', password: 'pass' }],
     ['oauth2', { access_token: 'token', scope: 'read' }, { type: 'OAUTH2', access_token: 'token', scope: 'read' }],
     ['custom', { token: 'token' }, { token: 'token', subdomain: 'acme' }],
@@ -79,7 +79,7 @@ describe('connections API', () => {
       { credentialType: 'secret_text', credentials: { value: 'old' }, expiresAt: '2000-01-01T00:00:00.000Z' },
       [{ key: 'secret', services: ['service'], credentialTypes: ['secret_text'], refresh }],
     );
-    expect(await refreshed.api.resolve({ service: 'service', owner: { id: 'owner' } })).toBe('next');
+    expect(await refreshed.api.resolve({ service: 'service', owner: { id: 'owner' } })).toEqual({ type: 'SECRET_TEXT', secret_text: 'next' });
     expect(refresh).toHaveBeenCalledOnce();
 
     const failed = await setup(

@@ -6,7 +6,7 @@ export function credentialExecution({ module, piece, service, credential }: {
   service: string;
   credential: unknown;
 }): void {
-  it('passes the resolved credential to the action', async () => {
+  it('passes the resolved connection value to the action', async () => {
     const activepiecesPiece = Object.values(module).find((value) => typeof value === 'object' && value !== null && 'getAction' in value) as { getAction: (name: string) => { run: (context: Record<string, unknown>) => Promise<unknown> } };
     const tool = piece.tools().at(0)!;
     const action = activepiecesPiece.getAction(tool.slug.slice(service.length + 1));

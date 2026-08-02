@@ -6,4 +6,4 @@ import { createStripe, stripeActions } from './index.js';
 
 const stripe = createStripe();
 pieceContract({ piece: stripe, service: 'stripe', credentialType: 'secret_text', actions: stripeActions });
-credentialExecution({ module, piece: stripe, service: 'stripe', credential: 'stripe_test_key' });
+credentialExecution({ module, piece: stripe, service: 'stripe', credential: { type: 'SECRET_TEXT', secret_text: 'stripe_test_key' } });

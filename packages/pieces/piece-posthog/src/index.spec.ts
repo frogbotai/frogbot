@@ -6,4 +6,4 @@ import { createPosthog, posthogActions } from './index.js';
 
 const posthog = createPosthog();
 pieceContract({ piece: posthog, service: 'posthog', credentialType: 'secret_text', actions: posthogActions });
-credentialExecution({ module, piece: posthog, service: 'posthog', credential: 'posthog_test_key' });
+credentialExecution({ module, piece: posthog, service: 'posthog', credential: { type: 'SECRET_TEXT', secret_text: 'posthog_test_key' } });

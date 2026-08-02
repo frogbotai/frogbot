@@ -6,4 +6,4 @@ import { createPagerduty, pagerdutyActions } from './index.js';
 
 const pagerduty = createPagerduty();
 pieceContract({ piece: pagerduty, service: 'pagerduty', credentialType: 'secret_text', actions: pagerdutyActions });
-credentialExecution({ module, piece: pagerduty, service: 'pagerduty', credential: 'pagerduty_test_key' });
+credentialExecution({ module, piece: pagerduty, service: 'pagerduty', credential: { type: 'SECRET_TEXT', secret_text: 'pagerduty_test_key' } });

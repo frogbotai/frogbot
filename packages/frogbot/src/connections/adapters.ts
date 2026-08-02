@@ -10,7 +10,7 @@ function base64url(value: string): string {
 }
 
 export async function adaptCredential(type: Exclude<CredentialType, 'none'>, credentials: Record<string, unknown>): Promise<AppConnectionValue> {
-  if (type === 'secret_text') return String(credentials.value ?? credentials.apiKey ?? Object.values(credentials)[0] ?? '');
+  if (type === 'secret_text') return { type: 'SECRET_TEXT', secret_text: String(credentials.value ?? credentials.apiKey ?? Object.values(credentials)[0] ?? '') };
   if (type === 'basic_auth') return { username: String(credentials.username ?? ''), password: String(credentials.password ?? '') };
   if (type === 'oauth2') return { type: 'OAUTH2', ...credentials };
   if (type !== 'service_account') return credentials;

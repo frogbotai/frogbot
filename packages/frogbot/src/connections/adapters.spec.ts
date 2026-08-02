@@ -8,9 +8,21 @@ describe('credential adapters', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('adapts standard credential formats', async () => {
-    await expect(adaptCredential('secret_text', { apiKey: 'key' })).resolves.toBe('key');
+    await expect(adaptCredential('secret_text', { apiKey: 'key' })).resolves.toEqual({ type: 'SECRET_TEXT', secret_text: 'key' });
     await expect(adaptCredential('basic_auth', { username: 'frog', password: 'bot' })).resolves.toEqual({ username: 'frog', password: 'bot' });
     await expect(adaptCredential('oauth2', { access_token: 'token' })).resolves.toEqual({ type: 'OAUTH2', access_token: 'token' });
+  });
+
+  it.each([
+    [{ apiKey: 'sk-test' }, 'sk-test'],
+    [{ value: 'sk-test' }, 'sk-test'],
+    [{ token: 'sk-test' }, 'sk-test'],
+    [{}, ''],
+  ])('adapts secret text to the Activepieces connection shape', async (credentials, secretText) => {
+    await expect(adaptCredential('secret_text', credentials)).resolves.toEqual({
+      type: 'SECRET_TEXT',
+      secret_text: secretText,
+    });
   });
 
   it('mints and caches impersonated service-account tokens', async () => {
