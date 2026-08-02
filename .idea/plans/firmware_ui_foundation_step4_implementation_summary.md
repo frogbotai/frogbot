@@ -12,3 +12,10 @@
 - Added the framework-agnostic `@frogbotai/sdk` package with `{ baseURL, headers?, fetch? }` configuration.
 - Ported Payload's URL, header, JSON, multipart, and typed HTTP error transport under FrogBot naming.
 - Added focused unit coverage and package build configuration without wiring UI or implementing uploads.
+
+## Stage 3 — Wire Runtime Server Configuration
+
+- Made `ChatPlatformAdapter.apiBase` the single runtime server URL and removed the competing `Chat.apiBase` input.
+- Constructed one FrogBot SDK instance in `ChatProvider` and routed manifest, persistence, mutations, and chat transport through it.
+- Preserved custom fetch implementations and static or dynamic adapter headers without relying on `process.env` or framework globals.
+- Added browser-focused coverage for absolute runtime URLs, headers, custom fetch, and existing text chat behavior.

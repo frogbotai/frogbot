@@ -29,7 +29,6 @@ export type ChatProps = {
   threadId?: string | number
   defaultThreadId?: string | number
   onThreadIdChange?: (threadId: string | number | undefined) => void
-  apiBase?: string
   throttle?: number
   emptyContent?: ReactNode
   loadingContent?: ReactNode
@@ -52,34 +51,33 @@ export function Chat(props: ChatProps) {
   if (provider.loading) return props.loadingContent
   if (provider.error) return props.errorContent?.(provider.error)
   if (!provider.manifest || !provider.manifest.chat.enabled) return props.emptyContent
-  return <ChatOrchestrator {...props} threadIdControlled={Object.prototype.hasOwnProperty.call(props, 'threadId')} adapter={provider.adapter} agents={provider.manifest.agents} messagesSlug={provider.manifest.chat.messagesSlug} threadsSlug={provider.manifest.chat.threadsSlug} />
+  return <ChatOrchestrator {...props} threadIdControlled={Object.prototype.hasOwnProperty.call(props, 'threadId')} adapter={provider.adapter} sdk={provider.sdk} agents={provider.manifest.agents} messagesSlug={provider.manifest.chat.messagesSlug} threadsSlug={provider.manifest.chat.threadsSlug} />
 }
 
 type ChatOrchestratorProps = ChatProps & {
   adapter: NonNullable<ReturnType<typeof useChatProvider>>['adapter']
+  sdk: NonNullable<ReturnType<typeof useChatProvider>>['sdk']
   agents: ChatManifest['agents']
   messagesSlug: string
   threadsSlug: string
   threadIdControlled: boolean
 }
 
-function ChatOrchestrator({ abortedContent, adapter, agent, agents, apiBase = '/api', composerEndSlot, composerStartSlot, defaultThreadId, emptyContent, errorContent, fallbackTitle = 'New chat', messagesSlug, onThreadIdChange, panel, renderMessage, renderThreadActions, stopContent = 'Stop', submitContent = 'Send', threadId: controlledThreadId, threadIdControlled, threadsSlug, throttle, warningContent }: ChatOrchestratorProps) {
+function ChatOrchestrator({ abortedContent, adapter, agent, agents, composerEndSlot, composerStartSlot, defaultThreadId, emptyContent, errorContent, fallbackTitle = 'New chat', messagesSlug, onThreadIdChange, panel, renderMessage, renderThreadActions, sdk, stopContent = 'Stop', submitContent = 'Send', threadId: controlledThreadId, threadIdControlled, threadsSlug, throttle, warningContent }: ChatOrchestratorProps) {
   const [threadId, setThreadId] = useControlledState<string | number | undefined>({ controlled: threadIdControlled, defaultValue: defaultThreadId, onChange: onThreadIdChange, value: controlledThreadId })
   const [chatId, setChatId] = useState(threadId === undefined ? `new:${agent}` : String(threadId))
   const createdThreadId = useRef<string | undefined>(undefined)
   const reportedThreadId = useRef<string | undefined>(undefined)
   const previousAgent = useRef(agent)
-  const history = useThread({ adapter, apiBase, messagesSlug, threadId })
-  const threads = useThreads({ adapter, agent, apiBase, threadsSlug })
+  const history = useThread({ sdk, messagesSlug, threadId })
+  const threads = useThreads({ sdk, agent, threadsSlug })
   const [aborted, setAborted] = useState(false)
   const transport = useMemo(() => new FrogbotChatTransport({
     agentSlug: agent,
-    apiBase,
-    fetch: adapter.fetch,
-    headers: adapter.headers ? async () => Object.fromEntries(new Headers(await (typeof adapter.headers === 'function' ? adapter.headers() : adapter.headers)).entries()) : undefined,
+    sdk,
     onThreadId: (nextThreadId) => { createdThreadId.current = nextThreadId },
     prepareSendMessagesRequest: prepareChatRequest(threadId),
-  }), [adapter, agent, apiBase, threadId])
+  }), [agent, sdk, threadId])
   let addToolOutput: ReturnType<typeof useChat>['addToolOutput'] | undefined
   const chat = useChat({
     id: chatId,
@@ -138,11 +136,11 @@ function ChatOrchestrator({ abortedContent, adapter, agent, agents, apiBase = '/
   }
   const mutate = (thread: ThreadDocument): ThreadActions => ({
     rename: async (title) => {
-      await renameThread({ adapter, apiBase, threadsSlug, threadId: thread.id }, title)
+      await renameThread({ sdk, threadsSlug, threadId: thread.id }, title)
       threads.refresh()
     },
     delete: async () => {
-      await deleteThread({ adapter, apiBase, messagesSlug, threadsSlug, threadId: thread.id })
+      await deleteThread({ sdk, messagesSlug, threadsSlug, threadId: thread.id })
       if (String(threadId) === String(thread.id)) {
         clearConversation()
         setThreadId(undefined)

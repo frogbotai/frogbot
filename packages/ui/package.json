@@ -70,7 +70,6 @@
     "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
   },
   "devDependencies": {
-    "@frogbotai/sdk": "workspace:*",
     "@tailwindcss/cli": "^4.1.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
@@ -130,6 +129,7 @@
   },
   "dependencies": {
     "@ai-sdk/react": "4.0.5",
+    "@frogbotai/sdk": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.23",
     "@radix-ui/react-dropdown-menu": "^2.1.24",
     "@radix-ui/react-select": "^2.3.7",

@@ -1,12 +1,14 @@
+import { createFrogbotSDK } from '@frogbotai/sdk'
 import { describe, expect, it, vi } from 'vitest'
 
 import { FrogbotChatTransport, prepareChatRequest } from './transport'
 
 const message = { id: 'user-1', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Hello' }] }
+const sdk = (fetch: typeof globalThis.fetch = globalThis.fetch) => createFrogbotSDK({ baseURL: '/api', fetch })
 
 async function captureBody(threadId?: string) {
   const fetch = vi.fn(() => Promise.resolve(new Response(new ReadableStream({ start: (controller) => controller.close() }))))
-  const transport = new FrogbotChatTransport({ agentSlug: 'agent', fetch, prepareSendMessagesRequest: prepareChatRequest(threadId), body: { unsupported: true } })
+  const transport = new FrogbotChatTransport({ agentSlug: 'agent', sdk: sdk(fetch), prepareSendMessagesRequest: prepareChatRequest(threadId), body: { unsupported: true } })
   await transport.sendMessages({ chatId: 'chat', messageId: message.id, messages: [message], trigger: 'submit-message' })
   return JSON.parse(fetch.mock.calls[0][1]?.body as string)
 }
@@ -25,7 +27,7 @@ describe('FrogbotChatTransport', () => {
     const fetch = vi.fn(() => Promise.resolve(new Response('data: {"type":"finish"}\n\n', {
       headers: { 'Content-Type': 'text/event-stream', 'X-Frogbot-Thread-Id': 'thread-1' },
     })))
-    const transport = new FrogbotChatTransport({ agentSlug: 'support agent', fetch, onThreadId })
+    const transport = new FrogbotChatTransport({ agentSlug: 'support agent', sdk: sdk(fetch), onThreadId })
     await transport.sendMessages({ chatId: 'chat', messages: [], trigger: 'submit-message' }).then((stream) => stream.cancel())
     expect(fetch).toHaveBeenCalledWith('/api/agents/support%20agent', expect.objectContaining({ method: 'POST' }))
     expect(transport.threadId).toBe('thread-1')
@@ -34,25 +36,25 @@ describe('FrogbotChatTransport', () => {
 
   it('requests the event stream response by default', async () => {
     const fetch = vi.fn(() => Promise.resolve(new Response('data: {"type":"finish"}\n\n', { headers: { 'Content-Type': 'text/event-stream' } })))
-    const transport = new FrogbotChatTransport({ agentSlug: 'agent', fetch })
+    const transport = new FrogbotChatTransport({ agentSlug: 'agent', sdk: sdk(fetch) })
     await transport.sendMessages({ chatId: 'chat', messages: [], trigger: 'submit-message' }).then((stream) => stream.cancel())
     expect(new Headers(fetch.mock.calls[0][1]?.headers).get('accept')).toBe('text/event-stream')
   })
 
   it('preserves caller header overrides', async () => {
     const fetch = vi.fn(() => Promise.resolve(new Response(new ReadableStream({ start: (controller) => controller.close() }))))
-    const transport = new FrogbotChatTransport({ agentSlug: 'agent', fetch, headers: { Accept: 'application/json' } })
+    const transport = new FrogbotChatTransport({ agentSlug: 'agent', sdk: sdk(fetch), headers: { Accept: 'application/json' } })
     await transport.sendMessages({ chatId: 'chat', messages: [], trigger: 'submit-message' })
     expect(new Headers(fetch.mock.calls[0][1]?.headers).get('accept')).toBe('application/json')
   })
 
   it('treats a bodyless 499 as a clean empty stream', async () => {
-    const transport = new FrogbotChatTransport({ agentSlug: 'agent', fetch: () => Promise.resolve(new Response(null, { status: 499 })) })
+    const transport = new FrogbotChatTransport({ agentSlug: 'agent', sdk: sdk(() => Promise.resolve(new Response(null, { status: 499 }))) })
     const stream = await transport.sendMessages({ chatId: 'chat', messages: [], trigger: 'submit-message' })
     expect((await stream.getReader().read()).done).toBe(true)
   })
 
   it('does not reconnect', async () => {
-    expect(await new FrogbotChatTransport({ agentSlug: 'agent' }).reconnectToStream({ chatId: 'chat' })).toBeNull()
+    expect(await new FrogbotChatTransport({ agentSlug: 'agent', sdk: sdk() }).reconnectToStream({ chatId: 'chat' })).toBeNull()
   })
 })

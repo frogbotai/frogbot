@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { createFrogbotSDK } from '@frogbotai/sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const state = vi.hoisted(() => ({
@@ -12,6 +13,7 @@ const state = vi.hoisted(() => ({
   options: undefined as import('@ai-sdk/react').UseChatOptions | undefined,
   refresh: vi.fn(),
   adapter: { fetch: vi.fn(), buildMetadata: vi.fn(() => ({ source: 'ui' })), executeClientTool: vi.fn() },
+  sdk: undefined as unknown as ReturnType<typeof createFrogbotSDK>,
   agents: [] as Array<{ slug: string; profile?: { name?: string; avatar?: string } }>,
   history: { messages: [] as import('ai').UIMessage[], loadedThreadId: undefined as string | undefined, loading: false },
 }))
@@ -19,6 +21,7 @@ const state = vi.hoisted(() => ({
 vi.mock('@ai-sdk/react', () => ({ useChat: (options: import('@ai-sdk/react').UseChatOptions) => { state.options = options; return state } }))
 vi.mock('./provider', () => ({ useChatProvider: () => ({
   adapter: state.adapter,
+  sdk: state.sdk,
   loading: false,
   manifest: { chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' }, agents: state.agents },
 }) }))
@@ -39,6 +42,7 @@ async function sendTransportMessage() {
 
 describe('Chat', () => {
   beforeEach(() => {
+    state.sdk = createFrogbotSDK({ baseURL: '/api', fetch: state.adapter.fetch })
     state.status = 'ready'
     state.error = undefined
     state.messages = []

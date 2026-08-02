@@ -1,3 +1,4 @@
+import type { FrogBotSDK } from '@frogbotai/sdk'
 import { DefaultChatTransport, type HttpChatTransportInitOptions, type PrepareSendMessagesRequest, type UIMessage } from 'ai'
 
 export type FrogbotChatTransportOptions<UI_MESSAGE extends UIMessage> = Omit<
@@ -5,8 +6,7 @@ export type FrogbotChatTransportOptions<UI_MESSAGE extends UIMessage> = Omit<
   'api' | 'fetch'
 > & {
   agentSlug: string
-  apiBase?: string
-  fetch?: typeof globalThis.fetch
+  sdk: FrogBotSDK
   onThreadId?: (threadId: string) => void
 }
 
@@ -17,12 +17,12 @@ export function prepareChatRequest<UI_MESSAGE extends UIMessage>(threadId?: stri
 export class FrogbotChatTransport<UI_MESSAGE extends UIMessage = UIMessage> extends DefaultChatTransport<UI_MESSAGE> {
   threadId?: string
 
-  constructor({ agentSlug, apiBase = '/api', fetch = globalThis.fetch, onThreadId, ...options }: FrogbotChatTransportOptions<UI_MESSAGE>) {
+  constructor({ agentSlug, sdk, onThreadId, ...options }: FrogbotChatTransportOptions<UI_MESSAGE>) {
     const capture = { threadId: (_threadId: string) => undefined }
     const configuredHeaders = options.headers
     super({
       ...options,
-      api: `${apiBase}/agents/${encodeURIComponent(agentSlug)}`,
+      api: `${sdk.baseURL}/agents/${encodeURIComponent(agentSlug)}`,
       headers: async () => {
         const headers = await (typeof configuredHeaders === 'function' ? configuredHeaders() : configuredHeaders)
         const merged = new Headers({ Accept: 'text/event-stream' })
@@ -30,7 +30,7 @@ export class FrogbotChatTransport<UI_MESSAGE extends UIMessage = UIMessage> exte
         return merged
       },
       fetch: async (input, init) => {
-        const response = await fetch(input, init)
+        const response = await sdk.fetch(input, init)
         const threadId = response.headers.get('X-Frogbot-Thread-Id')
         if (threadId) capture.threadId(threadId)
         if (response.status === 499) return new Response(new ReadableStream({ start: (controller) => controller.close() }), { status: 200 })
