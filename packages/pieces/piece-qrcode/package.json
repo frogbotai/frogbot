@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/piece-qrcode",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "QR code tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
