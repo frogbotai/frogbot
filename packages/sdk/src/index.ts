@@ -15,6 +15,11 @@ export type FrogBotUpload = {
   mimeType: string
 }
 
+export type FrogBotUploadResponse = {
+  doc: FrogBotUpload
+  message: string
+}
+
 export type FrogBotErrorDetail = {
   message: string
   [key: string]: unknown
@@ -90,7 +95,8 @@ export class FrogBotSDK {
     body.append('file', file)
     body.append('_payload', '{}')
     const response = await this.request(`/${collection}`, { method: 'POST', body })
-    return response.json() as Promise<FrogBotUpload>
+    const result = await response.json() as FrogBotUploadResponse
+    return result.doc
   }
 }
 

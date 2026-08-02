@@ -57,7 +57,10 @@ describe('FrogBotSDK', () => {
   })
 
   it('uploads a file to a collection', async () => {
-    const fetch = vi.fn(() => Promise.resolve(Response.json({ id: 'file-1', filename: 'frog.txt', mimeType: 'text/plain' })))
+    const fetch = vi.fn(() => Promise.resolve(Response.json({
+      doc: { id: 'file-1', filename: 'frog.txt', mimeType: 'text/plain' },
+      message: 'Document successfully created.',
+    })))
     const sdk = createFrogbotSDK({ baseURL: 'https://frogbot.example/api', fetch })
 
     await expect(sdk.upload('documents', new File(['frog'], 'frog.txt', { type: 'text/plain' }))).resolves.toEqual({ id: 'file-1', filename: 'frog.txt', mimeType: 'text/plain' })

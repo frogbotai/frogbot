@@ -837,8 +837,21 @@ function buildPayloadConfig(
   internalEndpoints: Endpoint[] = [],
   attachFrogbot: AttachFrogbot,
 ): PayloadConfig {
+  const frogbotKeys = new Set([
+    "agents",
+    "ai",
+    "connections",
+    "credentialSources",
+    "onInit",
+    "pieces",
+    "plugins",
+    "port",
+    "tools",
+  ]);
   const out: Record<string, unknown> = {
-    ...(config as unknown as Record<string, unknown>),
+    ...Object.fromEntries(
+      Object.entries(config).filter(([key]) => !frogbotKeys.has(key)),
+    ),
     collections: config.collections.map((collection) =>
       sanitizeCollection(collection, attachFrogbot),
     ),
@@ -941,15 +954,6 @@ function buildPayloadConfig(
     },
   };
 
-  // Drop FrogBot-only keys before handing to Payload.
-  delete out.plugins;
-  delete out.onInit;
-  delete out.port;
-  delete out.ai;
-  delete out.agents;
-  delete out.pieces;
-  delete out.connections;
-  delete out.credentialSources;
   out.onInit = onInit;
 
   return out as unknown as PayloadConfig;

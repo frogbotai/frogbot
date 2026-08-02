@@ -82,3 +82,63 @@ The reported skip count is primarily environmental rather than 400 missing imple
 - Roughly 25 golden TODOs are produced by incomplete fixtures or incorrect fixture classification.
 - Three active expected-failure integration tests keep known broken behavior green.
 - Several test files are not collected at all and therefore do not appear in the skip count.
+
+## Batch 4 lessons (issues #32–#36, #26 — triaged 2026-07-29)
+
+Suite-level gaps surfaced while researching tickets 28–32. Each is a *class* of missing
+test, not a single case.
+
+### P0 — the suite asserted the bug
+
+- [ ] `packages/frogbot/src/agents/endpoints.spec.ts:357-368` ('continues anonymous
+      threads after agent access succeeds') encodes the #32 security hole as expected
+      behavior, and its `findByID` mock is owner-blind so no ownership assertion is even
+      possible. Fixed as part of ticket 28, but audit the rest of the suite for the same
+      pattern: tests written to lock in whatever the code did, on paths where the
+      contract was never stated.
+- [ ] No access-control test crosses identities. Every thread/message spec runs as one
+      caller. Add a shared fixture with two authenticated users plus an anonymous caller
+      and assert the full matrix on every persistence path (JSON, SSE, local API).
+
+### P0 — type-level assertions cannot fail
+
+- [ ] `expectTypeOf` is used in `packages/frogbot` (`types/ai.spec.ts`, `frogbot.spec.ts`,
+      +5 more) but is completely unenforced: `packages/frogbot/tsconfig.json` excludes
+      `src/**/*.spec.ts` and no vitest project enables `typecheck`. Public type-surface
+      assertions are decorative today. Add a `tsconfig.typetest.json` + a
+      `typecheck:types` script wired into CI (ticket 29 Stage 1 introduces this — make it
+      repo-wide afterward).
+- [ ] Both hand-written-public-type defects so far (#14 `tools: []`, #33 logger) shipped
+      because no test compares a declared public type against the runtime it fronts. Add
+      contract tests for public types that wrap a third-party runtime (logger/pino,
+      provider entries, tool shapes).
+
+### P1 — adapters between two correct layers are untested
+
+- [ ] `toGatewayLogger` (`packages/frogbot/src/ai/init.ts:108-125`) silently drops every
+      structured field from gateway observability logs in production, with zero tests:
+      `ai/init.spec.ts` never passes a `logger`. Both sides were individually correct.
+      Audit every FrogBot↔gateway adapter/shim for the same untested-seam pattern.
+- [ ] Copy the real-pino capture harness at
+      `packages/gateway/src/observability/logger.spec.ts:188-232` into `packages/frogbot`
+      so log assertions check serialized output, not call spies (`pino` is not currently
+      resolvable from `packages/frogbot`).
+
+### P1 — no UI test harness for plugins
+
+- [ ] `vitest.config.ts`'s `ui` project only collects `packages/ui/src/**/*.spec.tsx`, so
+      nothing under `packages/plugins/**` can have a component test. Extend jsdom+RTL
+      collection to plugin client components (ticket 31 Stage 1 does this for
+      `plugin-api-keys`; generalize it).
+- [ ] `packages/plugins/plugin-api-keys/src/client.spec.ts:3-8` and
+      `importMap.spec.ts:12-17` mock `@payloadcms/ui` with hand-written factories that
+      break whenever a component imports a new primitive. Replace with a shared mock that
+      fails loudly on unmocked exports instead of silently returning undefined.
+
+### P1 — dead code passes as enforcement
+
+- [ ] `resolveProvider`'s `models` parameter has no production call site — only unit
+      tests pass it (ticket 30). Unit tests that construct arguments no caller supplies
+      give false confidence in an enforcement path. Add an integration-level assertion
+      per enforcement mechanism proving it fires through a real route/SDK entry, and
+      treat "only unit tests exercise this argument" as a review flag.

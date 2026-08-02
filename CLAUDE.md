@@ -46,6 +46,13 @@
 - The user-facing `typescript.autoGenerate` in `frogbot.config.ts` controls **FrogBot's** generation only (`FrogbotSanitizedConfig.typescript.autoGenerate`), wired to a boot-time call in `Frogbot.init()`.
 - Known related bugs: Payload's auto-generate breaks under Turbopack (vercel/next.js#66723) and trips a tsx/Node `module.registerHooks` bug on Node ≥23.5 (payloadcms/payload#16949, fixed in Payload's own `bin.js`). `config/load.ts` applies the same `registerHooks` guard before calling `tsImport`.
 
+## UI Parity with Firmware (CRITICAL — do not deviate)
+
+- **Firmware (`/Users/colbygilbert/Documents/Code/firmware`) is the previous iteration of FrogBot.** The goal is to port Firmware's existing, already-designed UI into FrogBot as FrogBot features — NOT to design new UI from scratch.
+- **When building any FrogBot admin/UI surface, find the corresponding Firmware implementation first** (`apps/web`, `apps/desktop`, `packages/app`, `packages/ui`, admin panel customizations) and follow it exactly. Not everything ports over, but where a Firmware design exists, it is the spec.
+- **Concrete example (issue #35):** the api-keys plugin UI must be a single button injected into the Payload collection list view that opens a modal (create → one-time key reveal in the same modal) — exactly how Firmware did it (`apps/web/src/collections/ApiKeys/components/CreateApiKeyButton.tsx`). Inline always-visible panels above the list table are wrong.
+- **Direction of travel:** FrogBot's default Payload admin panel is progressively moving toward the Firmware desktop app / aggressively-masked web admin look, with FrogBot providing the components. Don't go fully there in one step, but new UI work must trend toward that design, never away from it.
+
 ## What NOT to do
 
 - **Don't add comments unless explicitly requested.** Zero comments is the default, even for "explaining why this weird workaround exists." No comment blocks, no citations, no rationale — write it in the chat response instead, not the code. This has been a repeat mistake — check every edit before writing it.

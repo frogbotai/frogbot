@@ -47,7 +47,10 @@ describe('Composer', () => {
   })
 
   it('uploads dropped files immediately and submits stable references', async () => {
-    const fetch = vi.fn(() => Promise.resolve(Response.json({ id: 'file-1', filename: 'notes.txt', mimeType: 'text/plain' })))
+    const fetch = vi.fn(() => Promise.resolve(Response.json({
+      doc: { id: 'file-1', filename: 'notes.txt', mimeType: 'text/plain' },
+      message: 'Document successfully created.',
+    })))
     const onSubmit = vi.fn()
     const { container } = render(<Composer aria-label="Message" sdk={createFrogbotSDK({ baseURL: '/api', fetch })} filesSlug="documents" onSubmit={onSubmit} submitContent="Send" stopContent="Stop" />)
 
@@ -64,7 +67,10 @@ describe('Composer', () => {
   it('shows upload errors and retries', async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(new Response('failed', { status: 500, statusText: 'Failed' }))
-      .mockResolvedValueOnce(Response.json({ id: 'file-2', filename: 'retry.txt', mimeType: 'text/plain' }))
+      .mockResolvedValueOnce(Response.json({
+        doc: { id: 'file-2', filename: 'retry.txt', mimeType: 'text/plain' },
+        message: 'Document successfully created.',
+      }))
     const { container } = render(<Composer sdk={createFrogbotSDK({ baseURL: '/api', fetch })} filesSlug="files" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />)
 
     fireEvent.drop(container.querySelector('form') as HTMLFormElement, { dataTransfer: { files: [new File(['retry'], 'retry.txt', { type: 'text/plain' })] } })

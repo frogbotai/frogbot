@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 
 import type { Frogbot } from "../frogbot.js";
 import { getCachedFrogbot, resetFrogbotCache } from "../getFrogbot.js";
@@ -108,6 +109,29 @@ describe("frogbot sanitize", () => {
     const config = makeConfig();
     const result = sanitize(config);
     expect(result._internal.payloadConfig).toBeInstanceOf(Promise);
+  });
+
+  it("keeps FrogBot-only values out of the Payload config", async () => {
+    const execute = vi.fn();
+    const result = sanitize(
+      makeConfig({
+        serverURL: "https://example.com",
+        tools: [
+          {
+            slug: "search",
+            description: "Search",
+            inputSchema: z.object({ query: z.string() }),
+            execute,
+          },
+        ],
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.serverURL).toBe("https://example.com");
+    expect(payloadConfig).not.toHaveProperty("tools");
+    expect(JSON.stringify(payloadConfig)).not.toContain("inputSchema");
+    expect(JSON.stringify(payloadConfig)).not.toContain("search");
   });
 
   it("keeps repeated sanitization and codegen quiet when email is omitted", () => {
