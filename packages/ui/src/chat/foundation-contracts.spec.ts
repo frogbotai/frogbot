@@ -9,7 +9,7 @@ const stableAttachment = {
 }
 
 describe('Firmware UI foundation contracts', () => {
-  it.fails('configures the FrogBot SDK with one server connection', async () => {
+  it('configures the FrogBot SDK with one server connection', async () => {
     const packageName = '@frogbotai/sdk'
     const sdkModule = await import(packageName)
     const fetch = vi.fn(() => Promise.resolve(new Response('{}')))
