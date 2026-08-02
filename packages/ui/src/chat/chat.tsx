@@ -33,6 +33,7 @@ export type ChatProps = {
   throttle?: number
   emptyContent?: ReactNode
   loadingContent?: ReactNode
+  headerSlot?: ReactNode
   composerStartSlot?: ReactNode
   composerEndSlot?: ReactNode
   submitContent?: ReactNode
@@ -65,7 +66,7 @@ type ChatOrchestratorProps = ChatProps & {
   threadIdControlled: boolean
 }
 
-function ChatOrchestrator({ abortedContent, adapter, agent, agents, composerEndSlot, composerStartSlot, defaultThreadId, emptyContent, errorContent, fallbackTitle = 'New chat', filesSlug, messagesSlug, onThreadIdChange, panel, renderMessage, renderThreadActions, sdk, stopContent = 'Stop', submitContent = 'Send', threadId: controlledThreadId, threadIdControlled, threadsSlug, throttle, warningContent }: ChatOrchestratorProps) {
+function ChatOrchestrator({ abortedContent, adapter, agent, agents, composerEndSlot, composerStartSlot, defaultThreadId, emptyContent, errorContent, fallbackTitle = 'New chat', filesSlug, headerSlot, messagesSlug, onThreadIdChange, panel, renderMessage, renderThreadActions, sdk, stopContent = 'Stop', submitContent = 'Send', threadId: controlledThreadId, threadIdControlled, threadsSlug, throttle, warningContent }: ChatOrchestratorProps) {
   const [threadId, setThreadId] = useControlledState<string | number | undefined>({ controlled: threadIdControlled, defaultValue: defaultThreadId, onChange: onThreadIdChange, value: controlledThreadId })
   const [chatId, setChatId] = useState(threadId === undefined ? `new:${agent}` : String(threadId))
   const createdThreadId = useRef<string | undefined>(undefined)
@@ -172,6 +173,7 @@ function ChatOrchestrator({ abortedContent, adapter, agent, agents, composerEndS
   const defaultRenderMessage: MessageListProps['renderMessage'] = profile ? (message) => <Message key={message.id} role={message.role} avatar={message.role === 'assistant' ? <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-background">{profile.avatar ? <img src={profile.avatar} alt={displayName} className="size-full object-cover" /> : initials}</div> : undefined}>{message.parts.map((part, index) => <MessagePart key={`${message.id}-${index}`} part={part} />)}</Message> : undefined
 
   return <ChatShell panel={panel} sidebar={<ThreadHistory threads={displayedThreads} activeThreadId={threadId} fallbackTitle={fallbackTitle} onThreadChange={selectThread} renderActions={renderThreadActions ? (thread) => renderThreadActions(thread, mutate(thread)) : undefined} />}>
+    {headerSlot}
     {chat.messages.length === 0 && !history.loading ? emptyContent : <MessageList messages={chat.messages} renderMessage={renderMessage ?? defaultRenderMessage} />}
     <div className="p-4">
       <ChatStatus aborted={aborted} abortedContent={abortedContent} error={error} errorContent={errorContent} warningContent={warningContent} />

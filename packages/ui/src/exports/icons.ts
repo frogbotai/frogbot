@@ -1,4 +1,5 @@
 export { CheckIcon } from '../icons/check'
+export { BotIcon } from '../icons/bot'
 export { MenuIcon } from '../icons/menu'
 export { default as IconBase } from '../icons/IconBase'
 export { default as createLucideIcon } from '../icons/createLucideIcon'

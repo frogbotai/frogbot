@@ -25,7 +25,41 @@ export function SupportChat() {
 }
 ```
 
-Use `threadId` and `onThreadIdChange` for controlled routing. Use `defaultThreadId` when the component should manage selection internally. `composerStartSlot`, `composerEndSlot`, `panel`, and `renderThreadActions` add product-specific controls without replacing the shell.
+Use `threadId` and `onThreadIdChange` for controlled routing. Use `defaultThreadId` when the component should manage selection internally. `headerSlot`, `composerStartSlot`, `composerEndSlot`, `panel`, and `renderThreadActions` add product-specific controls without replacing the shell.
+
+## Composer selectors
+
+`AgentSelector` reads the agents available to the current user from `ChatProvider`. Keep the selected agent in your application state and pass it to both the selector and `<Chat>`. Changing it starts a new conversation.
+
+```tsx
+'use client'
+
+import { useState } from 'react'
+import { AgentSelector, Chat, ChatProvider, cookieFetch } from '@frogbotai/ui/chat'
+
+const adapter = { fetch: cookieFetch() }
+
+export function AgentChat() {
+  const [agent, setAgent] = useState('support')
+
+  return (
+    <ChatProvider adapter={adapter}>
+      <Chat
+        agent={agent}
+        headerSlot={<AgentSelector selectedAgent={agent} onAgentChange={setAgent} />}
+      />
+    </ChatProvider>
+  )
+}
+```
+
+`ModelSelector` and `ToolSelector` accept caller-supplied lists and controlled selection state. Place `ModelSelector` in `headerSlot` and `ToolSelector` in `composerStartSlot` or `composerEndSlot`. They render nothing when their lists are empty.
+
+<Warning>
+  Model and tool selections are currently client-side only. They do not override the server model, change tool availability, or add fields to chat requests.
+</Warning>
+
+The selectors intentionally differ from Firmware where FrogBot has no matching concept: agents have no "Default" row, model billing locks are omitted, tools use multi-select availability instead of prompt injection, and Radix handles menu positioning.
 
 ## Voice input
 

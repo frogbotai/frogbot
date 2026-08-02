@@ -23,7 +23,7 @@ vi.mock('./provider', () => ({ useChatProvider: () => ({
   adapter: state.adapter,
   sdk: state.sdk,
   loading: false,
-  manifest: { chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' }, files: { slug: 'files' }, agents: state.agents },
+  manifest: { ai: { transcribe: false }, chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' }, files: { slug: 'files' }, agents: state.agents },
 }) }))
 vi.mock('./use-thread', () => ({ useThread: () => state.history }))
 vi.mock('./use-threads', () => ({ useThreads: () => ({ docs: [{ id: 'one', agent: 'support', title: 'One' }, { id: 'two', agent: 'support', title: null }], loading: false, refresh: state.refresh }) }))
@@ -61,6 +61,15 @@ describe('Chat', () => {
     state.messages = [{ id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] }]
     render(<Chat agent="support" renderMessage={(item) => <div>Custom {item.id}</div>} />)
     expect(screen.getByText('Custom assistant')).toBeTruthy()
+  })
+
+  it('renders header slot content above the message list', () => {
+    state.agents = [{ slug: 'support', profile: { name: 'Ada' } }]
+    state.messages = [{ id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] }]
+    render(<Chat agent="support" headerSlot={<div>Agent controls</div>} />)
+    const header = screen.getByText('Agent controls')
+    const message = screen.getByText('Hello')
+    expect(header.compareDocumentPosition(message) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('renders a configured assistant profile avatar', () => {
