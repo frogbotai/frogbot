@@ -32,6 +32,7 @@ type AgentConfig = {
   model: ModelId
   instructions: string
   profile?: AgentProfile
+  skills?: readonly SkillConfig[]
   tools?: readonly AnyTool[]
   inheritTools?: false
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[]
@@ -124,6 +125,60 @@ export const supportAgent: AgentConfig = {
 ```
 
 Inference runs through the embedded gateway. Each model step can request tools, FrogBot executes them with `ToolCtx`, and the loop continues until a stop condition matches.
+
+---
+
+## Add skills
+
+Skills keep playbooks and reference material out of the prompt until the agent needs them. Each skill adds a short discovery line to the agent instructions and makes three tools available: `list_skills`, `load_skill`, and `load_skill_resource`.
+
+```ts
+import type { SkillConfig } from 'frogbot'
+
+const supportSkill: SkillConfig = {
+  slug: 'support-playbook',
+  description: 'Procedures for handling support requests',
+  license: 'MIT',
+  compatibility: 'Requires authenticated support access',
+  metadata: { owner: 'support' },
+  instructions: 'Identify the request category before choosing a procedure.',
+  resources: [
+    {
+      path: 'refunds.md',
+      description: 'Refund eligibility and workflow',
+      content: 'Verify the purchase date and payment status before issuing a refund.'
+    },
+    {
+      path: 'account.md',
+      description: 'Account-specific guidance',
+      content: async ({ req }) => loadAccountGuidance(req.user?.id)
+    }
+  ]
+}
+
+export const supportAgent: AgentConfig = {
+  slug: 'support',
+  model: 'fast',
+  instructions: 'Use the relevant skill before answering policy questions.',
+  skills: [supportSkill]
+}
+```
+
+`instructions` and resource `content` accept a string or a function receiving `{ req, frogbot }`. Function content is evaluated only when the agent loads it. Unknown skill and resource names return the available names so the agent can correct its next call.
+
+| `SkillConfig` field | Agent Skills field |
+| --- | --- |
+| `slug` | `name` |
+| `description` | `description` |
+| `license` | `license` |
+| `compatibility` | `compatibility` |
+| `metadata` | `metadata` |
+| `instructions` | `SKILL.md` body |
+| `resources` | `references/` files |
+
+`license` and `compatibility` are top-level fields. `metadata` is a flat string map. The three generated tool slugs are reserved when an agent has skills. `inheritTools: false` disables root tool inheritance but does not disable that agent's skill tools.
+
+Folder-based `source` skills are not supported yet. Declare skill content in configuration; a future generated skills map will package folder content without runtime filesystem access.
 
 ---
 

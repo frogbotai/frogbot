@@ -992,6 +992,137 @@ describe("frogbot sanitize", () => {
       }))).not.toThrow();
     });
 
+    it("rejects malformed skills", () => {
+      for (const skills of [
+        [{ slug: "", instructions: "Use it" }],
+        [{ slug: "docs" }],
+        [{ slug: "docs", instructions: "" }],
+      ]) {
+        expect(() => sanitize(makeConfig({
+          ai,
+          agents: [{ ...agent, skills }],
+        } as never))).toThrow("[frogbot] Agent 'support'");
+      }
+    });
+
+    it("rejects duplicate and unsafe skill slugs", () => {
+      expect(() => sanitize(makeConfig({
+        ai,
+        agents: [{ ...agent, skills: [
+          { slug: "docs", instructions: "One" },
+          { slug: "docs", instructions: "Two" },
+        ] }],
+      } as never))).toThrow("Duplicate skill slug 'docs'");
+      expect(() => sanitize(makeConfig({
+        ai,
+        agents: [{ ...agent, skills: [{ slug: "not safe", instructions: "Use it" }] }],
+      } as never))).toThrow("is not URL-safe");
+    });
+
+    it("allows the same skill slug on different agents", () => {
+      expect(() => sanitize(makeConfig({
+        ai,
+        agents: ["one", "two"].map((slug) => ({
+          ...agent,
+          slug,
+          skills: [{ slug: "docs", instructions: "Use it" }],
+        })),
+      } as never))).not.toThrow();
+    });
+
+    it("rejects duplicate skill resource paths", () => {
+      expect(() => sanitize(makeConfig({
+        ai,
+        agents: [{ ...agent, skills: [{
+          slug: "docs",
+          instructions: "Use it",
+          resources: [
+            { path: "api.md", content: "One" },
+            { path: "api.md", content: "Two" },
+          ],
+        }] }],
+      } as never))).toThrow("Duplicate resource path 'api.md'");
+    });
+
+    it.each(["list_skills", "load_skill", "load_skill_resource"])(
+      "reserves the %s tool slug for skills",
+      (slug) => {
+        expect(() => sanitize(makeConfig({
+          ai,
+          agents: [{
+            ...agent,
+            skills: [{ slug: "docs", instructions: "Use it" }],
+            tools: [makeTool(slug)],
+          }],
+        } as never))).toThrow(
+          `[frogbot] Tool slug '${slug}' is reserved for agent skills.`,
+        );
+      },
+    );
+
+    it("reserves skill tool names after root tool inheritance", () => {
+      expect(() => sanitize(makeConfig({
+        ai,
+        agents: [{ ...agent, skills: [{ slug: "docs", instructions: "Use it" }] }],
+        tools: [makeTool("load_skill")],
+      } as never))).toThrow(
+        "[frogbot] Tool slug 'load_skill' is reserved for agent skills.",
+      );
+    });
+
+    it("resolves skill tools and L1 instructions", () => {
+      const result = sanitize(makeConfig({
+        ai,
+        agents: [{
+          ...agent,
+          skills: [
+            { slug: "docs", description: "Product documentation", instructions: "Use docs" },
+            { slug: "support", instructions: "Support playbook" },
+          ],
+          tools: [makeTool("custom")],
+        }],
+      } as never));
+
+      expect(result.agents?.[0].tools?.map(({ slug }) => slug)).toEqual([
+        "custom",
+        "list_skills",
+        "load_skill",
+        "load_skill_resource",
+      ]);
+      expect(result.agents?.[0].instructions).toBe(
+        "Help the user\n\n- **docs**: Product documentation\n- **support**",
+      );
+    });
+
+    it("keeps skill tools when root tool inheritance is disabled", () => {
+      const result = sanitize(makeConfig({
+        ai,
+        agents: [{
+          ...agent,
+          inheritTools: false,
+          skills: [{ slug: "docs", instructions: "Use docs" }],
+        }],
+        tools: [makeTool("shared")],
+      } as never));
+
+      expect(result.agents?.[0].tools?.map(({ slug }) => slug)).toEqual([
+        "list_skills",
+        "load_skill",
+        "load_skill_resource",
+      ]);
+    });
+
+    it("does not change agents with empty or absent skills", () => {
+      const omitted = sanitize(makeConfig({ ai, agents: [agent] }));
+      const empty = sanitize(makeConfig({
+        ai,
+        agents: [{ ...agent, skills: [] }],
+      } as never));
+
+      expect(empty.agents?.[0].tools).toEqual(omitted.agents?.[0].tools);
+      expect(empty.agents?.[0].instructions).toBe(omitted.agents?.[0].instructions);
+    });
+
     it("reserves the schedule task slug and merges user jobs", async () => {
       const scheduled = { ...agent, triggers: [{ type: "schedule" as const, slug: "run", schedule: { every: "1h" as const }, prompt: "Run" }] };
       const handler = vi.fn();

@@ -135,6 +135,7 @@ export type {
 } from './types/piece.js';
 export type { Plugin } from './types/plugin.js';
 export type { FrogbotRequest } from './types/request.js';
+export type { SkillConfig, SkillContent, SkillCtx, SkillResource } from './types/skill.js';
 export type { Tool, ToolCtx } from './types/tool.js';
 export type { StopCondition, UIMessage } from 'ai';
 export { isStepCount, Output,stepCountIs } from 'ai';

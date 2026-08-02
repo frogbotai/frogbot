@@ -12,6 +12,7 @@ import type { Frogbot } from "../frogbot.js";
 import type { AgentSlug, FrogbotTypes } from "./generated.js";
 import type { DocID } from "./operations.js";
 import type { FrogbotRequest } from "./request.js";
+import type { SkillConfig } from "./skill.js";
 import type { AnyTool } from "./tool.js";
 
 export type AgentAccess = (args: {
@@ -55,6 +56,7 @@ export type AgentConfig = {
   model: AgentModelId;
   instructions: string;
   profile?: AgentProfile;
+  skills?: readonly SkillConfig[];
   tools?: readonly AnyTool[];
   inheritTools?: false;
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];
