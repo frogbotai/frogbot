@@ -1,7 +1,7 @@
 'use client'
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/tooltip'
-import { MicIcon } from '../icons/mic'
+import MicIcon from '../icons/icons/MicIcon'
 import { cn } from '../lib/utils'
 import { useChatProvider } from './provider'
 import { useTranscription } from './use-transcription'
