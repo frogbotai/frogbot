@@ -10,5 +10,6 @@ export type SanitizedChatConfig =
 
 export type ManifestResponse = {
   chat: SanitizedChatConfig;
+  files: { slug: string };
   agents: { slug: string; profile?: AgentProfile }[];
 };

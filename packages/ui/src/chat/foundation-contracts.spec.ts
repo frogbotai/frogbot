@@ -47,7 +47,7 @@ describe('Firmware UI foundation contracts', () => {
     })
   })
 
-  it.fails('rejects inline attachment data from the chat request pipeline', async () => {
+  it('rejects inline attachment data from the chat request pipeline', async () => {
     const prepare = prepareChatRequest()
 
     await expect(prepare({

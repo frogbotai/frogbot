@@ -7,6 +7,7 @@ import { type ReactNode,useEffect, useMemo, useRef, useState } from 'react'
 import { useControlledState } from '../hooks/use-controlled-state'
 import { ChatShell } from './chat-shell'
 import { ChatStatus } from './chat-status'
+import type { FileReference } from './attachments'
 import { Composer } from './composer'
 import { Message } from './message'
 import { MessageList, type MessageListProps } from './message-list'
@@ -51,19 +52,20 @@ export function Chat(props: ChatProps) {
   if (provider.loading) return props.loadingContent
   if (provider.error) return props.errorContent?.(provider.error)
   if (!provider.manifest || !provider.manifest.chat.enabled) return props.emptyContent
-  return <ChatOrchestrator {...props} threadIdControlled={Object.prototype.hasOwnProperty.call(props, 'threadId')} adapter={provider.adapter} sdk={provider.sdk} agents={provider.manifest.agents} messagesSlug={provider.manifest.chat.messagesSlug} threadsSlug={provider.manifest.chat.threadsSlug} />
+  return <ChatOrchestrator {...props} threadIdControlled={Object.prototype.hasOwnProperty.call(props, 'threadId')} adapter={provider.adapter} sdk={provider.sdk} agents={provider.manifest.agents} filesSlug={provider.manifest.files.slug} messagesSlug={provider.manifest.chat.messagesSlug} threadsSlug={provider.manifest.chat.threadsSlug} />
 }
 
 type ChatOrchestratorProps = ChatProps & {
   adapter: NonNullable<ReturnType<typeof useChatProvider>>['adapter']
   sdk: NonNullable<ReturnType<typeof useChatProvider>>['sdk']
   agents: ChatManifest['agents']
+  filesSlug: string
   messagesSlug: string
   threadsSlug: string
   threadIdControlled: boolean
 }
 
-function ChatOrchestrator({ abortedContent, adapter, agent, agents, composerEndSlot, composerStartSlot, defaultThreadId, emptyContent, errorContent, fallbackTitle = 'New chat', messagesSlug, onThreadIdChange, panel, renderMessage, renderThreadActions, sdk, stopContent = 'Stop', submitContent = 'Send', threadId: controlledThreadId, threadIdControlled, threadsSlug, throttle, warningContent }: ChatOrchestratorProps) {
+function ChatOrchestrator({ abortedContent, adapter, agent, agents, composerEndSlot, composerStartSlot, defaultThreadId, emptyContent, errorContent, fallbackTitle = 'New chat', filesSlug, messagesSlug, onThreadIdChange, panel, renderMessage, renderThreadActions, sdk, stopContent = 'Stop', submitContent = 'Send', threadId: controlledThreadId, threadIdControlled, threadsSlug, throttle, warningContent }: ChatOrchestratorProps) {
   const [threadId, setThreadId] = useControlledState<string | number | undefined>({ controlled: threadIdControlled, defaultValue: defaultThreadId, onChange: onThreadIdChange, value: controlledThreadId })
   const [chatId, setChatId] = useState(threadId === undefined ? `new:${agent}` : String(threadId))
   const createdThreadId = useRef<string | undefined>(undefined)
@@ -148,11 +150,15 @@ function ChatOrchestrator({ abortedContent, adapter, agent, agents, composerEndS
       threads.refresh()
     },
   })
-  const submit = async (text: string) => {
+  const submit = async (text: string, attachments: FileReference[]) => {
     setAborted(false)
-    const message: UIMessage = { id: '', role: 'user', parts: [{ type: 'text', text }] }
+    const parts = [
+      ...attachments.map((attachment) => ({ type: 'file-reference' as const, ...attachment })),
+      ...(text ? [{ type: 'text' as const, text }] : []),
+    ]
+    const message: UIMessage = { id: '', role: 'user', parts: parts as UIMessage['parts'] }
     const metadata = await adapter.buildMetadata?.(message)
-    await chat.sendMessage({ text, metadata })
+    await chat.sendMessage({ parts, metadata } as never)
   }
   const stop = () => {
     setAborted(true)
@@ -169,7 +175,7 @@ function ChatOrchestrator({ abortedContent, adapter, agent, agents, composerEndS
     {chat.messages.length === 0 && !history.loading ? emptyContent : <MessageList messages={chat.messages} renderMessage={renderMessage ?? defaultRenderMessage} />}
     <div className="p-4">
       <ChatStatus aborted={aborted} abortedContent={abortedContent} error={error} errorContent={errorContent} warningContent={warningContent} />
-      <Composer pending={chat.status === 'submitted' || chat.status === 'streaming'} onStop={stop} onSubmit={submit} startSlot={composerStartSlot} endSlot={composerEndSlot} submitContent={submitContent} stopContent={stopContent} />
+      <Composer sdk={sdk} filesSlug={filesSlug} pending={chat.status === 'submitted' || chat.status === 'streaming'} onStop={stop} onSubmit={submit} startSlot={composerStartSlot} endSlot={composerEndSlot} submitContent={submitContent} stopContent={stopContent} />
     </div>
   </ChatShell>
 }

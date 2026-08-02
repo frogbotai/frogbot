@@ -23,7 +23,7 @@ vi.mock('./provider', () => ({ useChatProvider: () => ({
   adapter: state.adapter,
   sdk: state.sdk,
   loading: false,
-  manifest: { chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' }, agents: state.agents },
+  manifest: { chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' }, files: { slug: 'files' }, agents: state.agents },
 }) }))
 vi.mock('./use-thread', () => ({ useThread: () => state.history }))
 vi.mock('./use-threads', () => ({ useThreads: () => ({ docs: [{ id: 'one', agent: 'support', title: 'One' }, { id: 'two', agent: 'support', title: null }], loading: false, refresh: state.refresh }) }))
@@ -92,7 +92,7 @@ describe('Chat', () => {
     const input = screen.getByRole('textbox')
     fireEvent.change(input, { target: { value: 'Hello' } })
     fireEvent.keyDown(input, { key: 'Enter' })
-    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledWith({ text: 'Hello', metadata: { source: 'ui' } }))
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledWith({ parts: [{ type: 'text', text: 'Hello' }], metadata: { source: 'ui' } }))
   })
 
   it('sends the strict request body for a new thread', async () => {

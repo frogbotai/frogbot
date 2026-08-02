@@ -20,7 +20,7 @@ export function buildManifestEndpoint() {
         }
       }
 
-      const body: ManifestResponse = { chat: req.frogbot.config.chat, agents };
+      const body: ManifestResponse = { chat: req.frogbot.config.chat, files: req.frogbot.config.files, agents };
       return Response.json(body, { headers: { 'Cache-Control': 'private, no-store' } });
     },
   };

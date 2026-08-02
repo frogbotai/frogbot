@@ -1,5 +1,6 @@
 export type { ChatPlatformAdapter } from '../chat/adapter'
 export { bearerFetch, cookieFetch } from '../chat/auth'
+export type { FileReference } from '../chat/attachments'
 export type { ChatProps } from '../chat/chat'
 export { Chat } from '../chat/chat'
 export type { ChatShellProps } from '../chat/chat-shell'

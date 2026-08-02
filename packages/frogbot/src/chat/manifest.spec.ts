@@ -26,7 +26,7 @@ function makeRequest({
   return {
     frogbot: {
       agents: Object.fromEntries(agents.map((agent) => [agent.slug, agent])),
-      config: { chat },
+      config: { chat, files: { slug: 'uploads' } },
     },
     user,
   } as unknown as FrogbotRequest;
@@ -61,6 +61,7 @@ describe('manifest endpoint', () => {
 
     expect(await response.json()).toEqual({
       chat: { enabled: true, threadsSlug: 'conversations', messagesSlug: 'turns' },
+      files: { slug: 'uploads' },
       agents: [{ slug: 'support' }],
     });
   });
@@ -91,7 +92,7 @@ describe('manifest endpoint', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ chat: { enabled: false }, agents: [{ slug: 'public' }] });
+    expect(await response.json()).toEqual({ chat: { enabled: false }, files: { slug: 'uploads' }, agents: [{ slug: 'public' }] });
   });
 
   it('prevents shared and persistent caching', async () => {

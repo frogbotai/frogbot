@@ -11,7 +11,11 @@ export type FrogbotChatTransportOptions<UI_MESSAGE extends UIMessage> = Omit<
 }
 
 export function prepareChatRequest<UI_MESSAGE extends UIMessage>(threadId?: string | number): PrepareSendMessagesRequest<UI_MESSAGE> {
-  return ({ messages }) => ({ body: { messages, ...(threadId === undefined ? {} : { threadId }) } })
+  return ({ messages }) => {
+    const unsafe = messages.some((message) => message.parts.some((part) => part.type === 'file' && (part.url.startsWith('data:') || part.providerReference)))
+    if (unsafe) throw new Error('Chat attachments require a stable FrogBot file reference')
+    return { body: { messages, ...(threadId === undefined ? {} : { threadId }) } }
+  }
 }
 
 export class FrogbotChatTransport<UI_MESSAGE extends UIMessage = UIMessage> extends DefaultChatTransport<UI_MESSAGE> {

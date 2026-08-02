@@ -56,6 +56,18 @@ describe('FrogBotSDK', () => {
     expect(new Headers(init?.headers).has('content-type')).toBe(false)
   })
 
+  it('uploads a file to a collection', async () => {
+    const fetch = vi.fn(() => Promise.resolve(Response.json({ id: 'file-1', filename: 'frog.txt', mimeType: 'text/plain' })))
+    const sdk = createFrogbotSDK({ baseURL: 'https://frogbot.example/api', fetch })
+
+    await expect(sdk.upload('documents', new File(['frog'], 'frog.txt', { type: 'text/plain' }))).resolves.toEqual({ id: 'file-1', filename: 'frog.txt', mimeType: 'text/plain' })
+
+    expect(fetch.mock.calls[0]?.[0]).toBe('https://frogbot.example/api/documents')
+    const body = fetch.mock.calls[0]?.[1]?.body as FormData
+    expect(body.get('file')).toBeInstanceOf(File)
+    expect(body.get('_payload')).toBe('{}')
+  })
+
   it('throws a typed error with API details', async () => {
     const response = new Response(JSON.stringify({ errors: [{ field: 'name', message: 'Required' }] }), {
       headers: { 'Content-Type': 'application/json' },

@@ -26,3 +26,19 @@
 - Normalized shared buttons, inputs, selects, and cards to Firmware's control states and geometry.
 - Kept the Firmware composer shell and its expected-failure baseline unchanged for Stage 5.
 - Exact deviations: Satoshi remains loaded from Firmware's `/fonts/*` public URL contract because the UI package does not own application public assets; unused extended color families remain deferred until a canonical FrogBot surface consumes them.
+
+## Stage 5 — Port the Firmware Composer Shell
+
+- Rebuilt the canonical FrogBot Composer with Firmware's gradient wrapper, rotating conic surround, 20px nested shell, textarea geometry, control row, responsive sizing, and focus, drag, and disabled states.
+- Replaced visible text actions with Firmware's round arrow and stop controls while retaining accessible consumer-provided labels.
+- Kept attachment, tool, page-context, reusable-prompt, plan, and microphone controls hidden because their behavior was not implemented; file drops only rendered the drag state and were discarded.
+- Converted the Stage 1 expected-failure composer baseline and added focused submit, stop, controlled-input, drag, and disabled-state coverage.
+- Exact deviations: Firmware's unavailable attachment, tool, page-context, reusable-prompt, plan, and microphone controls were omitted; attachment previews and audio waveform were omitted; reduced-motion users receive a static gradient; consumer start and end slots remain supported by FrogBot's existing public Composer contract.
+
+## Stage 6 — Upload Files on Selection
+
+- Added the canonical files collection slug to the FrogBot manifest and a focused SDK multipart upload method.
+- Added immediate selection and drop uploads, upload previews, errors, removal, and retry to the canonical Composer.
+- Sent and persisted only stable `{ id, filename, mediaType }` FrogBot references as `file-reference` message parts, including attachment-only messages.
+- Kept local preview URLs out of message state and did not add inline base64, provider IDs, server-side resolution, voice, or syntax behavior.
+- Risk: removing or abandoning an uploaded attachment can leave an orphaned file. Stage 6 does not cancel in-flight requests or delete uploaded records because ownership and safe cleanup semantics are not yet defined; retries can also create an orphan if the first request succeeds after the client observes failure.
