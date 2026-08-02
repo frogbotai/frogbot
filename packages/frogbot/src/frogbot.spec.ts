@@ -198,6 +198,42 @@ describe('Frogbot class', () => {
       expect(result).toBe(lifecycleFrogbot);
     });
 
+    it('refreshes config-derived registries for the same Payload instance', async () => {
+      const payloadMod = await import('payload');
+      const payload = (payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> })
+        .__getMockPayload();
+      const firstAccess = vi.fn(() => true);
+      const secondAccess = vi.fn(() => false);
+      const firstConfig = withAI(makeConfig());
+      firstConfig.agents = [{ slug: 'assistant', model: 'openai/gpt-4o', instructions: 'first', access: firstAccess }];
+      const onInit = vi.fn();
+      const frogbot = await new Frogbot().init({ config: firstConfig, onInit });
+      const firstAgent = frogbot.agents.assistant;
+      const firstGateway = frogbot.gateway;
+      const firstConnections = frogbot.connections;
+
+      await expect(new Frogbot().init({ config: firstConfig, onInit })).resolves.toBe(frogbot);
+      expect(frogbot.agents.assistant).toBe(firstAgent);
+
+      payload.config.collections = [
+        { slug: 'articles', custom: { frogbot: { auth: false } } },
+        { slug: 'payload-preferences', custom: {} },
+      ];
+      const secondConfig = withAI(makeConfig());
+      secondConfig.agents = [{ slug: 'assistant', model: 'openai/gpt-4o', instructions: 'second', access: secondAccess }];
+
+      await expect(new Frogbot().init({ config: secondConfig, onInit })).resolves.toBe(frogbot);
+
+      expect(frogbot.config).toBe(secondConfig);
+      expect(frogbot.agents.assistant).not.toBe(firstAgent);
+      expect(frogbot.agents.assistant.config.instructions).toBe('second');
+      await expect(Promise.resolve(frogbot.agents.assistant.config.access?.({ req: {} as never }))).resolves.toBe(false);
+      expect(frogbot.gateway).not.toBe(firstGateway);
+      expect(frogbot.connections).not.toBe(firstConnections);
+      expect(Object.keys(frogbot.collections)).toEqual(['articles']);
+      expect(onInit).toHaveBeenCalledOnce();
+    });
+
     it('keeps Payload initialization off the public instance API', () => {
       type HasInitFromPayload = 'initFromPayload' extends keyof Frogbot ? true : false;
 

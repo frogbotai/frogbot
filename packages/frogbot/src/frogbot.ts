@@ -22,7 +22,11 @@ import { transcribeOperation } from './ai/operations/transcribe.js';
 import { writeGeneratedTypes } from './bin/generateTypes.js';
 import { Connections } from './connections/api.js';
 import { generateImportMap } from './importMap/index.js';
-import { getFrogbotInstance, registerFrogbotInstance } from './instanceRegistry.js';
+import {
+  ensureFrogbotInstance,
+  refreshFrogbotConfig,
+  registerFrogbotInstance,
+} from './instanceRegistry.js';
 import type { FrogbotLocalAPI } from './localAPI.js';
 import { createFrogbotLocalAPI } from './localAPI.js';
 import type { AgentRegistry } from './types/agent.js';
@@ -144,10 +148,11 @@ export class Frogbot {
       disableDBConnect: options.disableDBConnect,
       disableOnInit: true,
     });
-    const registered = getFrogbotInstance(payload);
-    if (registered) return registered;
-
-    return this[initFromPayload](payload, config, options);
+    return ensureFrogbotInstance(
+      payload,
+      () => this[initFromPayload](payload, config, options),
+      config,
+    );
   }
 
   async [initFromPayload](
@@ -155,13 +160,10 @@ export class Frogbot {
     config: FrogbotSanitizedConfig,
     options: Pick<InitOptions, 'disableOnInit' | 'onInit'> = {},
   ): Promise<Frogbot> {
-    const registered = getFrogbotInstance(payload);
-    if (registered) return registered;
-
     this.config = config;
     this.payload = payload;
     this.local = createFrogbotLocalAPI(this.payload);
-    registerFrogbotInstance(this.payload, this);
+    registerFrogbotInstance(this.payload, this, config);
 
     this.secret = this.payload.secret;
     this.logger = this.payload.logger;
@@ -171,32 +173,10 @@ export class Frogbot {
           'Pass an `email` adapter to enable delivery.',
       );
     }
-    this.connections = new Connections(this, this.config.connections);
+    await this[refreshFrogbotConfig](config);
 
-    // Initialize the embedded AI gateway if AI is configured.
     if (this.config.ai) {
-      this.gateway = createAIGateway(this.config.ai, this.logger);
       await this.registerAITelemetry(this.config.ai);
-    }
-
-    if (this.config.agents?.length && this.config.ai) {
-      const agentDeps = {
-        gateway: this.assertAIConfigured(),
-        config: this.config.ai,
-        frogbot: this,
-      };
-      for (const agentConfig of this.config.agents) {
-        this.agents[agentConfig.slug] = createAgentInstance(agentConfig, agentDeps);
-      }
-    }
-
-    // Build collection registry (exclude Payload internals).
-    this.collections = {};
-    for (const c of this.payload.config.collections) {
-      if (c.slug.startsWith('payload-')) {
-        continue;
-      }
-      this.collections[c.slug] = this.toCollection(c);
     }
 
     if (
@@ -228,6 +208,29 @@ export class Frogbot {
     }
 
     return this;
+  }
+
+  async [refreshFrogbotConfig](config: FrogbotSanitizedConfig): Promise<void> {
+    this.config = config;
+    this.connections = new Connections(this, config.connections);
+    this.gateway = config.ai ? createAIGateway(config.ai, this.logger) : undefined;
+    this.agents = {};
+    if (config.agents?.length && config.ai) {
+      const agentDeps = {
+        gateway: this.assertAIConfigured(),
+        config: config.ai,
+        frogbot: this,
+      };
+      for (const agentConfig of config.agents) {
+        this.agents[agentConfig.slug] = createAgentInstance(agentConfig, agentDeps);
+      }
+    }
+    this.collections = {};
+    for (const collection of this.payload.config.collections) {
+      if (!collection.slug.startsWith('payload-')) {
+        this.collections[collection.slug] = this.toCollection(collection);
+      }
+    }
   }
 
   async destroy(): Promise<void> {

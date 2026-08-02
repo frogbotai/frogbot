@@ -6,16 +6,19 @@
 
 import type { InitOptions } from './frogbot.js';
 import { Frogbot } from './frogbot.js';
+import type { FrogbotSanitizedConfig } from './types/sanitized.js';
 
 type FrogbotCache = {
   frogbot: Frogbot | null;
+  config: InitOptions['config'] | null;
   promise: Promise<Frogbot> | null;
+  promiseConfig: InitOptions['config'] | null;
 };
 
 const globalRef = globalThis as { _frogbot?: FrogbotCache };
 
 function getCache(): FrogbotCache {
-  return (globalRef._frogbot ??= { frogbot: null, promise: null });
+  return (globalRef._frogbot ??= { frogbot: null, config: null, promise: null, promiseConfig: null });
 }
 
 /**
@@ -23,18 +26,32 @@ function getCache(): FrogbotCache {
  *
  * First call initializes; subsequent calls return the cached instance.
  */
-export async function getFrogbot(options: InitOptions): Promise<Frogbot> {
+export function getFrogbot(options: InitOptions): Promise<Frogbot> {
+  const config = options.config;
   const cached = getCache();
-  if (cached.frogbot) return cached.frogbot;
+  if (cached.frogbot && (!cached.config || cached.config === config)) return Promise.resolve(cached.frogbot);
+
+  if (cached.promise) {
+    if (cached.promiseConfig === config) return cached.promise;
+    return cached.promise.then(() => getFrogbot(options));
+  }
 
   if (!cached.promise) {
     const promise = new Frogbot().init(options).then((instance) => {
       cached.frogbot = instance;
+      cached.config = config;
       return instance;
     });
     cached.promise = promise;
-    void promise.catch(() => {
+    cached.promiseConfig = config;
+    void promise.then(() => {
+      if (cached.promise === promise) {
+        cached.promise = null;
+        cached.promiseConfig = null;
+      }
+    }, () => {
       if (cached.promise === promise) cached.promise = null;
+      if (cached.promiseConfig === config) cached.promiseConfig = null;
     });
   }
 
@@ -50,9 +67,10 @@ export function getCachedFrogbot(): Frogbot | null {
   return getCache().frogbot;
 }
 
-export function seedFrogbotCache(frogbot: Frogbot): void {
+export function seedFrogbotCache(frogbot: Frogbot, config?: FrogbotSanitizedConfig): void {
   const cached = getCache();
-  cached.frogbot ??= frogbot;
+  cached.frogbot = frogbot;
+  cached.config = config ?? cached.config;
 }
 
 /**
@@ -60,5 +78,5 @@ export function seedFrogbotCache(frogbot: Frogbot): void {
  * @internal
  */
 export function resetFrogbotCache(): void {
-  globalRef._frogbot = { frogbot: null, promise: null };
+  globalRef._frogbot = { frogbot: null, config: null, promise: null, promiseConfig: null };
 }

@@ -42,10 +42,7 @@ import { resolveFilesCollection } from "../files/resolveCollections.js";
 import type { Frogbot } from "../frogbot.js";
 import { initFrogbotFromPayload } from "../frogbot.js";
 import { seedFrogbotCache } from "../getFrogbot.js";
-import {
-  ensureFrogbotInstance,
-  getFrogbotInstance,
-} from "../instanceRegistry.js";
+import { ensureFrogbotInstance } from "../instanceRegistry.js";
 import { buildSkillTools } from "../skills/tools.js";
 import type { AgentConfig } from "../types/agent.js";
 import type { AIConfig, RouterConfig, SanitizedAIConfig } from "../types/ai.js";
@@ -971,18 +968,17 @@ export function sanitize(
   validateInternalPathReservations(config);
   const sanitizedConfigRef: { current?: FrogbotSanitizedConfig } = {};
   const attachFrogbot: AttachFrogbot = async (req) => {
-    let frogbot = getFrogbotInstance(req.payload);
-    if (!frogbot) {
-      const sanitizedConfig = sanitizedConfigRef.current;
-      if (!sanitizedConfig)
-        {throw new Error(
-          "[frogbot] Payload initialized before config sanitization completed.",
-        );}
-      frogbot = await ensureFrogbotInstance(req.payload, () =>
-        initFrogbotFromPayload(req.payload, sanitizedConfig),
-      );
-      seedFrogbotCache(frogbot);
-    }
+    const sanitizedConfig = sanitizedConfigRef.current;
+    if (!sanitizedConfig)
+      {throw new Error(
+        "[frogbot] Payload initialized before config sanitization completed.",
+      );}
+    const frogbot = await ensureFrogbotInstance(
+      req.payload,
+      () => initFrogbotFromPayload(req.payload, sanitizedConfig),
+      sanitizedConfig,
+    );
+    seedFrogbotCache(frogbot, sanitizedConfig);
     (req as PayloadRequest & { frogbot: Frogbot }).frogbot = frogbot;
     return req as unknown as FrogbotRequest;
   };
@@ -1057,10 +1053,12 @@ export function sanitize(
         {throw new Error(
           "[frogbot] Payload initialized before config sanitization completed.",
         );}
-      const frogbot = await ensureFrogbotInstance(payload, () =>
-        initFrogbotFromPayload(payload, sanitizedConfig),
+      const frogbot = await ensureFrogbotInstance(
+        payload,
+        () => initFrogbotFromPayload(payload, sanitizedConfig),
+        sanitizedConfig,
       );
-      seedFrogbotCache(frogbot);
+      seedFrogbotCache(frogbot, sanitizedConfig);
     },
     buildSecretEndpoints({ connections, pieces: pieces.pieces }),
     attachFrogbot,

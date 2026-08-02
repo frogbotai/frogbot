@@ -31,6 +31,15 @@ describe('getFrogbot', () => {
     expect(second).toBe(first);
   });
 
+  it('refreshes the singleton when the config reference changes', async () => {
+    const first = await getFrogbot(options);
+    const second = await getFrogbot({ config: Promise.resolve({}) } as never);
+
+    expect(second).not.toBe(first);
+    expect(initState.calls).toBe(2);
+    expect(getCachedFrogbot()).toBe(second);
+  });
+
   it('deduplicates concurrent initialization into one instance', async () => {
     const [first, second] = await Promise.all([getFrogbot(options), getFrogbot(options)]);
     expect(second).toBe(first);
