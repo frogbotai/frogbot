@@ -172,6 +172,21 @@ describe('Frogbot class', () => {
       expect(emailWarnings(frogbot.logger.warn as ReturnType<typeof vi.fn>)).toHaveLength(0);
     });
 
+    it('warns once for each root tool overridden by an agent', async () => {
+      const config = makeConfig();
+      (config._internal as any).toolCollisions = [
+        { agent: 'support', slug: 'search' },
+      ];
+      const frogbot = new Frogbot();
+
+      await frogbot.init({ config, disableOnInit: true });
+
+      const warnings = (frogbot.logger.warn as ReturnType<typeof vi.fn>).mock.calls.filter(
+        ([message]) => String(message).includes("Agent 'support' overrides root tool 'search'"),
+      );
+      expect(warnings).toHaveLength(1);
+    });
+
     it('leaves gateway undefined when no ai config is present', async () => {
       const frogbot = await setup();
       expect(frogbot.gateway).toBeUndefined();

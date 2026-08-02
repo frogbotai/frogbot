@@ -49,6 +49,7 @@ export type AgentConfig = {
   model: AgentModelId;
   instructions: string;
   tools?: readonly AnyTool[];
+  inheritTools?: false;
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];
   access?: AgentAccess;
   triggers?: readonly AgentScheduleTrigger[];

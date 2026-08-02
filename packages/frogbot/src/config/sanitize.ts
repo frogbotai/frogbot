@@ -365,11 +365,64 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
   };
 }
 
+function sanitizeToolList(
+  tools: readonly AnyTool[],
+  pieces: SanitizedPiecesConfig,
+  contextLabel: string,
+): AnyTool[] {
+  const context = `${contextLabel[0].toLowerCase()}${contextLabel.slice(1)}`;
+  const toolSlugs = new Set<string>();
+  return tools.map((configuredTool) => {
+    let tool = configuredTool;
+    if (
+      !isRecord(tool) ||
+      typeof tool.slug !== "string" ||
+      !tool.slug.trim()
+    ) {
+      throw new Error(
+        `[frogbot] A tool in ${context} is missing a \`slug\`.`,
+      );
+    }
+    if (typeof tool.pieceService === "string") {
+      const registered = pieces.services[tool.pieceService];
+      if (!registered)
+        {throw new Error(
+          `[frogbot] ${contextLabel} uses tool '${tool.slug}' but no '${tool.pieceService}' piece is registered in \`pieces\`.`,
+        );}
+      const resolved = pieces.tools[tool.slug];
+      if (!resolved)
+        {throw new Error(
+          `[frogbot] Piece '${tool.pieceService}' has no registered tool '${tool.slug}'.`,
+        );}
+      tool = resolved;
+    }
+    if (toolSlugs.has(tool.slug)) {
+      throw new Error(
+        `[frogbot] Duplicate tool slug '${tool.slug}' in ${context}.`,
+      );
+    }
+    if (typeof tool.description !== "string" || !tool.description.trim()) {
+      throw new Error(
+        `[frogbot] Tool '${tool.slug}' in ${context} requires a description.`,
+      );
+    }
+    if (!tool.inputSchema || typeof tool.execute !== "function") {
+      throw new Error(
+        `[frogbot] Tool '${tool.slug}' in ${context} requires inputSchema and execute.`,
+      );
+    }
+    toolSlugs.add(tool.slug);
+    return tool;
+  });
+}
+
 function sanitizeAgents(
   agents: AgentConfig[],
   ai: SanitizedAIBase | undefined,
   pieces: SanitizedPiecesConfig,
   mode: ValidationMode,
+  rootTools: AnyTool[],
+  toolCollisions: { agent: string; slug: string }[],
 ): AgentConfig[] | undefined {
   if (!Array.isArray(agents)) {
     throw new Error("[frogbot] `agents` must be an array.");
@@ -443,55 +496,29 @@ function sanitizeAgents(
       console.warn(message);
     }
 
+    let agentTools: AnyTool[] | undefined;
     if (agent.tools !== undefined) {
       if (!Array.isArray(agent.tools)) {
         throw new Error(
           `[frogbot] Agent '${agent.slug}' tools must be an array when configured.`,
         );
       }
-      const toolSlugs = new Set<string>();
-      const tools = agent.tools.map((tool) => {
-        if (
-          !isRecord(tool) ||
-          typeof tool.slug !== "string" ||
-          !tool.slug.trim()
-        ) {
-          throw new Error(
-            `[frogbot] A tool in agent '${agent.slug}' is missing a \`slug\`.`,
-          );
-        }
-        if (typeof tool.pieceService === "string") {
-          const registered = pieces.services[tool.pieceService];
-          if (!registered)
-            {throw new Error(
-              `[frogbot] Agent '${agent.slug}' uses tool '${tool.slug}' but no '${tool.pieceService}' piece is registered in \`pieces\`.`,
-            );}
-          const resolved = pieces.tools[tool.slug];
-          if (!resolved)
-            {throw new Error(
-              `[frogbot] Piece '${tool.pieceService}' has no registered tool '${tool.slug}'.`,
-            );}
-          tool = resolved;
-        }
-        if (toolSlugs.has(tool.slug)) {
-          throw new Error(
-            `[frogbot] Duplicate tool slug '${tool.slug}' in agent '${agent.slug}'.`,
-          );
-        }
-        if (typeof tool.description !== "string" || !tool.description.trim()) {
-          throw new Error(
-            `[frogbot] Tool '${tool.slug}' in agent '${agent.slug}' requires a description.`,
-          );
-        }
-        if (!tool.inputSchema || typeof tool.execute !== "function") {
-          throw new Error(
-            `[frogbot] Tool '${tool.slug}' in agent '${agent.slug}' requires inputSchema and execute.`,
-          );
-        }
-        toolSlugs.add(tool.slug);
-        return tool;
+      agentTools = sanitizeToolList(
+        agent.tools,
+        pieces,
+        `Agent '${agent.slug}'`,
+      );
+    }
+    if (agent.inheritTools !== false && rootTools.length > 0) {
+      const agentToolSlugs = new Set(agentTools?.map(({ slug }) => slug));
+      const inheritedTools = rootTools.filter(({ slug }) => {
+        if (!agentToolSlugs.has(slug)) return true;
+        toolCollisions.push({ agent: agent.slug, slug });
+        return false;
       });
-      agent = { ...agent, tools };
+      agent = { ...agent, tools: [...inheritedTools, ...(agentTools ?? [])] };
+    } else if (agentTools !== undefined) {
+      agent = { ...agent, tools: agentTools };
     }
 
     if (agent.triggers !== undefined) {
@@ -824,9 +851,21 @@ export function sanitize(
   // Sanitize AI config if present.
   const sanitizedAI = config.ai ? sanitizeAI(config.ai) : undefined;
   const pieces = sanitizePieces(config.pieces);
+  if (config.tools !== undefined && !Array.isArray(config.tools)) {
+    throw new Error("[frogbot] Root tools must be an array when configured.");
+  }
+  const rootTools = sanitizeToolList(config.tools ?? [], pieces, "Root");
+  const toolCollisions: { agent: string; slug: string }[] = [];
   const agents =
     config.agents !== undefined
-      ? sanitizeAgents(config.agents, sanitizedAI, pieces, mode)
+      ? sanitizeAgents(
+          config.agents,
+          sanitizedAI,
+          pieces,
+          mode,
+          rootTools,
+          toolCollisions,
+        )
       : undefined;
   const hasScheduleTriggers = agents?.some((agent) => agent.triggers?.length);
   if (
@@ -917,6 +956,7 @@ export function sanitize(
     _internal: {
       payloadConfig: payloadSanitizedPromise,
       noEmail: !config.email,
+      ...(toolCollisions.length > 0 ? { toolCollisions } : {}),
     },
   };
   sanitizedConfigRef.current = sanitizedConfig;

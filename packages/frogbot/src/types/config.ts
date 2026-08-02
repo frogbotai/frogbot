@@ -18,6 +18,7 @@ import type { PayloadConfig } from './payload.js';
 import type { Piece } from './piece.js';
 import type { Plugin } from './plugin.js';
 import type { FrogbotRequest } from './request.js';
+import type { AnyTool } from './tool.js';
 
 type PayloadAfterErrorHook = NonNullable<NonNullable<PayloadConfig['hooks']>['afterError']>[number];
 
@@ -51,6 +52,7 @@ export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   /** Agent configs registered at boot and exposed via frogbot.agents. */
   agents?: AgentConfig[];
   pieces?: Piece[];
+  tools?: readonly AnyTool[];
   connections?: ConnectionsConfig;
   credentialSources?: CredentialSource[];
   /** Plugin pipeline — runs serially, in order, before sanitization. */

@@ -32,13 +32,14 @@ type AgentConfig = {
   model: ModelId
   instructions: string
   tools?: readonly AnyTool[]
+  inheritTools?: false
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[]
   access?: AgentAccess
   triggers?: readonly AgentScheduleTrigger[]
 }
 ```
 
-`stopWhen` defaults to the AI SDK's `isStepCount(20)`. If provided, `tools` and `stopWhen` arrays must be non-empty.
+`stopWhen` defaults to the AI SDK's `isStepCount(20)`. If provided as an array, `stopWhen` must be non-empty.
 
 ---
 
@@ -99,6 +100,35 @@ export const supportAgent: AgentConfig = {
 ```
 
 Inference runs through the embedded gateway. Each model step can request tools, FrogBot executes them with `ToolCtx`, and the loop continues until a stop condition matches.
+
+---
+
+## Share tools across agents
+
+Add tools to the root configuration to attach them to every agent.
+
+```ts
+export default buildConfig({
+  tools: [lookupTicket],
+  agents: [supportAgent, reportingAgent]
+})
+```
+
+Toolkits can be spread into the same array, such as `tools: [...todoTools]`. If an agent declares a tool with the same slug, its tool replaces the root tool and FrogBot logs a warning during initialization.
+
+Set `inheritTools: false` when an agent should only use its own tools.
+
+```ts
+export const reportingAgent: AgentConfig = {
+  slug: 'reporting',
+  model: 'fast',
+  instructions: 'Create reports from approved data sources.',
+  inheritTools: false,
+  tools: [queryWarehouse]
+}
+```
+
+Root tools with `pieceService` use the same validation as agent tools. The matching piece must be registered in the root `pieces` array.
 
 ---
 

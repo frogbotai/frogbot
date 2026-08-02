@@ -772,6 +772,92 @@ describe("frogbot sanitize", () => {
       model: "openai/test",
       instructions: "Help the user",
     };
+    const makeTool = (slug: string, overrides: Record<string, unknown> = {}) => ({
+      slug,
+      description: `Run ${slug}`,
+      inputSchema: {},
+      execute: vi.fn(),
+      ...overrides,
+    });
+
+    it("adds root tools to every agent", () => {
+      const shared = makeTool("shared");
+      const result = sanitize(makeConfig({
+        ai,
+        agents: [agent, { ...agent, slug: "sales" }],
+        tools: [shared],
+      } as never));
+
+      expect(result.agents?.map(({ tools }) => tools?.map(({ slug }) => slug))).toEqual([
+        ["shared"],
+        ["shared"],
+      ]);
+    });
+
+    it("lets agent tools override root tools without warning during sanitize", () => {
+      const rootExecute = vi.fn();
+      const agentExecute = vi.fn();
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      const result = sanitize(makeConfig({
+        ai,
+        agents: [{ ...agent, tools: [makeTool("shared", { execute: agentExecute })] }],
+        tools: [makeTool("shared", { execute: rootExecute })],
+      } as never));
+
+      expect(result.agents?.[0].tools).toHaveLength(1);
+      expect(result.agents?.[0].tools?.[0].execute).toBe(agentExecute);
+      expect((result._internal as any).toolCollisions).toEqual([
+        { agent: "support", slug: "shared" },
+      ]);
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
+    it("allows agents to opt out of root tools", () => {
+      const result = sanitize(makeConfig({
+        ai,
+        agents: [{ ...agent, inheritTools: false }, { ...agent, slug: "sales" }],
+        tools: [makeTool("shared")],
+      } as never));
+
+      expect(result.agents?.[0].tools).toBeUndefined();
+      expect(result.agents?.[1].tools?.map(({ slug }) => slug)).toEqual(["shared"]);
+    });
+
+    it("rejects an unregistered root piece tool", () => {
+      expect(() => sanitize(makeConfig({
+        ai,
+        agents: [agent],
+        tools: [makeTool("search", { pieceService: "search" })],
+      } as never))).toThrow(
+        "[frogbot] Root uses tool 'search' but no 'search' piece is registered in `pieces`.",
+      );
+    });
+
+    it.each([undefined, []])(
+      "adds root tools when agent tools are %s",
+      (tools) => {
+        const result = sanitize(makeConfig({
+          ai,
+          agents: [{ ...agent, ...(tools === undefined ? {} : { tools }) }],
+          tools: [makeTool("shared")],
+        } as never));
+
+        expect(result.agents?.[0].tools?.map(({ slug }) => slug)).toEqual(["shared"]);
+      },
+    );
+
+    it("rejects duplicate tool slugs within root and agent arrays", () => {
+      expect(() => sanitize(makeConfig({
+        ai,
+        agents: [agent],
+        tools: [makeTool("same"), makeTool("same")],
+      } as never))).toThrow("[frogbot] Duplicate tool slug 'same' in root.");
+      expect(() => sanitize(makeConfig({
+        ai,
+        agents: [{ ...agent, tools: [makeTool("same"), makeTool("same")] }],
+      } as never))).toThrow("[frogbot] Duplicate tool slug 'same' in agent 'support'.");
+    });
 
     it("sanitizes agents, defaults access, registers endpoints, and removes agents from Payload", async () => {
       const result = sanitize(makeConfig({ ai, agents: [agent] }));

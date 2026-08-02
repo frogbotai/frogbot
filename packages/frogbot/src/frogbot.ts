@@ -171,6 +171,11 @@ export class Frogbot {
           'Pass an `email` adapter to enable delivery.',
       );
     }
+    for (const collision of this.config._internal.toolCollisions ?? []) {
+      this.logger.warn(
+        `[frogbot] Agent '${collision.agent}' overrides root tool '${collision.slug}'.`,
+      );
+    }
     this.connections = new Connections(this, this.config.connections);
 
     // Initialize the embedded AI gateway if AI is configured.
