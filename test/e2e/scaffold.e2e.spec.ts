@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { connect } from 'node:net';
+import { connect, createServer } from 'node:net';
 import { DatabaseSync } from 'node:sqlite';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -30,6 +30,22 @@ function isListening(port: number): Promise<boolean> {
   });
 }
 
+function getEphemeralPort(): Promise<number> {
+  return new Promise((resolvePort, reject) => {
+    const server = createServer();
+    server.unref();
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (typeof address !== 'object' || !address) {
+        reject(new Error('could not resolve ephemeral port'));
+        return;
+      }
+      server.close(() => resolvePort(address.port));
+    });
+  });
+}
+
 describe('branding gate', () => {
   it('finds zero Payload references in scaffold + example files', async () => {
     const result = await new Promise<{ code: number; output: string }>((resolveExit) => {
@@ -47,12 +63,13 @@ describe('branding gate', () => {
 
 describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () => {
   const templateDir = join(repoRoot, 'templates', 'blank');
-  const port = 3987;
-  const baseURL = `http://localhost:${port}`;
+  let baseURL: string;
   let server: ChildProcess;
   let dataDir: string;
 
   beforeAll(async () => {
+    const port = await getEphemeralPort();
+    baseURL = `http://localhost:${port}`;
     dataDir = mkdtempSync(join(tmpdir(), 'frogbot-e2e-'));
     const require = createRequire(join(templateDir, 'package.json'));
     const nextBin = require.resolve('next/dist/bin/next');
@@ -75,6 +92,7 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     const deadline = Date.now() + 210000;
     for (;;) {
       if (await isListening(port)) break;
+      if (server.exitCode !== null) throw new Error(`scaffold dev server exited with code ${server.exitCode}`);
       if (Date.now() > deadline) throw new Error('scaffold dev server did not become ready');
       await new Promise((r) => setTimeout(r, 2000));
     }
