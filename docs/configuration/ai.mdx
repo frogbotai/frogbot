@@ -351,6 +351,29 @@ ai: {
 
 The standalone server mounts the embedded gateway at `/api/ai`. Canonical `/api/ai/v1/*` requests are authenticated through `frogbot.auth`, and requests without a resolved user receive `401` before reaching the gateway.
 
+Use `@frogbotai/sdk` in browser and application clients. AI methods use the SDK's configured base URL, headers, and `fetch`, so cookie and bearer authentication wrappers apply without separate AI credentials.
+
+```ts
+import { createFrogbotSDK } from '@frogbotai/sdk'
+
+const sdk = createFrogbotSDK({
+  baseURL: '/api',
+  fetch: (input, init) => fetch(input, { ...init, credentials: 'include' })
+})
+
+const result = await sdk.ai.transcribe({
+  model: 'groq/whisper-large-v3',
+  file: recording
+})
+
+const response = await sdk.ai.chat({
+  model: 'openai/gpt-4o-mini',
+  messages: [{ role: 'user', content: 'Hello' }]
+})
+```
+
+`transcribe` returns parsed transcription JSON. `chat` returns the raw `Response` so the caller can consume either JSON or an SSE stream.
+
 Each accepted request gets one FrogBot lifecycle around the gateway handler. FrogBot runs the operation hooks, while the gateway handler runs the configured upstream hooks inline.
 
 | Method | Path |
@@ -367,9 +390,7 @@ Each accepted request gets one FrogBot lifecycle around the gateway handler. Fro
 | `POST` | `/api/ai/v1/videos/generations` |
 | `POST` | `/api/ai/v1/rerank` |
 
-Pass credentials accepted by your configured auth collection. HTTP bodies use provider-prefixed model IDs because router aliases are resolved by FrogBot's local operation layer, not by the gateway handler.
-
-The `ai.access` category callbacks also apply only to local operations. Mounted routes use the authenticated-user gate shown above and do not evaluate those callbacks.
+Pass credentials accepted by your configured auth collection. HTTP bodies use provider-prefixed model IDs because router aliases are resolved by FrogBot's local operation layer, not by the gateway handler. After authentication, mounted operation routes enforce the matching `ai.access` category. A denied request receives `403`; discovery routes such as `/models` do not run an operation access callback.
 
 ```bash
 curl http://localhost:3000/api/ai/v1/chat/completions \

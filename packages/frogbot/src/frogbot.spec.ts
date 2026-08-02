@@ -260,6 +260,20 @@ describe('Frogbot class', () => {
   });
 
   describe('Gateway HTTP adapter', () => {
+    async function setupGateway(access: Partial<NonNullable<FrogbotSanitizedConfig['ai']>['access']>) {
+      const config = withAI(makeConfig());
+      Object.assign(config.ai!.access, access);
+      const frogbot = new Frogbot();
+      await frogbot.init({ config, disableOnInit: true });
+      const payloadMod = await import('payload');
+      const payload = (payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> })
+        .__getMockPayload();
+      payload.auth.mockResolvedValue({ user: { id: 'user-1' }, permissions: {} });
+      const handler = vi.fn((request: Request) => Response.json({ path: new URL(request.url).pathname }));
+      frogbot.gateway!.handler = handler;
+      return { frogbot, handler };
+    }
+
     it('authenticates, strips the mount prefix, and forwards req in the hook context', async () => {
       const config = withAI(makeConfig());
       const frogbot = new Frogbot();
@@ -309,6 +323,59 @@ describe('Frogbot class', () => {
 
       expect(response.status).toBe(401);
       expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 when generate access is denied', async () => {
+      const { frogbot, handler } = await setupGateway({ generate: () => false });
+
+      const response = await createGatewayHandler(frogbot)(
+        new Request('http://localhost/api/ai/v1/chat/completions', { method: 'POST', body: '{}' }),
+      );
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        error: { message: 'Access denied for AI generate', type: 'permission_error' },
+      });
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('uses transcribe access for audio transcriptions', async () => {
+      const { frogbot, handler } = await setupGateway({ generate: () => true, transcribe: () => false });
+
+      const response = await createGatewayHandler(frogbot)(
+        new Request('http://localhost/api/ai/v1/audio/transcriptions', { method: 'POST', body: 'audio' }),
+      );
+
+      expect(response.status).toBe(403);
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('forwards when method access is allowed', async () => {
+      const generate = vi.fn(() => true);
+      const { frogbot, handler } = await setupGateway({ generate });
+
+      const response = await createGatewayHandler(frogbot)(
+        new Request('http://localhost/api/ai/v1/chat/completions', { method: 'POST', body: '{}' }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(generate).toHaveBeenCalledOnce();
+      expect(handler).toHaveBeenCalledOnce();
+      expect(new URL(handler.mock.calls[0]![0].url).pathname).toBe('/v1/chat/completions');
+    });
+
+    it('forwards model discovery without an access check', async () => {
+      const generate = vi.fn(() => false);
+      const { frogbot, handler } = await setupGateway({ generate });
+
+      const response = await createGatewayHandler(frogbot)(
+        new Request('http://localhost/api/ai/v1/models'),
+      );
+
+      expect(response.status).toBe(200);
+      expect(generate).not.toHaveBeenCalled();
+      expect(handler).toHaveBeenCalledOnce();
+      expect(new URL(handler.mock.calls[0]![0].url).pathname).toBe('/v1/models');
     });
   });
 

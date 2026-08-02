@@ -17,16 +17,18 @@ function makeAgent(slug: string, access?: AgentInstance['config']['access'], pro
 function makeRequest({
   agents = [makeAgent('support')],
   chat = { enabled: true, threadsSlug: 'conversations', messagesSlug: 'turns' } as const,
+  providers = {},
   user = { id: 'user-1' },
 }: {
   agents?: AgentInstance[];
   chat?: { enabled: false } | { enabled: true; threadsSlug: string; messagesSlug: string };
+  providers?: Record<string, unknown>;
   user?: { id: string } | null;
 } = {}): FrogbotRequest {
   return {
     frogbot: {
       agents: Object.fromEntries(agents.map((agent) => [agent.slug, agent])),
-      config: { chat, files: { slug: 'uploads' } },
+      config: { ai: { providers }, chat, files: { slug: 'uploads' } },
     },
     user,
   } as unknown as FrogbotRequest;
@@ -60,6 +62,7 @@ describe('manifest endpoint', () => {
     const response = await buildManifestEndpoint().handler(makeRequest());
 
     expect(await response.json()).toEqual({
+      ai: { transcribe: false },
       chat: { enabled: true, threadsSlug: 'conversations', messagesSlug: 'turns' },
       files: { slug: 'uploads' },
       agents: [{ slug: 'support' }],
@@ -92,12 +95,31 @@ describe('manifest endpoint', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ chat: { enabled: false }, files: { slug: 'uploads' }, agents: [{ slug: 'public' }] });
+    expect(await response.json()).toEqual({
+      ai: { transcribe: false },
+      chat: { enabled: false },
+      files: { slug: 'uploads' },
+      agents: [{ slug: 'public' }],
+    });
   });
 
   it('prevents shared and persistent caching', async () => {
     const response = await buildManifestEndpoint().handler(makeRequest());
 
     expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it('reports unavailable transcription', async () => {
+    const response = await buildManifestEndpoint().handler(makeRequest());
+
+    expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
+  });
+
+  it('reports the default transcription model', async () => {
+    const response = await buildManifestEndpoint().handler(makeRequest({ providers: { groq: true } }));
+
+    expect(await response.json()).toMatchObject({
+      ai: { transcribe: { model: 'groq/whisper-large-v3' } },
+    });
   });
 });

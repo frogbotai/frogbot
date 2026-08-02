@@ -20,6 +20,28 @@ export type FrogBotUploadResponse = {
   message: string
 }
 
+export type AIChatRequest = {
+  model: string
+  messages: Array<{ role: string; content?: unknown; [key: string]: unknown }>
+  stream?: boolean | null
+  [key: string]: unknown
+}
+
+export type AITranscriptionRequest = {
+  model: string
+  file: File
+  response_format?: 'json' | 'text' | 'srt' | 'verbose_json' | 'vtt' | null
+  language?: string | null
+  prompt?: string | null
+  temperature?: number | null
+  timestamp_granularities?: 'word' | 'segment' | Array<'word' | 'segment'> | null
+}
+
+export type AITranscriptionResult = {
+  text: string
+  [key: string]: unknown
+}
+
 export type FrogBotErrorDetail = {
   message: string
   [key: string]: unknown
@@ -51,6 +73,28 @@ export class FrogBotSDK {
   readonly baseURL: string
   readonly fetch: typeof fetch
   readonly headers: Headers
+  readonly ai = {
+    chat: (body: AIChatRequest, init: FrogBotRequestInit = {}) => this.request('/ai/v1/chat/completions', {
+      ...init,
+      method: 'POST',
+      json: body,
+    }),
+    transcribe: async (input: AITranscriptionRequest): Promise<AITranscriptionResult> => {
+      const body = new FormData()
+      body.append('model', input.model)
+      body.append('file', input.file)
+      if (input.response_format != null) body.append('response_format', input.response_format)
+      if (input.language != null) body.append('language', input.language)
+      if (input.prompt != null) body.append('prompt', input.prompt)
+      if (input.temperature != null) body.append('temperature', String(input.temperature))
+      const granularities = Array.isArray(input.timestamp_granularities)
+        ? input.timestamp_granularities
+        : input.timestamp_granularities == null ? [] : [input.timestamp_granularities]
+      for (const granularity of granularities) body.append('timestamp_granularities[]', granularity)
+      const response = await this.request('/ai/v1/audio/transcriptions', { method: 'POST', body })
+      return response.json() as Promise<AITranscriptionResult>
+    },
+  }
 
   constructor({ baseURL, fetch: customFetch, headers }: FrogBotSDKConfig) {
     this.baseURL = baseURL.replace(/\/$/, '')
@@ -73,13 +117,13 @@ export class FrogBotSDK {
     const response = await this.fetch(`${this.baseURL}${normalizedPath}`, init)
 
     if (!response.ok) {
-      let data: { errors?: FrogBotErrorDetail[]; message?: string } = {}
+      let data: { error?: { message?: string }; errors?: FrogBotErrorDetail[]; message?: string } = {}
       try {
         data = await response.clone().json()
       } catch {
         data = {}
       }
-      const errors = data.errors ?? [{ message: data.message ?? response.statusText }]
+      const errors = data.errors ?? [{ message: data.error?.message ?? data.message ?? response.statusText }]
       throw new FrogBotSDKError({
         errors,
         message: errors[0]?.message ?? response.statusText,

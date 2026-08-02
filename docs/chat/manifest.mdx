@@ -6,7 +6,7 @@ keywords: ["chat", "manifest", "agents", "collections", "API"]
 api: "GET /api/frogbot"
 ---
 
-The chat manifest gives clients the runtime configuration they need before starting a conversation. Use it instead of hard-coding collection slugs, because FrogBot preserves renamed thread and message collections.
+The chat manifest gives clients the runtime configuration they need before starting a conversation. Use it instead of hard-coding collection slugs or a transcription model.
 
 ```bash
 curl http://localhost:3000/api/frogbot \
@@ -17,6 +17,9 @@ An enabled chat configuration returns the resolved collection slugs and the agen
 
 ```json
 {
+  "ai": {
+    "transcribe": { "model": "groq/whisper-large-v3" }
+  },
   "chat": {
     "enabled": true,
     "threadsSlug": "conversations",
@@ -39,6 +42,7 @@ When chat persistence is disabled, `chat` contains only `enabled`.
 
 ```json
 {
+  "ai": { "transcribe": false },
   "chat": { "enabled": false },
   "agents": []
 }

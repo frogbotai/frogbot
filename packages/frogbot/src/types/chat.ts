@@ -9,6 +9,7 @@ export type SanitizedChatConfig =
   | { enabled: true; threadsSlug: string; messagesSlug: string };
 
 export type ManifestResponse = {
+  ai: { transcribe: { model: string } | false };
   chat: SanitizedChatConfig;
   files: { slug: string };
   agents: { slug: string; profile?: AgentProfile }[];
