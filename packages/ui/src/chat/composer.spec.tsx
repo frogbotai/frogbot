@@ -31,4 +31,17 @@ describe('Composer', () => {
     expect(onValueChange).toHaveBeenCalledWith('Next')
     expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe('Controlled')
   })
+
+  it('shows drag and disabled states without accepting files', () => {
+    const { container, rerender } = render(<Composer aria-label="Message" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />)
+    const form = container.querySelector('form') as HTMLFormElement
+    fireEvent.dragEnter(form)
+    expect(form.classList).toContain('gradient-wrapper-dragging')
+    fireEvent.drop(form, { dataTransfer: { files: [new File(['x'], 'x.txt')] } })
+    expect(form.classList).not.toContain('gradient-wrapper-dragging')
+
+    rerender(<Composer aria-label="Message" disabled defaultValue="Hello" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />)
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull()
+    expect((screen.getByLabelText('Message') as HTMLTextAreaElement).disabled).toBe(true)
+  })
 })

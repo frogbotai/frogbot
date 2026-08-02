@@ -117,7 +117,7 @@ describe('Chat', () => {
     state.messages = [{ id: 'user', role: 'user', parts: [{ type: 'text', text: 'Derived conversation title' }] }]
     render(<Chat agent="support" defaultThreadId="two" />)
     expect(screen.getByRole('button', { name: 'Derived conversation title' }).getAttribute('aria-current')).toBe('page')
-    expect(screen.getByText('Send')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull()
   })
 
   it('executes client tools and records their output', async () => {

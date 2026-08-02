@@ -132,6 +132,8 @@
   --color-red-600: #d32b4d;
   --color-red-700: #b21e3f;
   --color-green-350: #66eb96;
+  --color-blue-350: #78b6fc;
+  --color-purple-350: #cb9afe;
   --color-orange-350: #f6a360;
   --theme-base-0: var(--color-base-0);
   --theme-base-50: var(--color-base-50);
@@ -207,6 +209,44 @@
   --sidebar-ring: 217.2 91.2% 59.8%;
   font-family: var(--font-body);
   color: var(--foreground);
+}
+
+.gradient-wrapper {
+  position: relative;
+  filter: drop-shadow(0 0 6px rgba(134, 239, 172, 0.6)) drop-shadow(0 0 12px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 18px rgba(216, 180, 254, 0.3));
+}
+
+.gradient-container {
+  position: relative;
+  display: inline-block;
+  padding: 5px;
+  border-radius: 20px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.gradient-container::before {
+  content: "";
+  position: absolute;
+  inset: -5000000px;
+  background: conic-gradient(from 0deg, transparent 0deg, transparent 150deg, var(--color-green-350) 180deg, var(--color-blue-350) 210deg, #f598a2 270deg, var(--color-purple-350) 300deg, var(--color-blue-350) 330deg, transparent 360deg, var(--color-green-350) 5deg, transparent 15deg, transparent 360deg);
+  border-radius: 50%;
+  animation: rotateVariable 8s linear infinite;
+  z-index: -1;
+}
+
+.gradient-wrapper:has(.gradient-textarea:focus),
+.gradient-wrapper-dragging {
+  filter: drop-shadow(0 0 12px rgba(134, 239, 172, 0.6)) drop-shadow(0 0 24px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 36px rgba(216, 180, 254, 0.3));
+}
+
+@keyframes rotateVariable {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gradient-container::before { animation: none; }
 }
 
 [data-fb-theme="dark"] [data-fb-ui][data-theme="system"],

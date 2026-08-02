@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { expect, it, vi } from 'vitest'
@@ -24,16 +24,21 @@ it('matches the canonical Firmware theme foundation', () => {
   expect(styles).not.toContain('oklch(')
 })
 
-it.fails('matches the canonical Firmware composer shell', () => {
+it('matches the canonical Firmware composer shell', () => {
   const { container } = render(
     <Composer aria-label="Message" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />,
   )
 
   const form = container.querySelector('form')
+  const gradientContainer = container.querySelector('.gradient-container')
+  const panel = gradientContainer?.firstElementChild
   const textarea = screen.getByLabelText('Message')
+  fireEvent.change(textarea, { target: { value: 'Hello' } })
   const submit = screen.getByRole('button', { name: 'Send' })
 
-  for (const className of firmwareComposerBaseline.shell) expect(form?.classList).toContain(className)
+  expect(form?.classList).toContain(firmwareComposerBaseline.shell[0])
+  expect(gradientContainer?.classList).toContain(firmwareComposerBaseline.shell[1])
+  for (const className of firmwareComposerBaseline.shell.slice(2)) expect(panel?.classList).toContain(className)
   for (const className of firmwareComposerBaseline.textarea) expect(textarea.classList).toContain(className)
   for (const className of firmwareComposerBaseline.submit) expect(submit.classList).toContain(className)
 })
