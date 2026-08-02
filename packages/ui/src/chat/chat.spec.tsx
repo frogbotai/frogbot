@@ -104,6 +104,17 @@ describe('Chat', () => {
     await waitFor(() => expect(state.sendMessage).toHaveBeenCalledWith({ parts: [{ type: 'text', text: 'Hello' }], metadata: { source: 'ui' } }))
   })
 
+  it('submits long pasted text as data-paste', async () => {
+    render(<Chat agent="support" />)
+    fireEvent.paste(screen.getByRole('textbox'), { clipboardData: { getData: () => 'p'.repeat(651) } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await waitFor(() => expect(state.sendMessage).toHaveBeenCalledWith({
+      parts: [{ type: 'data-paste', data: { text: 'p'.repeat(651), filename: expect.stringMatching(/^pasted-\d+\.txt$/) } }],
+      metadata: { source: 'ui' },
+    }))
+    expect(state.adapter.fetch).not.toHaveBeenCalled()
+  })
+
   it('sends the strict request body for a new thread', async () => {
     render(<Chat agent="support" />)
     expect(await sendTransportMessage()).toEqual({ messages: [message] })

@@ -7,8 +7,9 @@ import { type ReactNode,useEffect, useMemo, useRef, useState } from 'react'
 import { useControlledState } from '../hooks/use-controlled-state'
 import { ChatShell } from './chat-shell'
 import { ChatStatus } from './chat-status'
-import type { FileReference } from './attachments'
+import type { ComposerAttachment } from './attachments'
 import { Composer } from './composer'
+import { isFlagPart, renderFlagPart } from './flag-parts'
 import { Message } from './message'
 import { MessageList, type MessageListProps } from './message-list'
 import { MessagePart } from './message-part'
@@ -151,10 +152,10 @@ function ChatOrchestrator({ abortedContent, adapter, agent, agents, composerEndS
       threads.refresh()
     },
   })
-  const submit = async (text: string, attachments: FileReference[]) => {
+  const submit = async (text: string, attachments: ComposerAttachment[]) => {
     setAborted(false)
     const parts = [
-      ...attachments.map((attachment) => ({ type: 'file-reference' as const, ...attachment })),
+      ...attachments.map((attachment) => 'type' in attachment && attachment.type === 'paste' ? { type: 'data-paste' as const, data: { text: attachment.text, filename: attachment.filename } } : { type: 'file-reference' as const, ...attachment }),
       ...(text ? [{ type: 'text' as const, text }] : []),
     ]
     const message: UIMessage = { id: '', role: 'user', parts: parts as UIMessage['parts'] }
@@ -170,7 +171,7 @@ function ChatOrchestrator({ abortedContent, adapter, agent, agents, composerEndS
   const profile = agents.find(({ slug }) => slug === agent)?.profile
   const displayName = profile?.name ?? agent
   const initials = displayName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()
-  const defaultRenderMessage: MessageListProps['renderMessage'] = profile ? (message) => <Message key={message.id} role={message.role} avatar={message.role === 'assistant' ? <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-background">{profile.avatar ? <img src={profile.avatar} alt={displayName} className="size-full object-cover" /> : initials}</div> : undefined}>{message.parts.map((part, index) => <MessagePart key={`${message.id}-${index}`} part={part} />)}</Message> : undefined
+  const defaultRenderMessage: MessageListProps['renderMessage'] = (message) => <Message key={message.id} role={message.role} avatar={profile && message.role === 'assistant' ? <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-background">{profile.avatar ? <img src={profile.avatar} alt={displayName} className="size-full object-cover" /> : initials}</div> : undefined}>{message.parts.map((part, index) => <MessagePart key={`${message.id}-${index}`} part={part} renderData={isFlagPart(part) ? renderFlagPart : undefined} />)}</Message>
 
   return <ChatShell panel={panel} sidebar={<ThreadHistory threads={displayedThreads} activeThreadId={threadId} fallbackTitle={fallbackTitle} onThreadChange={selectThread} renderActions={renderThreadActions ? (thread) => renderThreadActions(thread, mutate(thread)) : undefined} />}>
     {headerSlot}

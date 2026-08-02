@@ -61,6 +61,43 @@ export function AgentChat() {
 
 The selectors intentionally differ from Firmware where FrogBot has no matching concept: agents have no "Default" row, model billing locks are omitted, tools use multi-select availability instead of prompt injection, and Radix handles menu positioning.
 
+## Page context
+
+`PageContextButton` provides Firmware's open-tab picker for browser extension and desktop hosts. FrogBot does not mount it by default. A host supplies its tab bridge and places the button in `composerEndSlot`.
+
+```tsx
+import { PageContextButton } from '@frogbotai/ui/chat'
+
+<Chat
+  agent="support"
+  composerEndSlot={
+    <PageContextButton
+      isLoading={false}
+      getOpenTabs={getOpenTabs}
+      addPageContext={addPageContext}
+      removePageContext={removePageContext}
+      selectedTabIds={selectedTabIds}
+    />
+  }
+/>
+```
+
+The host remains responsible for reading tab content and creating `data-page-context` parts. The button only lists and toggles tab IDs.
+
+## Message data parts
+
+Chat renders these AI SDK v7 data part types:
+
+| Part type | Data payload |
+| --- | --- |
+| `data-paste` | `{ text: string, filename?: string }` |
+| `data-page-context` | `{ tabId: number, url: string, title: string, content: string, favicon?: string }` |
+| `data-prompt` | `{ id: string, title: string }` |
+
+Use a new `data-<name>` type for application-specific structured content. With the lower-level `MessagePart` component, pass `renderData` to render that type; otherwise `DataPart` displays its JSON payload.
+
+Pasting more than 650 characters into FrogBot's composer creates a removable pasted-text preview and sends a `data-paste` part. A paste of exactly 650 characters remains in the textarea. Pasted text stays client-side until message submission and is never uploaded as a file.
+
 ## Voice input
 
 The composer shows a microphone when the server manifest advertises a transcription model and the browser supports `MediaRecorder` and microphone access. Tap once to record and again to transcribe. The resulting text is appended to the current draft.

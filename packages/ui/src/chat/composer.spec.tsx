@@ -18,6 +18,35 @@ describe('Composer', () => {
     expect(screen.getByText('end')).toBeTruthy()
   })
 
+  it('renders no tab-context control without an end slot', () => {
+    render(<Composer endSlot={undefined} onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />)
+    expect(screen.queryByRole('button', { name: 'Add tab context' })).toBeNull()
+  })
+
+  it('keeps 650 characters in the textarea and attaches 651', () => {
+    const { rerender } = render(<Composer aria-label="Message" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />)
+    const input = screen.getByLabelText('Message') as HTMLTextAreaElement
+    fireEvent.paste(input, { clipboardData: { getData: () => 'a'.repeat(650) } })
+    fireEvent.change(input, { target: { value: 'a'.repeat(650) } })
+    expect(input.value).toBe('a'.repeat(650))
+    rerender(<Composer aria-label="Message" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />)
+    fireEvent.change(input, { target: { value: '' } })
+    fireEvent.paste(input, { clipboardData: { getData: () => 'b'.repeat(651) } })
+    expect(input.value).toBe('')
+    expect(screen.getByTestId('paste-attachment')).toBeTruthy()
+    expect(screen.getByTestId('paste-attachment').className).not.toContain('aspect-video')
+  })
+
+  it('submits pasted text without uploading it', async () => {
+    const fetch = vi.fn()
+    const onSubmit = vi.fn()
+    render(<Composer aria-label="Message" sdk={createFrogbotSDK({ baseURL: '/api', fetch })} filesSlug="files" onSubmit={onSubmit} submitContent="Send" stopContent="Stop" />)
+    fireEvent.paste(screen.getByLabelText('Message'), { clipboardData: { getData: () => 'p'.repeat(651) } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    expect(onSubmit).toHaveBeenCalledWith('', [{ type: 'paste', text: 'p'.repeat(651), filename: expect.stringMatching(/^pasted-\d+\.txt$/) }])
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it('stops while pending', () => {
     const onStop = vi.fn()
     render(<Composer pending onStop={onStop} onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />)

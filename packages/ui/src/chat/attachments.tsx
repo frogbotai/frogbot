@@ -10,6 +10,14 @@ export type FileReference = {
   mediaType: string
 }
 
+export type PasteAttachment = {
+  filename: string
+  text: string
+  type: 'paste'
+}
+
+export type ComposerAttachment = FileReference | PasteAttachment
+
 type UploadItem = {
   key: number
   file: File
@@ -92,4 +100,9 @@ export function AttachmentPreviews({ items, remove, retry }: { items: UploadItem
       <button type="button" aria-label={`Remove ${item.file.name}`} onClick={() => remove(item.key)} className="absolute right-0 top-0 mr-1 mt-1 flex size-5 items-center justify-center rounded-full border-0 bg-border p-0 hover:bg-red-500"><X className="size-3" /></button>
     </div>
   </div>)}</div></div>
+}
+
+export function PastePreviews({ items, remove }: { items: PasteAttachment[]; remove: (index: number) => void }) {
+  if (!items.length) return null
+  return <div className="relative mb-4 w-full"><div className="flex w-0 min-w-full flex-row items-end gap-2 overflow-x-auto">{items.map((item, index) => <div key={item.filename} data-testid="paste-attachment" className="relative mb-2 size-[120px] shrink-0 rounded-lg border border-solid border-border bg-base-200 p-2 text-xs text-[var(--theme-text)]"><div className="line-clamp-6 whitespace-pre-wrap break-words font-mono text-[10px] leading-snug opacity-90">{item.text}</div><button type="button" aria-label={`Remove ${item.filename}`} onClick={() => remove(index)} className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full border-0 bg-border p-0 hover:bg-red-500"><X className="size-3" /></button><div className="pointer-events-none absolute -bottom-2 left-2 rounded-full bg-base-300 px-2 py-[2px] text-[9px] font-semibold tracking-wide text-zinc-300">PASTED</div></div>)}</div></div>
 }
