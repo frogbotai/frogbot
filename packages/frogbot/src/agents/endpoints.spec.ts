@@ -5,14 +5,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentInstance } from '../types/agent.js';
 import type { FrogbotRequest } from '../types/request.js';
 
-const { createAgentUIStreamResponse } = vi.hoisted(() => ({
+const { createAgentUIStreamResponse, resolveChatAttachments } = vi.hoisted(() => ({
   createAgentUIStreamResponse: vi.fn(() => Promise.resolve(new Response('stream'))),
+  resolveChatAttachments: vi.fn(({ messages }) => Promise.resolve(messages.map((message: UIMessage) => ({ ...message, parts: message.parts.map((part) => part.type === 'file-reference' ? { type: 'file', filename: 'server.txt', mediaType: 'text/plain', url: 'data:text/plain;base64,ZmlsZQ==' } : part) })))),
 }));
 
 vi.mock('ai', async (importOriginal) => ({
   ...(await importOriginal<typeof AI>()),
   createAgentUIStreamResponse,
 }));
+
+vi.mock('../files/resolveChatAttachments.js', () => ({ resolveChatAttachments }));
 
 const { buildAgentEndpoints } = await import('./endpoints.js');
 
@@ -109,6 +112,7 @@ function authorizationsHandler() {
 describe('agent endpoints', () => {
   beforeEach(() => {
     createAgentUIStreamResponse.mockClear();
+    resolveChatAttachments.mockClear();
   });
 
   it('lists the same agent profile shape as the manifest', async () => {
@@ -157,6 +161,21 @@ describe('agent endpoints', () => {
     );
 
     expect(response.status).toBe(400);
+  });
+
+  it('accepts stable file references and resolves them before invocation', async () => {
+    const agent = makeAgent();
+    const parts = [{ type: 'text', text: 'Read' }, { type: 'file-reference', id: 'file-1', filename: 'client.txt', mediaType: 'text/plain' }];
+    const request = makeRequest({
+      agent,
+      accept: 'text/event-stream',
+      body: { messages: [{ id: 'one', role: 'user', parts }] },
+      find: vi.fn().mockResolvedValue({ docs: [{ id: 'one', role: 'user', parts }] }),
+    });
+    const response = await postHandler()(request);
+
+    expect(await response.text()).toBe('stream');
+    expect(resolveChatAttachments).toHaveBeenCalledWith({ req: request, messages: [expect.objectContaining({ parts: [{ type: 'text', text: 'Read' }, { type: 'file-reference', id: 'file-1', filename: 'client.txt', mediaType: 'text/plain' }] })] });
   });
 
   it('preserves safe status values from agent errors', async () => {

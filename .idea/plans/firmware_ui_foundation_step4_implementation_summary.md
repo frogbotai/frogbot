@@ -42,3 +42,11 @@
 - Sent and persisted only stable `{ id, filename, mediaType }` FrogBot references as `file-reference` message parts, including attachment-only messages.
 - Kept local preview URLs out of message state and did not add inline base64, provider IDs, server-side resolution, voice, or syntax behavior.
 - Risk: removing or abandoning an uploaded attachment can leave an orphaned file. Stage 6 does not cancel in-flight requests or delete uploaded records because ownership and safe cleanup semantics are not yet defined; retries can also create an orphan if the first request succeeds after the client observes failure.
+
+## Stage 7 — Resolve Files Server-Side
+
+- Resolved every stable file ID through the configured files collection with request-scoped access enforcement before provider invocation.
+- Read configured local storage directly and fetched cloud or private storage through Payload-generated file URLs with request credentials.
+- Converted authorized records to ephemeral server-side AI SDK file parts while retaining only stable FrogBot references in persisted messages.
+- Covered denied and missing records, mixed text and files, client metadata replacement, local reads, private cloud fetches, and AI SDK conversion.
+- Risk: cloud adapters must expose a fetchable document URL or Payload static handler; remote fetches buffer each attachment in memory, and provider media support and size limits remain provider-specific.

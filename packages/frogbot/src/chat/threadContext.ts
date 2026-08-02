@@ -1,9 +1,9 @@
 import type { UIMessage } from 'ai';
-import { validateUIMessages } from 'ai';
 import { commitTransaction, initTransaction, killTransaction, NotFound } from 'payload';
 
 import type { DocID } from '../types/operations.js';
 import type { FrogbotRequest } from '../types/request.js';
+import { validateChatMessages } from './validateMessages.js';
 
 export type ThreadContext = {
   threadId?: DocID;
@@ -77,10 +77,7 @@ export async function resolveThreadContext({
     overrideAccess,
   });
 
-  const uiMessages = await validateUIMessages({
-    messages: history.docs.map(toUIMessage),
-    tools: tools as never,
-  });
+  const uiMessages = await validateChatMessages(history.docs.map(toUIMessage), tools as never);
 
   return { threadId: resolvedThreadId, uiMessages };
 }

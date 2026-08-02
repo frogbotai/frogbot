@@ -1,7 +1,9 @@
 import type { UIMessage } from 'ai';
-import { createAgentUIStreamResponse, generateId, validateUIMessages } from 'ai';
+import { createAgentUIStreamResponse, generateId } from 'ai';
 import { z } from 'zod';
 
+import { validateChatMessages } from '../chat/validateMessages.js';
+import { resolveChatAttachments } from '../files/resolveChatAttachments.js';
 import type { DocID } from '../types/operations.js';
 import type { FrogbotRequest } from '../types/request.js';
 import {
@@ -48,7 +50,7 @@ export function buildAgentEndpoints() {
             requestedThreadId = threadId;
             body =
               'messages' in parsed && parsed.messages
-                ? { messages: await validateUIMessages({ messages: parsed.messages, tools: agent.aiAgent.tools as never }) }
+                ? { messages: await validateChatMessages(parsed.messages, agent.aiAgent.tools as never) }
                 : parsed;
           } catch {
             return Response.json({ error: 'Body must include `prompt` (string) or `messages` (array)' }, { status: 400 });
@@ -60,12 +62,13 @@ export function buildAgentEndpoints() {
             requestedThreadId,
             uiMessages: toUIMessages(body),
           });
+          const providerMessages = await resolveChatAttachments({ req, messages: uiMessages });
 
           if (acceptsEventStream(req.headers.get('accept'))) {
-            return await createAgentUIStreamResponse(getAgentStreamOptions({ req, agent, threadId, uiMessages }));
+            return await createAgentUIStreamResponse(getAgentStreamOptions({ req, agent, threadId, uiMessages: providerMessages }));
           }
 
-          const result = await generateAgentRequest({ req, agent, threadId, uiMessages });
+          const result = await generateAgentRequest({ req, agent, threadId, uiMessages: providerMessages });
 
           return Response.json({
             text: result.text,
