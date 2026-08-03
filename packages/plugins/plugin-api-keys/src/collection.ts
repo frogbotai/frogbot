@@ -6,6 +6,7 @@ type CollectionOptions = {
   authCollection: string;
   collectionSlug: string;
   tokenPrefix: string;
+  usageCollection?: string;
   collection?: Partial<CollectionConfig>;
   existing?: CollectionConfig;
 };
@@ -89,7 +90,7 @@ function createEndpoints({ collectionSlug, tokenPrefix }: Pick<CollectionOptions
 }
 
 export function createApiKeysCollection(options: CollectionOptions): CollectionConfig {
-  const { authCollection, collectionSlug, collection, existing } = options;
+  const { authCollection, collectionSlug, collection, existing, usageCollection } = options;
   const ownerAccess = ({ req }: { req: FrogbotRequest }) => {
     const owner = getOwnerID(req);
     return owner === null ? false : { owner: { equals: owner } };
@@ -100,7 +101,48 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
     { name: 'prefix', type: 'text', required: true, index: true, admin: { readOnly: true } },
     { name: 'tokenHash', type: 'text', required: true, unique: true, index: true, access: { read: () => false }, admin: { hidden: true } },
     { name: 'lastUsedAt', type: 'date', admin: { readOnly: true } },
-    { name: 'revokedAt', type: 'date', index: true, admin: { readOnly: true } },
+    {
+      name: 'revokedAt',
+      type: 'date',
+      index: true,
+      admin: { readOnly: true, condition: (_, siblingData) => Boolean(siblingData.revokedAt) },
+    },
+    ...(usageCollection
+      ? [
+          {
+            name: 'totalCostUSD',
+            type: 'number' as const,
+            label: 'Total Cost (USD)',
+            virtual: true,
+            admin: {
+              readOnly: true,
+              components: {
+                Cell: '@frogbotai/plugin-api-keys/client#CostUSDCell',
+                Field: '@frogbotai/plugin-api-keys/client#CostUSDField',
+              },
+            },
+            hooks: {
+              afterRead: [
+                async ({ data, req }: { data?: Record<string, unknown>; req: FrogbotRequest }) => {
+                  if (data?.id === undefined) return 0;
+                  const result = await req.frogbot.find({
+                    collection: usageCollection as never,
+                    depth: 0,
+                    overrideAccess: true,
+                    pagination: false,
+                    req,
+                    where: { apiKey: { equals: data.id } },
+                  });
+                  return result.docs.reduce((total, doc) => {
+                    const cost = (doc as Record<string, unknown>).costUSD;
+                    return total + (typeof cost === 'number' ? cost : 0);
+                  }, 0);
+                },
+              ],
+            },
+          },
+        ]
+      : []),
     {
       name: 'actions',
       type: 'ui',
@@ -130,6 +172,7 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
       defaultColumns: collection?.admin?.defaultColumns ?? existing?.admin?.defaultColumns ?? [
         'name',
         'prefix',
+        ...(usageCollection ? ['totalCostUSD'] : []),
         'lastUsedAt',
         'revokedAt',
         'actions',

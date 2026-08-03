@@ -15,6 +15,10 @@ describe('API key token utilities', () => {
     expect(second).not.toBe(first);
   });
 
+  it('uses the native FrogBot prefix by default', () => {
+    expect(createApiKeyToken()).toMatch(/^fb_[A-Za-z0-9_-]{43}$/);
+  });
+
   it('hashes tokens deterministically without retaining plaintext', () => {
     const hash = hashApiKeyToken('fbt_secret');
     expect(hash).toMatch(/^[a-f0-9]{64}$/);

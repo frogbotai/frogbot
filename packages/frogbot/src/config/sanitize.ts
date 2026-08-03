@@ -845,13 +845,27 @@ function buildPayloadConfig(
     "port",
     "tools",
   ]);
+  const collections = config.collections.map((collection) =>
+    sanitizeCollection(collection, attachFrogbot),
+  );
+  if (!collections.some((collection) => Boolean(collection.auth))) {
+    collections.push(
+      sanitizeCollection(
+        {
+          slug: "users",
+          admin: { useAsTitle: "name" },
+          auth: { tokenExpiration: 7200 },
+          fields: [{ name: "name", type: "text" }],
+        },
+        attachFrogbot,
+      ),
+    );
+  }
   const out: Record<string, unknown> = {
     ...Object.fromEntries(
       Object.entries(config).filter(([key]) => !frogbotKeys.has(key)),
     ),
-    collections: config.collections.map((collection) =>
-      sanitizeCollection(collection, attachFrogbot),
-    ),
+    collections,
     hooks: wrapRootHooks(config.hooks, attachFrogbot),
   };
 

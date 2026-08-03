@@ -8,7 +8,7 @@ export type ApiKeyHeaderOptions = {
   headerNames?: string[];
 };
 
-export function createApiKeyToken({ tokenPrefix = 'fbt' }: ApiKeyTokenOptions = {}): string {
+export function createApiKeyToken({ tokenPrefix = 'fb' }: ApiKeyTokenOptions = {}): string {
   return `${tokenPrefix}_${randomBytes(32).toString('base64url')}`;
 }
 

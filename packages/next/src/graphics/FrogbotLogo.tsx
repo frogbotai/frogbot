@@ -2,11 +2,8 @@ import React from 'react';
 
 const themeCss = `
 .frogbot-graphic-logo .fb-body{fill:#3acf6a}
-.frogbot-graphic-logo .fb-eye{fill:#101828}
+.frogbot-graphic-logo .fb-eye{fill:#ffffff}
 .frogbot-graphic-logo .fb-text{fill:#3acf6a}
-html[data-theme='dark'] .frogbot-graphic-logo .fb-body{fill:#2f964f}
-html[data-theme='dark'] .frogbot-graphic-logo .fb-eye{fill:#ffffff}
-html[data-theme='dark'] .frogbot-graphic-logo .fb-text{fill:#ffffff}
 `;
 
 export const FrogbotLogo: React.FC = () => (

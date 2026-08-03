@@ -238,6 +238,10 @@ describe('frogbot buildConfig', () => {
       const config = makeConfig({ collections: [] });
       const result = await buildConfig(config);
       expect(result.collections.map((c) => c.slug)).toEqual(['files']);
+      const payloadConfig = await result._internal.payloadConfig;
+      const users = payloadConfig.collections.find((collection) => collection.slug === 'users');
+      expect(users?.admin?.useAsTitle).toBe('name');
+      expect(users?.fields).toContainEqual(expect.objectContaining({ name: 'name', type: 'text' }));
     });
   });
 });

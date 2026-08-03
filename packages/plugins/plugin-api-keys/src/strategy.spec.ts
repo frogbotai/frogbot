@@ -7,7 +7,7 @@ function makeStrategy() {
   return createApiKeyStrategy({
     authCollection: 'users',
     collectionSlug: 'api-keys',
-    tokenPrefix: 'fbt',
+    tokenPrefix: 'fb',
   });
 }
 

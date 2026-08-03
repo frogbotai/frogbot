@@ -28,19 +28,6 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
       throw new Error(`[plugin-api-keys] Auth collection '${authCollection}' must exist and have auth enabled.`);
     }
     const existing = config.collections.find((collection) => collection.slug === collectionSlug);
-    const collection = createApiKeysCollection({
-      authCollection,
-      collectionSlug,
-      tokenPrefix: options.tokenPrefix ?? 'fbt',
-      collection: options.collection,
-      existing,
-    });
-    const strategy = createApiKeyStrategy({
-      authCollection,
-      collectionSlug,
-      headerNames: options.headerNames,
-      tokenPrefix: options.tokenPrefix ?? 'fbt',
-    });
     const usageLog = config.ai
       ? config.collections.find((item) => item.usageLog === true) ?? {
           slug: 'usage-logs',
@@ -48,6 +35,20 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
           fields: [],
         }
       : undefined;
+    const collection = createApiKeysCollection({
+      authCollection,
+      collectionSlug,
+      tokenPrefix: options.tokenPrefix ?? 'fb',
+      usageCollection: usageLog?.slug,
+      collection: options.collection,
+      existing,
+    });
+    const strategy = createApiKeyStrategy({
+      authCollection,
+      collectionSlug,
+      headerNames: options.headerNames,
+      tokenPrefix: options.tokenPrefix ?? 'fb',
+    });
     const usageField = {
       name: 'apiKey',
       type: 'relationship' as const,

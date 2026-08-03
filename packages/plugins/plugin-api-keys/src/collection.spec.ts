@@ -39,6 +39,10 @@ describe('API keys collection', () => {
       name: 'actions',
       admin: { components: { Cell: '@frogbotai/plugin-api-keys/client#RevokeApiKey' } },
     });
+    const revokedAt = collection.fields.find((field) => 'name' in field && field.name === 'revokedAt');
+    const condition = 'admin' in revokedAt! ? revokedAt.admin?.condition : undefined;
+    expect(condition?.({}, { revokedAt: null }, {} as never)).toBe(false);
+    expect(condition?.({}, { revokedAt: '2026-08-02T00:00:00.000Z' }, {} as never)).toBe(true);
     expect(collection.admin?.defaultColumns).toEqual(['name', 'prefix', 'lastUsedAt', 'revokedAt', 'actions']);
   });
 
@@ -63,6 +67,42 @@ describe('API keys collection', () => {
     expect(firstBody.token).not.toBe(secondBody.token);
     expect(create.mock.calls[0][0].data).not.toHaveProperty('token');
     expect(create.mock.calls[0][0].data.tokenHash).toHaveLength(64);
+    expect(firstBody.token).toMatch(/^fb_/);
+  });
+
+  it('shows attributed usage cost in list and document views', async () => {
+    const config = makeConfig();
+    config.ai = { providers: { openai: { apiKey: 'test' } } };
+    const result = await apiKeysPlugin()(config);
+    const collection = result.collections.find((item) => item.slug === 'api-keys')!;
+    const field = collection.fields.find((item) => 'name' in item && item.name === 'totalCostUSD');
+    const find = vi.fn().mockResolvedValue({ docs: [{ costUSD: 0.012 }, { costUSD: 0.003 }, { costUSD: null }] });
+    const hook = 'hooks' in field! ? field.hooks?.afterRead?.[0] : undefined;
+
+    expect(field).toMatchObject({
+      name: 'totalCostUSD',
+      label: 'Total Cost (USD)',
+      type: 'number',
+      virtual: true,
+      admin: {
+        readOnly: true,
+        components: {
+          Cell: '@frogbotai/plugin-api-keys/client#CostUSDCell',
+          Field: '@frogbotai/plugin-api-keys/client#CostUSDField',
+        },
+      },
+    });
+    expect(collection.admin?.defaultColumns).toContain('totalCostUSD');
+    await expect(
+      hook?.({ data: { id: 'key-1' }, req: { frogbot: { find } } } as never),
+    ).resolves.toBeCloseTo(0.015);
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'usage-logs',
+        pagination: false,
+        where: { apiKey: { equals: 'key-1' } },
+      }),
+    );
   });
 
   it('revokes only a key owned by the current user', async () => {
