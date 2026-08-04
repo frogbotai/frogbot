@@ -21,6 +21,7 @@ import { initI18n } from '@payloadcms/translations';
 import { compile } from 'json-schema-to-typescript';
 import type { SanitizedConfig } from 'payload';
 import { configToJSONSchema } from 'payload';
+import { format } from 'prettier';
 
 import { catalog } from '../ai/catalog.js';
 import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
@@ -192,7 +193,8 @@ async function compileTypes(
     compiled = `${compiled.trimEnd()}\n\n${[...extraTypeStrings].join('\n\n')}\n`;
   }
 
-  return `${compiled.trimEnd()}\n\n\n${buildGeneratedTypesFooter(agentSlugs, ai)}\n`;
+  const output = `${compiled.trimEnd()}\n\n\n${buildGeneratedTypesFooter(agentSlugs, ai)}\n`;
+  return format(output, { parser: 'typescript', singleQuote: true });
 }
 
 export async function writeGeneratedTypes(

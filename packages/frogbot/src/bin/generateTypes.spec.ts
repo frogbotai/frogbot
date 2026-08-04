@@ -183,7 +183,7 @@ describe('frogbot generate:types', () => {
       expect(output).toContain('threads: Thread;');
       expect(output).toContain('messages: Message;');
       expect(output).toContain("role: 'user' | 'assistant' | 'system';");
-      expect(output).toContain('"assistant": unknown;');
+      expect(output).toContain('assistant: unknown;');
       expect(output).not.toMatch(/payload/i);
     });
 
@@ -257,9 +257,9 @@ describe('frogbot generate:types', () => {
       const { outputPath } = await writeGeneratedTypes(config, dir);
       const output = await readFile(outputPath, 'utf-8');
 
-      expect(output).toContain('"assistant": unknown;');
-      expect(output).toContain('"anthropic/claude-sonnet-4-5"');
-      expect(output).not.toContain('"openai/gpt-4o"');
+      expect(output).toContain('assistant: unknown;');
+      expect(output).toContain("'anthropic/claude-sonnet-4-5'");
+      expect(output).not.toContain("'openai/gpt-4o'");
     });
 
     it('generates an empty agent map from an explicit empty agents array without AI', async () => {
@@ -281,8 +281,38 @@ describe('frogbot generate:types', () => {
     it('emits only models from configured built-in providers', async () => {
       const output = await generateModelTypes({ providers: { openai: true } });
 
-      expect(output).toContain('"openai/gpt-4o"');
+      expect(output).toContain("'openai/gpt-4o'");
       expect(output).not.toContain('anthropic/claude-sonnet-4-5');
+    });
+
+    it('wraps model unions that exceed the print width', async () => {
+      const output = await generateModelTypes({ providers: { bedrock: true } });
+
+      expect(output).toMatch(/models:\s*\n(?:\s*\|\s*'[^']+'\n)+/);
+    });
+
+    it('keeps short model unions inline', async () => {
+      const output = await generateModelTypes({
+        providers: {
+          openai: { apiKey: 'sk-test', models: ['gpt-4o-mini'] },
+        },
+      });
+
+      expect(output).toMatch(/models: [^\n]+;/);
+    });
+
+    it('does not rewrite byte-identical generated types', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-types-idempotent-'));
+      const { buildConfig } = await import('../config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [{ slug: 'users', auth: true, fields: [] }],
+        ai: { providers: { bedrock: true } },
+      });
+
+      await expect(writeGeneratedTypes(config, dir)).resolves.toMatchObject({ changed: true });
+      await expect(writeGeneratedTypes(config, dir)).resolves.toMatchObject({ changed: false });
     });
 
     it('combines models from multiple configured built-in providers', async () => {
@@ -290,8 +320,8 @@ describe('frogbot generate:types', () => {
         providers: { anthropic: true, openai: true },
       });
 
-      expect(output).toContain('"anthropic/claude-sonnet-4-5"');
-      expect(output).toContain('"openai/gpt-4o"');
+      expect(output).toContain("'anthropic/claude-sonnet-4-5'");
+      expect(output).toContain("'openai/gpt-4o'");
     });
 
     it('narrows built-in models to allowlists while retaining custom models and router slugs', async () => {
@@ -307,10 +337,10 @@ describe('frogbot generate:types', () => {
         routers: { fast: { model: 'internal/chat-v1' } },
       });
 
-      expect(output).toContain('"openai/gpt-4o-mini"');
-      expect(output).not.toContain('"openai/gpt-4o"');
-      expect(output).toContain('"internal/chat-v1"');
-      expect(output).toContain('"fast"');
+      expect(output).toContain("'openai/gpt-4o-mini'");
+      expect(output).not.toContain("'openai/gpt-4o'");
+      expect(output).toContain("'internal/chat-v1'");
+      expect(output).toContain("'fast'");
     });
 
     it('emits custom provider models and router slugs', async () => {
@@ -325,8 +355,8 @@ describe('frogbot generate:types', () => {
         routers: { fast: { model: 'internal/chat-v1' } },
       });
 
-      expect(output).toContain('"internal/chat-v1"');
-      expect(output).toContain('"fast"');
+      expect(output).toContain("'internal/chat-v1'");
+      expect(output).toContain("'fast'");
     });
 
     it('uses runtime provider prefixes for aliased built-ins', async () => {
@@ -334,17 +364,17 @@ describe('frogbot generate:types', () => {
         providers: { bedrock: true, together: true },
       });
 
-      expect(output).toContain('"togetherai/');
-      expect(output).not.toContain('"together/');
+      expect(output).toContain("'togetherai/");
+      expect(output).not.toContain("'together/");
     });
 
     it('removes stale models when configured providers change', async () => {
       const openai = await generateModelTypes({ providers: { openai: true } });
       const anthropic = await generateModelTypes({ providers: { anthropic: true } });
 
-      expect(openai).toContain('"openai/gpt-4o"');
-      expect(anthropic).not.toContain('"openai/gpt-4o"');
-      expect(anthropic).toContain('"anthropic/claude-sonnet-4-5"');
+      expect(openai).toContain("'openai/gpt-4o'");
+      expect(anthropic).not.toContain("'openai/gpt-4o'");
+      expect(anthropic).toContain("'anthropic/claude-sonnet-4-5'");
     });
   });
 });

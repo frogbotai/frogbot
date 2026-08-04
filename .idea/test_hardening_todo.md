@@ -49,6 +49,7 @@
 
 - [ ] Add `tools`, `tool_choice`, and `parallel_tool_calls` translator tests when chat-completions forwarding support is implemented.
 - [ ] Implement the real Cloudflare R2 binding integration test when a supported test runtime or emulator is available.
+- [x] Exercise generated formatting beyond print width so codegen tests verify layout as well as token presence. Completed with Ticket 51.
 
 ## Completed with Ticket 23
 
