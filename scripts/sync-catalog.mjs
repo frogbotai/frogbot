@@ -98,6 +98,13 @@ function mapModel({ model, provider }) {
           cache_write: model.cost.cache_write,
         })
       : undefined,
+    sdk: model.provider
+      ? compact({
+          npm: model.provider.npm,
+          api: model.provider.api,
+          shape: model.provider.shape,
+        })
+      : undefined,
     providers: [provider],
   });
 }

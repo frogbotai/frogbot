@@ -13,8 +13,13 @@ import {
   type AmazonBedrockProviderSettings,
   createAmazonBedrock,
 } from '@ai-sdk/amazon-bedrock';
+import {
+  type BedrockMantleProvider,
+  createBedrockMantle,
+} from '@ai-sdk/amazon-bedrock/mantle';
 
 import { readEnv } from '../../shared/runtimeDetection.js';
+import { DEFAULT_MODEL_CATALOG } from '../catalog.data.js';
 import type { ProviderDefinition } from '../types.js';
 
 export type BedrockConfig = Omit<AmazonBedrockProviderSettings, 'fetch' | 'generateId'>;
@@ -29,7 +34,11 @@ function hasExplicitBedrockAuth(cfg: BedrockConfig): boolean {
   );
 }
 
-export const bedrockProvider = {
+export const bedrockProvider: ProviderDefinition<
+  'amazon-bedrock',
+  BedrockConfig,
+  AmazonBedrockProvider
+> = {
   name: 'amazon-bedrock',
   envVars: [
     'AWS_BEARER_TOKEN_BEDROCK',
@@ -71,30 +80,47 @@ export const bedrockProvider = {
     return undefined;
   },
   build: (cfg) => {
-    if (hasExplicitBedrockAuth(cfg)) {
-      return createAmazonBedrock(cfg);
-    }
-
     let chain: AmazonBedrockProviderSettings['credentialProvider'];
-    return createAmazonBedrock({
-      ...cfg,
-      credentialProvider: async () => {
-        if (!chain) {
-          const packageName = ['@aws-sdk', 'credential-providers'].join('/');
-          const module = (await import(packageName).catch((error: unknown) => {
-            const message = error instanceof Error ? error.message : String(error);
-            throw new Error(
-              `Bedrock default credential resolution requires the optional @aws-sdk/credential-providers peer dependency: ${message}`,
-            );
-          })) as {
-            fromNodeProviderChain: () => NonNullable<
-              AmazonBedrockProviderSettings['credentialProvider']
-            >;
-          };
-          chain = module.fromNodeProviderChain();
-        }
-        return chain();
-      },
-    });
+    const settings = hasExplicitBedrockAuth(cfg)
+      ? cfg
+      : {
+          ...cfg,
+          credentialProvider: async () => {
+            if (!chain) {
+              const packageName = ['@aws-sdk', 'credential-providers'].join('/');
+              const module = (await import(packageName).catch((error: unknown) => {
+                const message = error instanceof Error ? error.message : String(error);
+                throw new Error(
+                  `Bedrock default credential resolution requires the optional @aws-sdk/credential-providers peer dependency: ${message}`,
+                );
+              })) as {
+                fromNodeProviderChain: () => NonNullable<
+                  AmazonBedrockProviderSettings['credentialProvider']
+                >;
+              };
+              chain = module.fromNodeProviderChain();
+            }
+            return chain();
+          },
+        };
+    const standard = createAmazonBedrock(settings);
+    const mantleProviders = new Map<string, BedrockMantleProvider>();
+    const languageModel: AmazonBedrockProvider['languageModel'] = (modelId) => {
+      const sdk = DEFAULT_MODEL_CATALOG.get(`amazon-bedrock/${modelId}`)?.sdk;
+      if (sdk?.npm !== '@ai-sdk/amazon-bedrock/mantle') {
+        return standard.languageModel(modelId);
+      }
+
+      const baseURL = sdk.api?.replace('${AWS_REGION}', settings.region ?? 'us-east-1');
+      const key = baseURL ?? '';
+      let mantle = mantleProviders.get(key);
+      if (!mantle) {
+        mantle = createBedrockMantle({ ...settings, baseURL });
+        mantleProviders.set(key, mantle);
+      }
+      return sdk.shape === 'chat' ? mantle.chat(modelId) : mantle.responses(modelId);
+    };
+    const provider = ((modelId: string) => languageModel(modelId)) as AmazonBedrockProvider;
+    return Object.assign(provider, standard, { languageModel });
   },
-} satisfies ProviderDefinition<'amazon-bedrock', BedrockConfig, AmazonBedrockProvider>;
+};

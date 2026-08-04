@@ -38,6 +38,12 @@ export type ModelCost = {
   cache_write?: number;
 };
 
+export type ModelSDK = {
+  npm: string;
+  api?: string;
+  shape?: "chat" | "responses";
+};
+
 export type Operation =
   | "chat.completions"
   | "responses"
@@ -70,6 +76,7 @@ export type ModelCatalogEntry = {
   /** Context window limits. */
   context: ModelContext;
   cost?: ModelCost;
+  sdk?: ModelSDK;
   /** Provider IDs that can serve this model (first = preferred). */
   providers: string[];
 };

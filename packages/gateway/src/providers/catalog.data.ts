@@ -2764,6 +2764,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "output": 16.5,
       "cache_read": 0.275
     },
+    "sdk": {
+      "npm": "@ai-sdk/amazon-bedrock/mantle",
+      "api": "https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1",
+      "shape": "responses"
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2800,6 +2805,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 5.5,
       "output": 33,
       "cache_read": 0.55
+    },
+    "sdk": {
+      "npm": "@ai-sdk/amazon-bedrock/mantle",
+      "api": "https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1",
+      "shape": "responses"
     },
     "providers": [
       "amazon-bedrock"
@@ -2839,6 +2849,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "cache_read": 0.1,
       "cache_write": 1.25
     },
+    "sdk": {
+      "npm": "@ai-sdk/amazon-bedrock/mantle",
+      "api": "https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1",
+      "shape": "responses"
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2876,6 +2891,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "output": 30,
       "cache_read": 0.5,
       "cache_write": 6.25
+    },
+    "sdk": {
+      "npm": "@ai-sdk/amazon-bedrock/mantle",
+      "api": "https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1",
+      "shape": "responses"
     },
     "providers": [
       "amazon-bedrock"
@@ -2915,6 +2935,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "cache_read": 0.25,
       "cache_write": 3.125
     },
+    "sdk": {
+      "npm": "@ai-sdk/amazon-bedrock/mantle",
+      "api": "https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1",
+      "shape": "responses"
+    },
     "providers": [
       "amazon-bedrock"
     ]
@@ -2946,6 +2971,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "cost": {
       "input": 0.15,
       "output": 0.6
+    },
+    "sdk": {
+      "npm": "@ai-sdk/amazon-bedrock/mantle",
+      "api": "https://bedrock-mantle.${AWS_REGION}.api.aws/v1",
+      "shape": "responses"
     },
     "providers": [
       "amazon-bedrock"
@@ -3010,6 +3040,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     "cost": {
       "input": 0.07,
       "output": 0.3
+    },
+    "sdk": {
+      "npm": "@ai-sdk/amazon-bedrock/mantle",
+      "api": "https://bedrock-mantle.${AWS_REGION}.api.aws/v1",
+      "shape": "responses"
     },
     "providers": [
       "amazon-bedrock"
@@ -3901,6 +3936,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       "input": 1.25,
       "output": 2.5,
       "cache_read": 0.2
+    },
+    "sdk": {
+      "npm": "@ai-sdk/amazon-bedrock/mantle",
+      "api": "https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1",
+      "shape": "responses"
     },
     "providers": [
       "amazon-bedrock"
