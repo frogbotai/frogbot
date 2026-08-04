@@ -8,7 +8,7 @@ import { useTranscription } from './use-transcription'
 
 export function MicControl({ onText }: { onText: (text: string) => void }) {
   const provider = useChatProvider()
-  const capability = provider?.manifest?.ai.transcribe
+  const capability = provider?.manifest?.ai?.transcribe
   const transcription = useTranscription({
     onText,
     transcribe: async (file) => capability ? (await provider.sdk.ai.transcribe({ file, model: capability.model })).text : '',
