@@ -3,10 +3,12 @@ title: "Chat manifest"
 sidebarTitle: "Manifest"
 description: "Discover chat collection slugs and accessible agents from a FrogBot deployment."
 keywords: ["chat", "manifest", "agents", "collections", "API"]
-api: "GET /api/frogbot"
+api: "GET https://app.frogbot.ai/api/frogbot"
 ---
 
 The chat manifest gives clients the runtime configuration they need before starting a conversation. Use it instead of hard-coding collection slugs or a transcription model.
+
+For model requests from a FrogBot app, see the [embedded gateway HTTP endpoints](/configuration/ai#call-over-http).
 
 ```bash
 curl http://localhost:3000/api/frogbot \
