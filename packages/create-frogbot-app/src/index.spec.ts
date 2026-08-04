@@ -89,12 +89,12 @@ describe('scaffold', () => {
     expect(() => scaffold({ ...options, templateDir: path.join(options.dest, 'missing') })).toThrow();
   });
 
-  it('writes the complete pnpm workspace config', () => {
+  it('writes scoped release-age exclusions to the pnpm workspace config', () => {
     const options = createDest();
     scaffold({ ...options, templateDir });
 
     expect(fs.readFileSync(path.join(options.dest, 'pnpm-workspace.yaml'), 'utf8')).toBe(
-      'allowBuilds:\n  sharp: true\n  esbuild: true\nminimumReleaseAge: 0\n',
+      "allowBuilds:\n  sharp: true\n  esbuild: true\nminimumReleaseAgeExclude:\n  - frogbot\n  - '@frogbotai/*'\n",
     );
     const pkg = JSON.parse(fs.readFileSync(path.join(options.dest, 'package.json'), 'utf8')) as {
       pnpm?: unknown;

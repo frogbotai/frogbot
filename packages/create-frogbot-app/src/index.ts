@@ -31,7 +31,7 @@ export function scaffold({
   fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
   fs.writeFileSync(
     path.join(dest, 'pnpm-workspace.yaml'),
-    'allowBuilds:\n  sharp: true\n  esbuild: true\nminimumReleaseAge: 0\n',
+    "allowBuilds:\n  sharp: true\n  esbuild: true\nminimumReleaseAgeExclude:\n  - frogbot\n  - '@frogbotai/*'\n",
   );
 }
 
