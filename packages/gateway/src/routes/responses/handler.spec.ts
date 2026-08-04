@@ -223,6 +223,46 @@ describe('responsesRoute', () => {
     expect(text).not.toContain('[DONE]');
     expect(doStream).toHaveBeenCalledWith(expect.objectContaining({ includeRawChunks: true }));
   });
+
+  it('passes the assembled streaming response to afterUpstream hooks', async () => {
+    const afterUpstream = vi.fn();
+    const doStream = vi.fn(async () => ({
+      stream: new ReadableStream({
+        start(controller) {
+          controller.enqueue({ type: 'text-start', id: 'txt_1' });
+          controller.enqueue({ type: 'text-delta', id: 'txt_1', delta: 'hello' });
+          controller.enqueue({ type: 'text-end', id: 'txt_1' });
+          controller.enqueue({
+            type: 'finish',
+            finishReason: { unified: 'stop', raw: 'stop' },
+            usage: {
+              inputTokens: { total: 3, noCache: 3 },
+              outputTokens: { total: 1, text: 1 },
+            },
+          });
+          controller.close();
+        },
+      }),
+    }));
+    const app = createApp({
+      registry: {
+        openai: new MockProviderV4({ languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doStream }) } }),
+      } as unknown as ProviderRegistry,
+      hooks: { afterUpstream: [afterUpstream] },
+    });
+
+    const res = await app.request('/v1/responses', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'openai/gpt-4o-mini', input: 'hi', stream: true }),
+    });
+
+    expect(res.status).toBe(200);
+    await res.text();
+    expect(afterUpstream).toHaveBeenCalledWith(
+      expect.objectContaining({ response: expect.objectContaining({ messages: expect.any(Array) }) }),
+    );
+  });
 });
 
 describe('forwardResponseParams', () => {
