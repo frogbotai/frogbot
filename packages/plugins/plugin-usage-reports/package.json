@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-usage-reports",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Usage analytics reports for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

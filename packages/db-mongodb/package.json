@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/db-mongodb",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "FrogBot MongoDB adapter.",
   "license": "MIT",
   "author": "Colby Gilbert",

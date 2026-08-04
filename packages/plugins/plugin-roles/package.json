@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-roles",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Code-defined role-based access control for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
