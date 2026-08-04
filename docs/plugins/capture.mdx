@@ -1,0 +1,92 @@
+---
+title: Capture
+description: Opt in to per-key AI request and response capture with gzip blob storage and retention.
+keywords: ["capture", "AI logging", "retention", "plugins"]
+---
+
+The capture plugin records selected language requests and responses as gzip blobs. Capture is off by default and storage failures never change the AI response.
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-capture
+```
+
+Add the API keys plugin first when you want per-key policy controls:
+
+```ts
+import { apiKeysPlugin } from '@frogbotai/plugin-api-keys'
+import { capturePlugin } from '@frogbotai/plugin-capture'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: databaseAdapter,
+  collections: [{ slug: 'users', auth: true, fields: [] }],
+  ai: {
+    providers: {
+      openai: { apiKey: process.env.OPENAI_API_KEY },
+    },
+  },
+  plugins: [apiKeysPlugin(), capturePlugin()],
+})
+```
+
+The API Keys collection gains a **Request capture** field with four policies:
+
+| Policy | Behavior |
+| --- | --- |
+| `off` | Never capture requests made with the key. |
+| `errors-only` | Capture failed language requests. |
+| `sample` | Capture each request independently according to `captureSampleRate`. |
+| `full` | Capture every language request made with the key. |
+
+The global `defaultPolicy` applies when no per-key policy exists, including agent and in-process calls without an API key. Set `context.capture` to `false` on an operation to force capture off.
+
+## Storage
+
+By default, captures are written to `.frogbot/captures/{requestId}.json.gz`. Set `directory` to change the development location or provide an object-store adapter:
+
+```ts
+capturePlugin({
+  defaultPolicy: 'errors-only',
+  storage: {
+    put: (key, bytes) => bucket.put(key, bytes),
+  },
+})
+```
+
+Each blob contains the canonical post-hook request, assembled response or error, model, provider, operation, usage, finish reason, and capture timestamp. Only `chat.completions`, `messages`, and `responses` operations are eligible.
+
+<Warning>
+  Captures are faithful payloads. The plugin does not scrub prompts, tool arguments, responses, PII, or secrets. Restrict access to the storage location.
+</Warning>
+
+## Retention
+
+Set `retentionDays` to schedule daily cleanup through Payload Jobs. Custom storage must provide `cleanup` when finite retention is enabled:
+
+```ts
+capturePlugin({
+  retentionDays: 14,
+  retentionCron: '0 3 * * *',
+  storage: {
+    put: (key, bytes) => bucket.put(key, bytes),
+    cleanup: (capturedBefore) => deleteCapturesBefore(capturedBefore),
+  },
+})
+```
+
+Omit `retentionDays` or set it to `null` to retain captures indefinitely.
+
+## Options
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `defaultPolicy` | `off` | Policy used when no per-key policy exists. |
+| `sampleRate` | `0.1` | Sampling probability from `0` to `1`. |
+| `storage` | Filesystem | Blob storage adapter with `put` and optional `cleanup`. |
+| `directory` | `.frogbot/captures` | Default filesystem storage directory. |
+| `apiKeysCollectionSlug` | `api-keys` | API-key collection slug, or `false` to disable integration. |
+| `retentionDays` | `null` | Positive finite retention in days. |
+| `retentionCron` | `0 3 * * *` | Cleanup task schedule. |

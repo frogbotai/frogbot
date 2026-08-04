@@ -97,14 +97,15 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
   };
   const fields: Field[] = [
     { name: 'name', type: 'text', required: true },
-    { name: 'owner', type: 'relationship', relationTo: authCollection, required: true, index: true },
-    { name: 'prefix', type: 'text', required: true, index: true, admin: { readOnly: true } },
-    { name: 'tokenHash', type: 'text', required: true, unique: true, index: true, access: { read: () => false }, admin: { hidden: true } },
-    { name: 'lastUsedAt', type: 'date', admin: { readOnly: true } },
+    { name: 'owner', type: 'relationship', relationTo: authCollection, required: true, index: true, access: { update: () => false } },
+    { name: 'prefix', type: 'text', required: true, index: true, access: { update: () => false }, admin: { readOnly: true } },
+    { name: 'tokenHash', type: 'text', required: true, unique: true, index: true, access: { read: () => false, update: () => false }, admin: { hidden: true } },
+    { name: 'lastUsedAt', type: 'date', access: { update: () => false }, admin: { readOnly: true } },
     {
       name: 'revokedAt',
       type: 'date',
       index: true,
+      access: { update: () => false },
       admin: { readOnly: true, condition: (_, siblingData) => Boolean(siblingData.revokedAt) },
     },
     ...(usageCollection
@@ -161,7 +162,7 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
       create: () => false,
       delete: () => false,
       read: ownerAccess,
-      update: () => false,
+      update: ownerAccess,
       ...existing?.access,
       ...collection?.access,
     },

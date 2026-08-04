@@ -31,7 +31,14 @@ describe('API keys collection', () => {
     expect(await collection.access?.read?.({ req: { user: { id: 'user-1' } } as FrogbotRequest })).toEqual({
       owner: { equals: 'user-1' },
     });
+    expect(await collection.access?.update?.({ req: { user: { id: 'user-1' } } as FrogbotRequest })).toEqual({
+      owner: { equals: 'user-1' },
+    });
     expect(await collection.access?.create?.({ req: {} as FrogbotRequest })).toBe(false);
+    for (const name of ['owner', 'prefix', 'tokenHash', 'lastUsedAt', 'revokedAt']) {
+      const field = collection.fields.find((item) => 'name' in item && item.name === name);
+      expect('access' in field! && field.access?.update?.({} as never)).toBe(false);
+    }
     expect(collection.admin?.components?.beforeListTable).toContain(
       '@frogbotai/plugin-api-keys/client#ApiKeysManager',
     );
