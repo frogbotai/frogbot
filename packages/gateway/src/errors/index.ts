@@ -16,16 +16,19 @@ export { toAnthropicErrorResponse,toOpenAIErrorResponse } from './envelope.js';
 export type { GatewayErrorCode } from './gatewayError.js';
 export {
   BodyTooLargeError,
+  BudgetExceededError,
   ConfigError,
   GatewayError,
   InvalidToolArgumentsError,
   isGatewayError,
   ModelIdError,
+  ModelNotAllowedError,
   ModelNotFoundError,
   ModelUnsupportedOperationError,
   NoProvidersError,
   NotFoundError,
   ProviderNotConfiguredError,
+  RateLimitExceededError,
   RequestValidationError,
   UnsupportedModalityError,
 } from './gatewayError.js';

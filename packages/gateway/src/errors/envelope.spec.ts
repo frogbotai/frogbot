@@ -12,9 +12,12 @@ import { describe, expect, it } from 'vitest';
 
 import { toAnthropicErrorResponse, toOpenAIErrorResponse } from './envelope.js';
 import {
+  BudgetExceededError,
   ConfigError,
   ModelIdError,
+  ModelNotAllowedError,
   ProviderNotConfiguredError,
+  RateLimitExceededError,
   UnsupportedModalityError,
 } from './gatewayError.js';
 
@@ -29,6 +32,16 @@ const apiCallError = (overrides: Partial<ConstructorParameters<typeof APICallErr
     requestBodyValues: {},
     ...overrides,
   });
+
+describe('policy errors', () => {
+  it.each([
+    [new BudgetExceededError(), 403, 'budget_exceeded'],
+    [new ModelNotAllowedError('openai/gpt-4o'), 403, 'model_not_allowed'],
+    [new RateLimitExceededError({ kind: 'rpm', retryAfterSeconds: 10 }), 429, 'rate_limit_exceeded'],
+  ])('preserves status and code', (error, status, code) => {
+    expect(toOpenAIErrorResponse(error)).toMatchObject({ status, body: { error: { code } } });
+  });
+});
 
 // ---------------------------------------------------------------------------
 // 1. GatewayError taxonomy

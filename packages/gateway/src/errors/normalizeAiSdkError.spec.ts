@@ -3,6 +3,7 @@ import { RetryError } from 'ai';
 import { describe, expect, it } from 'vitest';
 
 import { headersForError, isRetryableError } from './normalizeAiSdkError.js';
+import { RateLimitExceededError } from './gatewayError.js';
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -21,6 +22,9 @@ const apiCallError = (overrides: Partial<ConstructorParameters<typeof APICallErr
 // ---------------------------------------------------------------------------
 
 describe('headersForError', () => {
+  it('uses policy retry timing', () => {
+    expect(headersForError(new RateLimitExceededError({ kind: 'rpm', retryAfterSeconds: 17 }), 429)['retry-after']).toBe('17');
+  });
   it('forwards retry-after from a plain APICallError', () => {
     const err = apiCallError({ statusCode: 429, responseHeaders: { 'retry-after': '12' } });
     const headers = headersForError(err, 429);

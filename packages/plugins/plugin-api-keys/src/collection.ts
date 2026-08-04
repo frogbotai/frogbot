@@ -1,6 +1,7 @@
 import type { CollectionConfig, Endpoint, Field, FrogbotRequest } from 'frogbot';
 
 import { createApiKeyToken, getApiKeyPrefix, hashApiKeyToken } from './server/token.js';
+import { createPolicyFields } from './fields.js';
 
 type CollectionOptions = {
   authCollection: string;
@@ -101,6 +102,7 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
     { name: 'prefix', type: 'text', required: true, index: true, access: { update: () => false }, admin: { readOnly: true } },
     { name: 'tokenHash', type: 'text', required: true, unique: true, index: true, access: { read: () => false, update: () => false }, admin: { hidden: true } },
     { name: 'lastUsedAt', type: 'date', access: { update: () => false }, admin: { readOnly: true } },
+    ...createPolicyFields(true),
     {
       name: 'revokedAt',
       type: 'date',

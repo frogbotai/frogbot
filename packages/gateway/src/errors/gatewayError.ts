@@ -16,7 +16,10 @@ export type GatewayErrorCode =
   | 'invalid_request_body'
   | 'invalid_tool_arguments'
   | 'request_entity_too_large'
-  | 'resource_not_found';
+  | 'resource_not_found'
+  | 'budget_exceeded'
+  | 'model_not_allowed'
+  | 'rate_limit_exceeded';
 
 export const gatewayErrorMarker = Symbol.for('@frogbotai/gateway/GatewayError');
 
@@ -33,6 +36,32 @@ export class GatewayError extends Error {
     this.status = args.status;
     this.code = args.code;
     this.param = args.param ?? null;
+  }
+}
+
+export class BudgetExceededError extends GatewayError {
+  override readonly name = 'BudgetExceededError';
+
+  constructor() {
+    super({ message: 'The configured budget has been exhausted.', status: 403, code: 'budget_exceeded' });
+  }
+}
+
+export class ModelNotAllowedError extends GatewayError {
+  override readonly name = 'ModelNotAllowedError';
+
+  constructor(model: string) {
+    super({ message: `Model "${model}" is not allowed by this policy.`, status: 403, code: 'model_not_allowed', param: 'model' });
+  }
+}
+
+export class RateLimitExceededError extends GatewayError {
+  override readonly name = 'RateLimitExceededError';
+  readonly retryAfterSeconds: number;
+
+  constructor(args: { kind: 'rpm' | 'tpm'; retryAfterSeconds: number }) {
+    super({ message: `${args.kind.toUpperCase()} rate limit exceeded.`, status: 429, code: 'rate_limit_exceeded' });
+    this.retryAfterSeconds = args.retryAfterSeconds;
   }
 }
 

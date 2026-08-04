@@ -27,6 +27,10 @@ import { unwrapRetryError } from './unwrapRetryError.js';
 export function headersForError(err: unknown, status: number): Record<string, string> {
   let upstreamHeaders: Headers | Record<string, string> | undefined;
 
+  if (typeof err === 'object' && err !== null && typeof (err as { retryAfterSeconds?: unknown }).retryAfterSeconds === 'number') {
+    upstreamHeaders = { 'retry-after': String((err as { retryAfterSeconds: number }).retryAfterSeconds) };
+  }
+
   const cause = unwrapRetryError(err);
   if (APICallError.isInstance(cause)) {
     upstreamHeaders = cause.responseHeaders;

@@ -142,12 +142,15 @@ export function statusForError(err: unknown): GatewayHttpStatus {
 // ---------------------------------------------------------------------------
 
 const GATEWAY_CODE_TO_TYPE: Record<GatewayErrorCode, OpenAIErrorType> = {
+  budget_exceeded: 'invalid_request_error',
   config_invalid: 'server_error',
   invalid_model_id: 'invalid_request_error',
   model_not_found: 'not_found_error',
+  model_not_allowed: 'invalid_request_error',
   model_unsupported_operation: 'invalid_request_error',
   no_providers: 'server_error',
   provider_not_configured: 'not_found_error',
+  rate_limit_exceeded: 'rate_limit_error',
   unsupported_modality: 'invalid_request_error',
   invalid_request_body: 'invalid_request_error',
   invalid_tool_arguments: 'invalid_request_error',

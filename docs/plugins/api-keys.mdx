@@ -75,8 +75,36 @@ apiKeysPlugin({
 | `tokenPrefix` | `fbt` | Prefix placed before generated key values. |
 | `headerNames` | `['x-api-key']` | Additional request headers accepted for authentication. |
 | `collection` | — | Collection overrides, including fields, access, hooks, endpoints, and admin configuration. |
+| `defaults` | — | Inherited monthly budget, RPM, TPM, model, and blocking defaults. |
+| `alerts` | — | Threshold webhook URL, headers, and threshold fractions. |
 
 Collection overrides merge with the generated configuration and changes made by other plugins. The admin controls use the default admin design system without plugin-specific CSS, so your global admin styles continue to apply.
+
+## Budgets and limits
+
+```ts
+apiKeysPlugin({
+  defaults: {
+    monthlyBudgetUSD: 25,
+    rpm: 60,
+    tpm: 100_000,
+    models: ['openai/gpt-4o-mini'],
+    budgetBehavior: 'block',
+  },
+  alerts: {
+    webhookURL: process.env.BUDGET_WEBHOOK_URL!,
+    thresholds: [0.8, 1],
+  },
+})
+```
+
+Key and user policy fields support `inherit`, `custom`, and `unlimited`. Add `budgets:manage` to administrator grants. The fields use the roles plugin's field adapter, so owning a key does not permit changing its caps.
+
+Budget and RPM checks run before the operation. Model policy runs after the request model is parsed and can only narrow provider model allowlists. Completed usage settles TPM and spend for both the key and owner. A monthly Payload task resets spend and alert state.
+
+Rate windows are process-local. Spend writes are serialized within one process, but Payload has no atomic increment operation, so multiple processes can lose concurrent updates. Streaming and TPM admission can exceed a limit by in-flight requests. These are governance limits, not billing ledgers.
+
+Webhook deliveries include the subject, current spend, configured budget, and newly crossed thresholds. Each threshold fires once per monthly period. Failed deliveries are not retried automatically.
 
 ## Security behavior
 
