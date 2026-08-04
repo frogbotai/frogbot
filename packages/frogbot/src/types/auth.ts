@@ -5,6 +5,7 @@
 import type { IncomingAuthType } from 'payload';
 
 export interface AuthConfig {
+  depth?: number;
   tokenExpiration?: number;
   verify?: boolean | { generateEmailHTML?: (args: { token: string; user: unknown }) => string | Promise<string> };
   maxLoginAttempts?: number;

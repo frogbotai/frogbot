@@ -147,7 +147,7 @@
             "group": "Ecosystem",
             "pages": [
               { "group": "Pieces", "expanded": false, "pages": ["pieces/index"]},
-              { "group": "Plugins", "expanded": false, "pages": ["plugins/overview", "plugins/api-keys", "plugins/capture", "plugins/usage-reports", "plugins/oauth", "plugins/rag", "plugins/build-your-own", "plugins/plugin-api"]},
+              { "group": "Plugins", "expanded": false, "pages": ["plugins/overview", "plugins/api-keys", "plugins/roles", "plugins/capture", "plugins/usage-reports", "plugins/oauth", "plugins/rag", "plugins/build-your-own", "plugins/plugin-api"]},
               { "group": "Gateway", "expanded": false, "pages": ["gateway/overview", "gateway/providers", "gateway/configuration", "gateway/embedding", "gateway/hooks", "gateway/observability", "gateway/errors"]}
             ]
           }

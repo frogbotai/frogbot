@@ -1,0 +1,101 @@
+---
+title: "Roles"
+sidebarTitle: "Roles"
+description: "Define versioned roles and enforce grants across collections, fields, and agents."
+keywords: ["roles", "RBAC", "authorization", "permissions", "plugins"]
+---
+
+The roles plugin defines authorization policy in code while keeping role assignment editable at runtime. It synchronizes a read-only roles collection, adds a roles relationship to your auth collection, and compiles grants into FrogBot's existing access functions.
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-roles
+```
+
+## Configure
+
+```ts
+import { can, canAgent, canField, rolesPlugin } from '@frogbotai/plugin-roles'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  collections: [
+    {
+      slug: 'users',
+      auth: true,
+      fields: [],
+    },
+    {
+      slug: 'usage-logs',
+      access: { read: can('usage-logs:read') },
+      fields: [],
+    },
+  ],
+  plugins: [
+    rolesPlugin({
+      resources: [
+        { slug: 'agents', actions: ['run'] },
+        { slug: 'usage-logs', actions: ['read'] },
+        { slug: 'budgets', actions: ['read', 'manage'] },
+      ],
+      roles: [
+        {
+          slug: 'admin',
+          name: 'Administrator',
+          grants: [{ resource: '*', actions: ['*'] }],
+        },
+        {
+          slug: 'member',
+          name: 'Member',
+          grants: [
+            { resource: 'agents', actions: ['run'] },
+            { resource: 'usage-logs', actions: ['read'], scope: 'own' },
+            { resource: 'budgets', actions: ['read'] },
+          ],
+        },
+      ],
+    }),
+  ],
+})
+```
+
+The first created user receives the `admin` role unless the create operation explicitly supplies roles. Later assignments are edited through the auth collection's Roles field.
+
+## Access adapters
+
+Use the adapter matching the consumer's access contract:
+
+```ts
+can('usage-logs:read')
+canField('budgets:manage')
+canAgent('agents:run')
+```
+
+`can()` returns `true`, `false`, or a Payload query. An `own` grant defaults to `{ user: { equals: req.user.id } }`; pass `ownerField` when a collection uses another ownership field.
+
+```ts
+can('documents:read', { ownerField: 'createdBy' })
+```
+
+Fields and agents have boolean-only contracts, so `canField()` and `canAgent()` treat either `any` or `own` as permission to use that field or agent.
+
+## Population and security
+
+The plugin raises the auth collection's relationship depth to at least one so `req.user.roles` contains role documents and their grants. Higher configured depth values are preserved. Missing, malformed, or unpopulated role relationships deny access.
+
+The roles projection permits authenticated reads for relationship population and denies API creates, updates, and deletes. Initialization synchronizes configured roles with `overrideAccess: true` and never deletes removed role records or user assignments. Existing internal operations that deliberately use `overrideAccess: true` continue to bypass access functions.
+
+## Defaults and options
+
+Without `roles`, the plugin supplies `admin`, `member`, and `viewer` defaults. Pass `resources` to reject unknown resources or actions during startup.
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `roles` | `admin`, `member`, `viewer` | Code-defined role policy. |
+| `resources` | unrestricted | Optional grant validation registry. |
+| `authCollection` | `users` | Auth collection receiving assignments. |
+| `collectionSlug` | `roles` | Role projection collection slug. |
+| `fieldName` | `roles` | Auth relationship field name. |
+| `adminRole` | `admin` | First-user role slug. |
+| `collection` | none | Additional projection collection configuration and fields. |
