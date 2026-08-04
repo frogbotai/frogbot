@@ -19,6 +19,7 @@ export default defineConfig({
           include: [
             'packages/ui/src/**/*.spec.tsx',
             'packages/plugins/plugin-api-keys/src/**/*.spec.tsx',
+            'packages/plugins/plugin-usage-reports/src/**/*.spec.tsx',
           ],
           exclude: ['**/node_modules/**', '**/dist/**'],
           environment: 'jsdom',

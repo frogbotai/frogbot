@@ -1,0 +1,62 @@
+{
+  "name": "@frogbotai/plugin-usage-reports",
+  "version": "0.11.0",
+  "description": "Usage analytics reports for FrogBot.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/plugins/plugin-usage-reports"
+  },
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && cp src/client/styles.css dist/client/styles.css",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "@payloadcms/plugin-import-export": "3.85.1",
+    "@payloadcms/ui": "3.85.1",
+    "frogbot": "workspace:*",
+    "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
+    "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
+  },
+  "devDependencies": {
+    "@payloadcms/plugin-import-export": "3.85.1",
+    "@payloadcms/ui": "3.85.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "19.2.14",
+    "frogbot": "workspace:*",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "typescript": "5.6.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

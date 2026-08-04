@@ -1150,6 +1150,33 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/plugins/plugin-usage-reports:
+    devDependencies:
+      '@payloadcms/plugin-import-export':
+        specifier: 3.85.1
+        version: 3.85.1(@payloadcms/ui@3.85.1(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2))(payload@3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      '@payloadcms/ui':
+        specifier: 3.85.1
+        version: 3.85.1(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
+      '@testing-library/react':
+        specifier: ^16.3.0
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      react:
+        specifier: 19.2.6
+        version: 19.2.6
+      react-dom:
+        specifier: 19.2.6
+        version: 19.2.6(react@19.2.6)
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/sdk:
     devDependencies:
       typescript:
@@ -3812,6 +3839,12 @@ packages:
       payload: 3.85.1
       react: ^19.0.1 || ^19.1.2 || ^19.2.1
       react-dom: ^19.0.1 || ^19.1.2 || ^19.2.1
+
+  '@payloadcms/plugin-import-export@3.85.1':
+    resolution: {integrity: sha512-OyeyDh5m4GrGb9tLMv/Xvfz/ZPmx+WiKtcAz54TzFFYk9FuBkhb1aqXywxo7wFw9iMjxxToBR9/IqJT1KGaDBQ==}
+    peerDependencies:
+      '@payloadcms/ui': 3.85.1
+      payload: 3.85.1
 
   '@payloadcms/storage-azure@3.85.1':
     resolution: {integrity: sha512-fLfDbYAe9tLcndFqOoh/cqVWX0wfO3pHsibDf0jgRXqDrTeAg2q685naF8WUhekBEXy7y3keUDuhrddvvwFODQ==}
@@ -10847,6 +10880,19 @@ snapshots:
       - next
       - supports-color
       - typescript
+
+  '@payloadcms/plugin-import-export@3.85.1(@payloadcms/ui@3.85.1(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2))(payload@3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
+    dependencies:
+      '@faceless-ui/modal': 3.0.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      '@payloadcms/translations': 3.85.1
+      '@payloadcms/ui': 3.85.1(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
+      csv-parse: 5.6.0
+      csv-stringify: 6.5.2
+      payload: 3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      qs-esm: 8.0.1
+    transitivePeerDependencies:
+      - react
+      - react-dom
 
   '@payloadcms/storage-azure@3.85.1(next@15.4.11(@opentelemetry/api@1.9.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(sass@1.77.4))(payload@3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.6.2)':
     dependencies:

@@ -1,0 +1,63 @@
+---
+title: Usage reports
+description: Explore model and user usage over a date range with adapter-neutral reports.
+keywords: ["usage", "analytics", "cost", "tokens", "plugins"]
+---
+
+The usage reports plugin adds a **Usage Analytics** admin page with sortable Models and Users tables, preset and custom date ranges, and request, token, and cost totals.
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-usage-reports @payloadcms/plugin-import-export
+```
+
+```ts
+import { usageReportsPlugin } from '@frogbotai/plugin-usage-reports'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: databaseAdapter,
+  collections: [{ slug: 'users', auth: true, fields: [] }],
+  ai: {
+    providers: {
+      openai: { apiKey: process.env.OPENAI_API_KEY },
+    },
+  },
+  plugins: [usageReportsPlugin()],
+})
+```
+
+Reports use paginated Payload local API reads and in-memory reduction. They do not access Drizzle or another database adapter directly, so the same implementation supports FrogBot's SQL and MongoDB adapters.
+
+## Admin tools
+
+The plugin extends the marker-resolved usage-log collection with:
+
+- Payload's experimental visual list grouping through `admin.groupBy`
+- Filtered, export-only CSV through `@payloadcms/plugin-import-export`
+- A Usage Analytics custom view based on Firmware's date range and models/users tables
+
+CSV export contains filtered raw usage rows. The Usage Analytics page contains aggregated totals.
+
+## Report API
+
+Authenticated callers can request aggregated data directly:
+
+```http
+GET /api/usage/report?groupBy=model&from=2026-07-01T00:00:00.000Z&to=2026-08-01T00:00:00.000Z
+```
+
+`groupBy` accepts `model`, `user`, `day`, or `apiKey`. API-key grouping does not infer attribution. It returns attributed rows only when a plugin such as `@frogbotai/plugin-api-keys` populated the usage log's `apiKey` relationship.
+
+The endpoint currently follows usage-log read access and requires an authenticated user. Role-specific report permissions can replace this gate when an application installs a compatible roles policy.
+
+## Options
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `pageSize` | `5000` | Number of usage rows read in each Payload local API page. |
+| `rawExport` | `true` | Enable Payload export-only CSV support on the usage collection. |
+
+Large date ranges scan every matching usage row. Add rollups only after deployment profiling demonstrates that this portable path is insufficient.
