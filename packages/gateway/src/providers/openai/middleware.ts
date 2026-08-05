@@ -68,6 +68,42 @@ export const openaiEmbedDimensions: BeforeUpstreamHook = (args) => {
   }
 };
 
+export const openaiPromptCacheBreakpoint: BeforeUpstreamHook = (args) => {
+  const applyBreakpoint = (value: unknown) => {
+    if (!value || typeof value !== 'object') return;
+    const target = value as Record<string, unknown>;
+    const providerOptions = target.providerOptions as Record<string, Record<string, unknown>> | undefined;
+    const cacheControl = providerOptions?.unknown?.cache_control;
+    if (!cacheControl || typeof cacheControl !== 'object') return;
+
+    providerOptions.openai = {
+      ...(providerOptions.openai ?? {}),
+      promptCacheBreakpoint: { mode: 'explicit' },
+    };
+    delete providerOptions.unknown.cache_control;
+    if (Object.keys(providerOptions.unknown).length === 0) delete providerOptions.unknown;
+  };
+
+  for (const value of args.messages ?? []) {
+    applyBreakpoint(value);
+    if (!value || typeof value !== 'object') continue;
+    const content = (value as Record<string, unknown>).content;
+    if (!Array.isArray(content)) continue;
+    for (const part of content) applyBreakpoint(part);
+  }
+
+  const requestCacheControl = args.providerOptions.unknown?.cache_control;
+  const lastMessage = args.messages?.at(-1);
+  if (requestCacheControl && typeof requestCacheControl === 'object' && lastMessage && typeof lastMessage === 'object') {
+    const message = lastMessage as Record<string, unknown>;
+    const providerOptions = (message.providerOptions ??= {}) as Record<string, Record<string, unknown>>;
+    providerOptions.unknown = { ...(providerOptions.unknown ?? {}), cache_control: requestCacheControl };
+    applyBreakpoint(message);
+    delete args.providerOptions.unknown?.cache_control;
+    if (Object.keys(args.providerOptions.unknown ?? {}).length === 0) delete args.providerOptions.unknown;
+  }
+};
+
 /** Check if a model name is an o-series reasoning model. */
 function isReasoningModel(modelName: string): boolean {
   return /^o[134]/.test(modelName);
@@ -76,4 +112,8 @@ function isReasoningModel(modelName: string): boolean {
 /**
  * All OpenAI beforeUpstream hooks, in registration order.
  */
-export const openaiBeforeUpstream: BeforeUpstreamHook[] = [openaiReasoningEffort, openaiEmbedDimensions];
+export const openaiBeforeUpstream: BeforeUpstreamHook[] = [
+  openaiReasoningEffort,
+  openaiEmbedDimensions,
+  openaiPromptCacheBreakpoint,
+];

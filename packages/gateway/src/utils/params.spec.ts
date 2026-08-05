@@ -19,8 +19,8 @@ describe('parsePromptCachingOptions', () => {
   });
 
   it('parses prompt_cache_retention', () => {
-    const result = parsePromptCachingOptions({ prompt_cache_retention: '5m' });
-    expect(result).toEqual({ prompt_cache_retention: '5m' });
+    const result = parsePromptCachingOptions({ prompt_cache_retention: 'in_memory' });
+    expect(result).toEqual({ prompt_cache_retention: 'in_memory' });
   });
 
   it('parses cache_control object', () => {
@@ -31,12 +31,12 @@ describe('parsePromptCachingOptions', () => {
   it('parses all fields together', () => {
     const result = parsePromptCachingOptions({
       prompt_cache_key: 'key-1',
-      prompt_cache_retention: '1h',
+      prompt_cache_retention: '24h',
       cache_control: { type: 'ephemeral', ttl: '5m' },
     });
     expect(result).toEqual({
       prompt_cache_key: 'key-1',
-      prompt_cache_retention: '1h',
+      prompt_cache_retention: '24h',
       cache_control: { type: 'ephemeral', ttl: '5m' },
     });
   });
@@ -47,6 +47,13 @@ describe('parsePromptCachingOptions', () => {
 
   it('ignores non-string prompt_cache_key', () => {
     expect(parsePromptCachingOptions({ prompt_cache_key: 123 })).toBeUndefined();
+  });
+
+  it('rejects invalid prompt_cache_retention', () => {
+    expect(() => parsePromptCachingOptions({ prompt_cache_retention: '7d' })).toThrow(expect.objectContaining({
+      message: expect.stringContaining("'in_memory' or '24h'"),
+      param: 'prompt_cache_retention',
+    }));
   });
 });
 

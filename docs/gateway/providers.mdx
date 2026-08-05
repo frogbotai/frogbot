@@ -41,6 +41,14 @@ The `5m` and `1h` TTL values pass through to Bedrock. Other TTL values are omitt
 
 ---
 
+## OpenAI prompt caching
+
+OpenAI models translate Anthropic-style `cache_control` markers from `/v1/chat/completions` and `/v1/messages` into explicit OpenAI prompt cache breakpoints. Markers are supported on messages and message content parts. A request-level marker applies to the last message.
+
+OpenAI retention accepts only `in_memory` and `24h`. Marker TTL values are omitted because OpenAI breakpoints have no TTL equivalent. TTL does not infer retention. This translation does not apply to Azure, custom OpenAI-compatible providers, tool definitions, or `/v1/responses`.
+
+---
+
 ## Custom OpenAI-compatible endpoints
 
 Any key that isn't a built-in provider name is a generic OpenAI-compatible endpoint. `baseURL` is required — it's what tells the gateway a key is a deliberate custom endpoint rather than a typo of a built-in name.

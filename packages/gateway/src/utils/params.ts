@@ -5,6 +5,9 @@
 // `thinking.budget_tokens`) and common operations like snake_case → camelCase
 // conversion for providerOptions namespacing.
 
+import { z } from 'zod';
+
+import { RequestValidationError } from '../errors/gatewayError.js';
 import type { ReasoningEffort } from '../shared/types.js';
 
 // ---------------------------------------------------------------------------
@@ -200,9 +203,11 @@ export function effortFromBudget(budgetTokens: number, maxOutputTokens?: number)
 
 export type PromptCachingOptions = {
   prompt_cache_key?: string;
-  prompt_cache_retention?: string;
+  prompt_cache_retention?: 'in_memory' | '24h';
   cache_control?: { type: string; ttl?: string };
 };
+
+const promptCacheRetentionSchema = z.enum(['in_memory', '24h']);
 
 /**
  * Parse top-level prompt caching fields from the request body into a
@@ -224,7 +229,14 @@ export function parsePromptCachingOptions(opts: {
   }
 
   if (typeof opts.prompt_cache_retention === 'string' && opts.prompt_cache_retention.length > 0) {
-    result.prompt_cache_retention = opts.prompt_cache_retention;
+    const retention = promptCacheRetentionSchema.safeParse(opts.prompt_cache_retention);
+    if (!retention.success) {
+      throw new RequestValidationError({
+        message: "prompt_cache_retention must be 'in_memory' or '24h'",
+        param: 'prompt_cache_retention',
+      });
+    }
+    result.prompt_cache_retention = retention.data;
     hasValue = true;
   }
 

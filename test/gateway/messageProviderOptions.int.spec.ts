@@ -105,4 +105,69 @@ describe('message provider options ordering', () => {
     expect(status).toBe(200);
     expect(callOptions?.providerOptions?.bedrock?.serviceTier).toBe('standard_only');
   });
+
+  it('translates OpenAI cache controls from chat completions', async () => {
+    let callOptions: LanguageModelV4CallOptions | undefined;
+    const app = makeApp('openai', (options) => { callOptions = options; });
+
+    const { status } = await postJson(app, '/v1/chat/completions', {
+      model: 'openai/gpt-5',
+      prompt_cache_key: 'cache-key',
+      cache_control: { type: 'ephemeral' },
+      messages: [{
+        role: 'user',
+        content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+      }],
+    });
+
+    expect(status).toBe(200);
+    expect(callOptions?.providerOptions?.openai).toEqual({ promptCacheKey: 'cache-key' });
+    expect(callOptions?.prompt[0]).toHaveProperty(
+      'providerOptions.openai.promptCacheBreakpoint',
+      { mode: 'explicit' },
+    );
+    expect(callOptions?.prompt[0]).toHaveProperty(
+      'content[0].providerOptions.openai.promptCacheBreakpoint',
+      { mode: 'explicit' },
+    );
+  });
+
+  it('translates OpenAI cache controls from messages', async () => {
+    let callOptions: LanguageModelV4CallOptions | undefined;
+    const app = makeApp('openai', (options) => { callOptions = options; });
+
+    const { status } = await postJson(app, '/v1/messages', {
+      model: 'openai/gpt-5',
+      max_tokens: 100,
+      cache_control: { type: 'ephemeral' },
+      messages: [{
+        role: 'user',
+        content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+      }],
+    });
+
+    expect(status).toBe(200);
+    expect(callOptions?.prompt[0]).toHaveProperty(
+      'providerOptions.openai.promptCacheBreakpoint',
+      { mode: 'explicit' },
+    );
+    expect(callOptions?.prompt[0]).toHaveProperty(
+      'content[0].providerOptions.openai.promptCacheBreakpoint',
+      { mode: 'explicit' },
+    );
+  });
+
+  it('rejects invalid OpenAI prompt cache retention', async () => {
+    const app = makeApp('openai', () => {});
+
+    const { status, body } = await postJson(app, '/v1/chat/completions', {
+      model: 'openai/gpt-5',
+      prompt_cache_retention: '7d',
+      messages: [{ role: 'user', content: 'hello' }],
+    });
+
+    expect(status).toBe(400);
+    expect(body).toHaveProperty('error.param', 'prompt_cache_retention');
+    expect(body).toHaveProperty('error.message', expect.stringContaining("'in_memory' or '24h'"));
+  });
 });

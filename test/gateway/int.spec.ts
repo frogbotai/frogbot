@@ -482,7 +482,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     const { status } = await postJson(app, '/v1/chat/completions', {
       model: 'anthropic/test-model',
       prompt_cache_key: 'cache-key-1',
-      prompt_cache_retention: '1h',
+      prompt_cache_retention: '24h',
       messages: [{ role: 'user', content: 'hi', cache_control: { type: 'ephemeral' } }],
     }, {
       'anthropic-beta': 'prompt-caching-2024-07-31',
@@ -495,7 +495,7 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     expect(callOptions?.providerOptions).toEqual({
       anthropic: {
         promptCacheKey: 'cache-key-1',
-        promptCacheRetention: '1h',
+        promptCacheRetention: '24h',
       },
     });
     expect(callOptions?.prompt[0]).toHaveProperty('providerOptions.anthropic.cacheControl', { type: 'ephemeral' });
