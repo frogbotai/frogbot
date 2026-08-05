@@ -14,25 +14,47 @@ import { calculateReasoningBudgetFromEffort } from '../../utils/params.js';
  * Only fires for Anthropic models on Bedrock (identified by `anthropic.` prefix).
  */
 export const bedrockCachePoint: BeforeUpstreamHook = (args) => {
-  const providerOptions = args.providerOptions;
-  if (!providerOptions) return;
-
-  // Only apply to Anthropic models on Bedrock.
   const model = args.model;
   if (!model.includes('anthropic.') && !model.includes('claude')) return;
 
-  // If the user set `cache_control` in the unknown namespace, convert it to
-  // Bedrock's `cachePoint` format under the `bedrock` namespace — the shipped
-  // SDK reads cachePoint from `bedrock`/`amazonBedrock`, never the hyphenated
-  // `amazon-bedrock` string.
-  const unknown = providerOptions['unknown'];
-  if (!unknown?.['cache_control']) return;
+  const processProviderOptions = (providerOptions?: Record<string, Record<string, unknown>>) => {
+    if (!providerOptions) return;
+    const unknown = providerOptions.unknown;
+    const cacheControl = unknown?.cache_control;
+    if (!cacheControl || typeof cacheControl !== 'object') return;
 
-  const bedrock = (providerOptions['bedrock'] ??= {});
-  bedrock['cachePoint'] = { type: 'default' };
+    const ttl = (cacheControl as Record<string, unknown>).ttl;
+    (providerOptions.bedrock ??= {}).cachePoint = {
+      type: 'default',
+      ...(ttl === '5m' || ttl === '1h' ? { ttl } : {}),
+    };
+    delete unknown.cache_control;
+    if (Object.keys(unknown).length === 0) delete providerOptions.unknown;
+  };
 
-  // Remove cache_control from unknown since Bedrock doesn't support it directly.
-  delete unknown['cache_control'];
+  let lastMessage: Record<string, unknown> | undefined;
+  for (const value of args.messages ?? []) {
+    if (!value || typeof value !== 'object') continue;
+    const message = value as Record<string, unknown>;
+    lastMessage = message;
+    processProviderOptions(message.providerOptions as Record<string, Record<string, unknown>> | undefined);
+
+    if (!Array.isArray(message.content)) continue;
+    for (const value of message.content) {
+      if (!value || typeof value !== 'object') continue;
+      const part = value as Record<string, unknown>;
+      processProviderOptions(part.providerOptions as Record<string, Record<string, unknown>> | undefined);
+    }
+  }
+
+  const requestCacheControl = args.providerOptions.unknown?.cache_control;
+  if (requestCacheControl && lastMessage) {
+    const providerOptions = (lastMessage.providerOptions ??= {}) as Record<string, Record<string, unknown>>;
+    providerOptions.unknown = { ...(providerOptions.unknown ?? {}), cache_control: requestCacheControl };
+    processProviderOptions(providerOptions);
+    delete args.providerOptions.unknown.cache_control;
+    if (Object.keys(args.providerOptions.unknown).length === 0) delete args.providerOptions.unknown;
+  }
 };
 
 /**

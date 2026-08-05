@@ -24,39 +24,86 @@ function makeArgs(model: string, overrides: Partial<BeforeUpstreamHookArgs> = {}
 }
 
 describe('bedrockCachePoint', () => {
-  it('converts cache_control to cachePoint for Claude on Bedrock', () => {
+  it('converts message-level cache_control and consumes the marker', () => {
+    const message = {
+      role: 'user',
+      content: 'Hello',
+      providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
+    };
     const args = makeArgs('anthropic.claude-3-5-sonnet-20241022-v2:0', {
-      providerOptions: {
-        unknown: { cache_control: { type: 'ephemeral' } },
-      },
+      messages: [message],
     });
     void bedrockCachePoint(args);
-    expect(args.providerOptions['bedrock']).toEqual({
+    expect(message.providerOptions.bedrock).toEqual({
       cachePoint: { type: 'default' },
     });
-    expect(args.providerOptions['unknown']['cache_control']).toBeUndefined();
+    expect(message.providerOptions.unknown).toBeUndefined();
   });
 
-  it('fires for models containing "claude" in the ID', () => {
-    const args = makeArgs('claude-4-sonnet', {
-      providerOptions: {
-        unknown: { cache_control: { type: 'ephemeral' } },
-      },
-    });
+  it('converts part-level cache_control without marking the parent message', () => {
+    const part = {
+      type: 'text',
+      text: 'Hello',
+      providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
+    };
+    const message = { role: 'user', content: [part] };
+    const args = makeArgs('claude-4-sonnet', { messages: [message] });
     void bedrockCachePoint(args);
-    expect(args.providerOptions['bedrock']).toEqual({
+    expect(part.providerOptions.bedrock).toEqual({
       cachePoint: { type: 'default' },
     });
+    expect(message).not.toHaveProperty('providerOptions');
+  });
+
+  it.each(['5m', '1h'] as const)('passes through a %s TTL', (ttl) => {
+    const message = {
+      role: 'user',
+      content: 'Hello',
+      providerOptions: { unknown: { cache_control: { type: 'ephemeral', ttl } } },
+    };
+    void bedrockCachePoint(makeArgs('claude-4-sonnet', { messages: [message] }));
+    expect(message.providerOptions.bedrock).toEqual({ cachePoint: { type: 'default', ttl } });
+  });
+
+  it('omits an unsupported TTL without throwing', () => {
+    const message = {
+      role: 'user',
+      content: 'Hello',
+      providerOptions: { unknown: { cache_control: { type: 'ephemeral', ttl: '24h' } } },
+    };
+    void bedrockCachePoint(makeArgs('claude-4-sonnet', { messages: [message] }));
+    expect(message.providerOptions.bedrock).toEqual({ cachePoint: { type: 'default' } });
+  });
+
+  it('maps request-level cache_control to the last message', () => {
+    const first = { role: 'system', content: 'Context' };
+    const last = { role: 'user', content: 'Question' };
+    const args = makeArgs('claude-4-sonnet', {
+      messages: [first, last],
+      providerOptions: { unknown: { cache_control: { type: 'ephemeral', ttl: '1h' } } },
+    });
+    void bedrockCachePoint(args);
+    expect(first).not.toHaveProperty('providerOptions');
+    expect(last).toHaveProperty('providerOptions.bedrock.cachePoint', { type: 'default', ttl: '1h' });
+    expect(args.providerOptions.bedrock).toBeUndefined();
+    expect(args.providerOptions.unknown).toBeUndefined();
   });
 
   it('skips non-Anthropic models', () => {
+    const message = {
+      role: 'user',
+      content: 'Hello',
+      providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
+    };
     const args = makeArgs('amazon.nova-pro-v1:0', {
+      messages: [message],
       providerOptions: {
         unknown: { cache_control: { type: 'ephemeral' } },
       },
     });
     void bedrockCachePoint(args);
     expect(args.providerOptions['bedrock']).toBeUndefined();
+    expect(message.providerOptions).toEqual({ unknown: { cache_control: { type: 'ephemeral' } } });
   });
 
   it('skips when no cache_control in unknown namespace', () => {

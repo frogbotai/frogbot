@@ -30,12 +30,14 @@ import { vertexThinkingBudget } from './vertex/middleware.js';
 function makeArgs(overrides: {
   model: string;
   providerOptions: Record<string, Record<string, unknown>>;
+  messages?: unknown[];
   maxOutputTokens?: number;
 }): Parameters<BeforeUpstreamHook>[0] {
   return {
     operation: 'chatCompletions',
     model: overrides.model,
     providerOptions: overrides.providerOptions,
+    messages: overrides.messages,
     params: { maxOutputTokens: overrides.maxOutputTokens ?? 4096 },
   } as unknown as Parameters<BeforeUpstreamHook>[0];
 }
@@ -77,12 +79,18 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
   // SDK reads cachePoint from the `bedrock` namespace (index.js:407). The
   // cachePoint marker never reaches the wire → no prompt caching on Bedrock.
   it('bedrockCachePoint emits cachePoint under the SDK-read `bedrock` namespace', () => {
-    const providerOptions: Record<string, Record<string, unknown>> = {
-      unknown: { cache_control: { type: 'ephemeral' } },
+    const providerOptions: Record<string, Record<string, unknown>> = {};
+    const message = {
+      role: 'user',
+      content: 'Hello',
+      providerOptions: {
+        unknown: { cache_control: { type: 'ephemeral' } },
+      } as Record<string, Record<string, unknown>>,
     };
-    void bedrockCachePoint(makeArgs({ model: 'amazon-bedrock/anthropic.claude-sonnet-4', providerOptions }));
+    void bedrockCachePoint(makeArgs({ model: 'amazon-bedrock/anthropic.claude-sonnet-4', providerOptions, messages: [message] }));
 
-    expect(providerOptions['bedrock']?.['cachePoint']).toEqual({ type: 'default' });
+    expect(message.providerOptions['bedrock']?.['cachePoint']).toEqual({ type: 'default' });
+    expect(providerOptions['bedrock']).toBeUndefined();
   });
 
   // effortFromBudget can return 'max', which is NOT in the shipped OpenAI
