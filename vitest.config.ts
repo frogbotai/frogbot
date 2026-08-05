@@ -88,6 +88,7 @@ export default defineConfig({
             'test/gateway/e2e.spec.ts',
             'test/gateway/live/matrix.e2e.spec.ts',
             'test/gateway/live/scenarios.e2e.spec.ts',
+            'test/gateway/cacheLive.smoke.spec.ts',
           ],
           environment: 'node',
           fileParallelism: false,

@@ -156,6 +156,19 @@ describe('toResponsesResponse', () => {
     expect(result.usage.input_tokens_details).toEqual({ cached_tokens: 12 });
   });
 
+  it('includes input_tokens_details cache read and write tokens', () => {
+    const result = toResponsesResponse({
+      model: 'openai/gpt-4o-mini',
+      result: {
+        text: 'ok',
+        finishReason: 'stop',
+        response: baseResponse,
+        usage: { ...baseUsage, inputTokenDetails: { cacheReadTokens: 12, cacheWriteTokens: 8 } },
+      },
+    });
+    expect(result.usage.input_tokens_details).toEqual({ cached_tokens: 12, cache_write_tokens: 8 });
+  });
+
   it('includes output_tokens_details.reasoning_tokens when reasoningTokens is set', () => {
     const result = toResponsesResponse({
       model: 'openai/gpt-4o-mini',

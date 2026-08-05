@@ -169,11 +169,17 @@ export function reasoningEncryptedContent(
 }
 
 export function toResponseUsage(usage: LanguageModelUsage): Record<string, unknown> {
+  const inputTokenDetails = {
+    ...(usage.inputTokenDetails?.cacheReadTokens !== undefined
+      ? { cached_tokens: usage.inputTokenDetails.cacheReadTokens }
+      : {}),
+    ...(usage.inputTokenDetails?.cacheWriteTokens !== undefined
+      ? { cache_write_tokens: usage.inputTokenDetails.cacheWriteTokens }
+      : {}),
+  };
   return {
     input_tokens: usage.inputTokens ?? 0,
-    ...(usage.inputTokenDetails?.cacheReadTokens !== undefined
-      ? { input_tokens_details: { cached_tokens: usage.inputTokenDetails.cacheReadTokens } }
-      : {}),
+    ...(Object.keys(inputTokenDetails).length > 0 ? { input_tokens_details: inputTokenDetails } : {}),
     output_tokens: usage.outputTokens ?? 0,
     ...(usage.outputTokenDetails?.reasoningTokens !== undefined
       ? { output_tokens_details: { reasoning_tokens: usage.outputTokenDetails.reasoningTokens } }

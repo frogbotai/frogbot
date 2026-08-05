@@ -60,6 +60,12 @@
 
 - [x] Exercise at least one tool-bearing path through a real `Tool.execute`, the real AI SDK tool loop, and persisted transcript read-back.
 
+## Completed with Ticket 64
+
+- [x] Add real-provider, injected-fetch route integration tests that inspect serialized upstream request bodies.
+- [x] Pin installed SDK cache namespace and field contracts independently of gateway translation.
+- [x] Cover cache read/write usage across all language response formats and hook payloads.
+
 ## Coverage balance to preserve
 
 - Unit tests for config, validation, translators, adapters, and utilities.

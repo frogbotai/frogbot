@@ -75,9 +75,6 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     expect(openai['reasoningEffort']).toBeDefined();
   });
 
-  // Bedrock middleware writes to the `amazon-bedrock` namespace, but the shipped
-  // SDK reads cachePoint from the `bedrock` namespace (index.js:407). The
-  // cachePoint marker never reaches the wire → no prompt caching on Bedrock.
   it('bedrockCachePoint emits cachePoint under the SDK-read `bedrock` namespace', () => {
     const providerOptions: Record<string, Record<string, unknown>> = {};
     const message = {
