@@ -158,7 +158,6 @@ type WireCase = {
   route: '/v1/chat/completions' | '/v1/messages';
   body: Record<string, unknown>;
   assertBody: (body: Record<string, any>) => void;
-  fails?: boolean;
   model?: string;
 };
 
@@ -168,8 +167,7 @@ const wireCases: WireCase[] = [
     provider: 'anthropic',
     route: '/v1/messages',
     body: { cache_control: { type: 'ephemeral', ttl: '1h' }, messages: [{ role: 'user', content: 'hello' }] },
-    assertBody: (body) => expect(body.messages[0].content[0].cache_control).toEqual({ type: 'ephemeral', ttl: '1h' }),
-    fails: true,
+    assertBody: (body) => expect(body.cache_control).toEqual({ type: 'ephemeral', ttl: '1h' }),
   },
   {
     name: 'anthropic messages system cache control',
@@ -254,13 +252,19 @@ const wireCases: WireCase[] = [
     route: '/v1/chat/completions',
     body: { messages: [{ role: 'user', content: 'hello', cache_control: { type: 'ephemeral' } }] },
     assertBody: (body) => expect(body.messages[0].content[0].prompt_cache_breakpoint).toEqual({ mode: 'explicit' }),
-    fails: true,
   },
   {
     name: 'openai content cache breakpoint',
     provider: 'openai',
     route: '/v1/chat/completions',
     body: { messages: [{ role: 'user', content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }] }] },
+    assertBody: (body) => expect(body.messages[0].content[0].prompt_cache_breakpoint).toEqual({ mode: 'explicit' }),
+  },
+  {
+    name: 'openai request cache control on string-content last message',
+    provider: 'openai',
+    route: '/v1/chat/completions',
+    body: { cache_control: { type: 'ephemeral' }, messages: [{ role: 'user', content: 'hello' }] },
     assertBody: (body) => expect(body.messages[0].content[0].prompt_cache_breakpoint).toEqual({ mode: 'explicit' }),
   },
   {
@@ -280,26 +284,7 @@ const wireCases: WireCase[] = [
 ];
 
 describe('cache wire matrix', () => {
-  it.each(wireCases.filter((wireCase) => !wireCase.fails))('$name', async (wireCase) => {
-    const provider = providers.find((entry) => entry.name === wireCase.provider);
-    if (!provider) throw new Error(`Missing provider ${wireCase.provider}`);
-    const { app, requests } = buildCacheApp({
-      providerName: provider.name,
-      providerFactory: provider.factory,
-      successBody: provider.successBody,
-    });
-    const { status, body } = await postJson(app, wireCase.route, {
-      model: `${provider.name}/${wireCase.model ?? provider.model}`,
-      max_tokens: 32,
-      ...wireCase.body,
-    });
-
-    expect(status, JSON.stringify(body)).toBe(200);
-    expect(requests).toHaveLength(1);
-    wireCase.assertBody(requests[0]!.body);
-  });
-
-  it.fails.each(wireCases.filter((wireCase) => wireCase.fails))('$name', async (wireCase) => {
+  it.each(wireCases)('$name', async (wireCase) => {
     const provider = providers.find((entry) => entry.name === wireCase.provider);
     if (!provider) throw new Error(`Missing provider ${wireCase.provider}`);
     const { app, requests } = buildCacheApp({

@@ -128,8 +128,13 @@ describe('openaiPromptCacheBreakpoint', () => {
 
     openaiPromptCacheBreakpoint(args);
 
-    expect(message.providerOptions).toEqual({
-      openai: { promptCacheBreakpoint: { mode: 'explicit' } },
+    expect(message).toEqual({
+      role: 'user',
+      content: [{
+        type: 'text',
+        text: 'hello',
+        providerOptions: { openai: { promptCacheBreakpoint: { mode: 'explicit' } } },
+      }],
     });
   });
 
@@ -160,9 +165,11 @@ describe('openaiPromptCacheBreakpoint', () => {
 
     openaiPromptCacheBreakpoint(args);
 
-    expect(message.providerOptions).toEqual({
-      openai: { promptCacheBreakpoint: { mode: 'explicit' } },
-    });
+    expect(message.content).toEqual([{
+      type: 'text',
+      text: 'hello',
+      providerOptions: { openai: { promptCacheBreakpoint: { mode: 'explicit' } } },
+    }]);
   });
 
   it('applies request-level cache control to the last message', () => {
@@ -178,7 +185,14 @@ describe('openaiPromptCacheBreakpoint', () => {
     openaiPromptCacheBreakpoint(args);
 
     expect(messages[0]).not.toHaveProperty('providerOptions');
-    expect(messages[1]).toHaveProperty('providerOptions.openai.promptCacheBreakpoint', { mode: 'explicit' });
+    expect(messages[1]).toEqual({
+      role: 'assistant',
+      content: [{
+        type: 'text',
+        text: 'last',
+        providerOptions: { openai: { promptCacheBreakpoint: { mode: 'explicit' } } },
+      }],
+    });
     expect(args.providerOptions.unknown).toBeUndefined();
   });
 

@@ -84,12 +84,30 @@ export const openaiPromptCacheBreakpoint: BeforeUpstreamHook = (args) => {
     if (Object.keys(providerOptions.unknown).length === 0) delete providerOptions.unknown;
   };
 
-  for (const value of args.messages ?? []) {
+  const applyMessageBreakpoint = (value: unknown) => {
+    if (!value || typeof value !== 'object') return;
+    const message = value as Record<string, unknown>;
+    const providerOptions = message.providerOptions as Record<string, Record<string, unknown>> | undefined;
+    const cacheControl = providerOptions?.unknown?.cache_control;
+    if (typeof message.content === 'string' && cacheControl && typeof cacheControl === 'object') {
+      message.content = [{
+        type: 'text',
+        text: message.content,
+        providerOptions: { unknown: { cache_control: cacheControl } },
+      }];
+      delete providerOptions.unknown.cache_control;
+      if (Object.keys(providerOptions.unknown).length === 0) delete providerOptions.unknown;
+      if (Object.keys(providerOptions).length === 0) delete message.providerOptions;
+    }
+
     applyBreakpoint(value);
-    if (!value || typeof value !== 'object') continue;
-    const content = (value as Record<string, unknown>).content;
-    if (!Array.isArray(content)) continue;
+    const content = message.content;
+    if (!Array.isArray(content)) return;
     for (const part of content) applyBreakpoint(part);
+  };
+
+  for (const value of args.messages ?? []) {
+    applyMessageBreakpoint(value);
   }
 
   const requestCacheControl = args.providerOptions.unknown?.cache_control;
@@ -98,7 +116,7 @@ export const openaiPromptCacheBreakpoint: BeforeUpstreamHook = (args) => {
     const message = lastMessage as Record<string, unknown>;
     const providerOptions = (message.providerOptions ??= {}) as Record<string, Record<string, unknown>>;
     providerOptions.unknown = { ...(providerOptions.unknown ?? {}), cache_control: requestCacheControl };
-    applyBreakpoint(message);
+    applyMessageBreakpoint(message);
     delete args.providerOptions.unknown?.cache_control;
     if (Object.keys(args.providerOptions.unknown ?? {}).length === 0) delete args.providerOptions.unknown;
   }

@@ -66,6 +66,10 @@
 - [x] Pin installed SDK cache namespace and field contracts independently of gateway translation.
 - [x] Cover cache read/write usage across all language response formats and hook payloads.
 
+## Completed with Ticket 65
+
+- [x] Pair cache middleware unit coverage with real-SDK wire assertions for marked string and array message content shapes.
+
 ## Coverage balance to preserve
 
 - Unit tests for config, validation, translators, adapters, and utilities.
