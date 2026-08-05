@@ -202,6 +202,24 @@ describe('createOpenAIStreamTransform', () => {
     });
   });
 
+  test('finish-step reports cached input tokens', async () => {
+    const chunks = await collectChunks([
+      {
+        type: 'finish-step',
+        finishReason: 'stop',
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+          inputTokenDetails: { cacheReadTokens: 7 },
+        },
+        response: { id: 'resp-1', modelId: 'gemini' },
+      } as unknown as TextStreamPart<ToolSet>,
+    ], 'google/gemini');
+
+    expect(chunks[0].usage?.prompt_tokens_details?.cached_tokens).toBe(7);
+  });
+
   test('include_usage: true emits usage:null on deltas + a dedicated empty-choices usage chunk', async () => {
     const chunks = await collectChunks(
       [

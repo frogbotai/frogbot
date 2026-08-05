@@ -28,6 +28,28 @@ describe('parsePromptCachingOptions', () => {
     expect(result).toEqual({ cache_control: { type: 'ephemeral' } });
   });
 
+  it('parses cached_content', () => {
+    expect(parsePromptCachingOptions({ cached_content: 'cachedContents/abc123' })).toEqual({
+      cached_content: 'cachedContents/abc123',
+    });
+  });
+
+  it('prefers explicit cached_content over prompt_cache_key', () => {
+    expect(parsePromptCachingOptions({
+      prompt_cache_key: 'cachedContents/from-key',
+      cached_content: 'cachedContents/explicit',
+    })).toEqual({
+      prompt_cache_key: 'cachedContents/from-key',
+      cached_content: 'cachedContents/explicit',
+    });
+  });
+
+  it('rejects non-string cached_content', () => {
+    expect(() => parsePromptCachingOptions({ cached_content: 123 })).toThrow(expect.objectContaining({
+      param: 'cached_content',
+    }));
+  });
+
   it('parses all fields together', () => {
     const result = parsePromptCachingOptions({
       prompt_cache_key: 'key-1',
@@ -99,6 +121,15 @@ describe('forwardLanguageParams', () => {
     };
     forwardLanguageParams(opts, 'anthropic-aws');
     expect(opts['anthropic']).toEqual({ cacheControl: { type: 'ephemeral' } });
+    expect(opts['unknown']).toBeUndefined();
+  });
+
+  it.each(['google', 'vertex'])('forwards cached_content to the %s SDK namespace', (providerName) => {
+    const opts: Record<string, Record<string, unknown>> = {
+      unknown: { cached_content: 'cachedContents/abc123' },
+    };
+    forwardLanguageParams(opts, providerName);
+    expect(opts[providerName]).toEqual({ cachedContent: 'cachedContents/abc123' });
     expect(opts['unknown']).toBeUndefined();
   });
 

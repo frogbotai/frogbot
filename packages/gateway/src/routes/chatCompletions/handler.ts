@@ -140,6 +140,13 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
 
       // Parse top-level prompt caching options → providerOptions.unknown
       const cachingOpts = parsePromptCachingOptions(body as Record<string, unknown>);
+      if (
+        cachingOpts?.prompt_cache_key
+        && !cachingOpts.cached_content
+        && (resolved.providerName === 'google' || resolved.providerName === 'vertex')
+      ) {
+        cachingOpts.cached_content = cachingOpts.prompt_cache_key;
+      }
       const unknownOpts: Record<string, JSONValue> = {
         ...collectPassthroughChatParams(body),
         ...(cachingOpts ?? {}),
@@ -500,6 +507,7 @@ const HANDLED_CHAT_PARAMS = new Set<string>([
   'prompt_cache_key',
   'prompt_cache_retention',
   'cache_control',
+  'cached_content',
   'functions',
   'function_call',
 ]);

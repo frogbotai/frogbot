@@ -205,6 +205,7 @@ export type PromptCachingOptions = {
   prompt_cache_key?: string;
   prompt_cache_retention?: 'in_memory' | '24h';
   cache_control?: { type: string; ttl?: string };
+  cached_content?: string;
 };
 
 const promptCacheRetentionSchema = z.enum(['in_memory', '24h']);
@@ -219,6 +220,7 @@ export function parsePromptCachingOptions(opts: {
   prompt_cache_key?: unknown;
   prompt_cache_retention?: unknown;
   cache_control?: unknown;
+  cached_content?: unknown;
 }): PromptCachingOptions | undefined {
   const result: PromptCachingOptions = {};
   let hasValue = false;
@@ -226,6 +228,16 @@ export function parsePromptCachingOptions(opts: {
   if (typeof opts.prompt_cache_key === 'string' && opts.prompt_cache_key.length > 0) {
     result.prompt_cache_key = opts.prompt_cache_key;
     hasValue = true;
+  }
+
+  if (typeof opts.cached_content === 'string' && opts.cached_content.length > 0) {
+    result.cached_content = opts.cached_content;
+    hasValue = true;
+  } else if (opts.cached_content !== undefined && opts.cached_content !== null && typeof opts.cached_content !== 'string') {
+    throw new RequestValidationError({
+      message: 'cached_content must be a string',
+      param: 'cached_content',
+    });
   }
 
   if (typeof opts.prompt_cache_retention === 'string' && opts.prompt_cache_retention.length > 0) {

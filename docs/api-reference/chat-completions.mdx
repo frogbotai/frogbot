@@ -107,6 +107,10 @@ Options: `low`, `medium`, `high`
 
 </ParamField>
 
+<ParamField body="cached_content" type="string">
+  Pre-created Google or Vertex cache resource to use as context, in `cachedContents/{id}` format. When omitted, `prompt_cache_key` is used as the cache resource for Google and Vertex models. Cache resource creation and management happen directly through Google, outside the gateway.
+</ParamField>
+
 <ParamField body="generation_config" type="object">
   Google generationConfig object. Merged with auto-generated config. Use for Google-specific params like `candidateCount` or `responseMimeType`.
 

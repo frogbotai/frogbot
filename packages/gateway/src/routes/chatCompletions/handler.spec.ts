@@ -15,6 +15,119 @@ function baseRequest(overrides: Partial<ChatCompletionRequest> = {}): ChatComple
 }
 
 describe('chatCompletionsRoute', () => {
+  it.each(['google', 'vertex'])('routes cached_content to the %s provider namespace', async (providerName) => {
+    const doGenerate = vi.fn(async () => ({
+      content: [{ type: 'text' as const, text: 'hello' }],
+      finishReason: 'stop' as const,
+      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+      warnings: [],
+    }));
+    const app = createApp({
+      registry: {
+        [providerName]: new MockProviderV4({
+          languageModels: { gemini: new MockLanguageModelV4({ doGenerate }) },
+        }),
+      } as unknown as ProviderRegistry,
+    });
+
+    const res = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: `${providerName}/gemini`,
+        cached_content: 'cachedContents/abc123',
+        messages: [{ role: 'user', content: 'hello' }],
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(doGenerate.mock.calls[0][0].providerOptions?.[providerName]?.cachedContent).toBe('cachedContents/abc123');
+  });
+
+  it('maps prompt_cache_key to Google cachedContent', async () => {
+    const doGenerate = vi.fn(async () => ({
+      content: [{ type: 'text' as const, text: 'hello' }],
+      finishReason: 'stop' as const,
+      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+      warnings: [],
+    }));
+    const app = createApp({
+      registry: {
+        google: new MockProviderV4({ languageModels: { gemini: new MockLanguageModelV4({ doGenerate }) } }),
+      } as unknown as ProviderRegistry,
+    });
+
+    const res = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini',
+        prompt_cache_key: 'cachedContents/from-key',
+        messages: [{ role: 'user', content: 'hello' }],
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(doGenerate.mock.calls[0][0].providerOptions?.google).toMatchObject({
+      cachedContent: 'cachedContents/from-key',
+      promptCacheKey: 'cachedContents/from-key',
+    });
+  });
+
+  it('does not map prompt_cache_key to cachedContent for other providers', async () => {
+    const doGenerate = vi.fn(async () => ({
+      content: [{ type: 'text' as const, text: 'hello' }],
+      finishReason: 'stop' as const,
+      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+      warnings: [],
+    }));
+    const app = createApp({
+      registry: {
+        openai: new MockProviderV4({ languageModels: { model: new MockLanguageModelV4({ doGenerate }) } }),
+      } as unknown as ProviderRegistry,
+    });
+
+    const res = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'openai/model',
+        prompt_cache_key: 'cache-key',
+        messages: [{ role: 'user', content: 'hello' }],
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(doGenerate.mock.calls[0][0].providerOptions?.openai?.cachedContent).toBeUndefined();
+  });
+
+  it('preserves unrelated passthrough fields', async () => {
+    const doGenerate = vi.fn(async () => ({
+      content: [{ type: 'text' as const, text: 'hello' }],
+      finishReason: 'stop' as const,
+      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+      warnings: [],
+    }));
+    const app = createApp({
+      registry: {
+        google: new MockProviderV4({ languageModels: { gemini: new MockLanguageModelV4({ doGenerate }) } }),
+      } as unknown as ProviderRegistry,
+    });
+
+    const res = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini',
+        some_other_field: 'preserved',
+        messages: [{ role: 'user', content: 'hello' }],
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(doGenerate.mock.calls[0][0].providerOptions?.google?.someOtherField).toBe('preserved');
+  });
+
   it('forwards anthropic-aws cache markers through the Anthropic SDK namespace', async () => {
     const doGenerate = vi.fn(async () => ({
       content: [{ type: 'text' as const, text: 'hello' }],
