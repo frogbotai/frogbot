@@ -121,7 +121,6 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         messages: body.messages as AnthropicMessage[],
         system: body.system as AnthropicSystemParam | undefined,
       });
-      forwardMessageProviderOptions(messages, resolved.providerName);
       const headers = prepareForwardHeaders(c.req.raw.headers, {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,
       });
@@ -183,9 +182,10 @@ export function messagesRoute(ctx: MessagesRouteContext) {
         resolvedModel: model,
       });
 
-      // Forward the `unknown` namespace into the SDK provider namespace AFTER
-      // hooks run — provider middleware (e.g. bedrock cachePoint) consumes
-      // `unknown.cache_control` and must see it before it is drained here.
+      // Forward message-level and request-level `unknown` namespaces into the
+      // SDK provider namespace AFTER hooks run so provider middleware can
+      // consume `unknown.cache_control` before it is drained.
+      forwardMessageProviderOptions(messages, resolved.providerName);
       forwardLanguageParams(providerOptions, resolved.providerName);
 
       // Shared AI SDK options.

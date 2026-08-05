@@ -173,10 +173,8 @@ describe('G82 — provider config type errors surface at first request, not star
 //     'anthropic-aws' key (same file:266-282). Filing under 'anthropic-aws'
 //     is VALID.
 //
-//   - registry 'amazon-bedrock' → Bedrock reads ['amazonBedrock', 'bedrock']
-//     (ai/packages/amazon-bedrock/src/amazon-bedrock-chat-language-model.ts
-//     :110-116). The gateway never files caching params here anyway because
-//     'amazon-bedrock' is in CACHE_DROP_PROVIDERS (utils/params.ts:215).
+//   - registry 'amazon-bedrock' → the installed Bedrock v4 SDK reads 'bedrock'.
+//     The gateway maps the registry key there after stripping cache fields.
 //
 // Conclusion: the registry key the gateway uses is a key the SDK actually
 // reads. G83/PR11 is BUG-NOT-REAL. The tests below assert the correct,

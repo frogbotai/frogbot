@@ -84,9 +84,9 @@ export function calculateReasoningBudgetFromEffort(
  * is the package's own namespace string — never the model ID, never a hyphen.
  * Only registry keys whose SDK namespace differs are listed here:
  *
- *   - `amazon-bedrock` builds `@ai-sdk/amazon-bedrock`, which reads
- *     `amazonBedrock` (primary) / `bedrock` (legacy) — never the hyphenated
- *     `amazon-bedrock` string.
+ *   - `amazon-bedrock` builds `@ai-sdk/amazon-bedrock` v4, which reads
+ *     `bedrock` — never the hyphenated `amazon-bedrock` string. Version 5
+ *     retains `bedrock` as a fallback namespace.
  *   - `anthropic-aws` is intentionally absent: it builds `@ai-sdk/anthropic-aws`,
  *     whose Anthropic language model reads providerOptions under both
  *     'anthropic' AND its dynamic provider name 'anthropic-aws' (anthropic-
@@ -98,7 +98,7 @@ export function calculateReasoningBudgetFromEffort(
  *     SDK-read namespace.
  */
 const PROVIDER_OPTIONS_NAMESPACE: Record<string, string> = {
-  'amazon-bedrock': 'amazonBedrock',
+  'amazon-bedrock': 'bedrock',
 };
 
 /** Resolve the SDK providerOptions namespace for a registry provider key. */
@@ -124,10 +124,10 @@ export function forwardLanguageParams(
   const unknown = providerOptions['unknown'];
   if (!unknown) return;
 
-  // Providers that reject cache fields — drop unknown namespace entirely.
-  if (CACHE_DROP_PROVIDERS.has(providerName)) {
-    delete providerOptions['unknown'];
-    return;
+  if (CACHE_FIELD_REJECTING_PROVIDERS.has(providerName)) {
+    delete unknown['cache_control'];
+    delete unknown['prompt_cache_key'];
+    delete unknown['prompt_cache_retention'];
   }
 
   const namespace = providerOptionsNamespace(providerName);
@@ -245,4 +245,4 @@ export function parsePromptCachingOptions(opts: {
  * Providers that explicitly reject cache_control fields. `forwardLanguageParams`
  * should NOT forward caching options to these providers.
  */
-export const CACHE_DROP_PROVIDERS = new Set(['amazon-bedrock']);
+export const CACHE_FIELD_REJECTING_PROVIDERS = new Set(['amazon-bedrock']);

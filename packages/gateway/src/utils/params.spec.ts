@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  CACHE_DROP_PROVIDERS,
+  CACHE_FIELD_REJECTING_PROVIDERS,
   forwardLanguageParams,
   parsePromptCachingOptions,
+  providerOptionsNamespace,
   snakeToCamel,
 } from './params.js';
 
@@ -71,12 +72,17 @@ describe('forwardLanguageParams', () => {
     expect(opts['anthropic']['cacheControl']).toEqual({ type: 'persistent' });
   });
 
-  it('drops unknown namespace for bedrock providers', () => {
+  it('drops bedrock cache fields and forwards non-cache fields', () => {
     const opts: Record<string, Record<string, unknown>> = {
-      unknown: { cache_control: { type: 'ephemeral' } },
+      unknown: {
+        cache_control: { type: 'ephemeral' },
+        prompt_cache_key: 'key-1',
+        prompt_cache_retention: '24h',
+        service_tier: 'reserved',
+      },
     };
     forwardLanguageParams(opts, 'amazon-bedrock');
-    expect(opts['amazon-bedrock']).toBeUndefined();
+    expect(opts['bedrock']).toEqual({ serviceTier: 'reserved' });
     expect(opts['unknown']).toBeUndefined();
   });
 
@@ -89,9 +95,15 @@ describe('forwardLanguageParams', () => {
   });
 });
 
-describe('CACHE_DROP_PROVIDERS', () => {
+describe('providerOptionsNamespace', () => {
+  it('maps amazon-bedrock to the SDK bedrock namespace', () => {
+    expect(providerOptionsNamespace('amazon-bedrock')).toBe('bedrock');
+  });
+});
+
+describe('CACHE_FIELD_REJECTING_PROVIDERS', () => {
   it('contains amazon-bedrock', () => {
-    expect(CACHE_DROP_PROVIDERS.has('amazon-bedrock')).toBe(true);
+    expect(CACHE_FIELD_REJECTING_PROVIDERS.has('amazon-bedrock')).toBe(true);
   });
 });
 

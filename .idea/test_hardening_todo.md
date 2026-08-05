@@ -143,3 +143,10 @@ test, not a single case.
       give false confidence in an enforcement path. Add an integration-level assertion
       per enforcement mechanism proving it fires through a real route/SDK entry, and
       treat "only unit tests exercise this argument" as a review flag.
+
+## Completed with Ticket 59
+
+- [x] Add handler-level `beforeUpstream` coverage proving hooks observe message/part-level
+      `providerOptions.unknown` before the generic namespace drain on both language routes.
+- [x] Include fields that must survive whenever a test asserts scoped filtering, rather
+      than testing only fields that are removed.
