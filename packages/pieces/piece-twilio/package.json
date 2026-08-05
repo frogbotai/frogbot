@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/piece-twilio",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Twilio tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

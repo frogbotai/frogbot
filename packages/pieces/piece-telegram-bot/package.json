@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/piece-telegram-bot",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Telegram Bot tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
