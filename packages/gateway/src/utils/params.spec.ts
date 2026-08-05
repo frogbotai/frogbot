@@ -86,6 +86,15 @@ describe('forwardLanguageParams', () => {
     expect(opts['unknown']).toBeUndefined();
   });
 
+  it('forwards anthropic-aws cache fields to the Anthropic SDK namespace', () => {
+    const opts: Record<string, Record<string, unknown>> = {
+      unknown: { cache_control: { type: 'ephemeral' } },
+    };
+    forwardLanguageParams(opts, 'anthropic-aws');
+    expect(opts['anthropic']).toEqual({ cacheControl: { type: 'ephemeral' } });
+    expect(opts['unknown']).toBeUndefined();
+  });
+
   it('is a no-op when no unknown namespace exists', () => {
     const opts: Record<string, Record<string, unknown>> = {
       anthropic: { thinking: { type: 'enabled' } },
@@ -98,6 +107,10 @@ describe('forwardLanguageParams', () => {
 describe('providerOptionsNamespace', () => {
   it('maps amazon-bedrock to the SDK bedrock namespace', () => {
     expect(providerOptionsNamespace('amazon-bedrock')).toBe('bedrock');
+  });
+
+  it('maps anthropic-aws to the SDK anthropic namespace', () => {
+    expect(providerOptionsNamespace('anthropic-aws')).toBe('anthropic');
   });
 });
 

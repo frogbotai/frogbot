@@ -87,11 +87,9 @@ export function calculateReasoningBudgetFromEffort(
  *   - `amazon-bedrock` builds `@ai-sdk/amazon-bedrock` v4, which reads
  *     `bedrock` — never the hyphenated `amazon-bedrock` string. Version 5
  *     retains `bedrock` as a fallback namespace.
- *   - `anthropic-aws` is intentionally absent: it builds `@ai-sdk/anthropic-aws`,
- *     whose Anthropic language model reads providerOptions under both
- *     'anthropic' AND its dynamic provider name 'anthropic-aws' (anthropic-
- *     language-model.ts:193-197, 266-282), so the registry key is itself a
- *     valid, SDK-read namespace.
+ *   - `anthropic-aws` builds `@ai-sdk/anthropic-aws`, whose message, part, and
+ *     tool metadata reads use the `anthropic` namespace. Request-level options
+ *     accept both namespaces, so remapping is safe at every level.
  *   - `vertex` is intentionally absent: the Vertex language model reads
  *     provider options under `['googleVertex', 'vertex']` (google-language-
  *     model.ts:131-134), so the registry key `vertex` is itself a valid,
@@ -99,6 +97,7 @@ export function calculateReasoningBudgetFromEffort(
  */
 const PROVIDER_OPTIONS_NAMESPACE: Record<string, string> = {
   'amazon-bedrock': 'bedrock',
+  'anthropic-aws': 'anthropic',
 };
 
 /** Resolve the SDK providerOptions namespace for a registry provider key. */
