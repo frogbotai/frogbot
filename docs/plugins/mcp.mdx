@@ -1,0 +1,55 @@
+---
+title: "MCP server"
+sidebarTitle: "MCP server"
+description: "Expose selected collections and globals to external MCP clients."
+keywords: ["MCP", "Model Context Protocol", "plugins", "API keys"]
+---
+
+The MCP plugin exposes selected collections and globals as MCP tools for external clients such as Claude Desktop and Cursor. It delegates tool registration, schemas, and transport to Payload's MCP plugin while using FrogBot's hashed, revocable API keys for authentication.
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-mcp @frogbotai/plugin-api-keys @frogbotai/plugin-roles
+```
+
+## Configure
+
+Add `mcpPlugin()` after `apiKeysPlugin()` in the plugin array.
+
+```ts
+import { apiKeysPlugin } from '@frogbotai/plugin-api-keys'
+import { mcpPlugin } from '@frogbotai/plugin-mcp'
+import { rolesPlugin } from '@frogbotai/plugin-roles'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  collections: [
+    { slug: 'users', auth: true, fields: [] },
+    { slug: 'posts', fields: [{ name: 'title', type: 'text' }] },
+  ],
+  plugins: [
+    rolesPlugin(),
+    apiKeysPlugin(),
+    mcpPlugin({
+      collections: {
+        posts: { enabled: { find: true } },
+      },
+    }),
+  ],
+})
+```
+
+Configure your MCP client to send Streamable HTTP requests to `/api/mcp` with a key from the API Keys admin collection:
+
+```http
+Authorization: Bearer fbt_...
+```
+
+Revoked, malformed, and unknown keys are rejected immediately. The MCP endpoint only accepts users authenticated by the API keys plugin.
+
+## Scope
+
+The adapter forwards the collection, global, custom-tool, response-override, and handler options supported by `@payloadcms/plugin-mcp`. Experimental config, collection-definition, job, and auth-mutation tools cannot be enabled. SSE is not supported.
+
+Payload adds a `payload-mcp-api-keys` collection to preserve its plugin schema. This collection is dormant in FrogBot: keys stored there cannot authenticate `/api/mcp`.

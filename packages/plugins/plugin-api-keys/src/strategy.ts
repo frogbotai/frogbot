@@ -2,6 +2,10 @@ import type { AuthConfig } from 'frogbot';
 
 import { extractApiKeyToken, hashApiKeyToken } from './server/token.js';
 
+export type ApiKeyStrategy = NonNullable<AuthConfig['strategies']>[number];
+
+const apiKeyStrategies = new WeakSet<ApiKeyStrategy>();
+
 type StrategyOptions = {
   authCollection: string;
   collectionSlug: string;
@@ -9,9 +13,9 @@ type StrategyOptions = {
   tokenPrefix: string;
 };
 
-export function createApiKeyStrategy(options: StrategyOptions): NonNullable<AuthConfig['strategies']>[number] {
+export function createApiKeyStrategy(options: StrategyOptions): ApiKeyStrategy {
   const { authCollection, collectionSlug, headerNames, tokenPrefix } = options;
-  return {
+  const strategy: ApiKeyStrategy = {
     name: 'api-key',
     authenticate: async ({ headers, payload }) => {
       const token = extractApiKeyToken(headers, { headerNames });
@@ -53,4 +57,10 @@ export function createApiKeyStrategy(options: StrategyOptions): NonNullable<Auth
       };
     },
   };
+  apiKeyStrategies.add(strategy);
+  return strategy;
+}
+
+export function isApiKeyStrategy(strategy: ApiKeyStrategy): boolean {
+  return apiKeyStrategies.has(strategy);
 }

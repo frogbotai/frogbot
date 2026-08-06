@@ -18,6 +18,8 @@ export {
   getApiKeyPrefix,
   hashApiKeyToken,
 } from './server/token.js';
+export type { ApiKeyStrategy } from './strategy.js';
+export { isApiKeyStrategy } from './strategy.js';
 
 export type ApiKeysPluginOptions = {
   authCollection?: string;
