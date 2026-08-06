@@ -1,3 +1,4 @@
+import { rolesPlugin } from '@frogbotai/plugin-roles';
 import type { FrogbotConfig, FrogbotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -12,7 +13,7 @@ function makeConfig(): FrogbotConfig {
 }
 
 async function getCollection() {
-  const config = await apiKeysPlugin()(makeConfig());
+  const config = await rolesPlugin({ roles: ['admin', 'auditor', 'member', 'support'] })(await apiKeysPlugin()(makeConfig()));
   return config.collections.find((collection) => collection.slug === 'api-keys')!;
 }
 
@@ -36,13 +37,16 @@ describe('API keys collection', () => {
       'revokedAt',
       'actions',
     ]);
-    expect(await collection.access?.read?.({ req: { user: { id: 'user-1' } } as FrogbotRequest })).toEqual({
+    expect(await collection.access?.read?.({ req: { user: { id: 'user-1', roles: ['member'] } } as FrogbotRequest })).toEqual({
       owner: { equals: 'user-1' },
     });
-    expect(await collection.access?.update?.({ req: { user: { id: 'user-1' } } as FrogbotRequest })).toEqual({
+    expect(await collection.access?.update?.({ req: { user: { id: 'user-1', roles: ['member'] } } as FrogbotRequest })).toEqual({
       owner: { equals: 'user-1' },
     });
     expect(await collection.access?.create?.({ req: {} as FrogbotRequest })).toBe(false);
+    expect(await collection.access?.delete?.({ req: {} as FrogbotRequest })).toBe(false);
+    expect(await collection.access?.read?.({ req: { user: { id: 'audit-1', roles: ['auditor'] } } as FrogbotRequest })).toBe(true);
+    expect(await collection.access?.update?.({ req: { user: { id: 'support-1', roles: ['support'] } } as FrogbotRequest })).toBe(true);
     for (const name of ['owner', 'prefix', 'tokenHash', 'lastUsedAt', 'revokedAt']) {
       const field = collection.fields.find((item) => 'name' in item && item.name === name);
       expect('access' in field! && field.access?.update?.({} as never)).toBe(false);
@@ -85,6 +89,16 @@ describe('API keys collection', () => {
     expect(firstBody.token).toMatch(/^fb_/);
   });
 
+  it('authenticates key mutations before validating input', async () => {
+    const collection = await getCollection();
+    const req = { routeParams: {}, json: () => Promise.resolve({}) } as unknown as FrogbotRequest;
+
+    for (const path of ['/mint', '/:id/revoke', '/:id/rotate']) {
+      const endpoint = collection.endpoints!.find((item) => item.path === path)!;
+      expect((await endpoint.handler(req)).status).toBe(401);
+    }
+  });
+
   it('shows attributed usage cost in list and document views', async () => {
     const config = makeConfig();
     config.ai = { providers: { openai: { apiKey: 'test' } } };
@@ -124,10 +138,10 @@ describe('API keys collection', () => {
     const collection = await getCollection();
     const update = vi.fn().mockResolvedValue({});
     const req = {
-      user: { id: 'user-1' },
+      user: { id: 'user-1', roles: ['member'] },
       routeParams: { id: 'key-1' },
       frogbot: {
-        find: vi.fn().mockResolvedValue({ docs: [{ id: 'key-1', owner: 'user-1' }] }),
+        find: vi.fn().mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
         update,
       },
     } as unknown as FrogbotRequest;
@@ -139,6 +153,62 @@ describe('API keys collection', () => {
     expect((req.frogbot.find as ReturnType<typeof vi.fn>).mock.calls[0][0].where).toEqual({
       and: [{ id: { equals: 'key-1' } }, { owner: { equals: 'user-1' } }],
     });
+  });
+
+  it('allows support to revoke a key owned by another user', async () => {
+    const collection = await getCollection();
+    const req = {
+      user: { id: 'support-1', roles: ['support'] },
+      routeParams: { id: 'key-1' },
+      frogbot: {
+        find: vi.fn().mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+    } as unknown as FrogbotRequest;
+    const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
+
+    expect((await endpoint.handler(req)).status).toBe(200);
+    expect((req.frogbot.find as ReturnType<typeof vi.fn>).mock.calls[0][0].where).toEqual({ id: { equals: 'key-1' } });
+  });
+
+  it('rotates by revoking before minting and preserves key ownership', async () => {
+    const collection = await getCollection();
+    const operations: string[] = [];
+    const req = {
+      user: { id: 'support-1' },
+      routeParams: { id: 'key-1' },
+      frogbot: {
+        find: vi.fn().mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
+        update: vi.fn().mockImplementation(async () => { operations.push('revoke'); }),
+        create: vi.fn().mockImplementation(async () => { operations.push('mint'); return { id: 'key-2', createdAt: 'now' }; }),
+      },
+    } as unknown as FrogbotRequest;
+    const endpoint = collection.endpoints!.find((item) => item.path === '/:id/rotate')!;
+    const response = await endpoint.handler(req);
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(operations).toEqual(['revoke', 'mint']);
+    expect(body).toMatchObject({ id: 'key-2', name: 'Deploy', token: expect.stringMatching(/^fb_/) });
+    expect((req.frogbot.create as ReturnType<typeof vi.fn>).mock.calls[0][0].data.owner).toBe('user-1');
+  });
+
+  it('leaves the old key revoked when rotate minting fails', async () => {
+    const collection = await getCollection();
+    const update = vi.fn().mockResolvedValue({});
+    const req = {
+      user: { id: 'user-1' },
+      routeParams: { id: 'key-1' },
+      frogbot: {
+        find: vi.fn().mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
+        update,
+        create: vi.fn().mockRejectedValue(new Error('database unavailable')),
+      },
+    } as unknown as FrogbotRequest;
+    const endpoint = collection.endpoints!.find((item) => item.path === '/:id/rotate')!;
+
+    await expect(endpoint.handler(req)).rejects.toThrow('database unavailable');
+    expect(update).toHaveBeenCalledOnce();
   });
 
   it('merges an existing transformed collection and explicit overrides', async () => {

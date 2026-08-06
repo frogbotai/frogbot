@@ -1,12 +1,11 @@
 import type { Access, CollectionConfig, Field, FrogbotConfig, Plugin } from 'frogbot';
-import { formatLabels, type Field as PayloadField } from 'payload';
+import { type Field as PayloadField, formatLabels } from 'payload';
 
 import { allow, bindCompiledAccess, compiledAccess, isCompiledAccess } from './allow.js';
 import { attachRoleResolver, defaultRoleResolver, resolveRequestRoles } from './resolve.js';
-import { normalizeRoles } from './types.js';
 import type { RoleResolver, RolesPluginOptions } from './types.js';
+import { normalizeRoles } from './types.js';
 
-export { RESERVED_ROLE_SLUGS } from './types.js';
 export { allow } from './allow.js';
 export { hasRole, isLoggedIn, ownRows, rolesOf, viaApiKey } from './predicates.js';
 export type {
@@ -19,6 +18,7 @@ export type {
   RoleSlug,
   RolesPluginOptions,
 } from './types.js';
+export { RESERVED_ROLE_SLUGS } from './types.js';
 
 function bindFields(fields: PayloadField[], roles: ReadonlySet<string>, resolver: RoleResolver, authCollection: boolean): PayloadField[] {
   return fields.map((field) => {
@@ -164,14 +164,16 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
     const resolver = options.resolveRoles ?? defaultRoleResolver;
     const roleSlugs = roles.map(({ slug }) => slug);
     const listed = new Set(roleSlugs);
-    if (roles.length === 0) return {
-      ...config,
-      _roles: {
-        ...(config._roles?.required ? { required: true } : {}),
-        present: true,
-        configured: false,
-      },
-    };
+    if (roles.length === 0) {
+      return {
+        ...config,
+        _roles: {
+          ...(config._roles?.required ? { required: true } : {}),
+          present: true,
+          configured: false,
+        },
+      };
+    }
     const bind = (operation: string, access: ReturnType<typeof allow>) => bindCompiledAccess(access, {
       operation,
       polymorphicOwnFields: new Set(),
@@ -248,16 +250,17 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
       attachRoleResolver(frogbot, resolver);
       const stale = new Set<string>();
       let page = 1;
-      do {
+      let hasNextPage = true;
+      while (hasNextPage) {
         const result = await frogbot.find({ collection: authSlug as never, limit: 100, overrideAccess: true, page });
         for (const doc of result.docs) {
           const assigned = (doc as { [key: string]: unknown })[fieldName];
           if (!Array.isArray(assigned)) continue;
           for (const role of assigned) if (typeof role === 'string' && !roleSlugs.includes(role)) stale.add(role);
         }
-        if (!result.hasNextPage) break;
+        hasNextPage = result.hasNextPage;
         page = result.nextPage ?? page + 1;
-      } while (true);
+      }
       if (stale.size > 0) frogbot.logger.warn(`[plugin-roles] Stored assignments reference unlisted roles: ${[...stale].join(', ')}.`);
     };
     const result = {

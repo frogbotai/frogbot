@@ -11,6 +11,7 @@ import type {
   FrogbotConfig,
   Plugin,
 } from 'frogbot';
+import { allow } from '@frogbotai/plugin-roles';
 
 const compress = promisify(gzip);
 const languageOperations = new Set(['chat.completions', 'messages', 'responses']);
@@ -143,6 +144,7 @@ function addPolicyFields(config: FrogbotConfig, options: CapturePluginOptions): 
     defaultValue: 'off',
     required: true,
     label: 'Request capture',
+    access: { update: allow('admin') },
     admin: { description: 'Records AI requests and responses made with this key.' },
     options: [
       { label: 'Off', value: 'off' },
@@ -157,6 +159,7 @@ function addPolicyFields(config: FrogbotConfig, options: CapturePluginOptions): 
     defaultValue: options.sampleRate ?? 0.1,
     min: 0,
     max: 1,
+    access: { update: allow('admin') },
     admin: { condition: (_, siblingData) => siblingData.capture === 'sample' },
   });
   return config.collections.map((collection) => collection === target ? { ...collection, fields } : collection);

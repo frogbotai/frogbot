@@ -30,7 +30,7 @@ async function setup(pageSize = 2) {
   return { result, endpoint };
 }
 
-function request(url: string, find: ReturnType<typeof vi.fn>, user: unknown = { id: 'admin' }) {
+function request(url: string, find: ReturnType<typeof vi.fn>, user: unknown = { id: 'admin', roles: ['admin'] }) {
   return {
     url,
     user,
@@ -68,6 +68,18 @@ describe('usageReportsPlugin', () => {
     expect(invalid.status).toBe(400);
     expect(unsupported.status).toBe(400);
     expect(find).not.toHaveBeenCalled();
+  });
+
+  it('denies members and allows reporting roles including API-key requests', async () => {
+    const { endpoint } = await setup();
+    const url = 'http://localhost/api/usage/report?groupBy=model&from=2026-01-01&to=2026-02-01';
+    const find = vi.fn().mockResolvedValue({ docs: [], hasNextPage: false });
+
+    expect((await endpoint.handler(request(url, find, { id: 'member-1', roles: ['member'] }))).status).toBe(403);
+    for (const role of ['admin', 'finance', 'auditor']) {
+      const user = { id: `${role}-1`, roles: [role], ...(role === 'finance' ? { _strategy: 'api-key' } : {}) };
+      expect((await endpoint.handler(request(url, find, user))).status).toBe(200);
+    }
   });
 
   it('paginates the resolved collection and aggregates model usage', async () => {

@@ -6,6 +6,7 @@ import { gunzip } from 'node:zlib';
 
 import type { FrogbotConfig } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
+import { rolesPlugin } from '@frogbotai/plugin-roles';
 
 import { capturePlugin, type CaptureBlob, type CaptureStorage, createCaptureFilesystemStorage } from './index.js';
 
@@ -27,9 +28,10 @@ async function settle(): Promise<void> {
 describe('capturePlugin', () => {
   it('injects capture policy fields into the configured API-key collection', async () => {
     const input = config();
+    input.collections.push({ slug: 'users', auth: true, fields: [] });
     input.collections.push({ slug: 'credentials', fields: [{ name: 'name', type: 'text' }] });
-    const result = await capturePlugin({ apiKeysCollectionSlug: 'credentials' })(input);
-    const fields = result.collections[0]!.fields;
+    const result = await rolesPlugin({ roles: ['admin', 'member'] })(await capturePlugin({ apiKeysCollectionSlug: 'credentials' })(input));
+    const fields = result.collections.find(({ slug }) => slug === 'credentials')!.fields;
 
     expect(fields).toContainEqual(expect.objectContaining({
       name: 'capture',
@@ -44,6 +46,12 @@ describe('capturePlugin', () => {
       max: 1,
     }));
     expect(fields).toContainEqual({ name: 'name', type: 'text' });
+    for (const name of ['capture', 'captureSampleRate']) {
+      const field = fields.find((item) => 'name' in item && item.name === name);
+      const update = field && 'access' in field ? field.access?.update : undefined;
+      expect(await update?.({ req: { user: { id: 'member-1', roles: ['member'] } } } as never)).toBe(false);
+      expect(await update?.({ req: { user: { id: 'admin-1', roles: ['admin'] } } } as never)).toBe(true);
+    }
   });
 
   it('requires explicitly configured API-key collections to exist', () => {

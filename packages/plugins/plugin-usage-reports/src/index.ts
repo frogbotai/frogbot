@@ -1,4 +1,5 @@
 import { importExportPlugin } from '@payloadcms/plugin-import-export';
+import { hasRole } from '@frogbotai/plugin-roles';
 import type { Endpoint, FrogbotRequest, Plugin } from 'frogbot';
 
 export type UsageReportGroup = 'apiKey' | 'day' | 'model' | 'user';
@@ -104,6 +105,7 @@ function buildReportEndpoint(slug: string, pageSize: number): Endpoint {
     path: '/usage/report',
     handler: async (req) => {
       if (!req.user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      if (!hasRole(req, 'admin', 'finance', 'auditor')) return Response.json({ error: 'Forbidden' }, { status: 403 });
       const query = parseRequest(req);
       if (!query) return Response.json({ error: 'Invalid groupBy or date range' }, { status: 400 });
       const rows = new Map<string, UsageReportRow>();

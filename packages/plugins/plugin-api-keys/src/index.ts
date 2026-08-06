@@ -9,6 +9,8 @@ import type { PolicyDocument } from './policy.js';
 import { createApiKeyStrategy } from './strategy.js';
 
 export type { ApiKeyHeaderOptions, ApiKeyTokenOptions } from './server/token.js';
+export type { MintApiKeyOptions, RevokeApiKeyOptions, RotateApiKeyOptions } from './server/services.js';
+export { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
 export type { EffectivePolicy, PolicyDefaults, PolicyDocument, PolicyMode, PolicyValue } from './policy.js';
 export {
   createApiKeyToken,

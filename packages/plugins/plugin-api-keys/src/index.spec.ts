@@ -1,5 +1,6 @@
 import type { FrogbotConfig, Plugin } from 'frogbot';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { rolesPlugin } from '@frogbotai/plugin-roles';
 
 import { apiKeysPlugin } from './index.js';
 
@@ -83,15 +84,15 @@ describe('apiKeysPlugin', () => {
       db: {},
       collections: [{ slug: 'users', auth: true, fields: [] }],
     } as FrogbotConfig;
-    const result = await apiKeysPlugin({ defaults: { monthlyBudgetUSD: 20, rpm: 5 } })(config);
+    const result = await rolesPlugin({ roles: ['admin', 'auditor', 'member', 'support'] })(await apiKeysPlugin({ defaults: { monthlyBudgetUSD: 20, rpm: 5 } })(config));
     const users = result.collections.find(({ slug }) => slug === 'users');
     const keys = result.collections.find(({ slug }) => slug === 'api-keys');
     expect(users?.fields).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'monthlyBudget' })]));
     expect(keys?.fields).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'monthlyBudget' }), expect.objectContaining({ name: 'spendThisPeriodUSD' })]));
     const budget = keys?.fields.find((field) => 'name' in field && field.name === 'monthlyBudget');
     const update = budget && 'access' in budget ? budget.access?.update : undefined;
-    const member = { user: { roles: [{ slug: 'member', grants: [{ resource: 'api-keys', actions: ['update'], scope: 'own' }] }] } };
-    const admin = { user: { roles: [{ slug: 'admin', grants: [{ resource: '*', actions: ['*'] }] }] } };
+    const member = { user: { id: 'user-1', roles: ['member'] } };
+    const admin = { user: { id: 'admin-1', roles: ['admin'] } };
     expect(await update?.({ req: member } as never)).toBe(false);
     expect(await update?.({ req: admin } as never)).toBe(true);
   });

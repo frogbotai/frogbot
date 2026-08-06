@@ -1,13 +1,7 @@
 import type { Field, FieldAccess } from 'frogbot';
+import { allow } from '@frogbotai/plugin-roles';
 
-const manage: FieldAccess = ({ doc, req }) => {
-  if (!req.user) return false;
-  const roles = (req.user as { roles?: unknown }).roles;
-  if (Array.isArray(roles) && roles.some((role) => role === 'admin' || (typeof role === 'object' && role !== null && 'slug' in role && role.slug === 'admin'))) return true;
-  const owner = (doc as { owner?: unknown } | undefined)?.owner;
-  const ownerId = owner && typeof owner === 'object' && 'id' in owner ? owner.id : owner;
-  return ownerId !== undefined && req.user.id !== undefined && ownerId === req.user.id;
-};
+const manage: FieldAccess = allow('admin');
 
 function policyField(name: string, value: Field): Field {
   return {

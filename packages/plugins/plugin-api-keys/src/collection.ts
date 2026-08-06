@@ -1,6 +1,7 @@
 import type { CollectionConfig, Endpoint, Field, FrogbotRequest } from 'frogbot';
+import { allow } from '@frogbotai/plugin-roles';
 
-import { createApiKeyToken, getApiKeyPrefix, hashApiKeyToken } from './server/token.js';
+import { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
 import { createPolicyFields } from './fields.js';
 
 type CollectionOptions = {
@@ -23,68 +24,55 @@ function mergeFields(...groups: (Field[] | undefined)[]): Field[] {
   return [...fields.values()];
 }
 
-function getOwnerID(req: FrogbotRequest): string | number | null {
-  return req.user?.id ?? null;
-}
-
 function createEndpoints({ collectionSlug, tokenPrefix }: Pick<CollectionOptions, 'collectionSlug' | 'tokenPrefix'>): Endpoint[] {
   return [
     {
       method: 'post',
       path: '/mint',
       handler: async (req) => {
-        const owner = getOwnerID(req);
-        if (owner === null) return Response.json({ error: 'Authentication required' }, { status: 401 });
-
+        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
         const body = (await req.json?.().catch(() => null) ?? null) as { name?: unknown } | null;
         const name = typeof body?.name === 'string' ? body.name.trim() : '';
         if (!name) return Response.json({ error: 'Name is required' }, { status: 400 });
-
-        const token = createApiKeyToken({ tokenPrefix });
-        const prefix = getApiKeyPrefix(token);
-        const doc = (await req.frogbot.create({
-          collection: collectionSlug as never,
-          data: {
-            name,
-            owner,
-            prefix,
-            tokenHash: hashApiKeyToken(token),
-          },
-          overrideAccess: true,
-          req,
-        })) as Record<string, unknown>;
-
-        return Response.json({ id: doc.id, name, prefix, token, createdAt: doc.createdAt }, { status: 201 });
+        try {
+          return Response.json(await mintApiKey({ req, collectionSlug, tokenPrefix, name }), { status: 201 });
+        } catch (error) {
+          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') return Response.json({ error: 'Authentication required' }, { status: 401 });
+          throw error;
+        }
       },
     },
     {
       method: 'post',
       path: '/:id/revoke',
       handler: async (req) => {
-        const owner = getOwnerID(req);
-        if (owner === null) return Response.json({ error: 'Authentication required' }, { status: 401 });
-
+        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) return Response.json({ error: 'API key not found' }, { status: 404 });
-        const result = await req.frogbot.find({
-          collection: collectionSlug as never,
-          limit: 1,
-          overrideAccess: true,
-          req,
-          where: { and: [{ id: { equals: id } }, { owner: { equals: owner } }] },
-        });
-        const key = result.docs[0] as Record<string, unknown> | undefined;
-        if (!key) return Response.json({ error: 'API key not found' }, { status: 404 });
-
-        const revokedAt = typeof key.revokedAt === 'string' ? key.revokedAt : new Date().toISOString();
-        await req.frogbot.update({
-          collection: collectionSlug as never,
-          id: key.id as never,
-          data: { revokedAt },
-          overrideAccess: true,
-          req,
-        });
-        return Response.json({ id: key.id, revokedAt });
+        try {
+          const { name: _name, owner: _owner, ...result } = await revokeApiKey({ req, collectionSlug, id });
+          return Response.json(result);
+        } catch (error) {
+          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') return Response.json({ error: 'Authentication required' }, { status: 401 });
+          if (error instanceof ApiKeyServiceError && error.code === 'not_found') return Response.json({ error: 'API key not found' }, { status: 404 });
+          throw error;
+        }
+      },
+    },
+    {
+      method: 'post',
+      path: '/:id/rotate',
+      handler: async (req) => {
+        if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
+        const id = req.routeParams?.id;
+        if (typeof id !== 'string' || !id) return Response.json({ error: 'API key not found' }, { status: 404 });
+        try {
+          return Response.json(await rotateApiKey({ req, collectionSlug, id, tokenPrefix }), { status: 201 });
+        } catch (error) {
+          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') return Response.json({ error: 'Authentication required' }, { status: 401 });
+          if (error instanceof ApiKeyServiceError && error.code === 'not_found') return Response.json({ error: 'API key not found' }, { status: 404 });
+          throw error;
+        }
       },
     },
   ];
@@ -92,10 +80,6 @@ function createEndpoints({ collectionSlug, tokenPrefix }: Pick<CollectionOptions
 
 export function createApiKeysCollection(options: CollectionOptions): CollectionConfig {
   const { authCollection, collectionSlug, collection, existing, usageCollection } = options;
-  const ownerAccess = ({ req }: { req: FrogbotRequest }) => {
-    const owner = getOwnerID(req);
-    return owner === null ? false : { owner: { equals: owner } };
-  };
   const fields: Field[] = [
     { name: 'name', type: 'text', required: true },
     { name: 'owner', type: 'relationship', relationTo: authCollection, required: true, index: true, access: { update: () => false } },
@@ -163,8 +147,8 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
     access: {
       create: () => false,
       delete: () => false,
-      read: ownerAccess,
-      update: ownerAccess,
+      read: allow('auditor', 'support', { role: 'member', own: 'owner' }),
+      update: allow('support', { role: 'member', own: 'owner' }),
       ...existing?.access,
       ...collection?.access,
     },
