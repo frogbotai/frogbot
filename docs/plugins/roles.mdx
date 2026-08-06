@@ -1,11 +1,11 @@
 ---
 title: "Roles"
 sidebarTitle: "Roles"
-description: "Define versioned roles and enforce grants across collections, fields, and agents."
+description: "Define roles in code and apply role-aware access across FrogBot."
 keywords: ["roles", "RBAC", "authorization", "permissions", "plugins"]
 ---
 
-The roles plugin defines authorization policy in code while keeping role assignment editable at runtime. It synchronizes a read-only roles collection, adds a roles relationship to your auth collection, and compiles grants into FrogBot's existing access functions.
+The roles plugin keeps role definitions in code and role assignments on users.
 
 ## Install
 
@@ -13,10 +13,12 @@ The roles plugin defines authorization policy in code while keeping role assignm
 pnpm add @frogbotai/plugin-roles
 ```
 
-## Configure
+## Define roles
+
+List every role your application uses:
 
 ```ts
-import { can, canAgent, canField, rolesPlugin } from '@frogbotai/plugin-roles'
+import { rolesPlugin } from '@frogbotai/plugin-roles'
 import { buildConfig } from 'frogbot'
 
 export default buildConfig({
@@ -26,76 +28,164 @@ export default buildConfig({
       auth: true,
       fields: [],
     },
-    {
-      slug: 'usage-logs',
-      access: { read: can('usage-logs:read') },
-      fields: [],
-    },
   ],
   plugins: [
     rolesPlugin({
-      resources: [
-        { slug: 'agents', actions: ['run'] },
-        { slug: 'usage-logs', actions: ['read'] },
-        { slug: 'budgets', actions: ['read', 'manage'] },
-      ],
       roles: [
-        {
-          slug: 'admin',
-          name: 'Administrator',
-          grants: [{ resource: '*', actions: ['*'] }],
-        },
-        {
-          slug: 'member',
-          name: 'Member',
-          grants: [
-            { resource: 'agents', actions: ['run'] },
-            { resource: 'usage-logs', actions: ['read'], scope: 'own' },
-            { resource: 'budgets', actions: ['read'] },
-          ],
-        },
+        'admin',
+        'member',
+        'finance',
+        'auditor',
+        'support',
+        { slug: 'compliance', label: 'Compliance Officer' },
       ],
     }),
   ],
 })
 ```
 
-The first created user receives the `admin` role unless the create operation explicitly supplies roles. Later assignments are edited through the auth collection's Roles field.
+`rolesPlugin()` and `rolesPlugin({ roles: [] })` are valid and inert. When roles are listed, the plugin adds a `roles` select field with `hasMany: true` to the `users` auth collection. Assignments are stored as slugs. There is no separate role-definition collection.
 
-## Access adapters
-
-Use the adapter matching the consumer's access contract:
+Use an object to customize a label:
 
 ```ts
-can('usage-logs:read')
-canField('budgets:manage')
-canAgent('agents:run')
+rolesPlugin({
+  roles: [
+    'admin',
+    'member',
+    { slug: 'compliance', label: 'Compliance Officer' },
+  ],
+})
 ```
 
-`can()` returns `true`, `false`, or a Payload query. An `own` grant defaults to `{ user: { equals: req.user.id } }`; pass `ownerField` when a collection uses another ownership field.
+Without `label`, FrogBot uses Payload's `formatLabels` behavior, so `prompt-engineer` displays as `Prompt Engineer`. If `admin` is listed, the first user is assigned it unless that create operation supplies roles explicitly.
 
-```ts
-can('documents:read', { ownerField: 'createdBy' })
-```
+### Reserved archetypes
 
-Fields and agents have boolean-only contracts, so `canField()` and `canAgent()` treat either `any` or `own` as permission to use that field or agent.
+Reserved behavior activates only when its slug is listed.
 
-## Population and security
-
-The plugin raises the auth collection's relationship depth to at least one so `req.user.roles` contains role documents and their grants. Higher configured depth values are preserved. Missing, malformed, or unpopulated role relationships deny access.
-
-The roles projection permits authenticated reads for relationship population and denies API creates, updates, and deletes. Initialization synchronizes configured roles with `overrideAccess: true` and never deletes removed role records or user assignments. Existing internal operations that deliberately use `overrideAccess: true` continue to bypass access functions.
-
-## Defaults and options
-
-Without `roles`, the plugin supplies `admin`, `member`, and `viewer` defaults. Pass `resources` to reject unknown resources or actions during startup.
-
-| Option | Default | Description |
+| Slug | Intended user | Built-in behavior |
 | --- | --- | --- |
-| `roles` | `admin`, `member`, `viewer` | Code-defined role policy. |
-| `resources` | unrestricted | Optional grant validation registry. |
-| `authCollection` | `users` | Auth collection receiving assignments. |
-| `collectionSlug` | `roles` | Role projection collection slug. |
-| `fieldName` | `roles` | Auth relationship field name. |
-| `adminRole` | `admin` | First-user role slug. |
-| `collection` | none | Additional projection collection configuration and fields. |
+| `admin` | Platform owner | Passes every `allow()` call and manages role assignments. |
+| `member` | Everyday user | Runs agents and manages owned threads, keys, and usage. |
+| `finance` | Accounting | Reads all usage and usage reports. |
+| `auditor` | Compliance | Reads all usage and usage reports, but not thread or message content. |
+| `support` | Operations | Reads all usage and can read, revoke, or rotate keys when the API keys plugin is configured. |
+
+## Apply access
+
+`allow(...clauses)` compiles role, ownership, and function clauses into one native access function.
+
+```ts
+import { allow, hasRole } from '@frogbotai/plugin-roles'
+
+const projects = {
+  slug: 'projects',
+  access: {
+    create: allow({ role: 'member', own: 'owner' }),
+    read: allow('finance', { role: 'member', own: 'owner' }),
+    update: allow('admin'),
+    delete: ({ req }) => hasRole(req, 'compliance') && !hasRole(req, 'admin'),
+  },
+  fields: [
+    {
+      name: 'owner',
+      type: 'relationship',
+      relationTo: 'users',
+      required: true,
+    },
+    {
+      name: 'reviewNotes',
+      type: 'text',
+      access: {
+        read: allow('compliance'),
+        update: allow('compliance'),
+      },
+    },
+  ],
+}
+
+const assistant = {
+  slug: 'assistant',
+  access: allow('member'),
+}
+```
+
+Role clauses and boolean-returning functions fit collection, field, and agent access. An ownership clause or a function that can return a Payload `Where` fits collection access only; TypeScript rejects it in boolean-only field and agent slots.
+
+`own` always names the target collection field. On create, FrogBot stamps that field with the current user's ID. On read, update, and delete, it produces an ownership query. An unauthenticated request is denied, and a listed `admin` role passes before clauses are evaluated.
+
+### Compiled and manual access
+
+**`allow(...)` is additive with admin-implicit; a plain function in the slot is manual and you own everything.**
+
+A function clause returning `false` abstains rather than vetoing another clause. Use a plain access function when you need veto logic or do not want the `admin` short-circuit.
+
+## Request predicates
+
+The five synchronous helpers work anywhere a `FrogbotRequest` is available:
+
+```ts
+import {
+  hasRole,
+  isLoggedIn,
+  ownRows,
+  rolesOf,
+  viaApiKey,
+} from '@frogbotai/plugin-roles'
+
+isLoggedIn(req)
+hasRole(req, 'finance', 'auditor')
+rolesOf(req)
+ownRows(req, 'owner')
+viaApiKey(req)
+```
+
+| Helper | Result |
+| --- | --- |
+| `isLoggedIn(req)` | Whether `req.user` exists. |
+| `hasRole(req, ...roles)` | Whether the user has any supplied role. This is literal and does not imply `admin`. |
+| `rolesOf(req)` | The effective role slugs resolved for this request. |
+| `ownRows(req, field)` | A Payload ownership query, or `false` without a user. |
+| `viaApiKey(req)` | Whether authentication used the API-key strategy. |
+
+Compose predicates with ordinary JavaScript in manual access functions:
+
+```ts
+read: ({ req }) =>
+  hasRole(req, 'admin', 'finance') || ownRows(req, 'user')
+
+update: ({ req }) => hasRole(req, 'admin') && !viaApiKey(req)
+```
+
+For custom role sources, provide a synchronous resolver. Its result is cached per request:
+
+```ts
+rolesPlugin({
+  roles: ['admin', 'member'],
+  resolveRoles: (req) => req.user?.tenantRoles ?? [],
+})
+```
+
+## Explicit omissions
+
+| Omitted | Reason |
+| --- | --- |
+| default roles / required roles | nothing exists the config doesn't show; empty is valid and inert |
+| `extends` / role inheritance | multi-role assignment already composes, per-person and UI-visible |
+| singular/plural labels | a role renders in exactly one place; one optional `label` |
+| `roleAccess({ op })` object wrapper | per-op `allow()` slots into Payload's native shape; agents need a single function |
+| `anyOf` / `allOf` / `not` combinators | JS `\|\|` / `&&` / `!` already have Payload's exact semantics |
+| `isAdmin(req)` | `hasRole(req, 'admin')` provides one spelling per fact |
+| deny rules / precedence | additive-only is a core invariant |
+| AND grammar between clauses | the ownership clause is the conjunction; clause lists are additive |
+| async predicates / per-check resolution | resolution is synchronous and cached per request |
+| roles editable at runtime | definitions are code; only assignment is data |
+| team/group scoping | deferred until a team concept exists |
+| default `own` field name | must always be explicit |
+
+Per-collection `own` field-name unions are not included in v1.
+
+## API keys
+
+`apiKeysPlugin()` requires `rolesPlugin()` so key ownership and reserved archetype access are always enforced. See [API keys](/plugins/api-keys) for setup and key operations.

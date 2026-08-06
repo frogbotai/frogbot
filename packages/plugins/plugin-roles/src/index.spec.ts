@@ -36,7 +36,7 @@ describe('rolesPlugin', () => {
     const read = () => true as const;
     const input = { ...config(), _roles: { required: true as const, present: true as const, configured: true, threads: { read }, messages: { read }, usageLogs: { read } } };
     const result = await rolesPlugin()(input);
-    expect(result._roles).toEqual({ required: true, present: true, configured: false });
+    expect(result._roles).toEqual({ required: true, present: true, configured: false, roles: [] });
   });
 
   it('writes bound access for core surfaces', async () => {

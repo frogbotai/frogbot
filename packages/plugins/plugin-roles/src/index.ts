@@ -3,7 +3,7 @@ import { type Field as PayloadField, formatLabels } from 'payload';
 
 import { allow, bindCompiledAccess, compiledAccess, isCompiledAccess } from './allow.js';
 import { attachRoleResolver, defaultRoleResolver, resolveRequestRoles } from './resolve.js';
-import type { RoleResolver, RolesPluginOptions } from './types.js';
+import type { RoleResolver, RoleSlug, RolesPluginOptions } from './types.js';
 import { normalizeRoles } from './types.js';
 
 export { allow } from './allow.js';
@@ -171,6 +171,7 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
           ...(config._roles?.required ? { required: true } : {}),
           present: true,
           configured: false,
+          roles: [],
         },
       };
     }
@@ -191,6 +192,7 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
       ...config._roles,
       present: true,
       configured: true,
+      roles: roleSlugs,
       threads: {
         create: bind('create', allow('admin', 'member')),
         read: bind('read', threadOwner),
@@ -204,7 +206,7 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
         delete: messageOwner,
       },
       usageLogs: {
-        read: bind('read', allow('admin', 'finance', 'auditor', 'support', { role: 'member', own: 'user' })),
+        read: bind('read', allow('admin', 'finance' as RoleSlug, 'auditor' as RoleSlug, 'support' as RoleSlug, { role: 'member', own: 'user' })),
       },
     };
     const authSlug = 'users';

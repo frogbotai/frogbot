@@ -33,6 +33,7 @@ export type FrogbotSanitizedConfig = {
   connections: SanitizedConnectionsConfig;
   files: SanitizedFilesConfig;
   pieces: SanitizedPiecesConfig;
+  roles: string[];
   typescript?: {
     autoGenerate?: boolean;
   };

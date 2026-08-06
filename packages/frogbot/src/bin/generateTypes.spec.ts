@@ -135,6 +135,16 @@ describe('frogbot generate:types', () => {
     expect(buildGeneratedTypesFooter([])).toContain('agents: {};');
   });
 
+  it('emits role slugs in the GeneratedTypes augmentation', () => {
+    expect(buildGeneratedTypesFooter([], undefined, ['admin', 'member'])).toContain(
+      'roles: "admin" | "member";',
+    );
+  });
+
+  it('emits never when no roles are configured', () => {
+    expect(buildGeneratedTypesFooter([])).toContain('roles: never;');
+  });
+
   describe('generated output', () => {
     let dir: string;
 
@@ -277,6 +287,53 @@ describe('frogbot generate:types', () => {
       const output = await readFile(outputPath, 'utf-8');
 
       expect(output).toContain('agents: {};');
+    });
+
+    it('emits configured role slugs', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-types-roles-'));
+      const { buildConfig } = await import('../config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [{ slug: 'users', auth: true, fields: [] }],
+        plugins: [rolesPlugin({ roles: ['admin', { slug: 'member', label: 'Member' }] })],
+      });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const output = await readFile(outputPath, 'utf-8');
+
+      expect(output).toContain("roles: 'admin' | 'member';");
+    });
+
+    it('emits never when roles are explicitly empty', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-types-empty-roles-'));
+      const { buildConfig } = await import('../config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [{ slug: 'users', auth: true, fields: [] }],
+        plugins: [rolesPlugin({ roles: [] })],
+      });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const output = await readFile(outputPath, 'utf-8');
+
+      expect(output).toContain('roles: never;');
+    });
+
+    it('emits never without the roles plugin', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-types-no-roles-'));
+      const { buildConfig } = await import('../config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [{ slug: 'users', auth: true, fields: [] }],
+      });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const output = await readFile(outputPath, 'utf-8');
+
+      expect(output).toContain('roles: never;');
     });
 
     it('emits only models from configured built-in providers', async () => {

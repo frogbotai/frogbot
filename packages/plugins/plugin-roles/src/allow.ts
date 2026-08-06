@@ -2,7 +2,7 @@ import type { FrogbotRequest } from 'frogbot';
 import type { Where } from 'payload';
 
 import { resolveRequestRoles } from './resolve.js';
-import type { BooleanClause, Clause, ClauseFunction, OwnClause, RoleAccessArgs, RoleResolver, RoleSlug } from './types.js';
+import type { BooleanClause, Clause, ClauseFunction, OwnClause, RoleAccessArgs, RoleResolver } from './types.js';
 
 export const compiledAccess = Symbol('frogbot.compiledAccess');
 
@@ -10,7 +10,7 @@ export type CompiledBinding = {
   operation?: string;
   polymorphicOwnFields: ReadonlySet<string>;
   resolver: RoleResolver;
-  roles: ReadonlySet<RoleSlug>;
+  roles: ReadonlySet<string>;
 };
 
 export type CompiledAccess<TArgs extends RoleAccessArgs = RoleAccessArgs, TResult extends boolean | Where = boolean | Where> = ((
@@ -40,8 +40,8 @@ function compile<TArgs extends RoleAccessArgs, TResult extends boolean | Where>(
   const access = async (args: TArgs): Promise<boolean | Where> => {
     const req = args.req;
     if (!req.user) return false;
-    const configured = binding?.roles ?? new Set<RoleSlug>();
-    const assigned = resolveRequestRoles(req, binding?.resolver);
+    const configured = binding?.roles ?? new Set<string>();
+    const assigned: readonly string[] = resolveRequestRoles(req, binding?.resolver);
     if (configured.has('admin') && assigned.includes('admin')) return true;
 
     const wheres: Where[] = [];

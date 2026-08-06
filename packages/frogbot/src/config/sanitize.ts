@@ -1097,6 +1097,7 @@ export function sanitize(
     connections,
     files,
     pieces,
+    roles: config._roles?.roles ?? [],
     typescript: {
       autoGenerate:
         (config as { typescript?: { autoGenerate?: boolean } }).typescript

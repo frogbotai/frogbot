@@ -1,10 +1,10 @@
-import type { AccessArgs, FrogbotRequest } from 'frogbot';
+import type { AccessArgs, FrogbotRequest, RoleSlug } from 'frogbot';
 import type { Where } from 'payload';
 
-export type RoleSlug = string;
+export type { RoleSlug } from 'frogbot';
 
-export type RoleEntry = RoleSlug | {
-  slug: RoleSlug;
+export type RoleEntry = string | {
+  slug: string;
   label?: string;
 };
 
@@ -35,7 +35,7 @@ export type Clause<TArgs extends RoleAccessArgs = RoleAccessArgs> = RoleClause |
 export type BooleanClause<TArgs extends RoleAccessArgs = RoleAccessArgs> = RoleClause | ClauseFunction<TArgs, boolean>;
 
 export type NormalizedRole = {
-  slug: RoleSlug;
+  slug: string;
   label?: string;
 };
 

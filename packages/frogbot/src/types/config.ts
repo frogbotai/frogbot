@@ -35,6 +35,7 @@ export type RolesPrewiring = {
   present?: true;
   required?: true;
   configured?: boolean;
+  roles?: string[];
   threads?: CollectionAccess;
   messages?: CollectionAccess;
   usageLogs?: CollectionAccess;

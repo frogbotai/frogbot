@@ -77,6 +77,7 @@ export type {
   CollectionSlug,
   FrogbotTypes,
   GeneratedTypes,
+  RoleSlug,
   TypedCollection,
   UntypedFrogbotTypes,
 } from './types/generated.js';
