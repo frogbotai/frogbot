@@ -7,7 +7,7 @@ keywords: plugins, config, configuration, extensions, custom, documentation, Con
 
 FrogBot Plugins take full advantage of the modularity of the [FrogBot Config](/configuration/overview), allowing developers to easily inject custom—sometimes complex—functionality into FrogBot apps from a very small touch-point. This is especially useful for sharing your work across multiple projects or with the greater FrogBot community.
 
-There are many [Official Plugins](#official-plugins) available that solve for some of the most common use cases, such as the [Form Builder Plugin](/plugins/form-builder) or [SEO Plugin](/plugins/seo). There are also [Community Plugins](#community-plugins) available, maintained entirely by contributing members. To extend FrogBot's functionality in some other way, you can easily [build your own plugin](/plugins/build-your-own).
+FrogBot provides [Official Plugins](#official-plugins) for common use cases. To extend FrogBot's functionality in another way, you can [build your own plugin](/plugins/build-your-own).
 
 To configure Plugins, use the `plugins` property in your [FrogBot Config](/configuration/overview):
 
@@ -47,42 +47,23 @@ FrogBot maintains a set of Official Plugins that solve for some of the common us
 
 - [API Keys](/plugins/api-keys)
 - [Capture](/plugins/capture)
+- [OAuth](/plugins/oauth)
+- [Roles](/plugins/roles)
 - [Usage reports](/plugins/usage-reports)
-- [Form Builder](/plugins/form-builder)
-- [MCP](/plugins/mcp)
-- [Multi-Tenant](/plugins/multi-tenant)
-- [Nested Docs](/plugins/nested-docs)
-- [Redirects](/plugins/redirects)
-- [Search](/plugins/search)
-- [Sentry](/plugins/sentry)
-- [SEO](/plugins/seo)
-- [Stripe](/plugins/stripe)
-- [Import/Export](/plugins/import-export)
-- [Ecommerce](/ecommerce/overview)
 
-You can also [build your own plugin](/plugins/build-your-own) to easily extend FrogBot's functionality in some other way. Once your plugin is ready, consider [sharing it with the community](#community-plugins).
+You can also [build your own plugin](/plugins/build-your-own) to extend FrogBot's functionality in another way.
 
-Plugins are changing every day, so be sure to check back often to see what new plugins may have been added. If you have a specific plugin you would like to see, please feel free to start a new [Discussion](https://github.com/frogbot/frogbot/discussions).
+Plugins are changing every day, so be sure to check back often to see what new plugins may have been added. If you have a specific plugin you would like to see, please feel free to start a new [Discussion](https://github.com/frogbotai/frogbot/discussions).
 
 <Warning>
   For a complete list of Official Plugins, visit the [Packages
-  Directory](https://github.com/frogbot/frogbot/tree/main/packages) of the
-  [FrogBot Monorepo](https://github.com/frogbot/frogbot).
-</Warning>
-
-## Community Plugins
-
-Community Plugins are those that are maintained entirely by outside contributors. They are a great way to share your work across the ecosystem for others to use. You can discover Community Plugins by browsing the `frogbot-plugin` topic on [GitHub](https://github.com/topics/frogbot-plugin).
-
-Some plugins have become so widely used that they are adopted as an [Official Plugin](#official-plugins), such as the [Lexical Plugin](https://github.com/AlessioGr/frogbot-plugin-lexical). If you have a plugin that you think should be an Official Plugin, please feel free to start a new [Discussion](https://github.com/frogbot/frogbot/discussions).
-
-<Warning>
-  For maintainers building plugins for others to use, please add the
-  `frogbot-plugin` topic on [GitHub](https://github.com/topics/frogbot-plugin)
-  to help others find it.
+  Directory](https://github.com/frogbotai/frogbot/tree/main/packages) of the
+  [FrogBot Monorepo](https://github.com/frogbotai/frogbot).
 </Warning>
 
 ## Example
+
+A plugin is a function with the type `(config: FrogbotConfig) => FrogbotConfig | Promise<FrogbotConfig>`. FrogBot runs plugins serially in `plugins` array order. There is no ordering, slug, or registration mechanism. See [Build your own plugin](/plugins/build-your-own) for the full guide.
 
 The base [FrogBot Config](/configuration/overview) allows for a `plugins` property which takes an `array` of [Plugin Configs](/plugins/build-your-own).
 
@@ -105,9 +86,9 @@ const config = buildConfig({
 Here is an example what the `addLastModified` plugin from above might look like. It adds a `lastModifiedBy` field to all FrogBot collections. For full details, see [how to build your own plugin](/plugins/build-your-own).
 
 ```ts
-import { Config, Plugin } from 'frogbot'
+import { FrogbotConfig, Plugin } from 'frogbot'
 
-export const addLastModified: Plugin = (incomingConfig: Config): Config => {
+export const addLastModified: Plugin = (incomingConfig: FrogbotConfig): FrogbotConfig => {
   // Find all incoming auth-enabled collections
   // so we can create a lastModifiedBy relationship field
   // to all auth collections
@@ -116,7 +97,7 @@ export const addLastModified: Plugin = (incomingConfig: Config): Config => {
   )
 
   // Spread the existing config
-  const config: Config = {
+  const config: FrogbotConfig = {
     ...incomingConfig,
     collections: incomingConfig.collections.map((collection) => {
       // Spread each item that we are modifying,
