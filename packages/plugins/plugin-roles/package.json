@@ -26,16 +26,19 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && pnpm typecheck:types",
+    "typecheck:types": "tsc --noEmit -p tsconfig.typetest.json"
   },
   "engines": {
     "node": ">=22"
   },
   "peerDependencies": {
-    "frogbot": "workspace:*"
+    "frogbot": "workspace:*",
+    "payload": "3.85.1"
   },
   "devDependencies": {
     "frogbot": "workspace:*",
+    "payload": "3.85.1",
     "typescript": "5.6.2"
   },
   "publishConfig": {

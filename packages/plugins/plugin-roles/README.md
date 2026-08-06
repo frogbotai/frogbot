@@ -1,6 +1,6 @@
 # @frogbotai/plugin-roles
 
-Code-defined role-based access control for FrogBot.
+Code-defined role assignment and access helpers for FrogBot.
 
 ## Install
 
@@ -11,7 +11,7 @@ pnpm add @frogbotai/plugin-roles
 ## Configure
 
 ```ts
-import { can, canAgent, canField, rolesPlugin } from '@frogbotai/plugin-roles'
+import { allow, rolesPlugin } from '@frogbotai/plugin-roles'
 import { buildConfig } from 'frogbot'
 
 export default buildConfig({
@@ -22,71 +22,47 @@ export default buildConfig({
       fields: [],
     },
     {
-      slug: 'budgets',
-      access: { read: can('budgets:read') },
+      slug: 'projects',
+      access: {
+        create: allow({ role: 'member', own: 'owner' }),
+        read: allow('finance', { role: 'member', own: 'owner' }),
+      },
       fields: [
-        {
-          name: 'limitUSD',
-          type: 'number',
-          access: { update: canField('budgets:manage') },
-        },
+        { name: 'owner', type: 'relationship', relationTo: 'users', required: true },
       ],
-    },
-  ],
-  agents: [
-    {
-      slug: 'assistant',
-      model: 'openai/gpt-5',
-      instructions: 'Help the user.',
-      access: canAgent('agents:run'),
     },
   ],
   plugins: [
     rolesPlugin({
-      resources: [
-        { slug: 'agents', actions: ['run'] },
-        { slug: 'budgets', actions: ['read', 'manage'] },
-      ],
-      roles: [
-        {
-          slug: 'admin',
-          name: 'Administrator',
-          grants: [{ resource: '*', actions: ['*'] }],
-        },
-        {
-          slug: 'member',
-          name: 'Member',
-          grants: [
-            { resource: 'agents', actions: ['run'] },
-            { resource: 'budgets', actions: ['read'] },
-          ],
-        },
-      ],
+      roles: ['admin', 'member', { slug: 'finance', label: 'Finance' }],
     }),
   ],
 })
 ```
 
-Roles and grants are defined in code. The plugin synchronizes them into a read-only `roles` collection and adds an editable roles relationship to the auth collection. The first user receives the configured `admin` role unless the create operation supplies roles explicitly.
+Configured roles are stored as slugs in a `roles` select field on the `users` collection. No field is added when `roles` is omitted or empty. The first user receives `admin` when that role is listed.
 
-`can()` returns a Payload collection access function and compiles an `own` grant to a query. `canField()` and `canAgent()` return booleans because fields and agents do not accept query constraints.
+`allow()` accepts role slugs, ownership clauses, and native access functions. Boolean-only clauses work in collection, field, and agent access slots. Ownership or `Where` clauses work only in collection access slots.
+
+## Predicates
 
 ```ts
-can('usage-logs:read', { ownerField: 'user' })
+import { hasRole, isLoggedIn, ownRows, rolesOf, viaApiKey } from '@frogbotai/plugin-roles'
+
+hasRole(req, 'finance', 'auditor')
+isLoggedIn(req)
+ownRows(req, 'owner')
+rolesOf(req)
+viaApiKey(req)
 ```
 
-The plugin sets auth relationship depth to at least one and preserves any higher configured depth. Access is denied if a request does not contain populated role documents.
+## Custom Resolution
 
-## Options
+```ts
+rolesPlugin({
+  roles: ['admin', 'member'],
+  resolveRoles: (req) => req.user?.tenantRoles ?? [],
+})
+```
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `roles` | `admin`, `member`, `viewer` | Code-defined roles and grants. |
-| `resources` | unrestricted | Optional resource/action registry used to validate grants at startup. |
-| `authCollection` | `users` | Auth-enabled collection receiving role assignments. |
-| `collectionSlug` | `roles` | Read-only role projection collection. |
-| `fieldName` | `roles` | Relationship field added to the auth collection. |
-| `adminRole` | `admin` | Role assigned to the first user. |
-| `collection` | none | Additional roles collection configuration and non-reserved fields. |
-
-Internal operations using `overrideAccess: true` continue to bypass role access functions.
+Role resolution is memoized per request. `rolesPlugin()` and `rolesPlugin({ roles: [] })` are no-ops.

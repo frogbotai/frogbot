@@ -1161,6 +1161,9 @@ importers:
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
+      payload:
+        specifier: 3.85.1
+        version: 3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
       typescript:
         specifier: 5.6.2
         version: 5.6.2
@@ -3552,9 +3555,6 @@ packages:
 
   '@next/env@15.4.11':
     resolution: {integrity: sha512-mIYp/091eYfPFezKX7ZPTWqrmSXq+ih6+LcUyKvLmeLQGhlPtot33kuEOd4U+xAA7sFfj21+OtCpIZx0g5SpvQ==}
-
-  '@next/env@15.5.20':
-    resolution: {integrity: sha512-dXh51Wvddf8daEyBXryZZEe1FdVxEWx9lgaTseLZUtC1XP/W8Wri+Z+VPOElHlByk23CyqHdc2oVByX7wsTWsw==}
 
   '@next/swc-darwin-arm64@15.4.8':
     resolution: {integrity: sha512-Pf6zXp7yyQEn7sqMxur6+kYcywx5up1J849psyET7/8pG2gQTVMjU3NzgIt8SeEP5to3If/SaWmaA6H6ysBr1A==}
@@ -10427,8 +10427,6 @@ snapshots:
 
   '@next/env@15.4.11': {}
 
-  '@next/env@15.5.20': {}
-
   '@next/swc-darwin-arm64@15.4.8':
     optional: true
 
@@ -14207,7 +14205,7 @@ snapshots:
 
   payload@3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2):
     dependencies:
-      '@next/env': 15.5.20
+      '@next/env': 15.4.10
       '@payloadcms/translations': 3.85.1
       '@types/busboy': 1.5.4
       ajv: 8.18.0
