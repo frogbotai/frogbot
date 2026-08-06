@@ -70,6 +70,10 @@
 
 - [x] Pair cache middleware unit coverage with real-SDK wire assertions for marked string and array message content shapes.
 
+## Completed with Ticket 66
+
+- [x] Use receiver-dependent loggers in tests that claim compatibility with production logger implementations.
+
 ## Coverage balance to preserve
 
 - Unit tests for config, validation, translators, adapters, and utilities.

@@ -135,8 +135,7 @@ export function logGatewayError(
     errorType: isError ? (args.error as Error).name : undefined,
     message: maybeMaskMessage(rawMessage, { status: args.status, requestId: args.requestId, production: isProduction() }),
   };
-  const log = args.status >= 500 ? logger.error : logger.warn;
-  log(entry, 'request-error');
+  logger[args.status >= 500 ? 'error' : 'warn'](entry, 'request-error');
 }
 
 function baseLog(args: { requestId: string; operation: HookOperation; provider: string; model: string }) {

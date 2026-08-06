@@ -5,7 +5,7 @@ import pino from 'pino';
 import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import type { AfterErrorHookArgs, AfterOperationHookArgs, BeforeUpstreamHookArgs } from '../hooks.js';
-import { createAiSdkWarningLogger, createLogger, createLoggingHooks, type GatewayLogger } from './logger.js';
+import { createAiSdkWarningLogger, createLogger, createLoggingHooks, type GatewayLogger, logGatewayError } from './logger.js';
 
 const base = {
   operation: 'responses' as const,
@@ -24,6 +24,24 @@ function captureLogger() {
     error: (obj: unknown, msg: string) => entries.push({ level: 'error', obj, msg }),
   } as unknown as GatewayLogger;
   return { entries, logger };
+}
+
+function capturePino(): { logger: GatewayLogger; lines: () => Array<Record<string, unknown>> } {
+  const chunks: string[] = [];
+  const stream = new Writable({
+    write(chunk, _enc, cb) {
+      chunks.push(chunk.toString());
+      cb();
+    },
+  });
+  const logger = pino({ level: 'trace' }, stream) as unknown as GatewayLogger;
+  const lines = () =>
+    chunks
+      .join('')
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+  return { logger, lines };
 }
 
 describe('GatewayLogger structural compatibility', () => {
@@ -193,24 +211,6 @@ describe('createLoggingHooks with a real pino instance', () => {
     process.env.NODE_ENV = originalNodeEnv;
   });
 
-  function capturePino(): { logger: GatewayLogger; lines: () => Array<Record<string, unknown>> } {
-    const chunks: string[] = [];
-    const stream = new Writable({
-      write(chunk, _enc, cb) {
-        chunks.push(chunk.toString());
-        cb();
-      },
-    });
-    const logger = pino({ level: 'trace' }, stream) as unknown as GatewayLogger;
-    const lines = () =>
-      chunks
-        .join('')
-        .split('\n')
-        .filter(Boolean)
-        .map((l) => JSON.parse(l) as Record<string, unknown>);
-    return { logger, lines };
-  }
-
   it('serializes lifecycle entries with pino level numbers and request metadata', async () => {
     const { logger, lines } = capturePino();
     const hooks = createLoggingHooks(logger);
@@ -292,6 +292,34 @@ describe('createLoggingHooks with a real pino instance', () => {
     const [entry] = lines();
     expect(entry).toMatchObject({ level: 50, msg: 'request-error', requestId: 'req_123', phase: 'beforeUpstream' });
     expect(entry).not.toHaveProperty('error');
+  });
+});
+
+describe('logGatewayError with a real pino instance', () => {
+  it('logs a 400 at warn level', () => {
+    const { logger, lines } = capturePino();
+
+    logGatewayError(logger, {
+      requestId: 'req_1',
+      status: 400,
+      path: '/v1/chat/completions',
+      error: new Error('bad request'),
+    });
+
+    expect(lines()).toMatchObject([{ level: 40, msg: 'request-error' }]);
+  });
+
+  it('logs a 500 at error level', () => {
+    const { logger, lines } = capturePino();
+
+    logGatewayError(logger, {
+      requestId: 'req_1',
+      status: 500,
+      path: '/v1/chat/completions',
+      error: new Error('internal error'),
+    });
+
+    expect(lines()).toMatchObject([{ level: 50, msg: 'request-error' }]);
   });
 });
 

@@ -10,12 +10,17 @@
 //        can inject an arbitrary string that becomes the span-map key and the
 //        echoed response header.
 
+import { Writable } from 'node:stream';
+
 import type { LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
+import pino from 'pino';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
-import type { GatewayLogger,LogFn } from '../../packages/gateway/src/observability/logger.js';
+import type { GatewayLogger, LogFn } from '../../packages/gateway/src/observability/logger.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+
+const API_CALL_ERROR_MARKER = Symbol.for('vercel.ai.error.AI_APICallError');
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -62,6 +67,24 @@ function makeModel(opts: { text?: string } = {}): LanguageModelV4 {
 function makeApp(hooks = {}) {
   const registry = { openai: { languageModel: () => makeModel() } } as unknown as ProviderRegistry;
   return createApp({ registry, hooks });
+}
+
+function capturePino() {
+  const chunks: string[] = [];
+  const sink = new Writable({
+    write(chunk, _enc, callback) {
+      chunks.push(chunk.toString());
+      callback();
+    },
+  });
+  const logger = pino({ level: 'info' }, sink) as unknown as GatewayLogger;
+  const lines = () =>
+    chunks
+      .join('')
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+  return { logger, lines };
 }
 
 // ---------------------------------------------------------------------------
@@ -147,6 +170,57 @@ describe('G101 — pre-resolution failures produce zero log lines', () => {
     expect(res.status).toBe(404);
     // G101: the gateway should log the not-found error.
     expect(logLines.length).toBeGreaterThan(0);
+  });
+});
+
+describe('gateway errors with a real pino instance', () => {
+  it('preserves a schema-validation 400 and logs it at warn level', async () => {
+    const { logger, lines } = capturePino();
+    const registry = { openai: { languageModel: () => makeModel() } } as unknown as ProviderRegistry;
+    const app = createApp({ registry, logger });
+
+    const res = await app.request('http://localhost/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'openai/gpt-4o' }),
+    });
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: { type: 'invalid_request_error' } });
+    expect(lines()).toMatchObject([{ level: 40, msg: 'request-error' }]);
+  });
+
+  it('preserves a post-resolution upstream 403 and logs both error layers', async () => {
+    const { logger, lines } = capturePino();
+    const upstreamBody = {
+      error: { message: 'Forbidden', type: 'permission_error', code: 'permission_denied', param: null },
+    };
+    const error = Object.assign(new Error('Forbidden'), {
+      [API_CALL_ERROR_MARKER]: true,
+      statusCode: 403,
+      url: 'https://example.com',
+      requestBodyValues: {},
+      data: upstreamBody,
+      isRetryable: false,
+    });
+    const model = { ...makeModel(), doGenerate: () => Promise.reject(error) } as LanguageModelV4;
+    const registry = {
+      openai: { languageModel: () => model },
+    } as unknown as ProviderRegistry;
+    const app = createApp({ registry, logger });
+
+    const res = await app.request('http://localhost/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'openai/model', messages: [{ role: 'user', content: 'hi' }] }),
+    });
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual(upstreamBody);
+    expect(lines().filter((line) => line.msg === 'request-error')).toMatchObject([
+      { level: 50, msg: 'request-error' },
+      { level: 40, msg: 'request-error' },
+    ]);
   });
 });
 
