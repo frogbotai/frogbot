@@ -64,7 +64,7 @@ Each blob contains the canonical post-hook request, assembled response or error,
 
 ## Retention
 
-Set `retentionDays` to schedule daily cleanup through Payload Jobs. Custom storage must provide `cleanup` when finite retention is enabled:
+Set `retentionDays` to schedule daily cleanup. Custom storage must provide `cleanup` when finite retention is enabled:
 
 ```ts
 capturePlugin({

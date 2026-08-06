@@ -29,15 +29,15 @@ export default buildConfig({
 })
 ```
 
-Reports use paginated Payload local API reads and in-memory reduction. They do not access Drizzle or another database adapter directly, so the same implementation supports FrogBot's SQL and MongoDB adapters.
+Reports use paginated local reads and in-memory reduction. They do not access Drizzle or another database adapter directly, so the same implementation supports FrogBot's SQL and MongoDB adapters.
 
 ## Admin tools
 
-The plugin extends the marker-resolved usage-log collection with:
+The plugin extends the usage-log collection with:
 
-- Payload's experimental visual list grouping through `admin.groupBy`
-- Filtered, export-only CSV through `@payloadcms/plugin-import-export`
-- A Usage Analytics custom view based on Firmware's date range and models/users tables
+- Grouped list views
+- Filtered, export-only CSV from the usage-log list view
+- A Usage Analytics view with date-range filtering and models/users breakdown tables
 
 CSV export contains filtered raw usage rows. The Usage Analytics page contains aggregated totals.
 
@@ -57,7 +57,7 @@ The endpoint currently follows usage-log read access and requires an authenticat
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `pageSize` | `5000` | Number of usage rows read in each Payload local API page. |
-| `rawExport` | `true` | Enable Payload export-only CSV support on the usage collection. |
+| `pageSize` | `5000` | Number of usage rows read per page during report generation. |
+| `rawExport` | `true` | Enable export-only CSV support on the usage collection. |
 
 Large date ranges scan every matching usage row. Add rollups only after deployment profiling demonstrates that this portable path is insufficient.
