@@ -1,0 +1,21 @@
+---
+title: "Sentry"
+description: "Capture FrogBot server and admin errors with Sentry."
+---
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-sentry @sentry/nextjs
+```
+
+## Configure
+
+```ts
+import * as Sentry from '@sentry/nextjs'
+import { sentryPlugin } from '@frogbotai/plugin-sentry'
+
+plugins: [sentryPlugin({ Sentry })]
+```
+
+The adapter preserves Payload's enablement, status capture, context, and debug options. It composes with existing FrogBot `afterError` hooks and admin providers.

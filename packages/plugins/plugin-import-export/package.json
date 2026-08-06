@@ -1,0 +1,49 @@
+{
+  "name": "@frogbotai/plugin-import-export",
+  "version": "0.13.0",
+  "description": "Payload import and export integration for FrogBot.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/plugins/plugin-import-export"
+  },
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@payloadcms/plugin-import-export": "3.85.1"
+  },
+  "peerDependencies": {
+    "frogbot": "workspace:*",
+    "payload": "3.85.1"
+  },
+  "devDependencies": {
+    "frogbot": "workspace:*",
+    "payload": "3.85.1",
+    "typescript": "5.6.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

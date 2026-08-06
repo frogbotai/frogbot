@@ -1,0 +1,20 @@
+---
+title: "Search"
+description: "Maintain a search index from selected FrogBot collections."
+---
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-search
+```
+
+## Configure
+
+```ts
+import { searchPlugin } from '@frogbotai/plugin-search'
+
+plugins: [searchPlugin({ collections: ['posts'] })]
+```
+
+The adapter preserves Payload's synchronization, priorities, localization, draft handling, batching, skip logic, and search collection override. Existing collection hooks remain active.

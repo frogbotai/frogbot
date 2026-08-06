@@ -1,0 +1,20 @@
+---
+title: "Redirects"
+description: "Manage redirects that target FrogBot collections or custom URLs."
+---
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-redirects
+```
+
+## Configure
+
+```ts
+import { redirectsPlugin } from '@frogbotai/plugin-redirects'
+
+plugins: [redirectsPlugin({ collections: ['pages'] })]
+```
+
+The adapter preserves Payload's redirect types, field override, and redirects collection override. Only FrogBot collection slugs should be supplied as relationship targets.

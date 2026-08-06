@@ -1,0 +1,20 @@
+---
+title: "Nested documents"
+description: "Add parent relationships and breadcrumbs to FrogBot collections."
+---
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-nested-docs
+```
+
+## Configure
+
+```ts
+import { nestedDocsPlugin } from '@frogbotai/plugin-nested-docs'
+
+plugins: [nestedDocsPlugin({ collections: ['pages'] })]
+```
+
+The adapter preserves Payload's custom parent and breadcrumb field slugs plus label and URL generators. It extends only the selected FrogBot collections and retains their fields and hooks.
