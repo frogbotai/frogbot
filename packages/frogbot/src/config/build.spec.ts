@@ -92,6 +92,19 @@ describe('frogbot buildConfig', () => {
       expect(slugs).toContain('added');
     });
 
+    it('rejects a roles-dependent plugin regardless of plugin order', async () => {
+      const requireRoles: Plugin = (config) => ({ ...config, _roles: { ...config._roles, required: true } });
+      const unrelated: Plugin = (config) => config;
+      await expect(buildConfig(makeConfig({ plugins: [requireRoles, unrelated] }))).rejects.toThrow(/requires rolesPlugin/);
+      await expect(buildConfig(makeConfig({ plugins: [unrelated, requireRoles] }))).rejects.toThrow(/requires rolesPlugin/);
+    });
+
+    it('accepts an empty roles marker for dependent plugins', async () => {
+      const requireRoles: Plugin = (config) => ({ ...config, _roles: { ...config._roles, required: true } });
+      const roles: Plugin = (config) => ({ ...config, _roles: { ...config._roles, present: true, configured: false } });
+      await expect(buildConfig(makeConfig({ plugins: [requireRoles, roles] }))).resolves.toBeDefined();
+    });
+
     it('surfaces a plugin failure as `[frogbot] plugin at index N failed: <msg>`', async () => {
       const config = makeConfig({
         plugins: [

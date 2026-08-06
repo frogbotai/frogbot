@@ -26,10 +26,27 @@ function req(roles: string[] = ['member'], id = 'user-1'): FrogbotRequest {
 }
 
 describe('rolesPlugin', () => {
-  it('is inert without configured roles', () => {
+  it('is inert without configured roles', async () => {
     const input = config();
-    expect(rolesPlugin()(input)).toBe(input);
-    expect(rolesPlugin({ roles: [] })(input)).toBe(input);
+    expect(await rolesPlugin()(input)).toMatchObject({ _roles: { present: true, configured: false } });
+    expect(await rolesPlugin({ roles: [] })(input)).toMatchObject({ _roles: { present: true, configured: false } });
+  });
+
+  it('clears prior role prewiring when roles are empty', async () => {
+    const read = () => true as const;
+    const input = { ...config(), _roles: { required: true as const, present: true as const, configured: true, threads: { read }, messages: { read }, usageLogs: { read } } };
+    const result = await rolesPlugin()(input);
+    expect(result._roles).toEqual({ required: true, present: true, configured: false });
+  });
+
+  it('writes bound access for core surfaces', async () => {
+    const result = await rolesPlugin({ roles: ['admin', 'member', 'finance', 'auditor', 'support'] })(config());
+    const memberReq = { user: { id: 'user-1', roles: ['member'] } } as FrogbotRequest;
+    const financeReq = { user: { id: 'user-2', roles: ['finance'] } } as FrogbotRequest;
+    expect(await result._roles?.threads?.read?.({ req: memberReq })).toEqual({ user: { equals: 'user-1' } });
+    expect(await result._roles?.messages?.read?.({ req: memberReq })).toEqual({ 'thread.user': { equals: 'user-1' } });
+    expect(await result._roles?.usageLogs?.read?.({ req: memberReq })).toEqual({ user: { equals: 'user-1' } });
+    expect(await result._roles?.usageLogs?.read?.({ req: financeReq })).toBe(true);
   });
 
   it('injects a labeled role select and assigns admin to the first user', async () => {

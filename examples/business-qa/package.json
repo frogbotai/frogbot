@@ -36,6 +36,7 @@
     "@frogbotai/piece-resend": "workspace:*",
     "@frogbotai/plugin-api-keys": "workspace:*",
     "@frogbotai/plugin-oauth": "workspace:*",
+    "@frogbotai/plugin-roles": "workspace:*",
     "frogbot": "workspace:*",
     "graphql": "^16.8.1",
     "next": "15.4.11",

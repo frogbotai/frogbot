@@ -1,10 +1,11 @@
-import type { Access } from '../../types/access.js';
+import type { Access, CollectionAccess } from '../../types/access.js';
 import type { CollectionConfig } from '../../types/collection.js';
 import type { FrogbotRequest } from '../../types/request.js';
 
 export type DefaultThreadsCollectionProps = {
   slug: string;
   userSlug: string;
+  access?: CollectionAccess;
 };
 
 function userID(req: FrogbotRequest): number | string | undefined {
@@ -16,7 +17,7 @@ const owner: Access = ({ req }) => {
   return id !== undefined ? { user: { equals: id } } : false;
 };
 
-export function defaultThreadsCollection({ slug, userSlug }: DefaultThreadsCollectionProps): CollectionConfig {
+export function defaultThreadsCollection({ slug, userSlug, access }: DefaultThreadsCollectionProps): CollectionConfig {
   return {
     slug,
     trash: true,
@@ -30,6 +31,7 @@ export function defaultThreadsCollection({ slug, userSlug }: DefaultThreadsColle
       read: owner,
       update: owner,
       delete: owner,
+      ...access,
     },
     fields: [
       { name: 'title', type: 'text' },

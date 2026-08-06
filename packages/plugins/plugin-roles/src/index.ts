@@ -1,4 +1,4 @@
-import type { CollectionConfig, Field, FrogbotConfig, Plugin } from 'frogbot';
+import type { Access, CollectionConfig, Field, FrogbotConfig, Plugin } from 'frogbot';
 import { formatLabels, type Field as PayloadField } from 'payload';
 
 import { allow, bindCompiledAccess, compiledAccess, isCompiledAccess } from './allow.js';
@@ -159,15 +159,60 @@ function validateCompiledAccess(config: FrogbotConfig, roleSlugs: readonly strin
 
 export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
   const roles = normalizeRoles(options.roles ?? []);
-  if (roles.length === 0) return (config) => config;
 
   return (config) => {
     const resolver = options.resolveRoles ?? defaultRoleResolver;
+    const roleSlugs = roles.map(({ slug }) => slug);
+    const listed = new Set(roleSlugs);
+    if (roles.length === 0) return {
+      ...config,
+      _roles: {
+        ...(config._roles?.required ? { required: true } : {}),
+        present: true,
+        configured: false,
+      },
+    };
+    const bind = (operation: string, access: ReturnType<typeof allow>) => bindCompiledAccess(access, {
+      operation,
+      polymorphicOwnFields: new Set(),
+      resolver,
+      roles: listed,
+    });
+    const threadOwner = allow('admin', { role: 'member', own: 'user' });
+    const messageOwner = async ({ req }: Parameters<Access>[0]) => {
+      if (!req.user) return false;
+      const assigned = resolveRequestRoles(req, resolver);
+      if (listed.has('admin') && assigned.includes('admin')) return true;
+      return listed.has('member') && assigned.includes('member') ? { 'thread.user': { equals: req.user.id } } : false;
+    };
+    const prewiring: FrogbotConfig['_roles'] = {
+      ...config._roles,
+      present: true,
+      configured: true,
+      threads: {
+        create: bind('create', allow('admin', 'member')),
+        read: bind('read', threadOwner),
+        update: bind('update', threadOwner),
+        delete: bind('delete', threadOwner),
+      },
+      messages: {
+        create: bind('create', allow('admin', 'member')),
+        read: messageOwner,
+        update: messageOwner,
+        delete: messageOwner,
+      },
+      usageLogs: {
+        read: bind('read', allow('admin', 'finance', 'auditor', 'support', { role: 'member', own: 'user' })),
+      },
+    };
     const authSlug = 'users';
     const fieldName = 'roles';
     const authCollection = config.collections.find(({ slug }) => slug === authSlug);
     if (!authCollection || authCollection.auth === undefined || authCollection.auth === false) {
-      throw new Error(`[plugin-roles] Auth collection '${authSlug}' must exist and have auth enabled.`);
+      return {
+        ...config,
+        _roles: prewiring,
+      };
     }
     if (authCollection.fields.some((field) => 'name' in field && field.name === fieldName)) {
       throw new Error(`[plugin-roles] Auth field '${fieldName}' is already in use.`);
@@ -198,7 +243,6 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
     });
 
     const previousOnInit = config.onInit;
-    const roleSlugs = roles.map(({ slug }) => slug);
     const onInit: FrogbotConfig['onInit'] = async (frogbot) => {
       await previousOnInit?.(frogbot);
       attachRoleResolver(frogbot, resolver);
@@ -216,7 +260,12 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
       } while (true);
       if (stale.size > 0) frogbot.logger.warn(`[plugin-roles] Stored assignments reference unlisted roles: ${[...stale].join(', ')}.`);
     };
-    const result = { ...config, collections, onInit } as FrogbotConfig;
+    const result = {
+      ...config,
+      collections,
+      onInit,
+      _roles: prewiring,
+    } as FrogbotConfig;
     validateCompiledAccess(result, roleSlugs);
     return bindAccess(result, roleSlugs, resolver);
   };

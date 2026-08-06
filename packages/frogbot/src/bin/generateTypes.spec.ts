@@ -9,6 +9,7 @@ import { promisify } from 'node:util';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { apiKeysPlugin } from '../../../plugins/plugin-api-keys/src/index.js';
+import { rolesPlugin } from '../../../plugins/plugin-roles/src/index.js';
 
 import {
   buildGeneratedTypesFooter,
@@ -215,7 +216,7 @@ describe('frogbot generate:types', () => {
         db: { defaultIDType: 'number' } as never,
         collections: [{ slug: 'users', auth: true, fields: [] }],
         ai: { providers: { openai: { apiKey: 'sk-test' } } },
-        plugins: [apiKeysPlugin()],
+        plugins: [rolesPlugin(), apiKeysPlugin()],
       });
 
       const { outputPath } = await writeGeneratedTypes(config, dir);

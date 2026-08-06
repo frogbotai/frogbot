@@ -80,9 +80,9 @@ describe('manifest endpoint', () => {
     const response = await buildManifestEndpoint().handler(req);
 
     expect(await response.json()).toMatchObject({ agents: [{ slug: 'allowed' }] });
-    expect(allowed).toHaveBeenCalledWith({ req });
-    expect(denied).toHaveBeenCalledWith({ req });
-    expect(throwing).toHaveBeenCalledWith({ req });
+    expect(allowed).toHaveBeenCalledWith({ req, agent: req.frogbot.agents.allowed });
+    expect(denied).toHaveBeenCalledWith({ req, agent: req.frogbot.agents.denied });
+    expect(throwing).toHaveBeenCalledWith({ req, agent: req.frogbot.agents.throwing });
   });
 
   it('serves anonymous callers without exposing protected agents', async () => {

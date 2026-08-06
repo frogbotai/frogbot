@@ -5,17 +5,18 @@ Capture selected FrogBot AI language requests and responses as gzip blobs.
 ```ts
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { capturePlugin } from '@frogbotai/plugin-capture';
+import { rolesPlugin } from '@frogbotai/plugin-roles';
 import { buildConfig } from 'frogbot';
 
 export default buildConfig({
   secret: process.env.FROGBOT_SECRET!,
   db: databaseAdapter,
   collections: [{ slug: 'users', auth: true, fields: [] }],
-  plugins: [apiKeysPlugin(), capturePlugin()],
+  plugins: [rolesPlugin(), apiKeysPlugin(), capturePlugin()],
 });
 ```
 
-Capture defaults to `off`. When the API keys plugin runs first, the plugin adds `capture` and `captureSampleRate` fields to its collection. Supported policies are `off`, `errors-only`, `sample`, and `full`.
+Capture defaults to `off`. When the API keys plugin runs before capture, the plugin adds `capture` and `captureSampleRate` fields to its collection. Supported policies are `off`, `errors-only`, `sample`, and `full`.
 
 The default filesystem storage writes `{requestId}.json.gz` under `.frogbot/captures`. Configure a custom object store with `storage.put`:
 

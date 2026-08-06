@@ -41,6 +41,7 @@ export function createAgentInstance(
   const { gateway, config, frogbot } = deps;
   const tools = toAISDKTools(agentConfig.tools);
   const access = agentConfig.access ?? (({ req }) => !!req.user);
+  let instance: AgentInstance;
 
   const baseAgent = new ToolLoopAgent<
     AgentCallOptions,
@@ -101,7 +102,7 @@ export function createAgentInstance(
     const options = call.options;
     const req = await frogbot.createRequest(options.req);
     const overrideAccess = options.overrideAccess ?? true;
-    if (!overrideAccess && !(await access({ req }))) {
+    if (!overrideAccess && !(await access({ req, agent: instance }))) {
       throw Object.assign(
         new Error(`Access denied for agent '${agentConfig.slug}'`),
         { status: 403 },
@@ -264,7 +265,7 @@ export function createAgentInstance(
   ): Promise<AgentGenerateResult> => {
     const { threadId, ...runOpts } = opts;
     const req = await frogbot.createRequest(runOpts.req);
-    if (runOpts.overrideAccess === false && !(await access({ req }))) {
+    if (runOpts.overrideAccess === false && !(await access({ req, agent: instance }))) {
       throw Object.assign(
         new Error(`Access denied for agent '${agentConfig.slug}'`),
         { status: 403 },
@@ -307,13 +308,14 @@ export function createAgentInstance(
   const stream = async (opts: AgentStreamOpts): Promise<AgentStreamResult> =>
     aiAgent.stream(await buildCall(opts));
 
-  return {
+  instance = {
     slug: agentConfig.slug,
     config: agentConfig,
     aiAgent,
     generate,
     stream,
   };
+  return instance;
 }
 
 async function buildPrompt(

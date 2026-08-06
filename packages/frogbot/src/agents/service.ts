@@ -25,7 +25,7 @@ export function getAgent({ req, slug }: { req: FrogbotRequest; slug?: string }):
 export async function assertAgentAccess({ req, agent }: { req: FrogbotRequest; agent: AgentInstance }): Promise<void> {
   const access = agent.config.access ?? (({ req: current }: { req: FrogbotRequest }) => !!current.user);
   try {
-    if (await access({ req })) return;
+    if (await access({ req, agent })) return;
   } catch {
     throw new AgentServiceError(`Access denied for agent '${agent.slug}'`, 403);
   }

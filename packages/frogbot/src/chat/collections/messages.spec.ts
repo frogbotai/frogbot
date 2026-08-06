@@ -75,5 +75,12 @@ describe('defaultMessagesCollection', () => {
         expect(await collection.access?.[op]?.({ req: reqWithUser() })).toBe(false);
       }
     });
+
+    it('permits per-operation access overrides', async () => {
+      const read = () => true as const;
+      const configured = defaultMessagesCollection({ slug: 'messages', threadsSlug: 'threads', access: { read } });
+      expect(configured.access?.read).toBe(read);
+      expect(await configured.access?.update?.({ req: reqWithUser('u1') })).toEqual({ 'thread.user': { equals: 'u1' } });
+    });
   });
 });

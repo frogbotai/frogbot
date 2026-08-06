@@ -101,14 +101,14 @@ export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
     collections: config.collections,
     existing: threadCollection,
     marker: 'thread',
-    defaultCollection: defaultThreadsCollection({ slug: threadsSlug, userSlug }),
+    defaultCollection: defaultThreadsCollection({ slug: threadsSlug, userSlug, access: config._roles?.threads }),
     reservedFields: ['user'],
   });
   const collections = resolveChatCollection({
     collections: withThreads,
     existing: messageCollection,
     marker: 'message',
-    defaultCollection: defaultMessagesCollection({ slug: messagesSlug, threadsSlug }),
+    defaultCollection: defaultMessagesCollection({ slug: messagesSlug, threadsSlug, access: config._roles?.messages }),
     reservedFields: ['id', 'parts', 'thread'],
   });
 

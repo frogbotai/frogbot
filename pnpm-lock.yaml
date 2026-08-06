@@ -168,6 +168,9 @@ importers:
       '@frogbotai/plugin-oauth':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-oauth
+      '@frogbotai/plugin-roles':
+        specifier: workspace:*
+        version: link:../../packages/plugins/plugin-roles
       frogbot:
         specifier: workspace:*
         version: link:../../packages/frogbot

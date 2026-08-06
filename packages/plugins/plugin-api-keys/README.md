@@ -4,13 +4,14 @@ Add multiple named, independently revocable API keys to a FrogBot application.
 
 ```ts
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
+import { rolesPlugin } from '@frogbotai/plugin-roles';
 import { buildConfig } from 'frogbot';
 
 export default buildConfig({
   secret: process.env.FROGBOT_SECRET!,
   db: databaseAdapter,
   collections: [{ slug: 'users', auth: true, fields: [] }],
-  plugins: [apiKeysPlugin()],
+  plugins: [rolesPlugin(), apiKeysPlugin()],
 });
 ```
 

@@ -8,6 +8,7 @@
 // type name or import path.
 
 import type { RootAdminConfig } from './admin.js';
+import type { CollectionAccess } from './access.js';
 import type { AgentConfig } from './agent.js';
 import type { AIConfig } from './ai.js';
 import type { CollectionConfig } from './collection.js';
@@ -28,6 +29,15 @@ export type AfterErrorHook = (
 
 export type RootHooks = {
   afterError?: AfterErrorHook[];
+};
+
+export type RolesPrewiring = {
+  present?: true;
+  required?: true;
+  configured?: boolean;
+  threads?: CollectionAccess;
+  messages?: CollectionAccess;
+  usageLogs?: CollectionAccess;
 };
 
 /** Root config keys FrogBot overrides or forbids. Excluded from the
@@ -64,4 +74,5 @@ export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   hooks?: RootHooks;
   /** AI configuration — providers, routers, hooks, and access control. */
   ai?: AIConfig;
+  _roles?: RolesPrewiring;
 };

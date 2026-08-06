@@ -1,4 +1,4 @@
-import type { Access } from '../../types/access.js';
+import type { Access, CollectionAccess } from '../../types/access.js';
 import type { CollectionConfig } from '../../types/collection.js';
 
 export const MESSAGE_USAGE_CONTEXT_KEY = 'frogbotMessageUsage';
@@ -23,6 +23,7 @@ function mergeUsage(previous: MessageUsage | undefined, next: MessageUsage): Mes
 export type DefaultMessagesCollectionProps = {
   slug: string;
   threadsSlug: string;
+  access?: CollectionAccess;
 };
 
 const threadOwner: Access = ({ req }) => {
@@ -30,7 +31,7 @@ const threadOwner: Access = ({ req }) => {
   return id !== undefined ? { 'thread.user': { equals: id } } : false;
 };
 
-export function defaultMessagesCollection({ slug, threadsSlug }: DefaultMessagesCollectionProps): CollectionConfig {
+export function defaultMessagesCollection({ slug, threadsSlug, access }: DefaultMessagesCollectionProps): CollectionConfig {
   return {
     slug,
     trash: true,
@@ -43,6 +44,7 @@ export function defaultMessagesCollection({ slug, threadsSlug }: DefaultMessages
       read: threadOwner,
       update: threadOwner,
       delete: threadOwner,
+      ...access,
     },
     hooks: {
       beforeChange: [

@@ -17,6 +17,7 @@ import type { AnyTool } from "./tool.js";
 
 export type AgentAccess = (args: {
   req: FrogbotRequest;
+  agent: AgentInstance;
 }) => boolean | Promise<boolean>;
 
 export type AgentModelId = FrogbotTypes["models"];

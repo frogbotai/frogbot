@@ -1,5 +1,6 @@
 import { resolveUserSlug } from "../chat/resolveUserSlug.js";
 import { mergeCollection } from "../collections/mergeCollection.js";
+import type { CollectionAccess } from "../types/access.js";
 import type { CollectionConfig } from "../types/collection.js";
 import type { FrogbotConfig } from "../types/config.js";
 
@@ -8,11 +9,13 @@ export const USAGE_LOGS_SLUG = "usage-logs";
 type UsageCollectionProps = {
   userSlug: string;
   threadsSlug?: string;
+  access?: CollectionAccess;
 };
 
 export function defaultUsageCollection({
   userSlug,
   threadsSlug,
+  access,
 }: UsageCollectionProps): CollectionConfig {
   return {
     slug: USAGE_LOGS_SLUG,
@@ -25,6 +28,7 @@ export function defaultUsageCollection({
       read: ({ req }) => Boolean(req.user),
       update: () => false,
       delete: () => false,
+      ...access,
     },
     fields: [
       { name: "user", type: "relationship", relationTo: userSlug, index: true },
@@ -90,6 +94,7 @@ export function resolveUsageCollection(
   const base = defaultUsageCollection({
     userSlug: resolveUserSlug(config),
     threadsSlug,
+    access: config._roles?.usageLogs,
   });
   if (existing) {
     const collections = [...config.collections];

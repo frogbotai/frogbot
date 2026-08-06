@@ -62,6 +62,15 @@ describe('agent service', () => {
     await expect(assertAgentAccess({ req, agent: req.frogbot.agents.broken })).rejects.toMatchObject({ status: 403 });
   });
 
+  it('passes the agent instance to access functions', async () => {
+    const access = vi.fn(({ agent }: { agent: AgentInstance }) => agent.slug === 'support');
+    const support = makeAgent({ access });
+    const req = makeRequest({ agents: { support } });
+
+    await expect(assertAgentAccess({ req, agent: support })).resolves.toBeUndefined();
+    expect(access).toHaveBeenCalledWith({ req, agent: support });
+  });
+
   it('resolves authorization services from agent tools', async () => {
     const authorizations = vi.fn().mockResolvedValue([{ source: 'google' }]);
     const agent = makeAgent();

@@ -47,6 +47,13 @@ describe('defaultThreadsCollection', () => {
         expect(await collection.access?.[op]?.({ req: reqWithUser() })).toBe(false);
       }
     });
+
+    it('permits per-operation access overrides', async () => {
+      const read = () => true as const;
+      const configured = defaultThreadsCollection({ slug: 'threads', userSlug: 'users', access: { read } });
+      expect(configured.access?.read).toBe(read);
+      expect(await configured.access?.update?.({ req: reqWithUser('u1') })).toEqual({ user: { equals: 'u1' } });
+    });
   });
 
   describe('user field beforeChange', () => {

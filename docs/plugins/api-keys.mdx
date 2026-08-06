@@ -10,7 +10,7 @@ The API keys plugin adds an `api-keys` collection, API-key authentication, and a
 ## Install
 
 ```bash
-pnpm add @frogbotai/plugin-api-keys
+pnpm add @frogbotai/plugin-api-keys @frogbotai/plugin-roles
 ```
 
 ## Configure
@@ -19,6 +19,7 @@ Add the plugin to your FrogBot config. By default, it associates keys with the a
 
 ```ts
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys'
+import { rolesPlugin } from '@frogbotai/plugin-roles'
 import { buildConfig } from 'frogbot'
 
 export default buildConfig({
@@ -29,7 +30,7 @@ export default buildConfig({
       fields: [],
     },
   ],
-  plugins: [apiKeysPlugin()],
+  plugins: [rolesPlugin(), apiKeysPlugin()],
 })
 ```
 

@@ -129,6 +129,7 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
     };
     return {
       ...config,
+      _roles: { ...config._roles, required: true },
       jobs: config.ai ? jobs : config.jobs,
       collections: [
         ...collections,
