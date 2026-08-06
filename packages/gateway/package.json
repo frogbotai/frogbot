@@ -7,7 +7,7 @@
   "homepage": "https://github.com/frogbotai/frogbot#readme",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "publishConfig": {
     "access": "public"
@@ -63,7 +63,7 @@
   },
   "dependencies": {
     "@ai-sdk/alibaba": "^2.0.0",
-    "@ai-sdk/amazon-bedrock": "^4.0.0",
+    "@ai-sdk/amazon-bedrock": "^5.0.2",
     "@ai-sdk/anthropic": "^4.0.0",
     "@ai-sdk/anthropic-aws": "^2.0.0",
     "@ai-sdk/assemblyai": "^3.0.1",

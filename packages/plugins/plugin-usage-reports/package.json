@@ -37,7 +37,7 @@
     "typecheck": "tsc --noEmit"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "peerDependencies": {
     "@payloadcms/plugin-import-export": "3.85.1",

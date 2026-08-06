@@ -121,7 +121,7 @@ export default defineConfig({
 | `basePath` | Extra path prefix routes are also served under (default `/v1`). Bare paths always work. |
 | `catalog` | Authoritative model catalog for routing, `GET /v1/models`, operation validation, and built-in provider allowlist validation. Unlisted built-in models do not route. |
 | `maxBodyBytes` | Request body size cap, enforced on every route. Defaults to 10 MB (25 MB for audio transcriptions). |
-| `upstreamTimeoutMs` | Server-side deadline per upstream call. A fired deadline surfaces as `504 gateway_timeout`. Requires Node ≥ 20. |
+| `upstreamTimeoutMs` | Server-side deadline per upstream call. A fired deadline surfaces as `504 gateway_timeout`. |
 | `logger` | A ready logger instance (pino-compatible) or options for the built-in console logger. |
 | `tracing` | OpenTelemetry endpoint options. See [Observability](/gateway/observability). |
 | `tracer` | A host-provided OpenTelemetry `Tracer`, used instead of the global tracer. |
