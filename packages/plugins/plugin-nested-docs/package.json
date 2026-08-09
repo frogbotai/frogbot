@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-nested-docs",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Payload nested documents integration for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
@@ -20,14 +20,20 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },
-  "engines": { "node": ">=22" },
-  "dependencies": { "@payloadcms/plugin-nested-docs": "3.85.1" },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@payloadcms/plugin-nested-docs": "3.85.1"
+  },
   "peerDependencies": {
     "frogbot": "workspace:*",
     "payload": "3.85.1"
@@ -37,5 +43,7 @@
     "payload": "3.85.1",
     "typescript": "5.6.2"
   },
-  "publishConfig": { "access": "public" }
+  "publishConfig": {
+    "access": "public"
+  }
 }

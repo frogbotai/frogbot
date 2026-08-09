@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-import-export",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Payload import and export integration for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
