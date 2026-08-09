@@ -25,8 +25,7 @@ import { format } from 'prettier';
 
 import { catalog } from '../ai/catalog.js';
 import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
-import { loadConfig } from '../config/load.js';
-import { resolveSourceDir } from '../config/sourceDir.js';
+import { loadConfig, resolveConfigDir } from '../config/load.js';
 import type { CustomProviderEntry, SanitizedAIConfig } from '../types/ai.js';
 import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
 
@@ -145,9 +144,9 @@ export function stripInternalCollections(schema: ConfigJSONSchema): void {
   stripRefs(schema, internalDefs);
 }
 
-function resolveOutputPath(config: SanitizedConfig, cwd: string): string {
+function resolveOutputPath(config: SanitizedConfig, dir: string): string {
   const fromEnv = process.env.FROGBOT_TS_OUTPUT_PATH;
-  if (fromEnv) return isAbsolute(fromEnv) ? fromEnv : resolve(cwd, fromEnv);
+  if (fromEnv) return isAbsolute(fromEnv) ? fromEnv : resolve(dir, fromEnv);
 
   const fromConfig = config.typescript?.outputFile;
   // Payload defaults `typescript.outputFile` to `<cwd>/payload-types.ts`
@@ -155,7 +154,7 @@ function resolveOutputPath(config: SanitizedConfig, cwd: string): string {
   // FrogBot's filename so we don't litter `payload-types.ts` next to
   // the user's config. Otherwise honor whatever they explicitly set.
   if (fromConfig && !fromConfig.endsWith('/payload-types.ts')) return fromConfig;
-  return join(resolveSourceDir(cwd), DEFAULT_FILENAME);
+  return join(resolve(dir), DEFAULT_FILENAME);
 }
 
 async function compileTypes(
@@ -203,10 +202,10 @@ async function compileTypes(
 
 export async function writeGeneratedTypes(
   frogbotConfig: FrogbotSanitizedConfig,
-  cwd: string,
+  configDir: string,
 ): Promise<{ outputPath: string; changed: boolean }> {
   const config = await frogbotConfig._internal.payloadConfig;
-  const outputPath = resolveOutputPath(config, cwd);
+  const outputPath = resolveOutputPath(config, configDir);
   const compiled = await compileTypes(
     config,
     frogbotConfig.agents?.map((agent) => agent.slug) ?? [],
@@ -232,7 +231,10 @@ export async function generateTypes(): Promise<void> {
 
   try {
     const frogbotConfig = await loadConfig({ cwd, mode: 'codegen' });
-    const { outputPath, changed } = await writeGeneratedTypes(frogbotConfig, cwd);
+    const { outputPath, changed } = await writeGeneratedTypes(
+      frogbotConfig,
+      resolveConfigDir(cwd) ?? cwd,
+    );
 
     if (changed) {
       console.log(`[frogbot] types written to ${outputPath}`);  

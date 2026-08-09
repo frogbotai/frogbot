@@ -53,6 +53,8 @@ vi.mock('payload', () => ({
 vi.mock('./bin/generateTypes.js', () => ({ writeGeneratedTypes: vi.fn(() => Promise.resolve()) }));
 vi.mock('./importMap/index.js', () => ({ generateImportMap: vi.fn(() => Promise.resolve()) }));
 
+const { writeGeneratedTypes } = await import('./bin/generateTypes.js');
+const { resolveConfigDir } = await import('./config/load.js');
 const { sanitize } = await import('./config/sanitize.js');
 const { getCachedFrogbot, getFrogbot, resetFrogbotCache } = await import('./getFrogbot.js');
 const { getFrogbotInstance } = await import('./instanceRegistry.js');
@@ -142,5 +144,23 @@ describe('Frogbot lifecycle', () => {
 
     await expect(response?.json()).resolves.toEqual({ attached: true });
     expect(getFrogbotInstance(payload)).toBeDefined();
+  });
+
+  it('skips type generation when no config file is discoverable from cwd', async () => {
+    resetFrogbotCache();
+    payloadState.entryExists = false;
+    payloadState.failNext = false;
+    payloadState.promise = null;
+    vi.mocked(writeGeneratedTypes).mockClear();
+    const config = sanitize({
+      secret: 'test-secret',
+      db: {} as never,
+      collections: [{ slug: 'users', fields: [] }],
+    });
+
+    await getFrogbot({ config });
+
+    expect(resolveConfigDir(process.cwd())).toBeNull();
+    expect(vi.mocked(writeGeneratedTypes)).not.toHaveBeenCalled();
   });
 });

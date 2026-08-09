@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -61,8 +61,6 @@ describe('frogbot generate:types', () => {
 
   it.todo('loads config from cwd via loadConfig');
   it.todo('honors FROGBOT_CONFIG_PATH when set');
-  it.todo('writes to <cwd>/src/frogbot-types.ts when a src directory exists');
-  it.todo('writes to <cwd>/frogbot-types.ts otherwise');
   it.todo(
     "redirects Payload's default outputFile (payload-types.ts) to frogbot-types.ts",
   );
@@ -371,6 +369,21 @@ describe('frogbot generate:types', () => {
 
       await expect(writeGeneratedTypes(config, dir)).resolves.toMatchObject({ changed: true });
       await expect(writeGeneratedTypes(config, dir)).resolves.toMatchObject({ changed: false });
+    });
+
+    it('writes into the config directory rather than a nested src directory', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-types-config-dir-'));
+      await mkdir(join(dir, 'src'));
+      const { buildConfig } = await import('../config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [{ slug: 'users', auth: true, fields: [] }],
+      });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+
+      expect(outputPath).toBe(join(dir, 'frogbot-types.ts'));
     });
 
     it('combines models from multiple configured built-in providers', async () => {

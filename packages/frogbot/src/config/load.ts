@@ -39,6 +39,16 @@ function findConfigFile(startDir: string): string | null {
   }
 }
 
+export function resolveConfigDir(cwd: string): string | null {
+  const fromEnv = process.env.FROGBOT_CONFIG_PATH;
+  if (fromEnv) {
+    const abs = isAbsolute(fromEnv) ? fromEnv : resolve(cwd, fromEnv);
+    return existsSync(abs) ? dirname(abs) : null;
+  }
+  const configPath = findConfigFile(cwd);
+  return configPath ? dirname(configPath) : null;
+}
+
 function isSanitizedConfig(value: unknown): value is FrogbotSanitizedConfig {
   return (
     typeof value === 'object' &&

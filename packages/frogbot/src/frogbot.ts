@@ -20,6 +20,7 @@ import { rerankOperation } from './ai/operations/rerank.js';
 import { streamTextOperation } from './ai/operations/streamText.js';
 import { transcribeOperation } from './ai/operations/transcribe.js';
 import { writeGeneratedTypes } from './bin/generateTypes.js';
+import { resolveConfigDir } from './config/load.js';
 import { Connections } from './connections/api.js';
 import { generateImportMap } from './importMap/index.js';
 import {
@@ -184,9 +185,12 @@ export class Frogbot {
       this.config.typescript?.autoGenerate !== false &&
       !options.disableOnInit
     ) {
-      void writeGeneratedTypes(this.config, process.cwd()).catch((err: unknown) => {
-        this.logger.warn(`[frogbot] type generation failed: ${err instanceof Error ? err.message : String(err)}`);
-      });
+      const configDir = resolveConfigDir(process.cwd());
+      if (configDir) {
+        void writeGeneratedTypes(this.config, configDir).catch((err: unknown) => {
+          this.logger.warn(`[frogbot] type generation failed: ${err instanceof Error ? err.message : String(err)}`);
+        });
+      }
     }
 
     if (process.env.NODE_ENV !== 'production' && !options.disableOnInit) {

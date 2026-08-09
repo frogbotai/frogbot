@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { loadConfig } from './load.js';
+import { loadConfig, resolveConfigDir } from './load.js';
 
 const dirs: string[] = [];
 const CONFIG = 'export default { collections: [], _internal: {} };\n';
@@ -54,4 +54,51 @@ describe('frogbot loadConfig', () => {
   it.todo('awaits a Promise default export');
   it.todo('rejects a default export missing `collections` with `[frogbot] … is not a SanitizedConfig`');
   it.todo('returns the sanitized config object on success');
+});
+
+describe('frogbot resolveConfigDir', () => {
+  it('returns the directory holding the config', async () => {
+    const dir = await makeDir();
+    await writeFile(join(dir, 'frogbot.config.mjs'), CONFIG);
+
+    expect(resolveConfigDir(dir)).toBe(dir);
+  });
+
+  it('returns src/ when the config lives there', async () => {
+    const dir = await makeDir();
+    await mkdir(join(dir, 'src'));
+    await writeFile(join(dir, 'src', 'frogbot.config.mjs'), CONFIG);
+
+    expect(resolveConfigDir(dir)).toBe(join(dir, 'src'));
+  });
+
+  it('returns null when no config exists up the tree', async () => {
+    const dir = await makeDir();
+
+    expect(resolveConfigDir(dir)).toBeNull();
+  });
+
+  it('honors FROGBOT_CONFIG_PATH', async () => {
+    const dir = await makeDir();
+    await mkdir(join(dir, 'suite'));
+    await writeFile(join(dir, 'suite', 'config.ts'), CONFIG);
+    process.env.FROGBOT_CONFIG_PATH = join(dir, 'suite', 'config.ts');
+
+    try {
+      expect(resolveConfigDir(process.cwd())).toBe(join(dir, 'suite'));
+    } finally {
+      delete process.env.FROGBOT_CONFIG_PATH;
+    }
+  });
+
+  it('returns null when FROGBOT_CONFIG_PATH points at a missing file', async () => {
+    const dir = await makeDir();
+    process.env.FROGBOT_CONFIG_PATH = join(dir, 'missing.ts');
+
+    try {
+      expect(resolveConfigDir(process.cwd())).toBeNull();
+    } finally {
+      delete process.env.FROGBOT_CONFIG_PATH;
+    }
+  });
 });
