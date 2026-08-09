@@ -81,7 +81,7 @@
     "@ai-sdk/fireworks": "^3.0.0",
     "@ai-sdk/gladia": "^3.0.1",
     "@ai-sdk/google": "^4.0.0",
-    "@ai-sdk/google-vertex": "^4.0.0",
+    "@ai-sdk/google-vertex": "^5.0.47",
     "@ai-sdk/groq": "^4.0.0",
     "@ai-sdk/huggingface": "^2.0.0",
     "@ai-sdk/hume": "^3.0.5",
