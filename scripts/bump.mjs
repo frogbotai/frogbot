@@ -1,8 +1,7 @@
-import { existsSync,readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+import { consumerDirs, packageDirs, readJSON, ROOT } from './lib/workspace.mjs'
 
 const BUMPS = ['major', 'minor', 'patch']
 const bump = process.argv[2]
@@ -20,10 +19,6 @@ function inc(version, type) {
   return `${major}.${minor}.${patch + 1}`
 }
 
-function readJSON(file) {
-  return JSON.parse(readFileSync(file, 'utf8'))
-}
-
 function writeJSON(file, data) {
   writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`)
 }
@@ -35,44 +30,17 @@ if (!current) throw new Error('Root package.json has no "version" field')
 
 const next = inc(current, bump)
 
-function collectPackageDirs(baseDir) {
-  const dirs = []
-  for (const entry of readdirSync(baseDir, { withFileTypes: true })) {
-    if (!entry.isDirectory() || entry.name === 'node_modules') continue
-    const dir = path.join(baseDir, entry.name)
-    if (existsSync(path.join(dir, 'package.json'))) {
-      dirs.push(dir)
-      continue
-    }
-    for (const child of readdirSync(dir, { withFileTypes: true })) {
-      if (!child.isDirectory() || child.name === 'node_modules') continue
-      const childDir = path.join(dir, child.name)
-      if (existsSync(path.join(childDir, 'package.json'))) dirs.push(childDir)
-    }
-  }
-  return dirs
-}
-
-const packageDirs = collectPackageDirs(path.join(ROOT, 'packages'))
+const dirs = packageDirs()
 
 const workspaceNames = new Set()
-for (const dir of packageDirs) {
+for (const dir of dirs) {
   const pkgPath = path.join(dir, 'package.json')
   if (!existsSync(pkgPath)) continue
   workspaceNames.add(readJSON(pkgPath).name)
 }
 
-const consumerDirs = []
-for (const group of ['examples', 'templates']) {
-  const groupDir = path.join(ROOT, group)
-  if (!existsSync(groupDir)) continue
-  for (const dir of readdirSync(groupDir)) {
-    consumerDirs.push(path.join(groupDir, dir))
-  }
-}
-
 const targets = [{ path: rootPath, json: root, name: root.name }]
-for (const dir of [...packageDirs, ...consumerDirs]) {
+for (const dir of [...dirs, ...consumerDirs()]) {
   const pkgPath = path.join(dir, 'package.json')
   if (!existsSync(pkgPath)) continue
   const json = readJSON(pkgPath)

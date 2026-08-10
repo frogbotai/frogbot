@@ -31,8 +31,10 @@
     "docker:start": "docker compose -f test/docker-compose.yml --profile",
     "docker:clean": "docker compose -f test/docker-compose.yml down -v --remove-orphans",
     "bump": "pnpm test && pnpm build && node scripts/bump.mjs",
-    "publish-packages": "pnpm -r publish --access public --no-git-checks",
-    "release": "pnpm test && pnpm build && pnpm publish-packages"
+    "publish-packages": "pnpm -r publish --access public --no-git-checks --report-summary",
+    "release": "pnpm test && pnpm build && pnpm publish-packages && pnpm release:status",
+    "release:resume": "pnpm build && pnpm publish-packages && pnpm release:status",
+    "release:status": "node scripts/release-status.mjs"
   },
   "devDependencies": {
     "@basetenlabs/performance-client": "^0.0.10",
