@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { scaffold } from './index.js';
+import { detectPackageManager, scaffold } from './index.js';
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const templateDir = path.join(packageRoot, 'dist', 'templates', 'blank');
@@ -54,7 +54,7 @@ describe('scaffold', () => {
     expect(config).toContain('tools: [...todoTools]');
     expect(fs.existsSync(path.join(options.dest, 'app'))).toBe(false);
     const readme = fs.readFileSync(path.join(options.dest, 'README.md'), 'utf8');
-    expect(readme).toContain('pnpm 10.26 or newer');
+    expect(readme).toContain('Any package manager works');
     expect(readme).toContain('`src/frogbot.config.ts`');
     expect(readme).toContain('To use a root layout instead');
   });
@@ -69,6 +69,19 @@ describe('scaffold', () => {
       const content = fs.readFileSync(path.join(file.parentPath, file.name), 'utf8');
       expect(content).not.toContain('@payloadcms/');
     }
+  });
+
+  it('writes a .env with a generated secret alongside the untouched .env.example', () => {
+    const options = createDest();
+    scaffold({ ...options, templateDir });
+
+    const env = fs.readFileSync(path.join(options.dest, '.env'), 'utf8');
+    const secret = /^FROGBOT_SECRET=(.+)$/m.exec(env)?.[1];
+    expect(secret).toMatch(/^[0-9a-f]{48}$/);
+    expect(env).toContain('DATABASE_URL=file:./frogbot.db');
+    expect(fs.readFileSync(path.join(options.dest, '.env.example'), 'utf8')).toContain(
+      'FROGBOT_SECRET=YOUR_SECRET_HERE',
+    );
   });
 
   it('rejects an existing destination without changing it', () => {
@@ -89,16 +102,30 @@ describe('scaffold', () => {
     expect(() => scaffold({ ...options, templateDir: path.join(options.dest, 'missing') })).toThrow();
   });
 
-  it('writes scoped release-age exclusions to the pnpm workspace config', () => {
-    const options = createDest();
-    scaffold({ ...options, templateDir });
+  it('writes scoped release-age exclusions to the pnpm workspace config for pnpm only', () => {
+    const pnpmOptions = createDest();
+    scaffold({ ...pnpmOptions, packageManager: 'pnpm', templateDir });
 
-    expect(fs.readFileSync(path.join(options.dest, 'pnpm-workspace.yaml'), 'utf8')).toBe(
+    expect(fs.readFileSync(path.join(pnpmOptions.dest, 'pnpm-workspace.yaml'), 'utf8')).toBe(
       "allowBuilds:\n  sharp: true\n  esbuild: true\nminimumReleaseAgeExclude:\n  - frogbot\n  - '@frogbotai/*'\n",
     );
-    const pkg = JSON.parse(fs.readFileSync(path.join(options.dest, 'package.json'), 'utf8')) as {
+    const pkg = JSON.parse(fs.readFileSync(path.join(pnpmOptions.dest, 'package.json'), 'utf8')) as {
       pnpm?: unknown;
     };
     expect(pkg.pnpm).toBeUndefined();
+
+    for (const packageManager of ['bun', 'npm', 'yarn'] as const) {
+      const options = createDest();
+      scaffold({ ...options, packageManager, templateDir });
+      expect(fs.existsSync(path.join(options.dest, 'pnpm-workspace.yaml'))).toBe(false);
+    }
+  });
+
+  it('detects the package manager that invoked the scaffolder', () => {
+    expect(detectPackageManager('pnpm/10.26.0 npm/? node/v22.14.0')).toBe('pnpm');
+    expect(detectPackageManager('yarn/4.6.0 npm/? node/v22.14.0')).toBe('yarn');
+    expect(detectPackageManager('bun/1.3.13 npm/? node/v22.14.0')).toBe('bun');
+    expect(detectPackageManager('npm/10.9.0 node/v22.14.0')).toBe('npm');
+    expect(detectPackageManager('')).toBe('npm');
   });
 });

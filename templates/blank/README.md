@@ -7,16 +7,20 @@ The `users` file is an example you can customize, not a framework requirement. C
 
 ## Quick Start
 
-This project requires pnpm 10.26 or newer so its approved dependency build scripts run
-during installation.
+Any package manager works — npm, pnpm, yarn, or bun.
 
 ```bash
-pnpm install
-cp .env.example .env
-# edit .env and set OPENAI_API_KEY
-
-pnpm dev
+npm install
+npm run dev
 ```
+
+On pnpm 10.26 or newer, the generated `pnpm-workspace.yaml` pre-approves the
+dependency build scripts this project needs.
+
+`create-frogbot-app` already wrote a `.env` with a generated `FROGBOT_SECRET`, and
+the default `assistant` agent runs on opencode Zen's free
+`zen/deepseek-v4-flash-free` — no API key needed. Swap the provider in
+`src/frogbot.config.ts` for openai, anthropic, google, etc. when you're ready.
 
 FrogBot commands load `.env`, `.env.local`, and mode-specific `.env*` files with Next.js
 precedence. Existing shell variables take priority.
@@ -39,7 +43,7 @@ curl -s http://localhost:3000/api/agents/assistant \
 | `src/frogbot.config.ts` | Your FrogBot config — agents, collections, providers             |
 | `src/app/(frogbot)/`    | Admin panel + API routes (owned by FrogBot, safe to leave alone) |
 | `src/app/(app)/`        | Your app — replace the placeholder home page                     |
-| `src/frogbot-types.ts`  | Generated types (`pnpm generate:types`)                          |
+| `src/frogbot-types.ts`  | Generated types (`npm run generate:types`)                       |
 
 To use a root layout instead, move everything out of `src/` and update the
 `@/*` and `@frogbot-config` paths in `tsconfig.json`. No config, import-map, or
@@ -55,11 +59,11 @@ type-generation changes are needed — both layouts are detected automatically.
 
 ## Scripts
 
-| Command                   | Description                                        |
-| ------------------------- | -------------------------------------------------- |
-| `pnpm dev`                | Start the Next.js dev server (`frogbot dev`)       |
-| `pnpm build`              | Production build (`next build`)                    |
-| `pnpm start`              | Serve the production build (`frogbot start`)       |
-| `pnpm generate:types`     | Regenerate `src/frogbot-types.ts` from this config |
-| `pnpm generate:importmap` | Regenerate `src/app/(frogbot)/admin/importMap.js`  |
-| `pnpm typecheck`          | Type-check the project                             |
+| Script               | Description                                        |
+| -------------------- | -------------------------------------------------- |
+| `dev`                | Start the Next.js dev server (`frogbot dev`)       |
+| `build`              | Production build (`next build`)                    |
+| `start`              | Serve the production build (`frogbot start`)       |
+| `generate:types`     | Regenerate `src/frogbot-types.ts` from this config |
+| `generate:importmap` | Regenerate `src/app/(frogbot)/admin/importMap.js`  |
+| `typecheck`          | Type-check the project                             |

@@ -7,26 +7,19 @@ import { assistant } from './agents';
 import { Users } from './collections';
 
 const config: FrogbotConfig = {
-  secret: process.env.FROGBOT_SECRET ?? 'dev-secret-change-me',
+  secret: process.env.FROGBOT_SECRET || '',
   db: sqliteAdapter({
-    client: { url: process.env.DATABASE_URL ?? 'file:./frogbot.db' },
+    client: { url: process.env.DATABASE_URL || '' },
   }),
   collections: [Users],
   tools: [...todoTools],
   ai: {
-    providers: process.env.FROGBOT_E2E_ZEN
-      ? {
-          zen: {
-            type: 'openai-compatible',
-            baseUrl: 'https://opencode.ai/zen/v1',
-            apiKey: 'public',
-            models: [{ id: 'deepseek-v4-flash-free', mode: 'chat' }],
-          },
-        }
-      : { openai: true },
-    routers: {
-      assistant: {
-        model: process.env.FROGBOT_MODEL ?? 'openai/gpt-4o-mini',
+    providers: {
+      zen: {
+        type: 'openai-compatible',
+        baseUrl: 'https://opencode.ai/zen/v1',
+        apiKey: 'public',
+        models: [{ id: 'deepseek-v4-flash-free', mode: 'chat' }],
       },
     },
   },

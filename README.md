@@ -51,12 +51,11 @@ Scaffold a project and talk to a real agent in under a minute:
 ```bash
 npx create-frogbot-app my-agent
 cd my-agent
-pnpm install
-cp .env.example .env   # set OPENAI_API_KEY
-pnpm dev
+npm install
+npm run dev
 ```
 
-That gives you a `users` auth collection, SQLite storage, and one agent — no Docker, no external database. Then talk to it:
+That gives you a `users` auth collection, SQLite storage, and one agent — no Docker, no external database. The scaffolder writes a `.env` with a generated `FROGBOT_SECRET`, so the default agent answers immediately. Then talk to it:
 
 ```bash
 curl -s http://localhost:3000/api/agents/assistant \

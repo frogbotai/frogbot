@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline/promises';
@@ -5,12 +6,28 @@ import { fileURLToPath } from 'node:url';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
+export type PackageManager = 'bun' | 'npm' | 'pnpm' | 'yarn';
+
+const COMMANDS: Record<PackageManager, { dev: string; install: string }> = {
+  bun: { dev: 'bun dev', install: 'bun install' },
+  npm: { dev: 'npm run dev', install: 'npm install' },
+  pnpm: { dev: 'pnpm dev', install: 'pnpm install' },
+  yarn: { dev: 'yarn dev', install: 'yarn install' },
+};
+
+export function detectPackageManager(userAgent = process.env.npm_config_user_agent): PackageManager {
+  const name = userAgent?.split('/')[0];
+  return name === 'bun' || name === 'pnpm' || name === 'yarn' ? name : 'npm';
+}
+
 export function scaffold({
   dest,
+  packageManager = detectPackageManager(),
   projectName,
   templateDir,
 }: {
   dest: string;
+  packageManager?: PackageManager;
   projectName: string;
   templateDir: string;
 }): void {
@@ -25,14 +42,25 @@ export function scaffold({
     fs.renameSync(gitignore, path.join(dest, '.gitignore'));
   }
 
+  const envExample = path.join(dest, '.env.example');
+  if (fs.existsSync(envExample)) {
+    const env = fs
+      .readFileSync(envExample, 'utf8')
+      .replace(/^FROGBOT_SECRET=.*$/m, `FROGBOT_SECRET=${randomBytes(24).toString('hex')}`);
+    fs.writeFileSync(path.join(dest, '.env'), env);
+  }
+
   const pkgPath = path.join(dest, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { name: string };
   pkg.name = projectName;
   fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
-  fs.writeFileSync(
-    path.join(dest, 'pnpm-workspace.yaml'),
-    "allowBuilds:\n  sharp: true\n  esbuild: true\nminimumReleaseAgeExclude:\n  - frogbot\n  - '@frogbotai/*'\n",
-  );
+
+  if (packageManager === 'pnpm') {
+    fs.writeFileSync(
+      path.join(dest, 'pnpm-workspace.yaml'),
+      "allowBuilds:\n  sharp: true\n  esbuild: true\nminimumReleaseAgeExclude:\n  - frogbot\n  - '@frogbotai/*'\n",
+    );
+  }
 }
 
 export async function main(): Promise<void> {
@@ -55,16 +83,17 @@ export async function main(): Promise<void> {
     process.exit(1);
   }
 
+  const packageManager = detectPackageManager();
   const templateDir = path.join(dirname, 'templates', 'blank');
-  scaffold({ dest, projectName, templateDir });
+  scaffold({ dest, packageManager, projectName, templateDir });
 
+  const { dev, install } = COMMANDS[packageManager];
   console.log(`
 Created ${projectName}.
 
 Next steps:
   cd ${projectName}
-  pnpm install
-  cp .env.example .env   # set OPENAI_API_KEY
-  pnpm dev
+  ${install}
+  ${dev}
 `);
 }

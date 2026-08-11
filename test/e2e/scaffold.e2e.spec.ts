@@ -80,8 +80,6 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        FROGBOT_E2E_ZEN: '1',
-        FROGBOT_MODEL: 'zen/deepseek-v4-flash-free',
         FROGBOT_SECRET: 'e2e-secret',
         DATABASE_URL: `file:${join(dataDir, 'e2e.db')}`,
       },
