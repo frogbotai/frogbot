@@ -9,7 +9,7 @@ The usage reports plugin adds a **Usage Analytics** admin page with sortable Mod
 ## Install
 
 ```bash
-pnpm add @frogbotai/plugin-usage-reports @payloadcms/plugin-import-export
+pnpm add @frogbotai/plugin-usage-reports
 ```
 
 ```ts
@@ -36,7 +36,7 @@ Reports use paginated local reads and in-memory reduction. They do not access Dr
 The plugin extends the usage-log collection with:
 
 - Grouped list views
-- Filtered, export-only CSV from the usage-log list view
+- Filtered, export-only CSV from the usage-log list view, when `@frogbotai/plugin-import-export` is installed
 - A Usage Analytics view with date-range filtering and models/users breakdown tables
 
 CSV export contains filtered raw usage rows. The Usage Analytics page contains aggregated totals.
@@ -49,15 +49,30 @@ Authenticated callers can request aggregated data directly:
 GET /api/usage/report?groupBy=model&from=2026-07-01T00:00:00.000Z&to=2026-08-01T00:00:00.000Z
 ```
 
-`groupBy` accepts `model`, `user`, `day`, or `apiKey`. API-key grouping does not infer attribution. It returns attributed rows only when a plugin such as `@frogbotai/plugin-api-keys` populated the usage log's `apiKey` relationship.
+`groupBy` accepts `model`, `user`, or `day`. `apiKey` is accepted only when the usage collection already has an `apiKey` relationship, which `@frogbotai/plugin-api-keys` adds — list `usageReportsPlugin()` after `apiKeysPlugin()` to enable it. Other values return `400`.
 
-The endpoint currently follows usage-log read access and requires an authenticated user. Role-specific report permissions can replace this gate when an application installs a compatible roles policy.
+The endpoint allows any authenticated caller by default, matching Payload's default access. Pass `access` to narrow it with an ordinary access function. Returning `false` forbids the request; returning a `Where` restricts the rows the report reads:
+
+```ts
+usageReportsPlugin({
+  access: ({ req }) => (req.user?.isAdmin ? true : { user: { equals: req.user!.id } }),
+})
+```
+
+Because `allow()` returns an access function, the roles plugin composes here without being a dependency:
+
+```ts
+import { allow } from '@frogbotai/plugin-roles'
+
+usageReportsPlugin({ access: allow('admin', 'finance', 'auditor') })
+```
 
 ## Options
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `pageSize` | `5000` | Number of usage rows read per page during report generation. |
-| `rawExport` | `true` | Enable export-only CSV support on the usage collection. |
+| `rawExport` | `true` | Enable export-only CSV support on the usage collection. Requires `@frogbotai/plugin-import-export`. |
+| `access` | logged in | Access function gating the report endpoint and optionally filtering its rows. |
 
 Large date ranges scan every matching usage row. Add rollups only after deployment profiling demonstrates that this portable path is insufficient.

@@ -1306,9 +1306,9 @@ importers:
 
   packages/plugins/plugin-usage-reports:
     devDependencies:
-      '@frogbotai/plugin-roles':
+      '@frogbotai/plugin-import-export':
         specifier: workspace:*
-        version: link:../plugin-roles
+        version: link:../plugin-import-export
       '@payloadcms/plugin-import-export':
         specifier: 3.85.1
         version: 3.85.1(@payloadcms/ui@3.85.1(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2))(payload@3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)

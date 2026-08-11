@@ -70,16 +70,42 @@ describe('usageReportsPlugin', () => {
     expect(find).not.toHaveBeenCalled();
   });
 
-  it('denies members and allows reporting roles including API-key requests', async () => {
+  it('allows any authenticated caller by default, including API-key requests', async () => {
     const { endpoint } = await setup();
     const url = 'http://localhost/api/usage/report?groupBy=model&from=2026-01-01&to=2026-02-01';
     const find = vi.fn().mockResolvedValue({ docs: [], hasNextPage: false });
 
-    expect((await endpoint.handler(request(url, find, { id: 'member-1', roles: ['member'] }))).status).toBe(403);
-    for (const role of ['admin', 'finance', 'auditor']) {
-      const user = { id: `${role}-1`, roles: [role], ...(role === 'finance' ? { _strategy: 'api-key' } : {}) };
-      expect((await endpoint.handler(request(url, find, user))).status).toBe(200);
-    }
+    expect((await endpoint.handler(request(url, find, { id: 'member-1' }))).status).toBe(200);
+    expect((await endpoint.handler(request(url, find, { id: 'service-1', _strategy: 'api-key' }))).status).toBe(200);
+  });
+
+  it('applies a custom access function as a gate and as a row filter', async () => {
+    const denied = await usageReportsPlugin({ access: () => false })(createConfig());
+    const scoped = await usageReportsPlugin({ access: ({ req }) => ({ user: { equals: req.user!.id } }) })(createConfig());
+    const url = 'http://localhost/api/usage/report?groupBy=model&from=2026-01-01&to=2026-02-01';
+    const find = vi.fn().mockResolvedValue({ docs: [], hasNextPage: false });
+
+    const forbidden = await denied.endpoints!.find((item) => item.path === '/usage/report')!.handler(request(url, find));
+    expect(forbidden.status).toBe(403);
+    expect(find).not.toHaveBeenCalled();
+
+    await scoped.endpoints!.find((item) => item.path === '/usage/report')!.handler(request(url, find, { id: 'user-1' }));
+    expect(find.mock.calls[0][0].where.and).toContainEqual({ user: { equals: 'user-1' } });
+  });
+
+  it('rejects apiKey grouping until a plugin adds the relationship', async () => {
+    const config = createConfig();
+    const usage = config.collections.find((item) => item.slug === 'ai-usage')!;
+    usage.fields = usage.fields.filter((field) => !('name' in field && field.name === 'apiKey'));
+    const result = await usageReportsPlugin()(config);
+    const find = vi.fn();
+
+    const response = await result.endpoints!.find((item) => item.path === '/usage/report')!.handler(
+      request('http://localhost/api/usage/report?groupBy=apiKey&from=2026-01-01&to=2026-02-01', find),
+    );
+
+    expect(response.status).toBe(400);
+    expect(find).not.toHaveBeenCalled();
   });
 
   it('paginates the resolved collection and aggregates model usage', async () => {

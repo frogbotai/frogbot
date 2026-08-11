@@ -1,6 +1,4 @@
-import { importExportPlugin } from '@payloadcms/plugin-import-export';
-import { hasRole } from '@frogbotai/plugin-roles';
-import type { Endpoint, FrogbotRequest, Plugin } from 'frogbot';
+import type { Access, AccessResult, Endpoint, FrogbotRequest, Plugin } from 'frogbot';
 
 export type UsageReportGroup = 'apiKey' | 'day' | 'model' | 'user';
 
@@ -28,9 +26,10 @@ export type UsageReport = {
 export type UsageReportsPluginOptions = {
   pageSize?: number;
   rawExport?: boolean;
+  access?: Access;
 };
 
-const groups = new Set<UsageReportGroup>(['apiKey', 'day', 'model', 'user']);
+const loggedIn: Access = ({ req }) => Boolean(req.user);
 
 function idAndLabel(value: unknown): { key: string; label: string } | undefined {
   if (typeof value === 'string' || typeof value === 'number') {
@@ -90,7 +89,7 @@ function addDoc(row: UsageReportRow, doc: Record<string, unknown>): void {
   row.costUSD += number(doc, 'costUSD');
 }
 
-function parseRequest(req: FrogbotRequest) {
+function parseRequest(req: FrogbotRequest, groups: ReadonlySet<UsageReportGroup>) {
   const search = new URL(req.url ?? '', 'http://localhost').searchParams;
   const groupBy = search.get('groupBy') as UsageReportGroup | null;
   const fromDate = new Date(search.get('from') ?? '');
@@ -99,14 +98,23 @@ function parseRequest(req: FrogbotRequest) {
   return { groupBy, from: fromDate.toISOString(), to: toDate.toISOString() };
 }
 
-function buildReportEndpoint(slug: string, pageSize: number): Endpoint {
+type ReportEndpointOptions = {
+  slug: string;
+  pageSize: number;
+  groups: ReadonlySet<UsageReportGroup>;
+  access: Access;
+};
+
+function buildReportEndpoint({ slug, pageSize, groups, access }: ReportEndpointOptions): Endpoint {
   return {
     method: 'get',
     path: '/usage/report',
     handler: async (req) => {
       if (!req.user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-      if (!hasRole(req, 'admin', 'finance', 'auditor')) return Response.json({ error: 'Forbidden' }, { status: 403 });
-      const query = parseRequest(req);
+      const permitted = await access({ req });
+      if (permitted === false) return Response.json({ error: 'Forbidden' }, { status: 403 });
+      const scope: Exclude<AccessResult, boolean>[] = permitted === true ? [] : [permitted];
+      const query = parseRequest(req, groups);
       if (!query) return Response.json({ error: 'Invalid groupBy or date range' }, { status: 400 });
       const rows = new Map<string, UsageReportRow>();
       let page = 1;
@@ -117,6 +125,7 @@ function buildReportEndpoint(slug: string, pageSize: number): Endpoint {
             and: [
               { requestedAt: { greater_than_equal: query.from } },
               { requestedAt: { less_than_equal: query.to } },
+              ...scope,
             ],
           },
           page,
@@ -168,10 +177,12 @@ export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plu
         ? { ...collection, admin: { ...collection.admin, groupBy: true } }
         : collection)
       : [...config.collections, { ...usage, admin: { groupBy: true } }];
+    const groups = new Set<UsageReportGroup>(['day', 'model', 'user']);
+    if (usage.fields.some((field) => 'name' in field && field.name === 'apiKey')) groups.add('apiKey');
     const next = {
       ...config,
       collections,
-      endpoints: [...(config.endpoints ?? []), buildReportEndpoint(usage.slug, pageSize)],
+      endpoints: [...(config.endpoints ?? []), buildReportEndpoint({ slug: usage.slug, pageSize, groups, access: options.access ?? loggedIn })],
       admin: {
         ...config.admin,
         components: {
@@ -191,6 +202,7 @@ export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plu
       },
     };
     if (options.rawExport === false) return next;
+    const { importExportPlugin } = await import('@frogbotai/plugin-import-export');
     return await importExportPlugin({
       collections: [{ slug: usage.slug, import: false, export: { format: 'csv' } }],
     })(next as never) as unknown as typeof next;
