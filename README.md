@@ -32,7 +32,7 @@
 
 **Define your AI agents, tools, providers, and your entire data layer in one typed `frogbot.config.ts` — FrogBot boots the production agent backend for all of it.** No routing code, no glue, no SaaS.
 
-It ships with a full data layer (collections, auth, access control, hooks) and its own embeddable, fully MIT open-source [AI gateway](./packages/gateway) built on the [Vercel AI SDK](https://ai-sdk.dev) — the server side of what Vercel kept closed-source.
+It ships with a full data layer (collections, auth, access control, hooks) and its own embeddable, fully MIT open-source [AI gateway](./packages/gateway).
 
 ## Why FrogBot
 
