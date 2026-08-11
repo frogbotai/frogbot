@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-redirects",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Payload redirects integration for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
