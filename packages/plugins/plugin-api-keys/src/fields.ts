@@ -1,9 +1,8 @@
 import type { Field, FieldAccess } from 'frogbot';
-import { allow } from '@frogbotai/plugin-roles';
 
-const manage: FieldAccess = allow('admin');
+const deny: FieldAccess = () => false;
 
-function policyField(name: string, value: Field): Field {
+function policyField(name: string, value: Field, manage: FieldAccess): Field {
   return {
     name,
     type: 'group',
@@ -25,18 +24,18 @@ function policyField(name: string, value: Field): Field {
   } as Field;
 }
 
-export function createPolicyFields(includeState: boolean): Field[] {
+export function createPolicyFields(includeState: boolean, policyAccess: FieldAccess = deny): Field[] {
   return [
-    policyField('monthlyBudget', { name: 'value', type: 'number', min: 0 }),
-    policyField('rpm', { name: 'value', type: 'number', min: 1 }),
-    policyField('tpm', { name: 'value', type: 'number', min: 1 }),
-    policyField('models', { name: 'value', type: 'json' }),
+    policyField('monthlyBudget', { name: 'value', type: 'number', min: 0 }, policyAccess),
+    policyField('rpm', { name: 'value', type: 'number', min: 1 }, policyAccess),
+    policyField('tpm', { name: 'value', type: 'number', min: 1 }, policyAccess),
+    policyField('models', { name: 'value', type: 'json' }, policyAccess),
     {
       name: 'budgetBehavior',
       type: 'select',
       defaultValue: 'block',
       options: ['block', 'alert-only'],
-      access: { update: manage },
+      access: { update: policyAccess },
     },
     ...(includeState
       ? [

@@ -4,14 +4,13 @@ Add multiple named, independently revocable API keys to a FrogBot application.
 
 ```ts
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
-import { rolesPlugin } from '@frogbotai/plugin-roles';
 import { buildConfig } from 'frogbot';
 
 export default buildConfig({
   secret: process.env.FROGBOT_SECRET!,
   db: databaseAdapter,
   collections: [{ slug: 'users', auth: true, fields: [] }],
-  plugins: [rolesPlugin(), apiKeysPlugin()],
+  plugins: [apiKeysPlugin()],
 });
 ```
 
@@ -42,3 +41,20 @@ apiKeysPlugin({
 ```
 
 Collection overrides merge with the generated fields, access, endpoints, hooks, admin components, and transforms applied by other plugins. The manager uses Payload controls without plugin CSS, so global admin styles continue to apply.
+
+The plugin has no role system of its own. Keys are owner-scoped, and budget fields are read-only. To layer roles on top, install `@frogbotai/plugin-roles`, list it after `apiKeysPlugin()`, and pass `policyAccess` and `canRevokeAnyKey`:
+
+```ts
+import { allow, hasRole } from '@frogbotai/plugin-roles';
+
+apiKeysPlugin({
+  policyAccess: allow('admin'),
+  canRevokeAnyKey: (req) => hasRole(req, 'admin', 'support'),
+  collection: {
+    access: {
+      read: allow('auditor', 'support', { role: 'member', own: 'owner' }),
+      update: allow('support', { role: 'member', own: 'owner' }),
+    },
+  },
+});
+```

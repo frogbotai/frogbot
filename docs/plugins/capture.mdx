@@ -17,7 +17,6 @@ Add the API keys plugin first when you want per-key policy controls:
 ```ts
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys'
 import { capturePlugin } from '@frogbotai/plugin-capture'
-import { rolesPlugin } from '@frogbotai/plugin-roles'
 import { buildConfig } from 'frogbot'
 
 export default buildConfig({
@@ -29,7 +28,7 @@ export default buildConfig({
       openai: { apiKey: process.env.OPENAI_API_KEY },
     },
   },
-  plugins: [rolesPlugin(), apiKeysPlugin(), capturePlugin()],
+  plugins: [apiKeysPlugin(), capturePlugin()],
 })
 ```
 

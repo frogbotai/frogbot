@@ -42,9 +42,6 @@ async function runPlugins(config: FrogbotConfig): Promise<FrogbotConfig> {
 }
 
 function validatePluginMarkers(config: FrogbotConfig): FrogbotConfig {
-  if (config._roles?.required && !config._roles.present) {
-    throw new Error('[plugin-api-keys] apiKeysPlugin requires rolesPlugin().');
-  }
   if (!config._roles?.configured || config.collections.some((collection) => collection.auth !== undefined && collection.auth !== false)) {
     return config;
   }

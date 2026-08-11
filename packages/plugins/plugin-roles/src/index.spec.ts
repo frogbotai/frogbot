@@ -34,9 +34,9 @@ describe('rolesPlugin', () => {
 
   it('clears prior role prewiring when roles are empty', async () => {
     const read = () => true as const;
-    const input = { ...config(), _roles: { required: true as const, present: true as const, configured: true, threads: { read }, messages: { read }, usageLogs: { read } } };
+    const input = { ...config(), _roles: { present: true as const, configured: true, threads: { read }, messages: { read }, usageLogs: { read } } };
     const result = await rolesPlugin()(input);
-    expect(result._roles).toEqual({ required: true, present: true, configured: false, roles: [] });
+    expect(result._roles).toEqual({ present: true, configured: false, roles: [] });
   });
 
   it('writes bound access for core surfaces', async () => {

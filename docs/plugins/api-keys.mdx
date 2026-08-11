@@ -10,7 +10,7 @@ The API keys plugin adds an `api-keys` collection, API-key authentication, and a
 ## Install
 
 ```bash
-pnpm add @frogbotai/plugin-api-keys @frogbotai/plugin-roles
+pnpm add @frogbotai/plugin-api-keys
 ```
 
 ## Configure
@@ -19,7 +19,6 @@ Add the plugin to your FrogBot config. By default, it associates keys with the a
 
 ```ts
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys'
-import { rolesPlugin } from '@frogbotai/plugin-roles'
 import { buildConfig } from 'frogbot'
 
 export default buildConfig({
@@ -30,7 +29,7 @@ export default buildConfig({
       fields: [],
     },
   ],
-  plugins: [rolesPlugin(), apiKeysPlugin()],
+  plugins: [apiKeysPlugin()],
 })
 ```
 
@@ -76,6 +75,8 @@ apiKeysPlugin({
 | `tokenPrefix` | `fbt` | Prefix placed before generated key values. |
 | `headerNames` | `['x-api-key']` | Additional request headers accepted for authentication. |
 | `collection` | — | Collection overrides, including fields, access, hooks, endpoints, and admin configuration. |
+| `policyAccess` | deny | Field update access for the budget, rate, and model policy fields. |
+| `canRevokeAnyKey` | — | Predicate allowing a request to revoke or rotate a key it does not own. |
 | `defaults` | — | Inherited monthly budget, RPM, TPM, model, and blocking defaults. |
 | `alerts` | — | Threshold webhook URL, headers, and threshold fractions. |
 
@@ -99,7 +100,7 @@ apiKeysPlugin({
 })
 ```
 
-Key and user policy fields support `inherit`, `custom`, and `unlimited`. Add `budgets:manage` to administrator grants. The fields use the roles plugin's field adapter, so owning a key does not permit changing its caps.
+Key and user policy fields support `inherit`, `custom`, and `unlimited`. They reject updates unless you pass `policyAccess`, so owning a key does not permit changing its caps.
 
 Budget and RPM checks run before the operation. Model policy runs after the request model is parsed and can only narrow provider model allowlists. Completed usage settles TPM and spend for both the key and owner. A monthly task resets spend and alert state.
 
@@ -107,9 +108,37 @@ Rate windows are process-local. Spend writes are serialized within one process, 
 
 Webhook deliveries include the subject, current spend, configured budget, and newly crossed thresholds. Each threshold fires once per monthly period. Failed deliveries are not retried automatically.
 
+## Role-aware access
+
+The plugin does not require a role system. By default, callers read and update only the keys they own, key policy fields reject updates, and revoke and rotate are limited to the caller's own keys.
+
+To layer roles on top, install [`@frogbotai/plugin-roles`](/plugins/roles) and list it **after** `apiKeysPlugin()` so it can bind the access clauses:
+
+```ts
+import { apiKeysPlugin } from '@frogbotai/plugin-api-keys'
+import { allow, hasRole, rolesPlugin } from '@frogbotai/plugin-roles'
+
+plugins: [
+  apiKeysPlugin({
+    policyAccess: allow('admin'),
+    canRevokeAnyKey: (req) => hasRole(req, 'admin', 'support'),
+    collection: {
+      access: {
+        read: allow('auditor', 'support', { role: 'member', own: 'owner' }),
+        update: allow('support', { role: 'member', own: 'owner' }),
+      },
+    },
+  }),
+  rolesPlugin({ roles: ['admin', 'member', 'auditor', 'support'] }),
+]
+```
+
+`rolesPlugin()` with no roles listed is inert and binds nothing, so `allow()` clauses passed to any plugin deny every request until you list the roles.
+
 ## Security behavior
 
 - Plaintext keys are returned only when created.
 - The collection stores a SHA-256 hash and a short display prefix, not the plaintext key.
 - Collection reads are scoped to the authenticated owner by default.
 - Keys are revoked individually without affecting the owning user's other authentication methods.
+- Collection reads and writes, revoke, and rotate are owner-scoped until you widen them.

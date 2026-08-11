@@ -1,4 +1,4 @@
-import type { CollectionConfig, Plugin } from 'frogbot';
+import type { CollectionConfig, FieldAccess, FrogbotRequest, Plugin } from 'frogbot';
 import { calculateModelCostUSD } from '@frogbotai/gateway';
 import { BudgetExceededError, ModelNotAllowedError, RateLimitExceededError } from '@frogbotai/gateway/errors';
 
@@ -27,6 +27,8 @@ export type ApiKeysPluginOptions = {
   tokenPrefix?: string;
   headerNames?: string[];
   collection?: Partial<CollectionConfig>;
+  policyAccess?: FieldAccess;
+  canRevokeAnyKey?: (req: FrogbotRequest) => boolean | Promise<boolean>;
   defaults?: import('./policy.js').PolicyDefaults;
   alerts?: {
     webhookURL: string;
@@ -75,6 +77,8 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
       collectionSlug,
       tokenPrefix: options.tokenPrefix ?? 'fb',
       usageCollection: usageLog?.slug,
+      policyAccess: options.policyAccess,
+      canRevokeAnyKey: options.canRevokeAnyKey,
       collection: options.collection,
       existing,
     });
@@ -97,7 +101,7 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
         const authConfig = typeof next.auth === 'object' ? next.auth : {};
         next = {
           ...next,
-          fields: [...next.fields, ...createPolicyFields(true)],
+          fields: [...next.fields, ...createPolicyFields(true, options.policyAccess)],
           auth: {
             ...authConfig,
             strategies: [...(authConfig.strategies ?? []), strategy],
@@ -133,7 +137,6 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
     };
     return {
       ...config,
-      _roles: { ...config._roles, required: true },
       jobs: config.ai ? jobs : config.jobs,
       collections: [
         ...collections,

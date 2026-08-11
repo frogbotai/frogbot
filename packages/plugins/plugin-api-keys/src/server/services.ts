@@ -1,4 +1,3 @@
-import { hasRole } from '@frogbotai/plugin-roles';
 import type { FrogbotRequest } from 'frogbot';
 
 import { createApiKeyToken, getApiKeyPrefix, hashApiKeyToken } from './token.js';
@@ -14,6 +13,7 @@ export type RevokeApiKeyOptions = {
   req: FrogbotRequest;
   collectionSlug: string;
   id: string;
+  anyOwner?: boolean;
 };
 
 export class ApiKeyServiceError extends Error {
@@ -52,12 +52,12 @@ export async function mintApiKey(options: MintApiKeyOptions) {
 
 export type RotateApiKeyOptions = RevokeApiKeyOptions & { tokenPrefix: string };
 
-export async function rotateApiKey({ req, collectionSlug, id, tokenPrefix }: RotateApiKeyOptions) {
-  const revoked = await revokeApiKey({ req, collectionSlug, id });
+export async function rotateApiKey({ req, collectionSlug, id, tokenPrefix, anyOwner }: RotateApiKeyOptions) {
+  const revoked = await revokeApiKey({ req, collectionSlug, id, anyOwner });
   return mintForOwner({ req, collectionSlug, tokenPrefix, name: revoked.name, owner: revoked.owner });
 }
 
-export async function revokeApiKey({ req, collectionSlug, id }: RevokeApiKeyOptions) {
+export async function revokeApiKey({ req, collectionSlug, id, anyOwner }: RevokeApiKeyOptions) {
   const owner = req.user?.id;
   if (owner === undefined) throw new ApiKeyServiceError('authentication_required');
   const result = await req.frogbot.find({
@@ -66,7 +66,7 @@ export async function revokeApiKey({ req, collectionSlug, id }: RevokeApiKeyOpti
     limit: 1,
     overrideAccess: true,
     req,
-    where: hasRole(req, 'admin', 'support')
+    where: anyOwner
       ? { id: { equals: id } }
       : { and: [{ id: { equals: id } }, { owner: { equals: owner } }] },
   });

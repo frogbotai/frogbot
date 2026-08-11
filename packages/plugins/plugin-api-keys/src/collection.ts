@@ -1,5 +1,4 @@
-import type { CollectionConfig, Endpoint, Field, FrogbotRequest } from 'frogbot';
-import { allow } from '@frogbotai/plugin-roles';
+import type { Access, CollectionConfig, Endpoint, Field, FieldAccess, FrogbotRequest } from 'frogbot';
 
 import { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
 import { createPolicyFields } from './fields.js';
@@ -9,9 +8,13 @@ type CollectionOptions = {
   collectionSlug: string;
   tokenPrefix: string;
   usageCollection?: string;
+  policyAccess?: FieldAccess;
+  canRevokeAnyKey?: (req: FrogbotRequest) => boolean | Promise<boolean>;
   collection?: Partial<CollectionConfig>;
   existing?: CollectionConfig;
 };
+
+const ownKeys: Access = ({ req }) => (req.user ? { owner: { equals: req.user.id } } : false);
 
 function mergeFields(...groups: (Field[] | undefined)[]): Field[] {
   const fields = new Map<string, Field>();
@@ -24,7 +27,7 @@ function mergeFields(...groups: (Field[] | undefined)[]): Field[] {
   return [...fields.values()];
 }
 
-function createEndpoints({ collectionSlug, tokenPrefix }: Pick<CollectionOptions, 'collectionSlug' | 'tokenPrefix'>): Endpoint[] {
+function createEndpoints({ collectionSlug, tokenPrefix, canRevokeAnyKey }: Pick<CollectionOptions, 'collectionSlug' | 'tokenPrefix' | 'canRevokeAnyKey'>): Endpoint[] {
   return [
     {
       method: 'post',
@@ -50,7 +53,8 @@ function createEndpoints({ collectionSlug, tokenPrefix }: Pick<CollectionOptions
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) return Response.json({ error: 'API key not found' }, { status: 404 });
         try {
-          const { name: _name, owner: _owner, ...result } = await revokeApiKey({ req, collectionSlug, id });
+          const anyOwner = (await canRevokeAnyKey?.(req)) === true;
+          const { name: _name, owner: _owner, ...result } = await revokeApiKey({ req, collectionSlug, id, anyOwner });
           return Response.json(result);
         } catch (error) {
           if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') return Response.json({ error: 'Authentication required' }, { status: 401 });
@@ -67,7 +71,8 @@ function createEndpoints({ collectionSlug, tokenPrefix }: Pick<CollectionOptions
         const id = req.routeParams?.id;
         if (typeof id !== 'string' || !id) return Response.json({ error: 'API key not found' }, { status: 404 });
         try {
-          return Response.json(await rotateApiKey({ req, collectionSlug, id, tokenPrefix }), { status: 201 });
+          const anyOwner = (await canRevokeAnyKey?.(req)) === true;
+          return Response.json(await rotateApiKey({ req, collectionSlug, id, tokenPrefix, anyOwner }), { status: 201 });
         } catch (error) {
           if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') return Response.json({ error: 'Authentication required' }, { status: 401 });
           if (error instanceof ApiKeyServiceError && error.code === 'not_found') return Response.json({ error: 'API key not found' }, { status: 404 });
@@ -79,14 +84,14 @@ function createEndpoints({ collectionSlug, tokenPrefix }: Pick<CollectionOptions
 }
 
 export function createApiKeysCollection(options: CollectionOptions): CollectionConfig {
-  const { authCollection, collectionSlug, collection, existing, usageCollection } = options;
+  const { authCollection, collectionSlug, collection, existing, policyAccess, usageCollection } = options;
   const fields: Field[] = [
     { name: 'name', type: 'text', required: true },
     { name: 'owner', type: 'relationship', relationTo: authCollection, required: true, index: true, access: { update: () => false } },
     { name: 'prefix', type: 'text', required: true, index: true, access: { update: () => false }, admin: { readOnly: true } },
     { name: 'tokenHash', type: 'text', required: true, unique: true, index: true, access: { read: () => false, update: () => false }, admin: { hidden: true } },
     { name: 'lastUsedAt', type: 'date', access: { update: () => false }, admin: { readOnly: true } },
-    ...createPolicyFields(true),
+    ...createPolicyFields(true, policyAccess),
     {
       name: 'revokedAt',
       type: 'date',
@@ -147,8 +152,8 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
     access: {
       create: () => false,
       delete: () => false,
-      read: allow('auditor', 'support', { role: 'member', own: 'owner' }),
-      update: allow('support', { role: 'member', own: 'owner' }),
+      read: ownKeys,
+      update: ownKeys,
       ...existing?.access,
       ...collection?.access,
     },

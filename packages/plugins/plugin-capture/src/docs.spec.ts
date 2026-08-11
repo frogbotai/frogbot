@@ -13,7 +13,7 @@ describe('capture plugin docs', () => {
     ]);
 
     expect(docs).toContain('pnpm add @frogbotai/plugin-capture');
-    expect(docs).toContain("plugins: [rolesPlugin(), apiKeysPlugin(), capturePlugin()]");
+    expect(docs).toContain("plugins: [apiKeysPlugin(), capturePlugin()]");
     expect(docs).toContain('errors-only');
     expect(docs).toContain('retentionDays');
     expect(docs).toContain('storage');

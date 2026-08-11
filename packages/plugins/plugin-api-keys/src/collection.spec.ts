@@ -1,4 +1,3 @@
-import { rolesPlugin } from '@frogbotai/plugin-roles';
 import type { FrogbotConfig, FrogbotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -12,8 +11,8 @@ function makeConfig(): FrogbotConfig {
   };
 }
 
-async function getCollection() {
-  const config = await rolesPlugin({ roles: ['admin', 'auditor', 'member', 'support'] })(await apiKeysPlugin()(makeConfig()));
+async function getCollection(options: Parameters<typeof apiKeysPlugin>[0] = {}) {
+  const config = await apiKeysPlugin(options)(makeConfig());
   return config.collections.find((collection) => collection.slug === 'api-keys')!;
 }
 
@@ -45,9 +44,9 @@ describe('API keys collection', () => {
     });
     expect(await collection.access?.create?.({ req: {} as FrogbotRequest })).toBe(false);
     expect(await collection.access?.delete?.({ req: {} as FrogbotRequest })).toBe(false);
-    expect(await collection.access?.read?.({ req: { user: { id: 'audit-1', roles: ['auditor'] } } as FrogbotRequest })).toBe(true);
-    expect(await collection.access?.update?.({ req: { user: { id: 'support-1', roles: ['support'] } } as FrogbotRequest })).toBe(true);
-    for (const name of ['owner', 'prefix', 'tokenHash', 'lastUsedAt', 'revokedAt']) {
+    expect(await collection.access?.read?.({ req: {} as FrogbotRequest })).toBe(false);
+    expect(await collection.access?.update?.({ req: {} as FrogbotRequest })).toBe(false);
+    for (const name of ['owner', 'prefix', 'tokenHash', 'lastUsedAt', 'revokedAt', 'monthlyBudget', 'rpm', 'tpm', 'models', 'budgetBehavior']) {
       const field = collection.fields.find((item) => 'name' in item && item.name === name);
       expect('access' in field! && field.access?.update?.({} as never)).toBe(false);
     }
@@ -155,8 +154,8 @@ describe('API keys collection', () => {
     });
   });
 
-  it('allows support to revoke a key owned by another user', async () => {
-    const collection = await getCollection();
+  it('revokes another user\'s key only when canRevokeAnyKey allows it', async () => {
+    const collection = await getCollection({ canRevokeAnyKey: (req) => (req.user as { roles?: string[] } | null)?.roles?.includes('support') === true });
     const req = {
       user: { id: 'support-1', roles: ['support'] },
       routeParams: { id: 'key-1' },

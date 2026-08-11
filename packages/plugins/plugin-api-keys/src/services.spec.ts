@@ -59,11 +59,11 @@ describe('API key services', () => {
     expect(update).toHaveBeenCalledOnce();
   });
 
-  it('allows support to revoke without owner scoping', async () => {
+  it('drops owner scoping only when anyOwner is set', async () => {
     const find = vi.fn().mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] });
     const req = request({ user: { id: 'support-1', roles: ['support'] }, frogbot: { find, update: vi.fn() } });
 
-    await revokeApiKey({ req, collectionSlug: 'credentials', id: 'key-1' });
+    await revokeApiKey({ req, collectionSlug: 'credentials', id: 'key-1', anyOwner: true });
 
     expect(find).toHaveBeenCalledWith(expect.objectContaining({ where: { id: { equals: 'key-1' } } }));
   });

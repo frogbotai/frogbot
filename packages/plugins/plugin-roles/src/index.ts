@@ -168,7 +168,6 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
       return {
         ...config,
         _roles: {
-          ...(config._roles?.required ? { required: true } : {}),
           present: true,
           configured: false,
           roles: [],

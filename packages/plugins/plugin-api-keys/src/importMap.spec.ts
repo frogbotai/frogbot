@@ -8,7 +8,6 @@ import { buildConfig } from '../../../frogbot/src/config/build.js';
 import { generateImportMap } from '../../../frogbot/src/importMap/index.js';
 import type { FrogbotConfig } from '../../../frogbot/src/types/config.js';
 import { apiKeysPlugin } from './index.js';
-import { rolesPlugin } from '../../plugin-roles/src/index.js';
 
 vi.mock('@payloadcms/ui', () => ({
   Button: () => null,
@@ -33,7 +32,7 @@ describe('api keys import map', () => {
       secret: 'test-secret',
       db: { defaultIDType: 'number' } as never,
       collections: [{ slug: 'users', auth: true, fields: [] }],
-      plugins: [rolesPlugin(), apiKeysPlugin()],
+      plugins: [apiKeysPlugin()],
     } as FrogbotConfig);
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
