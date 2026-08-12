@@ -96,14 +96,11 @@ describe("resolveUsageCollection", () => {
     expect(access?.delete?.({ req: {} } as never)).toBe(false);
   });
 
-  it("applies role access without changing write denials", async () => {
-    const read = () => ({ user: { equals: "user-1" } });
-    const result = resolveUsageCollection(makeConfig({ _roles: { usageLogs: { read } } }));
+  it("allows authenticated reads and denies anonymous requests by default", async () => {
+    const result = resolveUsageCollection(makeConfig());
     const access = result.collections.at(-1)?.access;
-    expect(access?.read).toBe(read);
-    expect(await access?.create?.({ req: {} } as never)).toBe(false);
-    expect(await access?.update?.({ req: {} } as never)).toBe(false);
-    expect(await access?.delete?.({ req: {} } as never)).toBe(false);
+    expect(await access?.read?.({ req: { user: { id: "user-1" } } } as never)).toBe(true);
+    expect(await access?.read?.({ req: { user: null } } as never)).toBe(false);
   });
 
   it("rejects reserved fields on a marked collection", () => {

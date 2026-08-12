@@ -40,7 +40,7 @@ export default buildConfig({
 })
 ```
 
-Configured roles are stored as slugs in a `roles` select field on the `users` collection. No field is added when `roles` is omitted or empty. The first user receives `admin` when that role is listed.
+Configured roles are stored as slugs in a `roles` select field on the `users` collection. No field is added when `roles` is omitted or empty. Roles have no reserved or implicit behavior: `allow('finance')` grants only `finance`.
 
 `allow()` accepts role slugs, ownership clauses, and native access functions. Boolean-only clauses work in collection, field, and agent access slots. Ownership or `Where` clauses work only in collection access slots.
 
@@ -66,3 +66,5 @@ rolesPlugin({
 ```
 
 Role resolution is memoized per request. `rolesPlugin()` and `rolesPlugin({ roles: [] })` are no-ops.
+
+Use `defaultRole` to assign new users that omit `roles`. Role-field updates default to assigned `admin` users when `admin` is listed and deny everyone otherwise; replace this with `rolesFieldAccess` when needed. Bootstrap the first privileged user explicitly through Payload's Local API or a seed script.

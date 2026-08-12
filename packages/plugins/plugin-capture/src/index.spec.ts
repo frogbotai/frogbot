@@ -6,7 +6,6 @@ import { gunzip } from 'node:zlib';
 
 import type { FrogbotConfig } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
-import { rolesPlugin } from '@frogbotai/plugin-roles';
 
 import { capturePlugin, type CaptureBlob, type CaptureStorage, createCaptureFilesystemStorage } from './index.js';
 
@@ -30,7 +29,7 @@ describe('capturePlugin', () => {
     const input = config();
     input.collections.push({ slug: 'users', auth: true, fields: [] });
     input.collections.push({ slug: 'credentials', fields: [{ name: 'name', type: 'text' }] });
-    const result = await rolesPlugin({ roles: ['admin', 'member'] })(await capturePlugin({ apiKeysCollectionSlug: 'credentials' })(input));
+    const result = await capturePlugin({ apiKeysCollectionSlug: 'credentials' })(input);
     const fields = result.collections.find(({ slug }) => slug === 'credentials')!.fields;
 
     expect(fields).toContainEqual(expect.objectContaining({
@@ -50,7 +49,20 @@ describe('capturePlugin', () => {
       const field = fields.find((item) => 'name' in item && item.name === name);
       const update = field && 'access' in field ? field.access?.update : undefined;
       expect(await update?.({ req: { user: { id: 'member-1', roles: ['member'] } } } as never)).toBe(false);
-      expect(await update?.({ req: { user: { id: 'admin-1', roles: ['admin'] } } } as never)).toBe(true);
+      expect(await update?.({ req: { user: { id: 'admin-1', roles: ['admin'] } } } as never)).toBe(false);
+    }
+  });
+
+  it('passes captureFieldAccess to both capture fields', async () => {
+    const update = vi.fn(() => true as const);
+    const input = config();
+    input.collections.push({ slug: 'credentials', fields: [] });
+    const result = await capturePlugin({ apiKeysCollectionSlug: 'credentials', captureFieldAccess: update })(input);
+    const fields = result.collections.find(({ slug }) => slug === 'credentials')!.fields;
+
+    for (const name of ['capture', 'captureSampleRate']) {
+      const field = fields.find((item) => 'name' in item && item.name === name);
+      expect(field && 'access' in field ? field.access?.update : undefined).toBe(update);
     }
   });
 

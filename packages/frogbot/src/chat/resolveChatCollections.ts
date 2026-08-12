@@ -7,7 +7,7 @@
 //   - persistence is on whenever agents are configured or a collection
 //     is marked; there is no opt-out
 
-import { mergeCollection } from '../collections/mergeCollection.js';
+import { resolveMarkedCollection } from '../collections/resolveMarkedCollection.js';
 import type { SanitizedChatConfig } from '../types/chat.js';
 import type { CollectionConfig } from '../types/collection.js';
 import type { FrogbotConfig } from '../types/config.js';
@@ -36,42 +36,6 @@ function findChatCollection(collections: CollectionConfig[], marker: 'thread' | 
   return marked[0];
 }
 
-type ResolveChatCollectionProps = {
-  collections: CollectionConfig[];
-  existing: CollectionConfig | undefined;
-  marker: 'thread' | 'message';
-  defaultCollection: CollectionConfig;
-  reservedFields: string[];
-};
-
-function resolveChatCollection({
-  collections,
-  existing,
-  marker,
-  defaultCollection,
-  reservedFields,
-}: ResolveChatCollectionProps): CollectionConfig[] {
-  if (existing) {
-    const out = [...collections];
-    out[collections.indexOf(existing)] = mergeCollection({
-      user: existing,
-      base: defaultCollection,
-      reservedFields,
-      feature: 'chat persistence',
-    });
-    return out;
-  }
-
-  const collision = collections.find((c) => c.slug === defaultCollection.slug);
-  if (collision) {
-    throw new Error(
-      `[frogbot] Collection slug '${defaultCollection.slug}' conflicts with the default chat ${marker} collection. ` +
-        `Add \`${marker}: true\` to adopt it, or rename it.`,
-    );
-  }
-  return [...collections, defaultCollection];
-}
-
 export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
   if (config.collections.some((c) => c.slug === CHAT_ASSETS_SLUG)) {
     throw new Error(`[frogbot] Collection slug '${CHAT_ASSETS_SLUG}' is reserved for FrogBot chat assets.`);
@@ -97,18 +61,22 @@ export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
   }
 
   const userSlug = resolveUserSlug(config);
-  const withThreads = resolveChatCollection({
+  const withThreads = resolveMarkedCollection({
+    collectionLabel: 'chat thread',
     collections: config.collections,
     existing: threadCollection,
     marker: 'thread',
-    defaultCollection: defaultThreadsCollection({ slug: threadsSlug, userSlug, access: config._roles?.threads }),
+    feature: 'chat persistence',
+    defaultCollection: defaultThreadsCollection({ slug: threadsSlug, userSlug }),
     reservedFields: ['user'],
   });
-  const collections = resolveChatCollection({
+  const collections = resolveMarkedCollection({
+    collectionLabel: 'chat message',
     collections: withThreads,
     existing: messageCollection,
     marker: 'message',
-    defaultCollection: defaultMessagesCollection({ slug: messagesSlug, threadsSlug, access: config._roles?.messages }),
+    feature: 'chat persistence',
+    defaultCollection: defaultMessagesCollection({ slug: messagesSlug, threadsSlug }),
     reservedFields: ['id', 'parts', 'thread'],
   });
 

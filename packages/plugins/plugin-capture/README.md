@@ -18,6 +18,8 @@ export default buildConfig({
 
 Capture defaults to `off`. When the API keys plugin runs before capture, the plugin adds `capture` and `captureSampleRate` fields to its collection. Supported policies are `off`, `errors-only`, `sample`, and `full`.
 
+Updates to both capture fields are denied by default. Pass `captureFieldAccess` to provide a field access function.
+
 The default filesystem storage writes `{requestId}.json.gz` under `.frogbot/captures`. Configure a custom object store with `storage.put`:
 
 ```ts

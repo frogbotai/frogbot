@@ -8,7 +8,6 @@
 // type name or import path.
 
 import type { RootAdminConfig } from './admin.js';
-import type { CollectionAccess } from './access.js';
 import type { AgentConfig } from './agent.js';
 import type { AIConfig } from './ai.js';
 import type { CollectionConfig } from './collection.js';
@@ -35,9 +34,6 @@ export type RolesPrewiring = {
   present?: true;
   configured?: boolean;
   roles?: string[];
-  threads?: CollectionAccess;
-  messages?: CollectionAccess;
-  usageLogs?: CollectionAccess;
 };
 
 /** Root config keys FrogBot overrides or forbids. Excluded from the

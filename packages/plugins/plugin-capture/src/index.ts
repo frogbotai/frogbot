@@ -9,9 +9,9 @@ import type {
   AIBeforeOperationHookArgs,
   AIBeforeUpstreamHookArgs,
   FrogbotConfig,
+  FieldAccess,
   Plugin,
 } from 'frogbot';
-import { allow } from '@frogbotai/plugin-roles';
 
 const compress = promisify(gzip);
 const languageOperations = new Set(['chat.completions', 'messages', 'responses']);
@@ -48,6 +48,7 @@ export type CapturePluginOptions = {
   apiKeysCollectionSlug?: string | false;
   retentionDays?: number | null;
   retentionCron?: string;
+  captureFieldAccess?: FieldAccess;
 };
 
 type CaptureSnapshot = Pick<CaptureBlob, 'messages' | 'params' | 'system' | 'tools'>;
@@ -138,13 +139,14 @@ function addPolicyFields(config: FrogbotConfig, options: CapturePluginOptions): 
   }
   const names = new Set(target.fields.flatMap((field) => 'name' in field && field.name ? [field.name] : []));
   const fields = [...target.fields];
+  const captureFieldAccess = options.captureFieldAccess ?? (() => false);
   if (!names.has('capture')) fields.push({
     name: 'capture',
     type: 'select',
     defaultValue: 'off',
     required: true,
     label: 'Request capture',
-    access: { update: allow('admin') },
+    access: { update: captureFieldAccess },
     admin: { description: 'Records AI requests and responses made with this key.' },
     options: [
       { label: 'Off', value: 'off' },
@@ -159,7 +161,7 @@ function addPolicyFields(config: FrogbotConfig, options: CapturePluginOptions): 
     defaultValue: options.sampleRate ?? 0.1,
     min: 0,
     max: 1,
-    access: { update: allow('admin') },
+    access: { update: captureFieldAccess },
     admin: { condition: (_, siblingData) => siblingData.capture === 'sample' },
   });
   return config.collections.map((collection) => collection === target ? { ...collection, fields } : collection);

@@ -1,4 +1,4 @@
-import type { AccessArgs, FrogbotRequest, RoleSlug } from 'frogbot';
+import type { AccessArgs, FieldAccess, FrogbotRequest, RoleSlug } from 'frogbot';
 import type { Where } from 'payload';
 
 export type { RoleSlug } from 'frogbot';
@@ -8,13 +8,19 @@ export type RoleEntry = string | {
   label?: string;
 };
 
-export const RESERVED_ROLE_SLUGS = ['admin', 'member', 'finance', 'auditor', 'support'] as const;
-
 export type RoleResolver = (req: FrogbotRequest) => RoleSlug[];
+
+export type RolesFieldAccess = {
+  create?: FieldAccess;
+  read?: FieldAccess;
+  update?: FieldAccess;
+};
 
 export type RolesPluginOptions = {
   roles?: readonly RoleEntry[];
+  defaultRole?: string;
   resolveRoles?: RoleResolver;
+  rolesFieldAccess?: RolesFieldAccess;
 };
 
 export type RoleClause = RoleSlug;
@@ -41,11 +47,6 @@ export type NormalizedRole = {
 
 export function normalizeRoles(entries: readonly RoleEntry[]): NormalizedRole[] {
   const roles = entries.map((entry) => typeof entry === 'string' ? { slug: entry } : entry);
-  const invalidReserved = roles.find(({ slug }) => {
-    const normalized = slug.toLowerCase();
-    return RESERVED_ROLE_SLUGS.includes(normalized as (typeof RESERVED_ROLE_SLUGS)[number]) && slug !== normalized;
-  });
-  if (invalidReserved) throw new Error(`[plugin-roles] Reserved role slug '${invalidReserved.slug}' must be lowercase.`);
   const duplicate = roles.find((role, index) => roles.findIndex(({ slug }) => slug === role.slug) !== index);
   if (duplicate) throw new Error(`[plugin-roles] Duplicate role slug '${duplicate.slug}'.`);
   return roles;

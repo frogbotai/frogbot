@@ -1,9 +1,9 @@
-import type { Access, CollectionConfig, Field, FrogbotConfig, Plugin } from 'frogbot';
+import type { CollectionConfig, Field, FrogbotConfig, Plugin } from 'frogbot';
 import { type Field as PayloadField, formatLabels } from 'payload';
 
-import { allow, bindCompiledAccess, compiledAccess, isCompiledAccess } from './allow.js';
+import { bindCompiledAccess, compiledAccess, isCompiledAccess } from './allow.js';
 import { attachRoleResolver, defaultRoleResolver, resolveRequestRoles } from './resolve.js';
-import type { RoleResolver, RoleSlug, RolesPluginOptions } from './types.js';
+import type { RoleResolver, RolesPluginOptions } from './types.js';
 import { normalizeRoles } from './types.js';
 
 export { allow } from './allow.js';
@@ -16,9 +16,9 @@ export type {
   RoleEntry,
   RoleResolver,
   RoleSlug,
+  RolesFieldAccess,
   RolesPluginOptions,
 } from './types.js';
-export { RESERVED_ROLE_SLUGS } from './types.js';
 
 function bindFields(fields: PayloadField[], roles: ReadonlySet<string>, resolver: RoleResolver, authCollection: boolean): PayloadField[] {
   return fields.map((field) => {
@@ -159,11 +159,15 @@ function validateCompiledAccess(config: FrogbotConfig, roleSlugs: readonly strin
 
 export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
   const roles = normalizeRoles(options.roles ?? []);
+  if (options.defaultRole !== undefined) {
+    if (!roles.some(({ slug }) => slug === options.defaultRole)) {
+      throw new Error(`[plugin-roles] defaultRole '${options.defaultRole}' is not listed in rolesPlugin().`);
+    }
+  }
 
   return (config) => {
     const resolver = options.resolveRoles ?? defaultRoleResolver;
     const roleSlugs = roles.map(({ slug }) => slug);
-    const listed = new Set(roleSlugs);
     if (roles.length === 0) {
       return {
         ...config,
@@ -174,39 +178,11 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
         },
       };
     }
-    const bind = (operation: string, access: ReturnType<typeof allow>) => bindCompiledAccess(access, {
-      operation,
-      polymorphicOwnFields: new Set(),
-      resolver,
-      roles: listed,
-    });
-    const threadOwner = allow('admin', { role: 'member', own: 'user' });
-    const messageOwner = async ({ req }: Parameters<Access>[0]) => {
-      if (!req.user) return false;
-      const assigned = resolveRequestRoles(req, resolver);
-      if (listed.has('admin') && assigned.includes('admin')) return true;
-      return listed.has('member') && assigned.includes('member') ? { 'thread.user': { equals: req.user.id } } : false;
-    };
     const prewiring: FrogbotConfig['_roles'] = {
       ...config._roles,
       present: true,
       configured: true,
       roles: roleSlugs,
-      threads: {
-        create: bind('create', allow('admin', 'member')),
-        read: bind('read', threadOwner),
-        update: bind('update', threadOwner),
-        delete: bind('delete', threadOwner),
-      },
-      messages: {
-        create: bind('create', allow('admin', 'member')),
-        read: messageOwner,
-        update: messageOwner,
-        delete: messageOwner,
-      },
-      usageLogs: {
-        read: bind('read', allow('admin', 'finance' as RoleSlug, 'auditor' as RoleSlug, 'support' as RoleSlug, { role: 'member', own: 'user' })),
-      },
     };
     const authSlug = 'users';
     const fieldName = 'roles';
@@ -221,27 +197,28 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
       throw new Error(`[plugin-roles] Auth field '${fieldName}' is already in use.`);
     }
 
-    const hasAdmin = roles.some(({ slug }) => slug === 'admin');
+    const defaultRolesFieldAccess = roleSlugs.includes('admin')
+      ? { update: ({ req }: Parameters<NonNullable<NonNullable<Field['access']>['update']>>[0]) => resolveRequestRoles(req, resolver).includes('admin') }
+      : { update: () => false };
     const field: Field = {
       name: fieldName,
       type: 'select',
       hasMany: true,
       options: roles.map(({ slug, label }) => ({ label: label ?? formatLabels(slug).singular, value: slug })),
       admin: { position: 'sidebar' },
-      access: { update: allow('admin') },
+      access: options.rolesFieldAccess ?? defaultRolesFieldAccess,
     };
-    const assignFirstUser: NonNullable<NonNullable<CollectionConfig['hooks']>['beforeChange']>[number] = async ({ data, operation, req }) => {
-      if (!hasAdmin || operation !== 'create' || data[fieldName] !== undefined) return data;
-      const users = await req.frogbot.count({ collection: authSlug as never, overrideAccess: true, req });
-      if (users.totalDocs !== 0) return data;
-      return { ...data, [fieldName]: ['admin'] };
+    const assignDefaultRole: NonNullable<NonNullable<CollectionConfig['hooks']>['beforeChange']>[number] = ({ data, operation }) => {
+      if (operation !== 'create' || data[fieldName] !== undefined) return data;
+      return { ...data, [fieldName]: [options.defaultRole] };
     };
+    const userHooks = options.defaultRole === undefined ? [] : [assignDefaultRole];
     const collections = config.collections.map((collection) => collection.slug !== authSlug ? collection : {
       ...collection,
       fields: [...collection.fields, field],
       hooks: {
         ...collection.hooks,
-        beforeChange: [...(collection.hooks?.beforeChange ?? []), assignFirstUser],
+        beforeChange: [...(collection.hooks?.beforeChange ?? []), ...userHooks],
       },
     });
 
@@ -249,20 +226,6 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
     const onInit: FrogbotConfig['onInit'] = async (frogbot) => {
       await previousOnInit?.(frogbot);
       attachRoleResolver(frogbot, resolver);
-      const stale = new Set<string>();
-      let page = 1;
-      let hasNextPage = true;
-      while (hasNextPage) {
-        const result = await frogbot.find({ collection: authSlug as never, limit: 100, overrideAccess: true, page });
-        for (const doc of result.docs) {
-          const assigned = (doc as { [key: string]: unknown })[fieldName];
-          if (!Array.isArray(assigned)) continue;
-          for (const role of assigned) if (typeof role === 'string' && !roleSlugs.includes(role)) stale.add(role);
-        }
-        hasNextPage = result.hasNextPage;
-        page = result.nextPage ?? page + 1;
-      }
-      if (stale.size > 0) frogbot.logger.warn(`[plugin-roles] Stored assignments reference unlisted roles: ${[...stale].join(', ')}.`);
     };
     const result = {
       ...config,

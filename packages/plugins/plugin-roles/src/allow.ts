@@ -42,8 +42,6 @@ function compile<TArgs extends RoleAccessArgs, TResult extends boolean | Where>(
     if (!req.user) return false;
     const configured = binding?.roles ?? new Set<string>();
     const assigned: readonly string[] = resolveRequestRoles(req, binding?.resolver);
-    if (configured.has('admin') && assigned.includes('admin')) return true;
-
     const wheres: Where[] = [];
     for (const clause of clauses) {
       if (typeof clause === 'string') {

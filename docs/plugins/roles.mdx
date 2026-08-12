@@ -1,11 +1,11 @@
 ---
 title: "Roles"
 sidebarTitle: "Roles"
-description: "Define roles in code and apply role-aware access across FrogBot."
+description: "Define roles in code and compose role-aware access in FrogBot."
 keywords: ["roles", "RBAC", "authorization", "permissions", "plugins"]
 ---
 
-The roles plugin keeps role definitions in code and role assignments on users.
+The roles plugin stores code-defined role assignments on users and provides access helpers. It does not add access rules to your collections.
 
 ## Install
 
@@ -14,8 +14,6 @@ pnpm add @frogbotai/plugin-roles
 ```
 
 ## Define roles
-
-List every role your application uses:
 
 ```ts
 import { rolesPlugin } from '@frogbotai/plugin-roles'
@@ -35,8 +33,6 @@ export default buildConfig({
         'admin',
         'member',
         'finance',
-        'auditor',
-        'support',
         { slug: 'compliance', label: 'Compliance Officer' },
       ],
     }),
@@ -44,48 +40,26 @@ export default buildConfig({
 })
 ```
 
-`rolesPlugin()` and `rolesPlugin({ roles: [] })` are valid and inert. When roles are listed, the plugin adds a `roles` select field with `hasMany: true` to the `users` auth collection. Assignments are stored as slugs. There is no separate role-definition collection.
+When roles are listed, the plugin adds a `roles` multi-select field to the `users` auth collection. Assignments are stored as slugs. There is no role-definition collection.
 
-Use an object to customize a label:
+Roles are literal strings. No slug is reserved, and no role receives implicit access. `admin` is a common convention, but it is not a superuser unless your access functions grant it.
 
-```ts
-rolesPlugin({
-  roles: [
-    'admin',
-    'member',
-    { slug: 'compliance', label: 'Compliance Officer' },
-  ],
-})
-```
-
-Without `label`, FrogBot uses Payload's `formatLabels` behavior, so `prompt-engineer` displays as `Prompt Engineer`. If `admin` is listed, the first user is assigned it unless that create operation supplies roles explicitly.
-
-### Reserved archetypes
-
-Reserved behavior activates only when its slug is listed.
-
-| Slug | Intended user | Built-in behavior |
-| --- | --- | --- |
-| `admin` | Platform owner | Passes every `allow()` call and manages role assignments. |
-| `member` | Everyday user | Runs agents and manages owned threads, keys, and usage. |
-| `finance` | Accounting | Reads all usage and usage reports. |
-| `auditor` | Compliance | Reads all usage and usage reports, but not thread or message content. |
-| `support` | Operations | Reads all usage and can read, revoke, or rotate keys when the API keys plugin is configured. |
+`rolesPlugin()` and `rolesPlugin({ roles: [] })` are inert and add no field.
 
 ## Apply access
 
-`allow(...clauses)` compiles role, ownership, and function clauses into one native access function.
+`allow(...clauses)` composes role, ownership, and function clauses into a Payload access function:
 
 ```ts
-import { allow, hasRole } from '@frogbotai/plugin-roles'
+import { allow, hasRole, ownRows } from '@frogbotai/plugin-roles'
 
 const projects = {
   slug: 'projects',
   access: {
     create: allow({ role: 'member', own: 'owner' }),
-    read: allow('finance', { role: 'member', own: 'owner' }),
-    update: allow('admin'),
-    delete: ({ req }) => hasRole(req, 'compliance') && !hasRole(req, 'admin'),
+    read: allow('admin', 'finance', { role: 'member', own: 'owner' }),
+    update: allow('admin', { role: 'member', own: 'owner' }),
+    delete: allow('admin'),
   },
   fields: [
     {
@@ -98,41 +72,32 @@ const projects = {
       name: 'reviewNotes',
       type: 'text',
       access: {
-        read: allow('compliance'),
+        read: allow('admin', 'compliance'),
         update: allow('compliance'),
       },
     },
   ],
 }
 
-const assistant = {
-  slug: 'assistant',
-  access: allow('member'),
+const invoices = {
+  slug: 'invoices',
+  access: {
+    read: ({ req }) => hasRole(req, 'admin', 'finance') || ownRows(req, 'user'),
+  },
+  fields: [],
 }
 ```
 
-Role clauses and boolean-returning functions fit collection, field, and agent access. An ownership clause or a function that can return a Payload `Where` fits collection access only; TypeScript rejects it in boolean-only field and agent slots.
+Every role must be written where it should apply. For example, `allow('finance')` denies a user assigned only `admin`; use `allow('admin', 'finance')` to grant both.
 
-`own` always names the target collection field. On create, FrogBot stamps that field with the current user's ID. On read, update, and delete, it produces an ownership query. An unauthenticated request is denied, and a listed `admin` role passes before clauses are evaluated.
+An ownership clause names a relationship field. On create, FrogBot stamps that field when the matching role grants access. On read, update, and delete, it returns an ownership query. Function clauses returning `false` abstain rather than vetoing another clause.
 
-### Compiled and manual access
+Ownership and `Where` clauses are for collection access. Boolean role and function clauses also work in field and agent access.
 
-**`allow(...)` is additive with admin-implicit; a plain function in the slot is manual and you own everything.**
-
-A function clause returning `false` abstains rather than vetoing another clause. Use a plain access function when you need veto logic or do not want the `admin` short-circuit.
-
-## Request predicates
-
-The five synchronous helpers work anywhere a `FrogbotRequest` is available:
+## Request helpers
 
 ```ts
-import {
-  hasRole,
-  isLoggedIn,
-  ownRows,
-  rolesOf,
-  viaApiKey,
-} from '@frogbotai/plugin-roles'
+import { hasRole, isLoggedIn, ownRows, rolesOf, viaApiKey } from '@frogbotai/plugin-roles'
 
 isLoggedIn(req)
 hasRole(req, 'finance', 'auditor')
@@ -144,21 +109,45 @@ viaApiKey(req)
 | Helper | Result |
 | --- | --- |
 | `isLoggedIn(req)` | Whether `req.user` exists. |
-| `hasRole(req, ...roles)` | Whether the user has any supplied role. This is literal and does not imply `admin`. |
-| `rolesOf(req)` | The effective role slugs resolved for this request. |
-| `ownRows(req, field)` | A Payload ownership query, or `false` without a user. |
+| `hasRole(req, ...roles)` | Whether the user has any supplied literal role. |
+| `rolesOf(req)` | Effective role slugs for the request. |
+| `ownRows(req, field)` | An ownership query, or `false` without a user. |
 | `viaApiKey(req)` | Whether authentication used the API-key strategy. |
 
-Compose predicates with ordinary JavaScript in manual access functions:
+## Role field access
+
+When `admin` is listed, the injected `roles` field allows updates from users assigned `admin`. When `admin` is not listed, updates are denied by default. This default affects the field only; it does not grant `admin` access anywhere else.
+
+Use `rolesFieldAccess` to replace the default:
 
 ```ts
-read: ({ req }) =>
-  hasRole(req, 'admin', 'finance') || ownRows(req, 'user')
-
-update: ({ req }) => hasRole(req, 'admin') && !viaApiKey(req)
+rolesPlugin({
+  roles: ['owner', 'member'],
+  rolesFieldAccess: {
+    read: ({ req }) => req.user?.id === req.data?.id,
+    update: ({ req }) => hasRole(req, 'owner'),
+  },
+})
 ```
 
-For custom role sources, provide a synchronous resolver. Its result is cached per request:
+The object is passed directly to the injected Payload field.
+
+## Default role
+
+By default, new users receive no role. Set `defaultRole` to assign users created without an explicit `roles` value:
+
+```ts
+rolesPlugin({
+  roles: ['admin', 'member'],
+  defaultRole: 'member',
+})
+```
+
+The default must be listed in `roles`. Explicit assignments, including `roles: []`, are preserved. Existing users are unchanged.
+
+## Custom role sources
+
+By default, helpers read `req.user.roles`. Use `resolveRoles` when assignments come from another synchronous source, such as JWT claims or tenant membership:
 
 ```ts
 rolesPlugin({
@@ -167,25 +156,27 @@ rolesPlugin({
 })
 ```
 
-## Explicit omissions
+The resolver must return listed slugs. Its result is cached once per request and shared by predicates and `allow()` clauses.
 
-| Omitted | Reason |
-| --- | --- |
-| default roles / required roles | nothing exists the config doesn't show; empty is valid and inert |
-| `extends` / role inheritance | multi-role assignment already composes, per-person and UI-visible |
-| singular/plural labels | a role renders in exactly one place; one optional `label` |
-| `roleAccess({ op })` object wrapper | per-op `allow()` slots into Payload's native shape; agents need a single function |
-| `anyOf` / `allOf` / `not` combinators | JS `\|\|` / `&&` / `!` already have Payload's exact semantics |
-| `isAdmin(req)` | `hasRole(req, 'admin')` provides one spelling per fact |
-| deny rules / precedence | additive-only is a core invariant |
-| AND grammar between clauses | the ownership clause is the conjunction; clause lists are additive |
-| async predicates / per-check resolution | resolution is synchronous and cached per request |
-| roles editable at runtime | definitions are code; only assignment is data |
-| team/group scoping | deferred until a team concept exists |
-| default `own` field name | must always be explicit |
+## Bootstrap access
 
-Per-collection `own` field-name unions are not included in v1.
+The plugin does not promote the first user. Bootstrap privileged assignments explicitly with Payload's Local API from a seed or migration, which bypasses access control by default:
 
-## API keys
+```ts
+await frogbot.update({
+  collection: 'users',
+  id: ownerUserId,
+  data: { roles: ['admin'] },
+})
+```
 
-`apiKeysPlugin()` requires `rolesPlugin()` so key ownership and reserved archetype access are always enforced. See [API keys](/plugins/api-keys) for setup and key operations.
+You can also assign roles when seeding users:
+
+```ts
+await frogbot.create({
+  collection: 'users',
+  data: { email, password, roles: ['admin'] },
+})
+```
+
+For application-managed onboarding, add a userland collection hook that derives the assignment from your own invite, tenant, or deployment rules. Keep that bootstrap condition in application code and remove or disable one-time logic after it succeeds.

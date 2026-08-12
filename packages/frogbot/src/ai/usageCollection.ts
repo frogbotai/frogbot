@@ -1,5 +1,5 @@
 import { resolveUserSlug } from "../chat/resolveUserSlug.js";
-import { mergeCollection } from "../collections/mergeCollection.js";
+import { resolveMarkedCollection } from "../collections/resolveMarkedCollection.js";
 import type { CollectionAccess } from "../types/access.js";
 import type { CollectionConfig } from "../types/collection.js";
 import type { FrogbotConfig } from "../types/config.js";
@@ -94,24 +94,17 @@ export function resolveUsageCollection(
   const base = defaultUsageCollection({
     userSlug: resolveUserSlug(config),
     threadsSlug,
-    access: config._roles?.usageLogs,
   });
-  if (existing) {
-    const collections = [...config.collections];
-    collections[collections.indexOf(existing)] = mergeCollection({
-      user: existing,
-      base,
-      reservedFields: base.fields
-        .map((field) => ("name" in field ? field.name : undefined))
-        .filter((name): name is string => !!name),
-      feature: "AI usage tracking",
-    });
-    return { collections, slug };
-  }
-  if (config.collections.some((collection) => collection.slug === slug)) {
-    throw new Error(
-      `[frogbot] Collection slug '${slug}' conflicts with the default AI usage-log collection. Add \`usageLog: true\` to adopt it, or rename it.`,
-    );
-  }
-  return { collections: [...config.collections, base], slug };
+  const collections = resolveMarkedCollection({
+    collectionLabel: "AI usage-log",
+    collections: config.collections,
+    defaultCollection: base,
+    existing,
+    feature: "AI usage tracking",
+    marker: "usageLog",
+    reservedFields: base.fields
+      .map((field) => ("name" in field ? field.name : undefined))
+      .filter((name): name is string => !!name),
+  });
+  return { collections, slug };
 }

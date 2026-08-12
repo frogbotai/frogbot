@@ -43,6 +43,14 @@ The API Keys collection gains a **Request capture** field with four policies:
 
 The global `defaultPolicy` applies when no per-key policy exists, including agent and in-process calls without an API key. Set `context.capture` to `false` on an operation to force capture off.
 
+Updates to `capture` and `captureSampleRate` are denied by default. Provide `captureFieldAccess` to enable them for selected users:
+
+```ts
+capturePlugin({
+  captureFieldAccess: ({ req }) => Boolean(req.user),
+})
+```
+
 ## Storage
 
 By default, captures are written to `.frogbot/captures/{requestId}.json.gz`. Set `directory` to change the development location or provide an object-store adapter:
@@ -88,5 +96,6 @@ Omit `retentionDays` or set it to `null` to retain captures indefinitely.
 | `storage` | Filesystem | Blob storage adapter with `put` and optional `cleanup`. |
 | `directory` | `.frogbot/captures` | Default filesystem storage directory. |
 | `apiKeysCollectionSlug` | `api-keys` | API-key collection slug, or `false` to disable integration. |
+| `captureFieldAccess` | deny | Field update access for `capture` and `captureSampleRate`. |
 | `retentionDays` | `null` | Positive finite retention in days. |
 | `retentionCron` | `0 3 * * *` | Cleanup task schedule. |
