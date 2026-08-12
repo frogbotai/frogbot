@@ -25,7 +25,6 @@ export type UsageReport = {
 
 export type UsageReportsPluginOptions = {
   pageSize?: number;
-  rawExport?: boolean;
   access?: Access;
 };
 
@@ -179,7 +178,7 @@ export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plu
       : [...config.collections, { ...usage, admin: { groupBy: true } }];
     const groups = new Set<UsageReportGroup>(['day', 'model', 'user']);
     if (usage.fields.some((field) => 'name' in field && field.name === 'apiKey')) groups.add('apiKey');
-    const next = {
+    return {
       ...config,
       collections,
       endpoints: [...(config.endpoints ?? []), buildReportEndpoint({ slug: usage.slug, pageSize, groups, access: options.access ?? loggedIn })],
@@ -201,10 +200,5 @@ export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plu
         },
       },
     };
-    if (options.rawExport === false) return next;
-    const { importExportPlugin } = await import('@frogbotai/plugin-import-export');
-    return await importExportPlugin({
-      collections: [{ slug: usage.slug, import: false, export: { format: 'csv' } }],
-    })(next as never) as unknown as typeof next;
   };
 }

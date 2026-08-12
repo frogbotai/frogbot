@@ -36,10 +36,20 @@ Reports use paginated local reads and in-memory reduction. They do not access Dr
 The plugin extends the usage-log collection with:
 
 - Grouped list views
-- Filtered, export-only CSV from the usage-log list view, when `@frogbotai/plugin-import-export` is installed
 - A Usage Analytics view with date-range filtering and models/users breakdown tables
 
-CSV export contains filtered raw usage rows. The Usage Analytics page contains aggregated totals.
+The Usage Analytics page contains aggregated totals. To also export filtered raw usage rows as CSV, add [`@frogbotai/plugin-import-export`](/plugins/import-export) yourself and point it at the usage collection:
+
+```ts
+import { importExportPlugin } from '@frogbotai/plugin-import-export'
+
+plugins: [
+  usageReportsPlugin(),
+  importExportPlugin({
+    collections: [{ slug: 'usage-logs', import: false, export: { format: 'csv' } }],
+  }),
+]
+```
 
 ## Report API
 
@@ -72,7 +82,6 @@ usageReportsPlugin({ access: allow('admin', 'finance', 'auditor') })
 | Option | Default | Description |
 | --- | --- | --- |
 | `pageSize` | `5000` | Number of usage rows read per page during report generation. |
-| `rawExport` | `true` | Enable export-only CSV support on the usage collection. Requires `@frogbotai/plugin-import-export`. |
 | `access` | logged in | Access function gating the report endpoint and optionally filtering its rows. |
 
 Large date ranges scan every matching usage row. Add rollups only after deployment profiling demonstrates that this portable path is insufficient.

@@ -116,9 +116,7 @@ viaApiKey(req)
 
 ## Role field access
 
-When `admin` is listed, the injected `roles` field allows updates from users assigned `admin`. When `admin` is not listed, updates are denied by default. This default affects the field only; it does not grant `admin` access anywhere else.
-
-Use `rolesFieldAccess` to replace the default:
+The injected `roles` field uses Payload's default field access. Use `rolesFieldAccess` when role assignments need different access rules:
 
 ```ts
 rolesPlugin({
@@ -134,7 +132,7 @@ The object is passed directly to the injected Payload field.
 
 ## Default role
 
-By default, new users receive no role. Set `defaultRole` to assign users created without an explicit `roles` value:
+By default, new users receive no role. Set `defaultRole` to configure the injected field's Payload `defaultValue`:
 
 ```ts
 rolesPlugin({

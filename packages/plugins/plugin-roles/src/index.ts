@@ -197,29 +197,18 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
       throw new Error(`[plugin-roles] Auth field '${fieldName}' is already in use.`);
     }
 
-    const defaultRolesFieldAccess = roleSlugs.includes('admin')
-      ? { update: ({ req }: Parameters<NonNullable<NonNullable<Field['access']>['update']>>[0]) => resolveRequestRoles(req, resolver).includes('admin') }
-      : { update: () => false };
     const field: Field = {
       name: fieldName,
       type: 'select',
       hasMany: true,
       options: roles.map(({ slug, label }) => ({ label: label ?? formatLabels(slug).singular, value: slug })),
       admin: { position: 'sidebar' },
-      access: options.rolesFieldAccess ?? defaultRolesFieldAccess,
+      ...(options.defaultRole === undefined ? {} : { defaultValue: [options.defaultRole] }),
+      ...(options.rolesFieldAccess === undefined ? {} : { access: options.rolesFieldAccess }),
     };
-    const assignDefaultRole: NonNullable<NonNullable<CollectionConfig['hooks']>['beforeChange']>[number] = ({ data, operation }) => {
-      if (operation !== 'create' || data[fieldName] !== undefined) return data;
-      return { ...data, [fieldName]: [options.defaultRole] };
-    };
-    const userHooks = options.defaultRole === undefined ? [] : [assignDefaultRole];
     const collections = config.collections.map((collection) => collection.slug !== authSlug ? collection : {
       ...collection,
       fields: [...collection.fields, field],
-      hooks: {
-        ...collection.hooks,
-        beforeChange: [...(collection.hooks?.beforeChange ?? []), ...userHooks],
-      },
     });
 
     const previousOnInit = config.onInit;

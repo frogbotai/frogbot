@@ -1,3 +1,4 @@
+import { importExportPlugin } from '@frogbotai/plugin-import-export';
 import type { FrogbotConfig, FrogbotRequest, Plugin } from 'frogbot';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
@@ -43,19 +44,30 @@ describe('usageReportsPlugin', () => {
     expectTypeOf(usageReportsPlugin).returns.toMatchTypeOf<Plugin>();
   });
 
-  it('enables grouping and export while preserving existing usage collection admin config', async () => {
+  it('enables grouping while preserving existing usage collection admin config', async () => {
     const { result } = await setup();
     const usage = result.collections.find((item) => item.slug === 'ai-usage');
     expect(usage?.admin).toMatchObject({ group: 'AI', groupBy: true });
-    expect(usage?.admin?.components?.listMenuItems).toEqual([
-      expect.objectContaining({ path: '@payloadcms/plugin-import-export/rsc#ExportListMenuItem' }),
-    ]);
-    expect(result.admin?.components?.providers).toContain('@payloadcms/plugin-import-export/rsc#ImportExportProvider');
     expect((result.admin?.components as Record<string, unknown>).views).toMatchObject({
       usageReports: { path: '/usage-analytics' },
     });
     expect((result.admin?.components as Record<string, unknown>).afterNavLinks).toContain('@frogbotai/plugin-usage-reports/client#UsageReportsNavLink');
+  });
+
+  it('composes with an explicitly configured import-export plugin exactly once', async () => {
+    const withReports = await usageReportsPlugin()(createConfig());
+    const result = await importExportPlugin({
+      collections: [{ slug: 'ai-usage', import: false, export: { format: 'csv' } }],
+    })(withReports as never) as unknown as typeof withReports;
+    const usage = result.collections.find((item) => item.slug === 'ai-usage');
+
     expect(result.collections.map((item) => item.slug)).toContain('exports');
+    expect(usage?.admin?.components?.listMenuItems).toEqual([
+      expect.objectContaining({ path: '@payloadcms/plugin-import-export/rsc#ExportListMenuItem' }),
+    ]);
+    expect((result.admin?.components as Record<string, unknown>).providers).toEqual([
+      '@payloadcms/plugin-import-export/rsc#ImportExportProvider',
+    ]);
   });
 
   it('rejects unauthenticated and invalid date ranges', async () => {
