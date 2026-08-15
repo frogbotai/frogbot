@@ -1141,18 +1141,6 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/plugins/plugin-capture:
-    devDependencies:
-      '@frogbotai/plugin-roles':
-        specifier: workspace:*
-        version: link:../plugin-roles
-      frogbot:
-        specifier: workspace:*
-        version: link:../../frogbot
-      typescript:
-        specifier: 5.6.2
-        version: 5.6.2
-
   packages/plugins/plugin-import-export:
     dependencies:
       '@payloadcms/plugin-import-export':

@@ -1,4 +1,5 @@
 import { dev } from './dev.js';
+import { exportTrainingData } from './exportTrainingData.js';
 import { generateImportMap } from './generateImportMap.js';
 import { generateTypes } from './generateTypes.js';
 import { loadEnv } from './loadEnv.js';
@@ -17,8 +18,12 @@ export async function bin() {
     await generateTypes();
   } else if (command === 'generate:importmap') {
     await generateImportMap();
+  } else if (command === 'export:training-data') {
+    await exportTrainingData(args);
   } else {
-    console.error('[frogbot] usage: frogbot <start|dev|generate:types|generate:importmap>');
+    console.error(
+      '[frogbot] usage: frogbot <start|dev|generate:types|generate:importmap|export:training-data>',
+    );
     process.exit(2);
   }
 }

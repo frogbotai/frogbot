@@ -25,6 +25,11 @@ export type { GatewayHandler } from './server/gateway.js';
 export { createGatewayHandler } from './server/gateway.js';
 export type { ConnectionsConfig, CredentialSource, SanitizedConnectionsConfig } from './types/connections.js';
 export type { FrogbotSanitizedConfig } from './types/sanitized.js';
+export type {
+  ReadTrainingDataOptions,
+  TrainingDataDocument,
+  TrainingDataRecord,
+} from './training/types.js';
 
 // ---------------------------------------------------------------------------
 // Owned types

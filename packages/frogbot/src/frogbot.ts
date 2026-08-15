@@ -30,6 +30,9 @@ import {
 } from './instanceRegistry.js';
 import type { FrogbotLocalAPI } from './localAPI.js';
 import { createFrogbotLocalAPI } from './localAPI.js';
+import { encodeTrainingData } from './training/encodeTrainingData.js';
+import { readTrainingData } from './training/readTrainingData.js';
+import type { ReadTrainingDataOptions } from './training/types.js';
 import type { AgentRegistry } from './types/agent.js';
 import type {
   EmbedManyOpts,
@@ -390,6 +393,12 @@ export class Frogbot {
 
   rerank = (opts: RerankOpts) =>
     rerankOperation(this.aiDeps(), opts);
+
+  // ── Training data ───────────────────────────────────────────────────────
+
+  exportTrainingData(options: ReadTrainingDataOptions = {}): ReadableStream<Uint8Array> {
+    return encodeTrainingData(readTrainingData(this, options));
+  }
 
   // ── Private ─────────────────────────────────────────────────────────────
 
