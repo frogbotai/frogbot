@@ -3,24 +3,17 @@ title: "API keys"
 description: "Generate credentials to access all models"
 ---
 
-Your API key unlocks access to all supported models through a single subscription. Choose between a fixed monthly rate or pay-as-you-go.
+Your API key unlocks all supported models. Usage is billed at exact provider cost from your USD balance.
 
 ---
 
 ## Create a key
 
 1. Go to [Account](https://app.frogbot.ai) in the dashboard
-2. Click **API Keys** in the sidebar
-3. Click **Create API**
-4. Select a pricing model: **Subscription** or **API**
-5. Click **Generate**
-
-<Frame>
-  <img
-    src="/images/api_key_pricing_model_select.png"
-    alt="API key pricing model selection"
-  />
-</Frame>
+2. Click **Settings Icon** in sidebar
+3. Click **API Keys** in the settings modal
+4. Click **Create API**
+5. Copy and securely store your API key
 
 ---
 
@@ -47,9 +40,8 @@ curl https://app.frogbot.ai/api/v1/chat/completions \
 
 ---
 
-## Pricing models
+## Understand pricing
 
-| Model        | Description                            |
-| ------------ | -------------------------------------- |
-| Subscription | Fixed monthly rate with included usage |
-| API          | Pay per token based on model pricing   |
+Subscription payments and added funds become your USD balance. API usage is deducted from that balance at exact provider cost.
+
+See [Balance & Usage Pricing](/balance-usage-pricing) for details.

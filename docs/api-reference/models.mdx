@@ -12,62 +12,64 @@ List available model IDs across all inference endpoints.
 
 Use these model IDs with [chat completions](/api-reference/chat-completions) and [messages](/api-reference/messages).
 
-| Model ID | Provider | Context | Token multiplier |
-|---|---|---|---|
-| `claude-fable-5` | Anthropic | 1M | `4` |
-| `claude-opus-5` | Anthropic | 1M | `2` |
-| `claude-sonnet-5` | Anthropic | 1M | `1.2` |
-| `claude-opus-4-8` | Anthropic | 1M | `2` |
-| `claude-opus-4-7` | Anthropic | 200k | `2` |
-| `claude-opus-4-6` | Anthropic | 1M | `2` |
-| `claude-opus-4-5` | Anthropic | 200k | `2` |
-| `claude-opus-4-1` | Anthropic | 200k | `6` |
-| `claude-sonnet-4-6` | Anthropic | 1M | `1.2` |
-| `claude-sonnet-4-5` | Anthropic | 200k | `1.2` |
-| `claude-sonnet-4` | Anthropic | 200k | `1.2` |
-| `claude-haiku-4-5` | Anthropic | 200k | `0.4` |
-| `gpt-5-6-sol` | OpenAI | 272k | `0.7` |
-| `gpt-5-6-terra` | OpenAI | 272k | `0.6` |
-| `gpt-5-6-luna` | OpenAI | 272k | `0.1` |
-| `gpt-5-5` | OpenAI | 1050k | `0.7` |
-| `gpt-5-4` | OpenAI | 272k | `0.7` |
-| `gpt-5.2` | OpenAI | 400k | `0.7` |
-| `gpt-5-3-codex` | OpenAI | 400k | `0.7` |
-| `gpt-5` | OpenAI | 400k | `0.75` |
-| `gpt-5-4-mini` | OpenAI | 400k | `0.15` |
-| `gpt-5-4-nano` | OpenAI | 400k | `0.1` |
-| `gpt-4o` | OpenAI | 128k | `0.8` |
-| `gpt-4o-mini` | OpenAI | 128k | `0.1` |
-| `gpt-4.1` | OpenAI | 1M | `0.6` |
-| `grok-4-5` | xAI | 500k | `0.4` |
-| `grok-4-3` | xAI | 1M | `0.2` |
-| `grok-4-1-fast-reasoning` | xAI | 2M | `0.2` |
-| `grok-4-1-fast-non-reasoning` | xAI | 2M | `0.2` |
-| `grok-code-fast-1` | xAI | 256k | `0.2` |
-| `gemini-3-6-flash` | Google | 1M | `0.5` |
-| `gemini-3-1-pro-preview` | Google | 1M | `0.8` |
-| `gemini-3-flash-preview` | Google | 1M | `0.2` |
-| `gemini-2.5-pro` | Google | 1M | `0.75` |
-| `gemini-2.5-flash` | Google | 1M | `0.15` |
-| `gemini-2.5-flash-lite` | Google | 1M | `0.1` |
-| `gemini-3-1-flash-lite` | Google | 1M | `0.15` |
-| `deepseek-v4-pro` | Fireworks AI | 1M | `0.22` |
-| `deepseek-r1` | Bedrock | 128k | `0.4` |
-| `gpt-oss-120b` | Bedrock | 128k | `0.15` |
-| `gpt-oss-20b` | Bedrock | 128k | `0.1` |
-| `minimax-m3` | Fireworks AI | 524k | `0.1` |
-| `minimax-m2-7` | Fireworks AI | 196k | `0.1` |
-| `kimi-k3` | Fireworks AI | 1M | `1.2` |
-| `kimi-k2-7-code` | Fireworks AI | 262k | `0.4` |
-| `kimi-k2-6` | Fireworks AI | 262k | `0.4` |
-| `kimi-k2-thinking` | Bedrock | 262k | `0.7` |
-| `zai-glm-5-2` | Fireworks AI | 1M | `1` |
-| `zai-glm-5-1` | Fireworks AI | 202k | `1` |
-| `qwen-3-7-plus` | Fireworks AI | 262k | `0.6` |
-| `zai-glm-4.7-flash` | Bedrock | 128k | `0.1` |
-| `f1` | Frogbot | 128k | `0.2` |
-| `f1-flash` | Frogbot | 1M | `0.15` |
-| `f1-pro` | Frogbot | 1M | `0.8` |
+Prices are USD per 1M tokens on the registry's default route. A dash means the route has no cached-input price.
+
+| Model ID | Default route | Context | Input | Cached input | Output |
+|---|---|---:|---:|---:|---:|
+| `claude-fable-5` | Bedrock | 1M | $10 | $1 | $50 |
+| `claude-opus-5` | Bedrock | 1M | $5 | $0.50 | $25 |
+| `claude-sonnet-5` | Bedrock | 1M | $3 | $0.30 | $15 |
+| `claude-opus-4-8` | Bedrock | 1M | $5 | $0.50 | $25 |
+| `claude-opus-4-7` | Bedrock | 200k | $5 | $0.50 | $25 |
+| `claude-opus-4-6` | Bedrock | 200k | $5 | $0.50 | $25 |
+| `claude-opus-4-5` | Bedrock | 200k | $5 | $0.50 | $25 |
+| `claude-opus-4-1` | Bedrock | 200k | $15 | $1.50 | $75 |
+| `claude-sonnet-4-6` | Bedrock | 200k | $3 | $0.30 | $15 |
+| `claude-sonnet-4-5` | Bedrock | 200k | $3 | $0.30 | $15 |
+| `claude-sonnet-4` | Bedrock | 200k | $3 | $0.30 | $15 |
+| `claude-haiku-4-5` | Bedrock | 200k | $1 | $0.10 | $5 |
+| `gpt-5-6-sol` | Bedrock | 272k | $5 | $0.50 | $30 |
+| `gpt-5-6-terra` | Bedrock | 272k | $2 | $0.20 | $12 |
+| `gpt-5-6-luna` | Bedrock | 272k | $0.20 | $0.02 | $1.20 |
+| `gpt-5-5` | Bedrock | 272k | $5 | $0.50 | $30 |
+| `gpt-5-4` | Bedrock | 272k | $2.50 | $0.25 | $15 |
+| `gpt-5.2` | OpenAI | 400k | $1.75 | $0.175 | $14 |
+| `gpt-5-3-codex` | OpenAI | 400k | $1.75 | $0.175 | $14 |
+| `gpt-5` | OpenAI | 400k | $1.25 | $0.13 | $10 |
+| `gpt-5-4-mini` | OpenAI | 400k | $0.75 | $0.075 | $4.50 |
+| `gpt-5-4-nano` | OpenAI | 400k | $0.20 | $0.02 | $1.25 |
+| `gpt-4o` | OpenAI | 128k | $2.50 | $1.25 | $10 |
+| `gpt-4o-mini` | OpenAI | 128k | $0.15 | $0.08 | $0.60 |
+| `gpt-4.1` | OpenAI | 1M | $2 | $0.50 | $8 |
+| `grok-4-5` | xAI | 500k | $2 | $0.30 | $6 |
+| `grok-4-3` | xAI | 1M | $1.25 | $0.20 | $2.50 |
+| `grok-4-1-fast-reasoning` | xAI | 128k | $0.20 | $0.05 | $0.50 |
+| `grok-4-1-fast-non-reasoning` | xAI | 128k | $0.20 | $0.05 | $0.50 |
+| `grok-code-fast-1` | xAI | 256k | $0.20 | $0.02 | $1.50 |
+| `gemini-3-6-flash` | Gemini | 1M | $1.50 | $0.15 | $7.50 |
+| `gemini-3-1-pro-preview` | Gemini | 1M | $2 | $0.20 | $12 |
+| `gemini-3-flash-preview` | Gemini | 1M | $0.50 | $0.05 | $3 |
+| `gemini-2.5-pro` | Gemini | 1M | $1.25 | $0.31 | $10 |
+| `gemini-2.5-flash` | Gemini | 1M | $0.30 | $0.075 | $2.50 |
+| `gemini-2.5-flash-lite` | Gemini | 1M | $0.10 | $0.025 | $0.40 |
+| `gemini-3-1-flash-lite` | Gemini | 1M | $0.25 | $0.025 | $1.50 |
+| `deepseek-v4-pro` | Fireworks AI | 1M | $1.74 | $0.14 | $3.48 |
+| `deepseek-r1` | Bedrock | 128k | $1.35 | — | $5.40 |
+| `gpt-oss-120b` | Bedrock | 128k | $0.15 | — | $0.60 |
+| `gpt-oss-20b` | Bedrock | 128k | $0.07 | — | $0.20 |
+| `minimax-m3` | Fireworks AI | 524k | $0.30 | $0.06 | $1.20 |
+| `minimax-m2-7` | Fireworks AI | 196k | $0.30 | $0.06 | $1.20 |
+| `kimi-k3` | Fireworks AI | 1M | $3 | $0.30 | $15 |
+| `kimi-k2-7-code` | Fireworks AI | 262k | $0.95 | $0.19 | $4 |
+| `kimi-k2-6` | Fireworks AI | 262k | $0.95 | $0.16 | $4 |
+| `kimi-k2-thinking` | Bedrock | 262k | $0.60 | — | $2.50 |
+| `zai-glm-5-2` | Fireworks AI | 1.04M | $1.40 | $0.14 | $4.40 |
+| `zai-glm-5-1` | Fireworks AI | 202.8k | $1.40 | $0.26 | $4.40 |
+| `qwen-3-7-plus` | Fireworks AI | 262k | $0.40 | $0.08 | $1.60 |
+| `zai-glm-4.7-flash` | Bedrock | 128k | $0.70 | — | $0.40 |
+| `f1` | Gemini | 1M | $0.50 | $0.05 | $3 |
+| `f1-flash` | Fireworks AI | 262k | $0.95 | $0.16 | $4 |
+| `f1-pro` | Gemini | 1M | $2 | $0.20 | $12 |
 
 ---
 
@@ -75,20 +77,20 @@ Use these model IDs with [chat completions](/api-reference/chat-completions) and
 
 Use these model IDs with [embeddings](/api-reference/embeddings).
 
-| Model ID | Provider | Credit price per 1M tokens |
+| Model ID | Provider | USD per 1M tokens |
 |---|---|---|
-| `text-embedding-3-small` | OpenAI | 9.6 credits |
-| `text-embedding-3-large` | OpenAI | 62.4 credits |
-| `text-embedding-ada-002` | OpenAI | 48 credits |
+| `text-embedding-3-small` | OpenAI | $0.02 |
+| `text-embedding-3-large` | OpenAI | $0.13 |
+| `text-embedding-ada-002` | OpenAI | $0.10 |
 | `text-embedding-004` | Google | Free |
-| `voyage-4-large` | Voyage AI | 57.6 credits |
-| `voyage-4` | Voyage AI | 28.8 credits |
-| `voyage-4-lite` | Voyage AI | 9.6 credits |
-| `voyage-context-3` | Voyage AI | 86.4 credits |
-| `voyage-code-3` | Voyage AI | 86.4 credits |
-| `voyage-finance-2` | Voyage AI | 57.6 credits |
-| `voyage-law-2` | Voyage AI | 57.6 credits |
-| `voyage-code-2` | Voyage AI | 57.6 credits |
+| `voyage-4-large` | Voyage AI | $0.12 |
+| `voyage-4` | Voyage AI | $0.06 |
+| `voyage-4-lite` | Voyage AI | $0.02 |
+| `voyage-context-3` | Voyage AI | $0.18 |
+| `voyage-code-3` | Voyage AI | $0.18 |
+| `voyage-finance-2` | Voyage AI | $0.12 |
+| `voyage-law-2` | Voyage AI | $0.12 |
+| `voyage-code-2` | Voyage AI | $0.12 |
 
 ---
 
@@ -96,10 +98,10 @@ Use these model IDs with [embeddings](/api-reference/embeddings).
 
 Use these model IDs with [rerank](/api-reference/rerank).
 
-| Model ID | Provider | Credit price per 1M tokens |
+| Model ID | Provider | USD per 1M tokens |
 |---|---|---|
-| `rerank-2.5` | Voyage AI | 24 credits |
-| `rerank-2.5-lite` | Voyage AI | 9.6 credits |
+| `rerank-2.5` | Voyage AI | $0.05 |
+| `rerank-2.5-lite` | Voyage AI | $0.02 |
 
 ---
 
@@ -107,10 +109,10 @@ Use these model IDs with [rerank](/api-reference/rerank).
 
 Use these model IDs with [audio transcriptions](/api-reference/audio-transcriptions).
 
-| Model ID | Provider | Credit price |
+| Model ID | Provider | USD price |
 |---|---|---|
-| `whisper-1` | OpenAI | 2.88 credits/min |
-| `elevenlabs-scribe-v2` | ElevenLabs | 192 credits/hr |
+| `whisper-1` | OpenAI | $0.006/min |
+| `elevenlabs-scribe-v2` | ElevenLabs | $0.40/hr |
 
 ---
 
@@ -118,11 +120,11 @@ Use these model IDs with [audio transcriptions](/api-reference/audio-transcripti
 
 Use these model IDs with [audio speech](/api-reference/audio-speech).
 
-| Model ID | Provider | Credit price per 1M chars |
+| Model ID | Provider | USD per 1M characters |
 |---|---|---|
-| `elevenlabs-tts-multilingual-v2` | ElevenLabs | 81,600 credits |
-| `elevenlabs-tts-v3` | ElevenLabs | 81,600 credits |
-| `elevenlabs-tts-v2-flash` | ElevenLabs | 38,400 credits |
+| `elevenlabs-tts-multilingual-v2` | ElevenLabs | $170 |
+| `elevenlabs-tts-v3` | ElevenLabs | $170 |
+| `elevenlabs-tts-v2-flash` | ElevenLabs | $80 |
 
 ---
 
@@ -130,15 +132,15 @@ Use these model IDs with [audio speech](/api-reference/audio-speech).
 
 Use these model IDs with [image generation](/api-reference/images-generations).
 
-| Model ID | Provider | Credit price |
+| Model ID | Provider | USD price |
 |---|---|---|
-| `dall-e-3` | OpenAI | 19.2-57.6 credits per image |
-| `imagen-4` | Google | 19.2 credits per image |
-| `imagen-4-ultra` | Google | 28.8 credits per image |
-| `imagen-4-fast` | Google | 9.6 credits per image |
-| `gemini-3-pro-image-preview` | Google | 960 input / 57,600 output credits per 1M tokens |
-| `gemini-3-1-flash-image-preview` | Google | 144 input / 14,400 output credits per 1M tokens |
-| `gemini-2.5-flash-image` | Google | 144 input / 14,400 output credits per 1M tokens |
+| `dall-e-3` | OpenAI | $0.04-$0.12 per image |
+| `imagen-4` | Google | $0.04 per image |
+| `imagen-4-ultra` | Google | $0.06 per image |
+| `imagen-4-fast` | Google | $0.02 per image |
+| `gemini-3-pro-image-preview` | Google | $2 input / $120 output per 1M tokens |
+| `gemini-3-1-flash-image-preview` | Google | $0.30 input / $30 output per 1M tokens |
+| `gemini-2.5-flash-image` | Google | $0.30 input / $30 output per 1M tokens |
 
 ---
 

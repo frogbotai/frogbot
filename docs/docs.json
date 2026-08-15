@@ -162,7 +162,7 @@
           },
           {
             "group": "Pricing",
-            "pages": ["credit-system"]
+            "pages": ["balance-usage-pricing"]
           },
           {
             "group": "Browser Agent MCP",

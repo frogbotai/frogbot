@@ -1,10 +1,10 @@
 ---
-title: "Get Quota"
-description: "Check your credit balance"
+title: "Usage balance"
+description: "Check your available balance in USD"
 api: "GET https://app.frogbot.ai/api/v1/quota"
 ---
 
-Check your current credit balance. **Monthly credits are used before top-up credits.**
+Check the USD balance available for AI usage.
 
 ---
 
@@ -17,23 +17,19 @@ curl https://app.frogbot.ai/api/v1/quota \
 
 ---
 
-## Response fields
+## Read fields
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `monthly` | number | Credits from your current subscription period |
-| `topUp` | number | Purchased top-up credits (do not expire) |
-| `reset` | string | Date when monthly credits reset
+| `balanceUSD` | number | Available balance in US dollars |
 
 ---
 
-## Examples
+## View examples
 
 ```json 200
 {
-  "monthly": 8000,
-  "topUp": 2500,
-  "reset": "2026-05-01"
+  "balanceUSD": 26.25
 }
 ```
 
@@ -45,10 +41,6 @@ curl https://app.frogbot.ai/api/v1/quota \
 
 ---
 
-## Understand response
+## Understand results
 
-`monthly` credits come from your subscription and reset each billing period.
-
-`topUp` credits where purchased separately on top of your subscription and never expire.
-
-`reset` is included when a billing period end date is available.
+`balanceUSD` includes subscription payments and any funds you add. AI usage reduces it at the provider's exact USD cost.
