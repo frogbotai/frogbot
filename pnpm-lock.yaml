@@ -170,12 +170,24 @@ importers:
       '@frogbotai/plugin-roles':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-roles
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
+      drizzle-kit:
+        specifier: ^0.31.7
+        version: 0.31.7
       frogbot:
         specifier: workspace:*
         version: link:../../packages/frogbot
       graphql:
         specifier: ^16.8.1
         version: 16.14.2
+      json-schema-to-typescript:
+        specifier: ^15.0.3
+        version: 15.0.4
+      libsql:
+        specifier: ^0.4.7
+        version: 0.4.7
       next:
         specifier: 15.4.11
         version: 15.4.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4)
@@ -185,6 +197,12 @@ importers:
       react-dom:
         specifier: 19.2.6
         version: 19.2.6(react@19.2.6)
+      pino:
+        specifier: ^9.14.0
+        version: 9.14.0
+      sharp:
+        specifier: ^0.34.5
+        version: 0.34.5
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -1522,12 +1540,24 @@ importers:
       '@frogbotai/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
+      drizzle-kit:
+        specifier: ^0.31.7
+        version: 0.31.7
       frogbot:
         specifier: workspace:*
         version: link:../../packages/frogbot
       graphql:
         specifier: ^16.8.1
         version: 16.14.2
+      json-schema-to-typescript:
+        specifier: ^15.0.3
+        version: 15.0.4
+      libsql:
+        specifier: ^0.4.7
+        version: 0.4.7
       next:
         specifier: 15.4.11
         version: 15.4.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4)
@@ -1537,6 +1567,12 @@ importers:
       react-dom:
         specifier: 19.2.6
         version: 19.2.6(react@19.2.6)
+      pino:
+        specifier: ^9.14.0
+        version: 9.14.0
+      sharp:
+        specifier: ^0.34.5
+        version: 0.34.5
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -8615,6 +8651,13 @@ packages:
         integrity: sha512-ixNtAJndqh173VQ4KodSdJEI6nuioBWI0V1ITNKhZZsO0pEMoDxz539T4FTTbSZ/xIOSuDnzxLVRqBVSvPNE2g==,
       }
     engines: { node: '>=18.0' }
+
+  cross-env@7.0.3:
+    resolution:
+      {
+        integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==,
+      }
+    engines: { node: '>=10.14', npm: '>=6', yarn: '>=1' }
 
   cross-spawn@7.0.6:
     resolution:
@@ -19566,6 +19609,8 @@ snapshots:
   crc-32@1.2.2: {}
 
   croner@10.0.1: {}
+
+  cross-env@7.0.3: {}
 
   cross-spawn@7.0.6:
     dependencies:

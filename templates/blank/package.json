@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "frogbot dev",
     "prebuild": "frogbot generate:importmap",
-    "build": "next build",
+    "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
     "start": "frogbot start",
     "generate:types": "frogbot generate:types",
     "generate:importmap": "frogbot generate:importmap",
@@ -20,11 +20,17 @@
     "@frogbotai/db-sqlite": "workspace:*",
     "@frogbotai/next": "workspace:*",
     "@frogbotai/ui": "workspace:*",
+    "cross-env": "^7.0.3",
+    "drizzle-kit": "^0.31.7",
     "frogbot": "workspace:*",
     "graphql": "^16.8.1",
+    "json-schema-to-typescript": "^15.0.3",
+    "libsql": "^0.4.7",
     "next": "15.4.11",
+    "pino": "^9.14.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
+    "sharp": "^0.34.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
