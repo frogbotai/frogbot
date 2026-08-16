@@ -1,0 +1,30 @@
+# Fly.io app configuration for a FrogBot app with SQLite on a persistent volume.
+#
+# Before deploying:
+#   1. Replace the app name below (or let `fly launch` do it for you)
+#   2. fly volumes create frogbot_data --size 1 --region <your-region>
+#   3. fly secrets set FROGBOT_SECRET=<random-string> DATABASE_URL=file:/data/frogbot.db
+#
+# SQLite on a volume means a single machine: `fly scale count 1`.
+# Scale-to-zero still works -- the data lives on the volume, not the machine.
+
+app = 'my-frogbot-app'
+primary_region = 'sjc'
+
+[build]
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[mounts]
+  source = 'frogbot_data'
+  destination = '/data'
+
+[[vm]]
+  memory = '1gb'
+  cpus = 1

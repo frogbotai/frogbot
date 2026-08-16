@@ -1,0 +1,11 @@
+# FrogBot local dev
+frogbot.db
+frogbot.db-*
+.env
+.env.local
+
+# Dependencies / build output
+node_modules
+dist
+.next
+*.tsbuildinfo
