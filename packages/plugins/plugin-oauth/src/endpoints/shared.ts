@@ -29,9 +29,8 @@ export function getReturnUrl({
 }: {
   allowedOrigins: string[];
   baseUrl: string;
-  value: string | null;
+  value: string;
 }): string {
-  if (!value) return new URL('/', baseUrl).toString();
   if (value.startsWith('/') && !value.startsWith('//')) return new URL(value, baseUrl).toString();
   const url = new URL(value);
   if (!allowedOrigins.includes(url.origin)) throw new Error('Return URL is not allowed.');

@@ -8,6 +8,7 @@ import { createLifecycleEndpoints } from './lifecycle.js';
 
 type OAuthEndpointsOptions = {
   baseUrl: string;
+  fallbackPath: string;
   allowedReturnOrigins: string[];
   paths: { authorize: string; callback: string; refresh: string; revoke: string };
   callbackUrlPath: string;

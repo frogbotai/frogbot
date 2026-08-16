@@ -141,8 +141,10 @@ export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
     };
     const encryption = options.encryption ?? createCredentialEncryption({ secret: config.secret });
     const apiRoute = config.routes?.api ?? '/api';
+    const adminRoute = config.routes?.admin ?? '/admin';
     const endpoints = createOAuthEndpoints({
       baseUrl,
+      fallbackPath: adminRoute,
       allowedReturnOrigins: options.allowedReturnOrigins ?? [],
       paths,
       callbackUrlPath: `${apiRoute}/${authCollection}${paths.callback}`,

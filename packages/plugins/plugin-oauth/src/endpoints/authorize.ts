@@ -9,6 +9,7 @@ type AuthorizeEndpointOptions = {
   path: string;
   callbackPath: string;
   baseUrl: string;
+  fallbackPath: string;
   allowedReturnOrigins: string[];
   statesSlug: string;
   ownerField: string;
@@ -29,7 +30,7 @@ export function createAuthorizeEndpoint(options: AuthorizeEndpointOptions): Endp
         returnUrl = getReturnUrl({
           allowedOrigins: options.allowedReturnOrigins,
           baseUrl: options.baseUrl,
-          value: req.searchParams.get('returnUrl'),
+          value: req.searchParams.get('returnUrl') || options.fallbackPath,
         });
       } catch {
         return Response.json({ error: 'Return URL is not allowed' }, { status: 400 });
