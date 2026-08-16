@@ -17,6 +17,7 @@ export default tseslint.config(
       '**/next-env.d.ts',
       'packages/frogbot/bin.js',
       '**/*.e2e.spec.ts',
+      '**/migrations/**',
     ],
   },
   eslint.configs.recommended,

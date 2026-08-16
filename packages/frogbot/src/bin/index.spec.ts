@@ -68,7 +68,7 @@ describe('frogbot bin', () => {
     await expect(bin()).rejects.toThrow('exit:2');
     expect(mocks.calls).toEqual(['loadEnv']);
     expect(error).toHaveBeenCalledWith(
-      '[frogbot] usage: frogbot <start|dev|generate:types|generate:importmap|export:training-data>',
+      '[frogbot] usage: frogbot <start|dev|generate:types|generate:importmap|export:training-data|migrate|migrate:create|migrate:status|migrate:down|migrate:refresh|migrate:reset|migrate:fresh>',
     );
   });
 
