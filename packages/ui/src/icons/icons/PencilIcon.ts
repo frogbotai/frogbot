@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const pencilIcon: IconNode = [
   [
@@ -18,8 +18,8 @@ export const pencilIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const PencilIcon = createLucideIcon('PencilIcon', pencilIcon)
+const PencilIcon = createLucideIcon('PencilIcon', pencilIcon);
 
-export default PencilIcon
+export default PencilIcon;

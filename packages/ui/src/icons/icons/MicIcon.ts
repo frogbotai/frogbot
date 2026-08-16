@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const micIcon: IconNode = [
   [
@@ -15,8 +15,8 @@ export const micIcon: IconNode = [
       strokeLinecap: 'round',
     },
   ],
-]
+];
 
-const MicIcon = createLucideIcon('Mic', micIcon)
+const MicIcon = createLucideIcon('Mic', micIcon);
 
-export default MicIcon
+export default MicIcon;

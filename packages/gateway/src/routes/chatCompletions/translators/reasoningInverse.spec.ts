@@ -97,7 +97,11 @@ describe('reasoning_details inverse (wire → AI SDK)', () => {
     const content = result.content as Array<Record<string, unknown>>;
     expect(content).toHaveLength(4); // 3 reasoning + 1 text
     expect(content[0]).toMatchObject({ type: 'reasoning', text: 'Step 1' });
-    expect(content[1]).toMatchObject({ type: 'reasoning', text: '', providerOptions: { unknown: { redactedData: 'encrypted-step-2' } } });
+    expect(content[1]).toMatchObject({
+      type: 'reasoning',
+      text: '',
+      providerOptions: { unknown: { redactedData: 'encrypted-step-2' } },
+    });
     expect(content[2]).toMatchObject({ type: 'reasoning', text: 'Step 3' });
     expect(content[3]).toEqual({ type: 'text', text: 'Final' });
   });

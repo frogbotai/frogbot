@@ -1,9 +1,11 @@
-import type { UIMessage } from 'ai'
+import type { UIMessage } from 'ai';
 
 export type ChatPlatformAdapter = {
-  apiBase?: string
-  fetch: typeof globalThis.fetch
-  headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
-  buildMetadata?: (message: UIMessage) => Record<string, unknown> | Promise<Record<string, unknown>>
-  executeClientTool?: (name: string, input: unknown) => unknown
-}
+  apiBase?: string;
+  fetch: typeof globalThis.fetch;
+  headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
+  buildMetadata?: (
+    message: UIMessage,
+  ) => Record<string, unknown> | Promise<Record<string, unknown>>;
+  executeClientTool?: (name: string, input: unknown) => unknown;
+};

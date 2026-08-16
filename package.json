@@ -7,6 +7,8 @@
     "build": "pnpm -r build",
     "lint": "eslint . --cache --cache-location .idea/tmp/.eslintcache",
     "lint:fix": "eslint . --fix --cache --cache-location .idea/tmp/.eslintcache",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "typecheck": "pnpm --filter \"./packages/**\" build && pnpm -r --no-bail typecheck",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",

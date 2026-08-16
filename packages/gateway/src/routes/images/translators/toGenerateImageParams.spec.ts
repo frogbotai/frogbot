@@ -4,19 +4,21 @@ import { toGenerateImageParams } from './toGenerateImageParams.js';
 
 describe('toGenerateImageParams', () => {
   it('maps OpenAI image generation fields to AI SDK params', () => {
-    expect(toGenerateImageParams({
-      body: {
-        model: 'openai/dall-e-3',
-        prompt: 'a frog robot',
-        n: 2,
-        size: '1024x1024',
-        quality: 'hd',
-        style: 'vivid',
-        response_format: 'b64_json',
-        user: 'user-1',
-      },
-      providerName: 'openai',
-    })).toEqual({
+    expect(
+      toGenerateImageParams({
+        body: {
+          model: 'openai/dall-e-3',
+          prompt: 'a frog robot',
+          n: 2,
+          size: '1024x1024',
+          quality: 'hd',
+          style: 'vivid',
+          response_format: 'b64_json',
+          user: 'user-1',
+        },
+        providerName: 'openai',
+      }),
+    ).toEqual({
       prompt: 'a frog robot',
       n: 2,
       size: '1024x1024',
@@ -37,16 +39,18 @@ describe('toGenerateImageParams', () => {
     ['luma', 'luma'],
     ['black-forest-labs', 'blackForestLabs'],
   ])('scopes image provider options for %s', (providerName, providerOptionsKey) => {
-    expect(toGenerateImageParams({
-      body: {
-        model: `${providerName}/image-model`,
-        prompt: 'a frog robot',
-        quality: 'hd',
-        style: 'vivid',
-        user: 'user-1',
-      },
-      providerName,
-    }).providerOptions).toEqual({
+    expect(
+      toGenerateImageParams({
+        body: {
+          model: `${providerName}/image-model`,
+          prompt: 'a frog robot',
+          quality: 'hd',
+          style: 'vivid',
+          user: 'user-1',
+        },
+        providerName,
+      }).providerOptions,
+    ).toEqual({
       [providerOptionsKey]: {
         quality: 'hd',
         style: 'vivid',

@@ -51,7 +51,10 @@ describe('assistant message persistence', () => {
         metadata: { source: 'agent' },
       },
       context: {
-        [MESSAGE_USAGE_CONTEXT_KEY]: expect.objectContaining({ totalTokens: 5, model: 'openai/test' }),
+        [MESSAGE_USAGE_CONTEXT_KEY]: expect.objectContaining({
+          totalTokens: 5,
+          model: 'openai/test',
+        }),
       },
       req,
       overrideAccess: true,
@@ -73,7 +76,11 @@ describe('assistant message persistence', () => {
     expect(create).not.toHaveBeenCalled();
     expect(update).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ collection: 'messages', id: 'assistant-1', data: expect.objectContaining({ parts: message.parts }) }),
+      expect.objectContaining({
+        collection: 'messages',
+        id: 'assistant-1',
+        data: expect.objectContaining({ parts: message.parts }),
+      }),
     );
   });
 

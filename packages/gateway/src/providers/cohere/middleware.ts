@@ -27,6 +27,4 @@ export const cohereEmbedDimensions: BeforeUpstreamHook = (args) => {
   delete unknown.dimensions;
 };
 
-export const cohereBeforeUpstream: BeforeUpstreamHook[] = [
-  cohereEmbedDimensions,
-];
+export const cohereBeforeUpstream: BeforeUpstreamHook[] = [cohereEmbedDimensions];

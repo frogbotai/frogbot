@@ -6,17 +6,16 @@
 // providerOptions-introspection concern — we must capture what reached the model,
 // which a free OpenAI-compatible model cannot report back over the wire.
 
-import type {
-  LanguageModelV4,
-  LanguageModelV4CallOptions,
-} from '@ai-sdk/provider';
+import type { LanguageModelV4, LanguageModelV4CallOptions } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
-function createRecordingModel(onCall: (options: LanguageModelV4CallOptions) => void): LanguageModelV4 {
+function createRecordingModel(
+  onCall: (options: LanguageModelV4CallOptions) => void,
+): LanguageModelV4 {
   const usage = {
     inputTokens: { total: 5, noCache: 5 },
     outputTokens: { total: 4, text: 4 },
@@ -25,7 +24,9 @@ function createRecordingModel(onCall: (options: LanguageModelV4CallOptions) => v
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: (options: LanguageModelV4CallOptions) => {
       onCall(options);
       return Promise.resolve({
@@ -57,7 +58,9 @@ describe('chat reasoning_effort reaches the model — G39/PR3', () => {
   // the model — the whole vendor reasoning-translation chain has no producer.
   it('forwards reasoning_effort:high as providerOptions.openai.reasoningEffort', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeApp('openai', (o) => { callOptions = o; });
+    const app = makeApp('openai', (o) => {
+      callOptions = o;
+    });
 
     const { status } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/o3',
@@ -66,7 +69,9 @@ describe('chat reasoning_effort reaches the model — G39/PR3', () => {
     });
 
     expect(status).toBe(200);
-    const openai = (callOptions?.providerOptions as Record<string, Record<string, unknown>> | undefined)?.['openai'];
+    const openai = (
+      callOptions?.providerOptions as Record<string, Record<string, unknown>> | undefined
+    )?.['openai'];
     expect(openai?.['reasoningEffort']).toBe('high');
   });
 });

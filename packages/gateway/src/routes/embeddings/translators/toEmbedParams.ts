@@ -28,5 +28,8 @@ export function toEmbedParams(body: EmbeddingsRequest): EmbedParams {
 }
 
 function isBatchInput(input: EmbeddingsRequest['input']): input is string[] | number[][] {
-  return Array.isArray(input) && (input.length === 0 || typeof input[0] === 'string' || Array.isArray(input[0]));
+  return (
+    Array.isArray(input) &&
+    (input.length === 0 || typeof input[0] === 'string' || Array.isArray(input[0]))
+  );
 }

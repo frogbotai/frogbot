@@ -44,7 +44,12 @@ export async function resolveThreadContext({
 
   let resolvedThreadId: DocID;
   try {
-    resolvedThreadId = await resolveThreadId({ req, agentSlug, threadId, threadsSlug: chat.threadsSlug });
+    resolvedThreadId = await resolveThreadId({
+      req,
+      agentSlug,
+      threadId,
+      threadsSlug: chat.threadsSlug,
+    });
 
     for (const message of newMessages) {
       await req.frogbot.create({
@@ -89,7 +94,12 @@ type ResolveThreadIdProps = {
   threadsSlug: string;
 };
 
-async function resolveThreadId({ req, agentSlug, threadId, threadsSlug }: ResolveThreadIdProps): Promise<DocID> {
+async function resolveThreadId({
+  req,
+  agentSlug,
+  threadId,
+  threadsSlug,
+}: ResolveThreadIdProps): Promise<DocID> {
   const overrideAccess = true;
   if (threadId !== undefined) {
     const thread = (await req.frogbot.findByID({
@@ -99,7 +109,8 @@ async function resolveThreadId({ req, agentSlug, threadId, threadsSlug }: Resolv
       req,
       overrideAccess,
     })) as { user?: { id: DocID } | DocID | null };
-    const ownerId = typeof thread.user === 'object' && thread.user !== null ? thread.user.id : thread.user;
+    const ownerId =
+      typeof thread.user === 'object' && thread.user !== null ? thread.user.id : thread.user;
     if ((ownerId ?? null) !== (req.user?.id ?? null)) throw new NotFound(req.t);
     return threadId;
   }
@@ -117,7 +128,12 @@ async function resolveThreadId({ req, agentSlug, threadId, threadsSlug }: Resolv
 }
 
 function toUIMessage(doc: unknown): UIMessage {
-  const message = doc as { id: DocID; role: UIMessage['role']; parts: UIMessage['parts']; metadata?: unknown };
+  const message = doc as {
+    id: DocID;
+    role: UIMessage['role'];
+    parts: UIMessage['parts'];
+    metadata?: unknown;
+  };
   return {
     id: String(message.id),
     role: message.role,

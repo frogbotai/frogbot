@@ -34,7 +34,11 @@ describe('mergeConfigs', () => {
   });
 
   it('skips __proto__/constructor/prototype provider keys', () => {
-    const overlay = { providers: JSON.parse('{"__proto__": {"polluted": true}, "constructor": {"x": 1}, "openai": {"apiKey": "k"}}') };
+    const overlay = {
+      providers: JSON.parse(
+        '{"__proto__": {"polluted": true}, "constructor": {"x": 1}, "openai": {"apiKey": "k"}}',
+      ),
+    };
     const merged = mergeConfigs({ providers: {} }, overlay);
     expect(Object.keys(merged.providers)).toEqual(['openai']);
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
@@ -132,9 +136,19 @@ describe('loadConfigFile', () => {
     const p = join(dir, 'gateway.config.json');
     process.env.FROGBOTAI_TEST_BASE_URL = 'https://api.example.test/v1';
     writeFileSync(secret, 'from-file\n');
-    writeFileSync(p, JSON.stringify({ providers: { openai: { apiKey: '{file:./secret.txt}', baseURL: '{env:FROGBOTAI_TEST_BASE_URL}' } } }));
+    writeFileSync(
+      p,
+      JSON.stringify({
+        providers: {
+          openai: { apiKey: '{file:./secret.txt}', baseURL: '{env:FROGBOTAI_TEST_BASE_URL}' },
+        },
+      }),
+    );
     const cfg = await loadConfigFile(p);
-    expect(cfg.providers.openai).toEqual({ apiKey: 'from-file', baseURL: 'https://api.example.test/v1' });
+    expect(cfg.providers.openai).toEqual({
+      apiKey: 'from-file',
+      baseURL: 'https://api.example.test/v1',
+    });
   });
 
   it('loads .mjs default export', async () => {
@@ -161,7 +175,9 @@ describe('loadConfigFile', () => {
     const dir = scratch();
     const p = join(dir, 'gateway.config.mjs');
     writeFileSync(p, `export const foo = { providers: { openai: { apiKey: 'x' } } };`);
-    await expect(loadConfigFile(p)).rejects.toThrow(/neither a "default" nor a named "config" export/);
+    await expect(loadConfigFile(p)).rejects.toThrow(
+      /neither a "default" nor a named "config" export/,
+    );
   });
 
   it('rejects an array default export (P2-D6c)', async () => {

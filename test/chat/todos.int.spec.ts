@@ -33,7 +33,10 @@ describe('chat persistence: todos', () => {
     await booted.shutdown();
   });
 
-  async function exerciseTodos(req: Awaited<ReturnType<typeof booted.frogbot.createRequest>>, id: string) {
+  async function exerciseTodos(
+    req: Awaited<ReturnType<typeof booted.frogbot.createRequest>>,
+    id: string,
+  ) {
     const { write_todos, read_todos } = await import(toolsPath);
     const first = await resolveThreadContext({
       req,
@@ -68,11 +71,15 @@ describe('chat persistence: todos', () => {
   }
 
   it('persists todos across an authenticated thread continuation', async () => {
-    const req = await booted.frogbot.createRequest({ user: { ...owner, collection: usersSlug } } as never);
+    const req = await booted.frogbot.createRequest({
+      user: { ...owner, collection: usersSlug },
+    } as never);
     await expect(exerciseTodos(req, 'authenticated')).resolves.toBeDefined();
   });
 
   it('persists todos across an anonymous thread continuation', async () => {
-    await expect(exerciseTodos(await booted.frogbot.createRequest({}), 'anonymous')).resolves.toBeDefined();
+    await expect(
+      exerciseTodos(await booted.frogbot.createRequest({}), 'anonymous'),
+    ).resolves.toBeDefined();
   });
 });

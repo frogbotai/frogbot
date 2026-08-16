@@ -6,8 +6,12 @@ describe('gracefulShutdown', () => {
   it('force-flushes then shuts down the provider', async () => {
     const order: string[] = [];
     const provider = {
-      forceFlush: vi.fn(async () => { order.push('forceFlush'); }),
-      shutdown: vi.fn(async () => { order.push('shutdown'); }),
+      forceFlush: vi.fn(async () => {
+        order.push('forceFlush');
+      }),
+      shutdown: vi.fn(async () => {
+        order.push('shutdown');
+      }),
     };
 
     await gracefulShutdown(provider, 10_000);
@@ -38,7 +42,9 @@ describe('gracefulShutdown', () => {
 
   it('still shuts down when forceFlush rejects', async () => {
     const provider = {
-      forceFlush: vi.fn(async () => { throw new Error('exporter down'); }),
+      forceFlush: vi.fn(async () => {
+        throw new Error('exporter down');
+      }),
       shutdown: vi.fn(async () => {}),
     };
 
@@ -49,7 +55,9 @@ describe('gracefulShutdown', () => {
   it('swallows a shutdown rejection so the caller can still exit', async () => {
     const provider = {
       forceFlush: vi.fn(async () => {}),
-      shutdown: vi.fn(async () => { throw new Error('shutdown failed'); }),
+      shutdown: vi.fn(async () => {
+        throw new Error('shutdown failed');
+      }),
     };
 
     await expect(gracefulShutdown(provider, 10_000)).resolves.toBeUndefined();

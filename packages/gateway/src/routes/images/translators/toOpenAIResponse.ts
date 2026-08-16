@@ -30,12 +30,13 @@ export function toOpenAIImagesResponse(
   return {
     created: Math.floor(Date.now() / 1000),
     data: images.map((image) => ({ b64_json: image.base64 })),
-    ...(usage != null && usage.totalTokens > 0 && {
-      usage: {
-        input_tokens: usage.inputTokens,
-        output_tokens: usage.outputTokens,
-        total_tokens: usage.totalTokens,
-      },
-    }),
+    ...(usage != null &&
+      usage.totalTokens > 0 && {
+        usage: {
+          input_tokens: usage.inputTokens,
+          output_tokens: usage.outputTokens,
+          total_tokens: usage.totalTokens,
+        },
+      }),
   };
 }

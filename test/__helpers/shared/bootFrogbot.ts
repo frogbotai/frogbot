@@ -1,23 +1,23 @@
-import type { MongooseAdapter } from '@frogbotai/db-mongodb'
-import { serve } from '@hono/node-server'
-import type { FrogbotInstance } from 'frogbot'
-import { createGatewayHandler } from 'frogbot'
-import type { FrogbotSanitizedConfig } from 'frogbot/test'
-import { Frogbot } from 'frogbot/test'
-import { Hono } from 'hono'
-import path from 'path'
-import type { Payload } from 'payload'
-import { pathToFileURL } from 'url'
+import type { MongooseAdapter } from '@frogbotai/db-mongodb';
+import { serve } from '@hono/node-server';
+import type { FrogbotInstance } from 'frogbot';
+import { createGatewayHandler } from 'frogbot';
+import type { FrogbotSanitizedConfig } from 'frogbot/test';
+import { Frogbot } from 'frogbot/test';
+import { Hono } from 'hono';
+import path from 'path';
+import type { Payload } from 'payload';
+import { pathToFileURL } from 'url';
 
-import { FrogbotRESTClient } from './FrogbotRESTClient'
+import { FrogbotRESTClient } from './FrogbotRESTClient';
 
 export type BootedFrogbot = {
-  frogbot: FrogbotInstance
-  payload: Payload
-  restClient: FrogbotRESTClient
-  baseUrl: string
-  shutdown: () => Promise<void>
-}
+  frogbot: FrogbotInstance;
+  payload: Payload;
+  restClient: FrogbotRESTClient;
+  baseUrl: string;
+  shutdown: () => Promise<void>;
+};
 
 /**
  * Boot a real frogbot HTTP server configured by `config.ts` in the
@@ -37,84 +37,88 @@ export type BootedFrogbot = {
  *
  * Callers MUST invoke `shutdown` in an `afterAll` hook.
  */
-export async function bootFrogbot(dirname: string, suiteNameOverride?: string): Promise<BootedFrogbot> {
-  const suiteName = suiteNameOverride ?? path.basename(dirname)
-  const dbType = process.env.FROGBOT_DATABASE || 'sqlite'
+export async function bootFrogbot(
+  dirname: string,
+  suiteNameOverride?: string,
+): Promise<BootedFrogbot> {
+  const suiteName = suiteNameOverride ?? path.basename(dirname);
+  const dbType = process.env.FROGBOT_DATABASE || 'sqlite';
 
   if (dbType === 'mongodb') {
-    const baseUri = process.env.MONGODB_URI || 'mongodb://localhost:27018?directConnection=true&replicaSet=rs0'
-    const parsed = new URL(baseUri)
-    parsed.pathname = `/frogbot-test-${suiteName}`
-    process.env.MONGODB_URI = parsed.toString()
+    const baseUri =
+      process.env.MONGODB_URI || 'mongodb://localhost:27018?directConnection=true&replicaSet=rs0';
+    const parsed = new URL(baseUri);
+    parsed.pathname = `/frogbot-test-${suiteName}`;
+    process.env.MONGODB_URI = parsed.toString();
   }
 
-  const configPath = path.resolve(dirname, 'config.ts')
+  const configPath = path.resolve(dirname, 'config.ts');
   const mod = (await import(pathToFileURL(configPath).href)) as {
-    default: FrogbotSanitizedConfig | Promise<FrogbotSanitizedConfig>
-  }
-  const config = await mod.default
+    default: FrogbotSanitizedConfig | Promise<FrogbotSanitizedConfig>;
+  };
+  const config = await mod.default;
 
-  const frogbot: FrogbotInstance = await new Frogbot().init({ config })
-  const payload = (frogbot as unknown as { payload: Payload }).payload
+  const frogbot: FrogbotInstance = await new Frogbot().init({ config });
+  const payload = (frogbot as unknown as { payload: Payload }).payload;
   if (payload.db.name === 'mongoose') {
-    const db = payload.db as MongooseAdapter
-    await Promise.all(Object.values(db.connection.models).map((model) => model.init()))
+    const db = payload.db as MongooseAdapter;
+    await Promise.all(Object.values(db.connection.models).map((model) => model.init()));
   }
-  const app = createTestServer(frogbot)
-  const port = await getEphemeralPort()
-  const closeServer = await listen(app, port)
-  const baseUrl = `http://127.0.0.1:${port}`
-  const restClient = new FrogbotRESTClient(baseUrl)
+  const app = createTestServer(frogbot);
+  const port = await getEphemeralPort();
+  const closeServer = await listen(app, port);
+  const baseUrl = `http://127.0.0.1:${port}`;
+  const restClient = new FrogbotRESTClient(baseUrl);
 
   const shutdown = async () => {
-    await closeServer()
-    await frogbot.destroy()
-  }
+    await closeServer();
+    await frogbot.destroy();
+  };
 
-  return { frogbot, payload, restClient, baseUrl, shutdown }
+  return { frogbot, payload, restClient, baseUrl, shutdown };
 }
 
 function createTestServer(frogbot: FrogbotInstance): Hono {
-  const app = new Hono()
-  app.get('/', (c) => c.json({ ok: true, name: 'frogbot' }))
+  const app = new Hono();
+  app.get('/', (c) => c.json({ ok: true, name: 'frogbot' }));
   if (frogbot.config.ai) {
-    const gatewayHandler = createGatewayHandler(frogbot)
-    app.all('/api/ai/*', (c) => gatewayHandler(c.req.raw))
+    const gatewayHandler = createGatewayHandler(frogbot);
+    app.all('/api/ai/*', (c) => gatewayHandler(c.req.raw));
   }
-  app.all('/api/*', (c) => frogbot.handleRequest(c.req.raw.clone()))
-  return app
+  app.all('/api/*', (c) => frogbot.handleRequest(c.req.raw.clone()));
+  return app;
 }
 
 function listen(app: Hono, port: number): Promise<() => Promise<void>> {
-  const server = serve({ fetch: app.fetch, port })
+  const server = serve({ fetch: app.fetch, port });
   return Promise.resolve(
     () =>
       new Promise<void>((resolve, reject) => {
         server.close((err) => {
           if (err) {
-            reject(err)
+            reject(err);
           } else {
-            resolve()
+            resolve();
           }
-        })
+        });
       }),
-  )
+  );
 }
 
 async function getEphemeralPort(): Promise<number> {
-  const net = await import('net')
+  const net = await import('net');
   return new Promise((resolve, reject) => {
-    const server = net.createServer()
-    server.unref()
-    server.on('error', reject)
+    const server = net.createServer();
+    server.unref();
+    server.on('error', reject);
     server.listen(0, () => {
-      const address = server.address()
+      const address = server.address();
       if (typeof address === 'object' && address) {
-        const port = address.port
-        server.close(() => resolve(port))
+        const port = address.port;
+        server.close(() => resolve(port));
       } else {
-        reject(new Error('[test] could not resolve ephemeral port'))
+        reject(new Error('[test] could not resolve ephemeral port'));
       }
-    })
-  })
+    });
+  });
 }

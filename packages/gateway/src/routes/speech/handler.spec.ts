@@ -14,7 +14,9 @@ describe('speechRoute', () => {
     }));
     const app = createApp({
       registry: {
-        openai: new MockProviderV4({ speechModels: { 'tts-1': new MockSpeechModelV4({ doGenerate }) } }),
+        openai: new MockProviderV4({
+          speechModels: { 'tts-1': new MockSpeechModelV4({ doGenerate }) },
+        }),
       } as unknown as ProviderRegistry,
     });
 
@@ -32,11 +34,13 @@ describe('speechRoute', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toBe('audio/wav');
     expect(new Uint8Array(await res.arrayBuffer())).toEqual(audio);
-    expect(doGenerate).toHaveBeenCalledWith(expect.objectContaining({
-      text: 'Hello from Frogbot',
-      voice: 'alloy',
-      outputFormat: 'wav',
-    }));
+    expect(doGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: 'Hello from Frogbot',
+        voice: 'alloy',
+        outputFormat: 'wav',
+      }),
+    );
   });
 
   it('maps content type from the requested response_format', async () => {

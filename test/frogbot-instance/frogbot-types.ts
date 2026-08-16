@@ -201,7 +201,6 @@ export interface Auth {
   [k: string]: unknown;
 }
 
-
 declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {};

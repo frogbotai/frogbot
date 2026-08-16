@@ -43,7 +43,17 @@ export type ToAnthropicResponseArgs = {
 };
 
 export function toAnthropicResponse(args: ToAnthropicResponseArgs): AnthropicResponse {
-  const { text, finishReason, rawFinishReason, stopSequence, usage, response, toolCalls, reasoning, model } = args;
+  const {
+    text,
+    finishReason,
+    rawFinishReason,
+    stopSequence,
+    usage,
+    response,
+    toolCalls,
+    reasoning,
+    model,
+  } = args;
 
   const content: AnthropicResponseBlock[] = [];
 
@@ -96,9 +106,7 @@ export function toAnthropicResponse(args: ToAnthropicResponseArgs): AnthropicRes
       ...(usage.cacheReadInputTokens !== undefined
         ? { cache_read_input_tokens: usage.cacheReadInputTokens }
         : {}),
-      ...(usage.serviceTier !== undefined
-        ? { service_tier: usage.serviceTier }
-        : {}),
+      ...(usage.serviceTier !== undefined ? { service_tier: usage.serviceTier } : {}),
       ...usageDetailFields(usage),
     },
   };
@@ -147,12 +155,14 @@ export function extractCacheCreation(
   rawUsage: Record<string, unknown> | undefined,
 ): CacheCreationBreakdown | undefined {
   const breakdown = rawUsage?.cache_creation as Record<string, unknown> | undefined;
-  const ephemeral5m = typeof breakdown?.ephemeral_5m_input_tokens === 'number'
-    ? breakdown.ephemeral_5m_input_tokens
-    : undefined;
-  const ephemeral1h = typeof breakdown?.ephemeral_1h_input_tokens === 'number'
-    ? breakdown.ephemeral_1h_input_tokens
-    : undefined;
+  const ephemeral5m =
+    typeof breakdown?.ephemeral_5m_input_tokens === 'number'
+      ? breakdown.ephemeral_5m_input_tokens
+      : undefined;
+  const ephemeral1h =
+    typeof breakdown?.ephemeral_1h_input_tokens === 'number'
+      ? breakdown.ephemeral_1h_input_tokens
+      : undefined;
   if (ephemeral5m === undefined && ephemeral1h === undefined) return undefined;
   return { ephemeral5mInputTokens: ephemeral5m, ephemeral1hInputTokens: ephemeral1h };
 }
@@ -188,16 +198,22 @@ export function mapStopReason(reason: string, rawReason?: string): AnthropicStop
     return rawReason as AnthropicStopReason;
   }
   switch (reason) {
-    case 'stop':           return 'end_turn';
-    case 'tool-calls':     return 'tool_use';
-    case 'length':         return 'max_tokens';
-    case 'content-filter': return 'refusal';
+    case 'stop':
+      return 'end_turn';
+    case 'tool-calls':
+      return 'tool_use';
+    case 'length':
+      return 'max_tokens';
+    case 'content-filter':
+      return 'refusal';
     // Anthropic spec: stop_reason is non-null on completed messages
     // (https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons),
     // so unhandled upstream stops (unified 'other') and gateway-internal
     // 'error' fall back to 'end_turn' instead of null.
     case 'error':
-    case 'other':          return 'end_turn';
-    default:               return 'end_turn';
+    case 'other':
+      return 'end_turn';
+    default:
+      return 'end_turn';
   }
 }

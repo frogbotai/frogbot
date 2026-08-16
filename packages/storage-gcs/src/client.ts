@@ -1,1 +1,1 @@
-export { GcsClientUploadHandler } from '@payloadcms/storage-gcs/client'
+export { GcsClientUploadHandler } from '@payloadcms/storage-gcs/client';

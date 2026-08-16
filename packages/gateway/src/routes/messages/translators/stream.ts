@@ -342,11 +342,16 @@ function partToEvents(part: TextStreamPart<ToolSet>, state: StreamState): string
       }
 
       // content-filter → refusal (inverse of the AI SDK's refusal → content-filter map).
-      const stopReason: AnthropicStopReason = mapStopReason(part.finishReason, part.rawFinishReason);
+      const stopReason: AnthropicStopReason = mapStopReason(
+        part.finishReason,
+        part.rawFinishReason,
+      );
 
       const rawUsage = state.rawUsage ?? part.totalUsage?.raw;
-      const serviceTier = typeof rawUsage?.service_tier === 'string' ? rawUsage.service_tier : undefined;
-      const thinkingTokens = extractThinkingTokens(rawUsage) ?? part.totalUsage?.outputTokenDetails?.reasoningTokens;
+      const serviceTier =
+        typeof rawUsage?.service_tier === 'string' ? rawUsage.service_tier : undefined;
+      const thinkingTokens =
+        extractThinkingTokens(rawUsage) ?? part.totalUsage?.outputTokenDetails?.reasoningTokens;
       const cacheCreation = extractCacheCreation(rawUsage);
 
       events.push(
@@ -455,7 +460,9 @@ function formatEvent(eventType: string, data: unknown): string {
   return `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
-function extractSignature(part: { providerMetadata?: Record<string, Record<string, unknown>> }): string | undefined {
+function extractSignature(part: {
+  providerMetadata?: Record<string, Record<string, unknown>>;
+}): string | undefined {
   const meta = part.providerMetadata;
   if (!meta) return undefined;
   const anthropic = meta.anthropic ?? meta.unknown;

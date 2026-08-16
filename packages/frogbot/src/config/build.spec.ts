@@ -28,19 +28,25 @@ describe('frogbot buildConfig', () => {
   describe('validation', () => {
     it('rejects a missing `secret`', async () => {
       const config = makeConfig({ secret: '' });
-      await expect(buildConfig(config)).rejects.toThrowError('[frogbot] `secret` is required and must be a string.');
+      await expect(buildConfig(config)).rejects.toThrowError(
+        '[frogbot] `secret` is required and must be a string.',
+      );
     });
 
     it('rejects a non-string `secret`', async () => {
       const config = makeConfig({ secret: 123 as unknown as string });
-      await expect(buildConfig(config)).rejects.toThrowError('[frogbot] `secret` is required and must be a string.');
+      await expect(buildConfig(config)).rejects.toThrowError(
+        '[frogbot] `secret` is required and must be a string.',
+      );
     });
 
     it('rejects a missing `db`', async () => {
       const config = makeConfig({
         db: undefined as unknown as FrogbotConfig['db'],
       });
-      await expect(buildConfig(config)).rejects.toThrowError('[frogbot] `db` is required. Pass a database adapter.');
+      await expect(buildConfig(config)).rejects.toThrowError(
+        '[frogbot] `db` is required. Pass a database adapter.',
+      );
     });
 
     it('rejects a non-array `collections`', async () => {
@@ -98,7 +104,10 @@ describe('frogbot buildConfig', () => {
     });
 
     it('accepts an inert roles marker', async () => {
-      const roles: Plugin = (config) => ({ ...config, _roles: { ...config._roles, present: true, configured: false } });
+      const roles: Plugin = (config) => ({
+        ...config,
+        _roles: { ...config._roles, present: true, configured: false },
+      });
       await expect(buildConfig(makeConfig({ plugins: [roles] }))).resolves.toBeDefined();
     });
 
@@ -110,7 +119,9 @@ describe('frogbot buildConfig', () => {
           },
         ],
       });
-      await expect(buildConfig(config)).rejects.toThrowError('[frogbot] plugin at index 0 failed: plugin boom');
+      await expect(buildConfig(config)).rejects.toThrowError(
+        '[frogbot] plugin at index 0 failed: plugin boom',
+      );
     });
 
     it('wraps the correct index for non-first plugin failures', async () => {
@@ -123,7 +134,9 @@ describe('frogbot buildConfig', () => {
           },
         ],
       });
-      await expect(buildConfig(config)).rejects.toThrowError('[frogbot] plugin at index 2 failed: third died');
+      await expect(buildConfig(config)).rejects.toThrowError(
+        '[frogbot] plugin at index 2 failed: third died',
+      );
     });
 
     it('plugin can add fields to a collection', async () => {

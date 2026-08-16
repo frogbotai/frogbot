@@ -18,10 +18,7 @@
 // guards (fixed by passing `allowSystemInMessages: true` in both handlers,
 // mirroring the responses handler).
 
-import type {
-  LanguageModelV4,
-  LanguageModelV4CallOptions,
-} from '@ai-sdk/provider';
+import type { LanguageModelV4, LanguageModelV4CallOptions } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
@@ -39,7 +36,9 @@ function createRecordingModel(opts?: {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: async (options: LanguageModelV4CallOptions) => {
       opts?.onCall?.(options);
       return {
@@ -71,9 +70,14 @@ describe('system prompts must reach upstream on all text routes', () => {
   // rejects role:system in messages without allowSystemInMessages.
   it('chat completions: system message → 200 and system content reaches upstream', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o-mini',
@@ -90,9 +94,14 @@ describe('system prompts must reach upstream on all text routes', () => {
   // G155 regression guard — same defect on /v1/messages via top-level `system` param.
   it('messages: top-level system param → 200 and system content reaches upstream', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',

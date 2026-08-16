@@ -6,7 +6,7 @@ import { generateId, streamText as aiStreamText } from 'ai';
 
 import { toAISDKTools, toAISDKToolsContext } from '../../agents/tools.js';
 import type { Frogbot, Logger } from '../../frogbot.js';
-import type { SanitizedAIConfig,StreamTextOpts } from '../../types/ai.js';
+import type { SanitizedAIConfig, StreamTextOpts } from '../../types/ai.js';
 import type { FrogbotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
@@ -24,7 +24,17 @@ export async function streamTextOperation(
   opts: StreamTextOpts,
 ): Promise<ReturnType<typeof aiStreamText>> {
   const { gateway, config, frogbot } = deps;
-  const { model: input, req, overrideAccess, tools, onFinish, onEnd, onError, onAbort, ...aiSdkOpts } = opts;
+  const {
+    model: input,
+    req,
+    overrideAccess,
+    tools,
+    onFinish,
+    onEnd,
+    onError,
+    onAbort,
+    ...aiSdkOpts
+  } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
   // 1. Resolve model (router slug → model ID).
@@ -80,7 +90,8 @@ export async function streamTextOperation(
       },
       onAbort: async (event: unknown) => {
         await op.finish({
-          error: opts.abortSignal?.reason ?? new DOMException('The operation was aborted', 'AbortError'),
+          error:
+            opts.abortSignal?.reason ?? new DOMException('The operation was aborted', 'AbortError'),
         });
         if (onAbort) {
           await onAbort(event);

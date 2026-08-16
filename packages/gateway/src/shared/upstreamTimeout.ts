@@ -16,7 +16,10 @@ export type UpstreamSignal = {
   timedOut: () => boolean;
 };
 
-export function createUpstreamSignal(clientSignal: AbortSignal, timeoutMs?: number): UpstreamSignal {
+export function createUpstreamSignal(
+  clientSignal: AbortSignal,
+  timeoutMs?: number,
+): UpstreamSignal {
   if (!timeoutMs) {
     return { signal: clientSignal, timedOut: () => false };
   }
@@ -32,5 +35,8 @@ export function createUpstreamSignal(clientSignal: AbortSignal, timeoutMs?: numb
  * the first byte. Surfaces through the route `onError` as 504 `gateway_timeout`.
  */
 export function upstreamTimeoutError(): DOMException {
-  return new DOMException('The upstream request timed out before producing a response.', 'TimeoutError');
+  return new DOMException(
+    'The upstream request timed out before producing a response.',
+    'TimeoutError',
+  );
 }

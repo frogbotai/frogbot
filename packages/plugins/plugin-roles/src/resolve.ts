@@ -15,7 +15,9 @@ type FrogbotWithResolver = object & {
 
 export const defaultRoleResolver: RoleResolver = (req) => {
   const roles = (req.user as { roles?: unknown } | null)?.roles;
-  return Array.isArray(roles) ? roles.filter((role): role is string => typeof role === 'string') as RoleSlug[] : [];
+  return Array.isArray(roles)
+    ? (roles.filter((role): role is string => typeof role === 'string') as RoleSlug[])
+    : [];
 };
 
 export function attachRoleResolver(frogbot: object, resolver: RoleResolver): void {
@@ -23,10 +25,15 @@ export function attachRoleResolver(frogbot: object, resolver: RoleResolver): voi
 }
 
 export function resolverForRequest(req: FrogbotRequest): RoleResolver {
-  return (req.frogbot as FrogbotWithResolver | undefined)?.[configuredResolver] ?? defaultRoleResolver;
+  return (
+    (req.frogbot as FrogbotWithResolver | undefined)?.[configuredResolver] ?? defaultRoleResolver
+  );
 }
 
-export function resolveRequestRoles(req: FrogbotRequest, resolver = resolverForRequest(req)): RoleSlug[] {
+export function resolveRequestRoles(
+  req: FrogbotRequest,
+  resolver = resolverForRequest(req),
+): RoleSlug[] {
   const request = req as RequestWithRoles;
   request[resolvedRoles] ??= new Map();
   const cached = request[resolvedRoles].get(resolver);

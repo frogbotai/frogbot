@@ -5,10 +5,7 @@
 // Confirmed findings are wrapped as `it.fails(...)` so the suite stays green;
 // flip to `it()` when the corresponding fix lands.
 
-import type {
-  LanguageModelV4,
-  LanguageModelV4CallOptions,
-} from '@ai-sdk/provider';
+import type { LanguageModelV4, LanguageModelV4CallOptions } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
@@ -61,7 +58,9 @@ function createRecordingModel(opts?: {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: async (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
       if (error) throw error;
@@ -115,10 +114,15 @@ describe('chat response_format forwarded upstream', () => {
     // Mock returns valid JSON text: generateText with `output` set eagerly
     // parses the final text (ai generate-text.ts parseCompleteOutput) and a
     // non-JSON reply would fail the request before the assertion lands.
-    const app = makeAppWithModel('openai', createRecordingModel({
-      text: '{"ok":true}',
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        text: '{"ok":true}',
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o-mini',
@@ -132,10 +136,15 @@ describe('chat response_format forwarded upstream', () => {
 
   it('forwards response_format {type: json_schema, strict} as responseFormat {type: json, schema}', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      text: '{"city":"Paris"}',
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        text: '{"city":"Paris"}',
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const schema = {
       type: 'object',
@@ -153,10 +162,12 @@ describe('chat response_format forwarded upstream', () => {
     });
 
     expect(status).toBe(200);
-    expect(callOptions?.responseFormat).toEqual(expect.objectContaining({
-      type: 'json',
-      schema: expect.objectContaining({ type: 'object' }),
-    }));
+    expect(callOptions?.responseFormat).toEqual(
+      expect.objectContaining({
+        type: 'json',
+        schema: expect.objectContaining({ type: 'object' }),
+      }),
+    );
   });
 });
 
@@ -170,9 +181,14 @@ describe('chat response_format forwarded upstream', () => {
 describe('messages thinking forwarded upstream', () => {
   it('maps thinking {type: enabled, budget_tokens} to providerOptions.anthropic.thinking.budgetTokens', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',
@@ -197,9 +213,14 @@ describe('messages thinking forwarded upstream', () => {
 describe('responses tool-call round trip', () => {
   it('accepts function_call + function_call_output input items and delivers the tool result upstream', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/responses', {
       model: 'openai/gpt-4o-mini',
@@ -219,11 +240,13 @@ describe('responses tool-call round trip', () => {
           output: '{"temperature":"18C"}',
         },
       ],
-      tools: [{
-        type: 'function',
-        name: 'get_weather',
-        parameters: { type: 'object', properties: { city: { type: 'string' } } },
-      }],
+      tools: [
+        {
+          type: 'function',
+          name: 'get_weather',
+          parameters: { type: 'object', properties: { city: { type: 'string' } } },
+        },
+      ],
     });
 
     expect(status, `expected 200, got ${status}: ${JSON.stringify(body)}`).toBe(200);

@@ -1,10 +1,6 @@
 // Provider definition: Google Generative AI.
 
-import {
-  createGoogle,
-  type GoogleProvider,
-  type GoogleProviderSettings,
-} from '@ai-sdk/google';
+import { createGoogle, type GoogleProvider, type GoogleProviderSettings } from '@ai-sdk/google';
 
 import type { ProviderDefinition } from '../types.js';
 

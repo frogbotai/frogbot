@@ -1,4 +1,11 @@
-import type { Access, CollectionConfig, Endpoint, Field, FieldAccess, FrogbotRequest } from 'frogbot';
+import type {
+  Access,
+  CollectionConfig,
+  Endpoint,
+  Field,
+  FieldAccess,
+  FrogbotRequest,
+} from 'frogbot';
 
 import { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
 import { createPolicyFields } from './fields.js';
@@ -27,20 +34,27 @@ function mergeFields(...groups: (Field[] | undefined)[]): Field[] {
   return [...fields.values()];
 }
 
-function createEndpoints({ collectionSlug, tokenPrefix, canRevokeAnyKey }: Pick<CollectionOptions, 'collectionSlug' | 'tokenPrefix' | 'canRevokeAnyKey'>): Endpoint[] {
+function createEndpoints({
+  collectionSlug,
+  tokenPrefix,
+  canRevokeAnyKey,
+}: Pick<CollectionOptions, 'collectionSlug' | 'tokenPrefix' | 'canRevokeAnyKey'>): Endpoint[] {
   return [
     {
       method: 'post',
       path: '/mint',
       handler: async (req) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
-        const body = (await req.json?.().catch(() => null) ?? null) as { name?: unknown } | null;
+        const body = ((await req.json?.().catch(() => null)) ?? null) as { name?: unknown } | null;
         const name = typeof body?.name === 'string' ? body.name.trim() : '';
         if (!name) return Response.json({ error: 'Name is required' }, { status: 400 });
         try {
-          return Response.json(await mintApiKey({ req, collectionSlug, tokenPrefix, name }), { status: 201 });
+          return Response.json(await mintApiKey({ req, collectionSlug, tokenPrefix, name }), {
+            status: 201,
+          });
         } catch (error) {
-          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') return Response.json({ error: 'Authentication required' }, { status: 401 });
+          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required')
+            return Response.json({ error: 'Authentication required' }, { status: 401 });
           throw error;
         }
       },
@@ -51,14 +65,21 @@ function createEndpoints({ collectionSlug, tokenPrefix, canRevokeAnyKey }: Pick<
       handler: async (req) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
         const id = req.routeParams?.id;
-        if (typeof id !== 'string' || !id) return Response.json({ error: 'API key not found' }, { status: 404 });
+        if (typeof id !== 'string' || !id)
+          return Response.json({ error: 'API key not found' }, { status: 404 });
         try {
           const anyOwner = (await canRevokeAnyKey?.(req)) === true;
-          const { name: _name, owner: _owner, ...result } = await revokeApiKey({ req, collectionSlug, id, anyOwner });
+          const {
+            name: _name,
+            owner: _owner,
+            ...result
+          } = await revokeApiKey({ req, collectionSlug, id, anyOwner });
           return Response.json(result);
         } catch (error) {
-          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') return Response.json({ error: 'Authentication required' }, { status: 401 });
-          if (error instanceof ApiKeyServiceError && error.code === 'not_found') return Response.json({ error: 'API key not found' }, { status: 404 });
+          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required')
+            return Response.json({ error: 'Authentication required' }, { status: 401 });
+          if (error instanceof ApiKeyServiceError && error.code === 'not_found')
+            return Response.json({ error: 'API key not found' }, { status: 404 });
           throw error;
         }
       },
@@ -69,13 +90,19 @@ function createEndpoints({ collectionSlug, tokenPrefix, canRevokeAnyKey }: Pick<
       handler: async (req) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
         const id = req.routeParams?.id;
-        if (typeof id !== 'string' || !id) return Response.json({ error: 'API key not found' }, { status: 404 });
+        if (typeof id !== 'string' || !id)
+          return Response.json({ error: 'API key not found' }, { status: 404 });
         try {
           const anyOwner = (await canRevokeAnyKey?.(req)) === true;
-          return Response.json(await rotateApiKey({ req, collectionSlug, id, tokenPrefix, anyOwner }), { status: 201 });
+          return Response.json(
+            await rotateApiKey({ req, collectionSlug, id, tokenPrefix, anyOwner }),
+            { status: 201 },
+          );
         } catch (error) {
-          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') return Response.json({ error: 'Authentication required' }, { status: 401 });
-          if (error instanceof ApiKeyServiceError && error.code === 'not_found') return Response.json({ error: 'API key not found' }, { status: 404 });
+          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required')
+            return Response.json({ error: 'Authentication required' }, { status: 401 });
+          if (error instanceof ApiKeyServiceError && error.code === 'not_found')
+            return Response.json({ error: 'API key not found' }, { status: 404 });
           throw error;
         }
       },
@@ -84,13 +111,41 @@ function createEndpoints({ collectionSlug, tokenPrefix, canRevokeAnyKey }: Pick<
 }
 
 export function createApiKeysCollection(options: CollectionOptions): CollectionConfig {
-  const { authCollection, collectionSlug, collection, existing, policyAccess, usageCollection } = options;
+  const { authCollection, collectionSlug, collection, existing, policyAccess, usageCollection } =
+    options;
   const fields: Field[] = [
     { name: 'name', type: 'text', required: true },
-    { name: 'owner', type: 'relationship', relationTo: authCollection, required: true, index: true, access: { update: () => false } },
-    { name: 'prefix', type: 'text', required: true, index: true, access: { update: () => false }, admin: { readOnly: true } },
-    { name: 'tokenHash', type: 'text', required: true, unique: true, index: true, access: { read: () => false, update: () => false }, admin: { hidden: true } },
-    { name: 'lastUsedAt', type: 'date', access: { update: () => false }, admin: { readOnly: true } },
+    {
+      name: 'owner',
+      type: 'relationship',
+      relationTo: authCollection,
+      required: true,
+      index: true,
+      access: { update: () => false },
+    },
+    {
+      name: 'prefix',
+      type: 'text',
+      required: true,
+      index: true,
+      access: { update: () => false },
+      admin: { readOnly: true },
+    },
+    {
+      name: 'tokenHash',
+      type: 'text',
+      required: true,
+      unique: true,
+      index: true,
+      access: { read: () => false, update: () => false },
+      admin: { hidden: true },
+    },
+    {
+      name: 'lastUsedAt',
+      type: 'date',
+      access: { update: () => false },
+      admin: { readOnly: true },
+    },
     ...createPolicyFields(true, policyAccess),
     {
       name: 'revokedAt',
@@ -161,14 +216,15 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
       useAsTitle: 'name',
       ...existing?.admin,
       ...collection?.admin,
-      defaultColumns: collection?.admin?.defaultColumns ?? existing?.admin?.defaultColumns ?? [
-        'name',
-        'prefix',
-        ...(usageCollection ? ['totalCostUSD'] : []),
-        'lastUsedAt',
-        'revokedAt',
-        'actions',
-      ],
+      defaultColumns: collection?.admin?.defaultColumns ??
+        existing?.admin?.defaultColumns ?? [
+          'name',
+          'prefix',
+          ...(usageCollection ? ['totalCostUSD'] : []),
+          'lastUsedAt',
+          'revokedAt',
+          'actions',
+        ],
       components: {
         ...existing?.admin?.components,
         ...collection?.admin?.components,

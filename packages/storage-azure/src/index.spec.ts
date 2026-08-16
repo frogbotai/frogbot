@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest';
 
-import { azureStorage, getStorageClient } from './index'
+import { azureStorage, getStorageClient } from './index';
 
 describe('@frogbotai/storage-azure exports', () => {
   it('exports azureStorage as a function', () => {
-    expect(typeof azureStorage).toBe('function')
-  })
+    expect(typeof azureStorage).toBe('function');
+  });
 
   it('exports getStorageClient as a function', () => {
-    expect(typeof getStorageClient).toBe('function')
-  })
-})
+    expect(typeof getStorageClient).toBe('function');
+  });
+});

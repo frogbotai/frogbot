@@ -15,7 +15,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
-import { buildProviderRegistry, type ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import {
+  buildProviderRegistry,
+  type ProviderRegistry,
+} from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
 const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY ?? 'public';
@@ -52,14 +55,18 @@ type ResponsesBody = {
   object?: string;
   status?: string;
   output_text?: string;
-  output?: Array<{ type?: string; role?: string; content?: Array<{ type?: string; text?: string }> }>;
+  output?: Array<{
+    type?: string;
+    role?: string;
+    content?: Array<{ type?: string; text?: string }>;
+  }>;
 };
 
 describe.skipIf(!RUN_E2E)('gateway E2E — cross-route fidelity (same question, three wires)', () => {
   const app = makeZenApp();
 
   it(
-    'the same arithmetic question returns 200 + correct answer in each route\'s own envelope',
+    "the same arithmetic question returns 200 + correct answer in each route's own envelope",
     async () => {
       const [chat, messages, responses] = await Promise.all([
         postJson<ChatBody>(app, '/v1/chat/completions', {

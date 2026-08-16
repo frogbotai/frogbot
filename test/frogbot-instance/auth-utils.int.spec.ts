@@ -21,7 +21,9 @@ describe('frogbot-instance: Auth + utilities', () => {
       overrideAccess: true,
     });
   });
-  afterAll(async () => { await booted.shutdown(); });
+  afterAll(async () => {
+    await booted.shutdown();
+  });
 
   describe('auth', () => {
     it('with valid JWT headers returns user and permissions', async () => {

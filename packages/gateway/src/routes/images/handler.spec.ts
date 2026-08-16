@@ -35,11 +35,13 @@ describe('imagesRoute', () => {
     expect(await res.json()).toMatchObject({
       data: [{ b64_json: 'aW1hZ2U=' }],
     });
-    expect(doGenerate).toHaveBeenCalledWith(expect.objectContaining({
-      prompt: 'a frog robot',
-      n: 1,
-      size: '1024x1024',
-    }));
+    expect(doGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: 'a frog robot',
+        n: 1,
+        size: '1024x1024',
+      }),
+    );
   });
 
   it('returns typed 400 for response_format url', async () => {

@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const peopleIcon: IconNode = [
   [
@@ -31,8 +31,8 @@ export const peopleIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const PeopleIcon = createLucideIcon('PeopleIcon', peopleIcon, 4, '0 0 48 48')
+const PeopleIcon = createLucideIcon('PeopleIcon', peopleIcon, 4, '0 0 48 48');
 
-export default PeopleIcon
+export default PeopleIcon;

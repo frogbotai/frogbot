@@ -1,13 +1,21 @@
 import { ConnectionError } from '../connections/api.js';
-import { executeActivepiecesAction, loadActivepiecesPiece, propertiesSchema } from '../pieces/activepieces.js';
+import {
+  executeActivepiecesAction,
+  loadActivepiecesPiece,
+  propertiesSchema,
+} from '../pieces/activepieces.js';
 import type { CredentialType, Piece, PieceFactoryConfig, PiecePolicy } from '../types/piece.js';
 import type { AnyTool } from '../types/tool.js';
 
 export { UnsupportedPieceContextError } from '../pieces/activepieces.js';
 export type { Piece, PieceFactoryConfig, PiecePolicy } from '../types/piece.js';
 
-function derivePolicy(credentialType: CredentialType, auth?: PieceFactoryConfig['auth']): PiecePolicy {
-  if (auth?.allowUserOverride) throw new Error('[frogbot] `allowUserOverride` is not yet supported.');
+function derivePolicy(
+  credentialType: CredentialType,
+  auth?: PieceFactoryConfig['auth'],
+): PiecePolicy {
+  if (auth?.allowUserOverride)
+    throw new Error('[frogbot] `allowUserOverride` is not yet supported.');
   if (credentialType === 'none') return { type: 'none' };
   if (!auth) return { type: 'user' };
   if (credentialType === 'oauth2') {
@@ -21,7 +29,16 @@ function derivePolicy(credentialType: CredentialType, auth?: PieceFactoryConfig[
   return { type: 'developer', credential };
 }
 
-export function createActivepiecesPiece({ module, service, credentialType, credentialFields, defaultActions, errorsAsResults = false, config, scopes }: {
+export function createActivepiecesPiece({
+  module,
+  service,
+  credentialType,
+  credentialFields,
+  defaultActions,
+  errorsAsResults = false,
+  config,
+  scopes,
+}: {
   module: Record<string, unknown>;
   service: string;
   credentialType: CredentialType;
@@ -44,12 +61,19 @@ export function createActivepiecesPiece({ module, service, credentialType, crede
       inputSchema: propertiesSchema(action.props),
       execute: async (input: Record<string, unknown>, ctx) => {
         if (credentialType !== 'none' && policy.type !== 'developer' && !ctx.req.user) {
-          return { error: `Authentication is required to use '${service}'.`, code: 'unauthenticated' };
+          return {
+            error: `Authentication is required to use '${service}'.`,
+            code: 'unauthenticated',
+          };
         }
         try {
-          const auth = credentialType === 'none'
-            ? undefined
-            : await ctx.frogbot.connections.resolve({ service, owner: ctx.req.user ?? undefined });
+          const auth =
+            credentialType === 'none'
+              ? undefined
+              : await ctx.frogbot.connections.resolve({
+                  service,
+                  owner: ctx.req.user ?? undefined,
+                });
           return await executeActivepiecesAction({ action, propsValue: input, auth, ctx });
         } catch (error) {
           if (error instanceof ConnectionError) return { error: error.message, code: error.code };

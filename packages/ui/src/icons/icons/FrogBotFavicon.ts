@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const frogBotFavicon: IconNode = [
   [
@@ -52,13 +52,13 @@ export const frogBotFavicon: IconNode = [
       transform: 'matrix(1.0553187,0,0,1.0553187,16.770994,16.77428)',
     },
   ],
-]
+];
 
 const FrogBotFavicon = createLucideIcon(
   'FrogBotFaviconIcon',
   frogBotFavicon,
   0,
   '0 0 139.05405 139.05405',
-)
+);
 
-export default FrogBotFavicon
+export default FrogBotFavicon;

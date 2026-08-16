@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const cursorIcon: IconNode = [
   [
@@ -27,8 +27,8 @@ export const cursorIcon: IconNode = [
       strokeWidth: '0',
     },
   ],
-]
+];
 
-const CursorIcon = createLucideIcon('CursorIcon', cursorIcon)
+const CursorIcon = createLucideIcon('CursorIcon', cursorIcon);
 
-export default CursorIcon
+export default CursorIcon;

@@ -15,13 +15,29 @@ function makeSpan() {
   return {
     attributes: {} as Record<string, unknown>,
     ended: false,
-    addEvent() { return this as unknown as Span; },
-    end() { this.ended = true; },
+    addEvent() {
+      return this as unknown as Span;
+    },
+    end() {
+      this.ended = true;
+    },
     recordException: vi.fn(),
-    setAttribute(key: string, value: unknown) { this.attributes[key] = value; return this as unknown as Span; },
-    setAttributes(attrs: Record<string, unknown>) { Object.assign(this.attributes, attrs); return this as unknown as Span; },
+    setAttribute(key: string, value: unknown) {
+      this.attributes[key] = value;
+      return this as unknown as Span;
+    },
+    setAttributes(attrs: Record<string, unknown>) {
+      Object.assign(this.attributes, attrs);
+      return this as unknown as Span;
+    },
     setStatus: vi.fn(),
-    spanContext() { return { traceId: '00000000000000000000000000000000', spanId: '0000000000000000', traceFlags: 0 }; },
+    spanContext() {
+      return {
+        traceId: '00000000000000000000000000000000',
+        spanId: '0000000000000000',
+        traceFlags: 0,
+      };
+    },
   };
 }
 
@@ -30,14 +46,21 @@ function createNonStreamingMock(): LanguageModelV4 {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    get supportedUrls() { return Promise.resolve({}); },
-    doGenerate: () => Promise.resolve({
-      content: [{ type: 'text', text: 'hi' }],
-      finishReason: 'stop',
-      usage: { inputTokens: { total: 5, noCache: 5 }, outputTokens: { total: 4, text: 4 } },
-      warnings: [],
-      response: { id: 'mock-resp-1', modelId: 'mock-model', timestamp: new Date('2026-01-01T00:00:00Z') },
-    }),
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
+    doGenerate: () =>
+      Promise.resolve({
+        content: [{ type: 'text', text: 'hi' }],
+        finishReason: 'stop',
+        usage: { inputTokens: { total: 5, noCache: 5 }, outputTokens: { total: 4, text: 4 } },
+        warnings: [],
+        response: {
+          id: 'mock-resp-1',
+          modelId: 'mock-model',
+          timestamp: new Date('2026-01-01T00:00:00Z'),
+        },
+      }),
     doStream: () => Promise.reject(new Error('unused in non-streaming path')),
   };
 }
@@ -49,7 +72,9 @@ function makeApp(signalLevel: 'full' | 'required', spanNames: string[]) {
       return makeSpan();
     }),
   } as unknown as Tracer;
-  const registry = { openai: { languageModel: () => createNonStreamingMock() } } as unknown as ProviderRegistry;
+  const registry = {
+    openai: { languageModel: () => createNonStreamingMock() },
+  } as unknown as ProviderRegistry;
   return createApp({ registry, tracer, signalLevel });
 }
 

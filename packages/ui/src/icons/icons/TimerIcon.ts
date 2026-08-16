@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const timerIcon: IconNode = [
   [
@@ -26,8 +26,8 @@ export const timerIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const TimerIcon = createLucideIcon('TimerIcon', timerIcon, undefined, '0 0 20 20')
+const TimerIcon = createLucideIcon('TimerIcon', timerIcon, undefined, '0 0 20 20');
 
-export default TimerIcon
+export default TimerIcon;

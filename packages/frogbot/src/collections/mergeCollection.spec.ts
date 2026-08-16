@@ -33,7 +33,11 @@ describe('mergeCollection', () => {
       base: makeBase(),
       reservedFields: [],
     });
-    expect(merged.fields.map((f) => ('name' in f ? f.name : undefined))).toEqual(['department', 'title', 'agent']);
+    expect(merged.fields.map((f) => ('name' in f ? f.name : undefined))).toEqual([
+      'department',
+      'title',
+      'agent',
+    ]);
   });
 
   it('deep-merges matching fields with user props winning', () => {
@@ -43,7 +47,9 @@ describe('mergeCollection', () => {
         fields: [{ name: 'title', type: 'text', label: 'Subject', admin: { readOnly: true } }],
       },
       base: makeBase({
-        fields: [{ name: 'title', type: 'text', index: true, admin: { description: 'Thread title' } }],
+        fields: [
+          { name: 'title', type: 'text', index: true, admin: { description: 'Thread title' } },
+        ],
       }),
       reservedFields: [],
     });
@@ -131,7 +137,11 @@ describe('mergeCollection', () => {
       reservedFields: [],
     });
     expect(merged.trash).toBe(false);
-    const defaulted = mergeChatCollection({ user: { slug: 'threads', fields: [] }, base: makeBase(), reservedFields: [] });
+    const defaulted = mergeChatCollection({
+      user: { slug: 'threads', fields: [] },
+      base: makeBase(),
+      reservedFields: [],
+    });
     expect(defaulted.trash).toBe(true);
   });
 
@@ -162,11 +172,15 @@ describe('mergeCollection', () => {
       mergeChatCollection({
         user: {
           slug: 'messages',
-          fields: [{ name: 'usage', type: 'group', fields: [{ name: 'inputTokens', type: 'text' }] }],
+          fields: [
+            { name: 'usage', type: 'group', fields: [{ name: 'inputTokens', type: 'text' }] },
+          ],
         },
         base: makeBase({
           slug: 'messages',
-          fields: [{ name: 'usage', type: 'group', fields: [{ name: 'inputTokens', type: 'number' }] }],
+          fields: [
+            { name: 'usage', type: 'group', fields: [{ name: 'inputTokens', type: 'number' }] },
+          ],
         }),
         reservedFields: [],
       }),

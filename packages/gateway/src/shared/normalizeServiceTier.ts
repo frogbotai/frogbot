@@ -25,7 +25,9 @@ const GEMINI_TRAFFIC_TYPE_MAP: Record<string, string> = {
   TRAFFIC_TYPE_UNSPECIFIED: 'auto',
 };
 
-export function normalizeServiceTier(providerMetadata?: Record<string, Record<string, unknown>>): string | undefined {
+export function normalizeServiceTier(
+  providerMetadata?: Record<string, Record<string, unknown>>,
+): string | undefined {
   if (!providerMetadata) return undefined;
 
   // Check each known provider namespace for service_tier

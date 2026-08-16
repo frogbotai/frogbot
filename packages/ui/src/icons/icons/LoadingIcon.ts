@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const loadingIcon: IconNode = [
   [
@@ -58,8 +58,8 @@ export const loadingIcon: IconNode = [
       strokeLinecap: 'round',
     },
   ],
-]
+];
 
-const LoadingIcon = createLucideIcon('Loading', loadingIcon)
+const LoadingIcon = createLucideIcon('Loading', loadingIcon);
 
-export default LoadingIcon
+export default LoadingIcon;

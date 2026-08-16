@@ -1,1 +1,1 @@
-export { nodemailerAdapter, type NodemailerAdapterArgs } from '@payloadcms/email-nodemailer'
+export { nodemailerAdapter, type NodemailerAdapterArgs } from '@payloadcms/email-nodemailer';

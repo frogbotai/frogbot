@@ -191,17 +191,21 @@ export class Frogbot {
       const configDir = resolveConfigDir(process.cwd());
       if (configDir) {
         void writeGeneratedTypes(this.config, configDir).catch((err: unknown) => {
-          this.logger.warn(`[frogbot] type generation failed: ${err instanceof Error ? err.message : String(err)}`);
+          this.logger.warn(
+            `[frogbot] type generation failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
         });
       }
     }
 
     if (process.env.NODE_ENV !== 'production' && !options.disableOnInit) {
-      void generateImportMap(this.payload.config, { ignoreResolveError: true }).catch((err: unknown) => {
-        this.logger.warn(
-          `[frogbot] import map generation failed: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      });
+      void generateImportMap(this.payload.config, { ignoreResolveError: true }).catch(
+        (err: unknown) => {
+          this.logger.warn(
+            `[frogbot] import map generation failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        },
+      );
     }
 
     // Run onInit callbacks.
@@ -262,7 +266,9 @@ export class Frogbot {
 
   // ── CRUD ────────────────────────────────────────────────────────────────
 
-  async find<T extends CollectionSlug>(args: FindArgs<T>): Promise<PaginatedDocs<TypedCollection<T>>> {
+  async find<T extends CollectionSlug>(
+    args: FindArgs<T>,
+  ): Promise<PaginatedDocs<TypedCollection<T>>> {
     return this.local.find(args);
   }
 
@@ -275,14 +281,18 @@ export class Frogbot {
   }
 
   async update<T extends CollectionSlug>(args: UpdateByIDArgs<T>): Promise<TypedCollection<T>>;
-  async update<T extends CollectionSlug>(args: UpdateManyArgs<T>): Promise<BulkResult<TypedCollection<T>>>;
+  async update<T extends CollectionSlug>(
+    args: UpdateManyArgs<T>,
+  ): Promise<BulkResult<TypedCollection<T>>>;
   async update<T extends CollectionSlug>(args: UpdateArgs<T>) {
     if ('id' in args) return this.local.update(args);
     return this.local.update(args);
   }
 
   async delete<T extends CollectionSlug>(args: DeleteByIDArgs<T>): Promise<TypedCollection<T>>;
-  async delete<T extends CollectionSlug>(args: DeleteManyArgs<T>): Promise<BulkResult<TypedCollection<T>>>;
+  async delete<T extends CollectionSlug>(
+    args: DeleteManyArgs<T>,
+  ): Promise<BulkResult<TypedCollection<T>>>;
   async delete<T extends CollectionSlug>(args: DeleteByIDArgs<T> | DeleteManyArgs<T>) {
     if ('id' in args) return this.local.delete(args);
     return this.local.delete(args);
@@ -316,11 +326,15 @@ export class Frogbot {
     return this.local.findVersionByID(args);
   }
 
-  async countVersions<T extends CollectionSlug>(args: CountVersionsArgs<T>): Promise<{ totalDocs: number }> {
+  async countVersions<T extends CollectionSlug>(
+    args: CountVersionsArgs<T>,
+  ): Promise<{ totalDocs: number }> {
     return this.local.countVersions(args);
   }
 
-  async restoreVersion<T extends CollectionSlug>(args: RestoreVersionArgs<T>): Promise<TypedCollection<T>> {
+  async restoreVersion<T extends CollectionSlug>(
+    args: RestoreVersionArgs<T>,
+  ): Promise<TypedCollection<T>> {
     return this.local.restoreVersion(args);
   }
 
@@ -338,7 +352,9 @@ export class Frogbot {
     return this.local.forgotPassword(args);
   }
 
-  async resetPassword<T extends CollectionSlug>(args: ResetPasswordArgs<T>): Promise<ResetPasswordResult> {
+  async resetPassword<T extends CollectionSlug>(
+    args: ResetPasswordArgs<T>,
+  ): Promise<ResetPasswordResult> {
     return this.local.resetPassword(args);
   }
 
@@ -373,26 +389,19 @@ export class Frogbot {
   streamText = (opts: StreamTextOpts): ReturnType<typeof streamTextOperation> =>
     streamTextOperation(this.aiDeps(), opts);
 
-  embed = (opts: EmbedOpts) =>
-    embedOperation(this.aiDeps(), opts);
+  embed = (opts: EmbedOpts) => embedOperation(this.aiDeps(), opts);
 
-  embedMany = (opts: EmbedManyOpts) =>
-    embedManyOperation(this.aiDeps(), opts);
+  embedMany = (opts: EmbedManyOpts) => embedManyOperation(this.aiDeps(), opts);
 
-  generateImage = (opts: GenerateImageOpts) =>
-    generateImageOperation(this.aiDeps(), opts);
+  generateImage = (opts: GenerateImageOpts) => generateImageOperation(this.aiDeps(), opts);
 
-  generateSpeech = (opts: GenerateSpeechOpts) =>
-    generateSpeechOperation(this.aiDeps(), opts);
+  generateSpeech = (opts: GenerateSpeechOpts) => generateSpeechOperation(this.aiDeps(), opts);
 
-  transcribe = (opts: TranscribeOpts) =>
-    transcribeOperation(this.aiDeps(), opts);
+  transcribe = (opts: TranscribeOpts) => transcribeOperation(this.aiDeps(), opts);
 
-  generateVideo = (opts: GenerateVideoOpts) =>
-    generateVideoOperation(this.aiDeps(), opts);
+  generateVideo = (opts: GenerateVideoOpts) => generateVideoOperation(this.aiDeps(), opts);
 
-  rerank = (opts: RerankOpts) =>
-    rerankOperation(this.aiDeps(), opts);
+  rerank = (opts: RerankOpts) => rerankOperation(this.aiDeps(), opts);
 
   // ── Training data ───────────────────────────────────────────────────────
 

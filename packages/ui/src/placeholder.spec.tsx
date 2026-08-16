@@ -1,12 +1,12 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 
-import { Placeholder } from './placeholder'
+import { Placeholder } from './placeholder';
 
 describe('Placeholder', () => {
   it('renders', () => {
-    render(<Placeholder />)
+    render(<Placeholder />);
 
-    expect(screen.getByText('UI preview')).toBeTruthy()
-  })
-})
+    expect(screen.getByText('UI preview')).toBeTruthy();
+  });
+});

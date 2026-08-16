@@ -46,7 +46,9 @@ function makeMockModel(): LanguageModelV4 {
     provider: 'mock',
     modelId: 'mock-model',
     defaultObjectGenerationMode: undefined,
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: async () => ({
       content: [{ type: 'text' as const, text: 'hi' }],
       finishReason: 'stop',
@@ -61,7 +63,11 @@ function makeMockModel(): LanguageModelV4 {
       stream: new ReadableStream<LanguageModelV4StreamPart>({
         start(controller) {
           controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
-          controller.enqueue({ type: 'text-delta', id: 'text-0', delta: 'hi' } as LanguageModelV4StreamPart);
+          controller.enqueue({
+            type: 'text-delta',
+            id: 'text-0',
+            delta: 'hi',
+          } as LanguageModelV4StreamPart);
           controller.enqueue({ type: 'text-end', id: 'text-0' } as LanguageModelV4StreamPart);
           controller.enqueue({
             type: 'finish',
@@ -79,7 +85,9 @@ function makeMockModel(): LanguageModelV4 {
 }
 
 function makeApp() {
-  const registry = { groq: { languageModel: () => makeMockModel() } } as unknown as ProviderRegistry;
+  const registry = {
+    groq: { languageModel: () => makeMockModel() },
+  } as unknown as ProviderRegistry;
   return createApp({ registry });
 }
 
@@ -145,20 +153,17 @@ describe('G92 — project config walk stops at the project root (DX10)', () => {
 // ---------------------------------------------------------------------------
 
 describe('G93 — provider-name typos silently accepted (DX11)', () => {
-  it(
-    'createGateway with typo provider key "openaai" should warn or error (G93)',
-    () => {
-      // parseGatewayConfig validates provider names against PROVIDER_NAMES. A
-      // typo key like "openaai" is not a known provider, so validation throws
-      // with a "did you mean" hint instead of silently dropping it.
-      expect(() => {
-        createGateway({
-          providers: {
-            // @ts-expect-error intentional typo to test runtime validation
-            openaai: { apiKey: 'sk-test' },
-          },
-        });
-      }).toThrow(/unknown provider|invalid provider|openaai/i);
-    },
-  );
+  it('createGateway with typo provider key "openaai" should warn or error (G93)', () => {
+    // parseGatewayConfig validates provider names against PROVIDER_NAMES. A
+    // typo key like "openaai" is not a known provider, so validation throws
+    // with a "did you mean" hint instead of silently dropping it.
+    expect(() => {
+      createGateway({
+        providers: {
+          // @ts-expect-error intentional typo to test runtime validation
+          openaai: { apiKey: 'sk-test' },
+        },
+      });
+    }).toThrow(/unknown provider|invalid provider|openaai/i);
+  });
 });

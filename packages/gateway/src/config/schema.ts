@@ -157,9 +157,8 @@ export function parseGatewayConfig(input: GatewayConfig): GatewayConfig {
       } else {
         const catalog = input.catalog ?? DEFAULT_MODEL_CATALOG;
         for (const model of models) {
-          const canonicalId = typeof model === 'string'
-            ? canonicalizeModelId(`${name}/${model}`)
-            : '';
+          const canonicalId =
+            typeof model === 'string' ? canonicalizeModelId(`${name}/${model}`) : '';
           if (!model || typeof model !== 'string' || !catalog.has(canonicalId)) {
             issues.push(`providers.${name}.models contains unknown model: ${String(model)}`);
           }

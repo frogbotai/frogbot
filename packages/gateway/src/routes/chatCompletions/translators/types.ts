@@ -28,10 +28,7 @@ export type OpenAIChatRequest = {
 };
 
 export type OpenAIMessage =
-  | OpenAISystemMessage
-  | OpenAIUserMessage
-  | OpenAIAssistantMessage
-  | OpenAIToolMessage;
+  OpenAISystemMessage | OpenAIUserMessage | OpenAIAssistantMessage | OpenAIToolMessage;
 
 export type OpenAIUnknownMessage = {
   role: string;
@@ -61,16 +58,31 @@ export type OpenAIContentPart =
   | OpenAIContentPartFile;
 
 export type OpenAIContentPartText = { type: 'text'; text: string; cache_control?: CacheControl };
-export type OpenAIContentPartImage = { type: 'image_url'; image_url: { url: string; detail?: string | null }; cache_control?: CacheControl };
+export type OpenAIContentPartImage = {
+  type: 'image_url';
+  image_url: { url: string; detail?: string | null };
+  cache_control?: CacheControl;
+};
 export type OpenAIContentPartInputAudio = {
   type: 'input_audio';
   input_audio: { data: string; format: string };
   cache_control?: CacheControl;
 };
-export type OpenAIContentPartFile = { type: 'file'; file: { filename?: string; file_data?: string; file_id?: string }; cache_control?: CacheControl };
+export type OpenAIContentPartFile = {
+  type: 'file';
+  file: { filename?: string; file_data?: string; file_id?: string };
+  cache_control?: CacheControl;
+};
 
 export type OpenAIReasoningDetail =
-  | { type: 'reasoning.text'; id?: string; index: number; text: string; signature?: string; format?: string }
+  | {
+      type: 'reasoning.text';
+      id?: string;
+      index: number;
+      text: string;
+      signature?: string;
+      format?: string;
+    }
   | { type: 'reasoning.encrypted'; id?: string; index: number; data: string; format?: string };
 
 export type OpenAIAssistantMessage = {

@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const microsoftIcon: IconNode = [
   [
@@ -30,8 +30,8 @@ export const microsoftIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const MicrosoftIcon = createLucideIcon('MicrosoftIcon', microsoftIcon, 0, '0 0 23 23')
+const MicrosoftIcon = createLucideIcon('MicrosoftIcon', microsoftIcon, 0, '0 0 23 23');
 
-export default MicrosoftIcon
+export default MicrosoftIcon;

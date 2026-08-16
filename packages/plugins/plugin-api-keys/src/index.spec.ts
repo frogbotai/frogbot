@@ -27,10 +27,9 @@ describe('apiKeysPlugin', () => {
     } as FrogbotConfig;
     const result = await apiKeysPlugin()(config);
     const users = result.collections[0];
-    expect(typeof users?.auth === 'object' && users.auth.strategies?.map((strategy) => strategy.name)).toEqual([
-      'existing',
-      'api-key',
-    ]);
+    expect(
+      typeof users?.auth === 'object' && users.auth.strategies?.map((strategy) => strategy.name),
+    ).toEqual(['existing', 'api-key']);
   });
 
   it('composes API key attribution into AI usage tracking', async () => {
@@ -87,8 +86,15 @@ describe('apiKeysPlugin', () => {
     const result = await apiKeysPlugin({ defaults: { monthlyBudgetUSD: 20, rpm: 5 } })(config);
     const users = result.collections.find(({ slug }) => slug === 'users');
     const keys = result.collections.find(({ slug }) => slug === 'api-keys');
-    expect(users?.fields).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'monthlyBudget' })]));
-    expect(keys?.fields).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'monthlyBudget' }), expect.objectContaining({ name: 'spendThisPeriodUSD' })]));
+    expect(users?.fields).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: 'monthlyBudget' })]),
+    );
+    expect(keys?.fields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'monthlyBudget' }),
+        expect.objectContaining({ name: 'spendThisPeriodUSD' }),
+      ]),
+    );
     const budget = keys?.fields.find((field) => 'name' in field && field.name === 'monthlyBudget');
     const update = budget && 'access' in budget ? budget.access?.update : undefined;
     expect(await update?.({ req: { user: { id: 'admin-1' } } } as never)).toBe(false);
@@ -100,13 +106,19 @@ describe('apiKeysPlugin', () => {
       db: {},
       collections: [{ slug: 'users', auth: true, fields: [] }],
     } as FrogbotConfig;
-    const result = await rolesPlugin({ roles: ['admin', 'member'] })(await apiKeysPlugin({ policyAccess: allow('admin') })(config));
+    const result = await rolesPlugin({ roles: ['admin', 'member'] })(
+      await apiKeysPlugin({ policyAccess: allow('admin') })(config),
+    );
     const keys = result.collections.find(({ slug }) => slug === 'api-keys');
     const budget = keys?.fields.find((field) => 'name' in field && field.name === 'monthlyBudget');
     const update = budget && 'access' in budget ? budget.access?.update : undefined;
 
-    expect(await update?.({ req: { user: { id: 'user-1', roles: ['member'] } } } as never)).toBe(false);
-    expect(await update?.({ req: { user: { id: 'admin-1', roles: ['admin'] } } } as never)).toBe(true);
+    expect(await update?.({ req: { user: { id: 'user-1', roles: ['member'] } } } as never)).toBe(
+      false,
+    );
+    expect(await update?.({ req: { user: { id: 'admin-1', roles: ['admin'] } } } as never)).toBe(
+      true,
+    );
   });
 
   it('blocks exhausted budgets and disallowed models', async () => {
@@ -116,13 +128,21 @@ describe('apiKeysPlugin', () => {
       collections: [{ slug: 'users', auth: true, fields: [] }],
       ai: { providers: { openai: { apiKey: 'test' } } },
     } as FrogbotConfig;
-    const result = await apiKeysPlugin({ defaults: { monthlyBudgetUSD: 10, models: ['openai/gpt-4o-mini'] } })(config);
-    const findByID = vi.fn().mockResolvedValue({ id: 'key-1', spendThisPeriodUSD: 10, owner: 'user-1' });
+    const result = await apiKeysPlugin({
+      defaults: { monthlyBudgetUSD: 10, models: ['openai/gpt-4o-mini'] },
+    })(config);
+    const findByID = vi
+      .fn()
+      .mockResolvedValue({ id: 'key-1', spendThisPeriodUSD: 10, owner: 'user-1' });
     const req = { frogbot: { findByID }, user: { id: 'user-1', apiKeyId: 'key-1' } };
     const context = {};
-    await expect(result.ai?.hooks?.beforeOperation?.at(-1)?.({ req, context } as never)).rejects.toMatchObject({ code: 'budget_exceeded', status: 403 });
+    await expect(
+      result.ai?.hooks?.beforeOperation?.at(-1)?.({ req, context } as never),
+    ).rejects.toMatchObject({ code: 'budget_exceeded', status: 403 });
     findByID.mockResolvedValue({ id: 'key-1', spendThisPeriodUSD: 0, owner: 'user-1' });
     await result.ai?.hooks?.beforeOperation?.at(-1)?.({ req, context } as never);
-    expect(() => result.ai?.hooks?.beforeUpstream?.at(-1)?.({ context, model: 'openai/gpt-4o' } as never)).toThrow(expect.objectContaining({ code: 'model_not_allowed', status: 403 }));
+    expect(() =>
+      result.ai?.hooks?.beforeUpstream?.at(-1)?.({ context, model: 'openai/gpt-4o' } as never),
+    ).toThrow(expect.objectContaining({ code: 'model_not_allowed', status: 403 }));
   });
 });

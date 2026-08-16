@@ -12,8 +12,12 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 describe('frogbot-instance: CRUD expansion', () => {
   let booted: BootedFrogbot;
 
-  beforeAll(async () => { booted = await bootFrogbot(dirname); });
-  afterAll(async () => { await booted.shutdown(); });
+  beforeAll(async () => {
+    booted = await bootFrogbot(dirname);
+  });
+  afterAll(async () => {
+    await booted.shutdown();
+  });
 
   describe('duplicate', () => {
     it('duplicates a document and returns a new ID with same data', async () => {

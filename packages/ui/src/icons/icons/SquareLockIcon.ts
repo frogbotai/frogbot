@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const squareLockIcon: IconNode = [
   [
@@ -23,8 +23,8 @@ export const squareLockIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const SquareLockIcon = createLucideIcon('SquareLockIcon', squareLockIcon, 1, '0 0 16 16')
+const SquareLockIcon = createLucideIcon('SquareLockIcon', squareLockIcon, 1, '0 0 16 16');
 
-export default SquareLockIcon
+export default SquareLockIcon;

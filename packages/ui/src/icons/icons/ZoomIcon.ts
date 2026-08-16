@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const zoomIcon: IconNode = [
   [
@@ -9,8 +9,8 @@ export const zoomIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const ZoomIcon = createLucideIcon('ZoomIcon', zoomIcon, 0, '0 0 24 24')
+const ZoomIcon = createLucideIcon('ZoomIcon', zoomIcon, 0, '0 0 24 24');
 
-export default ZoomIcon
+export default ZoomIcon;

@@ -1,8 +1,4 @@
-import {
-  createVoyage,
-  type VoyageProvider,
-  type VoyageProviderSettings,
-} from '@ai-sdk/voyage';
+import { createVoyage, type VoyageProvider, type VoyageProviderSettings } from '@ai-sdk/voyage';
 
 import type { ProviderDefinition } from '../types.js';
 

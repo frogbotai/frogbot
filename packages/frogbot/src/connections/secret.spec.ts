@@ -25,11 +25,12 @@ function setup() {
     connections: { enabled: true, slug: 'connections', encryption, sources: [], assignments: {} },
     pieces,
   });
-  const request = (body: unknown, user: unknown = { id: 'owner' }) => ({
-    user,
-    json: async () => body,
-    frogbot: { create, update, find },
-  }) as never;
+  const request = (body: unknown, user: unknown = { id: 'owner' }) =>
+    ({
+      user,
+      json: async () => body,
+      frogbot: { create, update, find },
+    }) as never;
   return { encryption, create, update, find, endpoints, request };
 }
 
@@ -48,15 +49,24 @@ describe('secret connection endpoints', () => {
   it('stores custom secrets byte-identically and instance values as metadata', async () => {
     const { endpoints, request, create, encryption } = setup();
     const serviceAccountJson = '{"private_key":"line1\\nline2"}';
-    await endpoints[0]!.handler(request({ service: 'vertex', credentials: { serviceAccountJson, region: 'us-east1' } }));
+    await endpoints[0]!.handler(
+      request({ service: 'vertex', credentials: { serviceAccountJson, region: 'us-east1' } }),
+    );
     const data = create.mock.calls[0]![0].data;
-    expect(JSON.parse(await encryption.decrypt(data.encryptedCredentials))).toEqual({ serviceAccountJson });
+    expect(JSON.parse(await encryption.decrypt(data.encryptedCredentials))).toEqual({
+      serviceAccountJson,
+    });
     expect(data.metadata).toEqual({ region: 'us-east1' });
   });
 
   it('rejects unknown custom fields and unauthenticated submissions', async () => {
     const { endpoints, request } = setup();
-    const invalid = await endpoints[0]!.handler(request({ service: 'vertex', credentials: { serviceAccountJson: '{}', region: 'x', extra: true } }));
+    const invalid = await endpoints[0]!.handler(
+      request({
+        service: 'vertex',
+        credentials: { serviceAccountJson: '{}', region: 'x', extra: true },
+      }),
+    );
     expect(invalid.status).toBe(400);
     expect(await invalid.json()).toEqual({ error: 'Unknown credential fields: extra.' });
     expect((await endpoints[0]!.handler(request({}, null))).status).toBe(401);
@@ -65,7 +75,10 @@ describe('secret connection endpoints', () => {
   it('replaces and revokes only owner-scoped records', async () => {
     const { endpoints, request, find, update } = setup();
     find.mockResolvedValue({ docs: [{ id: 'existing' }] });
-    expect((await endpoints[1]!.handler(request({ service: 'resend', credentials: { value: 'new' } }))).status).toBe(200);
+    expect(
+      (await endpoints[1]!.handler(request({ service: 'resend', credentials: { value: 'new' } })))
+        .status,
+    ).toBe(200);
     expect((await endpoints[2]!.handler(request({ service: 'resend' }))).status).toBe(200);
     expect(find.mock.calls[0]![0].where.and[0]).toEqual({ owner: { equals: 'owner' } });
     expect(update.mock.calls[1]![0].data).toEqual({ status: 'revoked', encryptedCredentials: '' });

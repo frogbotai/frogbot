@@ -4,10 +4,13 @@ import { InvalidToolArgumentsError } from '../../../../errors/gatewayError.js';
 import type { ProviderMetadata } from '../../../../shared/types.js';
 import type { OpenAIAssistantMessage } from '../types.js';
 
-export function parseAssistantMessage(msg: OpenAIAssistantMessage, messageIndex: number): AssistantModelMessage {
+export function parseAssistantMessage(
+  msg: OpenAIAssistantMessage,
+  messageIndex: number,
+): AssistantModelMessage {
   const text = Array.isArray(msg.content)
     ? msg.content.map((p) => p.text).join('')
-    : msg.content ?? '';
+    : (msg.content ?? '');
   const hasReasoningDetails = !!msg.reasoning_details && msg.reasoning_details.length > 0;
   const hasReasoning = hasReasoningDetails || !!msg.reasoning_content;
   const hasToolCalls = !!msg.tool_calls && msg.tool_calls.length > 0;

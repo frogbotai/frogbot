@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const lockIcon: IconNode = [
   [
@@ -20,8 +20,8 @@ export const lockIcon: IconNode = [
       d: 'M9.55986 14.2988C9.36861 14.2988 9.19236 14.3738 9.05736 14.5051L7.48611 16.0763L6.94236 15.5326C6.80736 15.3976 6.63111 15.3263 6.43986 15.3263C6.25236 15.3263 6.07236 15.4013 5.94111 15.5326C5.80611 15.6676 5.73486 15.8438 5.73486 16.0351C5.73486 16.2263 5.80986 16.4026 5.94111 16.5376L6.98736 17.5838C7.12236 17.7188 7.29861 17.7901 7.48986 17.7901C7.68111 17.7901 7.85736 17.7151 7.98861 17.5838L10.0624 15.5101C10.1974 15.3751 10.2686 15.1988 10.2686 15.0076C10.2686 14.8163 10.1936 14.6401 10.0624 14.5088C9.92736 14.3738 9.75111 14.2988 9.55986 14.2988Z',
     },
   ],
-]
+];
 
-const LockIcon = createLucideIcon('LockIcon', lockIcon, undefined, '0 0 16 24')
+const LockIcon = createLucideIcon('LockIcon', lockIcon, undefined, '0 0 16 24');
 
-export default LockIcon
+export default LockIcon;

@@ -51,11 +51,11 @@ export function peekRawValue(rawValue: unknown): RawPeekExtras | undefined {
   }
 
   // Azure content_filter_results — top-level or in choices[0]
-  const cfr = raw.content_filter_results ?? (
-    Array.isArray(choices) && choices.length > 0
+  const cfr =
+    raw.content_filter_results ??
+    (Array.isArray(choices) && choices.length > 0
       ? (choices[0] as Record<string, unknown>)?.content_filter_results
-      : undefined
-  );
+      : undefined);
   if (cfr && typeof cfr === 'object') {
     extras.contentFilterResults = cfr as Record<string, unknown>;
     found = true;

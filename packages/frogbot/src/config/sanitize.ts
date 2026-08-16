@@ -16,57 +16,54 @@ import type {
   PayloadEmailAdapter,
   PayloadHandler,
   PayloadRequest,
-} from "payload";
-import { buildConfig as payloadBuildConfig } from "payload";
-import { Cron } from "croner";
+} from 'payload';
+import { buildConfig as payloadBuildConfig } from 'payload';
+import { Cron } from 'croner';
 
-import { buildAgentEndpoints } from "../agents/endpoints.js";
+import { buildAgentEndpoints } from '../agents/endpoints.js';
 import {
   AGENT_SCHEDULE_TASK_SLUG,
   everyToCron,
   resolveScheduleTasks,
-} from "../agents/resolveScheduleTasks.js";
-import { isKnownModelId } from "../ai/catalog.js";
-import { getGatewayProviderName, isProviderName } from "../ai/providerNames.js";
-import { resolveUsageCollection } from "../ai/usageCollection.js";
-import { buildManifestEndpoint } from "../chat/manifest.js";
-import { resolveChatCollections } from "../chat/resolveChatCollections.js";
-import { resolveConnectionsCollections } from "../connections/resolveCollections.js";
+} from '../agents/resolveScheduleTasks.js';
+import { isKnownModelId } from '../ai/catalog.js';
+import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
+import { resolveUsageCollection } from '../ai/usageCollection.js';
+import { buildManifestEndpoint } from '../chat/manifest.js';
+import { resolveChatCollections } from '../chat/resolveChatCollections.js';
+import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
 import {
   buildSecretEndpoints,
   builtInDeveloperSources,
   builtInSecretSource,
-} from "../connections/secret.js";
-import { resolveCredentialSources } from "../connections/sources.js";
-import { resolveFilesCollection } from "../files/resolveCollections.js";
-import type { Frogbot } from "../frogbot.js";
-import { initFrogbotFromPayload } from "../frogbot.js";
-import { seedFrogbotCache } from "../getFrogbot.js";
-import { ensureFrogbotInstance } from "../instanceRegistry.js";
-import { buildSkillTools } from "../skills/tools.js";
-import type { AgentConfig } from "../types/agent.js";
-import type { AIConfig, RouterConfig, SanitizedAIConfig } from "../types/ai.js";
-import type { SkillConfig } from "../types/skill.js";
-import type { CollectionConfig } from "../types/collection.js";
-import { COLLECTION_MARKERS } from "../types/collection.js";
-import type { FrogbotConfig } from "../types/config.js";
-import type { Endpoint } from "../types/endpoint.js";
-import type { Piece, SanitizedPiecesConfig } from "../types/piece.js";
-import type { FrogbotRequest } from "../types/request.js";
-import type {
-  FrogbotSanitizedConfig,
-  SanitizedCollectionMeta,
-} from "../types/sanitized.js";
-import type { AnyTool } from "../types/tool.js";
-import { rewriteComponentPaths } from "./rewriteComponentPaths.js";
-import { resolveSourceDir } from "./sourceDir.js";
-import type { ValidationMode } from "./validationContext.js";
-import { getValidationMode } from "./validationContext.js";
+} from '../connections/secret.js';
+import { resolveCredentialSources } from '../connections/sources.js';
+import { resolveFilesCollection } from '../files/resolveCollections.js';
+import type { Frogbot } from '../frogbot.js';
+import { initFrogbotFromPayload } from '../frogbot.js';
+import { seedFrogbotCache } from '../getFrogbot.js';
+import { ensureFrogbotInstance } from '../instanceRegistry.js';
+import { buildSkillTools } from '../skills/tools.js';
+import type { AgentConfig } from '../types/agent.js';
+import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../types/ai.js';
+import type { SkillConfig } from '../types/skill.js';
+import type { CollectionConfig } from '../types/collection.js';
+import { COLLECTION_MARKERS } from '../types/collection.js';
+import type { FrogbotConfig } from '../types/config.js';
+import type { Endpoint } from '../types/endpoint.js';
+import type { Piece, SanitizedPiecesConfig } from '../types/piece.js';
+import type { FrogbotRequest } from '../types/request.js';
+import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from '../types/sanitized.js';
+import type { AnyTool } from '../types/tool.js';
+import { rewriteComponentPaths } from './rewriteComponentPaths.js';
+import { resolveSourceDir } from './sourceDir.js';
+import type { ValidationMode } from './validationContext.js';
+import { getValidationMode } from './validationContext.js';
 
 const noopEmailAdapter: PayloadEmailAdapter<void> = ({ payload }) => ({
-  name: "frogbot-noop",
-  defaultFromAddress: "noop@frogbot.local",
-  defaultFromName: "FrogBot",
+  name: 'frogbot-noop',
+  defaultFromAddress: 'noop@frogbot.local',
+  defaultFromName: 'FrogBot',
   sendEmail(message) {
     payload.logger.warn(
       `[frogbot] Email attempted without a configured adapter. To: '${String(message.to)}', Subject: '${String(message.subject)}'. ` +
@@ -96,17 +93,15 @@ function wrapEndpointHandler(
 }
 
 function wrapRootHooks(
-  hooks: FrogbotConfig["hooks"],
+  hooks: FrogbotConfig['hooks'],
   attachFrogbot: AttachFrogbot,
-): PayloadConfig["hooks"] {
-  if (!hooks?.afterError) return hooks as PayloadConfig["hooks"];
+): PayloadConfig['hooks'] {
+  if (!hooks?.afterError) return hooks as PayloadConfig['hooks'];
   return {
-    afterError: hooks.afterError.map(
-      (hook) => async (args) => {
-        if (!args.req.payload) return hook(args as never);
-        return hook({ ...args, req: await attachFrogbot(args.req) });
-      },
-    ),
+    afterError: hooks.afterError.map((hook) => async (args) => {
+      if (!args.req.payload) return hook(args as never);
+      return hook({ ...args, req: await attachFrogbot(args.req) });
+    }),
   };
 }
 
@@ -117,10 +112,7 @@ function wrapEndpoints(
   if (!endpoints) return endpoints;
   return endpoints.map((e) => ({
     ...e,
-    handler: wrapEndpointHandler(
-      e.handler as unknown as PayloadHandler,
-      attachFrogbot,
-    ),
+    handler: wrapEndpointHandler(e.handler as unknown as PayloadHandler, attachFrogbot),
   }));
 }
 
@@ -147,13 +139,11 @@ function sanitizeCollection(
 
   // Inject `req.frogbot` bootstrap as the first `beforeOperation`.
   const existingHooks = (c.hooks ?? {}) as Record<string, unknown[]>;
-  const existingBeforeOp =
-    (existingHooks.beforeOperation as unknown[] | undefined) ?? [];
+  const existingBeforeOp = (existingHooks.beforeOperation as unknown[] | undefined) ?? [];
   out.hooks = {
     ...existingHooks,
     beforeOperation: [
-      (args: { req: PayloadRequest }) =>
-        bootstrapBeforeOperation(args, attachFrogbot),
+      (args: { req: PayloadRequest }) => bootstrapBeforeOperation(args, attachFrogbot),
       ...existingBeforeOp,
     ],
   };
@@ -171,38 +161,30 @@ function sanitizeCollection(
 const defaultAccessFn = ({ req }: { req: FrogbotRequest }) => !!req.user;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-type SanitizedAIBase = Omit<SanitizedAIConfig, "usage">;
+type SanitizedAIBase = Omit<SanitizedAIConfig, 'usage'>;
 
 function sanitizeAI(ai: AIConfig): SanitizedAIBase {
   // Validate providers.
   if (!isRecord(ai.providers)) {
-    throw new Error(
-      "[frogbot] `ai.providers` is required and must be an object.",
-    );
+    throw new Error('[frogbot] `ai.providers` is required and must be an object.');
   }
-  const configured = Object.values(ai.providers).filter(
-    (entry) => entry != null,
-  );
+  const configured = Object.values(ai.providers).filter((entry) => entry != null);
   if (configured.length === 0) {
-    throw new Error(
-      "[frogbot] At least one AI provider must be configured under `ai.providers`.",
-    );
+    throw new Error('[frogbot] At least one AI provider must be configured under `ai.providers`.');
   }
   for (const [key, entry] of Object.entries(ai.providers)) {
     if (entry === undefined) {
       continue;
     }
     if (!key.trim()) {
-      throw new Error("[frogbot] AI provider names must not be empty.");
+      throw new Error('[frogbot] AI provider names must not be empty.');
     }
     if (entry === true) {
       if (!isProviderName(key)) {
-        throw new Error(
-          `[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`,
-        );
+        throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
       }
       continue;
     }
@@ -210,34 +192,19 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
       throw new Error(`[frogbot] Provider '${key}' must be true or an object.`);
     }
     const provider: Record<string, unknown> = entry;
-    if ("type" in provider || "baseUrl" in provider) {
+    if ('type' in provider || 'baseUrl' in provider) {
       const custom = provider;
-      if (custom.type !== "openai-compatible") {
-        throw new Error(
-          `[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`,
-        );
+      if (custom.type !== 'openai-compatible') {
+        throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
       }
-      if (typeof custom.baseUrl !== "string" || !custom.baseUrl.trim()) {
-        throw new Error(
-          `[frogbot] Custom provider '${key}' requires a baseUrl.`,
-        );
+      if (typeof custom.baseUrl !== 'string' || !custom.baseUrl.trim()) {
+        throw new Error(`[frogbot] Custom provider '${key}' requires a baseUrl.`);
       }
-      if (
-        !custom.models ||
-        !Array.isArray(custom.models) ||
-        custom.models.length === 0
-      ) {
-        throw new Error(
-          `[frogbot] Custom provider '${key}' requires a non-empty models array.`,
-        );
+      if (!custom.models || !Array.isArray(custom.models) || custom.models.length === 0) {
+        throw new Error(`[frogbot] Custom provider '${key}' requires a non-empty models array.`);
       }
       for (const model of custom.models) {
-        if (
-          !isRecord(model) ||
-          typeof model.id !== "string" ||
-          !model.id.trim() ||
-          !model.mode
-        ) {
+        if (!isRecord(model) || typeof model.id !== 'string' || !model.id.trim() || !model.mode) {
           throw new Error(
             `[frogbot] Every model for custom provider '${key}' requires an id and mode.`,
           );
@@ -246,20 +213,16 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
       continue;
     }
     if (!isProviderName(key)) {
-      throw new Error(
-        `[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`,
-      );
+      throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
     }
     if (provider.models !== undefined) {
       if (!Array.isArray(provider.models)) {
-        throw new Error(
-          `[frogbot] Provider '${key}' models must be an array.`,
-        );
+        throw new Error(`[frogbot] Provider '${key}' models must be an array.`);
       }
       const gatewayProvider = getGatewayProviderName(key);
       for (const model of provider.models) {
         if (
-          typeof model !== "string" ||
+          typeof model !== 'string' ||
           !isKnownModelId(`${gatewayProvider}/${model}`, new Set([gatewayProvider]))
         ) {
           throw new Error(
@@ -268,23 +231,14 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
         }
       }
     }
-    if (key === "bedrock") {
-      const hasRegion =
-        typeof provider.region === "string" && !!provider.region.trim();
+    if (key === 'bedrock') {
+      const hasRegion = typeof provider.region === 'string' && !!provider.region.trim();
       const hasAccessKey =
-        typeof provider.accessKeyId === "string" &&
-        !!provider.accessKeyId.trim();
+        typeof provider.accessKeyId === 'string' && !!provider.accessKeyId.trim();
       const hasSecretKey =
-        typeof provider.secretAccessKey === "string" &&
-        !!provider.secretAccessKey.trim();
-      const hasCredentialProvider =
-        typeof provider.credentialProvider === "function";
-      if (
-        !hasRegion &&
-        !hasAccessKey &&
-        !hasSecretKey &&
-        !hasCredentialProvider
-      ) {
+        typeof provider.secretAccessKey === 'string' && !!provider.secretAccessKey.trim();
+      const hasCredentialProvider = typeof provider.credentialProvider === 'function';
+      if (!hasRegion && !hasAccessKey && !hasSecretKey && !hasCredentialProvider) {
         throw new Error(
           `[frogbot] Provider 'bedrock' requires a region or explicit AWS credentials.`,
         );
@@ -296,7 +250,7 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
       }
       continue;
     }
-    if (typeof provider.apiKey !== "string" || !provider.apiKey.trim()) {
+    if (typeof provider.apiKey !== 'string' || !provider.apiKey.trim()) {
       throw new Error(
         `[frogbot] Provider '${key}' requires a non-empty apiKey when configured with an object.`,
       );
@@ -305,21 +259,15 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
 
   // Validate routers.
   if (ai.routers !== undefined && !isRecord(ai.routers)) {
-    throw new Error("[frogbot] `ai.routers` must be an object.");
+    throw new Error('[frogbot] `ai.routers` must be an object.');
   }
   const routers: Record<string, RouterConfig> = ai.routers ?? {};
   if (ai.defaultRouter && !routers[ai.defaultRouter]) {
-    throw new Error(
-      `[frogbot] defaultRouter '${ai.defaultRouter}' does not exist in ai.routers.`,
-    );
+    throw new Error(`[frogbot] defaultRouter '${ai.defaultRouter}' does not exist in ai.routers.`);
   }
 
   for (const [slug, router] of Object.entries(routers)) {
-    if (
-      !isRecord(router) ||
-      typeof router.model !== "string" ||
-      !router.model.trim()
-    ) {
+    if (!isRecord(router) || typeof router.model !== 'string' || !router.model.trim()) {
       throw new Error(`[frogbot] Router '${slug}' requires a model.`);
     }
   }
@@ -343,8 +291,7 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
 
   // Deployment identifier for telemetry spans.
   const _internal = {
-    deploymentId:
-      ai.deploymentId ?? process.env.FROGBOT_DEPLOYMENT_ID ?? "local",
+    deploymentId: ai.deploymentId ?? process.env.FROGBOT_DEPLOYMENT_ID ?? 'local',
   };
 
   // Telemetry — default enabled, user opts out via { enabled: false }.
@@ -373,39 +320,31 @@ function sanitizeToolList(
   const toolSlugs = new Set<string>();
   return tools.map((configuredTool) => {
     let tool = configuredTool;
-    if (
-      !isRecord(tool) ||
-      typeof tool.slug !== "string" ||
-      !tool.slug.trim()
-    ) {
-      throw new Error(
-        `[frogbot] A tool in ${context} is missing a \`slug\`.`,
-      );
+    if (!isRecord(tool) || typeof tool.slug !== 'string' || !tool.slug.trim()) {
+      throw new Error(`[frogbot] A tool in ${context} is missing a \`slug\`.`);
     }
-    if (typeof tool.pieceService === "string") {
+    if (typeof tool.pieceService === 'string') {
       const registered = pieces.services[tool.pieceService];
-      if (!registered)
-        {throw new Error(
+      if (!registered) {
+        throw new Error(
           `[frogbot] ${contextLabel} uses tool '${tool.slug}' but no '${tool.pieceService}' piece is registered in \`pieces\`.`,
-        );}
+        );
+      }
       const resolved = pieces.tools[tool.slug];
-      if (!resolved)
-        {throw new Error(
+      if (!resolved) {
+        throw new Error(
           `[frogbot] Piece '${tool.pieceService}' has no registered tool '${tool.slug}'.`,
-        );}
+        );
+      }
       tool = resolved;
     }
     if (toolSlugs.has(tool.slug)) {
-      throw new Error(
-        `[frogbot] Duplicate tool slug '${tool.slug}' in ${context}.`,
-      );
+      throw new Error(`[frogbot] Duplicate tool slug '${tool.slug}' in ${context}.`);
     }
-    if (typeof tool.description !== "string" || !tool.description.trim()) {
-      throw new Error(
-        `[frogbot] Tool '${tool.slug}' in ${context} requires a description.`,
-      );
+    if (typeof tool.description !== 'string' || !tool.description.trim()) {
+      throw new Error(`[frogbot] Tool '${tool.slug}' in ${context} requires a description.`);
     }
-    if (!tool.inputSchema || typeof tool.execute !== "function") {
+    if (!tool.inputSchema || typeof tool.execute !== 'function') {
       throw new Error(
         `[frogbot] Tool '${tool.slug}' in ${context} requires inputSchema and execute.`,
       );
@@ -418,40 +357,29 @@ function sanitizeToolList(
 function sanitizeSkills(agentSlug: string, skills: readonly SkillConfig[]): void {
   const skillSlugs = new Set<string>();
   for (const skill of skills) {
-    if (
-      !isRecord(skill) ||
-      typeof skill.slug !== "string" ||
-      !skill.slug.trim()
-    ) {
-      throw new Error(
-        `[frogbot] Agent '${agentSlug}' has a skill missing a \`slug\`.`,
-      );
+    if (!isRecord(skill) || typeof skill.slug !== 'string' || !skill.slug.trim()) {
+      throw new Error(`[frogbot] Agent '${agentSlug}' has a skill missing a \`slug\`.`);
     }
-    if (
-      skill.slug !== skill.slug.trim() ||
-      encodeURIComponent(skill.slug) !== skill.slug
-    ) {
+    if (skill.slug !== skill.slug.trim() || encodeURIComponent(skill.slug) !== skill.slug) {
       throw new Error(
         `[frogbot] Skill slug '${skill.slug}' in agent '${agentSlug}' is not URL-safe.`,
       );
     }
     if (skillSlugs.has(skill.slug)) {
-      throw new Error(
-        `[frogbot] Duplicate skill slug '${skill.slug}' in agent '${agentSlug}'.`,
-      );
+      throw new Error(`[frogbot] Duplicate skill slug '${skill.slug}' in agent '${agentSlug}'.`);
     }
     skillSlugs.add(skill.slug);
     if (
-      typeof skill.instructions !== "function" &&
-      (typeof skill.instructions !== "string" || !skill.instructions.trim())
+      typeof skill.instructions !== 'function' &&
+      (typeof skill.instructions !== 'string' || !skill.instructions.trim())
     ) {
       throw new Error(
         `[frogbot] Agent '${agentSlug}' skill '${skill.slug}' requires instructions.`,
       );
     }
-    for (const field of ["description", "license", "compatibility"] as const) {
+    for (const field of ['description', 'license', 'compatibility'] as const) {
       const value = skill[field];
-      if (value !== undefined && (typeof value !== "string" || !value.trim())) {
+      if (value !== undefined && (typeof value !== 'string' || !value.trim())) {
         throw new Error(
           `[frogbot] Agent '${agentSlug}' skill '${skill.slug}' ${field} must be a non-empty string.`,
         );
@@ -460,7 +388,7 @@ function sanitizeSkills(agentSlug: string, skills: readonly SkillConfig[]): void
     if (
       skill.metadata !== undefined &&
       (!isRecord(skill.metadata) ||
-        Object.values(skill.metadata).some((value) => typeof value !== "string"))
+        Object.values(skill.metadata).some((value) => typeof value !== 'string'))
     ) {
       throw new Error(
         `[frogbot] Agent '${agentSlug}' skill '${skill.slug}' metadata must contain only string values.`,
@@ -474,11 +402,7 @@ function sanitizeSkills(agentSlug: string, skills: readonly SkillConfig[]): void
     }
     const paths = new Set<string>();
     for (const resource of skill.resources) {
-      if (
-        !isRecord(resource) ||
-        typeof resource.path !== "string" ||
-        !resource.path.trim()
-      ) {
+      if (!isRecord(resource) || typeof resource.path !== 'string' || !resource.path.trim()) {
         throw new Error(
           `[frogbot] Agent '${agentSlug}' skill '${skill.slug}' has a resource missing a path.`,
         );
@@ -491,15 +415,15 @@ function sanitizeSkills(agentSlug: string, skills: readonly SkillConfig[]): void
       paths.add(resource.path);
       if (
         resource.description !== undefined &&
-        (typeof resource.description !== "string" || !resource.description.trim())
+        (typeof resource.description !== 'string' || !resource.description.trim())
       ) {
         throw new Error(
           `[frogbot] Agent '${agentSlug}' skill '${skill.slug}' resource '${resource.path}' description must be a non-empty string.`,
         );
       }
       if (
-        typeof resource.content !== "function" &&
-        (typeof resource.content !== "string" || !resource.content.trim())
+        typeof resource.content !== 'function' &&
+        (typeof resource.content !== 'string' || !resource.content.trim())
       ) {
         throw new Error(
           `[frogbot] Agent '${agentSlug}' skill '${skill.slug}' resource '${resource.path}' requires content.`,
@@ -517,13 +441,13 @@ function sanitizeAgents(
   rootTools: AnyTool[],
 ): AgentConfig[] | undefined {
   if (!Array.isArray(agents)) {
-    throw new Error("[frogbot] `agents` must be an array.");
+    throw new Error('[frogbot] `agents` must be an array.');
   }
   if (agents.length === 0) {
     return undefined;
   }
   if (!ai) {
-    throw new Error("[frogbot] `agents` requires an `ai` configuration block.");
+    throw new Error('[frogbot] `agents` requires an `ai` configuration block.');
   }
 
   const providers = new Set<string>(
@@ -536,17 +460,10 @@ function sanitizeAgents(
   const slugs = new Set<string>();
 
   return agents.map((agent) => {
-    if (
-      !isRecord(agent) ||
-      typeof agent.slug !== "string" ||
-      !agent.slug.trim()
-    ) {
-      throw new Error("[frogbot] Every agent must have a `slug`.");
+    if (!isRecord(agent) || typeof agent.slug !== 'string' || !agent.slug.trim()) {
+      throw new Error('[frogbot] Every agent must have a `slug`.');
     }
-    if (
-      agent.slug !== agent.slug.trim() ||
-      encodeURIComponent(agent.slug) !== agent.slug
-    ) {
+    if (agent.slug !== agent.slug.trim() || encodeURIComponent(agent.slug) !== agent.slug) {
       throw new Error(`[frogbot] Agent slug '${agent.slug}' is not URL-safe.`);
     }
     if (slugs.has(agent.slug)) {
@@ -554,38 +471,34 @@ function sanitizeAgents(
     }
     slugs.add(agent.slug);
 
-    if (typeof agent.model !== "string" || !agent.model.trim()) {
+    if (typeof agent.model !== 'string' || !agent.model.trim()) {
       throw new Error(`[frogbot] Agent '${agent.slug}' requires a \`model\`.`);
     }
-    if (typeof agent.instructions !== "string" || !agent.instructions.trim()) {
-      throw new Error(
-        `[frogbot] Agent '${agent.slug}' requires \`instructions\`.`,
-      );
+    if (typeof agent.instructions !== 'string' || !agent.instructions.trim()) {
+      throw new Error(`[frogbot] Agent '${agent.slug}' requires \`instructions\`.`);
     }
     if (agent.profile !== undefined) {
       if (!isRecord(agent.profile)) {
         throw new Error(`[frogbot] Agent '${agent.slug}' profile must be an object.`);
       }
-      for (const field of ["name", "avatar", "description"] as const) {
+      for (const field of ['name', 'avatar', 'description'] as const) {
         const value = agent.profile[field];
-        if (value !== undefined && (typeof value !== "string" || !value.trim())) {
+        if (value !== undefined && (typeof value !== 'string' || !value.trim())) {
           throw new Error(
             `[frogbot] Agent '${agent.slug}' profile ${field} must be a non-empty string.`,
           );
         }
       }
     }
-    if (agent.access !== undefined && typeof agent.access !== "function") {
-      throw new Error(
-        `[frogbot] Agent '${agent.slug}' access must be a function.`,
-      );
+    if (agent.access !== undefined && typeof agent.access !== 'function') {
+      throw new Error(`[frogbot] Agent '${agent.slug}' access must be a function.`);
     }
     if (
       agent.stopWhen !== undefined &&
-      typeof agent.stopWhen !== "function" &&
+      typeof agent.stopWhen !== 'function' &&
       (!Array.isArray(agent.stopWhen) ||
         agent.stopWhen.length === 0 ||
-        agent.stopWhen.some((condition) => typeof condition !== "function"))
+        agent.stopWhen.some((condition) => typeof condition !== 'function'))
     ) {
       throw new Error(
         `[frogbot] Agent '${agent.slug}' stopWhen must contain at least one condition.`,
@@ -593,26 +506,20 @@ function sanitizeAgents(
     }
 
     const model = ai.routers[agent.model]?.model ?? agent.model;
-    const separator = model.indexOf("/");
-    const provider = separator > 0 ? model.slice(0, separator) : "";
+    const separator = model.indexOf('/');
+    const provider = separator > 0 ? model.slice(0, separator) : '';
     if (!provider || !providers.has(provider)) {
-      const message = `[frogbot] Agent '${agent.slug}' model '${agent.model}' does not resolve to a configured provider. Configured providers: ${[...providers].join(", ")}. Update the agent model or configure its provider under \`ai.providers\`.`;
-      if (mode === "runtime") throw new Error(message);
+      const message = `[frogbot] Agent '${agent.slug}' model '${agent.model}' does not resolve to a configured provider. Configured providers: ${[...providers].join(', ')}. Update the agent model or configure its provider under \`ai.providers\`.`;
+      if (mode === 'runtime') throw new Error(message);
       console.warn(message);
     }
 
     let agentTools: AnyTool[] | undefined;
     if (agent.tools !== undefined) {
       if (!Array.isArray(agent.tools)) {
-        throw new Error(
-          `[frogbot] Agent '${agent.slug}' tools must be an array when configured.`,
-        );
+        throw new Error(`[frogbot] Agent '${agent.slug}' tools must be an array when configured.`);
       }
-      agentTools = sanitizeToolList(
-        agent.tools,
-        pieces,
-        `Agent '${agent.slug}'`,
-      );
+      agentTools = sanitizeToolList(agent.tools, pieces, `Agent '${agent.slug}'`);
     }
     if (agent.inheritTools !== false && rootTools.length > 0) {
       const agentToolSlugs = new Set(agentTools?.map(({ slug }) => slug));
@@ -624,30 +531,22 @@ function sanitizeAgents(
 
     if (agent.skills !== undefined) {
       if (!Array.isArray(agent.skills)) {
-        throw new Error(
-          `[frogbot] Agent '${agent.slug}' skills must be an array when configured.`,
-        );
+        throw new Error(`[frogbot] Agent '${agent.slug}' skills must be an array when configured.`);
       }
       sanitizeSkills(agent.slug, agent.skills);
       if (agent.skills.length > 0) {
         const toolSlugs = new Set(agent.tools?.map(({ slug }) => slug));
-        for (const slug of [
-          "list_skills",
-          "load_skill",
-          "load_skill_resource",
-        ]) {
+        for (const slug of ['list_skills', 'load_skill', 'load_skill_resource']) {
           if (toolSlugs.has(slug)) {
-            throw new Error(
-              `[frogbot] Tool slug '${slug}' is reserved for agent skills.`,
-            );
+            throw new Error(`[frogbot] Tool slug '${slug}' is reserved for agent skills.`);
           }
         }
-        const skillLines = agent.skills.map(({ slug, description }) =>
-          `- **${slug}**${description ? `: ${description}` : ""}`
+        const skillLines = agent.skills.map(
+          ({ slug, description }) => `- **${slug}**${description ? `: ${description}` : ''}`,
         );
         agent = {
           ...agent,
-          instructions: `${agent.instructions}\n\n${skillLines.join("\n")}`,
+          instructions: `${agent.instructions}\n\n${skillLines.join('\n')}`,
           tools: [...(agent.tools ?? []), ...buildSkillTools(agent.skills)],
         };
       }
@@ -663,8 +562,8 @@ function sanitizeAgents(
       for (const trigger of agent.triggers) {
         if (
           !isRecord(trigger) ||
-          trigger.type !== "schedule" ||
-          typeof trigger.slug !== "string" ||
+          trigger.type !== 'schedule' ||
+          typeof trigger.slug !== 'string' ||
           !trigger.slug.trim()
         ) {
           throw new Error(
@@ -685,8 +584,8 @@ function sanitizeAgents(
           );
         }
         triggerSlugs.add(trigger.slug);
-        const hasPrompt = typeof trigger.prompt === "string";
-        const hasHandler = typeof trigger.handler === "function";
+        const hasPrompt = typeof trigger.prompt === 'string';
+        const hasHandler = typeof trigger.handler === 'function';
         if (hasPrompt === hasHandler) {
           throw new Error(
             `[frogbot] Trigger '${trigger.slug}' in agent '${agent.slug}' requires exactly one of prompt or handler.`,
@@ -702,8 +601,8 @@ function sanitizeAgents(
             `[frogbot] Trigger '${trigger.slug}' in agent '${agent.slug}' requires a schedule.`,
           );
         }
-        const hasEvery = typeof trigger.schedule.every === "string";
-        const hasCron = typeof trigger.schedule.cron === "string";
+        const hasEvery = typeof trigger.schedule.every === 'string';
+        const hasCron = typeof trigger.schedule.cron === 'string';
         if (hasEvery === hasCron) {
           throw new Error(
             `[frogbot] Trigger '${trigger.slug}' in agent '${agent.slug}' schedule requires exactly one of every or cron.`,
@@ -732,23 +631,22 @@ function sanitizeAgents(
 }
 
 function sanitizePieces(pieces: Piece[] | undefined): SanitizedPiecesConfig {
-  if (pieces === undefined)
-    {return { enabled: false, pieces: [], services: {}, tools: {} };}
-  if (!Array.isArray(pieces))
-    {throw new Error("[frogbot] `pieces` must be an array.");}
-  if (pieces.length === 0)
-    {return { enabled: false, pieces: [], services: {}, tools: {} };}
+  if (pieces === undefined) {
+    return { enabled: false, pieces: [], services: {}, tools: {} };
+  }
+  if (!Array.isArray(pieces)) {
+    throw new Error('[frogbot] `pieces` must be an array.');
+  }
+  if (pieces.length === 0) {
+    return { enabled: false, pieces: [], services: {}, tools: {} };
+  }
 
   const services = new Set<string>();
   const serviceIndex: Record<string, Piece> = {};
   const toolIndex: Record<string, AnyTool> = {};
   for (const piece of pieces) {
-    if (
-      !isRecord(piece) ||
-      typeof piece.service !== "string" ||
-      !piece.service.trim()
-    ) {
-      throw new Error("[frogbot] Every piece must have a `service`.");
+    if (!isRecord(piece) || typeof piece.service !== 'string' || !piece.service.trim()) {
+      throw new Error('[frogbot] Every piece must have a `service`.');
     }
     if (services.has(piece.service)) {
       throw new Error(`[frogbot] Duplicate piece service: '${piece.service}'.`);
@@ -758,25 +656,17 @@ function sanitizePieces(pieces: Piece[] | undefined): SanitizedPiecesConfig {
 
     if (
       !Array.isArray(piece.actions) ||
-      piece.actions.some(
-        (action) => typeof action !== "string" || !action.trim(),
-      )
+      piece.actions.some((action) => typeof action !== 'string' || !action.trim())
     ) {
-      throw new Error(
-        `[frogbot] Piece '${piece.service}' actions must be non-empty strings.`,
-      );
+      throw new Error(`[frogbot] Piece '${piece.service}' actions must be non-empty strings.`);
     }
     const actions = new Set(piece.actions);
     if (actions.size !== piece.actions.length) {
-      throw new Error(
-        `[frogbot] Piece '${piece.service}' declares duplicate actions.`,
-      );
+      throw new Error(`[frogbot] Piece '${piece.service}' declares duplicate actions.`);
     }
     for (const tool of piece.tools()) {
       const prefix = `${piece.service}_`;
-      const action = tool.slug.startsWith(prefix)
-        ? tool.slug.slice(prefix.length)
-        : "";
+      const action = tool.slug.startsWith(prefix) ? tool.slug.slice(prefix.length) : '';
       if (!actions.has(action)) {
         throw new Error(
           `[frogbot] Piece '${piece.service}' exposes unknown action '${action || tool.slug}'.`,
@@ -790,35 +680,27 @@ function sanitizePieces(pieces: Piece[] | undefined): SanitizedPiecesConfig {
 }
 
 function validateInternalPathReservations(
-  config: Pick<FrogbotConfig, "collections" | "endpoints">,
+  config: Pick<FrogbotConfig, 'collections' | 'endpoints'>,
 ): void {
   for (const [slug, api] of [
-    ["agents", "agent"],
-    ["frogbot", "manifest"],
+    ['agents', 'agent'],
+    ['frogbot', 'manifest'],
   ] as const) {
     if (config.collections.some((collection) => collection.slug === slug)) {
-      throw new Error(
-        `[frogbot] Collection slug '${slug}' is reserved for the ${api} API.`,
-      );
+      throw new Error(`[frogbot] Collection slug '${slug}' is reserved for the ${api} API.`);
     }
   }
 
   const endpoints = (config as { endpoints?: Endpoint[] | false }).endpoints;
-  if (
-    endpoints !== undefined &&
-    endpoints !== false &&
-    !Array.isArray(endpoints)
-  ) {
-    throw new Error("[frogbot] `endpoints` must be an array or false.");
+  if (endpoints !== undefined && endpoints !== false && !Array.isArray(endpoints)) {
+    throw new Error('[frogbot] `endpoints` must be an array or false.');
   }
 
   for (const endpoint of Array.isArray(endpoints) ? endpoints : []) {
-    if (endpoint.path === "/agents" || endpoint.path.startsWith("/agents/")) {
-      throw new Error(
-        `[frogbot] Endpoint path '${endpoint.path}' is reserved for the agent API.`,
-      );
+    if (endpoint.path === '/agents' || endpoint.path.startsWith('/agents/')) {
+      throw new Error(`[frogbot] Endpoint path '${endpoint.path}' is reserved for the agent API.`);
     }
-    if (endpoint.path === "/frogbot" || endpoint.path.startsWith("/frogbot/")) {
+    if (endpoint.path === '/frogbot' || endpoint.path.startsWith('/frogbot/')) {
       throw new Error(
         `[frogbot] Endpoint path '${endpoint.path}' is reserved for the manifest API.`,
       );
@@ -830,20 +712,20 @@ function validateInternalPathReservations(
 
 function buildPayloadConfig(
   config: FrogbotConfig,
-  onInit: NonNullable<PayloadConfig["onInit"]>,
+  onInit: NonNullable<PayloadConfig['onInit']>,
   internalEndpoints: Endpoint[] = [],
   attachFrogbot: AttachFrogbot,
 ): PayloadConfig {
   const frogbotKeys = new Set([
-    "agents",
-    "ai",
-    "connections",
-    "credentialSources",
-    "onInit",
-    "pieces",
-    "plugins",
-    "port",
-    "tools",
+    'agents',
+    'ai',
+    'connections',
+    'credentialSources',
+    'onInit',
+    'pieces',
+    'plugins',
+    'port',
+    'tools',
   ]);
   const collections = config.collections.map((collection) =>
     sanitizeCollection(collection, attachFrogbot),
@@ -852,19 +734,17 @@ function buildPayloadConfig(
     collections.push(
       sanitizeCollection(
         {
-          slug: "users",
-          admin: { useAsTitle: "name" },
+          slug: 'users',
+          admin: { useAsTitle: 'name' },
           auth: { tokenExpiration: 7200 },
-          fields: [{ name: "name", type: "text" }],
+          fields: [{ name: 'name', type: 'text' }],
         },
         attachFrogbot,
       ),
     );
   }
   const out: Record<string, unknown> = {
-    ...Object.fromEntries(
-      Object.entries(config).filter(([key]) => !frogbotKeys.has(key)),
-    ),
+    ...Object.fromEntries(Object.entries(config).filter(([key]) => !frogbotKeys.has(key))),
     collections,
     hooks: wrapRootHooks(config.hooks, attachFrogbot),
   };
@@ -895,20 +775,14 @@ function buildPayloadConfig(
     ...(config as { typescript?: Record<string, unknown> }).typescript,
     autoGenerate: false,
   };
-  out.cookiePrefix = config.cookiePrefix ?? "frogbot";
+  out.cookiePrefix = config.cookiePrefix ?? 'frogbot';
 
   const admin = (
     config as {
       admin?: {
-        components?: { graphics?: Record<string, unknown> } & Record<
-          string,
-          unknown
-        >;
+        components?: { graphics?: Record<string, unknown> } & Record<string, unknown>;
         importMap?: Record<string, unknown>;
-        meta?: { openGraph?: Record<string, unknown> } & Record<
-          string,
-          unknown
-        >;
+        meta?: { openGraph?: Record<string, unknown> } & Record<string, unknown>;
       } & Record<string, unknown>;
     }
   ).admin;
@@ -917,19 +791,19 @@ function buildPayloadConfig(
     components: {
       ...admin?.components,
       graphics: {
-        Icon: "@frogbotai/next/rsc#FrogbotIcon",
-        Logo: "@frogbotai/next/rsc#FrogbotLogo",
+        Icon: '@frogbotai/next/rsc#FrogbotIcon',
+        Logo: '@frogbotai/next/rsc#FrogbotLogo',
         ...admin?.components?.graphics,
       },
     },
     meta: {
-      defaultOGImageType: "static",
-      titleSuffix: "- FrogBot",
+      defaultOGImageType: 'static',
+      titleSuffix: '- FrogBot',
       ...admin?.meta,
       openGraph: {
         description:
-          "FrogBot is an open-source AI agent framework you configure in one TypeScript file, then deploy anywhere or run as a Docker image.",
-        siteName: "FrogBot",
+          'FrogBot is an open-source AI agent framework you configure in one TypeScript file, then deploy anywhere or run as a Docker image.',
+        siteName: 'FrogBot',
         ...admin?.meta?.openGraph,
       },
     },
@@ -942,15 +816,11 @@ function buildPayloadConfig(
 
   const i18n = (
     config as {
-      i18n?: { translations?: Record<string, unknown> } & Record<
-        string,
-        unknown
-      >;
+      i18n?: { translations?: Record<string, unknown> } & Record<string, unknown>;
     }
   ).i18n;
   const en = i18n?.translations?.en as
-    | ({ general?: Record<string, unknown> } & Record<string, unknown>)
-    | undefined;
+    ({ general?: Record<string, unknown> } & Record<string, unknown>) | undefined;
   out.i18n = {
     ...i18n,
     translations: {
@@ -958,7 +828,7 @@ function buildPayloadConfig(
       en: {
         ...en,
         general: {
-          payloadSettings: "FrogBot Settings",
+          payloadSettings: 'FrogBot Settings',
           ...en?.general,
         },
       },
@@ -975,18 +845,15 @@ export function sanitize(
   { mode = getValidationMode() }: { mode?: ValidationMode } = {},
 ): FrogbotSanitizedConfig {
   if ((config as unknown as Record<string, unknown>).globals !== undefined) {
-    throw new Error(
-      "[frogbot] `globals` is not a FrogBot concept. Use collections instead.",
-    );
+    throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections instead.');
   }
   validateInternalPathReservations(config);
   const sanitizedConfigRef: { current?: FrogbotSanitizedConfig } = {};
   const attachFrogbot: AttachFrogbot = async (req) => {
     const sanitizedConfig = sanitizedConfigRef.current;
-    if (!sanitizedConfig)
-      {throw new Error(
-        "[frogbot] Payload initialized before config sanitization completed.",
-      );}
+    if (!sanitizedConfig) {
+      throw new Error('[frogbot] Payload initialized before config sanitization completed.');
+    }
     const frogbot = await ensureFrogbotInstance(
       req.payload,
       () => initFrogbotFromPayload(req.payload, sanitizedConfig),
@@ -1001,18 +868,12 @@ export function sanitize(
   const sanitizedAI = config.ai ? sanitizeAI(config.ai) : undefined;
   const pieces = sanitizePieces(config.pieces);
   if (config.tools !== undefined && !Array.isArray(config.tools)) {
-    throw new Error("[frogbot] Root tools must be an array when configured.");
+    throw new Error('[frogbot] Root tools must be an array when configured.');
   }
-  const rootTools = sanitizeToolList(config.tools ?? [], pieces, "Root");
+  const rootTools = sanitizeToolList(config.tools ?? [], pieces, 'Root');
   const agents =
     config.agents !== undefined
-      ? sanitizeAgents(
-          config.agents,
-          sanitizedAI,
-          pieces,
-          mode,
-          rootTools,
-        )
+      ? sanitizeAgents(config.agents, sanitizedAI, pieces, mode, rootTools)
       : undefined;
   const hasScheduleTriggers = agents?.some((agent) => agent.triggers?.length);
   if (
@@ -1063,10 +924,9 @@ export function sanitize(
     { ...config, agents, collections, jobs },
     async (payload) => {
       const sanitizedConfig = sanitizedConfigRef.current;
-      if (!sanitizedConfig)
-        {throw new Error(
-          "[frogbot] Payload initialized before config sanitization completed.",
-        );}
+      if (!sanitizedConfig) {
+        throw new Error('[frogbot] Payload initialized before config sanitization completed.');
+      }
       const frogbot = await ensureFrogbotInstance(
         payload,
         () => initFrogbotFromPayload(payload, sanitizedConfig),
@@ -1077,9 +937,7 @@ export function sanitize(
     buildSecretEndpoints({ connections, pieces: pieces.pieces }),
     attachFrogbot,
   );
-  const payloadSanitizedPromise = payloadBuildConfig(payloadConfig).then(
-    rewriteComponentPaths,
-  );
+  const payloadSanitizedPromise = payloadBuildConfig(payloadConfig).then(rewriteComponentPaths);
 
   const sanitizedConfig: FrogbotSanitizedConfig = {
     admin: {
@@ -1100,8 +958,7 @@ export function sanitize(
     roles: config._roles?.roles ?? [],
     typescript: {
       autoGenerate:
-        (config as { typescript?: { autoGenerate?: boolean } }).typescript
-          ?.autoGenerate !== false,
+        (config as { typescript?: { autoGenerate?: boolean } }).typescript?.autoGenerate !== false,
     },
     _internal: {
       payloadConfig: payloadSanitizedPromise,

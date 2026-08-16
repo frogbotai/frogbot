@@ -8,11 +8,14 @@ import { resolveMcpAccess } from './access.js';
 function setup({ revoked = false } = {}) {
   const token = createApiKeyToken();
   const payload = {
-    find: vi.fn().mockImplementation(({ where }) => Promise.resolve({
-      docs: revoked || where.and[0].tokenHash.equals !== hashApiKeyToken(token)
-        ? []
-        : [{ id: 'key-1', owner: 'user-1' }],
-    })),
+    find: vi.fn().mockImplementation(({ where }) =>
+      Promise.resolve({
+        docs:
+          revoked || where.and[0].tokenHash.equals !== hashApiKeyToken(token)
+            ? []
+            : [{ id: 'key-1', owner: 'user-1' }],
+      }),
+    ),
     findByID: vi.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
     update: vi.fn().mockResolvedValue({}),
   };
@@ -21,10 +24,11 @@ function setup({ revoked = false } = {}) {
     collectionSlug: 'api-keys',
     tokenPrefix: 'fb',
   });
-  const request = (value: string) => ({
-    headers: new Headers({ authorization: `Bearer ${value}` }),
-    payload,
-  }) as never;
+  const request = (value: string) =>
+    ({
+      headers: new Headers({ authorization: `Bearer ${value}` }),
+      payload,
+    }) as never;
   return { request, strategy, token };
 }
 
@@ -45,7 +49,9 @@ describe('resolveMcpAccess', () => {
   it('authenticates the raw key and grants configured capabilities in Payload MCP shape', async () => {
     const { request, strategy, token } = setup();
 
-    await expect(resolveMcpAccess({ authenticate: strategy.authenticate, pluginOptions, req: request(token) })).resolves.toMatchObject({
+    await expect(
+      resolveMcpAccess({ authenticate: strategy.authenticate, pluginOptions, req: request(token) }),
+    ).resolves.toMatchObject({
       user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1' },
       blogPosts: { create: true, find: true },
       pages: { create: true, delete: true, find: true, update: true },
@@ -62,10 +68,12 @@ describe('resolveMcpAccess', () => {
     ['revoked key', () => setup({ revoked: true }), null],
   ])('rejects %s', async (_name, makeSetup, replacement) => {
     const { request, strategy, token } = makeSetup();
-    await expect(resolveMcpAccess({
-      authenticate: strategy.authenticate,
-      pluginOptions,
-      req: request(replacement ?? token),
-    })).rejects.toThrow(UnauthorizedError);
+    await expect(
+      resolveMcpAccess({
+        authenticate: strategy.authenticate,
+        pluginOptions,
+        req: request(replacement ?? token),
+      }),
+    ).rejects.toThrow(UnauthorizedError);
   });
 });

@@ -27,11 +27,11 @@ describe('roles', () => {
   });
 
   async function createUser(email: string, roles?: string[]): Promise<User> {
-    return await booted.frogbot.create({
+    return (await booted.frogbot.create({
       collection: 'users',
       data: { email, password, ...(roles ? { roles } : {}) },
       overrideAccess: true,
-    }) as User;
+    })) as User;
   }
 
   async function requestFor(user: User) {
@@ -40,11 +40,11 @@ describe('roles', () => {
 
   it('does not assign a role to the first user without defaultRole', async () => {
     const user = await createUser('first@frogbot.local');
-    const persisted = await booted.frogbot.findByID({
+    const persisted = (await booted.frogbot.findByID({
       collection: 'users',
       id: user.id,
       overrideAccess: true,
-    }) as User;
+    })) as User;
 
     expect(persisted.roles ?? []).toEqual([]);
   });
@@ -58,11 +58,13 @@ describe('roles', () => {
       overrideAccess: true,
     });
 
-    await expect(booted.frogbot.find({
-      collection: 'member-documents',
-      req: await requestFor(admin),
-      overrideAccess: false,
-    })).rejects.toThrow();
+    await expect(
+      booted.frogbot.find({
+        collection: 'member-documents',
+        req: await requestFor(admin),
+        overrideAccess: false,
+      }),
+    ).rejects.toThrow();
 
     const result = await booted.frogbot.find({
       collection: 'member-documents',
@@ -92,11 +94,11 @@ describe('roles', () => {
       overrideAccess: false,
     });
 
-    const persisted = await booted.frogbot.findByID({
+    const persisted = (await booted.frogbot.findByID({
       collection: 'users',
       id: target.id,
       overrideAccess: true,
-    }) as User;
+    })) as User;
     expect(persisted.roles).toEqual(['owner']);
   });
 
@@ -110,16 +112,37 @@ describe('roles', () => {
     });
     await booted.frogbot.create({
       collection: 'messages',
-      data: { id: 'private-message', thread: thread.id, role: 'user', parts: [{ type: 'text', text: 'Private' }] },
+      data: {
+        id: 'private-message',
+        thread: thread.id,
+        role: 'user',
+        parts: [{ type: 'text', text: 'Private' }],
+      },
       overrideAccess: true,
     });
 
     const adminReq = await requestFor(admin);
     const ownerReq = await requestFor(owner);
-    const adminThreads = await booted.frogbot.find({ collection: 'threads', req: adminReq, overrideAccess: false });
-    const adminMessages = await booted.frogbot.find({ collection: 'messages', req: adminReq, overrideAccess: false });
-    const ownerThreads = await booted.frogbot.find({ collection: 'threads', req: ownerReq, overrideAccess: false });
-    const ownerMessages = await booted.frogbot.find({ collection: 'messages', req: ownerReq, overrideAccess: false });
+    const adminThreads = await booted.frogbot.find({
+      collection: 'threads',
+      req: adminReq,
+      overrideAccess: false,
+    });
+    const adminMessages = await booted.frogbot.find({
+      collection: 'messages',
+      req: adminReq,
+      overrideAccess: false,
+    });
+    const ownerThreads = await booted.frogbot.find({
+      collection: 'threads',
+      req: ownerReq,
+      overrideAccess: false,
+    });
+    const ownerMessages = await booted.frogbot.find({
+      collection: 'messages',
+      req: ownerReq,
+      overrideAccess: false,
+    });
 
     expect(adminThreads.docs).toHaveLength(0);
     expect(adminMessages.docs).toHaveLength(0);

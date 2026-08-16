@@ -11,13 +11,13 @@ pnpm add @frogbotai/db-mongodb
 ## Usage
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { mongooseAdapter } from '@frogbotai/db-mongodb'
+import { buildConfig } from 'frogbot';
+import { mongooseAdapter } from '@frogbotai/db-mongodb';
 
 export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URL,
   }),
   // ...rest of config
-})
+});
 ```

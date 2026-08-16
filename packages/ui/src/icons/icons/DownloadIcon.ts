@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const downloadIcon: IconNode = [
   [
@@ -18,8 +18,8 @@ export const downloadIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const DownloadIcon = createLucideIcon('Download', downloadIcon)
+const DownloadIcon = createLucideIcon('Download', downloadIcon);
 
-export default DownloadIcon
+export default DownloadIcon;

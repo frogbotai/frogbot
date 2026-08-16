@@ -72,7 +72,9 @@ export function toModelMessages(input: string | ResponsesInputItem[]): ModelMess
               providerOptions: {
                 openai: {
                   ...(item.id != null ? { itemId: item.id } : {}),
-                  ...(item.encrypted_content != null ? { reasoningEncryptedContent: item.encrypted_content } : {}),
+                  ...(item.encrypted_content != null
+                    ? { reasoningEncryptedContent: item.encrypted_content }
+                    : {}),
                 },
               },
             })),
@@ -138,15 +140,16 @@ function messageToModelMessage(message: ResponsesInputMessage, messageIndex: num
           if (part.file_id) {
             reject('provider file references', `${path}.file_id`);
           }
-          if (part.file_url)
-            {return {
+          if (part.file_url) {
+            return {
               type: 'file',
               mediaType: 'application/pdf',
               data: {
                 type: 'url',
                 url: parseUrl(part.file_url, `${path}.file_url`),
               },
-            };}
+            };
+          }
           if (!part.file_data) {
             reject('missing file_data', `${path}.file_data`);
           }

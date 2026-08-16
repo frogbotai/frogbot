@@ -26,7 +26,13 @@ assert.match(css, /data-fb-theme/);
 const bundles = [...html.matchAll(/src="(\/_next\/static\/[^"?]+\.js)"/g)]
   .map((match) => fs.readFileSync(path.join(nextRoot, match[1].replace('/_next/', '')), 'utf8'))
   .join('\n');
-for (const forbidden of ['@payloadcms/', '@tauri-apps/', '@capacitor/', 'FrogBot Pro', 'firmware.ai']) {
+for (const forbidden of [
+  '@payloadcms/',
+  '@tauri-apps/',
+  '@capacitor/',
+  'FrogBot Pro',
+  'firmware.ai',
+]) {
   assert.ok(!bundles.includes(forbidden), `Next client bundle contains ${forbidden}`);
 }
 

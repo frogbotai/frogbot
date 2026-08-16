@@ -110,7 +110,10 @@ describe('chat persistence: thread context', () => {
       req: followUpReq,
       agentSlug,
       threadId: first.threadId,
-      incoming: [userMessage('Stale client message', 'follow-up-stale'), userMessage('Second turn', 'follow-up-2')],
+      incoming: [
+        userMessage('Stale client message', 'follow-up-stale'),
+        userMessage('Second turn', 'follow-up-2'),
+      ],
       tools: {},
     });
 
@@ -201,7 +204,9 @@ describe('chat persistence: thread context', () => {
         id: 'assistant-portable-id',
         role: 'assistant',
         parts: [{ type: 'text', text: 'Partial' }],
-        metadata: { usage: { inputTokens: 2, outputTokens: 1, totalTokens: 3, model: 'openai/test' } },
+        metadata: {
+          usage: { inputTokens: 2, outputTokens: 1, totalTokens: 3, model: 'openai/test' },
+        },
       },
     });
     await persistAssistantMessage({

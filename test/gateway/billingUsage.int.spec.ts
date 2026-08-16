@@ -30,34 +30,48 @@ function createUsageMock(): LanguageModelV4 {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    get supportedUrls() { return Promise.resolve({}); },
-    doGenerate: () => Promise.resolve({
-      content: [{ type: 'text', text: 'hi' }],
-      finishReason: 'stop',
-      usage: USAGE,
-      warnings: [],
-      response: { id: 'mock-resp-1', modelId: 'mock-model', timestamp: new Date('2026-01-01T00:00:00Z') },
-    }),
-    doStream: () => Promise.resolve({
-      stream: new ReadableStream<LanguageModelV4StreamPart>({
-        start(controller) {
-          controller.enqueue({ type: 'text-start', id: 't0' } as LanguageModelV4StreamPart);
-          controller.enqueue({ type: 'text-delta', id: 't0', delta: 'hi' } as LanguageModelV4StreamPart);
-          controller.enqueue({ type: 'text-end', id: 't0' } as LanguageModelV4StreamPart);
-          controller.enqueue({
-            type: 'finish',
-            finishReason: { unified: 'stop', raw: 'stop' },
-            usage: USAGE,
-          } as LanguageModelV4StreamPart);
-          controller.close();
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
+    doGenerate: () =>
+      Promise.resolve({
+        content: [{ type: 'text', text: 'hi' }],
+        finishReason: 'stop',
+        usage: USAGE,
+        warnings: [],
+        response: {
+          id: 'mock-resp-1',
+          modelId: 'mock-model',
+          timestamp: new Date('2026-01-01T00:00:00Z'),
         },
       }),
-    }),
+    doStream: () =>
+      Promise.resolve({
+        stream: new ReadableStream<LanguageModelV4StreamPart>({
+          start(controller) {
+            controller.enqueue({ type: 'text-start', id: 't0' } as LanguageModelV4StreamPart);
+            controller.enqueue({
+              type: 'text-delta',
+              id: 't0',
+              delta: 'hi',
+            } as LanguageModelV4StreamPart);
+            controller.enqueue({ type: 'text-end', id: 't0' } as LanguageModelV4StreamPart);
+            controller.enqueue({
+              type: 'finish',
+              finishReason: { unified: 'stop', raw: 'stop' },
+              usage: USAGE,
+            } as LanguageModelV4StreamPart);
+            controller.close();
+          },
+        }),
+      }),
   };
 }
 
 function makeApp(providerName: string, hooks: Hooks) {
-  const registry = { [providerName]: { languageModel: () => createUsageMock() } } as unknown as ProviderRegistry;
+  const registry = {
+    [providerName]: { languageModel: () => createUsageMock() },
+  } as unknown as ProviderRegistry;
   return createApp({ registry, hooks });
 }
 
@@ -73,7 +87,13 @@ describe('gateway billing usage — cache-write token attribution (G96)', () => 
   // distinct field; today HookUsage only exposes cachedInputTokens (cache-read).
   it('chat non-streaming: exposes cacheWriteTokens to afterOperation hooks', async () => {
     const calls: AfterOperationHookArgs[] = [];
-    const app = makeApp('openai', { afterOperation: [(args) => { calls.push(args); }] });
+    const app = makeApp('openai', {
+      afterOperation: [
+        (args) => {
+          calls.push(args);
+        },
+      ],
+    });
 
     const res = await app.request('http://localhost/v1/chat/completions', {
       method: 'POST',
@@ -95,7 +115,13 @@ describe('gateway billing usage — cache-write token attribution (G96)', () => 
   // the stream drains; the streaming lifecycle's toHookUsage drops it today.
   it('chat streaming: exposes cacheWriteTokens to afterOperation hooks', async () => {
     const calls: AfterOperationHookArgs[] = [];
-    const app = makeApp('openai', { afterOperation: [(args) => { calls.push(args); }] });
+    const app = makeApp('openai', {
+      afterOperation: [
+        (args) => {
+          calls.push(args);
+        },
+      ],
+    });
 
     const res = await app.request('http://localhost/v1/chat/completions', {
       method: 'POST',

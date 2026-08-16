@@ -1,5 +1,5 @@
-import { createElement, forwardRef } from 'react'
-import { LucideProps } from '../types'
+import { createElement, forwardRef } from 'react';
+import { LucideProps } from '../types';
 
 const GoogleGeminiIcon = forwardRef<SVGSVGElement, LucideProps>(
   ({ size = 20, className = '', ...props }, ref) =>
@@ -78,8 +78,8 @@ const GoogleGeminiIcon = forwardRef<SVGSVGElement, LucideProps>(
         ]),
       ],
     ),
-)
+);
 
-GoogleGeminiIcon.displayName = 'GoogleGeminiIcon'
+GoogleGeminiIcon.displayName = 'GoogleGeminiIcon';
 
-export default GoogleGeminiIcon
+export default GoogleGeminiIcon;

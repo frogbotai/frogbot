@@ -4,7 +4,9 @@ import { helpText, parseCliArgs, parsePort } from './args.js';
 
 describe('parseCliArgs', () => {
   it('parses help, quiet, config, and port flags', () => {
-    expect(parseCliArgs(['--help', '--quiet', '--config', 'gateway.config.ts', '--port', '4000'])).toEqual({
+    expect(
+      parseCliArgs(['--help', '--quiet', '--config', 'gateway.config.ts', '--port', '4000']),
+    ).toEqual({
       configPath: 'gateway.config.ts',
       help: true,
       port: 4000,

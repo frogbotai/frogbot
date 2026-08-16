@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const redoIcon: IconNode = [
   [
@@ -10,8 +10,8 @@ export const redoIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const RedoIcon = createLucideIcon('Redo', redoIcon)
+const RedoIcon = createLucideIcon('Redo', redoIcon);
 
-export default RedoIcon
+export default RedoIcon;

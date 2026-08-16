@@ -16,7 +16,12 @@ import { createOAuthCredentialSource } from './source.js';
 import type { OAuthPluginOptions } from './types.js';
 import type { OAuthProvider } from './types.js';
 
-function createProvider(id: string, clientId: string, clientSecret: string, scopes: string[]): OAuthProvider {
+function createProvider(
+  id: string,
+  clientId: string,
+  clientSecret: string,
+  scopes: string[],
+): OAuthProvider {
   const options = { clientId, clientSecret, service: id, scopes };
   if (id === 'google') return googleProvider(options);
   if (id === 'github') return githubProvider(options);
@@ -31,7 +36,8 @@ function createProvider(id: string, clientId: string, clientSecret: string, scop
 }
 
 function providerId(service: string): string {
-  if (service.startsWith('google_') || service.startsWith('google-') || service === 'gmail') return 'google';
+  if (service.startsWith('google_') || service.startsWith('google-') || service === 'gmail')
+    return 'google';
   if (service.startsWith('microsoft_') || service.startsWith('microsoft-')) return 'microsoft';
   return service;
 }
@@ -42,41 +48,85 @@ export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
     const ids = new Set<string>();
     for (const provider of explicit) {
       if (!provider.id) throw new Error('[plugin-oauth] Provider IDs must not be empty.');
-      if (!provider.service) throw new Error('[plugin-oauth] Provider service IDs must not be empty.');
-      if (ids.has(provider.id)) throw new Error(`[plugin-oauth] Provider ID '${provider.id}' must be unique.`);
+      if (!provider.service)
+        throw new Error('[plugin-oauth] Provider service IDs must not be empty.');
+      if (ids.has(provider.id))
+        throw new Error(`[plugin-oauth] Provider ID '${provider.id}' must be unique.`);
       ids.add(provider.id);
     }
   }
 
   return (config) => {
     const authCollection = options.authCollection ?? 'users';
-    const connectionsSlug = config.collections.find((collection) => collection.connections)?.slug ?? 'connections';
+    const connectionsSlug =
+      config.collections.find((collection) => collection.connections)?.slug ?? 'connections';
     const statesSlug = options.statesSlug ?? 'oauth-states';
     const auth = config.collections.find((collection) => collection.slug === authCollection);
     if (!auth || auth.auth === undefined || auth.auth === false) {
-      throw new Error(`[plugin-oauth] Auth collection '${authCollection}' must exist and have auth enabled.`);
+      throw new Error(
+        `[plugin-oauth] Auth collection '${authCollection}' must exist and have auth enabled.`,
+      );
     }
     const authOptions = typeof auth.auth === 'object' ? auth.auth : {};
     const loginWithUsername = authOptions.loginWithUsername;
-    const usernameOnly = loginWithUsername === true || (typeof loginWithUsername === 'object' && loginWithUsername.allowEmailLogin !== true && loginWithUsername.requireEmail !== true);
+    const usernameOnly =
+      loginWithUsername === true ||
+      (typeof loginWithUsername === 'object' &&
+        loginWithUsername.allowEmailLogin !== true &&
+        loginWithUsername.requireEmail !== true);
     if (explicit?.some((provider) => provider.signIn) && usernameOnly) {
-      throw new Error(`[plugin-oauth] Auth collection '${authCollection}' must support email when OAuth sign-in is enabled.`);
+      throw new Error(
+        `[plugin-oauth] Auth collection '${authCollection}' must support email when OAuth sign-in is enabled.`,
+      );
     }
     const ownerField = options.ownerField ?? { name: 'owner', relationTo: authCollection };
-    const groups = new Map<object, { id: string; services: string[]; scopes: Set<string>; clientId: string; clientSecret: string }>();
+    const groups = new Map<
+      object,
+      {
+        id: string;
+        services: string[];
+        scopes: Set<string>;
+        clientId: string;
+        clientSecret: string;
+      }
+    >();
     for (const piece of config.pieces ?? []) {
       if (piece.credentialType !== 'oauth2') continue;
-      if (piece.policy.type !== 'oauth') throw new Error(`[plugin-oauth] OAuth piece '${piece.service}' requires OAuth app credentials.`);
+      if (piece.policy.type !== 'oauth')
+        throw new Error(
+          `[plugin-oauth] OAuth piece '${piece.service}' requires OAuth app credentials.`,
+        );
       const key = piece.separateConsent ? piece : piece.policy.source;
-      const current = groups.get(key) ?? { id: providerId(piece.service), services: [], scopes: new Set(), clientId: piece.policy.clientId, clientSecret: piece.policy.clientSecret };
+      const current = groups.get(key) ?? {
+        id: providerId(piece.service),
+        services: [],
+        scopes: new Set(),
+        clientId: piece.policy.clientId,
+        clientSecret: piece.policy.clientSecret,
+      };
       current.services.push(piece.service);
       for (const scope of piece.scopes ?? []) current.scopes.add(scope);
       groups.set(key, current);
     }
-    const derived = explicit ?? [...groups.values()].map((group, index) => {
-      const id = [...groups.values()].filter((candidate) => candidate.id === group.id).length > 1 ? `${group.id}-${index + 1}` : group.id;
-      return { ...createProvider(id.startsWith(`${group.id}-`) ? group.id : id, group.clientId, group.clientSecret, [...group.scopes]), id, service: group.services[0]!, services: group.services };
-    });
+    const derived =
+      explicit ??
+      [...groups.values()].map((group, index) => {
+        const id =
+          [...groups.values()].filter((candidate) => candidate.id === group.id).length > 1
+            ? `${group.id}-${index + 1}`
+            : group.id;
+        return {
+          ...createProvider(
+            id.startsWith(`${group.id}-`) ? group.id : id,
+            group.clientId,
+            group.clientSecret,
+            [...group.scopes],
+          ),
+          id,
+          service: group.services[0]!,
+          services: group.services,
+        };
+      });
     const providers = new Map(derived.map((provider) => [provider.id, provider]));
     const baseUrl = options.baseUrl ?? config.serverURL ?? 'http://localhost:3000';
     const paths = {
@@ -132,7 +182,9 @@ export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
       },
       credentialSources: [
         ...(config.credentialSources ?? []),
-        ...derived.map((provider) => createOAuthCredentialSource({ provider, encryption, connectionsSlug })),
+        ...derived.map((provider) =>
+          createOAuthCredentialSource({ provider, encryption, connectionsSlug }),
+        ),
       ],
       collections: [
         ...config.collections.map((collection) => {

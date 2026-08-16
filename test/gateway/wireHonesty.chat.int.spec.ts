@@ -57,7 +57,9 @@ function createRecordingModel(opts?: {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: async (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
       return {
@@ -74,13 +76,13 @@ function createRecordingModel(opts?: {
     },
     doStream: async (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
-      const parts: LanguageModelV4StreamPart[] = streamParts ?? ([
+      const parts: LanguageModelV4StreamPart[] = streamParts ?? [
         { type: 'stream-start', warnings: [] },
         { type: 'text-start', id: 'text-0' },
         { type: 'text-delta', id: 'text-0', delta: text },
         { type: 'text-end', id: 'text-0' },
         { type: 'finish', finishReason: STOP_FINISH, usage: DEFAULT_USAGE },
-      ]);
+      ];
       return {
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
@@ -213,10 +215,12 @@ describe('stream id/model stability', () => {
     const completed = frames.find((f) => f.type === 'response.completed');
     expect(created).toBeDefined();
     expect(completed).toBeDefined();
-    expect(completed!.response.id, 'envelope id must be stable created → completed')
-      .toBe(created!.response.id);
-    expect(completed!.response.model, 'envelope model must be stable created → completed')
-      .toBe(created!.response.model);
+    expect(completed!.response.id, 'envelope id must be stable created → completed').toBe(
+      created!.response.id,
+    );
+    expect(completed!.response.model, 'envelope model must be stable created → completed').toBe(
+      created!.response.model,
+    );
   });
 });
 
@@ -231,9 +235,14 @@ describe('chat schema accepts spec-valid message shapes', () => {
   // G8 — schema.ts system content z.string() 400s spec-valid array parts the translator supports; flip to it() when fixed. See 056_full_gateway_review.
   it('accepts system message with array-of-text-parts content', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o-mini',
@@ -250,9 +259,14 @@ describe('chat schema accepts spec-valid message shapes', () => {
   // G8 — schema.ts tool content z.string() 400s spec-valid array parts (parseToolOutput handles arrays); flip to it() when fixed. See 056_full_gateway_review.
   it('accepts tool message with array-of-text-parts content', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o-mini',
@@ -261,11 +275,13 @@ describe('chat schema accepts spec-valid message shapes', () => {
         {
           role: 'assistant',
           content: null,
-          tool_calls: [{
-            id: 'call_1',
-            type: 'function',
-            function: { name: 'get_weather', arguments: '{"city":"Paris"}' },
-          }],
+          tool_calls: [
+            {
+              id: 'call_1',
+              type: 'function',
+              function: { name: 'get_weather', arguments: '{"city":"Paris"}' },
+            },
+          ],
         },
         {
           role: 'tool',
@@ -273,13 +289,15 @@ describe('chat schema accepts spec-valid message shapes', () => {
           content: [{ type: 'text', text: 'g8-tool-result-18C' }],
         },
       ],
-      tools: [{
-        type: 'function',
-        function: {
-          name: 'get_weather',
-          parameters: { type: 'object', properties: { city: { type: 'string' } } },
+      tools: [
+        {
+          type: 'function',
+          function: {
+            name: 'get_weather',
+            parameters: { type: 'object', properties: { city: { type: 'string' } } },
+          },
         },
-      }],
+      ],
     });
 
     expect(status, `expected 200, got ${status}: ${JSON.stringify(body)}`).toBe(200);
@@ -289,9 +307,14 @@ describe('chat schema accepts spec-valid message shapes', () => {
   // G8 — schema.ts assistant content string|null 400s spec-valid array-of-parts; flip to it() when fixed. See 056_full_gateway_review.
   it('accepts assistant message with array-of-parts content', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o-mini',
@@ -323,9 +346,10 @@ function expectForwardedOr400(args: {
   if (args.status === 400) return; // typed rejection — policy-compliant
   expect(args.status).toBe(200);
   const serialized = JSON.stringify(args.callOptions ?? {});
-  const found = typeof args.evidence === 'string'
-    ? serialized.includes(args.evidence)
-    : args.evidence.test(serialized);
+  const found =
+    typeof args.evidence === 'string'
+      ? serialized.includes(args.evidence)
+      : args.evidence.test(serialized);
   expect(
     found,
     `\`${args.field}\` was accepted (HTTP ${args.status}) but never reached upstream callOptions — silently dropped`,
@@ -336,9 +360,14 @@ function expectForwardedOr400(args: {
 describe('documented chat fields: forward or 400, never drop', () => {
   async function post(body: Record<string, unknown>) {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
     const { status } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o-mini',
       messages: [{ role: 'user', content: 'hi' }],
@@ -350,10 +379,12 @@ describe('documented chat fields: forward or 400, never drop', () => {
   // G9 — legacy functions/function_call silently dropped: model receives NO tools, HTTP 200; flip to it() when fixed. See 056_full_gateway_review.
   it('legacy functions/function_call produce tools upstream (or 400)', async () => {
     const { status, callOptions } = await post({
-      functions: [{
-        name: 'get_weather',
-        parameters: { type: 'object', properties: { city: { type: 'string' } } },
-      }],
+      functions: [
+        {
+          name: 'get_weather',
+          parameters: { type: 'object', properties: { city: { type: 'string' } } },
+        },
+      ],
       function_call: 'auto',
     });
     if (status !== 400) {
@@ -490,9 +521,14 @@ describe('tool_choice allowed_tools / unknown shapes', () => {
   // G10 — allowed_tools maps to activeTools + mode.
   it('allowed_tools mode=required constrains the upstream call (or 400)', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o-mini',
@@ -527,7 +563,10 @@ describe('tool_choice allowed_tools / unknown shapes', () => {
       tool_choice: { type: 'g10-bogus-shape' },
     });
 
-    expect(status, `unknown tool_choice shape must 400, got ${status}: ${JSON.stringify(body)}`).toBe(400);
+    expect(
+      status,
+      `unknown tool_choice shape must 400, got ${status}: ${JSON.stringify(body)}`,
+    ).toBe(400);
   });
 });
 
@@ -541,7 +580,9 @@ describe('tool_choice allowed_tools / unknown shapes', () => {
 
 // G11
 describe('streaming preserves reasoning_details metadata', () => {
-  function reasoningStreamParts(providerMetadata: Record<string, Record<string, unknown>>): LanguageModelV4StreamPart[] {
+  function reasoningStreamParts(
+    providerMetadata: Record<string, Record<string, unknown>>,
+  ): LanguageModelV4StreamPart[] {
     return [
       { type: 'stream-start', warnings: [] },
       { type: 'reasoning-start', id: 'r-0' },
@@ -555,9 +596,12 @@ describe('streaming preserves reasoning_details metadata', () => {
   }
 
   it('thinking signature survives to the streaming wire', async () => {
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      streamParts: reasoningStreamParts({ anthropic: { signature: 'sig-g11-signature' } }),
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        streamParts: reasoningStreamParts({ anthropic: { signature: 'sig-g11-signature' } }),
+      }),
+    );
 
     const { status, text } = await postRaw(app, '/v1/chat/completions', {
       model: 'anthropic/claude-sonnet-4-20250514',
@@ -574,9 +618,12 @@ describe('streaming preserves reasoning_details metadata', () => {
   });
 
   it('redacted thinking data survives to the streaming wire', async () => {
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      streamParts: reasoningStreamParts({ anthropic: { redactedData: 'g11-redacted-blob' } }),
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        streamParts: reasoningStreamParts({ anthropic: { redactedData: 'g11-redacted-blob' } }),
+      }),
+    );
 
     const { status, text } = await postRaw(app, '/v1/chat/completions', {
       model: 'anthropic/claude-sonnet-4-20250514',

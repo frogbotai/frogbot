@@ -14,19 +14,26 @@ type InterpolateConfigTextOptions = {
 const ENV_TOKEN = /(\\*)(\{env:([^}]*)\})/g;
 const FILE_TOKEN = /(\\*)(\{file:([^}]*)\})/g;
 
-export async function interpolateConfigText(options: InterpolateConfigTextOptions): Promise<string> {
+export async function interpolateConfigText(
+  options: InterpolateConfigTextOptions,
+): Promise<string> {
   const dir = options.dir ?? dirname(options.source);
   const env = options.env ?? process.env;
 
-  const withEnv = options.text.replace(ENV_TOKEN, (_m, slashes: string, token: string, name: string) => {
-    const prefix = '\\'.repeat(Math.floor(slashes.length / 2));
-    if (slashes.length % 2 === 1) return prefix + token;
-    const value = env[name];
-    if (value === undefined) {
-      throw new ConfigError([`failed to resolve ${token} in ${options.source}: environment variable ${name} is not set`]);
-    }
-    return prefix + JSON.stringify(value).slice(1, -1);
-  });
+  const withEnv = options.text.replace(
+    ENV_TOKEN,
+    (_m, slashes: string, token: string, name: string) => {
+      const prefix = '\\'.repeat(Math.floor(slashes.length / 2));
+      if (slashes.length % 2 === 1) return prefix + token;
+      const value = env[name];
+      if (value === undefined) {
+        throw new ConfigError([
+          `failed to resolve ${token} in ${options.source}: environment variable ${name} is not set`,
+        ]);
+      }
+      return prefix + JSON.stringify(value).slice(1, -1);
+    },
+  );
 
   const matches = [...withEnv.matchAll(FILE_TOKEN)];
   if (matches.length === 0) return withEnv;
@@ -79,13 +86,17 @@ async function resolveConfigFilePath(options: ResolveConfigFilePathOptions): Pro
   const base = resolve(dir);
 
   if (!isInside(base, lexical)) {
-    throw new ConfigError([`failed to resolve ${token} in ${source}: path resolves outside the config directory`]);
+    throw new ConfigError([
+      `failed to resolve ${token} in ${source}: path resolves outside the config directory`,
+    ]);
   }
 
   const canonicalBase = await realpathOrSelf(base);
   const canonical = await realpathOrSelf(lexical);
   if (!isInside(canonicalBase, canonical)) {
-    throw new ConfigError([`failed to resolve ${token} in ${source}: path resolves outside the config directory`]);
+    throw new ConfigError([
+      `failed to resolve ${token} in ${source}: path resolves outside the config directory`,
+    ]);
   }
 
   return canonical;

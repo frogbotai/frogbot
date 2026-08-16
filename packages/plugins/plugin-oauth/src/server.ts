@@ -5,5 +5,9 @@ export { getSafeOAuthError, OAuthError } from './server/error.js';
 export { loginFromOAuth } from './server/login.js';
 export type { PKCECodes } from './server/pkce.js';
 export { createPKCECodes } from './server/pkce.js';
-export { createOAuthState, createOAuthStateExpiration, isOAuthStateExpired } from './server/state.js';
+export {
+  createOAuthState,
+  createOAuthStateExpiration,
+  isOAuthStateExpired,
+} from './server/state.js';
 export { mergeOAuthTokenSets, parseOAuthTokenSet } from './server/tokens.js';

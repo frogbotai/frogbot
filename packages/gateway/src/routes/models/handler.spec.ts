@@ -33,7 +33,7 @@ describe('modelsRoute', () => {
       allowlists: new Map([['openai', new Set(['openai/allowed'])]]),
     });
     const response = await app.request('/models');
-    const body = await response.json() as { data: Array<{ id: string }> };
+    const body = (await response.json()) as { data: Array<{ id: string }> };
 
     expect(body.data.map(({ id }) => id)).toEqual(['openai/allowed']);
   });

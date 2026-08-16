@@ -1,6 +1,16 @@
 'use client';
 
-import { Button, CopyIcon, Modal, TextInput, Tooltip, useConfig, useListQuery, useModal, useRouteCache } from '@payloadcms/ui';
+import {
+  Button,
+  CopyIcon,
+  Modal,
+  TextInput,
+  Tooltip,
+  useConfig,
+  useListQuery,
+  useModal,
+  useRouteCache,
+} from '@payloadcms/ui';
 import { type ChangeEvent, type KeyboardEvent, useState } from 'react';
 
 import './styles.css';
@@ -160,7 +170,9 @@ export function RevokeApiKey({
   async function revoke() {
     setLoading(true);
     setError(undefined);
-    const response = await fetch(`${config.routes.api}/${collectionSlug}/${rowData.id}/revoke`, { method: 'POST' });
+    const response = await fetch(`${config.routes.api}/${collectionSlug}/${rowData.id}/revoke`, {
+      method: 'POST',
+    });
     setLoading(false);
     if (!response.ok) {
       const result = (await response.json()) as { error?: string };
@@ -185,13 +197,18 @@ export function RevokeApiKey({
       >
         Revoke
       </Button>
-      <Modal className="api-keys-modal" closeOnBlur onClose={() => closeModal(confirmSlug)} slug={confirmSlug}>
+      <Modal
+        className="api-keys-modal"
+        closeOnBlur
+        onClose={() => closeModal(confirmSlug)}
+        slug={confirmSlug}
+      >
         <div className="api-keys-modal__wrapper">
           <div className="api-keys-modal__content">
             <h1>Revoke API Key</h1>
             <p>
-              This will immediately disable {rowData.name ?? 'this key'}. Any scripts or tools using this key will stop
-              working. This cannot be undone.
+              This will immediately disable {rowData.name ?? 'this key'}. Any scripts or tools using
+              this key will stop working. This cannot be undone.
             </p>
             {error ? <p role="alert">{error}</p> : null}
           </div>

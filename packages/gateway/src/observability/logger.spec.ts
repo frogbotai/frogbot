@@ -4,8 +4,18 @@ import type { Logger as PinoLogger } from 'pino';
 import pino from 'pino';
 import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
-import type { AfterErrorHookArgs, AfterOperationHookArgs, BeforeUpstreamHookArgs } from '../hooks.js';
-import { createAiSdkWarningLogger, createLogger, createLoggingHooks, type GatewayLogger, logGatewayError } from './logger.js';
+import type {
+  AfterErrorHookArgs,
+  AfterOperationHookArgs,
+  BeforeUpstreamHookArgs,
+} from '../hooks.js';
+import {
+  createAiSdkWarningLogger,
+  createLogger,
+  createLoggingHooks,
+  type GatewayLogger,
+  logGatewayError,
+} from './logger.js';
 
 const base = {
   operation: 'responses' as const,
@@ -290,7 +300,12 @@ describe('createLoggingHooks with a real pino instance', () => {
     } satisfies AfterErrorHookArgs);
 
     const [entry] = lines();
-    expect(entry).toMatchObject({ level: 50, msg: 'request-error', requestId: 'req_123', phase: 'beforeUpstream' });
+    expect(entry).toMatchObject({
+      level: 50,
+      msg: 'request-error',
+      requestId: 'req_123',
+      phase: 'beforeUpstream',
+    });
     expect(entry).not.toHaveProperty('error');
   });
 });
@@ -339,8 +354,24 @@ describe('createAiSdkWarningLogger', () => {
     });
 
     expect(warn).toHaveBeenCalledTimes(2);
-    expect(warn).toHaveBeenNthCalledWith(1, { provider: 'openai', model: 'gpt-4o', warning: { type: 'unsupported', feature: 'streaming' } }, 'ai-sdk-unsupported');
-    expect(warn).toHaveBeenNthCalledWith(2, { provider: 'openai', model: 'gpt-4o', warning: { type: 'other', message: 'something unexpected' } }, 'ai-sdk-other');
+    expect(warn).toHaveBeenNthCalledWith(
+      1,
+      {
+        provider: 'openai',
+        model: 'gpt-4o',
+        warning: { type: 'unsupported', feature: 'streaming' },
+      },
+      'ai-sdk-unsupported',
+    );
+    expect(warn).toHaveBeenNthCalledWith(
+      2,
+      {
+        provider: 'openai',
+        model: 'gpt-4o',
+        warning: { type: 'other', message: 'something unexpected' },
+      },
+      'ai-sdk-other',
+    );
   });
 
   it('does not throw when warnings array is empty', () => {
@@ -352,7 +383,9 @@ describe('createAiSdkWarningLogger', () => {
 
   it('swallows logger errors so a failing logger never propagates', () => {
     const fn = createAiSdkWarningLogger({
-      warn: () => { throw new Error('logger exploded'); },
+      warn: () => {
+        throw new Error('logger exploded');
+      },
     } as unknown as GatewayLogger);
     expect(() => fn({ warnings: [{ type: 'other', message: 'x' }] })).not.toThrow();
   });

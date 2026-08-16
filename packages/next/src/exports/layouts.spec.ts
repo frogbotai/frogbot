@@ -41,7 +41,10 @@ describe('@frogbotai/next layouts', () => {
 
     await handleServerFunctions({ name: 'form-state', args: {}, config, importMap: {} });
 
-    const forwarded = mocks.handleServerFunctions.mock.calls[0][0] as { config: Promise<unknown>; name: string };
+    const forwarded = mocks.handleServerFunctions.mock.calls[0][0] as {
+      config: Promise<unknown>;
+      name: string;
+    };
     expect(forwarded.name).toBe('form-state');
     await expect(forwarded.config).resolves.toBe(payloadConfig);
   });

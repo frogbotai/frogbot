@@ -36,17 +36,36 @@ describe('API keys collection', () => {
       'revokedAt',
       'actions',
     ]);
-    expect(await collection.access?.read?.({ req: { user: { id: 'user-1', roles: ['member'] } } as FrogbotRequest })).toEqual({
+    expect(
+      await collection.access?.read?.({
+        req: { user: { id: 'user-1', roles: ['member'] } } as FrogbotRequest,
+      }),
+    ).toEqual({
       owner: { equals: 'user-1' },
     });
-    expect(await collection.access?.update?.({ req: { user: { id: 'user-1', roles: ['member'] } } as FrogbotRequest })).toEqual({
+    expect(
+      await collection.access?.update?.({
+        req: { user: { id: 'user-1', roles: ['member'] } } as FrogbotRequest,
+      }),
+    ).toEqual({
       owner: { equals: 'user-1' },
     });
     expect(await collection.access?.create?.({ req: {} as FrogbotRequest })).toBe(false);
     expect(await collection.access?.delete?.({ req: {} as FrogbotRequest })).toBe(false);
     expect(await collection.access?.read?.({ req: {} as FrogbotRequest })).toBe(false);
     expect(await collection.access?.update?.({ req: {} as FrogbotRequest })).toBe(false);
-    for (const name of ['owner', 'prefix', 'tokenHash', 'lastUsedAt', 'revokedAt', 'monthlyBudget', 'rpm', 'tpm', 'models', 'budgetBehavior']) {
+    for (const name of [
+      'owner',
+      'prefix',
+      'tokenHash',
+      'lastUsedAt',
+      'revokedAt',
+      'monthlyBudget',
+      'rpm',
+      'tpm',
+      'models',
+      'budgetBehavior',
+    ]) {
       const field = collection.fields.find((item) => 'name' in item && item.name === name);
       expect('access' in field! && field.access?.update?.({} as never)).toBe(false);
     }
@@ -57,11 +76,19 @@ describe('API keys collection', () => {
       name: 'actions',
       admin: { components: { Cell: '@frogbotai/plugin-api-keys/client#RevokeApiKey' } },
     });
-    const revokedAt = collection.fields.find((field) => 'name' in field && field.name === 'revokedAt');
+    const revokedAt = collection.fields.find(
+      (field) => 'name' in field && field.name === 'revokedAt',
+    );
     const condition = 'admin' in revokedAt! ? revokedAt.admin?.condition : undefined;
     expect(condition?.({}, { revokedAt: null }, {} as never)).toBe(false);
     expect(condition?.({}, { revokedAt: '2026-08-02T00:00:00.000Z' }, {} as never)).toBe(true);
-    expect(collection.admin?.defaultColumns).toEqual(['name', 'prefix', 'lastUsedAt', 'revokedAt', 'actions']);
+    expect(collection.admin?.defaultColumns).toEqual([
+      'name',
+      'prefix',
+      'lastUsedAt',
+      'revokedAt',
+      'actions',
+    ]);
   });
 
   it('mints multiple keys while storing only hashes', async () => {
@@ -104,7 +131,9 @@ describe('API keys collection', () => {
     const result = await apiKeysPlugin()(config);
     const collection = result.collections.find((item) => item.slug === 'api-keys')!;
     const field = collection.fields.find((item) => 'name' in item && item.name === 'totalCostUSD');
-    const find = vi.fn().mockResolvedValue({ docs: [{ costUSD: 0.012 }, { costUSD: 0.003 }, { costUSD: null }] });
+    const find = vi
+      .fn()
+      .mockResolvedValue({ docs: [{ costUSD: 0.012 }, { costUSD: 0.003 }, { costUSD: null }] });
     const hook = 'hooks' in field! ? field.hooks?.afterRead?.[0] : undefined;
 
     expect(field).toMatchObject({
@@ -140,7 +169,9 @@ describe('API keys collection', () => {
       user: { id: 'user-1', roles: ['member'] },
       routeParams: { id: 'key-1' },
       frogbot: {
-        find: vi.fn().mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
+        find: vi
+          .fn()
+          .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
         update,
       },
     } as unknown as FrogbotRequest;
@@ -154,20 +185,27 @@ describe('API keys collection', () => {
     });
   });
 
-  it('revokes another user\'s key only when canRevokeAnyKey allows it', async () => {
-    const collection = await getCollection({ canRevokeAnyKey: (req) => (req.user as { roles?: string[] } | null)?.roles?.includes('support') === true });
+  it("revokes another user's key only when canRevokeAnyKey allows it", async () => {
+    const collection = await getCollection({
+      canRevokeAnyKey: (req) =>
+        (req.user as { roles?: string[] } | null)?.roles?.includes('support') === true,
+    });
     const req = {
       user: { id: 'support-1', roles: ['support'] },
       routeParams: { id: 'key-1' },
       frogbot: {
-        find: vi.fn().mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
+        find: vi
+          .fn()
+          .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
         update: vi.fn().mockResolvedValue({}),
       },
     } as unknown as FrogbotRequest;
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
 
     expect((await endpoint.handler(req)).status).toBe(200);
-    expect((req.frogbot.find as ReturnType<typeof vi.fn>).mock.calls[0][0].where).toEqual({ id: { equals: 'key-1' } });
+    expect((req.frogbot.find as ReturnType<typeof vi.fn>).mock.calls[0][0].where).toEqual({
+      id: { equals: 'key-1' },
+    });
   });
 
   it('rotates by revoking before minting and preserves key ownership', async () => {
@@ -177,9 +215,16 @@ describe('API keys collection', () => {
       user: { id: 'support-1' },
       routeParams: { id: 'key-1' },
       frogbot: {
-        find: vi.fn().mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
-        update: vi.fn().mockImplementation(async () => { operations.push('revoke'); }),
-        create: vi.fn().mockImplementation(async () => { operations.push('mint'); return { id: 'key-2', createdAt: 'now' }; }),
+        find: vi
+          .fn()
+          .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
+        update: vi.fn().mockImplementation(async () => {
+          operations.push('revoke');
+        }),
+        create: vi.fn().mockImplementation(async () => {
+          operations.push('mint');
+          return { id: 'key-2', createdAt: 'now' };
+        }),
       },
     } as unknown as FrogbotRequest;
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/rotate')!;
@@ -188,8 +233,14 @@ describe('API keys collection', () => {
 
     expect(response.status).toBe(201);
     expect(operations).toEqual(['revoke', 'mint']);
-    expect(body).toMatchObject({ id: 'key-2', name: 'Deploy', token: expect.stringMatching(/^fb_/) });
-    expect((req.frogbot.create as ReturnType<typeof vi.fn>).mock.calls[0][0].data.owner).toBe('user-1');
+    expect(body).toMatchObject({
+      id: 'key-2',
+      name: 'Deploy',
+      token: expect.stringMatching(/^fb_/),
+    });
+    expect((req.frogbot.create as ReturnType<typeof vi.fn>).mock.calls[0][0].data.owner).toBe(
+      'user-1',
+    );
   });
 
   it('leaves the old key revoked when rotate minting fails', async () => {
@@ -199,7 +250,9 @@ describe('API keys collection', () => {
       user: { id: 'user-1' },
       routeParams: { id: 'key-1' },
       frogbot: {
-        find: vi.fn().mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
+        find: vi
+          .fn()
+          .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
         update,
         create: vi.fn().mockRejectedValue(new Error('database unavailable')),
       },

@@ -18,7 +18,9 @@ function listen(server: Server): Promise<void> {
 }
 
 function close(server: Server): Promise<void> {
-  return new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+  return new Promise((resolve, reject) =>
+    server.close((error) => (error ? reject(error) : resolve())),
+  );
 }
 
 describe('agent endpoint composition', () => {
@@ -33,11 +35,24 @@ describe('agent endpoint composition', () => {
         const stream = (JSON.parse(body) as { stream?: boolean }).stream;
         if (stream) {
           response.writeHead(200, { 'content-type': 'text/event-stream' });
-          response.end('data: {"id":"chatcmpl-test","object":"chat.completion.chunk","created":1,"model":"gpt-4.1-mini","choices":[{"index":0,"delta":{"role":"assistant","content":"hello"},"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-test","object":"chat.completion.chunk","created":1,"model":"gpt-4.1-mini","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}\n\ndata: [DONE]\n\n');
+          response.end(
+            'data: {"id":"chatcmpl-test","object":"chat.completion.chunk","created":1,"model":"gpt-4.1-mini","choices":[{"index":0,"delta":{"role":"assistant","content":"hello"},"finish_reason":null}]}\n\ndata: {"id":"chatcmpl-test","object":"chat.completion.chunk","created":1,"model":"gpt-4.1-mini","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}\n\ndata: [DONE]\n\n',
+          );
           return;
         }
         response.writeHead(200, { 'content-type': 'application/json' });
-        response.end(JSON.stringify({ id: 'chatcmpl-test', object: 'chat.completion', created: 1, model: 'gpt-4.1-mini', choices: [{ index: 0, message: { role: 'assistant', content: 'hello' }, finish_reason: 'stop' }], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } }));
+        response.end(
+          JSON.stringify({
+            id: 'chatcmpl-test',
+            object: 'chat.completion',
+            created: 1,
+            model: 'gpt-4.1-mini',
+            choices: [
+              { index: 0, message: { role: 'assistant', content: 'hello' }, finish_reason: 'stop' },
+            ],
+            usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+          }),
+        );
       });
     });
     await listen(openai);
@@ -51,8 +66,17 @@ describe('agent endpoint composition', () => {
 
   async function expectPersisted(threadId: string | number) {
     const [threads, messages] = await Promise.all([
-      booted.frogbot.count({ collection: threadsSlug, where: { id: { equals: threadId } }, overrideAccess: true }),
-      booted.frogbot.find({ collection: messagesSlug, where: { thread: { equals: threadId } }, depth: 0, overrideAccess: true }),
+      booted.frogbot.count({
+        collection: threadsSlug,
+        where: { id: { equals: threadId } },
+        overrideAccess: true,
+      }),
+      booted.frogbot.find({
+        collection: messagesSlug,
+        where: { thread: { equals: threadId } },
+        depth: 0,
+        overrideAccess: true,
+      }),
     ]);
     expect(threads.totalDocs).toBe(1);
     expect(messages.docs).toHaveLength(2);
@@ -89,7 +113,10 @@ describe('agent endpoint composition', () => {
   }
 
   it('JSON POST persists one thread, one user message, and one assistant message', async () => {
-    const response = await booted.restClient.post<{ text: string; threadId: string | number }>(`/api/agents/${agentSlug}`, { prompt: 'Reply with exactly: hello' });
+    const response = await booted.restClient.post<{ text: string; threadId: string | number }>(
+      `/api/agents/${agentSlug}`,
+      { prompt: 'Reply with exactly: hello' },
+    );
     expect(response.status, JSON.stringify(response.body)).toBe(200);
     expect(response.body.text).toBe('hello');
     expect(response.body.threadId).toBeDefined();

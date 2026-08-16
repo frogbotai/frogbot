@@ -1,8 +1,8 @@
-import type { AfterOperationHook } from "@frogbotai/gateway";
-import { calculateModelCostUSD } from "@frogbotai/gateway";
+import type { AfterOperationHook } from '@frogbotai/gateway';
+import { calculateModelCostUSD } from '@frogbotai/gateway';
 
-import type { AIOperationContext } from "./hooks.js";
-import { USAGE_LOGS_SLUG } from "./usageCollection.js";
+import type { AIOperationContext } from './hooks.js';
+import { USAGE_LOGS_SLUG } from './usageCollection.js';
 
 export const logUsage: AfterOperationHook = (args) => {
   const context = args.context as AIOperationContext;
@@ -17,9 +17,7 @@ export const logUsage: AfterOperationHook = (args) => {
       data: {
         ...(context.usageFields ?? {}),
         ...(req.user?.id !== undefined ? { user: req.user.id } : {}),
-        ...(context.agent?.threadId !== undefined
-          ? { thread: context.agent.threadId }
-          : {}),
+        ...(context.agent?.threadId !== undefined ? { thread: context.agent.threadId } : {}),
         requestId: args.requestId,
         runId: context.agent?.runId,
         model: args.model,
@@ -37,10 +35,5 @@ export const logUsage: AfterOperationHook = (args) => {
       overrideAccess: true,
       req,
     })
-    .catch((error: unknown) =>
-      req.frogbot.logger.error(
-        "[frogbot] Failed to log AI usage",
-        error,
-      ),
-    );
+    .catch((error: unknown) => req.frogbot.logger.error('[frogbot] Failed to log AI usage', error));
 };

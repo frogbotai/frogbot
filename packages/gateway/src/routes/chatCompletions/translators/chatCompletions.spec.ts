@@ -22,10 +22,7 @@
 
 import { describe, expect, test } from 'vitest';
 
-import {
-  type OpenAIMessage,
-  toModelMessages,
-} from './index.js';
+import { type OpenAIMessage, toModelMessages } from './index.js';
 
 // ---------------------------------------------------------------------------
 // system messages
@@ -61,13 +58,9 @@ describe('user messages', () => {
   });
 
   test('parses a single text content part', () => {
-    const result = toModelMessages([
-      { role: 'user', content: [{ type: 'text', text: 'Hello' }] },
-    ]);
+    const result = toModelMessages([{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }]);
 
-    expect(result).toEqual([
-      { role: 'user', content: [{ type: 'text', text: 'Hello' }] },
-    ]);
+    expect(result).toEqual([{ role: 'user', content: [{ type: 'text', text: 'Hello' }] }]);
   });
 
   test('parses base64 data-URL image_url into a file part', () => {
@@ -109,9 +102,7 @@ describe('user messages', () => {
       toModelMessages([
         {
           role: 'user',
-          content: [
-            { type: 'image_url', image_url: { url: 'https://example.com/image.jpg' } },
-          ],
+          content: [{ type: 'image_url', image_url: { url: 'https://example.com/image.jpg' } }],
         },
       ]),
     ).toThrow(/remote image URL/);
@@ -206,9 +197,7 @@ describe('assistant messages', () => {
   test('text-only assistant collapses to a string content (fast path)', () => {
     // Inverse of opencode's "should convert assistant text messages". The
     // parser's fast path emits a string instead of `[{type:'text',...}]`.
-    const result = toModelMessages([
-      { role: 'assistant', content: 'Hello back!' },
-    ]);
+    const result = toModelMessages([{ role: 'assistant', content: 'Hello back!' }]);
 
     expect(result).toEqual([{ role: 'assistant', content: 'Hello back!' }]);
   });
@@ -339,9 +328,7 @@ describe('assistant messages', () => {
     expect(result).toEqual([
       {
         role: 'assistant',
-        content: [
-          { type: 'reasoning', text: 'Just thinking, no response yet' },
-        ],
+        content: [{ type: 'reasoning', text: 'Just thinking, no response yet' }],
       },
     ]);
   });
@@ -411,9 +398,7 @@ describe('tool calls and results', () => {
     // Malformed input — a tool message referencing an id that no prior
     // assistant turn produced. We tolerate it (empty toolName) rather than
     // reject, matching the spirit of opencode's lenient correlation pass.
-    const result = toModelMessages([
-      { role: 'tool', tool_call_id: 'orphan-id', content: 'oops' },
-    ]);
+    const result = toModelMessages([{ role: 'tool', tool_call_id: 'orphan-id', content: 'oops' }]);
     expect(result).toEqual([
       {
         role: 'tool',
@@ -591,13 +576,9 @@ describe('developer role mapping (extra: stage 4.5)', () => {
   test('OpenAI o1-series `developer` role maps to AI SDK `system`', () => {
     // OpenAI's o1-series renamed `system` to `developer`. Both flow into the
     // AI SDK's `system` role so downstream providers see a uniform shape.
-    const result = toModelMessages([
-      { role: 'developer', content: 'You are a careful reasoner.' },
-    ]);
+    const result = toModelMessages([{ role: 'developer', content: 'You are a careful reasoner.' }]);
 
-    expect(result).toEqual([
-      { role: 'system', content: 'You are a careful reasoner.' },
-    ]);
+    expect(result).toEqual([{ role: 'system', content: 'You are a careful reasoner.' }]);
   });
 });
 
@@ -768,9 +749,7 @@ describe('file part handling', () => {
       toModelMessages([
         {
           role: 'user',
-          content: [
-            { type: 'file', file: { file_data: 'https://example.com/file.pdf' } },
-          ],
+          content: [{ type: 'file', file: { file_data: 'https://example.com/file.pdf' } }],
         },
       ]);
     } catch (e) {
@@ -827,9 +806,7 @@ describe('re-ingested field forwarding (G55)', () => {
   });
 
   test('assistant `refusal: null` keeps the plain-text fast path', () => {
-    const result = toModelMessages([
-      { role: 'assistant', content: 'hello', refusal: null },
-    ]);
+    const result = toModelMessages([{ role: 'assistant', content: 'hello', refusal: null }]);
 
     expect(result).toEqual([{ role: 'assistant', content: 'hello' }]);
   });
@@ -953,7 +930,10 @@ describe('array-of-text-parts content (G8)', () => {
     const result = toModelMessages([
       {
         role: 'system',
-        content: [{ type: 'text', text: 'part-a ' }, { type: 'text', text: 'part-b' }],
+        content: [
+          { type: 'text', text: 'part-a ' },
+          { type: 'text', text: 'part-b' },
+        ],
       },
     ]);
 
@@ -988,7 +968,10 @@ describe('array-of-text-parts content (G8)', () => {
     const result = toModelMessages([
       {
         role: 'assistant',
-        content: [{ type: 'text', text: 'prior ' }, { type: 'text', text: 'turn' }],
+        content: [
+          { type: 'text', text: 'prior ' },
+          { type: 'text', text: 'turn' },
+        ],
       },
     ]);
 
@@ -1007,9 +990,7 @@ describe('compatibility tolerance', () => {
     const result = toModelMessages([
       { role: 'function', content: '{"result":42}' } as OpenAIMessage,
     ]);
-    expect(result).toEqual([
-      { role: 'system', content: '[role=function] {"result":42}' },
-    ]);
+    expect(result).toEqual([{ role: 'system', content: '[role=function] {"result":42}' }]);
   });
 
   test('vendor-specific role with non-string content is JSON-serialised', () => {
@@ -1073,9 +1054,7 @@ describe('compatibility tolerance', () => {
       toModelMessages([
         {
           role: 'user',
-          content: [
-            { type: 'input_audio', input_audio: { data: 'AAAA', format: 'aac' } } as any,
-          ],
+          content: [{ type: 'input_audio', input_audio: { data: 'AAAA', format: 'aac' } } as any],
         },
       ]);
     } catch (e) {

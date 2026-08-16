@@ -30,40 +30,37 @@ describe('G76 — transcriptions: stream=true silently ignored', () => {
   // rejects stream=true with a typed 400 rather than silently returning buffered
   // JSON (the previous behavioral lie). SSE streaming is deferred until the AI
   // SDK provides a doStream() surface for transcription models.
-  it(
-    'POST /v1/audio/transcriptions with stream=true is rejected with a 400',
-    async () => {
-      const registry = {
-        openai: new MockProviderV4({
-          transcriptionModels: {
-            'whisper-1': new MockTranscriptionModelV4({
-              doGenerate: () =>
-                Promise.resolve({
-                  text: 'hello world',
-                  segments: [],
-                  language: 'en',
-                  durationInSeconds: 1,
-                  warnings: [],
-                  response: { id: 'r', timestamp: new Date(0), modelId: 'whisper-1' },
-                }),
-            }),
-          },
-        }),
-      } as unknown as ProviderRegistry;
-      const app = createApp({ registry });
+  it('POST /v1/audio/transcriptions with stream=true is rejected with a 400', async () => {
+    const registry = {
+      openai: new MockProviderV4({
+        transcriptionModels: {
+          'whisper-1': new MockTranscriptionModelV4({
+            doGenerate: () =>
+              Promise.resolve({
+                text: 'hello world',
+                segments: [],
+                language: 'en',
+                durationInSeconds: 1,
+                warnings: [],
+                response: { id: 'r', timestamp: new Date(0), modelId: 'whisper-1' },
+              }),
+          }),
+        },
+      }),
+    } as unknown as ProviderRegistry;
+    const app = createApp({ registry });
 
-      const form = new FormData();
-      form.set('model', 'openai/whisper-1');
-      form.set('file', new File([new Uint8Array([1, 2, 3])], 'audio.mp3', { type: 'audio/mpeg' }));
-      form.set('stream', 'true');
+    const form = new FormData();
+    form.set('model', 'openai/whisper-1');
+    form.set('file', new File([new Uint8Array([1, 2, 3])], 'audio.mp3', { type: 'audio/mpeg' }));
+    form.set('stream', 'true');
 
-      const res = await app.request('/v1/audio/transcriptions', { method: 'POST', body: form });
+    const res = await app.request('/v1/audio/transcriptions', { method: 'POST', body: form });
 
-      expect(res.status).toBe(400);
-      const body = (await res.json()) as { error?: { message?: string } };
-      expect(body.error?.message).toContain('streaming transcription is not supported');
-    },
-  );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error?: { message?: string } };
+    expect(body.error?.message).toContain('streaming transcription is not supported');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -94,7 +91,12 @@ describe('G78 — speech Content-Type matches requested outputFormat', () => {
     const res = await app.request('/v1/audio/speech', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'openai/tts-1', input: 'Hello', voice: 'alloy', response_format: 'pcm' }),
+      body: JSON.stringify({
+        model: 'openai/tts-1',
+        input: 'Hello',
+        voice: 'alloy',
+        response_format: 'pcm',
+      }),
     });
 
     expect(res.status).toBe(200);
@@ -124,7 +126,12 @@ describe('G78 — speech Content-Type matches requested outputFormat', () => {
     const res = await app.request('/v1/audio/speech', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'openai/tts-1', input: 'Hello', voice: 'alloy', response_format: 'mp3' }),
+      body: JSON.stringify({
+        model: 'openai/tts-1',
+        input: 'Hello',
+        voice: 'alloy',
+        response_format: 'mp3',
+      }),
     });
 
     expect(res.status).toBe(200);

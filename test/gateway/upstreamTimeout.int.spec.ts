@@ -42,7 +42,9 @@ function createHangingModel(): LanguageModelV4 {
     provider: 'mock',
     modelId: 'mock-model',
     defaultObjectGenerationMode: undefined,
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: (options: { abortSignal?: AbortSignal }) => hang(options.abortSignal),
     doStream: (options: { abortSignal?: AbortSignal }) =>
       // First-chunk read never completes — models the hung `peekStream` case.

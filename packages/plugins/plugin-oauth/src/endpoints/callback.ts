@@ -29,7 +29,9 @@ type StateDocument = {
   [key: string]: unknown;
 };
 
-async function extractCallback(req: FrogbotRequest): Promise<{ code?: string; state?: string; error?: string }> {
+async function extractCallback(
+  req: FrogbotRequest,
+): Promise<{ code?: string; state?: string; error?: string }> {
   if (req.method === 'GET') {
     return {
       code: req.searchParams.get('code') ?? undefined,
@@ -39,10 +41,14 @@ async function extractCallback(req: FrogbotRequest): Promise<{ code?: string; st
   }
   const contentType = req.headers.get('content-type') ?? '';
   if (contentType.includes('application/x-www-form-urlencoded')) {
-    const body = new URLSearchParams(await req.text?.() ?? '');
-    return { code: body.get('code') ?? undefined, state: body.get('state') ?? undefined, error: body.get('error') ?? undefined };
+    const body = new URLSearchParams((await req.text?.()) ?? '');
+    return {
+      code: body.get('code') ?? undefined,
+      state: body.get('state') ?? undefined,
+      error: body.get('error') ?? undefined,
+    };
   }
-  const body = (await req.json?.().catch(() => ({})) ?? {}) as Record<string, unknown>;
+  const body = ((await req.json?.().catch(() => ({}))) ?? {}) as Record<string, unknown>;
   return {
     code: typeof body.code === 'string' ? body.code : undefined,
     state: typeof body.state === 'string' ? body.state : undefined,
@@ -54,7 +60,9 @@ function serializeTokens(tokens: OAuthTokenSet): string {
   return JSON.stringify({
     access_token: tokens.accessToken,
     refresh_token: tokens.refreshToken,
-    expires_in: tokens.expiresAt ? Math.max(0, Math.floor((tokens.expiresAt.getTime() - Date.now()) / 1000)) : undefined,
+    expires_in: tokens.expiresAt
+      ? Math.max(0, Math.floor((tokens.expiresAt.getTime() - Date.now()) / 1000))
+      : undefined,
     scope: tokens.scopes?.join(' '),
     token_type: tokens.tokenType,
     id_token: tokens.idToken,
@@ -67,27 +75,45 @@ export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpo
     const provider = getProvider({ providers: options.providers, req });
     if (!provider) return Response.json({ error: 'OAuth provider not found' }, { status: 404 });
     const callback = await extractCallback(req);
-    if (!callback.state) return Response.json({ error: 'OAuth state is required' }, { status: 400 });
+    if (!callback.state)
+      return Response.json({ error: 'OAuth state is required' }, { status: 400 });
     const consumed = await req.frogbot.delete({
       collection: options.statesSlug as never,
       overrideAccess: true,
       req,
-      where: { and: [{ state: { equals: callback.state } }, { provider: { equals: provider.id } }] },
+      where: {
+        and: [{ state: { equals: callback.state } }, { provider: { equals: provider.id } }],
+      },
     });
     const state = consumed.docs[0] as StateDocument | undefined;
     if (!state || isOAuthStateExpired({ expiresAt: state.expiresAt })) {
       return Response.json({ error: 'OAuth state is invalid or expired' }, { status: 400 });
     }
-    if (callback.error) return Response.redirect(withOAuthResult({ returnUrl: state.returnUrl, error: 'access_denied' }));
-    if (!callback.code) return Response.redirect(withOAuthResult({ returnUrl: state.returnUrl, error: 'invalid_request' }));
+    if (callback.error)
+      return Response.redirect(
+        withOAuthResult({ returnUrl: state.returnUrl, error: 'access_denied' }),
+      );
+    if (!callback.code)
+      return Response.redirect(
+        withOAuthResult({ returnUrl: state.returnUrl, error: 'invalid_request' }),
+      );
     try {
-      const callbackUrl = new URL(options.path.replace(':provider', provider.id), options.baseUrl).toString();
-      const tokens = await provider.exchange({ callbackUrl, code: callback.code, codeVerifier: state.codeVerifier, req });
+      const callbackUrl = new URL(
+        options.path.replace(':provider', provider.id),
+        options.baseUrl,
+      ).toString();
+      const tokens = await provider.exchange({
+        callbackUrl,
+        code: callback.code,
+        codeVerifier: state.codeVerifier,
+        req,
+      });
       const scopes = tokens.scopes ?? provider.scopes;
       const account = await provider.getAccount({ tokens, req });
       const owner = state[options.ownerField];
       if (owner === undefined || owner === null) {
-        if (!account.email) throw new OAuthError('invalid_request', 'The OAuth account must have an email address.');
+        if (!account.email)
+          throw new OAuthError('invalid_request', 'The OAuth account must have an email address.');
         const existingUsers = await req.frogbot.find({
           collection: options.authCollection as never,
           limit: 1,
@@ -95,30 +121,40 @@ export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpo
           req,
           where: { email: { equals: account.email } },
         });
-        const collectionConfig = getPayloadRequest(req).payload.collections[options.authCollection]!.config;
-        const user = existingUsers.docs[0] ?? await req.frogbot.create({
-          collection: options.authCollection as never,
-          data: {
-            email: account.email,
-            password: randomBytes(32).toString('base64url'),
-            ...(collectionConfig.auth.verify ? { _verified: true } : {}),
-          },
-          overrideAccess: true,
+        const collectionConfig =
+          getPayloadRequest(req).payload.collections[options.authCollection]!.config;
+        const user =
+          existingUsers.docs[0] ??
+          (await req.frogbot.create({
+            collection: options.authCollection as never,
+            data: {
+              email: account.email,
+              password: randomBytes(32).toString('base64url'),
+              ...(collectionConfig.auth.verify ? { _verified: true } : {}),
+            },
+            overrideAccess: true,
+            req,
+            showHiddenFields: true,
+          }));
+        return await loginFromOAuth({
           req,
-          showHiddenFields: true,
+          user: user as never,
+          collectionSlug: options.authCollection,
+          returnUrl: state.returnUrl,
         });
-        return await loginFromOAuth({ req, user: user as never, collectionSlug: options.authCollection, returnUrl: state.returnUrl });
       }
       const existing = await req.frogbot.find({
         collection: options.connectionsSlug as never,
         limit: 1,
         overrideAccess: true,
         req,
-        where: { and: [
-          { owner: { equals: owner } },
-          { sourceKey: { equals: provider.id } },
-          { accountId: { equals: account.id } },
-        ] },
+        where: {
+          and: [
+            { owner: { equals: owner } },
+            { sourceKey: { equals: provider.id } },
+            { accountId: { equals: account.id } },
+          ],
+        },
       });
       const data = {
         owner,
@@ -128,7 +164,9 @@ export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpo
         credentialType: 'oauth2',
         accountId: account.id,
         accountLabel: account.name ?? account.email,
-        encryptedCredentials: await options.encryption.encrypt(serializeTokens({ ...tokens, scopes })),
+        encryptedCredentials: await options.encryption.encrypt(
+          serializeTokens({ ...tokens, scopes }),
+        ),
         expiresAt: tokens.expiresAt?.toISOString(),
         scopes,
         status: 'active',
@@ -136,13 +174,29 @@ export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpo
       };
       const current = existing.docs[0] as Record<string, unknown> | undefined;
       const connection = current
-        ? await req.frogbot.update({ collection: options.connectionsSlug as never, id: current.id as never, data, overrideAccess: true, req })
-        : await req.frogbot.create({ collection: options.connectionsSlug as never, data, overrideAccess: true, req });
-      return Response.redirect(withOAuthResult({ returnUrl: state.returnUrl, connection: connection.id }));
+        ? await req.frogbot.update({
+            collection: options.connectionsSlug as never,
+            id: current.id as never,
+            data,
+            overrideAccess: true,
+            req,
+          })
+        : await req.frogbot.create({
+            collection: options.connectionsSlug as never,
+            data,
+            overrideAccess: true,
+            req,
+          });
+      return Response.redirect(
+        withOAuthResult({ returnUrl: state.returnUrl, connection: connection.id }),
+      );
     } catch (error) {
       const safe = getSafeOAuthError(error);
       return Response.redirect(withOAuthResult({ returnUrl: state.returnUrl, error: safe.code }));
     }
   };
-  return [{ method: 'get', path: options.path, handler }, { method: 'post', path: options.path, handler }];
+  return [
+    { method: 'get', path: options.path, handler },
+    { method: 'post', path: options.path, handler },
+  ];
 }

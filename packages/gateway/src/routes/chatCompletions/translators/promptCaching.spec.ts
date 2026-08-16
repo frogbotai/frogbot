@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { parseAssistantMessage } from './toModelMessages/assistant.js';
 import { parseSystemMessage } from './toModelMessages/system.js';
 import { parseUserMessage } from './toModelMessages/user.js';
-import type { OpenAIAssistantMessage, OpenAISystemMessage,OpenAIUserMessage } from './types.js';
+import type { OpenAIAssistantMessage, OpenAISystemMessage, OpenAIUserMessage } from './types.js';
 
 describe('cache_control on messages', () => {
   describe('system message', () => {
@@ -42,7 +42,9 @@ describe('cache_control on messages', () => {
       };
       const result = parseUserMessage(msg, 0);
       const parts = result.content as Array<{ type: string; providerOptions?: unknown }>;
-      expect(parts[0].providerOptions).toEqual({ unknown: { cache_control: { type: 'ephemeral' } } });
+      expect(parts[0].providerOptions).toEqual({
+        unknown: { cache_control: { type: 'ephemeral' } },
+      });
     });
 
     it('omits providerOptions on parts without cache_control', () => {

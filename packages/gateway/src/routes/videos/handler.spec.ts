@@ -41,10 +41,12 @@ describe('videosRoute', () => {
       model: 'replicate/wan-2.5',
       data: [{ b64_json: 'dmlkZW8=' }],
     });
-    expect(doGenerate).toHaveBeenCalledWith(expect.objectContaining({
-      prompt: 'a frog robot waving',
-      n: 1,
-    }));
+    expect(doGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: 'a frog robot waving',
+        n: 1,
+      }),
+    );
   });
 
   it('returns typed 400 for response_format url', async () => {

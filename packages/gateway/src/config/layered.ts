@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import { dirname, parse, resolve } from 'node:path';
 
 import { ConfigError } from '../errors/gatewayError.js';
-import { isRecord,loadConfigFile, mergeConfigs } from './parse.js';
+import { isRecord, loadConfigFile, mergeConfigs } from './parse.js';
 import type { GatewayConfig } from './schema.js';
 import { interpolateConfigText } from './variable.js';
 
@@ -46,7 +46,9 @@ export type LayeredConfigResult = {
   sources: ConfigSource[];
 };
 
-export async function loadLayeredConfig(options: LayeredConfigOptions = {}): Promise<LayeredConfigResult> {
+export async function loadLayeredConfig(
+  options: LayeredConfigOptions = {},
+): Promise<LayeredConfigResult> {
   const env = options.env ?? process.env;
   const cwd = options.cwd ?? process.cwd();
   const sources: ConfigSource[] = [];

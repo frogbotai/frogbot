@@ -88,7 +88,12 @@ describe('training data export', () => {
 
     await booted.frogbot.create({
       collection: messagesSlug,
-      data: { id: 'x1', role: 'user', parts: [{ type: 'text', text: 'excluded' }], thread: excluded.id },
+      data: {
+        id: 'x1',
+        role: 'user',
+        parts: [{ type: 'text', text: 'excluded' }],
+        thread: excluded.id,
+      },
       overrideAccess: true,
     });
   });

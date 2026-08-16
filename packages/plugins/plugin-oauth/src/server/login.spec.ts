@@ -3,7 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { loginFromOAuth } from './login.js';
 
-function request({ useSessions = false, verify = false, maxLoginAttempts = 0, beforeLogin = [], afterLogin = [] }: {
+function request({
+  useSessions = false,
+  verify = false,
+  maxLoginAttempts = 0,
+  beforeLogin = [],
+  afterLogin = [],
+}: {
   useSessions?: boolean;
   verify?: boolean;
   maxLoginAttempts?: number;
@@ -41,11 +47,20 @@ function request({ useSessions = false, verify = false, maxLoginAttempts = 0, be
 describe('loginFromOAuth', () => {
   it('runs login hooks and returns a session cookie redirect', async () => {
     const order: string[] = [];
-    const beforeLogin = vi.fn().mockImplementation(() => { order.push('before'); });
-    const afterLogin = vi.fn().mockImplementation(() => { order.push('after'); });
+    const beforeLogin = vi.fn().mockImplementation(() => {
+      order.push('before');
+    });
+    const afterLogin = vi.fn().mockImplementation(() => {
+      order.push('after');
+    });
     const { req } = request({ beforeLogin: [beforeLogin], afterLogin: [afterLogin] });
     const user = { id: 'user-1', email: 'user@example.com' };
-    const result = await loginFromOAuth({ req, user, collectionSlug: 'users', returnUrl: '/admin' });
+    const result = await loginFromOAuth({
+      req,
+      user,
+      collectionSlug: 'users',
+      returnUrl: '/admin',
+    });
     expect(order).toEqual(['before', 'after']);
     expect(req.user).toBe(user);
     expect(result.status).toBe(302);
@@ -56,21 +71,44 @@ describe('loginFromOAuth', () => {
 
   it.each([false, true])('honors useSessions=%s', async (useSessions) => {
     const { req, updateOne } = request({ useSessions });
-    await loginFromOAuth({ req, user: { id: 'user-1', email: 'user@example.com' }, collectionSlug: 'users', returnUrl: '/' });
+    await loginFromOAuth({
+      req,
+      user: { id: 'user-1', email: 'user@example.com' },
+      collectionSlug: 'users',
+      returnUrl: '/',
+    });
     expect(updateOne).toHaveBeenCalledTimes(useSessions ? 1 : 0);
   });
 
   it('rejects unverified users before hooks', async () => {
     const beforeLogin = vi.fn();
     const { req } = request({ verify: true, beforeLogin: [beforeLogin] });
-    await expect(loginFromOAuth({ req, user: { id: 'user-1', email: 'user@example.com', _verified: false }, collectionSlug: 'users', returnUrl: '/' })).rejects.toThrow(/verify/i);
+    await expect(
+      loginFromOAuth({
+        req,
+        user: { id: 'user-1', email: 'user@example.com', _verified: false },
+        collectionSlug: 'users',
+        returnUrl: '/',
+      }),
+    ).rejects.toThrow(/verify/i);
     expect(beforeLogin).not.toHaveBeenCalled();
   });
 
   it('rejects locked users before hooks', async () => {
     const beforeLogin = vi.fn();
     const { req } = request({ maxLoginAttempts: 5, beforeLogin: [beforeLogin] });
-    await expect(loginFromOAuth({ req, user: { id: 'user-1', email: 'user@example.com', lockUntil: new Date(Date.now() + 10000).toISOString() }, collectionSlug: 'users', returnUrl: '/' })).rejects.toThrow(/locked/i);
+    await expect(
+      loginFromOAuth({
+        req,
+        user: {
+          id: 'user-1',
+          email: 'user@example.com',
+          lockUntil: new Date(Date.now() + 10000).toISOString(),
+        },
+        collectionSlug: 'users',
+        returnUrl: '/',
+      }),
+    ).rejects.toThrow(/locked/i);
     expect(beforeLogin).not.toHaveBeenCalled();
   });
 });

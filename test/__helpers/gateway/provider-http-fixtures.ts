@@ -20,19 +20,25 @@ export function createProviderFixtureFetch(args: {
   update?: boolean;
   fetch?: FixtureFetch;
 }): FixtureFetch {
-  const { fixturePath, update = false, fetch: realFetch = globalThis.fetch.bind(globalThis) } = args;
+  const {
+    fixturePath,
+    update = false,
+    fetch: realFetch = globalThis.fetch.bind(globalThis),
+  } = args;
   let replayIndex = 0;
   const recorded: ProviderHttpExchange[] = [];
-  const fixtures = !update && existsSync(fixturePath)
-    ? JSON.parse(readFileSync(fixturePath, 'utf-8')) as ProviderHttpExchange[]
-    : [];
+  const fixtures =
+    !update && existsSync(fixturePath)
+      ? (JSON.parse(readFileSync(fixturePath, 'utf-8')) as ProviderHttpExchange[])
+      : [];
 
   return async (input, init) => {
     const request = new Request(input, init);
 
     if (!update) {
       const exchange = fixtures[replayIndex++];
-      if (!exchange) throw new Error(`No provider HTTP fixture for ${request.method} ${request.url}`);
+      if (!exchange)
+        throw new Error(`No provider HTTP fixture for ${request.method} ${request.url}`);
       return new Response(Buffer.from(exchange.bodyBase64, 'base64'), {
         status: exchange.status,
         headers: exchange.headers,

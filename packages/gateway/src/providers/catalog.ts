@@ -7,7 +7,7 @@
 // Types
 // ---------------------------------------------------------------------------
 
-export type Modality = "text" | "image" | "audio" | "video" | "embedding";
+export type Modality = 'text' | 'image' | 'audio' | 'video' | 'embedding';
 
 export type ModelCapabilities = {
   /** Supports tool/function calling. */
@@ -41,18 +41,18 @@ export type ModelCost = {
 export type ModelSDK = {
   npm: string;
   api?: string;
-  shape?: "chat" | "responses";
+  shape?: 'chat' | 'responses';
 };
 
 export type Operation =
-  | "chat.completions"
-  | "responses"
-  | "embeddings"
-  | "images.generations"
-  | "audio.speech"
-  | "audio.transcriptions"
-  | "video.generations"
-  | "rerank";
+  | 'chat.completions'
+  | 'responses'
+  | 'embeddings'
+  | 'images.generations'
+  | 'audio.speech'
+  | 'audio.transcriptions'
+  | 'video.generations'
+  | 'rerank';
 
 export type ModelCatalogEntry = {
   /** Canonical model ID (e.g. `openai/gpt-4o`). */
@@ -63,7 +63,7 @@ export type ModelCatalogEntry = {
   created?: string;
   /** Knowledge cutoff ISO date string. */
   knowledge?: string;
-  status?: "alpha" | "beta" | "deprecated";
+  status?: 'alpha' | 'beta' | 'deprecated';
   /** Input/output modalities. */
   modalities: {
     input: Modality[];
@@ -124,7 +124,7 @@ export type ModelCatalog = Map<string, ModelCatalogEntry>;
  */
 export function presetFor<
   Ids extends string,
-  T extends Omit<ModelCatalogEntry, "id"> = Omit<ModelCatalogEntry, "id">,
+  T extends Omit<ModelCatalogEntry, 'id'> = Omit<ModelCatalogEntry, 'id'>,
 >() {
   return (id: Ids, base: T): ModelCatalogEntry => ({
     ...base,
@@ -144,9 +144,7 @@ export function presetFor<
  * const catalog = defineModelCatalog(gpt4o, gpt4oMini, claude4Sonnet, ...)
  * ```
  */
-export function defineModelCatalog(
-  ...entries: ModelCatalogEntry[]
-): ModelCatalog {
+export function defineModelCatalog(...entries: ModelCatalogEntry[]): ModelCatalog {
   const catalog: ModelCatalog = new Map();
   for (const entry of entries) {
     if (catalog.has(entry.id)) {
@@ -160,10 +158,9 @@ export function defineModelCatalog(
 /**
  * Check if a catalog entry supports a given operation.
  */
-export function supportsOperation(
-  entry: ModelCatalogEntry,
-  operation: Operation,
-): boolean {
-  return entry.operations.includes(operation) ||
-    (operation === "responses" && entry.operations.includes("chat.completions"));
+export function supportsOperation(entry: ModelCatalogEntry, operation: Operation): boolean {
+  return (
+    entry.operations.includes(operation) ||
+    (operation === 'responses' && entry.operations.includes('chat.completions'))
+  );
 }

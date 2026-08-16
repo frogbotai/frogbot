@@ -1,22 +1,22 @@
-import type { FrogbotConfig } from 'frogbot'
-import { buildConfig } from 'frogbot'
+import type { FrogbotConfig } from 'frogbot';
+import { buildConfig } from 'frogbot';
 
 export const testCredentials = {
   email: 'dev@frogbot.local',
   password: 'frogbot-test',
-}
+};
 
 export const openAccess = {
   create: () => true,
   delete: () => true,
   read: () => true,
   update: () => true,
-}
+};
 
 type TestConfigOverrides = Omit<FrogbotConfig, 'secret' | 'db'> & {
-  secret?: string
-  db?: FrogbotConfig['db']
-}
+  secret?: string;
+  db?: FrogbotConfig['db'];
+};
 
 /**
  * Build a test config using the database adapter selected by FROGBOT_DATABASE.
@@ -25,13 +25,13 @@ type TestConfigOverrides = Omit<FrogbotConfig, 'secret' | 'db'> & {
  */
 export async function buildTestConfig(overrides: TestConfigOverrides) {
   // Dynamic import of the generated adapter file
-  const { databaseAdapter } = await import('../../databaseAdapter.js')
+  const { databaseAdapter } = await import('../../databaseAdapter.js');
 
   const config: FrogbotConfig = {
     secret: 'test-secret',
     db: databaseAdapter,
     typescript: { autoGenerate: false },
     ...overrides,
-  }
-  return buildConfig(config)
+  };
+  return buildConfig(config);
 }

@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const chatGptIcon: IconNode = [
   [
@@ -15,8 +15,8 @@ export const chatGptIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const ChatGptIcon = createLucideIcon('ChatGptIcon', chatGptIcon, 0, '0 0 20 20')
+const ChatGptIcon = createLucideIcon('ChatGptIcon', chatGptIcon, 0, '0 0 20 20');
 
-export default ChatGptIcon
+export default ChatGptIcon;

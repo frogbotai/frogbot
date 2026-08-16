@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest';
 import type { BeforeUpstreamHookArgs } from '../../hooks.js';
 import { bedrockCachePoint, bedrockThinkingEffort } from './middleware.js';
 
-function makeArgs(model: string, overrides: Partial<BeforeUpstreamHookArgs> = {}): BeforeUpstreamHookArgs {
+function makeArgs(
+  model: string,
+  overrides: Partial<BeforeUpstreamHookArgs> = {},
+): BeforeUpstreamHookArgs {
   return {
     phase: 'beforeUpstream',
     operation: 'chat.completions',
@@ -84,7 +87,10 @@ describe('bedrockCachePoint', () => {
     });
     void bedrockCachePoint(args);
     expect(first).not.toHaveProperty('providerOptions');
-    expect(last).toHaveProperty('providerOptions.bedrock.cachePoint', { type: 'default', ttl: '1h' });
+    expect(last).toHaveProperty('providerOptions.bedrock.cachePoint', {
+      type: 'default',
+      ttl: '1h',
+    });
     expect(args.providerOptions.bedrock).toBeUndefined();
     expect(args.providerOptions.unknown).toBeUndefined();
   });

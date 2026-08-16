@@ -11,8 +11,8 @@ pnpm add @frogbotai/db-postgres
 ## Usage
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { postgresAdapter } from '@frogbotai/db-postgres'
+import { buildConfig } from 'frogbot';
+import { postgresAdapter } from '@frogbotai/db-postgres';
 
 export default buildConfig({
   db: postgresAdapter({
@@ -21,5 +21,5 @@ export default buildConfig({
     },
   }),
   // ...rest of config
-})
+});
 ```

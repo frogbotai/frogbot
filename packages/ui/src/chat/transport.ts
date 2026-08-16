@@ -1,53 +1,71 @@
-import type { FrogBotSDK } from '@frogbotai/sdk'
-import { DefaultChatTransport, type HttpChatTransportInitOptions, type PrepareSendMessagesRequest, type UIMessage } from 'ai'
+import type { FrogBotSDK } from '@frogbotai/sdk';
+import {
+  DefaultChatTransport,
+  type HttpChatTransportInitOptions,
+  type PrepareSendMessagesRequest,
+  type UIMessage,
+} from 'ai';
 
 export type FrogbotChatTransportOptions<UI_MESSAGE extends UIMessage> = Omit<
   HttpChatTransportInitOptions<UI_MESSAGE>,
   'api' | 'fetch'
 > & {
-  agentSlug: string
-  sdk: FrogBotSDK
-  onThreadId?: (threadId: string) => void
-}
+  agentSlug: string;
+  sdk: FrogBotSDK;
+  onThreadId?: (threadId: string) => void;
+};
 
-export function prepareChatRequest<UI_MESSAGE extends UIMessage>(threadId?: string | number): PrepareSendMessagesRequest<UI_MESSAGE> {
+export function prepareChatRequest<UI_MESSAGE extends UIMessage>(
+  threadId?: string | number,
+): PrepareSendMessagesRequest<UI_MESSAGE> {
   return ({ messages }) => {
-    const unsafe = messages.some((message) => message.parts.some((part) => part.type === 'file' && (part.url.startsWith('data:') || part.providerReference)))
-    if (unsafe) throw new Error('Chat attachments require a stable FrogBot file reference')
-    return { body: { messages, ...(threadId === undefined ? {} : { threadId }) } }
-  }
+    const unsafe = messages.some((message) =>
+      message.parts.some(
+        (part) => part.type === 'file' && (part.url.startsWith('data:') || part.providerReference),
+      ),
+    );
+    if (unsafe) throw new Error('Chat attachments require a stable FrogBot file reference');
+    return { body: { messages, ...(threadId === undefined ? {} : { threadId }) } };
+  };
 }
 
-export class FrogbotChatTransport<UI_MESSAGE extends UIMessage = UIMessage> extends DefaultChatTransport<UI_MESSAGE> {
-  threadId?: string
+export class FrogbotChatTransport<
+  UI_MESSAGE extends UIMessage = UIMessage,
+> extends DefaultChatTransport<UI_MESSAGE> {
+  threadId?: string;
 
   constructor({ agentSlug, sdk, onThreadId, ...options }: FrogbotChatTransportOptions<UI_MESSAGE>) {
-    const capture = { threadId: (_threadId: string) => undefined }
-    const configuredHeaders = options.headers
+    const capture = { threadId: (_threadId: string) => undefined };
+    const configuredHeaders = options.headers;
     super({
       ...options,
       api: `${sdk.baseURL}/agents/${encodeURIComponent(agentSlug)}`,
       headers: async () => {
-        const headers = await (typeof configuredHeaders === 'function' ? configuredHeaders() : configuredHeaders)
-        const merged = new Headers({ Accept: 'text/event-stream' })
-        new Headers(headers).forEach((value, key) => merged.set(key, value))
-        return merged
+        const headers = await (typeof configuredHeaders === 'function'
+          ? configuredHeaders()
+          : configuredHeaders);
+        const merged = new Headers({ Accept: 'text/event-stream' });
+        new Headers(headers).forEach((value, key) => merged.set(key, value));
+        return merged;
       },
       fetch: async (input, init) => {
-        const response = await sdk.fetch(input, init)
-        const threadId = response.headers.get('X-Frogbot-Thread-Id')
-        if (threadId) capture.threadId(threadId)
-        if (response.status === 499) return new Response(new ReadableStream({ start: (controller) => controller.close() }), { status: 200 })
-        return response
+        const response = await sdk.fetch(input, init);
+        const threadId = response.headers.get('X-Frogbot-Thread-Id');
+        if (threadId) capture.threadId(threadId);
+        if (response.status === 499)
+          return new Response(new ReadableStream({ start: (controller) => controller.close() }), {
+            status: 200,
+          });
+        return response;
       },
-    })
+    });
     capture.threadId = (threadId) => {
-      this.threadId = threadId
-      onThreadId?.(threadId)
-    }
+      this.threadId = threadId;
+      onThreadId?.(threadId);
+    };
   }
 
   override reconnectToStream(): Promise<null> {
-    return Promise.resolve(null)
+    return Promise.resolve(null);
   }
 }

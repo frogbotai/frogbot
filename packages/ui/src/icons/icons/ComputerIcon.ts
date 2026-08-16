@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const computerIcon: IconNode = [
   [
@@ -36,8 +36,8 @@ export const computerIcon: IconNode = [
       rx: '2',
     },
   ],
-]
+];
 
-const ComputerIcon = createLucideIcon('ComputerIcon', computerIcon)
+const ComputerIcon = createLucideIcon('ComputerIcon', computerIcon);
 
-export default ComputerIcon
+export default ComputerIcon;

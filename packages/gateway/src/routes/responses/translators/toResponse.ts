@@ -51,9 +51,10 @@ export function toResponsesResponse(args: {
     created_at: createdAt,
     completed_at: status === 'completed' ? createdAt : null,
     status,
-    error: status === 'failed'
-      ? { code: 'server_error', message: 'The model failed to generate a response.' }
-      : null,
+    error:
+      status === 'failed'
+        ? { code: 'server_error', message: 'The model failed to generate a response.' }
+        : null,
     incomplete_details: incompleteDetails,
     model: args.result.response.modelId ?? args.model,
     previous_response_id: args.previousResponseId ?? null,
@@ -179,7 +180,9 @@ export function toResponseUsage(usage: LanguageModelUsage): Record<string, unkno
   };
   return {
     input_tokens: usage.inputTokens ?? 0,
-    ...(Object.keys(inputTokenDetails).length > 0 ? { input_tokens_details: inputTokenDetails } : {}),
+    ...(Object.keys(inputTokenDetails).length > 0
+      ? { input_tokens_details: inputTokenDetails }
+      : {}),
     output_tokens: usage.outputTokens ?? 0,
     ...(usage.outputTokenDetails?.reasoningTokens !== undefined
       ? { output_tokens_details: { reasoning_tokens: usage.outputTokenDetails.reasoningTokens } }

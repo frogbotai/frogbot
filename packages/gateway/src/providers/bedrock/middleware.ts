@@ -37,20 +37,30 @@ export const bedrockCachePoint: BeforeUpstreamHook = (args) => {
     if (!value || typeof value !== 'object') continue;
     const message = value as Record<string, unknown>;
     lastMessage = message;
-    processProviderOptions(message.providerOptions as Record<string, Record<string, unknown>> | undefined);
+    processProviderOptions(
+      message.providerOptions as Record<string, Record<string, unknown>> | undefined,
+    );
 
     if (!Array.isArray(message.content)) continue;
     for (const value of message.content) {
       if (!value || typeof value !== 'object') continue;
       const part = value as Record<string, unknown>;
-      processProviderOptions(part.providerOptions as Record<string, Record<string, unknown>> | undefined);
+      processProviderOptions(
+        part.providerOptions as Record<string, Record<string, unknown>> | undefined,
+      );
     }
   }
 
   const requestCacheControl = args.providerOptions.unknown?.cache_control;
   if (requestCacheControl && lastMessage) {
-    const providerOptions = (lastMessage.providerOptions ??= {}) as Record<string, Record<string, unknown>>;
-    providerOptions.unknown = { ...(providerOptions.unknown ?? {}), cache_control: requestCacheControl };
+    const providerOptions = (lastMessage.providerOptions ??= {}) as Record<
+      string,
+      Record<string, unknown>
+    >;
+    providerOptions.unknown = {
+      ...(providerOptions.unknown ?? {}),
+      cache_control: requestCacheControl,
+    };
     processProviderOptions(providerOptions);
     delete args.providerOptions.unknown.cache_control;
     if (Object.keys(args.providerOptions.unknown).length === 0) delete args.providerOptions.unknown;
@@ -94,7 +104,8 @@ export const bedrockThinkingEffort: BeforeUpstreamHook = (args) => {
   if (!args.model.includes('claude') && !args.model.includes('anthropic.')) return;
 
   const bedrockOpts = args.providerOptions['bedrock'] as { reasoningConfig?: unknown } | undefined;
-  const amazonBedrockOpts = args.providerOptions['amazonBedrock'] as { reasoningConfig?: unknown } | undefined;
+  const amazonBedrockOpts = args.providerOptions['amazonBedrock'] as
+    { reasoningConfig?: unknown } | undefined;
   if (bedrockOpts?.reasoningConfig || amazonBedrockOpts?.reasoningConfig) return;
 
   const unknown = args.providerOptions['unknown'];
@@ -110,4 +121,8 @@ export const bedrockThinkingEffort: BeforeUpstreamHook = (args) => {
   };
 };
 
-export const bedrockBeforeUpstream: BeforeUpstreamHook[] = [bedrockThinkingEffort, bedrockCachePoint, bedrockEmbedDimensions];
+export const bedrockBeforeUpstream: BeforeUpstreamHook[] = [
+  bedrockThinkingEffort,
+  bedrockCachePoint,
+  bedrockEmbedDimensions,
+];

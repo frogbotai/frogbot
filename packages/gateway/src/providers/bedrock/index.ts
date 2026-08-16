@@ -13,10 +13,7 @@ import {
   type AmazonBedrockProviderSettings,
   createAmazonBedrock,
 } from '@ai-sdk/amazon-bedrock';
-import {
-  type BedrockMantleProvider,
-  createBedrockMantle,
-} from '@ai-sdk/amazon-bedrock/mantle';
+import { type BedrockMantleProvider, createBedrockMantle } from '@ai-sdk/amazon-bedrock/mantle';
 
 import { readEnv } from '../../shared/runtimeDetection.js';
 import { DEFAULT_MODEL_CATALOG } from '../catalog.data.js';

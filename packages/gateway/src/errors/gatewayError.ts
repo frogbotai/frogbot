@@ -31,7 +31,12 @@ export class GatewayError extends Error {
   /** OpenAI `error.param` — request field this error applies to, when known. */
   readonly param: string | null;
 
-  constructor(args: { message: string; status: number; code: GatewayErrorCode; param?: string | null }) {
+  constructor(args: {
+    message: string;
+    status: number;
+    code: GatewayErrorCode;
+    param?: string | null;
+  }) {
     super(args.message);
     this.status = args.status;
     this.code = args.code;
@@ -43,7 +48,11 @@ export class BudgetExceededError extends GatewayError {
   override readonly name = 'BudgetExceededError';
 
   constructor() {
-    super({ message: 'The configured budget has been exhausted.', status: 403, code: 'budget_exceeded' });
+    super({
+      message: 'The configured budget has been exhausted.',
+      status: 403,
+      code: 'budget_exceeded',
+    });
   }
 }
 
@@ -51,7 +60,12 @@ export class ModelNotAllowedError extends GatewayError {
   override readonly name = 'ModelNotAllowedError';
 
   constructor(model: string) {
-    super({ message: `Model "${model}" is not allowed by this policy.`, status: 403, code: 'model_not_allowed', param: 'model' });
+    super({
+      message: `Model "${model}" is not allowed by this policy.`,
+      status: 403,
+      code: 'model_not_allowed',
+      param: 'model',
+    });
   }
 }
 
@@ -60,13 +74,21 @@ export class RateLimitExceededError extends GatewayError {
   readonly retryAfterSeconds: number;
 
   constructor(args: { kind: 'rpm' | 'tpm'; retryAfterSeconds: number }) {
-    super({ message: `${args.kind.toUpperCase()} rate limit exceeded.`, status: 429, code: 'rate_limit_exceeded' });
+    super({
+      message: `${args.kind.toUpperCase()} rate limit exceeded.`,
+      status: 429,
+      code: 'rate_limit_exceeded',
+    });
     this.retryAfterSeconds = args.retryAfterSeconds;
   }
 }
 
 export function isGatewayError(err: unknown): err is GatewayError {
-  return typeof err === 'object' && err !== null && (err as { [gatewayErrorMarker]?: unknown })[gatewayErrorMarker] === true;
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    (err as { [gatewayErrorMarker]?: unknown })[gatewayErrorMarker] === true
+  );
 }
 
 /**
@@ -266,7 +288,8 @@ export class NoProvidersError extends GatewayError {
 
   constructor() {
     super({
-      message: 'No providers are configured. Add at least one provider to the gateway config or set provider env vars.',
+      message:
+        'No providers are configured. Add at least one provider to the gateway config or set provider env vars.',
       status: 500,
       code: 'no_providers',
     });

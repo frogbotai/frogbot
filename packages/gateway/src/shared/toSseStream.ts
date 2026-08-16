@@ -63,9 +63,7 @@ export type ToSseStreamOptions<TError = unknown> = {
 };
 
 export type ToSseStreamDoneOutcome =
-  | { kind: 'done' }
-  | { kind: 'error'; error: unknown }
-  | { kind: 'cancel'; reason?: unknown };
+  { kind: 'done' } | { kind: 'error'; error: unknown } | { kind: 'cancel'; reason?: unknown };
 
 /**
  * Wrap an inner SSE string stream with heartbeat + termination + abort
@@ -118,10 +116,7 @@ export function toSseStream<TError = unknown>(
         await opts.onDone?.({ kind: 'error', error: err });
         if (opts.toError) {
           const mapped = opts.toError(err as TError);
-          const text =
-            typeof mapped === 'string'
-              ? mapped
-              : mapped.map(serializeSseFrame).join('');
+          const text = typeof mapped === 'string' ? mapped : mapped.map(serializeSseFrame).join('');
           controller.enqueue(text);
           if (opts.appendDone) {
             controller.enqueue(serializeSseFrame({ kind: 'done' }));

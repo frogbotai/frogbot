@@ -9,17 +9,13 @@ import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
 
 const execFileAsync = promisify(execFile);
-const binURL = pathToFileURL(
-  new URL('./index.ts', import.meta.url).pathname,
-).href;
+const binURL = pathToFileURL(new URL('./index.ts', import.meta.url).pathname).href;
 const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
 
 describe('frogbot generate:importmap', () => {
   it.todo('loads config from cwd via loadConfig');
   it.todo('generates the import map from the sanitized payload config');
-  it.todo(
-    'logs `[frogbot] import map written to <path>` when the file changed',
-  );
+  it.todo('logs `[frogbot] import map written to <path>` when the file changed');
   it.todo('logs `[frogbot] import map unchanged at <path>` when identical');
   it.todo('exits non-zero on any failure with a `[frogbot]` prefixed message');
 
@@ -28,14 +24,8 @@ describe('frogbot generate:importmap', () => {
 
     await writeFile(join(dir, '.env'), 'FROGBOT_TEST_KEY=base\n');
     await writeFile(join(dir, '.env.local'), 'FROGBOT_TEST_KEY=local\n');
-    await writeFile(
-      join(dir, '.env.production'),
-      'FROGBOT_TEST_KEY=production\n',
-    );
-    await writeFile(
-      join(dir, '.env.production.local'),
-      'FROGBOT_TEST_KEY=production-local\n',
-    );
+    await writeFile(join(dir, '.env.production'), 'FROGBOT_TEST_KEY=production\n');
+    await writeFile(join(dir, '.env.production.local'), 'FROGBOT_TEST_KEY=production-local\n');
     await writeFile(
       join(dir, 'frogbot.config.mjs'),
       "import { writeFileSync } from 'node:fs'; writeFileSync('observed-env', process.env.FROGBOT_TEST_KEY ?? ''); export default {};\n",
@@ -58,9 +48,7 @@ describe('frogbot generate:importmap', () => {
       );
 
       await expect(result).rejects.toBeDefined();
-      await expect(readFile(join(dir, 'observed-env'), 'utf8')).resolves.toBe(
-        'production-local',
-      );
+      await expect(readFile(join(dir, 'observed-env'), 'utf8')).resolves.toBe('production-local');
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

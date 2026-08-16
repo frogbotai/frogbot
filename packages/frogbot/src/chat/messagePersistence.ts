@@ -22,7 +22,10 @@ export type PersistAssistantMessageProps = {
   isContinuation: boolean;
 };
 
-export function createMessageUsage(usage: LanguageModelUsage, model: string): MessageUsage | undefined {
+export function createMessageUsage(
+  usage: LanguageModelUsage,
+  model: string,
+): MessageUsage | undefined {
   const tokens = toHookUsage(usage);
   if (!tokens) return undefined;
 

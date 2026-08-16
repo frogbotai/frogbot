@@ -1,12 +1,12 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, beforeEach, describe, expect,it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
-import { testUserEmail, testUserPassword,usersSlug } from './shared.js';
+import { testUserEmail, testUserPassword, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -17,9 +17,15 @@ type MeBody = {
 describe('auth', () => {
   let booted: BootedFrogbot;
 
-  beforeAll(async () => { booted = await bootFrogbot(dirname); });
-  afterAll(async () => { await booted.shutdown(); });
-  beforeEach(async () => { await clearAndSeed(booted.frogbot, 'empty'); });
+  beforeAll(async () => {
+    booted = await bootFrogbot(dirname);
+  });
+  afterAll(async () => {
+    await booted.shutdown();
+  });
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
+  });
 
   async function createUser(email = testUserEmail, password = testUserPassword) {
     return booted.restClient.post(`/api/${usersSlug}`, { email, password, name: 'Test' });

@@ -1,7 +1,7 @@
 import { mongooseAdapter } from '@frogbotai/db-mongodb';
 import type { FrogbotConfig, Plugin } from 'frogbot';
 import { buildConfig } from 'frogbot';
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { projectsSlug } from './shared.js';
 
@@ -9,8 +9,14 @@ describe('plugins', () => {
   describe('lifecycle', () => {
     it('plugins run serially in array order', async () => {
       const order: number[] = [];
-      const plugin1: Plugin = (config) => { order.push(1); return config; };
-      const plugin2: Plugin = (config) => { order.push(2); return config; };
+      const plugin1: Plugin = (config) => {
+        order.push(1);
+        return config;
+      };
+      const plugin2: Plugin = (config) => {
+        order.push(2);
+        return config;
+      };
 
       const testConfig: FrogbotConfig = {
         secret: 'serial-test',
@@ -81,7 +87,11 @@ describe('plugins', () => {
         secret: 'x',
         db: mongooseAdapter({ url: 'mongodb://localhost:27017/x' }),
         collections: [{ slug: 'users', auth: true, fields: [] }],
-        plugins: [() => { throw new Error('plugin boom'); }],
+        plugins: [
+          () => {
+            throw new Error('plugin boom');
+          },
+        ],
       };
 
       await expect(buildConfig(boom)).rejects.toThrow(/\[frogbot\] plugin at index 0/);

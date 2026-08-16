@@ -11,10 +11,16 @@ import { createApp } from '../../packages/gateway/src/app.js';
 import { cohereProvider } from '../../packages/gateway/src/providers/cohere/index.js';
 import { falProvider } from '../../packages/gateway/src/providers/fal/index.js';
 import { openaiProvider } from '../../packages/gateway/src/providers/openai/index.js';
-import { buildProviderRegistry, type ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import {
+  buildProviderRegistry,
+  type ProviderRegistry,
+} from '../../packages/gateway/src/providers/registry.js';
 import { replicateProvider } from '../../packages/gateway/src/providers/replicate/index.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
-import { createProviderFixtureFetch, shouldUpdateFixtures } from '../__helpers/gateway/provider-http-fixtures.js';
+import {
+  createProviderFixtureFetch,
+  shouldUpdateFixtures,
+} from '../__helpers/gateway/provider-http-fixtures.js';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const RUN_E2E_IMAGES = process.env.RUN_E2E_IMAGES === '1';
@@ -81,7 +87,10 @@ function makeE2EApp(recordScenario?: string) {
       registry.cohere = cohereProvider.build({ apiKey: COHERE_API_KEY, fetch } as never);
     }
     if (recordScenario.startsWith('replicate-') && REPLICATE_API_TOKEN) {
-      registry.replicate = replicateProvider.build({ apiToken: REPLICATE_API_TOKEN, fetch } as never);
+      registry.replicate = replicateProvider.build({
+        apiToken: REPLICATE_API_TOKEN,
+        fetch,
+      } as never);
     }
     if (recordScenario.startsWith('fal-') && FAL_API_KEY) {
       registry.fal = falProvider.build({ apiKey: FAL_API_KEY, fetch } as never);
@@ -289,7 +298,12 @@ describeE2E('gateway E2E — real providers', () => {
       const res = await app.request('/v1/audio/speech', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ model: 'openai/tts-1', input: 'hello', voice: 'alloy', response_format: 'mp3' }),
+        body: JSON.stringify({
+          model: 'openai/tts-1',
+          input: 'hello',
+          voice: 'alloy',
+          response_format: 'mp3',
+        }),
       });
       expect(res.status).toBe(200);
       expect(res.headers.get('content-type')).toBe('audio/mpeg');
@@ -302,7 +316,10 @@ describeE2E('gateway E2E — real providers', () => {
       const app = makeE2EApp('openai-transcription');
       const form = new FormData();
       form.set('model', 'openai/whisper-1');
-      form.set('file', new File([new Uint8Array([82, 73, 70, 70])], 'tiny.wav', { type: 'audio/wav' }));
+      form.set(
+        'file',
+        new File([new Uint8Array([82, 73, 70, 70])], 'tiny.wav', { type: 'audio/wav' }),
+      );
       const res = await app.request('/v1/audio/transcriptions', { method: 'POST', body: form });
       expect(res.status).toBe(200);
       expect(await res.json()).toHaveProperty('text');

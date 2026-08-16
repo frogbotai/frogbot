@@ -12,18 +12,33 @@ import { experimental_generateVideo as generateVideo } from 'ai';
 import { Hono } from 'hono';
 
 import { isClientAbort } from '../../errors/clientAbort.js';
-import { toContentfulStatus,toOpenAIErrorResponse } from '../../errors/envelope.js';
+import { toContentfulStatus, toOpenAIErrorResponse } from '../../errors/envelope.js';
 import { headersForError } from '../../errors/normalizeAiSdkError.js';
-import { type GatewayEnv, type HookPhase, type Hooks, type OperationBase,runHooks } from '../../hooks.js';
+import {
+  type GatewayEnv,
+  type HookPhase,
+  type Hooks,
+  type OperationBase,
+  runHooks,
+} from '../../hooks.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { type ProviderModelPolicy, type ProviderRegistry,requireVideoModel, resolveProvider } from '../../providers/registry.js';
+import {
+  type ProviderModelPolicy,
+  type ProviderRegistry,
+  requireVideoModel,
+  resolveProvider,
+} from '../../providers/registry.js';
 import { createUpstreamSignal } from '../../shared/upstreamTimeout.js';
 import { prepareForwardHeaders } from '../../utils/headers.js';
 import { parseJsonBody } from '../../utils/parseJsonBody.js';
 import { ensureRequestId } from '../../utils/requestId.js';
 import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
 import { parseVideosRequest } from './schema.js';
-import { assertSupportedResponseFormat, toGenerateVideoParams, toOpenAIVideosResponse } from './translators/index.js';
+import {
+  assertSupportedResponseFormat,
+  toGenerateVideoParams,
+  toOpenAIVideosResponse,
+} from './translators/index.js';
 
 export type VideosRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;

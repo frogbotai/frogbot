@@ -13,11 +13,17 @@ describe('responsesRoute', () => {
       finishReason: 'stop' as const,
       usage: { inputTokens: 3, outputTokens: 2, totalTokens: 5 },
       warnings: [],
-      response: { id: 'resp_test', modelId: 'gpt-4o-mini', timestamp: new Date('2026-07-03T00:00:00.000Z') },
+      response: {
+        id: 'resp_test',
+        modelId: 'gpt-4o-mini',
+        timestamp: new Date('2026-07-03T00:00:00.000Z'),
+      },
     }));
     const app = createApp({
       registry: {
-        openai: new MockProviderV4({ languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doGenerate }) } }),
+        openai: new MockProviderV4({
+          languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doGenerate }) },
+        }),
       } as unknown as ProviderRegistry,
     });
 
@@ -39,9 +45,11 @@ describe('responsesRoute', () => {
       output_text: 'hello frog',
       usage: { input_tokens: 0, output_tokens: 0, total_tokens: 0 },
     });
-    expect(doGenerate).toHaveBeenCalledWith(expect.objectContaining({
-      prompt: expect.arrayContaining([expect.objectContaining({ role: 'user' })]),
-    }));
+    expect(doGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: expect.arrayContaining([expect.objectContaining({ role: 'user' })]),
+      }),
+    );
   });
 
   it('routes responses operation through hooks', async () => {
@@ -60,10 +68,14 @@ describe('responsesRoute', () => {
           },
         }),
       } as unknown as ProviderRegistry,
-      hooks: { beforeUpstream: [(args) => {
-        beforeUpstream(args);
-        args.params.temperature = 0.25;
-      }] },
+      hooks: {
+        beforeUpstream: [
+          (args) => {
+            beforeUpstream(args);
+            args.params.temperature = 0.25;
+          },
+        ],
+      },
     });
 
     const res = await app.request('/v1/responses', {
@@ -74,7 +86,11 @@ describe('responsesRoute', () => {
 
     expect(res.status).toBe(200);
     expect(beforeUpstream).toHaveBeenCalledWith(
-      expect.objectContaining({ operation: 'responses', provider: 'anthropic', providerOptions: {} }),
+      expect.objectContaining({
+        operation: 'responses',
+        provider: 'anthropic',
+        providerOptions: {},
+      }),
     );
     expect(doGenerate).toHaveBeenCalledWith(expect.objectContaining({ temperature: 0.25 }));
   });
@@ -82,16 +98,27 @@ describe('responsesRoute', () => {
   it('passes tools, tool_choice, structured output, and instructions to the model', async () => {
     const doGenerate = vi.fn(async () => ({
       content: [
-        { type: 'tool-call' as const, toolCallId: 'call_1', toolName: 'get_weather', input: JSON.stringify({ city: 'Paris' }) },
+        {
+          type: 'tool-call' as const,
+          toolCallId: 'call_1',
+          toolName: 'get_weather',
+          input: JSON.stringify({ city: 'Paris' }),
+        },
       ],
       finishReason: 'tool-calls' as const,
       usage: { inputTokens: 3, outputTokens: 2, totalTokens: 5 },
       warnings: [],
-      response: { id: 'resp_tools', modelId: 'gpt-4o-mini', timestamp: new Date('2026-07-03T00:00:00.000Z') },
+      response: {
+        id: 'resp_tools',
+        modelId: 'gpt-4o-mini',
+        timestamp: new Date('2026-07-03T00:00:00.000Z'),
+      },
     }));
     const app = createApp({
       registry: {
-        openai: new MockProviderV4({ languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doGenerate }) } }),
+        openai: new MockProviderV4({
+          languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doGenerate }) },
+        }),
       } as unknown as ProviderRegistry,
     });
 
@@ -102,28 +129,43 @@ describe('responsesRoute', () => {
         model: 'openai/gpt-4o-mini',
         input: 'what is the weather',
         instructions: 'You are a weather bot',
-        tools: [{ type: 'function', name: 'get_weather', parameters: { type: 'object', properties: { city: { type: 'string' } } } }],
+        tools: [
+          {
+            type: 'function',
+            name: 'get_weather',
+            parameters: { type: 'object', properties: { city: { type: 'string' } } },
+          },
+        ],
         tool_choice: 'auto',
-        text: { format: { type: 'json_schema', name: 'weather', schema: { type: 'object', properties: { temp: { type: 'number' } } } } },
+        text: {
+          format: {
+            type: 'json_schema',
+            name: 'weather',
+            schema: { type: 'object', properties: { temp: { type: 'number' } } },
+          },
+        },
       }),
     });
 
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.output).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'function_call', name: 'get_weather', call_id: 'call_1' }),
-    ]));
+    expect(body.output).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'function_call', name: 'get_weather', call_id: 'call_1' }),
+      ]),
+    );
 
     const call = doGenerate.mock.calls[0][0] as Record<string, any>;
-    expect(call.tools).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'function', name: 'get_weather' }),
-    ]));
+    expect(call.tools).toEqual(
+      expect.arrayContaining([expect.objectContaining({ type: 'function', name: 'get_weather' })]),
+    );
     expect(call.toolChoice).toMatchObject({ type: 'auto' });
     expect(call.responseFormat).toMatchObject({ type: 'json' });
     const instructionMsg = call.prompt.find((m: any) => m.role === 'system');
-    const instructionText = typeof instructionMsg?.content === 'string'
-      ? instructionMsg.content
-      : instructionMsg?.content?.map((p: any) => p.text).join('');
+    const instructionText =
+      typeof instructionMsg?.content === 'string'
+        ? instructionMsg.content
+        : instructionMsg?.content?.map((p: any) => p.text).join('');
     expect(instructionText).toContain('You are a weather bot');
   });
 
@@ -134,18 +176,28 @@ describe('responsesRoute', () => {
       usage: { inputTokens: 3, outputTokens: 2, totalTokens: 5 },
       warnings: [],
       providerMetadata: { openai: { service_tier: 'flex' } },
-      response: { id: 'resp_env', modelId: 'gpt-4o-mini', timestamp: new Date('2026-07-03T00:00:00.000Z') },
+      response: {
+        id: 'resp_env',
+        modelId: 'gpt-4o-mini',
+        timestamp: new Date('2026-07-03T00:00:00.000Z'),
+      },
     }));
     const app = createApp({
       registry: {
-        openai: new MockProviderV4({ languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doGenerate }) } }),
+        openai: new MockProviderV4({
+          languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doGenerate }) },
+        }),
       } as unknown as ProviderRegistry,
     });
 
     const res = await app.request('/v1/responses', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'openai/gpt-4o-mini', input: 'hi', parallel_tool_calls: false }),
+      body: JSON.stringify({
+        model: 'openai/gpt-4o-mini',
+        input: 'hi',
+        parallel_tool_calls: false,
+      }),
     });
 
     expect(res.status).toBe(200);
@@ -165,7 +217,9 @@ describe('responsesRoute', () => {
     });
     const app = createApp({
       registry: {
-        openai: new MockProviderV4({ languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doGenerate }) } }),
+        openai: new MockProviderV4({
+          languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doGenerate }) },
+        }),
       } as unknown as ProviderRegistry,
     });
 
@@ -203,7 +257,9 @@ describe('responsesRoute', () => {
     }));
     const app = createApp({
       registry: {
-        openai: new MockProviderV4({ languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doStream }) } }),
+        openai: new MockProviderV4({
+          languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doStream }) },
+        }),
       } as unknown as ProviderRegistry,
     });
 
@@ -246,7 +302,9 @@ describe('responsesRoute', () => {
     }));
     const app = createApp({
       registry: {
-        openai: new MockProviderV4({ languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doStream }) } }),
+        openai: new MockProviderV4({
+          languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doStream }) },
+        }),
       } as unknown as ProviderRegistry,
       hooks: { afterUpstream: [afterUpstream] },
     });
@@ -260,7 +318,9 @@ describe('responsesRoute', () => {
     expect(res.status).toBe(200);
     await res.text();
     expect(afterUpstream).toHaveBeenCalledWith(
-      expect.objectContaining({ response: expect.objectContaining({ messages: expect.any(Array) }) }),
+      expect.objectContaining({
+        response: expect.objectContaining({ messages: expect.any(Array) }),
+      }),
     );
   });
 });
@@ -386,7 +446,9 @@ describe('responses schema validation', () => {
   });
 
   it('rejects out-of-range frequency_penalty', () => {
-    expect(() => parseResponsesRequest({ model: 'x', input: 'hi', frequency_penalty: 3 })).toThrow();
+    expect(() =>
+      parseResponsesRequest({ model: 'x', input: 'hi', frequency_penalty: 3 }),
+    ).toThrow();
   });
 
   it('rejects an invalid truncation enum', () => {
@@ -394,7 +456,9 @@ describe('responses schema validation', () => {
   });
 
   it('rejects an invalid service_tier enum', () => {
-    expect(() => parseResponsesRequest({ model: 'x', input: 'hi', service_tier: 'turbo' })).toThrow();
+    expect(() =>
+      parseResponsesRequest({ model: 'x', input: 'hi', service_tier: 'turbo' }),
+    ).toThrow();
   });
 });
 
@@ -402,14 +466,18 @@ describe('responsesRoute param forwarding (non-streaming)', () => {
   const openaiApp = (doGenerate: ReturnType<typeof vi.fn>) =>
     createApp({
       registry: {
-        openai: new MockProviderV4({ languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doGenerate }) } }),
+        openai: new MockProviderV4({
+          languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doGenerate }) },
+        }),
       } as unknown as ProviderRegistry,
     });
 
   const anthropicApp = (doGenerate: ReturnType<typeof vi.fn>) =>
     createApp({
       registry: {
-        anthropic: new MockProviderV4({ languageModels: { 'claude-sonnet-4': new MockLanguageModelV4({ doGenerate }) } }),
+        anthropic: new MockProviderV4({
+          languageModels: { 'claude-sonnet-4': new MockLanguageModelV4({ doGenerate }) },
+        }),
       } as unknown as ProviderRegistry,
     });
 
@@ -521,7 +589,9 @@ describe('responsesRoute param forwarding (streaming)', () => {
     const doStream = streamModel();
     const app = createApp({
       registry: {
-        openai: new MockProviderV4({ languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doStream }) } }),
+        openai: new MockProviderV4({
+          languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doStream }) },
+        }),
       } as unknown as ProviderRegistry,
     });
     const res = await app.request('/v1/responses', {
@@ -539,7 +609,9 @@ describe('responsesRoute param forwarding (streaming)', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const call = doStream.mock.calls[0][0] as Record<string, unknown> & { providerOptions?: Record<string, unknown> };
+    const call = doStream.mock.calls[0][0] as Record<string, unknown> & {
+      providerOptions?: Record<string, unknown>;
+    };
     expect(call).toMatchObject({ temperature: 0.4, topK: 20, stopSequences: ['STOP'] });
     expect(call.providerOptions).toMatchObject({
       openai: { previousResponseId: 'resp_prev', serviceTier: 'flex' },
@@ -550,7 +622,9 @@ describe('responsesRoute param forwarding (streaming)', () => {
     const doStream = streamModel();
     const app = createApp({
       registry: {
-        anthropic: new MockProviderV4({ languageModels: { 'claude-sonnet-4': new MockLanguageModelV4({ doStream }) } }),
+        anthropic: new MockProviderV4({
+          languageModels: { 'claude-sonnet-4': new MockLanguageModelV4({ doStream }) },
+        }),
       } as unknown as ProviderRegistry,
     });
     const res = await app.request('/v1/responses', {
@@ -572,7 +646,9 @@ describe('responsesRoute param forwarding (streaming)', () => {
     const doStream = streamModel();
     const app = createApp({
       registry: {
-        openai: new MockProviderV4({ languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doStream }) } }),
+        openai: new MockProviderV4({
+          languageModels: { 'gpt-4o-mini': new MockLanguageModelV4({ doStream }) },
+        }),
       } as unknown as ProviderRegistry,
     });
     const res = await app.request('/v1/responses', {

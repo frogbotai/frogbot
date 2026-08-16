@@ -84,7 +84,10 @@ export async function assertPublicHttpsUrl(url: URL): Promise<void> {
   }
   for (const { address } of addresses) {
     if (isPrivateAddress(address)) {
-      throw downloadRejected(url, 'hostname resolves to a private, loopback, or link-local address');
+      throw downloadRejected(
+        url,
+        'hostname resolves to a private, loopback, or link-local address',
+      );
     }
   }
 }
@@ -127,7 +130,9 @@ function isPrivateIPv6(address: string): boolean {
   return false;
 }
 
-async function fetchPublicUrl(url: URL): Promise<{ data: Uint8Array; mediaType: string | undefined }> {
+async function fetchPublicUrl(
+  url: URL,
+): Promise<{ data: Uint8Array; mediaType: string | undefined }> {
   let current = url;
 
   for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects++) {
@@ -181,7 +186,7 @@ async function readCapped(response: Response, url: URL): Promise<Uint8Array> {
   let total = 0;
   while (true) {
     const { done, value } = await reader.read();
-    if (done)  break;
+    if (done) break;
 
     total += value.byteLength;
     if (total > MAX_DOWNLOAD_BYTES) {

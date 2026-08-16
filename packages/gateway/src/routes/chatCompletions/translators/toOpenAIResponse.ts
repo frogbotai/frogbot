@@ -1,6 +1,12 @@
 import { normalizeToolName } from '../../../shared/normalizeToolName.js';
 import { stripEmptyKeys } from '../../../shared/stripEmptyKeys.js';
-import type { OpenAIChatResponse, OpenAIChoice, OpenAIReasoningDetail, OpenAIToolCall, OpenAIUsage } from './types.js';
+import type {
+  OpenAIChatResponse,
+  OpenAIChoice,
+  OpenAIReasoningDetail,
+  OpenAIToolCall,
+  OpenAIUsage,
+} from './types.js';
 
 export type UsageInput = {
   promptTokens: number;
@@ -21,8 +27,17 @@ export function toOpenAIResponse(args: {
   serviceTier?: string;
   model: string;
 }): OpenAIChatResponse {
-  const { text, finishReason, usage, response, toolCalls, reasoningDetails, reasoningContent, serviceTier, model } =
-    args;
+  const {
+    text,
+    finishReason,
+    usage,
+    response,
+    toolCalls,
+    reasoningDetails,
+    reasoningContent,
+    serviceTier,
+    model,
+  } = args;
 
   const message: OpenAIChoice['message'] = {
     role: 'assistant',
@@ -46,22 +61,22 @@ export function toOpenAIResponse(args: {
   }
 
   if (toolCalls && toolCalls.length > 0) {
-    message.tool_calls = toolCalls.map(
-      (tc): OpenAIToolCall => ({
-        id: tc.toolCallId,
-        type: 'function',
-        function: {
-          name: normalizeToolName(tc.toolName),
-          arguments: typeof tc.args === 'string' ? tc.args : JSON.stringify(stripEmptyKeys(tc.args)),
-        },
-      }),
-    );
+    message.tool_calls = toolCalls.map((tc): OpenAIToolCall => ({
+      id: tc.toolCallId,
+      type: 'function',
+      function: {
+        name: normalizeToolName(tc.toolName),
+        arguments: typeof tc.args === 'string' ? tc.args : JSON.stringify(stripEmptyKeys(tc.args)),
+      },
+    }));
   }
 
   return {
     id: response.id ?? `chatcmpl-${crypto.randomUUID()}`,
     object: 'chat.completion',
-    created: response.timestamp ? Math.floor(response.timestamp.getTime() / 1000) : Math.floor(Date.now() / 1000),
+    created: response.timestamp
+      ? Math.floor(response.timestamp.getTime() / 1000)
+      : Math.floor(Date.now() / 1000),
     model: response.modelId ?? model,
     choices: [
       {

@@ -11,8 +11,8 @@ pnpm add @frogbotai/email-nodemailer
 ## Usage
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { nodemailerAdapter } from '@frogbotai/email-nodemailer'
+import { buildConfig } from 'frogbot';
+import { nodemailerAdapter } from '@frogbotai/email-nodemailer';
 
 export default buildConfig({
   email: await nodemailerAdapter({
@@ -28,5 +28,5 @@ export default buildConfig({
     },
   }),
   // ...rest of config
-})
+});
 ```

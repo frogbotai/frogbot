@@ -8,10 +8,10 @@
 // `args.req` / `args.req.user` / `args.agent` — Payload-style — without the
 // gateway ever knowing what a FrogbotRequest is.
 
-import type { Hooks, HookUsage } from "@frogbotai/gateway";
+import type { Hooks, HookUsage } from '@frogbotai/gateway';
 
-import type { AIHookContext, SanitizedAIHooks } from "../types/hooks-ai.js";
-import type { FrogbotRequest } from "../types/request.js";
+import type { AIHookContext, SanitizedAIHooks } from '../types/hooks-ai.js';
+import type { FrogbotRequest } from '../types/request.js';
 
 /** Shape FrogBot seeds into the gateway `context` bag for every operation. */
 export type AIOperationContext = {
@@ -51,7 +51,7 @@ export function toGatewayHooks(hooks: SanitizedAIHooks): Hooks {
 }
 
 export function toHookUsage(usage: unknown): HookUsage | undefined {
-  if (!usage || typeof usage !== "object") return undefined;
+  if (!usage || typeof usage !== 'object') return undefined;
   const value = usage as {
     inputTokens?: number;
     outputTokens?: number;
@@ -60,19 +60,16 @@ export function toHookUsage(usage: unknown): HookUsage | undefined {
     inputTokenDetails?: { cacheReadTokens?: number; cacheWriteTokens?: number };
     outputTokenDetails?: { reasoningTokens?: number };
   };
-  if (typeof value.tokens === "number") {
+  if (typeof value.tokens === 'number') {
     return {
       inputTokens: value.tokens,
       outputTokens: 0,
       totalTokens: value.tokens,
     };
   }
-  if (
-    value.inputTokens == null &&
-    value.outputTokens == null &&
-    value.totalTokens == null
-  )
-    {return undefined;}
+  if (value.inputTokens == null && value.outputTokens == null && value.totalTokens == null) {
+    return undefined;
+  }
   const inputTokens = value.inputTokens ?? 0;
   const outputTokens = value.outputTokens ?? 0;
   return {

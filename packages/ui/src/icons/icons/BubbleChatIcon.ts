@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const bubbleChatIcon: IconNode = [
   [
@@ -30,8 +30,8 @@ export const bubbleChatIcon: IconNode = [
       strokeWidth: '1.5',
     },
   ],
-]
+];
 
-const BubbleChatIcon = createLucideIcon('BubbleChatIcon', bubbleChatIcon, 1.5, '0 0 21 21')
+const BubbleChatIcon = createLucideIcon('BubbleChatIcon', bubbleChatIcon, 1.5, '0 0 21 21');
 
-export default BubbleChatIcon
+export default BubbleChatIcon;

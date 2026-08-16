@@ -53,7 +53,10 @@ const defaultLevel = (): LogLevel => {
 
 function makeLogFn(level: Exclude<LogLevel, 'silent'>): LogFn {
   return (first: Record<string, unknown> | string, msg?: string) => {
-    const entry = typeof first === 'string' ? { level, time: Date.now(), msg: first } : { level, time: Date.now(), msg, ...first };
+    const entry =
+      typeof first === 'string'
+        ? { level, time: Date.now(), msg: first }
+        : { level, time: Date.now(), msg, ...first };
     console.log(JSON.stringify(entry));
   };
 }
@@ -64,7 +67,8 @@ function makeLogFn(level: Exclude<LogLevel, 'silent'>): LogFn {
  */
 export function createLogger(options: LoggerOptions = {}): GatewayLogger {
   const threshold = LEVEL[options.level ?? defaultLevel()];
-  const at = (level: Exclude<LogLevel, 'silent'>): LogFn => (LEVEL[level] >= threshold ? makeLogFn(level) : noop);
+  const at = (level: Exclude<LogLevel, 'silent'>): LogFn =>
+    LEVEL[level] >= threshold ? makeLogFn(level) : noop;
   return {
     trace: at('trace'),
     debug: at('debug'),
@@ -101,13 +105,16 @@ export function createLoggingHooks(logger: GatewayLogger = createLogger()): Hook
     ],
     afterOperation: [
       (args) => {
-        logger.info({
-          ...baseLog(args),
-          durationMs: args.durationMs,
-          finishReason: args.finishReason,
-          usage: args.usage,
-          error: args.error ? true : undefined,
-        }, 'request-end');
+        logger.info(
+          {
+            ...baseLog(args),
+            durationMs: args.durationMs,
+            finishReason: args.finishReason,
+            usage: args.usage,
+            error: args.error ? true : undefined,
+          },
+          'request-end',
+        );
       },
     ],
   };
@@ -133,12 +140,21 @@ export function logGatewayError(
     status: args.status,
     path: args.path,
     errorType: isError ? (args.error as Error).name : undefined,
-    message: maybeMaskMessage(rawMessage, { status: args.status, requestId: args.requestId, production: isProduction() }),
+    message: maybeMaskMessage(rawMessage, {
+      status: args.status,
+      requestId: args.requestId,
+      production: isProduction(),
+    }),
   };
   logger[args.status >= 500 ? 'error' : 'warn'](entry, 'request-error');
 }
 
-function baseLog(args: { requestId: string; operation: HookOperation; provider: string; model: string }) {
+function baseLog(args: {
+  requestId: string;
+  operation: HookOperation;
+  provider: string;
+  model: string;
+}) {
   return {
     requestId: args.requestId,
     operation: args.operation,
@@ -184,7 +200,9 @@ export function createAiSdkWarningLogger(logger: GatewayLogger): LogWarningsFunc
     for (const warning of warnings) {
       try {
         logger.warn({ provider, model, warning }, `ai-sdk-${warning.type}`);
-      } catch { /* logger errors must not propagate out of the SDK warning path */ }
+      } catch {
+        /* logger errors must not propagate out of the SDK warning path */
+      }
     }
   };
 }

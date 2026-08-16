@@ -12,14 +12,16 @@ describe('resolveFilesCollection', () => {
 
   it('adopts a marked collection and preserves overrides', () => {
     const access = { read: () => true as const };
-    const collections: CollectionConfig[] = [{
-      slug: 'documents',
-      file: true,
-      upload: { mimeTypes: ['application/pdf'] },
-      folders: false,
-      access,
-      fields: [{ name: 'category', type: 'text' }],
-    }];
+    const collections: CollectionConfig[] = [
+      {
+        slug: 'documents',
+        file: true,
+        upload: { mimeTypes: ['application/pdf'] },
+        folders: false,
+        access,
+        fields: [{ name: 'category', type: 'text' }],
+      },
+    ];
     const result = resolveFilesCollection({ collections });
     expect(result.files.slug).toBe('documents');
     expect(result.collections).toHaveLength(1);
@@ -36,24 +38,34 @@ describe('resolveFilesCollection', () => {
     expect(() => resolveFilesCollection({ collections: [{ slug: 'files', fields: [] }] })).toThrow(
       'Add `file: true`',
     );
-    expect(() => resolveFilesCollection({ collections: [
-      { slug: 'one', file: true, fields: [] },
-      { slug: 'two', file: true, fields: [] },
-    ] })).toThrow('Multiple collections marked `file: true`');
+    expect(() =>
+      resolveFilesCollection({
+        collections: [
+          { slug: 'one', file: true, fields: [] },
+          { slug: 'two', file: true, fields: [] },
+        ],
+      }),
+    ).toThrow('Multiple collections marked `file: true`');
   });
 
   it('rejects disabled uploads and multiple roles', () => {
-    expect(() => resolveFilesCollection({
-      collections: [{ slug: 'documents', file: true, upload: false, fields: [] }],
-    })).toThrow('cannot set `upload: false`');
-    expect(() => resolveFilesCollection({
-      collections: [{ slug: 'documents', file: true, thread: true, fields: [] }],
-    })).toThrow('marked as multiple roles');
+    expect(() =>
+      resolveFilesCollection({
+        collections: [{ slug: 'documents', file: true, upload: false, fields: [] }],
+      }),
+    ).toThrow('cannot set `upload: false`');
+    expect(() =>
+      resolveFilesCollection({
+        collections: [{ slug: 'documents', file: true, thread: true, fields: [] }],
+      }),
+    ).toThrow('marked as multiple roles');
   });
 
   it('rejects usage-log and file roles on one collection', () => {
-    expect(() => resolveFilesCollection({
-      collections: [{ slug: 'documents', file: true, usageLog: true, fields: [] }],
-    })).toThrow('marked as multiple roles');
+    expect(() =>
+      resolveFilesCollection({
+        collections: [{ slug: 'documents', file: true, usageLog: true, fields: [] }],
+      }),
+    ).toThrow('marked as multiple roles');
   });
 });

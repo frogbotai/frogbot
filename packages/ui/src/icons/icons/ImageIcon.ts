@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const imageIcon: IconNode = [
   [
@@ -22,8 +22,8 @@ export const imageIcon: IconNode = [
       d: 'M4.16699 17.5C7.81071 13.1458 11.8954 7.40334 17.9149 11.2853',
     },
   ],
-]
+];
 
-const ImageIcon = createLucideIcon('ImageIcon', imageIcon, 1.25, '0 0 20 20')
+const ImageIcon = createLucideIcon('ImageIcon', imageIcon, 1.25, '0 0 20 20');
 
-export default ImageIcon
+export default ImageIcon;

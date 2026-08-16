@@ -12,9 +12,7 @@ describe('resolveBedrockModelId', () => {
     expect(resolveBedrockModelId('claude-4-sonnet')).toBe(
       'anthropic.claude-sonnet-4-20250514-v1:0',
     );
-    expect(resolveBedrockModelId('claude-4-opus')).toBe(
-      'anthropic.claude-opus-4-20250514-v1:0',
-    );
+    expect(resolveBedrockModelId('claude-4-opus')).toBe('anthropic.claude-opus-4-20250514-v1:0');
   });
 
   it('maps Nova model shorthands', () => {
@@ -24,12 +22,8 @@ describe('resolveBedrockModelId', () => {
   });
 
   it('maps Llama model shorthands', () => {
-    expect(resolveBedrockModelId('llama-3.3-70b')).toBe(
-      'meta.llama3-3-70b-instruct-v1:0',
-    );
-    expect(resolveBedrockModelId('llama-3.2-3b')).toBe(
-      'meta.llama3-2-3b-instruct-v1:0',
-    );
+    expect(resolveBedrockModelId('llama-3.3-70b')).toBe('meta.llama3-3-70b-instruct-v1:0');
+    expect(resolveBedrockModelId('llama-3.2-3b')).toBe('meta.llama3-2-3b-instruct-v1:0');
   });
 
   it('passes through full IDs unchanged', () => {

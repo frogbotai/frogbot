@@ -41,7 +41,13 @@ describe('toGatewayHooks', () => {
     const req = makeReq();
     const agent = { slug: 'support', runId: 'run-1' };
     const context = { req, agent };
-    const base = { requestId: 'req_1', operation: 'chat.completions' as const, startedAt: 0, context, otel: {} };
+    const base = {
+      requestId: 'req_1',
+      operation: 'chat.completions' as const,
+      startedAt: 0,
+      context,
+      otel: {},
+    };
 
     await gatewayHooks.beforeOperation?.[0]?.({ ...base, phase: 'beforeOperation' });
     await gatewayHooks.beforeUpstream?.[0]?.({

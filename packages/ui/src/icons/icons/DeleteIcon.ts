@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const deleteIcon: IconNode = [
   [
@@ -36,8 +36,8 @@ export const deleteIcon: IconNode = [
       strokeLinecap: 'round',
     },
   ],
-]
+];
 
-const DeleteIcon = createLucideIcon('DeleteIcon', deleteIcon, 1.25, '0 0 20 20')
+const DeleteIcon = createLucideIcon('DeleteIcon', deleteIcon, 1.25, '0 0 20 20');
 
-export default DeleteIcon
+export default DeleteIcon;

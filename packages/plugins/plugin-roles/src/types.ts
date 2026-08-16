@@ -3,10 +3,12 @@ import type { Where } from 'payload';
 
 export type { RoleSlug } from 'frogbot';
 
-export type RoleEntry = string | {
-  slug: string;
-  label?: string;
-};
+export type RoleEntry =
+  | string
+  | {
+      slug: string;
+      label?: string;
+    };
 
 export type RoleResolver = (req: FrogbotRequest) => RoleSlug[];
 
@@ -32,13 +34,16 @@ export type OwnClause = {
 
 export type RoleAccessArgs = AccessArgs;
 
-export type ClauseFunction<TArgs extends RoleAccessArgs = RoleAccessArgs, TResult extends boolean | Where = boolean | Where> = (
-  args: TArgs,
-) => TResult | Promise<TResult>;
+export type ClauseFunction<
+  TArgs extends RoleAccessArgs = RoleAccessArgs,
+  TResult extends boolean | Where = boolean | Where,
+> = (args: TArgs) => TResult | Promise<TResult>;
 
-export type Clause<TArgs extends RoleAccessArgs = RoleAccessArgs> = RoleClause | OwnClause | ClauseFunction<TArgs>;
+export type Clause<TArgs extends RoleAccessArgs = RoleAccessArgs> =
+  RoleClause | OwnClause | ClauseFunction<TArgs>;
 
-export type BooleanClause<TArgs extends RoleAccessArgs = RoleAccessArgs> = RoleClause | ClauseFunction<TArgs, boolean>;
+export type BooleanClause<TArgs extends RoleAccessArgs = RoleAccessArgs> =
+  RoleClause | ClauseFunction<TArgs, boolean>;
 
 export type NormalizedRole = {
   slug: string;
@@ -46,8 +51,10 @@ export type NormalizedRole = {
 };
 
 export function normalizeRoles(entries: readonly RoleEntry[]): NormalizedRole[] {
-  const roles = entries.map((entry) => typeof entry === 'string' ? { slug: entry } : entry);
-  const duplicate = roles.find((role, index) => roles.findIndex(({ slug }) => slug === role.slug) !== index);
+  const roles = entries.map((entry) => (typeof entry === 'string' ? { slug: entry } : entry));
+  const duplicate = roles.find(
+    (role, index) => roles.findIndex(({ slug }) => slug === role.slug) !== index,
+  );
   if (duplicate) throw new Error(`[plugin-roles] Duplicate role slug '${duplicate.slug}'.`);
   return roles;
 }

@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const checkmarkCircleIcon: IconNode = [
   [
@@ -16,8 +16,8 @@ export const checkmarkCircleIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const CheckmarkCircleIcon = createLucideIcon('CheckmarkCircle', checkmarkCircleIcon)
+const CheckmarkCircleIcon = createLucideIcon('CheckmarkCircle', checkmarkCircleIcon);
 
-export default CheckmarkCircleIcon
+export default CheckmarkCircleIcon;

@@ -1,1 +1,5 @@
-{"model":"anthropic/claude-sonnet-4-20250514","messages":[{"role":"user","content":"Hello"}],"max_tokens":100}
+{
+  "model": "anthropic/claude-sonnet-4-20250514",
+  "messages": [{ "role": "user", "content": "Hello" }],
+  "max_tokens": 100
+}

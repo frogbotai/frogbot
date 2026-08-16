@@ -18,7 +18,12 @@ type FrogbotCache = {
 const globalRef = globalThis as { _frogbot?: FrogbotCache };
 
 function getCache(): FrogbotCache {
-  return (globalRef._frogbot ??= { frogbot: null, config: null, promise: null, promiseConfig: null });
+  return (globalRef._frogbot ??= {
+    frogbot: null,
+    config: null,
+    promise: null,
+    promiseConfig: null,
+  });
 }
 
 /**
@@ -29,7 +34,8 @@ function getCache(): FrogbotCache {
 export function getFrogbot(options: InitOptions): Promise<Frogbot> {
   const config = options.config;
   const cached = getCache();
-  if (cached.frogbot && (!cached.config || cached.config === config)) return Promise.resolve(cached.frogbot);
+  if (cached.frogbot && (!cached.config || cached.config === config))
+    return Promise.resolve(cached.frogbot);
 
   if (cached.promise) {
     if (cached.promiseConfig === config) return cached.promise;
@@ -44,15 +50,18 @@ export function getFrogbot(options: InitOptions): Promise<Frogbot> {
     });
     cached.promise = promise;
     cached.promiseConfig = config;
-    void promise.then(() => {
-      if (cached.promise === promise) {
-        cached.promise = null;
-        cached.promiseConfig = null;
-      }
-    }, () => {
-      if (cached.promise === promise) cached.promise = null;
-      if (cached.promiseConfig === config) cached.promiseConfig = null;
-    });
+    void promise.then(
+      () => {
+        if (cached.promise === promise) {
+          cached.promise = null;
+          cached.promiseConfig = null;
+        }
+      },
+      () => {
+        if (cached.promise === promise) cached.promise = null;
+        if (cached.promiseConfig === config) cached.promiseConfig = null;
+      },
+    );
   }
 
   return cached.promise;

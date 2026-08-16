@@ -11,8 +11,8 @@ pnpm add @frogbotai/storage-vercel-blob
 ## Usage
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { vercelBlobStorage } from '@frogbotai/storage-vercel-blob'
+import { buildConfig } from 'frogbot';
+import { vercelBlobStorage } from '@frogbotai/storage-vercel-blob';
 
 export default buildConfig({
   storage: [
@@ -24,5 +24,5 @@ export default buildConfig({
     }),
   ],
   // ...rest of config
-})
+});
 ```

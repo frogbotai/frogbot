@@ -35,7 +35,17 @@ describe('MCP plugin', () => {
   it('rejects an unrelated strategy with the same name', async () => {
     const config = {
       ...baseConfig,
-      collections: [{ slug: 'users', auth: { strategies: [{ name: 'api-key', authenticate: async () => ({ user: { id: 'fake' } as never }) }] }, fields: [] }],
+      collections: [
+        {
+          slug: 'users',
+          auth: {
+            strategies: [
+              { name: 'api-key', authenticate: async () => ({ user: { id: 'fake' } as never }) },
+            ],
+          },
+          fields: [],
+        },
+      ],
     } as FrogbotConfig;
 
     await expect(mcpPlugin({})(config)).rejects.toThrow(
@@ -44,20 +54,32 @@ describe('MCP plugin', () => {
   });
 
   it('registers Payload MCP endpoints and its dormant key collection', async () => {
-    const result = await mcpPlugin({ collections: { posts: { enabled: true } } })(await authenticatedConfig());
+    const result = await mcpPlugin({ collections: { posts: { enabled: true } } })(
+      await authenticatedConfig(),
+    );
 
     expect(result.collections.map(({ slug }) => slug)).toContain('payload-mcp-api-keys');
-    expect(result.endpoints?.filter(({ path }) => path === '/mcp').map(({ method }) => method)).toEqual(['post', 'get']);
+    expect(
+      result.endpoints?.filter(({ path }) => path === '/mcp').map(({ method }) => method),
+    ).toEqual(['post', 'get']);
   });
 
   it('does not register experimental tools or call Payload default auth', async () => {
-    const result = await mcpPlugin({ experimental: { tools: { auth: { enabled: true } } } } as never)(await authenticatedConfig());
-    const endpoint = result.endpoints?.find(({ method, path }) => method === 'post' && path === '/mcp');
+    const result = await mcpPlugin({
+      experimental: { tools: { auth: { enabled: true } } },
+    } as never)(await authenticatedConfig());
+    const endpoint = result.endpoints?.find(
+      ({ method, path }) => method === 'post' && path === '/mcp',
+    );
     const payload = { find: vi.fn() };
 
-    await expect(endpoint?.handler({ headers: new Headers(), payload, user: null } as never)).rejects.toThrow('Unauthorized');
+    await expect(
+      endpoint?.handler({ headers: new Headers(), payload, user: null } as never),
+    ).rejects.toThrow('Unauthorized');
     expect(payload.find).not.toHaveBeenCalled();
-    expect(result.collections.find(({ slug }) => slug === 'payload-mcp-api-keys')).not.toHaveProperty(
+    expect(
+      result.collections.find(({ slug }) => slug === 'payload-mcp-api-keys'),
+    ).not.toHaveProperty(
       'fields',
       expect.arrayContaining([expect.objectContaining({ name: 'auth' })]),
     );
@@ -68,14 +90,20 @@ describe('MCP plugin', () => {
     ['plaintext lookalike', 'fb_plaintext'],
     ['revoked key', createApiKeyToken()],
   ])('rejects %s before MCP handling', async (_name, token) => {
-    const result = await mcpPlugin({ collections: { posts: { enabled: { find: true } } } })(await authenticatedConfig());
-    const endpoint = result.endpoints?.find(({ method, path }) => method === 'post' && path === '/mcp');
+    const result = await mcpPlugin({ collections: { posts: { enabled: { find: true } } } })(
+      await authenticatedConfig(),
+    );
+    const endpoint = result.endpoints?.find(
+      ({ method, path }) => method === 'post' && path === '/mcp',
+    );
     const payload = { find: vi.fn().mockResolvedValue({ docs: [] }) };
 
-    await expect(endpoint?.handler({
-      headers: new Headers({ authorization: `Bearer ${token}` }),
-      payload,
-    } as never)).rejects.toThrow('Unauthorized');
+    await expect(
+      endpoint?.handler({
+        headers: new Headers({ authorization: `Bearer ${token}` }),
+        payload,
+      } as never),
+    ).rejects.toThrow('Unauthorized');
   });
 
   it('registers MCP through the FrogBot config pipeline', async () => {
@@ -108,10 +136,16 @@ describe('MCP plugin', () => {
         { slug: 'users', auth: true, fields: [] },
         { slug: 'posts', fields: [{ name: 'title', type: 'text' }] },
       ],
-      plugins: [rolesPlugin(), apiKeysPlugin(), mcpPlugin({ collections: { posts: { enabled: { find: true } } } })],
+      plugins: [
+        rolesPlugin(),
+        apiKeysPlugin(),
+        mcpPlugin({ collections: { posts: { enabled: { find: true } } } }),
+      ],
     } as FrogbotConfig);
     const payloadConfig = await config._internal.payloadConfig;
-    const endpoint = payloadConfig.endpoints?.find(({ method, path }) => method === 'post' && path === '/mcp');
+    const endpoint = payloadConfig.endpoints?.find(
+      ({ method, path }) => method === 'post' && path === '/mcp',
+    );
     const payload = {
       config: payloadConfig,
       db: { defaultIDType: 'number' },
@@ -120,12 +154,14 @@ describe('MCP plugin', () => {
       find: vi.fn().mockImplementation(({ collection, where }) => {
         if (collection === 'api-keys') {
           return Promise.resolve({
-            docs: where.and[0].tokenHash.equals === hashApiKeyToken(token)
-              ? [{ id: 'key-1', owner: 'user-1' }]
-              : [],
+            docs:
+              where.and[0].tokenHash.equals === hashApiKeyToken(token)
+                ? [{ id: 'key-1', owner: 'user-1' }]
+                : [],
           });
         }
-        if (collection === 'posts') return Promise.resolve({ docs: [{ id: 1, title: 'First post' }], totalDocs: 1 });
+        if (collection === 'posts')
+          return Promise.resolve({ docs: [{ id: 1, title: 'First post' }], totalDocs: 1 });
         return Promise.resolve({ docs: [] });
       }),
       findByID: vi.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
@@ -144,15 +180,24 @@ describe('MCP plugin', () => {
         payload,
         url: 'http://localhost/api/mcp',
       } as never);
-      const text = await response?.text() ?? '';
-      const data = text.split('\n').find((line) => line.startsWith('data: '))?.slice(6) ?? text;
+      const text = (await response?.text()) ?? '';
+      const data =
+        text
+          .split('\n')
+          .find((line) => line.startsWith('data: '))
+          ?.slice(6) ?? text;
       return JSON.parse(data) as Record<string, any>;
     };
 
     const listed = await request({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} });
     expect(listed.result.tools.map(({ name }: { name: string }) => name)).toEqual(['findPosts']);
 
-    const called = await request({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'findPosts', arguments: {} } });
+    const called = await request({
+      jsonrpc: '2.0',
+      id: 2,
+      method: 'tools/call',
+      params: { name: 'findPosts', arguments: {} },
+    });
     expect(called.result.content[0].text).toContain('First post');
     expect(payload.find).toHaveBeenCalledWith(expect.objectContaining({ collection: 'posts' }));
   });

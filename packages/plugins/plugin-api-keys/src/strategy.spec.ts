@@ -45,7 +45,9 @@ describe('API key authentication strategy', () => {
     ['malformed', new Headers({ authorization: 'Bearer invalid' })],
   ])('does not authenticate %s tokens', async (_name, headers) => {
     const payload = makePayload();
-    expect(await makeStrategy().authenticate({ headers, payload: payload as never })).toEqual({ user: null });
+    expect(await makeStrategy().authenticate({ headers, payload: payload as never })).toEqual({
+      user: null,
+    });
     expect(payload.find).not.toHaveBeenCalled();
   });
 

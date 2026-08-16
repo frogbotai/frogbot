@@ -6,12 +6,16 @@
 // exact point in the handler where it belongs, so the control flow reads
 // top-to-bottom with nothing hidden behind a runner abstraction.
 
-import { type Attributes, type Context as OtelContext,context as otelContext } from '@opentelemetry/api';
-import { generateText, type JSONValue,streamText } from 'ai';
+import {
+  type Attributes,
+  type Context as OtelContext,
+  context as otelContext,
+} from '@opentelemetry/api';
+import { generateText, type JSONValue, streamText } from 'ai';
 import { Hono } from 'hono';
 
 import { isClientAbort } from '../../errors/clientAbort.js';
-import { toContentfulStatus,toOpenAIErrorResponse } from '../../errors/envelope.js';
+import { toContentfulStatus, toOpenAIErrorResponse } from '../../errors/envelope.js';
 import { maybeMaskMessage } from '../../errors/maskMessage.js';
 import { headersForError } from '../../errors/normalizeAiSdkError.js';
 import { streamErrorFrameToEnvelope } from '../../errors/streamError.js';
@@ -27,7 +31,11 @@ import {
 import type { AiSdkTelemetry } from '../../observability/aiSdkTelemetry.js';
 import { otelContextKey } from '../../observability/tracing.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { type ProviderModelPolicy, type ProviderRegistry,resolveProvider } from '../../providers/registry.js';
+import {
+  type ProviderModelPolicy,
+  type ProviderRegistry,
+  resolveProvider,
+} from '../../providers/registry.js';
 import { peekStream } from '../../shared/peekStream.js';
 import { isProduction } from '../../shared/runtimeDetection.js';
 import { createStreamLifecycle, type StreamLifecycle } from '../../shared/streamLifecycle.js';
@@ -167,7 +175,8 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
       // Run the upstream call with the gateway span's context active so AI SDK
       // inner spans parent under it (stashed by the tracing hook's
       // `beforeUpstream`; falls back to the ambient context when tracing is off).
-      const activeContext = (context[otelContextKey] as OtelContext | undefined) ?? otelContext.active();
+      const activeContext =
+        (context[otelContextKey] as OtelContext | undefined) ?? otelContext.active();
 
       phase = 'upstream';
 

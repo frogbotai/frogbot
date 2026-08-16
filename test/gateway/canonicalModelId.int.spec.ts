@@ -8,10 +8,7 @@
 // AWS/Bedrock creds that Zen's free OpenAI-compatible models can't stand in for;
 // the observable seam is "which model id did languageModel() receive".
 
-import type {
-  LanguageModelV4,
-  LanguageModelV4CallOptions,
-} from '@ai-sdk/provider';
+import type { LanguageModelV4, LanguageModelV4CallOptions } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
@@ -28,7 +25,9 @@ function createMockModel(): LanguageModelV4 {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: (_options: LanguageModelV4CallOptions) =>
       Promise.resolve({
         content: [{ type: 'text' as const, text: 'ok' }],

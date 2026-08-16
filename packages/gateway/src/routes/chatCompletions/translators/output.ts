@@ -18,9 +18,8 @@ type JsonSchemaConfig = {
 
 export function toChatOutput(responseFormat: unknown): Output.Output | undefined {
   if (responseFormat == null) return undefined;
-  const type = typeof responseFormat === 'object'
-    ? (responseFormat as { type?: unknown }).type
-    : undefined;
+  const type =
+    typeof responseFormat === 'object' ? (responseFormat as { type?: unknown }).type : undefined;
 
   if (type === 'text') return undefined;
   if (type === 'json_object') return Output.json();

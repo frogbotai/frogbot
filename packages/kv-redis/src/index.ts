@@ -1,1 +1,1 @@
-export { RedisKVAdapter, redisKVAdapter, type RedisKVAdapterOptions } from '@payloadcms/kv-redis'
+export { RedisKVAdapter, redisKVAdapter, type RedisKVAdapterOptions } from '@payloadcms/kv-redis';

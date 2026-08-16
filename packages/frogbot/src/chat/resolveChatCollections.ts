@@ -25,7 +25,10 @@ type ResolvedChat = {
   chat: SanitizedChatConfig;
 };
 
-function findChatCollection(collections: CollectionConfig[], marker: 'thread' | 'message'): CollectionConfig | undefined {
+function findChatCollection(
+  collections: CollectionConfig[],
+  marker: 'thread' | 'message',
+): CollectionConfig | undefined {
   const marked = collections.filter((c) => c[marker] === true);
   if (marked.length > 1) {
     throw new Error(
@@ -38,7 +41,9 @@ function findChatCollection(collections: CollectionConfig[], marker: 'thread' | 
 
 export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
   if (config.collections.some((c) => c.slug === CHAT_ASSETS_SLUG)) {
-    throw new Error(`[frogbot] Collection slug '${CHAT_ASSETS_SLUG}' is reserved for FrogBot chat assets.`);
+    throw new Error(
+      `[frogbot] Collection slug '${CHAT_ASSETS_SLUG}' is reserved for FrogBot chat assets.`,
+    );
   }
 
   const threadCollection = findChatCollection(config.collections, 'thread');
@@ -49,7 +54,10 @@ export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
     );
   }
 
-  const enabled = config.agents !== undefined || threadCollection !== undefined || messageCollection !== undefined;
+  const enabled =
+    config.agents !== undefined ||
+    threadCollection !== undefined ||
+    messageCollection !== undefined;
   if (!enabled) {
     return { collections: config.collections, chat: { enabled: false } };
   }
@@ -57,7 +65,9 @@ export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
   const threadsSlug = threadCollection?.slug ?? DEFAULT_THREADS_SLUG;
   const messagesSlug = messageCollection?.slug ?? DEFAULT_MESSAGES_SLUG;
   if (threadsSlug === messagesSlug) {
-    throw new Error(`[frogbot] Thread and message collections must differ (both '${threadsSlug}').`);
+    throw new Error(
+      `[frogbot] Thread and message collections must differ (both '${threadsSlug}').`,
+    );
   }
 
   const userSlug = resolveUserSlug(config);

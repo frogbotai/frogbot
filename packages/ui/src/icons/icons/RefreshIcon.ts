@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const refreshIcon: IconNode = [
   [
@@ -10,8 +10,8 @@ export const refreshIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const RefreshIcon = createLucideIcon('RefreshIcon', refreshIcon, 1.5)
+const RefreshIcon = createLucideIcon('RefreshIcon', refreshIcon, 1.5);
 
-export default RefreshIcon
+export default RefreshIcon;

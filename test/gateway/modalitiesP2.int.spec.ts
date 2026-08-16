@@ -32,7 +32,11 @@ function createMockImageModel(opts?: {
       return Promise.resolve({
         images: [Buffer.from('fake-image').toString('base64')],
         warnings: [],
-        response: { timestamp: new Date('2026-01-01T00:00:00Z'), modelId: 'mock-image-model', headers: {} },
+        response: {
+          timestamp: new Date('2026-01-01T00:00:00Z'),
+          modelId: 'mock-image-model',
+          headers: {},
+        },
         usage: { inputTokens: 10, outputTokens: 0, totalTokens: 10 },
       });
     },
@@ -42,8 +46,12 @@ function createMockImageModel(opts?: {
 function makeImageApp(imageModel?: ImageModelV4) {
   const fakeProvider = {
     imageModel: () => imageModel ?? createMockImageModel(),
-    languageModel: () => { throw new Error('not used'); },
-    embeddingModel: () => { throw new Error('not used'); },
+    languageModel: () => {
+      throw new Error('not used');
+    },
+    embeddingModel: () => {
+      throw new Error('not used');
+    },
   };
   const registry = { openai: fakeProvider } as unknown as ProviderRegistry;
   return createApp({ registry });
@@ -58,38 +66,32 @@ function makeImageApp(imageModel?: ImageModelV4) {
 // ---------------------------------------------------------------------------
 
 describe('G77 — images: size:auto rejected; usage missing from response', () => {
-  it(
-    // G77: size:"auto" rejected by schema regex /^\d+x\d+$/
-    'POST /v1/images/generations with size:"auto" returns 200, not 400',
-    async () => {
-      const app = makeImageApp();
-      const { status } = await postJson(app, '/v1/images/generations', {
-        model: 'openai/gpt-image-1',
-        prompt: 'a cat',
-        size: 'auto',
-      });
+  it(// G77: size:"auto" rejected by schema regex /^\d+x\d+$/
+  'POST /v1/images/generations with size:"auto" returns 200, not 400', async () => {
+    const app = makeImageApp();
+    const { status } = await postJson(app, '/v1/images/generations', {
+      model: 'openai/gpt-image-1',
+      prompt: 'a cat',
+      size: 'auto',
+    });
 
-      // "auto" is a valid gpt-image-1 size; schema regex rejects it with 400
-      expect(status).not.toBe(400);
-      expect(status).toBe(200);
-    },
-  );
+    // "auto" is a valid gpt-image-1 size; schema regex rejects it with 400
+    expect(status).not.toBe(400);
+    expect(status).toBe(200);
+  });
 
-  it(
-    // G77: response from /v1/images/generations is missing usage field
-    'POST /v1/images/generations response includes usage field',
-    async () => {
-      const app = makeImageApp(createMockImageModel());
-      const { status, body } = await postJson(app, '/v1/images/generations', {
-        model: 'openai/gpt-image-1',
-        prompt: 'a cat',
-        size: '1024x1024',
-      });
+  it(// G77: response from /v1/images/generations is missing usage field
+  'POST /v1/images/generations response includes usage field', async () => {
+    const app = makeImageApp(createMockImageModel());
+    const { status, body } = await postJson(app, '/v1/images/generations', {
+      model: 'openai/gpt-image-1',
+      prompt: 'a cat',
+      size: '1024x1024',
+    });
 
-      expect(status).toBe(200);
-      // OpenAI images response includes usage for gpt-image-1 token-based billing;
-      // gateway currently strips usage from toOpenAIImagesResponse
-      expect(body).toHaveProperty('usage');
-    },
-  );
+    expect(status).toBe(200);
+    // OpenAI images response includes usage for gpt-image-1 token-based billing;
+    // gateway currently strips usage from toOpenAIImagesResponse
+    expect(body).toHaveProperty('usage');
+  });
 });

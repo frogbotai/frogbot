@@ -20,7 +20,9 @@ describe('parseMessagesRequest — required fields', () => {
   });
 
   test('rejects missing model', () => {
-    expect(() => parseMessagesRequest({ ...valid, model: undefined })).toThrow(RequestValidationError);
+    expect(() => parseMessagesRequest({ ...valid, model: undefined })).toThrow(
+      RequestValidationError,
+    );
   });
 
   test('rejects empty model', () => {
@@ -28,7 +30,9 @@ describe('parseMessagesRequest — required fields', () => {
   });
 
   test('rejects missing max_tokens', () => {
-    expect(() => parseMessagesRequest({ ...valid, max_tokens: undefined })).toThrow(RequestValidationError);
+    expect(() => parseMessagesRequest({ ...valid, max_tokens: undefined })).toThrow(
+      RequestValidationError,
+    );
   });
 
   test('rejects non-positive max_tokens', () => {
@@ -80,7 +84,9 @@ describe('parseMessagesRequest — content blocks', () => {
   test('accepts empty tool_use id/name via the catch-all', () => {
     const result = parseMessagesRequest({
       ...valid,
-      messages: [{ role: 'assistant', content: [{ type: 'tool_use', id: '', name: 'x', input: {} }] }],
+      messages: [
+        { role: 'assistant', content: [{ type: 'tool_use', id: '', name: 'x', input: {} }] },
+      ],
     });
     expect((result.messages[0].content as Array<{ type: string }>)[0].type).toBe('tool_use');
   });
@@ -98,7 +104,12 @@ describe('parseMessagesRequest — cache_control & system', () => {
   test('accepts ephemeral cache_control with ttl', () => {
     const result = parseMessagesRequest({
       ...valid,
-      messages: [{ role: 'user', content: [{ type: 'text', text: 'hi', cache_control: { type: 'ephemeral', ttl: '1h' } }] }],
+      messages: [
+        {
+          role: 'user',
+          content: [{ type: 'text', text: 'hi', cache_control: { type: 'ephemeral', ttl: '1h' } }],
+        },
+      ],
     });
     expect(result.messages).toHaveLength(1);
   });
@@ -131,11 +142,16 @@ describe('parseMessagesRequest — tools & optional params', () => {
   });
 
   test('rejects tool with an empty name', () => {
-    expect(() => parseMessagesRequest({ ...valid, tools: [{ name: '' }] })).toThrow(RequestValidationError);
+    expect(() => parseMessagesRequest({ ...valid, tools: [{ name: '' }] })).toThrow(
+      RequestValidationError,
+    );
   });
 
   test('preserves unknown top-level fields via .loose()', () => {
-    const result = parseMessagesRequest({ ...valid, some_future_field: 'kept' }) as Record<string, unknown>;
+    const result = parseMessagesRequest({ ...valid, some_future_field: 'kept' }) as Record<
+      string,
+      unknown
+    >;
     expect(result.some_future_field).toBe('kept');
   });
 

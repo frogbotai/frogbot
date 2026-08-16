@@ -61,7 +61,7 @@ export function toModelMessages(messages: OpenAIMessage[]): ModelMessage[] {
   const out: ModelMessage[] = [];
   const toolNames = new Map<string, string>();
 
-  for (let i = 0; i < messages.length; ) {
+  for (let i = 0; i < messages.length;) {
     const msg = messages[i];
 
     if (msg.role === 'tool') {

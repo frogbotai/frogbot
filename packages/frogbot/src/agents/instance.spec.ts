@@ -117,44 +117,48 @@ function makeDeps(config: SanitizedAIConfig, req: FrogbotRequest) {
       await hook({ ...args, ...lift(context) });
     }
   };
-  const operation = vi.fn((opts: { operation: string; model: string; context?: Record<string, unknown> }) => {
-    const requestId = `req_${Math.random().toString(36).slice(2)}`;
-    const context = opts.context ?? {};
-    let finished = false;
-    return {
-      requestId,
-      context,
-      start: async () => {
-        await runHooks(
-          config.hooks?.beforeOperation as never,
-          { phase: 'beforeOperation', operation: opts.operation, requestId },
-          context,
-        );
-      },
-      finish: async (result?: { finishReason?: string; usage?: unknown; error?: unknown }) => {
-        if (finished) return;
-        finished = true;
-        await runHooks(
-          config.hooks?.afterOperation as never,
-          {
-            phase: 'afterOperation',
-            operation: opts.operation,
-            requestId,
-            finishReason: result?.finishReason,
-            usage: result?.usage,
-            error: result?.error,
-          },
-          context,
-        );
-      },
-      chatModel: () => ({}),
-    };
-  });
+  const operation = vi.fn(
+    (opts: { operation: string; model: string; context?: Record<string, unknown> }) => {
+      const requestId = `req_${Math.random().toString(36).slice(2)}`;
+      const context = opts.context ?? {};
+      let finished = false;
+      return {
+        requestId,
+        context,
+        start: async () => {
+          await runHooks(
+            config.hooks?.beforeOperation as never,
+            { phase: 'beforeOperation', operation: opts.operation, requestId },
+            context,
+          );
+        },
+        finish: async (result?: { finishReason?: string; usage?: unknown; error?: unknown }) => {
+          if (finished) return;
+          finished = true;
+          await runHooks(
+            config.hooks?.afterOperation as never,
+            {
+              phase: 'afterOperation',
+              operation: opts.operation,
+              requestId,
+              finishReason: result?.finishReason,
+              usage: result?.usage,
+              error: result?.error,
+            },
+            context,
+          );
+        },
+        chatModel: () => ({}),
+      };
+    },
+  );
   const frogbot = {
     config: { chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' } },
     create: vi.fn(() => Promise.resolve({ id: 'message-1' })),
     find: vi.fn(() =>
-      Promise.resolve({ docs: [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }] }),
+      Promise.resolve({
+        docs: [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+      }),
     ),
     findByID: vi.fn(() => Promise.resolve({ id: 'thread-1', user: req.user?.id ?? null })),
     update: vi.fn(() => Promise.resolve({ id: 'thread-1' })),
@@ -195,24 +199,26 @@ describe('agent hook lifecycle', () => {
     const runtimeContext = agentState.prepared?.runtimeContext as {
       agent: { slug: string; runId: string };
     };
-    expect(beforeOperation).toHaveBeenCalledWith(expect.objectContaining({
-      req,
-      user: req.user,
-      agent: runtimeContext.agent,
-    }));
+    expect(beforeOperation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        req,
+        user: req.user,
+        agent: runtimeContext.agent,
+      }),
+    );
     expect(runtimeContext.agent.slug).toBe('support');
     const toolsContext = agentState.prepared?.toolsContext as Record<
       string,
       { agent: { slug: string; runId: string } }
     >;
-    expect(toolsContext.lookup.agent).toEqual(
-      runtimeContext.agent,
+    expect(toolsContext.lookup.agent).toEqual(runtimeContext.agent);
+    expect(afterOperation).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        agent: runtimeContext.agent,
+        finishReason: 'stop',
+        usage: { inputTokens: 2, outputTokens: 1, totalTokens: 3 },
+      }),
     );
-    expect(afterOperation).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-      agent: runtimeContext.agent,
-      finishReason: 'stop',
-      usage: { inputTokens: 2, outputTokens: 1, totalTokens: 3 },
-    }));
   });
 
   it('finalizes a stream once when terminal callbacks repeat', async () => {
@@ -289,7 +295,10 @@ describe('agent hook lifecycle', () => {
 
     await agent.generate({ prompt: 'Create', req });
     expect(deps.frogbot.create).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'threads', data: { user: 'user-1', agent: 'support' } }),
+      expect.objectContaining({
+        collection: 'threads',
+        data: { user: 'user-1', agent: 'support' },
+      }),
     );
 
     deps.frogbot.create.mockClear();
@@ -344,7 +353,11 @@ describe('agent hook lifecycle', () => {
     await agent.generate({ prompt: 'Continue', threadId: 'thread-1', req });
 
     expect(deps.frogbot.create).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'threads', data: { user: null, agent: 'support' }, overrideAccess: true }),
+      expect.objectContaining({
+        collection: 'threads',
+        data: { user: null, agent: 'support' },
+        overrideAccess: true,
+      }),
     );
     expect(deps.frogbot.findByID).toHaveBeenCalledWith(
       expect.objectContaining({ collection: 'threads', id: 'thread-1', overrideAccess: true }),

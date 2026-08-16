@@ -2,14 +2,19 @@ import { createCipheriv, createHash } from 'node:crypto';
 
 import { describe, expect, it } from 'vitest';
 
-import { createCredentialEncryption,CredentialCryptoError } from './encryption.js';
+import { createCredentialEncryption, CredentialCryptoError } from './encryption.js';
 
 function legacyEncrypt(value: string, secret: string): string {
   const key = createHash('sha256').update('frogbot:plugin-oauth:').update(secret).digest();
   const iv = Buffer.alloc(12, 1);
   const cipher = createCipheriv('aes-256-gcm', key, iv);
   const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
-  return ['v1', iv.toString('base64url'), cipher.getAuthTag().toString('base64url'), encrypted.toString('base64url')].join('.');
+  return [
+    'v1',
+    iv.toString('base64url'),
+    cipher.getAuthTag().toString('base64url'),
+    encrypted.toString('base64url'),
+  ].join('.');
 }
 
 describe('credential encryption', () => {

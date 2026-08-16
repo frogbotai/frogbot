@@ -55,7 +55,9 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     const thinking = providerOptions['anthropic']?.['thinking'] as Record<string, unknown>;
     expect(thinking).toBeDefined();
     // The camelCase key is what the shipped SDK type declares and reads.
-    const roundTripped = { thinking: { type: 'enabled' as const, budgetTokens: thinking['budgetTokens'] } } satisfies AnthropicProviderOptions;
+    const roundTripped = {
+      thinking: { type: 'enabled' as const, budgetTokens: thinking['budgetTokens'] },
+    } satisfies AnthropicProviderOptions;
     expect(roundTripped.thinking.budgetTokens).toBeTypeOf('number');
     expect(thinking['budgetTokens']).toBeTypeOf('number');
   });
@@ -67,10 +69,16 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     const providerOptions: Record<string, Record<string, unknown>> = {
       anthropic: { thinking: { budget_tokens: 3600 } },
     };
-    void openaiReasoningEffort(makeArgs({ model: 'openai/o3', providerOptions, maxOutputTokens: 4096 }));
+    void openaiReasoningEffort(
+      makeArgs({ model: 'openai/o3', providerOptions, maxOutputTokens: 4096 }),
+    );
 
     const openai = providerOptions['openai'] ?? {};
-    const roundTripped = { reasoningEffort: openai['reasoningEffort'] as OpenAIChatLanguageModelOptions['reasoningEffort'] } satisfies OpenAIChatLanguageModelOptions;
+    const roundTripped = {
+      reasoningEffort: openai[
+        'reasoningEffort'
+      ] as OpenAIChatLanguageModelOptions['reasoningEffort'],
+    } satisfies OpenAIChatLanguageModelOptions;
     expect(roundTripped.reasoningEffort).toBeDefined();
     expect(openai['reasoningEffort']).toBeDefined();
   });
@@ -84,7 +92,13 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
         unknown: { cache_control: { type: 'ephemeral' } },
       } as Record<string, Record<string, unknown>>,
     };
-    void bedrockCachePoint(makeArgs({ model: 'amazon-bedrock/anthropic.claude-sonnet-4', providerOptions, messages: [message] }));
+    void bedrockCachePoint(
+      makeArgs({
+        model: 'amazon-bedrock/anthropic.claude-sonnet-4',
+        providerOptions,
+        messages: [message],
+      }),
+    );
 
     expect(message.providerOptions['bedrock']?.['cachePoint']).toEqual({ type: 'default' });
     expect(providerOptions['bedrock']).toBeUndefined();
@@ -94,9 +108,9 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
   // reasoningEffort enum {none,minimal,low,medium,high,xhigh}. A near-full
   // budget yields an effort string the SDK rejects/ignores.
   it('effortFromBudget never emits a value outside the SDK reasoningEffort enum', () => {
-    const validEfforts: ReadonlyArray<NonNullable<OpenAIChatLanguageModelOptions['reasoningEffort']>> = [
-      'none', 'minimal', 'low', 'medium', 'high', 'xhigh',
-    ];
+    const validEfforts: ReadonlyArray<
+      NonNullable<OpenAIChatLanguageModelOptions['reasoningEffort']>
+    > = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'];
     // maxOutputTokens tiny vs budget → fraction >= 0.95 → 'max'.
     const effort = effortFromBudget(10000, 10000);
     expect(effort).toBeDefined();
@@ -110,7 +124,9 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     const providerOptions: Record<string, Record<string, unknown>> = {
       openai: { reasoning_effort: 'high' },
     };
-    void vertexThinkingBudget(makeArgs({ model: 'vertex/gemini-2.5-pro', providerOptions, maxOutputTokens: 4096 }));
+    void vertexThinkingBudget(
+      makeArgs({ model: 'vertex/gemini-2.5-pro', providerOptions, maxOutputTokens: 4096 }),
+    );
 
     const google = providerOptions['google'] as GoogleGenerativeAIProviderOptions;
     expect(google.thinkingConfig?.thinkingBudget).toBeTypeOf('number');

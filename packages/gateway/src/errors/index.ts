@@ -12,7 +12,7 @@ export type {
   OpenAIErrorEnvelope,
   OpenAIErrorType,
 } from './envelope.js';
-export { toAnthropicErrorResponse,toOpenAIErrorResponse } from './envelope.js';
+export { toAnthropicErrorResponse, toOpenAIErrorResponse } from './envelope.js';
 export type { GatewayErrorCode } from './gatewayError.js';
 export {
   BodyTooLargeError,
@@ -33,5 +33,5 @@ export {
   UnsupportedModalityError,
 } from './gatewayError.js';
 export { headersForError, isRetryableError } from './normalizeAiSdkError.js';
-export { CONTEXT_OVERFLOW_ENVELOPE,isContextOverflow } from './overflow.js';
+export { CONTEXT_OVERFLOW_ENVELOPE, isContextOverflow } from './overflow.js';
 export { buildRetryHeaders, isRetryableStatus } from './retryHeaders.js';

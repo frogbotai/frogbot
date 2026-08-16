@@ -14,7 +14,7 @@ import {
   providers,
 } from '../../../packages/gateway/src/providers/registry.js';
 import { parseSse } from '../../__helpers/gateway/parse-sse.js';
-import { type JsonResponse,postJson } from '../../__helpers/gateway/post-json.js';
+import { type JsonResponse, postJson } from '../../__helpers/gateway/post-json.js';
 import type { LiveProviderEntry } from './matrix.js';
 
 export type LiveApp = Hono;
@@ -41,7 +41,9 @@ export function makeLiveApp(entry: LiveProviderEntry): LiveApp {
   }
   const cfg = providers[name].fromEnv(process.env);
   if (!cfg) {
-    throw new Error(`matrix entry "${entry.label}": env not configured (${providers[name].envVars[0]})`);
+    throw new Error(
+      `matrix entry "${entry.label}": env not configured (${providers[name].envVars[0]})`,
+    );
   }
   const cfgMap: ProviderConfigMap = {};
   (cfgMap as Record<string, unknown>)[name] = cfg;
@@ -192,9 +194,7 @@ export async function runMessagesStream(app: LiveApp, model: string): Promise<vo
   expect(res.status).toBe(200);
   expect(res.headers.get('content-type')).toContain('text/event-stream');
 
-  const events = parseSse(await res.text()).map(
-    (f) => JSON.parse(f.data) as AnthropicEventData,
-  );
+  const events = parseSse(await res.text()).map((f) => JSON.parse(f.data) as AnthropicEventData);
   const types = events.map((e) => e.type);
   expect(types[0]).toBe('message_start');
   expect(types[types.length - 1]).toBe('message_stop');

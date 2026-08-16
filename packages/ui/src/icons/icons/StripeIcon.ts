@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const stripeIcon: IconNode = [
   [
@@ -9,8 +9,8 @@ export const stripeIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const StripeIcon = createLucideIcon('StripeIcon', stripeIcon, 0, '0 0 24 24')
+const StripeIcon = createLucideIcon('StripeIcon', stripeIcon, 0, '0 0 24 24');
 
-export default StripeIcon
+export default StripeIcon;

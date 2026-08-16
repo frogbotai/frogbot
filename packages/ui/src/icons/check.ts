@@ -1,1 +1,1 @@
-export { Check as CheckIcon } from 'lucide-react'
+export { Check as CheckIcon } from 'lucide-react';

@@ -19,11 +19,7 @@ export type VertexConfig = Omit<GoogleVertexProviderSettings, 'fetch' | 'generat
 
 export const vertexProvider = {
   name: 'vertex',
-  envVars: [
-    'GOOGLE_VERTEX_API_KEY',
-    'GOOGLE_VERTEX_PROJECT',
-    'GOOGLE_VERTEX_LOCATION',
-  ],
+  envVars: ['GOOGLE_VERTEX_API_KEY', 'GOOGLE_VERTEX_PROJECT', 'GOOGLE_VERTEX_LOCATION'],
   fromEnv: (env) => {
     // Express mode — API key only.
     if (env.GOOGLE_VERTEX_API_KEY) {

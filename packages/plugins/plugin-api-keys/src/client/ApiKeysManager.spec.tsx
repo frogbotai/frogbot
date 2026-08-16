@@ -7,11 +7,18 @@ const openModal = vi.fn();
 const clearRouteCache = vi.fn();
 
 vi.mock('@payloadcms/ui', () => ({
-  Button: ({ children, ...props }: { children: ReactNode }) => <button {...props}>{children}</button>,
+  Button: ({ children, ...props }: { children: ReactNode }) => (
+    <button {...props}>{children}</button>
+  ),
   CopyIcon: () => <svg data-testid="copy-icon" />,
-  Modal: ({ children, className }: { children: ReactNode; className?: string }) => <div className={className} role="dialog">{children}</div>,
+  Modal: ({ children, className }: { children: ReactNode; className?: string }) => (
+    <div className={className} role="dialog">
+      {children}
+    </div>
+  ),
   TextInput: ({ label, ...props }: { label: string }) => <input aria-label={label} {...props} />,
-  Tooltip: ({ children, show }: { children: ReactNode; show?: boolean }) => (show ? <span>{children}</span> : null),
+  Tooltip: ({ children, show }: { children: ReactNode; show?: boolean }) =>
+    show ? <span>{children}</span> : null,
   useConfig: () => ({ config: { routes: { api: '/api' } } }),
   useListQuery: () => ({ collectionSlug: 'api-keys' }),
   useModal: () => ({ closeModal, openModal }),
@@ -40,12 +47,17 @@ describe('API key controls', () => {
     fireEvent.change(screen.getByLabelText('Key name'), { target: { value: 'Deploy' } });
     fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
 
-    expect(await screen.findByText("Key generated! Copy it now — you won't see it again.")).toBeTruthy();
+    expect(
+      await screen.findByText("Key generated! Copy it now — you won't see it again."),
+    ).toBeTruthy();
     expect(screen.getByText('frogbot_secret')).toBeTruthy();
-    expect(fetch).toHaveBeenCalledWith('/api/api-keys/mint', expect.objectContaining({
-      body: JSON.stringify({ name: 'Deploy' }),
-      method: 'POST',
-    }));
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/api-keys/mint',
+      expect.objectContaining({
+        body: JSON.stringify({ name: 'Deploy' }),
+        method: 'POST',
+      }),
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(closeModal).toHaveBeenCalledWith('create-api-key-modal');

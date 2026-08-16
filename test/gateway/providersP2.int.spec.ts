@@ -12,7 +12,10 @@ import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import { createGateway } from '../../packages/gateway/src/gateway.js';
-import { buildProviderRegistry, type ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import {
+  buildProviderRegistry,
+  type ProviderRegistry,
+} from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
 // ---------------------------------------------------------------------------
@@ -25,7 +28,9 @@ function makeCapturingModel(capture: (opts: LanguageModelV4CallOptions) => void)
     provider: 'mock',
     modelId: 'mock-model',
     defaultObjectGenerationMode: undefined,
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: (options: LanguageModelV4CallOptions) => {
       capture(options);
       return Promise.resolve({
@@ -74,33 +79,32 @@ describe('G80 — pre-built provider instance not accepted (D-class)', () => {
 // ---------------------------------------------------------------------------
 
 describe('G81 — createGateway applies enabled_providers (enforcement via G45)', () => {
-  it(
-    // enabled_providers: ['openai'] excludes all other providers (G45 fix)
-    'createGateway respects enabled_providers allow list (excluded providers become unavailable)',
-    async () => {
-      // Configure two providers, but only allow 'openai' via enabled_providers
-      const app = createGateway({
-        providers: {
-          openai: { apiKey: 'sk-test-openai' },
-          groq: { apiKey: 'test-groq-key' },
-        },
-        enabled_providers: ['openai'],
-      });
+  it(// enabled_providers: ['openai'] excludes all other providers (G45 fix)
+  'createGateway respects enabled_providers allow list (excluded providers become unavailable)', async () => {
+    // Configure two providers, but only allow 'openai' via enabled_providers
+    const app = createGateway({
+      providers: {
+        openai: { apiKey: 'sk-test-openai' },
+        groq: { apiKey: 'test-groq-key' },
+      },
+      enabled_providers: ['openai'],
+    });
 
-      // groq is excluded by enabled_providers — 404 "not configured" (G45 fix)
-      const res = await app.handler(new Request('http://localhost/v1/chat/completions', {
+    // groq is excluded by enabled_providers — 404 "not configured" (G45 fix)
+    const res = await app.handler(
+      new Request('http://localhost/v1/chat/completions', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           model: 'groq/llama-3.3-70b-versatile',
           messages: [{ role: 'user', content: 'hi' }],
         }),
-      }));
+      }),
+    );
 
-      // 404: groq excluded from the registry by the allow list
-      expect(res.status).toBe(404);
-    },
-  );
+    // 404: groq excluded from the registry by the allow list
+    expect(res.status).toBe(404);
+  });
 
   it('createGateway throws when enabled_providers contains unknown provider names', () => {
     // G81 fix: unknown names in enabled_providers ('some-other-provider'
@@ -134,20 +138,17 @@ describe('G81 — createGateway applies enabled_providers (enforcement via G45)'
 // ---------------------------------------------------------------------------
 
 describe('G82 — provider config type errors surface at first request, not startup', () => {
-  it(
-    // G82: bad api_key type fails at createGateway (startup validation)
-    'createGateway throws at startup when provider config has wrong field types',
-    () => {
-      // A gateway with api_key as a number should fail at config time,
-      // not defer the error until the first actual API call.
-      expect(() => {
-        createGateway({
-          // @ts-expect-error — intentionally passing wrong type to test runtime validation
-          providers: { openai: { apiKey: 123 } },
-        });
-      }).toThrow(/apiKey|api_key|invalid|string/i);
-    },
-  );
+  it(// G82: bad api_key type fails at createGateway (startup validation)
+  'createGateway throws at startup when provider config has wrong field types', () => {
+    // A gateway with api_key as a number should fail at config time,
+    // not defer the error until the first actual API call.
+    expect(() => {
+      createGateway({
+        // @ts-expect-error — intentionally passing wrong type to test runtime validation
+        providers: { openai: { apiKey: 123 } },
+      });
+    }).toThrow(/apiKey|api_key|invalid|string/i);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -189,7 +190,9 @@ describe('G83 — forwardLanguageParams registry key IS a key the SDK reads (REJ
     // forwarded caching options DO reach the model. There is no 'google-vertex'
     // namespace anywhere in the SDK.
     let capturedOptions: LanguageModelV4CallOptions | undefined;
-    const model = makeCapturingModel((opts) => { capturedOptions = opts; });
+    const model = makeCapturingModel((opts) => {
+      capturedOptions = opts;
+    });
 
     const fakeProvider = { languageModel: () => model };
     const registry = { vertex: fakeProvider } as unknown as ProviderRegistry;

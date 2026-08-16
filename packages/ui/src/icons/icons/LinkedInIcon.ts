@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const linkedInIcon: IconNode = [
   [
@@ -24,8 +24,8 @@ export const linkedInIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const LinkedInIcon = createLucideIcon('LinkedInIcon', linkedInIcon, undefined, '0 0 20 20')
+const LinkedInIcon = createLucideIcon('LinkedInIcon', linkedInIcon, undefined, '0 0 20 20');
 
-export default LinkedInIcon
+export default LinkedInIcon;

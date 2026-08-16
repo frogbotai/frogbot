@@ -127,7 +127,8 @@ describe('getFrogbot', () => {
   it('accepts a lifecycle-created instance without replacing it', async () => {
     const lifecycleInstance = {};
     const module = await import('./getFrogbot.js');
-    const seed = (module as unknown as { seedFrogbotCache: (instance: unknown) => void }).seedFrogbotCache;
+    const seed = (module as unknown as { seedFrogbotCache: (instance: unknown) => void })
+      .seedFrogbotCache;
 
     seed(lifecycleInstance);
 

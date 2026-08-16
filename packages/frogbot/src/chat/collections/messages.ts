@@ -13,9 +13,16 @@ type MessageUsage = Record<string, unknown> & {
 
 function mergeUsage(previous: MessageUsage | undefined, next: MessageUsage): MessageUsage {
   const merged: MessageUsage = { ...previous, ...next };
-  for (const key of ['inputTokens', 'outputTokens', 'totalTokens', 'reasoningTokens', 'cachedInputTokens'] as const) {
+  for (const key of [
+    'inputTokens',
+    'outputTokens',
+    'totalTokens',
+    'reasoningTokens',
+    'cachedInputTokens',
+  ] as const) {
     const value = (previous?.[key] ?? 0) + (next[key] ?? 0);
-    if (value !== 0 || previous?.[key] !== undefined || next[key] !== undefined) merged[key] = value;
+    if (value !== 0 || previous?.[key] !== undefined || next[key] !== undefined)
+      merged[key] = value;
   }
   return merged;
 }
@@ -31,7 +38,11 @@ const threadOwner: Access = ({ req }) => {
   return id !== undefined ? { 'thread.user': { equals: id } } : false;
 };
 
-export function defaultMessagesCollection({ slug, threadsSlug, access }: DefaultMessagesCollectionProps): CollectionConfig {
+export function defaultMessagesCollection({
+  slug,
+  threadsSlug,
+  access,
+}: DefaultMessagesCollectionProps): CollectionConfig {
   return {
     slug,
     trash: true,

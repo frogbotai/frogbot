@@ -31,10 +31,17 @@ describe('SerialQueue', () => {
 describe('resolvePolicy', () => {
   it('resolves key, user, defaults, and unlimited in order', () => {
     const defaults = { monthlyBudgetUSD: 50, rpm: 10, tpm: 1000, models: ['openai/gpt-4o-mini'] };
-    expect(resolvePolicy({ defaults, key: { monthlyBudget: { mode: 'custom', value: 5 } }, user: {} }).monthlyBudgetUSD).toBe(5);
-    expect(resolvePolicy({ defaults, key: {}, user: { rpm: { mode: 'custom', value: 3 } } }).rpm).toBe(3);
+    expect(
+      resolvePolicy({ defaults, key: { monthlyBudget: { mode: 'custom', value: 5 } }, user: {} })
+        .monthlyBudgetUSD,
+    ).toBe(5);
+    expect(
+      resolvePolicy({ defaults, key: {}, user: { rpm: { mode: 'custom', value: 3 } } }).rpm,
+    ).toBe(3);
     expect(resolvePolicy({ defaults, key: {}, user: {} })).toMatchObject(defaults);
-    expect(resolvePolicy({ defaults, key: { models: { mode: 'unlimited' } }, user: {} }).models).toBeUndefined();
+    expect(
+      resolvePolicy({ defaults, key: { models: { mode: 'unlimited' } }, user: {} }).models,
+    ).toBeUndefined();
   });
 });
 
@@ -44,7 +51,9 @@ describe('SlidingWindowRateLimiter', () => {
     const limiter = new SlidingWindowRateLimiter(() => now);
     expect(limiter.admit('key:1', { rpm: 2, tpm: 10 })).toBeUndefined();
     limiter.settle('key:1', 10);
-    expect(limiter.admit('key:1', { rpm: 2, tpm: 10 })).toEqual(expect.objectContaining({ kind: 'tpm' }));
+    expect(limiter.admit('key:1', { rpm: 2, tpm: 10 })).toEqual(
+      expect.objectContaining({ kind: 'tpm' }),
+    );
     now = 60_001;
     expect(limiter.admit('key:1', { rpm: 2, tpm: 10 })).toBeUndefined();
   });

@@ -3,9 +3,16 @@
 import { describe, expect, it } from 'vitest';
 
 import type { BeforeUpstreamHookArgs } from '../../hooks.js';
-import { openaiEmbedDimensions, openaiPromptCacheBreakpoint, openaiReasoningEffort } from './middleware.js';
+import {
+  openaiEmbedDimensions,
+  openaiPromptCacheBreakpoint,
+  openaiReasoningEffort,
+} from './middleware.js';
 
-function makeArgs(model: string, overrides: Partial<BeforeUpstreamHookArgs> = {}): BeforeUpstreamHookArgs {
+function makeArgs(
+  model: string,
+  overrides: Partial<BeforeUpstreamHookArgs> = {},
+): BeforeUpstreamHookArgs {
   return {
     phase: 'beforeUpstream',
     operation: 'chat.completions',
@@ -130,11 +137,13 @@ describe('openaiPromptCacheBreakpoint', () => {
 
     expect(message).toEqual({
       role: 'user',
-      content: [{
-        type: 'text',
-        text: 'hello',
-        providerOptions: { openai: { promptCacheBreakpoint: { mode: 'explicit' } } },
-      }],
+      content: [
+        {
+          type: 'text',
+          text: 'hello',
+          providerOptions: { openai: { promptCacheBreakpoint: { mode: 'explicit' } } },
+        },
+      ],
     });
   });
 
@@ -165,11 +174,13 @@ describe('openaiPromptCacheBreakpoint', () => {
 
     openaiPromptCacheBreakpoint(args);
 
-    expect(message.content).toEqual([{
-      type: 'text',
-      text: 'hello',
-      providerOptions: { openai: { promptCacheBreakpoint: { mode: 'explicit' } } },
-    }]);
+    expect(message.content).toEqual([
+      {
+        type: 'text',
+        text: 'hello',
+        providerOptions: { openai: { promptCacheBreakpoint: { mode: 'explicit' } } },
+      },
+    ]);
   });
 
   it('applies request-level cache control to the last message', () => {
@@ -187,11 +198,13 @@ describe('openaiPromptCacheBreakpoint', () => {
     expect(messages[0]).not.toHaveProperty('providerOptions');
     expect(messages[1]).toEqual({
       role: 'assistant',
-      content: [{
-        type: 'text',
-        text: 'last',
-        providerOptions: { openai: { promptCacheBreakpoint: { mode: 'explicit' } } },
-      }],
+      content: [
+        {
+          type: 'text',
+          text: 'last',
+          providerOptions: { openai: { promptCacheBreakpoint: { mode: 'explicit' } } },
+        },
+      ],
     });
     expect(args.providerOptions.unknown).toBeUndefined();
   });

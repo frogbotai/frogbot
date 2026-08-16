@@ -15,34 +15,39 @@ function baseRequest(overrides: Partial<ChatCompletionRequest> = {}): ChatComple
 }
 
 describe('chatCompletionsRoute', () => {
-  it.each(['google', 'vertex'])('routes cached_content to the %s provider namespace', async (providerName) => {
-    const doGenerate = vi.fn(async () => ({
-      content: [{ type: 'text' as const, text: 'hello' }],
-      finishReason: 'stop' as const,
-      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-      warnings: [],
-    }));
-    const app = createApp({
-      registry: {
-        [providerName]: new MockProviderV4({
-          languageModels: { gemini: new MockLanguageModelV4({ doGenerate }) },
+  it.each(['google', 'vertex'])(
+    'routes cached_content to the %s provider namespace',
+    async (providerName) => {
+      const doGenerate = vi.fn(async () => ({
+        content: [{ type: 'text' as const, text: 'hello' }],
+        finishReason: 'stop' as const,
+        usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+        warnings: [],
+      }));
+      const app = createApp({
+        registry: {
+          [providerName]: new MockProviderV4({
+            languageModels: { gemini: new MockLanguageModelV4({ doGenerate }) },
+          }),
+        } as unknown as ProviderRegistry,
+      });
+
+      const res = await app.request('/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model: `${providerName}/gemini`,
+          cached_content: 'cachedContents/abc123',
+          messages: [{ role: 'user', content: 'hello' }],
         }),
-      } as unknown as ProviderRegistry,
-    });
+      });
 
-    const res = await app.request('/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model: `${providerName}/gemini`,
-        cached_content: 'cachedContents/abc123',
-        messages: [{ role: 'user', content: 'hello' }],
-      }),
-    });
-
-    expect(res.status).toBe(200);
-    expect(doGenerate.mock.calls[0][0].providerOptions?.[providerName]?.cachedContent).toBe('cachedContents/abc123');
-  });
+      expect(res.status).toBe(200);
+      expect(doGenerate.mock.calls[0][0].providerOptions?.[providerName]?.cachedContent).toBe(
+        'cachedContents/abc123',
+      );
+    },
+  );
 
   it('maps prompt_cache_key to Google cachedContent', async () => {
     const doGenerate = vi.fn(async () => ({
@@ -53,7 +58,9 @@ describe('chatCompletionsRoute', () => {
     }));
     const app = createApp({
       registry: {
-        google: new MockProviderV4({ languageModels: { gemini: new MockLanguageModelV4({ doGenerate }) } }),
+        google: new MockProviderV4({
+          languageModels: { gemini: new MockLanguageModelV4({ doGenerate }) },
+        }),
       } as unknown as ProviderRegistry,
     });
 
@@ -83,7 +90,9 @@ describe('chatCompletionsRoute', () => {
     }));
     const app = createApp({
       registry: {
-        openai: new MockProviderV4({ languageModels: { model: new MockLanguageModelV4({ doGenerate }) } }),
+        openai: new MockProviderV4({
+          languageModels: { model: new MockLanguageModelV4({ doGenerate }) },
+        }),
       } as unknown as ProviderRegistry,
     });
 
@@ -110,7 +119,9 @@ describe('chatCompletionsRoute', () => {
     }));
     const app = createApp({
       registry: {
-        google: new MockProviderV4({ languageModels: { gemini: new MockLanguageModelV4({ doGenerate }) } }),
+        google: new MockProviderV4({
+          languageModels: { gemini: new MockLanguageModelV4({ doGenerate }) },
+        }),
       } as unknown as ProviderRegistry,
     });
 
@@ -151,7 +162,10 @@ describe('chatCompletionsRoute', () => {
         cache_control: { type: 'ephemeral' },
         messages: [
           { role: 'system', content: 'system', cache_control: { type: 'ephemeral' } },
-          { role: 'user', content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }] },
+          {
+            role: 'user',
+            content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+          },
         ],
       }),
     });
@@ -160,21 +174,25 @@ describe('chatCompletionsRoute', () => {
     const call = doGenerate.mock.calls[0][0] as Record<string, any>;
     expect(call.providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral' });
     expect(call.prompt[0].providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral' });
-    expect(call.prompt[1].content[0].providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral' });
+    expect(call.prompt[1].content[0].providerOptions?.anthropic?.cacheControl).toEqual({
+      type: 'ephemeral',
+    });
   });
 });
 
 describe('buildLanguageParams', () => {
   it('maps OpenAI wire fields to cross-provider language params', () => {
-    const params = buildLanguageParams(baseRequest({
-      temperature: 0.5,
-      top_p: 0.9,
-      top_k: 40,
-      max_tokens: 256,
-      presence_penalty: 0.1,
-      frequency_penalty: 0.2,
-      seed: 42,
-    }));
+    const params = buildLanguageParams(
+      baseRequest({
+        temperature: 0.5,
+        top_p: 0.9,
+        top_k: 40,
+        max_tokens: 256,
+        presence_penalty: 0.1,
+        frequency_penalty: 0.2,
+        seed: 42,
+      }),
+    );
 
     expect(params).toEqual({
       temperature: 0.5,
@@ -194,7 +212,9 @@ describe('buildLanguageParams', () => {
   });
 
   it('prefers max_completion_tokens over deprecated max_tokens when both are present', () => {
-    const params = buildLanguageParams(baseRequest({ max_tokens: 100, max_completion_tokens: 512 }));
+    const params = buildLanguageParams(
+      baseRequest({ max_tokens: 100, max_completion_tokens: 512 }),
+    );
     expect(params.maxOutputTokens).toBe(512);
   });
 
@@ -254,7 +274,13 @@ describe('extractReasoningDetails', () => {
     ]);
 
     expect(details).toEqual([
-      { type: 'reasoning.encrypted', id: expect.stringMatching(/^reasoning-/), index: 0, data: 'encrypted_blob', format: 'unknown' },
+      {
+        type: 'reasoning.encrypted',
+        id: expect.stringMatching(/^reasoning-/),
+        index: 0,
+        data: 'encrypted_blob',
+        format: 'unknown',
+      },
     ]);
   });
 

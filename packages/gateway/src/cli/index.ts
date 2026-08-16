@@ -28,7 +28,7 @@ import { loadLayeredConfig } from '../config/layered.js';
 import { finalizeConfig } from '../config/parse.js';
 import type { GatewayConfig } from '../config/schema.js';
 import { createGateway } from '../gateway.js';
-import { PROVIDER_NAMES, type ProviderConfigMap,providers } from '../providers/registry.js';
+import { PROVIDER_NAMES, type ProviderConfigMap, providers } from '../providers/registry.js';
 import { helpText, parseCliArgs, parsePort } from './args.js';
 import { startupBanner } from './banner.js';
 
@@ -181,7 +181,8 @@ async function main() {
       hostname: host,
     },
     (info) => {
-      const displayHost = info.address === '0.0.0.0' || info.address === '::' ? 'localhost' : info.address;
+      const displayHost =
+        info.address === '0.0.0.0' || info.address === '::' ? 'localhost' : info.address;
       console.log(`listening on http://${displayHost}:${info.port}`);
     },
   );

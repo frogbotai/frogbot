@@ -5,5 +5,6 @@ import type { Plugin } from 'frogbot';
 export type ImportExportPluginOptions = ImportExportPluginConfig;
 
 export function importExportPlugin(options: ImportExportPluginOptions): Plugin {
-  return async (config) => await payloadImportExportPlugin(options)(config as never) as unknown as typeof config;
+  return async (config) =>
+    (await payloadImportExportPlugin(options)(config as never)) as unknown as typeof config;
 }

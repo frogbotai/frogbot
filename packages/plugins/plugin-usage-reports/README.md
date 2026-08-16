@@ -22,7 +22,9 @@ The usage-log list gains Payload's experimental visual grouping. Set `pageSize` 
 ```ts
 plugins: [
   usageReportsPlugin(),
-  importExportPlugin({ collections: [{ slug: 'usage-logs', import: false, export: { format: 'csv' } }] }),
+  importExportPlugin({
+    collections: [{ slug: 'usage-logs', import: false, export: { format: 'csv' } }],
+  }),
 ];
 ```
 

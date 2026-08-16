@@ -5,5 +5,15 @@ import { credentialExecution } from '../../credential-execution.js';
 import { createPagerduty, pagerdutyActions } from './index.js';
 
 const pagerduty = createPagerduty();
-pieceContract({ piece: pagerduty, service: 'pagerduty', credentialType: 'secret_text', actions: pagerdutyActions });
-credentialExecution({ module, piece: pagerduty, service: 'pagerduty', credential: { type: 'SECRET_TEXT', secret_text: 'pagerduty_test_key' } });
+pieceContract({
+  piece: pagerduty,
+  service: 'pagerduty',
+  credentialType: 'secret_text',
+  actions: pagerdutyActions,
+});
+credentialExecution({
+  module,
+  piece: pagerduty,
+  service: 'pagerduty',
+  credential: { type: 'SECRET_TEXT', secret_text: 'pagerduty_test_key' },
+});

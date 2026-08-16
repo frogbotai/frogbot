@@ -26,7 +26,11 @@ export type StreamErrorMaskOptions = {
  * error message. Errors without a status are server faults (500-class), so
  * they mask in production too.
  */
-function maskStreamErrorMessage(message: string, status: number | undefined, opts: StreamErrorMaskOptions): string {
+function maskStreamErrorMessage(
+  message: string,
+  status: number | undefined,
+  opts: StreamErrorMaskOptions,
+): string {
   return maybeMaskMessage(redactKeyFragments(message), {
     status: status ?? 500,
     requestId: opts.requestId,
@@ -34,17 +38,31 @@ function maskStreamErrorMessage(message: string, status: number | undefined, opt
   });
 }
 
-export function extractOpenAIStreamErrorInfo(error: unknown, opts: StreamErrorMaskOptions = {}): StreamErrorInfo {
+export function extractOpenAIStreamErrorInfo(
+  error: unknown,
+  opts: StreamErrorMaskOptions = {},
+): StreamErrorInfo {
   if (error instanceof Error) {
     const apiErr = error as { statusCode?: number; message: string };
     return {
-      message: maskStreamErrorMessage(apiErr.message || 'An error occurred during streaming', apiErr.statusCode, opts),
-      type: typeof apiErr.statusCode === 'number' ? statusToOpenAIType(apiErr.statusCode) : 'server_error',
+      message: maskStreamErrorMessage(
+        apiErr.message || 'An error occurred during streaming',
+        apiErr.statusCode,
+        opts,
+      ),
+      type:
+        typeof apiErr.statusCode === 'number'
+          ? statusToOpenAIType(apiErr.statusCode)
+          : 'server_error',
       code: typeof apiErr.statusCode === 'number' ? String(apiErr.statusCode) : null,
     };
   }
   if (typeof error === 'string') {
-    return { message: maskStreamErrorMessage(error, undefined, opts), type: 'server_error', code: null };
+    return {
+      message: maskStreamErrorMessage(error, undefined, opts),
+      type: 'server_error',
+      code: null,
+    };
   }
   if (typeof error === 'object' && error !== null) {
     const obj = error as Record<string, unknown>;
@@ -61,17 +79,28 @@ export function extractOpenAIStreamErrorInfo(error: unknown, opts: StreamErrorMa
   return { message: 'An error occurred during streaming', type: 'server_error', code: null };
 }
 
-export function extractAnthropicStreamErrorInfo(error: unknown, opts: StreamErrorMaskOptions = {}): StreamErrorInfo {
+export function extractAnthropicStreamErrorInfo(
+  error: unknown,
+  opts: StreamErrorMaskOptions = {},
+): StreamErrorInfo {
   if (error instanceof Error) {
     const apiErr = error as { statusCode?: number; message: string };
     return {
-      message: maskStreamErrorMessage(apiErr.message || 'An error occurred during streaming', apiErr.statusCode, opts),
+      message: maskStreamErrorMessage(
+        apiErr.message || 'An error occurred during streaming',
+        apiErr.statusCode,
+        opts,
+      ),
       type: apiErr.statusCode ? statusToAnthropicType(apiErr.statusCode) : 'api_error',
       code: typeof apiErr.statusCode === 'number' ? String(apiErr.statusCode) : null,
     };
   }
   if (typeof error === 'string') {
-    return { message: maskStreamErrorMessage(error, undefined, opts), type: 'api_error', code: null };
+    return {
+      message: maskStreamErrorMessage(error, undefined, opts),
+      type: 'api_error',
+      code: null,
+    };
   }
   if (typeof error === 'object' && error !== null) {
     const obj = error as Record<string, unknown>;

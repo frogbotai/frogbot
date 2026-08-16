@@ -99,7 +99,9 @@ describe('scaffold', () => {
   it('surfaces a missing packed template', () => {
     const options = createDest();
 
-    expect(() => scaffold({ ...options, templateDir: path.join(options.dest, 'missing') })).toThrow();
+    expect(() =>
+      scaffold({ ...options, templateDir: path.join(options.dest, 'missing') }),
+    ).toThrow();
   });
 
   it('writes scoped release-age exclusions to the pnpm workspace config for pnpm only', () => {
@@ -109,7 +111,9 @@ describe('scaffold', () => {
     expect(fs.readFileSync(path.join(pnpmOptions.dest, 'pnpm-workspace.yaml'), 'utf8')).toBe(
       "allowBuilds:\n  sharp: true\n  esbuild: true\nminimumReleaseAgeExclude:\n  - frogbot\n  - '@frogbotai/*'\n",
     );
-    const pkg = JSON.parse(fs.readFileSync(path.join(pnpmOptions.dest, 'package.json'), 'utf8')) as {
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(pnpmOptions.dest, 'package.json'), 'utf8'),
+    ) as {
       pnpm?: unknown;
     };
     expect(pkg.pnpm).toBeUndefined();

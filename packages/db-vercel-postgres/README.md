@@ -11,8 +11,8 @@ pnpm add @frogbotai/db-vercel-postgres
 ## Usage
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { vercelPostgresAdapter } from '@frogbotai/db-vercel-postgres'
+import { buildConfig } from 'frogbot';
+import { vercelPostgresAdapter } from '@frogbotai/db-vercel-postgres';
 
 export default buildConfig({
   db: vercelPostgresAdapter({
@@ -21,5 +21,5 @@ export default buildConfig({
     },
   }),
   // ...rest of config
-})
+});
 ```

@@ -15,7 +15,9 @@ export type ReasoningMetadata = {
   signature?: string;
 };
 
-export function extractReasoningMetadata(providerMetadata?: Record<string, Record<string, unknown>>  ): ReasoningMetadata {
+export function extractReasoningMetadata(
+  providerMetadata?: Record<string, Record<string, unknown>>,
+): ReasoningMetadata {
   if (!providerMetadata) return {};
 
   for (const metadata of Object.values(providerMetadata)) {

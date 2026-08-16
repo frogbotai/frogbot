@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const pawnIcon: IconNode = [
   [
@@ -9,8 +9,8 @@ export const pawnIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const PawnIcon = createLucideIcon('Pawn', pawnIcon, 0, '0 -960 960 960')
+const PawnIcon = createLucideIcon('Pawn', pawnIcon, 0, '0 -960 960 960');
 
-export default PawnIcon
+export default PawnIcon;

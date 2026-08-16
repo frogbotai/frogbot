@@ -15,14 +15,15 @@ import { type Hooks } from './hooks.js';
 const okGenerate = () =>
   vi.fn(() =>
     Promise.resolve({
-    content: [{ type: 'text' as const, text: 'hello' }],
-    finishReason: { unified: 'stop' as const, raw: 'stop' },
-    usage: {
-      inputTokens: { total: 10, noCache: 10, cacheRead: undefined, cacheWrite: undefined },
-      outputTokens: { total: 5, text: 5, reasoning: undefined },
-    },
-    warnings: [],
-  }));
+      content: [{ type: 'text' as const, text: 'hello' }],
+      finishReason: { unified: 'stop' as const, raw: 'stop' },
+      usage: {
+        inputTokens: { total: 10, noCache: 10, cacheRead: undefined, cacheWrite: undefined },
+        outputTokens: { total: 5, text: 5, reasoning: undefined },
+      },
+      warnings: [],
+    }),
+  );
 
 function makeGateway(hooks: Hooks, doGenerate = okGenerate()): Gateway {
   const gw = createGateway({ providers: { openai: { apiKey: 'test-key' } }, hooks });
@@ -36,13 +37,21 @@ describe('gateway.operation', () => {
   it('start fires beforeOperation with the seeded context and no request', async () => {
     const beforeOperation = vi.fn();
     const gw = makeGateway({ beforeOperation: [beforeOperation] });
-    const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o-mini', context: { tenant: 'a' } });
+    const op = gw.operation({
+      operation: 'chat.completions',
+      model: 'openai/gpt-4o-mini',
+      context: { tenant: 'a' },
+    });
 
     await op.start();
 
     expect(beforeOperation).toHaveBeenCalledOnce();
     const args = beforeOperation.mock.calls[0][0];
-    expect(args).toMatchObject({ phase: 'beforeOperation', operation: 'chat.completions', requestId: op.requestId });
+    expect(args).toMatchObject({
+      phase: 'beforeOperation',
+      operation: 'chat.completions',
+      requestId: op.requestId,
+    });
     expect(args.context).toBe(op.context);
     expect(args.context.tenant).toBe('a');
     expect(args.request).toBeUndefined();
@@ -76,7 +85,11 @@ describe('gateway.operation', () => {
         },
       ],
     });
-    const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o-mini', context: { seed: 1 } });
+    const op = gw.operation({
+      operation: 'chat.completions',
+      model: 'openai/gpt-4o-mini',
+      context: { seed: 1 },
+    });
 
     await op.start();
     await generateText({ model: op.chatModel(), prompt: 'hi' });
@@ -128,7 +141,11 @@ describe('gateway.operation', () => {
     await op.start();
     await generateText({ model: op.chatModel(), prompt: 'hi' });
     await expect(
-      op.finish({ finishReason: 'abort', usage: { inputTokens: 1, outputTokens: 2, totalTokens: 3 }, error: explicitError }),
+      op.finish({
+        finishReason: 'abort',
+        usage: { inputTokens: 1, outputTokens: 2, totalTokens: 3 },
+        error: explicitError,
+      }),
     ).resolves.toBeUndefined();
     await op.finish();
 
@@ -153,9 +170,9 @@ describe('gateway.operation', () => {
     const op = gw.operation({ operation: 'chat.completions', model: 'openai/gpt-4o-mini' });
 
     await op.start();
-    await expect(generateText({ model: op.chatModel(), prompt: 'hi', maxRetries: 0 })).rejects.toThrow(
-      'upstream failed',
-    );
+    await expect(
+      generateText({ model: op.chatModel(), prompt: 'hi', maxRetries: 0 }),
+    ).rejects.toThrow('upstream failed');
     await op.finish();
 
     expect(afterError).toHaveBeenCalledOnce();

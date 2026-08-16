@@ -20,7 +20,11 @@ type OAuthEndpointsOptions = {
 
 export function createOAuthEndpoints(options: OAuthEndpointsOptions): Endpoint[] {
   return [
-    createAuthorizeEndpoint({ ...options, path: options.paths.authorize, callbackPath: options.paths.callback }),
+    createAuthorizeEndpoint({
+      ...options,
+      path: options.paths.authorize,
+      callbackPath: options.paths.callback,
+    }),
     ...createCallbackEndpoints({ ...options, path: options.paths.callback }),
     ...createLifecycleEndpoints(options),
   ];

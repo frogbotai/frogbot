@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@frogbotai/plugin-import-export', () => {
   throw Object.assign(
-    new Error("Cannot find package '@frogbotai/plugin-import-export' imported from /app/node_modules/@frogbotai/plugin-usage-reports/dist/index.js"),
+    new Error(
+      "Cannot find package '@frogbotai/plugin-import-export' imported from /app/node_modules/@frogbotai/plugin-usage-reports/dist/index.js",
+    ),
     { code: 'ERR_MODULE_NOT_FOUND' },
   );
 });

@@ -109,10 +109,7 @@ export type RefreshHook<T extends TypeWithID = any> = (args: {
   user: T;
 }) => any;
 
-export type MeHook<T extends TypeWithID = any> = (args: {
-  req: FrogbotRequest;
-  user: T;
-}) => any;
+export type MeHook<T extends TypeWithID = any> = (args: { req: FrogbotRequest; user: T }) => any;
 
 export type CollectionHooks<T extends TypeWithID = any> = {
   afterChange?: AfterChangeHook<T>[];
@@ -130,5 +127,3 @@ export type CollectionHooks<T extends TypeWithID = any> = {
   refresh?: RefreshHook<T>[];
   me?: MeHook<T>[];
 };
-
-

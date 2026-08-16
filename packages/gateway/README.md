@@ -84,18 +84,18 @@ curl http://localhost:3939/v1/chat/completions \
 
 ## Endpoints
 
-| Route | Compatibility | Streaming |
-| --- | --- | --- |
-| `POST /v1/chat/completions` | OpenAI Chat Completions | Yes |
-| `POST /v1/responses` | OpenAI Responses API | Yes |
-| `POST /v1/messages` | Anthropic Messages API | Yes |
-| `POST /v1/embeddings` | OpenAI Embeddings | — |
-| `POST /v1/images/generations` | OpenAI Images | — |
-| `POST /v1/audio/speech` | OpenAI Speech | — |
-| `POST /v1/audio/transcriptions` | OpenAI Transcriptions | — |
-| `POST /v1/rerank` | Reranking | — |
-| `POST /v1/videos/generations` | Video generation | — |
-| `GET /v1/models` | OpenAI Models (catalog discovery) | — |
+| Route                           | Compatibility                     | Streaming |
+| ------------------------------- | --------------------------------- | --------- |
+| `POST /v1/chat/completions`     | OpenAI Chat Completions           | Yes       |
+| `POST /v1/responses`            | OpenAI Responses API              | Yes       |
+| `POST /v1/messages`             | Anthropic Messages API            | Yes       |
+| `POST /v1/embeddings`           | OpenAI Embeddings                 | —         |
+| `POST /v1/images/generations`   | OpenAI Images                     | —         |
+| `POST /v1/audio/speech`         | OpenAI Speech                     | —         |
+| `POST /v1/audio/transcriptions` | OpenAI Transcriptions             | —         |
+| `POST /v1/rerank`               | Reranking                         | —         |
+| `POST /v1/videos/generations`   | Video generation                  | —         |
+| `GET /v1/models`                | OpenAI Models (catalog discovery) | —         |
 
 Routes are also served at their bare paths (`/chat/completions`), so mounting the handler under any prefix just works.
 

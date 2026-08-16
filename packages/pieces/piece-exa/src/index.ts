@@ -14,7 +14,8 @@ export function createExa(config?: PieceFactoryConfig) {
   const tool = piece.tool;
   piece.actions = piece.actions.filter((action) => action !== 'custom_api_call');
   piece.tool = (action) => {
-    if (action === 'custom_api_call') throw new Error("[frogbot] Piece 'exa' has no action 'custom_api_call'.");
+    if (action === 'custom_api_call')
+      throw new Error("[frogbot] Piece 'exa' has no action 'custom_api_call'.");
     return tool(action);
   };
   return Object.assign(piece, {

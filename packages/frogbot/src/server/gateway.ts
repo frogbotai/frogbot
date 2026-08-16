@@ -14,13 +14,21 @@ export function createGatewayHandler(frogbot: Frogbot): GatewayHandler {
 }
 
 function methodForPath(pathname: string): AIMethod | undefined {
-  if (/\/(?:chat\/completions|messages|responses|images\/generations|audio\/speech|videos\/generations)$/.test(pathname)) return 'generateText';
+  if (
+    /\/(?:chat\/completions|messages|responses|images\/generations|audio\/speech|videos\/generations)$/.test(
+      pathname,
+    )
+  )
+    return 'generateText';
   if (/\/embeddings$/.test(pathname)) return 'embed';
   if (/\/audio\/transcriptions$/.test(pathname)) return 'transcribe';
   if (/\/rerank$/.test(pathname)) return 'rerank';
 }
 
-export async function handleGatewayRequest({ frogbot, request }: HandleGatewayRequestArgs): Promise<Response> {
+export async function handleGatewayRequest({
+  frogbot,
+  request,
+}: HandleGatewayRequestArgs): Promise<Response> {
   const gateway = frogbot.gateway;
   const ai = frogbot.config.ai;
   if (!gateway || !ai) {
@@ -31,7 +39,10 @@ export async function handleGatewayRequest({ frogbot, request }: HandleGatewayRe
   const auth = await frogbot.auth({ headers: request.headers, req });
   req.user = auth.user;
   if (!req.user) {
-    return Response.json({ error: { message: 'Unauthorized', type: 'authentication_error' } }, { status: 401 });
+    return Response.json(
+      { error: { message: 'Unauthorized', type: 'authentication_error' } },
+      { status: 401 },
+    );
   }
 
   const url = new URL(request.url);

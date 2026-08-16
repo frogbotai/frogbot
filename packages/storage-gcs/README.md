@@ -11,8 +11,8 @@ pnpm add @frogbotai/storage-gcs
 ## Usage
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { gcsStorage } from '@frogbotai/storage-gcs'
+import { buildConfig } from 'frogbot';
+import { gcsStorage } from '@frogbotai/storage-gcs';
 
 export default buildConfig({
   storage: [
@@ -28,5 +28,5 @@ export default buildConfig({
     }),
   ],
   // ...rest of config
-})
+});
 ```

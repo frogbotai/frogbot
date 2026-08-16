@@ -45,17 +45,21 @@ describe('rerankRoute', () => {
       ],
       meta: { billed_units: { search_units: 1 } },
     });
-    expect(doRerank).toHaveBeenCalledWith(expect.objectContaining({
-      query: 'frog robot',
-      documents: { type: 'text', values: ['frog', 'robot'] },
-      topN: 2,
-    }));
+    expect(doRerank).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: 'frog robot',
+        documents: { type: 'text', values: ['frog', 'robot'] },
+        topN: 2,
+      }),
+    );
   });
 
   it('rejects mixed document types', async () => {
     const app = createApp({
       registry: {
-        cohere: new MockProviderV4({ rerankingModels: { 'rerank-v3.5': new MockRerankingModelV4() } }),
+        cohere: new MockProviderV4({
+          rerankingModels: { 'rerank-v3.5': new MockRerankingModelV4() },
+        }),
       } as unknown as ProviderRegistry,
     });
 

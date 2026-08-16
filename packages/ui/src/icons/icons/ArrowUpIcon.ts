@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const arrowUpIcon: IconNode = [
   [
@@ -17,8 +17,8 @@ export const arrowUpIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const ArrowUpIcon = createLucideIcon('ArrowUp', arrowUpIcon)
+const ArrowUpIcon = createLucideIcon('ArrowUp', arrowUpIcon);
 
-export default ArrowUpIcon
+export default ArrowUpIcon;

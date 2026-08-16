@@ -22,7 +22,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
-import { buildProviderRegistry, type ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import {
+  buildProviderRegistry,
+  type ProviderRegistry,
+} from '../../packages/gateway/src/providers/registry.js';
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
@@ -151,10 +154,19 @@ describe.skipIf(!RUN_E2E)('gateway E2E — Zen /v1/responses (Responses wire)', 
       const { status, body } = await postJson<ResponsesBody>(app, '/v1/responses', {
         model: MODEL,
         input: [
-          { role: 'system', content: 'You are a terse assistant. Answer in as few words as possible.' },
+          {
+            role: 'system',
+            content: 'You are a terse assistant. Answer in as few words as possible.',
+          },
           { role: 'user', content: [{ type: 'input_text', text: 'My name is Waldo.' }] },
-          { role: 'assistant', content: [{ type: 'output_text', text: 'Nice to meet you, Waldo.' }] },
-          { role: 'user', content: [{ type: 'input_text', text: 'What is my name? Reply with just the name.' }] },
+          {
+            role: 'assistant',
+            content: [{ type: 'output_text', text: 'Nice to meet you, Waldo.' }],
+          },
+          {
+            role: 'user',
+            content: [{ type: 'input_text', text: 'What is my name? Reply with just the name.' }],
+          },
         ],
         max_output_tokens: 1024,
       });
@@ -257,7 +269,9 @@ describe.skipIf(!RUN_E2E)('gateway E2E — Zen /v1/responses (Responses wire)', 
       const call = (body.output ?? []).find((item) => item.type === 'function_call');
 
       if (!call) {
-        console.warn('[zen.responses.e2e] model did not call the tool; asserting plain envelope instead');
+        console.warn(
+          '[zen.responses.e2e] model did not call the tool; asserting plain envelope instead',
+        );
         expect(body.object).toBe('response');
         expect(body.status).toBeTruthy();
         return;
@@ -284,7 +298,10 @@ describe.skipIf(!RUN_E2E)('gateway E2E — Zen /v1/responses (Responses wire)', 
       const { status, body } = await postJson<ResponsesBody>(app, '/v1/responses', {
         model: MODEL,
         input: [
-          { role: 'user', content: 'What is the weather in Paris? You MUST use the get_weather tool.' },
+          {
+            role: 'user',
+            content: 'What is the weather in Paris? You MUST use the get_weather tool.',
+          },
           {
             type: 'function_call',
             id: 'fc_1',
@@ -323,14 +340,16 @@ describe.skipIf(!RUN_E2E)('gateway E2E — Zen /v1/responses (Responses wire)', 
   it(
     'response envelope echoes spec-required tools/tool_choice/parallel_tool_calls (G21 — real-model confirmation)',
     async () => {
-      const { status, body } = await postJson<ResponsesBody & {
-        tools?: unknown[];
-        tool_choice?: unknown;
-        parallel_tool_calls?: boolean;
-        temperature?: number;
-        top_p?: number;
-        instructions?: string | null;
-      }>(app, '/v1/responses', {
+      const { status, body } = await postJson<
+        ResponsesBody & {
+          tools?: unknown[];
+          tool_choice?: unknown;
+          parallel_tool_calls?: boolean;
+          temperature?: number;
+          top_p?: number;
+          instructions?: string | null;
+        }
+      >(app, '/v1/responses', {
         model: MODEL,
         input: 'Say hi',
         instructions: 'You are a terse assistant.',

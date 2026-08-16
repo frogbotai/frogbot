@@ -1,5 +1,10 @@
 import type { OAuthProvider } from '../types.js';
-import { authorizationUrl, jsonRequest, type OAuthProviderOptions, tokenRequest } from './shared.js';
+import {
+  authorizationUrl,
+  jsonRequest,
+  type OAuthProviderOptions,
+  tokenRequest,
+} from './shared.js';
 
 const GRAPH_ME_URL = 'https://graph.microsoft.com/v1.0/me';
 

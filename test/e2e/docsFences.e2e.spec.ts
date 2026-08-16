@@ -44,7 +44,9 @@ describe('docs fences gate', () => {
     const result = await run(dir);
 
     expect(result.code).toBe(1);
-    expect(result.output).toContain(`${join('.idea', 'tmp', dir.split('/').at(-1)!, 'fixture.mdx')}:3`);
+    expect(result.output).toContain(
+      `${join('.idea', 'tmp', dir.split('/').at(-1)!, 'fixture.mdx')}:3`,
+    );
     expect(result.output).not.toContain('fixture.mdx:7');
   });
 

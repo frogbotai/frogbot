@@ -20,6 +20,4 @@ export const voyageEmbedDimensions: BeforeUpstreamHook = (args) => {
   delete unknown.dimensions;
 };
 
-export const voyageBeforeUpstream: BeforeUpstreamHook[] = [
-  voyageEmbedDimensions,
-];
+export const voyageBeforeUpstream: BeforeUpstreamHook[] = [voyageEmbedDimensions];

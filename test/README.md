@@ -92,19 +92,19 @@ test/
 
 ## Environment Variables
 
-| Variable | Values | Default | Description |
-| --- | --- | --- | --- |
+| Variable           | Values                          | Default   | Description             |
+| ------------------ | ------------------------------- | --------- | ----------------------- |
 | `FROGBOT_DATABASE` | `mongodb`, `postgres`, `sqlite` | `mongodb` | Which DB adapter to use |
 
 ## Docker Profiles
 
-| Profile | Services | Port(s) |
-| --- | --- | --- |
-| `mongodb` | MongoDB 8 | 27018 |
-| `postgres` | PostgreSQL (PostGIS + pgvector) | 5433 |
-| `storage` | LocalStack (S3), Azurite, fake-gcs-server, Vercel Blob | 4566, 10000, 4443, 3100 |
-| `redis` | Redis 7 | 6379 |
-| `all` | Everything above | All |
+| Profile    | Services                                               | Port(s)                 |
+| ---------- | ------------------------------------------------------ | ----------------------- |
+| `mongodb`  | MongoDB 8                                              | 27018                   |
+| `postgres` | PostgreSQL (PostGIS + pgvector)                        | 5433                    |
+| `storage`  | LocalStack (S3), Azurite, fake-gcs-server, Vercel Blob | 4566, 10000, 4443, 3100 |
+| `redis`    | Redis 7                                                | 6379                    |
+| `all`      | Everything above                                       | All                     |
 
 ## Convenience Scripts
 
@@ -194,6 +194,7 @@ export default buildTestConfig({ collections: [Users, Things] });
 ```
 
 **`buildTestConfig`** injects:
+
 - `secret: 'test-secret'`
 - `db`: adapter from generated `databaseAdapter.js` (controlled by `FROGBOT_DATABASE`)
 - `typescript: { autoGenerate: false }`
@@ -201,6 +202,7 @@ export default buildTestConfig({ collections: [Users, Things] });
 You only provide `collections` (and optionally `plugins`, `endpoints`, etc).
 
 **`openAccess`** is an object matching Payload's pattern:
+
 ```ts
 const openAccess = {
   create: () => true,
@@ -231,9 +233,15 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 describe('my-feature', () => {
   let booted: BootedFrogbot;
 
-  beforeAll(async () => { booted = await bootFrogbot(dirname); });
-  afterAll(async () => { await booted.shutdown(); });
-  beforeEach(async () => { await clearAndSeed(booted.frogbot, 'empty'); });
+  beforeAll(async () => {
+    booted = await bootFrogbot(dirname);
+  });
+  afterAll(async () => {
+    await booted.shutdown();
+  });
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
+  });
 
   it('creates via REST', async () => {
     const res = await booted.restClient.post(`/api/${thingsSlug}`, { title: 'Hi' });
@@ -296,6 +304,7 @@ This creates `frogbot-types.ts` in your suite directory. Commit it.
 ## `bootFrogbot` internals
 
 `bootFrogbot(dirname)` does:
+
 1. Reads `FROGBOT_DATABASE` and uses the generated adapter
 2. Dynamic-imports `<dirname>/config.ts` (must default-export a `buildTestConfig(...)` call)
 3. Calls `bootPayload({ config })` via `frogbot/test` (thin wrapper around Payload's `getPayload`)
@@ -354,6 +363,7 @@ first (`pnpm --filter frogbot build`).
 ### When to regenerate
 
 Run `pnpm dev:generate-types` after:
+
 - Editing a suite's `config.ts` (adding/removing collections or fields)
 - Adding a new suite (create config first, then generate)
 
@@ -384,11 +394,11 @@ Fully mocked — no real API calls. Resend tests mock `global.fetch`, Nodemailer
 
 ## Where to add a test
 
-| Kind | Location | Pattern |
-| --- | --- | --- |
-| Unit (pure logic, colocated with source) | `packages/**` or `apps/**` | `*.spec.ts` |
-| Integration (boot frogbot, hit REST) | `test/<feature>/int.spec.ts` | one suite dir per feature |
-| End-to-end (Playwright browser) | `test/e2e/*.e2e.spec.ts` | promote `test.skip` to `test(...)` |
+| Kind                                     | Location                     | Pattern                            |
+| ---------------------------------------- | ---------------------------- | ---------------------------------- |
+| Unit (pure logic, colocated with source) | `packages/**` or `apps/**`   | `*.spec.ts`                        |
+| Integration (boot frogbot, hit REST)     | `test/<feature>/int.spec.ts` | one suite dir per feature          |
+| End-to-end (Playwright browser)          | `test/e2e/*.e2e.spec.ts`     | promote `test.skip` to `test(...)` |
 
 ## Running
 

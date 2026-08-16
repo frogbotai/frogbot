@@ -10,9 +10,10 @@ type ResolveMcpAccessOptions = {
   req: PayloadRequest;
 };
 
-const toCamelCase = (value: string) => value
-  .replace(/[-_\s]+(.)?/g, (_, character: string | undefined) => character?.toUpperCase() ?? '')
-  .replace(/^(.)/, (_, character: string) => character.toLowerCase());
+const toCamelCase = (value: string) =>
+  value
+    .replace(/[-_\s]+(.)?/g, (_, character: string | undefined) => character?.toUpperCase() ?? '')
+    .replace(/^(.)/, (_, character: string) => character.toLowerCase());
 
 export function validateMcpCapabilities(pluginOptions: MCPPluginConfig): void {
   const reserved = new Set(['auth', 'config', 'jobs']);
@@ -23,31 +24,43 @@ export function validateMcpCapabilities(pluginOptions: MCPPluginConfig): void {
     for (const slug of Object.keys(entities ?? {})) {
       const capability = toCamelCase(slug);
       if (reserved.has(capability)) {
-        throw new Error(`[plugin-mcp] ${type} slug '${slug}' maps to reserved MCP capability '${capability}'.`);
+        throw new Error(
+          `[plugin-mcp] ${type} slug '${slug}' maps to reserved MCP capability '${capability}'.`,
+        );
       }
     }
   }
 }
 
 function collectionGrants(options: MCPPluginConfig['collections']) {
-  return Object.fromEntries(Object.entries(options ?? {}).map(([slug, config]) => [
-    toCamelCase(slug),
-    config?.enabled === true ? { create: true, delete: true, find: true, update: true } : config?.enabled,
-  ]));
+  return Object.fromEntries(
+    Object.entries(options ?? {}).map(([slug, config]) => [
+      toCamelCase(slug),
+      config?.enabled === true
+        ? { create: true, delete: true, find: true, update: true }
+        : config?.enabled,
+    ]),
+  );
 }
 
 function globalGrants(options: MCPPluginConfig['globals']) {
-  return Object.fromEntries(Object.entries(options ?? {}).map(([slug, config]) => [
-    toCamelCase(slug),
-    config?.enabled === true ? { find: true, update: true } : config?.enabled,
-  ]));
+  return Object.fromEntries(
+    Object.entries(options ?? {}).map(([slug, config]) => [
+      toCamelCase(slug),
+      config?.enabled === true ? { find: true, update: true } : config?.enabled,
+    ]),
+  );
 }
 
 function namedGrants(items: Array<{ name: string }> | undefined) {
   return Object.fromEntries((items ?? []).map(({ name }) => [toCamelCase(name), true]));
 }
 
-export async function resolveMcpAccess({ authenticate, pluginOptions, req }: ResolveMcpAccessOptions): Promise<MCPAccessSettings> {
+export async function resolveMcpAccess({
+  authenticate,
+  pluginOptions,
+  req,
+}: ResolveMcpAccessOptions): Promise<MCPAccessSettings> {
   const result = await authenticate({ headers: req.headers, payload: req.payload });
   if (!result.user) throw new UnauthorizedError();
 

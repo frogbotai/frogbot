@@ -30,7 +30,8 @@ function buildHooks(events: string[]): Hooks {
     afterUpstream: [() => events.push('afterUpstream')],
     afterError: [(args) => events.push(`afterError:${args.failedPhase}`)],
     afterOperation: [
-      (args) => events.push(`afterOperation:${args.finishReason ?? 'none'}:${args.error ? 'error' : 'ok'}`),
+      (args) =>
+        events.push(`afterOperation:${args.finishReason ?? 'none'}:${args.error ? 'error' : 'ok'}`),
     ],
   };
 }
@@ -269,7 +270,12 @@ describe('modality handler operation runner', () => {
     const res = await app.request(route.path, route.init());
 
     expect(res.status).toBe(200);
-    expect(events).toEqual(['beforeOperation', 'beforeUpstream', 'afterUpstream', 'afterOperation:none:ok']);
+    expect(events).toEqual([
+      'beforeOperation',
+      'beforeUpstream',
+      'afterUpstream',
+      'afterOperation:none:ok',
+    ]);
   });
 
   it.each(cases)('returns the shared error envelope for $name', async (route) => {
@@ -287,7 +293,12 @@ describe('modality handler operation runner', () => {
         param: null,
       },
     });
-    expect(events).toEqual(['beforeOperation', 'beforeUpstream', 'afterError:upstream', 'afterOperation:none:error']);
+    expect(events).toEqual([
+      'beforeOperation',
+      'beforeUpstream',
+      'afterError:upstream',
+      'afterOperation:none:error',
+    ]);
   });
 
   it('returns 499 with no body when the client aborts', async () => {

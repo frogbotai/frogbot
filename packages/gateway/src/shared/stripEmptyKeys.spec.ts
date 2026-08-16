@@ -6,7 +6,7 @@ describe('stripEmptyKeys', () => {
   test('strips top-level empty-string key', () => {
     const obj = { '': {}, city: 'San Francisco' };
     const result = stripEmptyKeys(obj) as Record<string, unknown>;
-    expect(result[''] ).toBeUndefined();
+    expect(result['']).toBeUndefined();
     expect(result.city).toBe('San Francisco');
   });
 

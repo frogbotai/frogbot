@@ -39,14 +39,7 @@ export type RolesPrewiring = {
 /** Root config keys FrogBot overrides or forbids. Excluded from the
  *  Payload pass-through so FrogBot can declare its own shape for them. */
 type FrogbotOverridden =
-  | 'admin'
-  | 'collections'
-  | 'db'
-  | 'endpoints'
-  | 'globals'
-  | 'hooks'
-  | 'plugins'
-  | 'secret';
+  'admin' | 'collections' | 'db' | 'endpoints' | 'globals' | 'hooks' | 'plugins' | 'secret';
 
 export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   /** Server-side secret used for tokens, cookies, and signing. */

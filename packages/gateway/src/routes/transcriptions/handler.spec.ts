@@ -16,7 +16,9 @@ describe('transcriptionsRoute', () => {
     }));
     const app = createApp({
       registry: {
-        openai: new MockProviderV4({ transcriptionModels: { 'whisper-1': new MockTranscriptionModelV4({ doGenerate }) } }),
+        openai: new MockProviderV4({
+          transcriptionModels: { 'whisper-1': new MockTranscriptionModelV4({ doGenerate }) },
+        }),
       } as unknown as ProviderRegistry,
     });
     const form = new FormData();
@@ -39,10 +41,12 @@ describe('transcriptionsRoute', () => {
       words: [],
       segments: [{ id: 0, seek: 0, start: 0, end: 1.5, text: 'Hello from Frogbot', tokens: [] }],
     });
-    expect(doGenerate).toHaveBeenCalledWith(expect.objectContaining({
-      audio: new Uint8Array([1, 2, 3]),
-      providerOptions: { openai: { timestampGranularities: ['segment'] } },
-    }));
+    expect(doGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        audio: new Uint8Array([1, 2, 3]),
+        providerOptions: { openai: { timestampGranularities: ['segment'] } },
+      }),
+    );
   });
 
   it('returns plain text for response_format text', async () => {
@@ -82,13 +86,18 @@ describe('transcriptionsRoute', () => {
   it('rejects missing file, oversized bodies, and wrong content type', async () => {
     const app = createApp({
       registry: {
-        openai: new MockProviderV4({ transcriptionModels: { 'whisper-1': new MockTranscriptionModelV4() } }),
+        openai: new MockProviderV4({
+          transcriptionModels: { 'whisper-1': new MockTranscriptionModelV4() },
+        }),
       } as unknown as ProviderRegistry,
     });
 
     const noFile = new FormData();
     noFile.set('model', 'openai/whisper-1');
-    const noFileRes = await app.request('/v1/audio/transcriptions', { method: 'POST', body: noFile });
+    const noFileRes = await app.request('/v1/audio/transcriptions', {
+      method: 'POST',
+      body: noFile,
+    });
     expect(noFileRes.status).toBe(400);
     expect(await noFileRes.json()).toHaveProperty('error.param', 'file');
 

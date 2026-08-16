@@ -83,10 +83,10 @@ curl -s http://localhost:3000/api/agents/assistant \
 
 ## CLI
 
-| Command | Description |
-| --- | --- |
-| `frogbot dev` | Boot the server with config file watching |
-| `frogbot start` | Boot the server for production |
+| Command                  | Description                                  |
+| ------------------------ | -------------------------------------------- |
+| `frogbot dev`            | Boot the server with config file watching    |
+| `frogbot start`          | Boot the server for production               |
 | `frogbot generate:types` | Generate `frogbot-types.ts` from your config |
 
 ## Documentation

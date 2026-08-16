@@ -19,7 +19,12 @@ describe('defaultMessagesCollection', () => {
     const renamed = defaultMessagesCollection({ slug: 'turns', threadsSlug: 'conversations' });
     expect(renamed.slug).toBe('turns');
     const thread = renamed.fields.find((f) => 'name' in f && f.name === 'thread');
-    expect(thread).toMatchObject({ type: 'relationship', relationTo: 'conversations', required: true, index: true });
+    expect(thread).toMatchObject({
+      type: 'relationship',
+      relationTo: 'conversations',
+      required: true,
+      index: true,
+    });
   });
 
   it('defines id, thread, role, parts, metadata, and usage fields', () => {
@@ -78,9 +83,15 @@ describe('defaultMessagesCollection', () => {
 
     it('permits per-operation access overrides', async () => {
       const read = () => true as const;
-      const configured = defaultMessagesCollection({ slug: 'messages', threadsSlug: 'threads', access: { read } });
+      const configured = defaultMessagesCollection({
+        slug: 'messages',
+        threadsSlug: 'threads',
+        access: { read },
+      });
       expect(configured.access?.read).toBe(read);
-      expect(await configured.access?.update?.({ req: reqWithUser('u1') })).toEqual({ 'thread.user': { equals: 'u1' } });
+      expect(await configured.access?.update?.({ req: reqWithUser('u1') })).toEqual({
+        'thread.user': { equals: 'u1' },
+      });
     });
   });
 });

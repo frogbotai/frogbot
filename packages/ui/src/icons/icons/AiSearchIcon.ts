@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const aiSearchIcon: IconNode = [
   [
@@ -26,8 +26,8 @@ export const aiSearchIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const AiSearchIcon = createLucideIcon('AiSearch', aiSearchIcon)
+const AiSearchIcon = createLucideIcon('AiSearch', aiSearchIcon);
 
-export default AiSearchIcon
+export default AiSearchIcon;

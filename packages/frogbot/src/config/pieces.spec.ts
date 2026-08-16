@@ -11,8 +11,20 @@ function piece(service: string, toolAction = 'run'): Piece {
     credentialType: 'none',
     policy: { type: 'none' },
     actions: ['run'],
-    tool: () => ({ slug: `${service}_${toolAction}`, description: 'Run', inputSchema: {} as never, execute: () => null }),
-    tools: () => [{ slug: `${service}_${toolAction}`, description: 'Run', inputSchema: {} as never, execute: () => null }],
+    tool: () => ({
+      slug: `${service}_${toolAction}`,
+      description: 'Run',
+      inputSchema: {} as never,
+      execute: () => null,
+    }),
+    tools: () => [
+      {
+        slug: `${service}_${toolAction}`,
+        description: 'Run',
+        inputSchema: {} as never,
+        execute: () => null,
+      },
+    ],
   };
 }
 
@@ -20,22 +32,35 @@ describe('piece config', () => {
   it('accepts a hand-written piece', () => {
     const example = piece('example');
     const result = sanitize({ secret: 'secret', db, collections: [], pieces: [example] });
-    expect(result.pieces).toMatchObject({ enabled: true, pieces: [example], services: { example } });
+    expect(result.pieces).toMatchObject({
+      enabled: true,
+      pieces: [example],
+      services: { example },
+    });
   });
 
   it('rejects duplicate services', () => {
-    expect(() => sanitize({ secret: 'secret', db, collections: [], pieces: [piece('example'), piece('example')] })).toThrow(
-      "Duplicate piece service: 'example'",
-    );
+    expect(() =>
+      sanitize({
+        secret: 'secret',
+        db,
+        collections: [],
+        pieces: [piece('example'), piece('example')],
+      }),
+    ).toThrow("Duplicate piece service: 'example'");
   });
 
   it('rejects unknown exposed actions', () => {
-    expect(() => sanitize({ secret: 'secret', db, collections: [], pieces: [piece('example', 'missing')] })).toThrow(
-      "Piece 'example' exposes unknown action 'missing'",
-    );
+    expect(() =>
+      sanitize({ secret: 'secret', db, collections: [], pieces: [piece('example', 'missing')] }),
+    ).toThrow("Piece 'example' exposes unknown action 'missing'");
   });
 
   it('requires a service ID at the type boundary', () => {
-    expectTypeOf<{ credentialType: 'none'; actions: []; tools: () => [] }>().not.toMatchTypeOf<Piece>();
+    expectTypeOf<{
+      credentialType: 'none';
+      actions: [];
+      tools: () => [];
+    }>().not.toMatchTypeOf<Piece>();
   });
 });

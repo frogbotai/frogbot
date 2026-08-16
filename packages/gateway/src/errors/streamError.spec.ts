@@ -50,7 +50,10 @@ describe('parseStreamErrorFrame', () => {
   });
 
   it('parses a stringified SSE data payload', () => {
-    const json = JSON.stringify({ type: 'error', error: { code: 'server_error', message: 'boom', type: 'server_error' } });
+    const json = JSON.stringify({
+      type: 'error',
+      error: { code: 'server_error', message: 'boom', type: 'server_error' },
+    });
     expect(parseStreamErrorFrame(json)?.message).toBe('boom');
   });
 
@@ -80,20 +83,54 @@ describe('inferStatusFromStreamError', () => {
     ['numeric 429 code', { message: 'x', code: 429, type: null, frame: null }, 429],
     ['numeric 503 code', { message: 'x', code: 503, type: null, frame: null }, 503],
     ['three-digit string code', { message: 'x', code: '404', type: null, frame: null }, 404],
-    ['rate_limit_exceeded keyword', { message: 'x', code: 'rate_limit_exceeded', type: null, frame: null }, 429],
-    ['insufficient_quota keyword', { message: 'x', code: 'insufficient_quota', type: null, frame: null }, 429],
-    ['too_many_requests', { message: 'x', code: 'too_many_requests', type: null, frame: null }, 429],
-    ['invalid_api_key keyword', { message: 'x', code: 'invalid_api_key', type: null, frame: null }, 401],
-    ['authentication type', { message: 'x', code: null, type: 'authentication_error', frame: null }, 401],
-    ['permission keyword', { message: 'x', code: 'permission_denied', type: null, frame: null }, 403],
+    [
+      'rate_limit_exceeded keyword',
+      { message: 'x', code: 'rate_limit_exceeded', type: null, frame: null },
+      429,
+    ],
+    [
+      'insufficient_quota keyword',
+      { message: 'x', code: 'insufficient_quota', type: null, frame: null },
+      429,
+    ],
+    [
+      'too_many_requests',
+      { message: 'x', code: 'too_many_requests', type: null, frame: null },
+      429,
+    ],
+    [
+      'invalid_api_key keyword',
+      { message: 'x', code: 'invalid_api_key', type: null, frame: null },
+      401,
+    ],
+    [
+      'authentication type',
+      { message: 'x', code: null, type: 'authentication_error', frame: null },
+      401,
+    ],
+    [
+      'permission keyword',
+      { message: 'x', code: 'permission_denied', type: null, frame: null },
+      403,
+    ],
     ['not_found keyword', { message: 'x', code: 'model_not_found', type: null, frame: null }, 404],
-    ['context_length keyword', { message: 'x', code: 'context_length_exceeded', type: null, frame: null }, 400],
-    ['overload keyword', { message: 'x', code: 'server_is_overloaded', type: null, frame: null }, 503],
+    [
+      'context_length keyword',
+      { message: 'x', code: 'context_length_exceeded', type: null, frame: null },
+      400,
+    ],
+    [
+      'overload keyword',
+      { message: 'x', code: 'server_is_overloaded', type: null, frame: null },
+      503,
+    ],
     ['timeout keyword', { message: 'x', code: 'gateway_timeout', type: null, frame: null }, 504],
     ['unknown → 500', { message: 'x', code: 'mystery', type: null, frame: null }, 500],
     ['nothing → 500', { message: 'x', code: null, type: null, frame: null }, 500],
   ])('%s', (_, parsed, expected) => {
-    expect(inferStatusFromStreamError(parsed as Parameters<typeof inferStatusFromStreamError>[0])).toBe(expected);
+    expect(
+      inferStatusFromStreamError(parsed as Parameters<typeof inferStatusFromStreamError>[0]),
+    ).toBe(expected);
   });
 });
 
@@ -105,7 +142,12 @@ describe('streamErrorFrameToEnvelope', () => {
   it('produces a complete OpenAI envelope for a rate-limit frame', () => {
     const result = streamErrorFrameToEnvelope({
       type: 'error',
-      error: { code: 'rate_limit_exceeded', message: 'Rate limit reached', type: 'rate_limit_error', param: null },
+      error: {
+        code: 'rate_limit_exceeded',
+        message: 'Rate limit reached',
+        type: 'rate_limit_error',
+        param: null,
+      },
     });
     expect(result).toEqual({
       status: 429,
@@ -131,7 +173,10 @@ describe('streamErrorFrameToEnvelope', () => {
   });
 
   it('coerces numeric codes to strings in the envelope', () => {
-    const result = streamErrorFrameToEnvelope({ type: 'error', error: { code: 429, message: 'rate limited' } });
+    const result = streamErrorFrameToEnvelope({
+      type: 'error',
+      error: { code: 429, message: 'rate limited' },
+    });
     expect(result?.body.error.code).toBe('429');
     expect(result?.status).toBe(429);
   });

@@ -10,10 +10,7 @@
 //     'error' on demand (a free model won't reproduce that fault reliably).
 // Both are captured here with a MockLanguageModelV4.
 
-import type {
-  LanguageModelV4,
-  LanguageModelV4CallOptions,
-} from '@ai-sdk/provider';
+import type { LanguageModelV4, LanguageModelV4CallOptions } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
@@ -22,13 +19,17 @@ import { postJson } from '../__helpers/gateway/post-json.js';
 
 // A mock model that records the options it was called with, so a test can
 // assert exactly which provider options the gateway forwarded to the SDK seam.
-function createCapturingModel(capture: (options: LanguageModelV4CallOptions) => void): LanguageModelV4 {
+function createCapturingModel(
+  capture: (options: LanguageModelV4CallOptions) => void,
+): LanguageModelV4 {
   return {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
     defaultObjectGenerationMode: undefined,
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: (options: LanguageModelV4CallOptions) => {
       capture(options);
       // Return valid JSON text so a json_schema structured-output request
@@ -59,7 +60,9 @@ function createErrorFinishModel(): LanguageModelV4 {
     provider: 'mock',
     modelId: 'mock-model',
     defaultObjectGenerationMode: undefined,
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: () =>
       Promise.resolve({
         content: [{ type: 'text', text: '' }],
@@ -97,7 +100,12 @@ describe('gateway integration — /v1/responses wire fidelity (mock tier)', () =
     let captured: LanguageModelV4CallOptions | undefined;
     // Provider is 'openai' so the OpenAI provider-option gate is active — this
     // isolates the drop to the reasoning/text params, not the provider gate.
-    const app = makeApp('openai', createCapturingModel((options) => { captured = options; }));
+    const app = makeApp(
+      'openai',
+      createCapturingModel((options) => {
+        captured = options;
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/responses', {
       model: 'openai/gpt-5',
@@ -133,9 +141,11 @@ describe('gateway integration — /v1/responses wire fidelity (mock tier)', () =
     expect(status).toBe(200);
     expect(body.status).toBe('failed');
     expect(body.error).not.toBeNull();
-    expect(body.error).toEqual(expect.objectContaining({
-      code: expect.any(String),
-      message: expect.any(String),
-    }));
+    expect(body.error).toEqual(
+      expect.objectContaining({
+        code: expect.any(String),
+        message: expect.any(String),
+      }),
+    );
   });
 });

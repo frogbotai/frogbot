@@ -45,7 +45,11 @@ export class SerialQueue {
   }
 }
 
-function resolveValue<T>(key: PolicyValue<T> | undefined, user: PolicyValue<T> | undefined, fallback: T | undefined): T | undefined {
+function resolveValue<T>(
+  key: PolicyValue<T> | undefined,
+  user: PolicyValue<T> | undefined,
+  fallback: T | undefined,
+): T | undefined {
   for (const policy of [key, user]) {
     if (policy?.mode === 'unlimited') return undefined;
     if (policy?.mode === 'custom') return policy.value;
@@ -53,21 +57,31 @@ function resolveValue<T>(key: PolicyValue<T> | undefined, user: PolicyValue<T> |
   return fallback;
 }
 
-export function resolvePolicy(args: { key?: PolicyDocument; user?: PolicyDocument; defaults?: PolicyDefaults }): EffectivePolicy {
+export function resolvePolicy(args: {
+  key?: PolicyDocument;
+  user?: PolicyDocument;
+  defaults?: PolicyDefaults;
+}): EffectivePolicy {
   const { key, user, defaults = {} } = args;
-  const budgetSpend = key?.monthlyBudget?.mode === 'custom'
-    ? key.spendThisPeriodUSD
-    : key?.monthlyBudget?.mode === 'unlimited'
-      ? 0
-      : user?.monthlyBudget?.mode === 'custom'
-        ? user.spendThisPeriodUSD
-        : key?.spendThisPeriodUSD ?? user?.spendThisPeriodUSD;
+  const budgetSpend =
+    key?.monthlyBudget?.mode === 'custom'
+      ? key.spendThisPeriodUSD
+      : key?.monthlyBudget?.mode === 'unlimited'
+        ? 0
+        : user?.monthlyBudget?.mode === 'custom'
+          ? user.spendThisPeriodUSD
+          : (key?.spendThisPeriodUSD ?? user?.spendThisPeriodUSD);
   return {
-    monthlyBudgetUSD: resolveValue(key?.monthlyBudget, user?.monthlyBudget, defaults.monthlyBudgetUSD),
+    monthlyBudgetUSD: resolveValue(
+      key?.monthlyBudget,
+      user?.monthlyBudget,
+      defaults.monthlyBudgetUSD,
+    ),
     rpm: resolveValue(key?.rpm, user?.rpm, defaults.rpm),
     tpm: resolveValue(key?.tpm, user?.tpm, defaults.tpm),
     models: resolveValue(key?.models, user?.models, defaults.models),
-    budgetBehavior: key?.budgetBehavior ?? user?.budgetBehavior ?? defaults.budgetBehavior ?? 'block',
+    budgetBehavior:
+      key?.budgetBehavior ?? user?.budgetBehavior ?? defaults.budgetBehavior ?? 'block',
     spendThisPeriodUSD: budgetSpend ?? 0,
   };
 }
@@ -79,13 +93,18 @@ export class SlidingWindowRateLimiter {
 
   constructor(private readonly now: () => number = Date.now) {}
 
-  admit(subject: string, policy: Pick<EffectivePolicy, 'rpm' | 'tpm'>): { kind: 'rpm' | 'tpm'; retryAfterSeconds: number } | undefined {
+  admit(
+    subject: string,
+    policy: Pick<EffectivePolicy, 'rpm' | 'tpm'>,
+  ): { kind: 'rpm' | 'tpm'; retryAfterSeconds: number } | undefined {
     const now = this.now();
     const entry = this.get(subject, now);
     const retry = (at: number) => Math.max(1, Math.ceil((at + 60_000 - now) / 1000));
-    if (policy.rpm !== undefined && entry.requests.length >= policy.rpm) return { kind: 'rpm', retryAfterSeconds: retry(entry.requests[0]!) };
+    if (policy.rpm !== undefined && entry.requests.length >= policy.rpm)
+      return { kind: 'rpm', retryAfterSeconds: retry(entry.requests[0]!) };
     const tokens = entry.tokens.reduce((sum, item) => sum + item.value, 0);
-    if (policy.tpm !== undefined && tokens >= policy.tpm) return { kind: 'tpm', retryAfterSeconds: retry(entry.tokens[0]?.at ?? now) };
+    if (policy.tpm !== undefined && tokens >= policy.tpm)
+      return { kind: 'tpm', retryAfterSeconds: retry(entry.tokens[0]?.at ?? now) };
     entry.requests.push(now);
     return undefined;
   }

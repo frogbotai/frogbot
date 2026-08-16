@@ -1,1 +1,1 @@
-declare module "@activepieces/*" {}
+declare module '@activepieces/*' {}

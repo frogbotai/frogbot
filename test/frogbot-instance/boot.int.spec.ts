@@ -11,8 +11,12 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 describe('frogbot-instance: boot', () => {
   let booted: BootedFrogbot;
 
-  beforeAll(async () => { booted = await bootFrogbot(dirname); });
-  afterAll(async () => { await booted.shutdown(); });
+  beforeAll(async () => {
+    booted = await bootFrogbot(dirname);
+  });
+  afterAll(async () => {
+    await booted.shutdown();
+  });
 
   it('boots successfully and exposes the frogbot instance', () => {
     expect(booted.frogbot).toBeDefined();

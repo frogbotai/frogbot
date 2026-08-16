@@ -20,8 +20,16 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
 import { createGateway } from '../../packages/gateway/src/gateway.js';
-import type { AfterErrorHookArgs, AfterOperationHookArgs, BeforeUpstreamHookArgs, Hooks } from '../../packages/gateway/src/hooks.js';
-import { buildProviderRegistry, type ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import type {
+  AfterErrorHookArgs,
+  AfterOperationHookArgs,
+  BeforeUpstreamHookArgs,
+  Hooks,
+} from '../../packages/gateway/src/hooks.js';
+import {
+  buildProviderRegistry,
+  type ProviderRegistry,
+} from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
 // ---------------------------------------------------------------------------
@@ -67,10 +75,11 @@ function createMockLanguageModel(opts?: {
     onCall,
   } = opts ?? {};
 
-  const content: LanguageModelV4['doGenerate'] extends (opts: any) => Promise<infer R> ? R['content'] : never =
-    toolCalls
-      ? toolCalls.map((tc) => ({ type: 'tool-call' as const, ...tc }))
-      : [{ type: 'text' as const, text }];
+  const content: LanguageModelV4['doGenerate'] extends (opts: any) => Promise<infer R>
+    ? R['content']
+    : never = toolCalls
+    ? toolCalls.map((tc) => ({ type: 'tool-call' as const, ...tc }))
+    : [{ type: 'text' as const, text }];
   const usage = {
     inputTokens: {
       total: inputTokens,
@@ -90,7 +99,9 @@ function createMockLanguageModel(opts?: {
     provider: 'mock',
     modelId: 'mock-model',
     defaultObjectGenerationMode: undefined,
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: async (options) => {
       onCall?.(options);
       if (error) throw error;
@@ -110,11 +121,13 @@ function createMockLanguageModel(opts?: {
       onCall?.(options);
       const parts: LanguageModelV4StreamPart[] = [
         { type: 'stream-start' as const, warnings },
-        ...(text ? [
-          { type: 'text-start' as const, id: 'text-0' },
-          { type: 'text-delta' as const, id: 'text-0', delta: text },
-          { type: 'text-end' as const, id: 'text-0' },
-        ] : []),
+        ...(text
+          ? [
+              { type: 'text-start' as const, id: 'text-0' },
+              { type: 'text-delta' as const, id: 'text-0', delta: text },
+              { type: 'text-end' as const, id: 'text-0' },
+            ]
+          : []),
         { type: 'finish' as const, finishReason, usage },
       ];
       return {
@@ -156,14 +169,24 @@ function createDelayedStreamModel(opts: {
   inputTokens?: number;
   outputTokens?: number;
 }): LanguageModelV4 {
-  const { delayMs, text = 'hello', finishReason = 'stop', inputTokens = 42, outputTokens = 17 } = opts;
+  const {
+    delayMs,
+    text = 'hello',
+    finishReason = 'stop',
+    inputTokens = 42,
+    outputTokens = 17,
+  } = opts;
   return {
     ...createMockLanguageModel(),
     doStream: async () => ({
       stream: new ReadableStream<LanguageModelV4StreamPart>({
         start(controller) {
           controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
-          controller.enqueue({ type: 'text-delta', id: 'text-0', delta: text } as LanguageModelV4StreamPart);
+          controller.enqueue({
+            type: 'text-delta',
+            id: 'text-0',
+            delta: text,
+          } as LanguageModelV4StreamPart);
           controller.enqueue({ type: 'text-end', id: 'text-0' } as LanguageModelV4StreamPart);
           setTimeout(() => {
             controller.enqueue({
@@ -197,7 +220,11 @@ function createMidStreamErrorModel(error: unknown): LanguageModelV4 {
       stream: new ReadableStream<LanguageModelV4StreamPart>({
         start(controller) {
           controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
-          controller.enqueue({ type: 'text-delta', id: 'text-0', delta: 'hello' } as LanguageModelV4StreamPart);
+          controller.enqueue({
+            type: 'text-delta',
+            id: 'text-0',
+            delta: 'hello',
+          } as LanguageModelV4StreamPart);
           controller.enqueue({ type: 'error', error } as LanguageModelV4StreamPart);
           controller.close();
         },
@@ -249,19 +276,30 @@ function createMockImageModel(opts?: {
       onCall?.(options);
       if (error) throw error;
       return {
-        images: images ?? Array.from({ length: options.n ?? 1 }, (_, index) => Buffer.from(`image-${index}`).toString('base64')),
+        images:
+          images ??
+          Array.from({ length: options.n ?? 1 }, (_, index) =>
+            Buffer.from(`image-${index}`).toString('base64'),
+          ),
         warnings,
-        response: { timestamp: new Date('2026-01-01T00:00:00Z'), modelId: 'mock-image-model', headers: {} },
+        response: {
+          timestamp: new Date('2026-01-01T00:00:00Z'),
+          modelId: 'mock-image-model',
+          headers: {},
+        },
         usage: { inputTokens: 3, outputTokens: 0, totalTokens: 3 },
       };
     },
   };
 }
 
-function makeAppWithMockModalityProvider(providerName: string, opts: {
-  embeddingModel?: EmbeddingModelV4;
-  imageModel?: ImageModelV4;
-}) {
+function makeAppWithMockModalityProvider(
+  providerName: string,
+  opts: {
+    embeddingModel?: EmbeddingModelV4;
+    imageModel?: ImageModelV4;
+  },
+) {
   const fakeProvider = {
     embeddingModel: () => opts.embeddingModel ?? createMockEmbeddingModel(),
     imageModel: () => opts.imageModel ?? createMockImageModel(),
@@ -353,7 +391,11 @@ describe('gateway integration — /v1/messages', () => {
   it('forwards array-form system to beforeUpstream hooks', async () => {
     let captured: BeforeUpstreamHookArgs['system'];
     const app = makeAppWithMockProvider('anthropic', createMockLanguageModel(), {
-      beforeUpstream: [(args) => { captured = args.system; }],
+      beforeUpstream: [
+        (args) => {
+          captured = args.system;
+        },
+      ],
     });
 
     const { status } = await postJson(app, '/v1/messages', {
@@ -371,7 +413,11 @@ describe('gateway integration — /v1/messages', () => {
   it('forwards string-form system to beforeUpstream hooks', async () => {
     let captured: BeforeUpstreamHookArgs['system'];
     const app = makeAppWithMockProvider('anthropic', createMockLanguageModel(), {
-      beforeUpstream: [(args) => { captured = args.system; }],
+      beforeUpstream: [
+        (args) => {
+          captured = args.system;
+        },
+      ],
     });
 
     const { status } = await postJson(app, '/v1/messages', {
@@ -475,21 +521,31 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
 
   it('forwards prompt cache params and allowlisted headers for chat completions', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithMockProvider('anthropic', createMockLanguageModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithMockProvider(
+      'anthropic',
+      createMockLanguageModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
-    const { status } = await postJson(app, '/v1/chat/completions', {
-      model: 'anthropic/test-model',
-      prompt_cache_key: 'cache-key-1',
-      prompt_cache_retention: '24h',
-      messages: [{ role: 'user', content: 'hi', cache_control: { type: 'ephemeral' } }],
-    }, {
-      'anthropic-beta': 'prompt-caching-2024-07-31',
-      'openai-beta': 'assistants=v2',
-      traceparent: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
-      authorization: 'Bearer secret',
-    });
+    const { status } = await postJson(
+      app,
+      '/v1/chat/completions',
+      {
+        model: 'anthropic/test-model',
+        prompt_cache_key: 'cache-key-1',
+        prompt_cache_retention: '24h',
+        messages: [{ role: 'user', content: 'hi', cache_control: { type: 'ephemeral' } }],
+      },
+      {
+        'anthropic-beta': 'prompt-caching-2024-07-31',
+        'openai-beta': 'assistants=v2',
+        traceparent: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
+        authorization: 'Bearer secret',
+      },
+    );
 
     expect(status).toBe(200);
     expect(callOptions?.providerOptions).toEqual({
@@ -498,7 +554,9 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
         promptCacheRetention: '24h',
       },
     });
-    expect(callOptions?.prompt[0]).toHaveProperty('providerOptions.anthropic.cacheControl', { type: 'ephemeral' });
+    expect(callOptions?.prompt[0]).toHaveProperty('providerOptions.anthropic.cacheControl', {
+      type: 'ephemeral',
+    });
     expect(callOptions?.headers).toMatchObject({
       'anthropic-beta': 'prompt-caching-2024-07-31',
       'openai-beta': 'assistants=v2',
@@ -510,24 +568,39 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
 
   it('forwards Anthropic cache_control blocks after provider resolution', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithMockProvider('anthropic', createMockLanguageModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithMockProvider(
+      'anthropic',
+      createMockLanguageModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
-    const { status } = await postJson(app, '/v1/messages', {
-      model: 'anthropic/test-model',
-      messages: [{
-        role: 'user',
-        content: [{ type: 'text', text: 'hi', cache_control: { type: 'ephemeral' } }],
-      }],
-      max_tokens: 100,
-    }, {
-      'anthropic-beta': 'prompt-caching-2024-07-31',
-      traceparent: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
-    });
+    const { status } = await postJson(
+      app,
+      '/v1/messages',
+      {
+        model: 'anthropic/test-model',
+        messages: [
+          {
+            role: 'user',
+            content: [{ type: 'text', text: 'hi', cache_control: { type: 'ephemeral' } }],
+          },
+        ],
+        max_tokens: 100,
+      },
+      {
+        'anthropic-beta': 'prompt-caching-2024-07-31',
+        traceparent: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
+      },
+    );
 
     expect(status).toBe(200);
-    expect(callOptions?.prompt[0]).toHaveProperty('content[0].providerOptions.anthropic.cacheControl', { type: 'ephemeral' });
+    expect(callOptions?.prompt[0]).toHaveProperty(
+      'content[0].providerOptions.anthropic.cacheControl',
+      { type: 'ephemeral' },
+    );
     expect(callOptions?.headers).toMatchObject({
       'anthropic-beta': 'prompt-caching-2024-07-31',
       traceparent: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
@@ -537,9 +610,14 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
 
   it('forwards top_k to chat completions', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithMockProvider('groq', createMockLanguageModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithMockProvider(
+      'groq',
+      createMockLanguageModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/chat/completions', {
       model: 'groq/test-model',
@@ -553,9 +631,14 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
 
   it('forwards top_k to messages', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithMockProvider('anthropic', createMockLanguageModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithMockProvider(
+      'anthropic',
+      createMockLanguageModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/messages', {
       model: 'anthropic/test-model',
@@ -596,10 +679,13 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
   });
 
   it('plumbs cached and reasoning usage into OpenAI responses', async () => {
-    const app = makeAppWithMockProvider('groq', createMockLanguageModel({
-      inputTokenDetails: { cacheReadTokens: 3, cacheWriteTokens: 2 },
-      outputTokenDetails: { reasoningTokens: 7 },
-    }));
+    const app = makeAppWithMockProvider(
+      'groq',
+      createMockLanguageModel({
+        inputTokenDetails: { cacheReadTokens: 3, cacheWriteTokens: 2 },
+        outputTokenDetails: { reasoningTokens: 7 },
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'groq/test-model',
@@ -613,9 +699,12 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
   });
 
   it('plumbs cached usage into Anthropic responses', async () => {
-    const app = makeAppWithMockProvider('anthropic', createMockLanguageModel({
-      inputTokenDetails: { cacheReadTokens: 3, cacheWriteTokens: 2 },
-    }));
+    const app = makeAppWithMockProvider(
+      'anthropic',
+      createMockLanguageModel({
+        inputTokenDetails: { cacheReadTokens: 3, cacheWriteTokens: 2 },
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/messages', {
       model: 'anthropic/test-model',
@@ -636,10 +725,15 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'groq/llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: 'weather in SF' }],
-      tools: [{
-        type: 'function',
-        function: { name: 'get_weather', parameters: { type: 'object', properties: { city: { type: 'string' } } } },
-      }],
+      tools: [
+        {
+          type: 'function',
+          function: {
+            name: 'get_weather',
+            parameters: { type: 'object', properties: { city: { type: 'string' } } },
+          },
+        },
+      ],
     });
     expect(status).toBe(200);
     expect(body).toHaveProperty('choices[0].message.tool_calls');
@@ -680,7 +774,11 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
           stream: new ReadableStream<LanguageModelV4StreamPart>({
             start(controller) {
               controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
-              controller.enqueue({ type: 'text-delta', id: 'text-0', delta: 'hello' } as LanguageModelV4StreamPart);
+              controller.enqueue({
+                type: 'text-delta',
+                id: 'text-0',
+                delta: 'hello',
+              } as LanguageModelV4StreamPart);
             },
           }),
         };
@@ -846,7 +944,11 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
-            controller.enqueue({ type: 'text-delta', id: 'text-0', delta: 'hello' } as LanguageModelV4StreamPart);
+            controller.enqueue({
+              type: 'text-delta',
+              id: 'text-0',
+              delta: 'hello',
+            } as LanguageModelV4StreamPart);
             controller.enqueue({ type: 'error', error } as LanguageModelV4StreamPart);
             controller.close();
           },
@@ -884,16 +986,22 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     const order: string[] = [];
     const error = new Error('blocked by hook');
     const app = makeAppWithMockProvider('groq', undefined, {
-      beforeUpstream: [() => {
-        order.push('beforeUpstream');
-        throw error;
-      }],
-      afterError: [(args) => {
-        order.push(`afterError:${args.failedPhase}:${args.error === error}`);
-      }],
-      afterOperation: [(args) => {
-        order.push(`afterOperation:${args.error === error}`);
-      }],
+      beforeUpstream: [
+        () => {
+          order.push('beforeUpstream');
+          throw error;
+        },
+      ],
+      afterError: [
+        (args) => {
+          order.push(`afterError:${args.failedPhase}:${args.error === error}`);
+        },
+      ],
+      afterOperation: [
+        (args) => {
+          order.push(`afterOperation:${args.error === error}`);
+        },
+      ],
     });
 
     const { status, body } = await postJson(app, '/v1/chat/completions', {
@@ -914,21 +1022,32 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
     const previousNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     try {
-      const app = makeAppWithMockProvider('openai', createMockLanguageModel({
-        error: new Error('provider leaked secret sk-provider-internal'),
-      }));
+      const app = makeAppWithMockProvider(
+        'openai',
+        createMockLanguageModel({
+          error: new Error('provider leaked secret sk-provider-internal'),
+        }),
+      );
 
-      const { status, headers, body } = await postJson(app, '/v1/chat/completions', {
-        model: 'openai/gpt-4o-mini',
-        messages: [{ role: 'user', content: 'hi' }],
-      }, { 'x-request-id': 'req-stage-7' });
+      const { status, headers, body } = await postJson(
+        app,
+        '/v1/chat/completions',
+        {
+          model: 'openai/gpt-4o-mini',
+          messages: [{ role: 'user', content: 'hi' }],
+        },
+        { 'x-request-id': 'req-stage-7' },
+      );
 
       expect(status).toBe(500);
       // G103: the gateway mints its own id and does not echo the client value.
       const requestId = headers.get('x-request-id') ?? '';
       expect(requestId).not.toBe('req-stage-7');
       expect(requestId).toMatch(/^req_[A-Za-z0-9-]+$/);
-      expect(body).toHaveProperty('error.message', `Internal server error (request_id: ${requestId}).`);
+      expect(body).toHaveProperty(
+        'error.message',
+        `Internal server error (request_id: ${requestId}).`,
+      );
       expect(JSON.stringify(body)).not.toContain('sk-provider-internal');
     } finally {
       process.env.NODE_ENV = previousNodeEnv;
@@ -938,17 +1057,37 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
   it('runs all lifecycle hook slots for responses and mutates upstream params', async () => {
     const order: string[] = [];
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithMockProvider('openai', createMockLanguageModel({
-      onCall: (options) => { callOptions = options; },
-    }), {
-      beforeOperation: [() => { order.push('beforeOperation'); }],
-      beforeUpstream: [(args) => {
-        order.push('beforeUpstream');
-        args.params.temperature = 0.4;
-      }],
-      afterUpstream: [() => { order.push('afterUpstream'); }],
-      afterOperation: [() => { order.push('afterOperation'); }],
-    });
+    const app = makeAppWithMockProvider(
+      'openai',
+      createMockLanguageModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+      {
+        beforeOperation: [
+          () => {
+            order.push('beforeOperation');
+          },
+        ],
+        beforeUpstream: [
+          (args) => {
+            order.push('beforeUpstream');
+            args.params.temperature = 0.4;
+          },
+        ],
+        afterUpstream: [
+          () => {
+            order.push('afterUpstream');
+          },
+        ],
+        afterOperation: [
+          () => {
+            order.push('afterOperation');
+          },
+        ],
+      },
+    );
 
     const { status, body } = await postJson(app, '/v1/responses', {
       model: 'openai/gpt-4o-mini',
@@ -964,7 +1103,11 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
   it('short-circuits responses beforeOperation denial before upstream', async () => {
     const beforeUpstream = vi.fn();
     const app = makeAppWithMockProvider('openai', createMockLanguageModel(), {
-      beforeOperation: [() => { throw Object.assign(new Error('denied'), { statusCode: 403 }); }],
+      beforeOperation: [
+        () => {
+          throw Object.assign(new Error('denied'), { statusCode: 403 });
+        },
+      ],
       beforeUpstream: [beforeUpstream],
     });
 
@@ -980,36 +1123,54 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
 
   it('forwards responses tools/tool_choice/instructions and emits function_call output', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithMockProvider('openai', createMockLanguageModel({
-      text: '',
-      toolCalls: [{ toolCallId: 'call_1', toolName: 'get_weather', input: { city: 'Paris' } }],
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithMockProvider(
+      'openai',
+      createMockLanguageModel({
+        text: '',
+        toolCalls: [{ toolCallId: 'call_1', toolName: 'get_weather', input: { city: 'Paris' } }],
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/responses', {
       model: 'openai/gpt-4o-mini',
       input: 'what is the weather',
       instructions: 'You are a weather bot',
-      tools: [{ type: 'function', name: 'get_weather', parameters: { type: 'object', properties: { city: { type: 'string' } } } }],
+      tools: [
+        {
+          type: 'function',
+          name: 'get_weather',
+          parameters: { type: 'object', properties: { city: { type: 'string' } } },
+        },
+      ],
       tool_choice: 'auto',
     });
 
     expect(status).toBe(200);
-    expect(body.output).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'function_call', name: 'get_weather', call_id: 'call_1' }),
-    ]));
-    expect(callOptions?.tools).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'function', name: 'get_weather' }),
-    ]));
+    expect(body.output).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'function_call', name: 'get_weather', call_id: 'call_1' }),
+      ]),
+    );
+    expect(callOptions?.tools).toEqual(
+      expect.arrayContaining([expect.objectContaining({ type: 'function', name: 'get_weather' })]),
+    );
     expect(callOptions?.toolChoice).toMatchObject({ type: 'auto' });
     expect(callOptions?.prompt.some((m) => m.role === 'system')).toBe(true);
   });
 
   it('preserves assistant role across multi-turn array-content input', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithMockProvider('openai', createMockLanguageModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithMockProvider(
+      'openai',
+      createMockLanguageModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/responses', {
       model: 'openai/gpt-4o-mini',
@@ -1025,7 +1186,6 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
   });
 });
 
-
 // ---------------------------------------------------------------------------
 // P0-A1 — streaming `afterOperation`/`afterError` fire off the stream's real
 // terminal signal (success, mid-stream error, client abort), not at
@@ -1035,9 +1195,18 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
 describe('gateway integration — streaming lifecycle (afterOperation timing)', () => {
   it('does not fire afterOperation at HTTP-return time, and fires it exactly once with real usage/finishReason once the stream drains', async () => {
     const afterOperationCalls: AfterOperationHookArgs[] = [];
-    const model = createDelayedStreamModel({ delayMs: 40, inputTokens: 42, outputTokens: 17, finishReason: 'stop' });
+    const model = createDelayedStreamModel({
+      delayMs: 40,
+      inputTokens: 42,
+      outputTokens: 17,
+      finishReason: 'stop',
+    });
     const app = makeAppWithMockProvider('groq', model, {
-      afterOperation: [(args) => { afterOperationCalls.push(args); }],
+      afterOperation: [
+        (args) => {
+          afterOperationCalls.push(args);
+        },
+      ],
     });
 
     const res = await app.request('http://localhost/v1/chat/completions', {
@@ -1080,8 +1249,18 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
     const model = createMidStreamErrorModel(error);
 
     const app = makeAppWithMockProvider('groq', model, {
-      afterError: [(args) => { order.push('afterError'); afterErrorCalls.push(args); }],
-      afterOperation: [(args) => { order.push('afterOperation'); afterOperationCalls.push(args); }],
+      afterError: [
+        (args) => {
+          order.push('afterError');
+          afterErrorCalls.push(args);
+        },
+      ],
+      afterOperation: [
+        (args) => {
+          order.push('afterOperation');
+          afterOperationCalls.push(args);
+        },
+      ],
     });
 
     const res = await app.request('http://localhost/v1/chat/completions', {
@@ -1111,7 +1290,11 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
     const afterErrorCalls: AfterErrorHookArgs[] = [];
     const error = new Error('provider failed');
     const app = makeAppWithMockProvider('groq', createMockLanguageModel({ error }), {
-      afterError: [(args) => { afterErrorCalls.push(args); }],
+      afterError: [
+        (args) => {
+          afterErrorCalls.push(args);
+        },
+      ],
     });
 
     const { status } = await postJson(app, '/v1/chat/completions', {
@@ -1129,7 +1312,11 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
     const afterErrorCalls: AfterErrorHookArgs[] = [];
     const error = Object.assign(new Error('provider failed'), { statusCode: 503 });
     const app = makeAppWithMockProvider('groq', createMidStreamErrorModel(error), {
-      afterError: [(args) => { afterErrorCalls.push(args); }],
+      afterError: [
+        (args) => {
+          afterErrorCalls.push(args);
+        },
+      ],
     });
 
     const res = await app.request('http://localhost/v1/chat/completions', {
@@ -1159,15 +1346,27 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
-            controller.enqueue({ type: 'text-delta', id: 'text-0', delta: 'hello' } as LanguageModelV4StreamPart);
+            controller.enqueue({
+              type: 'text-delta',
+              id: 'text-0',
+              delta: 'hello',
+            } as LanguageModelV4StreamPart);
           },
         }),
       }),
     } as unknown as LanguageModelV4;
 
     const app = makeAppWithMockProvider('groq', model, {
-      afterOperation: [(args) => { afterOperationCalls.push(args); }],
-      afterError: [(args) => { afterErrorCalls.push(args); }],
+      afterOperation: [
+        (args) => {
+          afterOperationCalls.push(args);
+        },
+      ],
+      afterError: [
+        (args) => {
+          afterErrorCalls.push(args);
+        },
+      ],
     });
 
     const controller = new AbortController();
@@ -1202,7 +1401,11 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
     const afterOperationCalls: AfterOperationHookArgs[] = [];
     const model = createDelayedStreamModel({ delayMs: 20, inputTokens: 11, outputTokens: 6 });
     const app = makeAppWithMockProvider('anthropic', model, {
-      afterOperation: [(args) => { afterOperationCalls.push(args); }],
+      afterOperation: [
+        (args) => {
+          afterOperationCalls.push(args);
+        },
+      ],
     });
 
     const res = await app.request('http://localhost/v1/messages', {
@@ -1235,7 +1438,11 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
     const afterOperationCalls: AfterOperationHookArgs[] = [];
     const model = createDelayedStreamModel({ delayMs: 20, inputTokens: 9, outputTokens: 3 });
     const app = makeAppWithMockProvider('openai', model, {
-      afterOperation: [(args) => { afterOperationCalls.push(args); }],
+      afterOperation: [
+        (args) => {
+          afterOperationCalls.push(args);
+        },
+      ],
     });
 
     const res = await app.request('http://localhost/v1/responses', {
@@ -1281,7 +1488,10 @@ describe('gateway integration — streaming lifecycle (afterOperation timing)', 
         event: block.match(/^event: (.+)$/m)?.[1],
         data: block.match(/^data: (.+)$/m)?.[1],
       }))
-      .filter((entry): entry is { event: string; data: string } => Boolean(entry.event && entry.data) && entry.data !== '[DONE]')
+      .filter(
+        (entry): entry is { event: string; data: string } =>
+          Boolean(entry.event && entry.data) && entry.data !== '[DONE]',
+      )
       .map((entry) => ({ event: entry.event, data: JSON.parse(entry.data) }));
 
     expect(events[0].event).toBe('response.created');
@@ -1376,8 +1586,12 @@ describe('gateway integration — P1-C7 warnings parity', () => {
 
   it('streaming fires afterUpstream with warnings from the onFinish event before afterOperation', async () => {
     const order: string[] = [];
-    const afterUpstream = vi.fn(() => { order.push('afterUpstream'); });
-    const afterOperation = vi.fn(() => { order.push('afterOperation'); });
+    const afterUpstream = vi.fn(() => {
+      order.push('afterUpstream');
+    });
+    const afterOperation = vi.fn(() => {
+      order.push('afterOperation');
+    });
     const model = createMockLanguageModel({ warnings: [warning] });
     const app = makeAppWithMockProvider('openai', model, {
       afterUpstream: [afterUpstream],
@@ -1421,7 +1635,11 @@ describe('gateway integration — M3 embeddings and images', () => {
   it('embeddings resolves cross-provider arrays and forwards provider options', async () => {
     let callOptions: EmbeddingModelV4CallOptions | undefined;
     const app = makeAppWithMockModalityProvider('voyage', {
-      embeddingModel: createMockEmbeddingModel({ onCall: (options) => { callOptions = options; } }),
+      embeddingModel: createMockEmbeddingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
     });
 
     const { status, body } = await postJson(app, '/v1/embeddings', {
@@ -1461,7 +1679,11 @@ describe('gateway integration — M3 embeddings and images', () => {
   it('images resolves OpenAI provider and returns n generated images', async () => {
     let callOptions: ImageModelV4CallOptions | undefined;
     const app = makeAppWithMockModalityProvider('openai', {
-      imageModel: createMockImageModel({ onCall: (options) => { callOptions = options; } }),
+      imageModel: createMockImageModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
     });
 
     const { status, body } = await postJson(app, '/v1/images/generations', {
@@ -1567,7 +1789,12 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
     const res = await app.request('/v1/audio/speech', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'openai/tts-1', input: 'hi', voice: 'alloy', response_format: 'wav' }),
+      body: JSON.stringify({
+        model: 'openai/tts-1',
+        input: 'hi',
+        voice: 'alloy',
+        response_format: 'wav',
+      }),
     });
 
     expect(res.status).toBe(200);
@@ -1611,13 +1838,15 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
       maxBodyBytes: 2,
     });
 
-    const res = await gateway.handler(new Request('http://localhost/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: { 'content-length': '3' },
-    }));
+    const res = await gateway.handler(
+      new Request('http://localhost/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { 'content-length': '3' },
+      }),
+    );
 
     expect(res.status).toBe(413);
-    const body = await res.json() as Record<string, unknown>;
+    const body = (await res.json()) as Record<string, unknown>;
     expect(body).toHaveProperty('error.code', 'request_entity_too_large');
     expect(body).toHaveProperty('error.param', 'content-length');
   });
@@ -1631,15 +1860,17 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
       hooks: { afterUpstream: [afterUpstream] },
     });
 
-    const res = await app.fetch(new Request('http://localhost/v1/images/generations', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model: 'replicate/black-forest-labs/flux-schnell',
-        prompt: 'frog',
-        response_format: 'b64_json',
+    const res = await app.fetch(
+      new Request('http://localhost/v1/images/generations', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model: 'replicate/black-forest-labs/flux-schnell',
+          prompt: 'frog',
+          response_format: 'b64_json',
+        }),
       }),
-    }));
+    );
 
     expect(res.status).toBe(200);
     expect(JSON.parse(res.headers.get('x-gateway-warnings') ?? '[]')).toEqual([warning]);
@@ -1652,7 +1883,10 @@ describe('gateway integration — M4 video, speech, transcription, and rerank', 
       provider: 'mock.rerank',
       modelId: 'rerank-v3.5',
       doRerank: async () => ({
-        ranking: [{ index: 1, relevanceScore: 0.9 }, { index: 0, relevanceScore: 0.4 }],
+        ranking: [
+          { index: 1, relevanceScore: 0.9 },
+          { index: 0, relevanceScore: 0.4 },
+        ],
         warnings: [],
         response: { id: 'rerank_1' },
       }),

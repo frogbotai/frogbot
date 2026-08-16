@@ -1,4 +1,8 @@
-import { createDeepgram, type DeepgramProvider, type DeepgramProviderSettings } from '@ai-sdk/deepgram';
+import {
+  createDeepgram,
+  type DeepgramProvider,
+  type DeepgramProviderSettings,
+} from '@ai-sdk/deepgram';
 
 import type { ProviderDefinition } from '../types.js';
 

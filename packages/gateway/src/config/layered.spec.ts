@@ -14,15 +14,30 @@ describe('loadLayeredConfig', () => {
     const project = join(dir, 'project');
     mkdirSync(project);
     const explicit = join(dir, 'explicit.gateway.config.json');
-    writeFileSync(explicit, JSON.stringify({ providers: { openai: { baseURL: 'https://explicit.test/v1' } }, logger: { level: 'debug' } }));
-    writeFileSync(join(project, 'gateway.config.json'), JSON.stringify({ providers: { openai: { organization: 'project-org' } }, logger: { level: 'warn' } }));
+    writeFileSync(
+      explicit,
+      JSON.stringify({
+        providers: { openai: { baseURL: 'https://explicit.test/v1' } },
+        logger: { level: 'debug' },
+      }),
+    );
+    writeFileSync(
+      join(project, 'gateway.config.json'),
+      JSON.stringify({
+        providers: { openai: { organization: 'project-org' } },
+        logger: { level: 'warn' },
+      }),
+    );
 
     const result = await loadLayeredConfig({
       cwd: project,
       defaults: { providers: { openai: { apiKey: 'default-key' } }, logger: { level: 'info' } },
       configPath: explicit,
       env: {
-        GATEWAY_CONFIG_JSON: JSON.stringify({ providers: { openai: { apiKey: '{env:FROGBOTAI_INLINE_KEY}' } }, tracing: { endpoint: 'http://otel.test' } }),
+        GATEWAY_CONFIG_JSON: JSON.stringify({
+          providers: { openai: { apiKey: '{env:FROGBOTAI_INLINE_KEY}' } },
+          tracing: { endpoint: 'http://otel.test' },
+        }),
         FROGBOTAI_INLINE_KEY: 'inline-key',
       },
     });
@@ -34,7 +49,12 @@ describe('loadLayeredConfig', () => {
     });
     expect(result.config.logger).toEqual({ level: 'debug' });
     expect(result.config.tracing).toEqual({ endpoint: 'http://otel.test' });
-    expect(result.sources.map((source) => source.kind)).toEqual(['defaults', 'project', 'env', 'inline']);
+    expect(result.sources.map((source) => source.kind)).toEqual([
+      'defaults',
+      'project',
+      'env',
+      'inline',
+    ]);
   });
 
   it('lets explicit config win over project config on a conflicting key (P2-D6e)', async () => {
@@ -42,8 +62,20 @@ describe('loadLayeredConfig', () => {
     const project = join(dir, 'project');
     mkdirSync(project);
     const explicit = join(dir, 'explicit.gateway.config.json');
-    writeFileSync(explicit, JSON.stringify({ providers: { openai: { apiKey: 'x', organization: 'explicit-org' } }, logger: { level: 'debug' } }));
-    writeFileSync(join(project, 'gateway.config.json'), JSON.stringify({ providers: { openai: { apiKey: 'x', organization: 'project-org' } }, logger: { level: 'warn' } }));
+    writeFileSync(
+      explicit,
+      JSON.stringify({
+        providers: { openai: { apiKey: 'x', organization: 'explicit-org' } },
+        logger: { level: 'debug' },
+      }),
+    );
+    writeFileSync(
+      join(project, 'gateway.config.json'),
+      JSON.stringify({
+        providers: { openai: { apiKey: 'x', organization: 'project-org' } },
+        logger: { level: 'warn' },
+      }),
+    );
 
     const result = await loadLayeredConfig({ cwd: project, configPath: explicit, env: {} });
 
@@ -80,8 +112,14 @@ describe('loadLayeredConfig', () => {
     const dir = scratch();
     const project = join(dir, 'project');
     mkdirSync(project);
-    writeFileSync(join(project, 'gateway.config.ts'), `export default { providers: { openai: { apiKey: 'ts-key' } } };\n`);
-    writeFileSync(join(project, 'gateway.config.json'), JSON.stringify({ providers: { openai: { apiKey: 'json-key', organization: 'json-org' } } }));
+    writeFileSync(
+      join(project, 'gateway.config.ts'),
+      `export default { providers: { openai: { apiKey: 'ts-key' } } };\n`,
+    );
+    writeFileSync(
+      join(project, 'gateway.config.json'),
+      JSON.stringify({ providers: { openai: { apiKey: 'json-key', organization: 'json-org' } } }),
+    );
 
     const result = await loadLayeredConfig({ cwd: project, env: {} });
 
@@ -96,14 +134,28 @@ describe('loadLayeredConfig', () => {
     const inner = join(outer, 'inner');
     mkdirSync(inner, { recursive: true });
     writeFileSync(join(outer, 'package.json'), '{}');
-    writeFileSync(join(outer, 'gateway.config.json'), JSON.stringify({ providers: { openai: { apiKey: 'outer-key', organization: 'outer-org' } } }));
-    writeFileSync(join(inner, 'gateway.config.json'), JSON.stringify({ providers: { openai: { apiKey: 'inner-key' } } }));
+    writeFileSync(
+      join(outer, 'gateway.config.json'),
+      JSON.stringify({ providers: { openai: { apiKey: 'outer-key', organization: 'outer-org' } } }),
+    );
+    writeFileSync(
+      join(inner, 'gateway.config.json'),
+      JSON.stringify({ providers: { openai: { apiKey: 'inner-key' } } }),
+    );
 
     const result = await loadLayeredConfig({ cwd: inner, env: {} });
 
-    expect(result.config.providers.openai).toEqual({ apiKey: 'inner-key', organization: 'outer-org' });
-    const projectPaths = result.sources.filter((source) => source.kind === 'project').map((source) => source.path);
-    expect(projectPaths).toEqual([join(outer, 'gateway.config.json'), join(inner, 'gateway.config.json')]);
+    expect(result.config.providers.openai).toEqual({
+      apiKey: 'inner-key',
+      organization: 'outer-org',
+    });
+    const projectPaths = result.sources
+      .filter((source) => source.kind === 'project')
+      .map((source) => source.path);
+    expect(projectPaths).toEqual([
+      join(outer, 'gateway.config.json'),
+      join(inner, 'gateway.config.json'),
+    ]);
   });
 
   it('does not walk past the project root into ancestor directories (G92)', async () => {
@@ -112,15 +164,25 @@ describe('loadLayeredConfig', () => {
     const project = join(outer, 'project');
     mkdirSync(project, { recursive: true });
     // Ancestor config above the project root — must NOT be discovered.
-    writeFileSync(join(outer, 'gateway.config.json'), JSON.stringify({ providers: { openai: { apiKey: 'ancestor-key', organization: 'ancestor-org' } } }));
+    writeFileSync(
+      join(outer, 'gateway.config.json'),
+      JSON.stringify({
+        providers: { openai: { apiKey: 'ancestor-key', organization: 'ancestor-org' } },
+      }),
+    );
     // `.git` marks the project root; the walk must stop here.
     mkdirSync(join(project, '.git'));
-    writeFileSync(join(project, 'gateway.config.json'), JSON.stringify({ providers: { openai: { apiKey: 'project-key' } } }));
+    writeFileSync(
+      join(project, 'gateway.config.json'),
+      JSON.stringify({ providers: { openai: { apiKey: 'project-key' } } }),
+    );
 
     const result = await loadLayeredConfig({ cwd: project, env: {} });
 
     expect(result.config.providers.openai).toEqual({ apiKey: 'project-key' });
-    const projectPaths = result.sources.filter((source) => source.kind === 'project').map((source) => source.path);
+    const projectPaths = result.sources
+      .filter((source) => source.kind === 'project')
+      .map((source) => source.path);
     expect(projectPaths).toEqual([join(project, 'gateway.config.json')]);
   });
 
@@ -129,9 +191,15 @@ describe('loadLayeredConfig', () => {
     const outer = join(dir, 'outer');
     const project = join(outer, 'project');
     mkdirSync(project, { recursive: true });
-    writeFileSync(join(outer, 'gateway.config.json'), JSON.stringify({ providers: { openai: { apiKey: 'ancestor-key' } } }));
+    writeFileSync(
+      join(outer, 'gateway.config.json'),
+      JSON.stringify({ providers: { openai: { apiKey: 'ancestor-key' } } }),
+    );
     writeFileSync(join(project, 'package.json'), '{}');
-    writeFileSync(join(project, 'gateway.config.json'), JSON.stringify({ providers: { openai: { apiKey: 'project-key' } } }));
+    writeFileSync(
+      join(project, 'gateway.config.json'),
+      JSON.stringify({ providers: { openai: { apiKey: 'project-key' } } }),
+    );
 
     const result = await loadLayeredConfig({ cwd: project, env: {} });
 
@@ -143,14 +211,28 @@ describe('loadLayeredConfig', () => {
     const outer = join(dir, 'outer');
     const inner = join(outer, 'inner');
     mkdirSync(inner, { recursive: true });
-    writeFileSync(join(outer, 'gateway.config.json'), JSON.stringify({ providers: { openai: { apiKey: 'outer-key', organization: 'outer-org' } } }));
-    writeFileSync(join(inner, 'gateway.config.json'), JSON.stringify({ providers: { openai: { apiKey: 'inner-key' } } }));
+    writeFileSync(
+      join(outer, 'gateway.config.json'),
+      JSON.stringify({ providers: { openai: { apiKey: 'outer-key', organization: 'outer-org' } } }),
+    );
+    writeFileSync(
+      join(inner, 'gateway.config.json'),
+      JSON.stringify({ providers: { openai: { apiKey: 'inner-key' } } }),
+    );
 
     const result = await loadLayeredConfig({ cwd: inner, env: { GATEWAY_CONFIG_ROOT: outer } });
 
-    expect(result.config.providers.openai).toEqual({ apiKey: 'inner-key', organization: 'outer-org' });
-    const projectPaths = result.sources.filter((source) => source.kind === 'project').map((source) => source.path);
-    expect(projectPaths).toEqual([join(outer, 'gateway.config.json'), join(inner, 'gateway.config.json')]);
+    expect(result.config.providers.openai).toEqual({
+      apiKey: 'inner-key',
+      organization: 'outer-org',
+    });
+    const projectPaths = result.sources
+      .filter((source) => source.kind === 'project')
+      .map((source) => source.path);
+    expect(projectPaths).toEqual([
+      join(outer, 'gateway.config.json'),
+      join(inner, 'gateway.config.json'),
+    ]);
   });
 
   it('labels a malformed GATEWAY_CONFIG_JSON parse error with its source (D5a)', async () => {

@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const notionIcon: IconNode = [
   [
@@ -9,8 +9,8 @@ export const notionIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const NotionIcon = createLucideIcon('NotionIcon', notionIcon, 0, '0 0 24 24')
+const NotionIcon = createLucideIcon('NotionIcon', notionIcon, 0, '0 0 24 24');
 
-export default NotionIcon
+export default NotionIcon;

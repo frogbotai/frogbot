@@ -25,7 +25,9 @@ describe('defaultThreadsCollection', () => {
   it('defines title, user, agent, lastMessageAt, and todos fields', () => {
     const names = collection.fields.map((f) => ('name' in f ? f.name : undefined));
     expect(names).toEqual(['title', 'user', 'agent', 'lastMessageAt', 'todos']);
-    expect(collection.fields.find((f) => 'name' in f && f.name === 'todos')).toMatchObject({ type: 'json' });
+    expect(collection.fields.find((f) => 'name' in f && f.name === 'todos')).toMatchObject({
+      type: 'json',
+    });
   });
 
   it('enables soft delete and the Chat admin group', () => {
@@ -50,9 +52,15 @@ describe('defaultThreadsCollection', () => {
 
     it('permits per-operation access overrides', async () => {
       const read = () => true as const;
-      const configured = defaultThreadsCollection({ slug: 'threads', userSlug: 'users', access: { read } });
+      const configured = defaultThreadsCollection({
+        slug: 'threads',
+        userSlug: 'users',
+        access: { read },
+      });
       expect(configured.access?.read).toBe(read);
-      expect(await configured.access?.update?.({ req: reqWithUser('u1') })).toEqual({ user: { equals: 'u1' } });
+      expect(await configured.access?.update?.({ req: reqWithUser('u1') })).toEqual({
+        user: { equals: 'u1' },
+      });
     });
   });
 

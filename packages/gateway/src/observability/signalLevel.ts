@@ -22,7 +22,10 @@ export const defaultSignalLevels: Required<SignalLevels> = {
   frogbot: 'recommended',
 };
 
-export function resolveSignalLevels(input?: SignalLevelInput, base?: Required<SignalLevels>): Required<SignalLevels> {
+export function resolveSignalLevels(
+  input?: SignalLevelInput,
+  base?: Required<SignalLevels>,
+): Required<SignalLevels> {
   // No `base` means the operator is establishing the baseline from defaults —
   // any level is allowed. When a `base` is supplied the input is a per-request
   // client override, which may only downgrade the operator baseline (a ceiling),
@@ -39,11 +42,15 @@ export function resolveSignalLevels(input?: SignalLevelInput, base?: Required<Si
   if (!input) {
     return base;
   }
-  const override: SignalLevels = typeof input === 'string' ? { gen_ai: input, http: input, frogbot: input } : input;
+  const override: SignalLevels =
+    typeof input === 'string' ? { gen_ai: input, http: input, frogbot: input } : input;
   return Object.fromEntries(
     (Object.keys(base) as SignalNamespace[]).map((ns) => {
       const overrideLevel = override[ns];
-      const level = overrideLevel !== undefined && order[overrideLevel] < order[base[ns]] ? overrideLevel : base[ns];
+      const level =
+        overrideLevel !== undefined && order[overrideLevel] < order[base[ns]]
+          ? overrideLevel
+          : base[ns];
       return [ns, level];
     }),
   ) as Required<SignalLevels>;
@@ -60,6 +67,8 @@ export function signalLevelFromBody(body: unknown): SignalLevelInput {
   if (typeof trace === 'string' && trace in order) return trace as SignalLevel;
   if (!trace || typeof trace !== 'object') return undefined;
   return Object.fromEntries(
-    Object.entries(trace).filter(([key, value]) => key in defaultSignalLevels && typeof value === 'string' && value in order),
+    Object.entries(trace).filter(
+      ([key, value]) => key in defaultSignalLevels && typeof value === 'string' && value in order,
+    ),
   );
 }

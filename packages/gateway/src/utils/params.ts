@@ -168,7 +168,8 @@ export function forwardMessageProviderOptions(messages: unknown[], providerName:
 /** Forward a single value's `providerOptions.unknown` namespace, if present. */
 export function forwardProviderOptions(value: unknown, providerName: string) {
   if (!value || typeof value !== 'object') return;
-  const providerOptions = (value as { providerOptions?: Record<string, Record<string, unknown>> }).providerOptions;
+  const providerOptions = (value as { providerOptions?: Record<string, Record<string, unknown>> })
+    .providerOptions;
   if (providerOptions) forwardLanguageParams(providerOptions, providerName);
 }
 
@@ -181,7 +182,10 @@ export function forwardProviderOptions(value: unknown, providerName: string) {
  * Used by the OpenAI middleware when an Anthropic-style budget is provided
  * for an o-series model.
  */
-export function effortFromBudget(budgetTokens: number, maxOutputTokens?: number): ReasoningEffort | undefined {
+export function effortFromBudget(
+  budgetTokens: number,
+  maxOutputTokens?: number,
+): ReasoningEffort | undefined {
   if (budgetTokens <= 0) return undefined;
 
   const max = maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS;
@@ -233,7 +237,11 @@ export function parsePromptCachingOptions(opts: {
   if (typeof opts.cached_content === 'string' && opts.cached_content.length > 0) {
     result.cached_content = opts.cached_content;
     hasValue = true;
-  } else if (opts.cached_content !== undefined && opts.cached_content !== null && typeof opts.cached_content !== 'string') {
+  } else if (
+    opts.cached_content !== undefined &&
+    opts.cached_content !== null &&
+    typeof opts.cached_content !== 'string'
+  ) {
     throw new RequestValidationError({
       message: 'cached_content must be a string',
       param: 'cached_content',
@@ -252,7 +260,11 @@ export function parsePromptCachingOptions(opts: {
     hasValue = true;
   }
 
-  if (opts.cache_control && typeof opts.cache_control === 'object' && 'type' in opts.cache_control) {
+  if (
+    opts.cache_control &&
+    typeof opts.cache_control === 'object' &&
+    'type' in opts.cache_control
+  ) {
     result.cache_control = opts.cache_control as { type: string; ttl?: string };
     hasValue = true;
   }

@@ -10,13 +10,13 @@ export async function generateImportMap(): Promise<void> {
     const result = await generate(payloadConfig);
 
     if (result?.changed) {
-      console.log(`[frogbot] import map written to ${result.outputPath}`);  
+      console.log(`[frogbot] import map written to ${result.outputPath}`);
     } else if (result) {
-      console.log(`[frogbot] import map unchanged at ${result.outputPath}`);  
+      console.log(`[frogbot] import map unchanged at ${result.outputPath}`);
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[frogbot] ${message}`);  
+    console.error(`[frogbot] ${message}`);
     process.exit(1);
   }
 }

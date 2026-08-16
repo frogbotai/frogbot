@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, beforeEach, describe, expect,it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
@@ -13,9 +13,15 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 describe('collections-rest', () => {
   let booted: BootedFrogbot;
 
-  beforeAll(async () => { booted = await bootFrogbot(dirname); });
-  afterAll(async () => { await booted.shutdown(); });
-  beforeEach(async () => { await clearAndSeed(booted.frogbot, 'empty'); });
+  beforeAll(async () => {
+    booted = await bootFrogbot(dirname);
+  });
+  afterAll(async () => {
+    await booted.shutdown();
+  });
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
+  });
 
   describe('lifecycle', () => {
     it('GET / returns { ok: true, name: "frogbot" }', async () => {
@@ -89,9 +95,7 @@ describe('collections-rest', () => {
       await booted.restClient.post(`/api/${projectsSlug}`, { title: 'Alpha' });
       await booted.restClient.post(`/api/${projectsSlug}`, { title: 'Beta' });
 
-      const res = await booted.restClient.get(
-        `/api/${projectsSlug}?where[title][equals]=Alpha`,
-      );
+      const res = await booted.restClient.get(`/api/${projectsSlug}?where[title][equals]=Alpha`);
       expect(res.status).toBe(200);
       expect((res.body as any).docs).toHaveLength(1);
       expect((res.body as any).docs[0].title).toBe('Alpha');

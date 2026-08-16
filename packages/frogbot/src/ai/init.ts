@@ -7,51 +7,49 @@
 // `openai-compatible` entries become gateway providers under their configured
 // key.
 
-import type { Gateway, GatewayConfig } from "@frogbotai/gateway";
-import { createGateway } from "@frogbotai/gateway";
+import type { Gateway, GatewayConfig } from '@frogbotai/gateway';
+import { createGateway } from '@frogbotai/gateway';
 
-import type { Logger } from "../frogbot.js";
+import type { Logger } from '../frogbot.js';
 import type {
   BedrockProviderEntry,
   BuiltInProviderEntry,
   CustomProviderEntry,
   SanitizedAIConfig,
-} from "../types/ai.js";
-import { toGatewayHooks } from "./hooks.js";
-import { logUsage } from "./logUsage.js";
-import { getGatewayProviderName, isProviderName } from "./providerNames.js";
+} from '../types/ai.js';
+import { toGatewayHooks } from './hooks.js';
+import { logUsage } from './logUsage.js';
+import { getGatewayProviderName, isProviderName } from './providerNames.js';
 
 function isCustomProvider(entry: object): entry is CustomProviderEntry {
-  return "type" in entry && entry.type === "openai-compatible";
+  return 'type' in entry && entry.type === 'openai-compatible';
 }
 
 function isBuiltInProvider(entry: object): entry is BuiltInProviderEntry {
-  return "apiKey" in entry;
+  return 'apiKey' in entry;
 }
 
 function isBedrockProvider(entry: object): entry is BedrockProviderEntry {
-  return "region" in entry || "accessKeyId" in entry || "credentialProvider" in entry;
+  return 'region' in entry || 'accessKeyId' in entry || 'credentialProvider' in entry;
 }
 
-function setGatewayProvider<K extends keyof GatewayConfig["providers"]>(
-  providers: GatewayConfig["providers"],
+function setGatewayProvider<K extends keyof GatewayConfig['providers']>(
+  providers: GatewayConfig['providers'],
   provider: K,
-  entry: GatewayConfig["providers"][K],
+  entry: GatewayConfig['providers'][K],
 ): void {
   providers[provider] = entry;
 }
 
 export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
-  const providers = {} as GatewayConfig["providers"];
+  const providers = {} as GatewayConfig['providers'];
 
   for (const [key, entry] of Object.entries(config.providers)) {
     if (entry === undefined) continue;
 
     if (entry === true) {
       if (!isProviderName(key)) {
-        throw new Error(
-          `[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`,
-        );
+        throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
       }
       setGatewayProvider(providers, getGatewayProviderName(key), {});
       continue;
@@ -72,13 +70,11 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
     }
 
     if (!isProviderName(key)) {
-      throw new Error(
-        `[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`,
-      );
+      throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
     }
 
-    if (key === "replicate") {
-      if (!isBuiltInProvider(entry) || typeof entry.apiKey !== "string" || !entry.apiKey.trim()) {
+    if (key === 'replicate') {
+      if (!isBuiltInProvider(entry) || typeof entry.apiKey !== 'string' || !entry.apiKey.trim()) {
         throw new Error(
           "[frogbot] Provider 'replicate' requires a non-empty apiKey when configured with an object.",
         );
@@ -90,21 +86,17 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
       continue;
     }
 
-    if (key === "bedrock") {
+    if (key === 'bedrock') {
       if (!isBedrockProvider(entry)) {
         throw new Error(
           "[frogbot] Provider 'bedrock' requires a region or explicit AWS credentials.",
         );
       }
-      providers["amazon-bedrock"] = entry;
+      providers['amazon-bedrock'] = entry;
       continue;
     }
 
-    if (
-      !isBuiltInProvider(entry) ||
-      typeof entry.apiKey !== "string" ||
-      !entry.apiKey.trim()
-    ) {
+    if (!isBuiltInProvider(entry) || typeof entry.apiKey !== 'string' || !entry.apiKey.trim()) {
       throw new Error(
         `[frogbot] Provider '${key}' requires a non-empty apiKey when configured with an object.`,
       );
@@ -125,10 +117,7 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
   };
 }
 
-export function createAIGateway(
-  config: SanitizedAIConfig,
-  logger?: Logger,
-): Gateway {
+export function createAIGateway(config: SanitizedAIConfig, logger?: Logger): Gateway {
   const create = createGateway as (config: GatewayConfig) => Gateway;
   return create({
     ...buildGatewayConfig(config),

@@ -132,7 +132,9 @@ describe('createAnthropicStreamTransform', () => {
           totalUsage: { outputTokens: 1 },
         } as unknown as TextStreamPart<ToolSet>,
       ]);
-      expect(events.find((e) => e.event === 'message_delta')?.data.delta.stop_reason).toBe(stopReason);
+      expect(events.find((e) => e.event === 'message_delta')?.data.delta.stop_reason).toBe(
+        stopReason,
+      );
     }
   });
 

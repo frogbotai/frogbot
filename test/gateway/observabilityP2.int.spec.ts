@@ -32,35 +32,43 @@ function makeModel(opts: { text?: string } = {}): LanguageModelV4 {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    get supportedUrls() { return Promise.resolve({}); },
-    doGenerate: () => Promise.resolve({
-      content: [{ type: 'text', text }],
-      finishReason: 'stop',
-      usage: {
-        inputTokens: { total: 10, noCache: 10 },
-        outputTokens: { total: 5, text: 5 },
-      },
-      warnings: [],
-      response: { id: 'r1', modelId: 'mock-model', timestamp: new Date('2026-01-01') },
-    }),
-    doStream: () => Promise.resolve({
-      stream: new ReadableStream<LanguageModelV4StreamPart>({
-        start(controller) {
-          controller.enqueue({ type: 'text-start', id: 't0' } as LanguageModelV4StreamPart);
-          controller.enqueue({ type: 'text-delta', id: 't0', delta: text } as LanguageModelV4StreamPart);
-          controller.enqueue({ type: 'text-end', id: 't0' } as LanguageModelV4StreamPart);
-          controller.enqueue({
-            type: 'finish',
-            finishReason: { unified: 'stop', raw: 'stop' },
-            usage: {
-              inputTokens: { total: 10, noCache: 10 },
-              outputTokens: { total: 5, text: 5 },
-            },
-          } as LanguageModelV4StreamPart);
-          controller.close();
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
+    doGenerate: () =>
+      Promise.resolve({
+        content: [{ type: 'text', text }],
+        finishReason: 'stop',
+        usage: {
+          inputTokens: { total: 10, noCache: 10 },
+          outputTokens: { total: 5, text: 5 },
         },
+        warnings: [],
+        response: { id: 'r1', modelId: 'mock-model', timestamp: new Date('2026-01-01') },
       }),
-    }),
+    doStream: () =>
+      Promise.resolve({
+        stream: new ReadableStream<LanguageModelV4StreamPart>({
+          start(controller) {
+            controller.enqueue({ type: 'text-start', id: 't0' } as LanguageModelV4StreamPart);
+            controller.enqueue({
+              type: 'text-delta',
+              id: 't0',
+              delta: text,
+            } as LanguageModelV4StreamPart);
+            controller.enqueue({ type: 'text-end', id: 't0' } as LanguageModelV4StreamPart);
+            controller.enqueue({
+              type: 'finish',
+              finishReason: { unified: 'stop', raw: 'stop' },
+              usage: {
+                inputTokens: { total: 10, noCache: 10 },
+                outputTokens: { total: 5, text: 5 },
+              },
+            } as LanguageModelV4StreamPart);
+            controller.close();
+          },
+        }),
+      }),
   };
 }
 
@@ -128,9 +136,16 @@ describe('G101 — pre-resolution failures produce zero log lines', () => {
       }
     };
     const logger: GatewayLogger = {
-      trace: capture, debug: capture, info: capture, warn: capture, error: capture, fatal: capture,
+      trace: capture,
+      debug: capture,
+      info: capture,
+      warn: capture,
+      error: capture,
+      fatal: capture,
     };
-    const registry = { openai: { languageModel: () => makeModel() } } as unknown as ProviderRegistry;
+    const registry = {
+      openai: { languageModel: () => makeModel() },
+    } as unknown as ProviderRegistry;
     const app = createApp({ registry, logger });
 
     // Sending a body that fails Zod schema: missing required `messages` field.
@@ -155,16 +170,26 @@ describe('G101 — pre-resolution failures produce zero log lines', () => {
       }
     };
     const logger: GatewayLogger = {
-      trace: capture, debug: capture, info: capture, warn: capture, error: capture, fatal: capture,
+      trace: capture,
+      debug: capture,
+      info: capture,
+      warn: capture,
+      error: capture,
+      fatal: capture,
     };
-    const registry = { openai: { languageModel: () => makeModel() } } as unknown as ProviderRegistry;
+    const registry = {
+      openai: { languageModel: () => makeModel() },
+    } as unknown as ProviderRegistry;
     const app = createApp({ registry, logger });
 
     // Provider `badprovider` is not in the registry → ProviderNotConfiguredError.
     const res = await app.request('http://localhost/v1/chat/completions', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'badprovider/some-model', messages: [{ role: 'user', content: 'hi' }] }),
+      body: JSON.stringify({
+        model: 'badprovider/some-model',
+        messages: [{ role: 'user', content: 'hi' }],
+      }),
     });
 
     expect(res.status).toBe(404);
@@ -176,7 +201,9 @@ describe('G101 — pre-resolution failures produce zero log lines', () => {
 describe('gateway errors with a real pino instance', () => {
   it('preserves a schema-validation 400 and logs it at warn level', async () => {
     const { logger, lines } = capturePino();
-    const registry = { openai: { languageModel: () => makeModel() } } as unknown as ProviderRegistry;
+    const registry = {
+      openai: { languageModel: () => makeModel() },
+    } as unknown as ProviderRegistry;
     const app = createApp({ registry, logger });
 
     const res = await app.request('http://localhost/v1/chat/completions', {
@@ -193,7 +220,12 @@ describe('gateway errors with a real pino instance', () => {
   it('preserves a post-resolution upstream 403 and logs both error layers', async () => {
     const { logger, lines } = capturePino();
     const upstreamBody = {
-      error: { message: 'Forbidden', type: 'permission_error', code: 'permission_denied', param: null },
+      error: {
+        message: 'Forbidden',
+        type: 'permission_error',
+        code: 'permission_denied',
+        param: null,
+      },
     };
     const error = Object.assign(new Error('Forbidden'), {
       [API_CALL_ERROR_MARKER]: true,
@@ -269,12 +301,18 @@ describe('G103 — x-request-id injection: no sanitisation or prefix', () => {
       app.request('http://localhost/v1/chat/completions', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-request-id': id },
-        body: JSON.stringify({ model: 'openai/gpt-4o', messages: [{ role: 'user', content: 'req1' }] }),
+        body: JSON.stringify({
+          model: 'openai/gpt-4o',
+          messages: [{ role: 'user', content: 'req1' }],
+        }),
       }),
       app.request('http://localhost/v1/chat/completions', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-request-id': id },
-        body: JSON.stringify({ model: 'openai/gpt-4o', messages: [{ role: 'user', content: 'req2' }] }),
+        body: JSON.stringify({
+          model: 'openai/gpt-4o',
+          messages: [{ role: 'user', content: 'req2' }],
+        }),
       }),
     ]);
 

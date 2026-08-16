@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const gitHubIcon: IconNode = [
   [
@@ -9,8 +9,8 @@ export const gitHubIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const GitHubIcon = createLucideIcon('GitHubIcon', gitHubIcon, 0, '0 0 24 24')
+const GitHubIcon = createLucideIcon('GitHubIcon', gitHubIcon, 0, '0 0 24 24');
 
-export default GitHubIcon
+export default GitHubIcon;

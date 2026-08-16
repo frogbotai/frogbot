@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const thumbsUpIcon: IconNode = [
   [
@@ -18,8 +18,8 @@ export const thumbsUpIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const ThumbsUpIcon = createLucideIcon('ThumbsUp', thumbsUpIcon)
+const ThumbsUpIcon = createLucideIcon('ThumbsUp', thumbsUpIcon);
 
-export default ThumbsUpIcon
+export default ThumbsUpIcon;

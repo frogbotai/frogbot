@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const visaIcon: IconNode = [
   [
@@ -23,8 +23,8 @@ export const visaIcon: IconNode = [
       fill: '#F2AE14',
     },
   ],
-]
+];
 
-const VisaIcon = createLucideIcon('VisaIcon', visaIcon, undefined, '0 0 24 24')
+const VisaIcon = createLucideIcon('VisaIcon', visaIcon, undefined, '0 0 24 24');
 
-export default VisaIcon
+export default VisaIcon;

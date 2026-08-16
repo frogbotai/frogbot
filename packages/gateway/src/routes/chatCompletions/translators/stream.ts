@@ -15,7 +15,10 @@
 
 import type { TextStreamPart, ToolSet } from 'ai';
 
-import { extractOpenAIStreamErrorInfo, type StreamErrorMaskOptions } from '../../../shared/extractStreamErrorInfo.js';
+import {
+  extractOpenAIStreamErrorInfo,
+  type StreamErrorMaskOptions,
+} from '../../../shared/extractStreamErrorInfo.js';
 import { peekRawValue } from '../../../shared/rawPeek.js';
 import { toReasoningDetail } from '../../../shared/toReasoningDetail.js';
 import type { OpenAIReasoningDetail } from './types.js';
@@ -103,7 +106,9 @@ type StreamState = {
   maskOpts: StreamErrorMaskOptions;
 };
 
-function createStreamState(args: { model: string; includeUsage?: boolean } & StreamErrorMaskOptions): StreamState {
+function createStreamState(
+  args: { model: string; includeUsage?: boolean } & StreamErrorMaskOptions,
+): StreamState {
   return {
     roleEmitted: false,
     toolCallIndices: new Map(),

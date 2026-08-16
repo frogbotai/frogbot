@@ -18,7 +18,9 @@ describe('resolveUserSlug', () => {
   });
 
   it('treats an auth options object as auth enabled', () => {
-    expect(resolveUserSlug(make([{ slug: 'accounts', auth: { verify: true }, fields: [] }]))).toBe('accounts');
+    expect(resolveUserSlug(make([{ slug: 'accounts', auth: { verify: true }, fields: [] }]))).toBe(
+      'accounts',
+    );
   });
 
   it('treats auth: false as not an auth collection', () => {

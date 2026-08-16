@@ -22,22 +22,16 @@ export const claudeThinkingEffort: BeforeUpstreamHook = (args) => {
 
   // Check if thinking is already explicitly configured
   const anthropicOpts = args.providerOptions['anthropic'] as
-    | { thinking?: { type?: string; budgetTokens?: number } }
-    | undefined;
+    { thinking?: { type?: string; budgetTokens?: number } } | undefined;
   if (anthropicOpts?.thinking) return;
 
   // Read the cross-provider reasoning_effort from OpenAI namespace
-  const openaiOpts = args.providerOptions['openai'] as
-    | { reasoning_effort?: string }
-    | undefined;
+  const openaiOpts = args.providerOptions['openai'] as { reasoning_effort?: string } | undefined;
   const effort = openaiOpts?.reasoning_effort;
   if (!effort) return;
 
   // Calculate budget from effort
-  const budgetTokens = calculateReasoningBudgetFromEffort(
-    effort,
-    args.params?.maxOutputTokens,
-  );
+  const budgetTokens = calculateReasoningBudgetFromEffort(effort, args.params?.maxOutputTokens);
 
   if (budgetTokens <= 0) return;
 
@@ -52,6 +46,4 @@ export const claudeThinkingEffort: BeforeUpstreamHook = (args) => {
 /**
  * All Anthropic beforeUpstream hooks, in registration order.
  */
-export const anthropicBeforeUpstream: BeforeUpstreamHook[] = [
-  claudeThinkingEffort,
-];
+export const anthropicBeforeUpstream: BeforeUpstreamHook[] = [claudeThinkingEffort];

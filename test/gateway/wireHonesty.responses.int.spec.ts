@@ -32,10 +32,7 @@
 // findings are wrapped as `it.fails(...)` so the suite stays green; flip to
 // `it()` when the fix lands.
 
-import type {
-  LanguageModelV4,
-  LanguageModelV4CallOptions,
-} from '@ai-sdk/provider';
+import type { LanguageModelV4, LanguageModelV4CallOptions } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
@@ -59,7 +56,9 @@ function createRecordingModel(opts?: {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: async (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
       return {
@@ -110,9 +109,14 @@ describe('responses hosted tools forwarded upstream (openai)', () => {
   // G19 — tools:[{type:'web_search'}] silently stripped (callOptions.tools undefined, 200); flip to it() when fixed. See 056_full_gateway_review.
   it('forwards tools:[{type: web_search}] as provider-defined tool id openai.web_search', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/responses', {
       model: 'openai/gpt-4o-mini',
@@ -123,33 +127,42 @@ describe('responses hosted tools forwarded upstream (openai)', () => {
     expect(status, `expected 200, got ${status}: ${JSON.stringify(body)}`).toBe(200);
     // AI SDK seam: LanguageModelV4ProviderTool (prepare-tools.ts maps ToolSet
     // provider tools to { type: 'provider', id, name, args }).
-    expect(callOptions?.tools).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'provider', id: 'openai.web_search' }),
-    ]));
+    expect(callOptions?.tools).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'provider', id: 'openai.web_search' }),
+      ]),
+    );
   });
 
   // G19 — tools:[{type:'mcp',...}] silently stripped including server config; flip to it() when fixed. See 056_full_gateway_review.
   it('forwards tools:[{type: mcp, server_label, server_url}] as provider-defined tool id openai.mcp with server args', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/responses', {
       model: 'openai/gpt-4o-mini',
       input: 'use the deepwiki server',
-      tools: [{
-        type: 'mcp',
-        server_label: 'deepwiki',
-        server_url: 'https://mcp.deepwiki.com/mcp',
-        require_approval: 'never',
-      }],
+      tools: [
+        {
+          type: 'mcp',
+          server_label: 'deepwiki',
+          server_url: 'https://mcp.deepwiki.com/mcp',
+          require_approval: 'never',
+        },
+      ],
     });
 
     expect(status, `expected 200, got ${status}: ${JSON.stringify(body)}`).toBe(200);
-    expect(callOptions?.tools).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'provider', id: 'openai.mcp' }),
-    ]));
+    expect(callOptions?.tools).toEqual(
+      expect.arrayContaining([expect.objectContaining({ type: 'provider', id: 'openai.mcp' })]),
+    );
     // The server connection config must survive translation (openai-responses
     // mcpArgsSchema: serverLabel/serverUrl/requireApproval).
     const serialized = JSON.stringify(callOptions?.tools ?? []);
@@ -160,9 +173,14 @@ describe('responses hosted tools forwarded upstream (openai)', () => {
   // G19 — hosted tool dropped even alongside a surviving function tool (partial toolset, no warning); flip to it() when fixed. See 056_full_gateway_review.
   it('keeps hosted tools when mixed with function tools', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/responses', {
       model: 'openai/gpt-4o-mini',
@@ -178,10 +196,12 @@ describe('responses hosted tools forwarded upstream (openai)', () => {
     });
 
     expect(status).toBe(200);
-    expect(callOptions?.tools).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'function', name: 'get_weather' }),
-      expect.objectContaining({ type: 'provider', id: 'openai.web_search' }),
-    ]));
+    expect(callOptions?.tools).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'function', name: 'get_weather' }),
+        expect.objectContaining({ type: 'provider', id: 'openai.web_search' }),
+      ]),
+    );
   });
 });
 
@@ -198,9 +218,14 @@ describe('responses hosted tool_choice forwarded upstream', () => {
   // G19 — tool_choice {type:'web_search'} silently degraded to undefined/auto; flip to it() when fixed. See 056_full_gateway_review.
   it('forwards tool_choice {type: web_search} as {type: tool, toolName: web_search}', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/responses', {
       model: 'openai/gpt-4o-mini',
@@ -228,9 +253,15 @@ describe('responses hosted tools on non-OpenAI upstream', () => {
   it('rejects hosted tools with a typed 400 instead of silently degrading', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
     let modelCalled = false;
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      onCall: (options) => { modelCalled = true; callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        onCall: (options) => {
+          modelCalled = true;
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status, body } = await postJson<{ error?: { type?: string; message?: string } }>(
       app,
@@ -245,7 +276,7 @@ describe('responses hosted tools on non-OpenAI upstream', () => {
     expect(
       status,
       `expected typed 400, got ${status}: ${JSON.stringify(body)} ` +
-      `(modelCalled=${modelCalled}, tools=${JSON.stringify(callOptions?.tools)})`,
+        `(modelCalled=${modelCalled}, tools=${JSON.stringify(callOptions?.tools)})`,
     ).toBe(400);
     expect(body).toHaveProperty('error.type', 'invalid_request_error');
     // The upstream must never be invoked with the hosted tool silently removed.

@@ -12,12 +12,16 @@
 // exact point in the handler where it belongs, so the control flow reads
 // top-to-bottom with nothing hidden behind a runner abstraction.
 
-import { type Attributes, type Context as OtelContext,context as otelContext } from '@opentelemetry/api';
-import { generateText, type JSONValue,streamText } from 'ai';
+import {
+  type Attributes,
+  type Context as OtelContext,
+  context as otelContext,
+} from '@opentelemetry/api';
+import { generateText, type JSONValue, streamText } from 'ai';
 import { Hono } from 'hono';
 
 import { isClientAbort } from '../../errors/clientAbort.js';
-import { toContentfulStatus,toOpenAIErrorResponse } from '../../errors/envelope.js';
+import { toContentfulStatus, toOpenAIErrorResponse } from '../../errors/envelope.js';
 import { RequestValidationError } from '../../errors/gatewayError.js';
 import { maybeMaskMessage } from '../../errors/maskMessage.js';
 import { headersForError } from '../../errors/normalizeAiSdkError.js';
@@ -34,21 +38,29 @@ import {
 import type { AiSdkTelemetry } from '../../observability/aiSdkTelemetry.js';
 import { otelContextKey } from '../../observability/tracing.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { type ProviderModelPolicy, type ProviderRegistry,resolveProvider } from '../../providers/registry.js';
+import {
+  type ProviderModelPolicy,
+  type ProviderRegistry,
+  resolveProvider,
+} from '../../providers/registry.js';
 import { normalizeServiceTier } from '../../shared/normalizeServiceTier.js';
 import { peekStream } from '../../shared/peekStream.js';
 import { isProduction } from '../../shared/runtimeDetection.js';
 import { createStreamLifecycle, type StreamLifecycle } from '../../shared/streamLifecycle.js';
-import { type ReasoningDetail,toReasoningDetail } from '../../shared/toReasoningDetail.js';
+import { type ReasoningDetail, toReasoningDetail } from '../../shared/toReasoningDetail.js';
 import { createSseResponse, toSseStream } from '../../shared/toSseStream.js';
 import { createUpstreamSignal, upstreamTimeoutError } from '../../shared/upstreamTimeout.js';
 import { prepareForwardHeaders } from '../../utils/headers.js';
-import { forwardLanguageParams, forwardMessageProviderOptions, parsePromptCachingOptions } from '../../utils/params.js';
+import {
+  forwardLanguageParams,
+  forwardMessageProviderOptions,
+  parsePromptCachingOptions,
+} from '../../utils/params.js';
 import { parseJsonBody } from '../../utils/parseJsonBody.js';
 import { createRepairToolCall } from '../../utils/repairToolCall.js';
 import { ensureRequestId } from '../../utils/requestId.js';
 import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
-import { type ChatCompletionRequest,parseChatCompletionRequest } from './schema.js';
+import { type ChatCompletionRequest, parseChatCompletionRequest } from './schema.js';
 import {
   type OpenAIMessage,
   type OpenAITool,
@@ -57,7 +69,7 @@ import {
   toOpenAIResponse,
 } from './translators/index.js';
 import { createOpenAIStreamTransform } from './translators/stream.js';
-import { toAISDKToolChoice,toAISDKTools } from './translators/tools.js';
+import { toAISDKToolChoice, toAISDKTools } from './translators/tools.js';
 
 export type ChatCompletionsRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
@@ -141,9 +153,9 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
       // Parse top-level prompt caching options → providerOptions.unknown
       const cachingOpts = parsePromptCachingOptions(body as Record<string, unknown>);
       if (
-        cachingOpts?.prompt_cache_key
-        && !cachingOpts.cached_content
-        && (resolved.providerName === 'google' || resolved.providerName === 'vertex')
+        cachingOpts?.prompt_cache_key &&
+        !cachingOpts.cached_content &&
+        (resolved.providerName === 'google' || resolved.providerName === 'vertex')
       ) {
         cachingOpts.cached_content = cachingOpts.prompt_cache_key;
       }
@@ -157,7 +169,8 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
       if (typeof body.reasoning_effort === 'string') {
         unknownOpts.reasoning_effort = body.reasoning_effort;
       }
-      const providerOptions: Record<string, Record<string, JSONValue>> = Object.keys(unknownOpts).length > 0
+      const providerOptions: Record<string, Record<string, JSONValue>> = Object.keys(unknownOpts)
+        .length > 0
         ? { unknown: unknownOpts }
         : {};
       const headers = prepareForwardHeaders(c.req.raw.headers, {
@@ -204,7 +217,8 @@ export function chatCompletionsRoute(ctx: ChatCompletionsRouteContext) {
       // Run the upstream call with the gateway span's context active so AI SDK
       // inner spans parent under it (stashed by the tracing hook's
       // `beforeUpstream`; falls back to the ambient context when tracing is off).
-      const activeContext = (context[otelContextKey] as OtelContext | undefined) ?? otelContext.active();
+      const activeContext =
+        (context[otelContextKey] as OtelContext | undefined) ?? otelContext.active();
 
       phase = 'upstream';
 
@@ -442,7 +456,8 @@ export function extractReasoningDetails(
     details.push(
       toReasoningDetail({
         text: part.text,
-        providerMetadata: (part as { providerMetadata?: Record<string, Record<string, unknown>> }).providerMetadata,
+        providerMetadata: (part as { providerMetadata?: Record<string, Record<string, unknown>> })
+          .providerMetadata,
         id: `reasoning-${crypto.randomUUID()}`,
         index: details.length,
       }),
@@ -469,10 +484,16 @@ function rejectUnsupportedChatParams(body: Record<string, unknown>) {
   // Legacy tool-calling API: forwarding these into a provider namespace would
   // not translate to actual tools, so reject-400 and point clients at `tools`.
   if (body.functions !== undefined && body.functions !== null) {
-    rejectParam('functions', 'The legacy `functions` parameter is not supported. Use `tools` instead.');
+    rejectParam(
+      'functions',
+      'The legacy `functions` parameter is not supported. Use `tools` instead.',
+    );
   }
   if (body.function_call !== undefined && body.function_call !== null) {
-    rejectParam('function_call', 'The legacy `function_call` parameter is not supported. Use `tool_choice` instead.');
+    rejectParam(
+      'function_call',
+      'The legacy `function_call` parameter is not supported. Use `tool_choice` instead.',
+    );
   }
 }
 

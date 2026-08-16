@@ -11,12 +11,12 @@ export function normalizeToolName(name: string): string {
     const c = name.charCodeAt(i);
 
     if (
-      (c >= 48 && c <= 57) ||  // 0-9
-      (c >= 65 && c <= 90) ||  // A-Z
+      (c >= 48 && c <= 57) || // 0-9
+      (c >= 65 && c <= 90) || // A-Z
       (c >= 97 && c <= 122) || // a-z
-      c === 95 ||              // _
-      c === 45 ||              // -
-      c === 46                 // .
+      c === 95 || // _
+      c === 45 || // -
+      c === 46 // .
     ) {
       out += name[i];
     } else {

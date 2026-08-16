@@ -7,7 +7,23 @@ import type { FrogbotRequest } from '../types/request.js';
 
 const { createAgentUIStreamResponse, resolveChatAttachments } = vi.hoisted(() => ({
   createAgentUIStreamResponse: vi.fn(() => Promise.resolve(new Response('stream'))),
-  resolveChatAttachments: vi.fn(({ messages }) => Promise.resolve(messages.map((message: UIMessage) => ({ ...message, parts: message.parts.map((part) => part.type === 'file-reference' ? { type: 'file', filename: 'server.txt', mediaType: 'text/plain', url: 'data:text/plain;base64,ZmlsZQ==' } : part) })))),
+  resolveChatAttachments: vi.fn(({ messages }) =>
+    Promise.resolve(
+      messages.map((message: UIMessage) => ({
+        ...message,
+        parts: message.parts.map((part) =>
+          part.type === 'file-reference'
+            ? {
+                type: 'file',
+                filename: 'server.txt',
+                mediaType: 'text/plain',
+                url: 'data:text/plain;base64,ZmlsZQ==',
+              }
+            : part,
+        ),
+      })),
+    ),
+  ),
 }));
 
 vi.mock('ai', async (importOriginal) => ({
@@ -98,15 +114,20 @@ function makeRequest({
 }
 
 function postHandler() {
-  return buildAgentEndpoints().find(({ path, method }) => path === '/agents/:slug' && method === 'post')!.handler;
+  return buildAgentEndpoints().find(
+    ({ path, method }) => path === '/agents/:slug' && method === 'post',
+  )!.handler;
 }
 
 function listHandler() {
-  return buildAgentEndpoints().find(({ path, method }) => path === '/agents' && method === 'get')!.handler;
+  return buildAgentEndpoints().find(({ path, method }) => path === '/agents' && method === 'get')!
+    .handler;
 }
 
 function authorizationsHandler() {
-  return buildAgentEndpoints().find(({ path, method }) => path === '/agents/:slug/authorizations' && method === 'get')!.handler;
+  return buildAgentEndpoints().find(
+    ({ path, method }) => path === '/agents/:slug/authorizations' && method === 'get',
+  )!.handler;
 }
 
 describe('agent endpoints', () => {
@@ -117,19 +138,35 @@ describe('agent endpoints', () => {
 
   it('lists the same agent profile shape as the manifest', async () => {
     const agent = makeAgent();
-    agent.config = { ...agent.config, profile: { name: 'Ada', avatar: '/ada.png' } } as AgentInstance['config'];
+    agent.config = {
+      ...agent.config,
+      profile: { name: 'Ada', avatar: '/ada.png' },
+    } as AgentInstance['config'];
     const response = await listHandler()(makeRequest({ agent }));
 
-    expect(await response.json()).toEqual({ agents: [{ slug: 'support', profile: agent.config.profile }] });
+    expect(await response.json()).toEqual({
+      agents: [{ slug: 'support', profile: agent.config.profile }],
+    });
   });
 
   it('returns authorization preflight requirements and requires authentication', async () => {
-    const authorizations = vi.fn().mockResolvedValue([{ source: 'google', services: ['google-sheets'], type: 'oauth', scopes: ['sheets'] }]);
+    const authorizations = vi
+      .fn()
+      .mockResolvedValue([
+        { source: 'google', services: ['google-sheets'], type: 'oauth', scopes: ['sheets'] },
+      ]);
     const agent = makeAgent();
     agent.config.tools = [{ slug: 'google-sheets_find', pieceService: 'google-sheets' } as never];
     const response = await authorizationsHandler()(makeRequest({ agent, authorizations }));
-    expect(await response.json()).toEqual({ authorizations: [{ source: 'google', services: ['google-sheets'], type: 'oauth', scopes: ['sheets'] }] });
-    expect(authorizations).toHaveBeenCalledWith({ owner: { id: 'user-1' }, services: ['google-sheets'] });
+    expect(await response.json()).toEqual({
+      authorizations: [
+        { source: 'google', services: ['google-sheets'], type: 'oauth', scopes: ['sheets'] },
+      ],
+    });
+    expect(authorizations).toHaveBeenCalledWith({
+      owner: { id: 'user-1' },
+      services: ['google-sheets'],
+    });
     expect((await authorizationsHandler()(makeRequest({ user: null }))).status).toBe(401);
   });
 
@@ -165,7 +202,10 @@ describe('agent endpoints', () => {
 
   it('accepts stable file references and resolves them before invocation', async () => {
     const agent = makeAgent();
-    const parts = [{ type: 'text', text: 'Read' }, { type: 'file-reference', id: 'file-1', filename: 'client.txt', mediaType: 'text/plain' }];
+    const parts = [
+      { type: 'text', text: 'Read' },
+      { type: 'file-reference', id: 'file-1', filename: 'client.txt', mediaType: 'text/plain' },
+    ];
     const request = makeRequest({
       agent,
       accept: 'text/event-stream',
@@ -175,11 +215,28 @@ describe('agent endpoints', () => {
     const response = await postHandler()(request);
 
     expect(await response.text()).toBe('stream');
-    expect(resolveChatAttachments).toHaveBeenCalledWith({ req: request, messages: [expect.objectContaining({ parts: [{ type: 'text', text: 'Read' }, { type: 'file-reference', id: 'file-1', filename: 'client.txt', mediaType: 'text/plain' }] })] });
+    expect(resolveChatAttachments).toHaveBeenCalledWith({
+      req: request,
+      messages: [
+        expect.objectContaining({
+          parts: [
+            { type: 'text', text: 'Read' },
+            {
+              type: 'file-reference',
+              id: 'file-1',
+              filename: 'client.txt',
+              mediaType: 'text/plain',
+            },
+          ],
+        }),
+      ],
+    });
   });
 
   it('preserves safe status values from agent errors', async () => {
-    const generate = vi.fn(() => Promise.reject(Object.assign(new Error('denied'), { statusCode: 403 })));
+    const generate = vi.fn(() =>
+      Promise.reject(Object.assign(new Error('denied'), { statusCode: 403 })),
+    );
     const response = await postHandler()(makeRequest({ agent: makeAgent(generate) }));
 
     expect(response.status).toBe(403);
@@ -241,7 +298,8 @@ describe('agent endpoints', () => {
   });
 
   it('persists the streamed assistant message with finish usage', async () => {
-    const create = vi.fn()
+    const create = vi
+      .fn()
       .mockResolvedValueOnce({ id: 'thread-9' })
       .mockResolvedValue({ id: 'assistant-1' });
     const update = vi.fn(() => Promise.resolve({ id: 'thread-9' }));
@@ -276,21 +334,30 @@ describe('agent endpoints', () => {
       expect.objectContaining({
         collection: 'messages',
         data: expect.objectContaining({ id: 'assistant-1', role: 'assistant' }),
-        context: { frogbotMessageUsage: expect.objectContaining({ totalTokens: 3, model: 'openai/test' }) },
+        context: {
+          frogbotMessageUsage: expect.objectContaining({ totalTokens: 3, model: 'openai/test' }),
+        },
       }),
     );
-    expect(update).toHaveBeenCalledWith(expect.objectContaining({ collection: 'threads', id: 'thread-9' }));
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'threads', id: 'thread-9' }),
+    );
   });
 
   it('persists partial assistant parts when the stream ends without usage', async () => {
-    const create = vi.fn()
+    const create = vi
+      .fn()
       .mockResolvedValueOnce({ id: 'thread-9' })
       .mockResolvedValue({ id: 'assistant-1' });
     const request = makeRequest({ create, accept: 'text/event-stream' });
     await postHandler()(request);
 
     const options = createAgentUIStreamResponse.mock.calls[0][0] as {
-      onFinish: (event: { responseMessage: UIMessage; isContinuation: boolean; isAborted: boolean }) => Promise<void>;
+      onFinish: (event: {
+        responseMessage: UIMessage;
+        isContinuation: boolean;
+        isAborted: boolean;
+      }) => Promise<void>;
     };
     await options.onFinish({
       responseMessage: {
@@ -314,7 +381,11 @@ describe('agent endpoints', () => {
   it('loads an owned existing thread with overrideAccess true and echoes its id', async () => {
     const create = vi.fn(() => Promise.resolve({ id: 'msg-1' }));
     const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7', user: 'user-1' }));
-    const request = makeRequest({ create, findByID, body: { prompt: 'Hello', threadId: 'thread-7' } });
+    const request = makeRequest({
+      create,
+      findByID,
+      body: { prompt: 'Hello', threadId: 'thread-7' },
+    });
     const response = await postHandler()(request);
 
     expect(findByID).toHaveBeenCalledWith({
@@ -329,8 +400,12 @@ describe('agent endpoints', () => {
   });
 
   it('propagates thread load failures as their status', async () => {
-    const findByID = vi.fn(() => Promise.reject(Object.assign(new Error('not found'), { status: 404 })));
-    const response = await postHandler()(makeRequest({ findByID, body: { prompt: 'Hello', threadId: 'gone' } }));
+    const findByID = vi.fn(() =>
+      Promise.reject(Object.assign(new Error('not found'), { status: 404 })),
+    );
+    const response = await postHandler()(
+      makeRequest({ findByID, body: { prompt: 'Hello', threadId: 'gone' } }),
+    );
 
     expect(response.status).toBe(404);
   });
@@ -342,7 +417,11 @@ describe('agent endpoints', () => {
     const response = await postHandler()(makeRequest({ agent, create, user: null }));
 
     expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'threads', data: { user: null, agent: 'support' }, overrideAccess: true }),
+      expect.objectContaining({
+        collection: 'threads',
+        data: { user: null, agent: 'support' },
+        overrideAccess: true,
+      }),
     );
     expect(await response.json()).toMatchObject({ threadId: 'thread-9' });
   });
@@ -373,7 +452,9 @@ describe('agent endpoints', () => {
         overrideAccess: true,
       }),
     );
-    expect(create.mock.invocationCallOrder[0]).toBeLessThan((agent.generate as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]);
+    expect(create.mock.invocationCallOrder[0]).toBeLessThan(
+      (agent.generate as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0],
+    );
     expect(agent.generate).toHaveBeenCalledWith(
       expect.objectContaining({
         messages: [
@@ -395,7 +476,9 @@ describe('agent endpoints', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(findByID).toHaveBeenCalledWith(expect.objectContaining({ id: 'thread-7', overrideAccess: true }));
+    expect(findByID).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'thread-7', overrideAccess: true }),
+    );
     expect(await response.json()).toMatchObject({ threadId: 'thread-7' });
   });
 
@@ -406,7 +489,14 @@ describe('agent endpoints', () => {
     const find = vi.fn();
     const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7', user: 'user-1' }));
     const response = await postHandler()(
-      makeRequest({ agent, create, find, findByID, user: null, body: { prompt: 'Hello', threadId: 'thread-7' } }),
+      makeRequest({
+        agent,
+        create,
+        find,
+        findByID,
+        user: null,
+        body: { prompt: 'Hello', threadId: 'thread-7' },
+      }),
     );
 
     expect(response.status).toBe(404);
@@ -426,5 +516,4 @@ describe('agent endpoints', () => {
     expect(findByID).not.toHaveBeenCalled();
     expect(agent.generate).not.toHaveBeenCalled();
   });
-
 });

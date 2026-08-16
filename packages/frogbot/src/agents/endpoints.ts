@@ -20,7 +20,9 @@ import {
 const threadIdSchema = z.union([z.string(), z.number()]).optional();
 
 const bodySchema = z.union([
-  z.object({ prompt: z.string().min(1), messages: z.never().optional(), threadId: threadIdSchema }).strict(),
+  z
+    .object({ prompt: z.string().min(1), messages: z.never().optional(), threadId: threadIdSchema })
+    .strict(),
   z
     .object({
       messages: z.array(z.unknown()).min(1),
@@ -30,7 +32,8 @@ const bodySchema = z.union([
     .strict(),
 ]);
 
-type AgentRequestBody = { prompt: string; messages?: never } | { messages: UIMessage[]; prompt?: never };
+type AgentRequestBody =
+  { prompt: string; messages?: never } | { messages: UIMessage[]; prompt?: never };
 
 export function buildAgentEndpoints() {
   return [
@@ -50,10 +53,18 @@ export function buildAgentEndpoints() {
             requestedThreadId = threadId;
             body =
               'messages' in parsed && parsed.messages
-                ? { messages: await validateChatMessages(parsed.messages, agent.aiAgent.tools as never) }
+                ? {
+                    messages: await validateChatMessages(
+                      parsed.messages,
+                      agent.aiAgent.tools as never,
+                    ),
+                  }
                 : parsed;
           } catch {
-            return Response.json({ error: 'Body must include `prompt` (string) or `messages` (array)' }, { status: 400 });
+            return Response.json(
+              { error: 'Body must include `prompt` (string) or `messages` (array)' },
+              { status: 400 },
+            );
           }
 
           const { threadId, uiMessages } = await prepareAgentRequest({
@@ -65,10 +76,17 @@ export function buildAgentEndpoints() {
           const providerMessages = await resolveChatAttachments({ req, messages: uiMessages });
 
           if (acceptsEventStream(req.headers.get('accept'))) {
-            return await createAgentUIStreamResponse(getAgentStreamOptions({ req, agent, threadId, uiMessages: providerMessages }));
+            return await createAgentUIStreamResponse(
+              getAgentStreamOptions({ req, agent, threadId, uiMessages: providerMessages }),
+            );
           }
 
-          const result = await generateAgentRequest({ req, agent, threadId, uiMessages: providerMessages });
+          const result = await generateAgentRequest({
+            req,
+            agent,
+            threadId,
+            uiMessages: providerMessages,
+          });
 
           return Response.json({
             text: result.text,
@@ -99,7 +117,10 @@ export function buildAgentEndpoints() {
           agent = getAgent({ req, slug });
           await assertAgentAccess({ req, agent });
         } catch (error) {
-          return Response.json({ error: getErrorMessage(error) }, { status: getErrorStatus(error) });
+          return Response.json(
+            { error: getErrorMessage(error) },
+            { status: getErrorStatus(error) },
+          );
         }
         return Response.json({ authorizations: await getAgentAuthorizations({ req, agent }) });
       },
@@ -127,13 +148,17 @@ function toUIMessages(body: AgentRequestBody): UIMessage[] {
 }
 
 function acceptsEventStream(accept: string | null): boolean {
-  return accept?.split(',').some((value) => value.trim().split(';', 1)[0] === 'text/event-stream') ?? false;
+  return (
+    accept?.split(',').some((value) => value.trim().split(';', 1)[0] === 'text/event-stream') ??
+    false
+  );
 }
 
 function getErrorStatus(error: unknown): number {
   if (error instanceof AgentServiceError) return error.status;
   if (typeof error !== 'object' || error === null) return 500;
-  const status = 'status' in error ? error.status : 'statusCode' in error ? error.statusCode : undefined;
+  const status =
+    'status' in error ? error.status : 'statusCode' in error ? error.statusCode : undefined;
   return typeof status === 'number' && status >= 400 && status <= 599 ? status : 500;
 }
 

@@ -82,7 +82,12 @@ describe('toAnthropicResponse', () => {
   });
 
   test('maps finishReason to stop_reason and forwards stop_sequence', () => {
-    const result = toAnthropicResponse({ ...baseArgs, text: 'x', finishReason: 'tool-calls', stopSequence: 'STOP' });
+    const result = toAnthropicResponse({
+      ...baseArgs,
+      text: 'x',
+      finishReason: 'tool-calls',
+      stopSequence: 'STOP',
+    });
     expect(result.stop_reason).toBe('tool_use');
     expect(result.stop_sequence).toBe('STOP');
   });
@@ -93,7 +98,11 @@ describe('toAnthropicResponse', () => {
   });
 
   test('emits base usage tokens', () => {
-    const result = toAnthropicResponse({ ...baseArgs, text: 'x', usage: { inputTokens: 8, outputTokens: 15 } });
+    const result = toAnthropicResponse({
+      ...baseArgs,
+      text: 'x',
+      usage: { inputTokens: 8, outputTokens: 15 },
+    });
     expect(result.usage.input_tokens).toBe(8);
     expect(result.usage.output_tokens).toBe(15);
   });

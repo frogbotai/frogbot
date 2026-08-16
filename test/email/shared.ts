@@ -1,1 +1,1 @@
-export const usersSlug = 'users'
+export const usersSlug = 'users';

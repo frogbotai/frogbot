@@ -10,8 +10,9 @@ export function buildManifestEndpoint() {
     handler: async (req: FrogbotRequest) => {
       const agents = await listAgents({ req });
 
-      const transcription = getFilteredCatalog(new Set(Object.keys(req.frogbot.config.ai?.providers ?? {})))
-        .find((entry) => entry.mode === 'audio_transcription');
+      const transcription = getFilteredCatalog(
+        new Set(Object.keys(req.frogbot.config.ai?.providers ?? {})),
+      ).find((entry) => entry.mode === 'audio_transcription');
       const body: ManifestResponse = {
         ai: { transcribe: transcription ? { model: transcription.id } : false },
         chat: req.frogbot.config.chat,

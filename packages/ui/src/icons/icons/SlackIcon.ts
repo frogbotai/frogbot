@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const slackIcon: IconNode = [
   [
@@ -9,8 +9,8 @@ export const slackIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const SlackIcon = createLucideIcon('SlackIcon', slackIcon, 0, '0 0 24 24')
+const SlackIcon = createLucideIcon('SlackIcon', slackIcon, 0, '0 0 24 24');
 
-export default SlackIcon
+export default SlackIcon;

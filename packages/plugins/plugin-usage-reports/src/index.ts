@@ -93,7 +93,14 @@ function parseRequest(req: FrogbotRequest, groups: ReadonlySet<UsageReportGroup>
   const groupBy = search.get('groupBy') as UsageReportGroup | null;
   const fromDate = new Date(search.get('from') ?? '');
   const toDate = new Date(search.get('to') ?? '');
-  if (!groupBy || !groups.has(groupBy) || Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime()) || fromDate > toDate) return;
+  if (
+    !groupBy ||
+    !groups.has(groupBy) ||
+    Number.isNaN(fromDate.getTime()) ||
+    Number.isNaN(toDate.getTime()) ||
+    fromDate > toDate
+  )
+    return;
   return { groupBy, from: fromDate.toISOString(), to: toDate.toISOString() };
 }
 
@@ -146,7 +153,10 @@ function buildReportEndpoint({ slug, pageSize, groups, access }: ReportEndpointO
         if (!result.hasNextPage) break;
         page = result.nextPage ?? page + 1;
       }
-      const reportRows = [...rows.values()].sort((a, b) => b.costUSD - a.costUSD || b.totalTokens - a.totalTokens || a.label.localeCompare(b.label));
+      const reportRows = [...rows.values()].sort(
+        (a, b) =>
+          b.costUSD - a.costUSD || b.totalTokens - a.totalTokens || a.label.localeCompare(b.label),
+      );
       const totals = emptyRow('', '');
       for (const row of reportRows) {
         totals.requestCount += row.requestCount;
@@ -159,39 +169,57 @@ function buildReportEndpoint({ slug, pageSize, groups, access }: ReportEndpointO
         totals.costUSD += row.costUSD;
       }
       const { key: _key, label: _label, ...reportTotals } = totals;
-      return Response.json({ ...query, rows: reportRows, totals: reportTotals } satisfies UsageReport);
+      return Response.json({
+        ...query,
+        rows: reportRows,
+        totals: reportTotals,
+      } satisfies UsageReport);
     },
   };
 }
 
 export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plugin {
   const pageSize = options.pageSize ?? 5000;
-  if (!Number.isInteger(pageSize) || pageSize < 1) throw new Error('[plugin-usage-reports] pageSize must be a positive integer.');
+  if (!Number.isInteger(pageSize) || pageSize < 1)
+    throw new Error('[plugin-usage-reports] pageSize must be a positive integer.');
   return async (config) => {
     if (!config.ai) throw new Error('[plugin-usage-reports] AI configuration is required.');
     const existing = config.collections.find((collection) => collection.usageLog === true);
     const usage = existing ?? { slug: 'usage-logs', usageLog: true as const, fields: [] };
     const collections = existing
-      ? config.collections.map((collection) => collection === existing
-        ? { ...collection, admin: { ...collection.admin, groupBy: true } }
-        : collection)
+      ? config.collections.map((collection) =>
+          collection === existing
+            ? { ...collection, admin: { ...collection.admin, groupBy: true } }
+            : collection,
+        )
       : [...config.collections, { ...usage, admin: { groupBy: true } }];
     const groups = new Set<UsageReportGroup>(['day', 'model', 'user']);
-    if (usage.fields.some((field) => 'name' in field && field.name === 'apiKey')) groups.add('apiKey');
+    if (usage.fields.some((field) => 'name' in field && field.name === 'apiKey'))
+      groups.add('apiKey');
     return {
       ...config,
       collections,
-      endpoints: [...(config.endpoints ?? []), buildReportEndpoint({ slug: usage.slug, pageSize, groups, access: options.access ?? loggedIn })],
+      endpoints: [
+        ...(config.endpoints ?? []),
+        buildReportEndpoint({
+          slug: usage.slug,
+          pageSize,
+          groups,
+          access: options.access ?? loggedIn,
+        }),
+      ],
       admin: {
         ...config.admin,
         components: {
           ...config.admin?.components,
           afterNavLinks: [
-            ...(((config.admin?.components as Record<string, unknown> | undefined)?.afterNavLinks as unknown[] | undefined) ?? []),
+            ...(((config.admin?.components as Record<string, unknown> | undefined)
+              ?.afterNavLinks as unknown[] | undefined) ?? []),
             '@frogbotai/plugin-usage-reports/client#UsageReportsNavLink',
           ],
           views: {
-            ...(((config.admin?.components as Record<string, unknown> | undefined)?.views as Record<string, unknown> | undefined) ?? {}),
+            ...(((config.admin?.components as Record<string, unknown> | undefined)?.views as
+              Record<string, unknown> | undefined) ?? {}),
             usageReports: {
               Component: '@frogbotai/plugin-usage-reports/client#UsageReports',
               path: '/usage-analytics',

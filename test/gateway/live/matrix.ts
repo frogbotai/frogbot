@@ -16,13 +16,7 @@ import type { ProviderName } from '../../../packages/gateway/src/providers/regis
 export type TextWire = 'chat' | 'messages' | 'responses';
 
 export type LiveRoute =
-  | TextWire
-  | 'embeddings'
-  | 'rerank'
-  | 'transcriptions'
-  | 'speech'
-  | 'images'
-  | 'videos';
+  TextWire | 'embeddings' | 'rerank' | 'transcriptions' | 'speech' | 'images' | 'videos';
 
 export type SpeechSpec = { model: string; voice: string };
 

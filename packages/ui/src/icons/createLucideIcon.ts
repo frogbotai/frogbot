@@ -1,19 +1,19 @@
-import { createElement, forwardRef } from 'react'
-import { IconNode, LucideProps } from './types'
-import IconBase from './IconBase'
+import { createElement, forwardRef } from 'react';
+import { IconNode, LucideProps } from './types';
+import IconBase from './IconBase';
 
 // Helper functions
 const toKebabCase = (str: string): string => {
-  return str.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
-}
+  return str.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+};
 
 const toPascalCase = (str: string): string => {
-  return str.charAt(0).toUpperCase() + str.slice(1)
-}
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
 
 const mergeClasses = (...classes: (string | undefined)[]): string => {
-  return classes.filter(Boolean).join(' ')
-}
+  return classes.filter(Boolean).join(' ');
+};
 
 const createLucideIcon = (
   iconName: string,
@@ -30,11 +30,11 @@ const createLucideIcon = (
       ...(defaultViewBox !== undefined && { viewBox: defaultViewBox }),
       ...props,
     }),
-  )
+  );
 
-  Component.displayName = toPascalCase(iconName)
+  Component.displayName = toPascalCase(iconName);
 
-  return Component
-}
+  return Component;
+};
 
-export default createLucideIcon
+export default createLucideIcon;

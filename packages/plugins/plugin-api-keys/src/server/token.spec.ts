@@ -31,7 +31,9 @@ describe('API key token utilities', () => {
   });
 
   it('extracts Bearer tokens case-insensitively', () => {
-    expect(extractApiKeyToken(new Headers({ authorization: 'bearer fbt_token' }))).toBe('fbt_token');
+    expect(extractApiKeyToken(new Headers({ authorization: 'bearer fbt_token' }))).toBe(
+      'fbt_token',
+    );
   });
 
   it('extracts default and configured key headers', () => {

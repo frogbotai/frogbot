@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const hourglassIcon: IconNode = [
   [
@@ -34,8 +34,8 @@ export const hourglassIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const HourglassIcon = createLucideIcon('HourglassIcon', hourglassIcon)
+const HourglassIcon = createLucideIcon('HourglassIcon', hourglassIcon);
 
-export default HourglassIcon
+export default HourglassIcon;

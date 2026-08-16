@@ -11,7 +11,8 @@ import { FrogbotRESTClient } from '../__helpers/shared/FrogbotRESTClient';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
-const prompt = 'Call get_secret_code now, then reply with only the exact code returned by the tool.';
+const prompt =
+  'Call get_secret_code now, then reply with only the exact code returned by the tool.';
 const sentinel = 'FROGBOT-E2E-7421';
 
 type RegisterBody = {
@@ -97,61 +98,54 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
     rmSync(dataDir, { recursive: true, force: true });
   });
 
-  it(
-    'round-trips a tool result into the final answer',
-    { retry: 2 },
-    async () => {
-      const response = await client.post<AgentBody>(
-        '/api/agents/tool-demo',
-        { prompt },
-        { headers: { authorization: `Bearer ${token}` } },
-      );
+  it('round-trips a tool result into the final answer', { retry: 2 }, async () => {
+    const response = await client.post<AgentBody>(
+      '/api/agents/tool-demo',
+      { prompt },
+      { headers: { authorization: `Bearer ${token}` } },
+    );
 
-      expect(response.status, JSON.stringify(response.body)).toBe(200);
-      expect(response.body.text).toContain(sentinel);
-      expect(response.body.threadId).toBeDefined();
-      threadId = response.body.threadId;
-    },
-  );
+    expect(response.status, JSON.stringify(response.body)).toBe(200);
+    expect(response.body.text).toContain(sentinel);
+    expect(response.body.threadId).toBeDefined();
+    threadId = response.body.threadId;
+  });
 
-  it(
-    'persists one transcript with the completed tool call',
-    { retry: 2 },
-    async () => {
-      const auth = { headers: { authorization: `Bearer ${token}` } };
-      const threads = await client.get<
-        FindBody<{ id: string | number; agent: string; user: string | number | { id: string | number } }>
-      >('/api/threads', auth);
+  it('persists one transcript with the completed tool call', { retry: 2 }, async () => {
+    const auth = { headers: { authorization: `Bearer ${token}` } };
+    const threads = await client.get<
+      FindBody<{
+        id: string | number;
+        agent: string;
+        user: string | number | { id: string | number };
+      }>
+    >('/api/threads', auth);
 
-      expect(threads.status, JSON.stringify(threads.body)).toBe(200);
-      expect(threads.body.docs).toHaveLength(1);
-      expect(threads.body.docs[0]?.agent).toBe('tool-demo');
-      const owner = threads.body.docs[0]?.user;
-      expect(typeof owner === 'object' ? owner.id : owner).toBe(userId);
+    expect(threads.status, JSON.stringify(threads.body)).toBe(200);
+    expect(threads.body.docs).toHaveLength(1);
+    expect(threads.body.docs[0]?.agent).toBe('tool-demo');
+    const owner = threads.body.docs[0]?.user;
+    expect(typeof owner === 'object' ? owner.id : owner).toBe(userId);
 
-      const messages = await client.get<
-        FindBody<{ role: string; parts: Array<Record<string, unknown>> }>
-      >(`/api/messages?where[thread][equals]=${threadId}&sort=createdAt`, auth);
+    const messages = await client.get<
+      FindBody<{ role: string; parts: Array<Record<string, unknown>> }>
+    >(`/api/messages?where[thread][equals]=${threadId}&sort=createdAt`, auth);
 
-      expect(messages.status, JSON.stringify(messages.body)).toBe(200);
-      expect(messages.body.docs).toHaveLength(2);
-      expect(messages.body.docs.map(({ role }) => role)).toEqual(['user', 'assistant']);
-      const assistant = messages.body.docs.find(({ role }) => role === 'assistant');
-      expect(assistant).toBeDefined();
-      expect(
-        assistant?.parts.some(
-          (part) =>
-            part.type === 'tool-get_secret_code' &&
-            JSON.stringify(part.output).includes(sentinel),
-        ),
-        JSON.stringify(assistant?.parts),
-      ).toBe(true);
-      expect(
-        assistant?.parts.some(
-          (part) => part.type === 'text' && String(part.text).includes(sentinel),
-        ),
-        JSON.stringify(assistant?.parts),
-      ).toBe(true);
-    },
-  );
+    expect(messages.status, JSON.stringify(messages.body)).toBe(200);
+    expect(messages.body.docs).toHaveLength(2);
+    expect(messages.body.docs.map(({ role }) => role)).toEqual(['user', 'assistant']);
+    const assistant = messages.body.docs.find(({ role }) => role === 'assistant');
+    expect(assistant).toBeDefined();
+    expect(
+      assistant?.parts.some(
+        (part) =>
+          part.type === 'tool-get_secret_code' && JSON.stringify(part.output).includes(sentinel),
+      ),
+      JSON.stringify(assistant?.parts),
+    ).toBe(true);
+    expect(
+      assistant?.parts.some((part) => part.type === 'text' && String(part.text).includes(sentinel)),
+      JSON.stringify(assistant?.parts),
+    ).toBe(true);
+  });
 });

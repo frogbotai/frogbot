@@ -37,7 +37,11 @@ describe('policy errors', () => {
   it.each([
     [new BudgetExceededError(), 403, 'budget_exceeded'],
     [new ModelNotAllowedError('openai/gpt-4o'), 403, 'model_not_allowed'],
-    [new RateLimitExceededError({ kind: 'rpm', retryAfterSeconds: 10 }), 429, 'rate_limit_exceeded'],
+    [
+      new RateLimitExceededError({ kind: 'rpm', retryAfterSeconds: 10 }),
+      429,
+      'rate_limit_exceeded',
+    ],
   ])('preserves status and code', (error, status, code) => {
     expect(toOpenAIErrorResponse(error)).toMatchObject({ status, body: { error: { code } } });
   });
@@ -143,7 +147,12 @@ describe('toOpenAIErrorResponse — OpenAI-shaped upstream bodies', () => {
 
   it('preserves upstream param when present', () => {
     const data = {
-      error: { message: 'invalid value for messages', type: 'invalid_request_error', code: null, param: 'messages' },
+      error: {
+        message: 'invalid value for messages',
+        type: 'invalid_request_error',
+        code: null,
+        param: 'messages',
+      },
     };
     const { body } = toOpenAIErrorResponse(apiCallError({ statusCode: 400, data }));
     expect(body.error.param).toBe('messages');
@@ -175,7 +184,11 @@ describe('toOpenAIErrorResponse — OpenAI-shaped upstream bodies', () => {
 
   it('unwraps double-encoded OpenRouter error.message envelope', () => {
     const inner = JSON.stringify({
-      error: { code: 429, message: 'Resource has been exhausted (e.g. check quota).', status: 'RESOURCE_EXHAUSTED' },
+      error: {
+        code: 429,
+        message: 'Resource has been exhausted (e.g. check quota).',
+        status: 'RESOURCE_EXHAUSTED',
+      },
     });
     const data = { error: { message: inner, code: 429 } };
     const { body, status } = toOpenAIErrorResponse(apiCallError({ statusCode: 429, data }));
@@ -185,7 +198,9 @@ describe('toOpenAIErrorResponse — OpenAI-shaped upstream bodies', () => {
   });
 
   it('normalizes image content policy refusals to the canonical OpenAI code', () => {
-    const data = { error: { message: 'Request blocked by the safety policy.', code: 'safety_blocked' } };
+    const data = {
+      error: { message: 'Request blocked by the safety policy.', code: 'safety_blocked' },
+    };
     const { body, status } = toOpenAIErrorResponse(apiCallError({ statusCode: 400, data }));
     expect(status).toBe(400);
     expect(body.error.type).toBe('invalid_request_error');
@@ -200,7 +215,9 @@ describe('toOpenAIErrorResponse — OpenAI-shaped upstream bodies', () => {
 describe('toOpenAIErrorResponse — HTML body from upstream proxy/gateway', () => {
   it('substitutes friendly 401 message when body is HTML', () => {
     const html = '<!doctype html><html><body><h1>401 Unauthorized</h1></body></html>';
-    const { body, status } = toOpenAIErrorResponse(apiCallError({ statusCode: 401, responseBody: html }));
+    const { body, status } = toOpenAIErrorResponse(
+      apiCallError({ statusCode: 401, responseBody: html }),
+    );
     expect(status).toBe(401);
     expect(body.error.type).toBe('authentication_error');
     expect(body.error.message).toMatch(/blocked by a gateway or proxy/);
@@ -209,7 +226,9 @@ describe('toOpenAIErrorResponse — HTML body from upstream proxy/gateway', () =
 
   it('substitutes friendly 403 message when body is HTML', () => {
     const html = '<html><body>Forbidden</body></html>';
-    const { body, status } = toOpenAIErrorResponse(apiCallError({ statusCode: 403, responseBody: html }));
+    const { body, status } = toOpenAIErrorResponse(
+      apiCallError({ statusCode: 403, responseBody: html }),
+    );
     expect(status).toBe(403);
     expect(body.error.message).toMatch(/blocked by a gateway or proxy/);
   });
@@ -229,7 +248,9 @@ describe('toOpenAIErrorResponse — HTML body from upstream proxy/gateway', () =
 
 describe('toOpenAIErrorResponse — empty / malformed bodies', () => {
   it('uses err.message when responseBody is missing', () => {
-    const { body } = toOpenAIErrorResponse(apiCallError({ message: 'upstream timed out', statusCode: 504 }));
+    const { body } = toOpenAIErrorResponse(
+      apiCallError({ message: 'upstream timed out', statusCode: 504 }),
+    );
     expect(body.error.message).toBe('upstream timed out');
   });
 
@@ -278,7 +299,10 @@ describe('toOpenAIErrorResponse — context overflow normalization', () => {
 
   it('normalizes Anthropic "prompt is too long" message', () => {
     const { body, status } = toOpenAIErrorResponse(
-      apiCallError({ statusCode: 400, message: 'prompt is too long: 250000 tokens > 200000 maximum' }),
+      apiCallError({
+        statusCode: 400,
+        message: 'prompt is too long: 250000 tokens > 200000 maximum',
+      }),
     );
     expect(status).toBe(400);
     expect(body.error.code).toBe('context_length_exceeded');
@@ -295,7 +319,10 @@ describe('toOpenAIErrorResponse — context overflow normalization', () => {
 
   it('normalizes Gemini "input token count exceeds the maximum"', () => {
     const { body } = toOpenAIErrorResponse(
-      apiCallError({ statusCode: 400, message: 'input token count of 50000 exceeds the maximum of 32000' }),
+      apiCallError({
+        statusCode: 400,
+        message: 'input token count of 50000 exceeds the maximum of 32000',
+      }),
     );
     expect(body.error.code).toBe('context_length_exceeded');
   });

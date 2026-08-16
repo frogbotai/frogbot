@@ -19,7 +19,9 @@ function createMockLanguageModel(): LanguageModelV4 {
     provider: 'mock',
     modelId: 'mock-model',
     defaultObjectGenerationMode: undefined,
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: () =>
       Promise.resolve({
         content: [{ type: 'text', text: 'hi' }],

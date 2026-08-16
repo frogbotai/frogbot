@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const attachmentIcon: IconNode = [
   [
@@ -10,8 +10,8 @@ export const attachmentIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const AttachmentIcon = createLucideIcon('Attachment', attachmentIcon)
+const AttachmentIcon = createLucideIcon('Attachment', attachmentIcon);
 
-export default AttachmentIcon
+export default AttachmentIcon;

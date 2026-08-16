@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const googleIcon: IconNode = [
   [
@@ -9,8 +9,8 @@ export const googleIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const GoogleIcon = createLucideIcon('GoogleIcon', googleIcon, 0, '0 0 24 24')
+const GoogleIcon = createLucideIcon('GoogleIcon', googleIcon, 0, '0 0 24 24');
 
-export default GoogleIcon
+export default GoogleIcon;

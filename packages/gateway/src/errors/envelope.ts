@@ -47,7 +47,7 @@ import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { isProduction } from '../shared/runtimeDetection.js';
 import { classifyAiSdkError } from './classifyAiSdkError.js';
 import { isUpstreamAbortError } from './clientAbort.js';
-import { type GatewayErrorCode,isGatewayError } from './gatewayError.js';
+import { type GatewayErrorCode, isGatewayError } from './gatewayError.js';
 import { maybeMaskMessage, redactKeyFragments } from './maskMessage.js';
 import { CONTEXT_OVERFLOW_ENVELOPE, isContextOverflow } from './overflow.js';
 import { statusToAnthropicType, statusToOpenAIType } from './statusMaps.js';
@@ -83,21 +83,7 @@ export type ErrorResponseOptions = {
 
 /** HTTP statuses we use; widened so Hono's `c.json(body, status)` accepts them. */
 export type GatewayHttpStatus =
-  | 400
-  | 401
-  | 402
-  | 403
-  | 404
-  | 408
-  | 409
-  | 413
-  | 422
-  | 429
-  | 500
-  | 502
-  | 503
-  | 504
-  | 529;
+  400 | 401 | 402 | 403 | 404 | 408 | 409 | 413 | 422 | 429 | 500 | 502 | 503 | 504 | 529;
 
 // Hono's `ContentfulStatusCode` omits non-standard codes like 529 (Anthropic's
 // "overloaded"), which the gateway intentionally serves. Hono serves 529
@@ -323,7 +309,10 @@ export function toOpenAIErrorResponse(
   return maskOpenAIResponse(toOpenAIErrorResponseUnmasked(err), opts);
 }
 
-function toOpenAIErrorResponseUnmasked(err: unknown): { body: OpenAIErrorEnvelope; status: GatewayHttpStatus } {
+function toOpenAIErrorResponseUnmasked(err: unknown): {
+  body: OpenAIErrorEnvelope;
+  status: GatewayHttpStatus;
+} {
   // 1. Our own taxonomy
   if (isGatewayError(err)) {
     return {
@@ -370,7 +359,13 @@ function toOpenAIErrorResponseUnmasked(err: unknown): { body: OpenAIErrorEnvelop
     return envelope(err.message, 'invalid_request_error', 'invalid_prompt', null, 400);
   }
   if (TooManyEmbeddingValuesForCallError.isInstance(err)) {
-    return envelope(err.message, 'invalid_request_error', 'too_many_embedding_values', 'input', 400);
+    return envelope(
+      err.message,
+      'invalid_request_error',
+      'too_many_embedding_values',
+      'input',
+      400,
+    );
   }
   if (LoadAPIKeyError.isInstance(err)) {
     return envelope(err.message, 'server_error', 'missing_api_key', null, 500);
@@ -431,7 +426,10 @@ function maskOpenAIResponse(
 // APICallError handler
 // ---------------------------------------------------------------------------
 
-function fromAPICallError(err: APICallError): { body: OpenAIErrorEnvelope; status: GatewayHttpStatus } {
+function fromAPICallError(err: APICallError): {
+  body: OpenAIErrorEnvelope;
+  status: GatewayHttpStatus;
+} {
   const status = (err.statusCode ?? 500) as GatewayHttpStatus;
   const parsedBody = looseJson(err.data) ?? looseJson(err.responseBody);
   const looseBody = asLooseOpenAIBody(parsedBody);
@@ -472,7 +470,13 @@ function fromAPICallError(err: APICallError): { body: OpenAIErrorEnvelope; statu
   const htmlMessage =
     typeof err.responseBody === 'string' ? htmlBodyMessage(err.responseBody, status) : undefined;
   if (htmlMessage) {
-    return envelope(htmlMessage, statusToOpenAIType(status), openAICodeForStatus(status), null, status);
+    return envelope(
+      htmlMessage,
+      statusToOpenAIType(status),
+      openAICodeForStatus(status),
+      null,
+      status,
+    );
   }
 
   if (hasContentPolicySignal({ status, code: upstreamCode, message: upstreamMessage })) {
@@ -509,7 +513,13 @@ function fromAPICallError(err: APICallError): { body: OpenAIErrorEnvelope; statu
       'Upstream error',
   );
 
-  return envelope(fallbackMessage, statusToOpenAIType(status), openAICodeForStatus(status), null, status);
+  return envelope(
+    fallbackMessage,
+    statusToOpenAIType(status),
+    openAICodeForStatus(status),
+    null,
+    status,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -570,7 +580,10 @@ export function toAnthropicErrorResponse(
 ): { body: AnthropicErrorEnvelope; status: GatewayHttpStatus } {
   return maskAnthropicResponse(toAnthropicErrorResponseUnmasked(err), opts);
 }
-function toAnthropicErrorResponseUnmasked(err: unknown): { body: AnthropicErrorEnvelope; status: GatewayHttpStatus } {
+function toAnthropicErrorResponseUnmasked(err: unknown): {
+  body: AnthropicErrorEnvelope;
+  status: GatewayHttpStatus;
+} {
   // 1. Our own taxonomy
   if (isGatewayError(err)) {
     return {
@@ -687,7 +700,10 @@ function anthropicEnvelope(
 // APICallError handler (Anthropic)
 // ---------------------------------------------------------------------------
 
-function fromAnthropicAPICallError(err: APICallError): { body: AnthropicErrorEnvelope; status: GatewayHttpStatus } {
+function fromAnthropicAPICallError(err: APICallError): {
+  body: AnthropicErrorEnvelope;
+  status: GatewayHttpStatus;
+} {
   const status = (err.statusCode ?? 500) as GatewayHttpStatus;
   // Try to extract message from upstream Anthropic body
   const parsedBody = looseJson(err.data) ?? looseJson(err.responseBody);

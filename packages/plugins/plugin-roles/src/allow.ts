@@ -2,7 +2,14 @@ import type { FrogbotRequest } from 'frogbot';
 import type { Where } from 'payload';
 
 import { resolveRequestRoles } from './resolve.js';
-import type { BooleanClause, Clause, ClauseFunction, OwnClause, RoleAccessArgs, RoleResolver } from './types.js';
+import type {
+  BooleanClause,
+  Clause,
+  ClauseFunction,
+  OwnClause,
+  RoleAccessArgs,
+  RoleResolver,
+} from './types.js';
 
 export const compiledAccess = Symbol('frogbot.compiledAccess');
 
@@ -13,9 +20,10 @@ export type CompiledBinding = {
   roles: ReadonlySet<string>;
 };
 
-export type CompiledAccess<TArgs extends RoleAccessArgs = RoleAccessArgs, TResult extends boolean | Where = boolean | Where> = ((
-  args: TArgs,
-) => Promise<TResult>) & {
+export type CompiledAccess<
+  TArgs extends RoleAccessArgs = RoleAccessArgs,
+  TResult extends boolean | Where = boolean | Where,
+> = ((args: TArgs) => Promise<TResult>) & {
   [compiledAccess]: {
     binding?: CompiledBinding;
     clauses: readonly Clause<TArgs>[];
@@ -28,7 +36,10 @@ function isOwnClause<TArgs extends RoleAccessArgs>(clause: Clause<TArgs>): claus
 
 function ownWhere(req: FrogbotRequest, field: string, polymorphic: boolean): Where {
   const value = polymorphic
-    ? { relationTo: (req.user as unknown as { collection: string }).collection, value: req.user!.id }
+    ? {
+        relationTo: (req.user as unknown as { collection: string }).collection,
+        value: req.user!.id,
+      }
     : req.user!.id;
   return { [field]: { equals: value } };
 }
@@ -51,7 +62,9 @@ function compile<TArgs extends RoleAccessArgs, TResult extends boolean | Where>(
       if (isOwnClause(clause)) {
         if (!configured.has(clause.role) || !assigned.includes(clause.role)) continue;
         if (binding?.operation === 'create') return true;
-        wheres.push(ownWhere(req, clause.own, binding?.polymorphicOwnFields.has(clause.own) ?? false));
+        wheres.push(
+          ownWhere(req, clause.own, binding?.polymorphicOwnFields.has(clause.own) ?? false),
+        );
         continue;
       }
       const result = await (clause as ClauseFunction<TArgs>)(args);
@@ -71,7 +84,10 @@ export function isCompiledAccess(value: unknown): value is CompiledAccess {
   return typeof value === 'function' && compiledAccess in value;
 }
 
-export function bindCompiledAccess(access: CompiledAccess, binding: CompiledBinding): CompiledAccess {
+export function bindCompiledAccess(
+  access: CompiledAccess,
+  binding: CompiledBinding,
+): CompiledAccess {
   return compile(access[compiledAccess].clauses, binding);
 }
 

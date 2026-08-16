@@ -17,9 +17,7 @@ export type AccessArgs<TData = any> = {
   req: FrogbotRequest;
 };
 
-export type Access<TData = any> = (
-  args: AccessArgs<TData>,
-) => AccessResult | Promise<AccessResult>;
+export type Access<TData = any> = (args: AccessArgs<TData>) => AccessResult | Promise<AccessResult>;
 
 export type CollectionAccess = {
   admin?: (args: { req: FrogbotRequest }) => boolean | Promise<boolean>;

@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const arrowDownFilledIcon: IconNode = [
   [
@@ -18,8 +18,8 @@ export const arrowDownFilledIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const ArrowDownFilledIcon = createLucideIcon('ArrowDownFilledIcon', arrowDownFilledIcon)
+const ArrowDownFilledIcon = createLucideIcon('ArrowDownFilledIcon', arrowDownFilledIcon);
 
-export default ArrowDownFilledIcon
+export default ArrowDownFilledIcon;

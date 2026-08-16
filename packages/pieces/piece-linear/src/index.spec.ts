@@ -5,5 +5,15 @@ import { credentialExecution } from '../../credential-execution.js';
 import { createLinear, linearActions } from './index.js';
 
 const linear = createLinear();
-pieceContract({ piece: linear, service: 'linear', credentialType: 'secret_text', actions: linearActions });
-credentialExecution({ module, piece: linear, service: 'linear', credential: { type: 'SECRET_TEXT', secret_text: 'lin_api_test' } });
+pieceContract({
+  piece: linear,
+  service: 'linear',
+  credentialType: 'secret_text',
+  actions: linearActions,
+});
+credentialExecution({
+  module,
+  piece: linear,
+  service: 'linear',
+  credential: { type: 'SECRET_TEXT', secret_text: 'lin_api_test' },
+});

@@ -16,7 +16,10 @@ export type EmbedDeps = {
   logger: Logger;
 };
 
-export async function embedOperation(deps: EmbedDeps, opts: EmbedOpts): Promise<Awaited<ReturnType<typeof aiEmbed>>> {
+export async function embedOperation(
+  deps: EmbedDeps,
+  opts: EmbedOpts,
+): Promise<Awaited<ReturnType<typeof aiEmbed>>> {
   const { gateway, config } = deps;
   const { model: input, req, overrideAccess, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);

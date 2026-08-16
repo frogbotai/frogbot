@@ -50,7 +50,11 @@ function rewriteFields(fields: unknown[]): void {
     }
     if (Array.isArray(value.blocks)) {
       for (const block of value.blocks) {
-        if (block && typeof block === 'object' && Array.isArray((block as { fields?: unknown }).fields)) {
+        if (
+          block &&
+          typeof block === 'object' &&
+          Array.isArray((block as { fields?: unknown }).fields)
+        ) {
           rewriteFields((block as { fields: unknown[] }).fields);
         }
       }
@@ -77,12 +81,15 @@ export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig 
     );
   }
 
-  if (admin?.components) admin.components = rewriteComponents(admin.components) as typeof admin.components;
+  if (admin?.components)
+    admin.components = rewriteComponents(admin.components) as typeof admin.components;
 
   if (config.collections) {
     for (const collection of config.collections) {
       if (collection.admin?.components) {
-        collection.admin.components = rewriteComponents(collection.admin.components) as typeof collection.admin.components;
+        collection.admin.components = rewriteComponents(
+          collection.admin.components,
+        ) as typeof collection.admin.components;
       }
       if (collection.fields) rewriteFields(collection.fields);
     }

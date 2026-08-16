@@ -13,15 +13,15 @@ Public pieces are NOT vendored — `genImportMapIterateFields` is imported from
 
 ## Files
 
-| Local | Upstream |
-| --- | --- |
-| `index.ts` | `index.ts` (`generateImportMap`, `writeImportMap`) |
-| `iterateConfig.ts` | `iterateConfig.ts` |
-| `iterateCollections.ts` | `iterateCollections.ts` |
-| `iterateGlobals.ts` | `iterateGlobals.ts` |
-| `utilities/addPayloadComponentToImportMap.ts` | `utilities/addPayloadComponentToImportMap.ts` |
-| `utilities/getImportMapToBaseDirPath.ts` | `utilities/getImportMapToBaseDirPath.ts` |
-| `utilities/resolveImportMapFilePath.ts` | `utilities/resolveImportMapFilePath.ts` |
+| Local                                         | Upstream                                           |
+| --------------------------------------------- | -------------------------------------------------- |
+| `index.ts`                                    | `index.ts` (`generateImportMap`, `writeImportMap`) |
+| `iterateConfig.ts`                            | `iterateConfig.ts`                                 |
+| `iterateCollections.ts`                       | `iterateCollections.ts`                            |
+| `iterateGlobals.ts`                           | `iterateGlobals.ts`                                |
+| `utilities/addPayloadComponentToImportMap.ts` | `utilities/addPayloadComponentToImportMap.ts`      |
+| `utilities/getImportMapToBaseDirPath.ts`      | `utilities/getImportMapToBaseDirPath.ts`           |
+| `utilities/resolveImportMapFilePath.ts`       | `utilities/resolveImportMapFilePath.ts`            |
 
 ## Local modifications
 

@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const redditIcon: IconNode = [
   [
@@ -59,8 +59,8 @@ export const redditIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const RedditIcon = createLucideIcon('RedditIcon', redditIcon, 1.5, '0 0 20 20')
+const RedditIcon = createLucideIcon('RedditIcon', redditIcon, 1.5, '0 0 20 20');
 
-export default RedditIcon
+export default RedditIcon;

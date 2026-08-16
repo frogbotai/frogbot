@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const amexIcon: IconNode = [
   [
@@ -122,8 +122,8 @@ export const amexIcon: IconNode = [
       fill: '#016FD0',
     },
   ],
-]
+];
 
-const AmexIcon = createLucideIcon('AmexIcon', amexIcon, undefined, '0 0 24 24')
+const AmexIcon = createLucideIcon('AmexIcon', amexIcon, undefined, '0 0 24 24');
 
-export default AmexIcon
+export default AmexIcon;

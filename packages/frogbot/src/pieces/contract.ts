@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import type { Piece } from '../types/piece.js';
 
-export function pieceContract({ piece, service, credentialType, actions }: {
+export function pieceContract({
+  piece,
+  service,
+  credentialType,
+  actions,
+}: {
   piece: Piece;
   service: string;
   credentialType: Piece['credentialType'];
@@ -28,7 +33,11 @@ export function pieceContract({ piece, service, credentialType, actions }: {
       expect(piece.tool(action).slug).toBe(`${service}_${action}`);
     });
     it('exposes every action as a named tool', () => {
-      expect(Object.values(piece).filter((value) => value && typeof value === 'object' && 'pieceService' in value)).toHaveLength(piece.actions.length);
+      expect(
+        Object.values(piece).filter(
+          (value) => value && typeof value === 'object' && 'pieceService' in value,
+        ),
+      ).toHaveLength(piece.actions.length);
     });
   });
 }

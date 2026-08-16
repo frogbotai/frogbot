@@ -41,18 +41,20 @@ export function toOpenAITranscriptionResponse(args: {
       language: raw?.language ?? args.result.language ?? '',
       duration: args.result.durationInSeconds ?? raw?.duration ?? 0,
       words: raw?.words ?? [],
-      segments: raw?.segments ?? args.result.segments.map((segment, index) => ({
-        id: index,
-        seek: 0,
-        start: segment.startSecond,
-        end: segment.endSecond,
-        text: segment.text,
-        tokens: [],
-        temperature: 0,
-        avg_logprob: 0,
-        compression_ratio: 0,
-        no_speech_prob: 0,
-      })),
+      segments:
+        raw?.segments ??
+        args.result.segments.map((segment, index) => ({
+          id: index,
+          seek: 0,
+          start: segment.startSecond,
+          end: segment.endSecond,
+          text: segment.text,
+          tokens: [],
+          temperature: 0,
+          avg_logprob: 0,
+          compression_ratio: 0,
+          no_speech_prob: 0,
+        })),
     };
   }
   return { text: args.result.text };
@@ -93,18 +95,26 @@ function isRawVerboseJson(value: unknown): value is RawVerboseJson {
 }
 
 function toSrt(segments: TranscriptionResult['segments']) {
-  return segments.map((segment, index) => [
-    String(index + 1),
-    `${formatTimestamp(segment.startSecond, ',')} --> ${formatTimestamp(segment.endSecond, ',')}`,
-    segment.text,
-  ].join('\n')).join('\n\n');
+  return segments
+    .map((segment, index) =>
+      [
+        String(index + 1),
+        `${formatTimestamp(segment.startSecond, ',')} --> ${formatTimestamp(segment.endSecond, ',')}`,
+        segment.text,
+      ].join('\n'),
+    )
+    .join('\n\n');
 }
 
 function toVtt(segments: TranscriptionResult['segments']) {
-  return segments.map((segment) => [
-    `${formatTimestamp(segment.startSecond, '.')} --> ${formatTimestamp(segment.endSecond, '.')}`,
-    segment.text,
-  ].join('\n')).join('\n\n');
+  return segments
+    .map((segment) =>
+      [
+        `${formatTimestamp(segment.startSecond, '.')} --> ${formatTimestamp(segment.endSecond, '.')}`,
+        segment.text,
+      ].join('\n'),
+    )
+    .join('\n\n');
 }
 
 function formatTimestamp(seconds: number, decimal: ',' | '.') {

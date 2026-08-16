@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const docxIcon: IconNode = [
   [
@@ -42,8 +42,8 @@ export const docxIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const DocxIcon = createLucideIcon('DocxIcon', docxIcon)
+const DocxIcon = createLucideIcon('DocxIcon', docxIcon);
 
-export default DocxIcon
+export default DocxIcon;

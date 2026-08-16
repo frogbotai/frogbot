@@ -127,46 +127,46 @@ See the [simple example](./examples/simple) for the full walkthrough.
 
 This monorepo publishes the following packages:
 
-| Package | Description |
-| --- | --- |
-| [`frogbot`](./packages/frogbot) | FrogBot core: typed configuration surface, agent runtime, CLI, and HTTP server |
+| Package                                    | Description                                                                                                                                        |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`frogbot`](./packages/frogbot)            | FrogBot core: typed configuration surface, agent runtime, CLI, and HTTP server                                                                     |
 | [`@frogbotai/gateway`](./packages/gateway) | The embeddable, self-hostable AI gateway built on the Vercel AI SDK — fully MIT open source. Run it standalone or drop it into any existing server |
 
 **Plugins**
 
-| Package | Description |
-| --- | --- |
-| [`@frogbotai/plugin-api-keys`](./packages/plugins/plugin-api-keys) | Multiple named, independently revocable API keys |
-| [`@frogbotai/plugin-oauth`](./packages/plugins/plugin-oauth) | Owner-scoped OAuth connections with encrypted credentials, refresh, and revocation |
+| Package                                                            | Description                                                                        |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| [`@frogbotai/plugin-api-keys`](./packages/plugins/plugin-api-keys) | Multiple named, independently revocable API keys                                   |
+| [`@frogbotai/plugin-oauth`](./packages/plugins/plugin-oauth)       | Owner-scoped OAuth connections with encrypted credentials, refresh, and revocation |
 
 **Database adapters**
 
-| Package | Description |
-| --- | --- |
-| [`@frogbotai/db-sqlite`](./packages/db-sqlite) | SQLite |
-| [`@frogbotai/db-postgres`](./packages/db-postgres) | Postgres |
-| [`@frogbotai/db-mongodb`](./packages/db-mongodb) | MongoDB |
+| Package                                                          | Description     |
+| ---------------------------------------------------------------- | --------------- |
+| [`@frogbotai/db-sqlite`](./packages/db-sqlite)                   | SQLite          |
+| [`@frogbotai/db-postgres`](./packages/db-postgres)               | Postgres        |
+| [`@frogbotai/db-mongodb`](./packages/db-mongodb)                 | MongoDB         |
 | [`@frogbotai/db-vercel-postgres`](./packages/db-vercel-postgres) | Vercel Postgres |
-| [`@frogbotai/db-d1-sqlite`](./packages/db-d1-sqlite) | Cloudflare D1 |
+| [`@frogbotai/db-d1-sqlite`](./packages/db-d1-sqlite)             | Cloudflare D1   |
 
 **Storage adapters**
 
-| Package | Description |
-| --- | --- |
-| [`@frogbotai/storage-s3`](./packages/storage-s3) | Amazon S3 |
-| [`@frogbotai/storage-r2`](./packages/storage-r2) | Cloudflare R2 |
-| [`@frogbotai/storage-gcs`](./packages/storage-gcs) | Google Cloud Storage |
-| [`@frogbotai/storage-azure`](./packages/storage-azure) | Azure Blob Storage |
-| [`@frogbotai/storage-vercel-blob`](./packages/storage-vercel-blob) | Vercel Blob |
-| [`@frogbotai/storage-uploadthing`](./packages/storage-uploadthing) | UploadThing |
+| Package                                                            | Description          |
+| ------------------------------------------------------------------ | -------------------- |
+| [`@frogbotai/storage-s3`](./packages/storage-s3)                   | Amazon S3            |
+| [`@frogbotai/storage-r2`](./packages/storage-r2)                   | Cloudflare R2        |
+| [`@frogbotai/storage-gcs`](./packages/storage-gcs)                 | Google Cloud Storage |
+| [`@frogbotai/storage-azure`](./packages/storage-azure)             | Azure Blob Storage   |
+| [`@frogbotai/storage-vercel-blob`](./packages/storage-vercel-blob) | Vercel Blob          |
+| [`@frogbotai/storage-uploadthing`](./packages/storage-uploadthing) | UploadThing          |
 
 **Email & KV adapters**
 
-| Package | Description |
-| --- | --- |
-| [`@frogbotai/email-nodemailer`](./packages/email-nodemailer) | Nodemailer |
-| [`@frogbotai/email-resend`](./packages/email-resend) | Resend |
-| [`@frogbotai/kv-redis`](./packages/kv-redis) | Redis KV store |
+| Package                                                      | Description    |
+| ------------------------------------------------------------ | -------------- |
+| [`@frogbotai/email-nodemailer`](./packages/email-nodemailer) | Nodemailer     |
+| [`@frogbotai/email-resend`](./packages/email-resend)         | Resend         |
+| [`@frogbotai/kv-redis`](./packages/kv-redis)                 | Redis KV store |
 
 ## Examples
 

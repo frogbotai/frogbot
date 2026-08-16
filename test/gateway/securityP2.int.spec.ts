@@ -38,7 +38,9 @@ function createHeaderCapturingModel(): { model: LanguageModelV4; calls: Recorded
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate(options: { headers?: unknown }) {
       calls.push({ headers: options.headers as Record<string, string> | undefined });
       return Promise.resolve({
@@ -79,7 +81,9 @@ function createHeaderCapturingModel(): { model: LanguageModelV4; calls: Recorded
 }
 
 function makeApp(capturer: ReturnType<typeof createHeaderCapturingModel>) {
-  const registry = { openai: { languageModel: () => capturer.model } } as unknown as ProviderRegistry;
+  const registry = {
+    openai: { languageModel: () => capturer.model },
+  } as unknown as ProviderRegistry;
   return createApp({ registry });
 }
 
@@ -171,15 +175,17 @@ describe('G33 — SSRF via remote URL fetch', () => {
       body: JSON.stringify({
         model: 'openai/gpt-4o',
         max_tokens: 16,
-        messages: [{
-          role: 'user',
-          content: [{ type: 'image', source: { type: 'url', url: 'http://127.0.0.1:8080/' } }],
-        }],
+        messages: [
+          {
+            role: 'user',
+            content: [{ type: 'image', source: { type: 'url', url: 'http://127.0.0.1:8080/' } }],
+          },
+        ],
       }),
     });
 
     expect(res.status).toBe(400);
-    const body = await res.json() as { type: string; error: { type: string; message: string } };
+    const body = (await res.json()) as { type: string; error: { type: string; message: string } };
     expect(body.error.type).toBe('invalid_request_error');
     expect(body.error.message).toContain('scheme "http:" is not allowed');
     // The request must never reach the provider.
@@ -196,15 +202,22 @@ describe('G33 — SSRF via remote URL fetch', () => {
       body: JSON.stringify({
         model: 'openai/gpt-4o',
         max_tokens: 16,
-        messages: [{
-          role: 'user',
-          content: [{ type: 'image', source: { type: 'url', url: 'https://169.254.169.254/latest/meta-data/' } }],
-        }],
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: { type: 'url', url: 'https://169.254.169.254/latest/meta-data/' },
+              },
+            ],
+          },
+        ],
       }),
     });
 
     expect(res.status).toBe(400);
-    const body = await res.json() as { error: { type: string; message: string } };
+    const body = (await res.json()) as { error: { type: string; message: string } };
     expect(body.error.type).toBe('invalid_request_error');
     expect(body.error.message).toContain('private, loopback, or link-local');
     expect(capturer.calls).toHaveLength(0);
@@ -219,15 +232,19 @@ describe('G33 — SSRF via remote URL fetch', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         model: 'openai/gpt-4o',
-        input: [{
-          role: 'user',
-          content: [{ type: 'input_image', image_url: 'http://169.254.169.254/latest/meta-data/' }],
-        }],
+        input: [
+          {
+            role: 'user',
+            content: [
+              { type: 'input_image', image_url: 'http://169.254.169.254/latest/meta-data/' },
+            ],
+          },
+        ],
       }),
     });
 
     expect(res.status).toBe(400);
-    const body = await res.json() as { error: { type: string; message: string } };
+    const body = (await res.json()) as { error: { type: string; message: string } };
     expect(body.error.type).toBe('invalid_request_error');
     expect(capturer.calls).toHaveLength(0);
   });
@@ -241,15 +258,17 @@ describe('G33 — SSRF via remote URL fetch', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         model: 'openai/gpt-4o',
-        input: [{
-          role: 'user',
-          content: [{ type: 'input_file', file_url: 'http://169.254.169.254/latest/meta-data/' }],
-        }],
+        input: [
+          {
+            role: 'user',
+            content: [{ type: 'input_file', file_url: 'http://169.254.169.254/latest/meta-data/' }],
+          },
+        ],
       }),
     });
 
     expect(res.status).toBe(400);
-    const body = await res.json() as { error: { type: string; message: string } };
+    const body = (await res.json()) as { error: { type: string; message: string } };
     expect(body.error.type).toBe('invalid_request_error');
     expect(capturer.calls).toHaveLength(0);
   });
@@ -265,10 +284,14 @@ describe('G33 — SSRF via remote URL fetch', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         model: 'openai/gpt-4o',
-        messages: [{
-          role: 'user',
-          content: [{ type: 'image_url', image_url: { url: 'http://169.254.169.254/latest/meta-data/' } }],
-        }],
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'image_url', image_url: { url: 'http://169.254.169.254/latest/meta-data/' } },
+            ],
+          },
+        ],
       }),
     });
 

@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const scrollIcon: IconNode = [
   [
@@ -34,8 +34,8 @@ export const scrollIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const ScrollIcon = createLucideIcon('ScrollIcon', scrollIcon, 1.5)
+const ScrollIcon = createLucideIcon('ScrollIcon', scrollIcon, 1.5);
 
-export default ScrollIcon
+export default ScrollIcon;

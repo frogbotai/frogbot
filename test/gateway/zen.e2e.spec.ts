@@ -20,7 +20,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
-import { buildProviderRegistry, type ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import {
+  buildProviderRegistry,
+  type ProviderRegistry,
+} from '../../packages/gateway/src/providers/registry.js';
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
@@ -126,9 +129,7 @@ describe.skipIf(!RUN_E2E)('gateway E2E — OpenCode Zen free models', () => {
       expect(chunks[0]!.choices?.[0]?.delta?.role).toBe('assistant');
 
       // Deltas accumulate to non-empty text.
-      const text = chunks
-        .map((c) => c.choices?.[0]?.delta?.content ?? '')
-        .join('');
+      const text = chunks.map((c) => c.choices?.[0]?.delta?.content ?? '').join('');
       expect(text.length).toBeGreaterThan(0);
 
       // Some chunk carries a terminal finish_reason.
@@ -151,7 +152,9 @@ describe.skipIf(!RUN_E2E)('gateway E2E — OpenCode Zen free models', () => {
     async () => {
       const { status, body } = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
         model: MODEL,
-        messages: [{ role: 'user', content: 'What is the weather in Paris? Use the get_weather tool.' }],
+        messages: [
+          { role: 'user', content: 'What is the weather in Paris? Use the get_weather tool.' },
+        ],
         tools: [
           {
             type: 'function',

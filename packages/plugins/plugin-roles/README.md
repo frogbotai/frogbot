@@ -11,8 +11,8 @@ pnpm add @frogbotai/plugin-roles
 ## Configure
 
 ```ts
-import { allow, rolesPlugin } from '@frogbotai/plugin-roles'
-import { buildConfig } from 'frogbot'
+import { allow, rolesPlugin } from '@frogbotai/plugin-roles';
+import { buildConfig } from 'frogbot';
 
 export default buildConfig({
   collections: [
@@ -27,9 +27,7 @@ export default buildConfig({
         create: allow({ role: 'member', own: 'owner' }),
         read: allow('finance', { role: 'member', own: 'owner' }),
       },
-      fields: [
-        { name: 'owner', type: 'relationship', relationTo: 'users', required: true },
-      ],
+      fields: [{ name: 'owner', type: 'relationship', relationTo: 'users', required: true }],
     },
   ],
   plugins: [
@@ -37,7 +35,7 @@ export default buildConfig({
       roles: ['admin', 'member', { slug: 'finance', label: 'Finance' }],
     }),
   ],
-})
+});
 ```
 
 Configured roles are stored as slugs in a `roles` select field on the `users` collection. No field is added when `roles` is omitted or empty. Roles have no reserved or implicit behavior: `allow('finance')` grants only `finance`.
@@ -47,13 +45,13 @@ Configured roles are stored as slugs in a `roles` select field on the `users` co
 ## Predicates
 
 ```ts
-import { hasRole, isLoggedIn, ownRows, rolesOf, viaApiKey } from '@frogbotai/plugin-roles'
+import { hasRole, isLoggedIn, ownRows, rolesOf, viaApiKey } from '@frogbotai/plugin-roles';
 
-hasRole(req, 'finance', 'auditor')
-isLoggedIn(req)
-ownRows(req, 'owner')
-rolesOf(req)
-viaApiKey(req)
+hasRole(req, 'finance', 'auditor');
+isLoggedIn(req);
+ownRows(req, 'owner');
+rolesOf(req);
+viaApiKey(req);
 ```
 
 ## Custom Resolution
@@ -62,7 +60,7 @@ viaApiKey(req)
 rolesPlugin({
   roles: ['admin', 'member'],
   resolveRoles: (req) => req.user?.tenantRoles ?? [],
-})
+});
 ```
 
 Role resolution is memoized per request. `rolesPlugin()` and `rolesPlugin({ roles: [] })` are no-ops.

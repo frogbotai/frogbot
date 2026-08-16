@@ -90,8 +90,7 @@ export type UpdateManyArgs<TSlug extends CollectionSlug> = CommonArgs & {
 };
 
 export type UpdateArgs<TSlug extends CollectionSlug> =
-  | UpdateByIDArgs<TSlug>
-  | UpdateManyArgs<TSlug>;
+  UpdateByIDArgs<TSlug> | UpdateManyArgs<TSlug>;
 
 export type DeleteByIDArgs<TSlug extends CollectionSlug> = CommonArgs & {
   collection: TSlug;
@@ -104,8 +103,7 @@ export type DeleteManyArgs<TSlug extends CollectionSlug> = CommonArgs & {
 };
 
 export type DeleteArgs<TSlug extends CollectionSlug> =
-  | DeleteByIDArgs<TSlug>
-  | DeleteManyArgs<TSlug>;
+  DeleteByIDArgs<TSlug> | DeleteManyArgs<TSlug>;
 
 export type CountArgs<TSlug extends CollectionSlug> = CommonArgs & {
   collection: TSlug;

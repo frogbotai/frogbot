@@ -26,7 +26,9 @@ function createMockLanguageModel(): LanguageModelV4 {
     provider: 'mock',
     modelId: 'mock-model',
     defaultObjectGenerationMode: undefined,
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: () =>
       Promise.resolve({
         content: [{ type: 'text', text: 'hi' }],
@@ -114,15 +116,17 @@ describe('gateway config — provider allow/deny lists (G45)', () => {
       disabled_providers: ['anthropic'],
     });
 
-    const res = await gw.handler(new Request('http://localhost/v1/messages', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model: 'anthropic/claude-sonnet-4-20250514',
-        messages: [{ role: 'user', content: 'hi' }],
-        max_tokens: 100,
+    const res = await gw.handler(
+      new Request('http://localhost/v1/messages', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model: 'anthropic/claude-sonnet-4-20250514',
+          messages: [{ role: 'user', content: 'hi' }],
+          max_tokens: 100,
+        }),
       }),
-    }));
+    );
 
     expect(res.status).toBe(404);
     const body = (await res.json()) as { error?: { type?: string } };
@@ -140,15 +144,17 @@ describe('gateway config — provider allow/deny lists (G45)', () => {
       enabled_providers: ['openai'],
     });
 
-    const res = await gw.handler(new Request('http://localhost/v1/messages', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model: 'anthropic/claude-sonnet-4-20250514',
-        messages: [{ role: 'user', content: 'hi' }],
-        max_tokens: 100,
+    const res = await gw.handler(
+      new Request('http://localhost/v1/messages', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model: 'anthropic/claude-sonnet-4-20250514',
+          messages: [{ role: 'user', content: 'hi' }],
+          max_tokens: 100,
+        }),
       }),
-    }));
+    );
 
     expect(res.status).toBe(404);
     const body = (await res.json()) as { error?: { type?: string } };

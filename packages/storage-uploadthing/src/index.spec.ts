@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest';
 
-import { uploadthingStorage } from './index'
+import { uploadthingStorage } from './index';
 
 describe('@frogbotai/storage-uploadthing exports', () => {
   it('exports uploadthingStorage as a function', () => {
-    expect(typeof uploadthingStorage).toBe('function')
-  })
-})
+    expect(typeof uploadthingStorage).toBe('function');
+  });
+});

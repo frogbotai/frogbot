@@ -35,19 +35,23 @@ describe('parsePromptCachingOptions', () => {
   });
 
   it('prefers explicit cached_content over prompt_cache_key', () => {
-    expect(parsePromptCachingOptions({
-      prompt_cache_key: 'cachedContents/from-key',
-      cached_content: 'cachedContents/explicit',
-    })).toEqual({
+    expect(
+      parsePromptCachingOptions({
+        prompt_cache_key: 'cachedContents/from-key',
+        cached_content: 'cachedContents/explicit',
+      }),
+    ).toEqual({
       prompt_cache_key: 'cachedContents/from-key',
       cached_content: 'cachedContents/explicit',
     });
   });
 
   it('rejects non-string cached_content', () => {
-    expect(() => parsePromptCachingOptions({ cached_content: 123 })).toThrow(expect.objectContaining({
-      param: 'cached_content',
-    }));
+    expect(() => parsePromptCachingOptions({ cached_content: 123 })).toThrow(
+      expect.objectContaining({
+        param: 'cached_content',
+      }),
+    );
   });
 
   it('parses all fields together', () => {
@@ -72,10 +76,12 @@ describe('parsePromptCachingOptions', () => {
   });
 
   it('rejects invalid prompt_cache_retention', () => {
-    expect(() => parsePromptCachingOptions({ prompt_cache_retention: '7d' })).toThrow(expect.objectContaining({
-      message: expect.stringContaining("'in_memory' or '24h'"),
-      param: 'prompt_cache_retention',
-    }));
+    expect(() => parsePromptCachingOptions({ prompt_cache_retention: '7d' })).toThrow(
+      expect.objectContaining({
+        message: expect.stringContaining("'in_memory' or '24h'"),
+        param: 'prompt_cache_retention',
+      }),
+    );
   });
 });
 
@@ -124,14 +130,17 @@ describe('forwardLanguageParams', () => {
     expect(opts['unknown']).toBeUndefined();
   });
 
-  it.each(['google', 'vertex'])('forwards cached_content to the %s SDK namespace', (providerName) => {
-    const opts: Record<string, Record<string, unknown>> = {
-      unknown: { cached_content: 'cachedContents/abc123' },
-    };
-    forwardLanguageParams(opts, providerName);
-    expect(opts[providerName]).toEqual({ cachedContent: 'cachedContents/abc123' });
-    expect(opts['unknown']).toBeUndefined();
-  });
+  it.each(['google', 'vertex'])(
+    'forwards cached_content to the %s SDK namespace',
+    (providerName) => {
+      const opts: Record<string, Record<string, unknown>> = {
+        unknown: { cached_content: 'cachedContents/abc123' },
+      };
+      forwardLanguageParams(opts, providerName);
+      expect(opts[providerName]).toEqual({ cachedContent: 'cachedContents/abc123' });
+      expect(opts['unknown']).toBeUndefined();
+    },
+  );
 
   it('is a no-op when no unknown namespace exists', () => {
     const opts: Record<string, Record<string, unknown>> = {

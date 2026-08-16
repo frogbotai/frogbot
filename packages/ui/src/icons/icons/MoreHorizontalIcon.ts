@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const moreHorizontalIcon: IconNode = [
   [
@@ -26,8 +26,8 @@ export const moreHorizontalIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const MoreHorizontalIcon = createLucideIcon('MoreHorizontal', moreHorizontalIcon)
+const MoreHorizontalIcon = createLucideIcon('MoreHorizontal', moreHorizontalIcon);
 
-export default MoreHorizontalIcon
+export default MoreHorizontalIcon;

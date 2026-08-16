@@ -5,16 +5,11 @@ import { readTrainingData } from './readTrainingData.js';
 
 type Page = { docs: Record<string, unknown>[]; hasNextPage: boolean };
 
-function stubFrogbot(pages: {
-  threads: Page[];
-  messages: Record<string, Page[]>;
-}) {
+function stubFrogbot(pages: { threads: Page[]; messages: Record<string, Page[]> }) {
   const find = vi.fn(async (args: Record<string, unknown>) => {
     const page = (args.page as number) - 1;
     if (args.collection === 'threads') return pages.threads[page];
-    const threadID = String(
-      ((args.where as { thread: { equals: unknown } }).thread.equals),
-    );
+    const threadID = String((args.where as { thread: { equals: unknown } }).thread.equals);
     return pages.messages[threadID][page];
   });
 
@@ -43,7 +38,10 @@ describe('readTrainingData', () => {
       messages: {
         1: [
           { docs: [{ id: 'a', parts: [{ type: 'text', text: 'hi' }] }], hasNextPage: true },
-          { docs: [{ id: 'b', parts: [{ type: 'future-part', payload: { deep: true } }] }], hasNextPage: false },
+          {
+            docs: [{ id: 'b', parts: [{ type: 'future-part', payload: { deep: true } }] }],
+            hasNextPage: false,
+          },
         ],
         2: [{ docs: [], hasNextPage: false }],
       },
@@ -62,7 +60,12 @@ describe('readTrainingData', () => {
       { thread: { id: 2 }, messages: [] },
     ]);
     expect(find).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'threads', depth: 0, limit: 1, sort: ['createdAt', 'id'] }),
+      expect.objectContaining({
+        collection: 'threads',
+        depth: 0,
+        limit: 1,
+        sort: ['createdAt', 'id'],
+      }),
     );
   });
 

@@ -1,18 +1,18 @@
-import { createElement, forwardRef } from 'react'
-import defaultAttributes from './defaultAttributes'
-import { IconNode, LucideProps } from './types'
+import { createElement, forwardRef } from 'react';
+import defaultAttributes from './defaultAttributes';
+import { IconNode, LucideProps } from './types';
 
 // Helper functions (simplified versions)
 const mergeClasses = (...classes: (string | undefined)[]): string => {
-  return classes.filter(Boolean).join(' ')
-}
+  return classes.filter(Boolean).join(' ');
+};
 
 const hasA11yProp = (props: Record<string, any>): boolean => {
-  return Object.keys(props).some((key) => key.startsWith('aria-') || key === 'role')
-}
+  return Object.keys(props).some((key) => key.startsWith('aria-') || key === 'role');
+};
 
 interface IconComponentProps extends LucideProps {
-  iconNode: IconNode
+  iconNode: IconNode;
 }
 
 const IconBase = forwardRef<SVGSVGElement, IconComponentProps>(
@@ -49,8 +49,8 @@ const IconBase = forwardRef<SVGSVGElement, IconComponentProps>(
         ...(Array.isArray(children) ? children : [children]),
       ],
     ),
-)
+);
 
-IconBase.displayName = 'IconBase'
+IconBase.displayName = 'IconBase';
 
-export default IconBase
+export default IconBase;

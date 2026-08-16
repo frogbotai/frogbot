@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const firmwareFavicon: IconNode = [
   [
@@ -18,8 +18,8 @@ export const firmwareFavicon: IconNode = [
       clipRule: 'evenodd',
     },
   ],
-]
+];
 
-const FirmwareFavicon = createLucideIcon('FirmwareFavicon', firmwareFavicon, 0, '0 0 20 20')
+const FirmwareFavicon = createLucideIcon('FirmwareFavicon', firmwareFavicon, 0, '0 0 20 20');
 
-export default FirmwareFavicon
+export default FirmwareFavicon;

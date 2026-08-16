@@ -32,7 +32,10 @@ async function collectEvents(parts: TextStreamPart<ToolSet>[]) {
   }
 }
 
-function finishStep(finishReason: string, extra: Record<string, unknown> = {}): TextStreamPart<ToolSet> {
+function finishStep(
+  finishReason: string,
+  extra: Record<string, unknown> = {},
+): TextStreamPart<ToolSet> {
   return {
     type: 'finish-step',
     finishReason,

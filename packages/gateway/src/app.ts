@@ -18,7 +18,7 @@ import type { Tracer } from '@opentelemetry/api';
 import { Hono } from 'hono';
 
 import { isClientAbort } from './errors/clientAbort.js';
-import { toContentfulStatus,toOpenAIErrorResponse } from './errors/envelope.js';
+import { toContentfulStatus, toOpenAIErrorResponse } from './errors/envelope.js';
 import { NotFoundError } from './errors/gatewayError.js';
 import { headersForError } from './errors/normalizeAiSdkError.js';
 import type { Hooks } from './hooks.js';
@@ -90,8 +90,12 @@ export type AppContext = {
   signalLevel?: SignalLevelInput;
 };
 
-const isLoggerInstance = (logger: GatewayLogger | LoggerOptions | undefined): logger is GatewayLogger =>
-  typeof logger === 'object' && logger !== null && typeof (logger as GatewayLogger).info === 'function';
+const isLoggerInstance = (
+  logger: GatewayLogger | LoggerOptions | undefined,
+): logger is GatewayLogger =>
+  typeof logger === 'object' &&
+  logger !== null &&
+  typeof (logger as GatewayLogger).info === 'function';
 
 const normalizeBasePath = (basePath: string | undefined): string => {
   const trimmed = (basePath ?? '/v1').replace(/\/+$/, '');
@@ -116,8 +120,11 @@ export function createApp(ctx: AppContext) {
   const hooks = mergeHooks(tracingHooks, loggingHooks, genAiHooks, ctx.hooks ?? {});
   const telemetry = createAiSdkTelemetry({ tracer: ctx.tracer, signalLevel });
 
-  if (typeof (globalThis as { AI_SDK_LOG_WARNINGS?: unknown }).AI_SDK_LOG_WARNINGS === 'undefined') {
-    (globalThis as { AI_SDK_LOG_WARNINGS?: unknown }).AI_SDK_LOG_WARNINGS = createAiSdkWarningLogger(logger);
+  if (
+    typeof (globalThis as { AI_SDK_LOG_WARNINGS?: unknown }).AI_SDK_LOG_WARNINGS === 'undefined'
+  ) {
+    (globalThis as { AI_SDK_LOG_WARNINGS?: unknown }).AI_SDK_LOG_WARNINGS =
+      createAiSdkWarningLogger(logger);
   }
 
   app.use('*', async (c, next) => {
@@ -156,7 +163,11 @@ export function createApp(ctx: AppContext) {
     '/embeddings': embeddingsRoute(routeCtx),
     '/images/generations': imagesRoute(routeCtx),
     '/messages': messagesRoute({ ...routeCtx, telemetry }),
-    '/models': modelsRoute({ registry: ctx.registry, catalog: ctx.catalog, allowlists: ctx.allowlists }),
+    '/models': modelsRoute({
+      registry: ctx.registry,
+      catalog: ctx.catalog,
+      allowlists: ctx.allowlists,
+    }),
     '/rerank': rerankRoute(routeCtx),
     '/responses': responsesRoute({ ...routeCtx, telemetry }),
     '/audio/speech': speechRoute(routeCtx),
@@ -180,7 +191,9 @@ export function createApp(ctx: AppContext) {
   // and under `basePath` for consistency with the double-mount route pattern.
   const healthResponse = {
     version: GATEWAY_PACKAGE_VERSION,
-    providers: Object.keys(ctx.registry).filter((k) => ctx.registry[k as keyof ProviderRegistry] != null),
+    providers: Object.keys(ctx.registry).filter(
+      (k) => ctx.registry[k as keyof ProviderRegistry] != null,
+    ),
     modalities: ['chat', 'embeddings', 'images', 'audio', 'video', 'rerank'],
   };
   app.get('/health', (c) => c.json(healthResponse, 200));

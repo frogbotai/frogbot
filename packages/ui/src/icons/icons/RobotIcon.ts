@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const robotIcon: IconNode = [
   [
@@ -77,8 +77,8 @@ export const robotIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const RobotIcon = createLucideIcon('RobotIcon', robotIcon, undefined, '0 0 20 20')
+const RobotIcon = createLucideIcon('RobotIcon', robotIcon, undefined, '0 0 20 20');
 
-export default RobotIcon
+export default RobotIcon;

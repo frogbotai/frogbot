@@ -11,8 +11,8 @@ pnpm add @frogbotai/storage-s3
 ## Usage
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { s3Storage } from '@frogbotai/storage-s3'
+import { buildConfig } from 'frogbot';
+import { s3Storage } from '@frogbotai/storage-s3';
 
 export default buildConfig({
   storage: [
@@ -31,5 +31,5 @@ export default buildConfig({
     }),
   ],
   // ...rest of config
-})
+});
 ```

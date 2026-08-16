@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest';
 import type { BeforeUpstreamHookArgs } from '../../hooks.js';
 import { claudeThinkingEffort } from './middleware.js';
 
-function makeArgs(model: string, overrides: Partial<BeforeUpstreamHookArgs> = {}): BeforeUpstreamHookArgs {
+function makeArgs(
+  model: string,
+  overrides: Partial<BeforeUpstreamHookArgs> = {},
+): BeforeUpstreamHookArgs {
   return {
     phase: 'beforeUpstream',
     operation: 'chat.completions',

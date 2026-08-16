@@ -51,7 +51,12 @@ function csvFilter(envVar: string): Set<string> | undefined {
   if (!raw) {
     return undefined;
   }
-  return new Set(raw.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean));
+  return new Set(
+    raw
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  );
 }
 
 const tierFilter = process.env.E2E_TIER; // 'free' | 'paid' | undefined
@@ -114,7 +119,11 @@ for (const entry of LIVE_MATRIX) {
 
     for (const model of entry.embeddings ?? []) {
       describe.skipIf(!routeEnabled('embeddings'))(`${model} — /v1/embeddings`, () => {
-        it('embeds documents', () => runEmbeddings(getApp(), `${entry.label}/${model}`), TEST_TIMEOUT);
+        it(
+          'embeds documents',
+          () => runEmbeddings(getApp(), `${entry.label}/${model}`),
+          TEST_TIMEOUT,
+        );
       });
     }
 
@@ -125,20 +134,35 @@ for (const entry of LIVE_MATRIX) {
     }
 
     for (const model of entry.transcriptions ?? []) {
-      describe.skipIf(!routeEnabled('transcriptions'))(`${model} — /v1/audio/transcriptions`, () => {
-        it('transcribes a WAV upload', () => runTranscription(getApp(), `${entry.label}/${model}`), TEST_TIMEOUT);
-      });
+      describe.skipIf(!routeEnabled('transcriptions'))(
+        `${model} — /v1/audio/transcriptions`,
+        () => {
+          it(
+            'transcribes a WAV upload',
+            () => runTranscription(getApp(), `${entry.label}/${model}`),
+            TEST_TIMEOUT,
+          );
+        },
+      );
     }
 
     for (const spec of entry.speech ?? []) {
       describe.skipIf(!routeEnabled('speech'))(`${spec.model} — /v1/audio/speech`, () => {
-        it('returns audio bytes', () => runSpeech(getApp(), `${entry.label}/${spec.model}`, spec.voice), TEST_TIMEOUT);
+        it(
+          'returns audio bytes',
+          () => runSpeech(getApp(), `${entry.label}/${spec.model}`, spec.voice),
+          TEST_TIMEOUT,
+        );
       });
     }
 
     for (const model of entry.images ?? []) {
       describe.skipIf(!routeEnabled('images'))(`${model} — /v1/images/generations`, () => {
-        it('generates an image', () => runImages(getApp(), `${entry.label}/${model}`), TEST_TIMEOUT);
+        it(
+          'generates an image',
+          () => runImages(getApp(), `${entry.label}/${model}`),
+          TEST_TIMEOUT,
+        );
       });
     }
 

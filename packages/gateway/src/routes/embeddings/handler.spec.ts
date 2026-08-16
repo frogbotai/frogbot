@@ -79,7 +79,9 @@ describe('embeddingsRoute', () => {
   it('rejects empty strings and caps batch inputs at 2048', async () => {
     const app = createApp({
       registry: {
-        openai: new MockProviderV4({ embeddingModels: { 'text-embedding-3-small': new MockEmbeddingModelV4() } }),
+        openai: new MockProviderV4({
+          embeddingModels: { 'text-embedding-3-small': new MockEmbeddingModelV4() },
+        }),
       } as unknown as ProviderRegistry,
     });
 

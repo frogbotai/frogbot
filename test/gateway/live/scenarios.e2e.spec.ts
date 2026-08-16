@@ -52,7 +52,12 @@ function csvFilter(envVar: string): Set<string> | undefined {
   if (!raw) {
     return undefined;
   }
-  return new Set(raw.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean));
+  return new Set(
+    raw
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  );
 }
 
 const tierFilter = process.env.E2E_TIER;
@@ -97,11 +102,31 @@ for (const entry of LIVE_MATRIX) {
     const getApp = () => (app ??= makeLiveApp(entry));
 
     describe.skipIf(!toolsCapable)('tool round trips', () => {
-      it('chat wire: tool_call → tool result → final answer', () => runChatToolRoundTrip(getApp(), model), TEST_TIMEOUT);
-      it('messages wire: tool_use → tool_result → final answer', () => runMessagesToolRoundTrip(getApp(), model), TEST_TIMEOUT);
-      it('responses wire: function_call → function_call_output → final answer (G3)', () => runResponsesToolRoundTrip(getApp(), model), TEST_TIMEOUT);
-      it('chat wire streaming: tool-call deltas coalesce', () => runChatStreamingToolCall(getApp(), model), TEST_TIMEOUT);
-      it('chat wire: parallel tool calls have unique ids', () => runChatParallelToolCalls(getApp(), model), TEST_TIMEOUT);
+      it(
+        'chat wire: tool_call → tool result → final answer',
+        () => runChatToolRoundTrip(getApp(), model),
+        TEST_TIMEOUT,
+      );
+      it(
+        'messages wire: tool_use → tool_result → final answer',
+        () => runMessagesToolRoundTrip(getApp(), model),
+        TEST_TIMEOUT,
+      );
+      it(
+        'responses wire: function_call → function_call_output → final answer (G3)',
+        () => runResponsesToolRoundTrip(getApp(), model),
+        TEST_TIMEOUT,
+      );
+      it(
+        'chat wire streaming: tool-call deltas coalesce',
+        () => runChatStreamingToolCall(getApp(), model),
+        TEST_TIMEOUT,
+      );
+      it(
+        'chat wire: parallel tool calls have unique ids',
+        () => runChatParallelToolCalls(getApp(), model),
+        TEST_TIMEOUT,
+      );
     });
 
     describe('multi-turn recall', () => {
@@ -112,19 +137,47 @@ for (const entry of LIVE_MATRIX) {
 
     describe('truncation semantics', () => {
       it('chat wire: finish_reason=length', () => runChatTruncation(getApp(), model), TEST_TIMEOUT);
-      it('messages wire: stop_reason=max_tokens', () => runMessagesTruncation(getApp(), model), TEST_TIMEOUT);
-      it('responses wire: budget binds', () => runResponsesTruncation(getApp(), model), TEST_TIMEOUT);
+      it(
+        'messages wire: stop_reason=max_tokens',
+        () => runMessagesTruncation(getApp(), model),
+        TEST_TIMEOUT,
+      );
+      it(
+        'responses wire: budget binds',
+        () => runResponsesTruncation(getApp(), model),
+        TEST_TIMEOUT,
+      );
     });
 
     describe('error envelopes (bogus model)', () => {
-      it('chat wire: OpenAI error dialect', () => runChatErrorEnvelope(getApp(), entry.label), TEST_TIMEOUT);
-      it('messages wire: Anthropic error dialect', () => runMessagesErrorEnvelope(getApp(), entry.label), TEST_TIMEOUT);
-      it('responses wire: error object present', () => runResponsesErrorEnvelope(getApp(), entry.label), TEST_TIMEOUT);
+      it(
+        'chat wire: OpenAI error dialect',
+        () => runChatErrorEnvelope(getApp(), entry.label),
+        TEST_TIMEOUT,
+      );
+      it(
+        'messages wire: Anthropic error dialect',
+        () => runMessagesErrorEnvelope(getApp(), entry.label),
+        TEST_TIMEOUT,
+      );
+      it(
+        'responses wire: error object present',
+        () => runResponsesErrorEnvelope(getApp(), entry.label),
+        TEST_TIMEOUT,
+      );
     });
 
     describe('resilience', () => {
-      it('mid-stream client abort does not wedge the app', () => runChatStreamAbort(getApp(), model, entry.label), TEST_TIMEOUT);
-      it.skipIf(!hugePrompt)('oversized prompt returns a valid envelope', () => runChatHugePrompt(getApp(), model, hugePrompt), TEST_TIMEOUT);
+      it(
+        'mid-stream client abort does not wedge the app',
+        () => runChatStreamAbort(getApp(), model, entry.label),
+        TEST_TIMEOUT,
+      );
+      it.skipIf(!hugePrompt)(
+        'oversized prompt returns a valid envelope',
+        () => runChatHugePrompt(getApp(), model, hugePrompt),
+        TEST_TIMEOUT,
+      );
     });
   });
 }

@@ -1,10 +1,10 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @source "./**/*.{ts,tsx}";
 
 @theme inline {
   --font-payload: var(--font-body);
-  --font-gilda: "Gilda Display";
+  --font-gilda: 'Gilda Display';
   --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;
   --text-sm: 0.875rem;
@@ -96,8 +96,10 @@
 }
 
 [data-fb-ui] {
-  --font-body: "Satoshi-Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-gilda: "Gilda Display";
+  --font-body:
+    'Satoshi-Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-gilda: 'Gilda Display';
   --color-base-0: rgb(249, 250, 251);
   --color-base-50: rgb(246, 247, 249);
   --color-base-100: rgb(243, 244, 246);
@@ -213,7 +215,8 @@
 
 .gradient-wrapper {
   position: relative;
-  filter: drop-shadow(0 0 6px rgba(134, 239, 172, 0.6)) drop-shadow(0 0 12px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 18px rgba(216, 180, 254, 0.3));
+  filter: drop-shadow(0 0 6px rgba(134, 239, 172, 0.6))
+    drop-shadow(0 0 12px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 18px rgba(216, 180, 254, 0.3));
 }
 
 .gradient-container {
@@ -226,10 +229,23 @@
 }
 
 .gradient-container::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: -5000000px;
-  background: conic-gradient(from 0deg, transparent 0deg, transparent 150deg, var(--color-green-350) 180deg, var(--color-blue-350) 210deg, #f598a2 270deg, var(--color-purple-350) 300deg, var(--color-blue-350) 330deg, transparent 360deg, var(--color-green-350) 5deg, transparent 15deg, transparent 360deg);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 150deg,
+    var(--color-green-350) 180deg,
+    var(--color-blue-350) 210deg,
+    #f598a2 270deg,
+    var(--color-purple-350) 300deg,
+    var(--color-blue-350) 330deg,
+    transparent 360deg,
+    var(--color-green-350) 5deg,
+    transparent 15deg,
+    transparent 360deg
+  );
   border-radius: 50%;
   animation: rotateVariable 8s linear infinite;
   z-index: -1;
@@ -237,21 +253,28 @@
 
 .gradient-wrapper:has(.gradient-textarea:focus),
 .gradient-wrapper-dragging {
-  filter: drop-shadow(0 0 12px rgba(134, 239, 172, 0.6)) drop-shadow(0 0 24px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 36px rgba(216, 180, 254, 0.3));
+  filter: drop-shadow(0 0 12px rgba(134, 239, 172, 0.6))
+    drop-shadow(0 0 24px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 36px rgba(216, 180, 254, 0.3));
 }
 
 @keyframes rotateVariable {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gradient-container::before { animation: none; }
+  .gradient-container::before {
+    animation: none;
+  }
 }
 
-[data-fb-theme="dark"] [data-fb-ui][data-theme="system"],
+[data-fb-theme='dark'] [data-fb-ui][data-theme='system'],
 [data-fb-ui].dark,
-[data-fb-ui][data-theme="dark"] {
+[data-fb-ui][data-theme='dark'] {
   --theme-base-0: var(--color-base-1000);
   --theme-base-50: var(--color-base-950);
   --theme-base-100: var(--color-base-900);
@@ -315,12 +338,12 @@
   color-scheme: dark;
 }
 
-[data-fb-theme="light"] [data-fb-ui][data-theme="system"] {
+[data-fb-theme='light'] [data-fb-ui][data-theme='system'] {
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  [data-fb-ui][data-theme="system"] {
+  [data-fb-ui][data-theme='system'] {
     --theme-base-0: var(--color-base-1000);
     --theme-base-50: var(--color-base-950);
     --theme-base-100: var(--color-base-900);
@@ -371,16 +394,20 @@
 }
 
 @font-face {
-  font-family: "Satoshi-Variable";
-  src: url("/fonts/Satoshi-Variable.woff2") format("woff2"), url("/fonts/Satoshi-Variable.woff") format("woff");
+  font-family: 'Satoshi-Variable';
+  src:
+    url('/fonts/Satoshi-Variable.woff2') format('woff2'),
+    url('/fonts/Satoshi-Variable.woff') format('woff');
   font-style: normal;
   font-weight: 300 900;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Satoshi-Variable";
-  src: url("/fonts/Satoshi-VariableItalic.woff2") format("woff2"), url("/fonts/Satoshi-VariableItalic.woff") format("woff");
+  font-family: 'Satoshi-Variable';
+  src:
+    url('/fonts/Satoshi-VariableItalic.woff2') format('woff2'),
+    url('/fonts/Satoshi-VariableItalic.woff') format('woff');
   font-style: italic;
   font-weight: 300 900;
   font-display: swap;

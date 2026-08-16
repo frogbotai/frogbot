@@ -146,9 +146,7 @@ export type AnthropicModelId =
   | 'anthropic/claude-sonnet-5';
 
 export type CerebrasModelId =
-  | 'cerebras/gemma-4-31b'
-  | 'cerebras/gpt-oss-120b'
-  | 'cerebras/zai-glm-4.7';
+  'cerebras/gemma-4-31b' | 'cerebras/gpt-oss-120b' | 'cerebras/zai-glm-4.7';
 
 export type CohereModelId =
   | 'cohere/c4ai-aya-expanse-32b'
@@ -373,10 +371,7 @@ export type TogetherModelId =
   | 'togetherai/thinkingmachines/Inkling'
   | 'togetherai/zai-org/GLM-5.2';
 
-export type VoyageModelId =
-  | 'voyage/voyage-3'
-  | 'voyage/voyage-3-lite'
-  | 'voyage/voyage-code-3';
+export type VoyageModelId = 'voyage/voyage-3' | 'voyage/voyage-3-lite' | 'voyage/voyage-code-3';
 
 export type XAIModelId =
   | 'xai/grok-4.20-0309-non-reasoning'

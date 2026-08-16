@@ -36,10 +36,12 @@ export function enforceStreamBodyLimit(
 
       bytes += value.byteLength;
       if (bytes > maxBodyBytes) {
-        controller.error(new BodyTooLargeError({
-          message: `Request body exceeds ${maxBodyBytes} bytes`,
-          param: '(body)',
-        }));
+        controller.error(
+          new BodyTooLargeError({
+            message: `Request body exceeds ${maxBodyBytes} bytes`,
+            param: '(body)',
+          }),
+        );
         return;
       }
 

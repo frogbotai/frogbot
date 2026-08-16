@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const profileIcon: IconNode = [
   [
@@ -18,8 +18,8 @@ export const profileIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const ProfileIcon = createLucideIcon('ProfileIcon', profileIcon, 1.5, '0 0 20 20')
+const ProfileIcon = createLucideIcon('ProfileIcon', profileIcon, 1.5, '0 0 20 20');
 
-export default ProfileIcon
+export default ProfileIcon;

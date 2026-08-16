@@ -32,13 +32,15 @@ describe('custom usage logs', () => {
       context: { req: { frogbot: booted.frogbot } },
     } as never);
 
-    await expect.poll(async () => {
-      const result = await booted.frogbot.count({
-        collection: 'ai-usage' as never,
-        overrideAccess: true,
-        where: { requestId: { equals: 'custom-write' } },
-      });
-      return result.totalDocs;
-    }).toBe(1);
+    await expect
+      .poll(async () => {
+        const result = await booted.frogbot.count({
+          collection: 'ai-usage' as never,
+          overrideAccess: true,
+          where: { requestId: { equals: 'custom-write' } },
+        });
+        return result.totalDocs;
+      })
+      .toBe(1);
   });
 });

@@ -3,7 +3,12 @@ import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
-const NEXT_CONFIG_FILES = ['next.config.ts', 'next.config.mjs', 'next.config.js', 'next.config.cjs'];
+const NEXT_CONFIG_FILES = [
+  'next.config.ts',
+  'next.config.mjs',
+  'next.config.js',
+  'next.config.cjs',
+];
 
 export function findNextConfig(cwd: string): string | null {
   for (const file of NEXT_CONFIG_FILES) {
@@ -33,7 +38,9 @@ export function runNext(command: 'dev' | 'start', args: string[] = []): void {
   try {
     nextBin = resolveNextBin(cwd);
   } catch {
-    console.error('[frogbot] could not resolve `next` from this project. Install it: pnpm add next');
+    console.error(
+      '[frogbot] could not resolve `next` from this project. Install it: pnpm add next',
+    );
     process.exit(1);
   }
 

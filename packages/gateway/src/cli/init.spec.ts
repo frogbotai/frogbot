@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync,mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -16,7 +16,14 @@ describe('runInit', () => {
     runInit({ dir: 'my-gateway', cwd, log });
 
     const root = join(cwd, 'my-gateway');
-    const written = ['package.json', 'tsconfig.json', 'src/server.ts', '.env.example', '.gitignore', 'README.md'];
+    const written = [
+      'package.json',
+      'tsconfig.json',
+      'src/server.ts',
+      '.env.example',
+      '.gitignore',
+      'README.md',
+    ];
     expect(written.filter((file) => existsSync(join(root, file)))).toEqual(written);
 
     const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
@@ -51,6 +58,8 @@ describe('runInit', () => {
     mkdirSync(join(cwd, 'app'));
     writeFileSync(join(cwd, 'app', 'package.json'), '{}');
 
-    expect(() => runInit({ dir: 'app', cwd, log: vi.fn() })).toThrow(/refusing to overwrite.*package\.json/);
+    expect(() => runInit({ dir: 'app', cwd, log: vi.fn() })).toThrow(
+      /refusing to overwrite.*package\.json/,
+    );
   });
 });

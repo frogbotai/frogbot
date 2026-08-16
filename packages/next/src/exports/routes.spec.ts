@@ -25,7 +25,14 @@ function makeConfig() {
 }
 
 describe('@frogbotai/next routes', () => {
-  it.each(['REST_DELETE', 'REST_GET', 'REST_OPTIONS', 'REST_PATCH', 'REST_POST', 'REST_PUT'] as const)(
+  it.each([
+    'REST_DELETE',
+    'REST_GET',
+    'REST_OPTIONS',
+    'REST_PATCH',
+    'REST_POST',
+    'REST_PUT',
+  ] as const)(
     '%s passes the unwrapped payload config promise to the payload handler builder',
     async (name) => {
       const { config, payloadConfig } = makeConfig();

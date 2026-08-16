@@ -20,12 +20,7 @@ export type AzureConfig = Omit<AzureOpenAIProviderSettings, 'fetch'>;
 
 export const azureProvider = {
   name: 'azure',
-  envVars: [
-    'AZURE_API_KEY',
-    'AZURE_RESOURCE_NAME',
-    'AZURE_OPENAI_BASE_URL',
-    'AZURE_API_VERSION',
-  ],
+  envVars: ['AZURE_API_KEY', 'AZURE_RESOURCE_NAME', 'AZURE_OPENAI_BASE_URL', 'AZURE_API_VERSION'],
   fromEnv: (env) => {
     const apiKey = env.AZURE_API_KEY;
 

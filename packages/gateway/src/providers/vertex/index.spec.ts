@@ -42,15 +42,11 @@ describe('vertexProvider.fromEnv', () => {
   });
 
   it('returns undefined when only project is set (partial ADC skips — G41)', () => {
-    expect(
-      vertexProvider.fromEnv({ GOOGLE_VERTEX_PROJECT: 'my-project' }),
-    ).toBeUndefined();
+    expect(vertexProvider.fromEnv({ GOOGLE_VERTEX_PROJECT: 'my-project' })).toBeUndefined();
   });
 
   it('returns undefined when only location is set (partial ADC skips — G41)', () => {
-    expect(
-      vertexProvider.fromEnv({ GOOGLE_VERTEX_LOCATION: 'us-central1' }),
-    ).toBeUndefined();
+    expect(vertexProvider.fromEnv({ GOOGLE_VERTEX_LOCATION: 'us-central1' })).toBeUndefined();
   });
 
   it('API key takes priority over ADC', () => {

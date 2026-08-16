@@ -10,8 +10,12 @@
 // exact point in the handler where it belongs, so the control flow reads
 // top-to-bottom with nothing hidden behind a runner abstraction.
 
-import { type Attributes, type Context as OtelContext,context as otelContext } from '@opentelemetry/api';
-import { generateText, jsonSchema, type JSONValue,Output, streamText } from 'ai';
+import {
+  type Attributes,
+  type Context as OtelContext,
+  context as otelContext,
+} from '@opentelemetry/api';
+import { generateText, jsonSchema, type JSONValue, Output, streamText } from 'ai';
 import { Hono } from 'hono';
 
 import { isClientAbort } from '../../errors/clientAbort.js';
@@ -20,11 +24,22 @@ import { RequestValidationError } from '../../errors/gatewayError.js';
 import { maybeMaskMessage } from '../../errors/maskMessage.js';
 import { headersForError } from '../../errors/normalizeAiSdkError.js';
 import { statusForAnthropicErrorType } from '../../errors/statusMaps.js';
-import { type GatewayEnv, type HookPhase, type Hooks, type HookUsage, type OperationBase,runHooks } from '../../hooks.js';
+import {
+  type GatewayEnv,
+  type HookPhase,
+  type Hooks,
+  type HookUsage,
+  type OperationBase,
+  runHooks,
+} from '../../hooks.js';
 import type { AiSdkTelemetry } from '../../observability/aiSdkTelemetry.js';
 import { otelContextKey } from '../../observability/tracing.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { type ProviderModelPolicy, type ProviderRegistry,resolveProvider } from '../../providers/registry.js';
+import {
+  type ProviderModelPolicy,
+  type ProviderRegistry,
+  resolveProvider,
+} from '../../providers/registry.js';
 import { isProduction } from '../../shared/runtimeDetection.js';
 import { createStreamLifecycle, type StreamLifecycle } from '../../shared/streamLifecycle.js';
 import { toAnthropicReasoning } from '../../shared/toAnthropicReasoning.js';
@@ -32,11 +47,15 @@ import { createSseResponse, toSseStream } from '../../shared/toSseStream.js';
 import { createUpstreamSignal, upstreamTimeoutError } from '../../shared/upstreamTimeout.js';
 import { guardedDownload } from '../../utils/downloadGuard.js';
 import { prepareForwardHeaders } from '../../utils/headers.js';
-import { forwardLanguageParams, forwardMessageProviderOptions, parsePromptCachingOptions } from '../../utils/params.js';
+import {
+  forwardLanguageParams,
+  forwardMessageProviderOptions,
+  parsePromptCachingOptions,
+} from '../../utils/params.js';
 import { parseJsonBody } from '../../utils/parseJsonBody.js';
 import { ensureRequestId } from '../../utils/requestId.js';
 import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
-import { type MessagesRequest,parseMessagesRequest } from './schema.js';
+import { type MessagesRequest, parseMessagesRequest } from './schema.js';
 import type { AnthropicMessage, AnthropicSystemParam } from './translators/index.js';
 import {
   createAnthropicStreamTransform,
@@ -45,7 +64,7 @@ import {
   toAnthropicResponse,
   toModelMessages,
 } from './translators/index.js';
-import { toAISDKToolChoice,toAISDKTools } from './translators/tools.js';
+import { toAISDKToolChoice, toAISDKTools } from './translators/tools.js';
 
 export type MessagesRouteContext = ProviderModelPolicy & {
   registry: ProviderRegistry;
@@ -162,10 +181,13 @@ export function messagesRoute(ctx: MessagesRouteContext) {
       // Structured output: `output_config.format` (GA) with the deprecated
       // top-level `output_format` as a fallback. `json_schema` → Output.object,
       // which the anthropic provider renders back into `output_config.format`.
-      const outputConfig = body.output_config ?? (body.output_format ? { format: body.output_format } : undefined);
+      const outputConfig =
+        body.output_config ?? (body.output_format ? { format: body.output_format } : undefined);
       const outputFormat = outputConfig?.format;
       const output =
-        outputFormat?.type === 'json_schema' ? Output.object({ schema: jsonSchema(outputFormat.schema) }) : undefined;
+        outputFormat?.type === 'json_schema'
+          ? Output.object({ schema: jsonSchema(outputFormat.schema) })
+          : undefined;
 
       // `beforeUpstream` hooks may mutate `messages`/`params`/`headers`/
       // `providerOptions` in place; `aiOptions` is built afterward so it
@@ -214,7 +236,8 @@ export function messagesRoute(ctx: MessagesRouteContext) {
       // Run the upstream call with the gateway span's context active so AI SDK
       // inner spans parent under it (stashed by the tracing hook's
       // `beforeUpstream`; falls back to the ambient context when tracing is off).
-      const activeContext = (context[otelContextKey] as OtelContext | undefined) ?? otelContext.active();
+      const activeContext =
+        (context[otelContextKey] as OtelContext | undefined) ?? otelContext.active();
 
       phase = 'upstream';
 
@@ -338,12 +361,15 @@ export function messagesRoute(ctx: MessagesRouteContext) {
 
       const reasoning = toAnthropicReasoning(result.finalStep.reasoning);
 
-      const anthropicUsage = result.providerMetadata?.anthropic?.usage as Record<string, unknown> | undefined;
-      const serviceTier = typeof anthropicUsage?.service_tier === 'string' ? anthropicUsage.service_tier : undefined;
+      const anthropicUsage = result.providerMetadata?.anthropic?.usage as
+        Record<string, unknown> | undefined;
+      const serviceTier =
+        typeof anthropicUsage?.service_tier === 'string' ? anthropicUsage.service_tier : undefined;
       // Same-provider Anthropic surfaces thinking tokens only on the raw usage
       // object (convert-anthropic-usage.ts leaves outputTokens.reasoning
       // undefined); other providers surface them via outputTokenDetails.
-      const thinkingTokens = extractThinkingTokens(anthropicUsage) ?? result.usage.outputTokenDetails?.reasoningTokens;
+      const thinkingTokens =
+        extractThinkingTokens(anthropicUsage) ?? result.usage.outputTokenDetails?.reasoningTokens;
 
       // Same-provider only: non-Anthropic upstreams never populate
       // providerMetadata.anthropic, so cross-provider stop_sequence stays null.
@@ -459,7 +485,10 @@ function rejectUnsupportedMessagesParams(body: Record<string, unknown>) {
  * `budget_tokens`; the shipped AnthropicProviderOptions reads camelCase
  * `budgetTokens` (anthropic-language-model-options.ts).
  */
-function applyThinking(providerOptions: Record<string, Record<string, JSONValue>>, thinking: unknown) {
+function applyThinking(
+  providerOptions: Record<string, Record<string, JSONValue>>,
+  thinking: unknown,
+) {
   if (!thinking || typeof thinking !== 'object') return;
   const { type, budget_tokens } = thinking as {
     type?: unknown;
@@ -483,7 +512,10 @@ function applyThinking(providerOptions: Record<string, Record<string, JSONValue>
  * `providerOptions.anthropic.disableParallelToolUse`
  * (anthropic-language-model-options.ts).
  */
-function applyToolChoiceOptions(providerOptions: Record<string, Record<string, JSONValue>>, toolChoice: unknown) {
+function applyToolChoiceOptions(
+  providerOptions: Record<string, Record<string, JSONValue>>,
+  toolChoice: unknown,
+) {
   if (!toolChoice || typeof toolChoice !== 'object') return;
   const { disable_parallel_tool_use } = toolChoice as {
     disable_parallel_tool_use?: unknown;
@@ -556,17 +588,15 @@ function applyContainer(
       mapped.id = container.id;
     }
     if (container.skills != null) {
-      mapped.skills = container.skills.map(
-        (skill): JSONValue => ({
-          type: skill.type,
-          ...(skill.version != null ? { version: skill.version } : {}),
-          ...(skill.skill_id != null
-            ? skill.type === 'custom'
-              ? { providerReference: { anthropic: skill.skill_id } }
-              : { skillId: skill.skill_id }
-            : {}),
-        }),
-      );
+      mapped.skills = container.skills.map((skill): JSONValue => ({
+        type: skill.type,
+        ...(skill.version != null ? { version: skill.version } : {}),
+        ...(skill.skill_id != null
+          ? skill.type === 'custom'
+            ? { providerReference: { anthropic: skill.skill_id } }
+            : { skillId: skill.skill_id }
+          : {}),
+      }));
     }
   }
 
@@ -612,7 +642,9 @@ async function peekAnthropicStream(stream: ReadableStream<string>) {
     const { done, value } = await reader.read();
     if (done) {
       reader.releaseLock();
-      return chunks.length === 0 ? undefined : { first: chunks.join(''), stream: streamFromChunks(chunks) };
+      return chunks.length === 0
+        ? undefined
+        : { first: chunks.join(''), stream: streamFromChunks(chunks) };
     }
 
     chunks.push(value);

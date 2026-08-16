@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const stoplightIcon: IconNode = [
   [
@@ -60,8 +60,8 @@ export const stoplightIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const StoplightIcon = createLucideIcon('StoplightIcon', stoplightIcon)
+const StoplightIcon = createLucideIcon('StoplightIcon', stoplightIcon);
 
-export default StoplightIcon
+export default StoplightIcon;

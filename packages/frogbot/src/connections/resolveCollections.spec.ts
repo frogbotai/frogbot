@@ -24,7 +24,10 @@ describe('resolveConnectionsCollections', () => {
   it('injects the default collection for credentialed pieces', () => {
     const result = resolveConnectionsCollections(config(), pieces);
     expect(result.connections).toMatchObject({ enabled: true, slug: DEFAULT_CONNECTIONS_SLUG });
-    expect(result.collections.map((collection) => collection.slug)).toEqual(['users', 'connections']);
+    expect(result.collections.map((collection) => collection.slug)).toEqual([
+      'users',
+      'connections',
+    ]);
   });
 
   it('adopts and extends a marked collection', () => {
@@ -34,34 +37,59 @@ describe('resolveConnectionsCollections', () => {
     );
     const collection = result.collections.find((item) => item.slug === 'accounts');
     expect(result.connections.slug).toBe('accounts');
-    expect(collection?.fields.map((field) => 'name' in field ? field.name : undefined)).toContain('tenant');
-    expect(collection?.fields.map((field) => 'name' in field ? field.name : undefined)).toContain('encryptedCredentials');
+    expect(collection?.fields.map((field) => ('name' in field ? field.name : undefined))).toContain(
+      'tenant',
+    );
+    expect(collection?.fields.map((field) => ('name' in field ? field.name : undefined))).toContain(
+      'encryptedCredentials',
+    );
   });
 
   it('rejects collisions and duplicate markers', () => {
-    expect(() => resolveConnectionsCollections(config([{ slug: 'connections', fields: [] }]), pieces)).toThrow('Add `connections: true`');
-    expect(() => resolveConnectionsCollections(config([
-      { slug: 'one', connections: true, fields: [] },
-      { slug: 'two', connections: true, fields: [] },
-    ]), pieces)).toThrow('Multiple collections marked `connections: true`');
+    expect(() =>
+      resolveConnectionsCollections(config([{ slug: 'connections', fields: [] }]), pieces),
+    ).toThrow('Add `connections: true`');
+    expect(() =>
+      resolveConnectionsCollections(
+        config([
+          { slug: 'one', connections: true, fields: [] },
+          { slug: 'two', connections: true, fields: [] },
+        ]),
+        pieces,
+      ),
+    ).toThrow('Multiple collections marked `connections: true`');
   });
 
   it('rejects reserved fields and locks metadata to json', () => {
-    expect(() => resolveConnectionsCollections(config([
-      { slug: 'accounts', connections: true, fields: [{ name: 'owner', type: 'text' }] },
-    ]), pieces)).toThrow("Field 'owner'");
-    expect(() => resolveConnectionsCollections(config([
-      { slug: 'accounts', connections: true, fields: [{ name: 'metadata', type: 'text' }] },
-    ]), pieces)).toThrow("must use type 'json'");
+    expect(() =>
+      resolveConnectionsCollections(
+        config([
+          { slug: 'accounts', connections: true, fields: [{ name: 'owner', type: 'text' }] },
+        ]),
+        pieces,
+      ),
+    ).toThrow("Field 'owner'");
+    expect(() =>
+      resolveConnectionsCollections(
+        config([
+          { slug: 'accounts', connections: true, fields: [{ name: 'metadata', type: 'text' }] },
+        ]),
+        pieces,
+      ),
+    ).toThrow("must use type 'json'");
   });
 
   it('owner-scopes reads and hides encrypted credentials', async () => {
     const result = resolveConnectionsCollections(config(), pieces);
     const collection = result.collections.find((item) => item.slug === 'connections')!;
     const read = collection.access!.read!;
-    expect(await read({ req: { user: { id: 'owner' } } as never })).toEqual({ owner: { equals: 'owner' } });
+    expect(await read({ req: { user: { id: 'owner' } } as never })).toEqual({
+      owner: { equals: 'owner' },
+    });
     expect(await read({ req: { user: null } as never })).toBe(false);
-    const encrypted = collection.fields.find((field) => 'name' in field && field.name === 'encryptedCredentials');
+    const encrypted = collection.fields.find(
+      (field) => 'name' in field && field.name === 'encryptedCredentials',
+    );
     expect(encrypted).toMatchObject({ hidden: true, access: { read: expect.any(Function) } });
     expect(await (encrypted as { access: { read: () => boolean } }).access.read()).toBe(false);
   });

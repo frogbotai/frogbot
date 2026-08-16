@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const browserIcon: IconNode = [
   [
@@ -31,8 +31,8 @@ export const browserIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const BrowserIcon = createLucideIcon('BrowserIcon', browserIcon, 1.5)
+const BrowserIcon = createLucideIcon('BrowserIcon', browserIcon, 1.5);
 
-export default BrowserIcon
+export default BrowserIcon;

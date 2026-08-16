@@ -25,14 +25,19 @@ function makeApp() {
   });
 }
 
-async function post(body: unknown): Promise<{ status: number; body: { error: { message: string; type: string; code: string | null; param: string | null } } }> {
+async function post(body: unknown): Promise<{
+  status: number;
+  body: { error: { message: string; type: string; code: string | null; param: string | null } };
+}> {
   const app = makeApp();
   const res = await app.request('http://localhost/v1/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const data = (await res.json()) as { error: { message: string; type: string; code: string | null; param: string | null } };
+  const data = (await res.json()) as {
+    error: { message: string; type: string; code: string | null; param: string | null };
+  };
   return { status: res.status, body: data };
 }
 
@@ -274,13 +279,23 @@ describe('chat-completions route — regression: 500→400 conversion', () => {
     ['empty body', {}],
     ['null messages', { model: 'openai/gpt-4o-mini', messages: null }],
     ['messages as string', { model: 'openai/gpt-4o-mini', messages: 'oops' }],
-    ['user message with null content', { model: 'openai/gpt-4o-mini', messages: [{ role: 'user', content: null }] }],
-    ['tool_calls without id', {
-      model: 'openai/gpt-4o-mini',
-      messages: [
-        { role: 'assistant', content: null, tool_calls: [{ type: 'function', function: { name: 'x', arguments: '{}' } }] },
-      ],
-    }],
+    [
+      'user message with null content',
+      { model: 'openai/gpt-4o-mini', messages: [{ role: 'user', content: null }] },
+    ],
+    [
+      'tool_calls without id',
+      {
+        model: 'openai/gpt-4o-mini',
+        messages: [
+          {
+            role: 'assistant',
+            content: null,
+            tool_calls: [{ type: 'function', function: { name: 'x', arguments: '{}' } }],
+          },
+        ],
+      },
+    ],
   ])('%s produces 400, not 500', async (_, payload) => {
     const { status, body } = await post(payload);
     expect(status).toBe(400);

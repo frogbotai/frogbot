@@ -1,16 +1,16 @@
-import type { CollectionSlug, FrogbotInstance } from 'frogbot'
+import type { CollectionSlug, FrogbotInstance } from 'frogbot';
 
-import { empty } from './scenarios/empty'
-import { singleUser } from './scenarios/singleUser'
-import { workspaceWithFiles } from './scenarios/workspaceWithFiles'
+import { empty } from './scenarios/empty';
+import { singleUser } from './scenarios/singleUser';
+import { workspaceWithFiles } from './scenarios/workspaceWithFiles';
 
-export type Scenario = 'empty' | 'singleUser' | 'workspaceWithFiles'
+export type Scenario = 'empty' | 'singleUser' | 'workspaceWithFiles';
 
 const scenarios = {
   empty,
   singleUser,
   workspaceWithFiles,
-} as const
+} as const;
 
 /**
  * Truncate every collection on the booted frogbot instance, then apply
@@ -21,8 +21,8 @@ const scenarios = {
  * functional. Revisit when the first real scenario lands.
  */
 export async function clearAndSeed(frogbot: FrogbotInstance, scenario: Scenario): Promise<void> {
-  await clearAll(frogbot)
-  await scenarios[scenario](frogbot)
+  await clearAll(frogbot);
+  await scenarios[scenario](frogbot);
 }
 
 async function clearAll(frogbot: FrogbotInstance): Promise<void> {
@@ -31,6 +31,6 @@ async function clearAll(frogbot: FrogbotInstance): Promise<void> {
       collection: slug,
       where: {},
       overrideAccess: true,
-    })
+    });
   }
 }

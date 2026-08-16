@@ -48,5 +48,4 @@ export type AgentSlug = Extract<keyof FrogbotTypes['agents'], string>;
 export type RoleSlug = FrogbotTypes['roles'];
 
 /** Document shape for a given collection slug. */
-export type TypedCollection<TSlug extends CollectionSlug> =
-  FrogbotTypes['collections'][TSlug];
+export type TypedCollection<TSlug extends CollectionSlug> = FrogbotTypes['collections'][TSlug];

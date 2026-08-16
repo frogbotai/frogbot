@@ -53,10 +53,7 @@ export type AnthropicSystemParam = string | AnthropicSystemTextBlock[];
 // -- User content blocks --
 
 export type AnthropicUserBlock =
-  | AnthropicTextBlock
-  | AnthropicImageBlock
-  | AnthropicToolResultBlock
-  | AnthropicDocumentBlock;
+  AnthropicTextBlock | AnthropicImageBlock | AnthropicToolResultBlock | AnthropicDocumentBlock;
 
 export type AnthropicTextBlock = {
   type: 'text';
@@ -72,8 +69,7 @@ export type AnthropicMediaSource =
 
 // Document sources additionally allow a `text` variant (inline text file).
 export type AnthropicDocumentSource =
-  | AnthropicMediaSource
-  | { type: 'text'; media_type?: string | null; data: string };
+  AnthropicMediaSource | { type: 'text'; media_type?: string | null; data: string };
 
 export type AnthropicImageBlock = {
   type: 'image';
@@ -92,8 +88,7 @@ export type AnthropicDocumentBlock = {
 
 // tool_result.content can be a string, or an array of text/image sub-blocks.
 export type AnthropicToolResultSubBlock =
-  | { type: 'text'; text: string }
-  | { type: 'image'; source: AnthropicMediaSource };
+  { type: 'text'; text: string } | { type: 'image'; source: AnthropicMediaSource };
 
 export type AnthropicToolResultBlock = {
   type: 'tool_result';
@@ -146,10 +141,7 @@ export type AnthropicToolDefinition = {
 };
 
 export type AnthropicToolChoice =
-  | { type: 'auto' }
-  | { type: 'any' }
-  | { type: 'none' }
-  | { type: 'tool'; name: string };
+  { type: 'auto' } | { type: 'any' } | { type: 'none' } | { type: 'tool'; name: string };
 
 // ===========================================================================
 // Response

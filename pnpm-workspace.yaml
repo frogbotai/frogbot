@@ -1,8 +1,8 @@
 packages:
-  - "packages/*"
-  - "packages/pieces/*"
-  - "packages/plugins/*"
-  - "test"
-  - "templates/blank"
-  - "e2e-fixtures/tool-agent"
-  - "examples/business-qa"
+  - 'packages/*'
+  - 'packages/pieces/*'
+  - 'packages/plugins/*'
+  - 'test'
+  - 'templates/blank'
+  - 'e2e-fixtures/tool-agent'
+  - 'examples/business-qa'

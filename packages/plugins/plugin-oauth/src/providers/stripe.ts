@@ -1,5 +1,10 @@
 import type { OAuthProvider, OAuthTokenSet } from '../types.js';
-import { authorizationUrl, jsonRequest, type OAuthProviderOptions, tokenRequest } from './shared.js';
+import {
+  authorizationUrl,
+  jsonRequest,
+  type OAuthProviderOptions,
+  tokenRequest,
+} from './shared.js';
 
 const AUTHORIZATION_URL = 'https://connect.stripe.com/oauth/authorize';
 const TOKEN_URL = 'https://connect.stripe.com/oauth/token';
@@ -49,7 +54,8 @@ export function stripeProvider(options: OAuthProviderOptions): OAuthProvider {
         metadata: value,
       };
     },
-    refresh: ({ tokens }) => token({ grant_type: 'refresh_token', refresh_token: tokens.refreshToken }),
+    refresh: ({ tokens }) =>
+      token({ grant_type: 'refresh_token', refresh_token: tokens.refreshToken }),
     revoke: async ({ tokens }) => {
       const body = new URLSearchParams({
         client_id: options.clientId,

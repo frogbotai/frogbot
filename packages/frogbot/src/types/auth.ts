@@ -7,10 +7,13 @@ import type { IncomingAuthType } from 'payload';
 export interface AuthConfig {
   depth?: number;
   tokenExpiration?: number;
-  verify?: boolean | { generateEmailHTML?: (args: { token: string; user: unknown }) => string | Promise<string> };
+  verify?:
+    | boolean
+    | { generateEmailHTML?: (args: { token: string; user: unknown }) => string | Promise<string> };
   maxLoginAttempts?: number;
   lockTime?: number;
-  loginWithUsername?: boolean | { allowEmailLogin?: boolean; requireEmail?: boolean; requireUsername?: boolean };
+  loginWithUsername?:
+    boolean | { allowEmailLogin?: boolean; requireEmail?: boolean; requireUsername?: boolean };
   /**
    * Disable the built-in email/password strategy. Only set this when auth is
    * fully replaced by a custom strategy or an OAuth provider.

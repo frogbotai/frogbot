@@ -36,25 +36,45 @@ export class UnsupportedPieceContextError extends Error {
 }
 
 function unsupported(capability: string): object {
-  return new Proxy({}, { get: () => { throw new UnsupportedPieceContextError(capability); } });
+  return new Proxy(
+    {},
+    {
+      get: () => {
+        throw new UnsupportedPieceContextError(capability);
+      },
+    },
+  );
 }
 
 export function loadActivepiecesPiece(module: Record<string, unknown>): ActivepiecesPiece {
   const matches = Object.values(module).filter((value): value is ActivepiecesPiece => {
     if (typeof value !== 'object' || value === null) return false;
     const candidate = value as Partial<ActivepiecesPiece>;
-    return typeof candidate.metadata === 'function' && typeof candidate.actions === 'function' && typeof candidate.getAction === 'function';
+    return (
+      typeof candidate.metadata === 'function' &&
+      typeof candidate.actions === 'function' &&
+      typeof candidate.getAction === 'function'
+    );
   });
   if (matches.length !== 1) {
-    throw new Error(`[frogbot] Expected exactly one Activepieces piece export, found ${matches.length}.`);
+    throw new Error(
+      `[frogbot] Expected exactly one Activepieces piece export, found ${matches.length}.`,
+    );
   }
   return matches[0];
 }
 
-function optionSchema(values: (string | number | boolean | null)[], fallback: z.ZodType): z.ZodType {
+function optionSchema(
+  values: (string | number | boolean | null)[],
+  fallback: z.ZodType,
+): z.ZodType {
   if (values.length === 0) return fallback;
   if (values.length === 1) return z.literal(values[0]!);
-  return z.union([z.literal(values[0]!), z.literal(values[1]!), ...values.slice(2).map((value) => z.literal(value))]);
+  return z.union([
+    z.literal(values[0]!),
+    z.literal(values[1]!),
+    ...values.slice(2).map((value) => z.literal(value)),
+  ]);
 }
 
 function propertySchema(property: ActivepiecesProperty): z.ZodType {
@@ -72,7 +92,9 @@ function propertySchema(property: ActivepiecesProperty): z.ZodType {
       schema = z.array(z.unknown());
       break;
     case 'OBJECT':
-      schema = property.properties ? propertiesSchema(property.properties) : z.record(z.string(), z.unknown());
+      schema = property.properties
+        ? propertiesSchema(property.properties)
+        : z.record(z.string(), z.unknown());
       break;
     case 'JSON':
       schema = z.unknown();
@@ -88,7 +110,12 @@ function propertySchema(property: ActivepiecesProperty): z.ZodType {
     case 'MULTI_SELECT_DROPDOWN':
     case 'STATIC_MULTI_SELECT_DROPDOWN':
       schema = property.options?.options?.length
-        ? z.array(optionSchema(property.options.options.map((option) => option.value), z.string()))
+        ? z.array(
+            optionSchema(
+              property.options.options.map((option) => option.value),
+              z.string(),
+            ),
+          )
         : z.array(z.string());
       break;
     default:
@@ -99,17 +126,27 @@ function propertySchema(property: ActivepiecesProperty): z.ZodType {
   return property.required ? schema : schema.optional();
 }
 
-export function propertiesSchema(properties: Record<string, ActivepiecesProperty>): z.ZodObject<Record<string, z.ZodType>> {
-  return z.object(Object.fromEntries(Object.entries(properties).map(([name, property]) => [name, propertySchema(property)])));
+export function propertiesSchema(
+  properties: Record<string, ActivepiecesProperty>,
+): z.ZodObject<Record<string, z.ZodType>> {
+  return z.object(
+    Object.fromEntries(
+      Object.entries(properties).map(([name, property]) => [name, propertySchema(property)]),
+    ),
+  );
 }
 
-async function resolveProps(properties: Record<string, ActivepiecesProperty>, values: Record<string, unknown>): Promise<Record<string, unknown>> {
+async function resolveProps(
+  properties: Record<string, ActivepiecesProperty>,
+  values: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
   const resolved = { ...values };
   for (const [name, property] of Object.entries(properties)) {
     const value = values[name];
     if (property.type === 'FILE' && typeof value === 'string') {
       const response = await fetch(value);
-      if (!response.ok) throw new Error(`[frogbot] Failed to download piece file '${value}': ${response.status}.`);
+      if (!response.ok)
+        throw new Error(`[frogbot] Failed to download piece file '${value}': ${response.status}.`);
       const fileName = new URL(value).pathname.split('/').pop() || 'file';
       resolved[name] = {
         data: Buffer.from(await response.arrayBuffer()),
@@ -141,7 +178,9 @@ export async function executeActivepiecesAction({
       write: async ({ fileName, data }: { fileName: string; data: Buffer }) => {
         const collection = ctx?.frogbot.config.files?.slug;
         if (!ctx || !collection) {
-          throw new Error('[frogbot] Piece file output requires the files collection to be configured.');
+          throw new Error(
+            '[frogbot] Piece file output requires the files collection to be configured.',
+          );
         }
         const doc = await ctx.frogbot.create({
           collection,

@@ -79,7 +79,9 @@ describe('assertPublicHttpsUrl', () => {
   });
 
   it('throws a 400 gateway error', async () => {
-    const error = await assertPublicHttpsUrl(new URL('http://127.0.0.1/')).catch((err: unknown) => err);
+    const error = await assertPublicHttpsUrl(new URL('http://127.0.0.1/')).catch(
+      (err: unknown) => err,
+    );
     expect(error).toMatchObject({ status: 400, code: 'invalid_request_body' });
   });
 });

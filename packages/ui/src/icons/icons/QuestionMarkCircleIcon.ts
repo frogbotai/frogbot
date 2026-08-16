@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const questionMarkCircleIcon: IconNode = [
   [
@@ -26,8 +26,8 @@ export const questionMarkCircleIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const QuestionMarkCircleIcon = createLucideIcon('QuestionMarkCircleIcon', questionMarkCircleIcon)
+const QuestionMarkCircleIcon = createLucideIcon('QuestionMarkCircleIcon', questionMarkCircleIcon);
 
-export default QuestionMarkCircleIcon
+export default QuestionMarkCircleIcon;

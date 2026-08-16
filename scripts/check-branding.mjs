@@ -17,7 +17,13 @@ const roots = [
 ];
 
 const skipDirs = new Set(['node_modules', '.next', '.git', 'dist']);
-const skipFiles = new Set(['pnpm-lock.yaml', 'package-lock.json', 'yarn.lock', '.env', '.env.local']);
+const skipFiles = new Set([
+  'pnpm-lock.yaml',
+  'package-lock.json',
+  'yarn.lock',
+  '.env',
+  '.env.local',
+]);
 const skipPatterns = [/^frogbot\.db/, /\.tsbuildinfo$/, /\.(png|jpg|jpeg|gif|ico|woff2?)$/];
 
 function* walk(dir) {

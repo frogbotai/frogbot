@@ -15,11 +15,19 @@ import { OpenTelemetry } from '@ai-sdk/otel';
 import type { Tracer } from '@opentelemetry/api';
 import type { TelemetryOptions } from 'ai';
 
-import { includesSignalLevel, resolveSignalLevels, type SignalLevelInput,traceOverrideKey } from './signalLevel.js';
+import {
+  includesSignalLevel,
+  resolveSignalLevels,
+  type SignalLevelInput,
+  traceOverrideKey,
+} from './signalLevel.js';
 import { createGatewayTracer } from './tracing.js';
 
 /** Subset of the AI SDK `telemetry` option the gateway drives per request. */
-export type RequestTelemetryOptions = Pick<TelemetryOptions, 'isEnabled' | 'recordInputs' | 'recordOutputs' | 'integrations'>;
+export type RequestTelemetryOptions = Pick<
+  TelemetryOptions,
+  'isEnabled' | 'recordInputs' | 'recordOutputs' | 'integrations'
+>;
 
 export type AiSdkTelemetry = {
   /** Build the AI SDK `telemetry` option for one request from its resolved signal levels (`context` is the hook context bag carrying the per-request trace override). */
@@ -33,7 +41,9 @@ export type AiSdkTelemetryOptions = {
 
 export function createAiSdkTelemetry(options: AiSdkTelemetryOptions = {}): AiSdkTelemetry {
   const baseLevels = resolveSignalLevels(options.signalLevel);
-  const integration = new OpenTelemetry({ tracer: createGatewayTracer({ tracer: options.tracer }) });
+  const integration = new OpenTelemetry({
+    tracer: createGatewayTracer({ tracer: options.tracer }),
+  });
   return {
     forRequest(context) {
       const levels = resolveSignalLevels(context[traceOverrideKey] as SignalLevelInput, baseLevels);

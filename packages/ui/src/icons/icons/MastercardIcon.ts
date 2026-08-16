@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const mastercardIcon: IconNode = [
   [
@@ -23,8 +23,8 @@ export const mastercardIcon: IconNode = [
       fill: '#F79E1B',
     },
   ],
-]
+];
 
-const MastercardIcon = createLucideIcon('MastercardIcon', mastercardIcon, undefined, '0 0 25 24')
+const MastercardIcon = createLucideIcon('MastercardIcon', mastercardIcon, undefined, '0 0 25 24');
 
-export default MastercardIcon
+export default MastercardIcon;

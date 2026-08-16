@@ -6,7 +6,7 @@ import type {
   LanguageModelV4CallOptions,
   LanguageModelV4StreamPart,
 } from '@ai-sdk/provider';
-import { type Context as OtelContext,context as otelContext } from '@opentelemetry/api';
+import { type Context as OtelContext, context as otelContext } from '@opentelemetry/api';
 import { wrapEmbeddingModel, wrapImageModel, wrapLanguageModel } from 'ai';
 
 import {
@@ -138,15 +138,27 @@ function createModelHooks(options: ModelHookOptions) {
     usage?: HookUsage;
     warnings?: unknown[];
   }): Promise<void> {
-    await runHooks(hooks.afterUpstream, { ...base, phase: 'afterUpstream', ...fields }, { isolate: true });
+    await runHooks(
+      hooks.afterUpstream,
+      { ...base, phase: 'afterUpstream', ...fields },
+      { isolate: true },
+    );
   }
 
-  async function afterError(error: unknown, failedPhase: 'beforeUpstream' | 'upstream' = 'upstream'): Promise<void> {
-    await runHooks(hooks.afterError, { ...base, phase: 'afterError', failedPhase, error }, { isolate: true });
+  async function afterError(
+    error: unknown,
+    failedPhase: 'beforeUpstream' | 'upstream' = 'upstream',
+  ): Promise<void> {
+    await runHooks(
+      hooks.afterError,
+      { ...base, phase: 'afterError', failedPhase, error },
+      { isolate: true },
+    );
   }
 
   function run<T>(callback: () => PromiseLike<T>): PromiseLike<T> {
-    const active = (base.context[otelContextKey] as OtelContext | undefined) ?? otelContext.active();
+    const active =
+      (base.context[otelContextKey] as OtelContext | undefined) ?? otelContext.active();
     return otelContext.with(active, callback);
   }
 
@@ -192,8 +204,9 @@ function directUsage(value: unknown): HookUsage | undefined {
     typeof usage.inputTokens !== 'number' &&
     typeof usage.outputTokens !== 'number' &&
     typeof usage.totalTokens !== 'number'
-  )
-    {return undefined;}
+  ) {
+    return undefined;
+  }
   const inputTokens = usage.inputTokens ?? 0;
   const outputTokens = usage.outputTokens ?? 0;
   return {
@@ -259,7 +272,10 @@ function wrapLanguageStream(args: {
   });
 }
 
-export function withLanguageModelHooks(model: GatewayLanguageModel, options: ModelHookOptions): LanguageModelV4 {
+export function withLanguageModelHooks(
+  model: GatewayLanguageModel,
+  options: ModelHookOptions,
+): LanguageModelV4 {
   return wrapLanguageModel({
     model,
     middleware: {
@@ -303,7 +319,10 @@ export function withLanguageModelHooks(model: GatewayLanguageModel, options: Mod
   });
 }
 
-export function withEmbeddingModelHooks(model: GatewayEmbeddingModel, options: ModelHookOptions): EmbeddingModelV4 {
+export function withEmbeddingModelHooks(
+  model: GatewayEmbeddingModel,
+  options: ModelHookOptions,
+): EmbeddingModelV4 {
   return wrapEmbeddingModel({
     model,
     middleware: {
@@ -365,7 +384,9 @@ function withMethodHooks<T extends object>(args: {
         const hooks = createModelHooks(args.options);
         await hooks.beforeUpstream(callOptions);
         try {
-          const method = Reflect.get(target, property, target) as (options: CallOptions) => PromiseLike<CallResult>;
+          const method = Reflect.get(target, property, target) as (
+            options: CallOptions,
+          ) => PromiseLike<CallResult>;
           const result = await hooks.run(() => method.call(target, callOptions));
           await hooks.afterUpstream({
             response: result.response,
@@ -387,8 +408,10 @@ export const withVideoModelHooks = (
   options: ModelHookOptions,
 ): Experimental_VideoModelV4 => withMethodHooks({ method: 'doGenerate', model, options });
 
-export const withSpeechModelHooks = (model: GatewaySpeechModel, options: ModelHookOptions): GatewaySpeechModel =>
-  withMethodHooks({ method: 'doGenerate', model, options });
+export const withSpeechModelHooks = (
+  model: GatewaySpeechModel,
+  options: ModelHookOptions,
+): GatewaySpeechModel => withMethodHooks({ method: 'doGenerate', model, options });
 
 export const withTranscriptionModelHooks = (
   model: GatewayTranscriptionModel,

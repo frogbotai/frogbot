@@ -90,7 +90,8 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     const deadline = Date.now() + 210000;
     for (;;) {
       if (await isListening(port)) break;
-      if (server.exitCode !== null) throw new Error(`scaffold dev server exited with code ${server.exitCode}`);
+      if (server.exitCode !== null)
+        throw new Error(`scaffold dev server exited with code ${server.exitCode}`);
       if (Date.now() > deadline) throw new Error('scaffold dev server did not become ready');
       await new Promise((r) => setTimeout(r, 2000));
     }
@@ -141,8 +142,12 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
 
   function expectPersisted(threadId: string | number) {
     const db = new DatabaseSync(join(dataDir, 'e2e.db'));
-    const thread = db.prepare('SELECT count(*) AS count FROM threads WHERE id = ?').get(threadId) as { count: number };
-    const messages = db.prepare('SELECT role FROM messages WHERE thread_id = ? ORDER BY role').all(threadId) as Array<{ role: string }>;
+    const thread = db
+      .prepare('SELECT count(*) AS count FROM threads WHERE id = ?')
+      .get(threadId) as { count: number };
+    const messages = db
+      .prepare('SELECT role FROM messages WHERE thread_id = ? ORDER BY role')
+      .all(threadId) as Array<{ role: string }>;
     db.close();
     expect(thread.count).toBe(1);
     expect(messages.map(({ role }) => role)).toEqual(['assistant', 'user']);
@@ -154,7 +159,11 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ prompt: 'Reply with exactly: hello' }),
     });
-    const body = (await response.json()) as { text: string; finishReason: string; threadId: string | number };
+    const body = (await response.json()) as {
+      text: string;
+      finishReason: string;
+      threadId: string | number;
+    };
     expect(response.status, JSON.stringify(body)).toBe(200);
     expect(body.text).toBe('hello');
     expect(body.finishReason).toBe('stop');
@@ -207,7 +216,10 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     }
     expect(responseStatus).toBe(200);
     expect(chunks.length).toBeGreaterThan(0);
-    expect(chunks.some((chunk) => chunk.type === 'text-delta'), JSON.stringify(chunks)).toBe(true);
+    expect(
+      chunks.some((chunk) => chunk.type === 'text-delta'),
+      JSON.stringify(chunks),
+    ).toBe(true);
     expect(transport.threadId).toBeDefined();
     expectPersisted(transport.threadId!);
   });

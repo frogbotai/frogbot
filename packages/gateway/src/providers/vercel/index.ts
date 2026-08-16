@@ -1,10 +1,6 @@
 // Provider definition: Vercel.
 
-import {
-  createVercel,
-  type VercelProvider,
-  type VercelProviderSettings,
-} from '@ai-sdk/vercel';
+import { createVercel, type VercelProvider, type VercelProviderSettings } from '@ai-sdk/vercel';
 
 import type { ProviderDefinition } from '../types.js';
 

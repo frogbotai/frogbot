@@ -73,7 +73,12 @@ function mergeField(base: Field, user: Field, slug: string, feature: string): Fi
   return merged;
 }
 
-function mergeFields(userFields: Field[], baseFields: Field[], slug: string, feature: string): Field[] {
+function mergeFields(
+  userFields: Field[],
+  baseFields: Field[],
+  slug: string,
+  feature: string,
+): Field[] {
   const out = [...userFields];
   for (const baseField of baseFields) {
     const name = fieldName(baseField);
@@ -94,7 +99,12 @@ export type MergeCollectionProps = {
   feature: string;
 };
 
-export function mergeCollection({ user, base, reservedFields, feature }: MergeCollectionProps): CollectionConfig {
+export function mergeCollection({
+  user,
+  base,
+  reservedFields,
+  feature,
+}: MergeCollectionProps): CollectionConfig {
   for (const reserved of reservedFields) {
     if (user.fields.some((f) => fieldName(f) === reserved)) {
       throw new Error(

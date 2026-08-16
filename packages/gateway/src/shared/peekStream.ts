@@ -3,7 +3,9 @@ export type PeekedStream<T> = {
   stream: ReadableStream<T>;
 };
 
-export async function peekStream<T>(stream: ReadableStream<T>): Promise<PeekedStream<T> | undefined> {
+export async function peekStream<T>(
+  stream: ReadableStream<T>,
+): Promise<PeekedStream<T> | undefined> {
   const reader = stream.getReader();
   const { done, value } = await reader.read();
 

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, beforeEach, describe, expect,it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
@@ -253,9 +253,21 @@ describe('hooks-access', () => {
     });
 
     it('multiple creates increment hookCount correctly', async () => {
-      await booted.frogbot.create({ collection: reqAccessSlug, data: { title: 'A' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: reqAccessSlug, data: { title: 'B' }, overrideAccess: true });
-      const docC = await booted.frogbot.create({ collection: reqAccessSlug, data: { title: 'C' }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: reqAccessSlug,
+        data: { title: 'A' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: reqAccessSlug,
+        data: { title: 'B' },
+        overrideAccess: true,
+      });
+      const docC = await booted.frogbot.create({
+        collection: reqAccessSlug,
+        data: { title: 'C' },
+        overrideAccess: true,
+      });
 
       const fetched = await booted.frogbot.findByID({
         collection: reqAccessSlug,

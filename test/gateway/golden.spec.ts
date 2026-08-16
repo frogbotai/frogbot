@@ -10,7 +10,7 @@
 // Golden tests verify that translator output exactly matches the committed fixtures.
 // When upstream wire formats change, re-record gated E2E fixtures with `RUN_E2E=1 ... --update`.
 
-import { existsSync,readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { TextStreamPart, ToolSet } from 'ai';
@@ -22,7 +22,10 @@ import { openaiProvider } from '../../packages/gateway/src/providers/openai/inde
 import { createOpenAIStreamTransform } from '../../packages/gateway/src/routes/chatCompletions/translators/stream.js';
 import { createAnthropicStreamTransform } from '../../packages/gateway/src/routes/messages/translators/stream.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
-import { createProviderFixtureFetch, shouldUpdateFixtures } from '../__helpers/gateway/provider-http-fixtures.js';
+import {
+  createProviderFixtureFetch,
+  shouldUpdateFixtures,
+} from '../__helpers/gateway/provider-http-fixtures.js';
 
 const FIXTURES_DIR = join(import.meta.dirname, '__fixtures__');
 
@@ -220,7 +223,10 @@ describe('gateway provider HTTP golden replay', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(loadJsonFixture(scenario, 'request.json')),
     });
-    const expected = loadJsonFixture<{ contentType: string; bytes: number[] }>(scenario, 'expected-response.json');
+    const expected = loadJsonFixture<{ contentType: string; bytes: number[] }>(
+      scenario,
+      'expected-response.json',
+    );
 
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toBe(expected.contentType);
@@ -230,7 +236,10 @@ describe('gateway provider HTTP golden replay', () => {
   it('replays OpenAI transcriptions through the real provider package', async () => {
     const scenario = 'openai-transcription';
     const app = makeOpenAIHttpFixtureApp(scenario);
-    const request = loadJsonFixture<{ model: string; response_format: string }>(scenario, 'request.json');
+    const request = loadJsonFixture<{ model: string; response_format: string }>(
+      scenario,
+      'request.json',
+    );
     const form = new FormData();
     form.set('model', request.model);
     form.set('response_format', request.response_format);

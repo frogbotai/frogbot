@@ -33,13 +33,25 @@ describe('oauthPlugin', () => {
       'users',
       'oauth-states',
     ]);
-    expect(result.credentialSources).toEqual([expect.objectContaining({ key: 'custom', services: ['custom-service'], credentialTypes: ['oauth2'] })]);
+    expect(result.credentialSources).toEqual([
+      expect.objectContaining({
+        key: 'custom',
+        services: ['custom-service'],
+        credentialTypes: ['oauth2'],
+      }),
+    ]);
   });
 
   it('rejects duplicate and empty provider IDs', () => {
-    expect(() => oauthPlugin({ providers: [provider, provider] })).toThrow("Provider ID 'custom' must be unique");
-    expect(() => oauthPlugin({ providers: [{ ...provider, id: '' }] })).toThrow('Provider IDs must not be empty');
-    expect(() => oauthPlugin({ providers: [{ ...provider, service: '' }] })).toThrow('Provider service IDs must not be empty');
+    expect(() => oauthPlugin({ providers: [provider, provider] })).toThrow(
+      "Provider ID 'custom' must be unique",
+    );
+    expect(() => oauthPlugin({ providers: [{ ...provider, id: '' }] })).toThrow(
+      'Provider IDs must not be empty',
+    );
+    expect(() => oauthPlugin({ providers: [{ ...provider, service: '' }] })).toThrow(
+      'Provider service IDs must not be empty',
+    );
   });
 
   it('groups pieces sharing OAuth credentials and unions scopes', async () => {
@@ -49,25 +61,43 @@ describe('oauthPlugin', () => {
       credentialType: 'oauth2' as const,
       policy: { type: 'oauth' as const, ...auth, source: auth },
       actions: [],
-      tool: () => { throw new Error('unused'); },
+      tool: () => {
+        throw new Error('unused');
+      },
       tools: () => [],
       scopes,
     });
     const plugin = oauthPlugin();
     const result = await plugin({
-      secret: 'test', db: {}, collections: [{ slug: 'users', auth: true, fields: [] }],
+      secret: 'test',
+      db: {},
+      collections: [{ slug: 'users', auth: true, fields: [] }],
       pieces: [piece('google_sheets', ['sheets']), piece('google_drive', ['drive'])],
     } as FrogbotConfig);
-    expect(result.credentialSources).toEqual([expect.objectContaining({ key: 'google', services: ['google_sheets', 'google_drive'], scopes: ['sheets', 'drive'] })]);
+    expect(result.credentialSources).toEqual([
+      expect.objectContaining({
+        key: 'google',
+        services: ['google_sheets', 'google_drive'],
+        scopes: ['sheets', 'drive'],
+      }),
+    ]);
   });
 
   it('rejects sign-in providers on username-only auth collections', async () => {
     const plugin = oauthPlugin({ providers: [{ ...provider, signIn: true } as OAuthProvider] });
-    expect(() => plugin({
-      secret: 'test',
-      db: {},
-      collections: [{ slug: 'users', auth: { loginWithUsername: { allowEmailLogin: false, requireEmail: false } }, fields: [] }],
-    } as FrogbotConfig)).toThrow(/email/i);
+    expect(() =>
+      plugin({
+        secret: 'test',
+        db: {},
+        collections: [
+          {
+            slug: 'users',
+            auth: { loginWithUsername: { allowEmailLogin: false, requireEmail: false } },
+            fields: [],
+          },
+        ],
+      } as FrogbotConfig),
+    ).toThrow(/email/i);
   });
 
   it.each([
@@ -75,11 +105,13 @@ describe('oauthPlugin', () => {
     { disableLocalStrategy: true },
   ])('allows sign-in providers with email-capable auth %#', async (auth) => {
     const plugin = oauthPlugin({ providers: [{ ...provider, signIn: true }] });
-    expect(() => plugin({
-      secret: 'test',
-      db: {},
-      collections: [{ slug: 'users', auth, fields: [] }],
-    } as FrogbotConfig)).not.toThrow();
+    expect(() =>
+      plugin({
+        secret: 'test',
+        db: {},
+        collections: [{ slug: 'users', auth, fields: [] }],
+      } as FrogbotConfig),
+    ).not.toThrow();
   });
 
   it('appends admin login buttons after existing afterLogin components', async () => {
@@ -133,9 +165,7 @@ describe('oauthPlugin', () => {
     })({
       secret: 'test',
       db: {},
-      collections: [
-        { slug: 'users', auth: { disableLocalStrategy: true }, fields: [] },
-      ],
+      collections: [{ slug: 'users', auth: { disableLocalStrategy: true }, fields: [] }],
     } as FrogbotConfig);
     expect(result.admin?.components?.afterLogin?.[0]).toMatchObject({
       clientProps: { showDivider: false },

@@ -11,7 +11,13 @@ export type StartupBannerArgs = {
   sources: ConfigSource[];
 };
 
-const hookSlots = ['beforeOperation', 'beforeUpstream', 'afterUpstream', 'afterError', 'afterOperation'] as const;
+const hookSlots = [
+  'beforeOperation',
+  'beforeUpstream',
+  'afterUpstream',
+  'afterError',
+  'afterOperation',
+] as const;
 
 const loggerLevel = (logger: GatewayLogger | LoggerOptions | undefined): string | undefined =>
   logger && 'level' in logger && typeof logger.level === 'string' ? logger.level : undefined;

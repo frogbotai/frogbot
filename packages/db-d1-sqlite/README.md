@@ -11,13 +11,13 @@ pnpm add @frogbotai/db-d1-sqlite
 ## Usage
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { sqliteD1Adapter } from '@frogbotai/db-d1-sqlite'
+import { buildConfig } from 'frogbot';
+import { sqliteD1Adapter } from '@frogbotai/db-d1-sqlite';
 
 export default buildConfig({
   db: sqliteD1Adapter({
     binding: 'DB',
   }),
   // ...rest of config
-})
+});
 ```

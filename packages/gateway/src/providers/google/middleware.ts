@@ -14,6 +14,4 @@ export const googleEmbedDimensions: BeforeUpstreamHook = (args) => {
   delete unknown.dimensions;
 };
 
-export const googleBeforeUpstream: BeforeUpstreamHook[] = [
-  googleEmbedDimensions,
-];
+export const googleBeforeUpstream: BeforeUpstreamHook[] = [googleEmbedDimensions];

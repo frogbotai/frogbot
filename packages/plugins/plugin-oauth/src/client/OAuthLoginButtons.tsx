@@ -42,7 +42,11 @@ function ProviderIcon({ id }: { id: string }) {
   return <Icon aria-hidden="true" size={20} />;
 }
 
-export function OAuthLoginButtons({ authorizePath, providers, showDivider = true }: OAuthLoginButtonsProps) {
+export function OAuthLoginButtons({
+  authorizePath,
+  providers,
+  showDivider = true,
+}: OAuthLoginButtonsProps) {
   if (providers.length === 0) return null;
   return (
     <div className={baseClass}>

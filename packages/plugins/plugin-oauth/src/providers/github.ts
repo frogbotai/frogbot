@@ -1,30 +1,25 @@
-import type { OAuthProvider } from "../types.js";
+import type { OAuthProvider } from '../types.js';
 import {
   authorizationUrl,
   jsonRequest,
   type OAuthProviderOptions,
   tokenRequest,
-} from "./shared.js";
+} from './shared.js';
 
 export function githubProvider(options: OAuthProviderOptions): OAuthProvider {
   const request = options.fetch ?? fetch;
-  const scopes = options.scopes ?? [
-    "admin:repo_hook",
-    "admin:org",
-    "repo",
-    "gist",
-  ];
+  const scopes = options.scopes ?? ['admin:repo_hook', 'admin:org', 'repo', 'gist'];
   return {
-    id: "github",
-    service: "github",
-    label: "GitHub",
+    id: 'github',
+    service: 'github',
+    label: 'GitHub',
     signIn: options.signIn,
-    authorizationUrl: "https://github.com/login/oauth/authorize",
-    tokenUrl: "https://github.com/login/oauth/access_token",
+    authorizationUrl: 'https://github.com/login/oauth/authorize',
+    tokenUrl: 'https://github.com/login/oauth/access_token',
     scopes,
     authorize: (context) =>
       authorizationUrl({
-        url: "https://github.com/login/oauth/authorize",
+        url: 'https://github.com/login/oauth/authorize',
         clientId: options.clientId,
         scopes,
         context,
@@ -33,8 +28,8 @@ export function githubProvider(options: OAuthProviderOptions): OAuthProvider {
       (
         await tokenRequest({
           fetch: request,
-          url: "https://github.com/login/oauth/access_token",
-          headers: { Accept: "application/json" },
+          url: 'https://github.com/login/oauth/access_token',
+          headers: { Accept: 'application/json' },
           body: {
             code,
             redirect_uri: callbackUrl,
@@ -47,16 +42,16 @@ export function githubProvider(options: OAuthProviderOptions): OAuthProvider {
     getAccount: async ({ tokens }) => {
       const value = await jsonRequest({
         fetch: request,
-        url: "https://api.github.com/user",
+        url: 'https://api.github.com/user',
         accessToken: tokens.accessToken,
       });
       return {
         id: String(value.id),
-        email: typeof value.email === "string" ? value.email : undefined,
+        email: typeof value.email === 'string' ? value.email : undefined,
         name:
-          typeof value.name === "string"
+          typeof value.name === 'string'
             ? value.name
-            : typeof value.login === "string"
+            : typeof value.login === 'string'
               ? value.login
               : undefined,
         metadata: value,
@@ -66,10 +61,10 @@ export function githubProvider(options: OAuthProviderOptions): OAuthProvider {
       (
         await tokenRequest({
           fetch: request,
-          url: "https://github.com/login/oauth/access_token",
-          headers: { Accept: "application/json" },
+          url: 'https://github.com/login/oauth/access_token',
+          headers: { Accept: 'application/json' },
           body: {
-            grant_type: "refresh_token",
+            grant_type: 'refresh_token',
             refresh_token: tokens.refreshToken,
             client_id: options.clientId,
             client_secret: options.clientSecret,
@@ -80,16 +75,16 @@ export function githubProvider(options: OAuthProviderOptions): OAuthProvider {
       const response = await request(
         `https://api.github.com/applications/${options.clientId}/token`,
         {
-          method: "DELETE",
+          method: 'DELETE',
           headers: {
-            Accept: "application/vnd.github+json",
-            Authorization: `Basic ${Buffer.from(`${options.clientId}:${options.clientSecret}`).toString("base64")}`,
-            "Content-Type": "application/json",
+            Accept: 'application/vnd.github+json',
+            Authorization: `Basic ${Buffer.from(`${options.clientId}:${options.clientSecret}`).toString('base64')}`,
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({ access_token: tokens.accessToken }),
         },
       );
-      if (!response.ok) throw new Error("OAuth revocation failed.");
+      if (!response.ok) throw new Error('OAuth revocation failed.');
     },
   };
 }

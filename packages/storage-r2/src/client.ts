@@ -1,1 +1,1 @@
-export { R2ClientUploadHandler } from '@payloadcms/storage-r2/client'
+export { R2ClientUploadHandler } from '@payloadcms/storage-r2/client';

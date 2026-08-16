@@ -6,7 +6,9 @@ export type PKCECodes = {
   challengeMethod: 'S256';
 };
 
-export function createPKCECodes({ verifier = randomBytes(32).toString('base64url') }: { verifier?: string } = {}): PKCECodes {
+export function createPKCECodes({
+  verifier = randomBytes(32).toString('base64url'),
+}: { verifier?: string } = {}): PKCECodes {
   return {
     verifier,
     challenge: createHash('sha256').update(verifier).digest('base64url'),

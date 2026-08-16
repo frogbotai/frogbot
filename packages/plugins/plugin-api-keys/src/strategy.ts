@@ -19,7 +19,12 @@ export function createApiKeyStrategy(options: StrategyOptions): ApiKeyStrategy {
     name: 'api-key',
     authenticate: async ({ headers, payload }) => {
       const token = extractApiKeyToken(headers, { headerNames });
-      if (!token || !new RegExp(`^${tokenPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_[A-Za-z0-9_-]{43}$`).test(token)) {
+      if (
+        !token ||
+        !new RegExp(
+          `^${tokenPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_[A-Za-z0-9_-]{43}$`,
+        ).test(token)
+      ) {
         return { user: null };
       }
 
@@ -29,7 +34,10 @@ export function createApiKeyStrategy(options: StrategyOptions): ApiKeyStrategy {
         limit: 1,
         overrideAccess: true,
         where: {
-          and: [{ tokenHash: { equals: hashApiKeyToken(token) } }, { revokedAt: { exists: false } }],
+          and: [
+            { tokenHash: { equals: hashApiKeyToken(token) } },
+            { revokedAt: { exists: false } },
+          ],
         },
       });
       const key = keys.docs[0] as { id: string | number; owner?: string | number } | undefined;

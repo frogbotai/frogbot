@@ -27,10 +27,12 @@ async function importMap(adminLoginButtons: boolean) {
     secret: 'test-secret',
     db: { defaultIDType: 'number' } as never,
     collections: [{ slug: 'users', auth: true, fields: [] }],
-    plugins: [oauthPlugin({
-      adminLoginButtons,
-      providers: [googleProvider({ clientId: 'id', clientSecret: 'secret', signIn: true })],
-    })],
+    plugins: [
+      oauthPlugin({
+        adminLoginButtons,
+        providers: [googleProvider({ clientId: 'id', clientSecret: 'secret', signIn: true })],
+      }),
+    ],
   } as FrogbotConfig);
 
   const payloadConfig = await config._internal.payloadConfig;
@@ -46,7 +48,9 @@ async function importMap(adminLoginButtons: boolean) {
 describe('OAuth import map', () => {
   it('registers login buttons only when enabled', async () => {
     expect(await importMap(true)).toContain('"@frogbotai/plugin-oauth/client#OAuthLoginButtons"');
-    expect(await importMap(false)).not.toContain('"@frogbotai/plugin-oauth/client#OAuthLoginButtons"');
+    expect(await importMap(false)).not.toContain(
+      '"@frogbotai/plugin-oauth/client#OAuthLoginButtons"',
+    );
     expect(OAuthLoginButtons).toBeTypeOf('function');
   });
 });

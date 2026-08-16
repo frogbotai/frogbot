@@ -13,7 +13,10 @@ describe('isContextOverflow — provider message patterns', () => {
     ['Groq', 'Please reduce the length of the messages or completion.'],
     ['OpenRouter / DeepSeek', "This model's maximum context length is 65536 tokens."],
     ['GitHub Copilot', 'request exceeds the limit of 16384 tokens'],
-    ['LM Studio', 'Trying to keep first 8192 tokens when context window is greater than the context length'],
+    [
+      'LM Studio',
+      'Trying to keep first 8192 tokens when context window is greater than the context length',
+    ],
     ['MiniMax', 'context window exceeds limit'],
     ['Kimi/Moonshot', 'exceeded model token limit'],
     ['vLLM (alt)', 'context length is only 8192 tokens'],

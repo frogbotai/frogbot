@@ -3,12 +3,28 @@ import { transcribe } from 'ai';
 import { Hono } from 'hono';
 
 import { isClientAbort } from '../../errors/clientAbort.js';
-import { toContentfulStatus,toOpenAIErrorResponse } from '../../errors/envelope.js';
-import { BodyTooLargeError, isGatewayError,RequestValidationError } from '../../errors/gatewayError.js';
+import { toContentfulStatus, toOpenAIErrorResponse } from '../../errors/envelope.js';
+import {
+  BodyTooLargeError,
+  isGatewayError,
+  RequestValidationError,
+} from '../../errors/gatewayError.js';
 import { headersForError } from '../../errors/normalizeAiSdkError.js';
-import { type GatewayEnv, type HookPhase, type Hooks, type HookUsage, type OperationBase,runHooks } from '../../hooks.js';
+import {
+  type GatewayEnv,
+  type HookPhase,
+  type Hooks,
+  type HookUsage,
+  type OperationBase,
+  runHooks,
+} from '../../hooks.js';
 import { getProviderHooks, mergeHooks } from '../../providers/middleware.js';
-import { type ProviderModelPolicy, type ProviderRegistry,requireTranscriptionModel, resolveProvider } from '../../providers/registry.js';
+import {
+  type ProviderModelPolicy,
+  type ProviderRegistry,
+  requireTranscriptionModel,
+  resolveProvider,
+} from '../../providers/registry.js';
 import { createUpstreamSignal } from '../../shared/upstreamTimeout.js';
 import { prepareForwardHeaders } from '../../utils/headers.js';
 import { ensureRequestId } from '../../utils/requestId.js';
@@ -57,12 +73,8 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
 
       const maxBodyBytes = ctx.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES;
       const contentLengthHeader = c.req.header('content-length');
-      const contentLength =
-        contentLengthHeader == null ? undefined : Number(contentLengthHeader);
-      if (
-        contentLength != null &&
-        (!Number.isFinite(contentLength) || contentLength < 0)
-      ) {
+      const contentLength = contentLengthHeader == null ? undefined : Number(contentLengthHeader);
+      if (contentLength != null && (!Number.isFinite(contentLength) || contentLength < 0)) {
         throw new RequestValidationError({
           message: 'Invalid Content-Length header',
           param: 'content-length',
@@ -74,11 +86,12 @@ export function transcriptionsRoute(ctx: TranscriptionsRouteContext) {
           param: 'content-length',
         });
       }
-      const request = contentLength == null
-        ? withStreamBodyLimit(c.req.raw, maxBodyBytes)
-        : c.req.raw;
+      const request =
+        contentLength == null ? withStreamBodyLimit(c.req.raw, maxBodyBytes) : c.req.raw;
 
-      const body = parseTranscriptionRequest(normalizeMultipartBody(await parseMultipartBody(request)));
+      const body = parseTranscriptionRequest(
+        normalizeMultipartBody(await parseMultipartBody(request)),
+      );
       if (body.file.size > maxBodyBytes) {
         throw new BodyTooLargeError({
           message: `File exceeds ${maxBodyBytes} bytes`,

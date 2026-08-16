@@ -1,1 +1,1 @@
-export { UploadthingClientUploadHandler } from '@payloadcms/storage-uploadthing/client'
+export { UploadthingClientUploadHandler } from '@payloadcms/storage-uploadthing/client';

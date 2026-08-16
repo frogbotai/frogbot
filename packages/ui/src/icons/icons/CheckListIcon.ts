@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const checkListIcon: IconNode = [
   [
@@ -39,8 +39,8 @@ export const checkListIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const CheckListIcon = createLucideIcon('CheckListIcon', checkListIcon, 1.5)
+const CheckListIcon = createLucideIcon('CheckListIcon', checkListIcon, 1.5);
 
-export default CheckListIcon
+export default CheckListIcon;

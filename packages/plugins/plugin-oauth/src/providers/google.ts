@@ -1,5 +1,10 @@
 import type { OAuthProvider } from '../types.js';
-import { authorizationUrl, jsonRequest, type OAuthProviderOptions, tokenRequest } from './shared.js';
+import {
+  authorizationUrl,
+  jsonRequest,
+  type OAuthProviderOptions,
+  tokenRequest,
+} from './shared.js';
 
 const AUTHORIZATION_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';

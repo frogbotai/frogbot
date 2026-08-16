@@ -238,8 +238,7 @@ describe('bedrockProvider.build', () => {
 
   it('routes catalogued Chat models through Mantle', () => {
     const entry = DEFAULT_MODEL_CATALOG.get('amazon-bedrock/openai.gpt-5.6-luna') as
-      | (object & { sdk?: { api: string; npm: string; shape: string } })
-      | undefined;
+      (object & { sdk?: { api: string; npm: string; shape: string } }) | undefined;
     const original = entry?.sdk;
     if (entry) {
       entry.sdk = {
@@ -251,9 +250,7 @@ describe('bedrockProvider.build', () => {
 
     try {
       const provider = bedrockProvider.build({ apiKey: 'token-123', region: 'us-east-2' });
-      expect(provider.languageModel('openai.gpt-5.6-luna')).toBe(
-        'chat:openai.gpt-5.6-luna',
-      );
+      expect(provider.languageModel('openai.gpt-5.6-luna')).toBe('chat:openai.gpt-5.6-luna');
       expect(mantleChat).toHaveBeenCalledWith('openai.gpt-5.6-luna');
     } finally {
       if (entry) entry.sdk = original;

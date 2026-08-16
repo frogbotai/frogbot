@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const changeScreenModeIcon: IconNode = [
   [
@@ -14,8 +14,8 @@ export const changeScreenModeIcon: IconNode = [
       d: 'M18 16.6082C17.9879 18.9537 17.8914 20.2239 17.123 21.0525C16.2442 22 14.8298 22 12.0011 22H8.00065C5.17192 22 3.75755 22 2.87878 21.0525C2 20.1049 2 18.5799 2 15.5298V14.4515C2 11.4014 2 9.87638 2.87878 8.92885C3.52015 8.2373 4.44682 8.05047 6.00043 8',
     },
   ],
-]
+];
 
-const ChangeScreenModeIcon = createLucideIcon('ChangeScreenModeIcon', changeScreenModeIcon, 1.5)
+const ChangeScreenModeIcon = createLucideIcon('ChangeScreenModeIcon', changeScreenModeIcon, 1.5);
 
-export default ChangeScreenModeIcon
+export default ChangeScreenModeIcon;

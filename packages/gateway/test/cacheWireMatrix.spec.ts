@@ -35,7 +35,9 @@ const successBodies = {
     metrics: { latencyMs: 1 },
   },
   google: {
-    candidates: [{ content: { role: 'model', parts: [{ text: 'ok' }] }, finishReason: 'STOP', index: 0 }],
+    candidates: [
+      { content: { role: 'model', parts: [{ text: 'ok' }] }, finishReason: 'STOP', index: 0 },
+    ],
     usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 },
   },
   openai: {
@@ -61,19 +63,51 @@ function buildCacheApp(args: {
       url: input instanceof Request ? input.url : String(input),
     });
     if (body.stream === true) {
-      const chunks = args.providerName === 'openai'
-        ? [
-            { id: 'chatcmpl_test', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o-mini', choices: [{ index: 0, delta: { role: 'assistant', content: 'ok' }, finish_reason: null }] },
-            { id: 'chatcmpl_test', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o-mini', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } },
-          ]
-        : [
-            { type: 'message_start', message: { id: 'msg_test', type: 'message', role: 'assistant', content: [], model: 'claude-sonnet-4-20250514', stop_reason: null, stop_sequence: null, usage: { input_tokens: 1, output_tokens: 0 } } },
-            { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
-            { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'ok' } },
-            { type: 'content_block_stop', index: 0 },
-            { type: 'message_delta', delta: { stop_reason: 'end_turn', stop_sequence: null }, usage: { output_tokens: 1 } },
-            { type: 'message_stop' },
-          ];
+      const chunks =
+        args.providerName === 'openai'
+          ? [
+              {
+                id: 'chatcmpl_test',
+                object: 'chat.completion.chunk',
+                created: 0,
+                model: 'gpt-4o-mini',
+                choices: [
+                  { index: 0, delta: { role: 'assistant', content: 'ok' }, finish_reason: null },
+                ],
+              },
+              {
+                id: 'chatcmpl_test',
+                object: 'chat.completion.chunk',
+                created: 0,
+                model: 'gpt-4o-mini',
+                choices: [{ index: 0, delta: {}, finish_reason: 'stop' }],
+                usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+              },
+            ]
+          : [
+              {
+                type: 'message_start',
+                message: {
+                  id: 'msg_test',
+                  type: 'message',
+                  role: 'assistant',
+                  content: [],
+                  model: 'claude-sonnet-4-20250514',
+                  stop_reason: null,
+                  stop_sequence: null,
+                  usage: { input_tokens: 1, output_tokens: 0 },
+                },
+              },
+              { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
+              { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'ok' } },
+              { type: 'content_block_stop', index: 0 },
+              {
+                type: 'message_delta',
+                delta: { stop_reason: 'end_turn', stop_sequence: null },
+                usage: { output_tokens: 1 },
+              },
+              { type: 'message_stop' },
+            ];
       const text = chunks.map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`).join('');
       return new Response(text, { headers: { 'content-type': 'text/event-stream' } });
     }
@@ -89,7 +123,8 @@ const providers = [
     name: 'anthropic-aws',
     model: 'claude-sonnet-4-20250514',
     successBody: successBodies.anthropic,
-    factory: (fetch: typeof globalThis.fetch) => createAnthropicAws({ apiKey: 'test', region: 'us-east-1', workspaceId: 'test', fetch }),
+    factory: (fetch: typeof globalThis.fetch) =>
+      createAnthropicAws({ apiKey: 'test', region: 'us-east-1', workspaceId: 'test', fetch }),
   },
   {
     name: 'anthropic',
@@ -101,7 +136,8 @@ const providers = [
     name: 'amazon-bedrock',
     model: 'anthropic.claude-sonnet-4-20250514-v1:0',
     successBody: successBodies.bedrock,
-    factory: (fetch: typeof globalThis.fetch) => createAmazonBedrock({ apiKey: 'test', region: 'us-east-1', fetch }),
+    factory: (fetch: typeof globalThis.fetch) =>
+      createAmazonBedrock({ apiKey: 'test', region: 'us-east-1', fetch }),
   },
   {
     name: 'openai',
@@ -116,13 +152,15 @@ const providers = [
     name: 'google',
     model: 'gemini-2.5-flash',
     successBody: successBodies.google,
-    factory: (fetch: typeof globalThis.fetch) => createGoogleGenerativeAI({ apiKey: 'test', fetch }),
+    factory: (fetch: typeof globalThis.fetch) =>
+      createGoogleGenerativeAI({ apiKey: 'test', fetch }),
   },
   {
     name: 'vertex',
     model: 'gemini-2.5-flash',
     successBody: successBodies.google,
-    factory: (fetch: typeof globalThis.fetch) => createVertex({ apiKey: 'test', location: 'global', fetch }),
+    factory: (fetch: typeof globalThis.fetch) =>
+      createVertex({ apiKey: 'test', location: 'global', fetch }),
   },
 ] satisfies Array<{
   name: string;
@@ -147,7 +185,9 @@ describe('cache wire matrix harness', () => {
       expect(status).toBe(200);
       expect(requests).toHaveLength(1);
       expect(requests[0]?.body).toBeTypeOf('object');
-      expect(`${decodeURIComponent(requests[0]?.url ?? '')}${JSON.stringify(requests[0]?.body)}`).toContain(provider.model);
+      expect(
+        `${decodeURIComponent(requests[0]?.url ?? '')}${JSON.stringify(requests[0]?.body)}`,
+      ).toContain(provider.model);
     });
   }
 });
@@ -166,22 +206,36 @@ const wireCases: WireCase[] = [
     name: 'anthropic messages request cache control',
     provider: 'anthropic',
     route: '/v1/messages',
-    body: { cache_control: { type: 'ephemeral', ttl: '1h' }, messages: [{ role: 'user', content: 'hello' }] },
+    body: {
+      cache_control: { type: 'ephemeral', ttl: '1h' },
+      messages: [{ role: 'user', content: 'hello' }],
+    },
     assertBody: (body) => expect(body.cache_control).toEqual({ type: 'ephemeral', ttl: '1h' }),
   },
   {
     name: 'anthropic messages system cache control',
     provider: 'anthropic',
     route: '/v1/messages',
-    body: { system: [{ type: 'text', text: 'system', cache_control: { type: 'ephemeral' } }], messages: [{ role: 'user', content: 'hello' }] },
+    body: {
+      system: [{ type: 'text', text: 'system', cache_control: { type: 'ephemeral' } }],
+      messages: [{ role: 'user', content: 'hello' }],
+    },
     assertBody: (body) => expect(body.system[0].cache_control).toEqual({ type: 'ephemeral' }),
   },
   {
     name: 'anthropic messages content cache control',
     provider: 'anthropic',
     route: '/v1/messages',
-    body: { messages: [{ role: 'user', content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }] }] },
-    assertBody: (body) => expect(body.messages[0].content[0].cache_control).toEqual({ type: 'ephemeral' }),
+    body: {
+      messages: [
+        {
+          role: 'user',
+          content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+        },
+      ],
+    },
+    assertBody: (body) =>
+      expect(body.messages[0].content[0].cache_control).toEqual({ type: 'ephemeral' }),
   },
   {
     name: 'anthropic messages tool cache control',
@@ -189,7 +243,14 @@ const wireCases: WireCase[] = [
     route: '/v1/messages',
     body: {
       messages: [{ role: 'user', content: 'hello' }],
-      tools: [{ name: 'weather', description: 'Weather', input_schema: { type: 'object', properties: {} }, cache_control: { type: 'ephemeral' } }],
+      tools: [
+        {
+          name: 'weather',
+          description: 'Weather',
+          input_schema: { type: 'object', properties: {} },
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
     },
     assertBody: (body) => expect(body.tools[0].cache_control).toEqual({ type: 'ephemeral' }),
   },
@@ -197,28 +258,51 @@ const wireCases: WireCase[] = [
     name: 'anthropic chat content cache control',
     provider: 'anthropic',
     route: '/v1/chat/completions',
-    body: { messages: [{ role: 'user', content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }] }] },
-    assertBody: (body) => expect(body.messages[0].content[0].cache_control).toEqual({ type: 'ephemeral' }),
+    body: {
+      messages: [
+        {
+          role: 'user',
+          content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+        },
+      ],
+    },
+    assertBody: (body) =>
+      expect(body.messages[0].content[0].cache_control).toEqual({ type: 'ephemeral' }),
   },
   {
     name: 'anthropic aws content cache control',
     provider: 'anthropic-aws',
     route: '/v1/messages',
-    body: { messages: [{ role: 'user', content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }] }] },
-    assertBody: (body) => expect(body.messages[0].content[0].cache_control).toEqual({ type: 'ephemeral' }),
+    body: {
+      messages: [
+        {
+          role: 'user',
+          content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+        },
+      ],
+    },
+    assertBody: (body) =>
+      expect(body.messages[0].content[0].cache_control).toEqual({ type: 'ephemeral' }),
   },
   {
     name: 'bedrock request cache point',
     provider: 'amazon-bedrock',
     route: '/v1/chat/completions',
-    body: { cache_control: { type: 'ephemeral', ttl: '1h' }, messages: [{ role: 'user', content: 'hello' }] },
-    assertBody: (body) => expect(body.messages[0].content[1].cachePoint).toEqual({ type: 'default', ttl: '1h' }),
+    body: {
+      cache_control: { type: 'ephemeral', ttl: '1h' },
+      messages: [{ role: 'user', content: 'hello' }],
+    },
+    assertBody: (body) =>
+      expect(body.messages[0].content[1].cachePoint).toEqual({ type: 'default', ttl: '1h' }),
   },
   {
     name: 'bedrock system cache point',
     provider: 'amazon-bedrock',
     route: '/v1/messages',
-    body: { system: [{ type: 'text', text: 'system', cache_control: { type: 'ephemeral', ttl: '5m' } }], messages: [{ role: 'user', content: 'hello' }] },
+    body: {
+      system: [{ type: 'text', text: 'system', cache_control: { type: 'ephemeral', ttl: '5m' } }],
+      messages: [{ role: 'user', content: 'hello' }],
+    },
     assertBody: (body) => expect(body.system[1].cachePoint).toEqual({ type: 'default', ttl: '5m' }),
   },
   {
@@ -233,14 +317,26 @@ const wireCases: WireCase[] = [
     name: 'bedrock content cache point',
     provider: 'amazon-bedrock',
     route: '/v1/messages',
-    body: { messages: [{ role: 'user', content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }] }] },
-    assertBody: (body) => expect(body.messages[0].content[1].cachePoint).toEqual({ type: 'default' }),
+    body: {
+      messages: [
+        {
+          role: 'user',
+          content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+        },
+      ],
+    },
+    assertBody: (body) =>
+      expect(body.messages[0].content[1].cachePoint).toEqual({ type: 'default' }),
   },
   {
     name: 'openai request cache key and retention',
     provider: 'openai',
     route: '/v1/chat/completions',
-    body: { prompt_cache_key: 'cache-key', prompt_cache_retention: '24h', messages: [{ role: 'user', content: 'hello' }] },
+    body: {
+      prompt_cache_key: 'cache-key',
+      prompt_cache_retention: '24h',
+      messages: [{ role: 'user', content: 'hello' }],
+    },
     assertBody: (body) => {
       expect(body.prompt_cache_key).toBe('cache-key');
       expect(body.prompt_cache_retention).toBe('24h');
@@ -251,34 +347,50 @@ const wireCases: WireCase[] = [
     provider: 'openai',
     route: '/v1/chat/completions',
     body: { messages: [{ role: 'user', content: 'hello', cache_control: { type: 'ephemeral' } }] },
-    assertBody: (body) => expect(body.messages[0].content[0].prompt_cache_breakpoint).toEqual({ mode: 'explicit' }),
+    assertBody: (body) =>
+      expect(body.messages[0].content[0].prompt_cache_breakpoint).toEqual({ mode: 'explicit' }),
   },
   {
     name: 'openai content cache breakpoint',
     provider: 'openai',
     route: '/v1/chat/completions',
-    body: { messages: [{ role: 'user', content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }] }] },
-    assertBody: (body) => expect(body.messages[0].content[0].prompt_cache_breakpoint).toEqual({ mode: 'explicit' }),
+    body: {
+      messages: [
+        {
+          role: 'user',
+          content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+        },
+      ],
+    },
+    assertBody: (body) =>
+      expect(body.messages[0].content[0].prompt_cache_breakpoint).toEqual({ mode: 'explicit' }),
   },
   {
     name: 'openai request cache control on string-content last message',
     provider: 'openai',
     route: '/v1/chat/completions',
     body: { cache_control: { type: 'ephemeral' }, messages: [{ role: 'user', content: 'hello' }] },
-    assertBody: (body) => expect(body.messages[0].content[0].prompt_cache_breakpoint).toEqual({ mode: 'explicit' }),
+    assertBody: (body) =>
+      expect(body.messages[0].content[0].prompt_cache_breakpoint).toEqual({ mode: 'explicit' }),
   },
   {
     name: 'google cached content',
     provider: 'google',
     route: '/v1/chat/completions',
-    body: { cached_content: 'cachedContents/example', messages: [{ role: 'user', content: 'hello' }] },
+    body: {
+      cached_content: 'cachedContents/example',
+      messages: [{ role: 'user', content: 'hello' }],
+    },
     assertBody: (body) => expect(body.cachedContent).toBe('cachedContents/example'),
   },
   {
     name: 'vertex cached content',
     provider: 'vertex',
     route: '/v1/chat/completions',
-    body: { cached_content: 'cachedContents/example', messages: [{ role: 'user', content: 'hello' }] },
+    body: {
+      cached_content: 'cachedContents/example',
+      messages: [{ role: 'user', content: 'hello' }],
+    },
     assertBody: (body) => expect(body.cachedContent).toBe('cachedContents/example'),
   },
 ];
@@ -313,9 +425,29 @@ describe('cache wire streaming matrix', () => {
         providerFactory: provider.factory,
         successBody: provider.successBody,
       });
-      const requestBody = route === '/v1/messages'
-        ? { model: `anthropic/${provider.model}`, max_tokens: 32, stream: true, messages: [{ role: 'user', content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }] }] }
-        : { model: `anthropic/${provider.model}`, stream: true, messages: [{ role: 'user', content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }] }] };
+      const requestBody =
+        route === '/v1/messages'
+          ? {
+              model: `anthropic/${provider.model}`,
+              max_tokens: 32,
+              stream: true,
+              messages: [
+                {
+                  role: 'user',
+                  content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+                },
+              ],
+            }
+          : {
+              model: `anthropic/${provider.model}`,
+              stream: true,
+              messages: [
+                {
+                  role: 'user',
+                  content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+                },
+              ],
+            };
       const response = await app.request(route, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -324,9 +456,15 @@ describe('cache wire streaming matrix', () => {
       await response.text();
 
       expect(response.status).toBe(200);
-      expect(requests[0]?.body.messages).toEqual(expect.arrayContaining([
-        expect.objectContaining({ content: expect.arrayContaining([expect.objectContaining({ cache_control: { type: 'ephemeral' } })]) }),
-      ]));
+      expect(requests[0]?.body.messages).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            content: expect.arrayContaining([
+              expect.objectContaining({ cache_control: { type: 'ephemeral' } }),
+            ]),
+          }),
+        ]),
+      );
     });
   }
 
@@ -344,13 +482,20 @@ describe('cache wire streaming matrix', () => {
         model: `openai/${provider.model}`,
         stream: true,
         prompt_cache_key: 'stream-key',
-        messages: [{ role: 'user', content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }] }],
+        messages: [
+          {
+            role: 'user',
+            content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+          },
+        ],
       }),
     });
     await response.text();
 
     expect(response.status).toBe(200);
     expect(requests[0]?.body.prompt_cache_key).toBe('stream-key');
-    expect((requests[0]?.body.messages as any[])[0].content[0].prompt_cache_breakpoint).toEqual({ mode: 'explicit' });
+    expect((requests[0]?.body.messages as any[])[0].content[0].prompt_cache_breakpoint).toEqual({
+      mode: 'explicit',
+    });
   });
 });

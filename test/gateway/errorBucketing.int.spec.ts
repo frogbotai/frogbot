@@ -49,7 +49,9 @@ function createThrowingLanguageModel(error: Error): LanguageModelV4 {
     provider: 'mock',
     modelId: 'mock-model',
     defaultObjectGenerationMode: undefined,
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: () => Promise.reject(error),
     doStream: () => Promise.reject(error),
   } as LanguageModelV4;
@@ -91,7 +93,10 @@ describe('gateway integration — AI SDK error bucketing (G25)', () => {
   // client-attributable fault). The finding says this belongs in the 4xx
   // family, not a generic 500 server_error.
   it('maps InvalidToolInputError to a client-attributable 4xx (not 500)', async () => {
-    const error = stampAiSdkError('AI_InvalidToolInputError', 'Invalid input for tool get_weather.');
+    const error = stampAiSdkError(
+      'AI_InvalidToolInputError',
+      'Invalid input for tool get_weather.',
+    );
     const app = makeChatApp(error);
 
     const { status, body } = await postJson(app, '/v1/chat/completions', {

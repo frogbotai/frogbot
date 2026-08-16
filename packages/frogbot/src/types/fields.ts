@@ -17,11 +17,7 @@ import type { FrogbotRequest } from './request.js';
 
 // ── Field hook ────────────────────────────────────────────────────────
 
-export type FieldHookArgs<
-  TData extends TypeWithID = any,
-  TValue = any,
-  TSiblingData = any,
-> = {
+export type FieldHookArgs<TData extends TypeWithID = any, TValue = any, TSiblingData = any> = {
   collection: null | SanitizedCollectionConfig;
   context: RequestContext;
   data?: Partial<TData>;
@@ -37,11 +33,9 @@ export type FieldHookArgs<
   value?: TValue;
 };
 
-export type FieldHook<
-  TData extends TypeWithID = any,
-  TValue = any,
-  TSiblingData = any,
-> = (args: FieldHookArgs<TData, TValue, TSiblingData>) => Promise<TValue> | TValue;
+export type FieldHook<TData extends TypeWithID = any, TValue = any, TSiblingData = any> = (
+  args: FieldHookArgs<TData, TValue, TSiblingData>,
+) => Promise<TValue> | TValue;
 
 // ── Validate ──────────────────────────────────────────────────────────
 
@@ -57,11 +51,7 @@ export type ValidateOptions<TData = any, TSiblingData = any, TValue = any> = {
   siblingData: Partial<TSiblingData>;
 };
 
-export type Validate<
-  TValue = any,
-  TData = any,
-  TSiblingData = any,
-> = (
+export type Validate<TValue = any, TData = any, TSiblingData = any> = (
   value: null | TValue | undefined,
   options: ValidateOptions<TData, TSiblingData, TValue>,
 ) => Promise<string | true> | string | true;

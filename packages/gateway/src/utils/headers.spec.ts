@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  FORWARD_HEADER_ALLOWLIST,
-  prepareForwardHeaders,
-} from './headers.js';
+import { FORWARD_HEADER_ALLOWLIST, prepareForwardHeaders } from './headers.js';
 
 describe('FORWARD_HEADER_ALLOWLIST', () => {
   it('contains 40+ entries', () => {
@@ -36,10 +33,10 @@ describe('prepareForwardHeaders', () => {
 
   it('strips non-allowlisted headers', () => {
     const incoming = new Headers({
-      'authorization': 'Bearer sk-xxx',
-      'host': 'api.example.com',
+      authorization: 'Bearer sk-xxx',
+      host: 'api.example.com',
       'x-internal-routing': 'shard-3',
-      'cookie': 'session=abc',
+      cookie: 'session=abc',
       'anthropic-beta': 'max-tokens-3-5-sonnet-2024-07-15',
     });
 
@@ -115,8 +112,8 @@ describe('prepareForwardHeaders', () => {
 
   it('forwards tracing headers', () => {
     const incoming = new Headers({
-      'traceparent': '00-trace-span-01',
-      'tracestate': 'vendor=value',
+      traceparent: '00-trace-span-01',
+      tracestate: 'vendor=value',
       'x-correlation-id': 'corr-789',
     });
 

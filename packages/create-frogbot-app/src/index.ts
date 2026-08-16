@@ -15,7 +15,9 @@ const COMMANDS: Record<PackageManager, { dev: string; install: string }> = {
   yarn: { dev: 'yarn dev', install: 'yarn install' },
 };
 
-export function detectPackageManager(userAgent = process.env.npm_config_user_agent): PackageManager {
+export function detectPackageManager(
+  userAgent = process.env.npm_config_user_agent,
+): PackageManager {
   const name = userAgent?.split('/')[0];
   return name === 'bun' || name === 'pnpm' || name === 'yarn' ? name : 'npm';
 }

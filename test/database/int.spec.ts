@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, beforeEach, describe, expect,it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
@@ -14,9 +14,15 @@ const adapterLabel = process.env.FROGBOT_DATABASE || 'sqlite';
 describe(`database contract [${adapterLabel}]`, () => {
   let booted: BootedFrogbot;
 
-  beforeAll(async () => { booted = await bootFrogbot(dirname); });
-  afterAll(async () => { await booted.shutdown(); });
-  beforeEach(async () => { await clearAndSeed(booted.frogbot, 'empty'); });
+  beforeAll(async () => {
+    booted = await bootFrogbot(dirname);
+  });
+  afterAll(async () => {
+    await booted.shutdown();
+  });
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
+  });
 
   // ─── Create ────────────────────────────────────────────────────────────────
 
@@ -88,16 +94,32 @@ describe(`database contract [${adapterLabel}]`, () => {
 
   describe('find', () => {
     it('returns all documents when no where is specified', async () => {
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'A' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'B' }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'A' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'B' },
+        overrideAccess: true,
+      });
 
       const result = await booted.frogbot.find({ collection: postsSlug, overrideAccess: true });
       expect(result.docs).toHaveLength(2);
     });
 
     it('filters with where equals', async () => {
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'Draft', status: 'draft' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'Published', status: 'published' }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'Draft', status: 'draft' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'Published', status: 'published' },
+        overrideAccess: true,
+      });
 
       const result = await booted.frogbot.find({
         collection: postsSlug,
@@ -109,9 +131,21 @@ describe(`database contract [${adapterLabel}]`, () => {
     });
 
     it('filters with where not_equals', async () => {
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'A', priority: 1 }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'B', priority: 2 }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'C', priority: 3 }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'A', priority: 1 },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'B', priority: 2 },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'C', priority: 3 },
+        overrideAccess: true,
+      });
 
       const result = await booted.frogbot.find({
         collection: postsSlug,
@@ -123,8 +157,16 @@ describe(`database contract [${adapterLabel}]`, () => {
     });
 
     it('filters with where contains (text)', async () => {
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'Hello World' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'Goodbye' }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'Hello World' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'Goodbye' },
+        overrideAccess: true,
+      });
 
       const result = await booted.frogbot.find({
         collection: postsSlug,
@@ -136,9 +178,21 @@ describe(`database contract [${adapterLabel}]`, () => {
     });
 
     it('filters with where greater_than / less_than', async () => {
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'Low', priority: 1 }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'Mid', priority: 5 }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'High', priority: 10 }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'Low', priority: 1 },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'Mid', priority: 5 },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'High', priority: 10 },
+        overrideAccess: true,
+      });
 
       const gt = await booted.frogbot.find({
         collection: postsSlug,
@@ -157,9 +211,21 @@ describe(`database contract [${adapterLabel}]`, () => {
     });
 
     it('filters with where in', async () => {
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'A', priority: 1 }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'B', priority: 2 }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'C', priority: 3 }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'A', priority: 1 },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'B', priority: 2 },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'C', priority: 3 },
+        overrideAccess: true,
+      });
 
       const result = await booted.frogbot.find({
         collection: postsSlug,
@@ -171,9 +237,21 @@ describe(`database contract [${adapterLabel}]`, () => {
     });
 
     it('filters with compound AND (implicit)', async () => {
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'A', priority: 1, status: 'draft' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'B', priority: 2, status: 'published' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'C', priority: 3, status: 'published' }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'A', priority: 1, status: 'draft' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'B', priority: 2, status: 'published' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'C', priority: 3, status: 'published' },
+        overrideAccess: true,
+      });
 
       const result = await booted.frogbot.find({
         collection: postsSlug,
@@ -188,17 +266,26 @@ describe(`database contract [${adapterLabel}]`, () => {
     });
 
     it('filters with OR', async () => {
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'A', priority: 1 }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'B', priority: 5 }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'C', priority: 10 }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'A', priority: 1 },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'B', priority: 5 },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'C', priority: 10 },
+        overrideAccess: true,
+      });
 
       const result = await booted.frogbot.find({
         collection: postsSlug,
         where: {
-          or: [
-            { priority: { equals: 1 } },
-            { priority: { equals: 10 } },
-          ],
+          or: [{ priority: { equals: 1 } }, { priority: { equals: 10 } }],
         },
         overrideAccess: true,
       });
@@ -262,9 +349,21 @@ describe(`database contract [${adapterLabel}]`, () => {
     });
 
     it('bulk update with where clause', async () => {
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'A', status: 'draft' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'B', status: 'draft' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'C', status: 'published' }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'A', status: 'draft' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'B', status: 'draft' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'C', status: 'published' },
+        overrideAccess: true,
+      });
 
       const result = await booted.frogbot.update({
         collection: postsSlug,
@@ -305,9 +404,21 @@ describe(`database contract [${adapterLabel}]`, () => {
     });
 
     it('bulk delete with where clause', async () => {
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'A', status: 'draft' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'B', status: 'draft' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'C', status: 'published' }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'A', status: 'draft' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'B', status: 'draft' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'C', status: 'published' },
+        overrideAccess: true,
+      });
 
       const result = await booted.frogbot.delete({
         collection: postsSlug,
@@ -322,8 +433,16 @@ describe(`database contract [${adapterLabel}]`, () => {
     });
 
     it('delete all with empty where', async () => {
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'A' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'B' }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'A' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'B' },
+        overrideAccess: true,
+      });
 
       await booted.frogbot.delete({
         collection: postsSlug,
@@ -340,18 +459,42 @@ describe(`database contract [${adapterLabel}]`, () => {
 
   describe('count', () => {
     it('returns total document count', async () => {
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'A' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'B' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'C' }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'A' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'B' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'C' },
+        overrideAccess: true,
+      });
 
       const result = await booted.frogbot.count({ collection: postsSlug, overrideAccess: true });
       expect(result.totalDocs).toBe(3);
     });
 
     it('respects where filter', async () => {
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'A', status: 'draft' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'B', status: 'published' }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'C', status: 'published' }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'A', status: 'draft' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'B', status: 'published' },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'C', status: 'published' },
+        overrideAccess: true,
+      });
 
       const result = await booted.frogbot.count({
         collection: postsSlug,
@@ -432,9 +575,21 @@ describe(`database contract [${adapterLabel}]`, () => {
 
   describe('sort', () => {
     beforeEach(async () => {
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'C', priority: 3 }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'A', priority: 1 }, overrideAccess: true });
-      await booted.frogbot.create({ collection: postsSlug, data: { title: 'B', priority: 2 }, overrideAccess: true });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'C', priority: 3 },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'A', priority: 1 },
+        overrideAccess: true,
+      });
+      await booted.frogbot.create({
+        collection: postsSlug,
+        data: { title: 'B', priority: 2 },
+        overrideAccess: true,
+      });
     });
 
     it('sorts ascending by text field', async () => {

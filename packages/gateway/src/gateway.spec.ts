@@ -55,18 +55,25 @@ describe('createGateway', () => {
     });
 
     expect(() => gw.chatModel('openai/gpt-4o')).not.toThrow();
-    expect(() => gw.chatModel('openai/gpt-4o-mini')).toThrow('Model "openai/gpt-4o-mini" not found');
+    expect(() => gw.chatModel('openai/gpt-4o-mini')).toThrow(
+      'Model "openai/gpt-4o-mini" not found',
+    );
   });
 
   it('enforces model allowlists for HTTP routes', async () => {
     const gw = createGateway({
       providers: { openai: { apiKey: 'test-key', models: ['gpt-4o'] } },
     });
-    const response = await gw.handler(new Request('http://localhost/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'openai/gpt-4o-mini', messages: [{ role: 'user', content: 'hi' }] }),
-    }));
+    const response = await gw.handler(
+      new Request('http://localhost/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model: 'openai/gpt-4o-mini',
+          messages: [{ role: 'user', content: 'hi' }],
+        }),
+      }),
+    );
 
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toMatchObject({
@@ -102,7 +109,10 @@ describe('createGateway', () => {
 
     expectTypeOf(gw.handler).toExtend<(request: Request) => Response | Promise<Response>>();
     expectTypeOf(gw.handler).toExtend<
-      (request: Request, env: { incoming: unknown; outgoing: unknown }) => Response | Promise<Response>
+      (
+        request: Request,
+        env: { incoming: unknown; outgoing: unknown },
+      ) => Response | Promise<Response>
     >();
     expectTypeOf(gw.handler).toExtend<
       (request: Request, env: unknown, ctx: unknown) => Response | Promise<Response>

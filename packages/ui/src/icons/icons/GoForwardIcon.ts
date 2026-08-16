@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const goForwardIcon: IconNode = [
   [
@@ -9,8 +9,8 @@ export const goForwardIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const GoForwardIcon = createLucideIcon('GoForwardIcon', goForwardIcon, 1.5)
+const GoForwardIcon = createLucideIcon('GoForwardIcon', goForwardIcon, 1.5);
 
-export default GoForwardIcon
+export default GoForwardIcon;

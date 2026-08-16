@@ -1,1 +1,1 @@
-export { VercelBlobClientUploadHandler } from '@payloadcms/storage-vercel-blob/client'
+export { VercelBlobClientUploadHandler } from '@payloadcms/storage-vercel-blob/client';

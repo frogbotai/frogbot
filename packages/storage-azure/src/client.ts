@@ -1,1 +1,1 @@
-export { AzureClientUploadHandler } from '@payloadcms/storage-azure/client'
+export { AzureClientUploadHandler } from '@payloadcms/storage-azure/client';

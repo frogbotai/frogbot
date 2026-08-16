@@ -33,7 +33,10 @@ export type TracingOptions = {
 };
 
 /** Fields needed to tag/attribute a span; shared shape across the phases that can create or annotate one. */
-type TracedHookArgs = Pick<BeforeUpstreamHookArgs, 'requestId' | 'operation' | 'model' | 'provider' | 'context'>;
+type TracedHookArgs = Pick<
+  BeforeUpstreamHookArgs,
+  'requestId' | 'operation' | 'model' | 'provider' | 'context'
+>;
 
 const noopSpan = trace.wrapSpanContext({
   traceId: '00000000000000000000000000000000',
@@ -99,10 +102,17 @@ export function createTracingHooks(options: TracingOptions = {}): Hooks {
     ],
     beforeUpstream: [
       (args) => {
-        const levels = resolveSignalLevels(args.context[traceOverrideKey] as SignalLevelInput, baseLevels);
+        const levels = resolveSignalLevels(
+          args.context[traceOverrideKey] as SignalLevelInput,
+          baseLevels,
+        );
         if (!includesSignalLevel(levels.frogbot, 'required')) return;
         const parent = context.active().setValue(hookContextKey, args);
-        const span = tracer.startSpan(`gateway.${args.operation}`, { attributes: baseAttributes(args) }, parent);
+        const span = tracer.startSpan(
+          `gateway.${args.operation}`,
+          { attributes: baseAttributes(args) },
+          parent,
+        );
         spans.set(args.requestId, span);
         // Stash the span's context so handlers can activate it around the
         // upstream AI SDK call — SDK-created spans become children of the

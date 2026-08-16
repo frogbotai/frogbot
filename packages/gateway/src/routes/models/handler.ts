@@ -8,10 +8,14 @@
 import { Hono } from 'hono';
 
 import { isClientAbort } from '../../errors/clientAbort.js';
-import { toContentfulStatus,toOpenAIErrorResponse } from '../../errors/envelope.js';
+import { toContentfulStatus, toOpenAIErrorResponse } from '../../errors/envelope.js';
 import { headersForError } from '../../errors/normalizeAiSdkError.js';
 import type { ModelCatalog, ModelCatalogEntry } from '../../providers/catalog.js';
-import { canonicalizeModelId, type ProviderModelAllowlists, type ProviderRegistry } from '../../providers/registry.js';
+import {
+  canonicalizeModelId,
+  type ProviderModelAllowlists,
+  type ProviderRegistry,
+} from '../../providers/registry.js';
 import { ensureRequestId } from '../../utils/requestId.js';
 
 export type ModelsRouteContext = {
@@ -40,13 +44,13 @@ export function modelsRoute(ctx: ModelsRouteContext) {
   const app = new Hono();
 
   app.get('/models', (c) => {
-    const isConfigured = (name: string) =>
-      ctx.registry[name as keyof ProviderRegistry] != null;
-    const isAvailable = (entry: ModelCatalogEntry) => entry.providers.some((provider) => {
-      if (!isConfigured(provider)) return false;
-      const allowlist = ctx.allowlists?.get(provider);
-      return !allowlist || allowlist.has(canonicalizeModelId(entry.id));
-    });
+    const isConfigured = (name: string) => ctx.registry[name as keyof ProviderRegistry] != null;
+    const isAvailable = (entry: ModelCatalogEntry) =>
+      entry.providers.some((provider) => {
+        if (!isConfigured(provider)) return false;
+        const allowlist = ctx.allowlists?.get(provider);
+        return !allowlist || allowlist.has(canonicalizeModelId(entry.id));
+      });
     const data = Array.from(ctx.catalog?.values() ?? [])
       .filter(isAvailable)
       .map(toOpenAIModelObject);

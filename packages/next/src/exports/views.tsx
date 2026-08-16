@@ -29,7 +29,10 @@ export function NotFoundPage({ config, ...rest }: NotFoundPageProps) {
   return <PayloadNotFoundPage {...rest} config={getPayloadConfig(config)} />;
 }
 
-type GeneratePageMetadataArgs = Omit<Parameters<typeof payloadGeneratePageMetadata>[0], 'config'> & {
+type GeneratePageMetadataArgs = Omit<
+  Parameters<typeof payloadGeneratePageMetadata>[0],
+  'config'
+> & {
   config: FrogbotConfigArg;
 };
 

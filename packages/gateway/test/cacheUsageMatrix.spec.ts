@@ -17,7 +17,11 @@ function buildUsageApp() {
       finishReason: 'stop',
       usage: modelUsage,
       warnings: [],
-      response: { id: 'response-id', modelId: 'model', timestamp: new Date('2026-01-01T00:00:00Z') },
+      response: {
+        id: 'response-id',
+        modelId: 'model',
+        timestamp: new Date('2026-01-01T00:00:00Z'),
+      },
     }),
     doStream: async () => ({
       stream: new ReadableStream({
@@ -43,11 +47,19 @@ const cases = [
   {
     route: '/v1/chat/completions',
     body: { model: 'openai/model', messages: [{ role: 'user', content: 'hello' }] },
-    assertUsage: (body: any) => expect(body.usage.prompt_tokens_details).toEqual({ cached_tokens: 60, cache_write_tokens: 10 }),
+    assertUsage: (body: any) =>
+      expect(body.usage.prompt_tokens_details).toEqual({
+        cached_tokens: 60,
+        cache_write_tokens: 10,
+      }),
   },
   {
     route: '/v1/messages',
-    body: { model: 'anthropic/model', max_tokens: 32, messages: [{ role: 'user', content: 'hello' }] },
+    body: {
+      model: 'anthropic/model',
+      max_tokens: 32,
+      messages: [{ role: 'user', content: 'hello' }],
+    },
     assertUsage: (body: any) => {
       expect(body.usage.cache_read_input_tokens).toBe(60);
       expect(body.usage.cache_creation_input_tokens).toBe(10);
@@ -56,7 +68,11 @@ const cases = [
   {
     route: '/v1/responses',
     body: { model: 'openai/model', input: 'hello' },
-    assertUsage: (body: any) => expect(body.usage.input_tokens_details).toEqual({ cached_tokens: 60, cache_write_tokens: 10 }),
+    assertUsage: (body: any) =>
+      expect(body.usage.input_tokens_details).toEqual({
+        cached_tokens: 60,
+        cache_write_tokens: 10,
+      }),
   },
 ] as const;
 
@@ -73,9 +89,11 @@ describe('cache usage matrix', () => {
 
       expect(response.status).toBe(200);
       testCase.assertUsage(body);
-      expect(afterUpstream).toHaveBeenCalledWith(expect.objectContaining({
-        usage: expect.objectContaining({ cachedInputTokens: 60, cacheWriteTokens: 10 }),
-      }));
+      expect(afterUpstream).toHaveBeenCalledWith(
+        expect.objectContaining({
+          usage: expect.objectContaining({ cachedInputTokens: 60, cacheWriteTokens: 10 }),
+        }),
+      );
     });
   }
 
@@ -85,15 +103,23 @@ describe('cache usage matrix', () => {
       const response = await app.request(testCase.route, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ...testCase.body, stream: true, stream_options: { include_usage: true } }),
+        body: JSON.stringify({
+          ...testCase.body,
+          stream: true,
+          stream_options: { include_usage: true },
+        }),
       });
       const body = await response.text();
 
       expect(response.status).toBe(200);
-      expect(body).toContain(testCase.route === '/v1/messages' ? 'cache_read_input_tokens' : 'cached_tokens');
-      expect(afterUpstream).toHaveBeenCalledWith(expect.objectContaining({
-        usage: expect.objectContaining({ cachedInputTokens: 60, cacheWriteTokens: 10 }),
-      }));
+      expect(body).toContain(
+        testCase.route === '/v1/messages' ? 'cache_read_input_tokens' : 'cached_tokens',
+      );
+      expect(afterUpstream).toHaveBeenCalledWith(
+        expect.objectContaining({
+          usage: expect.objectContaining({ cachedInputTokens: 60, cacheWriteTokens: 10 }),
+        }),
+      );
     });
   }
 });

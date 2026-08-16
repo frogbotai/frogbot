@@ -17,11 +17,16 @@ export function RootLayout({ config, ...rest }: RootLayoutProps) {
   return <PayloadRootLayout {...rest} config={getPayloadConfig(config)} />;
 }
 
-type HandleServerFunctionsArgs = Omit<Parameters<typeof payloadHandleServerFunctions>[0], 'config'> & {
+type HandleServerFunctionsArgs = Omit<
+  Parameters<typeof payloadHandleServerFunctions>[0],
+  'config'
+> & {
   config: FrogbotConfigArg;
 };
 
-export function handleServerFunctions(args: HandleServerFunctionsArgs): ReturnType<typeof payloadHandleServerFunctions> {
+export function handleServerFunctions(
+  args: HandleServerFunctionsArgs,
+): ReturnType<typeof payloadHandleServerFunctions> {
   const { config, ...rest } = args;
   return payloadHandleServerFunctions({ ...rest, config: getPayloadConfig(config) });
 }

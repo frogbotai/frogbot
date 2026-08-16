@@ -31,11 +31,7 @@ export function toAISDKTools(
   return result;
 }
 
-export type AISDKToolChoice =
-  | 'auto'
-  | 'none'
-  | 'required'
-  | { type: 'tool'; toolName: string };
+export type AISDKToolChoice = 'auto' | 'none' | 'required' | { type: 'tool'; toolName: string };
 
 export type AISDKToolChoiceResult = {
   toolChoice: AISDKToolChoice | undefined;

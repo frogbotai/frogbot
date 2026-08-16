@@ -18,10 +18,7 @@
 // no reasonable way to derive a base URL from env alone, and multi-endpoint
 // setups need explicit declarations.
 
-import {
-  createOpenAICompatible,
-  type OpenAICompatibleProvider,
-} from '@ai-sdk/openai-compatible';
+import { createOpenAICompatible, type OpenAICompatibleProvider } from '@ai-sdk/openai-compatible';
 
 /**
  * A single openai-compatible endpoint declaration. The provider name comes

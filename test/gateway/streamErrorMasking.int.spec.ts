@@ -32,14 +32,20 @@ function createMidStreamErrorModel(): LanguageModelV4 {
     provider: 'mock',
     modelId: 'mock-model',
     defaultObjectGenerationMode: undefined,
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: () => Promise.reject(error),
     doStream: () =>
       Promise.resolve({
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
             controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
-            controller.enqueue({ type: 'text-delta', id: 'text-0', delta: 'hello' } as LanguageModelV4StreamPart);
+            controller.enqueue({
+              type: 'text-delta',
+              id: 'text-0',
+              delta: 'hello',
+            } as LanguageModelV4StreamPart);
             controller.enqueue({ type: 'error', error } as LanguageModelV4StreamPart);
             controller.close();
           },

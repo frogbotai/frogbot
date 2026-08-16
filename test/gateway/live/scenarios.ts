@@ -11,7 +11,7 @@
 import { expect } from 'vitest';
 
 import { parseSse } from '../../__helpers/gateway/parse-sse.js';
-import { type LiveApp,post, postRaw } from './routes.js';
+import { type LiveApp, post, postRaw } from './routes.js';
 
 const MAX_TOKENS = 1024;
 
@@ -78,7 +78,11 @@ function noToolCall(model: string, wire: string, detail: string): Error {
 // Tool round trips — request → tool_call → tool result → final answer.
 // ---------------------------------------------------------------------------
 
-type ChatToolCall = { id?: string; type?: string; function?: { name?: string; arguments?: string } };
+type ChatToolCall = {
+  id?: string;
+  type?: string;
+  function?: { name?: string; arguments?: string };
+};
 
 type ChatBody = {
   choices?: Array<{
@@ -99,7 +103,11 @@ export async function runChatToolRoundTrip(app: LiveApp, model: string): Promise
   const message = first.body.choices?.[0]?.message;
   const toolCall = message?.tool_calls?.[0];
   if (!toolCall?.id || !toolCall.function?.name) {
-    throw noToolCall(model, '/v1/chat/completions', `finish_reason=${String(first.body.choices?.[0]?.finish_reason)}`);
+    throw noToolCall(
+      model,
+      '/v1/chat/completions',
+      `finish_reason=${String(first.body.choices?.[0]?.finish_reason)}`,
+    );
   }
   expect(toolCall.function.name).toBe('get_weather');
   const args = JSON.parse(toolCall.function.arguments ?? '{}') as { city?: string };
@@ -215,7 +223,12 @@ export async function runResponsesToolRoundTrip(app: LiveApp, model: string): Pr
     model,
     input: [
       { role: 'user', content: TOOL_PROMPT },
-      { type: 'function_call', call_id: call.call_id, name: call.name, arguments: call.arguments ?? '{}' },
+      {
+        type: 'function_call',
+        call_id: call.call_id,
+        name: call.name,
+        arguments: call.arguments ?? '{}',
+      },
       { type: 'function_call_output', call_id: call.call_id, output: TOOL_RESULT_JSON },
     ],
     tools: [RESPONSES_WEATHER_TOOL],
@@ -411,7 +424,11 @@ export async function runResponsesErrorEnvelope(app: LiveApp, label: string): Pr
 // wedge (the follow-up request must still get a well-formed response).
 // ---------------------------------------------------------------------------
 
-export async function runChatStreamAbort(app: LiveApp, model: string, label: string): Promise<void> {
+export async function runChatStreamAbort(
+  app: LiveApp,
+  model: string,
+  label: string,
+): Promise<void> {
   const res = await postRaw(app, '/v1/chat/completions', {
     model,
     messages: [{ role: 'user', content: LONG_ASK }],
@@ -437,7 +454,11 @@ export async function runChatStreamAbort(app: LiveApp, model: string, label: str
 // (success or error) and never hangs or crashes.
 // ---------------------------------------------------------------------------
 
-export async function runChatHugePrompt(app: LiveApp, model: string, hugePrompt: string): Promise<void> {
+export async function runChatHugePrompt(
+  app: LiveApp,
+  model: string,
+  hugePrompt: string,
+): Promise<void> {
   const res = await postRaw(app, '/v1/chat/completions', {
     model,
     messages: [{ role: 'user', content: hugePrompt }],
@@ -466,7 +487,14 @@ export async function runChatHugePrompt(app: LiveApp, model: string, hugePrompt:
 
 type ChatChunk = {
   choices?: Array<{
-    delta?: { content?: string; tool_calls?: Array<{ index?: number; id?: string; function?: { name?: string; arguments?: string } }> };
+    delta?: {
+      content?: string;
+      tool_calls?: Array<{
+        index?: number;
+        id?: string;
+        function?: { name?: string; arguments?: string };
+      }>;
+    };
     finish_reason?: string | null;
   }>;
 };

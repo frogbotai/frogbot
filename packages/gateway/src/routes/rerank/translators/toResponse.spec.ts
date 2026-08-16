@@ -13,14 +13,16 @@ describe('toOpenAIRerankResponse', () => {
       response: { id: 'rerank_123' },
     } as RerankResult<string>;
 
-    expect(toOpenAIRerankResponse(result, { returnDocuments: true, requestId: 'req_123' })).toEqual({
-      id: 'rerank_123',
-      results: [
-        { index: 1, relevance_score: 0.91, document: { text: 'robot' } },
-        { index: 0, relevance_score: 0.42, document: { text: 'frog' } },
-      ],
-      meta: {},
-    });
+    expect(toOpenAIRerankResponse(result, { returnDocuments: true, requestId: 'req_123' })).toEqual(
+      {
+        id: 'rerank_123',
+        results: [
+          { index: 1, relevance_score: 0.91, document: { text: 'robot' } },
+          { index: 0, relevance_score: 0.42, document: { text: 'frog' } },
+        ],
+        meta: {},
+      },
+    );
   });
 
   it('omits documents by default and falls back to request ID', () => {
@@ -29,7 +31,9 @@ describe('toOpenAIRerankResponse', () => {
       response: {},
     } as RerankResult<string>;
 
-    expect(toOpenAIRerankResponse(result, { returnDocuments: false, requestId: 'req_123' })).toEqual({
+    expect(
+      toOpenAIRerankResponse(result, { returnDocuments: false, requestId: 'req_123' }),
+    ).toEqual({
       id: 'req_123',
       results: [{ index: 0, relevance_score: 0.5 }],
       meta: {},
@@ -44,7 +48,9 @@ describe('toOpenAIRerankResponse', () => {
       },
     } as RerankResult<string>;
 
-    expect(toOpenAIRerankResponse(result, { returnDocuments: false, requestId: 'req_123' }).meta).toEqual({
+    expect(
+      toOpenAIRerankResponse(result, { returnDocuments: false, requestId: 'req_123' }).meta,
+    ).toEqual({
       billed_units: { search_units: 1 },
     });
   });

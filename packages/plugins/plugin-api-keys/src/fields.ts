@@ -24,7 +24,10 @@ function policyField(name: string, value: Field, manage: FieldAccess): Field {
   } as Field;
 }
 
-export function createPolicyFields(includeState: boolean, policyAccess: FieldAccess = deny): Field[] {
+export function createPolicyFields(
+  includeState: boolean,
+  policyAccess: FieldAccess = deny,
+): Field[] {
   return [
     policyField('monthlyBudget', { name: 'value', type: 'number', min: 0 }, policyAccess),
     policyField('rpm', { name: 'value', type: 'number', min: 1 }, policyAccess),
@@ -39,9 +42,25 @@ export function createPolicyFields(includeState: boolean, policyAccess: FieldAcc
     },
     ...(includeState
       ? [
-          { name: 'spendThisPeriodUSD', type: 'number' as const, defaultValue: 0, access: { update: () => false }, admin: { readOnly: true } },
-          { name: 'budgetPeriodStartedAt', type: 'date' as const, access: { update: () => false }, admin: { readOnly: true } },
-          { name: 'budgetAlertsSent', type: 'json' as const, access: { update: () => false }, admin: { hidden: true } },
+          {
+            name: 'spendThisPeriodUSD',
+            type: 'number' as const,
+            defaultValue: 0,
+            access: { update: () => false },
+            admin: { readOnly: true },
+          },
+          {
+            name: 'budgetPeriodStartedAt',
+            type: 'date' as const,
+            access: { update: () => false },
+            admin: { readOnly: true },
+          },
+          {
+            name: 'budgetAlertsSent',
+            type: 'json' as const,
+            access: { update: () => false },
+            admin: { hidden: true },
+          },
         ]
       : []),
   ];

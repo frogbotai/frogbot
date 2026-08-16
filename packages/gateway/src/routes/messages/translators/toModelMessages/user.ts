@@ -144,7 +144,11 @@ function parseUserContentBlock(
   }
 }
 
-function mediaSourceToFilePart(source: AnthropicMediaSource, fallbackMediaType: string, path: string): FilePart {
+function mediaSourceToFilePart(
+  source: AnthropicMediaSource,
+  fallbackMediaType: string,
+  path: string,
+): FilePart {
   switch (source.type) {
     case 'base64':
       return {
@@ -198,7 +202,10 @@ function documentProviderOptions(block: AnthropicDocumentBlock): ProviderOptions
   return Object.keys(providerOptions).length > 0 ? providerOptions : undefined;
 }
 
-function parseToolResult(block: AnthropicToolResultBlock, toolNameMap: Map<string, string>): ToolResultPart {
+function parseToolResult(
+  block: AnthropicToolResultBlock,
+  toolNameMap: Map<string, string>,
+): ToolResultPart {
   const output = toolResultOutput(block);
 
   const result: ToolResultPart = {

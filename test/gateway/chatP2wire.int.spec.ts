@@ -38,12 +38,21 @@ function createRecordingModel(opts?: {
   providerMetadata?: Record<string, Record<string, unknown>>;
   responseBody?: unknown;
 }): LanguageModelV4 {
-  const { text = 'Hello', streamParts, finishReason = STOP_FINISH, onCall, providerMetadata, responseBody } = opts ?? {};
+  const {
+    text = 'Hello',
+    streamParts,
+    finishReason = STOP_FINISH,
+    onCall,
+    providerMetadata,
+    responseBody,
+  } = opts ?? {};
   return {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: async (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
       return {
@@ -62,13 +71,13 @@ function createRecordingModel(opts?: {
     },
     doStream: async (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
-      const parts: LanguageModelV4StreamPart[] = streamParts ?? ([
+      const parts: LanguageModelV4StreamPart[] = streamParts ?? [
         { type: 'stream-start', warnings: [] },
         { type: 'text-start', id: 'text-0' },
         { type: 'text-delta', id: 'text-0', delta: text },
         { type: 'text-end', id: 'text-0' },
         { type: 'finish', finishReason, usage: DEFAULT_USAGE },
-      ]);
+      ];
       return {
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
@@ -146,14 +155,23 @@ describe('G47 — tool-input-delta id fallback corrupts wrong tool-call index', 
         const choices = d.choices as Array<Record<string, unknown>>;
         const delta = choices?.[0]?.delta as Record<string, unknown>;
         const calls = delta?.tool_calls as Array<Record<string, unknown>>;
-        return calls?.some((tc) => typeof tc.function === 'object' && (tc.function as Record<string, unknown>).arguments === '"corrupted"');
+        return calls?.some(
+          (tc) =>
+            typeof tc.function === 'object' &&
+            (tc.function as Record<string, unknown>).arguments === '"corrupted"',
+        );
       });
 
       // The corrupted delta should NOT appear at index 0 (tool_calls[0] belongs to call_a)
       const corruptedOnZero = chunks.some((c) => {
         const d = JSON.parse(c.data) as Record<string, unknown>;
-        const calls = ((d.choices as Array<Record<string, unknown>>)[0]?.delta as Record<string, unknown>)?.tool_calls as Array<Record<string, unknown>>;
-        return calls?.some((tc) => tc.index === 0 && (tc.function as Record<string, unknown>)?.arguments === '"corrupted"');
+        const calls = (
+          (d.choices as Array<Record<string, unknown>>)[0]?.delta as Record<string, unknown>
+        )?.tool_calls as Array<Record<string, unknown>>;
+        return calls?.some(
+          (tc) =>
+            tc.index === 0 && (tc.function as Record<string, unknown>)?.arguments === '"corrupted"',
+        );
       });
       expect(corruptedOnZero).toBe(false);
     },
@@ -253,7 +271,10 @@ describe('G49 — x-request-id absent on streaming SSE response', () => {
     });
 
     expect(res.status).toBe(200);
-    expect(res.headers.get('x-request-id'), 'streaming SSE response missing x-request-id').not.toBeNull();
+    expect(
+      res.headers.get('x-request-id'),
+      'streaming SSE response missing x-request-id',
+    ).not.toBeNull();
     await res.text();
   });
 });
@@ -270,9 +291,14 @@ describe('G52 — max_tokens/max_completion_tokens precedence', () => {
   // G52 — max_completion_tokens supersedes the deprecated max_tokens when both present.
   it('max_completion_tokens takes priority over max_tokens when both present', async () => {
     let capturedOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      onCall: (options) => { capturedOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        onCall: (options) => {
+          capturedOptions = options;
+        },
+      }),
+    );
 
     await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o',
@@ -282,7 +308,9 @@ describe('G52 — max_tokens/max_completion_tokens precedence', () => {
     });
 
     // Per OpenAI spec, max_completion_tokens (200) wins over deprecated max_tokens (100).
-    expect(capturedOptions?.maxOutputTokens, 'max_completion_tokens should take priority').toBe(200);
+    expect(capturedOptions?.maxOutputTokens, 'max_completion_tokens should take priority').toBe(
+      200,
+    );
   });
 });
 
@@ -312,7 +340,11 @@ describe('G53 — stream_options.include_usage wire semantics', () => {
 
     // The last real chunk before [DONE] should have usage + empty choices.
     const usageChunk = chunks.find(
-      (c) => c.usage !== null && c.usage !== undefined && Array.isArray(c.choices) && (c.choices as unknown[]).length === 0,
+      (c) =>
+        c.usage !== null &&
+        c.usage !== undefined &&
+        Array.isArray(c.choices) &&
+        (c.choices as unknown[]).length === 0,
     );
     expect(usageChunk, 'no usage-only chunk found before [DONE]').toBeDefined();
   });
@@ -421,7 +453,9 @@ describe('G54 — refusal finish_reason: content_filter instead of stop', () => 
       .map((f) => JSON.parse(f.data) as Record<string, unknown>);
 
     const finishChunk = chunks.find(
-      (c) => Array.isArray(c.choices) && (c.choices as Array<Record<string, unknown>>).some((ch) => ch.finish_reason !== null),
+      (c) =>
+        Array.isArray(c.choices) &&
+        (c.choices as Array<Record<string, unknown>>).some((ch) => ch.finish_reason !== null),
     );
     expect(finishChunk).toBeDefined();
     const finishReason = (finishChunk!.choices as Array<Record<string, unknown>>)[0].finish_reason;
@@ -440,9 +474,14 @@ describe('G54 — refusal finish_reason: content_filter instead of stop', () => 
 describe('G55 — assistant refusal preserved on re-ingestion', () => {
   it('assistant message refusal reaches upstream prompt', async () => {
     let capturedOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      onCall: (options) => { capturedOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        onCall: (options) => {
+          capturedOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o',
@@ -530,7 +569,9 @@ describe('G57 — mapFinishReason masks error/unknown as stop', () => {
       .map((f) => JSON.parse(f.data) as Record<string, unknown>);
 
     const finishChunk = chunks.find(
-      (c) => Array.isArray(c.choices) && (c.choices as Array<Record<string, unknown>>).some((ch) => ch.finish_reason !== null),
+      (c) =>
+        Array.isArray(c.choices) &&
+        (c.choices as Array<Record<string, unknown>>).some((ch) => ch.finish_reason !== null),
     );
     expect(finishChunk).toBeDefined();
     const finishReason = (finishChunk!.choices as Array<Record<string, unknown>>)[0].finish_reason;
@@ -547,21 +588,28 @@ describe('G57 — mapFinishReason masks error/unknown as stop', () => {
 describe('G58 — tools strict field forwarded', () => {
   it('tool strict: true reaches upstream via providerOptions', async () => {
     let capturedOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('openai', createRecordingModel({
-      onCall: (options) => { capturedOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        onCall: (options) => {
+          capturedOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o',
       messages: [{ role: 'user', content: 'hi' }],
-      tools: [{
-        type: 'function',
-        function: {
-          name: 'get_weather',
-          strict: true,
-          parameters: { type: 'object', properties: { city: { type: 'string' } } },
+      tools: [
+        {
+          type: 'function',
+          function: {
+            name: 'get_weather',
+            strict: true,
+            parameters: { type: 'object', properties: { city: { type: 'string' } } },
+          },
         },
-      }],
+      ],
     });
 
     expect(status).toBe(200);
@@ -592,19 +640,24 @@ describe('G58 — tools strict field forwarded', () => {
 
 describe('G59 — non-streaming refusal surfaced', () => {
   it('non-streaming response includes refusal field when model refuses', async () => {
-    const app = makeAppWithModel('openai', createRecordingModel({
-      text: '', // model refuses, empty text
-      finishReason: { unified: 'stop', raw: 'stop' },
-      responseBody: {
-        id: 'chatcmpl-refusal',
-        object: 'chat.completion',
-        choices: [{
-          index: 0,
-          message: { role: 'assistant', content: null, refusal: 'I cannot help with that.' },
-          finish_reason: 'stop',
-        }],
-      },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        text: '', // model refuses, empty text
+        finishReason: { unified: 'stop', raw: 'stop' },
+        responseBody: {
+          id: 'chatcmpl-refusal',
+          object: 'chat.completion',
+          choices: [
+            {
+              index: 0,
+              message: { role: 'assistant', content: null, refusal: 'I cannot help with that.' },
+              finish_reason: 'stop',
+            },
+          ],
+        },
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o',
@@ -623,18 +676,23 @@ describe('G59 — non-streaming refusal surfaced', () => {
   });
 
   it('non-streaming response omits refusal when provider body has none', async () => {
-    const app = makeAppWithModel('openai', createRecordingModel({
-      text: 'Hello',
-      responseBody: {
-        id: 'chatcmpl-ok',
-        object: 'chat.completion',
-        choices: [{
-          index: 0,
-          message: { role: 'assistant', content: 'Hello', refusal: null },
-          finish_reason: 'stop',
-        }],
-      },
-    }));
+    const app = makeAppWithModel(
+      'openai',
+      createRecordingModel({
+        text: 'Hello',
+        responseBody: {
+          id: 'chatcmpl-ok',
+          object: 'chat.completion',
+          choices: [
+            {
+              index: 0,
+              message: { role: 'assistant', content: 'Hello', refusal: null },
+              finish_reason: 'stop',
+            },
+          ],
+        },
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-4o',

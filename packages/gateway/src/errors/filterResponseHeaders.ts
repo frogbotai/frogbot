@@ -22,7 +22,9 @@ const ALLOWED_HEADERS = new Set([
  * Filter a header map / Headers instance / plain object down to the
  * allowlist. Casing is normalized; the returned map uses lowercase keys.
  */
-export function filterResponseHeaders(input: Headers | Record<string, string> | undefined): Record<string, string> {
+export function filterResponseHeaders(
+  input: Headers | Record<string, string> | undefined,
+): Record<string, string> {
   if (!input) return {};
 
   const out: Record<string, string> = {};

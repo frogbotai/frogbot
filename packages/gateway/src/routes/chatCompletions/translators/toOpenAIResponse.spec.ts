@@ -67,11 +67,13 @@ describe('toOpenAIResponse', () => {
       const result = toOpenAIResponse({
         ...baseArgs,
         finishReason: 'tool-calls',
-        toolCalls: [{
-          toolCallId: 'call_1',
-          toolName: 'my_tool',
-          args: { '': {}, city: 'San Francisco', nested: { '': {}, country: 'US' } },
-        }],
+        toolCalls: [
+          {
+            toolCallId: 'call_1',
+            toolName: 'my_tool',
+            args: { '': {}, city: 'San Francisco', nested: { '': {}, country: 'US' } },
+          },
+        ],
       });
 
       const parsed = JSON.parse(result.choices[0].message.tool_calls![0].function.arguments);
@@ -139,11 +141,13 @@ describe('toOpenAIResponse', () => {
         response: {
           ...baseArgs.response,
           body: {
-            choices: [{
-              index: 0,
-              message: { role: 'assistant', content: null, refusal: 'I cannot help with that.' },
-              finish_reason: 'stop',
-            }],
+            choices: [
+              {
+                index: 0,
+                message: { role: 'assistant', content: null, refusal: 'I cannot help with that.' },
+                finish_reason: 'stop',
+              },
+            ],
           },
         },
       });
@@ -158,7 +162,13 @@ describe('toOpenAIResponse', () => {
         response: {
           ...baseArgs.response,
           body: {
-            choices: [{ index: 0, message: { role: 'assistant', content: 'hi', refusal: null }, finish_reason: 'stop' }],
+            choices: [
+              {
+                index: 0,
+                message: { role: 'assistant', content: 'hi', refusal: null },
+                finish_reason: 'stop',
+              },
+            ],
           },
         },
       });
@@ -172,7 +182,13 @@ describe('toOpenAIResponse', () => {
         response: {
           ...baseArgs.response,
           body: {
-            choices: [{ index: 0, message: { role: 'assistant', content: 'hi', refusal: '' }, finish_reason: 'stop' }],
+            choices: [
+              {
+                index: 0,
+                message: { role: 'assistant', content: 'hi', refusal: '' },
+                finish_reason: 'stop',
+              },
+            ],
           },
         },
       });
@@ -191,8 +207,10 @@ describe('toOpenAIResponse', () => {
           .choices[0].message,
       ).not.toHaveProperty('refusal');
       expect(
-        toOpenAIResponse({ ...baseArgs, response: { ...baseArgs.response, body: { choices: [{ message: null }] } } })
-          .choices[0].message,
+        toOpenAIResponse({
+          ...baseArgs,
+          response: { ...baseArgs.response, body: { choices: [{ message: null }] } },
+        }).choices[0].message,
       ).not.toHaveProperty('refusal');
     });
 
@@ -203,11 +221,17 @@ describe('toOpenAIResponse', () => {
         response: {
           ...baseArgs.response,
           body: {
-            choices: [{
-              index: 0,
-              message: { role: 'assistant', content: 'Partial answer.', refusal: 'Then I refused.' },
-              finish_reason: 'stop',
-            }],
+            choices: [
+              {
+                index: 0,
+                message: {
+                  role: 'assistant',
+                  content: 'Partial answer.',
+                  refusal: 'Then I refused.',
+                },
+                finish_reason: 'stop',
+              },
+            ],
           },
         },
       });

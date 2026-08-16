@@ -7,7 +7,9 @@ describe('API keys plugin integration', () => {
     let transformed = config;
     for (const plugin of config.plugins ?? []) transformed = await plugin(transformed);
 
-    const credentials = transformed.collections.find((collection) => collection.slug === 'credentials')!;
+    const credentials = transformed.collections.find(
+      (collection) => collection.slug === 'credentials',
+    )!;
     const fields = credentials.fields.map((field) => ('name' in field ? field.name : null));
     expect(fields).toEqual(expect.arrayContaining(['tokenHash', 'environment', 'tenant']));
 
@@ -31,7 +33,11 @@ describe('API keys plugin integration', () => {
       payload: payload as never,
     });
 
-    expect(auth?.user).toMatchObject({ id: 'account-1', collection: 'accounts', _strategy: 'api-key' });
+    expect(auth?.user).toMatchObject({
+      id: 'account-1',
+      collection: 'accounts',
+      _strategy: 'api-key',
+    });
     expect(create.mock.calls[0][0].data).not.toHaveProperty('token');
   });
 });

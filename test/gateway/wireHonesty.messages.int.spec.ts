@@ -96,7 +96,9 @@ function createRecordingModel(opts?: {
     modelId: 'mock-model',
     // Accept every URL natively so the AI SDK forwards URL file parts to the
     // model instead of trying to download them (keeps G14 hermetic).
-    get supportedUrls() { return Promise.resolve({ '*': [/.*/] }); },
+    get supportedUrls() {
+      return Promise.resolve({ '*': [/.*/] });
+    },
     doGenerate: async (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
       if (error) throw error;
@@ -163,10 +165,13 @@ function postMessages(app: ReturnType<typeof createApp>, body: Record<string, un
 describe('messages content-filter → stop_reason refusal', () => {
   // G12
   it('non-streaming: content-filter finish emits stop_reason refusal', async () => {
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      text: 'I cannot help with that.',
-      finishReason: { unified: 'content-filter', raw: 'refusal' },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        text: 'I cannot help with that.',
+        finishReason: { unified: 'content-filter', raw: 'refusal' },
+      }),
+    );
 
     const { status, body } = await postMessages(app, {});
 
@@ -180,19 +185,22 @@ describe('messages content-filter → stop_reason refusal', () => {
       inputTokens: { total: 5, noCache: 5 },
       outputTokens: { total: 4, text: 4 },
     };
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      streamParts: [
-        { type: 'stream-start', warnings: [] },
-        { type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart,
-        { type: 'text-delta', id: 'text-0', delta: 'nope' } as LanguageModelV4StreamPart,
-        { type: 'text-end', id: 'text-0' } as LanguageModelV4StreamPart,
-        {
-          type: 'finish',
-          finishReason: { unified: 'content-filter', raw: 'refusal' },
-          usage,
-        },
-      ],
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        streamParts: [
+          { type: 'stream-start', warnings: [] },
+          { type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart,
+          { type: 'text-delta', id: 'text-0', delta: 'nope' } as LanguageModelV4StreamPart,
+          { type: 'text-end', id: 'text-0' } as LanguageModelV4StreamPart,
+          {
+            type: 'finish',
+            finishReason: { unified: 'content-filter', raw: 'refusal' },
+            usage,
+          },
+        ],
+      }),
+    );
 
     const res = await app.request('http://localhost/v1/messages', {
       method: 'POST',
@@ -227,9 +235,14 @@ describe('messages server tools not mis-translated', () => {
   // G13 — tools.ts:9-21 ignores the `type` discriminator: web_search_20250305 becomes a client function tool with an empty schema; flip to it() when fixed. See 056_full_gateway_review.
   it('does not register web_search_20250305 as a client function tool', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     await postMessages(app, {
       tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
@@ -255,24 +268,32 @@ describe('messages server tools not mis-translated', () => {
 describe('messages URL document defaults to application/pdf', () => {
   it('forwards a media_type-less URL document as application/pdf', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postMessages(app, {
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'text', text: 'summarize this' },
-          { type: 'document', source: { type: 'url', url: 'https://example.com/doc.pdf' } },
-        ],
-      }],
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'summarize this' },
+            { type: 'document', source: { type: 'url', url: 'https://example.com/doc.pdf' } },
+          ],
+        },
+      ],
     });
 
     expect(status).toBe(200);
     const userMessage = callOptions?.prompt.find((m) => m.role === 'user');
-    const fileParts = (Array.isArray(userMessage?.content) ? userMessage.content : [])
-      .filter((p): p is { type: 'file'; mediaType: string } => (p as { type: string }).type === 'file');
+    const fileParts = (Array.isArray(userMessage?.content) ? userMessage.content : []).filter(
+      (p): p is { type: 'file'; mediaType: string } => (p as { type: string }).type === 'file',
+    );
     expect(fileParts).toHaveLength(1);
     expect(fileParts[0]!.mediaType).toBe('application/pdf');
   });
@@ -295,9 +316,14 @@ describe('messages service_tier round trip', () => {
   // G15 — service_tier forwarded to the upstream call under providerOptions.unknown. See 056_full_gateway_review.
   it('forwards request service_tier to the upstream call', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postMessages(app, { service_tier: 'standard_only' });
 
@@ -309,14 +335,17 @@ describe('messages service_tier round trip', () => {
 
   // G15 — usage.service_tier emitted from providerMetadata.anthropic.usage. See 056_full_gateway_review.
   it('emits usage.service_tier from provider metadata on the response', async () => {
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      providerMetadata: {
-        anthropic: {
-          usage: { input_tokens: 5, output_tokens: 4, service_tier: 'standard' },
-          stopSequence: null,
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        providerMetadata: {
+          anthropic: {
+            usage: { input_tokens: 5, output_tokens: 4, service_tier: 'standard' },
+            stopSequence: null,
+          },
         },
-      },
-    }));
+      }),
+    );
 
     const { status, body } = await postMessages(app, {});
 
@@ -338,14 +367,20 @@ describe('messages service_tier round trip', () => {
 // G16 (+ AM23 / HE14)
 describe('messages Anthropic error envelope fidelity', () => {
   function appWithUpstreamStatus(statusCode: number, message: string) {
-    return makeAppWithModel('anthropic', createRecordingModel({
-      error: createApiCallError({ message, statusCode }),
-    }));
+    return makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        error: createApiCallError({ message, statusCode }),
+      }),
+    );
   }
 
   // G16 — 413 maps to request_too_large (envelope anthropicTypeForStatus). See 056_full_gateway_review.
   it('upstream 413 → request_too_large', async () => {
-    const { status, body } = await postMessages(appWithUpstreamStatus(413, 'Request exceeds the maximum allowed number of bytes'), {});
+    const { status, body } = await postMessages(
+      appWithUpstreamStatus(413, 'Request exceeds the maximum allowed number of bytes'),
+      {},
+    );
     expect(status).toBe(413);
     expect(body).toHaveProperty('error.type', 'request_too_large');
   });
@@ -359,7 +394,10 @@ describe('messages Anthropic error envelope fidelity', () => {
 
   // G16 — 504 maps to timeout_error. See 056_full_gateway_review.
   it('upstream 504 → timeout_error', async () => {
-    const { status, body } = await postMessages(appWithUpstreamStatus(504, 'Upstream timed out'), {});
+    const { status, body } = await postMessages(
+      appWithUpstreamStatus(504, 'Upstream timed out'),
+      {},
+    );
     expect(status).toBe(504);
     expect(body).toHaveProperty('error.type', 'timeout_error');
   });
@@ -388,14 +426,17 @@ describe('messages Anthropic error envelope fidelity', () => {
 
   // G16/AM23 — peek map now maps overloaded_error→529 (shared statusForAnthropicErrorType). See 056_full_gateway_review.
   it('streaming pre-first-byte upstream 529 re-materializes as HTTP 529', async () => {
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      streamParts: [
-        {
-          type: 'error',
-          error: Object.assign(new Error('Overloaded'), { statusCode: 529 }),
-        },
-      ],
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        streamParts: [
+          {
+            type: 'error',
+            error: Object.assign(new Error('Overloaded'), { statusCode: 529 }),
+          },
+        ],
+      }),
+    );
 
     const res = await app.request('http://localhost/v1/messages', {
       method: 'POST',
@@ -436,28 +477,40 @@ describe('messages structured output forwarded upstream', () => {
     // Mock returns valid JSON text: generateText with `output` set eagerly
     // parses the final text (ai generate-text.ts parseCompleteOutput) and a
     // non-JSON reply would fail the request before the assertion lands.
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      text: '{"city":"Paris"}',
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        text: '{"city":"Paris"}',
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postMessages(app, {
       output_config: { format: { type: 'json_schema', schema } },
     });
 
     expect(status).toBe(200);
-    expect(callOptions?.responseFormat).toEqual(expect.objectContaining({
-      type: 'json',
-      schema: expect.objectContaining({ type: 'object' }),
-    }));
+    expect(callOptions?.responseFormat).toEqual(
+      expect.objectContaining({
+        type: 'json',
+        schema: expect.objectContaining({ type: 'object' }),
+      }),
+    );
   });
 
   it('forwards deprecated top-level output_format as responseFormat {type: json, schema}', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      text: '{"city":"Paris"}',
-      onCall: (options) => { callOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        text: '{"city":"Paris"}',
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postMessages(app, {
       output_format: { type: 'json_schema', schema },
@@ -485,9 +538,14 @@ describe('messages metadata.user_id explicit 400', () => {
   // G18 POLICY — explicit typed 400 is forward-or-400 compliant; revisit only if the drop-in-compat decision is reversed. See 056_full_gateway_review.
   it('rejects metadata.user_id with a typed, param-attributed 400 (not a silent drop)', async () => {
     let upstreamCalled = false;
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      onCall: () => { upstreamCalled = true; },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        onCall: () => {
+          upstreamCalled = true;
+        },
+      }),
+    );
 
     const { status, body } = await postMessages(app, {
       metadata: { user_id: 'user-123' },

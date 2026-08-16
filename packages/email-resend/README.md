@@ -11,8 +11,8 @@ pnpm add @frogbotai/email-resend
 ## Usage
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { resendAdapter } from '@frogbotai/email-resend'
+import { buildConfig } from 'frogbot';
+import { resendAdapter } from '@frogbotai/email-resend';
 
 export default buildConfig({
   email: resendAdapter({
@@ -21,5 +21,5 @@ export default buildConfig({
     defaultFromName: 'My App',
   }),
   // ...rest of config
-})
+});
 ```

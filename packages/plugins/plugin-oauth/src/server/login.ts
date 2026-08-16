@@ -51,7 +51,12 @@ export async function loginFromOAuth({
   const context = payloadReq.context || ({} as RequestContext);
 
   for (const hook of hooks.beforeLogin) {
-    const result = await hook({ collection: collectionConfig, context, req: payloadReq, user: user as never });
+    const result = await hook({
+      collection: collectionConfig,
+      context,
+      req: payloadReq,
+      user: user as never,
+    });
     if (result) user = result as LoginUser;
   }
 
@@ -82,7 +87,13 @@ export async function loginFromOAuth({
   });
 
   for (const hook of hooks.afterLogin) {
-    const result = await hook({ collection: collectionConfig, context, req: payloadReq, token, user: user as never });
+    const result = await hook({
+      collection: collectionConfig,
+      context,
+      req: payloadReq,
+      token,
+      user: user as never,
+    });
     if (result) user = result as LoginUser;
   }
 

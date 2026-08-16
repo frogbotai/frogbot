@@ -23,14 +23,19 @@ export async function getOAuthConnectionCredentials(options: {
     limit: 1,
     overrideAccess: true,
     req: options.req,
-    where: { and: [
-      { id: { equals: options.connectionId } },
-      { owner: { equals: owner } },
-    ] },
+    where: { and: [{ id: { equals: options.connectionId } }, { owner: { equals: owner } }] },
   });
   const connection = result.docs[0] as Record<string, unknown> | undefined;
-  if (!connection || typeof connection.encryptedCredentials !== 'string' || typeof connection.sourceKey !== 'string' || typeof connection.accountId !== 'string') return null;
-  const value = JSON.parse(await options.encryption.decrypt(connection.encryptedCredentials)) as Record<string, unknown>;
+  if (
+    !connection ||
+    typeof connection.encryptedCredentials !== 'string' ||
+    typeof connection.sourceKey !== 'string' ||
+    typeof connection.accountId !== 'string'
+  )
+    return null;
+  const value = JSON.parse(
+    await options.encryption.decrypt(connection.encryptedCredentials),
+  ) as Record<string, unknown>;
   return {
     id: connection.id as string | number,
     sourceKey: connection.sourceKey,
@@ -38,11 +43,17 @@ export async function getOAuthConnectionCredentials(options: {
     tokens: {
       accessToken: String(value.access_token ?? ''),
       ...(typeof value.refresh_token === 'string' ? { refreshToken: value.refresh_token } : {}),
-      ...(typeof connection.expiresAt === 'string' ? { expiresAt: new Date(connection.expiresAt) } : {}),
-      ...(typeof value.scope === 'string' ? { scopes: value.scope.split(' ').filter(Boolean) } : {}),
+      ...(typeof connection.expiresAt === 'string'
+        ? { expiresAt: new Date(connection.expiresAt) }
+        : {}),
+      ...(typeof value.scope === 'string'
+        ? { scopes: value.scope.split(' ').filter(Boolean) }
+        : {}),
       ...(typeof value.token_type === 'string' ? { tokenType: value.token_type } : {}),
       ...(typeof value.id_token === 'string' ? { idToken: value.id_token } : {}),
-      ...(typeof value.data === 'object' && value.data ? { metadata: value.data as Record<string, unknown> } : {}),
+      ...(typeof value.data === 'object' && value.data
+        ? { metadata: value.data as Record<string, unknown> }
+        : {}),
     },
   };
 }

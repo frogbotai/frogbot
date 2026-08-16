@@ -19,7 +19,8 @@ import type { ToolCallRepairFunction, ToolSet } from 'ai';
  * Returns `undefined` if the AI SDK surface is unavailable — callers should
  * forward that as-is (AI SDK treats `undefined` as "no repair").
  */
-export function createRepairToolCall<TOOLS extends ToolSet>(): ToolCallRepairFunction<TOOLS> | undefined {
+export function createRepairToolCall<TOOLS extends ToolSet>():
+  ToolCallRepairFunction<TOOLS> | undefined {
   try {
     const repair: ToolCallRepairFunction<TOOLS> = async ({ toolCall }) => {
       return {

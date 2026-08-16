@@ -148,7 +148,13 @@ export interface BeforeUpstreamHookArgs extends HookBase {
    * prompt-cache markers. Mutating this has no effect — `system` is already
    * folded into `messages` before this hook runs.
    */
-  readonly system?: string | { type: 'text'; text: string; cache_control?: { type: string; ttl?: string | null } | null }[];
+  readonly system?:
+    | string
+    | {
+        type: 'text';
+        text: string;
+        cache_control?: { type: string; ttl?: string | null } | null;
+      }[];
   /** Read-only. Mutating has no effect on the pre-computed `toolChoice`. */
   readonly tools?: Record<string, unknown>;
   /** Mutable in place on language routes; absent on modality routes. */
@@ -204,7 +210,9 @@ export interface Hooks {
 // Runner (sequential execution; afterError/afterOperation isolate failures)
 // ---------------------------------------------------------------------------
 
-export async function runHooks<A extends { readonly requestId: string; readonly operation: HookOperation }>(
+export async function runHooks<
+  A extends { readonly requestId: string; readonly operation: HookOperation },
+>(
   hooks: Array<(args: A) => void | Promise<void>> | undefined,
   args: A,
   opts?: { isolate?: boolean },
@@ -215,9 +223,12 @@ export async function runHooks<A extends { readonly requestId: string; readonly 
       try {
         await hook(args);
       } catch (err) {
-        console.error(`[gateway] hook error (${args.operation}, requestId=${args.requestId}):`, err);
+        console.error(
+          `[gateway] hook error (${args.operation}, requestId=${args.requestId}):`,
+          err,
+        );
       }
-      continue
+      continue;
     }
 
     await hook(args);

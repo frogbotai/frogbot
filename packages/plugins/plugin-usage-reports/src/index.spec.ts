@@ -31,7 +31,11 @@ async function setup(pageSize = 2) {
   return { result, endpoint };
 }
 
-function request(url: string, find: ReturnType<typeof vi.fn>, user: unknown = { id: 'admin', roles: ['admin'] }) {
+function request(
+  url: string,
+  find: ReturnType<typeof vi.fn>,
+  user: unknown = { id: 'admin', roles: ['admin'] },
+) {
   return {
     url,
     user,
@@ -51,14 +55,16 @@ describe('usageReportsPlugin', () => {
     expect((result.admin?.components as Record<string, unknown>).views).toMatchObject({
       usageReports: { path: '/usage-analytics' },
     });
-    expect((result.admin?.components as Record<string, unknown>).afterNavLinks).toContain('@frogbotai/plugin-usage-reports/client#UsageReportsNavLink');
+    expect((result.admin?.components as Record<string, unknown>).afterNavLinks).toContain(
+      '@frogbotai/plugin-usage-reports/client#UsageReportsNavLink',
+    );
   });
 
   it('composes with an explicitly configured import-export plugin exactly once', async () => {
     const withReports = await usageReportsPlugin()(createConfig());
-    const result = await importExportPlugin({
+    const result = (await importExportPlugin({
       collections: [{ slug: 'ai-usage', import: false, export: { format: 'csv' } }],
-    })(withReports as never) as unknown as typeof withReports;
+    })(withReports as never)) as unknown as typeof withReports;
     const usage = result.collections.find((item) => item.slug === 'ai-usage');
 
     expect(result.collections.map((item) => item.slug)).toContain('exports');
@@ -73,9 +79,22 @@ describe('usageReportsPlugin', () => {
   it('rejects unauthenticated and invalid date ranges', async () => {
     const { endpoint } = await setup();
     const find = vi.fn();
-    const unauthorized = await endpoint.handler(request('http://localhost/api/usage/report?groupBy=model&from=2026-01-01&to=2026-02-01', find, null));
-    const invalid = await endpoint.handler(request('http://localhost/api/usage/report?groupBy=model&from=nope&to=2026-02-01', find));
-    const unsupported = await endpoint.handler(request('http://localhost/api/usage/report?groupBy=provider&from=2026-01-01&to=2026-02-01', find));
+    const unauthorized = await endpoint.handler(
+      request(
+        'http://localhost/api/usage/report?groupBy=model&from=2026-01-01&to=2026-02-01',
+        find,
+        null,
+      ),
+    );
+    const invalid = await endpoint.handler(
+      request('http://localhost/api/usage/report?groupBy=model&from=nope&to=2026-02-01', find),
+    );
+    const unsupported = await endpoint.handler(
+      request(
+        'http://localhost/api/usage/report?groupBy=provider&from=2026-01-01&to=2026-02-01',
+        find,
+      ),
+    );
     expect(unauthorized.status).toBe(401);
     expect(invalid.status).toBe(400);
     expect(unsupported.status).toBe(400);
@@ -88,20 +107,29 @@ describe('usageReportsPlugin', () => {
     const find = vi.fn().mockResolvedValue({ docs: [], hasNextPage: false });
 
     expect((await endpoint.handler(request(url, find, { id: 'member-1' }))).status).toBe(200);
-    expect((await endpoint.handler(request(url, find, { id: 'service-1', _strategy: 'api-key' }))).status).toBe(200);
+    expect(
+      (await endpoint.handler(request(url, find, { id: 'service-1', _strategy: 'api-key' })))
+        .status,
+    ).toBe(200);
   });
 
   it('applies a custom access function as a gate and as a row filter', async () => {
     const denied = await usageReportsPlugin({ access: () => false })(createConfig());
-    const scoped = await usageReportsPlugin({ access: ({ req }) => ({ user: { equals: req.user!.id } }) })(createConfig());
+    const scoped = await usageReportsPlugin({
+      access: ({ req }) => ({ user: { equals: req.user!.id } }),
+    })(createConfig());
     const url = 'http://localhost/api/usage/report?groupBy=model&from=2026-01-01&to=2026-02-01';
     const find = vi.fn().mockResolvedValue({ docs: [], hasNextPage: false });
 
-    const forbidden = await denied.endpoints!.find((item) => item.path === '/usage/report')!.handler(request(url, find));
+    const forbidden = await denied
+      .endpoints!.find((item) => item.path === '/usage/report')!
+      .handler(request(url, find));
     expect(forbidden.status).toBe(403);
     expect(find).not.toHaveBeenCalled();
 
-    await scoped.endpoints!.find((item) => item.path === '/usage/report')!.handler(request(url, find, { id: 'user-1' }));
+    await scoped
+      .endpoints!.find((item) => item.path === '/usage/report')!
+      .handler(request(url, find, { id: 'user-1' }));
     expect(find.mock.calls[0][0].where.and).toContainEqual({ user: { equals: 'user-1' } });
   });
 
@@ -112,35 +140,68 @@ describe('usageReportsPlugin', () => {
     const result = await usageReportsPlugin()(config);
     const find = vi.fn();
 
-    const response = await result.endpoints!.find((item) => item.path === '/usage/report')!.handler(
-      request('http://localhost/api/usage/report?groupBy=apiKey&from=2026-01-01&to=2026-02-01', find),
-    );
+    const response = await result
+      .endpoints!.find((item) => item.path === '/usage/report')!
+      .handler(
+        request(
+          'http://localhost/api/usage/report?groupBy=apiKey&from=2026-01-01&to=2026-02-01',
+          find,
+        ),
+      );
 
     expect(response.status).toBe(400);
     expect(find).not.toHaveBeenCalled();
   });
 
   it('paginates the resolved collection and aggregates model usage', async () => {
-    const find = vi.fn()
+    const find = vi
+      .fn()
       .mockResolvedValueOnce({
         docs: [
-          { model: 'openai/a', inputTokens: 10, outputTokens: 5, cachedInputTokens: 2, reasoningTokens: 1, totalTokens: 18, costUSD: 0.2 },
+          {
+            model: 'openai/a',
+            inputTokens: 10,
+            outputTokens: 5,
+            cachedInputTokens: 2,
+            reasoningTokens: 1,
+            totalTokens: 18,
+            costUSD: 0.2,
+          },
           { model: 'openai/b', inputTokens: 3, outputTokens: 4, totalTokens: 7, costUSD: 0.1 },
         ],
         hasNextPage: true,
         nextPage: 2,
       })
       .mockResolvedValueOnce({
-        docs: [{ model: 'openai/a', inputTokens: 2, outputTokens: 1, totalTokens: 3, costUSD: 0.05 }],
+        docs: [
+          { model: 'openai/a', inputTokens: 2, outputTokens: 1, totalTokens: 3, costUSD: 0.05 },
+        ],
         hasNextPage: false,
       });
     const { endpoint } = await setup();
-    const response = await endpoint.handler(request('http://localhost/api/usage/report?groupBy=model&from=2026-01-01&to=2026-02-01', find));
+    const response = await endpoint.handler(
+      request(
+        'http://localhost/api/usage/report?groupBy=model&from=2026-01-01&to=2026-02-01',
+        find,
+      ),
+    );
     const body = await response.json();
-    expect(find).toHaveBeenNthCalledWith(1, expect.objectContaining({ collection: 'ai-usage', page: 1, limit: 2, depth: 1 }));
-    expect(find).toHaveBeenNthCalledWith(2, expect.objectContaining({ collection: 'ai-usage', page: 2 }));
+    expect(find).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ collection: 'ai-usage', page: 1, limit: 2, depth: 1 }),
+    );
+    expect(find).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ collection: 'ai-usage', page: 2 }),
+    );
     expect(body.rows).toEqual([
-      expect.objectContaining({ key: 'openai/a', requestCount: 2, inputTokens: 12, totalTokens: 21, costUSD: 0.25 }),
+      expect.objectContaining({
+        key: 'openai/a',
+        requestCount: 2,
+        inputTokens: 12,
+        totalTokens: 21,
+        costUSD: 0.25,
+      }),
       expect.objectContaining({ key: 'openai/b', requestCount: 1, totalTokens: 7, costUSD: 0.1 }),
     ]);
   });
@@ -163,18 +224,37 @@ describe('usageReportsPlugin', () => {
       },
     ];
     const { endpoint } = await setup();
-    for (const [groupBy, key] of [['user', 'u1'], ['apiKey', 'k1'], ['day', '2026-01-02']] as const) {
+    for (const [groupBy, key] of [
+      ['user', 'u1'],
+      ['apiKey', 'k1'],
+      ['day', '2026-01-02'],
+    ] as const) {
       const find = vi.fn().mockResolvedValue({ docs, hasNextPage: false });
-      const response = await endpoint.handler(request(`http://localhost/api/usage/report?groupBy=${groupBy}&from=2026-01-01&to=2026-02-01`, find));
+      const response = await endpoint.handler(
+        request(
+          `http://localhost/api/usage/report?groupBy=${groupBy}&from=2026-01-01&to=2026-02-01`,
+          find,
+        ),
+      );
       const body = await response.json();
-      expect(body.rows).toEqual([expect.objectContaining({ key, requestCount: 2, totalTokens: 10, costUSD: 1 })]);
+      expect(body.rows).toEqual([
+        expect.objectContaining({ key, requestCount: 2, totalTokens: 10, costUSD: 1 }),
+      ]);
     }
   });
 
   it('returns an empty report for an empty range', async () => {
     const find = vi.fn().mockResolvedValue({ docs: [], hasNextPage: false });
     const { endpoint } = await setup();
-    const response = await endpoint.handler(request('http://localhost/api/usage/report?groupBy=model&from=2026-01-01&to=2026-02-01', find));
-    expect(await response.json()).toMatchObject({ rows: [], totals: { requestCount: 0, totalTokens: 0, costUSD: 0 } });
+    const response = await endpoint.handler(
+      request(
+        'http://localhost/api/usage/report?groupBy=model&from=2026-01-01&to=2026-02-01',
+        find,
+      ),
+    );
+    expect(await response.json()).toMatchObject({
+      rows: [],
+      totals: { requestCount: 0, totalTokens: 0, costUSD: 0 },
+    });
   });
 });

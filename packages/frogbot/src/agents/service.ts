@@ -11,7 +11,10 @@ import type { DocID } from '../types/operations.js';
 import type { FrogbotRequest } from '../types/request.js';
 
 export class AgentServiceError extends Error {
-  constructor(message: string, readonly status: number) {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
     super(message);
   }
 }
@@ -22,8 +25,15 @@ export function getAgent({ req, slug }: { req: FrogbotRequest; slug?: string }):
   return agent;
 }
 
-export async function assertAgentAccess({ req, agent }: { req: FrogbotRequest; agent: AgentInstance }): Promise<void> {
-  const access = agent.config.access ?? (({ req: current }: { req: FrogbotRequest }) => !!current.user);
+export async function assertAgentAccess({
+  req,
+  agent,
+}: {
+  req: FrogbotRequest;
+  agent: AgentInstance;
+}): Promise<void> {
+  const access =
+    agent.config.access ?? (({ req: current }: { req: FrogbotRequest }) => !!current.user);
   try {
     if (await access({ req, agent })) return;
   } catch {
@@ -32,7 +42,11 @@ export async function assertAgentAccess({ req, agent }: { req: FrogbotRequest; a
   throw new AgentServiceError(`Access denied for agent '${agent.slug}'`, 403);
 }
 
-export async function listAgents({ req }: { req: FrogbotRequest }): Promise<ManifestResponse['agents']> {
+export async function listAgents({
+  req,
+}: {
+  req: FrogbotRequest;
+}): Promise<ManifestResponse['agents']> {
   const agents: ManifestResponse['agents'] = [];
   for (const agent of Object.values(req.frogbot.agents)) {
     try {
@@ -48,11 +62,25 @@ export async function listAgents({ req }: { req: FrogbotRequest }): Promise<Mani
   return agents;
 }
 
-export async function getAgentAuthorizations({ req, agent }: { req: FrogbotRequest; agent: AgentInstance }) {
-  return req.frogbot.connections?.authorizations({
-    owner: req.user!,
-    services: [...new Set((agent.config.tools ?? []).flatMap((tool) => tool.pieceService ? [tool.pieceService] : []))],
-  }) ?? [];
+export async function getAgentAuthorizations({
+  req,
+  agent,
+}: {
+  req: FrogbotRequest;
+  agent: AgentInstance;
+}) {
+  return (
+    req.frogbot.connections?.authorizations({
+      owner: req.user!,
+      services: [
+        ...new Set(
+          (agent.config.tools ?? []).flatMap((tool) =>
+            tool.pieceService ? [tool.pieceService] : [],
+          ),
+        ),
+      ],
+    }) ?? []
+  );
 }
 
 export async function prepareAgentRequest({

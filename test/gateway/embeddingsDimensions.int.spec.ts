@@ -22,7 +22,9 @@ import { postJson } from '../__helpers/gateway/post-json.js';
 type CapturedProviderOptions = Record<string, Record<string, unknown>> | undefined;
 
 /** A mock embedding model that captures the providerOptions it receives. */
-function createCapturingEmbeddingModel(capture: (providerOptions: CapturedProviderOptions) => void): EmbeddingModelV4 {
+function createCapturingEmbeddingModel(
+  capture: (providerOptions: CapturedProviderOptions) => void,
+): EmbeddingModelV4 {
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -41,7 +43,10 @@ function createCapturingEmbeddingModel(capture: (providerOptions: CapturedProvid
   };
 }
 
-function makeApp(providerName: string, capture: (providerOptions: CapturedProviderOptions) => void) {
+function makeApp(
+  providerName: string,
+  capture: (providerOptions: CapturedProviderOptions) => void,
+) {
   const fakeProvider = { embeddingModel: () => createCapturingEmbeddingModel(capture) };
   const registry = { [providerName]: fakeProvider } as unknown as ProviderRegistry;
   return createApp({ registry });
@@ -56,7 +61,9 @@ describe('gateway integration — embeddings dimensions namespace (G24)', () => 
   // client silently receives full-width vectors.
   it('routes a dimensions request to the resolved cohere provider (not the openai namespace)', async () => {
     let captured: CapturedProviderOptions;
-    const app = makeApp('cohere', (providerOptions) => { captured = providerOptions; });
+    const app = makeApp('cohere', (providerOptions) => {
+      captured = providerOptions;
+    });
 
     const { status } = await postJson(app, '/v1/embeddings', {
       model: 'cohere/embed-english-v3.0',

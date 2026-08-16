@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const dropboxIcon: IconNode = [
   [
@@ -9,8 +9,8 @@ export const dropboxIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const DropboxIcon = createLucideIcon('DropboxIcon', dropboxIcon, 0, '0 0 24 24')
+const DropboxIcon = createLucideIcon('DropboxIcon', dropboxIcon, 0, '0 0 24 24');
 
-export default DropboxIcon
+export default DropboxIcon;

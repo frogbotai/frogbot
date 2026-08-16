@@ -3,9 +3,17 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { AgentInstance } from '../types/agent.js';
 import type { FrogbotRequest } from '../types/request.js';
-import { assertAgentAccess, generateAgentRequest, getAgentAuthorizations, listAgents } from './service.js';
+import {
+  assertAgentAccess,
+  generateAgentRequest,
+  getAgentAuthorizations,
+  listAgents,
+} from './service.js';
 
-function makeAgent({ slug = 'support', access }: { slug?: string; access?: AgentInstance['config']['access'] } = {}): AgentInstance {
+function makeAgent({
+  slug = 'support',
+  access,
+}: { slug?: string; access?: AgentInstance['config']['access'] } = {}): AgentInstance {
   const generate = vi.fn(() =>
     Promise.resolve({
       text: 'hello',
@@ -30,7 +38,11 @@ function makeAgent({ slug = 'support', access }: { slug?: string; access?: Agent
   };
 }
 
-function makeRequest({ agents, authorizations, create = vi.fn() }: {
+function makeRequest({
+  agents,
+  authorizations,
+  create = vi.fn(),
+}: {
   agents: Record<string, AgentInstance>;
   authorizations?: ReturnType<typeof vi.fn>;
   create?: ReturnType<typeof vi.fn>;
@@ -41,7 +53,10 @@ function makeRequest({ agents, authorizations, create = vi.fn() }: {
     frogbot: {
       agents,
       connections: authorizations ? { authorizations } : undefined,
-      config: { ai: { routers: {} }, chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' } },
+      config: {
+        ai: { routers: {} },
+        chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' },
+      },
       create,
       update: vi.fn(() => Promise.resolve({ id: 'thread-1' })),
     },
@@ -59,7 +74,9 @@ describe('agent service', () => {
     });
 
     await expect(listAgents({ req })).resolves.toEqual([{ slug: 'support' }, { slug: 'public' }]);
-    await expect(assertAgentAccess({ req, agent: req.frogbot.agents.broken })).rejects.toMatchObject({ status: 403 });
+    await expect(
+      assertAgentAccess({ req, agent: req.frogbot.agents.broken }),
+    ).rejects.toMatchObject({ status: 403 });
   });
 
   it('passes the agent instance to access functions', async () => {
@@ -77,19 +94,26 @@ describe('agent service', () => {
     const req = makeRequest({ agents: { support: agent }, authorizations });
 
     await expect(getAgentAuthorizations({ req, agent })).resolves.toEqual([{ source: 'google' }]);
-    expect(authorizations).toHaveBeenCalledWith({ owner: { id: 'user-1' }, services: ['google-sheets'] });
+    expect(authorizations).toHaveBeenCalledWith({
+      owner: { id: 'user-1' },
+      services: ['google-sheets'],
+    });
   });
 
   it('generates from UI messages and persists the assistant message', async () => {
     const create = vi.fn(() => Promise.resolve({ id: 'assistant-1' }));
     const agent = makeAgent();
     const req = makeRequest({ agents: { support: agent }, create });
-    const uiMessages: UIMessage[] = [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }];
+    const uiMessages: UIMessage[] = [
+      { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
+    ];
 
     const result = await generateAgentRequest({ req, agent, threadId: 'thread-1', uiMessages });
 
     expect(result.text).toBe('hello');
-    expect(agent.aiAgent.generate).toHaveBeenCalledWith(expect.objectContaining({ options: expect.objectContaining({ threadId: 'thread-1' }) }));
+    expect(agent.aiAgent.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ options: expect.objectContaining({ threadId: 'thread-1' }) }),
+    );
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'messages',

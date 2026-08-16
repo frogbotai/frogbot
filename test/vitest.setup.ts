@@ -1,40 +1,40 @@
-import { createConnection } from 'node:net'
+import { createConnection } from 'node:net';
 
-import type { DatabaseAdapterType } from './__helpers/shared/db/dbAdapters.js'
+import type { DatabaseAdapterType } from './__helpers/shared/db/dbAdapters.js';
 import {
   dbAdapters,
   generateDatabaseAdapter,
   getCurrentDatabaseAdapter,
-} from './__helpers/shared/db/dbAdapters.js'
+} from './__helpers/shared/db/dbAdapters.js';
 
-process.env.PAYLOAD_DISABLE_ADMIN = 'true'
-process.env.PAYLOAD_DROP_DATABASE = 'true'
+process.env.PAYLOAD_DISABLE_ADMIN = 'true';
+process.env.PAYLOAD_DROP_DATABASE = 'true';
 
 if (!process.env.FROGBOT_DATABASE) {
-  process.env.FROGBOT_DATABASE = 'sqlite'
+  process.env.FROGBOT_DATABASE = 'sqlite';
 }
 
-const adapter = getCurrentDatabaseAdapter()
+const adapter = getCurrentDatabaseAdapter();
 
-await assertDbReachable(adapter)
-generateDatabaseAdapter(adapter)
+await assertDbReachable(adapter);
+generateDatabaseAdapter(adapter);
 
 /**
  * TCP-ping the adapter's host:port. Skips file-based adapters.
  */
 async function assertDbReachable(adapterName: DatabaseAdapterType): Promise<void> {
-  const entry = dbAdapters[adapterName]
+  const entry = dbAdapters[adapterName];
   if (!('port' in entry) || !entry.port || !entry.host) {
-    return
+    return;
   }
 
-  const host = entry.host
-  const port = entry.port
-  const timeoutMs = process.env.CI === 'true' ? 10000 : 2000
+  const host = entry.host;
+  const port = entry.port;
+  const timeoutMs = process.env.CI === 'true' ? 10000 : 2000;
 
-  const result = await tcpPing(host, port, timeoutMs)
+  const result = await tcpPing(host, port, timeoutMs);
   if (result === true) {
-    return
+    return;
   }
 
   const lines = [
@@ -52,27 +52,27 @@ async function assertDbReachable(adapterName: DatabaseAdapterType): Promise<void
     `    \x1b[36mFROGBOT_DATABASE=sqlite pnpm test:int\x1b[0m`,
     '\x1b[31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m',
     '',
-  ]
-  process.stderr.write(lines.join('\n'))
-  process.exit(1)
+  ];
+  process.stderr.write(lines.join('\n'));
+  process.exit(1);
 }
 
 function tcpPing(host: string, port: number, timeoutMs: number): Promise<string | true> {
   return new Promise((resolve) => {
-    const socket = createConnection({ host, port })
+    const socket = createConnection({ host, port });
     const done = (value: string | true) => {
-      socket.removeAllListeners()
-      socket.destroy()
-      resolve(value)
-    }
-    const timer = setTimeout(() => done(`timed out after ${timeoutMs}ms`), timeoutMs)
+      socket.removeAllListeners();
+      socket.destroy();
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(`timed out after ${timeoutMs}ms`), timeoutMs);
     socket.once('connect', () => {
-      clearTimeout(timer)
-      done(true)
-    })
+      clearTimeout(timer);
+      done(true);
+    });
     socket.once('error', (err: NodeJS.ErrnoException) => {
-      clearTimeout(timer)
-      done(err.code || err.message || String(err))
-    })
-  })
+      clearTimeout(timer);
+      done(err.code || err.message || String(err));
+    });
+  });
 }

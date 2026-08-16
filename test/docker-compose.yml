@@ -26,7 +26,13 @@ services:
       - mongodb_data:/data/db
     command: ['--replSet', 'rs0']
     healthcheck:
-      test: ['CMD', 'mongosh', '--eval', "try { rs.status() } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}) }"]
+      test:
+        [
+          'CMD',
+          'mongosh',
+          '--eval',
+          "try { rs.status() } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}) }",
+        ]
       interval: 1s
       timeout: 5s
       retries: 30
@@ -69,7 +75,11 @@ services:
     volumes:
       - localstack_data:/var/lib/localstack
     healthcheck:
-      test: ['CMD-SHELL', 'awslocal s3api head-bucket --bucket frogbot-test-bucket >/dev/null 2>&1 || awslocal s3api create-bucket --bucket frogbot-test-bucket >/dev/null']
+      test:
+        [
+          'CMD-SHELL',
+          'awslocal s3api head-bucket --bucket frogbot-test-bucket >/dev/null 2>&1 || awslocal s3api create-bucket --bucket frogbot-test-bucket >/dev/null',
+        ]
       interval: 1s
       timeout: 5s
       retries: 30
@@ -96,16 +106,25 @@ services:
     restart: always
     command:
       [
-        '-scheme', 'http',
-        '-port', '4443',
-        '-public-host', 'http://localhost:4443',
-        '-external-url', 'http://localhost:4443',
-        '-backend', 'memory',
+        '-scheme',
+        'http',
+        '-port',
+        '4443',
+        '-public-host',
+        'http://localhost:4443',
+        '-external-url',
+        'http://localhost:4443',
+        '-backend',
+        'memory',
       ]
     ports:
       - '4443:4443'
     healthcheck:
-      test: ['CMD-SHELL', "wget -qO- http://localhost:4443/storage/v1/b/frogbot-test-bucket >/dev/null 2>&1 || wget -qO- --header='Content-Type: application/json' --post-data='{\"name\":\"frogbot-test-bucket\"}' 'http://localhost:4443/storage/v1/b?project=test' >/dev/null"]
+      test:
+        [
+          'CMD-SHELL',
+          'wget -qO- http://localhost:4443/storage/v1/b/frogbot-test-bucket >/dev/null 2>&1 || wget -qO- --header=''Content-Type: application/json'' --post-data=''{"name":"frogbot-test-bucket"}'' ''http://localhost:4443/storage/v1/b?project=test'' >/dev/null',
+        ]
       interval: 1s
       timeout: 5s
       retries: 30

@@ -9,7 +9,9 @@ async function loadTools() {
 function makeCtx(...args: [] | [number | string | undefined]) {
   const threadId = args.length === 0 ? 'thread-1' : args[0];
   const update = vi.fn();
-  const findByID = vi.fn().mockResolvedValue({ todos: [{ content: 'Ship it', status: 'completed' }] });
+  const findByID = vi
+    .fn()
+    .mockResolvedValue({ todos: [{ content: 'Ship it', status: 'completed' }] });
   const frogbot = {
     config: { chat: { enabled: true, threadsSlug: 'conversations' } },
     update,
@@ -78,7 +80,8 @@ describe('todo tools', () => {
   it('rejects invalid todo statuses', async () => {
     const { write_todos } = await loadTools();
     expect(
-      write_todos.inputSchema.safeParse({ todos: [{ content: 'Ship it', status: 'cancelled' }] }).success,
+      write_todos.inputSchema.safeParse({ todos: [{ content: 'Ship it', status: 'cancelled' }] })
+        .success,
     ).toBe(false);
   });
 

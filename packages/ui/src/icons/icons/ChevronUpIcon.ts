@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const chevronUpIcon: IconNode = [
   [
@@ -10,8 +10,8 @@ export const chevronUpIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const ChevronUpIcon = createLucideIcon('ChevronUpIcon', chevronUpIcon)
+const ChevronUpIcon = createLucideIcon('ChevronUpIcon', chevronUpIcon);
 
-export default ChevronUpIcon
+export default ChevronUpIcon;

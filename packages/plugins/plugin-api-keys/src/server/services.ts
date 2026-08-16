@@ -17,24 +17,28 @@ export type RevokeApiKeyOptions = {
 };
 
 export class ApiKeyServiceError extends Error {
-  constructor(
-    public readonly code: 'authentication_required' | 'not_found',
-  ) {
+  constructor(public readonly code: 'authentication_required' | 'not_found') {
     super(code);
   }
 }
 
 type MintForOwnerOptions = MintApiKeyOptions & { owner: string | number };
 
-async function mintForOwner({ req, collectionSlug, tokenPrefix, name, owner }: MintForOwnerOptions) {
+async function mintForOwner({
+  req,
+  collectionSlug,
+  tokenPrefix,
+  name,
+  owner,
+}: MintForOwnerOptions) {
   const token = createApiKeyToken({ tokenPrefix });
   const prefix = getApiKeyPrefix(token);
-  const doc = await req.frogbot.create({
+  const doc = (await req.frogbot.create({
     collection: collectionSlug as never,
     data: { name, owner, prefix, tokenHash: hashApiKeyToken(token) },
     overrideAccess: true,
     req,
-  }) as Record<string, unknown>;
+  })) as Record<string, unknown>;
   return { id: doc.id, name, prefix, token, createdAt: doc.createdAt };
 }
 
@@ -52,9 +56,21 @@ export async function mintApiKey(options: MintApiKeyOptions) {
 
 export type RotateApiKeyOptions = RevokeApiKeyOptions & { tokenPrefix: string };
 
-export async function rotateApiKey({ req, collectionSlug, id, tokenPrefix, anyOwner }: RotateApiKeyOptions) {
+export async function rotateApiKey({
+  req,
+  collectionSlug,
+  id,
+  tokenPrefix,
+  anyOwner,
+}: RotateApiKeyOptions) {
   const revoked = await revokeApiKey({ req, collectionSlug, id, anyOwner });
-  return mintForOwner({ req, collectionSlug, tokenPrefix, name: revoked.name, owner: revoked.owner });
+  return mintForOwner({
+    req,
+    collectionSlug,
+    tokenPrefix,
+    name: revoked.name,
+    owner: revoked.owner,
+  });
 }
 
 export async function revokeApiKey({ req, collectionSlug, id, anyOwner }: RevokeApiKeyOptions) {
@@ -71,7 +87,12 @@ export async function revokeApiKey({ req, collectionSlug, id, anyOwner }: Revoke
       : { and: [{ id: { equals: id } }, { owner: { equals: owner } }] },
   });
   const key = result.docs[0] as Record<string, unknown> | undefined;
-  if (!key || (typeof key.id !== 'string' && typeof key.id !== 'number') || typeof key.name !== 'string' || (typeof key.owner !== 'string' && typeof key.owner !== 'number')) {
+  if (
+    !key ||
+    (typeof key.id !== 'string' && typeof key.id !== 'number') ||
+    typeof key.name !== 'string' ||
+    (typeof key.owner !== 'string' && typeof key.owner !== 'number')
+  ) {
     throw new ApiKeyServiceError('not_found');
   }
   const revokedAt = typeof key.revokedAt === 'string' ? key.revokedAt : new Date().toISOString();

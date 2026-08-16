@@ -25,7 +25,12 @@ export function parseCliArgs(argv: string[]): CliArgs {
       out.port = parsePort(equalsValue('--port', arg.slice('--port='.length)), '--port');
     } else if (arg === 'init' && out.command === undefined) {
       out.command = 'init';
-    } else if (out.command === 'init' && out.dir === undefined && arg !== undefined && !arg.startsWith('-')) {
+    } else if (
+      out.command === 'init' &&
+      out.dir === undefined &&
+      arg !== undefined &&
+      !arg.startsWith('-')
+    ) {
       out.dir = arg;
     } else {
       throw new Error(`unknown ${arg?.startsWith('-') ? 'flag' : 'command'}: ${arg}`);

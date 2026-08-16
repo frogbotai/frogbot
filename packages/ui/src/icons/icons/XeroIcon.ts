@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const xeroIcon: IconNode = [
   [
@@ -9,8 +9,8 @@ export const xeroIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const XeroIcon = createLucideIcon('XeroIcon', xeroIcon, 0, '0 0 24 24')
+const XeroIcon = createLucideIcon('XeroIcon', xeroIcon, 0, '0 0 24 24');
 
-export default XeroIcon
+export default XeroIcon;

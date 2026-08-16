@@ -27,26 +27,28 @@ const payloadState = vi.hoisted(() => ({
 vi.mock('payload', () => ({
   buildConfig: vi.fn((config: unknown) => Promise.resolve(config)),
   createLocalReq: vi.fn(),
-  getPayload: vi.fn(({ config }: { config: Promise<{ onInit?: (payload: unknown) => Promise<void> }> }) => {
-    if (payloadState.promise) return payloadState.promise;
-    const disableOnInit = payloadState.entryExists;
-    payloadState.entryExists = true;
-    payloadState.promise = Promise.resolve(config)
-      .then(async (resolved) => {
-        payloadState.payload.config = resolved as typeof payloadState.payload.config;
-        if (payloadState.failNext) {
-          payloadState.failNext = false;
-          throw new Error('transient payload init failure');
-        }
-        if (!disableOnInit) await resolved.onInit?.(payloadState.payload);
-        return payloadState.payload;
-      })
-      .catch((error) => {
-        payloadState.promise = null;
-        throw error;
-      });
-    return payloadState.promise;
-  }),
+  getPayload: vi.fn(
+    ({ config }: { config: Promise<{ onInit?: (payload: unknown) => Promise<void> }> }) => {
+      if (payloadState.promise) return payloadState.promise;
+      const disableOnInit = payloadState.entryExists;
+      payloadState.entryExists = true;
+      payloadState.promise = Promise.resolve(config)
+        .then(async (resolved) => {
+          payloadState.payload.config = resolved as typeof payloadState.payload.config;
+          if (payloadState.failNext) {
+            payloadState.failNext = false;
+            throw new Error('transient payload init failure');
+          }
+          if (!disableOnInit) await resolved.onInit?.(payloadState.payload);
+          return payloadState.payload;
+        })
+        .catch((error) => {
+          payloadState.promise = null;
+          throw error;
+        });
+      return payloadState.promise;
+    },
+  ),
   handleEndpoints: vi.fn(),
 }));
 
@@ -87,7 +89,9 @@ describe('Frogbot lifecycle', () => {
     const payloadFirst = getPayload({ config: payloadConfig });
     await Promise.race([
       onInitStarted,
-      payloadFirst.then(() => Promise.reject(new Error('Payload initialized before FrogBot onInit'))),
+      payloadFirst.then(() =>
+        Promise.reject(new Error('Payload initialized before FrogBot onInit')),
+      ),
     ]);
     expect(getFrogbotInstance(payloadState.payload)).toBe(lifecycleFrogbot);
     expect(getCachedFrogbot()).toBeNull();

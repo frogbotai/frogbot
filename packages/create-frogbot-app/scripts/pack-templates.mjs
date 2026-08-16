@@ -46,4 +46,6 @@ for (const deps of [pkg.dependencies, pkg.devDependencies]) {
 delete pkg.private;
 fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 
-console.log(`[create-frogbot-app] packed templates/${templateName} -> dist/templates/${templateName}`);
+console.log(
+  `[create-frogbot-app] packed templates/${templateName} -> dist/templates/${templateName}`,
+);

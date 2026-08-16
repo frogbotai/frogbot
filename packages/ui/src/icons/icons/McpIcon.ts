@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const mcpIcon: IconNode = [
   [
@@ -23,8 +23,8 @@ export const mcpIcon: IconNode = [
       strokeLinecap: 'round',
     },
   ],
-]
+];
 
-const McpIcon = createLucideIcon('McpIcon', mcpIcon, 4.312, '0 0 147 158')
+const McpIcon = createLucideIcon('McpIcon', mcpIcon, 4.312, '0 0 147 158');
 
-export default McpIcon
+export default McpIcon;

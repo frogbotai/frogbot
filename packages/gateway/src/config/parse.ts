@@ -13,7 +13,7 @@ import { pathToFileURL } from 'node:url';
 
 import { ConfigError } from '../errors/gatewayError.js';
 import { PROVIDER_NAMES, type ProviderConfigMap } from '../providers/registry.js';
-import { type GatewayConfig,parseGatewayConfig } from './schema.js';
+import { type GatewayConfig, parseGatewayConfig } from './schema.js';
 import { interpolateConfigText } from './variable.js';
 
 /** Symbol placed on the parsed config object so we can detect and skip re-parsing. */
@@ -39,7 +39,9 @@ export async function loadConfigFile(path: string): Promise<GatewayConfig> {
   const abs = isAbsolute(path) ? path : resolve(process.cwd(), path);
   const ext = extname(abs).toLowerCase();
   if (!SUPPORTED_EXTS.has(ext)) {
-    throw new ConfigError([`unsupported config extension "${ext}"; expected one of ${[...SUPPORTED_EXTS].join(', ')}`]);
+    throw new ConfigError([
+      `unsupported config extension "${ext}"; expected one of ${[...SUPPORTED_EXTS].join(', ')}`,
+    ]);
   }
 
   let mod: Record<string, unknown>;
@@ -56,7 +58,10 @@ export async function loadConfigFile(path: string): Promise<GatewayConfig> {
     }
   } catch (err) {
     const cause = err instanceof Error ? err.message : String(err);
-    if ((ext === '.ts' || ext === '.mts' || ext === '.cts') && /Unknown file extension|Cannot find/.test(cause)) {
+    if (
+      (ext === '.ts' || ext === '.mts' || ext === '.cts') &&
+      /Unknown file extension|Cannot find/.test(cause)
+    ) {
       throw new ConfigError([
         `failed to load TypeScript config "${abs}" — the current runtime cannot import .ts directly.`,
         `use Bun, or pre-register a TS loader (e.g. \`node --import tsx <entry>\`), or compile to .js`,
@@ -66,9 +71,12 @@ export async function loadConfigFile(path: string): Promise<GatewayConfig> {
   }
 
   const raw = pickExport(mod, abs);
-  const resolved = typeof raw === 'function' ? await (raw as () => unknown | Promise<unknown>)() : raw;
+  const resolved =
+    typeof raw === 'function' ? await (raw as () => unknown | Promise<unknown>)() : raw;
   if (!isRecord(resolved)) {
-    throw new ConfigError([`config file "${abs}" must export a GatewayConfig object (default or named "config")`]);
+    throw new ConfigError([
+      `config file "${abs}" must export a GatewayConfig object (default or named "config")`,
+    ]);
   }
   return resolved as GatewayConfig;
 }
@@ -76,7 +84,9 @@ export async function loadConfigFile(path: string): Promise<GatewayConfig> {
 function pickExport(mod: Record<string, unknown>, abs: string): unknown {
   if ('default' in mod && mod.default != null) return mod.default;
   if ('config' in mod && mod.config != null) return mod.config;
-  throw new ConfigError([`config file "${abs}" exports neither a "default" nor a named "config" export`]);
+  throw new ConfigError([
+    `config file "${abs}" exports neither a "default" nor a named "config" export`,
+  ]);
 }
 
 // ---------------------------------------------------------------------------
@@ -101,7 +111,7 @@ export function mergeConfigs(base: GatewayConfig, overlay: GatewayConfig): Gatew
     const existing = (providers as Record<string, unknown>)[name];
     (providers as Record<string, unknown>)[name] =
       existing && typeof existing === 'object' && typeof cfg === 'object'
-        ? { ...(existing), ...(cfg as object) }
+        ? { ...existing, ...(cfg as object) }
         : cfg;
   }
 
@@ -156,7 +166,9 @@ function applyAllowDeny(config: GatewayConfig): GatewayConfig {
   }
   const disabledUnknown = [...disabled].filter((name) => !validNames.has(name));
   if (disabledUnknown.length > 0) {
-    issues.push(`disabled_providers contains unknown provider names: ${disabledUnknown.join(', ')}`);
+    issues.push(
+      `disabled_providers contains unknown provider names: ${disabledUnknown.join(', ')}`,
+    );
   }
   if (issues.length > 0) {
     throw new ConfigError(issues);

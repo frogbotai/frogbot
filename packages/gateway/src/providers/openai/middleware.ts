@@ -27,7 +27,8 @@ export const openaiReasoningEffort: BeforeUpstreamHook = (args) => {
   if (openaiOpts?.reasoningEffort) return;
 
   // Read cross-provider thinking budget from Anthropic namespace
-  const anthropicOpts = args.providerOptions['anthropic'] as { thinking?: { budget_tokens?: number } } | undefined;
+  const anthropicOpts = args.providerOptions['anthropic'] as
+    { thinking?: { budget_tokens?: number } } | undefined;
   const budgetTokens = anthropicOpts?.thinking?.budget_tokens;
   if (!budgetTokens || budgetTokens <= 0) return;
 
@@ -72,7 +73,8 @@ export const openaiPromptCacheBreakpoint: BeforeUpstreamHook = (args) => {
   const applyBreakpoint = (value: unknown) => {
     if (!value || typeof value !== 'object') return;
     const target = value as Record<string, unknown>;
-    const providerOptions = target.providerOptions as Record<string, Record<string, unknown>> | undefined;
+    const providerOptions = target.providerOptions as
+      Record<string, Record<string, unknown>> | undefined;
     const cacheControl = providerOptions?.unknown?.cache_control;
     if (!cacheControl || typeof cacheControl !== 'object') return;
 
@@ -87,14 +89,17 @@ export const openaiPromptCacheBreakpoint: BeforeUpstreamHook = (args) => {
   const applyMessageBreakpoint = (value: unknown) => {
     if (!value || typeof value !== 'object') return;
     const message = value as Record<string, unknown>;
-    const providerOptions = message.providerOptions as Record<string, Record<string, unknown>> | undefined;
+    const providerOptions = message.providerOptions as
+      Record<string, Record<string, unknown>> | undefined;
     const cacheControl = providerOptions?.unknown?.cache_control;
     if (typeof message.content === 'string' && cacheControl && typeof cacheControl === 'object') {
-      message.content = [{
-        type: 'text',
-        text: message.content,
-        providerOptions: { unknown: { cache_control: cacheControl } },
-      }];
+      message.content = [
+        {
+          type: 'text',
+          text: message.content,
+          providerOptions: { unknown: { cache_control: cacheControl } },
+        },
+      ];
       delete providerOptions.unknown.cache_control;
       if (Object.keys(providerOptions.unknown).length === 0) delete providerOptions.unknown;
       if (Object.keys(providerOptions).length === 0) delete message.providerOptions;
@@ -112,13 +117,25 @@ export const openaiPromptCacheBreakpoint: BeforeUpstreamHook = (args) => {
 
   const requestCacheControl = args.providerOptions.unknown?.cache_control;
   const lastMessage = args.messages?.at(-1);
-  if (requestCacheControl && typeof requestCacheControl === 'object' && lastMessage && typeof lastMessage === 'object') {
+  if (
+    requestCacheControl &&
+    typeof requestCacheControl === 'object' &&
+    lastMessage &&
+    typeof lastMessage === 'object'
+  ) {
     const message = lastMessage as Record<string, unknown>;
-    const providerOptions = (message.providerOptions ??= {}) as Record<string, Record<string, unknown>>;
-    providerOptions.unknown = { ...(providerOptions.unknown ?? {}), cache_control: requestCacheControl };
+    const providerOptions = (message.providerOptions ??= {}) as Record<
+      string,
+      Record<string, unknown>
+    >;
+    providerOptions.unknown = {
+      ...(providerOptions.unknown ?? {}),
+      cache_control: requestCacheControl,
+    };
     applyMessageBreakpoint(message);
     delete args.providerOptions.unknown?.cache_control;
-    if (Object.keys(args.providerOptions.unknown ?? {}).length === 0) delete args.providerOptions.unknown;
+    if (Object.keys(args.providerOptions.unknown ?? {}).length === 0)
+      delete args.providerOptions.unknown;
   }
 };
 

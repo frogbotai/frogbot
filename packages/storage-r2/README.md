@@ -11,8 +11,8 @@ pnpm add @frogbotai/storage-r2
 ## Usage
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { r2Storage } from '@frogbotai/storage-r2'
+import { buildConfig } from 'frogbot';
+import { r2Storage } from '@frogbotai/storage-r2';
 
 export default buildConfig({
   storage: [
@@ -24,5 +24,5 @@ export default buildConfig({
     }),
   ],
   // ...rest of config
-})
+});
 ```

@@ -38,12 +38,21 @@ function createRecordingModel(opts?: {
   providerMetadata?: Record<string, Record<string, unknown>>;
   onCall?: (options: LanguageModelV4CallOptions) => void;
 }): LanguageModelV4 {
-  const { text = 'Hello', streamParts, finishReason = STOP_FINISH, usage = DEFAULT_USAGE, providerMetadata, onCall } = opts ?? {};
+  const {
+    text = 'Hello',
+    streamParts,
+    finishReason = STOP_FINISH,
+    usage = DEFAULT_USAGE,
+    providerMetadata,
+    onCall,
+  } = opts ?? {};
   return {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: async (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
       return {
@@ -61,17 +70,19 @@ function createRecordingModel(opts?: {
     },
     doStream: async (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
-      const parts: LanguageModelV4StreamPart[] = streamParts ?? ([
+      const parts: LanguageModelV4StreamPart[] = streamParts ?? [
         { type: 'stream-start', warnings: [] },
         { type: 'text-start', id: 'text-0' },
         { type: 'text-delta', id: 'text-0', delta: text },
         { type: 'text-end', id: 'text-0' },
         { type: 'finish', finishReason, usage, ...(providerMetadata ? { providerMetadata } : {}) },
-      ]);
+      ];
       return {
         stream: new ReadableStream<LanguageModelV4StreamPart>({
           start(controller) {
-            for (const part of parts) {controller.enqueue(part);}
+            for (const part of parts) {
+              controller.enqueue(part);
+            }
             controller.close();
           },
         }),
@@ -109,10 +120,13 @@ describe('G60 — stop_sequence response field always null', () => {
     // raw 'stop_sequence', matched sequence in providerMetadata.anthropic.
     const stopSequenceFinish = { unified: 'stop', raw: 'stop_sequence' };
 
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      finishReason: stopSequenceFinish,
-      providerMetadata: { anthropic: { stopSequence: 'STOP' } },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        finishReason: stopSequenceFinish,
+        providerMetadata: { anthropic: { stopSequence: 'STOP' } },
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',
@@ -126,7 +140,10 @@ describe('G60 — stop_sequence response field always null', () => {
     const resp = body as Record<string, unknown>;
     expect(resp.stop_reason).toBe('stop_sequence');
     // stop_sequence should echo which one was matched, not null.
-    expect(resp.stop_sequence, 'stop_sequence field should not be null when stop_reason is stop_sequence').not.toBeNull();
+    expect(
+      resp.stop_sequence,
+      'stop_sequence field should not be null when stop_reason is stop_sequence',
+    ).not.toBeNull();
     expect(resp.stop_sequence).toBe('STOP');
   });
 });
@@ -143,10 +160,13 @@ describe('G60 — stop_sequence response field always null', () => {
 
 describe('G61 — stop-reason taxonomy: other → null is spec-invalid', () => {
   it('non-streaming message never returns null stop_reason (G61)', async () => {
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      // AI SDK surfaces context-window / unmapped stops as finishReason 'other'
-      finishReason: { unified: 'other', raw: 'model_context_window_exceeded' },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        // AI SDK surfaces context-window / unmapped stops as finishReason 'other'
+        finishReason: { unified: 'other', raw: 'model_context_window_exceeded' },
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',
@@ -178,9 +198,12 @@ describe('G62 — usage detail fields on messages responses', () => {
       outputTokens: { total: 15, text: 10, reasoning: 5 },
     };
 
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      usage: usageWithReasoning,
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        usage: usageWithReasoning,
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',
@@ -199,19 +222,22 @@ describe('G62 — usage detail fields on messages responses', () => {
   });
 
   it('messages response includes cache_creation breakdown from raw provider usage', async () => {
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      providerMetadata: {
-        anthropic: {
-          usage: {
-            input_tokens: 5,
-            output_tokens: 4,
-            cache_creation_input_tokens: 248,
-            cache_creation: { ephemeral_5m_input_tokens: 148, ephemeral_1h_input_tokens: 100 },
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        providerMetadata: {
+          anthropic: {
+            usage: {
+              input_tokens: 5,
+              output_tokens: 4,
+              cache_creation_input_tokens: 248,
+              cache_creation: { ephemeral_5m_input_tokens: 148, ephemeral_1h_input_tokens: 100 },
+            },
+            stopSequence: null,
           },
-          stopSequence: null,
         },
-      },
-    }));
+      }),
+    );
 
     const { status, body } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',
@@ -261,7 +287,10 @@ describe('G62 — usage detail fields on messages responses', () => {
     expect(status).toBe(200);
     const deltaFrame = parseSse(text).find((f) => f.event === 'message_delta');
     expect(deltaFrame).toBeDefined();
-    const usage = (JSON.parse(deltaFrame!.data) as Record<string, unknown>).usage as Record<string, unknown>;
+    const usage = (JSON.parse(deltaFrame!.data) as Record<string, unknown>).usage as Record<
+      string,
+      unknown
+    >;
     expect(usage).toHaveProperty('output_tokens_details.thinking_tokens', 5);
     expect(usage.cache_creation).toEqual({
       ephemeral_5m_input_tokens: 148,
@@ -297,20 +326,27 @@ describe('G63 — messages tools: strict and cache_control forwarded', () => {
   // (AI SDK anthropic-prepare-tools.ts + get-cache-control.ts:15-18).
   it('tool cache_control reaches upstream providerOptions', async () => {
     let capturedOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      onCall: (options) => { capturedOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        onCall: (options) => {
+          capturedOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',
       messages: [{ role: 'user', content: 'call a tool' }],
       max_tokens: 128,
-      tools: [{
-        name: 'get_weather',
-        description: 'Get weather',
-        input_schema: { type: 'object', properties: { city: { type: 'string' } } },
-        cache_control: { type: 'ephemeral' },
-      }],
+      tools: [
+        {
+          name: 'get_weather',
+          description: 'Get weather',
+          input_schema: { type: 'object', properties: { city: { type: 'string' } } },
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
     });
 
     expect(status).toBe(200);
@@ -338,9 +374,14 @@ describe('G64 — assistant cache_control forwarded in messages route', () => {
   // G64 — assistant text/tool_use blocks mirror the user-side cache_control pattern.
   it('assistant message cache_control reaches upstream providerOptions', async () => {
     let capturedOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      onCall: (options) => { capturedOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        onCall: (options) => {
+          capturedOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',
@@ -348,7 +389,9 @@ describe('G64 — assistant cache_control forwarded in messages route', () => {
         { role: 'user', content: 'hi' },
         {
           role: 'assistant',
-          content: [{ type: 'text', text: 'I will help you.', cache_control: { type: 'ephemeral' } }],
+          content: [
+            { type: 'text', text: 'I will help you.', cache_control: { type: 'ephemeral' } },
+          ],
         },
         { role: 'user', content: 'continue' },
       ],
@@ -377,9 +420,14 @@ describe('G65 — system block array: cache_control breakpoints preserved', () =
   // providerOptions.anthropic.cacheControl after namespace forwarding.
   it('multiple system blocks with cache_control produce separate cache breakpoints', async () => {
     let capturedOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      onCall: (options) => { capturedOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        onCall: (options) => {
+          capturedOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',
@@ -399,7 +447,8 @@ describe('G65 — system block array: cache_control breakpoints preserved', () =
     const prompt = capturedOptions?.prompt ?? [];
     const systemMsgs = prompt.filter((m) => m.role === 'system');
     const cacheBreakpoints = systemMsgs.filter((m) => {
-      const anthropic = (m.providerOptions as Record<string, Record<string, unknown>> | undefined)?.anthropic;
+      const anthropic = (m.providerOptions as Record<string, Record<string, unknown>> | undefined)
+        ?.anthropic;
       return anthropic?.cacheControl !== undefined;
     });
     expect(cacheBreakpoints.length, 'both system cache_control breakpoints should survive').toBe(2);
@@ -420,9 +469,14 @@ describe('G66 — top-level mcp_servers forwarded', () => {
   // G66 — mcp_servers → providerOptions.anthropic.mcpServers.
   it('mcp_servers reaches upstream providerOptions (G66)', async () => {
     let capturedOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      onCall: (options) => { capturedOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        onCall: (options) => {
+          capturedOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',
@@ -432,7 +486,8 @@ describe('G66 — top-level mcp_servers forwarded', () => {
     });
 
     expect(status).toBe(200);
-    const anthropicOpts = capturedOptions?.providerOptions?.anthropic as Record<string, unknown> | undefined;
+    const anthropicOpts = capturedOptions?.providerOptions?.anthropic as
+      Record<string, unknown> | undefined;
     // The MCP servers must reach the provider; otherwise the client's tools vanish.
     expect(anthropicOpts?.mcpServers ?? anthropicOpts?.mcp_servers).toBeDefined();
   });
@@ -463,7 +518,9 @@ describe('G68 — empty upstream stream produces invalid messages wire', () => {
       specificationVersion: 'v4',
       provider: 'mock',
       modelId: 'mock-model',
-      get supportedUrls() { return Promise.resolve({}); },
+      get supportedUrls() {
+        return Promise.resolve({});
+      },
       doGenerate: async () => {
         throw new Error('non-streaming not expected in this test');
       },
@@ -486,8 +543,12 @@ describe('G68 — empty upstream stream produces invalid messages wire', () => {
     });
 
     expect(status).toBe(200);
-    const events = parseSse(text).map((f) => f.event).filter(Boolean);
-    expect(events, 'empty stream must emit at least message_start + message_stop').toContain('message_start');
+    const events = parseSse(text)
+      .map((f) => f.event)
+      .filter(Boolean);
+    expect(events, 'empty stream must emit at least message_start + message_stop').toContain(
+      'message_start',
+    );
     expect(events).toContain('message_stop');
   });
 
@@ -499,7 +560,9 @@ describe('G68 — empty upstream stream produces invalid messages wire', () => {
       specificationVersion: 'v4',
       provider: 'mock',
       modelId: 'mock-model',
-      get supportedUrls() { return Promise.resolve({}); },
+      get supportedUrls() {
+        return Promise.resolve({});
+      },
       doGenerate: async () => {
         throw new Error('non-streaming not expected in this test');
       },
@@ -545,21 +608,30 @@ describe('G69 — document title dropped in translation', () => {
   // file part's providerOptions.anthropic so the model receives the label.
   it('document block title reaches the model (G69)', async () => {
     let capturedOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeAppWithModel('anthropic', createRecordingModel({
-      onCall: (options) => { capturedOptions = options; },
-    }));
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        onCall: (options) => {
+          capturedOptions = options;
+        },
+      }),
+    );
 
     const { status } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',
       max_tokens: 128,
-      messages: [{
-        role: 'user',
-        content: [{
-          type: 'document',
-          title: 'Q3 Financials',
-          source: { type: 'text', media_type: 'text/plain', data: 'revenue up 12%' },
-        }],
-      }],
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'document',
+              title: 'Q3 Financials',
+              source: { type: 'text', media_type: 'text/plain', data: 'revenue up 12%' },
+            },
+          ],
+        },
+      ],
     });
 
     expect(status).toBe(200);
@@ -567,7 +639,9 @@ describe('G69 — document title dropped in translation', () => {
     // title survived somewhere on it (providerOptions or a filename).
     const prompt = capturedOptions?.prompt ?? [];
     const serialized = JSON.stringify(prompt);
-    expect(serialized, 'document title should be forwarded to the model').toContain('Q3 Financials');
+    expect(serialized, 'document title should be forwarded to the model').toContain(
+      'Q3 Financials',
+    );
   });
 });
 
@@ -589,7 +663,10 @@ describe('G49 — x-request-id present on streaming messages SSE response', () =
     });
 
     expect(status).toBe(200);
-    expect(headers.get('x-request-id'), 'streaming messages SSE response missing x-request-id').not.toBeNull();
+    expect(
+      headers.get('x-request-id'),
+      'streaming messages SSE response missing x-request-id',
+    ).not.toBeNull();
   });
 });
 
@@ -614,7 +691,9 @@ describe('G51 — messages stream terminal-frame count', () => {
 
     expect(status).toBe(200);
     const stopFrames = parseSse(text).filter((f) => f.event === 'message_stop');
-    expect(stopFrames, 'messages stream must terminate with exactly one message_stop').toHaveLength(1);
+    expect(stopFrames, 'messages stream must terminate with exactly one message_stop').toHaveLength(
+      1,
+    );
     const doneCount = (text.match(/^data: \[DONE\]$/gm) ?? []).length;
     expect(doneCount, 'messages wire must not carry the OpenAI-only [DONE] sentinel').toBe(0);
   });

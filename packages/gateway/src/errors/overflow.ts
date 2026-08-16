@@ -57,7 +57,11 @@ const EMPTY_BODY_OVERFLOW = /^4(00|13)\s*(status code)?\s*\(no body\)/i;
  *   - `body`:    parsed JSON body, if any. We check `body.error.code` for
  *                provider-emitted overflow codes.
  */
-export function isContextOverflow(input: { message?: string; status?: number; body?: unknown }): boolean {
+export function isContextOverflow(input: {
+  message?: string;
+  status?: number;
+  body?: unknown;
+}): boolean {
   if (input.status === 413) return true;
 
   if (input.body && typeof input.body === 'object') {

@@ -99,7 +99,10 @@ export function setupTracing(options: SetupTracingOptions = {}): () => Promise<v
     providers.push(setupMetrics({ ...options.metrics, resource }));
   }
   const timeoutMs = options.shutdownTimeoutMs ?? 10_000;
-  return () => Promise.all(providers.map((provider) => gracefulShutdown(provider, timeoutMs))).then(() => undefined);
+  return () =>
+    Promise.all(providers.map((provider) => gracefulShutdown(provider, timeoutMs))).then(
+      () => undefined,
+    );
 }
 
 /**
@@ -109,7 +112,9 @@ export function setupTracing(options: SetupTracingOptions = {}): () => Promise<v
  * `setupTracing` by default; exported for hosts wiring metrics standalone
  * (they own flush/shutdown via `gracefulShutdown`).
  */
-export function setupMetrics(options: SetupMetricsOptions & { resource?: Resource } = {}): MeterProvider {
+export function setupMetrics(
+  options: SetupMetricsOptions & { resource?: Resource } = {},
+): MeterProvider {
   if (meterProvider) return meterProvider;
   const exporter = new OTLPMetricExporter(options.endpoint ? { url: options.endpoint } : {});
   meterProvider = new MeterProvider({
@@ -117,7 +122,9 @@ export function setupMetrics(options: SetupMetricsOptions & { resource?: Resourc
     readers: [
       new PeriodicExportingMetricReader({
         exporter,
-        ...(options.exportIntervalMs != null ? { exportIntervalMillis: options.exportIntervalMs } : {}),
+        ...(options.exportIntervalMs != null
+          ? { exportIntervalMillis: options.exportIntervalMs }
+          : {}),
       }),
     ],
   });
@@ -134,7 +141,10 @@ type ShutdownProvider = {
  * Flush and shut down `provider` on SIGTERM/SIGINT, bounding `forceFlush` with
  * `timeoutMs` so a wedged exporter can't block process exit. Exported for tests.
  */
-export async function gracefulShutdown(provider: ShutdownProvider, timeoutMs: number): Promise<void> {
+export async function gracefulShutdown(
+  provider: ShutdownProvider,
+  timeoutMs: number,
+): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     await Promise.race([

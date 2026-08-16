@@ -23,7 +23,11 @@ const apiCallError = (overrides: Partial<ConstructorParameters<typeof APICallErr
 
 describe('headersForError', () => {
   it('uses policy retry timing', () => {
-    expect(headersForError(new RateLimitExceededError({ kind: 'rpm', retryAfterSeconds: 17 }), 429)['retry-after']).toBe('17');
+    expect(
+      headersForError(new RateLimitExceededError({ kind: 'rpm', retryAfterSeconds: 17 }), 429)[
+        'retry-after'
+      ],
+    ).toBe('17');
   });
   it('forwards retry-after from a plain APICallError', () => {
     const err = apiCallError({ statusCode: 429, responseHeaders: { 'retry-after': '12' } });

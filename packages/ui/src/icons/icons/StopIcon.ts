@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const stopIcon: IconNode = [
   [
@@ -9,8 +9,8 @@ export const stopIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const StopIcon = createLucideIcon('Stop', stopIcon)
+const StopIcon = createLucideIcon('Stop', stopIcon);
 
-export default StopIcon
+export default StopIcon;

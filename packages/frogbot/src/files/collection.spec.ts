@@ -16,7 +16,9 @@ describe('defaultFilesCollection', () => {
 
   it('requires authentication for CRUD access', async () => {
     for (const operation of ['create', 'read', 'update', 'delete'] as const) {
-      expect(await collection.access?.[operation]?.({ req: { user: { id: 'u1' } } as never })).toBe(true);
+      expect(await collection.access?.[operation]?.({ req: { user: { id: 'u1' } } as never })).toBe(
+        true,
+      );
       expect(await collection.access?.[operation]?.({ req: { user: null } as never })).toBe(false);
     }
   });

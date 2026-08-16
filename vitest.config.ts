@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
@@ -61,10 +61,7 @@ export default defineConfig({
       {
         test: {
           name: 'gateway-integration',
-          include: [
-            'test/gateway/**/*.int.spec.ts',
-            'packages/gateway/test/**/*.spec.ts',
-          ],
+          include: ['test/gateway/**/*.int.spec.ts', 'packages/gateway/test/**/*.spec.ts'],
           exclude: ['**/node_modules/**', '**/dist/**'],
           environment: 'node',
           fileParallelism: false,
@@ -99,10 +96,7 @@ export default defineConfig({
       {
         test: {
           name: 'gateway-zen',
-          include: [
-            'test/gateway/crossRoute.e2e.spec.ts',
-            'test/gateway/zen*.e2e.spec.ts',
-          ],
+          include: ['test/gateway/crossRoute.e2e.spec.ts', 'test/gateway/zen*.e2e.spec.ts'],
           environment: 'node',
           fileParallelism: false,
           testTimeout: 90000,
@@ -110,4 +104,4 @@ export default defineConfig({
       },
     ],
   },
-})
+});

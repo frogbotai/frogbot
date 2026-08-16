@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const sidebarLeftIcon: IconNode = [
   [
@@ -23,8 +23,8 @@ export const sidebarLeftIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const SidebarLeftIcon = createLucideIcon('SidebarLeft', sidebarLeftIcon)
+const SidebarLeftIcon = createLucideIcon('SidebarLeft', sidebarLeftIcon);
 
-export default SidebarLeftIcon
+export default SidebarLeftIcon;

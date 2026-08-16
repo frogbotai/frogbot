@@ -79,8 +79,10 @@ export function buildGeneratedTypesFooter(
 ${agentSlugs.map((slug) => `      ${JSON.stringify(slug)}: unknown;`).join('\n')}
     }`;
   const modelIds = getConfiguredModelIds(ai);
-  const models = modelIds.length === 0 ? 'never' : modelIds.map((id) => JSON.stringify(id)).join(' | ');
-  const roles = roleSlugs.length === 0 ? 'never' : roleSlugs.map((slug) => JSON.stringify(slug)).join(' | ');
+  const models =
+    modelIds.length === 0 ? 'never' : modelIds.map((id) => JSON.stringify(id)).join(' | ');
+  const roles =
+    roleSlugs.length === 0 ? 'never' : roleSlugs.map((slug) => JSON.stringify(slug)).join(' | ');
 
   return `declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
@@ -133,9 +135,7 @@ export function stripInternalCollections(schema: ConfigJSONSchema): void {
     }
   }
 
-  const internalDefs = new Set(
-    Object.keys(schema.definitions ?? {}).filter(isInternal),
-  );
+  const internalDefs = new Set(Object.keys(schema.definitions ?? {}).filter(isInternal));
   if (internalDefs.size === 0) return;
 
   for (const name of internalDefs) {
@@ -174,9 +174,9 @@ async function compileTypes(
   // Payload's helper returns `{ jsonSchema, typeStringDefinitions }` in
   // newer versions; 3.68.5 returns the bare schema. Normalize.
   const result = configToJSONSchema(config, config.db.defaultIDType, i18n) as
-    | { jsonSchema: unknown; typeStringDefinitions?: Set<string> }
-    | object;
-  const jsonSchema = 'jsonSchema' in result ? (result as { jsonSchema: unknown }).jsonSchema : result;
+    { jsonSchema: unknown; typeStringDefinitions?: Set<string> } | object;
+  const jsonSchema =
+    'jsonSchema' in result ? (result as { jsonSchema: unknown }).jsonSchema : result;
   stripInternalCollections(jsonSchema as ConfigJSONSchema);
   const extraTypeStrings =
     'typeStringDefinitions' in result
@@ -237,13 +237,13 @@ export async function generateTypes(): Promise<void> {
     );
 
     if (changed) {
-      console.log(`[frogbot] types written to ${outputPath}`);  
+      console.log(`[frogbot] types written to ${outputPath}`);
     } else {
-      console.log(`[frogbot] types unchanged at ${outputPath}`);  
+      console.log(`[frogbot] types unchanged at ${outputPath}`);
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[frogbot] ${message}`);  
+    console.error(`[frogbot] ${message}`);
     process.exit(1);
   }
 }

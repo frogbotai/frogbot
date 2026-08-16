@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const rookIcon: IconNode = [
   [
@@ -11,8 +11,8 @@ export const rookIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const RookIcon = createLucideIcon('RookIcon', rookIcon, 0)
+const RookIcon = createLucideIcon('RookIcon', rookIcon, 0);
 
-export default RookIcon
+export default RookIcon;

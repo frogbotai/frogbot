@@ -1,9 +1,9 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { storageContractSuite } from '../__helpers/shared/storage/storageContractSuite'
-import { mediaSlug } from './shared.js'
+import { storageContractSuite } from '../__helpers/shared/storage/storageContractSuite';
+import { mediaSlug } from './shared.js';
 
-const dirname = path.dirname(fileURLToPath(import.meta.url))
+const dirname = path.dirname(fileURLToPath(import.meta.url));
 
-storageContractSuite('s3', dirname, mediaSlug)
+storageContractSuite('s3', dirname, mediaSlug);

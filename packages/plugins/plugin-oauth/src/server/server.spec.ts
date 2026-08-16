@@ -49,7 +49,12 @@ describe('OAuth server primitives', () => {
     const iv = Buffer.alloc(12, 1);
     const cipher = createCipheriv('aes-256-gcm', key, iv);
     const encrypted = Buffer.concat([cipher.update('credentials', 'utf8'), cipher.final()]);
-    const legacy = ['v1', iv.toString('base64url'), cipher.getAuthTag().toString('base64url'), encrypted.toString('base64url')].join('.');
+    const legacy = [
+      'v1',
+      iv.toString('base64url'),
+      cipher.getAuthTag().toString('base64url'),
+      encrypted.toString('base64url'),
+    ].join('.');
     expect(await createCredentialEncryption({ secret }).decrypt(legacy)).toBe('credentials');
   });
 
@@ -57,7 +62,12 @@ describe('OAuth server primitives', () => {
     const now = new Date('2026-01-01T00:00:00.000Z');
     const current = parseOAuthTokenSet({
       now,
-      value: { access_token: 'first', refresh_token: 'refresh', expires_in: 60, scope: 'openid email' },
+      value: {
+        access_token: 'first',
+        refresh_token: 'refresh',
+        expires_in: 60,
+        scope: 'openid email',
+      },
     });
     const merged = mergeOAuthTokenSets({ current, next: { accessToken: 'second' } });
     expect(current.expiresAt?.toISOString()).toBe('2026-01-01T00:01:00.000Z');

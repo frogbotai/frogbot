@@ -1,11 +1,18 @@
-import { type Attributes, type Histogram,metrics } from '@opentelemetry/api';
+import { type Attributes, type Histogram, metrics } from '@opentelemetry/api';
 
 import { httpStatusText, statusForError } from '../errors/envelope.js';
-import type { AfterOperationHookArgs, Hooks,HookUsage } from '../hooks.js';
+import type { AfterOperationHookArgs, Hooks, HookUsage } from '../hooks.js';
 import { createLogger, type GatewayLogger } from './logger.js';
-import { includesSignalLevel, resolveSignalLevels, type SignalLevelInput, type SignalLevels,traceOverrideKey } from './signalLevel.js';
+import {
+  includesSignalLevel,
+  resolveSignalLevels,
+  type SignalLevelInput,
+  type SignalLevels,
+  traceOverrideKey,
+} from './signalLevel.js';
 
-type TracedOperation = Pick<AfterOperationHookArgs, 'operation' | 'model' | 'provider'> & Partial<Pick<AfterOperationHookArgs, 'otel'>>;
+type TracedOperation = Pick<AfterOperationHookArgs, 'operation' | 'model' | 'provider'> &
+  Partial<Pick<AfterOperationHookArgs, 'otel'>>;
 
 const getMeter = () => metrics.getMeter('@frogbotai/gateway');
 
@@ -13,7 +20,9 @@ let tokenUsageHistogram: Histogram | undefined;
 let requestDurationHistogram: Histogram | undefined;
 
 const getTokenUsage = () =>
-  (tokenUsageHistogram ??= getMeter().createHistogram('gen_ai.client.token.usage', { unit: '{token}' }));
+  (tokenUsageHistogram ??= getMeter().createHistogram('gen_ai.client.token.usage', {
+    unit: '{token}',
+  }));
 
 // Spec-aligned bucket advice (OTel GenAI semconv `gen_ai.server.request.duration`,
 // seconds) with a tail extended to 30min for slow provider tiers, matching hebo.
@@ -21,14 +30,23 @@ const getRequestDuration = () =>
   (requestDurationHistogram ??= getMeter().createHistogram('gen_ai.server.request.duration', {
     unit: 's',
     advice: {
-      explicitBucketBoundaries: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60, 120, 300, 600, 900, 1800],
+      explicitBucketBoundaries: [
+        0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60, 120, 300, 600, 900, 1800,
+      ],
     },
   }));
 
 const safe = (value: number): number => (!Number.isFinite(value) ? 0 : Math.max(0, value));
 
-export function recordGenAiTokenUsage(ctx: TracedOperation, usage: HookUsage | undefined, trace?: SignalLevelInput, baseLevels?: Required<SignalLevels>, logger: GatewayLogger = createLogger()): void {
-  if (!usage || !includesSignalLevel(resolveSignalLevels(trace, baseLevels).gen_ai, 'recommended')) return;
+export function recordGenAiTokenUsage(
+  ctx: TracedOperation,
+  usage: HookUsage | undefined,
+  trace?: SignalLevelInput,
+  baseLevels?: Required<SignalLevels>,
+  logger: GatewayLogger = createLogger(),
+): void {
+  if (!usage || !includesSignalLevel(resolveSignalLevels(trace, baseLevels).gen_ai, 'recommended'))
+    return;
 
   const inputTokens = safe(usage.inputTokens);
   const outputTokens = safe(usage.outputTokens);
@@ -37,15 +55,31 @@ export function recordGenAiTokenUsage(ctx: TracedOperation, usage: HookUsage | u
   const reasoningOutput = safe(usage.reasoningTokens ?? 0);
 
   if (usage.inputTokens - (usage.cachedInputTokens ?? 0) - (usage.cacheWriteTokens ?? 0) < 0) {
-    logger.warn({ inputTokens: usage.inputTokens, cachedInputTokens: usage.cachedInputTokens, cacheWriteTokens: usage.cacheWriteTokens }, '[telemetry] cached input tokens exceed input total; clamping uncached to 0');
+    logger.warn(
+      {
+        inputTokens: usage.inputTokens,
+        cachedInputTokens: usage.cachedInputTokens,
+        cacheWriteTokens: usage.cacheWriteTokens,
+      },
+      '[telemetry] cached input tokens exceed input total; clamping uncached to 0',
+    );
   }
   if (usage.outputTokens - (usage.reasoningTokens ?? 0) < 0) {
-    logger.warn({ outputTokens: usage.outputTokens, reasoningTokens: usage.reasoningTokens }, '[telemetry] reasoning tokens exceed output total; clamping non-reasoning to 0');
+    logger.warn(
+      { outputTokens: usage.outputTokens, reasoningTokens: usage.reasoningTokens },
+      '[telemetry] reasoning tokens exceed output total; clamping non-reasoning to 0',
+    );
   }
 
-  const base = { ...ctx.otel, 'gen_ai.operation.name': ctx.operation, 'gen_ai.request.model': ctx.model, 'gen_ai.system': ctx.provider };
+  const base = {
+    ...ctx.otel,
+    'gen_ai.operation.name': ctx.operation,
+    'gen_ai.request.model': ctx.model,
+    'gen_ai.system': ctx.provider,
+  };
   const tokenUsage = getTokenUsage();
-  const emit = (value: number, extra: Record<string, unknown>) => tokenUsage.record(value, { ...base, ...extra });
+  const emit = (value: number, extra: Record<string, unknown>) =>
+    tokenUsage.record(value, { ...base, ...extra });
 
   // Input: partition only when a cache breakdown is reported; otherwise emit a bare point.
   if (usage.cachedInputTokens === undefined && usage.cacheWriteTokens === undefined) {
@@ -74,15 +108,27 @@ export function recordGenAiTokenUsage(ctx: TracedOperation, usage: HookUsage | u
  * taken from the abort-effective code in `otel` when present, else derived from
  * the error via the gateway's canonical error→status translator.
  */
-export function recordRequestDuration(ctx: TracedOperation, durationMs: number, error: unknown, trace?: SignalLevelInput, baseLevels?: Required<SignalLevels>): void {
+export function recordRequestDuration(
+  ctx: TracedOperation,
+  durationMs: number,
+  error: unknown,
+  trace?: SignalLevelInput,
+  baseLevels?: Required<SignalLevels>,
+): void {
   if (!includesSignalLevel(resolveSignalLevels(trace, baseLevels).gen_ai, 'recommended')) {
     return;
   }
 
-  const base: Attributes = { ...ctx.otel, 'gen_ai.operation.name': ctx.operation, 'gen_ai.request.model': ctx.model, 'gen_ai.system': ctx.provider };
+  const base: Attributes = {
+    ...ctx.otel,
+    'gen_ai.operation.name': ctx.operation,
+    'gen_ai.request.model': ctx.model,
+    'gen_ai.system': ctx.provider,
+  };
 
   const effective = ctx.otel?.['frogbot.status_code_effective'];
-  const status = typeof effective === 'number' ? effective : error !== undefined ? statusForError(error) : 200;
+  const status =
+    typeof effective === 'number' ? effective : error !== undefined ? statusForError(error) : 200;
   if (status !== 200) {
     base['error.type'] = `${status} ${httpStatusText(status).toLowerCase()}`;
   }
@@ -93,10 +139,12 @@ export function recordRequestDuration(ctx: TracedOperation, durationMs: number, 
 export function createGenAiHooks(trace?: SignalLevelInput, logger?: GatewayLogger): Hooks {
   const baseLevels = resolveSignalLevels(trace);
   return {
-    afterOperation: [(args) => {
-      const override = args.context[traceOverrideKey] as SignalLevelInput;
-      recordGenAiTokenUsage(args, args.usage, override, baseLevels, logger);
-      recordRequestDuration(args, args.durationMs, args.error, override, baseLevels);
-    }],
+    afterOperation: [
+      (args) => {
+        const override = args.context[traceOverrideKey] as SignalLevelInput;
+        recordGenAiTokenUsage(args, args.usage, override, baseLevels, logger);
+        recordRequestDuration(args, args.durationMs, args.error, override, baseLevels);
+      },
+    ],
   };
 }

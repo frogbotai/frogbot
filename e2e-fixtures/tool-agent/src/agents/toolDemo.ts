@@ -13,6 +13,7 @@ const getSecretCode: Tool<typeof inputSchema, { code: string }> = {
 export const toolDemo: AgentConfig = {
   slug: 'tool-demo',
   model: 'e2e',
-  instructions: 'Call the available tool when asked for the secret code, then report its exact result.',
+  instructions:
+    'Call the available tool when asked for the secret code, then report its exact result.',
   tools: [getSecretCode],
 };

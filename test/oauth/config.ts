@@ -8,7 +8,8 @@ export const provider: OAuthProvider = {
   authorizationUrl: 'https://provider.test/authorize',
   tokenUrl: 'https://provider.test/token',
   scopes: ['profile'],
-  authorize: ({ codeChallenge, state }) => new URL(`https://provider.test/authorize?state=${state}&code_challenge=${codeChallenge}`),
+  authorize: ({ codeChallenge, state }) =>
+    new URL(`https://provider.test/authorize?state=${state}&code_challenge=${codeChallenge}`),
   exchange: async () => ({ accessToken: 'access', refreshToken: 'refresh' }),
   getAccount: async () => ({ id: 'account-1', email: 'user@example.com' }),
   refresh: async () => ({ accessToken: 'next' }),
@@ -17,9 +18,14 @@ export const provider: OAuthProvider = {
 
 export const addTenant: Plugin = (config) => ({
   ...config,
-  collections: config.collections.map((collection) => collection.slug === 'connections'
-    ? { ...collection, fields: [...collection.fields, { name: 'tenantMarker', type: 'text' as const }] }
-    : collection),
+  collections: config.collections.map((collection) =>
+    collection.slug === 'connections'
+      ? {
+          ...collection,
+          fields: [...collection.fields, { name: 'tenantMarker', type: 'text' as const }],
+        }
+      : collection,
+  ),
 });
 
 export const config: FrogbotConfig = {

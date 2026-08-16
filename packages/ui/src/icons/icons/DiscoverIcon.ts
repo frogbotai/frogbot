@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const discoverIcon: IconNode = [
   [
@@ -203,8 +203,8 @@ export const discoverIcon: IconNode = [
       fill: '#1D1D1B',
     },
   ],
-]
+];
 
-const DiscoverIcon = createLucideIcon('DiscoverIcon', discoverIcon, undefined, '0 0 24 24')
+const DiscoverIcon = createLucideIcon('DiscoverIcon', discoverIcon, undefined, '0 0 24 24');
 
-export default DiscoverIcon
+export default DiscoverIcon;

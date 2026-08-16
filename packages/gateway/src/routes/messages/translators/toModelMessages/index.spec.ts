@@ -76,7 +76,10 @@ describe('user messages', () => {
   test('forwards cache_control on text blocks to providerOptions', () => {
     const result = toModelMessages({
       messages: [
-        { role: 'user', content: [{ type: 'text', text: 'part', cache_control: { type: 'ephemeral' } }] },
+        {
+          role: 'user',
+          content: [{ type: 'text', text: 'part', cache_control: { type: 'ephemeral' } }],
+        },
       ],
     });
     expect(result).toEqual([
@@ -117,9 +120,7 @@ describe('user messages', () => {
       messages: [
         {
           role: 'user',
-          content: [
-            { type: 'image', source: { type: 'url', url: 'https://example.com/x.png' } },
-          ],
+          content: [{ type: 'image', source: { type: 'url', url: 'https://example.com/x.png' } }],
         },
       ],
     });
@@ -169,7 +170,10 @@ describe('user messages', () => {
         {
           role: 'user',
           content: [
-            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: 'JVBER' } },
+            {
+              type: 'document',
+              source: { type: 'base64', media_type: 'application/pdf', data: 'JVBER' },
+            },
           ],
         },
       ],
@@ -177,7 +181,9 @@ describe('user messages', () => {
     expect(result).toEqual([
       {
         role: 'user',
-        content: [{ type: 'file', mediaType: 'application/pdf', data: { type: 'data', data: 'JVBER' } }],
+        content: [
+          { type: 'file', mediaType: 'application/pdf', data: { type: 'data', data: 'JVBER' } },
+        ],
       },
     ]);
   });
@@ -185,9 +191,7 @@ describe('user messages', () => {
   test('throws UnsupportedModalityError for unknown user block types', () => {
     expect(() =>
       toModelMessages({
-        messages: [
-          { role: 'user', content: [{ type: 'video' } as unknown as never] },
-        ],
+        messages: [{ role: 'user', content: [{ type: 'video' } as unknown as never] }],
       }),
     ).toThrow(UnsupportedModalityError);
   });
@@ -231,7 +235,14 @@ describe('tool_result handling', () => {
       { role: 'user', content: [{ type: 'text', text: 'Q: ' }] },
       {
         role: 'tool',
-        content: [{ type: 'tool-result', toolCallId: 'call_1', toolName: 'get_weather', output: { type: 'text', value: 'A' } }],
+        content: [
+          {
+            type: 'tool-result',
+            toolCallId: 'call_1',
+            toolName: 'get_weather',
+            output: { type: 'text', value: 'A' },
+          },
+        ],
       },
       { role: 'user', content: [{ type: 'text', text: ' follow-up' }] },
     ]);
@@ -240,7 +251,10 @@ describe('tool_result handling', () => {
   test('correlates tool_use_id to the tool name from a prior assistant tool_use', () => {
     const result = toModelMessages({
       messages: [
-        { role: 'assistant', content: [{ type: 'tool_use', id: 'call_9', name: 'lookup', input: {} }] },
+        {
+          role: 'assistant',
+          content: [{ type: 'tool_use', id: 'call_9', name: 'lookup', input: {} }],
+        },
         { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'call_9', content: 'ok' }] },
       ],
     });
@@ -250,7 +264,9 @@ describe('tool_result handling', () => {
 
   test('falls back to empty tool name when tool_use_id is unknown', () => {
     const result = toModelMessages({
-      messages: [{ role: 'user', content: [{ type: 'tool_result', tool_use_id: 'orphan', content: 'x' }] }],
+      messages: [
+        { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'orphan', content: 'x' }] },
+      ],
     });
     const toolMsg = result.find((m) => m.role === 'tool');
     expect((toolMsg?.content as Array<{ toolName: string }>)[0].toolName).toBe('');
@@ -258,7 +274,9 @@ describe('tool_result handling', () => {
 
   test('preserves JSON structure in string tool_result content', () => {
     const result = toModelMessages({
-      messages: [{ role: 'user', content: [{ type: 'tool_result', tool_use_id: 'c', content: '{"a":1}' }] }],
+      messages: [
+        { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'c', content: '{"a":1}' }] },
+      ],
     });
     const toolMsg = result.find((m) => m.role === 'tool');
     expect((toolMsg?.content as Array<{ output: unknown }>)[0].output).toEqual({
@@ -272,7 +290,10 @@ describe('tool_result handling', () => {
       messages: [{ role: 'user', content: [{ type: 'tool_result', tool_use_id: 'c' }] }],
     });
     const toolMsg = result.find((m) => m.role === 'tool');
-    expect((toolMsg?.content as Array<{ output: unknown }>)[0].output).toEqual({ type: 'text', value: '' });
+    expect((toolMsg?.content as Array<{ output: unknown }>)[0].output).toEqual({
+      type: 'text',
+      value: '',
+    });
   });
 
   test('maps array tool_result content into text/image content parts', () => {
@@ -308,7 +329,14 @@ describe('tool_result handling', () => {
       messages: [
         {
           role: 'user',
-          content: [{ type: 'tool_result', tool_use_id: 'c', content: 'x', cache_control: { type: 'ephemeral' } }],
+          content: [
+            {
+              type: 'tool_result',
+              tool_use_id: 'c',
+              content: 'x',
+              cache_control: { type: 'ephemeral' },
+            },
+          ],
         },
       ],
     });
@@ -341,14 +369,21 @@ describe('assistant messages', () => {
   test('keeps array form when a lone text block carries cache_control', () => {
     const result = toModelMessages({
       messages: [
-        { role: 'assistant', content: [{ type: 'text', text: 'answer', cache_control: { type: 'ephemeral' } }] },
+        {
+          role: 'assistant',
+          content: [{ type: 'text', text: 'answer', cache_control: { type: 'ephemeral' } }],
+        },
       ],
     });
     expect(result).toEqual([
       {
         role: 'assistant',
         content: [
-          { type: 'text', text: 'answer', providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } } },
+          {
+            type: 'text',
+            text: 'answer',
+            providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
+          },
         ],
       },
     ]);
@@ -363,21 +398,27 @@ describe('assistant messages', () => {
     expect(result).toEqual([
       {
         role: 'assistant',
-        content: [{ type: 'reasoning', text: 'hmm', providerOptions: { unknown: { signature: 'sig' } } }],
+        content: [
+          { type: 'reasoning', text: 'hmm', providerOptions: { unknown: { signature: 'sig' } } },
+        ],
       },
     ]);
   });
 
   test('maps redacted_thinking blocks to reasoning parts with redactedData', () => {
     const result = toModelMessages({
-      messages: [
-        { role: 'assistant', content: [{ type: 'redacted_thinking', data: 'REDACTED' }] },
-      ],
+      messages: [{ role: 'assistant', content: [{ type: 'redacted_thinking', data: 'REDACTED' }] }],
     });
     expect(result).toEqual([
       {
         role: 'assistant',
-        content: [{ type: 'reasoning', text: '', providerOptions: { unknown: { redactedData: 'REDACTED' } } }],
+        content: [
+          {
+            type: 'reasoning',
+            text: '',
+            providerOptions: { unknown: { redactedData: 'REDACTED' } },
+          },
+        ],
       },
     ]);
   });
@@ -394,7 +435,9 @@ describe('assistant messages', () => {
     expect(result).toEqual([
       {
         role: 'assistant',
-        content: [{ type: 'tool-call', toolCallId: 'call_1', toolName: 'search', input: { q: 'x' } }],
+        content: [
+          { type: 'tool-call', toolCallId: 'call_1', toolName: 'search', input: { q: 'x' } },
+        ],
       },
     ]);
   });

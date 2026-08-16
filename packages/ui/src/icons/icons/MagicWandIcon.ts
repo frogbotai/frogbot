@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const magicWandIcon: IconNode = [
   [
@@ -24,8 +24,8 @@ export const magicWandIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const MagicWandIcon = createLucideIcon('MagicWandIcon', magicWandIcon)
+const MagicWandIcon = createLucideIcon('MagicWandIcon', magicWandIcon);
 
-export default MagicWandIcon
+export default MagicWandIcon;

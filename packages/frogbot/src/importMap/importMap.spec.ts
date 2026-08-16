@@ -95,19 +95,22 @@ describe('frogbot importMap generator', () => {
 
   it('writes an import map when an agent model does not match the configured providers', async () => {
     const dir = await makeDir('frogbot-importmap-model-mismatch-');
-    const config = sanitize({
-      secret: 'test-secret',
-      db: { defaultIDType: 'number' } as never,
-      collections: [{ slug: 'users', auth: true, fields: [] }],
-      ai: { providers: { anthropic: true } },
-      agents: [
-        {
-          slug: 'assistant',
-          model: 'openai/gpt-4o-mini',
-          instructions: 'Assist.',
-        },
-      ],
-    }, { mode: 'codegen' });
+    const config = sanitize(
+      {
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [{ slug: 'users', auth: true, fields: [] }],
+        ai: { providers: { anthropic: true } },
+        agents: [
+          {
+            slug: 'assistant',
+            model: 'openai/gpt-4o-mini',
+            instructions: 'Assist.',
+          },
+        ],
+      },
+      { mode: 'codegen' },
+    );
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
@@ -115,25 +118,39 @@ describe('frogbot importMap generator', () => {
     const result = await generateImportMap(payloadConfig);
 
     expect(result).toEqual({ changed: true, outputPath: join(dir, 'importMap.js') });
-    await expect(readFile(join(dir, 'importMap.js'), 'utf-8')).resolves.toContain('export const importMap');
+    await expect(readFile(join(dir, 'importMap.js'), 'utf-8')).resolves.toContain(
+      'export const importMap',
+    );
   });
 
   it('does not import-map an agent profile avatar', async () => {
     const dir = await makeDir('frogbot-importmap-agent-profile-');
-    const config = sanitize({
-      secret: 'test-secret',
-      db: { defaultIDType: 'number' } as never,
-      collections: [{ slug: 'users', auth: true, fields: [] }],
-      ai: { providers: { openai: true } },
-      agents: [{ slug: 'assistant', model: 'openai/gpt-4o-mini', instructions: 'Assist.', profile: { avatar: '/agents/ada.png' } }],
-    } as never, { mode: 'codegen' });
+    const config = sanitize(
+      {
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [{ slug: 'users', auth: true, fields: [] }],
+        ai: { providers: { openai: true } },
+        agents: [
+          {
+            slug: 'assistant',
+            model: 'openai/gpt-4o-mini',
+            instructions: 'Assist.',
+            profile: { avatar: '/agents/ada.png' },
+          },
+        ],
+      } as never,
+      { mode: 'codegen' },
+    );
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
 
     await generateImportMap(payloadConfig);
 
-    await expect(readFile(join(dir, 'importMap.js'), 'utf-8')).resolves.not.toContain('/agents/ada.png');
+    await expect(readFile(join(dir, 'importMap.js'), 'utf-8')).resolves.not.toContain(
+      '/agents/ada.png',
+    );
   });
 
   it('skips the write when output matches the existing file, and force overrides', async () => {
@@ -171,8 +188,12 @@ describe('frogbot importMap generator', () => {
     const original = process.env.ROOT_DIR;
     process.env.ROOT_DIR = dir;
     try {
-      await expect(generateImportMap(payloadConfig, { ignoreResolveError: true })).resolves.toBeNull();
-      await expect(generateImportMap(payloadConfig)).rejects.toThrowError('Could not find the import map folder');
+      await expect(
+        generateImportMap(payloadConfig, { ignoreResolveError: true }),
+      ).resolves.toBeNull();
+      await expect(generateImportMap(payloadConfig)).rejects.toThrowError(
+        'Could not find the import map folder',
+      );
     } finally {
       if (original === undefined) {
         delete process.env.ROOT_DIR;

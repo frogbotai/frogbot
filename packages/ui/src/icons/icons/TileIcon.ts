@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const tileIcon: IconNode = [
   [
@@ -34,8 +34,8 @@ export const tileIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const TileIcon = createLucideIcon('TileIcon', tileIcon, 1.67, '0 0 20 20')
+const TileIcon = createLucideIcon('TileIcon', tileIcon, 1.67, '0 0 20 20');
 
-export default TileIcon
+export default TileIcon;

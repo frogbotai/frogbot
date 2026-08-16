@@ -29,8 +29,10 @@ export async function toTranscribeParams(args: ToTranscribeParamsArgs): Promise<
       ? body.timestamp_granularities
       : [body.timestamp_granularities];
     if (providerName === 'openai') options.timestampGranularities = timestampGranularities;
-    if (providerName === 'deepgram') options.utterances = timestampGranularities.includes('segment');
-    if (providerName === 'assemblyai') options.speakerLabels = timestampGranularities.includes('segment');
+    if (providerName === 'deepgram')
+      options.utterances = timestampGranularities.includes('segment');
+    if (providerName === 'assemblyai')
+      options.speakerLabels = timestampGranularities.includes('segment');
     if (providerName === 'gladia') options.sentences = timestampGranularities.includes('segment');
   }
 

@@ -20,66 +20,136 @@ export type {
   RolesPluginOptions,
 } from './types.js';
 
-function bindFields(fields: PayloadField[], roles: ReadonlySet<string>, resolver: RoleResolver, authCollection: boolean): PayloadField[] {
+function bindFields(
+  fields: PayloadField[],
+  roles: ReadonlySet<string>,
+  resolver: RoleResolver,
+  authCollection: boolean,
+): PayloadField[] {
   return fields.map((field) => {
     let next = field;
     const generatedRolesField = authCollection && 'name' in next && next.name === 'roles';
     if ('access' in next && next.access) {
-      const access = Object.fromEntries(Object.entries(next.access).map(([operation, value]) => {
-        if (!isCompiledAccess(value)) return [operation, value];
-        if (!generatedRolesField) {
-          for (const clause of value[compiledAccess].clauses) {
-            const role = typeof clause === 'string' ? clause : typeof clause === 'object' ? clause.role : undefined;
-            if (role && !roles.has(role)) throw new Error(`[plugin-roles] Role '${role}' is not listed in rolesPlugin().`);
+      const access = Object.fromEntries(
+        Object.entries(next.access).map(([operation, value]) => {
+          if (!isCompiledAccess(value)) return [operation, value];
+          if (!generatedRolesField) {
+            for (const clause of value[compiledAccess].clauses) {
+              const role =
+                typeof clause === 'string'
+                  ? clause
+                  : typeof clause === 'object'
+                    ? clause.role
+                    : undefined;
+              if (role && !roles.has(role))
+                throw new Error(`[plugin-roles] Role '${role}' is not listed in rolesPlugin().`);
+            }
           }
-        }
-        return [operation, bindCompiledAccess(value, { operation, polymorphicOwnFields: new Set(), resolver, roles })];
-      }));
+          return [
+            operation,
+            bindCompiledAccess(value, {
+              operation,
+              polymorphicOwnFields: new Set(),
+              resolver,
+              roles,
+            }),
+          ];
+        }),
+      );
       next = { ...next, access } as PayloadField;
     }
-    if ('fields' in next && Array.isArray(next.fields)) next = { ...next, fields: bindFields(next.fields, roles, resolver, false) } as PayloadField;
+    if ('fields' in next && Array.isArray(next.fields))
+      next = { ...next, fields: bindFields(next.fields, roles, resolver, false) } as PayloadField;
     if ('tabs' in next && Array.isArray(next.tabs)) {
-      next = { ...next, tabs: next.tabs.map((tab) => ({ ...tab, fields: bindFields(tab.fields, roles, resolver, false) })) } as PayloadField;
+      next = {
+        ...next,
+        tabs: next.tabs.map((tab) => ({
+          ...tab,
+          fields: bindFields(tab.fields, roles, resolver, false),
+        })),
+      } as PayloadField;
     }
     return next;
   });
 }
 
-function bindAccess(config: FrogbotConfig, roleSlugs: readonly string[], resolver: RoleResolver): FrogbotConfig {
+function bindAccess(
+  config: FrogbotConfig,
+  roleSlugs: readonly string[],
+  resolver: RoleResolver,
+): FrogbotConfig {
   const listed = new Set(roleSlugs);
   const collections = config.collections.map((collection) => {
     const fields = namedFields(collection.fields as unknown as PayloadField[]);
-    const access = collection.access ? Object.fromEntries(Object.entries(collection.access).map(([operation, value]) => {
-      if (!isCompiledAccess(value)) return [operation, value];
-      for (const clause of value[compiledAccess].clauses) {
-        const role = typeof clause === 'string' ? clause : typeof clause === 'object' ? clause.role : undefined;
-        if (role && !listed.has(role)) throw new Error(`[plugin-roles] Role '${role}' is not listed in rolesPlugin().`);
-      }
-      const polymorphicOwnFields = new Set(value[compiledAccess].clauses.flatMap((clause) => {
-        if (typeof clause !== 'object') return [];
-        const field = fields.find(({ name }) => name === clause.own);
-        return field?.type === 'relationship' && Array.isArray(field.relationTo) ? [clause.own] : [];
-      }));
-      return [operation, bindCompiledAccess(value, { operation, polymorphicOwnFields, resolver, roles: listed })];
-    })) : undefined;
+    const access = collection.access
+      ? Object.fromEntries(
+          Object.entries(collection.access).map(([operation, value]) => {
+            if (!isCompiledAccess(value)) return [operation, value];
+            for (const clause of value[compiledAccess].clauses) {
+              const role =
+                typeof clause === 'string'
+                  ? clause
+                  : typeof clause === 'object'
+                    ? clause.role
+                    : undefined;
+              if (role && !listed.has(role))
+                throw new Error(`[plugin-roles] Role '${role}' is not listed in rolesPlugin().`);
+            }
+            const polymorphicOwnFields = new Set(
+              value[compiledAccess].clauses.flatMap((clause) => {
+                if (typeof clause !== 'object') return [];
+                const field = fields.find(({ name }) => name === clause.own);
+                return field?.type === 'relationship' && Array.isArray(field.relationTo)
+                  ? [clause.own]
+                  : [];
+              }),
+            );
+            return [
+              operation,
+              bindCompiledAccess(value, {
+                operation,
+                polymorphicOwnFields,
+                resolver,
+                roles: listed,
+              }),
+            ];
+          }),
+        )
+      : undefined;
     const create = collection.access?.create;
     const own = isCompiledAccess(create)
       ? create[compiledAccess].clauses.filter((clause) => typeof clause === 'object')
       : [];
-    const boundFields = bindFields(collection.fields as unknown as PayloadField[], listed, resolver, collection.slug === 'users') as unknown as Field[];
+    const boundFields = bindFields(
+      collection.fields as unknown as PayloadField[],
+      listed,
+      resolver,
+      collection.slug === 'users',
+    ) as unknown as Field[];
     if (own.length === 0) return { ...collection, access, fields: boundFields };
-    const stamp: NonNullable<NonNullable<CollectionConfig['hooks']>['beforeChange']>[number] = ({ data, operation, req }) => {
+    const stamp: NonNullable<NonNullable<CollectionConfig['hooks']>['beforeChange']>[number] = ({
+      data,
+      operation,
+      req,
+    }) => {
       if (operation !== 'create' || !req.user) return data;
       const assigned = resolveRequestRoles(req, resolver);
-      return own.reduce((next, clause) => listed.has(clause.role) && assigned.includes(clause.role)
-        ? { ...next, [clause.own]: req.user!.id }
-        : next, data);
+      return own.reduce(
+        (next, clause) =>
+          listed.has(clause.role) && assigned.includes(clause.role)
+            ? { ...next, [clause.own]: req.user!.id }
+            : next,
+        data,
+      );
     };
     return {
       ...collection,
       access,
       fields: boundFields,
-      hooks: { ...collection.hooks, beforeChange: [...(collection.hooks?.beforeChange ?? []), stamp] },
+      hooks: {
+        ...collection.hooks,
+        beforeChange: [...(collection.hooks?.beforeChange ?? []), stamp],
+      },
     };
   });
   return { ...config, collections };
@@ -125,18 +195,26 @@ function validateCompiledAccess(config: FrogbotConfig, roleSlugs: readonly strin
         if (typeof clause !== 'object') continue;
         if (clause.own === 'id') {
           if (collection.slug !== authSlug) {
-            throw new Error(`[plugin-roles] own field 'id' is only valid on the '${authSlug}' auth collection.`);
+            throw new Error(
+              `[plugin-roles] own field 'id' is only valid on the '${authSlug}' auth collection.`,
+            );
           }
           continue;
         }
         const field = fields.find(({ name }) => name === clause.own);
         if (!field || field.type !== 'relationship') {
-          const nearest = fields.map(({ name }) => name).sort((a, b) => distance(a, clause.own) - distance(b, clause.own))[0];
-          throw new Error(`[plugin-roles] own field '${clause.own}' on '${collection.slug}' must be a relationship to '${authSlug}'${nearest ? `; did you mean '${nearest}'?` : '.'}`);
+          const nearest = fields
+            .map(({ name }) => name)
+            .sort((a, b) => distance(a, clause.own) - distance(b, clause.own))[0];
+          throw new Error(
+            `[plugin-roles] own field '${clause.own}' on '${collection.slug}' must be a relationship to '${authSlug}'${nearest ? `; did you mean '${nearest}'?` : '.'}`,
+          );
         }
         const targets = Array.isArray(field.relationTo) ? field.relationTo : [field.relationTo];
         if (!targets.includes(authSlug)) {
-          throw new Error(`[plugin-roles] own field '${clause.own}' on '${collection.slug}' must target '${authSlug}'.`);
+          throw new Error(
+            `[plugin-roles] own field '${clause.own}' on '${collection.slug}' must target '${authSlug}'.`,
+          );
         }
       }
     }
@@ -146,11 +224,19 @@ function validateCompiledAccess(config: FrogbotConfig, roleSlugs: readonly strin
       for (const value of Object.values(field.access)) {
         if (!isCompiledAccess(value)) continue;
         for (const clause of value[compiledAccess].clauses) {
-          const role = typeof clause === 'string' ? clause : typeof clause === 'object' ? clause.role : undefined;
-          if (role && !roleSlugs.includes(role)) throw new Error(`[plugin-roles] Role '${role}' is not listed in rolesPlugin().`);
+          const role =
+            typeof clause === 'string'
+              ? clause
+              : typeof clause === 'object'
+                ? clause.role
+                : undefined;
+          if (role && !roleSlugs.includes(role))
+            throw new Error(`[plugin-roles] Role '${role}' is not listed in rolesPlugin().`);
         }
         if (value[compiledAccess].clauses.some((clause) => typeof clause === 'object')) {
-          throw new Error(`[plugin-roles] own clauses cannot be used in field access for '${field.name}'.`);
+          throw new Error(
+            `[plugin-roles] own clauses cannot be used in field access for '${field.name}'.`,
+          );
         }
       }
     }
@@ -161,7 +247,9 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
   const roles = normalizeRoles(options.roles ?? []);
   if (options.defaultRole !== undefined) {
     if (!roles.some(({ slug }) => slug === options.defaultRole)) {
-      throw new Error(`[plugin-roles] defaultRole '${options.defaultRole}' is not listed in rolesPlugin().`);
+      throw new Error(
+        `[plugin-roles] defaultRole '${options.defaultRole}' is not listed in rolesPlugin().`,
+      );
     }
   }
 
@@ -201,15 +289,22 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
       name: fieldName,
       type: 'select',
       hasMany: true,
-      options: roles.map(({ slug, label }) => ({ label: label ?? formatLabels(slug).singular, value: slug })),
+      options: roles.map(({ slug, label }) => ({
+        label: label ?? formatLabels(slug).singular,
+        value: slug,
+      })),
       admin: { position: 'sidebar' },
       ...(options.defaultRole === undefined ? {} : { defaultValue: [options.defaultRole] }),
       ...(options.rolesFieldAccess === undefined ? {} : { access: options.rolesFieldAccess }),
     };
-    const collections = config.collections.map((collection) => collection.slug !== authSlug ? collection : {
-      ...collection,
-      fields: [...collection.fields, field],
-    });
+    const collections = config.collections.map((collection) =>
+      collection.slug !== authSlug
+        ? collection
+        : {
+            ...collection,
+            fields: [...collection.fields, field],
+          },
+    );
 
     const previousOnInit = config.onInit;
     const onInit: FrogbotConfig['onInit'] = async (frogbot) => {

@@ -1,12 +1,12 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from 'react';
 
-import type { ThemeTokens } from './provider'
+import type { ThemeTokens } from './provider';
 
 export interface BrandConfig {
-  icon: ReactNode
-  logo: ReactNode
-  productName: string
-  tokens?: ThemeTokens
+  icon: ReactNode;
+  logo: ReactNode;
+  productName: string;
+  tokens?: ThemeTokens;
 }
 
-export type BrandTheme = Pick<BrandConfig, 'tokens'>
+export type BrandTheme = Pick<BrandConfig, 'tokens'>;

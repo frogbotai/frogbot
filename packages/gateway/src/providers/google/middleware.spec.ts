@@ -4,7 +4,9 @@ import { googleEmbedDimensions } from './middleware.js';
 
 describe('googleEmbedDimensions', () => {
   it('maps neutral dimensions to Google outputDimensionality for embeddings', () => {
-    const providerOptions: Record<string, Record<string, unknown>> = { unknown: { dimensions: 256 } };
+    const providerOptions: Record<string, Record<string, unknown>> = {
+      unknown: { dimensions: 256 },
+    };
 
     googleEmbedDimensions({
       phase: 'beforeUpstream',

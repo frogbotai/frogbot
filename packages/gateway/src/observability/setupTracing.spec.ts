@@ -34,7 +34,11 @@ const findResolvedUrl = (root: object): string | undefined => {
 // process signal handlers as a side effect of setupTracing. The trace exporter
 // mock captures the exact config setup.ts hands it; the tracer-provider mock
 // captures the resource so G94 can assert service identity.
-const mockSetupModules = (captured: { exporterConfig?: { url?: string }; exporterConstructed?: boolean; providerOptions?: { resource?: { attributes: Record<string, unknown> } } }) => {
+const mockSetupModules = (captured: {
+  exporterConfig?: { url?: string };
+  exporterConstructed?: boolean;
+  providerOptions?: { resource?: { attributes: Record<string, unknown> } };
+}) => {
   vi.doMock('@opentelemetry/exporter-trace-otlp-http', () => ({
     OTLPTraceExporter: class {
       constructor(config: { url?: string } = {}) {
@@ -49,20 +53,30 @@ const mockSetupModules = (captured: { exporterConfig?: { url?: string }; exporte
         captured.providerOptions = options;
       }
       register() {}
-      forceFlush() { return Promise.resolve(); }
-      shutdown() { return Promise.resolve(); }
+      forceFlush() {
+        return Promise.resolve();
+      }
+      shutdown() {
+        return Promise.resolve();
+      }
     },
   }));
   vi.doMock('@opentelemetry/sdk-trace-base', () => ({ BatchSpanProcessor: class {} }));
   vi.doMock('@opentelemetry/sdk-metrics', () => ({
     MeterProvider: class {
-      forceFlush() { return Promise.resolve(); }
-      shutdown() { return Promise.resolve(); }
+      forceFlush() {
+        return Promise.resolve();
+      }
+      shutdown() {
+        return Promise.resolve();
+      }
     },
     PeriodicExportingMetricReader: class {},
   }));
   vi.doMock('@opentelemetry/exporter-metrics-otlp-http', () => ({ OTLPMetricExporter: class {} }));
-  vi.doMock('@opentelemetry/context-async-hooks', () => ({ AsyncLocalStorageContextManager: class {} }));
+  vi.doMock('@opentelemetry/context-async-hooks', () => ({
+    AsyncLocalStorageContextManager: class {},
+  }));
   // Keep the real api surface (diag, createContextKey, ... — used by the real
   // @opentelemetry/resources at import time) but neuter the global registration
   // side effects.
@@ -116,7 +130,9 @@ describe('setupTracing OTLP endpoint resolution (G28)', () => {
 
     // Build a REAL exporter with the SAME config setup.ts passed, then read
     // the URL its transport will actually POST spans to.
-    const actual = await vi.importActual<{ OTLPTraceExporter: typeof OTLPTraceExporter }>('@opentelemetry/exporter-trace-otlp-http');
+    const actual = await vi.importActual<{ OTLPTraceExporter: typeof OTLPTraceExporter }>(
+      '@opentelemetry/exporter-trace-otlp-http',
+    );
     const real = new actual.OTLPTraceExporter(captured.exporterConfig);
     expect(findResolvedUrl(real)).toBe('http://otel-collector:4318/v1/traces');
   });
@@ -158,7 +174,8 @@ describe('setupTracing resource / service identity (G94)', () => {
   it('gives the tracer provider a resource with the gateway service name, not unknown_service', async () => {
     delete process.env.OTEL_SERVICE_NAME;
 
-    const captured: { providerOptions?: { resource?: { attributes: Record<string, unknown> } } } = {};
+    const captured: { providerOptions?: { resource?: { attributes: Record<string, unknown> } } } =
+      {};
     mockSetupModules(captured);
 
     const { setupTracing } = await import('./setup.js');
@@ -174,7 +191,8 @@ describe('setupTracing resource / service identity (G94)', () => {
   it('honors OTEL_SERVICE_NAME via env resource detection', async () => {
     process.env.OTEL_SERVICE_NAME = 'my-gateway';
 
-    const captured: { providerOptions?: { resource?: { attributes: Record<string, unknown> } } } = {};
+    const captured: { providerOptions?: { resource?: { attributes: Record<string, unknown> } } } =
+      {};
     mockSetupModules(captured);
 
     const { setupTracing } = await import('./setup.js');

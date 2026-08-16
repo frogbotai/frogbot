@@ -1,10 +1,8 @@
-import type { ToolCtx } from "./tool.js";
+import type { ToolCtx } from './tool.js';
 
-export type SkillCtx = Pick<ToolCtx, "req" | "frogbot">;
+export type SkillCtx = Pick<ToolCtx, 'req' | 'frogbot'>;
 
-export type SkillContent =
-  | string
-  | ((ctx: SkillCtx) => string | Promise<string>);
+export type SkillContent = string | ((ctx: SkillCtx) => string | Promise<string>);
 
 export type SkillResource = {
   path: string;

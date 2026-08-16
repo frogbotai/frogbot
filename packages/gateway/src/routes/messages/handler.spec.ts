@@ -28,16 +28,20 @@ describe('messagesRoute', () => {
         max_tokens: 128,
         cache_control: { type: 'ephemeral' },
         system: [{ type: 'text', text: 'system', cache_control: { type: 'ephemeral' } }],
-        messages: [{
-          role: 'user',
-          content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
-        }],
-        tools: [{
-          name: 'lookup',
-          description: 'Lookup a value',
-          input_schema: { type: 'object', properties: {} },
-          cache_control: { type: 'ephemeral' },
-        }],
+        messages: [
+          {
+            role: 'user',
+            content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+          },
+        ],
+        tools: [
+          {
+            name: 'lookup',
+            description: 'Lookup a value',
+            input_schema: { type: 'object', properties: {} },
+            cache_control: { type: 'ephemeral' },
+          },
+        ],
       }),
     });
 
@@ -45,7 +49,9 @@ describe('messagesRoute', () => {
     const call = doGenerate.mock.calls[0][0] as Record<string, any>;
     expect(call.providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral' });
     expect(call.prompt[0].providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral' });
-    expect(call.prompt[1].content[0].providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral' });
+    expect(call.prompt[1].content[0].providerOptions?.anthropic?.cacheControl).toEqual({
+      type: 'ephemeral',
+    });
     expect(call.tools[0].providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral' });
   });
 });

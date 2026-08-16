@@ -8,8 +8,10 @@ import type { Frogbot } from '../frogbot.js';
 import type { TypeWithID } from './generated.js';
 import type { PayloadRequest } from './payload.js';
 
-export interface FrogbotRequest<TUser = Record<string, unknown> & TypeWithID>
-  extends Omit<PayloadRequest, 'payload' | 'user'> {
+export interface FrogbotRequest<TUser = Record<string, unknown> & TypeWithID> extends Omit<
+  PayloadRequest,
+  'payload' | 'user'
+> {
   user: TUser | null;
   frogbot: Frogbot;
 }

@@ -2,7 +2,9 @@ import type { TrainingDataRecord } from './types.js';
 
 const encoder = new TextEncoder();
 
-async function* encodeRecords(records: AsyncIterable<TrainingDataRecord>): AsyncGenerator<Uint8Array> {
+async function* encodeRecords(
+  records: AsyncIterable<TrainingDataRecord>,
+): AsyncGenerator<Uint8Array> {
   for await (const record of records) {
     yield encoder.encode(`{"thread":${JSON.stringify(record.thread)},"messages":[`);
     for (let index = 0; index < record.messages.length; index += 1) {

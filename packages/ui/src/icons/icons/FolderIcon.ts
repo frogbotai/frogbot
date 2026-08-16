@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const folderIcon: IconNode = [
   [
@@ -9,8 +9,8 @@ export const folderIcon: IconNode = [
       strokeLinecap: 'round',
     },
   ],
-]
+];
 
-const FolderIcon = createLucideIcon('FolderIcon', folderIcon, 2, '0 0 20 20')
+const FolderIcon = createLucideIcon('FolderIcon', folderIcon, 2, '0 0 20 20');
 
-export default FolderIcon
+export default FolderIcon;

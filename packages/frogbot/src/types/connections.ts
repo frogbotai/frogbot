@@ -12,9 +12,20 @@ export type CredentialSource = {
   credentialTypes: readonly Exclude<CredentialType, 'none'>[];
   policy?: PiecePolicy['type'];
   scopes?: readonly string[];
-  resolve?(context: { service: string; owner?: TypeWithID }): Promise<AppConnectionValue> | AppConnectionValue;
-  refresh?(context: { connection: ConnectionRecord; frogbot: Frogbot; owner: TypeWithID }): Promise<void>;
-  revoke?(context: { connection: ConnectionRecord; frogbot: Frogbot; owner: TypeWithID }): Promise<void>;
+  resolve?(context: {
+    service: string;
+    owner?: TypeWithID;
+  }): Promise<AppConnectionValue> | AppConnectionValue;
+  refresh?(context: {
+    connection: ConnectionRecord;
+    frogbot: Frogbot;
+    owner: TypeWithID;
+  }): Promise<void>;
+  revoke?(context: {
+    connection: ConnectionRecord;
+    frogbot: Frogbot;
+    owner: TypeWithID;
+  }): Promise<void>;
 };
 
 export type ConnectionsConfig = {

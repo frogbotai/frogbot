@@ -12,7 +12,13 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import type { GatewayLogger } from './logger.js';
 
 const ctx = { operation: 'responses' as const, model: 'openai/gpt-4o', provider: 'openai' };
-const usage = { inputTokens: 100, outputTokens: 50, totalTokens: 150, cachedInputTokens: 20, reasoningTokens: 10 };
+const usage = {
+  inputTokens: 100,
+  outputTokens: 50,
+  totalTokens: 150,
+  cachedInputTokens: 20,
+  reasoningTokens: 10,
+};
 
 describe('genAi metrics', () => {
   beforeEach(() => {
@@ -32,7 +38,9 @@ describe('genAi metrics', () => {
   it('lazily creates histograms only when recording (no work at import time)', async () => {
     const record = vi.fn();
     const createHistogram = vi.fn(() => ({ record }));
-    const provider = { getMeter: () => ({ createHistogram }) as unknown as Meter } as unknown as MeterProvider;
+    const provider = {
+      getMeter: () => ({ createHistogram }) as unknown as Meter,
+    } as unknown as MeterProvider;
     metrics.setGlobalMeterProvider(provider);
 
     const { recordGenAiTokenUsage } = await import('./genAi.js');
@@ -45,10 +53,22 @@ describe('genAi metrics', () => {
     expect(createHistogram).toHaveBeenCalledTimes(1);
     expect(createHistogram).toHaveBeenCalledWith('gen_ai.client.token.usage', { unit: '{token}' });
     // cache read(20), uncached input(80), reasoning output(10), non-reasoning output(40)
-    expect(record).toHaveBeenCalledWith(20, expect.objectContaining({ 'gen_ai.token.type': 'input', 'gen_ai.token.cache': 'read' }));
-    expect(record).toHaveBeenCalledWith(80, expect.objectContaining({ 'gen_ai.token.type': 'input', 'gen_ai.token.cache': 'uncached' }));
-    expect(record).toHaveBeenCalledWith(10, expect.objectContaining({ 'gen_ai.token.type': 'output', 'gen_ai.token.reasoning': true }));
-    expect(record).toHaveBeenCalledWith(40, expect.objectContaining({ 'gen_ai.token.type': 'output', 'gen_ai.token.reasoning': false }));
+    expect(record).toHaveBeenCalledWith(
+      20,
+      expect.objectContaining({ 'gen_ai.token.type': 'input', 'gen_ai.token.cache': 'read' }),
+    );
+    expect(record).toHaveBeenCalledWith(
+      80,
+      expect.objectContaining({ 'gen_ai.token.type': 'input', 'gen_ai.token.cache': 'uncached' }),
+    );
+    expect(record).toHaveBeenCalledWith(
+      10,
+      expect.objectContaining({ 'gen_ai.token.type': 'output', 'gen_ai.token.reasoning': true }),
+    );
+    expect(record).toHaveBeenCalledWith(
+      40,
+      expect.objectContaining({ 'gen_ai.token.type': 'output', 'gen_ai.token.reasoning': false }),
+    );
   });
 
   it('skips recording when signal level is below recommended', async () => {
@@ -88,7 +108,10 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
     for (const rm of exporter.getMetrics()) {
       for (const sm of rm.scopeMetrics) {
         for (const metric of sm.metrics) {
-          if (metric.descriptor.name === metricName && metric.dataPointType === DataPointType.HISTOGRAM) {
+          if (
+            metric.descriptor.name === metricName &&
+            metric.dataPointType === DataPointType.HISTOGRAM
+          ) {
             histograms.push(metric);
           }
         }
@@ -102,18 +125,31 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   };
 
   const tokenPoints = () => collectPoints('gen_ai.client.token.usage');
-  const inputPoints = async () => (await tokenPoints()).filter((p) => p.attributes['gen_ai.token.type'] === 'input');
-  const outputPoints = async () => (await tokenPoints()).filter((p) => p.attributes['gen_ai.token.type'] === 'output');
+  const inputPoints = async () =>
+    (await tokenPoints()).filter((p) => p.attributes['gen_ai.token.type'] === 'input');
+  const outputPoints = async () =>
+    (await tokenPoints()).filter((p) => p.attributes['gen_ai.token.type'] === 'output');
 
   const makeLogger = () => {
     const warn = vi.fn();
-    const logger = { trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn, error: vi.fn(), fatal: vi.fn() } as unknown as GatewayLogger;
+    const logger = {
+      trace: vi.fn(),
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn,
+      error: vi.fn(),
+      fatal: vi.fn(),
+    } as unknown as GatewayLogger;
     return { logger, warn };
   };
 
   beforeAll(() => {
     exporter = new InMemoryMetricExporter(AggregationTemporality.DELTA);
-    reader = new PeriodicExportingMetricReader({ exporter, exportIntervalMillis: 60_000, exportTimeoutMillis: 10_000 });
+    reader = new PeriodicExportingMetricReader({
+      exporter,
+      exportIntervalMillis: 60_000,
+      exportTimeoutMillis: 10_000,
+    });
     provider = new SdkMeterProvider({ readers: [reader] });
     metrics.setGlobalMeterProvider(provider);
   });
@@ -136,19 +172,43 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
 
     expect(inputs).toContainEqual({
       value: 20,
-      attributes: { 'gen_ai.operation.name': 'responses', 'gen_ai.request.model': 'openai/gpt-4o', 'gen_ai.system': 'openai', 'gen_ai.token.type': 'input', 'gen_ai.token.cache': 'read' },
+      attributes: {
+        'gen_ai.operation.name': 'responses',
+        'gen_ai.request.model': 'openai/gpt-4o',
+        'gen_ai.system': 'openai',
+        'gen_ai.token.type': 'input',
+        'gen_ai.token.cache': 'read',
+      },
     });
     expect(inputs).toContainEqual({
       value: 80,
-      attributes: { 'gen_ai.operation.name': 'responses', 'gen_ai.request.model': 'openai/gpt-4o', 'gen_ai.system': 'openai', 'gen_ai.token.type': 'input', 'gen_ai.token.cache': 'uncached' },
+      attributes: {
+        'gen_ai.operation.name': 'responses',
+        'gen_ai.request.model': 'openai/gpt-4o',
+        'gen_ai.system': 'openai',
+        'gen_ai.token.type': 'input',
+        'gen_ai.token.cache': 'uncached',
+      },
     });
     expect(outputs).toContainEqual({
       value: 10,
-      attributes: { 'gen_ai.operation.name': 'responses', 'gen_ai.request.model': 'openai/gpt-4o', 'gen_ai.system': 'openai', 'gen_ai.token.type': 'output', 'gen_ai.token.reasoning': true },
+      attributes: {
+        'gen_ai.operation.name': 'responses',
+        'gen_ai.request.model': 'openai/gpt-4o',
+        'gen_ai.system': 'openai',
+        'gen_ai.token.type': 'output',
+        'gen_ai.token.reasoning': true,
+      },
     });
     expect(outputs).toContainEqual({
       value: 40,
-      attributes: { 'gen_ai.operation.name': 'responses', 'gen_ai.request.model': 'openai/gpt-4o', 'gen_ai.system': 'openai', 'gen_ai.token.type': 'output', 'gen_ai.token.reasoning': false },
+      attributes: {
+        'gen_ai.operation.name': 'responses',
+        'gen_ai.request.model': 'openai/gpt-4o',
+        'gen_ai.system': 'openai',
+        'gen_ai.token.type': 'output',
+        'gen_ai.token.reasoning': false,
+      },
     });
   });
 
@@ -157,7 +217,13 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
     const { recordGenAiTokenUsage } = await import('./genAi.js');
     const { logger, warn } = makeLogger();
 
-    recordGenAiTokenUsage(ctx, { inputTokens: 100, outputTokens: 50, totalTokens: 150, reasoningTokens: 60 }, 'recommended', undefined, logger);
+    recordGenAiTokenUsage(
+      ctx,
+      { inputTokens: 100, outputTokens: 50, totalTokens: 150, reasoningTokens: 60 },
+      'recommended',
+      undefined,
+      logger,
+    );
 
     const outputs = await outputPoints();
     const text = outputs.find((p) => p.attributes['gen_ai.token.reasoning'] === false);
@@ -173,7 +239,13 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
     const { recordGenAiTokenUsage } = await import('./genAi.js');
     const { logger, warn } = makeLogger();
 
-    recordGenAiTokenUsage(ctx, { inputTokens: 30, outputTokens: 10, totalTokens: 40, cachedInputTokens: 50 }, 'recommended', undefined, logger);
+    recordGenAiTokenUsage(
+      ctx,
+      { inputTokens: 30, outputTokens: 10, totalTokens: 40, cachedInputTokens: 50 },
+      'recommended',
+      undefined,
+      logger,
+    );
 
     const inputs = await inputPoints();
     const uncached = inputs.find((p) => p.attributes['gen_ai.token.cache'] === 'uncached');
@@ -189,7 +261,17 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
     const { recordGenAiTokenUsage } = await import('./genAi.js');
 
     expect(() =>
-      recordGenAiTokenUsage(ctx, { inputTokens: Number.NaN, outputTokens: Infinity, totalTokens: Number.NaN, cachedInputTokens: Infinity, reasoningTokens: Number.NaN }, 'recommended'),
+      recordGenAiTokenUsage(
+        ctx,
+        {
+          inputTokens: Number.NaN,
+          outputTokens: Infinity,
+          totalTokens: Number.NaN,
+          cachedInputTokens: Infinity,
+          reasoningTokens: Number.NaN,
+        },
+        'recommended',
+      ),
     ).not.toThrow();
 
     const inputs = await inputPoints();
@@ -213,7 +295,11 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
 
   it('emits bare (unpartitioned) points when no cache/reasoning breakdown is reported', async () => {
     const { recordGenAiTokenUsage } = await import('./genAi.js');
-    recordGenAiTokenUsage(ctx, { inputTokens: 100, outputTokens: 50, totalTokens: 150 }, 'recommended');
+    recordGenAiTokenUsage(
+      ctx,
+      { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
+      'recommended',
+    );
 
     const inputs = await inputPoints();
     const outputs = await outputPoints();
@@ -231,7 +317,17 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
 
   it('emits a cache=creation partition point for cache-write tokens', async () => {
     const { recordGenAiTokenUsage } = await import('./genAi.js');
-    recordGenAiTokenUsage(ctx, { inputTokens: 100, outputTokens: 50, totalTokens: 150, cachedInputTokens: 10, cacheWriteTokens: 20 }, 'recommended');
+    recordGenAiTokenUsage(
+      ctx,
+      {
+        inputTokens: 100,
+        outputTokens: 50,
+        totalTokens: 150,
+        cachedInputTokens: 10,
+        cacheWriteTokens: 20,
+      },
+      'recommended',
+    );
 
     const inputs = await inputPoints();
 
@@ -269,7 +365,12 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
 
   it('prefers the abort-effective status code from the otel bag for error.type', async () => {
     const { recordRequestDuration } = await import('./genAi.js');
-    recordRequestDuration({ ...ctx, otel: { 'frogbot.status_code_effective': 499 } }, 200, undefined, 'recommended');
+    recordRequestDuration(
+      { ...ctx, otel: { 'frogbot.status_code_effective': 499 } },
+      200,
+      undefined,
+      'recommended',
+    );
 
     const points = await durationPoints();
     expect(points).toHaveLength(1);

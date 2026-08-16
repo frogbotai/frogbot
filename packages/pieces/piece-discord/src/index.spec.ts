@@ -5,5 +5,15 @@ import { credentialExecution } from '../../credential-execution.js';
 import { createDiscord, discordActions } from './index.js';
 
 const discord = createDiscord();
-pieceContract({ piece: discord, service: 'discord', credentialType: 'secret_text', actions: discordActions });
-credentialExecution({ module, piece: discord, service: 'discord', credential: { type: 'SECRET_TEXT', secret_text: 'discord_test_key' } });
+pieceContract({
+  piece: discord,
+  service: 'discord',
+  credentialType: 'secret_text',
+  actions: discordActions,
+});
+credentialExecution({
+  module,
+  piece: discord,
+  service: 'discord',
+  credential: { type: 'SECRET_TEXT', secret_text: 'discord_test_key' },
+});

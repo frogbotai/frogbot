@@ -16,8 +16,19 @@ describe('generateMessage', () => {
       steps: [
         {
           content: [
-            { type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: { query: 'frog' } },
-            { type: 'tool-result', toolCallId: 'call-1', toolName: 'lookup', input: { query: 'frog' }, output: 'found' },
+            {
+              type: 'tool-call',
+              toolCallId: 'call-1',
+              toolName: 'lookup',
+              input: { query: 'frog' },
+            },
+            {
+              type: 'tool-result',
+              toolCallId: 'call-1',
+              toolName: 'lookup',
+              input: { query: 'frog' },
+              output: 'found',
+            },
           ],
         },
         { content: [{ type: 'text', text: 'Found it' }] },

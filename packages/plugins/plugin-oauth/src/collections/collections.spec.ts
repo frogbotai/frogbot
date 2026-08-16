@@ -16,7 +16,11 @@ const provider: OAuthProvider = {
 };
 
 function config(): FrogbotConfig {
-  return { secret: 'test', db: {} as FrogbotConfig['db'], collections: [{ slug: 'users', auth: true, fields: [] }] };
+  return {
+    secret: 'test',
+    db: {} as FrogbotConfig['db'],
+    collections: [{ slug: 'users', auth: true, fields: [] }],
+  };
 }
 
 describe('OAuth collections', () => {
@@ -24,7 +28,9 @@ describe('OAuth collections', () => {
     const result = await oauthPlugin({ providers: [provider] })(config());
     const states = result.collections.find((collection) => collection.slug === 'oauth-states')!;
     expect(await states.access?.read?.({ req: {} as FrogbotRequest })).toBe(false);
-    expect(result.collections.some((collection) => collection.slug === 'oauth-connections')).toBe(false);
+    expect(result.collections.some((collection) => collection.slug === 'oauth-connections')).toBe(
+      false,
+    );
   });
 
   it('merges transformed state collections and custom owner fields', async () => {

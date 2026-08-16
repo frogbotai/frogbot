@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const infoCircleIcon: IconNode = [
   [
@@ -27,8 +27,8 @@ export const infoCircleIcon: IconNode = [
       opacity: '0.64',
     },
   ],
-]
+];
 
-const InfoCircleIcon = createLucideIcon('InfoCircleIcon', infoCircleIcon, 1.25, '0 0 20 20')
+const InfoCircleIcon = createLucideIcon('InfoCircleIcon', infoCircleIcon, 1.25, '0 0 20 20');
 
-export default InfoCircleIcon
+export default InfoCircleIcon;

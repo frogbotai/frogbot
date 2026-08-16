@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const closeIcon: IconNode = [
   [
@@ -10,8 +10,8 @@ export const closeIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const CloseIcon = createLucideIcon('Close', closeIcon)
+const CloseIcon = createLucideIcon('Close', closeIcon);
 
-export default CloseIcon
+export default CloseIcon;

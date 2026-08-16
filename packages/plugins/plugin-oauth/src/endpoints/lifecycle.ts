@@ -13,9 +13,15 @@ type LifecycleEndpointOptions = {
   encryption: CredentialEncryption;
 };
 
-async function getConnectionId(req: Parameters<Endpoint['handler']>[0]): Promise<string | number | null> {
-  const body = (await req.json?.().catch(() => null) ?? null) as { connectionId?: unknown } | null;
-  return typeof body?.connectionId === 'string' || typeof body?.connectionId === 'number' ? body.connectionId : null;
+async function getConnectionId(
+  req: Parameters<Endpoint['handler']>[0],
+): Promise<string | number | null> {
+  const body = ((await req.json?.().catch(() => null)) ?? null) as {
+    connectionId?: unknown;
+  } | null;
+  return typeof body?.connectionId === 'string' || typeof body?.connectionId === 'number'
+    ? body.connectionId
+    : null;
 }
 
 function serialize(tokens: OAuthTokenSet): string {
@@ -37,18 +43,27 @@ export function createLifecycleEndpoints(options: LifecycleEndpointOptions): End
       handler: async (req) => {
         const provider = getProvider({ providers: options.providers, req });
         if (!provider) return Response.json({ error: 'OAuth provider not found' }, { status: 404 });
-        if (!provider.refresh) return Response.json({ error: 'OAuth provider does not support refresh' }, { status: 400 });
+        if (!provider.refresh)
+          return Response.json(
+            { error: 'OAuth provider does not support refresh' },
+            { status: 400 },
+          );
         const connectionId = await getConnectionId(req);
-        if (connectionId === null) return Response.json({ error: 'Connection ID is required' }, { status: 400 });
+        if (connectionId === null)
+          return Response.json({ error: 'Connection ID is required' }, { status: 400 });
         const connection = await getOAuthConnectionCredentials({
           req,
           connectionId,
           collectionSlug: options.connectionsSlug,
           encryption: options.encryption,
         });
-        if (!connection || connection.sourceKey !== provider.id) return Response.json({ error: 'OAuth connection not found' }, { status: 404 });
+        if (!connection || connection.sourceKey !== provider.id)
+          return Response.json({ error: 'OAuth connection not found' }, { status: 404 });
         try {
-          const next = mergeOAuthTokenSets({ current: connection.tokens, next: await provider.refresh({ tokens: connection.tokens, req }) });
+          const next = mergeOAuthTokenSets({
+            current: connection.tokens,
+            next: await provider.refresh({ tokens: connection.tokens, req }),
+          });
           await req.frogbot.update({
             collection: options.connectionsSlug,
             id: connection.id as never,
@@ -61,9 +76,19 @@ export function createLifecycleEndpoints(options: LifecycleEndpointOptions): End
             overrideAccess: true,
             req,
           });
-          return Response.json({ id: connection.id, status: 'active', expiresAt: next.expiresAt?.toISOString() });
+          return Response.json({
+            id: connection.id,
+            status: 'active',
+            expiresAt: next.expiresAt?.toISOString(),
+          });
         } catch {
-          await req.frogbot.update({ collection: options.connectionsSlug, id: connection.id as never, data: { status: 'error' }, overrideAccess: true, req });
+          await req.frogbot.update({
+            collection: options.connectionsSlug,
+            id: connection.id as never,
+            data: { status: 'error' },
+            overrideAccess: true,
+            req,
+          });
           return Response.json({ error: 'OAuth token refresh failed' }, { status: 502 });
         }
       },
@@ -75,14 +100,16 @@ export function createLifecycleEndpoints(options: LifecycleEndpointOptions): End
         const provider = getProvider({ providers: options.providers, req });
         if (!provider) return Response.json({ error: 'OAuth provider not found' }, { status: 404 });
         const connectionId = await getConnectionId(req);
-        if (connectionId === null) return Response.json({ error: 'Connection ID is required' }, { status: 400 });
+        if (connectionId === null)
+          return Response.json({ error: 'Connection ID is required' }, { status: 400 });
         const connection = await getOAuthConnectionCredentials({
           req,
           connectionId,
           collectionSlug: options.connectionsSlug,
           encryption: options.encryption,
         });
-        if (!connection || connection.sourceKey !== provider.id) return Response.json({ error: 'OAuth connection not found' }, { status: 404 });
+        if (!connection || connection.sourceKey !== provider.id)
+          return Response.json({ error: 'OAuth connection not found' }, { status: 404 });
         let providerRevoked = true;
         try {
           await provider.revoke?.({ tokens: connection.tokens, req });

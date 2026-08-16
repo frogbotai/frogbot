@@ -11,13 +11,13 @@ pnpm add @frogbotai/kv-redis
 ## Usage
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { redisKVAdapter } from '@frogbotai/kv-redis'
+import { buildConfig } from 'frogbot';
+import { redisKVAdapter } from '@frogbotai/kv-redis';
 
 export default buildConfig({
   kv: redisKVAdapter({
     redisURL: process.env.REDIS_URL,
   }),
   // ...rest of config
-})
+});
 ```

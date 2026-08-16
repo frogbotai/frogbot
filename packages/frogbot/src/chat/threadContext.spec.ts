@@ -73,7 +73,11 @@ describe('resolveThreadContext', () => {
       2,
       expect.objectContaining({
         collection: 'messages',
-        data: expect.objectContaining({ thread: 'thread-1', role: 'user', parts: incoming[0].parts }),
+        data: expect.objectContaining({
+          thread: 'thread-1',
+          role: 'user',
+          parts: incoming[0].parts,
+        }),
         overrideAccess: true,
       }),
     );
@@ -82,7 +86,13 @@ describe('resolveThreadContext', () => {
 
   it('verifies ownership and persists only the last incoming message when threadId is given', async () => {
     const { req, create, findByID } = makeReq();
-    await resolveThreadContext({ req, agentSlug: 'support', threadId: 'thread-7', incoming, tools: {} });
+    await resolveThreadContext({
+      req,
+      agentSlug: 'support',
+      threadId: 'thread-7',
+      incoming,
+      tools: {},
+    });
 
     expect(findByID).toHaveBeenCalledWith({
       collection: 'threads',
@@ -105,7 +115,13 @@ describe('resolveThreadContext', () => {
     const { req, create, find } = makeReq({ findByID });
 
     await expect(
-      resolveThreadContext({ req, agentSlug: 'support', threadId: 'thread-7', incoming, tools: {} }),
+      resolveThreadContext({
+        req,
+        agentSlug: 'support',
+        threadId: 'thread-7',
+        incoming,
+        tools: {},
+      }),
     ).rejects.toMatchObject({ status: 404 });
     expect(create).not.toHaveBeenCalled();
     expect(find).not.toHaveBeenCalled();
@@ -130,7 +146,13 @@ describe('resolveThreadContext', () => {
     const { req, create, findByID } = makeReq();
 
     await expect(
-      resolveThreadContext({ req, agentSlug: 'support', threadId: 'thread-1', incoming: [], tools: {} }),
+      resolveThreadContext({
+        req,
+        agentSlug: 'support',
+        threadId: 'thread-1',
+        incoming: [],
+        tools: {},
+      }),
     ).rejects.toMatchObject({ message: 'At least one user message is required', status: 400 });
     expect(create).not.toHaveBeenCalled();
     expect(findByID).not.toHaveBeenCalled();
@@ -140,7 +162,12 @@ describe('resolveThreadContext', () => {
     const find = vi.fn(() =>
       Promise.resolve({
         docs: [
-          { id: 42, role: 'user', parts: [{ type: 'text', text: 'Hi' }], metadata: { source: 'web' } },
+          {
+            id: 42,
+            role: 'user',
+            parts: [{ type: 'text', text: 'Hi' }],
+            metadata: { source: 'web' },
+          },
           { id: 43, role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
         ],
       }),
@@ -158,7 +185,12 @@ describe('resolveThreadContext', () => {
       overrideAccess: true,
     });
     expect(result.uiMessages).toEqual([
-      { id: '42', role: 'user', parts: [{ type: 'text', text: 'Hi' }], metadata: { source: 'web' } },
+      {
+        id: '42',
+        role: 'user',
+        parts: [{ type: 'text', text: 'Hi' }],
+        metadata: { source: 'web' },
+      },
       { id: '43', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
     ]);
   });
@@ -175,7 +207,9 @@ describe('resolveThreadContext', () => {
     expect(db.beginTransaction).toHaveBeenCalledOnce();
     expect(db.commitTransaction).toHaveBeenCalledWith('tx-1');
     expect(db.rollbackTransaction).not.toHaveBeenCalled();
-    expect(Math.max(...create.mock.invocationCallOrder)).toBeLessThan(db.commitTransaction.mock.invocationCallOrder[0]);
+    expect(Math.max(...create.mock.invocationCallOrder)).toBeLessThan(
+      db.commitTransaction.mock.invocationCallOrder[0],
+    );
     expect((req as { transactionID?: unknown }).transactionID).toBeUndefined();
   });
 
@@ -191,9 +225,9 @@ describe('resolveThreadContext', () => {
       .mockRejectedValueOnce(new Error('write failed'));
     const { req } = makeReq({ create, db });
 
-    await expect(resolveThreadContext({ req, agentSlug: 'support', incoming, tools: {} })).rejects.toThrow(
-      'write failed',
-    );
+    await expect(
+      resolveThreadContext({ req, agentSlug: 'support', incoming, tools: {} }),
+    ).rejects.toThrow('write failed');
     expect(db.rollbackTransaction).toHaveBeenCalledWith('tx-1');
     expect(db.commitTransaction).not.toHaveBeenCalled();
   });

@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const chromeIcon: IconNode = [
   [
@@ -9,8 +9,8 @@ export const chromeIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const ChromeIcon = createLucideIcon('ChromeIcon', chromeIcon, 0)
+const ChromeIcon = createLucideIcon('ChromeIcon', chromeIcon, 0);
 
-export default ChromeIcon
+export default ChromeIcon;

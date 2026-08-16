@@ -22,22 +22,16 @@ export const vertexThinkingBudget: BeforeUpstreamHook = (args) => {
 
   // Check if thinking is already explicitly configured
   const googleOpts = args.providerOptions['google'] as
-    | { thinkingConfig?: { thinkingBudget?: number } }
-    | undefined;
+    { thinkingConfig?: { thinkingBudget?: number } } | undefined;
   if (googleOpts?.thinkingConfig) return;
 
   // Read the cross-provider reasoning_effort from OpenAI namespace
-  const openaiOpts = args.providerOptions['openai'] as
-    | { reasoning_effort?: string }
-    | undefined;
+  const openaiOpts = args.providerOptions['openai'] as { reasoning_effort?: string } | undefined;
   const effort = openaiOpts?.reasoning_effort;
   if (!effort) return;
 
   // Calculate budget from effort
-  const budgetTokens = calculateReasoningBudgetFromEffort(
-    effort,
-    args.params?.maxOutputTokens,
-  );
+  const budgetTokens = calculateReasoningBudgetFromEffort(effort, args.params?.maxOutputTokens);
 
   if (budgetTokens <= 0) return;
 

@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const pdfIcon: IconNode = [
   [
@@ -18,8 +18,8 @@ export const pdfIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const PdfIcon = createLucideIcon('Pdf', pdfIcon)
+const PdfIcon = createLucideIcon('Pdf', pdfIcon);
 
-export default PdfIcon
+export default PdfIcon;

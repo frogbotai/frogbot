@@ -42,13 +42,18 @@ describe.skipIf(!RUN_E2E || !hasSearchKey)('web search e2e', () => {
       cwd: fixtureDir,
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, DATABASE_URL: `file:${join(dataDir, 'e2e.db')}`, FROGBOT_SECRET: 'e2e-secret' },
+      env: {
+        ...process.env,
+        DATABASE_URL: `file:${join(dataDir, 'e2e.db')}`,
+        FROGBOT_SECRET: 'e2e-secret',
+      },
     });
     server.stdout?.resume();
     server.stderr?.pipe(process.stderr);
     const deadline = Date.now() + 210000;
     while (!(await isListening(port))) {
-      if (Date.now() > deadline) throw new Error('web search agent dev server did not become ready');
+      if (Date.now() > deadline)
+        throw new Error('web search agent dev server did not become ready');
       await new Promise((resolveWait) => setTimeout(resolveWait, 2000));
     }
     const registration = await client.post<{ token: string }>('/api/users/first-register', {
@@ -93,7 +98,9 @@ describe.skipIf(!RUN_E2E || !hasSearchKey)('web search e2e', () => {
       auth,
     );
     expect(messages.status, JSON.stringify(messages.body)).toBe(200);
-    const output = messages.body.docs.flatMap(({ parts }) => parts).find(({ type }) => type === `tool-${toolType}`)?.output;
+    const output = messages.body.docs
+      .flatMap(({ parts }) => parts)
+      .find(({ type }) => type === `tool-${toolType}`)?.output;
     expect(output).toBeDefined();
     expect(JSON.stringify(output)).toMatch(/title|url/);
   }

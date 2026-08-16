@@ -1,11 +1,11 @@
-import type { UIMessage } from 'ai'
+import type { UIMessage } from 'ai';
 
 export type MessageDocument = {
-  id: string | number
-  role: UIMessage['role']
-  parts: UIMessage['parts']
-  metadata?: unknown
-}
+  id: string | number;
+  role: UIMessage['role'];
+  parts: UIMessage['parts'];
+  metadata?: unknown;
+};
 
 export function messageDocumentToUIMessage(message: MessageDocument): UIMessage {
   return {
@@ -13,15 +13,18 @@ export function messageDocumentToUIMessage(message: MessageDocument): UIMessage 
     role: message.role,
     parts: message.parts,
     ...(message.metadata == null ? {} : { metadata: message.metadata }),
-  }
+  };
 }
 
-export function uiMessageToDocument(message: UIMessage, thread: string | number): MessageDocument & { thread: string | number } {
+export function uiMessageToDocument(
+  message: UIMessage,
+  thread: string | number,
+): MessageDocument & { thread: string | number } {
   return {
     id: String(message.id),
     thread,
     role: message.role,
     parts: message.parts,
     ...(message.metadata == null ? {} : { metadata: message.metadata }),
-  }
+  };
 }

@@ -11,8 +11,12 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 describe('frogbot-instance: Properties', () => {
   let booted: BootedFrogbot;
 
-  beforeAll(async () => { booted = await bootFrogbot(dirname); });
-  afterAll(async () => { await booted.shutdown(); });
+  beforeAll(async () => {
+    booted = await bootFrogbot(dirname);
+  });
+  afterAll(async () => {
+    await booted.shutdown();
+  });
 
   describe('config', () => {
     it('is a SanitizedConfig with collections array', () => {

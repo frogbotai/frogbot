@@ -19,7 +19,10 @@ const FROGBOT_SERVER_PACKAGES = [
 
 const NATIVE_EXTERNALS = ['@basetenlabs/performance-client'];
 
-export function withFrogbot(nextConfig: NextConfig = {}, options: WithFrogbotOptions = {}): NextConfig {
+export function withFrogbot(
+  nextConfig: NextConfig = {},
+  options: WithFrogbotOptions = {},
+): NextConfig {
   const frogbotConfig: NextConfig = {
     ...nextConfig,
     serverExternalPackages: [
@@ -30,7 +33,9 @@ export function withFrogbot(nextConfig: NextConfig = {}, options: WithFrogbotOpt
     ],
     webpack: (webpackConfig, webpackOptions) => {
       const incoming =
-        typeof nextConfig.webpack === 'function' ? nextConfig.webpack(webpackConfig, webpackOptions) : webpackConfig;
+        typeof nextConfig.webpack === 'function'
+          ? nextConfig.webpack(webpackConfig, webpackOptions)
+          : webpackConfig;
 
       return {
         ...incoming,

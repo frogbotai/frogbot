@@ -41,14 +41,24 @@ export async function tokenRequest(options: {
   for (const [key, value] of Object.entries(options.body)) {
     if (value !== undefined) body.set(key, value);
   }
-  const response = await options.fetch(options.url, { method: 'POST', headers: options.headers, body });
+  const response = await options.fetch(options.url, {
+    method: 'POST',
+    headers: options.headers,
+    body,
+  });
   if (!response.ok) throw new Error('OAuth token request failed.');
-  const value = await response.json() as Record<string, unknown>;
+  const value = (await response.json()) as Record<string, unknown>;
   return { tokens: parseOAuthTokenSet({ value }), value };
 }
 
-export async function jsonRequest(options: { fetch: typeof fetch; url: string; accessToken: string }): Promise<Record<string, unknown>> {
-  const response = await options.fetch(options.url, { headers: { Authorization: `Bearer ${options.accessToken}` } });
+export async function jsonRequest(options: {
+  fetch: typeof fetch;
+  url: string;
+  accessToken: string;
+}): Promise<Record<string, unknown>> {
+  const response = await options.fetch(options.url, {
+    headers: { Authorization: `Bearer ${options.accessToken}` },
+  });
   if (!response.ok) throw new Error('OAuth account request failed.');
   return response.json() as Promise<Record<string, unknown>>;
 }

@@ -43,7 +43,9 @@ function createKeyLeakModel(): LanguageModelV4 {
     provider: 'mock',
     modelId: 'mock-model',
     defaultObjectGenerationMode: undefined,
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: () => Promise.reject(error),
     doStream: () => Promise.reject(error),
   } as LanguageModelV4;

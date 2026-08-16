@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const tagIcon: IconNode = [
   [
@@ -24,8 +24,8 @@ export const tagIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const TagIcon = createLucideIcon('TagIcon', tagIcon)
+const TagIcon = createLucideIcon('TagIcon', tagIcon);
 
-export default TagIcon
+export default TagIcon;

@@ -9,10 +9,10 @@ import type { OpenAIUserMessage } from '../types.js';
 // docs as of 2026-06 the set is `wav | mp3 | flac | opus | pcm16`. The
 // MIME mapping below is what the AI SDK and downstream providers expect.
 const AUDIO_FORMAT_MIME: Record<string, string> = {
-  wav:   'audio/wav',
-  mp3:   'audio/mpeg',
-  flac:  'audio/flac',
-  opus:  'audio/opus',
+  wav: 'audio/wav',
+  mp3: 'audio/mpeg',
+  flac: 'audio/flac',
+  opus: 'audio/opus',
   pcm16: 'audio/l16',
 };
 

@@ -1,10 +1,6 @@
 // Provider definition: Mistral.
 
-import {
-  createMistral,
-  type MistralProvider,
-  type MistralProviderSettings,
-} from '@ai-sdk/mistral';
+import { createMistral, type MistralProvider, type MistralProviderSettings } from '@ai-sdk/mistral';
 
 import type { ProviderDefinition } from '../types.js';
 

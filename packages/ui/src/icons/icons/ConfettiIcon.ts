@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const confettiIcon: IconNode = [
   [
@@ -81,8 +81,8 @@ export const confettiIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const ConfettiIcon = createLucideIcon('ConfettiIcon', confettiIcon, undefined, '0 0 20 20')
+const ConfettiIcon = createLucideIcon('ConfettiIcon', confettiIcon, undefined, '0 0 20 20');
 
-export default ConfettiIcon
+export default ConfettiIcon;

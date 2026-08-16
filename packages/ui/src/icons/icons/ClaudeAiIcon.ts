@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const claudeAiIcon: IconNode = [
   [
@@ -9,8 +9,8 @@ export const claudeAiIcon: IconNode = [
       fill: '#D97757',
     },
   ],
-]
+];
 
-const ClaudeAiIcon = createLucideIcon('ClaudeAiIcon', claudeAiIcon, 0, '0 0 20 20')
+const ClaudeAiIcon = createLucideIcon('ClaudeAiIcon', claudeAiIcon, 0, '0 0 20 20');
 
-export default ClaudeAiIcon
+export default ClaudeAiIcon;

@@ -63,10 +63,7 @@ describe('loadEnv', () => {
     await writeFile(join(dir, '.env'), 'FROGBOT_TEST_KEY=base\n');
     await writeFile(join(dir, '.env.local'), 'FROGBOT_TEST_KEY=local\n');
     await writeFile(join(dir, '.env.production'), 'FROGBOT_TEST_KEY=production\n');
-    await writeFile(
-      join(dir, '.env.production.local'),
-      'FROGBOT_TEST_KEY=production-local\n',
-    );
+    await writeFile(join(dir, '.env.production.local'), 'FROGBOT_TEST_KEY=production-local\n');
 
     try {
       await expect(
@@ -88,10 +85,7 @@ describe('loadEnv', () => {
     await writeFile(join(dir, '.env'), 'FROGBOT_TEST_KEY=base\n');
     await writeFile(join(dir, '.env.local'), 'FROGBOT_TEST_KEY=local\n');
     await writeFile(join(dir, '.env.production'), 'FROGBOT_TEST_KEY=production\n');
-    await writeFile(
-      join(dir, '.env.production.local'),
-      'FROGBOT_TEST_KEY=production-local\n',
-    );
+    await writeFile(join(dir, '.env.production.local'), 'FROGBOT_TEST_KEY=production-local\n');
 
     try {
       await expect(

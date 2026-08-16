@@ -60,7 +60,11 @@ describe('tracing', () => {
           startedAt: args.startedAt,
           context: args.context,
           otel: args.otel,
-          request: new Request('https://gateway.test/v1/responses', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ trace: 'full' }) }),
+          request: new Request('https://gateway.test/v1/responses', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ trace: 'full' }),
+          }),
         });
         await hooks.beforeUpstream?.[0]?.(args);
         await hooks.afterError?.[0]?.({
@@ -94,7 +98,9 @@ describe('tracing', () => {
 
   it('auto-tags decorated spans with auth context', () => {
     const span = makeSpan();
-    const tracer = createGatewayTracer({ tracer: { startSpan: vi.fn(() => span) } as unknown as Tracer });
+    const tracer = createGatewayTracer({
+      tracer: { startSpan: vi.fn(() => span) } as unknown as Tracer,
+    });
     tracer.startSpan('test', undefined, { getValue: () => makeArgs() } as never);
     expect(span.attributes).toMatchObject({ 'tenant.id': 'tenant_1', 'api_key.id': 'key_1' });
   });
@@ -102,7 +108,9 @@ describe('tracing', () => {
   it('creates request spans, emits warning events, and ends without route branches', async () => {
     const span = makeSpan();
     const hooks = createTracingHooks({
-      tracer: { startSpan: vi.fn((_name: string, _options?: SpanOptions) => span) } as unknown as Tracer,
+      tracer: {
+        startSpan: vi.fn((_name: string, _options?: SpanOptions) => span),
+      } as unknown as Tracer,
     });
     const args = makeArgs();
 
@@ -113,7 +121,11 @@ describe('tracing', () => {
       startedAt: args.startedAt,
       context: args.context,
       otel: args.otel,
-      request: new Request('https://gateway.test/v1/responses', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ trace: 'full' }) }),
+      request: new Request('https://gateway.test/v1/responses', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ trace: 'full' }),
+      }),
     });
     await hooks.beforeUpstream?.[0]?.(args);
     await hooks.afterUpstream?.[0]?.({
@@ -141,7 +153,12 @@ describe('tracing', () => {
       usage: { inputTokens: 1, outputTokens: 2, totalTokens: 3 },
     });
 
-    expect(span.events).toEqual([{ name: 'ai.sdk.warning', attributes: { warning: JSON.stringify({ type: 'other', message: 'careful' }) } }]);
+    expect(span.events).toEqual([
+      {
+        name: 'ai.sdk.warning',
+        attributes: { warning: JSON.stringify({ type: 'other', message: 'careful' }) },
+      },
+    ]);
     expect(span.attributes).toMatchObject({ 'tenant.id': 'tenant_1', 'api_key.id': 'key_1' });
     expect(span.ended).toBe(true);
   });
@@ -158,7 +175,11 @@ describe('tracing', () => {
       startedAt: args.startedAt,
       context: args.context,
       otel: args.otel,
-      request: new Request('https://gateway.test/v1/responses', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ trace: false }) }),
+      request: new Request('https://gateway.test/v1/responses', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ trace: false }),
+      }),
     });
     await hooks.beforeUpstream?.[0]?.(args);
 
@@ -177,7 +198,11 @@ describe('tracing', () => {
       startedAt: abandoned.startedAt,
       context: abandoned.context,
       otel: abandoned.otel,
-      request: new Request('https://gateway.test/v1/responses', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ trace: false }) }),
+      request: new Request('https://gateway.test/v1/responses', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ trace: false }),
+      }),
     });
     expect(abandoned.context['frogbot.gateway.traceOverride']).toBe('off');
 
@@ -192,7 +217,9 @@ describe('tracing', () => {
     process.env.NODE_ENV = 'development';
     try {
       const span = makeSpan();
-      const hooks = createTracingHooks({ tracer: { startSpan: vi.fn(() => span) } as unknown as Tracer });
+      const hooks = createTracingHooks({
+        tracer: { startSpan: vi.fn(() => span) } as unknown as Tracer,
+      });
       const args = makeArgs();
 
       await hooks.beforeUpstream?.[0]?.(args);
@@ -221,7 +248,9 @@ describe('tracing', () => {
     process.env.NODE_ENV = 'production';
     try {
       const span = makeSpan();
-      const hooks = createTracingHooks({ tracer: { startSpan: vi.fn(() => span) } as unknown as Tracer });
+      const hooks = createTracingHooks({
+        tracer: { startSpan: vi.fn(() => span) } as unknown as Tracer,
+      });
       const args = makeArgs();
 
       await hooks.beforeUpstream?.[0]?.(args);
@@ -240,7 +269,8 @@ describe('tracing', () => {
       });
 
       expect(span.recordException).toHaveBeenCalledWith({ name: 'ProviderError' });
-      const recorded = (span.recordException as unknown as { mock: { calls: unknown[][] } }).mock.calls[0]?.[0];
+      const recorded = (span.recordException as unknown as { mock: { calls: unknown[][] } }).mock
+        .calls[0]?.[0];
       expect(JSON.stringify(recorded)).not.toContain('sk-secret-123');
     } finally {
       process.env.NODE_ENV = previous;
@@ -250,7 +280,11 @@ describe('tracing', () => {
   it('skips the body parse when every base signal level is off', async () => {
     const hooks = createTracingHooks({ signalLevel: 'off' });
     const args = makeArgs();
-    const request = new Request('https://gateway.test/v1/responses', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ trace: 'full' }) });
+    const request = new Request('https://gateway.test/v1/responses', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ trace: 'full' }),
+    });
     const clone = vi.spyOn(request, 'clone');
 
     await hooks.beforeOperation?.[0]?.({
@@ -269,7 +303,9 @@ describe('tracing', () => {
   });
 
   it('parses the body when at least one base signal level is not off', async () => {
-    const hooks = createTracingHooks({ signalLevel: { gen_ai: 'off', http: 'off', frogbot: 'required' } });
+    const hooks = createTracingHooks({
+      signalLevel: { gen_ai: 'off', http: 'off', frogbot: 'required' },
+    });
     const args = makeArgs();
     const request = new Request('https://gateway.test/v1/responses', {
       method: 'POST',
@@ -293,11 +329,16 @@ describe('tracing', () => {
   });
 
   it('skips the body parse for non-JSON (multipart) requests without re-buffering the upload', async () => {
-    const hooks = createTracingHooks({ signalLevel: { gen_ai: 'off', http: 'off', frogbot: 'required' } });
+    const hooks = createTracingHooks({
+      signalLevel: { gen_ai: 'off', http: 'off', frogbot: 'required' },
+    });
     const args = makeArgs();
     const form = new FormData();
     form.append('file', new Blob(['x'.repeat(1024)], { type: 'audio/wav' }), 'audio.wav');
-    const request = new Request('https://gateway.test/v1/audio/transcriptions', { method: 'POST', body: form });
+    const request = new Request('https://gateway.test/v1/audio/transcriptions', {
+      method: 'POST',
+      body: form,
+    });
     const clone = vi.spyOn(request, 'clone');
 
     await hooks.beforeOperation?.[0]?.({

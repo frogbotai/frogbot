@@ -11,8 +11,8 @@ pnpm add @frogbotai/storage-azure
 ## Usage
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { azureStorage } from '@frogbotai/storage-azure'
+import { buildConfig } from 'frogbot';
+import { azureStorage } from '@frogbotai/storage-azure';
 
 export default buildConfig({
   storage: [
@@ -27,5 +27,5 @@ export default buildConfig({
     }),
   ],
   // ...rest of config
-})
+});
 ```

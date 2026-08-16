@@ -1,8 +1,8 @@
-import { render } from '@testing-library/react'
-import { createElement } from 'react'
-import { describe, expect, it } from 'vitest'
+import { render } from '@testing-library/react';
+import { createElement } from 'react';
+import { describe, expect, it } from 'vitest';
 
-import * as icons from '../exports/icons'
+import * as icons from '../exports/icons';
 
 const iconNames = [
   'AiSearchIcon',
@@ -111,38 +111,34 @@ const iconNames = [
   'WrenchIcon',
   'XIcon',
   'YoutubeIcon',
-] as const
+] as const;
 
 describe('firmware icons', () => {
   it('exports the complete icon manifest', () => {
-    expect(Object.keys(icons).sort()).toEqual([
-      ...iconNames,
-      'CheckIcon',
-      'IconBase',
-      'MenuIcon',
-      'createLucideIcon',
-    ].sort())
-  })
+    expect(Object.keys(icons).sort()).toEqual(
+      [...iconNames, 'CheckIcon', 'IconBase', 'MenuIcon', 'createLucideIcon'].sort(),
+    );
+  });
 
   it('renders every exported icon', () => {
     for (const name of [...iconNames, 'CheckIcon', 'MenuIcon'] as const) {
-      const component = icons[name as keyof typeof icons]
-      const { container, unmount } = render(createElement(component))
-      expect(container.querySelector('svg')).not.toBeNull()
-      unmount()
+      const component = icons[name as keyof typeof icons];
+      const { container, unmount } = render(createElement(component));
+      expect(container.querySelector('svg')).not.toBeNull();
+      unmount();
     }
-  })
+  });
 
   it('renders both structural outliers', () => {
-    const gemini = render(createElement(icons['GoogleGeminiIcon' as keyof typeof icons]))
-    expect(gemini.container.querySelector('defs')).not.toBeNull()
-    expect(gemini.container.querySelector('radialGradient')).not.toBeNull()
-    expect(gemini.container.querySelector('clipPath')).not.toBeNull()
-    gemini.unmount()
+    const gemini = render(createElement(icons['GoogleGeminiIcon' as keyof typeof icons]));
+    expect(gemini.container.querySelector('defs')).not.toBeNull();
+    expect(gemini.container.querySelector('radialGradient')).not.toBeNull();
+    expect(gemini.container.querySelector('clipPath')).not.toBeNull();
+    gemini.unmount();
 
-    const invalid = render(createElement(icons['InvalidStepIcon' as keyof typeof icons]))
-    expect(invalid.container.querySelector('svg')).not.toBeNull()
-  })
+    const invalid = render(createElement(icons['InvalidStepIcon' as keyof typeof icons]));
+    expect(invalid.container.querySelector('svg')).not.toBeNull();
+  });
 
   it('supports factory defaults and icon prop overrides', () => {
     const createLucideIcon = icons['createLucideIcon' as keyof typeof icons] as unknown as (
@@ -150,15 +146,15 @@ describe('firmware icons', () => {
       node: Array<[string, Record<string, string>]>,
       strokeWidth?: number,
       viewBox?: string,
-    ) => React.ComponentType<{ absoluteStrokeWidth?: boolean; color?: string; size?: number }>
-    const TestIcon = createLucideIcon('T', [['path', { d: 'M0 0' }]], 0, '0 0 20 20')
-    const { container } = render(<TestIcon absoluteStrokeWidth color="red" size={10} />)
-    const svg = container.querySelector('svg')
-    expect(svg?.getAttribute('viewBox')).toBe('0 0 20 20')
-    expect(svg?.getAttribute('stroke-width')).toBe('0')
-    expect(svg?.getAttribute('width')).toBe('10')
-    expect(svg?.getAttribute('height')).toBe('10')
-    expect(svg?.getAttribute('stroke')).toBe('red')
-    expect(svg?.getAttribute('aria-hidden')).toBe('true')
-  })
-})
+    ) => React.ComponentType<{ absoluteStrokeWidth?: boolean; color?: string; size?: number }>;
+    const TestIcon = createLucideIcon('T', [['path', { d: 'M0 0' }]], 0, '0 0 20 20');
+    const { container } = render(<TestIcon absoluteStrokeWidth color="red" size={10} />);
+    const svg = container.querySelector('svg');
+    expect(svg?.getAttribute('viewBox')).toBe('0 0 20 20');
+    expect(svg?.getAttribute('stroke-width')).toBe('0');
+    expect(svg?.getAttribute('width')).toBe('10');
+    expect(svg?.getAttribute('height')).toBe('10');
+    expect(svg?.getAttribute('stroke')).toBe('red');
+    expect(svg?.getAttribute('aria-hidden')).toBe('true');
+  });
+});

@@ -5,9 +5,17 @@ import { toResponsesToolChoice, toResponsesTools } from './tools.js';
 
 describe('toResponsesTools', () => {
   it('maps flat Responses function tools to an AI SDK tool set', () => {
-    const tools = toResponsesTools([
-      { type: 'function', name: 'get_weather', description: 'Weather', parameters: { type: 'object', properties: { city: { type: 'string' } } } },
-    ], 'openai');
+    const tools = toResponsesTools(
+      [
+        {
+          type: 'function',
+          name: 'get_weather',
+          description: 'Weather',
+          parameters: { type: 'object', properties: { city: { type: 'string' } } },
+        },
+      ],
+      'openai',
+    );
 
     expect(tools).toBeDefined();
     expect(Object.keys(tools!)).toEqual(['get_weather']);
@@ -28,29 +36,46 @@ describe('toResponsesTools', () => {
   });
 
   it('forwards an mcp tool with its server config captured as args (openai)', () => {
-    const tools = toResponsesTools([
-      { type: 'mcp', server_label: 'deepwiki', server_url: 'https://mcp.deepwiki.com/mcp', require_approval: 'never' },
-    ], 'openai');
+    const tools = toResponsesTools(
+      [
+        {
+          type: 'mcp',
+          server_label: 'deepwiki',
+          server_url: 'https://mcp.deepwiki.com/mcp',
+          require_approval: 'never',
+        },
+      ],
+      'openai',
+    );
 
     expect(tools!.mcp).toEqual({
       type: 'provider',
       id: 'openai.mcp',
-      args: { server_label: 'deepwiki', server_url: 'https://mcp.deepwiki.com/mcp', require_approval: 'never' },
+      args: {
+        server_label: 'deepwiki',
+        server_url: 'https://mcp.deepwiki.com/mcp',
+        require_approval: 'never',
+      },
     });
   });
 
   it('keeps hosted tools alongside function tools (openai)', () => {
-    const tools = toResponsesTools([
-      { type: 'web_search' },
-      { type: 'function', name: 'get_weather', parameters: { type: 'object', properties: {} } },
-    ], 'openai');
+    const tools = toResponsesTools(
+      [
+        { type: 'web_search' },
+        { type: 'function', name: 'get_weather', parameters: { type: 'object', properties: {} } },
+      ],
+      'openai',
+    );
 
     expect(Object.keys(tools!).sort()).toEqual(['get_weather', 'web_search']);
     expect(tools!.web_search).toEqual({ type: 'provider', id: 'openai.web_search', args: {} });
   });
 
   it('rejects hosted tools on a non-OpenAI provider with UnsupportedModalityError', () => {
-    expect(() => toResponsesTools([{ type: 'web_search' }], 'anthropic')).toThrow(UnsupportedModalityError);
+    expect(() => toResponsesTools([{ type: 'web_search' }], 'anthropic')).toThrow(
+      UnsupportedModalityError,
+    );
   });
 });
 
@@ -62,17 +87,29 @@ describe('toResponsesToolChoice', () => {
   });
 
   it('maps a flat named function choice', () => {
-    expect(toResponsesToolChoice({ type: 'function', name: 'get_weather' })).toEqual({ type: 'tool', toolName: 'get_weather' });
+    expect(toResponsesToolChoice({ type: 'function', name: 'get_weather' })).toEqual({
+      type: 'tool',
+      toolName: 'get_weather',
+    });
   });
 
   it('maps a hosted tool_choice to a named tool choice', () => {
-    expect(toResponsesToolChoice({ type: 'web_search' })).toEqual({ type: 'tool', toolName: 'web_search' });
-    expect(toResponsesToolChoice({ type: 'file_search' })).toEqual({ type: 'tool', toolName: 'file_search' });
+    expect(toResponsesToolChoice({ type: 'web_search' })).toEqual({
+      type: 'tool',
+      toolName: 'web_search',
+    });
+    expect(toResponsesToolChoice({ type: 'file_search' })).toEqual({
+      type: 'tool',
+      toolName: 'file_search',
+    });
     expect(toResponsesToolChoice({ type: 'mcp' })).toEqual({ type: 'tool', toolName: 'mcp' });
   });
 
   it('tolerates the nested chat shape', () => {
-    expect(toResponsesToolChoice({ type: 'function', function: { name: 'get_weather' } })).toEqual({ type: 'tool', toolName: 'get_weather' });
+    expect(toResponsesToolChoice({ type: 'function', function: { name: 'get_weather' } })).toEqual({
+      type: 'tool',
+      toolName: 'get_weather',
+    });
   });
 
   it('returns undefined for nullish or unknown choices', () => {

@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const wrenchIcon: IconNode = [
   [
@@ -23,8 +23,8 @@ export const wrenchIcon: IconNode = [
       strokeLinejoin: 'round',
     },
   ],
-]
+];
 
-const WrenchIcon = createLucideIcon('WrenchIcon', wrenchIcon)
+const WrenchIcon = createLucideIcon('WrenchIcon', wrenchIcon);
 
-export default WrenchIcon
+export default WrenchIcon;

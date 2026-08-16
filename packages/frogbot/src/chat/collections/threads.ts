@@ -17,7 +17,11 @@ const owner: Access = ({ req }) => {
   return id !== undefined ? { user: { equals: id } } : false;
 };
 
-export function defaultThreadsCollection({ slug, userSlug, access }: DefaultThreadsCollectionProps): CollectionConfig {
+export function defaultThreadsCollection({
+  slug,
+  userSlug,
+  access,
+}: DefaultThreadsCollectionProps): CollectionConfig {
   return {
     slug,
     trash: true,

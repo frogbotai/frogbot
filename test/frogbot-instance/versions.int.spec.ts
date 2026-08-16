@@ -12,8 +12,12 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 describe('frogbot-instance: Version operations', () => {
   let booted: BootedFrogbot;
 
-  beforeAll(async () => { booted = await bootFrogbot(dirname); });
-  afterAll(async () => { await booted.shutdown(); });
+  beforeAll(async () => {
+    booted = await bootFrogbot(dirname);
+  });
+  afterAll(async () => {
+    await booted.shutdown();
+  });
 
   describe('findVersions', () => {
     it('returns version history after updates', async () => {

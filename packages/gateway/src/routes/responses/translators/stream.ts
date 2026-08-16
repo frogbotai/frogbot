@@ -1,8 +1,11 @@
 import type { TextStreamPart, ToolSet } from 'ai';
 
-import { extractOpenAIStreamErrorInfo, type StreamErrorMaskOptions } from '../../../shared/extractStreamErrorInfo.js';
+import {
+  extractOpenAIStreamErrorInfo,
+  type StreamErrorMaskOptions,
+} from '../../../shared/extractStreamErrorInfo.js';
 import { peekRawValue } from '../../../shared/rawPeek.js';
-import { echoFields, type ResponsesEchoParams,toResponseUsage } from './toResponse.js';
+import { echoFields, type ResponsesEchoParams, toResponseUsage } from './toResponse.js';
 
 type ResponsesToolCallState = {
   callId: string;
@@ -19,7 +22,8 @@ type ResponsesReasoningState = {
   encryptedContent?: string;
 };
 
-type ResponsesFinishReason = 'stop' | 'tool-calls' | 'length' | 'content-filter' | 'error' | 'other';
+type ResponsesFinishReason =
+  'stop' | 'tool-calls' | 'length' | 'content-filter' | 'error' | 'other';
 
 type ResponsesStreamState = {
   responseId: string;
@@ -382,7 +386,9 @@ function ensureReasoning(state: ResponsesStreamState): ResponsesReasoningState {
   return state.reasoning;
 }
 
-function ensureOutputStarted(state: ResponsesStreamState): Array<Record<string, unknown> & { type: string }> {
+function ensureOutputStarted(
+  state: ResponsesStreamState,
+): Array<Record<string, unknown> & { type: string }> {
   if (state.outputStarted) return [];
   state.outputStarted = true;
   state.textOutputIndex = state.nextOutputIndex++;
@@ -419,7 +425,9 @@ function reasoningItem(reasoning: ResponsesReasoningState, status: 'in_progress'
     type: 'reasoning',
     status,
     summary:
-      status === 'completed' && reasoning.summaryText ? [{ type: 'summary_text', text: reasoning.summaryText }] : [],
+      status === 'completed' && reasoning.summaryText
+        ? [{ type: 'summary_text', text: reasoning.summaryText }]
+        : [],
     ...(status === 'completed' && reasoning.encryptedContent != null
       ? { encrypted_content: reasoning.encryptedContent }
       : {}),
@@ -453,7 +461,8 @@ function responseEnvelope(
     completed_at: status === 'completed' ? state.createdAt : null,
     status,
     error: status === 'failed' ? failedError(state) : null,
-    incomplete_details: status === 'incomplete' ? { reason: incompleteReason(state.finishReason) } : null,
+    incomplete_details:
+      status === 'incomplete' ? { reason: incompleteReason(state.finishReason) } : null,
     model: state.model,
     previous_response_id: previousResponseId ?? null,
     ...echoFields(state.body),

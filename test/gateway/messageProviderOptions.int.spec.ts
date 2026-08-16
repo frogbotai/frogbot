@@ -6,12 +6,16 @@ import type { Hooks } from '../../packages/gateway/src/hooks.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
-function createRecordingModel(onCall: (options: LanguageModelV4CallOptions) => void): LanguageModelV4 {
+function createRecordingModel(
+  onCall: (options: LanguageModelV4CallOptions) => void,
+): LanguageModelV4 {
   return {
     specificationVersion: 'v4',
     provider: 'mock',
     modelId: 'mock-model',
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: async (options) => {
       onCall(options);
       return {
@@ -33,7 +37,11 @@ function createRecordingModel(onCall: (options: LanguageModelV4CallOptions) => v
   };
 }
 
-function makeApp(providerName: string, onCall: (options: LanguageModelV4CallOptions) => void, hooks?: Hooks) {
+function makeApp(
+  providerName: string,
+  onCall: (options: LanguageModelV4CallOptions) => void,
+  hooks?: Hooks,
+) {
   const registry = {
     [providerName]: { languageModel: () => createRecordingModel(onCall) },
   } as unknown as ProviderRegistry;
@@ -41,7 +49,9 @@ function makeApp(providerName: string, onCall: (options: LanguageModelV4CallOpti
 }
 
 function cacheControlFrom(messages: unknown[] | undefined, namespace: string) {
-  const message = messages?.[0] as { content?: Array<{ providerOptions?: Record<string, Record<string, unknown>> }> };
+  const message = messages?.[0] as {
+    content?: Array<{ providerOptions?: Record<string, Record<string, unknown>> }>;
+  };
   return message.content?.[0]?.providerOptions?.[namespace]?.cache_control;
 }
 
@@ -49,51 +59,81 @@ describe('message provider options ordering', () => {
   it('exposes chat content-part unknown options to hooks before draining them', async () => {
     let hookMessages: unknown[] | undefined;
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeApp('anthropic', (options) => { callOptions = options; }, {
-      beforeUpstream: [(args) => { hookMessages = structuredClone(args.messages); }],
-    });
+    const app = makeApp(
+      'anthropic',
+      (options) => {
+        callOptions = options;
+      },
+      {
+        beforeUpstream: [
+          (args) => {
+            hookMessages = structuredClone(args.messages);
+          },
+        ],
+      },
+    );
 
     const { status } = await postJson(app, '/v1/chat/completions', {
       model: 'anthropic/claude-sonnet-4-20250514',
-      messages: [{
-        role: 'user',
-        content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
-      }],
+      messages: [
+        {
+          role: 'user',
+          content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+        },
+      ],
     });
 
     expect(status).toBe(200);
     expect(cacheControlFrom(hookMessages, 'unknown')).toEqual({ type: 'ephemeral' });
     expect(cacheControlFrom(callOptions?.prompt, 'unknown')).toBeUndefined();
-    expect((callOptions?.prompt[0] as { content: Array<{ providerOptions?: Record<string, unknown> }> })
-      .content[0]?.providerOptions?.anthropic).toEqual({ cacheControl: { type: 'ephemeral' } });
+    expect(
+      (callOptions?.prompt[0] as { content: Array<{ providerOptions?: Record<string, unknown> }> })
+        .content[0]?.providerOptions?.anthropic,
+    ).toEqual({ cacheControl: { type: 'ephemeral' } });
   });
 
   it('exposes messages content-part unknown options to hooks before draining them', async () => {
     let hookMessages: unknown[] | undefined;
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeApp('anthropic', (options) => { callOptions = options; }, {
-      beforeUpstream: [(args) => { hookMessages = structuredClone(args.messages); }],
-    });
+    const app = makeApp(
+      'anthropic',
+      (options) => {
+        callOptions = options;
+      },
+      {
+        beforeUpstream: [
+          (args) => {
+            hookMessages = structuredClone(args.messages);
+          },
+        ],
+      },
+    );
 
     const { status } = await postJson(app, '/v1/messages', {
       model: 'anthropic/claude-sonnet-4-20250514',
       max_tokens: 100,
-      messages: [{
-        role: 'user',
-        content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
-      }],
+      messages: [
+        {
+          role: 'user',
+          content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+        },
+      ],
     });
 
     expect(status).toBe(200);
     expect(cacheControlFrom(hookMessages, 'unknown')).toEqual({ type: 'ephemeral' });
     expect(cacheControlFrom(callOptions?.prompt, 'unknown')).toBeUndefined();
-    expect((callOptions?.prompt[0] as { content: Array<{ providerOptions?: Record<string, unknown> }> })
-      .content[0]?.providerOptions?.anthropic).toEqual({ cacheControl: { type: 'ephemeral' } });
+    expect(
+      (callOptions?.prompt[0] as { content: Array<{ providerOptions?: Record<string, unknown> }> })
+        .content[0]?.providerOptions?.anthropic,
+    ).toEqual({ cacheControl: { type: 'ephemeral' } });
   });
 
   it('forwards messages service_tier to Bedrock', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeApp('amazon-bedrock', (options) => { callOptions = options; });
+    const app = makeApp('amazon-bedrock', (options) => {
+      callOptions = options;
+    });
 
     const { status } = await postJson(app, '/v1/messages', {
       model: 'amazon-bedrock/anthropic.claude-sonnet-4-20250514-v1:0',
@@ -108,24 +148,27 @@ describe('message provider options ordering', () => {
 
   it('translates OpenAI cache controls from chat completions', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeApp('openai', (options) => { callOptions = options; });
+    const app = makeApp('openai', (options) => {
+      callOptions = options;
+    });
 
     const { status } = await postJson(app, '/v1/chat/completions', {
       model: 'openai/gpt-5',
       prompt_cache_key: 'cache-key',
       cache_control: { type: 'ephemeral' },
-      messages: [{
-        role: 'user',
-        content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
-      }],
+      messages: [
+        {
+          role: 'user',
+          content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+        },
+      ],
     });
 
     expect(status).toBe(200);
     expect(callOptions?.providerOptions?.openai).toEqual({ promptCacheKey: 'cache-key' });
-    expect(callOptions?.prompt[0]).toHaveProperty(
-      'providerOptions.openai.promptCacheBreakpoint',
-      { mode: 'explicit' },
-    );
+    expect(callOptions?.prompt[0]).toHaveProperty('providerOptions.openai.promptCacheBreakpoint', {
+      mode: 'explicit',
+    });
     expect(callOptions?.prompt[0]).toHaveProperty(
       'content[0].providerOptions.openai.promptCacheBreakpoint',
       { mode: 'explicit' },
@@ -134,23 +177,26 @@ describe('message provider options ordering', () => {
 
   it('translates OpenAI cache controls from messages', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeApp('openai', (options) => { callOptions = options; });
+    const app = makeApp('openai', (options) => {
+      callOptions = options;
+    });
 
     const { status } = await postJson(app, '/v1/messages', {
       model: 'openai/gpt-5',
       max_tokens: 100,
       cache_control: { type: 'ephemeral' },
-      messages: [{
-        role: 'user',
-        content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
-      }],
+      messages: [
+        {
+          role: 'user',
+          content: [{ type: 'text', text: 'hello', cache_control: { type: 'ephemeral' } }],
+        },
+      ],
     });
 
     expect(status).toBe(200);
-    expect(callOptions?.prompt[0]).toHaveProperty(
-      'providerOptions.openai.promptCacheBreakpoint',
-      { mode: 'explicit' },
-    );
+    expect(callOptions?.prompt[0]).toHaveProperty('providerOptions.openai.promptCacheBreakpoint', {
+      mode: 'explicit',
+    });
     expect(callOptions?.prompt[0]).toHaveProperty(
       'content[0].providerOptions.openai.promptCacheBreakpoint',
       { mode: 'explicit' },

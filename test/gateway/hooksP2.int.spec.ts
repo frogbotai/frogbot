@@ -29,7 +29,11 @@
 //            (extractOpenAIStreamErrorInfo / extractAnthropicStreamErrorInfo)
 //            now also mask via maybeMaskMessage (G35).
 
-import type { EmbeddingModelV4, LanguageModelV4, LanguageModelV4StreamPart } from '@ai-sdk/provider';
+import type {
+  EmbeddingModelV4,
+  LanguageModelV4,
+  LanguageModelV4StreamPart,
+} from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
@@ -48,7 +52,9 @@ function makeLanguageModel(opts?: { error?: unknown }): LanguageModelV4 {
     provider: 'mock',
     modelId: 'mock-model',
     defaultObjectGenerationMode: undefined,
-    get supportedUrls() { return Promise.resolve({}); },
+    get supportedUrls() {
+      return Promise.resolve({});
+    },
     doGenerate: async () => {
       if (opts?.error) throw opts.error;
       return {
@@ -69,7 +75,11 @@ function makeLanguageModel(opts?: { error?: unknown }): LanguageModelV4 {
             controller.enqueue({ type: 'error', error: opts.error } as LanguageModelV4StreamPart);
           } else {
             controller.enqueue({ type: 'text-start', id: 'text-0' } as LanguageModelV4StreamPart);
-            controller.enqueue({ type: 'text-delta', id: 'text-0', delta: 'hi' } as LanguageModelV4StreamPart);
+            controller.enqueue({
+              type: 'text-delta',
+              id: 'text-0',
+              delta: 'hi',
+            } as LanguageModelV4StreamPart);
             controller.enqueue({ type: 'text-end', id: 'text-0' } as LanguageModelV4StreamPart);
             controller.enqueue({
               type: 'finish',
@@ -125,37 +135,36 @@ describe('G86 — isClientAbort misclassifies upstream AbortError as 499 (HE9)',
   // simulate an upstream-side timeout abort (NOT a client disconnect).
   // `isClientAbort` is now signal-gated: a bare AbortError with a
   // still-connected client is an upstream fault → 504 gateway_timeout.
-  it(
-    'upstream AbortError should not be classified as 499 client abort (G86)',
-    async () => {
-      // Simulate upstream timeout: the provider throws an AbortError that
-      // originated server-side (e.g. AbortSignal.timeout() on the fetch).
-      const upstreamAbortError = new DOMException('upstream timeout', 'AbortError');
-      const model = makeLanguageModel({ error: upstreamAbortError });
-      const app = makeAppWithModel(model);
+  it('upstream AbortError should not be classified as 499 client abort (G86)', async () => {
+    // Simulate upstream timeout: the provider throws an AbortError that
+    // originated server-side (e.g. AbortSignal.timeout() on the fetch).
+    const upstreamAbortError = new DOMException('upstream timeout', 'AbortError');
+    const model = makeLanguageModel({ error: upstreamAbortError });
+    const app = makeAppWithModel(model);
 
-      const res = await app.request('http://localhost/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          model: 'groq/test',
-          messages: [{ role: 'user', content: 'hi' }],
-        }),
-      });
+    const res = await app.request('http://localhost/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'groq/test',
+        messages: [{ role: 'user', content: 'hi' }],
+      }),
+    });
 
-      // The request signal never aborted, so this is not a client abort:
-      // it maps to 504 gateway_timeout instead of a bodyless 499.
-      expect(res.status).not.toBe(499);
-      expect(res.status).toBe(504);
-    },
-  );
+    // The request signal never aborted, so this is not a client abort:
+    // it maps to 504 gateway_timeout instead of a bodyless 499.
+    expect(res.status).not.toBe(499);
+    expect(res.status).toBe(504);
+  });
 });
 
 // ---------------------------------------------------------------------------
 // G87 — beforeUpstream mutation contract on modality routes
 // ---------------------------------------------------------------------------
 
-function makeEmbeddingModel(capture: (opts: Record<string, Record<string, unknown>> | undefined) => void): EmbeddingModelV4 {
+function makeEmbeddingModel(
+  capture: (opts: Record<string, Record<string, unknown>> | undefined) => void,
+): EmbeddingModelV4 {
   return {
     specificationVersion: 'v4',
     provider: 'mock',
@@ -179,15 +188,22 @@ describe('G87 — beforeUpstream contract on modality routes (HE12)', () => {
     let captured: BeforeUpstreamHookArgs | undefined;
     let providerOptsAtUpstream: Record<string, Record<string, unknown>> | undefined;
     const registry = {
-      openai: { embeddingModel: () => makeEmbeddingModel((o) => { providerOptsAtUpstream = o; }) },
+      openai: {
+        embeddingModel: () =>
+          makeEmbeddingModel((o) => {
+            providerOptsAtUpstream = o;
+          }),
+      },
     } as unknown as ProviderRegistry;
     const app = createApp({
       registry,
       hooks: {
-        beforeUpstream: [(args) => {
-          captured = args;
-          args.providerOptions.openai = { ...args.providerOptions.openai, injected: true };
-        }],
+        beforeUpstream: [
+          (args) => {
+            captured = args;
+            args.providerOptions.openai = { ...args.providerOptions.openai, injected: true };
+          },
+        ],
       },
     });
 
@@ -213,7 +229,11 @@ describe('G87 — system is read-only on the messages route (HE12)', () => {
     const app = createApp({
       registry,
       hooks: {
-        beforeUpstream: [(args) => { capturedSystem = args.system; }],
+        beforeUpstream: [
+          (args) => {
+            capturedSystem = args.system;
+          },
+        ],
       },
     });
 

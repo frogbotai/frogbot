@@ -69,9 +69,9 @@ export function buildRetryHeaders(args: {
   return out;
 }
 
-function normalizeHeaders(
-  h: Headers | Record<string, string> | undefined,
-): { get: (name: string) => string | undefined } {
+function normalizeHeaders(h: Headers | Record<string, string> | undefined): {
+  get: (name: string) => string | undefined;
+} {
   if (!h) return { get: () => undefined };
   if (h instanceof Headers) {
     return { get: (name) => h.get(name) ?? undefined };

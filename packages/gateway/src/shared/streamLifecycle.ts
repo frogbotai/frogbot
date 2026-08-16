@@ -36,16 +36,25 @@
 
 import type { LanguageModelUsage } from 'ai';
 
-import { type HookPhase, type Hooks, type HookUsage, type OperationBase,runHooks } from '../hooks.js';
+import {
+  type HookPhase,
+  type Hooks,
+  type HookUsage,
+  type OperationBase,
+  runHooks,
+} from '../hooks.js';
 
 export type StreamDoneOutcome =
-  | { kind: 'done' }
-  | { kind: 'error'; error: unknown }
-  | { kind: 'cancel'; reason?: unknown };
+  { kind: 'done' } | { kind: 'error'; error: unknown } | { kind: 'cancel'; reason?: unknown };
 
 export type StreamLifecycle = {
   /** Wire directly into `streamText({ onFinish: lifecycle.onFinish })`. */
-  onFinish: (event: { finishReason: string; response?: unknown; usage: LanguageModelUsage; warnings?: unknown[] }) => Promise<void>;
+  onFinish: (event: {
+    finishReason: string;
+    response?: unknown;
+    usage: LanguageModelUsage;
+    warnings?: unknown[];
+  }) => Promise<void>;
   /** Wire directly into `streamText({ onError: lifecycle.onError })`. */
   onError: (event: { error: unknown }) => void;
   /** Wire directly into `streamText({ onAbort: lifecycle.onAbort })`. */
@@ -94,15 +103,31 @@ export function createStreamLifecycle(args: {
     );
   }
 
-  async function fireAfterUpstream(fields: { finishReason?: string; response?: unknown; usage?: HookUsage; warnings?: unknown[] }) {
+  async function fireAfterUpstream(fields: {
+    finishReason?: string;
+    response?: unknown;
+    usage?: HookUsage;
+    warnings?: unknown[];
+  }) {
     await runHooks(
       hooks.afterUpstream,
-      { ...base, phase: 'afterUpstream', finishReason: fields.finishReason, response: fields.response, usage: fields.usage, warnings: fields.warnings },
+      {
+        ...base,
+        phase: 'afterUpstream',
+        finishReason: fields.finishReason,
+        response: fields.response,
+        usage: fields.usage,
+        warnings: fields.warnings,
+      },
       { isolate: true },
     );
   }
 
-  async function fireAfterOperation(fields: { finishReason?: string; usage?: HookUsage; error?: unknown }) {
+  async function fireAfterOperation(fields: {
+    finishReason?: string;
+    usage?: HookUsage;
+    error?: unknown;
+  }) {
     if (finished) return;
     finished = true;
     await runHooks(
@@ -122,13 +147,20 @@ export function createStreamLifecycle(args: {
   async function finalizeAbort() {
     if (finished) return;
     base.otel['frogbot.status_code_effective'] = 499;
-    await fireAfterOperation({ finishReason: capturedFinishReason ?? 'abort', usage: capturedUsage });
+    await fireAfterOperation({
+      finishReason: capturedFinishReason ?? 'abort',
+      usage: capturedUsage,
+    });
   }
 
   async function finalizeError(error: unknown) {
     if (finished) return;
     await fireAfterError(error);
-    await fireAfterOperation({ finishReason: capturedFinishReason ?? 'error', usage: capturedUsage, error });
+    await fireAfterOperation({
+      finishReason: capturedFinishReason ?? 'error',
+      usage: capturedUsage,
+      error,
+    });
   }
 
   return {
@@ -139,7 +171,12 @@ export function createStreamLifecycle(args: {
         await finalizeError(capturedError ?? new Error('Stream finished with an error.'));
         return;
       }
-      await fireAfterUpstream({ finishReason: capturedFinishReason, response: event.response, usage: capturedUsage, warnings: event.warnings });
+      await fireAfterUpstream({
+        finishReason: capturedFinishReason,
+        response: event.response,
+        usage: capturedUsage,
+        warnings: event.warnings,
+      });
       await fireAfterOperation({ finishReason: capturedFinishReason, usage: capturedUsage });
     },
 
@@ -167,7 +204,11 @@ export function createStreamLifecycle(args: {
       }
       // Normal wire-level close with nothing captured by `streamText`'s
       // own callbacks — defensive fallback, should be rare in practice.
-      await fireAfterOperation({ finishReason: capturedFinishReason, usage: capturedUsage, error: capturedError });
+      await fireAfterOperation({
+        finishReason: capturedFinishReason,
+        usage: capturedUsage,
+        error: capturedError,
+      });
     },
 
     async finalizeNow(overrides) {
@@ -177,7 +218,10 @@ export function createStreamLifecycle(args: {
         await finalizeError(error);
         return;
       }
-      await fireAfterOperation({ finishReason: overrides?.finishReason ?? capturedFinishReason, usage: capturedUsage });
+      await fireAfterOperation({
+        finishReason: overrides?.finishReason ?? capturedFinishReason,
+        usage: capturedUsage,
+      });
     },
 
     hasFinalized: () => finished,

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { toResponsesResponse,toResponseStatus } from './toResponse.js';
+import { toResponsesResponse, toResponseStatus } from './toResponse.js';
 
 const baseResponse = { timestamp: new Date('2026-07-03T00:00:00.000Z') };
 const baseUsage = { inputTokens: 3, outputTokens: 2, totalTokens: 5 };
@@ -11,18 +11,22 @@ describe('toResponsesResponse', () => {
   });
 
   it('maps AI SDK generateText output to Responses shape', () => {
-    vi.spyOn(crypto, 'randomUUID').mockReturnValueOnce('response-id').mockReturnValueOnce('message-id');
+    vi.spyOn(crypto, 'randomUUID')
+      .mockReturnValueOnce('response-id')
+      .mockReturnValueOnce('message-id');
 
-    expect(toResponsesResponse({
-      model: 'openai/gpt-4o-mini',
-      previousResponseId: 'resp_prev',
-      result: {
-        text: 'hello frog',
-        finishReason: 'stop',
-        response: baseResponse,
-        usage: baseUsage,
-      },
-    })).toEqual({
+    expect(
+      toResponsesResponse({
+        model: 'openai/gpt-4o-mini',
+        previousResponseId: 'resp_prev',
+        result: {
+          text: 'hello frog',
+          finishReason: 'stop',
+          response: baseResponse,
+          usage: baseUsage,
+        },
+      }),
+    ).toEqual({
       id: 'resp_response-id',
       object: 'response',
       created_at: 1783036800,
@@ -46,20 +50,24 @@ describe('toResponsesResponse', () => {
       user: null,
       metadata: null,
       input: [],
-      output: [{
-        id: 'msg_message-id',
-        type: 'message',
-        role: 'assistant',
-        status: 'completed',
-        content: [{ type: 'output_text', text: 'hello frog', annotations: [] }],
-      }],
+      output: [
+        {
+          id: 'msg_message-id',
+          type: 'message',
+          role: 'assistant',
+          status: 'completed',
+          content: [{ type: 'output_text', text: 'hello frog', annotations: [] }],
+        },
+      ],
       output_text: 'hello frog',
       usage: { input_tokens: 3, output_tokens: 2, total_tokens: 5 },
     });
   });
 
   it('emits function_call output items from tool calls', () => {
-    vi.spyOn(crypto, 'randomUUID').mockReturnValue('fc-id' as `${string}-${string}-${string}-${string}-${string}`);
+    vi.spyOn(crypto, 'randomUUID').mockReturnValue(
+      'fc-id' as `${string}-${string}-${string}-${string}-${string}`,
+    );
 
     const result = toResponsesResponse({
       model: 'openai/gpt-4o-mini',
@@ -72,14 +80,16 @@ describe('toResponsesResponse', () => {
       },
     });
 
-    expect(result.output).toEqual([{
-      id: 'fc_fc-id',
-      type: 'function_call',
-      status: 'completed',
-      call_id: 'call_1',
-      name: 'get_weather',
-      arguments: JSON.stringify({ city: 'Paris' }),
-    }]);
+    expect(result.output).toEqual([
+      {
+        id: 'fc_fc-id',
+        type: 'function_call',
+        status: 'completed',
+        call_id: 'call_1',
+        name: 'get_weather',
+        arguments: JSON.stringify({ city: 'Paris' }),
+      },
+    ]);
     expect(result.output_text).toBe('');
   });
 
@@ -119,7 +129,12 @@ describe('toResponsesResponse', () => {
   it('maps status "incomplete" with content_filter for content-filter finishReason', () => {
     const result = toResponsesResponse({
       model: 'openai/gpt-4o-mini',
-      result: { text: '', finishReason: 'content-filter', response: baseResponse, usage: baseUsage },
+      result: {
+        text: '',
+        finishReason: 'content-filter',
+        response: baseResponse,
+        usage: baseUsage,
+      },
     });
     expect(result.status).toBe('incomplete');
     expect(result.incomplete_details).toEqual({ reason: 'content_filter' });

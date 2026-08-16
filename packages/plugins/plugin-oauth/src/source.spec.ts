@@ -21,14 +21,20 @@ async function setup(overrides: Partial<OAuthProvider> = {}) {
     ...overrides,
   };
   const update = vi.fn().mockResolvedValue({});
-  const source = createOAuthCredentialSource({ provider, encryption, connectionsSlug: 'connections' });
+  const source = createOAuthCredentialSource({
+    provider,
+    encryption,
+    connectionsSlug: 'connections',
+  });
   const connection = {
     id: 'connection',
     service: 'custom-service',
     source: 'oauth' as const,
     sourceKey: 'custom',
     credentialType: 'oauth2' as const,
-    encryptedCredentials: await encryption.encrypt(JSON.stringify({ access_token: 'access', refresh_token: 'refresh' })),
+    encryptedCredentials: await encryption.encrypt(
+      JSON.stringify({ access_token: 'access', refresh_token: 'refresh' }),
+    ),
     status: 'active' as const,
     expiresAt: '2000-01-01T00:00:00.000Z',
   };
@@ -38,18 +44,38 @@ async function setup(overrides: Partial<OAuthProvider> = {}) {
 describe('OAuth credential source', () => {
   it('refreshes expired credentials and marks failed refreshes as errors', async () => {
     const success = await setup();
-    await success.source.refresh!({ connection: success.connection, frogbot: success.frogbot, owner: { id: 'owner' } });
-    const stored = JSON.parse(await encryption.decrypt(success.update.mock.calls[0][0].data.encryptedCredentials));
+    await success.source.refresh!({
+      connection: success.connection,
+      frogbot: success.frogbot,
+      owner: { id: 'owner' },
+    });
+    const stored = JSON.parse(
+      await encryption.decrypt(success.update.mock.calls[0][0].data.encryptedCredentials),
+    );
     expect(stored).toMatchObject({ access_token: 'next', refresh_token: 'refresh' });
 
     const failure = await setup({ refresh: vi.fn().mockRejectedValue(new Error('invalid_grant')) });
-    await expect(failure.source.refresh!({ connection: failure.connection, frogbot: failure.frogbot, owner: { id: 'owner' } })).rejects.toThrow('invalid_grant');
-    expect(failure.update).toHaveBeenLastCalledWith(expect.objectContaining({ data: { status: 'error' } }));
+    await expect(
+      failure.source.refresh!({
+        connection: failure.connection,
+        frogbot: failure.frogbot,
+        owner: { id: 'owner' },
+      }),
+    ).rejects.toThrow('invalid_grant');
+    expect(failure.update).toHaveBeenLastCalledWith(
+      expect.objectContaining({ data: { status: 'error' } }),
+    );
   });
 
   it('revokes with providers that support revocation', async () => {
     const current = await setup();
-    await current.source.revoke!({ connection: current.connection, frogbot: current.frogbot, owner: { id: 'owner' } });
-    expect(current.provider.revoke).toHaveBeenCalledWith(expect.objectContaining({ tokens: expect.objectContaining({ accessToken: 'access' }) }));
+    await current.source.revoke!({
+      connection: current.connection,
+      frogbot: current.frogbot,
+      owner: { id: 'owner' },
+    });
+    expect(current.provider.revoke).toHaveBeenCalledWith(
+      expect.objectContaining({ tokens: expect.objectContaining({ accessToken: 'access' }) }),
+    );
   });
 });

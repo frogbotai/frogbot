@@ -1,5 +1,5 @@
-import { IconNode } from '../types'
-import createLucideIcon from '../createLucideIcon'
+import { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon';
 
 export const checkmarkIcon: IconNode = [
   [
@@ -11,8 +11,8 @@ export const checkmarkIcon: IconNode = [
       fill: 'currentColor',
     },
   ],
-]
+];
 
-const CheckmarkIcon = createLucideIcon('CheckmarkIcon', checkmarkIcon, 0, '0 0 13 11')
+const CheckmarkIcon = createLucideIcon('CheckmarkIcon', checkmarkIcon, 0, '0 0 13 11');
 
-export default CheckmarkIcon
+export default CheckmarkIcon;

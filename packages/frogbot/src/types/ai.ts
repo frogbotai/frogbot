@@ -57,7 +57,9 @@ export type BedrockProviderEntry = (
       accessKeyId?: never;
       secretAccessKey?: never;
       sessionToken?: never;
-    }) & BedrockModels;
+    }
+) &
+  BedrockModels;
 
 type ProviderEntry<P extends ProviderName = ProviderName> = true | BuiltInProviderEntry<P>;
 
@@ -152,12 +154,7 @@ export type AIMethod =
  * from `@ai-sdk/otel` without taking a hard dependency.
  */
 export type AITelemetrySpanType =
-  | 'operation'
-  | 'step'
-  | 'languageModel'
-  | 'tool'
-  | 'embedding'
-  | 'reranking';
+  'operation' | 'step' | 'languageModel' | 'tool' | 'embedding' | 'reranking';
 
 export type AIEnrichSpanArgs = {
   spanType: AITelemetrySpanType;
@@ -226,30 +223,28 @@ export type BaseAIOpts = {
   overrideAccess?: boolean;
 };
 
-export type GenerateTextOpts = BaseAIOpts & (
-  | { prompt: string; messages?: never }
-  | { prompt?: never; messages: ModelMessage[] }
-) & {
-  instructions?: string;
-  tools?: Tool[];
-  toolChoice?: ToolChoice<ToolSet>;
-  output?: AIOutput;
-  stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];
-  maxOutputTokens?: number;
-  temperature?: number;
-  topP?: number;
-  topK?: number;
-  presencePenalty?: number;
-  frequencyPenalty?: number;
-  seed?: number;
-  maxRetries?: number;
-  timeout?: number;
-  stopSequences?: string[];
-  providerOptions?: Record<string, unknown>;
-  abortSignal?: AbortSignal;
-  headers?: Record<string, string>;
-  onStepEnd?: (event: unknown) => void | Promise<void>;
-};
+export type GenerateTextOpts = BaseAIOpts &
+  ({ prompt: string; messages?: never } | { prompt?: never; messages: ModelMessage[] }) & {
+    instructions?: string;
+    tools?: Tool[];
+    toolChoice?: ToolChoice<ToolSet>;
+    output?: AIOutput;
+    stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];
+    maxOutputTokens?: number;
+    temperature?: number;
+    topP?: number;
+    topK?: number;
+    presencePenalty?: number;
+    frequencyPenalty?: number;
+    seed?: number;
+    maxRetries?: number;
+    timeout?: number;
+    stopSequences?: string[];
+    providerOptions?: Record<string, unknown>;
+    abortSignal?: AbortSignal;
+    headers?: Record<string, string>;
+    onStepEnd?: (event: unknown) => void | Promise<void>;
+  };
 
 export type StreamTextOpts = GenerateTextOpts & {
   onFinish?: (event: unknown) => void | Promise<void>;

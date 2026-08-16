@@ -5,8 +5,7 @@ import type { AgentProfile } from './agent.js';
 // from a config key. Milestone B reads the slugs from here.
 
 export type SanitizedChatConfig =
-  | { enabled: false }
-  | { enabled: true; threadsSlug: string; messagesSlug: string };
+  { enabled: false } | { enabled: true; threadsSlug: string; messagesSlug: string };
 
 export type ManifestResponse = {
   ai: { transcribe: { model: string } | false };

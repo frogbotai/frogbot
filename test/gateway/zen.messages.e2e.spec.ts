@@ -20,7 +20,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '../../packages/gateway/src/app.js';
-import { buildProviderRegistry, type ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import {
+  buildProviderRegistry,
+  type ProviderRegistry,
+} from '../../packages/gateway/src/providers/registry.js';
 import { parseSse, type SseFrame } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
@@ -77,7 +80,10 @@ type AnthropicEvent = {
 };
 
 function eventsOf(frames: SseFrame[]): AnthropicEvent[] {
-  return frames.map((f) => ({ event: f.event, data: JSON.parse(f.data) as AnthropicEvent['data'] }));
+  return frames.map((f) => ({
+    event: f.event,
+    data: JSON.parse(f.data) as AnthropicEvent['data'],
+  }));
 }
 
 async function streamMessages(app: ReturnType<typeof makeZenApp>, body: Record<string, unknown>) {
@@ -186,7 +192,10 @@ describe.skipIf(!RUN_E2E)('gateway E2E — Zen /v1/messages (Anthropic wire, cro
     'full Anthropic tool loop: tool_use → tool_result → final answer references it',
     async () => {
       const turn1Messages = [
-        { role: 'user', content: 'What is the weather in Paris? You MUST use the get_weather tool.' },
+        {
+          role: 'user',
+          content: 'What is the weather in Paris? You MUST use the get_weather tool.',
+        },
       ];
       const turn1 = await postJson<MessagesBody>(app, '/v1/messages', {
         model: MODEL,
@@ -361,7 +370,12 @@ describe.skipIf(!RUN_E2E)('gateway E2E — Zen /v1/messages (Anthropic wire, cro
     async () => {
       const { status, body } = await postJson<MessagesBody>(app, '/v1/messages', {
         model: MODEL,
-        messages: [{ role: 'user', content: 'Repeat this exact sentence and nothing else: alpha BANANA omega' }],
+        messages: [
+          {
+            role: 'user',
+            content: 'Repeat this exact sentence and nothing else: alpha BANANA omega',
+          },
+        ],
         stop_sequences: ['BANANA'],
         max_tokens: 1024,
       });
@@ -370,7 +384,9 @@ describe.skipIf(!RUN_E2E)('gateway E2E — Zen /v1/messages (Anthropic wire, cro
       expect(body.stop_reason).toBeTruthy();
       const text = textOf(body.content);
       if (text.length === 0) {
-        console.warn('[zen.messages.e2e] stop_sequences produced empty text (stop hit during reasoning?)');
+        console.warn(
+          '[zen.messages.e2e] stop_sequences produced empty text (stop hit during reasoning?)',
+        );
       }
       expect(text).not.toContain('omega');
       expect(text).not.toContain('BANANA');
@@ -442,7 +458,9 @@ describe.skipIf(!RUN_E2E)('gateway E2E — Zen /v1/messages (Anthropic wire, cro
       expect(useA.id!.length).toBeGreaterThan(0);
       expect(typeof useA.input).toBe('object');
 
-      const assistantA = (turn1.body.content ?? []).filter((b) => b.type === 'text' || b.type === 'tool_use');
+      const assistantA = (turn1.body.content ?? []).filter(
+        (b) => b.type === 'text' || b.type === 'tool_use',
+      );
       const turn2Messages: Array<Record<string, unknown>> = [
         ...baseMessages,
         { role: 'assistant', content: assistantA },
@@ -468,13 +486,18 @@ describe.skipIf(!RUN_E2E)('gateway E2E — Zen /v1/messages (Anthropic wire, cro
         expect(useB.id).not.toBe(useA.id);
         expect(typeof useB.input).toBe('object');
 
-        const assistantB = (turn2.body.content ?? []).filter((b) => b.type === 'text' || b.type === 'tool_use');
+        const assistantB = (turn2.body.content ?? []).filter(
+          (b) => b.type === 'text' || b.type === 'tool_use',
+        );
         const turn3 = await postJson<MessagesBody>(app, '/v1/messages', {
           model: MODEL,
           messages: [
             ...turn2Messages,
             { role: 'assistant', content: assistantB },
-            { role: 'user', content: [{ type: 'tool_result', tool_use_id: useB.id, content: '68 million' }] },
+            {
+              role: 'user',
+              content: [{ type: 'tool_result', tool_use_id: useB.id, content: '68 million' }],
+            },
           ],
           tools,
           max_tokens: 1024,
@@ -503,9 +526,14 @@ describe.skipIf(!RUN_E2E)('gateway E2E — Zen /v1/messages (Anthropic wire, cro
         model: MODEL,
         system: [
           { type: 'text', text: 'You are a terse assistant.' },
-          { type: 'text', text: 'The secret codeword is FALCON. If asked for the codeword, reply with just that word.' },
+          {
+            type: 'text',
+            text: 'The secret codeword is FALCON. If asked for the codeword, reply with just that word.',
+          },
         ],
-        messages: [{ role: 'user', content: 'What is the secret codeword? Reply with just the word.' }],
+        messages: [
+          { role: 'user', content: 'What is the secret codeword? Reply with just the word.' },
+        ],
         max_tokens: 1024,
       });
 

@@ -95,7 +95,11 @@ describe('@frogbotai/next views', () => {
     const a = (await generatePageMetadata({ config: withImages.config, params, searchParams })) as {
       openGraph?: unknown;
     };
-    const b = (await generatePageMetadata({ config: dynamicMode.config, params, searchParams })) as {
+    const b = (await generatePageMetadata({
+      config: dynamicMode.config,
+      params,
+      searchParams,
+    })) as {
       openGraph?: unknown;
     };
 

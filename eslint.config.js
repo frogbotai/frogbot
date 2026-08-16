@@ -1,8 +1,8 @@
-import eslint from '@eslint/js'
-import vitest from '@vitest/eslint-plugin'
-import simpleImportSort from 'eslint-plugin-simple-import-sort'
-import globals from 'globals'
-import tseslint from 'typescript-eslint'
+import eslint from '@eslint/js';
+import vitest from '@vitest/eslint-plugin';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
@@ -61,4 +61,4 @@ export default tseslint.config(
     files: ['templates/**', 'examples/**'],
     rules: { 'no-console': 'off' },
   },
-)
+);

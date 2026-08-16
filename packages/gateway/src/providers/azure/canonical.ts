@@ -15,10 +15,10 @@ export const AZURE_CANONICAL_IDS: Record<string, string> = {
   'gpt-4-turbo': 'gpt-4-turbo',
   'gpt-4': 'gpt-4',
   'gpt-35-turbo': 'gpt-35-turbo',
-  'o1': 'o1',
+  o1: 'o1',
   'o1-mini': 'o1-mini',
   'o1-preview': 'o1-preview',
-  'o3': 'o3',
+  o3: 'o3',
   'o3-mini': 'o3-mini',
   'o4-mini': 'o4-mini',
 };

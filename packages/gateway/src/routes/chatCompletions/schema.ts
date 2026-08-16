@@ -45,44 +45,60 @@ import { formatZodPath } from '../../shared/formatZodPath.js';
 // Content part schemas (user messages)
 // ---------------------------------------------------------------------------
 
-const textPartSchema = z.object({
-  type: z.literal('text'),
-  text: z.string(),
-}).loose();
+const textPartSchema = z
+  .object({
+    type: z.literal('text'),
+    text: z.string(),
+  })
+  .loose();
 
-const imagePartSchema = z.object({
-  type: z.literal('image_url'),
-  image_url: z.object({
-    url: z.string().min(1, 'image_url.url must be a non-empty string'),
-    detail: z.string().nullish(),
-  }).loose(),
-}).loose();
+const imagePartSchema = z
+  .object({
+    type: z.literal('image_url'),
+    image_url: z
+      .object({
+        url: z.string().min(1, 'image_url.url must be a non-empty string'),
+        detail: z.string().nullish(),
+      })
+      .loose(),
+  })
+  .loose();
 
-const inputAudioPartSchema = z.object({
-  type: z.literal('input_audio'),
-  input_audio: z.object({
-    data: z.string().min(1, 'input_audio.data must be a non-empty base64 string'),
-    // z.string() not z.enum — format validation belongs in the translator's
-    // AUDIO_FORMAT_MIME lookup, which emits UnsupportedModalityError + param.
-    format: z.string(),
-  }).loose(),
-}).loose();
+const inputAudioPartSchema = z
+  .object({
+    type: z.literal('input_audio'),
+    input_audio: z
+      .object({
+        data: z.string().min(1, 'input_audio.data must be a non-empty base64 string'),
+        // z.string() not z.enum — format validation belongs in the translator's
+        // AUDIO_FORMAT_MIME lookup, which emits UnsupportedModalityError + param.
+        format: z.string(),
+      })
+      .loose(),
+  })
+  .loose();
 
-const filePartSchema = z.object({
-  type: z.literal('file'),
-  file: z.object({
-    filename: z.string().nullish(),
-    file_data: z.string().nullish(),
-    file_id: z.string().nullish(),
-  }).loose(),
-}).loose();
+const filePartSchema = z
+  .object({
+    type: z.literal('file'),
+    file: z
+      .object({
+        filename: z.string().nullish(),
+        file_data: z.string().nullish(),
+        file_id: z.string().nullish(),
+      })
+      .loose(),
+  })
+  .loose();
 
 // Catch-all for content parts with unknown `type` values (e.g. `video`,
 // provider-specific types). Reaches the translator's default branch which
 // throws UnsupportedModalityError with the exact param path.
-const unknownContentPartSchema = z.object({
-  type: z.string(),
-}).loose();
+const unknownContentPartSchema = z
+  .object({
+    type: z.string(),
+  })
+  .loose();
 
 const userContentPartSchema = z.union([
   textPartSchema,
@@ -96,14 +112,18 @@ const userContentPartSchema = z.union([
 // Tool-call shape (assistant messages)
 // ---------------------------------------------------------------------------
 
-const toolCallSchema = z.object({
-  id: z.string().min(1, 'tool_call.id must be a non-empty string'),
-  type: z.literal('function'),
-  function: z.object({
-    name: z.string().min(1, 'tool_call.function.name must be a non-empty string'),
-    arguments: z.string(),
-  }).loose(),
-}).loose();
+const toolCallSchema = z
+  .object({
+    id: z.string().min(1, 'tool_call.id must be a non-empty string'),
+    type: z.literal('function'),
+    function: z
+      .object({
+        name: z.string().min(1, 'tool_call.function.name must be a non-empty string'),
+        arguments: z.string(),
+      })
+      .loose(),
+  })
+  .loose();
 
 // Message schemas
 //
@@ -123,34 +143,45 @@ const toolCallSchema = z.object({
 // format has no participant-name concept, so there is no upstream mapping —
 // this is parity with the AI SDK's own converters, not an oversight.
 
-const systemMessageSchema = z.object({
-  role: z.union([z.literal('system'), z.literal('developer')]),
-  content: z.union([z.string(), z.array(textPartSchema)]),
-  name: z.string().nullish(),
-}).loose();
+const systemMessageSchema = z
+  .object({
+    role: z.union([z.literal('system'), z.literal('developer')]),
+    content: z.union([z.string(), z.array(textPartSchema)]),
+    name: z.string().nullish(),
+  })
+  .loose();
 
-const userMessageSchema = z.object({
-  role: z.literal('user'),
-  content: z.union([z.string(), z.array(userContentPartSchema).min(1, 'user content array must be non-empty')]),
-  name: z.string().nullish(),
-}).loose();
+const userMessageSchema = z
+  .object({
+    role: z.literal('user'),
+    content: z.union([
+      z.string(),
+      z.array(userContentPartSchema).min(1, 'user content array must be non-empty'),
+    ]),
+    name: z.string().nullish(),
+  })
+  .loose();
 
-const assistantMessageSchema = z.object({
-  role: z.literal('assistant'),
-  content: z.union([z.string(), z.null(), z.array(textPartSchema)]).nullish(),
-  reasoning_content: z.string().nullish(),
-  tool_calls: z.array(toolCallSchema).nullish(),
-  // Re-ingested refusals are preserved as a text part (G55) — the AI SDK has
-  // no refusal content-part type on the input side.
-  refusal: z.union([z.string(), z.null()]).nullish(),
-  name: z.string().nullish(),
-}).loose();
+const assistantMessageSchema = z
+  .object({
+    role: z.literal('assistant'),
+    content: z.union([z.string(), z.null(), z.array(textPartSchema)]).nullish(),
+    reasoning_content: z.string().nullish(),
+    tool_calls: z.array(toolCallSchema).nullish(),
+    // Re-ingested refusals are preserved as a text part (G55) — the AI SDK has
+    // no refusal content-part type on the input side.
+    refusal: z.union([z.string(), z.null()]).nullish(),
+    name: z.string().nullish(),
+  })
+  .loose();
 
-const toolMessageSchema = z.object({
-  role: z.literal('tool'),
-  content: z.union([z.string(), z.array(textPartSchema)]),
-  tool_call_id: z.string().min(1, 'tool message tool_call_id is required'),
-}).loose();
+const toolMessageSchema = z
+  .object({
+    role: z.literal('tool'),
+    content: z.union([z.string(), z.array(textPartSchema)]),
+    tool_call_id: z.string().min(1, 'tool message tool_call_id is required'),
+  })
+  .loose();
 
 export const knownMessageSchema = z.discriminatedUnion('role', [
   systemMessageSchema,
@@ -162,10 +193,12 @@ export const knownMessageSchema = z.discriminatedUnion('role', [
 // Catch-all for messages whose role is not in the known set. Only used in the
 // two-pass parse logic below — never composed into a z.union with
 // knownMessageSchema to avoid z.union error-reporting ambiguity.
-export const unknownMessageSchema = z.object({
-  role: z.string(),
-  content: z.unknown().nullish(),
-}).loose();
+export const unknownMessageSchema = z
+  .object({
+    role: z.string(),
+    content: z.unknown().nullish(),
+  })
+  .loose();
 
 // Union type for the parsed message (used only for ChatCompletionRequest type).
 const messageSchema = z.union([knownMessageSchema, unknownMessageSchema]);
@@ -174,18 +207,23 @@ const messageSchema = z.union([knownMessageSchema, unknownMessageSchema]);
 // Tool definition (request-level)
 // ---------------------------------------------------------------------------
 
-const toolDefinitionSchema = z.object({
-  type: z.string(), // loosened: forward-compat with non-`function` tool types
-  // `function` is nullish so non-`function` tool types don't fail here with a
-  // misleading `tools[N].function` param — the translator rejects them with
-  // the correct `tools[N].type` param instead.
-  function: z.object({
-    name: z.string().min(1),
-    description: z.string().nullish(),
-    parameters: z.record(z.string(), z.unknown()).nullish(),
-    strict: z.boolean().nullish(),
-  }).loose().nullish(),
-}).loose();
+const toolDefinitionSchema = z
+  .object({
+    type: z.string(), // loosened: forward-compat with non-`function` tool types
+    // `function` is nullish so non-`function` tool types don't fail here with a
+    // misleading `tools[N].function` param — the translator rejects them with
+    // the correct `tools[N].type` param instead.
+    function: z
+      .object({
+        name: z.string().min(1),
+        description: z.string().nullish(),
+        parameters: z.record(z.string(), z.unknown()).nullish(),
+        strict: z.boolean().nullish(),
+      })
+      .loose()
+      .nullish(),
+  })
+  .loose();
 
 // Loosened to z.unknown() so extended values pass through to the forwarding
 // path without causing 400s from clients that send provider-specific
@@ -199,51 +237,56 @@ const toolChoiceSchema = z.unknown().nullish();
 // stream_options — OpenAI streaming usage/obfuscation controls. `.loose()` so
 // unknown nested keys survive (limited-schema philosophy); `.nullish()` so an
 // absent or null value is accepted.
-const streamOptionsSchema = z.object({
-  include_usage: z.boolean().nullish(),
-  include_obfuscation: z.boolean().nullish(),
-}).loose().nullish();
+const streamOptionsSchema = z
+  .object({
+    include_usage: z.boolean().nullish(),
+    include_obfuscation: z.boolean().nullish(),
+  })
+  .loose()
+  .nullish();
 
-export const chatCompletionRequestSchema = z.object({
-  model: z.string().min(1, 'model is required'),
-  messages: z.array(messageSchema).min(1, 'messages must contain at least one message'),
+export const chatCompletionRequestSchema = z
+  .object({
+    model: z.string().min(1, 'model is required'),
+    messages: z.array(messageSchema).min(1, 'messages must contain at least one message'),
 
-  // Sampling params — leave value ranges to the provider.
-  temperature: z.number().nullish(),
-  top_k: z.number().int().nullish(),
-  top_p: z.number().nullish(),
-  max_tokens: z.number().int().positive().nullish(),
-  max_completion_tokens: z.number().int().positive().nullish(),
-  stop: z.union([z.string(), z.array(z.string())]).nullish(),
-  presence_penalty: z.number().nullish(),
-  frequency_penalty: z.number().nullish(),
-  n: z.number().int().positive().nullish(),
-  seed: z.number().int().nullish(),
-  user: z.string().nullish(),
+    // Sampling params — leave value ranges to the provider.
+    temperature: z.number().nullish(),
+    top_k: z.number().int().nullish(),
+    top_p: z.number().nullish(),
+    max_tokens: z.number().int().positive().nullish(),
+    max_completion_tokens: z.number().int().positive().nullish(),
+    stop: z.union([z.string(), z.array(z.string())]).nullish(),
+    presence_penalty: z.number().nullish(),
+    frequency_penalty: z.number().nullish(),
+    n: z.number().int().positive().nullish(),
+    seed: z.number().int().nullish(),
+    user: z.string().nullish(),
 
-  // Streaming switch.
-  stream: z.boolean().nullish(),
+    // Streaming switch.
+    stream: z.boolean().nullish(),
 
-  // Streaming usage/obfuscation controls (OpenAI `stream_options`).
-  stream_options: streamOptionsSchema,
+    // Streaming usage/obfuscation controls (OpenAI `stream_options`).
+    stream_options: streamOptionsSchema,
 
-  // Reasoning effort for o-series / reasoning models. Forwarded to the SDK's
-  // provider namespace (OpenAI reads `reasoningEffort`).
-  reasoning_effort: z.string().nullish(),
+    // Reasoning effort for o-series / reasoning models. Forwarded to the SDK's
+    // provider namespace (OpenAI reads `reasoningEffort`).
+    reasoning_effort: z.string().nullish(),
 
-  // Tools — typed here for forward compat and forwarded by the handler.
-  tools: z.array(toolDefinitionSchema).nullish(),
-  tool_choice: toolChoiceSchema,
-  parallel_tool_calls: z.boolean().nullish(),
+    // Tools — typed here for forward compat and forwarded by the handler.
+    tools: z.array(toolDefinitionSchema).nullish(),
+    tool_choice: toolChoiceSchema,
+    parallel_tool_calls: z.boolean().nullish(),
 
-  // Structured output — loosened to z.unknown() for forward compat.
-  // Providers send extended shapes
-  // (e.g. `{ type: 'json_schema', json_schema: {...} }`) that would 400
-  // with a tight enum.
-  response_format: z.unknown().nullish(),
-  logit_bias: z.record(z.string(), z.number()).nullish(),
-  logprobs: z.boolean().nullish(),
-}).loose();
+    // Structured output — loosened to z.unknown() for forward compat.
+    // Providers send extended shapes
+    // (e.g. `{ type: 'json_schema', json_schema: {...} }`) that would 400
+    // with a tight enum.
+    response_format: z.unknown().nullish(),
+    logit_bias: z.record(z.string(), z.number()).nullish(),
+    logprobs: z.boolean().nullish(),
+  })
+  .loose();
 
 export type ChatCompletionRequest = z.infer<typeof chatCompletionRequestSchema>;
 

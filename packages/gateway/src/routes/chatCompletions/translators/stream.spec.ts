@@ -29,7 +29,9 @@ async function collectChunks(
     frames.push(value);
   }
 
-  return frames.filter((f) => f !== 'data: [DONE]\n\n').map((f) => JSON.parse(f.replace('data: ', '').trim()));
+  return frames
+    .filter((f) => f !== 'data: [DONE]\n\n')
+    .map((f) => JSON.parse(f.replace('data: ', '').trim()));
 }
 
 describe('createOpenAIStreamTransform', () => {
@@ -203,19 +205,22 @@ describe('createOpenAIStreamTransform', () => {
   });
 
   test('finish-step reports cached input tokens', async () => {
-    const chunks = await collectChunks([
-      {
-        type: 'finish-step',
-        finishReason: 'stop',
-        usage: {
-          inputTokens: 10,
-          outputTokens: 5,
-          totalTokens: 15,
-          inputTokenDetails: { cacheReadTokens: 7 },
-        },
-        response: { id: 'resp-1', modelId: 'gemini' },
-      } as unknown as TextStreamPart<ToolSet>,
-    ], 'google/gemini');
+    const chunks = await collectChunks(
+      [
+        {
+          type: 'finish-step',
+          finishReason: 'stop',
+          usage: {
+            inputTokens: 10,
+            outputTokens: 5,
+            totalTokens: 15,
+            inputTokenDetails: { cacheReadTokens: 7 },
+          },
+          response: { id: 'resp-1', modelId: 'gemini' },
+        } as unknown as TextStreamPart<ToolSet>,
+      ],
+      'google/gemini',
+    );
 
     expect(chunks[0].usage?.prompt_tokens_details?.cached_tokens).toBe(7);
   });

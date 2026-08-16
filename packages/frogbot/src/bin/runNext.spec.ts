@@ -7,7 +7,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('node:child_process', () => ({ spawn: mocks.spawn }));
-vi.mock('node:fs', () => ({ existsSync: mocks.existsSync, default: { existsSync: mocks.existsSync } }));
+vi.mock('node:fs', () => ({
+  existsSync: mocks.existsSync,
+  default: { existsSync: mocks.existsSync },
+}));
 vi.mock('node:module', () => ({
   createRequire: () => ({ resolve: mocks.resolve }),
   default: { createRequire: () => ({ resolve: mocks.resolve }) },
@@ -86,7 +89,11 @@ describe('runNext', () => {
     runNext('dev', ['-p', '4000']);
 
     expect(mocks.spawn).toHaveBeenCalledTimes(1);
-    const [execPath, spawnArgs, options] = mocks.spawn.mock.calls[0] as [string, string[], Record<string, unknown>];
+    const [execPath, spawnArgs, options] = mocks.spawn.mock.calls[0] as [
+      string,
+      string[],
+      Record<string, unknown>,
+    ];
     expect(execPath).toBe(process.execPath);
     expect(spawnArgs[0]).toContain('next');
     expect(spawnArgs.slice(1)).toEqual(['dev', '-p', '4000']);
@@ -100,7 +107,9 @@ describe('runNext', () => {
 
     runNext('start');
 
-    const exitHandler = child.on.mock.calls.find(([event]) => event === 'exit')?.[1] as (code: number | null) => void;
+    const exitHandler = child.on.mock.calls.find(([event]) => event === 'exit')?.[1] as (
+      code: number | null,
+    ) => void;
     expect(() => exitHandler(3)).toThrow('process.exit');
     expect(exitSpy).toHaveBeenCalledWith(3);
   });
@@ -112,7 +121,9 @@ describe('runNext', () => {
 
     runNext('start');
 
-    const exitHandler = child.on.mock.calls.find(([event]) => event === 'exit')?.[1] as (code: number | null) => void;
+    const exitHandler = child.on.mock.calls.find(([event]) => event === 'exit')?.[1] as (
+      code: number | null,
+    ) => void;
     expect(() => exitHandler(null)).toThrow('process.exit');
     expect(exitSpy).toHaveBeenCalledWith(0);
   });

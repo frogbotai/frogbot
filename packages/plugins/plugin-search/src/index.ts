@@ -4,6 +4,8 @@ import type { Plugin } from 'frogbot';
 
 export type SearchPluginOptions<ConfigTypes = unknown> = SearchPluginConfig<ConfigTypes>;
 
-export function searchPlugin<ConfigTypes = unknown>(options: SearchPluginOptions<ConfigTypes>): Plugin {
+export function searchPlugin<ConfigTypes = unknown>(
+  options: SearchPluginOptions<ConfigTypes>,
+): Plugin {
   return (config) => payloadSearchPlugin(options)(config as never) as unknown as typeof config;
 }

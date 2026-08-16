@@ -11,7 +11,13 @@ describe('rewriteComponentPaths', () => {
   it('rewrites the CollectionCards dashboard widget to @frogbotai/next', () => {
     const config = makeConfig({
       dashboard: {
-        widgets: [{ slug: 'collections', Component: '@payloadcms/next/rsc#CollectionCards', minWidth: 'full' }],
+        widgets: [
+          {
+            slug: 'collections',
+            Component: '@payloadcms/next/rsc#CollectionCards',
+            minWidth: 'full',
+          },
+        ],
       },
     });
 
@@ -103,18 +109,22 @@ describe('rewriteComponentPaths', () => {
 
   it('rewrites Payload folder field components', () => {
     const config = {
-      collections: [{
-        fields: [{
-          name: 'folder',
-          type: 'relationship',
-          admin: {
-            components: {
-              Cell: '@payloadcms/next/rsc#FolderTableCell',
-              Field: '@payloadcms/next/rsc#FolderField',
+      collections: [
+        {
+          fields: [
+            {
+              name: 'folder',
+              type: 'relationship',
+              admin: {
+                components: {
+                  Cell: '@payloadcms/next/rsc#FolderTableCell',
+                  Field: '@payloadcms/next/rsc#FolderField',
+                },
+              },
             },
-          },
-        }],
-      }],
+          ],
+        },
+      ],
     } as unknown as SanitizedConfig;
 
     rewriteComponentPaths(config);

@@ -28,8 +28,16 @@ describe('usage logs', () => {
       email: 'usage-second@frogbot.local',
       password: 'frogbot-test-password',
     };
-    const first = await defaultBooted.frogbot.create({ collection: 'users', data: firstCredentials, overrideAccess: true });
-    const second = await defaultBooted.frogbot.create({ collection: 'users', data: secondCredentials, overrideAccess: true });
+    const first = await defaultBooted.frogbot.create({
+      collection: 'users',
+      data: firstCredentials,
+      overrideAccess: true,
+    });
+    const second = await defaultBooted.frogbot.create({
+      collection: 'users',
+      data: secondCredentials,
+      overrideAccess: true,
+    });
     const usage = (requestId: string, user: number | string) => ({
       requestId,
       user,
@@ -41,16 +49,33 @@ describe('usage logs', () => {
       costUSD: 0,
       requestedAt: new Date().toISOString(),
     });
-    await defaultBooted.frogbot.create({ collection: 'usage-logs' as never, data: usage('first-log', first.id) as never, overrideAccess: true });
-    await defaultBooted.frogbot.create({ collection: 'usage-logs' as never, data: usage('second-log', second.id) as never, overrideAccess: true });
-
-    const login = await defaultBooted.restClient.post<{ token: string }>('/api/users/login', firstCredentials);
-    const response = await defaultBooted.restClient.get<{ docs: Array<{ requestId: string }> }>('/api/usage-logs', {
-      headers: { Authorization: `JWT ${login.body.token}` },
+    await defaultBooted.frogbot.create({
+      collection: 'usage-logs' as never,
+      data: usage('first-log', first.id) as never,
+      overrideAccess: true,
+    });
+    await defaultBooted.frogbot.create({
+      collection: 'usage-logs' as never,
+      data: usage('second-log', second.id) as never,
+      overrideAccess: true,
     });
 
+    const login = await defaultBooted.restClient.post<{ token: string }>(
+      '/api/users/login',
+      firstCredentials,
+    );
+    const response = await defaultBooted.restClient.get<{ docs: Array<{ requestId: string }> }>(
+      '/api/usage-logs',
+      {
+        headers: { Authorization: `JWT ${login.body.token}` },
+      },
+    );
+
     expect(response.status).toBe(200);
-    expect(response.body.docs.map(({ requestId }) => requestId).sort()).toEqual(['first-log', 'second-log']);
+    expect(response.body.docs.map(({ requestId }) => requestId).sort()).toEqual([
+      'first-log',
+      'second-log',
+    ]);
   });
 
   it('denies anonymous reads of the default collection', async () => {
