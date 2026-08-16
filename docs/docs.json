@@ -40,6 +40,11 @@
                 ]
               },
               {
+                "group": "Deployment",
+                "expanded": false,
+                "pages": ["deployment/overview"]
+              },
+              {
                 "group": "Configuration",
                 "expanded": false,
                 "pages": [

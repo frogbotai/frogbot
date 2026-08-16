@@ -1,0 +1,73 @@
+---
+title: "Deployment"
+sidebarTitle: "Deployment"
+description: "Deploy a FrogBot app to production with Docker or Fly.io, and avoid the common cold-start and dependency gotchas."
+---
+
+FrogBot apps are Next.js applications powered by Payload CMS. They build like a standard Next.js app, but two things differ from a plain Next.js project:
+
+1. **The build must run in full, at image build time** — not split into "compile in the image / generate at runtime". FrogBot's `prebuild` step generates the Payload import map, and `next build` compiles the app. Running `next build --experimental-build-mode generate` at container start (as some platform templates do) re-runs webpack in production, which requires `typescript` at runtime and slows cold starts dramatically.
+2. **Several native packages are externalized from the webpack bundle** by Payload's `withPayload`: `libsql`, `sharp`, `pino`, `drizzle-kit`, and `json-schema-to-typescript`. The compiled routes `require()` them at runtime, so they must be resolvable from your app root. With pnpm's strict `node_modules` layout that only happens if they are **direct dependencies** — which the FrogBot template includes for you. **Do not remove them.**
+
+## Requirements
+
+- `next.config.mjs`, not `next.config.ts`. The `.ts` variant needs `typescript` at runtime to parse the config, which production images typically prune. `frogbot start` refuses to start with a `.ts` config unless `typescript` is installed and tells you exactly how to fix it.
+- A `package.json` that includes the externalized packages above (shipped with `create-frogbot-app`).
+
+## Docker
+
+The template ships a production `Dockerfile` that handles all of this:
+
+- Installs all dependencies (including dev dependencies) and runs the **full** `pnpm build` inside the image.
+- Prunes dev dependencies afterwards, so `typescript` and friends never reach the final image.
+- Starts with `pnpm start` (which runs `frogbot start` → `next start`). Nothing is compiled at container start.
+
+```bash
+docker build -t my-frogbot-app .
+docker run -p 3000:3000 -e FROGBOT_SECRET=... -e DATABASE_URL=... my-frogbot-app
+```
+
+## Fly.io
+
+```bash
+fly launch   # uses the template Dockerfile — Fly will not overwrite it
+fly deploy
+```
+
+Fly's generator detects the existing `Dockerfile` and uses it instead of generating its default Next.js two-phase build, so your app gets a fast, single-phase cold start.
+
+### Database persistence
+
+The default SQLite database lives in a local `frogbot.db` file on the machine's ephemeral storage. If your machines **auto-stop** (scale to zero), the data is wiped on restart. Choose one of:
+
+- **Attach a persistent volume** and point `DATABASE_URL` at it. See the [SQLite guide](/database/sqlite) for the exact URL format.
+- **Use a remote database**: [Postgres](/database/postgres), [MongoDB](/database/mongodb), or a hosted SQLite like Turso. Set `DATABASE_URL` accordingly.
+
+If you use a volume or remote database, add the database file and its parent directory to `.dockerignore` so stale local data never ships in an image.
+
+## Troubleshooting
+
+### `Cannot find module 'libsql'` (or `sharp`, `pino`, `drizzle-kit`, `json-schema-to-typescript`)
+
+The compiled routes `require()` a package that Payload externalizes, but it is not linked at your project root. This happens when the package is only a transitive dependency and pnpm keeps it inside `.pnpm/`. Add it to `dependencies` in `package.json` and rebuild:
+
+```bash
+pnpm add libsql sharp pino drizzle-kit json-schema-to-typescript
+```
+
+### `Installing TypeScript...` or `Can't resolve '@frogbot-config'` at start
+
+A runtime `next build` step is running (usually a platform template with a two-phase build), and `typescript` was pruned from the image. Use the template `Dockerfile` above so the build happens once, in the image, and start runs only `next start`.
+
+### Slow cold starts
+
+If your platform starts a build at container boot, your cold start includes a webpack rebuild. Move the build into the image (see [Docker](#docker)) so cold starts are just `next start`.
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="rocket" href="/getting-started/installation">
+    Scaffold a project and run it locally.
+  </Card>
+  <Card title="Database" icon="database" href="/database/overview">
+    Choose a database adapter that fits your production storage needs.
+  </Card>
+</CardGroup>
