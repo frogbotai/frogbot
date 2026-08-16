@@ -1,5 +1,12 @@
 # Claude Instructions
 
+## Issue Triage & Feature Work
+
+- **When triaging issues or doing feature work, you MUST follow the documented process — read it before doing anything:**
+  - Triage: `.idea/issue_triage.md` (the "How Triage Works" section at the top is mandatory)
+  - Features: `.idea/feature_process/FEATURE_DEVELOPMENT_PROCESS.md`
+- Do not start with ad-hoc `gh` calls or your own greps; the process docs define intake order, ticket numbering, delegation to subagents, and artifact formats.
+
 ## Git Commits
 
 - Use Conventional Commits format: `type(scope): message`
@@ -55,6 +62,7 @@
 
 ## What NOT to do
 
+- **CRITICAL — documentation branding:** Never refer to Payload or Payload CMS in user-facing documentation, templates, examples, READMEs, scaffolded comments, or other user-visible copy. FrogBot is the product users interact with: describe behavior, APIs, admin features, adapters, collections, migrations, sessions, and configuration as **FrogBot** behavior. Rewrite underlying-framework references as a FrogBot self-reference or neutral wording. Before finishing documentation work, run the case-sensitive whole-word check: `rg -n -w -F 'Payload' -g '*.mdx' .` and remove every match unless the user explicitly requires a literal upstream package name or attribution.
 - **Don't add comments unless explicitly requested.** Zero comments is the default, even for "explaining why this weird workaround exists." No comment blocks, no citations, no rationale — write it in the chat response instead, not the code. This has been a repeat mistake — check every edit before writing it.
 - Don't assume libraries are available - check first
 - Don't over-engineer solutions
@@ -78,4 +86,4 @@
 
 - **`opencode` source:** `/Users/colbygilbert/Documents/Code/opencode` — ALWAYS check this repo for `opencode` internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what `opencode` supports.
 
-
+- **`opencode` v2 beta source:** `/Users/colbygilbert/Documents/Code/opencode-v2` — the 2.0 beta line (git worktree on `v2-beta`, tracks `origin/beta`). Check for 2.0 architecture direction (Effect runtime, `core`/`protocol`/`server`/`llm`/`sdk-next` package split). NOT shipped behavior — for what `opencode` does today, use `/Users/colbygilbert/Documents/Code/opencode`.

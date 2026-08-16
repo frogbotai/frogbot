@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Branding gate: user-visible + generated scaffold files must never
 // mention Payload. Scans the template, the packed create-frogbot-app
-// template, and both examples. Exits non-zero with file:line output.
+// template, packed scaffold, and examples. Exits non-zero with file:line output.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -9,12 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-const roots = [
-  'templates/blank',
-  'packages/create-frogbot-app/dist/templates/blank',
-  'examples/simple',
-  'examples/standalone',
-];
+const roots = ['templates/blank', 'packages/create-frogbot-app/dist/templates/blank', 'examples'];
 
 const skipDirs = new Set(['node_modules', '.next', '.git', 'dist']);
 const skipFiles = new Set([
@@ -51,7 +46,7 @@ for (const root of roots) {
     scanned++;
     const lines = fs.readFileSync(file, 'utf8').split('\n');
     lines.forEach((line, i) => {
-      if (/payload/i.test(line)) {
+      if (/Payload|@payloadcms\//.test(line)) {
         failures++;
         console.error(`${path.relative(repoRoot, file)}:${i + 1}: ${line.trim()}`);
       }

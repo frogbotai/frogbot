@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1
 
-# Production Dockerfile for a FrogBot app (Next.js + Payload).
-# Based on Payload's template Dockerfile and the Next.js with-docker example.
+# Production Dockerfile for a FrogBot app using Next.js.
+# Based on the Next.js with-docker example.
 #
 # - Detects your package manager from the lockfile you commit (npm, pnpm, or
 #   yarn) -- the template ships no lockfile of its own.
@@ -47,7 +47,7 @@ ENV NEXT_OUTPUT="standalone"
 ENV DATABASE_URL="file:/tmp/build.db"
 ENV FROGBOT_SECRET="build-time-placeholder"
 
-# `prebuild` generates the Payload import map, then `next build` compiles
+# `prebuild` generates the FrogBot import map, then `next build` compiles
 RUN \
   if [ -f yarn.lock ]; then corepack enable yarn && yarn run build; \
   elif [ -f package-lock.json ]; then npm run build; \

@@ -3,7 +3,7 @@
 Deploy a FrogBot app to [Fly.io](https://fly.io) with SQLite on a persistent volume. This example is the blank template plus everything production SQLite needs:
 
 - **`fly.toml`** with a `[mounts]` volume for the database and scale-to-zero enabled
-- **Generated migrations** (`src/migrations/`) wired into `prodMigrations`, so a fresh database gets its schema automatically on first boot — in production Payload does **not** push schema like it does in dev
+- **Generated migrations** (`src/migrations/`) wired into `prodMigrations`, so a fresh database gets its schema automatically on first boot — production does **not** push schema like development does
 - The template's **standalone Dockerfile** (package-manager agnostic, ~110MB final image, starts with plain `node server.js`)
 
 ## Deploy
@@ -19,7 +19,7 @@ fly launch --no-deploy
 # 3. Create the volume the database lives on
 fly volumes create frogbot_data --size 1 --region <your-region>
 
-# 4. Set secrets: the Payload secret and the database path on the volume
+# 4. Set secrets: the FrogBot secret and the database path on the volume
 fly secrets set FROGBOT_SECRET=$(openssl rand -hex 32) DATABASE_URL=file:/data/frogbot.db
 
 # 5. Deploy, then pin to a single machine (a volume attaches to one machine)

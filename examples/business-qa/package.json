@@ -39,7 +39,6 @@
     "@frogbotai/plugin-api-keys": "workspace:*",
     "@frogbotai/plugin-oauth": "workspace:*",
     "@frogbotai/plugin-roles": "workspace:*",
-    "@payloadcms/db-sqlite": "3.85.1",
     "cross-env": "^7.0.3",
     "drizzle-kit": "^0.31.7",
     "frogbot": "workspace:*",
