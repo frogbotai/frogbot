@@ -1,13 +1,5 @@
-import type {
-  Access,
-  CollectionConfig,
-  Endpoint,
-  Field,
-  FieldAccess,
-  FrogbotRequest,
-} from 'frogbot';
+import type { Access, CollectionConfig, Endpoint, Field, FrogbotRequest } from 'frogbot';
 
-import { createPolicyFields } from './fields.js';
 import { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
 
 type CollectionOptions = {
@@ -15,7 +7,6 @@ type CollectionOptions = {
   collectionSlug: string;
   tokenPrefix: string;
   usageCollection?: string;
-  policyAccess?: FieldAccess;
   canRevokeAnyKey?: (req: FrogbotRequest) => boolean | Promise<boolean>;
   collection?: Partial<CollectionConfig>;
   existing?: CollectionConfig;
@@ -118,8 +109,7 @@ function createEndpoints({
 }
 
 export function createApiKeysCollection(options: CollectionOptions): CollectionConfig {
-  const { authCollection, collectionSlug, collection, existing, policyAccess, usageCollection } =
-    options;
+  const { authCollection, collectionSlug, collection, existing, usageCollection } = options;
   const fields: Field[] = [
     { name: 'name', type: 'text', required: true },
     {
@@ -153,7 +143,6 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
       access: { update: () => false },
       admin: { readOnly: true },
     },
-    ...createPolicyFields(true, policyAccess),
     {
       name: 'revokedAt',
       type: 'date',

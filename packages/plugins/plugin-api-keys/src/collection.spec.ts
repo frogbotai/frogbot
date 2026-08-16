@@ -25,14 +25,6 @@ describe('API keys collection', () => {
       'prefix',
       'tokenHash',
       'lastUsedAt',
-      'monthlyBudget',
-      'rpm',
-      'tpm',
-      'models',
-      'budgetBehavior',
-      'spendThisPeriodUSD',
-      'budgetPeriodStartedAt',
-      'budgetAlertsSent',
       'revokedAt',
       'actions',
     ]);
@@ -60,11 +52,6 @@ describe('API keys collection', () => {
       'tokenHash',
       'lastUsedAt',
       'revokedAt',
-      'monthlyBudget',
-      'rpm',
-      'tpm',
-      'models',
-      'budgetBehavior',
     ]) {
       const field = collection.fields.find((item) => 'name' in item && item.name === name);
       expect('access' in field! && field.access?.update?.({} as never)).toBe(false);

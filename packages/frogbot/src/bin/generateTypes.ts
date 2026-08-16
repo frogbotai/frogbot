@@ -23,10 +23,9 @@ import type { SanitizedConfig } from 'payload';
 import { configToJSONSchema } from 'payload';
 import { format } from 'prettier';
 
-import { catalog } from '../ai/catalog.js';
-import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
+import { getConfiguredModelIds } from '../ai/models.js';
 import { loadConfig, resolveConfigDir } from '../config/load.js';
-import type { CustomProviderEntry, SanitizedAIConfig } from '../types/ai.js';
+import type { SanitizedAIConfig } from '../types/ai.js';
 import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
 
 const BANNER = `/* tslint:disable */
@@ -36,36 +35,6 @@ const BANNER = `/* tslint:disable */
  * DO NOT MODIFY IT BY HAND. Instead, modify your source FrogBot config,
  * and re-run \`frogbot generate:types\` to regenerate this file.
  */`;
-
-function getConfiguredModelIds(ai: SanitizedAIConfig | undefined): string[] {
-  if (!ai) return [];
-
-  const modelIds = new Set<string>();
-  for (const [provider, entry] of Object.entries(ai.providers)) {
-    if (!entry) continue;
-    const runtimeProvider = isProviderName(provider) ? getGatewayProviderName(provider) : provider;
-    const allowlist =
-      (entry as CustomProviderEntry).type === 'openai-compatible'
-        ? undefined
-        : (entry as { models?: string[] }).models;
-
-    for (const model of catalog) {
-      const modelName = model.id.slice(model.id.indexOf('/') + 1);
-      if (model.provider === runtimeProvider && (!allowlist || allowlist.includes(modelName))) {
-        modelIds.add(`${runtimeProvider}/${modelName}`);
-      }
-    }
-
-    if ((entry as CustomProviderEntry).type === 'openai-compatible') {
-      for (const model of (entry as CustomProviderEntry).models) {
-        modelIds.add(`${provider}/${model.id}`);
-      }
-    }
-  }
-
-  for (const slug of Object.keys(ai.routers)) modelIds.add(slug);
-  return [...modelIds].sort();
-}
 
 export function buildGeneratedTypesFooter(
   agentSlugs: readonly string[],

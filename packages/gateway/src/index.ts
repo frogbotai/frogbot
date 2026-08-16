@@ -32,6 +32,7 @@ export type {
 } from './hooks.js';
 
 // Model catalog types — powers GET /v1/models discovery and operation validation
+export { DEFAULT_MODEL_CATALOG } from './providers/catalog.data.js';
 export type {
   Modality,
   ModelCapabilities,
