@@ -24,7 +24,6 @@ export function createAuthorizeEndpoint(options: AuthorizeEndpointOptions): Endp
       const provider = getProvider({ providers: options.providers, req });
       if (!provider) return Response.json({ error: 'OAuth provider not found' }, { status: 404 });
       const owner = req.user?.id;
-      if (owner === undefined) return Response.json({ error: 'Authentication required' }, { status: 401 });
       let returnUrl: string;
       try {
         returnUrl = getReturnUrl({
@@ -35,6 +34,7 @@ export function createAuthorizeEndpoint(options: AuthorizeEndpointOptions): Endp
       } catch {
         return Response.json({ error: 'Return URL is not allowed' }, { status: 400 });
       }
+      if (owner === undefined && !provider.signIn) return Response.json({ error: 'Authentication required' }, { status: 401 });
       const state = createOAuthState();
       const pkce = createPKCECodes();
       const callbackUrl = new URL(options.callbackPath.replace(':provider', provider.id), options.baseUrl).toString();
@@ -42,7 +42,7 @@ export function createAuthorizeEndpoint(options: AuthorizeEndpointOptions): Endp
         collection: options.statesSlug as never,
         data: {
           state,
-          [options.ownerField]: owner,
+          ...(owner === undefined ? {} : { [options.ownerField]: owner }),
           provider: provider.id,
           returnUrl,
           codeVerifier: pkce.verifier,

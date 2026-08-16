@@ -6,7 +6,8 @@
 // branding story differs from Payload's.
 
 import type { Metadata } from 'next';
-import type { PayloadComponent } from 'payload';
+
+import type { AdminViews, Component, ProviderComponent } from './component.js';
 
 type DeepClone<T> = T extends object ? { [K in keyof T]: DeepClone<T[K]> } : T;
 
@@ -19,13 +20,24 @@ export type RootAdminMetaConfig = {
 
 export interface RootAdminGraphics {
   /** Replace the icon in the admin navigation. Defaults to the FrogBot head mark. */
-  Icon?: PayloadComponent;
+  Icon?: Component;
   /** Replace the logo on the login page. Defaults to the FrogBot wordmark. */
-  Logo?: PayloadComponent;
+  Logo?: Component;
 }
 
 export interface RootAdminComponents {
+  /** Add components to the top right of the admin panel. */
+  actions?: Component[];
+  /** Add components after the login form's email and password fields. */
+  afterLogin?: Component[];
+  /** Add components before the login form's email and password fields. */
+  beforeLogin?: Component[];
+  /** Component slots for admin branding. */
   graphics?: RootAdminGraphics;
+  /** Wrap the admin panel in custom context providers. */
+  providers?: ProviderComponent[];
+  /** Replace, modify, or add top-level admin routes. */
+  views?: AdminViews;
 }
 
 export interface RootAdminConfig {
@@ -42,8 +54,8 @@ export interface RootAdminConfig {
    *
    * @default 'gravatar'
    */
-  avatar?: 'default' | 'gravatar' | { Component: PayloadComponent };
-  /** Component slots for admin branding. */
+  avatar?: 'default' | 'gravatar' | { Component: Component };
+  /** Component slots for admin branding and injected UI. */
   components?: RootAdminComponents;
   /** Metadata for generated/admin surfaces. */
   meta?: RootAdminMetaConfig;

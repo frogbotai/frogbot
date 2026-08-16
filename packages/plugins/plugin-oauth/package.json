@@ -23,23 +23,43 @@
       "import": "./dist/server.js",
       "types": "./dist/server.d.ts",
       "default": "./dist/server.js"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
     }
   },
   "files": [
     "dist"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "*.scss"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && pnpm copyfiles",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit && pnpm typecheck:types",
-    "typecheck:types": "tsc --noEmit -p tsconfig.typetest.json"
+    "typecheck:types": "tsc --noEmit -p tsconfig.typetest.json",
+    "copyfiles": "copyfiles -u 1 \"src/**/*.scss\" dist/"
   },
   "peerDependencies": {
-    "frogbot": "workspace:*"
+    "@frogbotai/ui": "workspace:*",
+    "@payloadcms/ui": "3.85.1",
+    "frogbot": "workspace:*",
+    "payload": "3.85.1",
+    "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
+    "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
   },
   "devDependencies": {
+    "@frogbotai/ui": "workspace:*",
+    "@payloadcms/ui": "3.85.1",
+    "@types/react": "19.2.14",
+    "copyfiles": "^2.4.1",
     "frogbot": "workspace:*",
+    "payload": "3.85.1",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
     "typescript": "5.6.2"
   },
   "publishConfig": {
@@ -56,6 +76,11 @@
         "import": "./dist/server.js",
         "types": "./dist/server.d.ts",
         "default": "./dist/server.js"
+      },
+      "./client": {
+        "import": "./dist/client.js",
+        "types": "./dist/client.d.ts",
+        "default": "./dist/client.js"
       }
     }
   }

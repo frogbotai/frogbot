@@ -60,4 +60,85 @@ describe('oauthPlugin', () => {
     } as FrogbotConfig);
     expect(result.credentialSources).toEqual([expect.objectContaining({ key: 'google', services: ['google_sheets', 'google_drive'], scopes: ['sheets', 'drive'] })]);
   });
+
+  it('rejects sign-in providers on username-only auth collections', async () => {
+    const plugin = oauthPlugin({ providers: [{ ...provider, signIn: true } as OAuthProvider] });
+    expect(() => plugin({
+      secret: 'test',
+      db: {},
+      collections: [{ slug: 'users', auth: { loginWithUsername: { allowEmailLogin: false, requireEmail: false } }, fields: [] }],
+    } as FrogbotConfig)).toThrow(/email/i);
+  });
+
+  it.each([
+    { loginWithUsername: { allowEmailLogin: true, requireEmail: false } },
+    { disableLocalStrategy: true },
+  ])('allows sign-in providers with email-capable auth %#', async (auth) => {
+    const plugin = oauthPlugin({ providers: [{ ...provider, signIn: true }] });
+    expect(() => plugin({
+      secret: 'test',
+      db: {},
+      collections: [{ slug: 'users', auth, fields: [] }],
+    } as FrogbotConfig)).not.toThrow();
+  });
+
+  it('appends admin login buttons after existing afterLogin components', async () => {
+    const existing = '@app/AfterLogin';
+    const result = await oauthPlugin({
+      adminLoginButtons: true,
+      providers: [
+        { ...provider, id: 'google', service: 'google', label: 'Google', signIn: true },
+        { ...provider, id: 'microsoft', service: 'microsoft', label: 'Microsoft', signIn: true },
+        { ...provider, id: 'github', service: 'github' },
+      ],
+    })({
+      secret: 'test',
+      db: {},
+      admin: { components: { afterLogin: [existing] } },
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+    } as FrogbotConfig);
+    expect(result.admin?.components?.afterLogin).toEqual([
+      existing,
+      expect.objectContaining({
+        path: '@frogbotai/plugin-oauth/client#OAuthLoginButtons',
+        clientProps: expect.objectContaining({
+          showDivider: true,
+          providers: [
+            { id: 'google', label: 'Google' },
+            { id: 'microsoft', label: 'Microsoft' },
+          ],
+        }),
+      }),
+    ]);
+  });
+
+  it('falls back to the provider id when no label is set', async () => {
+    const result = await oauthPlugin({
+      adminLoginButtons: true,
+      providers: [{ ...provider, id: 'acme', service: 'acme', signIn: true }],
+    })({
+      secret: 'test',
+      db: {},
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+    } as FrogbotConfig);
+    expect(result.admin?.components?.afterLogin?.[0]).toMatchObject({
+      clientProps: { providers: [{ id: 'acme', label: 'acme' }] },
+    });
+  });
+
+  it('hides the separator when the local login form is disabled', async () => {
+    const result = await oauthPlugin({
+      adminLoginButtons: true,
+      providers: [{ ...provider, id: 'google', service: 'google', label: 'Google', signIn: true }],
+    })({
+      secret: 'test',
+      db: {},
+      collections: [
+        { slug: 'users', auth: { disableLocalStrategy: true }, fields: [] },
+      ],
+    } as FrogbotConfig);
+    expect(result.admin?.components?.afterLogin?.[0]).toMatchObject({
+      clientProps: { showDivider: false },
+    });
+  });
 });

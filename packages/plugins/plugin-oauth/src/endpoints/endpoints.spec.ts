@@ -17,6 +17,10 @@ function provider(): OAuthProvider {
   };
 }
 
+function signInProvider(): OAuthProvider {
+  return { ...provider(), signIn: true } as OAuthProvider;
+}
+
 async function endpoints(currentProvider = provider()) {
   const config = await oauthPlugin({ providers: [currentProvider], baseUrl: 'https://app.test' })({
     secret: 'test',
@@ -35,6 +39,32 @@ describe('OAuth authorize and callback endpoints', () => {
     expect((await authorize.handler(open as unknown as FrogbotRequest)).status).toBe(400);
     const rsc = { ...base, headers: new Headers({ RSC: '1' }) };
     expect((await authorize.handler(rsc as unknown as FrogbotRequest)).status).toBe(204);
+  });
+
+  it('allows signed-out users through sign-in providers with ownerless state', async () => {
+    const authorize = (await endpoints(signInProvider())).find((endpoint) => endpoint.path.endsWith('/authorize'))!;
+    const create = vi.fn().mockResolvedValue({ id: 'state-1' });
+    const result = await authorize.handler({
+      routeParams: { provider: 'custom' },
+      headers: new Headers(),
+      searchParams: new URLSearchParams(),
+      frogbot: { create },
+    } as unknown as FrogbotRequest);
+    expect(result.status).toBe(302);
+    expect(create.mock.calls[0][0].data).not.toHaveProperty('owner');
+  });
+
+  it('keeps signed-in users on the connection path for sign-in providers', async () => {
+    const authorize = (await endpoints(signInProvider())).find((endpoint) => endpoint.path.endsWith('/authorize'))!;
+    const create = vi.fn().mockResolvedValue({ id: 'state-1' });
+    await authorize.handler({
+      routeParams: { provider: 'custom' },
+      user: { id: 'user-1' },
+      headers: new Headers(),
+      searchParams: new URLSearchParams(),
+      frogbot: { create },
+    } as unknown as FrogbotRequest);
+    expect(create.mock.calls[0][0].data.owner).toBe('user-1');
   });
 
   it('persists state and completes the callback once with encrypted tokens', async () => {
@@ -91,4 +121,117 @@ describe('OAuth authorize and callback endpoints', () => {
     expect(failed.headers.get('location')).toContain('oauth_error=provider_error');
     expect(failed.headers.get('location')).not.toContain('secret');
   });
+
+  it('logs an existing user in without storing a connection or tokens', async () => {
+    const currentProvider = signInProvider();
+    const callback = (await endpoints(currentProvider)).find((endpoint) => endpoint.method === 'get' && endpoint.path.endsWith('/callback'))!;
+    const state = { id: 'state', provider: 'custom', returnUrl: 'https://app.test/', codeVerifier: 'verifier', expiresAt: new Date(Date.now() + 10000).toISOString() };
+    const find = vi.fn().mockResolvedValue({ docs: [{ id: 'user-1', email: 'user@example.com' }] });
+    const create = vi.fn();
+    const update = vi.fn();
+    const req = {
+      method: 'GET',
+      routeParams: { provider: 'custom' },
+      headers: new Headers(),
+      searchParams: new URLSearchParams({ state: 'state', code: 'code' }),
+      frogbot: { delete: vi.fn().mockResolvedValue({ docs: [state] }), find, create, update },
+      payload: {
+        secret: 'secret',
+        config: { cookiePrefix: 'frogbot' },
+        collections: { users: { config: authCollection() } },
+      },
+      context: {},
+    } as unknown as FrogbotRequest;
+    const result = await callback.handler(req);
+    expect(result.status).toBe(302);
+    expect(result.headers.get('set-cookie')).toContain('frogbot-token=');
+    expect(find).toHaveBeenCalledWith(expect.objectContaining({ collection: 'users', where: { email: { equals: 'user@example.com' } } }));
+    expect(create).not.toHaveBeenCalledWith(expect.objectContaining({ collection: 'connections' }));
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('creates verified users with random passwords before login', async () => {
+    const currentProvider = signInProvider();
+    const callback = (await endpoints(currentProvider)).find((endpoint) => endpoint.method === 'get' && endpoint.path.endsWith('/callback'))!;
+    const state = { id: 'state', provider: 'custom', returnUrl: 'https://app.test/', codeVerifier: 'verifier', expiresAt: new Date(Date.now() + 10000).toISOString() };
+    const user = { id: 'user-1', email: 'user@example.com', _verified: true };
+    const create = vi.fn().mockResolvedValue(user);
+    const req = callbackRequest({ state, find: vi.fn().mockResolvedValue({ docs: [] }), create, auth: authCollection({ verify: true }) });
+    const result = await callback.handler(req);
+    expect(result.status).toBe(302);
+    const userWrite = create.mock.calls.find(([args]) => args.collection === 'users')?.[0];
+    expect(userWrite.data).toMatchObject({ email: 'user@example.com', _verified: true });
+    expect(userWrite.data.password).toMatch(/^[A-Za-z0-9_-]{40,}$/);
+    expect(create).not.toHaveBeenCalledWith(expect.objectContaining({ collection: 'connections' }));
+  });
+
+  it('redirects safely when a sign-in account has no email', async () => {
+    const currentProvider = signInProvider();
+    (currentProvider.getAccount as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'account-1' });
+    const callback = (await endpoints(currentProvider)).find((endpoint) => endpoint.method === 'get' && endpoint.path.endsWith('/callback'))!;
+    const state = { id: 'state', provider: 'custom', returnUrl: 'https://app.test/', codeVerifier: 'verifier', expiresAt: new Date(Date.now() + 10000).toISOString() };
+    const find = vi.fn();
+    const create = vi.fn();
+    const result = await callback.handler(callbackRequest({ state, find, create }));
+    expect(result.headers.get('location')).toContain('oauth_error=');
+    expect(find).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['unverified', { _verified: false }, { verify: true }],
+    ['locked', { lockUntil: new Date(Date.now() + 10000).toISOString(), loginAttempts: 5 }, { maxLoginAttempts: 5 }],
+  ])('rejects %s users', async (_name, userFields, auth) => {
+    const currentProvider = signInProvider();
+    const callback = (await endpoints(currentProvider)).find((endpoint) => endpoint.method === 'get' && endpoint.path.endsWith('/callback'))!;
+    const state = { id: 'state', provider: 'custom', returnUrl: 'https://app.test/', codeVerifier: 'verifier', expiresAt: new Date(Date.now() + 10000).toISOString() };
+    const user = { id: 'user-1', email: 'user@example.com', ...userFields };
+    const find = vi.fn().mockResolvedValue({ docs: [user] });
+    const result = await callback.handler(callbackRequest({ state, find, auth: authCollection(auth) }));
+    expect(result.headers.get('location')).toContain('oauth_error=');
+    expect(result.headers.get('set-cookie')).toBeNull();
+    expect(find).toHaveBeenCalledWith(expect.objectContaining({ collection: 'users' }));
+  });
 });
+
+function authCollection(auth: Record<string, unknown> = {}) {
+  return {
+    slug: 'users',
+    fields: [],
+    hooks: { beforeLogin: [], afterLogin: [] },
+    auth: {
+      maxLoginAttempts: 0,
+      tokenExpiration: 7200,
+      useSessions: false,
+      verify: false,
+      cookies: { sameSite: 'Lax', secure: false },
+      ...auth,
+    },
+  };
+}
+
+function callbackRequest({
+  state,
+  find = vi.fn().mockResolvedValue({ docs: [] }),
+  create = vi.fn(),
+  auth = authCollection(),
+}: {
+  state: Record<string, unknown>;
+  find?: ReturnType<typeof vi.fn>;
+  create?: ReturnType<typeof vi.fn>;
+  auth?: ReturnType<typeof authCollection>;
+}) {
+  return {
+    method: 'GET',
+    routeParams: { provider: 'custom' },
+    headers: new Headers(),
+    searchParams: new URLSearchParams({ state: 'state', code: 'code' }),
+    frogbot: { delete: vi.fn().mockResolvedValue({ docs: [state] }), find, create, update: vi.fn() },
+    payload: {
+      secret: 'secret',
+      config: { cookiePrefix: 'frogbot' },
+      collections: { users: { config: auth } },
+    },
+    context: {},
+  } as unknown as FrogbotRequest;
+}

@@ -29,6 +29,8 @@ export function slackProvider(options: OAuthProviderOptions): OAuthProvider {
   return {
     id: "slack",
     service: "slack",
+    label: "Slack",
+    signIn: options.signIn,
     authorizationUrl: "https://slack.com/oauth/v2/authorize",
     tokenUrl: "https://slack.com/api/oauth.v2.access",
     scopes,

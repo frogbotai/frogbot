@@ -37,9 +37,12 @@ export type {
 
 export type { CatalogModelId } from './ai/generated.js';
 export type {
+  RootAdminComponents,
   RootAdminConfig,
+  RootAdminGraphics,
   RootAdminMetaConfig,
 } from './types/admin.js';
+export type { AdminViews, Component, ProviderComponent } from './types/component.js';
 export type {
   AgentAccess,
   AgentConfig,

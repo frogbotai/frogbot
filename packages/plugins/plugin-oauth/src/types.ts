@@ -1,6 +1,5 @@
 import type { CollectionConfig, FrogbotRequest } from 'frogbot';
-
-import type { OAuthEncryption } from './server/crypto.js';
+import type { CredentialEncryption } from 'frogbot/connections';
 
 export type OAuthTokenSet = {
   accessToken: string;
@@ -51,6 +50,8 @@ export interface OAuthProvider {
   id: string;
   service: string;
   services?: string[];
+  label?: string;
+  signIn?: boolean;
   authorizationUrl: string;
   tokenUrl: string;
   scopes: string[];
@@ -63,6 +64,7 @@ export interface OAuthProvider {
 
 export type OAuthPluginOptions = {
   providers?: OAuthProvider[];
+  adminLoginButtons?: boolean;
   authCollection?: string;
   statesSlug?: string;
   statesCollection?: Partial<CollectionConfig>;
@@ -78,5 +80,5 @@ export type OAuthPluginOptions = {
     revoke?: string;
   };
   allowedReturnOrigins?: string[];
-  encryption?: OAuthEncryption;
+  encryption?: CredentialEncryption;
 };

@@ -16,6 +16,8 @@ export function notionProvider(options: OAuthProviderOptions): OAuthProvider {
   return {
     id: "notion",
     service: "notion",
+    label: "Notion",
+    signIn: options.signIn,
     authorizationUrl: "https://api.notion.com/v1/oauth/authorize",
     tokenUrl: "https://api.notion.com/v1/oauth/token",
     scopes,

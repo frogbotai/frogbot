@@ -17,6 +17,8 @@ export function githubProvider(options: OAuthProviderOptions): OAuthProvider {
   return {
     id: "github",
     service: "github",
+    label: "GitHub",
+    signIn: options.signIn,
     authorizationUrl: "https://github.com/login/oauth/authorize",
     tokenUrl: "https://github.com/login/oauth/access_token",
     scopes,

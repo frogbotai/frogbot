@@ -1,11 +1,11 @@
 ---
-title: "OAuth connections"
-sidebarTitle: "OAuth connections"
-description: "Connect external accounts with encrypted OAuth credentials, refresh, and revocation."
+title: "OAuth"
+sidebarTitle: "OAuth"
+description: "Sign users in or connect external accounts with OAuth providers."
 keywords: ["OAuth", "connections", "plugins", "Google", "Microsoft", "Stripe", "Zoom", "Xero"]
 ---
 
-The OAuth plugin registers providers as credential sources for pieces. It handles the OAuth protocol while FrogBot core stores and resolves credentials. It does not use OAuth to log users in.
+The OAuth plugin signs users in and registers providers as credential sources for pieces. Sign-in and connection consent share endpoints but remain separate flows.
 
 ## Install
 
@@ -29,6 +29,7 @@ export default buildConfig({
         googleProvider({
           clientId: process.env.GOOGLE_CLIENT_ID!,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+          signIn: true,
         }),
       ],
     }),
@@ -50,17 +51,122 @@ GET /api/users/oauth/google/authorize?returnUrl=/settings
 
 The relative `returnUrl` receives `oauth_connection` after success or `oauth_error` after failure. Absolute return URLs are rejected unless their origin appears in `allowedReturnOrigins`.
 
+## Options
+
+`oauthPlugin` accepts the following options.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `providers` | `OAuthProvider[]` | Derived from `pieces` | Providers to mount. When omitted, one provider is derived per OAuth2 piece credential group. |
+| `adminLoginButtons` | `boolean` | `false` | Append a "Continue with {provider}" button to the admin login form for every provider with `signIn: true`. |
+| `authCollection` | `string` | `'users'` | Auth-enabled collection the endpoints mount on and that sign-in resolves users against. |
+| `statesSlug` | `string` | `'oauth-states'` | Slug of the short-lived state collection. An existing collection with this slug is extended instead of replaced. |
+| `statesCollection` | `Partial<CollectionConfig>` | — | Merged into the generated states collection. Use it to add fields or set `admin.group`. |
+| `ownerField` | `{ name: string; relationTo: string }` | `{ name: 'owner', relationTo: authCollection }` | Relationship field that scopes state and connection records to a user. |
+| `baseUrl` | `string` | `config.serverURL` ?? `'http://localhost:3000'` | Origin used to build absolute callback URLs sent to the provider. |
+| `paths` | `{ authorize?, callback?, refresh?, revoke? }` | See [Endpoints](#endpoints) | Endpoint suffixes appended to `/api/{authCollection}`. `:provider` is substituted per provider. |
+| `allowedReturnOrigins` | `string[]` | `[]` | Origins permitted in an absolute `returnUrl`. Relative URLs are always allowed. |
+| `encryption` | `CredentialEncryption` | AES-256-GCM from `config.secret` | Override credential encryption. Import `createCredentialEncryption` from `frogbot/connections` to customize. |
+
+## Sign users in
+
+Set `signIn: true` on each provider allowed to authenticate users. Anonymous authorization creates sign-in intent. The callback matches the provider account to the auth collection by email, creates a user when none exists, and issues the normal Payload session cookie.
+
+```ts
+oauthPlugin({
+  adminLoginButtons: true,
+  providers: [
+    googleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      signIn: true,
+    }),
+  ],
+})
+```
+
+`adminLoginButtons` appends one "Continue with {provider}" button per sign-in provider after the admin login form. Buttons inherit the admin theme through Payload's CSS variables and carry the provider's brand icon from `@frogbotai/ui/icons`.
+
+To control placement or wrap the button group, leave `adminLoginButtons` unset and register the exported component yourself:
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  admin: {
+    components: {
+      afterLogin: [
+        {
+          path: '@frogbotai/plugin-oauth/client#OAuthLoginButtons',
+          clientProps: {
+            authorizePath: '/api/users/oauth/:provider/authorize',
+            providers: [{ id: 'google', label: 'Google' }],
+          },
+        },
+      ],
+    },
+  },
+})
+```
+
+For a headless login page, link directly to the same authorize endpoint:
+
+```tsx
+<a href="/api/users/oauth/google/authorize?returnUrl=/admin">
+  Continue with Google
+</a>
+```
+
+Only enable sign-in for providers that return a real, owned email address. Among the built-in providers, only Google and Microsoft qualify. Stripe, Zoom, and Xero are connection-only, and GitHub's profile endpoint does not reliably return secondary or private email addresses, so its default provider is not suitable without custom account lookup behavior.
+
+OAuth-created users receive a random local password. When email verification is enabled, they are created as verified. Existing unverified or locked users are rejected. Auth collections may use `disableLocalStrategy`, but they must retain an email field and cannot require custom fields without defaults because the plugin cannot populate them during first sign-in.
+
 ## Built-in providers
 
-| Factory | Provider ID | Default behavior |
-| --- | --- | --- |
-| `googleProvider` | `google` | Offline access, account profile, refresh, and revoke |
-| `microsoftProvider` | `microsoft` | Common tenant by default, account profile, and refresh |
-| `stripeProvider` | `stripe` | Stripe Connect account exchange, refresh, and deauthorization |
-| `zoomProvider` | `zoom` | HTTP Basic token exchange, account profile, refresh, and revoke |
-| `xeroProvider` | `xero` | HTTP Basic token exchange, JWT account identity, refresh, and revoke |
+| Factory | Provider ID | Sign-in support | Default behavior |
+| --- | --- | --- | --- |
+| `googleProvider` | `google` | Yes | Offline access, account profile, refresh, and revoke |
+| `microsoftProvider` | `microsoft` | Yes | Common tenant by default, account profile, and refresh |
+| `githubProvider` | `github` | No | Account profile, refresh, and token deletion |
+| `slackProvider` | `slack` | No | Workspace identity, refresh, and revoke |
+| `notionProvider` | `notion` | No | HTTP Basic token exchange, bot user identity, refresh, and revoke |
+| `dropboxProvider` | `dropbox` | No | HTTP Basic token exchange, account profile, refresh, and revoke |
+| `stripeProvider` | `stripe` | No | Stripe Connect account exchange, refresh, and deauthorization |
+| `zoomProvider` | `zoom` | No | HTTP Basic token exchange, account profile, refresh, and revoke |
+| `xeroProvider` | `xero` | No | HTTP Basic token exchange, JWT account identity, refresh, and revoke |
 
-Every factory accepts `clientId`, `clientSecret`, optional `scopes`, and optional `fetch`. Microsoft also accepts `tenant`.
+Every factory takes the same options.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `clientId` | `string` | — | **Required.** OAuth app client ID from the provider console. |
+| `clientSecret` | `string` | — | **Required.** OAuth app client secret. |
+| `scopes` | `string[]` | Per provider | Replaces the provider's default scope list. |
+| `signIn` | `boolean` | `false` | Allow this provider to authenticate users, not just store connections. |
+| `service` | `string` | Provider ID | Override the `id` and `service` keys, for mounting the same provider twice. |
+| `fetch` | `typeof fetch` | Global `fetch` | Inject a custom fetch implementation, primarily for tests. |
+
+`microsoftProvider` additionally accepts `tenant` (`string`, defaults to `'common'`).
+
+## Provider interface
+
+A provider is a plain object satisfying `OAuthProvider`. The built-in factories return one; `authorize`, `exchange`, and `getAccount` are required.
+
+| Member | Type | Description |
+| --- | --- | --- |
+| `id` | `string` | Unique key used in endpoint URLs and as the credential source key. |
+| `service` | `string` | Primary piece service this provider supplies credentials for. |
+| `services` | `string[]` | Additional services covered by the same consent grant. Defaults to `[service]`. |
+| `label` | `string` | Brand name shown in admin login buttons. Falls back to `id`. |
+| `signIn` | `boolean` | Allow this provider to authenticate users. |
+| `authorizationUrl` | `string` | Provider consent endpoint, recorded for reference. |
+| `tokenUrl` | `string` | Provider token endpoint, recorded for reference. |
+| `scopes` | `string[]` | Scopes requested during consent and stored on the connection. |
+| `authorize` | `(ctx) => URL \| Promise<URL>` | Build the consent redirect from `callbackUrl`, `state`, and `codeChallenge`. |
+| `exchange` | `(ctx) => Promise<OAuthTokenSet>` | Trade `code` and `codeVerifier` for tokens. |
+| `getAccount` | `(ctx) => Promise<OAuthAccount>` | Resolve the external account `id`, and `email` when sign-in is enabled. |
+| `refresh` | `(ctx) => Promise<OAuthTokenSet>` | Optional. Exchange a refresh token for a new token set. |
+| `revoke` | `(ctx) => Promise<void>` | Optional. Invalidate the grant at the provider. |
 
 ## Endpoints
 
@@ -69,7 +175,7 @@ The plugin mounts these endpoints on the configured auth collection:
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/users/oauth/:provider/authorize` | Create state and redirect to provider consent |
-| `GET` or `POST` | `/api/users/oauth/:provider/callback` | Consume state and save the connection |
+| `GET` or `POST` | `/api/users/oauth/:provider/callback` | Consume state and complete sign-in or save the connection |
 | `POST` | `/api/users/oauth/:provider/refresh` | Refresh a connection by `connectionId` |
 | `POST` | `/api/users/oauth/:provider/revoke` | Revoke a connection by `connectionId` |
 
@@ -77,7 +183,7 @@ Use `paths` to change endpoint suffixes and `authCollection` to change the `/api
 
 ## Credential storage
 
-The plugin creates `oauth-states` and writes credentials to the core `connections` collection with `source: 'oauth'`. Connection reads are scoped to the authenticated owner. State records deny public access and callbacks consume them once.
+The plugin creates `oauth-states` and writes connection credentials to the core `connections` collection with `source: 'oauth'`. Sign-in discards provider tokens and never creates or updates a connection. Connection reads are scoped to the authenticated owner. State records deny public access and callbacks consume them once.
 
 ```ts
 oauthPlugin({
@@ -109,7 +215,7 @@ Expired credentials refresh during resolution when the provider implements `refr
 
 ## Custom providers
 
-A custom provider implements the exported `OAuthProvider` interface. `authorize`, `exchange`, and `getAccount` are required. Add `refresh` or `revoke` when the service supports them.
+A custom provider implements the exported `OAuthProvider` interface described in [Provider interface](#provider-interface). `authorize`, `exchange`, and `getAccount` are required. Add `refresh` or `revoke` when the service supports them.
 
 ```ts
 import type { OAuthProvider } from '@frogbotai/plugin-oauth'
@@ -117,9 +223,11 @@ import type { OAuthProvider } from '@frogbotai/plugin-oauth'
 const serviceProvider: OAuthProvider = {
   id: 'service',
   service: 'service',
+  label: 'Service',
   authorizationUrl: 'https://service.example/oauth/authorize',
   tokenUrl: 'https://service.example/oauth/token',
   scopes: ['profile'],
+  signIn: true,
   authorize: ({ callbackUrl, codeChallenge, state }) => buildAuthorizeUrl({
     callbackUrl,
     codeChallenge,
@@ -132,7 +240,9 @@ const serviceProvider: OAuthProvider = {
 
 ## Security behavior
 
-- Authorization requires an authenticated owner.
+- Authorization requires an authenticated owner unless the provider enables sign-in.
+- Sign-in always matches by email; an existing connection never grants login.
+- Sign-in never persists provider tokens or connection records.
 - State and PKCE values use cryptographically secure randomness.
 - State expires after ten minutes and is consumed before token exchange.
 - Credentials use authenticated AES-256-GCM encryption by default.
@@ -142,4 +252,4 @@ const serviceProvider: OAuthProvider = {
 - Refresh and revoke lookups include the authenticated owner.
 - External errors do not expose provider response bodies.
 
-The plugin does not schedule background refreshes, provide integration catalog UI, or turn provider accounts into FrogBot login sessions.
+The plugin does not schedule background refreshes or provide integration catalog UI.

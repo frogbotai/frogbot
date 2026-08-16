@@ -1,7 +1,7 @@
 import type { FrogbotRequest } from 'frogbot';
+import type { CredentialEncryption } from 'frogbot/connections';
 
 import type { OAuthTokenSet } from '../types.js';
-import type { OAuthEncryption } from './crypto.js';
 
 export type OAuthConnectionCredentials = {
   id: string | number;
@@ -14,7 +14,7 @@ export async function getOAuthConnectionCredentials(options: {
   req: FrogbotRequest;
   connectionId: string | number;
   collectionSlug?: string;
-  encryption: OAuthEncryption;
+  encryption: CredentialEncryption;
 }): Promise<OAuthConnectionCredentials | null> {
   const owner = options.req.user?.id;
   if (owner === undefined) return null;

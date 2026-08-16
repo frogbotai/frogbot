@@ -1,6 +1,6 @@
 import type { CredentialSource, FrogbotRequest } from 'frogbot';
+import type { CredentialEncryption } from 'frogbot/connections';
 
-import type { OAuthEncryption } from './server/crypto.js';
 import { mergeOAuthTokenSets } from './server/tokens.js';
 import type { OAuthProvider, OAuthTokenSet } from './types.js';
 
@@ -34,7 +34,7 @@ export function createOAuthCredentialSource({
   connectionsSlug,
 }: {
   provider: OAuthProvider;
-  encryption: OAuthEncryption;
+  encryption: CredentialEncryption;
   connectionsSlug: string;
 }): CredentialSource {
   return {

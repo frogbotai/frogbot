@@ -44,4 +44,11 @@ describe('OAuth collections', () => {
     expect(names).toEqual(expect.arrayContaining(['tenant', 'tenantMarker', 'custom']));
     expect(states.endpoints?.map((endpoint) => endpoint.path)).toContain('/tenant');
   });
+
+  it('allows OAuth states without owners', async () => {
+    const result = await oauthPlugin({ providers: [provider] })(config());
+    const states = result.collections.find((collection) => collection.slug === 'oauth-states')!;
+    const owner = states.fields.find((field) => 'name' in field && field.name === 'owner');
+    expect(owner).not.toMatchObject({ required: true });
+  });
 });

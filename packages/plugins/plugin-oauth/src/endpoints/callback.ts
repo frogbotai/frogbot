@@ -1,7 +1,10 @@
-import type { Endpoint, FrogbotRequest } from 'frogbot';
+import { randomBytes } from 'node:crypto';
 
-import type { OAuthEncryption } from '../server/crypto.js';
-import { getSafeOAuthError } from '../server/error.js';
+import type { Endpoint, FrogbotRequest } from 'frogbot';
+import type { CredentialEncryption } from 'frogbot/connections';
+
+import { getSafeOAuthError, OAuthError } from '../server/error.js';
+import { getPayloadRequest, loginFromOAuth } from '../server/login.js';
 import { isOAuthStateExpired } from '../server/state.js';
 import type { OAuthProvider, OAuthTokenSet } from '../types.js';
 import { getProvider, withOAuthResult } from './shared.js';
@@ -11,9 +14,10 @@ type CallbackEndpointOptions = {
   baseUrl: string;
   statesSlug: string;
   connectionsSlug: string;
+  authCollection: string;
   ownerField: string;
   providers: Map<string, OAuthProvider>;
-  encryption: OAuthEncryption;
+  encryption: CredentialEncryption;
 };
 
 type StateDocument = {
@@ -82,6 +86,29 @@ export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpo
       const scopes = tokens.scopes ?? provider.scopes;
       const account = await provider.getAccount({ tokens, req });
       const owner = state[options.ownerField];
+      if (owner === undefined || owner === null) {
+        if (!account.email) throw new OAuthError('invalid_request', 'The OAuth account must have an email address.');
+        const existingUsers = await req.frogbot.find({
+          collection: options.authCollection as never,
+          limit: 1,
+          overrideAccess: true,
+          req,
+          where: { email: { equals: account.email } },
+        });
+        const collectionConfig = getPayloadRequest(req).payload.collections[options.authCollection]!.config;
+        const user = existingUsers.docs[0] ?? await req.frogbot.create({
+          collection: options.authCollection as never,
+          data: {
+            email: account.email,
+            password: randomBytes(32).toString('base64url'),
+            ...(collectionConfig.auth.verify ? { _verified: true } : {}),
+          },
+          overrideAccess: true,
+          req,
+          showHiddenFields: true,
+        });
+        return await loginFromOAuth({ req, user: user as never, collectionSlug: options.authCollection, returnUrl: state.returnUrl });
+      }
       const existing = await req.frogbot.find({
         collection: options.connectionsSlug as never,
         limit: 1,

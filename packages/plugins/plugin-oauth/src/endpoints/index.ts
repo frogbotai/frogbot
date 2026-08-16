@@ -1,6 +1,6 @@
 import type { Endpoint } from 'frogbot';
+import type { CredentialEncryption } from 'frogbot/connections';
 
-import type { OAuthEncryption } from '../server/crypto.js';
 import type { OAuthProvider } from '../types.js';
 import { createAuthorizeEndpoint } from './authorize.js';
 import { createCallbackEndpoints } from './callback.js';
@@ -12,9 +12,10 @@ type OAuthEndpointsOptions = {
   paths: { authorize: string; callback: string; refresh: string; revoke: string };
   statesSlug: string;
   connectionsSlug: string;
+  authCollection: string;
   ownerField: string;
   providers: Map<string, OAuthProvider>;
-  encryption: OAuthEncryption;
+  encryption: CredentialEncryption;
 };
 
 export function createOAuthEndpoints(options: OAuthEndpointsOptions): Endpoint[] {

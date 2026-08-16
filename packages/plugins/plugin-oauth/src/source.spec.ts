@@ -1,10 +1,10 @@
+import { createCredentialEncryption } from 'frogbot/connections';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createOAuthEncryption } from './server/crypto.js';
 import { createOAuthCredentialSource } from './source.js';
 import type { OAuthProvider } from './types.js';
 
-const encryption = createOAuthEncryption({ secret: 'secret' });
+const encryption = createCredentialEncryption({ secret: 'secret' });
 
 async function setup(overrides: Partial<OAuthProvider> = {}) {
   const provider: OAuthProvider = {

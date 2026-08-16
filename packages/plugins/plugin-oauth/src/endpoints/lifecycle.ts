@@ -1,7 +1,7 @@
 import type { Endpoint } from 'frogbot';
+import type { CredentialEncryption } from 'frogbot/connections';
 
 import { getOAuthConnectionCredentials } from '../server/connections.js';
-import type { OAuthEncryption } from '../server/crypto.js';
 import { mergeOAuthTokenSets } from '../server/tokens.js';
 import type { OAuthProvider, OAuthTokenSet } from '../types.js';
 import { getProvider } from './shared.js';
@@ -10,7 +10,7 @@ type LifecycleEndpointOptions = {
   paths: { refresh: string; revoke: string };
   connectionsSlug: string;
   providers: Map<string, OAuthProvider>;
-  encryption: OAuthEncryption;
+  encryption: CredentialEncryption;
 };
 
 async function getConnectionId(req: Parameters<Endpoint['handler']>[0]): Promise<string | number | null> {

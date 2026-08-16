@@ -1,4 +1,5 @@
-import type { Plugin } from 'frogbot';
+import type { Component, Plugin } from 'frogbot';
+import { createCredentialEncryption } from 'frogbot/connections';
 
 import { createOAuthStatesCollection } from './collections/states.js';
 import { createOAuthEndpoints } from './endpoints/index.js';
@@ -11,7 +12,6 @@ import { slackProvider } from './providers/slack.js';
 import { stripeProvider } from './providers/stripe.js';
 import { xeroProvider } from './providers/xero.js';
 import { zoomProvider } from './providers/zoom.js';
-import { createOAuthEncryption } from './server/crypto.js';
 import { createOAuthCredentialSource } from './source.js';
 import type { OAuthPluginOptions } from './types.js';
 import type { OAuthProvider } from './types.js';
@@ -56,6 +56,12 @@ export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
     if (!auth || auth.auth === undefined || auth.auth === false) {
       throw new Error(`[plugin-oauth] Auth collection '${authCollection}' must exist and have auth enabled.`);
     }
+    const authOptions = typeof auth.auth === 'object' ? auth.auth : {};
+    const loginWithUsername = authOptions.loginWithUsername;
+    const usernameOnly = loginWithUsername === true || (typeof loginWithUsername === 'object' && loginWithUsername.allowEmailLogin !== true && loginWithUsername.requireEmail !== true);
+    if (explicit?.some((provider) => provider.signIn) && usernameOnly) {
+      throw new Error(`[plugin-oauth] Auth collection '${authCollection}' must support email when OAuth sign-in is enabled.`);
+    }
     const ownerField = options.ownerField ?? { name: 'owner', relationTo: authCollection };
     const groups = new Map<object, { id: string; services: string[]; scopes: Set<string>; clientId: string; clientSecret: string }>();
     for (const piece of config.pieces ?? []) {
@@ -79,13 +85,14 @@ export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
       refresh: options.paths?.refresh ?? '/oauth/:provider/refresh',
       revoke: options.paths?.revoke ?? '/oauth/:provider/revoke',
     };
-    const encryption = options.encryption ?? createOAuthEncryption({ secret: config.secret });
+    const encryption = options.encryption ?? createCredentialEncryption({ secret: config.secret });
     const endpoints = createOAuthEndpoints({
       baseUrl,
       allowedReturnOrigins: options.allowedReturnOrigins ?? [],
       paths,
       statesSlug,
       connectionsSlug,
+      authCollection,
       ownerField: ownerField.name,
       providers,
       encryption,
@@ -97,8 +104,32 @@ export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
       collection: options.statesCollection,
       existing: existingStates,
     });
+    const signInProviders = derived.filter((provider) => provider.signIn);
+    const loginButtons: Component[] =
+      options.adminLoginButtons && signInProviders.length > 0
+        ? [
+            {
+              path: '@frogbotai/plugin-oauth/client#OAuthLoginButtons',
+              clientProps: {
+                authorizePath: `/api/${authCollection}${paths.authorize}`,
+                showDivider: !authOptions.disableLocalStrategy,
+                providers: signInProviders.map((provider) => ({
+                  id: provider.id,
+                  label: provider.label ?? provider.id,
+                })),
+              },
+            },
+          ]
+        : [];
     return {
       ...config,
+      admin: {
+        ...config.admin,
+        components: {
+          ...config.admin?.components,
+          afterLogin: [...(config.admin?.components?.afterLogin ?? []), ...loginButtons],
+        },
+      },
       credentialSources: [
         ...(config.credentialSources ?? []),
         ...derived.map((provider) => createOAuthCredentialSource({ provider, encryption, connectionsSlug })),

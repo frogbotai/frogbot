@@ -21,6 +21,8 @@ export function dropboxProvider(options: OAuthProviderOptions): OAuthProvider {
   return {
     id: "dropbox",
     service: "dropbox",
+    label: "Dropbox",
+    signIn: options.signIn,
     authorizationUrl: "https://www.dropbox.com/oauth2/authorize",
     tokenUrl: "https://api.dropboxapi.com/oauth2/token",
     scopes,

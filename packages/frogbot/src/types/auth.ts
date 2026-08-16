@@ -11,6 +11,11 @@ export interface AuthConfig {
   maxLoginAttempts?: number;
   lockTime?: number;
   loginWithUsername?: boolean | { allowEmailLogin?: boolean; requireEmail?: boolean; requireUsername?: boolean };
+  /**
+   * Disable the built-in email/password strategy. Only set this when auth is
+   * fully replaced by a custom strategy or an OAuth provider.
+   */
+  disableLocalStrategy?: true | { enableFields?: true; optionalPassword?: true };
   cookies?: {
     secure?: boolean;
     sameSite?: 'lax' | 'strict' | 'none';

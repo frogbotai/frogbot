@@ -1,15 +1,14 @@
 import { createCipheriv, createHash } from 'node:crypto';
 
+import { createCredentialEncryption, CredentialCryptoError } from 'frogbot/connections';
 import { describe, expect, it } from 'vitest';
 
 import {
-  createOAuthEncryption,
   createOAuthState,
   createOAuthStateExpiration,
   createPKCECodes,
   isOAuthStateExpired,
   mergeOAuthTokenSets,
-  OAuthCryptoError,
   parseOAuthTokenSet,
 } from '../server.js';
 
@@ -35,13 +34,13 @@ describe('OAuth server primitives', () => {
   });
 
   it('encrypts values and rejects tampering', async () => {
-    const encryption = createOAuthEncryption({ secret: 'secret' });
+    const encryption = createCredentialEncryption({ secret: 'secret' });
     const encrypted = await encryption.encrypt('credentials');
     expect(encrypted).not.toContain('credentials');
     expect(await encryption.decrypt(encrypted)).toBe('credentials');
     const parts = encrypted.split('.');
     parts[2] = `${parts[2]?.startsWith('A') ? 'B' : 'A'}${parts[2]?.slice(1)}`;
-    expect(() => encryption.decrypt(parts.join('.'))).toThrow(OAuthCryptoError);
+    expect(() => encryption.decrypt(parts.join('.'))).toThrow(CredentialCryptoError);
   });
 
   it('decrypts ciphertext written with the legacy plugin label', async () => {
@@ -51,7 +50,7 @@ describe('OAuth server primitives', () => {
     const cipher = createCipheriv('aes-256-gcm', key, iv);
     const encrypted = Buffer.concat([cipher.update('credentials', 'utf8'), cipher.final()]);
     const legacy = ['v1', iv.toString('base64url'), cipher.getAuthTag().toString('base64url'), encrypted.toString('base64url')].join('.');
-    expect(await createOAuthEncryption({ secret }).decrypt(legacy)).toBe('credentials');
+    expect(await createCredentialEncryption({ secret }).decrypt(legacy)).toBe('credentials');
   });
 
   it('normalizes and merges token responses without dropping refresh tokens', () => {
