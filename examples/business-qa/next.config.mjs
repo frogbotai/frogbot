@@ -1,7 +1,6 @@
 import { withFrogbot } from '@frogbotai/next';
-import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   serverExternalPackages: [
     '@activepieces/piece-data-summarizer',
     '@activepieces/piece-date-helper',

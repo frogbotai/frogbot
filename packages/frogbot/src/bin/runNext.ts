@@ -18,6 +18,16 @@ export function findNextConfig(cwd: string): string | null {
   return null;
 }
 
+export function canResolveFromProject(cwd: string, specifier: string): boolean {
+  try {
+    const require = createRequire(path.join(cwd, 'package.json'));
+    require.resolve(specifier);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function resolveNextBin(cwd: string): string {
   const require = createRequire(path.join(cwd, 'package.json'));
   return require.resolve('next/dist/bin/next');
@@ -26,10 +36,22 @@ export function resolveNextBin(cwd: string): string {
 export function runNext(command: 'dev' | 'start', args: string[] = []): void {
   const cwd = process.cwd();
 
-  if (!findNextConfig(cwd)) {
+  const configFile = findNextConfig(cwd);
+  if (!configFile) {
     console.error(
       `[frogbot] no next.config.{ts,mjs,js,cjs} found in ${cwd}. ` +
-        `\`frogbot ${command}\` runs your Next.js app — create one with \`npm create frogbot-app\` or add a next.config.ts.`,
+        `\`frogbot ${command}\` runs your Next.js app — create one with \`npm create frogbot-app\` or add a next.config.mjs.`,
+    );
+    process.exit(1);
+  }
+
+  // `next start` must be able to parse next.config.ts, which requires the
+  // TypeScript compiler at runtime. Instead of letting Next.js silently
+  // install it on a production machine, fail fast with an actionable message.
+  if (path.basename(configFile) === 'next.config.ts' && !canResolveFromProject(cwd, 'typescript')) {
+    console.error(
+      `[frogbot] ${configFile} requires TypeScript at runtime, but \`typescript\` is not installed. ` +
+        `Rename it to next.config.mjs, or add \`typescript\` to your dependencies.`,
     );
     process.exit(1);
   }
