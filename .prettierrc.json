@@ -8,6 +8,10 @@
     {
       "files": ["*.md", "*.mdx"],
       "options": { "proseWrap": "preserve" }
+    },
+    {
+      "files": ["*.css", "*.scss"],
+      "options": { "singleQuote": false }
     }
   ]
 }

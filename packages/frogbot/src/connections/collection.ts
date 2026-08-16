@@ -45,6 +45,8 @@ export function defaultConnectionsCollection({
         hidden: true,
         access: { read: () => false },
         required: true,
+        validate: (value: unknown, { data }: { data?: { status?: unknown } }) =>
+          value || data?.status === 'revoked' ? true : 'This field is required.',
       },
       { name: 'scopes', type: 'text', hasMany: true },
       {

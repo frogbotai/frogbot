@@ -11,6 +11,7 @@ import { getProvider, withOAuthResult } from './shared.js';
 
 type CallbackEndpointOptions = {
   path: string;
+  callbackUrlPath: string;
   baseUrl: string;
   statesSlug: string;
   connectionsSlug: string;
@@ -79,6 +80,7 @@ export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpo
       return Response.json({ error: 'OAuth state is required' }, { status: 400 });
     const consumed = await req.frogbot.delete({
       collection: options.statesSlug as never,
+      depth: 0,
       overrideAccess: true,
       req,
       where: {
@@ -99,7 +101,7 @@ export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpo
       );
     try {
       const callbackUrl = new URL(
-        options.path.replace(':provider', provider.id),
+        options.callbackUrlPath.replace(':provider', provider.id),
         options.baseUrl,
       ).toString();
       const tokens = await provider.exchange({

@@ -20,9 +20,11 @@ export async function getOAuthConnectionCredentials(options: {
   if (owner === undefined) return null;
   const result = await options.req.frogbot.find({
     collection: (options.collectionSlug ?? 'connections') as never,
+    depth: 0,
     limit: 1,
     overrideAccess: true,
     req: options.req,
+    showHiddenFields: true,
     where: { and: [{ id: { equals: options.connectionId } }, { owner: { equals: owner } }] },
   });
   const connection = result.docs[0] as Record<string, unknown> | undefined;

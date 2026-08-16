@@ -10,6 +10,7 @@ type OAuthEndpointsOptions = {
   baseUrl: string;
   allowedReturnOrigins: string[];
   paths: { authorize: string; callback: string; refresh: string; revoke: string };
+  callbackUrlPath: string;
   statesSlug: string;
   connectionsSlug: string;
   authCollection: string;
@@ -23,7 +24,7 @@ export function createOAuthEndpoints(options: OAuthEndpointsOptions): Endpoint[]
     createAuthorizeEndpoint({
       ...options,
       path: options.paths.authorize,
-      callbackPath: options.paths.callback,
+      callbackPath: options.callbackUrlPath,
     }),
     ...createCallbackEndpoints({ ...options, path: options.paths.callback }),
     ...createLifecycleEndpoints(options),

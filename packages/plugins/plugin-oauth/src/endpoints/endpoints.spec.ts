@@ -81,6 +81,39 @@ describe('OAuth authorize and callback endpoints', () => {
     expect(create.mock.calls[0][0].data.owner).toBe('user-1');
   });
 
+  it('sends the mounted collection endpoint URL as the provider callback', async () => {
+    const build = async (routes?: { api: string }) => {
+      const currentProvider = provider();
+      const authorizeSpy = vi.fn(currentProvider.authorize);
+      const config = await oauthPlugin({
+        providers: [{ ...currentProvider, authorize: authorizeSpy }],
+        authCollection: 'accounts',
+        baseUrl: 'https://app.test',
+      })({
+        secret: 'test',
+        db: {} as FrogbotConfig['db'],
+        collections: [{ slug: 'accounts', auth: true, fields: [] }],
+        ...(routes ? { routes } : {}),
+      });
+      const authorize = config.collections[0]!.endpoints!.find((endpoint) =>
+        endpoint.path.endsWith('/authorize'),
+      )!;
+      await authorize.handler({
+        routeParams: { provider: 'custom' },
+        user: { id: 'user-1' },
+        headers: new Headers(),
+        searchParams: new URLSearchParams(),
+        frogbot: { create: vi.fn().mockResolvedValue({ id: 'state-1' }) },
+      } as unknown as FrogbotRequest);
+      return authorizeSpy.mock.calls[0]![0].callbackUrl;
+    };
+
+    expect(await build()).toBe('https://app.test/api/accounts/oauth/custom/callback');
+    expect(await build({ api: '/rest' })).toBe(
+      'https://app.test/rest/accounts/oauth/custom/callback',
+    );
+  });
+
   it('persists state and completes the callback once with encrypted tokens', async () => {
     const currentProvider = provider();
     const list = await endpoints(currentProvider);
@@ -141,6 +174,7 @@ describe('OAuth authorize and callback endpoints', () => {
     expect(currentProvider.exchange as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
       expect.objectContaining({ codeVerifier: stateData.codeVerifier }),
     );
+    expect(deleteState).toHaveBeenCalledWith(expect.objectContaining({ depth: 0 }));
     expect((await callback.handler(callbackReq)).status).toBe(400);
   });
 

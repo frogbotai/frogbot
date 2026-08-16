@@ -1,10 +1,10 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @source "./**/*.{ts,tsx}";
 
 @theme inline {
   --font-payload: var(--font-body);
-  --font-gilda: 'Gilda Display';
+  --font-gilda: "Gilda Display";
   --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;
   --text-sm: 0.875rem;
@@ -97,9 +97,9 @@
 
 [data-fb-ui] {
   --font-body:
-    'Satoshi-Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    "Satoshi-Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
-  --font-gilda: 'Gilda Display';
+  --font-gilda: "Gilda Display";
   --color-base-0: rgb(249, 250, 251);
   --color-base-50: rgb(246, 247, 249);
   --color-base-100: rgb(243, 244, 246);
@@ -229,7 +229,7 @@
 }
 
 .gradient-container::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: -5000000px;
   background: conic-gradient(
@@ -272,9 +272,9 @@
   }
 }
 
-[data-fb-theme='dark'] [data-fb-ui][data-theme='system'],
+[data-fb-theme="dark"] [data-fb-ui][data-theme="system"],
 [data-fb-ui].dark,
-[data-fb-ui][data-theme='dark'] {
+[data-fb-ui][data-theme="dark"] {
   --theme-base-0: var(--color-base-1000);
   --theme-base-50: var(--color-base-950);
   --theme-base-100: var(--color-base-900);
@@ -338,12 +338,12 @@
   color-scheme: dark;
 }
 
-[data-fb-theme='light'] [data-fb-ui][data-theme='system'] {
+[data-fb-theme="light"] [data-fb-ui][data-theme="system"] {
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  [data-fb-ui][data-theme='system'] {
+  [data-fb-ui][data-theme="system"] {
     --theme-base-0: var(--color-base-1000);
     --theme-base-50: var(--color-base-950);
     --theme-base-100: var(--color-base-900);
@@ -394,20 +394,20 @@
 }
 
 @font-face {
-  font-family: 'Satoshi-Variable';
+  font-family: "Satoshi-Variable";
   src:
-    url('/fonts/Satoshi-Variable.woff2') format('woff2'),
-    url('/fonts/Satoshi-Variable.woff') format('woff');
+    url("/fonts/Satoshi-Variable.woff2") format("woff2"),
+    url("/fonts/Satoshi-Variable.woff") format("woff");
   font-style: normal;
   font-weight: 300 900;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Satoshi-Variable';
+  font-family: "Satoshi-Variable";
   src:
-    url('/fonts/Satoshi-VariableItalic.woff2') format('woff2'),
-    url('/fonts/Satoshi-VariableItalic.woff') format('woff');
+    url("/fonts/Satoshi-VariableItalic.woff2") format("woff2"),
+    url("/fonts/Satoshi-VariableItalic.woff") format("woff");
   font-style: italic;
   font-weight: 300 900;
   font-display: swap;

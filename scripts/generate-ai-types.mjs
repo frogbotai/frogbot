@@ -2,6 +2,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { format, resolveConfig } from 'prettier';
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const catalogPath = resolve(root, 'packages/frogbot/src/ai/catalog.json');
 const outputPath = resolve(root, 'packages/frogbot/src/ai/generated.ts');
@@ -26,7 +28,7 @@ function typeUnion(values, indent = '  ') {
   return values.map((value) => `${indent}| ${value}`).join('\n');
 }
 
-export function renderAIModelTypes(catalog) {
+export async function renderAIModelTypes(catalog) {
   const providers = [...new Set(catalog.map((entry) => entry.provider))].sort();
   const sections = providers.map((provider) => {
     const ids = catalog
@@ -36,13 +38,15 @@ export function renderAIModelTypes(catalog) {
     return `export type ${typeName(provider)}ModelId =\n${union(ids)};`;
   });
   const combined = providers.map((provider) => `${typeName(provider)}ModelId`);
+  const source = `export type ProviderSlug =\n${union(providers)};\n\n${sections.join('\n\n')}\n\nexport type CatalogModelId =\n${typeUnion(combined)};\n`;
+  const options = (await resolveConfig(outputPath)) ?? {};
 
-  return `export type ProviderSlug =\n${union(providers)};\n\n${sections.join('\n\n')}\n\nexport type CatalogModelId =\n${typeUnion(combined)};\n`;
+  return format(source, { ...options, filepath: outputPath, parser: 'typescript' });
 }
 
 export async function generateAIModelTypes() {
   const catalog = JSON.parse(await readFile(catalogPath, 'utf8'));
-  await writeFile(outputPath, renderAIModelTypes(catalog));
+  await writeFile(outputPath, await renderAIModelTypes(catalog));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

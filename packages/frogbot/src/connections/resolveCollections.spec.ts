@@ -93,4 +93,16 @@ describe('resolveConnectionsCollections', () => {
     expect(encrypted).toMatchObject({ hidden: true, access: { read: expect.any(Function) } });
     expect(await (encrypted as { access: { read: () => boolean } }).access.read()).toBe(false);
   });
+
+  it('requires credentials unless the connection is revoked', () => {
+    const result = resolveConnectionsCollections(config(), pieces);
+    const collection = result.collections.find((item) => item.slug === 'connections')!;
+    const field = collection.fields.find(
+      (item) => 'name' in item && item.name === 'encryptedCredentials',
+    ) as { validate: (value: unknown, options: { data?: { status?: string } }) => unknown };
+
+    expect(field.validate('cipher', { data: { status: 'active' } })).toBe(true);
+    expect(field.validate('', { data: { status: 'revoked' } })).toBe(true);
+    expect(field.validate('', { data: { status: 'active' } })).toBe('This field is required.');
+  });
 });

@@ -104,4 +104,15 @@ describe('OAuth connection lifecycle', () => {
       and: [{ id: { equals: 'connection-1' } }, { owner: { equals: 'user-1' } }],
     });
   });
+
+  it('reads stored credentials unpopulated and past hidden field stripping', async () => {
+    const { endpoints } = await setup();
+    const refresh = endpoints.find((endpoint) => endpoint.path.endsWith('/refresh'))!;
+    const { req } = request({
+      encryptedCredentials: await encryption.encrypt(JSON.stringify({ access_token: 'access' })),
+    });
+    await refresh.handler(req);
+    const find = req.frogbot.find as ReturnType<typeof vi.fn>;
+    expect(find.mock.calls[0][0]).toMatchObject({ depth: 0, showHiddenFields: true });
+  });
 });

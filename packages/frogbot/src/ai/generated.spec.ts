@@ -9,7 +9,7 @@ describe('generated AI model types', () => {
   it('matches the canonical catalog', async () => {
     const generated = await readFile(new URL('./generated.ts', import.meta.url), 'utf8');
 
-    expect(generated).toBe(renderAIModelTypes(catalog));
+    expect(generated).toBe(await renderAIModelTypes(catalog));
   });
 
   it('contains current Anthropic models without retired IDs', () => {

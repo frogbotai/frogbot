@@ -70,7 +70,7 @@ describe('rolesPlugin', () => {
         ],
       }),
     );
-    expect(users.hooks?.beforeChange).toEqual([]);
+    expect(users.hooks?.beforeChange).toBeUndefined();
   });
 
   it('rejects duplicate role slugs and auth field collisions', () => {
@@ -91,53 +91,31 @@ describe('rolesPlugin', () => {
     );
   });
 
-  it('allows defaultRole with a custom resolver', async () => {
-    const result = await rolesPlugin({
-      roles: ['member'],
-      defaultRole: 'member',
-      resolveRoles: () => ['member'],
-    })(config());
-    const users = result.collections.find(({ slug }) => slug === 'users')!;
-    const hook = users.hooks!.beforeChange!.at(-1)!;
-    expect(await hook({ operation: 'create', data: { name: 'User' } } as never)).toEqual({
-      name: 'User',
-      roles: ['member'],
-    });
-  });
-
-  it('assigns the default role on create without overriding explicit roles', async () => {
+  it('configures defaultRole as the injected field default value', async () => {
     const result = await rolesPlugin({ roles: ['admin', 'member'], defaultRole: 'member' })(
       config(),
     );
     const users = result.collections.find(({ slug }) => slug === 'users')!;
-    const hook = users.hooks!.beforeChange!.at(-1)!;
-    expect(await hook({ operation: 'create', data: { name: 'First' } } as never)).toEqual({
-      name: 'First',
-      roles: ['member'],
-    });
-    expect(
-      await hook({ operation: 'create', data: { name: 'Admin', roles: ['admin'] } } as never),
-    ).toEqual({ name: 'Admin', roles: ['admin'] });
-    expect(
-      await hook({ operation: 'create', data: { name: 'Service', roles: [] } } as never),
-    ).toEqual({ name: 'Service', roles: [] });
+    expect(users.hooks?.beforeChange).toBeUndefined();
+    expect(users.fields).toContainEqual(
+      expect.objectContaining({ name: 'roles', defaultValue: ['member'] }),
+    );
   });
 
-  it('defaults role field updates to assigned admin only when admin is listed', async () => {
-    const withAdmin = await rolesPlugin({ roles: ['admin', 'member'] })(config());
-    const adminField = withAdmin.collections[0]!.fields.find(
-      (field) => 'name' in field && field.name === 'roles',
+  it('omits the field default value when no defaultRole is set', async () => {
+    const result = await rolesPlugin({ roles: ['admin', 'member'] })(config());
+    const field = result.collections[0]!.fields.find(
+      (item) => 'name' in item && item.name === 'roles',
     )!;
-    const adminUpdate = 'access' in adminField ? adminField.access?.update : undefined;
-    expect(await adminUpdate?.({ req: req(['admin']) } as never)).toBe(true);
-    expect(await adminUpdate?.({ req: req(['member']) } as never)).toBe(false);
+    expect('defaultValue' in field).toBe(false);
+  });
 
-    const withoutAdmin = await rolesPlugin({ roles: ['member'] })(config());
-    const memberField = withoutAdmin.collections[0]!.fields.find(
-      (field) => 'name' in field && field.name === 'roles',
+  it('leaves the role field on Payload default access', async () => {
+    const result = await rolesPlugin({ roles: ['admin', 'member'] })(config());
+    const field = result.collections[0]!.fields.find(
+      (item) => 'name' in item && item.name === 'roles',
     )!;
-    const memberUpdate = 'access' in memberField ? memberField.access?.update : undefined;
-    expect(await memberUpdate?.({ req: req(['admin']) } as never)).toBe(false);
+    expect('access' in field).toBe(false);
   });
 
   it('passes custom rolesFieldAccess through unchanged', async () => {

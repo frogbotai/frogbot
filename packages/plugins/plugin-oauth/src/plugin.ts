@@ -136,10 +136,12 @@ export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
       revoke: options.paths?.revoke ?? '/oauth/:provider/revoke',
     };
     const encryption = options.encryption ?? createCredentialEncryption({ secret: config.secret });
+    const apiRoute = config.routes?.api ?? '/api';
     const endpoints = createOAuthEndpoints({
       baseUrl,
       allowedReturnOrigins: options.allowedReturnOrigins ?? [],
       paths,
+      callbackUrlPath: `${apiRoute}/${authCollection}${paths.callback}`,
       statesSlug,
       connectionsSlug,
       authCollection,
@@ -161,7 +163,7 @@ export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
             {
               path: '@frogbotai/plugin-oauth/client#OAuthLoginButtons',
               clientProps: {
-                authorizePath: `/api/${authCollection}${paths.authorize}`,
+                authorizePath: `${apiRoute}/${authCollection}${paths.authorize}`,
                 showDivider: !authOptions.disableLocalStrategy,
                 providers: signInProviders.map((provider) => ({
                   id: provider.id,
