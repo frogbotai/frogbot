@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-stripe",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "Payload Stripe integration for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",

@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-search",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "Payload search integration for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
