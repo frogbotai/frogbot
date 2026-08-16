@@ -7,20 +7,15 @@ description: "Deploy a FrogBot app to production with Docker or Fly.io, and avoi
 FrogBot apps are Next.js applications powered by Payload CMS. They build like a standard Next.js app, but two things differ from a plain Next.js project:
 
 1. **The build must run in full, at image build time** — not split into "compile in the image / generate at runtime". FrogBot's `prebuild` step generates the Payload import map, and `next build` compiles the app. Running `next build --experimental-build-mode generate` at container start (as some platform templates do) re-runs webpack in production, which requires `typescript` at runtime and slows cold starts dramatically.
-2. **Several native packages are externalized from the webpack bundle** by Payload's `withPayload`: `libsql`, `sharp`, `pino`, `drizzle-kit`, and `json-schema-to-typescript`. The compiled routes `require()` them at runtime, so they must be resolvable from your app root. With pnpm's strict `node_modules` layout that only happens if they are **direct dependencies** — which the FrogBot template includes for you. **Do not remove them.**
-
-## Requirements
-
-- `next.config.mjs`, not `next.config.ts`. The `.ts` variant needs `typescript` at runtime to parse the config, which production images typically prune. `frogbot start` refuses to start with a `.ts` config unless `typescript` is installed and tells you exactly how to fix it.
-- A `package.json` that includes the externalized packages above (shipped with `create-frogbot-app`).
+2. **In production, Payload does not push your schema automatically** the way it does in dev. A fresh production database has no tables until migrations run — see [Migrations](#migrations).
 
 ## Docker
 
-The template ships a production `Dockerfile` that handles all of this:
+The template ships a production `Dockerfile` based on [Payload's template](https://github.com/payloadcms/payload/blob/main/templates/blank/Dockerfile) and the Next.js `with-docker` example:
 
-- Installs all dependencies (including dev dependencies) and runs the **full** `pnpm build` inside the image.
-- Prunes dev dependencies afterwards, so `typescript` and friends never reach the final image.
-- Starts with `pnpm start` (which runs `frogbot start` → `next start`). Nothing is compiled at container start.
+- **Package-manager agnostic** — it detects your committed lockfile (`pnpm-lock.yaml`, `package-lock.json`, or `yarn.lock`) and installs with the matching tool. The template ships no lockfile; your first `install` creates it.
+- **Standalone output** — the build stage sets `NEXT_OUTPUT=standalone` (wired up in the template's `next.config.mjs`), and the final image contains only Next's traced server: no package manager, no full `node_modules`. It starts with plain `node server.js` (~110&nbsp;MB image, sub-second boot).
+- **Build isolation** — the build stage uses a throwaway `DATABASE_URL` and a placeholder `FROGBOT_SECRET`, so no local data or secrets are baked into the image. Real values come from environment variables at runtime.
 
 ```bash
 docker build -t my-frogbot-app .
@@ -36,32 +31,73 @@ fly deploy
 
 Fly's generator detects the existing `Dockerfile` and uses it instead of generating its default Next.js two-phase build, so your app gets a fast, single-phase cold start.
 
+For a complete, working setup — persistent volume, migrations, scale-to-zero — see the [`fly-sqlite` example](https://github.com/frogbotai/frogbot/tree/main/examples/fly-sqlite).
+
 ### Database persistence
 
 The default SQLite database lives in a local `frogbot.db` file on the machine's ephemeral storage. If your machines **auto-stop** (scale to zero), the data is wiped on restart. Choose one of:
 
-- **Attach a persistent volume** and point `DATABASE_URL` at it. See the [SQLite guide](/database/sqlite) for the exact URL format.
+- **Attach a persistent volume** and point `DATABASE_URL` at it:
+
+  ```bash
+  fly volumes create frogbot_data --size 1 --region <your-region>
+  fly secrets set DATABASE_URL=file:/data/frogbot.db
+  ```
+
+  ```toml
+  [mounts]
+    source = 'frogbot_data'
+    destination = '/data'
+  ```
+
+  A volume attaches to one machine at a time, so with SQLite you run a **single machine** (`fly scale count 1`). Scale-to-zero still works — the data lives on the volume, not the machine.
+
 - **Use a remote database**: [Postgres](/database/postgres), [MongoDB](/database/mongodb), or a hosted SQLite like Turso. Set `DATABASE_URL` accordingly.
 
-If you use a volume or remote database, add the database file and its parent directory to `.dockerignore` so stale local data never ships in an image.
+## Migrations
+
+In development, Payload pushes your schema to SQLite automatically on boot. In **production** it does not — it only applies migrations listed in `prodMigrations`. Before your first production deploy:
+
+```bash
+pnpm migrate:create init   # generates src/migrations/<timestamp>_init.ts
+```
+
+Then wire the migrations into your database adapter:
+
+```ts
+import { migrations } from './migrations';
+
+sqliteAdapter({
+  client: { url: process.env.DATABASE_URL || '' },
+  prodMigrations: migrations,
+});
+```
+
+Commit the generated files. They are applied automatically on boot (before the server starts serving), so a fresh database gets its schema on first deploy. When you add or change collections, run `pnpm migrate:create <name>` again and commit the new files.
+
+Generated migrations import from `@payloadcms/db-sqlite`, which the template includes as a direct dependency — do not remove it.
 
 ## Troubleshooting
 
+### `no such table: users` in production
+
+Your production database has no schema. Payload only pushes schema automatically in dev; in production you need migrations wired into `prodMigrations` — see [Migrations](#migrations).
+
+### `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` during Docker build
+
+Recent pnpm versions refuse packages published within the last 24 hours as a supply-chain protection. If a FrogBot release is newer than that, either wait, pin an older pnpm via the `packageManager` field in `package.json`, or relax the policy in `pnpm-workspace.yaml` (`minimumReleaseAge: 0`).
+
 ### `Cannot find module 'libsql'` (or `sharp`, `pino`, `drizzle-kit`, `json-schema-to-typescript`)
 
-The compiled routes `require()` a package that Payload externalizes, but it is not linked at your project root. This happens when the package is only a transitive dependency and pnpm keeps it inside `.pnpm/`. Add it to `dependencies` in `package.json` and rebuild:
-
-```bash
-pnpm add libsql sharp pino drizzle-kit json-schema-to-typescript
-```
+Only applies to non-standalone deploys (bare VPS running `pnpm start`): the compiled routes `require()` a package that Payload externalizes, but it is not linked at your project root. Add it to `dependencies` in `package.json` and rebuild — the template already includes all of them. Standalone Docker images are unaffected; Next's file tracing bundles these automatically.
 
 ### `Installing TypeScript...` or `Can't resolve '@frogbot-config'` at start
 
-A runtime `next build` step is running (usually a platform template with a two-phase build), and `typescript` was pruned from the image. Use the template `Dockerfile` above so the build happens once, in the image, and start runs only `next start`.
+A runtime `next build` step is running (usually a platform template with a two-phase build), and `typescript` was pruned from the image. Use the template `Dockerfile` above so the build happens once, in the image, and start runs only `node server.js`.
 
 ### Slow cold starts
 
-If your platform starts a build at container boot, your cold start includes a webpack rebuild. Move the build into the image (see [Docker](#docker)) so cold starts are just `next start`.
+If your platform starts a build at container boot, your cold start includes a webpack rebuild. Move the build into the image (see [Docker](#docker)) so cold starts are just the standalone server booting.
 
 <CardGroup cols={2}>
   <Card title="Installation" icon="rocket" href="/getting-started/installation">
