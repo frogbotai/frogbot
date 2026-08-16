@@ -1,7 +1,8 @@
-import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
-import type { FrogbotConfig, Plugin } from 'frogbot';
+import type { CollectionConfig, Plugin } from 'frogbot';
 
+import { apiKeysPlugin } from '../../packages/plugins/plugin-api-keys/src/index.js';
 import { rolesPlugin } from '../../packages/plugins/plugin-roles/src/index.js';
+import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 
 export const addTenant: Plugin = (config) => ({
   ...config,
@@ -12,10 +13,28 @@ export const addTenant: Plugin = (config) => ({
   ),
 });
 
-export const config: FrogbotConfig = {
-  secret: 'api-keys-test',
-  db: {} as FrogbotConfig['db'],
-  collections: [{ slug: 'accounts', auth: true, fields: [] }],
+const Accounts: CollectionConfig = {
+  slug: 'accounts',
+  auth: true,
+  access: openAccess,
+  fields: [],
+};
+
+export default await buildTestConfig({
+  collections: [Accounts],
+  ai: {
+    providers: {
+      test: {
+        type: 'openai-compatible',
+        baseUrl: 'http://127.0.0.1:3988/v1',
+        apiKey: 'test-key',
+        models: [
+          { id: 'allowed', mode: 'chat', cost: { input: 1, output: 2 } },
+          { id: 'blocked', mode: 'chat', cost: { input: 1, output: 2 } },
+        ],
+      },
+    },
+  },
   plugins: [
     rolesPlugin(),
     apiKeysPlugin({
@@ -27,4 +46,4 @@ export const config: FrogbotConfig = {
     }),
     addTenant,
   ],
-};
+});

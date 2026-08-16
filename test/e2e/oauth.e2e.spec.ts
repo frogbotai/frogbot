@@ -383,7 +383,7 @@ describe('OAuth plugin e2e — real server, real provider handshake', () => {
     const callback = await fetch(providerRedirect.headers.get('location')!, { redirect: 'manual' });
 
     expect(callback.status).toBe(302);
-    expect(callback.headers.get('location')).toBe(`${baseUrl}/`);
+    expect(callback.headers.get('location')).toBe(`${baseUrl}/admin`);
     const cookie = callback.headers.get('set-cookie')!.match(/^(frogbot-token=[^;]+)/)![1]!;
 
     const me = await fetch(`${baseUrl}/api/users/me`, { headers: navigate(cookie) });

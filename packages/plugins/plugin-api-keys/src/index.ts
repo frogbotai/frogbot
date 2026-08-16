@@ -1,4 +1,4 @@
-import { calculateModelCostUSD } from '@frogbotai/gateway';
+import { calculateCostUSD, calculateModelCostUSD, type ModelCost } from '@frogbotai/gateway';
 import { BudgetExceededError, ModelNotAllowedError } from '@frogbotai/gateway/errors';
 import {
   type CollectionConfig,
@@ -40,12 +40,42 @@ export type ApiKeysPluginOptions = {
 };
 
 type PolicyContext = { policy?: PolicyDocument; usageFields?: { apiKey: string } };
+type PricedCustomProvider = {
+  type: 'openai-compatible';
+  models: Array<{
+    id: string;
+    cost?: { input?: number; output?: number; cache_read?: number };
+  }>;
+};
+
+function isPricedCustomProvider(entry: unknown): entry is PricedCustomProvider {
+  return (
+    typeof entry === 'object' &&
+    entry !== null &&
+    'type' in entry &&
+    entry.type === 'openai-compatible' &&
+    'models' in entry &&
+    Array.isArray(entry.models)
+  );
+}
 
 export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
   const queue = new SerialQueue();
   return (config) => {
     const authCollection = options.authCollection ?? 'users';
     const collectionSlug = options.collectionSlug ?? 'api-keys';
+    const configuredCosts = new Map<string, ModelCost>();
+    for (const [provider, entry] of Object.entries(config.ai?.providers ?? {})) {
+      if (!isPricedCustomProvider(entry)) continue;
+      for (const model of entry.models) {
+        if (!model.cost) continue;
+        configuredCosts.set(`${provider}/${model.id}`, {
+          input: model.cost.input ?? 0,
+          output: model.cost.output ?? 0,
+          ...(model.cost.cache_read !== undefined && { cache_read: model.cost.cache_read }),
+        });
+      }
+    }
     const auth = config.collections.find((collection) => collection.slug === authCollection);
     if (!auth || auth.auth === undefined || auth.auth === false) {
       throw new Error(
@@ -56,8 +86,9 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
     const collision = auth.fields.find(
       (field) => 'name' in field && reservedPolicyFields.has(field.name),
     );
-    if (collision && 'name' in collision)
+    if (collision && 'name' in collision) {
       throw new Error(`[plugin-api-keys] Auth field '${collision.name}' is reserved.`);
+    }
     const existing = config.collections.find((collection) => collection.slug === collectionSlug);
     const usageLog = config.ai
       ? (config.collections.find((item) => item.usageLog === true) ?? {
@@ -140,8 +171,9 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
                     if (
                       policy.monthlyBudget !== undefined &&
                       (policy.spendThisPeriodUSD ?? 0) >= policy.monthlyBudget
-                    )
+                    ) {
                       throw new BudgetExceededError();
+                    }
                     Object.assign(args.context as PolicyContext, {
                       policy,
                       ...('apiKeyId' in policy && typeof policy.apiKeyId === 'string'
@@ -154,8 +186,9 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
                   ...(config.ai.hooks?.beforeUpstream ?? []),
                   (args) => {
                     const models = (args.context as PolicyContext).policy?.models;
-                    if (models?.length && !models.includes(args.model))
+                    if (models?.length && !models.includes(args.model)) {
                       throw new ModelNotAllowedError(args.model);
+                    }
                   },
                 ],
                 afterOperation: [
@@ -164,7 +197,12 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
                     const req = args.req;
                     if (!req?.user || args.error) return;
                     const userId = req.user.id;
-                    const cost = args.usage ? calculateModelCostUSD(args.model, args.usage) : 0;
+                    const configuredCost = configuredCosts.get(args.model);
+                    const cost = args.usage
+                      ? configuredCost
+                        ? calculateCostUSD(args.usage, configuredCost)
+                        : calculateModelCostUSD(args.model, args.usage)
+                      : 0;
                     if (cost <= 0) return;
                     await queue.run(String(userId), async () => {
                       const user = (await req.frogbot.findByID({

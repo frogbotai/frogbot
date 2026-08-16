@@ -83,8 +83,8 @@ function makeApp() {
   });
 }
 
-function imageBytes() {
-  return (upstreamBodies[0] as any).messages[0].content[0].image.source.bytes;
+function imageContent() {
+  return (upstreamBodies[0] as any).messages[0].content[0].image;
 }
 
 beforeEach(() => {
@@ -107,7 +107,7 @@ describe('Bedrock file content wire contract', () => {
       ],
     });
 
-    expect(imageBytes()).toBe(PNG);
+    expect(imageContent()).toEqual({ format: 'png', source: { bytes: PNG } });
   });
 
   it('sends messages inline image bytes as base64', async () => {
@@ -124,7 +124,7 @@ describe('Bedrock file content wire contract', () => {
       ],
     });
 
-    expect(imageBytes()).toBe(PNG);
+    expect(imageContent()).toEqual({ format: 'png', source: { bytes: PNG } });
   });
 
   it('sends messages inline PDF bytes as base64', async () => {
@@ -244,7 +244,7 @@ describe('Bedrock file content wire contract', () => {
     });
     await response.text();
 
-    expect(imageBytes()).toBe(PNG);
+    expect(imageContent()).toEqual({ format: 'png', source: { bytes: PNG } });
   });
 
   it('sends in-process gateway image bytes as base64', async () => {
@@ -258,6 +258,6 @@ describe('Bedrock file content wire contract', () => {
     ];
     await gateway.chatModel(`amazon-bedrock/${STANDARD_MODEL}`).doGenerate({ prompt });
 
-    expect(imageBytes()).toBe(PNG);
+    expect(imageContent()).toEqual({ format: 'png', source: { bytes: PNG } });
   });
 });

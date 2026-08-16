@@ -88,7 +88,9 @@ describe('apiKeysPlugin', () => {
     expect(users?.fields).toEqual(
       expect.arrayContaining([expect.objectContaining({ name: 'monthlyBudget' })]),
     );
-    expect(keys?.fields.some((field) => 'name' in field && field.name === 'monthlyBudget')).toBe(false);
+    expect(keys?.fields.some((field) => 'name' in field && field.name === 'monthlyBudget')).toBe(
+      false,
+    );
     const spend = users?.fields.find(
       (field) => 'name' in field && field.name === 'spendThisPeriodUSD',
     );

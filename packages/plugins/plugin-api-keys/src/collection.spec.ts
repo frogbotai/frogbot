@@ -46,13 +46,7 @@ describe('API keys collection', () => {
     expect(await collection.access?.delete?.({ req: {} as FrogbotRequest })).toBe(false);
     expect(await collection.access?.read?.({ req: {} as FrogbotRequest })).toBe(false);
     expect(await collection.access?.update?.({ req: {} as FrogbotRequest })).toBe(false);
-    for (const name of [
-      'owner',
-      'prefix',
-      'tokenHash',
-      'lastUsedAt',
-      'revokedAt',
-    ]) {
+    for (const name of ['owner', 'prefix', 'tokenHash', 'lastUsedAt', 'revokedAt']) {
       const field = collection.fields.find((item) => 'name' in item && item.name === name);
       expect('access' in field! && field.access?.update?.({} as never)).toBe(false);
     }
