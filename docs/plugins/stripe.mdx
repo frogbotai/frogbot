@@ -17,4 +17,4 @@ import { stripePlugin } from '@frogbotai/plugin-stripe'
 plugins: [stripePlugin({ stripeSecretKey: process.env.STRIPE_SECRET_KEY! })]
 ```
 
-The adapter preserves Payload's webhook, REST route, logging, test-key, and collection synchronization options. FrogBot does not choose webhook handlers, payment flows, or synchronized collections for the app.
+The adapter preserves FrogBot's webhook, REST route, logging, test-key, and collection synchronization options. FrogBot does not choose webhook handlers, payment flows, or synchronized collections for the app.

@@ -5,7 +5,7 @@ description: "Store agent threads and messages with FrogBot's built-in chat coll
 keywords: ["chat", "threads", "messages", "persistence", "UIMessage"]
 ---
 
-When you configure an agent, FrogBot stores authenticated HTTP conversations in Payload collections. You can use the default `threads` and `messages` collections without adding configuration, or adopt the roles into your own collections.
+When you configure an agent, FrogBot stores authenticated HTTP conversations in FrogBot collections. You can use the default `threads` and `messages` collections without adding configuration, or adopt the roles into your own collections.
 
 Anonymous agent calls remain stateless, even when a custom agent access rule allows them.
 
@@ -105,7 +105,7 @@ const result = await frogbot.agents.support.generate({
 FrogBot awaits the user-message write before inference begins. Streaming responses save finalized or partial assistant parts on completion, error, abort, or client disconnect. Usage is attached when the model emits it but never blocks the message save.
 
 <Warning>
-  Payload's SQLite adapter disables transactions unless you configure `transactionOptions`. Without transactions, a failure between thread creation and the first message write can leave an empty thread. MongoDB and transaction-enabled adapters roll back the pair.
+  FrogBot's SQLite adapter disables transactions unless you configure `transactionOptions`. Without transactions, a failure between thread creation and the first message write can leave an empty thread. MongoDB and transaction-enabled adapters roll back the pair.
 </Warning>
 
 A hard process exit during inference can still leave a user message without an assistant reply. The thread remains valid and can be continued; incremental part persistence and resumable streams are planned separately.

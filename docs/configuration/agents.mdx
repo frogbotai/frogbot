@@ -363,7 +363,7 @@ export const reportingAgent: AgentConfig = {
 
 `every` accepts positive whole durations in seconds, minutes, hours, or days when they divide evenly into the corresponding cron field. Use `cron` for other intervals. Cron expressions use UTC; timezone-specific schedules are not yet supported.
 
-Payload Jobs runs schedules and skips an occurrence while the same trigger already has an active or runnable scheduled job. User-defined jobs, workflows, queues, and automatic runners remain configured alongside FrogBot schedules.
+FrogBot runs schedules and skips an occurrence while the same trigger already has an active or runnable scheduled job. User-defined jobs, workflows, queues, and automatic runners remain configured alongside FrogBot schedules.
 
 Each prompt trigger creates a fresh thread with `user: null` and persists its user and assistant messages. A handler may invoke the owning agent, another agent, or no agent. Every handler receives `{ frogbot, agent, req, job }`, and `req.context` contains `source`, `agentSlug`, `triggerSlug`, and `jobId`. Removing an agent or trigger makes already-queued work for it complete without running.
 
@@ -371,7 +371,7 @@ Each prompt trigger creates a fresh thread with `user: null` and persists its us
 
 ## Invoke over HTTP
 
-Configuring at least one worker mounts two Payload root endpoints. They are served under the normal `/api` prefix.
+Configuring at least one worker mounts two FrogBot endpoints at the root API path. They are served under the normal `/api` prefix.
 
 | Method | Path | Result |
 | --- | --- | --- |

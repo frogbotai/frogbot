@@ -5,14 +5,14 @@ description: "Understand FrogBot configuration, collections, agents, tools, and 
 keywords: ["concepts", "configuration", "collections", "agents", "tools", "chat"]
 ---
 
-FrogBot combines Payload's application and data layer with the AI SDK's model and agent primitives. Your TypeScript configuration defines the runtime; FrogBot does not scan folders or synchronize Markdown definitions into the database.
+FrogBot provides an application and data layer alongside the AI SDK's model and agent primitives. Your TypeScript configuration defines the runtime; FrogBot does not scan folders or synchronize Markdown definitions into the database.
 
 <CardGroup cols={2}>
   <Card title="Configuration" icon="file-cog" href="/configuration/overview">
     A typed `frogbot.config.ts` file registers collections, AI providers, agents, plugins, and endpoints.
   </Card>
   <Card title="Collections" icon="database" href="/configuration/collections">
-    Payload collections provide schemas, access control, hooks, and generated APIs for application data.
+    FrogBot collections provide schemas, access control, hooks, and generated APIs for application data.
   </Card>
   <Card title="AI" icon="cpu" href="/configuration/ai">
     Providers, model aliases, access rules, hooks, and telemetry run through FrogBot's embedded gateway.
@@ -30,7 +30,7 @@ FrogBot combines Payload's application and data layer with the AI SDK's model an
 
 ## Configuration drives the runtime
 
-FrogBot loads one configuration file during startup. `buildConfig` validates the public surface, runs plugins, resolves chat collection roles, initializes Payload, creates the embedded gateway, and builds the agent registry.
+FrogBot loads one configuration file during startup. `buildConfig` validates the public surface, runs plugins, resolves chat collection roles, initializes FrogBot, creates the embedded gateway, and builds the agent registry.
 
 ```ts
 import { sqliteAdapter } from '@frogbotai/db-sqlite'
@@ -59,7 +59,7 @@ export default buildConfig({
 
 ## Collections hold application data
 
-Collections are source-controlled schema definitions. Payload turns them into Local, REST, and GraphQL APIs and applies their access rules and hooks.
+Collections are source-controlled schema definitions. FrogBot turns them into Local, REST, and GraphQL APIs and applies their access rules and hooks.
 
 FrogBot adds role markers for chat customization:
 
@@ -110,6 +110,6 @@ Anonymous calls remain stateless. Local `generate()` calls also remain stateless
 
 ## Requests connect the layers
 
-`FrogbotRequest` extends Payload's request with `req.frogbot`. Pass the same request through Local API operations and agent calls to preserve the authenticated user, transaction, locale, and hook context.
+`FrogbotRequest` extends FrogBot's request with `req.frogbot`. Pass the same request through Local API operations and agent calls to preserve the authenticated user, transaction, locale, and hook context.
 
 Access is enforced only when `overrideAccess: false`. HTTP agent endpoints always enforce configured agent and collection access. Local operations default to trusted server behavior, so opt into access checks when running on behalf of a user.

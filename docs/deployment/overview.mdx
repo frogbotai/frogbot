@@ -4,14 +4,14 @@ sidebarTitle: "Deployment"
 description: "Deploy a FrogBot app to production with Docker or Fly.io, and avoid the common cold-start and dependency gotchas."
 ---
 
-FrogBot apps are Next.js applications powered by Payload CMS. They build like a standard Next.js app, but two things differ from a plain Next.js project:
+FrogBot apps are Next.js applications. They build like a standard Next.js app, but two things differ from a plain Next.js project:
 
-1. **The build must run in full, at image build time** — not split into "compile in the image / generate at runtime". FrogBot's `prebuild` step generates the Payload import map, and `next build` compiles the app. Running `next build --experimental-build-mode generate` at container start (as some platform templates do) re-runs webpack in production, which requires `typescript` at runtime and slows cold starts dramatically.
-2. **In production, Payload does not push your schema automatically** the way it does in dev. A fresh production database has no tables until migrations run — see [Migrations](#migrations).
+1. **The build must run in full, at image build time** — not split into "compile in the image / generate at runtime". FrogBot's `prebuild` step generates the admin import map, and `next build` compiles the app. Running `next build --experimental-build-mode generate` at container start (as some platform templates do) re-runs webpack in production, which requires `typescript` at runtime and slows cold starts dramatically.
+2. **In production, FrogBot does not push your schema automatically** the way it does in dev. A fresh production database has no tables until migrations run — see [Migrations](#migrations).
 
 ## Docker
 
-The template ships a production `Dockerfile` based on [Payload's template](https://github.com/payloadcms/payload/blob/main/templates/blank/Dockerfile) and the Next.js `with-docker` example:
+The template ships a production `Dockerfile` based on the Next.js `with-docker` example:
 
 - **Package-manager agnostic** — it detects your committed lockfile (`pnpm-lock.yaml`, `package-lock.json`, or `yarn.lock`) and installs with the matching tool. The template ships no lockfile; your first `install` creates it.
 - **Standalone output** — the build stage sets `NEXT_OUTPUT=standalone` (wired up in the template's `next.config.mjs`), and the final image contains only Next's traced server: no package manager, no full `node_modules`. It starts with plain `node server.js` (~110&nbsp;MB image, sub-second boot).
@@ -56,7 +56,7 @@ The default SQLite database lives in a local `frogbot.db` file on the machine's 
 
 ## Migrations
 
-In development, Payload pushes your schema to SQLite automatically on boot. In **production** it does not — it only applies migrations listed in `prodMigrations`. Before your first production deploy:
+In development, FrogBot pushes your schema to SQLite automatically on boot. In **production** it does not — it only applies migrations listed in `prodMigrations`. Before your first production deploy:
 
 ```bash
 pnpm migrate:create init   # generates src/migrations/<timestamp>_init.ts
@@ -75,13 +75,13 @@ sqliteAdapter({
 
 Commit the generated files. They are applied automatically on boot (before the server starts serving), so a fresh database gets its schema on first deploy. When you add or change collections, run `pnpm migrate:create <name>` again and commit the new files.
 
-Generated migrations import from `@payloadcms/db-sqlite`, which the template includes as a direct dependency — do not remove it.
+Generated migrations import from the underlying database adapter package, which the template includes as a direct dependency — do not remove it.
 
 ## Troubleshooting
 
 ### `no such table: users` in production
 
-Your production database has no schema. Payload only pushes schema automatically in dev; in production you need migrations wired into `prodMigrations` — see [Migrations](#migrations).
+Your production database has no schema. FrogBot only pushes schema automatically in dev; in production you need migrations wired into `prodMigrations` — see [Migrations](#migrations).
 
 ### `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` during Docker build
 
@@ -89,7 +89,7 @@ Recent pnpm versions refuse packages published within the last 24 hours as a sup
 
 ### `Cannot find module 'libsql'` (or `sharp`, `pino`, `drizzle-kit`, `json-schema-to-typescript`)
 
-Only applies to non-standalone deploys (bare VPS running `pnpm start`): the compiled routes `require()` a package that Payload externalizes, but it is not linked at your project root. Add it to `dependencies` in `package.json` and rebuild — the template already includes all of them. Standalone Docker images are unaffected; Next's file tracing bundles these automatically.
+Only applies to non-standalone deploys (bare VPS running `pnpm start`): the compiled routes `require()` a package that FrogBot externalizes from the webpack bundle, but it is not linked at your project root. Add it to `dependencies` in `package.json` and rebuild — the template already includes all of them. Standalone Docker images are unaffected; Next's file tracing bundles these automatically.
 
 ### `Installing TypeScript...` or `Can't resolve '@frogbot-config'` at start
 

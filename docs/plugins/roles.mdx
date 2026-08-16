@@ -48,7 +48,7 @@ Roles are literal strings. No slug is reserved, and no role receives implicit ac
 
 ## Apply access
 
-`allow(...clauses)` composes role, ownership, and function clauses into a Payload access function:
+`allow(...clauses)` composes role, ownership, and function clauses into a FrogBot access function:
 
 ```ts
 import { allow, hasRole, ownRows } from '@frogbotai/plugin-roles'
@@ -116,7 +116,7 @@ viaApiKey(req)
 
 ## Role field access
 
-The injected `roles` field uses Payload's default field access. Use `rolesFieldAccess` when role assignments need different access rules:
+The injected `roles` field uses FrogBot's default field access. Use `rolesFieldAccess` when role assignments need different access rules:
 
 ```ts
 rolesPlugin({
@@ -128,11 +128,11 @@ rolesPlugin({
 })
 ```
 
-The object is passed directly to the injected Payload field.
+The object is passed directly to the injected field.
 
 ## Default role
 
-By default, new users receive no role. Set `defaultRole` to configure the injected field's Payload `defaultValue`:
+By default, new users receive no role. Set `defaultRole` to configure the injected field's `defaultValue`:
 
 ```ts
 rolesPlugin({
@@ -158,7 +158,7 @@ The resolver must return listed slugs. Its result is cached once per request and
 
 ## Bootstrap access
 
-The plugin does not promote the first user. Bootstrap privileged assignments explicitly with Payload's Local API from a seed or migration, which bypasses access control by default:
+The plugin does not promote the first user. Bootstrap privileged assignments explicitly with FrogBot's Local API from a seed or migration, which bypasses access control by default:
 
 ```ts
 await frogbot.update({

@@ -1,7 +1,7 @@
 ---
 title: Collection Configs
 sidebarTitle: Collections
-description: FrogBot's collection model — role markers, scaffolded defaults, internal collections, the file model, and all Payload collection config options.
+description: FrogBot's collection model — role markers, scaffolded defaults, internal collections, the file model, and all FrogBot collection config options.
 keywords: collections, config, configuration, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
 ---
 
@@ -24,7 +24,7 @@ export default buildConfig({
 
 ## FrogBot collection model
 
-Collections you configure remain ordinary Payload collections. FrogBot injects a files collection, and agents also need thread and message stores. You can adopt those roles into collections you own.
+Collections you configure remain ordinary FrogBot collections. FrogBot injects a files collection, and agents also need thread and message stores. You can adopt those roles into collections you own.
 
 ### Role markers
 
@@ -66,7 +66,7 @@ The default collections use soft deletion, appear under **Chat** in the admin pa
 
 The thread's `user` relationship resolves as follows:
 
-- No auth collection: Payload's default `users` collection.
+- No auth collection: FrogBot's default `users` collection.
 - One auth collection: that collection, regardless of slug.
 - Multiple auth collections: the collection selected by `admin.user`.
 
@@ -74,7 +74,7 @@ See [Chat persistence](/chat/overview) for request behavior and durability guara
 
 ## Collection config options
 
-The following options are available on any `CollectionConfig`. FrogBot adds `thread`, `message`, `connections`, and `file` to Payload's standard set; everything else below is Payload's native API.
+The following options are available on any `CollectionConfig`. FrogBot adds `thread`, `message`, `connections`, and `file` to the built-in set; every other option below is part of the FrogBot configuration API.
 
 It's best practice to write Collections in separate files and import them into the root config.
 

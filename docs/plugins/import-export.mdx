@@ -1,6 +1,6 @@
 ---
 title: "Import and export"
-description: "Add Payload import and export workflows to FrogBot collections."
+description: "Add import and export workflows to FrogBot collections."
 ---
 
 ## Install
@@ -17,4 +17,4 @@ import { importExportPlugin } from '@frogbotai/plugin-import-export'
 plugins: [importExportPlugin({ collections: [{ slug: 'posts' }] })]
 ```
 
-The adapter preserves Payload's collection selection, import and export controls, limits, lifecycle hooks, and collection overrides. It adds the upstream admin provider, import and export collections, and jobs without replacing existing app config.
+The adapter preserves FrogBot's collection selection, import and export controls, limits, lifecycle hooks, and collection overrides. It adds the upstream admin provider, import and export collections, and jobs without replacing existing app config.

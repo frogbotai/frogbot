@@ -11,7 +11,7 @@ const config: FrogbotConfig = {
   secret: process.env.FROGBOT_SECRET || '',
   db: sqliteAdapter({
     client: { url: process.env.DATABASE_URL || '' },
-    // In production, Payload applies these migrations automatically on boot,
+    // In production, FrogBot applies these migrations automatically on boot,
     // creating the schema in a fresh database. In dev, the schema is pushed
     // automatically. When you change collections, run `pnpm migrate:create`.
     prodMigrations: migrations,

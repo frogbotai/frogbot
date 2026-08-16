@@ -34,7 +34,7 @@ export default buildConfig({
 
 ## Set core options
 
-`FrogbotConfig` requires `secret`, `db`, and `collections`. It extends Payload's server configuration while replacing the options FrogBot owns.
+`FrogbotConfig` requires `secret`, `db`, and `collections`. It extends FrogBot's server configuration while replacing the options FrogBot owns.
 
 | Option | Required | Purpose |
 | --- | --- | --- |
@@ -47,7 +47,7 @@ export default buildConfig({
 | `admin` | No | Sets `user`, `meta`, or `theme` for the root admin surface |
 | `endpoints` | No | Registers root handlers that receive `FrogbotRequest` |
 
-Other non-overridden Payload server options pass through. `globals` are forbidden; use collections instead.
+Other non-overridden FrogBot server options pass through. `globals` are forbidden; use collections instead.
 
 ---
 
@@ -210,9 +210,9 @@ Startup applies the configuration in this order.
 2. Run plugins serially.
 3. Resolve chat collection roles and inject any missing defaults.
 4. Sanitize collections, endpoints, AI, and workers.
-5. Initialize Payload and attach `req.frogbot` to supported request paths.
+5. Initialize FrogBot and attach `req.frogbot` to supported request paths.
 6. Create the embedded gateway and register optional AI telemetry.
 7. Build the typed worker registry.
 8. Run configured `onInit` callbacks.
 
-When workers are configured, sanitization also mounts `GET /api/agents` and `POST /api/agents/:slug`. The standalone server mounts authenticated gateway traffic under `/api/ai/v1/*` before forwarding other `/api/*` requests to Payload.
+When workers are configured, sanitization also mounts `GET /api/agents` and `POST /api/agents/:slug`. The standalone server mounts authenticated gateway traffic under `/api/ai/v1/*` before forwarding other `/api/*` requests to FrogBot.

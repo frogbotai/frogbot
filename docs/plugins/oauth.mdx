@@ -70,7 +70,7 @@ The relative `returnUrl` receives `oauth_connection` after success or `oauth_err
 
 ## Sign users in
 
-Set `signIn: true` on each provider allowed to authenticate users. Anonymous authorization creates sign-in intent. The callback matches the provider account to the auth collection by email, creates a user when none exists, and issues the normal Payload session cookie.
+Set `signIn: true` on each provider allowed to authenticate users. Anonymous authorization creates sign-in intent. The callback matches the provider account to the auth collection by email, creates a user when none exists, and issues the normal FrogBot session cookie.
 
 ```ts
 oauthPlugin({
@@ -85,7 +85,7 @@ oauthPlugin({
 })
 ```
 
-`adminLoginButtons` appends one "Continue with {provider}" button per sign-in provider after the admin login form. Buttons inherit the admin theme through Payload's CSS variables and carry the provider's brand icon from `@frogbotai/ui/icons`.
+`adminLoginButtons` appends one "Continue with {provider}" button per sign-in provider after the admin login form. Buttons inherit the admin theme through FrogBot's CSS variables and carry the provider's brand icon from `@frogbotai/ui/icons`.
 
 To control placement or wrap the button group, leave `adminLoginButtons` unset and register the exported component yourself:
 
