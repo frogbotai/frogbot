@@ -1,7 +1,7 @@
 {
   "name": "frogbot-monorepo",
   "private": true,
-  "version": "0.15.0",
+  "version": "0.16.0",
   "type": "module",
   "scripts": {
     "build": "pnpm -r build",
@@ -32,7 +32,7 @@
     "check:ui-architecture": "node scripts/check-ui-architecture.mjs",
     "docker:start": "docker compose -f test/docker-compose.yml --profile",
     "docker:clean": "docker compose -f test/docker-compose.yml down -v --remove-orphans",
-    "bump": "pnpm format && pnpm test && pnpm build && node scripts/bump.mjs",
+    "bump": "pnpm lint:fix && pnpm format && pnpm test && pnpm build && node scripts/bump.mjs",
     "publish-packages": "pnpm -r publish --access public --no-git-checks --report-summary",
     "release": "pnpm test && pnpm build && pnpm publish-packages && pnpm release:status",
     "release:resume": "pnpm build && pnpm publish-packages && pnpm release:status",

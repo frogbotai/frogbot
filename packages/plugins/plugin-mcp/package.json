@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-mcp",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Payload MCP integration for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
