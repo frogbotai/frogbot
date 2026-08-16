@@ -170,6 +170,9 @@ importers:
       '@frogbotai/plugin-roles':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-roles
+      '@payloadcms/db-sqlite':
+        specifier: 3.85.1
+        version: 3.85.1(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(bufferutil@4.1.0)(payload@3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
@@ -1540,6 +1543,9 @@ importers:
       '@frogbotai/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@payloadcms/db-sqlite':
+        specifier: 3.85.1
+        version: 3.85.1(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(bufferutil@4.1.0)(payload@3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
