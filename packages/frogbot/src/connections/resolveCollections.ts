@@ -73,11 +73,12 @@ export function resolveConnectionsCollections(
     config.connections?.encryption ?? createCredentialEncryption({ secret: config.secret });
   const sources = config.credentialSources ?? [];
   const assignments = config.connections?.assignments ?? {};
-  if (!enabled)
+  if (!enabled) {
     return {
       collections: config.collections,
       connections: { enabled: false, encryption, sources, assignments },
     };
+  }
 
   const existing = marked[0];
   const slug = existing?.slug ?? DEFAULT_CONNECTIONS_SLUG;

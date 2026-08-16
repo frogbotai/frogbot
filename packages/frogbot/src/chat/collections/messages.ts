@@ -21,8 +21,9 @@ function mergeUsage(previous: MessageUsage | undefined, next: MessageUsage): Mes
     'cachedInputTokens',
   ] as const) {
     const value = (previous?.[key] ?? 0) + (next[key] ?? 0);
-    if (value !== 0 || previous?.[key] !== undefined || next[key] !== undefined)
+    if (value !== 0 || previous?.[key] !== undefined || next[key] !== undefined) {
       merged[key] = value;
+    }
   }
   return merged;
 }

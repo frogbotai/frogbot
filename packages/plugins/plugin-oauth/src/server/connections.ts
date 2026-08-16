@@ -33,8 +33,9 @@ export async function getOAuthConnectionCredentials(options: {
     typeof connection.encryptedCredentials !== 'string' ||
     typeof connection.sourceKey !== 'string' ||
     typeof connection.accountId !== 'string'
-  )
+  ) {
     return null;
+  }
   const value = JSON.parse(
     await options.encryption.decrypt(connection.encryptedCredentials),
   ) as Record<string, unknown>;

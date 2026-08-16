@@ -34,8 +34,9 @@ function getCache(): FrogbotCache {
 export function getFrogbot(options: InitOptions): Promise<Frogbot> {
   const config = options.config;
   const cached = getCache();
-  if (cached.frogbot && (!cached.config || cached.config === config))
+  if (cached.frogbot && (!cached.config || cached.config === config)) {
     return Promise.resolve(cached.frogbot);
+  }
 
   if (cached.promise) {
     if (cached.promiseConfig === config) return cached.promise;

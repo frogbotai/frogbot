@@ -1,10 +1,11 @@
 'use client';
 
+import './styles.css';
+
 import { useConfig } from '@payloadcms/ui';
 import { useEffect, useState } from 'react';
 
 import type { UsageReport, UsageReportGroup, UsageReportRow } from '../index.js';
-import './styles.css';
 
 type DateRange = { from: string; to: string; label: string };
 type SortField = keyof Pick<
@@ -86,8 +87,9 @@ export function UsageReports() {
         setReport((await response.json()) as UsageReport);
       })
       .catch((reason: unknown) => {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
           setError(reason instanceof Error ? reason.message : 'Failed to load usage report');
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);

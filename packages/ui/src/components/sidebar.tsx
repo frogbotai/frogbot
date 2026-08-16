@@ -60,7 +60,7 @@ export function Sidebar({
   ...props
 }: ComponentProps<'aside'> & { side?: 'left' | 'right' }) {
   const { isMobile, open, openMobile, setOpenMobile } = useSidebar();
-  if (isMobile)
+  if (isMobile) {
     return (
       <Sheet open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent className="w-72 bg-sidebar p-0 text-sidebar-foreground" side={side}>
@@ -69,6 +69,7 @@ export function Sidebar({
         </SheetContent>
       </Sheet>
     );
+  }
   return (
     <aside
       className={cn(

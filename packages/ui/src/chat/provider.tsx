@@ -60,11 +60,12 @@ export function ChatProvider({
       .then((response) => response.json() as Promise<ChatManifest>)
       .then((manifest) => setState({ manifest, loading: false }))
       .catch((error: unknown) => {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
           setState({
             error: error instanceof Error ? error : new Error(String(error)),
             loading: false,
           });
+        }
       });
     return () => controller.abort();
   }, [sdk]);

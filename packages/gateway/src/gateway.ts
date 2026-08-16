@@ -23,8 +23,8 @@ import {
 import { DEFAULT_MODEL_CATALOG } from './providers/catalog.data.js';
 import { mergeHooks } from './providers/middleware.js';
 import {
-  buildProviderRegistry,
   buildProviderModelAllowlists,
+  buildProviderRegistry,
   type GatewayEmbeddingModel,
   type GatewayLanguageModel,
   type GatewayRerankingModel,

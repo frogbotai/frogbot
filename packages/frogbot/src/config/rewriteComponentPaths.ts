@@ -81,8 +81,9 @@ export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig 
     );
   }
 
-  if (admin?.components)
+  if (admin?.components) {
     admin.components = rewriteComponents(admin.components) as typeof admin.components;
+  }
 
   if (config.collections) {
     for (const collection of config.collections) {

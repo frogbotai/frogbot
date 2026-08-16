@@ -5,9 +5,9 @@ import type { UIMessage } from 'ai';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useControlledState } from '../hooks/use-controlled-state';
+import type { ComposerAttachment } from './attachments';
 import { ChatShell } from './chat-shell';
 import { ChatStatus } from './chat-status';
-import type { ComposerAttachment } from './attachments';
 import { Composer } from './composer';
 import { isFlagPart, renderFlagPart } from './flag-parts';
 import { Message } from './message';
@@ -168,8 +168,9 @@ function ChatOrchestrator({
       history.loadedThreadId !== undefined &&
       String(history.loadedThreadId) === String(threadId) &&
       String(history.loadedThreadId) !== reportedThreadId.current
-    )
+    ) {
       chat.setMessages(history.messages);
+    }
   }, [history.loadedThreadId, history.loading, history.messages, threadId, chat.setMessages]);
 
   useEffect(() => {

@@ -2,8 +2,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ChatProvider } from './provider';
 import { AgentSelector } from './agent-selector';
+import { ChatProvider } from './provider';
 
 const manifest = {
   ai: { transcribe: false as const },

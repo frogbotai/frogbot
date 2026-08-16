@@ -1,7 +1,7 @@
 import type { SourceDocumentUIPart, SourceUrlUIPart } from 'ai';
 
 export function SourcePart({ part }: { part: SourceDocumentUIPart | SourceUrlUIPart }) {
-  if (part.type === 'source-url')
+  if (part.type === 'source-url') {
     return (
       <a
         data-part="source-url"
@@ -13,6 +13,7 @@ export function SourcePart({ part }: { part: SourceDocumentUIPart | SourceUrlUIP
         {part.title || part.url}
       </a>
     );
+  }
   return (
     <span
       data-part="source-document"

@@ -1,5 +1,6 @@
 import { createElement, forwardRef } from 'react';
-import { LucideProps } from '../types';
+
+import type { LucideProps } from '../types';
 
 const GoogleGeminiIcon = forwardRef<SVGSVGElement, LucideProps>(
   ({ size = 20, className = '', ...props }, ref) =>

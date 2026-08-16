@@ -14,8 +14,9 @@ function derivePolicy(
   credentialType: CredentialType,
   auth?: PieceFactoryConfig['auth'],
 ): PiecePolicy {
-  if (auth?.allowUserOverride)
+  if (auth?.allowUserOverride) {
     throw new Error('[frogbot] `allowUserOverride` is not yet supported.');
+  }
   if (credentialType === 'none') return { type: 'none' };
   if (!auth) return { type: 'user' };
   if (credentialType === 'oauth2') {

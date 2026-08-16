@@ -13,18 +13,20 @@ export async function adaptCredential(
   type: Exclude<CredentialType, 'none'>,
   credentials: Record<string, unknown>,
 ): Promise<AppConnectionValue> {
-  if (type === 'secret_text')
+  if (type === 'secret_text') {
     return {
       type: 'SECRET_TEXT',
       secret_text: String(
         credentials.value ?? credentials.apiKey ?? Object.values(credentials)[0] ?? '',
       ),
     };
-  if (type === 'basic_auth')
+  }
+  if (type === 'basic_auth') {
     return {
       username: String(credentials.username ?? ''),
       password: String(credentials.password ?? ''),
     };
+  }
   if (type === 'oauth2') return { type: 'OAUTH2', ...credentials };
   if (type !== 'service_account') return credentials;
 
@@ -64,8 +66,9 @@ export async function adaptCredential(
       assertion,
     }),
   });
-  if (!response.ok)
+  if (!response.ok) {
     throw new Error(`[frogbot] Service account token exchange failed: ${response.status}.`);
+  }
   const token = (await response.json()) as { access_token: string; expires_in?: number };
   const value = { type: 'OAUTH2' as const, access_token: token.access_token };
   serviceAccountCache.set(cacheKey, {

@@ -83,8 +83,9 @@ export function Composer({
       pending ||
       disabled ||
       attachments.uploading
-    )
+    ) {
       return;
+    }
     void Promise.resolve(onSubmit(next, [...attachments.references, ...pastes])).then(() => {
       attachments.clear();
       setPastes([]);
@@ -100,8 +101,9 @@ export function Composer({
       event.key !== 'Enter' ||
       event.shiftKey ||
       event.nativeEvent.isComposing
-    )
+    ) {
       return;
+    }
     event.preventDefault();
     submit();
   };

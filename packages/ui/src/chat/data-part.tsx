@@ -15,13 +15,14 @@ export function DataPart({
   part: DataPartValue;
   render?: (part: DataPartValue) => ReactNode;
 }) {
-  if (render)
+  if (render) {
     return (
       <>
         <ArtifactStreamPart part={part} />
         {render(part)}
       </>
     );
+  }
   let content: string;
   try {
     content = JSON.stringify(part.data, null, 2);

@@ -7,8 +7,9 @@ export function parseOAuthTokenSet({
   value: Record<string, unknown>;
   now?: Date;
 }): OAuthTokenSet {
-  if (typeof value.access_token !== 'string' || !value.access_token)
+  if (typeof value.access_token !== 'string' || !value.access_token) {
     throw new Error('OAuth provider did not return an access token.');
+  }
   const expiresIn =
     typeof value.expires_in === 'number' ? value.expires_in : Number(value.expires_in);
   const scope =

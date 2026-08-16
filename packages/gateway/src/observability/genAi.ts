@@ -45,8 +45,12 @@ export function recordGenAiTokenUsage(
   baseLevels?: Required<SignalLevels>,
   logger: GatewayLogger = createLogger(),
 ): void {
-  if (!usage || !includesSignalLevel(resolveSignalLevels(trace, baseLevels).gen_ai, 'recommended'))
+  if (
+    !usage ||
+    !includesSignalLevel(resolveSignalLevels(trace, baseLevels).gen_ai, 'recommended')
+  ) {
     return;
+  }
 
   const inputTokens = safe(usage.inputTokens);
   const outputTokens = safe(usage.outputTokens);

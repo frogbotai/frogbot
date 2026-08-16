@@ -1,5 +1,7 @@
 'use client';
 
+import './index.scss';
+
 import {
   DropboxIcon,
   GitHubIcon,
@@ -13,8 +15,6 @@ import {
   ZoomIcon,
 } from '@frogbotai/ui/icons';
 import { Button } from '@payloadcms/ui';
-
-import './index.scss';
 
 const baseClass = 'oauth-login-buttons';
 

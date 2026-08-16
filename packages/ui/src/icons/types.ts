@@ -1,4 +1,4 @@
-import type { SVGProps, ForwardRefExoticComponent, RefAttributes } from 'react';
+import type { ForwardRefExoticComponent, RefAttributes, SVGProps } from 'react';
 
 /**
  * A reduced version of `SVGElementType` from @types/react. This type was added

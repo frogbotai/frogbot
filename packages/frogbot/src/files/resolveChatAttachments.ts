@@ -120,11 +120,12 @@ async function readFile({
     if (value) headers.set(name, value);
   }
   const response = await fetch(url, { headers, signal: req.signal ?? undefined });
-  if (!response.ok)
+  if (!response.ok) {
     throw new AgentServiceError(
       `File '${filename}' is unavailable`,
       response.status === 403 ? 403 : 404,
     );
+  }
   return Buffer.from(await response.arrayBuffer());
 }
 

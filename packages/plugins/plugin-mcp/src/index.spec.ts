@@ -160,8 +160,9 @@ describe('MCP plugin', () => {
                 : [],
           });
         }
-        if (collection === 'posts')
+        if (collection === 'posts') {
           return Promise.resolve({ docs: [{ id: 1, title: 'First post' }], totalDocs: 1 });
+        }
         return Promise.resolve({ docs: [] });
       }),
       findByID: vi.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),

@@ -7,8 +7,8 @@ import type {
   FrogbotRequest,
 } from 'frogbot';
 
-import { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
 import { createPolicyFields } from './fields.js';
+import { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
 
 type CollectionOptions = {
   authCollection: string;
@@ -53,8 +53,9 @@ function createEndpoints({
             status: 201,
           });
         } catch (error) {
-          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required')
+          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') {
             return Response.json({ error: 'Authentication required' }, { status: 401 });
+          }
           throw error;
         }
       },
@@ -65,8 +66,9 @@ function createEndpoints({
       handler: async (req) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
         const id = req.routeParams?.id;
-        if (typeof id !== 'string' || !id)
+        if (typeof id !== 'string' || !id) {
           return Response.json({ error: 'API key not found' }, { status: 404 });
+        }
         try {
           const anyOwner = (await canRevokeAnyKey?.(req)) === true;
           const {
@@ -76,10 +78,12 @@ function createEndpoints({
           } = await revokeApiKey({ req, collectionSlug, id, anyOwner });
           return Response.json(result);
         } catch (error) {
-          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required')
+          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') {
             return Response.json({ error: 'Authentication required' }, { status: 401 });
-          if (error instanceof ApiKeyServiceError && error.code === 'not_found')
+          }
+          if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
             return Response.json({ error: 'API key not found' }, { status: 404 });
+          }
           throw error;
         }
       },
@@ -90,8 +94,9 @@ function createEndpoints({
       handler: async (req) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
         const id = req.routeParams?.id;
-        if (typeof id !== 'string' || !id)
+        if (typeof id !== 'string' || !id) {
           return Response.json({ error: 'API key not found' }, { status: 404 });
+        }
         try {
           const anyOwner = (await canRevokeAnyKey?.(req)) === true;
           return Response.json(
@@ -99,10 +104,12 @@ function createEndpoints({
             { status: 201 },
           );
         } catch (error) {
-          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required')
+          if (error instanceof ApiKeyServiceError && error.code === 'authentication_required') {
             return Response.json({ error: 'Authentication required' }, { status: 401 });
-          if (error instanceof ApiKeyServiceError && error.code === 'not_found')
+          }
+          if (error instanceof ApiKeyServiceError && error.code === 'not_found') {
             return Response.json({ error: 'API key not found' }, { status: 404 });
+          }
           throw error;
         }
       },

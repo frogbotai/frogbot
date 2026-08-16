@@ -13,8 +13,9 @@ export function resolveCredentialSources({
   const keys = new Set<string>();
   for (const source of sources) {
     if (!source.key.trim()) throw new Error('[frogbot] Every credential source requires a key.');
-    if (keys.has(source.key))
+    if (keys.has(source.key)) {
       throw new Error(`[frogbot] Duplicate credential source key '${source.key}'.`);
+    }
     keys.add(source.key);
   }
 

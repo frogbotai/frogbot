@@ -21,8 +21,9 @@ export async function validateChatMessages(
       typeof message !== 'object' ||
       !('parts' in message) ||
       !Array.isArray(message.parts)
-    )
+    ) {
       return [];
+    }
     return message.parts.map((part) =>
       part && typeof part === 'object' && 'type' in part && part.type === 'file-reference'
         ? fileReferenceSchema.parse(part)
@@ -35,8 +36,9 @@ export async function validateChatMessages(
       typeof message !== 'object' ||
       !('parts' in message) ||
       !Array.isArray(message.parts)
-    )
+    ) {
       return message;
+    }
     return {
       ...message,
       parts: message.parts.filter((_, partIndex) => !references[index]?.[partIndex]),

@@ -76,8 +76,9 @@ export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpo
     const provider = getProvider({ providers: options.providers, req });
     if (!provider) return Response.json({ error: 'OAuth provider not found' }, { status: 404 });
     const callback = await extractCallback(req);
-    if (!callback.state)
+    if (!callback.state) {
       return Response.json({ error: 'OAuth state is required' }, { status: 400 });
+    }
     const consumed = await req.frogbot.delete({
       collection: options.statesSlug as never,
       depth: 0,
@@ -91,14 +92,16 @@ export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpo
     if (!state || isOAuthStateExpired({ expiresAt: state.expiresAt })) {
       return Response.json({ error: 'OAuth state is invalid or expired' }, { status: 400 });
     }
-    if (callback.error)
+    if (callback.error) {
       return Response.redirect(
         withOAuthResult({ returnUrl: state.returnUrl, error: 'access_denied' }),
       );
-    if (!callback.code)
+    }
+    if (!callback.code) {
       return Response.redirect(
         withOAuthResult({ returnUrl: state.returnUrl, error: 'invalid_request' }),
       );
+    }
     try {
       const callbackUrl = new URL(
         options.callbackUrlPath.replace(':provider', provider.id),
@@ -114,8 +117,9 @@ export function createCallbackEndpoints(options: CallbackEndpointOptions): Endpo
       const account = await provider.getAccount({ tokens, req });
       const owner = state[options.ownerField];
       if (owner === undefined || owner === null) {
-        if (!account.email)
+        if (!account.email) {
           throw new OAuthError('invalid_request', 'The OAuth account must have an email address.');
+        }
         const existingUsers = await req.frogbot.find({
           collection: options.authCollection as never,
           limit: 1,

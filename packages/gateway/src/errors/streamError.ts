@@ -132,8 +132,9 @@ export function inferStatusFromStreamError(parsed: ParsedStreamErrorFrame): numb
     .join(' ')
     .toLowerCase();
 
-  if (['insufficient_quota', 'rate_limit', 'too_many_requests'].some((t) => haystack.includes(t)))
+  if (['insufficient_quota', 'rate_limit', 'too_many_requests'].some((t) => haystack.includes(t))) {
     return 429;
+  }
   if (haystack.includes('authentication') || haystack.includes('invalid_api_key')) return 401;
   if (haystack.includes('permission')) return 403;
   if (haystack.includes('not_found')) return 404;

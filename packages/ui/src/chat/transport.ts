@@ -52,10 +52,11 @@ export class FrogbotChatTransport<
         const response = await sdk.fetch(input, init);
         const threadId = response.headers.get('X-Frogbot-Thread-Id');
         if (threadId) capture.threadId(threadId);
-        if (response.status === 499)
+        if (response.status === 499) {
           return new Response(new ReadableStream({ start: (controller) => controller.close() }), {
             status: 200,
           });
+        }
         return response;
       },
     });

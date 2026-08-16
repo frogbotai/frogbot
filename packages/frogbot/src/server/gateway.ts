@@ -1,5 +1,5 @@
-import type { Frogbot } from '../frogbot.js';
 import { AIAccessError, enforceAIAccess } from '../ai/access.js';
+import type { Frogbot } from '../frogbot.js';
 import type { AIMethod } from '../types/ai.js';
 
 type HandleGatewayRequestArgs = {
@@ -18,8 +18,9 @@ function methodForPath(pathname: string): AIMethod | undefined {
     /\/(?:chat\/completions|messages|responses|images\/generations|audio\/speech|videos\/generations)$/.test(
       pathname,
     )
-  )
+  ) {
     return 'generateText';
+  }
   if (/\/embeddings$/.test(pathname)) return 'embed';
   if (/\/audio\/transcriptions$/.test(pathname)) return 'transcribe';
   if (/\/rerank$/.test(pathname)) return 'rerank';

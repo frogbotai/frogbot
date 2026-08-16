@@ -4,8 +4,8 @@ import {
   jwtSign,
   LockedAuth,
   type PayloadRequest,
-  resetLoginAttempts,
   type RequestContext,
+  resetLoginAttempts,
   UnverifiedEmail,
 } from 'payload';
 import { addSessionToUser, generatePayloadCookie } from 'payload/shared';

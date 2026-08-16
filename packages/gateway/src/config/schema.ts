@@ -14,8 +14,8 @@ import type { Hooks } from '../hooks.js';
 import type { GatewayLogger, LoggerOptions } from '../observability/logger.js';
 import type { SignalLevelInput } from '../observability/signalLevel.js';
 import type { TracingOptions } from '../observability/tracing.js';
-import type { ModelCatalog } from '../providers/catalog.js';
 import { DEFAULT_MODEL_CATALOG } from '../providers/catalog.data.js';
+import type { ModelCatalog } from '../providers/catalog.js';
 import {
   canonicalizeModelId,
   isProviderInstance,

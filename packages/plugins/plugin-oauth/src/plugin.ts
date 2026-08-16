@@ -36,8 +36,9 @@ function createProvider(
 }
 
 function providerId(service: string): string {
-  if (service.startsWith('google_') || service.startsWith('google-') || service === 'gmail')
+  if (service.startsWith('google_') || service.startsWith('google-') || service === 'gmail') {
     return 'google';
+  }
   if (service.startsWith('microsoft_') || service.startsWith('microsoft-')) return 'microsoft';
   return service;
 }
@@ -48,10 +49,12 @@ export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
     const ids = new Set<string>();
     for (const provider of explicit) {
       if (!provider.id) throw new Error('[plugin-oauth] Provider IDs must not be empty.');
-      if (!provider.service)
+      if (!provider.service) {
         throw new Error('[plugin-oauth] Provider service IDs must not be empty.');
-      if (ids.has(provider.id))
+      }
+      if (ids.has(provider.id)) {
         throw new Error(`[plugin-oauth] Provider ID '${provider.id}' must be unique.`);
+      }
       ids.add(provider.id);
     }
   }
@@ -92,10 +95,11 @@ export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
     >();
     for (const piece of config.pieces ?? []) {
       if (piece.credentialType !== 'oauth2') continue;
-      if (piece.policy.type !== 'oauth')
+      if (piece.policy.type !== 'oauth') {
         throw new Error(
           `[plugin-oauth] OAuth piece '${piece.service}' requires OAuth app credentials.`,
         );
+      }
       const key = piece.separateConsent ? piece : piece.policy.source;
       const current = groups.get(key) ?? {
         id: providerId(piece.service),

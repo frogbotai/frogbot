@@ -15,8 +15,8 @@ export type {
   RoleClause,
   RoleEntry,
   RoleResolver,
-  RoleSlug,
   RolesFieldAccess,
+  RoleSlug,
   RolesPluginOptions,
 } from './types.js';
 
@@ -41,8 +41,9 @@ function bindFields(
                   : typeof clause === 'object'
                     ? clause.role
                     : undefined;
-              if (role && !roles.has(role))
+              if (role && !roles.has(role)) {
                 throw new Error(`[plugin-roles] Role '${role}' is not listed in rolesPlugin().`);
+              }
             }
           }
           return [
@@ -58,8 +59,9 @@ function bindFields(
       );
       next = { ...next, access } as PayloadField;
     }
-    if ('fields' in next && Array.isArray(next.fields))
+    if ('fields' in next && Array.isArray(next.fields)) {
       next = { ...next, fields: bindFields(next.fields, roles, resolver, false) } as PayloadField;
+    }
     if ('tabs' in next && Array.isArray(next.tabs)) {
       next = {
         ...next,
@@ -92,8 +94,9 @@ function bindAccess(
                   : typeof clause === 'object'
                     ? clause.role
                     : undefined;
-              if (role && !listed.has(role))
+              if (role && !listed.has(role)) {
                 throw new Error(`[plugin-roles] Role '${role}' is not listed in rolesPlugin().`);
+              }
             }
             const polymorphicOwnFields = new Set(
               value[compiledAccess].clauses.flatMap((clause) => {
@@ -230,8 +233,9 @@ function validateCompiledAccess(config: FrogbotConfig, roleSlugs: readonly strin
               : typeof clause === 'object'
                 ? clause.role
                 : undefined;
-          if (role && !roleSlugs.includes(role))
+          if (role && !roleSlugs.includes(role)) {
             throw new Error(`[plugin-roles] Role '${role}' is not listed in rolesPlugin().`);
+          }
         }
         if (value[compiledAccess].clauses.some((clause) => typeof clause === 'object')) {
           throw new Error(

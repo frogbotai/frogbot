@@ -9,9 +9,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../components/dropdown-menu';
-import RobotIcon from '../icons/icons/RobotIcon';
 import { CheckIcon } from '../icons/check';
 import ChevronDownIcon from '../icons/icons/ChevronDownIcon';
+import RobotIcon from '../icons/icons/RobotIcon';
 import { useChatProvider } from './provider';
 
 export type AgentSelectorProps = {
@@ -64,9 +64,10 @@ export const AgentSelector = memo(function AgentSelector({
 });
 
 function AgentAvatar({ agent, name }: { agent?: { profile?: { avatar?: string } }; name: string }) {
-  if (agent?.profile?.avatar)
+  if (agent?.profile?.avatar) {
     return (
       <img src={agent.profile.avatar} alt={name} className="size-5 rounded-full object-cover" />
     );
+  }
   return <RobotIcon className="size-5" aria-hidden="true" />;
 }

@@ -92,8 +92,9 @@ export function ArtifactView({ artifact: artifactProp }: { artifact?: Artifact }
   const artifact = artifactProp ?? context?.artifact;
   if (!artifact) return null;
   const definition = resolveArtifact(context?.registry ?? [], artifact.kind);
-  if (definition && context)
+  if (definition && context) {
     return <definition.render artifact={artifact} setArtifact={context.setArtifact} />;
+  }
   return (
     <div data-artifact-kind={artifact.kind} className="rounded-lg border border-border p-3">
       <strong>{artifact.title ?? artifact.kind}</strong>

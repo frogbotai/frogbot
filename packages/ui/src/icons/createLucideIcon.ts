@@ -1,6 +1,7 @@
 import { createElement, forwardRef } from 'react';
-import { IconNode, LucideProps } from './types';
+
 import IconBase from './IconBase';
+import type { IconNode, LucideProps } from './types';
 
 // Helper functions
 const toKebabCase = (str: string): string => {

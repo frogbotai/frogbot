@@ -21,12 +21,13 @@ const createComponents = (role: MessageRole): Components => ({
   code: ({ children, className, node: _, ...props }) => {
     const value = String(children);
     const code = value.replace(/\n$/, '');
-    if (!value.includes('\n'))
+    if (!value.includes('\n')) {
       return (
         <code className="rounded bg-muted px-1 py-0.5 font-mono text-sm" {...props}>
           {code}
         </code>
       );
+    }
     const language = className?.match(/language-(\w+)/)?.[1];
     return <CodeBlock code={code} language={language} role={role} />;
   },

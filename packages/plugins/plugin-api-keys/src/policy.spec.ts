@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { SerialQueue, SlidingWindowRateLimiter, resolvePolicy } from './policy.js';
+import { resolvePolicy, SerialQueue, SlidingWindowRateLimiter } from './policy.js';
 
 describe('SerialQueue', () => {
   it('serializes a subject and releases it after settlement', async () => {

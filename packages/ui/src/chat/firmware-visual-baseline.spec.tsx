@@ -52,10 +52,13 @@ it('matches the canonical Firmware composer shell', () => {
 
   expect(wrapper?.classList).toContain(firmwareComposerBaseline.shell[0]);
   expect(gradientContainer?.classList).toContain(firmwareComposerBaseline.shell[1]);
-  for (const className of firmwareComposerBaseline.shell.slice(2))
+  for (const className of firmwareComposerBaseline.shell.slice(2)) {
     expect(panel?.classList).toContain(className);
-  for (const className of firmwareComposerBaseline.textarea)
+  }
+  for (const className of firmwareComposerBaseline.textarea) {
     expect(textarea.classList).toContain(className);
-  for (const className of firmwareComposerBaseline.submit)
+  }
+  for (const className of firmwareComposerBaseline.submit) {
     expect(submit.classList).toContain(className);
+  }
 });

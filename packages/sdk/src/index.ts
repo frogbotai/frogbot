@@ -93,8 +93,9 @@ export class FrogBotSDK {
         : input.timestamp_granularities == null
           ? []
           : [input.timestamp_granularities];
-      for (const granularity of granularities)
+      for (const granularity of granularities) {
         body.append('timestamp_granularities[]', granularity);
+      }
       const response = await this.request('/ai/v1/audio/transcriptions', { method: 'POST', body });
       return response.json() as Promise<AITranscriptionResult>;
     },

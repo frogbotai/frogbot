@@ -24,16 +24,16 @@ export { getCachedFrogbot, getFrogbot } from './getFrogbot.js';
 export type { GatewayHandler } from './server/gateway.js';
 export { createGatewayHandler } from './server/gateway.js';
 export type {
+  ReadTrainingDataOptions,
+  TrainingDataDocument,
+  TrainingDataRecord,
+} from './training/types.js';
+export type {
   ConnectionsConfig,
   CredentialSource,
   SanitizedConnectionsConfig,
 } from './types/connections.js';
 export type { FrogbotSanitizedConfig } from './types/sanitized.js';
-export type {
-  ReadTrainingDataOptions,
-  TrainingDataDocument,
-  TrainingDataRecord,
-} from './training/types.js';
 
 // ---------------------------------------------------------------------------
 // Owned types
@@ -46,7 +46,6 @@ export type {
   RootAdminGraphics,
   RootAdminMetaConfig,
 } from './types/admin.js';
-export type { AdminViews, Component, ProviderComponent } from './types/component.js';
 export type {
   AgentAccess,
   AgentConfig,
@@ -82,6 +81,7 @@ export type {
 export type { AuthConfig } from './types/auth.js';
 export type { ManifestResponse } from './types/chat.js';
 export type { Collection, CollectionConfig } from './types/collection.js';
+export type { AdminViews, Component, ProviderComponent } from './types/component.js';
 export type { AfterErrorHook, FrogbotConfig, RootHooks } from './types/config.js';
 export type { DatabaseAdapter } from './types/database.js';
 export type {

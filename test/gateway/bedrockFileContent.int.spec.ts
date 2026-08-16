@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../packages/gateway/src/app.js';
 import { createGateway } from '../../packages/gateway/src/gateway.js';
 import {
-  bedrockProvider,
   type BedrockConfig,
+  bedrockProvider,
 } from '../../packages/gateway/src/providers/bedrock/index.js';
 import { DEFAULT_MODEL_CATALOG } from '../../packages/gateway/src/providers/catalog.data.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';

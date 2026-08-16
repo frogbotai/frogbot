@@ -46,8 +46,9 @@ for (const directory of (await readdir(root)).filter((name) => name.startsWith('
     .match(/export const (\w+Actions)\s*=\s*\[|export const (\w+Actions)\s*=\s*Object/)
     ?.slice(1)
     .find(Boolean);
-  if (!instance || !service || !credentialType || !actionsName)
+  if (!instance || !service || !credentialType || !actionsName) {
     throw new Error(`Cannot parse ${file}`);
+  }
 
   const imported = await import(
     pathToFileURL(

@@ -34,8 +34,9 @@ export function createAuthorizeEndpoint(options: AuthorizeEndpointOptions): Endp
       } catch {
         return Response.json({ error: 'Return URL is not allowed' }, { status: 400 });
       }
-      if (owner === undefined && !provider.signIn)
+      if (owner === undefined && !provider.signIn) {
         return Response.json({ error: 'Authentication required' }, { status: 401 });
+      }
       const state = createOAuthState();
       const pkce = createPKCECodes();
       const callbackUrl = new URL(

@@ -1,5 +1,5 @@
-import { IconNode } from '../types';
 import createLucideIcon from '../createLucideIcon';
+import type { IconNode } from '../types';
 
 export const checkmarkCircleIcon: IconNode = [
   [

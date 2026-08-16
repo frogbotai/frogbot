@@ -1,6 +1,6 @@
+import { allow, rolesPlugin } from '@frogbotai/plugin-roles';
 import type { FrogbotConfig, Plugin } from 'frogbot';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
-import { allow, rolesPlugin } from '@frogbotai/plugin-roles';
 
 import { apiKeysPlugin } from './index.js';
 

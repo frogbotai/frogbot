@@ -9,6 +9,7 @@
 //   3. Wrap every custom endpoint handler (root and per-collection) so
 //      `req.frogbot` is attached before the user's handler executes.
 
+import { Cron } from 'croner';
 import type {
   CollectionConfig as PayloadCollectionConfig,
   Config as PayloadConfig,
@@ -18,7 +19,6 @@ import type {
   PayloadRequest,
 } from 'payload';
 import { buildConfig as payloadBuildConfig } from 'payload';
-import { Cron } from 'croner';
 
 import { buildAgentEndpoints } from '../agents/endpoints.js';
 import {
@@ -46,7 +46,6 @@ import { ensureFrogbotInstance } from '../instanceRegistry.js';
 import { buildSkillTools } from '../skills/tools.js';
 import type { AgentConfig } from '../types/agent.js';
 import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../types/ai.js';
-import type { SkillConfig } from '../types/skill.js';
 import type { CollectionConfig } from '../types/collection.js';
 import { COLLECTION_MARKERS } from '../types/collection.js';
 import type { FrogbotConfig } from '../types/config.js';
@@ -54,6 +53,7 @@ import type { Endpoint } from '../types/endpoint.js';
 import type { Piece, SanitizedPiecesConfig } from '../types/piece.js';
 import type { FrogbotRequest } from '../types/request.js';
 import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from '../types/sanitized.js';
+import type { SkillConfig } from '../types/skill.js';
 import type { AnyTool } from '../types/tool.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
 import { resolveSourceDir } from './sourceDir.js';

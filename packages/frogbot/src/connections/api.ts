@@ -65,31 +65,36 @@ export class Connections {
     if (!doc && source?.resolve) return source.resolve({ service, owner });
     if (!doc) throw new ConnectionError(`No connection found for '${service}'.`, 'missing');
     const missingScopes = (source?.scopes ?? []).filter((scope) => !doc.scopes?.includes(scope));
-    if (missingScopes.length)
+    if (missingScopes.length) {
       throw new ConnectionError(
         `Connection for '${service}' is missing required scopes: ${missingScopes.join(', ')}.`,
         'scopes',
         missingScopes,
       );
-    if (doc.status === 'revoked')
+    }
+    if (doc.status === 'revoked') {
       throw new ConnectionError(`Connection for '${service}' is revoked.`, 'revoked');
+    }
     if (doc.expiresAt && new Date(doc.expiresAt).getTime() <= Date.now()) {
       const sourceKey = doc.sourceKey;
       const source = this.config.sources.find((candidate) => candidate.key === sourceKey);
-      if (!source?.refresh)
+      if (!source?.refresh) {
         throw new ConnectionError(`Connection for '${service}' is expired.`, 'expired');
+      }
       try {
         await source.refresh({ connection: doc, frogbot: this.frogbot, owner: owner! });
       } catch {
         throw new ConnectionError(`Connection for '${service}' could not be refreshed.`, 'error');
       }
       const refreshed = await this.findConnection(service, owner!);
-      if (!refreshed || refreshed.status === 'error')
+      if (!refreshed || refreshed.status === 'error') {
         throw new ConnectionError(`Connection for '${service}' could not be refreshed.`, 'error');
+      }
       return this.resolveCredentials({ doc: refreshed, service });
     }
-    if (doc.status === 'error')
+    if (doc.status === 'error') {
       throw new ConnectionError(`Connection for '${service}' is in an error state.`, 'error');
+    }
     return this.resolveCredentials({ doc, service });
   }
 
@@ -100,8 +105,9 @@ export class Connections {
     doc: ConnectionRecord;
     service: string;
   }): Promise<AppConnectionValue> {
-    if (!doc.encryptedCredentials)
+    if (!doc.encryptedCredentials) {
       throw new ConnectionError(`No connection found for '${service}'.`, 'missing');
+    }
     const credentials = JSON.parse(
       await this.config.encryption.decrypt(doc.encryptedCredentials),
     ) as Record<string, unknown>;

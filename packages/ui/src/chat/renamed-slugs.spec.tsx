@@ -18,20 +18,22 @@ describe('renamed collection acceptance', () => {
   it('drives Chat through the manifest and renamed collection endpoints', async () => {
     const fetch = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url === 'https://frogbot.example/api/frogbot')
+      if (url === 'https://frogbot.example/api/frogbot') {
         return Response.json({
           chat: { enabled: true, threadsSlug: 'conversations', messagesSlug: 'turns' },
           files: { slug: 'assets' },
           agents: [{ slug: 'support' }],
         });
-      if (url.startsWith('https://frogbot.example/api/conversations?'))
+      }
+      if (url.startsWith('https://frogbot.example/api/conversations?')) {
         return Response.json({
           docs: [{ id: 'thread-1', agent: 'support', title: 'Renamed thread' }],
           page: 1,
           totalDocs: 1,
           totalPages: 1,
         });
-      if (url.startsWith('https://frogbot.example/api/turns?'))
+      }
+      if (url.startsWith('https://frogbot.example/api/turns?')) {
         return Response.json({
           docs: [
             {
@@ -45,6 +47,7 @@ describe('renamed collection acceptance', () => {
           totalDocs: 1,
           totalPages: 1,
         });
+      }
       return new Response(null, { status: 404 });
     });
 

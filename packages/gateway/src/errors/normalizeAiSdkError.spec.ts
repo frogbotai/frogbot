@@ -2,8 +2,8 @@ import { APICallError } from '@ai-sdk/provider';
 import { RetryError } from 'ai';
 import { describe, expect, it } from 'vitest';
 
-import { headersForError, isRetryableError } from './normalizeAiSdkError.js';
 import { RateLimitExceededError } from './gatewayError.js';
+import { headersForError, isRetryableError } from './normalizeAiSdkError.js';
 
 // ---------------------------------------------------------------------------
 // Test helpers

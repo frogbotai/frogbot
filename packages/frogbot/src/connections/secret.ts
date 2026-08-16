@@ -14,20 +14,23 @@ function credentialData(
   credentials: Record<string, unknown>,
 ): { encrypted: Record<string, unknown>; metadata: Record<string, unknown> } {
   if (piece.credentialType === 'secret_text') {
-    if (typeof credentials.value !== 'string' || !credentials.value)
+    if (typeof credentials.value !== 'string' || !credentials.value) {
       throw new Error('A secret value is required.');
+    }
     return { encrypted: { value: credentials.value }, metadata: {} };
   }
   if (piece.credentialType === 'basic_auth') {
-    if (typeof credentials.username !== 'string' || typeof credentials.password !== 'string')
+    if (typeof credentials.username !== 'string' || typeof credentials.password !== 'string') {
       throw new Error('Username and password are required.');
+    }
     return {
       encrypted: { username: credentials.username, password: credentials.password },
       metadata: {},
     };
   }
-  if (piece.credentialType !== 'custom' || !piece.credentialFields)
+  if (piece.credentialType !== 'custom' || !piece.credentialFields) {
     throw new Error('This piece does not accept secret credentials.');
+  }
   const unknown = Object.keys(credentials).filter((key) => !piece.credentialFields?.[key]);
   if (unknown.length) throw new Error(`Unknown credential fields: ${unknown.join(', ')}.`);
   const missing = Object.keys(piece.credentialFields).filter(
@@ -131,8 +134,9 @@ export function buildSecretEndpoints({
         overrideAccess: true,
         req,
       });
-      if (existing.docs.length && !replace)
+      if (existing.docs.length && !replace) {
         return Response.json({ error: 'Connection already exists' }, { status: 409 });
+      }
       const data = {
         owner: req.user.id,
         services: [body.service],
@@ -174,8 +178,9 @@ export function buildSecretEndpoints({
       handler: async (req) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
         const body = (await req.json?.().catch(() => null)) as { service?: unknown } | null;
-        if (typeof body?.service !== 'string')
+        if (typeof body?.service !== 'string') {
           return Response.json({ error: 'Service is required' }, { status: 400 });
+        }
         const existing = await req.frogbot.find({
           collection: connections.slug as never,
           where: {
@@ -188,8 +193,9 @@ export function buildSecretEndpoints({
           overrideAccess: true,
           req,
         });
-        if (!existing.docs.length)
+        if (!existing.docs.length) {
           return Response.json({ error: 'Connection not found' }, { status: 404 });
+        }
         const doc = await req.frogbot.update({
           collection: connections.slug as never,
           id: existing.docs[0].id,

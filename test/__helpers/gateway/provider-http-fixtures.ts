@@ -37,8 +37,9 @@ export function createProviderFixtureFetch(args: {
 
     if (!update) {
       const exchange = fixtures[replayIndex++];
-      if (!exchange)
+      if (!exchange) {
         throw new Error(`No provider HTTP fixture for ${request.method} ${request.url}`);
+      }
       return new Response(Buffer.from(exchange.bodyBase64, 'base64'), {
         status: exchange.status,
         headers: exchange.headers,

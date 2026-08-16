@@ -100,11 +100,13 @@ export class SlidingWindowRateLimiter {
     const now = this.now();
     const entry = this.get(subject, now);
     const retry = (at: number) => Math.max(1, Math.ceil((at + 60_000 - now) / 1000));
-    if (policy.rpm !== undefined && entry.requests.length >= policy.rpm)
+    if (policy.rpm !== undefined && entry.requests.length >= policy.rpm) {
       return { kind: 'rpm', retryAfterSeconds: retry(entry.requests[0]!) };
+    }
     const tokens = entry.tokens.reduce((sum, item) => sum + item.value, 0);
-    if (policy.tpm !== undefined && tokens >= policy.tpm)
+    if (policy.tpm !== undefined && tokens >= policy.tpm) {
       return { kind: 'tpm', retryAfterSeconds: retry(entry.tokens[0]?.at ?? now) };
+    }
     entry.requests.push(now);
     return undefined;
   }

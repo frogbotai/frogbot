@@ -134,8 +134,9 @@ export const openaiPromptCacheBreakpoint: BeforeUpstreamHook = (args) => {
     };
     applyMessageBreakpoint(message);
     delete args.providerOptions.unknown?.cache_control;
-    if (Object.keys(args.providerOptions.unknown ?? {}).length === 0)
+    if (Object.keys(args.providerOptions.unknown ?? {}).length === 0) {
       delete args.providerOptions.unknown;
+    }
   }
 };
 

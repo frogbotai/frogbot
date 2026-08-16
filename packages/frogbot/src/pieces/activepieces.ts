@@ -145,8 +145,9 @@ async function resolveProps(
     const value = values[name];
     if (property.type === 'FILE' && typeof value === 'string') {
       const response = await fetch(value);
-      if (!response.ok)
+      if (!response.ok) {
         throw new Error(`[frogbot] Failed to download piece file '${value}': ${response.status}.`);
+      }
       const fileName = new URL(value).pathname.split('/').pop() || 'file';
       resolved[name] = {
         data: Buffer.from(await response.arrayBuffer()),

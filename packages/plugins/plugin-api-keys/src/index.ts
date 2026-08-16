@@ -1,24 +1,17 @@
-import type { CollectionConfig, FieldAccess, FrogbotRequest, Plugin } from 'frogbot';
 import { calculateModelCostUSD } from '@frogbotai/gateway';
 import {
   BudgetExceededError,
   ModelNotAllowedError,
   RateLimitExceededError,
 } from '@frogbotai/gateway/errors';
+import type { CollectionConfig, FieldAccess, FrogbotRequest, Plugin } from 'frogbot';
 
 import { createApiKeysCollection } from './collection.js';
 import { createPolicyFields } from './fields.js';
-import { SerialQueue, SlidingWindowRateLimiter, resolvePolicy } from './policy.js';
 import type { PolicyDocument } from './policy.js';
+import { resolvePolicy, SerialQueue, SlidingWindowRateLimiter } from './policy.js';
 import { createApiKeyStrategy } from './strategy.js';
 
-export type { ApiKeyHeaderOptions, ApiKeyTokenOptions } from './server/token.js';
-export type {
-  MintApiKeyOptions,
-  RevokeApiKeyOptions,
-  RotateApiKeyOptions,
-} from './server/services.js';
-export { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
 export type {
   EffectivePolicy,
   PolicyDefaults,
@@ -26,6 +19,13 @@ export type {
   PolicyMode,
   PolicyValue,
 } from './policy.js';
+export type {
+  MintApiKeyOptions,
+  RevokeApiKeyOptions,
+  RotateApiKeyOptions,
+} from './server/services.js';
+export { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
+export type { ApiKeyHeaderOptions, ApiKeyTokenOptions } from './server/token.js';
 export {
   createApiKeyToken,
   extractApiKeyToken,
@@ -63,29 +63,35 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
       name !== 'models' &&
       name !== 'budgetBehavior' &&
       (typeof value !== 'number' || !Number.isFinite(value) || value < 0)
-    )
+    ) {
       throw new Error(`[plugin-api-keys] Default '${name}' must be a non-negative finite number.`);
+    }
   }
   if (
     (options.defaults?.rpm !== undefined && options.defaults.rpm < 1) ||
     (options.defaults?.tpm !== undefined && options.defaults.tpm < 1)
-  )
+  ) {
     throw new Error('[plugin-api-keys] RPM and TPM defaults must be at least 1.');
+  }
   if (
     options.defaults?.budgetBehavior !== undefined &&
     !['block', 'alert-only'].includes(options.defaults.budgetBehavior)
-  )
+  ) {
     throw new Error('[plugin-api-keys] Budget behavior must be block or alert-only.');
-  if (options.defaults?.models?.some((model) => !model.includes('/')))
+  }
+  if (options.defaults?.models?.some((model) => !model.includes('/'))) {
     throw new Error('[plugin-api-keys] Default models must use provider/model IDs.');
-  if (options.alerts && !options.alerts.webhookURL)
+  }
+  if (options.alerts && !options.alerts.webhookURL) {
     throw new Error('[plugin-api-keys] Alert webhookURL is required.');
+  }
   if (
     options.alerts?.thresholds?.some(
       (threshold) => !Number.isFinite(threshold) || threshold <= 0 || threshold > 1,
     )
-  )
+  ) {
     throw new Error('[plugin-api-keys] Alert thresholds must be greater than 0 and at most 1.');
+  }
   const limiter = new SlidingWindowRateLimiter();
   const queue = new SerialQueue();
   return (config) => {
@@ -110,8 +116,9 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
     const collision = auth.fields.find(
       (field) => 'name' in field && reservedPolicyFields.has(field.name),
     );
-    if (collision && 'name' in collision)
+    if (collision && 'name' in collision) {
       throw new Error(`[plugin-api-keys] Auth field '${collision.name}' is reserved.`);
+    }
     const existing = config.collections.find((collection) => collection.slug === collectionSlug);
     const usageLog = config.ai
       ? (config.collections.find((item) => item.usageLog === true) ?? {
@@ -212,11 +219,12 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
                   async (args) => {
                     const apiKeyId = args.req?.user?.apiKeyId;
                     if (!args.req?.user) return;
-                    if (apiKeyId !== undefined)
+                    if (apiKeyId !== undefined) {
                       args.context.usageFields = {
                         ...(args.context.usageFields as Record<string, unknown> | undefined),
                         apiKey: apiKeyId,
                       };
+                    }
                     if (!args.req.frogbot?.findByID) return;
                     const key =
                       apiKeyId === undefined
@@ -251,8 +259,9 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
                           current.monthlyBudgetUSD !== undefined &&
                           current.spendThisPeriodUSD >= current.monthlyBudgetUSD,
                       )
-                    )
+                    ) {
                       throw new BudgetExceededError();
+                    }
                     for (const { subject, policy: current } of subjects) {
                       const violation = limiter.admit(subject, current);
                       if (violation) throw new RateLimitExceededError(violation);
@@ -268,8 +277,9 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
                   ...(config.ai.hooks?.beforeUpstream ?? []),
                   (args) => {
                     const models = (args.context as PolicyContext).policy?.models;
-                    if (models && !models.includes(args.model))
+                    if (models && !models.includes(args.model)) {
                       throw new ModelNotAllowedError(args.model);
+                    }
                   },
                 ],
                 afterOperation: [
@@ -279,8 +289,9 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
                     const req = args.req;
                     if (!req?.user || args.error) return;
                     const tokens = args.usage?.totalTokens ?? 0;
-                    for (const { subject } of context.policySubjects ?? [])
+                    for (const { subject } of context.policySubjects ?? []) {
                       limiter.settle(subject, tokens);
+                    }
                     const cost = args.usage ? calculateModelCostUSD(args.model, args.usage) : 0;
                     if (cost <= 0) return;
                     const targets = [
@@ -340,7 +351,7 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
                             overrideAccess: true,
                             req,
                           });
-                          if (options.alerts && crossed.length)
+                          if (options.alerts && crossed.length) {
                             await fetch(options.alerts.webhookURL, {
                               method: 'POST',
                               headers: {
@@ -354,6 +365,7 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
                                 thresholds: crossed,
                               }),
                             });
+                          }
                         }),
                       ),
                     );

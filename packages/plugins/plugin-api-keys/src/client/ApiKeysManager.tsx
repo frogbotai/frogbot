@@ -1,5 +1,7 @@
 'use client';
 
+import './styles.css';
+
 import {
   Button,
   CopyIcon,
@@ -12,8 +14,6 @@ import {
   useRouteCache,
 } from '@payloadcms/ui';
 import { type ChangeEvent, type KeyboardEvent, useState } from 'react';
-
-import './styles.css';
 
 const modalSlug = 'create-api-key-modal';
 

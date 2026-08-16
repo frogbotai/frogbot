@@ -36,8 +36,9 @@ export function MessagePart({ fallback, part, renderData, role }: MessagePartPro
   if (isToolUIPart(known)) return <ToolPart part={known} />;
   if (isDataUIPart(known)) return <DataPart part={known} render={renderData} />;
   if (isFileUIPart(known) || isReasoningFileUIPart(known)) return <FilePart part={known} />;
-  if (known.type === 'source-url' || known.type === 'source-document')
+  if (known.type === 'source-url' || known.type === 'source-document') {
     return <SourcePart part={known} />;
+  }
   if (part.type === 'step-start') return <StepStartPart />;
   return fallback ? (
     fallback(part)

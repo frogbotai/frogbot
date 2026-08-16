@@ -1,6 +1,6 @@
-import { allow, rolesPlugin } from '../../packages/plugins/plugin-roles/src/index.js';
 import type { CollectionConfig } from 'frogbot';
 
+import { allow, rolesPlugin } from '../../packages/plugins/plugin-roles/src/index.js';
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 
 const Users: CollectionConfig = {
