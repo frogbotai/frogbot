@@ -54,7 +54,9 @@ export async function loadConfigFile(path: string): Promise<GatewayConfig> {
       });
       mod = { default: JSON.parse(raw) };
     } else {
-      mod = (await import(pathToFileURL(abs).href)) as Record<string, unknown>;
+      mod = (await import(
+        /* webpackIgnore: true */ /* turbopackIgnore: true */ pathToFileURL(abs).href
+      )) as Record<string, unknown>;
     }
   } catch (err) {
     const cause = err instanceof Error ? err.message : String(err);

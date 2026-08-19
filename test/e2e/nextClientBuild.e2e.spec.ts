@@ -33,5 +33,6 @@ describe.skipIf(!RUN_E2E)('@frogbotai/next client build', () => {
     rmSync(buildDir, { recursive: true, force: true });
 
     expect(result.code, result.output).toBe(0);
+    expect(result.output).not.toMatch(/packages\/gateway\/.*\nCritical dependency/);
   }, 240000);
 });

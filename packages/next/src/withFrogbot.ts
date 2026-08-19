@@ -17,6 +17,8 @@ const FROGBOT_SERVER_PACKAGES = [
   '@frogbotai/kv-redis',
 ];
 
+const ALWAYS_SERVER_PACKAGES = ['@frogbotai/gateway'];
+
 const NATIVE_EXTERNALS = ['@basetenlabs/performance-client'];
 
 export function withFrogbot(
@@ -26,10 +28,13 @@ export function withFrogbot(
   const frogbotConfig: NextConfig = {
     ...nextConfig,
     serverExternalPackages: [
-      ...(nextConfig.serverExternalPackages || []),
-      ...(process.env.NODE_ENV === 'development' && options.devBundleServerPackages !== true
-        ? FROGBOT_SERVER_PACKAGES
-        : []),
+      ...new Set([
+        ...(nextConfig.serverExternalPackages || []),
+        ...ALWAYS_SERVER_PACKAGES,
+        ...(process.env.NODE_ENV === 'development' && options.devBundleServerPackages !== true
+          ? FROGBOT_SERVER_PACKAGES
+          : []),
+      ]),
     ],
     webpack: (webpackConfig, webpackOptions) => {
       const incoming =

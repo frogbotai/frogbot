@@ -85,7 +85,9 @@ export const bedrockProvider: ProviderDefinition<
           credentialProvider: async () => {
             if (!chain) {
               const packageName = ['@aws-sdk', 'credential-providers'].join('/');
-              const module = (await import(packageName).catch((error: unknown) => {
+              const module = (await import(
+                /* webpackIgnore: true */ /* turbopackIgnore: true */ packageName
+              ).catch((error: unknown) => {
                 const message = error instanceof Error ? error.message : String(error);
                 throw new Error(
                   `Bedrock default credential resolution requires the optional @aws-sdk/credential-providers peer dependency: ${message}`,
