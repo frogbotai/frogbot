@@ -1,8 +1,8 @@
 import type { LogWarningsFunction } from 'ai';
 
-import { maybeMaskMessage } from '../errors/maskMessage.js';
+import { unwrapRetryError } from '../errors/unwrapRetryError.js';
 import type { AfterErrorHookArgs, HookOperation, Hooks } from '../hooks.js';
-import { isProduction, readEnv } from '../shared/runtimeDetection.js';
+import { readEnv } from '../shared/runtimeDetection.js';
 
 /**
  * Structural, zero-dependency log function. Overloads mirror pino's `LogFn`
@@ -45,6 +45,8 @@ const LEVEL: Record<LogLevel, number> = {
 };
 
 const noop: LogFn = () => {};
+const responseBodyLimit = 2048;
+const textEncoder = new TextEncoder();
 
 const defaultLevel = (): LogLevel => {
   const env = readEnv('LOG_LEVEL') as LogLevel | undefined;
@@ -126,8 +128,7 @@ export function createLoggingHooks(logger: GatewayLogger = createLogger()): Hook
  * schema 400s, unknown-model 404s, `beforeOperation` auth rejections) never
  * reach `beforeUpstream`, so the logging hooks never fire — this is the only
  * signal an operator gets for those (G101 / OB12). 4xx logs at `warn`, 5xx at
- * `error`; the message is masked in production for 5xx (reuses the envelope's
- * masking contract).
+ * `error`.
  */
 export function logGatewayError(
   logger: GatewayLogger,
@@ -140,11 +141,7 @@ export function logGatewayError(
     status: args.status,
     path: args.path,
     errorType: isError ? (args.error as Error).name : undefined,
-    message: maybeMaskMessage(rawMessage, {
-      status: args.status,
-      requestId: args.requestId,
-      production: isProduction(),
-    }),
+    message: rawMessage,
   };
   logger[args.status >= 500 ? 'error' : 'warn'](entry, 'request-error');
 }
@@ -169,21 +166,75 @@ function errorLog(args: AfterErrorHookArgs) {
     ...baseLog(args),
     phase: args.failedPhase,
   };
-  if (isProduction()) return base;
   return {
     ...base,
-    error: serializeError(args.error),
+    error: serializeError(unwrapRetryError(args.error)),
   };
 }
 
-function serializeError(error: unknown): unknown {
-  if (!(error instanceof Error)) return error;
-  return {
+function serializeError(error: unknown, seen = new WeakSet<object>()): unknown {
+  if (!(error instanceof Error)) return serializeValue(error, seen);
+  if (seen.has(error)) return '[Circular]';
+  seen.add(error);
+  const serialized: Record<string, unknown> = {
     name: error.name,
     message: error.message,
     stack: error.stack,
-    cause: error.cause ? serializeError(error.cause) : undefined,
   };
+  for (const key of Object.keys(error)) {
+    try {
+      const value = (error as unknown as Record<string, unknown>)[key];
+      serialized[key] =
+        key === 'responseBody' && typeof value === 'string'
+          ? truncateResponseBody(value)
+          : serializeValue(value, seen);
+    } catch {
+      serialized[key] = '[Unserializable]';
+    }
+  }
+  if (error.cause) serialized.cause = serializeValue(error.cause, seen);
+  return serialized;
+}
+
+function serializeValue(value: unknown, seen: WeakSet<object>): unknown {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return value;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : String(value);
+  if (typeof value === 'undefined') return value;
+  if (typeof value === 'bigint' || typeof value === 'symbol' || typeof value === 'function') {
+    return String(value);
+  }
+  if (value instanceof Error) return serializeError(value, seen);
+  if (seen.has(value)) return '[Circular]';
+  seen.add(value);
+  if (Array.isArray(value)) return value.map((item) => serializeValue(item, seen));
+  if (value instanceof Date) return value.toJSON();
+  if (value instanceof URL) return value.toString();
+  const serialized: Record<string, unknown> = {};
+  try {
+    for (const key of Object.keys(value)) {
+      try {
+        serialized[key] = serializeValue((value as Record<string, unknown>)[key], seen);
+      } catch {
+        serialized[key] = '[Unserializable]';
+      }
+    }
+  } catch {
+    return '[Unserializable]';
+  }
+  return serialized;
+}
+
+function truncateResponseBody(value: string): string {
+  if (textEncoder.encode(value).byteLength <= responseBodyLimit) return value;
+  let length = 0;
+  let truncated = '';
+  for (const character of value) {
+    const characterLength = textEncoder.encode(character).byteLength;
+    if (length + characterLength > responseBodyLimit) break;
+    truncated += character;
+    length += characterLength;
+  }
+  return truncated;
 }
 
 /**

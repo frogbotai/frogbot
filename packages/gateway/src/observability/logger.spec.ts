@@ -1,5 +1,7 @@
 import { Writable } from 'node:stream';
 
+import { APICallError } from '@ai-sdk/provider';
+import { RetryError } from 'ai';
 import type { Logger as PinoLogger } from 'pino';
 import pino from 'pino';
 import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
@@ -52,6 +54,20 @@ function capturePino(): { logger: GatewayLogger; lines: () => Array<Record<strin
       .filter(Boolean)
       .map((line) => JSON.parse(line) as Record<string, unknown>);
   return { logger, lines };
+}
+
+function apiCallError(overrides: Partial<ConstructorParameters<typeof APICallError>[0]> = {}) {
+  return new APICallError({
+    message: 'rate limited',
+    url: 'https://api.example.test/v1/chat/completions',
+    requestBodyValues: {},
+    statusCode: 429,
+    responseHeaders: { 'retry-after': '10' },
+    responseBody: '{"error":{"message":"rate limited"}}',
+    isRetryable: true,
+    data: { error: { message: 'rate limited' } },
+    ...overrides,
+  });
 }
 
 describe('GatewayLogger structural compatibility', () => {
@@ -190,7 +206,7 @@ describe('createLoggingHooks', () => {
     });
   });
 
-  it('masks production error details', async () => {
+  it('logs production error details', async () => {
     process.env.NODE_ENV = 'production';
     const { entries, logger } = captureLogger();
     const hooks = createLoggingHooks(logger);
@@ -208,9 +224,95 @@ describe('createLoggingHooks', () => {
       obj: {
         requestId: 'req_123',
         phase: 'beforeUpstream',
+        error: {
+          name: 'Error',
+          message: 'secret',
+        },
       },
     });
-    expect(entries[0]?.obj).not.toHaveProperty('error');
+  });
+
+  it.each(['development', 'production'] as const)(
+    'logs APICallError diagnostics in %s',
+    async (nodeEnv) => {
+      process.env.NODE_ENV = nodeEnv;
+      const { entries, logger } = captureLogger();
+      const hooks = createLoggingHooks(logger);
+      const error = Object.assign(apiCallError(), {
+        custom: { source: 'provider' },
+      });
+
+      await hooks.afterError?.[0]?.({
+        ...base,
+        phase: 'afterError',
+        failedPhase: 'upstream',
+        error,
+      } satisfies AfterErrorHookArgs);
+
+      expect(entries[0]?.obj).toMatchObject({
+        error: {
+          statusCode: 429,
+          url: 'https://api.example.test/v1/chat/completions',
+          responseHeaders: { 'retry-after': '10' },
+          isRetryable: true,
+          data: { error: { message: 'rate limited' } },
+          responseBody: '{"error":{"message":"rate limited"}}',
+          custom: { source: 'provider' },
+        },
+      });
+    },
+  );
+
+  it('caps responseBody at 2048 UTF-8 bytes and preserves JSON-safe custom fields', async () => {
+    const { entries, logger } = captureLogger();
+    const hooks = createLoggingHooks(logger);
+    const circular: { self?: unknown } = {};
+    circular.self = circular;
+    const error = Object.assign(apiCallError({ responseBody: `${'a'.repeat(2046)}😀` }), {
+      custom: circular,
+    });
+
+    await hooks.afterError?.[0]?.({
+      ...base,
+      phase: 'afterError',
+      failedPhase: 'upstream',
+      error,
+    } satisfies AfterErrorHookArgs);
+
+    const serialized = (entries[0]?.obj as { error: Record<string, unknown> }).error;
+    expect(serialized.responseBody).toBe('a'.repeat(2046));
+    expect(new TextEncoder().encode(serialized.responseBody).byteLength).toBeLessThanOrEqual(2048);
+    expect(serialized.custom).toEqual({ self: '[Circular]' });
+    expect(() => JSON.stringify(entries[0]?.obj)).not.toThrow();
+  });
+
+  it('unwraps RetryError to log the final upstream error', async () => {
+    const { entries, logger } = captureLogger();
+    const hooks = createLoggingHooks(logger);
+    const error = new RetryError({
+      message: 'Failed after 3 attempts',
+      reason: 'maxRetriesExceeded',
+      errors: [apiCallError()],
+    });
+
+    await hooks.afterError?.[0]?.({
+      ...base,
+      phase: 'afterError',
+      failedPhase: 'upstream',
+      error,
+    } satisfies AfterErrorHookArgs);
+
+    expect(entries[0]?.obj).toMatchObject({
+      error: {
+        name: 'AI_APICallError',
+        message: 'rate limited',
+        statusCode: 429,
+        responseBody: '{"error":{"message":"rate limited"}}',
+      },
+    });
+    expect((entries[0]?.obj as { error: Record<string, unknown> }).error).not.toHaveProperty(
+      'errors',
+    );
   });
 });
 
@@ -287,7 +389,7 @@ describe('createLoggingHooks with a real pino instance', () => {
     expect((err.cause as Record<string, unknown>).message).toBe('root');
   });
 
-  it('masks the error property in production mode', async () => {
+  it('serializes the error property in production mode', async () => {
     process.env.NODE_ENV = 'production';
     const { logger, lines } = capturePino();
     const hooks = createLoggingHooks(logger);
@@ -306,7 +408,7 @@ describe('createLoggingHooks with a real pino instance', () => {
       requestId: 'req_123',
       phase: 'beforeUpstream',
     });
-    expect(entry).not.toHaveProperty('error');
+    expect(entry.error).toMatchObject({ name: 'Error', message: 'secret' });
   });
 });
 
@@ -335,6 +437,27 @@ describe('logGatewayError with a real pino instance', () => {
     });
 
     expect(lines()).toMatchObject([{ level: 50, msg: 'request-error' }]);
+  });
+
+  it('logs the raw 500 message in production', () => {
+    const previousNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      const { logger, lines } = capturePino();
+
+      logGatewayError(logger, {
+        requestId: 'req_1',
+        status: 500,
+        path: '/v1/chat/completions',
+        error: new Error('upstream detail'),
+      });
+
+      expect(lines()).toMatchObject([
+        { level: 50, msg: 'request-error', message: 'upstream detail' },
+      ]);
+    } finally {
+      process.env.NODE_ENV = previousNodeEnv;
+    }
   });
 });
 
