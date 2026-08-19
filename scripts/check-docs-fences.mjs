@@ -14,6 +14,28 @@ function* walk(dir) {
 }
 
 const failures = [];
+const plainTextLanguages = new Set(['text', 'txt', 'plaintext']);
+const commandPrefixes = [
+  'npm ',
+  'npx ',
+  'pnpm ',
+  'yarn ',
+  'bun ',
+  'node ',
+  'tsx ',
+  'git ',
+  'cd ',
+  'curl ',
+  'wget ',
+  'docker ',
+  'kubectl ',
+  'make ',
+  'just ',
+  'sh ',
+  'bash ',
+  'zsh ',
+  'fish ',
+];
 let files = 0;
 let fences = 0;
 
@@ -24,7 +46,19 @@ for (const file of walk(root)) {
 
   lines.forEach((line, index) => {
     const match = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
-    if (!match) return;
+    if (!match) {
+      if (open && !open.hasContent && line.trim() !== '') {
+        open.hasContent = true;
+        const content = line.trimStart();
+        if (
+          plainTextLanguages.has(open.language) &&
+          commandPrefixes.some((prefix) => content.startsWith(prefix))
+        ) {
+          failures.push(`${path.relative(process.cwd(), file)}:${index + 1}`);
+        }
+      }
+      return;
+    }
 
     const marker = match[1];
     if (open) {
@@ -34,15 +68,21 @@ for (const file of walk(root)) {
       return;
     }
 
-    open = { char: marker[0], length: marker.length };
+    const info = match[2].trim();
+    open = {
+      char: marker[0],
+      length: marker.length,
+      language: info.split(/\s+/, 1)[0],
+      hasContent: false,
+    };
     fences++;
-    if (match[2].trim() === '') failures.push(`${path.relative(process.cwd(), file)}:${index + 1}`);
+    if (info === '') failures.push(`${path.relative(process.cwd(), file)}:${index + 1}`);
   });
 }
 
 if (failures.length > 0) {
   for (const failure of failures) console.error(failure);
-  console.error(`\n[check-docs-fences] FAIL - ${failures.length} untagged fence(s) found.`);
+  console.error(`\n[check-docs-fences] FAIL - ${failures.length} fence issue(s) found.`);
   process.exit(1);
 }
 

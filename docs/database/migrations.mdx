@@ -114,7 +114,7 @@ adapter.
 
 The `migrate` command will run any migrations that have not yet been run.
 
-```text
+```bash
 npm run frogbot migrate
 ```
 
@@ -123,7 +123,7 @@ npm run frogbot migrate
 Create a new migration file in the migrations directory. You can optionally name the migration that will be created. By
 default, migrations will be named using a timestamp.
 
-```text
+```bash
 npm run frogbot migrate:create optional-name-here
 ```
 
@@ -139,7 +139,7 @@ and which migrations have not yet run.
 
 `frogbot migrate:status`
 
-```text
+```bash
 npm run frogbot migrate:status
 ```
 
@@ -147,7 +147,7 @@ npm run frogbot migrate:status
 
 Roll back the last batch of migrations.
 
-```text
+```bash
 npm run frogbot migrate:down
 ```
 
@@ -155,7 +155,7 @@ npm run frogbot migrate:down
 
 Roll back all migrations that have been run, and run them again.
 
-```text
+```bash
 npm run frogbot migrate:refresh
 ```
 
@@ -163,7 +163,7 @@ npm run frogbot migrate:refresh
 
 Roll back all migrations.
 
-```text
+```bash
 npm run frogbot migrate:reset
 ```
 
@@ -171,7 +171,7 @@ npm run frogbot migrate:reset
 
 Drops all entities from the database and re-runs all migrations from scratch.
 
-```text
+```bash
 npm run frogbot migrate:fresh
 ```
 

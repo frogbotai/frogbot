@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -56,5 +56,35 @@ describe('docs fences gate', () => {
 
     expect(result.code).toBe(0);
     expect(result.output).toContain('[check-docs-fences] OK - 1 files and 2 fences scanned.');
+  });
+
+  it('reports commands in plain-text fences', async () => {
+    const dir = fixture(
+      '# Example\n\n```text\nnpm run frogbot migrate\n```\n\n```txt\ngit status\n```\n\n```plaintext\ncurl https://example.com\n```\n',
+    );
+    const result = await run(dir);
+
+    expect(result.code).toBe(1);
+    const file = join('.idea', 'tmp', dir.split('/').at(-1)!, 'fixture.mdx');
+    expect(result.output).toContain(`${file}:4`);
+    expect(result.output).toContain(`${file}:8`);
+    expect(result.output).toContain(`${file}:12`);
+  });
+
+  it('accepts legitimate plain-text fences', async () => {
+    const dir = fixture(
+      '# Example\n\n```text\nhttps://example.com\n```\n\n```txt\nsrc/\n  index.ts\n```\n\n```txt\n/connect\n```\n\n```plaintext\nKEY=value\n```\n',
+    );
+    const result = await run(dir);
+
+    expect(result.code).toBe(0);
+    expect(result.output).toContain('[check-docs-fences] OK - 1 files and 4 fences scanned.');
+  });
+
+  it('uses bash for migrations commands', () => {
+    const migrations = readFileSync(join(repoRoot, 'docs', 'database', 'migrations.mdx'), 'utf8');
+
+    expect(migrations).not.toContain('```text\nnpm run frogbot migrate');
+    expect(migrations.match(/^```bash\nnpm run frogbot migrate/gm)).toHaveLength(7);
   });
 });
