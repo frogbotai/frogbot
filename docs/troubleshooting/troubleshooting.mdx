@@ -7,7 +7,7 @@ keywords: admin, components, custom, customize, documentation, Content Managemen
 
 ## Dependency mismatches
 
-All `frogbot` and `@frogbot/*` packages must be on exactly the same version and installed only once.
+All `frogbot` and `@frogbotai/*` packages must be on exactly the same version and installed only once.
 
 When two copies—or two different versions—of any of these packages (or of `react` / `react-dom`) appear in your dependency graph, you can see puzzling runtime errors. The most frequent is a broken React context:
 
@@ -26,7 +26,7 @@ There are two ways to do this:
 1. Using pnpm's built-in inspection tool
 
 ```bash
-pnpm why @frogbot/ui
+pnpm why @frogbotai/ui
 ```
 
 This prints the dependency tree and shows which versions are being installed. If you see more than one distinct version—or the same version listed under different paths—you have duplication.
@@ -35,7 +35,7 @@ This prints the dependency tree and shows which versions are being installed. If
 
 ```bash
 find node_modules -name package.json \
-     -exec grep -H '"name": "@frogbot/ui"' {} \;
+     -exec grep -H '"name": "@frogbotai/ui"' {} \;
 ```
 
 Most of these hits are likely symlinks created by pnpm. Edit the matching package.json files (temporarily add a comment or change a description) to confirm whether they point to the same physical folder or to multiple copies.
@@ -44,13 +44,13 @@ Perform the same two checks for react and react-dom; a second copy of React can 
 
 #### If no duplicates are found
 
-`@frogbot/ui` intentionally contains two bundles of itself, so you may see dual paths even when everything is correct. Inside the FrogBot Admin UI you must import only:
+`@frogbotai/ui` intentionally contains two bundles of itself, so you may see dual paths even when everything is correct. Inside the FrogBot Admin UI you must import only:
 
-- `@frogbot/ui`
-- `@frogbot/ui/rsc`
-- `@frogbot/ui/shared`
+- `@frogbotai/ui`
+- `@frogbotai/ui/rsc`
+- `@frogbotai/ui/shared`
 
-Any other deep import such as `@frogbot/ui/elements/Button` should **only** be used in your own frontend, outside of the FrogBot Admin Panel. Those deep entries are published un-bundled to help you tree-shake and ship a smaller client bundle if you only need a few components from `@frogbot/ui`.
+Any other deep import such as `@frogbotai/ui/elements/Button` should **only** be used in your own frontend, outside of the FrogBot Admin Panel. Those deep entries are published un-bundled to help you tree-shake and ship a smaller client bundle if you only need a few components from `@frogbotai/ui`.
 
 ### Fixing dependency issues
 
@@ -61,7 +61,7 @@ These steps assume `pnpm`, which the FrogBot team recommends and uses internally
 In package.json remove `^` or `~` from all versions of:
 
 - `frogbot`
-- `@frogbot/*`
+- `@frogbotai/*`
 - `react`
 - `react-dom`
 
@@ -106,7 +106,7 @@ pnpm dedupe
 - Switch to `pnpm` if you are on npm. Its symlinked store helps reducing accidental duplication.
 - Inspect the lockfile directly for peer-dependency violations.
 - Check project-level .npmrc / .pnpmfile.cjs overrides.
-- Run [Syncpack](https://www.npmjs.com/package/syncpack) to enforce identical versions of every `@frogbot/*`, `react`, and `react-dom` reference.
+- Run [Syncpack](https://www.npmjs.com/package/syncpack) to enforce identical versions of every `@frogbotai/*`, `react`, and `react-dom` reference.
 
 Absolute last resort: add Webpack aliases so that all imports of a given package resolve to the same path (e.g. `resolve.alias['react'] = path.resolve('./node_modules/react')`). Keep this only until you can fix the underlying version skew.
 
@@ -118,7 +118,7 @@ Another error you might see is the following or similarly related to hooks, in p
 useUploadHandlers must be used within UploadHandlersProvider
 ```
 
-This is a common pitfall when using a monorepo setup with multiple packages. In this case, ensure that all packages in the monorepo use the same version of `frogbot`, `@frogbot/*`, `next`, `react`, and `react-dom`. You can use pnpm with workspaces to manage dependencies across packages in a monorepo effectively. Unfortunately this error becomes harder to debug inside a monorepo due to how package managers hoist dependencies as well as resolve them.
+This is a common pitfall when using a monorepo setup with multiple packages. In this case, ensure that all packages in the monorepo use the same version of `frogbot`, `@frogbotai/*`, `next`, `react`, and `react-dom`. You can use pnpm with workspaces to manage dependencies across packages in a monorepo effectively. Unfortunately this error becomes harder to debug inside a monorepo due to how package managers hoist dependencies as well as resolve them.
 
 If you've pinned the versions and the error persists we recommend removing `.next/`, `node_modules/` and if possible deleting the lockfile and re-generating it to ensure that all packages in the monorepo are using the same version of the dependencies mentioned above.
 

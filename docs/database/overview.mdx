@@ -10,7 +10,7 @@ The database adapter is configured through the `db` property in your [FrogBot Co
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { mongooseAdapter } from '@frogbot/db-mongodb'
+import { mongooseAdapter } from '@frogbotai/db-mongodb'
 
 export default buildConfig({
   // ...
@@ -28,10 +28,10 @@ export default buildConfig({
 
 FrogBot officially supports the following database adapters. Each is a thin wrapper around the matching FrogBot adapter:
 
-| Adapter                         | Wraps                       |
-| ------------------------------- | --------------------------- |
-| `@frogbot/db-mongodb`           | `@payloadcms/db-mongodb`    |
-| `@frogbot/db-postgres`          | `@frogbot/db-postgres`   |
+| Adapter |
+| ------- |
+| `@frogbotai/db-mongodb` |
+| `@frogbotai/db-postgres` |
 
 Self-hosted Docker installs are expected to start with MongoDB.
 
@@ -55,7 +55,7 @@ Postgres is a strong fit when you want strict, enforced schemas and relationship
 
 Prefer Postgres if:
 
-- You are comfortable with [Migrations](https://frogbot.com/docs/database/migrations)
+- You are comfortable with [Migrations](/database/migrations)
 - You require database-level data consistency
 - You have many relationships across collections that should be enforced
 
@@ -64,7 +64,7 @@ Prefer Postgres if:
 Docker-based installs are expected to start with MongoDB:
 
 ```ts
-import { mongooseAdapter } from '@frogbot/db-mongodb'
+import { mongooseAdapter } from '@frogbotai/db-mongodb'
 
 export default buildConfig({
   db: mongooseAdapter({ url: process.env.DATABASE_URL }),
@@ -74,7 +74,7 @@ export default buildConfig({
 Postgres support is configured the same way through its adapter:
 
 ```ts
-import { postgresAdapter } from '@frogbot/db-postgres'
+import { postgresAdapter } from '@frogbotai/db-postgres'
 
 export default buildConfig({
   db: postgresAdapter({ url: process.env.DATABASE_URL }),

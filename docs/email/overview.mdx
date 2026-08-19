@@ -7,7 +7,7 @@ keywords: email, overview, config, configuration, documentation, Content Managem
 
 ## Introduction
 
-FrogBot has a few email adapters that can be imported to enable email functionality. The [@frogbot/email-nodemailer](https://www.npmjs.com/package/@frogbot/email-nodemailer) package will be the package most will want to install. This package provides an easy way to use [Nodemailer](https://nodemailer.com) for email and won't get in your way for those already familiar.
+FrogBot has a few email adapters that can be imported to enable email functionality. The [@frogbotai/email-nodemailer](https://www.npmjs.com/package/@frogbotai/email-nodemailer) package will be the package most will want to install. This package provides an easy way to use [Nodemailer](https://nodemailer.com) for email and won't get in your way for those already familiar.
 
 The email adapter should be passed into the `email` property of the FrogBot Config. This will allow FrogBot to send [auth-related emails](/authentication/email) for things like password resets, new user verification, and any other email sending needs you may have.
 
@@ -30,8 +30,8 @@ An email adapter will require at least the following fields:
 
 | Name       | Package                                                                                    | Description                                                                                                                                                                                     |
 | ---------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Nodemailer | [@frogbot/email-nodemailer](https://www.npmjs.com/package/@frogbot/email-nodemailer) | Use any [Nodemailer transport](https://nodemailer.com/transports), including SMTP, Resend, SendGrid, and more. This was provided by default in FrogBot 2.x. This is the easiest migration path. |
-| Resend     | [@frogbot/email-resend](https://www.npmjs.com/package/@frogbot/email-resend)         | Resend email via their REST API. This is preferred for serverless platforms such as Vercel because it is much more lightweight than the nodemailer adapter.                                     |
+| Nodemailer | [@frogbotai/email-nodemailer](https://www.npmjs.com/package/@frogbotai/email-nodemailer) | Use any [Nodemailer transport](https://nodemailer.com/transports), including SMTP, Resend, SendGrid, and more. This was provided by default in FrogBot 2.x. This is the easiest migration path. |
+| Resend     | [@frogbotai/email-resend](https://www.npmjs.com/package/@frogbotai/email-resend)         | Resend email via their REST API. This is preferred for serverless platforms such as Vercel because it is much more lightweight than the nodemailer adapter.                                     |
 
 ## Nodemailer Configuration
 
@@ -48,7 +48,7 @@ Simple Mail Transfer Protocol (SMTP) options can be passed in using the `transpo
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { nodemailerAdapter } from '@frogbot/email-nodemailer'
+import { nodemailerAdapter } from '@frogbotai/email-nodemailer'
 
 export default buildConfig({
   email: nodemailerAdapter({
@@ -71,7 +71,7 @@ export default buildConfig({
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { nodemailerAdapter } from '@frogbot/email-nodemailer'
+import { nodemailerAdapter } from '@frogbotai/email-nodemailer'
 import nodemailer from 'nodemailer'
 
 export default buildConfig({
@@ -97,7 +97,7 @@ You also have the ability to bring your own nodemailer transport. This is an exa
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { nodemailerAdapter } from '@frogbot/email-nodemailer'
+import { nodemailerAdapter } from '@frogbotai/email-nodemailer'
 import nodemailerSendgrid from 'nodemailer-sendgrid'
 
 export default buildConfig({
@@ -116,7 +116,7 @@ During development, if you pass nothing to `nodemailerAdapter`, it will use the 
 This will log the ethereal.email details to console on startup.
 
 ```ts
-import { nodemailerAdapter } from '@frogbot/email-nodemailer'
+import { nodemailerAdapter } from '@frogbotai/email-nodemailer'
 
 export default buildConfig({
   email: nodemailerAdapter(),
@@ -133,7 +133,7 @@ The Resend adapter requires an API key to be passed in the options. This can be 
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { resendAdapter } from '@frogbot/email-resend'
+import { resendAdapter } from '@frogbotai/email-resend'
 
 export default buildConfig({
   email: resendAdapter({
@@ -161,7 +161,7 @@ const email = await frogbot.sendEmail({
 
 **Nodemailer adapter (SMTP/SendGrid/etc.)**
 
-Works with `@frogbot/email-nodemailer` and any Nodemailer transport.
+Works with `@frogbotai/email-nodemailer` and any Nodemailer transport.
 
 ```ts
 await frogbot.sendEmail({
@@ -189,7 +189,7 @@ Anything supported by Nodemailer's attachments—streams, Buffers, URLs, content
 
 ### Resend adapter
 
-Works with @frogbot/email-resend.
+Works with @frogbotai/email-resend.
 
 For attachments from remote URLs
 

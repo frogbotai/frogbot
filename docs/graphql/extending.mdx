@@ -100,7 +100,7 @@ We've exposed a few types and utilities to help you extend the API further. Frog
 **`GraphQLJSON`** & **`GraphQLJSONObject`**
 
 ```ts
-import { GraphQLJSON, GraphQLJSONObject } from '@frogbot/graphql/types'
+import { GraphQLJSON, GraphQLJSONObject } from '@frogbotai/graphql/types'
 ```
 
 **`GraphQL`**
@@ -108,7 +108,7 @@ import { GraphQLJSON, GraphQLJSONObject } from '@frogbot/graphql/types'
 You can directly import the GraphQL package used by FrogBot, most useful for typing.
 
 ```ts
-import { GraphQL } from '@frogbot/graphql/types'
+import { GraphQL } from '@frogbotai/graphql/types'
 ```
 
 <Warning>
@@ -124,7 +124,7 @@ It takes in two arguments, the first for the name of this new schema type and th
 Example
 
 ```ts
-import { buildPaginatedListType } from '@frogbot/graphql/types'
+import { buildPaginatedListType } from '@frogbotai/graphql/types'
 
 export const getMyPosts = (GraphQL, frogbot) => {
   return {

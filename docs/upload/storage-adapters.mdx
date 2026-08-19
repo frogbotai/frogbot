@@ -10,19 +10,19 @@ FrogBot offers additional storage adapters to handle file uploads. These adapter
 
 | Service              | Package                                                                                                           |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Vercel Blob          | [`@frogbot/storage-vercel-blob`](https://github.com/frogbot/frogbot/tree/main/packages/storage-vercel-blob) |
-| AWS S3               | [`@frogbot/storage-s3`](https://github.com/frogbot/frogbot/tree/main/packages/storage-s3)                   |
-| Azure                | [`@frogbot/storage-azure`](https://github.com/frogbot/frogbot/tree/main/packages/storage-azure)             |
-| Google Cloud Storage | [`@frogbot/storage-gcs`](https://github.com/frogbot/frogbot/tree/main/packages/storage-gcs)                 |
-| Uploadthing          | [`@frogbot/storage-uploadthing`](https://github.com/frogbot/frogbot/tree/main/packages/storage-uploadthing) |
-| R2                   | [`@frogbot/storage-r2`](https://github.com/frogbot/frogbot/tree/main/packages/storage-r2)                   |
+| Vercel Blob          | [`@frogbotai/storage-vercel-blob`](https://github.com/frogbot/frogbot/tree/main/packages/storage-vercel-blob) |
+| AWS S3               | [`@frogbotai/storage-s3`](https://github.com/frogbot/frogbot/tree/main/packages/storage-s3)                   |
+| Azure                | [`@frogbotai/storage-azure`](https://github.com/frogbot/frogbot/tree/main/packages/storage-azure)             |
+| Google Cloud Storage | [`@frogbotai/storage-gcs`](https://github.com/frogbot/frogbot/tree/main/packages/storage-gcs)                 |
+| Uploadthing          | [`@frogbotai/storage-uploadthing`](https://github.com/frogbot/frogbot/tree/main/packages/storage-uploadthing) |
+| R2                   | [`@frogbotai/storage-r2`](https://github.com/frogbot/frogbot/tree/main/packages/storage-r2)                   |
 
 ## Configuration
 
 Storage adapters are registered under the top-level `storage` key in your FrogBot config. This placement ensures that upload hooks, static file handlers, and presigned-URL endpoints are wired up before any plugin modifies the config.
 
 ```ts
-import { s3Storage } from '@frogbot/storage-s3'
+import { s3Storage } from '@frogbotai/storage-s3'
 import { buildConfig } from 'frogbot'
 
 export default buildConfig({
@@ -42,19 +42,19 @@ export default buildConfig({
   `plugins`, run the codemod to migrate automatically:
 
 ```sh
-npx @frogbot/codemod --transform migrate-storage-adapters-to-config
+npx @frogbotai/codemod --transform migrate-storage-adapters-to-config
 ```
 
 </Banner>
 
 ## Vercel Blob Storage
 
-[`@frogbot/storage-vercel-blob`](https://www.npmjs.com/package/@frogbot/storage-vercel-blob)
+[`@frogbotai/storage-vercel-blob`](https://www.npmjs.com/package/@frogbotai/storage-vercel-blob)
 
 ### Installation#vercel-blob-installation
 
 ```sh
-pnpm add @frogbot/storage-vercel-blob
+pnpm add @frogbotai/storage-vercel-blob
 ```
 
 ### Usage#vercel-blob-usage
@@ -65,7 +65,7 @@ pnpm add @frogbot/storage-vercel-blob
 - When deploying to Vercel, server uploads are limited with 4.5MB. Set `clientUploads` to `true` to do uploads directly on the client.
 
 ```ts
-import { vercelBlobStorage } from '@frogbot/storage-vercel-blob'
+import { vercelBlobStorage } from '@frogbotai/storage-vercel-blob'
 import { Media } from './collections/Media'
 import { MediaWithPrefix } from './collections/MediaWithPrefix'
 
@@ -102,12 +102,12 @@ export default buildConfig({
 
 ## S3 Storage
 
-[`@frogbot/storage-s3`](https://www.npmjs.com/package/@frogbot/storage-s3)
+[`@frogbotai/storage-s3`](https://www.npmjs.com/package/@frogbotai/storage-s3)
 
 ### Installation#s3-installation
 
 ```sh
-pnpm add @frogbot/storage-s3
+pnpm add @frogbotai/storage-s3
 ```
 
 ### Usage#s3-usage
@@ -120,7 +120,7 @@ pnpm add @frogbot/storage-s3
 - You can conditionally enable the plugin using the `enabled` option. For example, `enabled: Boolean(process.env.S3_BUCKET)` skips the plugin in local development when credentials are not set.
 
 ```ts
-import { s3Storage } from '@frogbot/storage-s3'
+import { s3Storage } from '@frogbotai/storage-s3'
 import { Media } from './collections/Media'
 import { MediaWithPrefix } from './collections/MediaWithPrefix'
 
@@ -173,7 +173,7 @@ For full `S3ClientConfig` options, see the [AWS SDK Package](https://github.com/
 
 ### Using with Cloudflare R2 (via S3 API)#s3-r2
 
-Cloudflare R2 exposes an S3-compatible API, so you can use `@frogbot/storage-s3` to connect to it. This is the recommended approach when deploying to Vercel, Netlify, or any Node.js environment. (The `@frogbot/storage-r2` adapter is for Cloudflare Workers only, where R2 is available as a native bucket binding.)
+Cloudflare R2 exposes an S3-compatible API, so you can use `@frogbotai/storage-s3` to connect to it. This is the recommended approach when deploying to Vercel, Netlify, or any Node.js environment. (The `@frogbotai/storage-r2` adapter is for Cloudflare Workers only, where R2 is available as a native bucket binding.)
 
 <Banner type="warning">
   R2 buckets are **private by default**. The S3 API endpoint (e.g.
@@ -184,7 +184,7 @@ Cloudflare R2 exposes an S3-compatible API, so you can use `@frogbot/storage-s3`
 </Banner>
 
 ```ts
-import { s3Storage } from '@frogbot/storage-s3'
+import { s3Storage } from '@frogbotai/storage-s3'
 
 export default buildConfig({
   collections: [Media],
@@ -234,12 +234,12 @@ R2_PUBLIC_URL=https://media.yourdomain.com
 
 ## Azure Blob Storage
 
-[`@frogbot/storage-azure`](https://www.npmjs.com/package/@frogbot/storage-azure)
+[`@frogbotai/storage-azure`](https://www.npmjs.com/package/@frogbotai/storage-azure)
 
 ### Installation#azure-installation
 
 ```sh
-pnpm add @frogbot/storage-azure
+pnpm add @frogbotai/storage-azure
 ```
 
 ### Usage#azure-usage
@@ -249,7 +249,7 @@ pnpm add @frogbot/storage-azure
 - When deploying to Vercel, server uploads are limited with 4.5MB. Set `clientUploads` to `true` to do uploads directly on the client. You must allow CORS PUT method to your website.
 
 ```ts
-import { azureStorage } from '@frogbot/storage-azure'
+import { azureStorage } from '@frogbotai/storage-azure'
 import { Media } from './collections/Media'
 import { MediaWithPrefix } from './collections/MediaWithPrefix'
 
@@ -288,12 +288,12 @@ export default buildConfig({
 
 ## Google Cloud Storage
 
-[`@frogbot/storage-gcs`](https://www.npmjs.com/package/@frogbot/storage-gcs)
+[`@frogbotai/storage-gcs`](https://www.npmjs.com/package/@frogbotai/storage-gcs)
 
 ### Installation#gcs-installation
 
 ```sh
-pnpm add @frogbot/storage-gcs
+pnpm add @frogbotai/storage-gcs
 ```
 
 ### Usage#gcs-usage
@@ -303,7 +303,7 @@ pnpm add @frogbot/storage-gcs
 - When deploying to Vercel, server uploads are limited with 4.5MB. Set `clientUploads` to `true` to do uploads directly on the client. You must allow CORS PUT method for the bucket to your website.
 
 ```ts
-import { gcsStorage } from '@frogbot/storage-gcs'
+import { gcsStorage } from '@frogbotai/storage-gcs'
 import { Media } from './collections/Media'
 import { MediaWithPrefix } from './collections/MediaWithPrefix'
 
@@ -341,12 +341,12 @@ export default buildConfig({
 
 ## Uploadthing Storage
 
-[`@frogbot/storage-uploadthing`](https://www.npmjs.com/package/@frogbot/storage-uploadthing)
+[`@frogbotai/storage-uploadthing`](https://www.npmjs.com/package/@frogbotai/storage-uploadthing)
 
 ### Installation#uploadthing-installation
 
 ```sh
-pnpm add @frogbot/storage-uploadthing
+pnpm add @frogbotai/storage-uploadthing
 ```
 
 ### Usage#uploadthing-usage
@@ -391,14 +391,14 @@ export default buildConfig({
   change on any minor releases.
 </Banner>
 
-[`@frogbot/storage-r2`](https://www.npmjs.com/package/@frogbot/storage-r2)
+[`@frogbotai/storage-r2`](https://www.npmjs.com/package/@frogbotai/storage-r2)
 
 Use this adapter to store uploads in a Cloudflare R2 bucket via the Cloudflare Workers environment. If you're connecting to R2 from a Node.js environment (Vercel, Netlify, etc.) using the S3-compatible API, see [Using with Cloudflare R2 (via S3 API)](#s3-r2) instead.
 
 ### Installation#r2-installation
 
 ```sh
-pnpm add @frogbot/storage-r2
+pnpm add @frogbotai/storage-r2
 ```
 
 ### Usage#r2-usage
@@ -423,11 +423,11 @@ export default buildConfig({
 
 ## Custom Storage Adapters
 
-If you need to create a custom storage adapter, you can use the [`@frogbot/plugin-cloud-storage`](https://www.npmjs.com/package/@frogbot/plugin-cloud-storage) package. This package is used internally by the storage adapters mentioned above.
+If you need to create a custom storage adapter, you can use the [`@frogbotai/plugin-cloud-storage`](https://www.npmjs.com/package/@frogbotai/plugin-cloud-storage) package. This package is used internally by the storage adapters mentioned above.
 
 ### Installation#custom-installation
 
-`pnpm add @frogbot/plugin-cloud-storage`
+`pnpm add @frogbotai/plugin-cloud-storage`
 
 ### Usage#custom-usage
 
@@ -454,7 +454,7 @@ export interface GeneratedAdapter {
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { cloudStoragePlugin } from '@frogbot/plugin-cloud-storage'
+import { cloudStoragePlugin } from '@frogbotai/plugin-cloud-storage'
 
 export default buildConfig({
   plugins: [

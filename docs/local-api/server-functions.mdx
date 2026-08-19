@@ -317,7 +317,7 @@ Logs in a user by verifying credentials and setting the authentication cookie. T
 #### Importing the `login` function
 
 ```ts
-import { login } from '@frogbot/next/auth'
+import { login } from '@frogbotai/next/auth'
 ```
 
 The login function needs your FrogBot config, which cannot be imported in a client component. To work around this, create a simple server function like the one below, and call it from your client.
@@ -325,7 +325,7 @@ The login function needs your FrogBot config, which cannot be imported in a clie
 ```ts
 'use server'
 
-import { login } from '@frogbot/next/auth'
+import { login } from '@frogbotai/next/auth'
 import config from '@frogbot-config'
 
 export async function loginAction({
@@ -396,7 +396,7 @@ Logs out the current user by clearing the authentication cookie and current sess
 #### Importing the `logout` function
 
 ```ts
-import { logout } from '@frogbot/next/auth'
+import { logout } from '@frogbotai/next/auth'
 ```
 
 Similar to the login function, you now need to pass your FrogBot config to this function and this cannot be done in a client component. Use a helper server function as shown below. To ensure all sessions are cleared, set `allSessions: true` in the options, if you wish to logout but keep current sessions active, you can set this to `false` or leave it `undefined`.
@@ -404,7 +404,7 @@ Similar to the login function, you now need to pass your FrogBot config to this 
 ```ts
 'use server'
 
-import { logout } from '@frogbot/next/auth'
+import { logout } from '@frogbotai/next/auth'
 import config from '@frogbot-config'
 
 export async function logoutAction() {
@@ -437,7 +437,7 @@ Refreshes the authentication token and current session for the logged-in user.
 #### Importing the `refresh` function
 
 ```ts
-import { refresh } from '@frogbot/next/auth'
+import { refresh } from '@frogbotai/next/auth'
 ```
 
 As with login and logout, you need to pass your FrogBot config to this function. Create a helper server function like the one below. Passing the config directly to the client is not possible and will throw errors.
@@ -445,7 +445,7 @@ As with login and logout, you need to pass your FrogBot config to this function.
 ```ts
 'use server'
 
-import { refresh } from '@frogbot/next/auth'
+import { refresh } from '@frogbotai/next/auth'
 import config from '@frogbot-config'
 
 export async function refreshAction() {

@@ -364,7 +364,7 @@ export const Media: CollectionConfig = {
 
 ### Building Custom Upload Components
 
-Custom upload components must integrate with FrogBot's form system to work correctly. The recommended approach is to use FrogBot's built-in `<Upload>` component from `@frogbot/ui` and wrap it with additional functionality.
+Custom upload components must integrate with FrogBot's form system to work correctly. The recommended approach is to use FrogBot's built-in `<Upload>` component from `@frogbotai/ui` and wrap it with additional functionality.
 
 <Banner type="warning">
   You should not use a simple `<input type="file" />` element
@@ -404,7 +404,7 @@ export const CustomUploadServer: PayloadServerReactComponent<
 ```tsx
 'use client'
 import React from 'react'
-import { Upload, useDocumentInfo } from '@frogbot/ui'
+import { Upload, useDocumentInfo } from '@frogbotai/ui'
 
 export const CustomUploadClient = () => {
   const { collectionSlug, docConfig, initialState } = useDocumentInfo()
@@ -432,7 +432,7 @@ import {
   TextField,
   Upload,
   useDocumentInfo,
-} from '@frogbot/ui'
+} from '@frogbotai/ui'
 
 const customDrawerSlug = 'custom-upload-drawer'
 
@@ -479,7 +479,7 @@ export const CustomUploadClient = () => {
 
 ### Available Hooks and Components
 
-When building custom upload components, you have access to several useful hooks and components from `@frogbot/ui`:
+When building custom upload components, you have access to several useful hooks and components from `@frogbotai/ui`:
 
 | Hook / Component    | Description                                                           |
 | ------------------- | --------------------------------------------------------------------- |

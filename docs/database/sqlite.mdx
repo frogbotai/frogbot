@@ -1,10 +1,10 @@
 ---
 title: "SQLite"
 sidebarTitle: "SQLite"
-description: "Use SQLite with FrogBot through the @frogbot/db-sqlite adapter, which wraps @frogbot/db-sqlite on top of Drizzle."
+description: "Use SQLite with FrogBot through the @frogbotai/db-sqlite adapter, which wraps @frogbotai/db-sqlite on top of Drizzle."
 ---
 
-To use FrogBot with SQLite, install the package `@frogbot/db-sqlite`. It leverages Drizzle ORM and `libSQL` to interact with a SQLite database that you provide.
+To use FrogBot with SQLite, install the package `@frogbotai/db-sqlite`. It leverages Drizzle ORM and `libSQL` to interact with a SQLite database that you provide.
 
 It automatically manages changes to your database for you in development mode, and exposes a full suite of migration controls for you to leverage in order to keep other database environments in sync with your schema. DDL transformations are automatically generated.
 
@@ -13,13 +13,13 @@ To configure FrogBot to use SQLite, pass the `sqliteAdapter` to your FrogBot Con
 ## Install
 
 ```bash
-pnpm add @frogbot/db-sqlite
+pnpm add @frogbotai/db-sqlite
 ```
 
 ## Configure
 
 ```ts
-import { sqliteAdapter } from '@frogbot/db-sqlite'
+import { sqliteAdapter } from '@frogbotai/db-sqlite'
 
 export default buildConfig({
   // Your config goes here
@@ -76,7 +76,7 @@ Then, you can access Drizzle as follows:
 // Import table from the generated file
 import { posts } from './frogbot-generated-schema'
 // To avoid installing Drizzle, you can import everything that drizzle has from our re-export path.
-import { eq, sql, and } from '@frogbot/db-sqlite/drizzle'
+import { eq, sql, and } from '@frogbotai/db-sqlite/drizzle'
 
 // Drizzle's Querying API: https://orm.drizzle.team/docs/rqb
 const posts = await frogbot.db.drizzle.query.posts.findMany()
@@ -100,7 +100,7 @@ In addition to exposing Drizzle directly, all of the tables and Drizzle relation
 
 Drizzle exposes two ways to work locally in development mode.
 
-The first is [`db push`](https://orm.drizzle.team/kit-docs/overview#prototyping-with-db-push), which automatically pushes changes you make to your FrogBot Config (and therefore, Drizzle schema) to your database so you don't have to manually migrate every time you change your FrogBot Config. This only works in development mode, and should not be mixed with manually running [`migrate`](/docs/database/migrations) commands.
+The first is [`db push`](https://orm.drizzle.team/kit-docs/overview#prototyping-with-db-push), which automatically pushes changes you make to your FrogBot Config (and therefore, Drizzle schema) to your database so you don't have to manually migrate every time you change your FrogBot Config. This only works in development mode, and should not be mixed with manually running [`migrate`](/database/migrations) commands.
 
 You will be warned if any changes that you make will entail data loss while in development mode. Push is enabled by default, but you can opt out if you'd like.
 
@@ -119,8 +119,8 @@ For more information about migrations, [click here](/database/migrations#when-to
 Runs before the schema is built. You can use this hook to extend your database structure with tables that won't be managed by FrogBot.
 
 ```ts
-import { sqliteAdapter } from '@frogbot/db-sqlite'
-import { integer, sqliteTable } from '@frogbot/db-sqlite/drizzle/sqlite-core'
+import { sqliteAdapter } from '@frogbotai/db-sqlite'
+import { integer, sqliteTable } from '@frogbotai/db-sqlite/drizzle/sqlite-core'
 
 sqliteAdapter({
   beforeSchemaInit: [
@@ -174,7 +174,7 @@ export const countries = sqliteTable(
 You can import them into your config and append to the schema with the `beforeSchemaInit` hook like this:
 
 ```ts
-import { sqliteAdapter } from '@frogbot/db-sqlite'
+import { sqliteAdapter } from '@frogbotai/db-sqlite'
 import { users, countries } from '../drizzle/schema'
 
 sqliteAdapter({
@@ -202,8 +202,8 @@ To extend a table, FrogBot exposes `extendTable` utility to the args. You can re
 The following example adds the `extra_integer_column` column and a composite index on `country` and `city` columns.
 
 ```ts
-import { sqliteAdapter } from '@frogbot/db-sqlite'
-import { index, integer } from '@frogbot/db-sqlite/drizzle/sqlite-core'
+import { sqliteAdapter } from '@frogbotai/db-sqlite'
+import { index, integer } from '@frogbotai/db-sqlite/drizzle/sqlite-core'
 import { buildConfig } from 'frogbot'
 
 export default buildConfig({
@@ -250,7 +250,7 @@ Columns and tables, added in schema hooks won't be added to the generated via `f
 If you want them to be there, you either have to edit this file manually or mutate the internal FrogBot "raw" SQL schema in the `beforeSchemaInit`:
 
 ```ts
-import { sqliteAdapter } from '@frogbot/db-sqlite'
+import { sqliteAdapter } from '@frogbotai/db-sqlite'
 
 sqliteAdapter({
   beforeSchemaInit: [
@@ -295,10 +295,10 @@ sqliteAdapter({
 
 We also provide a separate adapter to connect to [Cloudflare D1](https://developers.cloudflare.com/d1/), which is a serverless SQLite database.
 
-To use it, install the package `@frogbot/db-d1-sqlite` and configure it as follows:
+To use it, install the package `@frogbotai/db-d1-sqlite` and configure it as follows:
 
 ```ts
-import { sqliteD1Adapter } from '@frogbot/db-d1-sqlite'
+import { sqliteD1Adapter } from '@frogbotai/db-d1-sqlite'
 
 export default buildConfig({
   // Your config goes here
@@ -330,7 +330,7 @@ You must also enable it on your D1 database in the Cloudflare dashboard. Read mo
 </Info>
 
 ```ts
-import { sqliteD1Adapter } from '@frogbot/db-d1-sqlite'
+import { sqliteD1Adapter } from '@frogbotai/db-d1-sqlite'
 
 export default buildConfig({
   collections: [],
@@ -349,7 +349,7 @@ You can then verify that they're being used by checking the logs in your Cloudfl
 You can enable Write-Ahead Logging (WAL) mode for improved performance and concurrency by passing the `wal` option to the SQLite adapter.
 
 ```ts title="Example SQLite Adapter with WAL"
-import { sqliteAdapter } from '@frogbot/db-sqlite'
+import { sqliteAdapter } from '@frogbotai/db-sqlite'
 export default buildConfig({
   // Your config goes here
   collections: [

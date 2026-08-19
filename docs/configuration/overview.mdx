@@ -14,7 +14,7 @@ FrogBot reads `frogbot.config.ts`, `frogbot.config.mjs`, or `frogbot.config.js` 
 Export the result of `buildConfig` from your project root.
 
 ```ts
-import { sqliteAdapter } from '@frogbot/db-sqlite'
+import { sqliteAdapter } from '@frogbotai/db-sqlite'
 import { buildConfig } from 'frogbot'
 
 export default buildConfig({
@@ -56,7 +56,7 @@ Other non-overridden FrogBot server options pass through. `globals` are forbidde
 Keep collections and agents in separate modules, then register their exported arrays.
 
 ```ts
-import { sqliteAdapter } from '@frogbot/db-sqlite'
+import { sqliteAdapter } from '@frogbotai/db-sqlite'
 import { buildConfig } from 'frogbot'
 
 import { agents } from './src/agents'

@@ -1,16 +1,16 @@
 ---
 title: "MongoDB"
 sidebarTitle: "MongoDB"
-description: "Use MongoDB with FrogBot through the @frogbot/db-mongodb adapter."
+description: "Use MongoDB with FrogBot through the @frogbotai/db-mongodb adapter."
 ---
 
-To use FrogBot with MongoDB, install the package `@frogbot/db-mongodb`. It will come with everything you need to
+To use FrogBot with MongoDB, install the package `@frogbotai/db-mongodb`. It will come with everything you need to
 store your FrogBot data in MongoDB.
 
 Then from there, pass it to your FrogBot Config as follows:
 
 ```ts
-import { mongooseAdapter } from '@frogbot/db-mongodb'
+import { mongooseAdapter } from '@frogbotai/db-mongodb'
 
 export default buildConfig({
   // Your config goes here
@@ -62,7 +62,7 @@ You can access Mongoose models as follows:
 You can import the `compatibilityOptions` object to get the recommended settings for other MongoDB implementations. Since these databases aren't officially supported by frogbot, you may still encounter issues even with these settings (please create an issue or PR if you believe these options should be updated):
 
 ```ts
-import { mongooseAdapter, compatibilityOptions } from '@frogbot/db-mongodb'
+import { mongooseAdapter, compatibilityOptions } from '@frogbotai/db-mongodb'
 
 export default buildConfig({
   db: mongooseAdapter({
@@ -87,7 +87,7 @@ We thread your locale automatically through to the MongoDB queries when collatio
 To enable collation, set the `collation` option in the adapter configuration:
 
 ```ts
-import { mongooseAdapter } from '@frogbot/db-mongodb'
+import { mongooseAdapter } from '@frogbotai/db-mongodb'
 
 export default buildConfig({
   // Your config goes here

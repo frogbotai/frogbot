@@ -1,11 +1,12 @@
+---
 title: "Postgres"
 sidebarTitle: "Postgres"
-description: "Use Postgres with FrogBot through the @frogbot/db-postgres adapter, which wraps @frogbot/db-postgres on top of Drizzle."
+description: "Use Postgres with FrogBot through the @frogbotai/db-postgres adapter, which wraps @frogbotai/db-postgres on top of Drizzle."
 ---
 
-To use FrogBot with Postgres, install the package `@frogbot/db-postgres`. It leverages Drizzle ORM and `node-postgres` to interact with a Postgres database that you provide.
+To use FrogBot with Postgres, install the package `@frogbotai/db-postgres`. It leverages Drizzle ORM and `node-postgres` to interact with a Postgres database that you provide.
 
-Alternatively, the `@frogbot/db-vercel-postgres` package is also available and is optimized for use with Vercel.
+Alternatively, the `@frogbotai/db-vercel-postgres` package is also available and is optimized for use with Vercel.
 
 It automatically manages changes to your database for you in development mode, and exposes a full suite of migration controls for you to leverage in order to keep other database environments in sync with your schema. DDL transformations are automatically generated.
 
@@ -13,10 +14,10 @@ To configure FrogBot to use Postgres, pass the `postgresAdapter` to your FrogBot
 
 ### Usage
 
-`@frogbot/db-postgres`:
+`@frogbotai/db-postgres`:
 
 ```ts
-import { postgresAdapter } from '@frogbot/db-postgres'
+import { postgresAdapter } from '@frogbotai/db-postgres'
 
 export default buildConfig({
   // Configure the Postgres adapter here
@@ -30,10 +31,10 @@ export default buildConfig({
 })
 ```
 
-`@frogbot/db-vercel-postgres`:
+`@frogbotai/db-vercel-postgres`:
 
 ```ts
-import { vercelPostgresAdapter } from '@frogbot/db-vercel-postgres'
+import { vercelPostgresAdapter } from '@frogbotai/db-vercel-postgres'
 
 export default buildConfig({
   // Automatically uses process.env.POSTGRES_URL if no options are provided.
@@ -96,7 +97,7 @@ Then, you can access Drizzle as follows:
 ```ts
 import { posts } from './frogbot-generated-schema'
 // To avoid installing Drizzle, you can import everything that drizzle has from our re-export path.
-import { eq, sql, and } from '@frogbot/db-postgres/drizzle'
+import { eq, sql, and } from '@frogbotai/db-postgres/drizzle'
 
 // Drizzle's Querying API: https://orm.drizzle.team/docs/rqb
 const posts = await frogbot.db.drizzle.query.posts.findMany()
@@ -121,7 +122,7 @@ In addition to exposing Drizzle directly, all of the tables, Drizzle relations, 
 
 Drizzle exposes two ways to work locally in development mode.
 
-The first is [`db push`](https://orm.drizzle.team/kit-docs/overview#prototyping-with-db-push), which automatically pushes changes you make to your FrogBot Config (and therefore, Drizzle schema) to your database so you don't have to manually migrate every time you change your FrogBot Config. This only works in development mode, and should not be mixed with manually running [`migrate`](/docs/database/migrations) commands.
+The first is [`db push`](https://orm.drizzle.team/kit-docs/overview#prototyping-with-db-push), which automatically pushes changes you make to your FrogBot Config (and therefore, Drizzle schema) to your database so you don't have to manually migrate every time you change your FrogBot Config. This only works in development mode, and should not be mixed with manually running [`migrate`](/database/migrations) commands.
 
 You will be warned if any changes that you make will entail data loss while in development mode. Push is enabled by default, but you can opt out if you'd like.
 
@@ -131,7 +132,7 @@ Alternatively, you can disable `push` and rely solely on migrations to keep your
 
 In Postgres, migrations are a fundamental aspect of working with FrogBot and you should become familiar with how they work.
 
-For more information about migrations, [click here](./migrations#when-to-run-migrations).
+For more information about migrations, [click here](/database/migrations#when-to-run-migrations).
 
 ## Drizzle schema hooks
 
@@ -140,12 +141,12 @@ For more information about migrations, [click here](./migrations#when-to-run-mig
 Runs before the schema is built. You can use this hook to extend your database structure with tables that won't be managed by FrogBot.
 
 ```ts
-import { postgresAdapter } from '@frogbot/db-postgres'
+import { postgresAdapter } from '@frogbotai/db-postgres'
 import {
   integer,
   pgTable,
   serial,
-} from '@frogbot/db-postgres/drizzle/pg-core'
+} from '@frogbotai/db-postgres/drizzle/pg-core'
 
 postgresAdapter({
   beforeSchemaInit: [
@@ -200,7 +201,7 @@ export const countries = pgTable(
 You can import them into your config and append to the schema with the `beforeSchemaInit` hook like this:
 
 ```ts
-import { postgresAdapter } from '@frogbot/db-postgres'
+import { postgresAdapter } from '@frogbotai/db-postgres'
 import { users, countries } from '../drizzle/schema'
 
 postgresAdapter({
@@ -228,8 +229,8 @@ To extend a table, FrogBot exposes `extendTable` utility to the args. You can re
 The following example adds the `extra_integer_column` column and a composite index on `country` and `city` columns.
 
 ```ts
-import { postgresAdapter } from '@frogbot/db-postgres'
-import { index, integer } from '@frogbot/db-postgres/drizzle/pg-core'
+import { postgresAdapter } from '@frogbotai/db-postgres'
+import { index, integer } from '@frogbotai/db-postgres/drizzle/pg-core'
 import { buildConfig } from 'frogbot'
 
 export default buildConfig({
@@ -276,7 +277,7 @@ Columns and tables, added in schema hooks won't be added to the generated via `f
 If you want them to be there, you either have to edit this file manually or mutate the internal FrogBot "raw" SQL schema in the `beforeSchemaInit`:
 
 ```ts
-import { postgresAdapter } from '@frogbot/db-postgres'
+import { postgresAdapter } from '@frogbotai/db-postgres'
 
 postgresAdapter({
   beforeSchemaInit: [

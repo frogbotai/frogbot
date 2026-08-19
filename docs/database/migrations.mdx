@@ -12,7 +12,7 @@ Ensure you have an npm script called "frogbot" in your `package.json` file.
 ```json
 {
   "scripts": {
-    "frogbot": "cross-env PAYLOAD_CONFIG_PATH=src/frogbot.config.ts frogbot"
+    "frogbot": "cross-env FROGBOT_CONFIG_PATH=src/frogbot.config.ts frogbot"
   }
 }
 ```
@@ -35,7 +35,7 @@ all changes that you attempt to make within the migration, and the `down` should
 Here is an example migration file:
 
 ```ts
-import { MigrateUpArgs, MigrateDownArgs } from '@frogbot/your-db-adapter'
+import { MigrateUpArgs, MigrateDownArgs } from '@frogbotai/your-db-adapter'
 
 export async function up({ frogbot, req }: MigrateUpArgs): Promise<void> {
   // Perform changes to your database here.
@@ -50,7 +50,7 @@ export async function down({ frogbot, req }: MigrateDownArgs): Promise<void> {
 
 ## Using Transactions
 
-When migrations are run, each migration is performed in a new [transaction](/docs/database/transactions) for you. All
+When migrations are run, each migration is performed in a new [transaction](/database/transactions) for you. All
 you need to do is pass the `req` object to any [Local API](/docs/local-api/overview) or direct database calls, such as
 `frogbot.db.updateMany()`, to make database changes inside the transaction. Assuming no errors were thrown, the transaction is committed
 after your `up` or `down` function runs. If the migration errors at any point or fails to commit, it is caught and the
@@ -63,7 +63,7 @@ Additionally, you can bypass FrogBot's layer entirely and perform operations dir
 ### MongoDB:
 
 ```ts
-import { type MigrateUpArgs } from '@frogbot/db-mongodb'
+import { type MigrateUpArgs } from '@frogbotai/db-mongodb'
 
 export async function up({
   session,
@@ -79,7 +79,7 @@ export async function up({
 ### Postgres:
 
 ```ts
-import { type MigrateUpArgs, sql } from '@frogbot/db-postgres'
+import { type MigrateUpArgs, sql } from '@frogbotai/db-postgres'
 
 export async function up({ db, frogbot, req }: MigrateUpArgs): Promise<void> {
   const { rows: posts } = await db.execute(sql`SELECT * from posts`)
@@ -88,10 +88,10 @@ export async function up({ db, frogbot, req }: MigrateUpArgs): Promise<void> {
 
 ### SQLite:
 
-In SQLite, transactions are disabled by default. [More](./transactions).
+In SQLite, transactions are disabled by default. [More](/database/transactions).
 
 ```ts
-import { type MigrateUpArgs, sql } from '@frogbot/db-sqlite'
+import { type MigrateUpArgs, sql } from '@frogbotai/db-sqlite'
 
 export async function up({ db, frogbot, req }: MigrateUpArgs): Promise<void> {
   const { rows: posts } = await db.run(sql`SELECT * from posts`)
@@ -203,7 +203,7 @@ You can disable this setting and solely use migrations to manage your local deve
 
 For this reason, we suggest that you leave `push` as its default setting and treat your local dev database as a sandbox.
 
-For more information about push mode and prototyping in development, [click here](./postgres#prototyping-in-development-mode).
+For more information about push mode and prototyping in development, [click here](/database/postgres#prototyping-in-development-mode).
 
 The typical workflow in FrogBot is to build out your FrogBot configs, install plugins, and make progress in development mode - allowing Drizzle to push your changes to your local database for you. Once you're finished, you can create a migration.
 
