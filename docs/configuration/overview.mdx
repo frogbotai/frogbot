@@ -122,7 +122,7 @@ ai: {
 }
 ```
 
-See [AI](/configuration/ai) for operation signatures, AI SDK v7 output, hooks, and the authenticated `/api/ai/v1/*` mount.
+See [AI](/configuration/ai) for operation signatures, AI SDK v7 output, hooks, and the authenticated `/api/v1/*` mount.
 
 ---
 
@@ -215,4 +215,4 @@ Startup applies the configuration in this order.
 7. Build the typed worker registry.
 8. Run configured `onInit` callbacks.
 
-When workers are configured, sanitization also mounts `GET /api/agents` and `POST /api/agents/:slug`. The standalone server mounts authenticated gateway traffic under `/api/ai/v1/*` before forwarding other `/api/*` requests to FrogBot.
+When workers are configured, sanitization also mounts `GET /api/agents` and `POST /api/agents/:slug`. The standalone server mounts authenticated gateway traffic under `/api/v1/*` before forwarding other `/api/*` requests to FrogBot.

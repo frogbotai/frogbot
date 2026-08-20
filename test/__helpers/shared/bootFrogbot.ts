@@ -83,7 +83,7 @@ function createTestServer(frogbot: FrogbotInstance): Hono {
   app.get('/', (c) => c.json({ ok: true, name: 'frogbot' }));
   if (frogbot.config.ai) {
     const gatewayHandler = createGatewayHandler(frogbot);
-    app.all('/api/ai/*', (c) => gatewayHandler(c.req.raw));
+    app.all('/api/v1/*', (c) => gatewayHandler(c.req.raw));
   }
   app.all('/api/*', (c) => frogbot.handleRequest(c.req.raw.clone()));
   return app;

@@ -685,6 +685,7 @@ function validateInternalPathReservations(
   for (const [slug, api] of [
     ['agents', 'agent'],
     ['frogbot', 'manifest'],
+    ['v1', 'AI gateway'],
   ] as const) {
     if (config.collections.some((collection) => collection.slug === slug)) {
       throw new Error(`[frogbot] Collection slug '${slug}' is reserved for the ${api} API.`);
@@ -703,6 +704,11 @@ function validateInternalPathReservations(
     if (endpoint.path === '/frogbot' || endpoint.path.startsWith('/frogbot/')) {
       throw new Error(
         `[frogbot] Endpoint path '${endpoint.path}' is reserved for the manifest API.`,
+      );
+    }
+    if (endpoint.path === '/v1' || endpoint.path.startsWith('/v1/')) {
+      throw new Error(
+        `[frogbot] Endpoint path '${endpoint.path}' is reserved for the AI gateway API.`,
       );
     }
   }

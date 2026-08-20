@@ -15,6 +15,7 @@ import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { FrogbotChatTransport, prepareChatRequest } from '../../packages/ui/src/chat/transport';
+import { createFrogbotSDK } from '../../packages/sdk/src/index';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
@@ -193,12 +194,14 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     let responseStatus: number | undefined;
     const transport = new FrogbotChatTransport({
       agentSlug: 'assistant',
-      apiBase: `${baseURL}/api`,
-      fetch: async (input, init) => {
-        const response = await fetch(input, init);
-        responseStatus = response.status;
-        return response;
-      },
+      sdk: createFrogbotSDK({
+        baseURL: `${baseURL}/api`,
+        fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+          const response = await fetch(input, init);
+          responseStatus = response.status;
+          return response;
+        },
+      }),
       prepareSendMessagesRequest: prepareChatRequest(),
     });
     const stream = await transport.sendMessages({
@@ -232,7 +235,7 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
   });
 
   it('rejects unauthenticated gateway requests with 401', async () => {
-    const res = await fetch(`${baseURL}/api/ai/v1/models`);
+    const res = await fetch(`${baseURL}/api/v1/models`);
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({
       error: { message: 'Unauthorized', type: 'authentication_error' },

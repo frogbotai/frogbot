@@ -133,7 +133,7 @@ describe('API keys plugin integration', () => {
     );
     const request = (model: string) =>
       booted.restClient.post(
-        '/api/ai/v1/chat/completions',
+        '/api/v1/chat/completions',
         { model, messages: [{ role: 'user', content: 'Hello' }] },
         { headers: { 'x-service-key': mint.body.token } },
       );

@@ -73,7 +73,7 @@ describe('MicControl', () => {
     fireEvent.click(button);
     await waitFor(() => expect(onText).toHaveBeenCalledWith('hello'));
     const [, init] = value.fetch.mock.calls[1] as [string, RequestInit];
-    expect(value.fetch.mock.calls[1]?.[0]).toBe('/api/ai/v1/audio/transcriptions');
+    expect(value.fetch.mock.calls[1]?.[0]).toBe('/api/v1/audio/transcriptions');
     expect(init.body).toBeInstanceOf(FormData);
     expect((init.body as FormData).get('model')).toBe('whisper-1');
     expect((init.body as FormData).get('file')).toBeInstanceOf(File);

@@ -344,7 +344,7 @@ describe('Frogbot class', () => {
       frogbot.gateway!.handler = handler;
 
       const response = await createGatewayHandler(frogbot)(
-        new Request('http://localhost/api/ai/v1/chat/completions', {
+        new Request('http://localhost/api/v1/chat/completions', {
           method: 'POST',
           headers: { authorization: 'Bearer token' },
           body: '{}',
@@ -376,7 +376,7 @@ describe('Frogbot class', () => {
       frogbot.gateway!.handler = handler;
 
       const response = await createGatewayHandler(frogbot)(
-        new Request('http://localhost/api/ai/v1/chat/completions', { method: 'POST', body: '{}' }),
+        new Request('http://localhost/api/v1/chat/completions', { method: 'POST', body: '{}' }),
       );
 
       expect(response.status).toBe(401);
@@ -387,7 +387,7 @@ describe('Frogbot class', () => {
       const { frogbot, handler } = await setupGateway({ generate: () => false });
 
       const response = await createGatewayHandler(frogbot)(
-        new Request('http://localhost/api/ai/v1/chat/completions', { method: 'POST', body: '{}' }),
+        new Request('http://localhost/api/v1/chat/completions', { method: 'POST', body: '{}' }),
       );
 
       expect(response.status).toBe(403);
@@ -404,7 +404,7 @@ describe('Frogbot class', () => {
       });
 
       const response = await createGatewayHandler(frogbot)(
-        new Request('http://localhost/api/ai/v1/audio/transcriptions', {
+        new Request('http://localhost/api/v1/audio/transcriptions', {
           method: 'POST',
           body: 'audio',
         }),
@@ -419,7 +419,7 @@ describe('Frogbot class', () => {
       const { frogbot, handler } = await setupGateway({ generate });
 
       const response = await createGatewayHandler(frogbot)(
-        new Request('http://localhost/api/ai/v1/chat/completions', { method: 'POST', body: '{}' }),
+        new Request('http://localhost/api/v1/chat/completions', { method: 'POST', body: '{}' }),
       );
 
       expect(response.status).toBe(200);
@@ -433,7 +433,7 @@ describe('Frogbot class', () => {
       const { frogbot, handler } = await setupGateway({ generate });
 
       const response = await createGatewayHandler(frogbot)(
-        new Request('http://localhost/api/ai/v1/models'),
+        new Request('http://localhost/api/v1/models'),
       );
 
       expect(response.status).toBe(200);

@@ -47,7 +47,7 @@ export async function handleGatewayRequest({
   }
 
   const url = new URL(request.url);
-  url.pathname = url.pathname.replace(/^\/api\/ai(?=\/|$)/, '') || '/';
+  url.pathname = url.pathname.replace(/^\/api(?=\/|$)/, '') || '/';
   const method = methodForPath(url.pathname);
   if (method) {
     try {

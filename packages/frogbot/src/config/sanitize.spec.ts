@@ -1394,6 +1394,26 @@ describe('frogbot sanitize', () => {
       ).toThrow(`[frogbot] Endpoint path '${path}' is reserved for the manifest API.`);
     });
 
+    it('reserves the v1 collection slug', () => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            collections: [{ slug: 'v1', fields: [] }],
+          }),
+        ),
+      ).toThrow("[frogbot] Collection slug 'v1' is reserved for the AI gateway API.");
+    });
+
+    it.each(['/v1', '/v1/custom'])('reserves AI gateway endpoint path %s', (path) => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            endpoints: [{ path, method: 'get', handler: () => new Response() }],
+          }),
+        ),
+      ).toThrow(`[frogbot] Endpoint path '${path}' is reserved for the AI gateway API.`);
+    });
+
     it('rejects non-URL-safe agent slugs', () => {
       expect(() =>
         sanitize(

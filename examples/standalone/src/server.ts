@@ -16,7 +16,7 @@ const gatewayHandler = createGatewayHandler(frogbot);
 const app = new Hono();
 
 app.get('/', (c) => c.json({ ok: true, name: 'frogbot' }));
-app.all('/api/ai/*', (c) => gatewayHandler(c.req.raw));
+app.all('/api/v1/*', (c) => gatewayHandler(c.req.raw));
 app.all('/api/*', (c) => frogbot.handleRequest(c.req.raw.clone()));
 
 const port = Number(process.env.PORT ?? 3000);

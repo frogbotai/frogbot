@@ -1,7 +1,7 @@
 import type { Frogbot } from './frogbot.js';
 import type { FrogbotSanitizedConfig } from './types/sanitized.js';
 
-export const refreshFrogbotConfig = Symbol();
+export const refreshFrogbotConfig = Symbol.for('frogbot.refreshConfig');
 
 type FrogbotInstanceEntry = {
   config?: FrogbotSanitizedConfig;

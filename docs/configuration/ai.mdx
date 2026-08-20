@@ -272,7 +272,7 @@ An in-process call with `req` enforces access unless `overrideAccess: true` is s
 
 ## Observe calls
 
-Register arrays of hooks for the five-phase lifecycle. FrogBot creates one lifecycle for each direct operation, local agent run, agent HTTP call, and mounted `/api/ai/v1/*` request.
+Register arrays of hooks for the five-phase lifecycle. FrogBot creates one lifecycle for each direct operation, local agent run, agent HTTP call, and mounted `/api/v1/*` request.
 
 ```ts
 ai: {
@@ -349,7 +349,7 @@ ai: {
 
 ## Call over HTTP
 
-The standalone server mounts the embedded gateway at `/api/ai`. Canonical `/api/ai/v1/*` requests are authenticated through `frogbot.auth`, and requests without a resolved user receive `401` before reaching the gateway.
+The standalone server mounts the embedded gateway at `/api/v1`. Canonical `/api/v1/*` requests are authenticated through `frogbot.auth`, and requests without a resolved user receive `401` before reaching the gateway.
 
 Use `@frogbotai/sdk` in browser and application clients. AI methods use the SDK's configured base URL, headers, and `fetch`, so cookie and bearer authentication wrappers apply without separate AI credentials.
 
@@ -378,22 +378,22 @@ Each accepted request gets one FrogBot lifecycle around the gateway handler. Fro
 
 | Method | Path |
 | --- | --- |
-| `GET` | `/api/ai/v1/models` |
-| `GET` | `/api/ai/v1/health` |
-| `POST` | `/api/ai/v1/chat/completions` |
-| `POST` | `/api/ai/v1/messages` |
-| `POST` | `/api/ai/v1/responses` |
-| `POST` | `/api/ai/v1/embeddings` |
-| `POST` | `/api/ai/v1/images/generations` |
-| `POST` | `/api/ai/v1/audio/speech` |
-| `POST` | `/api/ai/v1/audio/transcriptions` |
-| `POST` | `/api/ai/v1/videos/generations` |
-| `POST` | `/api/ai/v1/rerank` |
+| `GET` | `/api/v1/models` |
+| `GET` | `/api/v1/health` |
+| `POST` | `/api/v1/chat/completions` |
+| `POST` | `/api/v1/messages` |
+| `POST` | `/api/v1/responses` |
+| `POST` | `/api/v1/embeddings` |
+| `POST` | `/api/v1/images/generations` |
+| `POST` | `/api/v1/audio/speech` |
+| `POST` | `/api/v1/audio/transcriptions` |
+| `POST` | `/api/v1/videos/generations` |
+| `POST` | `/api/v1/rerank` |
 
 Pass credentials accepted by your configured auth collection. HTTP bodies use provider-prefixed model IDs because router aliases are resolved by FrogBot's local operation layer, not by the gateway handler. After authentication, mounted operation routes enforce the matching `ai.access` category. A denied request receives `403`; discovery routes such as `/models` do not run an operation access callback.
 
 ```bash
-curl http://localhost:3000/api/ai/v1/chat/completions \
+curl http://localhost:3000/api/v1/chat/completions \
   --request POST \
   --header "Authorization: Bearer $FROGBOT_TOKEN" \
   --header "Content-Type: application/json" \

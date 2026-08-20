@@ -4,7 +4,7 @@ FrogBot without Next.js. You own the HTTP server — a small [Hono](https://hono
 app that mounts FrogBot's two request handlers:
 
 - `frogbot.handleRequest` — the full REST API (`/api/*`), including agents
-- `createGatewayHandler(frogbot)` — the OpenAI-compatible AI gateway (`/api/ai/*`)
+- `createGatewayHandler(frogbot)` — the OpenAI-compatible AI gateway (`/api/v1/*`)
 
 No admin panel here; that requires the Next.js setup (`npm create frogbot-app`).
 Use this model for headless deployments, workers, or embedding FrogBot into an
@@ -30,11 +30,11 @@ curl -s http://localhost:3000/api/agents/assistant \
   -d '{"prompt":"Hello!"}' | jq
 ```
 
-The gateway (`/api/ai/*`) requires an authenticated FrogBot user — an
+The gateway (`/api/v1/*`) requires an authenticated FrogBot user — an
 unauthenticated request returns 401:
 
 ```bash
-curl -s http://localhost:3000/api/ai/v1/models
+curl -s http://localhost:3000/api/v1/models
 ```
 
 ## How it works
@@ -46,11 +46,11 @@ const frogbot = await getFrogbot({ config });
 const gatewayHandler = createGatewayHandler(frogbot);
 
 const app = new Hono();
-app.all('/api/ai/*', (c) => gatewayHandler(c.req.raw));
+app.all('/api/v1/*', (c) => gatewayHandler(c.req.raw));
 app.all('/api/*', (c) => frogbot.handleRequest(c.req.raw.clone()));
 ```
 
-Route order matters: mount `/api/ai/*` before `/api/*`. Both handlers speak
+Route order matters: mount `/api/v1/*` before `/api/*`. Both handlers speak
 Fetch `Request`/`Response`, so any framework (or none) works — Hono is just
 the example.
 

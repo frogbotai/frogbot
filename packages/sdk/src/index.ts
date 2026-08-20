@@ -75,7 +75,7 @@ export class FrogBotSDK {
   readonly headers: Headers;
   readonly ai = {
     chat: (body: AIChatRequest, init: FrogBotRequestInit = {}) =>
-      this.request('/ai/v1/chat/completions', {
+      this.request('/v1/chat/completions', {
         ...init,
         method: 'POST',
         json: body,
@@ -96,7 +96,7 @@ export class FrogBotSDK {
       for (const granularity of granularities) {
         body.append('timestamp_granularities[]', granularity);
       }
-      const response = await this.request('/ai/v1/audio/transcriptions', { method: 'POST', body });
+      const response = await this.request('/v1/audio/transcriptions', { method: 'POST', body });
       return response.json() as Promise<AITranscriptionResult>;
     },
   };

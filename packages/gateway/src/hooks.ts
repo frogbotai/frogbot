@@ -110,7 +110,7 @@ export interface BeforeOperationHookArgs extends HookBase {
   readonly phase: 'beforeOperation';
   /**
    * The raw HTTP request, when the operation originates from an HTTP entry
-   * (the gateway's own route handlers, or FrogBot's `/api/ai/*` proxy).
+   * (the gateway's own route handlers, or FrogBot's `/api/v1/*` proxy).
    * Absent for in-process operations (`frogbot.generateText(...)` and agents),
    * which have no incoming HTTP request.
    */

@@ -139,7 +139,7 @@ describe('FrogBotSDK', () => {
       ),
     });
 
-    await expect(sdk.request('/ai/v1/models')).rejects.toMatchObject({
+    await expect(sdk.request('/v1/models')).rejects.toMatchObject({
       errors: [{ message: 'Model not found' }],
       message: 'Model not found',
       status: 404,
@@ -164,7 +164,7 @@ describe('FrogBotSDK', () => {
       }),
     ).resolves.toEqual({ text: 'ribbit' });
 
-    expect(fetch.mock.calls[0]?.[0]).toBe('https://frogbot.example/api/ai/v1/audio/transcriptions');
+    expect(fetch.mock.calls[0]?.[0]).toBe('https://frogbot.example/api/v1/audio/transcriptions');
     const init = fetch.mock.calls[0]?.[1];
     const body = init?.body as FormData;
     expect(init?.method).toBe('POST');
@@ -186,7 +186,7 @@ describe('FrogBotSDK', () => {
     });
 
     expect(response).toBeInstanceOf(Response);
-    expect(fetch.mock.calls[0]?.[0]).toBe('https://frogbot.example/api/ai/v1/chat/completions');
+    expect(fetch.mock.calls[0]?.[0]).toBe('https://frogbot.example/api/v1/chat/completions');
     expect(fetch.mock.calls[0]?.[1]).toMatchObject({
       body: JSON.stringify({
         model: 'openai/gpt-4o',

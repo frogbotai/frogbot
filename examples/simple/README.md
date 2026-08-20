@@ -69,7 +69,7 @@ The `src/app/(frogbot)/` directory is the Next.js scaffold that serves everythin
 | ------------------------------------- | ---------------------------------------------- |
 | `src/app/(frogbot)/admin/`            | The admin panel (catch-all route + import map) |
 | `src/app/(frogbot)/api/[...slug]/`    | The REST API, including agent endpoints        |
-| `src/app/(frogbot)/api/ai/[...slug]/` | The OpenAI-compatible AI gateway               |
+| `src/app/(frogbot)/api/v1/[[...slug]]/` | The OpenAI-compatible AI gateway               |
 | `src/app/(app)/`                      | Your app — replace the placeholder home page   |
 
 The `access: () => true` on the agent is dev-only — it makes `curl` work
