@@ -40,7 +40,14 @@ export function createApiKeyStrategy(options: StrategyOptions): ApiKeyStrategy {
           ],
         },
       });
-      const key = keys.docs[0] as { id: string | number; owner?: string | number } | undefined;
+      const key = keys.docs[0] as
+        | {
+            id: string | number;
+            owner?: string | number;
+            capture?: boolean | 'disabled' | 'enabled' | 'inherit';
+            captureSampleRate?: number;
+          }
+        | undefined;
       if (!key?.owner) return { user: null };
 
       const user = await payload
@@ -61,6 +68,10 @@ export function createApiKeyStrategy(options: StrategyOptions): ApiKeyStrategy {
           collection: authCollection,
           _strategy: 'api-key',
           apiKeyId: key.id,
+          ...(key.capture !== undefined ? { capture: key.capture } : {}),
+          ...(typeof key.captureSampleRate === 'number'
+            ? { captureSampleRate: key.captureSampleRate }
+            : {}),
         },
       };
     },

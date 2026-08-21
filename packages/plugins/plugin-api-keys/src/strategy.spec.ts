@@ -40,6 +40,22 @@ describe('API key authentication strategy', () => {
     );
   });
 
+  it('merges optional capture policy onto the request actor', async () => {
+    const payload = makePayload();
+    payload.find.mockResolvedValue({
+      docs: [{ id: 'key-1', owner: 'user-1', capture: 'enabled', captureSampleRate: 0.25 }],
+    });
+
+    const result = await makeStrategy().authenticate({
+      headers: new Headers({ authorization: `Bearer ${createApiKeyToken()}` }),
+      payload: payload as never,
+    });
+
+    expect(result.user).toEqual(
+      expect.objectContaining({ capture: 'enabled', captureSampleRate: 0.25 }),
+    );
+  });
+
   it.each([
     ['missing', new Headers()],
     ['malformed', new Headers({ authorization: 'Bearer invalid' })],

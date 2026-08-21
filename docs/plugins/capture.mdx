@@ -1,0 +1,81 @@
+---
+title: AI request capture
+description: Retain AI request and response bodies in blob storage with a searchable metadata index.
+keywords: ["capture", "compliance", "requests", "responses", "plugins"]
+---
+
+The capture plugin stores opted-in traffic for chat completions, messages, and responses. Request and response content is gzip-compressed in blob storage. FrogBot stores only identifiers, timestamps, status, model, blob location, and byte size in the `ai-captures` collection.
+
+Nothing is captured unless you enable capture globally or for an API key.
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-capture
+```
+
+```ts
+import { capturePlugin } from '@frogbotai/plugin-capture'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: databaseAdapter,
+  collections: [{ slug: 'users', auth: true, fields: [] }],
+  ai: {
+    providers: {
+      openai: { apiKey: process.env.OPENAI_API_KEY },
+    },
+  },
+  plugins: [
+    capturePlugin({
+      enabled: true,
+      retentionDays: 90,
+      storageRoot: '/var/lib/frogbot/captures',
+    }),
+  ],
+})
+```
+
+The filesystem adapter defaults to `.frogbot/captures`. Production deployments should pass a shared, durable `storage` adapter implementing `put`, `get`, `delete`, and `list`.
+
+## Capture policy
+
+`enabled` defaults to `false`. `sampleRate` accepts a value from `0` to `1` and defaults to `1` for enabled traffic.
+
+When the API keys plugin runs before capture, capture adds `capture` and `captureSampleRate` fields to API keys. `capture` accepts `inherit`, `enabled`, or `disabled`; an explicit key setting overrides the global setting. The plugin does not require the API keys plugin.
+
+## Privacy and limits
+
+Incoming HTTP headers are never persisted. Set `maxBodyBytes` to reject captures whose serialized request, response, or error envelope exceeds the limit. The default is 10 MiB.
+
+The first release does not scrub fields inside messages, tools, responses, or errors. Treat the blob store as sensitive data and control access separately from ordinary admin access. Pass `access` to control who can read index rows.
+
+Capture writes run out of band. A storage or index failure is logged but does not fail the AI request. Because the blob and index are separate writes, an interrupted write can leave an unindexed blob. Content is never written to the primary database.
+
+## Retention
+
+Set `retentionDays` to register a daily pruning task. The task deletes each expired blob before deleting its index row. If you omit `retentionDays`, captures are retained until you delete them.
+
+## Export
+
+Export captures as JSON Lines with the FrogBot CLI:
+
+```bash
+frogbot export:captures --from 2026-07-01 --to 2026-09-30 --user user-123 --output q3.jsonl
+```
+
+Filters include `--user`, `--api-key`, `--from`, `--to`, and `--operation`. Without `--output`, JSON Lines are written to stdout.
+
+## Options
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `enabled` | `false` | Enables capture globally. |
+| `storage` | filesystem | Blob storage adapter. |
+| `storageRoot` | `.frogbot/captures` | Filesystem adapter root. |
+| `retentionDays` | unset | Days to retain captures. Unset retains them indefinitely. |
+| `sampleRate` | `1` | Fraction of enabled requests to capture. |
+| `maxBodyBytes` | `10485760` | Maximum serialized request size. |
+| `collectionSlug` | `ai-captures` | Content-free index collection slug. |
+| `access` | unset | Read access for index rows. |

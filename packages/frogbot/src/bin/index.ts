@@ -1,4 +1,5 @@
 import { dev } from './dev.js';
+import { exportCaptures } from './exportCaptures.js';
 import { exportTrainingData } from './exportTrainingData.js';
 import { generateImportMap } from './generateImportMap.js';
 import { generateTypes } from './generateTypes.js';
@@ -21,6 +22,8 @@ export async function bin() {
     await generateImportMap();
   } else if (command === 'export:training-data') {
     await exportTrainingData(args);
+  } else if (command === 'export:captures') {
+    await exportCaptures(args);
   } else if (
     command === 'migrate' ||
     command === 'migrate:create' ||
@@ -33,7 +36,7 @@ export async function bin() {
     await migrate([command, ...args]);
   } else {
     console.error(
-      '[frogbot] usage: frogbot <start|dev|generate:types|generate:importmap|export:training-data|migrate|migrate:create|migrate:status|migrate:down|migrate:refresh|migrate:reset|migrate:fresh>',
+      '[frogbot] usage: frogbot <start|dev|generate:types|generate:importmap|export:training-data|export:captures|migrate|migrate:create|migrate:status|migrate:down|migrate:refresh|migrate:reset|migrate:fresh>',
     );
     process.exit(2);
   }
