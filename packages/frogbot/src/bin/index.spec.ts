@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
     mocks.calls.push('loadEnv');
     process.env.FROGBOT_TEST_KEY = 'loaded';
   }),
+  migrate: vi.fn(async (args: string[]) => mocks.calls.push(`migrate:${args.join(',')}`)),
   start: vi.fn(() => mocks.calls.push(`start:${process.env.FROGBOT_TEST_KEY}`)),
 }));
 
@@ -28,6 +29,7 @@ vi.mock('./exportCaptures.js', () => ({ exportCaptures: mocks.exportCaptures }))
 vi.mock('./generateImportMap.js', () => ({ generateImportMap: mocks.generateImportMap }));
 vi.mock('./generateTypes.js', () => ({ generateTypes: mocks.generateTypes }));
 vi.mock('./loadEnv.js', () => ({ loadEnv: mocks.loadEnv }));
+vi.mock('./migrate.js', () => ({ migrate: mocks.migrate }));
 vi.mock('./start.js', () => ({ start: mocks.start }));
 
 import { bin } from './index.js';
@@ -61,6 +63,14 @@ describe('frogbot bin', () => {
     await bin();
 
     expect(mocks.calls).toEqual(['loadEnv', `${handler}:loaded`]);
+  });
+
+  it.each(['migrate', 'migrate:status'])('loads env before dispatching `%s`', async (command) => {
+    process.argv = ['node', 'frogbot', command];
+
+    await bin();
+
+    expect(mocks.calls).toEqual(['loadEnv', `migrate:${command}`]);
   });
 
   it.each([undefined, 'unknown'])('loads env before rejecting `%s`', async (command) => {

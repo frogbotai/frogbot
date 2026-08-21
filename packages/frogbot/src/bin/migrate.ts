@@ -109,6 +109,21 @@ export async function migrate(args: string[]): Promise<void> {
   try {
     switch (command) {
       case 'migrate':
+        if (!process.stdin.isTTY) {
+          const hasDevModeMigrations = await payload
+            .find({
+              collection: 'payload-migrations',
+              limit: 1,
+              where: { batch: { equals: -1 } },
+            })
+            .then(({ docs }) => docs.length > 0)
+            .catch(() => false);
+          if (hasDevModeMigrations) {
+            throw new Error(
+              'dev-mode schema changes detected; run `frogbot migrate` interactively to confirm migration',
+            );
+          }
+        }
         await adapter.migrate({});
         if (frogbotConfig.ai) {
           const { backfillAIUserPolicy } = await import('../ai/policy.js');
@@ -149,4 +164,5 @@ export async function migrate(args: string[]): Promise<void> {
   }
 
   console.log(`[frogbot] ${command} complete.`);
+  process.exit(0);
 }
