@@ -26,7 +26,7 @@ describe('custom usage logs', () => {
 
     logUsage({
       requestId: 'custom-write',
-      model: 'zen/deepseek-v4-flash-free',
+      model: 'zen/big-pickle',
       operation: 'chat.completions',
       startedAt: Date.now(),
       context: { req: { frogbot: booted.frogbot } },

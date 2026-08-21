@@ -19,7 +19,7 @@ const config: FrogbotConfig = {
         type: 'openai-compatible',
         baseUrl: 'https://opencode.ai/zen/v1',
         apiKey: 'public',
-        models: [{ id: 'deepseek-v4-flash-free', mode: 'chat' }],
+        models: [{ id: 'big-pickle', mode: 'chat' }],
       },
     },
   },

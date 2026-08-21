@@ -66,10 +66,6 @@ export const LIVE_MATRIX: LiveProviderEntry[] = [
       apiKeyFallback: 'public',
     },
     tier: 'free',
-    text: models('E2E_MODEL_ZEN_TEXT', [
-      'deepseek-v4-flash-free',
-      'nemotron-3-ultra-free',
-      'big-pickle',
-    ]),
+    text: models('E2E_MODEL_ZEN_TEXT', ['big-pickle', 'nemotron-3-ultra-free', 'mimo-v2.5-free']),
   },
 ];

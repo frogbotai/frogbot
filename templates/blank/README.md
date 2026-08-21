@@ -19,7 +19,7 @@ dependency build scripts this project needs.
 
 `create-frogbot-app` already wrote a `.env` with a generated `FROGBOT_SECRET`, and
 the default `assistant` agent runs on opencode Zen's free
-`zen/deepseek-v4-flash-free` — no API key needed. Swap the provider in
+`zen/big-pickle` — no API key needed. Swap the provider in
 `src/frogbot.config.ts` for openai, anthropic, google, etc. when you're ready.
 
 FrogBot commands load `.env`, `.env.local`, and mode-specific `.env*` files with Next.js

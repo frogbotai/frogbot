@@ -119,7 +119,12 @@ describe('API keys plugin integration', () => {
     await booted.frogbot.update({
       collection: 'accounts',
       id: owner.id,
-      data: { monthlyBudget: 10, models: ['test/allowed'], spendThisPeriodUSD: 0 },
+      data: {
+        modelAccess: 'selected',
+        monthlyBudget: 10,
+        models: ['test/allowed'],
+        spendThisPeriodUSD: 0,
+      },
       overrideAccess: true,
     });
     const login = await booted.restClient.post<{ token: string }>(

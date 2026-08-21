@@ -367,7 +367,7 @@ declare module 'frogbot' {
     agents: {
       assistant: unknown;
     };
-    models: 'zen/deepseek-v4-flash-free';
+    models: 'zen/big-pickle';
     roles: never;
   }
 }

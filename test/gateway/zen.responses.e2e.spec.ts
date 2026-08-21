@@ -33,7 +33,7 @@ const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY ?? 'public';
 const RUN_E2E = process.env.RUN_E2E === '1';
 
 const ZEN_BASE_URL = 'https://opencode.ai/zen/v1';
-const MODEL = 'zen/deepseek-v4-flash-free';
+const MODEL = 'zen/big-pickle';
 
 const TEST_TIMEOUT = 90_000;
 

@@ -93,7 +93,13 @@ export interface Config {
   };
   user: User;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      'frogbot-reset-ai-budgets': TaskFrogbotResetAiBudgets;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -122,6 +128,10 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name?: string | null;
+  modelAccess?: ('all' | 'selected') | null;
+  models?: 'zen/big-pickle'[] | null;
+  monthlyBudget?: number | null;
+  spendThisPeriodUSD?: number | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -246,6 +256,10 @@ export interface File {
  */
 export interface UsersSelect {
   name?: boolean;
+  modelAccess?: boolean;
+  models?: boolean;
+  monthlyBudget?: boolean;
+  spendThisPeriodUSD?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   email?: boolean;
@@ -356,6 +370,14 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-reset-ai-budgets".
+ */
+export interface TaskFrogbotResetAiBudgets {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "auth".
  */
 export interface Auth {
@@ -367,7 +389,7 @@ declare module 'frogbot' {
     agents: {
       assistant: unknown;
     };
-    models: 'zen/deepseek-v4-flash-free';
+    models: 'zen/big-pickle';
     roles: never;
   }
 }

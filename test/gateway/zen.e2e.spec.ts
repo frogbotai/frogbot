@@ -31,7 +31,7 @@ const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY ?? 'public';
 const RUN_E2E = process.env.RUN_E2E === '1';
 
 const ZEN_BASE_URL = 'https://opencode.ai/zen/v1';
-const ZEN_FREE_MODELS = ['deepseek-v4-flash-free', 'nemotron-3-super-free', 'big-pickle'];
+const ZEN_FREE_MODELS = ['big-pickle', 'nemotron-3-ultra-free', 'mimo-v2.5-free'];
 const MODEL = `zen/${ZEN_FREE_MODELS[0]}`;
 
 // Real network: keep prompts tiny and budgets generous.

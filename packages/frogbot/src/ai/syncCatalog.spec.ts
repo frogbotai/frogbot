@@ -59,7 +59,10 @@ describe('model catalog sync', () => {
   it('renders deterministic committed artifacts', async () => {
     const { buildCatalogs, renderCatalog, renderGatewayCatalog } = await loadSync();
     const first = buildCatalogs({ overlays, source });
-    const second = buildCatalogs({ overlays: [...overlays].reverse(), source });
+    const second = buildCatalogs({
+      overlays: Object.fromEntries(Object.entries(overlays).reverse()),
+      source,
+    });
 
     expect(renderCatalog(first.catalog)).toBe(renderCatalog(second.catalog));
     expect(renderGatewayCatalog(first.gateway)).toBe(renderGatewayCatalog(second.gateway));

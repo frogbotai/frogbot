@@ -93,7 +93,13 @@ function stripRefs(schema: unknown, stripped: ReadonlySet<string>): void {
 export function stripInternalCollections(schema: ConfigJSONSchema): void {
   const isInternal = (slug: string) => slug.startsWith('payload-');
 
-  for (const key of ['collections', 'collectionsJoins', 'collectionsSelect']) {
+  for (const key of [
+    'collections',
+    'collectionsJoins',
+    'collectionsSelect',
+    'globals',
+    'globalsSelect',
+  ]) {
     const group = schema.properties?.[key];
     if (!group) continue;
     for (const slug of Object.keys(group.properties ?? {})) {

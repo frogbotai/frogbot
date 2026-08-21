@@ -39,7 +39,7 @@ const RUN_E2E = process.env.RUN_E2E === '1';
 
 const ZEN_BASE_URL = 'https://opencode.ai/zen/v1';
 // Primary: reliable tool-caller. Reasoning model — generous budgets everywhere.
-const MODEL = 'zen/deepseek-v4-flash-free';
+const MODEL = 'zen/big-pickle';
 // Secondary: used where deepseek's reasoning interferes (tiny-budget test) and
 // to spread load on the concurrency test.
 const TINY_MODEL = 'zen/big-pickle';

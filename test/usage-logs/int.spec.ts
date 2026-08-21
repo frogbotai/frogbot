@@ -41,7 +41,7 @@ describe('usage logs', () => {
     const usage = (requestId: string, user: number | string) => ({
       requestId,
       user,
-      model: 'zen/deepseek-v4-flash-free',
+      model: 'zen/big-pickle',
       operation: 'chat.completions',
       inputTokens: 0,
       outputTokens: 0,
@@ -88,7 +88,7 @@ describe('usage logs', () => {
       collection: 'usage-logs' as never,
       data: {
         requestId: 'internal-write',
-        model: 'zen/deepseek-v4-flash-free',
+        model: 'zen/big-pickle',
         operation: 'chat.completions',
         inputTokens: 0,
         outputTokens: 0,

@@ -6,7 +6,7 @@ import { toolDemo } from './agents/toolDemo';
 import { braveSearch, braveSearchAgent, exa, exaSearchAgent } from './agents/webSearch';
 import { Users } from './collections/users';
 
-const model = process.env.E2E_ZEN_MODEL ?? 'zen/deepseek-v4-flash-free';
+const model = process.env.E2E_ZEN_MODEL ?? 'zen/big-pickle';
 
 const config: FrogbotConfig = {
   secret: process.env.FROGBOT_SECRET ?? 'e2e-secret',
