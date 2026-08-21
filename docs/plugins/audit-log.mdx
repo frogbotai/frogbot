@@ -1,0 +1,123 @@
+---
+title: Audit log
+description: Record immutable collection create, update, and delete activity in FrogBot.
+---
+
+The audit log plugin records who changed each document, what changed, and when. Audit entries are available in the `audit-logs` collection and cannot be created, updated, or deleted through the API.
+
+## Installation
+
+```bash
+pnpm add @frogbotai/plugin-audit-log
+```
+
+## Configuration
+
+```ts
+import { auditLogPlugin } from '@frogbotai/plugin-audit-log'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  collections: [
+    {
+      slug: 'posts',
+      fields: [{ name: 'title', type: 'text' }],
+    },
+  ],
+  plugins: [auditLogPlugin()],
+})
+```
+
+By default, the plugin audits create, update, and delete operations for every configured collection. Add the plugin after plugins that inject collections when those collections also need auditing.
+
+Each entry records the collection, operation, document ID, user, API key ID when available, timestamp, and a shallow changed-fields diff. Audit failures are logged without failing the original write.
+
+## Collection selection
+
+Use an allowlist:
+
+```ts
+auditLogPlugin({ collections: ['posts', 'media'] })
+```
+
+Or exclude selected collections:
+
+```ts
+auditLogPlugin({ collections: { exclude: ['sessions'] } })
+```
+
+Use `operations` to limit recorded operations:
+
+```ts
+auditLogPlugin({ operations: ['update', 'delete'] })
+```
+
+## Read access
+
+Reading audit entries requires an authenticated user by default. Provide a FrogBot access function for stricter rules:
+
+```ts
+auditLogPlugin({
+  access: {
+    read: ({ req }) => req.user?.role === 'admin',
+  },
+})
+```
+
+Internal audit writes always override access. API create, update, and delete access remains disabled.
+
+## Optional metadata
+
+Enable request IP and user-agent capture:
+
+```ts
+auditLogPlugin({ ipAddress: true })
+```
+
+Forwarded IP headers are ignored by default because clients can spoof them. If every request reaches FrogBot through a trusted proxy that replaces `x-forwarded-for` or `x-real-ip`, explicitly enable proxy trust:
+
+```ts
+auditLogPlugin({ ipAddress: true, trustProxy: true })
+```
+
+`trustProxy` trusts the first `x-forwarded-for` value and falls back to `x-real-ip`. Do not enable it when clients can connect directly or when your proxy appends untrusted values instead of replacing the header. User-agent capture does not require proxy trust.
+
+Store full document snapshots for deletes or every operation:
+
+```ts
+auditLogPlugin({ snapshot: 'delete' })
+```
+
+The default snapshot mode is `never`.
+
+<Warning>
+  Snapshots can store secrets, personal data, uploaded-content metadata, and other sensitive document fields. Enable them only after applying appropriate audit-log read access, retention, and data-handling controls.
+</Warning>
+
+## Retention
+
+Audit entries are retained indefinitely by default. Enable scheduled pruning with a retention window:
+
+```ts
+auditLogPlugin({
+  retention: {
+    days: 365,
+    cron: '0 2 * * *',
+  },
+})
+```
+
+The cron defaults to midnight daily. FrogBot jobs must be running for scheduled pruning to execute.
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collections` | `string[] \| { include?: string[]; exclude?: string[] }` | All collections | Selects audited collections. |
+| `operations` | `('create' \| 'update' \| 'delete')[]` | All operations | Selects audited operations. |
+| `collectionSlug` | `string` | `'audit-logs'` | Sets the audit collection slug. |
+| `access.read` | `Access` | Authenticated users | Controls audit entry reads. |
+| `ipAddress` | `boolean` | `false` | Records user agent and trusted forwarded IP metadata. |
+| `trustProxy` | `boolean` | `false` | Trusts forwarded IP headers when IP capture is enabled. |
+| `snapshot` | `'never' \| 'delete' \| 'always'` | `'never'` | Controls full document snapshots. |
+| `retention` | `false \| { days: number; cron?: string }` | `false` | Schedules deletion of old entries. |

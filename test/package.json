@@ -19,6 +19,7 @@
     "@frogbotai/email-resend": "workspace:*",
     "@frogbotai/kv-redis": "workspace:*",
     "@frogbotai/plugin-api-keys": "workspace:*",
+    "@frogbotai/plugin-audit-log": "workspace:*",
     "@frogbotai/plugin-import-export": "workspace:*",
     "@frogbotai/plugin-nested-docs": "workspace:*",
     "@frogbotai/plugin-oauth": "workspace:*",

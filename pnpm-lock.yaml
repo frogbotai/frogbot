@@ -1161,6 +1161,15 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/plugins/plugin-audit-log:
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/plugins/plugin-import-export:
     dependencies:
       '@payloadcms/plugin-import-export':
@@ -1625,6 +1634,9 @@ importers:
       '@frogbotai/plugin-api-keys':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-api-keys
+      '@frogbotai/plugin-audit-log':
+        specifier: workspace:*
+        version: link:../packages/plugins/plugin-audit-log
       '@frogbotai/plugin-import-export':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-import-export
