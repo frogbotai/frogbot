@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_MODEL_CATALOG } from './catalog.data.js';
 import {
   calculateCostUSD,
   defineModelCatalog,
@@ -9,7 +10,6 @@ import {
   presetFor,
   supportsOperation,
 } from './catalog.js';
-import { DEFAULT_MODEL_CATALOG } from './catalog.data.js';
 
 // ---------------------------------------------------------------------------
 // presetFor

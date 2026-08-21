@@ -118,8 +118,9 @@ export function createPolicyHooks({
       typeof entry !== 'object' ||
       !('type' in entry) ||
       entry.type !== 'openai-compatible'
-    )
+    ) {
       continue;
+    }
     for (const model of (entry as CustomProviderEntry).models) {
       if (!model.cost) continue;
       costs.set(`${provider}/${model.id}`, {

@@ -28,8 +28,8 @@ import {
 } from '../agents/resolveScheduleTasks.js';
 import { isKnownModelId } from '../ai/catalog.js';
 import { getConfiguredModelIds } from '../ai/models.js';
-import { createPolicyFields, mergePolicyFields } from '../ai/policyFields.js';
 import { createPolicyHooks } from '../ai/policy.js';
+import { createPolicyFields, mergePolicyFields } from '../ai/policyFields.js';
 import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
 import { resolveUsageCollection } from '../ai/usageCollection.js';
 import { buildManifestEndpoint } from '../chat/manifest.js';

@@ -1,11 +1,11 @@
 import { createWriteStream } from 'node:fs';
-import { gunzip } from 'node:zlib';
 import { promisify } from 'node:util';
+import { gunzip } from 'node:zlib';
 
 import { loadConfig } from '../config/load.js';
 import { Frogbot } from '../frogbot.js';
 import type { Where } from '../types/payload.js';
-import { parseExportCapturesArgs, type ExportCapturesArgs } from './exportCapturesArgs.js';
+import { type ExportCapturesArgs, parseExportCapturesArgs } from './exportCapturesArgs.js';
 import { writeCaptureLine } from './exportCapturesStream.js';
 
 const gunzipAsync = promisify(gunzip);
@@ -20,8 +20,9 @@ function whereFor(args: ExportCapturesArgs): Where | undefined {
   if (args.user) and.push({ user: { equals: args.user } });
   if (args.apiKey) and.push({ apiKey: { equals: args.apiKey } });
   if (args.operation) and.push({ operation: { equals: args.operation } });
-  if (args.from)
+  if (args.from) {
     and.push({ requestedAt: { greater_than_equal: new Date(args.from).toISOString() } });
+  }
   if (args.to) and.push({ requestedAt: { less_than_equal: new Date(args.to).toISOString() } });
   return and.length ? ({ and } as Where) : undefined;
 }
@@ -57,10 +58,11 @@ export async function exportCaptures(args: string[]): Promise<void> {
       if (!result.hasNextPage) break;
       page = result.nextPage ?? page + 1;
     }
-    if (destination)
+    if (destination) {
       await new Promise<void>((resolve, reject) =>
         destination!.end((error?: Error) => (error ? reject(error) : resolve())),
       );
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[frogbot] ${message}`);

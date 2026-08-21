@@ -4,13 +4,13 @@ import { createAuditLogCollection } from './collection.js';
 import { createAfterChangeHook, createAfterDeleteHook } from './hooks.js';
 import type { AuditCollectionSelection, AuditLogPluginOptions, AuditOperation } from './types.js';
 
+export { computeChanges } from './diff.js';
 export type {
   AuditCollectionSelection,
   AuditLogPluginOptions,
   AuditOperation,
   AuditSnapshot,
 } from './types.js';
-export { computeChanges } from './diff.js';
 
 function userSlug(config: FrogbotConfig): string {
   const authSlugs = config.collections
@@ -34,7 +34,10 @@ export function auditLogPlugin(options: AuditLogPluginOptions = {}): Plugin {
   const operations = new Set<AuditOperation>(options.operations ?? ['create', 'update', 'delete']);
   if (!auditSlug) throw new Error('[plugin-audit-log] collectionSlug is required.');
   if (operations.size === 0) throw new Error('[plugin-audit-log] operations cannot be empty.');
-  if (options.retention && (!Number.isInteger(options.retention.days) || options.retention.days < 1)) {
+  if (
+    options.retention &&
+    (!Number.isInteger(options.retention.days) || options.retention.days < 1)
+  ) {
     throw new Error('[plugin-audit-log] retention.days must be a positive integer.');
   }
   return (config) => {

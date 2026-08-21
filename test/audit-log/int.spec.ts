@@ -29,7 +29,10 @@ describe('audit log plugin integration', () => {
       credentials,
     );
     accountId = account.body.doc.id;
-    const login = await booted.restClient.post<{ token: string }>('/api/accounts/login', credentials);
+    const login = await booted.restClient.post<{ token: string }>(
+      '/api/accounts/login',
+      credentials,
+    );
     authorization = { Authorization: `JWT ${login.body.token}` };
   });
 
@@ -68,9 +71,17 @@ describe('audit log plugin integration', () => {
     expect(created.status).toBe(201);
     const id = created.body.doc.id;
     expect(
-      (await booted.restClient.patch(`/api/posts/${id}`, { title: 'Updated', optional: null }, { headers: authorization })).status,
+      (
+        await booted.restClient.patch(
+          `/api/posts/${id}`,
+          { title: 'Updated', optional: null },
+          { headers: authorization },
+        )
+      ).status,
     ).toBe(200);
-    expect((await booted.restClient.delete(`/api/posts/${id}`, { headers: authorization })).status).toBe(200);
+    expect(
+      (await booted.restClient.delete(`/api/posts/${id}`, { headers: authorization })).status,
+    ).toBe(200);
 
     await vi.waitFor(async () => expect(await entries(id)).toHaveLength(3));
     const audit = await entries(id);
@@ -110,14 +121,29 @@ describe('audit log plugin integration', () => {
   });
 
   it('rejects API writes to audit entries', async () => {
-    const existing = (await booted.frogbot.find({
-      collection: 'audit-logs' as never,
-      overrideAccess: true,
-      limit: 1,
-    })).docs[0]!;
-    expect((await booted.restClient.post('/api/audit-logs', {}, { headers: authorization })).status).toBe(403);
-    expect((await booted.restClient.patch(`/api/audit-logs/${existing.id}`, {}, { headers: authorization })).status).toBe(403);
-    expect((await booted.restClient.delete(`/api/audit-logs/${existing.id}`, { headers: authorization })).status).toBe(403);
+    const existing = (
+      await booted.frogbot.find({
+        collection: 'audit-logs' as never,
+        overrideAccess: true,
+        limit: 1,
+      })
+    ).docs[0]!;
+    expect(
+      (await booted.restClient.post('/api/audit-logs', {}, { headers: authorization })).status,
+    ).toBe(403);
+    expect(
+      (
+        await booted.restClient.patch(
+          `/api/audit-logs/${existing.id}`,
+          {},
+          { headers: authorization },
+        )
+      ).status,
+    ).toBe(403);
+    expect(
+      (await booted.restClient.delete(`/api/audit-logs/${existing.id}`, { headers: authorization }))
+        .status,
+    ).toBe(403);
   });
 
   it('prunes expired entries through the retention task', async () => {

@@ -40,12 +40,18 @@ describe('auditLogPlugin', () => {
 
   it('supports include and exclude selection', async () => {
     const included = await apply({ collections: ['posts'] });
-    expect(included.collections.find((item) => item.slug === 'posts')?.hooks?.afterDelete).toHaveLength(1);
+    expect(
+      included.collections.find((item) => item.slug === 'posts')?.hooks?.afterDelete,
+    ).toHaveLength(1);
     expect(included.collections.find((item) => item.slug === 'notes')?.hooks).toBeUndefined();
 
     const excluded = await apply({ collections: { exclude: ['posts'] } });
-    expect(excluded.collections.find((item) => item.slug === 'posts')?.hooks?.afterChange).toHaveLength(1);
-    expect(excluded.collections.find((item) => item.slug === 'notes')?.hooks?.afterChange).toHaveLength(1);
+    expect(
+      excluded.collections.find((item) => item.slug === 'posts')?.hooks?.afterChange,
+    ).toHaveLength(1);
+    expect(
+      excluded.collections.find((item) => item.slug === 'notes')?.hooks?.afterChange,
+    ).toHaveLength(1);
   });
 
   it('supports operation and metadata options', async () => {
@@ -66,9 +72,7 @@ describe('auditLogPlugin', () => {
     const result = await apply({ retention: { days: 30, cron: '0 1 * * *' } });
     const task = result.jobs?.tasks?.at(-1);
     const remove = vi.fn().mockResolvedValue({});
-    expect(task?.schedule).toEqual([
-      { cron: '0 1 * * *', queue: 'frogbot-prune-audit-logs' },
-    ]);
+    expect(task?.schedule).toEqual([{ cron: '0 1 * * *', queue: 'frogbot-prune-audit-logs' }]);
     await task?.handler({ req: { payload: { delete: remove } } } as never);
     expect(remove).toHaveBeenCalledWith(
       expect.objectContaining({

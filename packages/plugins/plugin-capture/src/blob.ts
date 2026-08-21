@@ -1,5 +1,5 @@
-import { gunzip, gzip } from 'node:zlib';
 import { promisify } from 'node:util';
+import { gunzip, gzip } from 'node:zlib';
 
 import type { CaptureRecord } from './types.js';
 

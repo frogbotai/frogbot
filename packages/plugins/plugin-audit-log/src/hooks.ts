@@ -21,8 +21,7 @@ function writeAudit(
   req: Parameters<AfterChangeHook<Document>>[0]['req'],
 ) {
   const user = req.user as
-    | (typeof req.user & { _strategy?: string; apiKeyId?: number | string })
-    | null;
+    (typeof req.user & { _strategy?: string; apiKeyId?: number | string }) | null;
   const snapshot =
     options.snapshot === 'always' || (options.snapshot === 'delete' && operation === 'delete')
       ? doc

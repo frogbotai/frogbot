@@ -10,8 +10,8 @@ import {
   NoProvidersError,
   ProviderNotConfiguredError,
 } from '../errors/gatewayError.js';
-import { defineModelCatalog, presetFor } from './catalog.js';
 import { DEFAULT_MODEL_CATALOG } from './catalog.data.js';
+import { defineModelCatalog, presetFor } from './catalog.js';
 import {
   buildProviderRegistry,
   PROVIDER_NAMES,

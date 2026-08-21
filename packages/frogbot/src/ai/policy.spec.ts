@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createPolicyFields, mergePolicyFields } from './policyFields.js';
 import {
   backfillAIUserPolicy,
   createPolicyHooks,
@@ -8,6 +7,7 @@ import {
   isTargetAllowed,
   resolvePolicy,
 } from './policy.js';
+import { createPolicyFields, mergePolicyFields } from './policyFields.js';
 
 describe('AI user policy', () => {
   it('normalizes missing and legacy policy values', () => {

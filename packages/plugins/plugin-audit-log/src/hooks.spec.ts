@@ -11,7 +11,8 @@ async function hook(options: Parameters<typeof auditLogPlugin>[0] = {}) {
       { slug: 'posts', fields: [] },
     ],
   } as never);
-  return result.collections.find((item) => item.slug === 'posts')?.hooks?.afterChange?.[0] as AfterChangeHook;
+  return result.collections.find((item) => item.slug === 'posts')?.hooks
+    ?.afterChange?.[0] as AfterChangeHook;
 }
 
 function request(user: Record<string, unknown> | null = null) {
