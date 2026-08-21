@@ -80,8 +80,8 @@ describe('capture hooks', () => {
       user: { id: 'user-1', apiKeyId: 'key-1', capture: true },
       frogbot: {
         create,
+        logger,
       },
-      payload: { logger },
     };
     const hooks = createCaptureHooks({
       enabled: true,
@@ -147,8 +147,7 @@ describe('capture hooks', () => {
     const logger = { error: vi.fn() };
     const req = {
       user: { id: 'user-1', apiKeyId: 'key-1', capture: true },
-      frogbot: { create: vi.fn() },
-      payload: { logger },
+      frogbot: { create: vi.fn(), logger },
     };
     const hooks = createCaptureHooks({
       enabled: false,
@@ -196,8 +195,7 @@ describe('capture hooks', () => {
     const logger = { error: vi.fn() };
     const req = {
       user: { id: 'user-1', capture: true },
-      frogbot: { create },
-      payload: { logger },
+      frogbot: { create, logger },
     };
     const hooks = createCaptureHooks({
       enabled: false,

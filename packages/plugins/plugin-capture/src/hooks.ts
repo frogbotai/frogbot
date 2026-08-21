@@ -34,7 +34,7 @@ function errorValue(error: unknown): CaptureRecord['error'] {
 }
 
 function logFailure(req: FrogbotRequest | undefined, error: unknown): void {
-  req?.payload?.logger?.error({ err: error }, '[plugin-capture] capture failed');
+  req?.frogbot.logger.error({ err: error }, '[plugin-capture] capture failed');
 }
 
 async function persist(
@@ -109,11 +109,11 @@ export function createCaptureHooks(options: HookOptions): AIHooks {
       (args: AIBeforeUpstreamHookArgs) => {
         const state = args.context[stateKey] as CaptureState | undefined;
         if (!state?.enabled) return;
-        const request = {
+        const request: CaptureRecord['request'] = {
           messages: args.messages,
           system: args.system,
           tools: args.tools,
-          params: args.params,
+          params: args.params ? { ...args.params } : undefined,
         };
         if (Buffer.byteLength(JSON.stringify(request)) > options.maxBodyBytes) {
           state.enabled = false;
