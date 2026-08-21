@@ -57,7 +57,7 @@ describe('audit hooks', () => {
   });
 
   it('records API key, metadata, and snapshot options', async () => {
-    const write = request({ id: 'user-1', apiKeyId: 'key-1', _strategy: 'api-key' });
+    const write = request({ id: 'user-1', apiKeyId: 42, _strategy: 'api-key' });
     const afterChange = await hook({ ipAddress: true, snapshot: 'always', trustProxy: true });
     await afterChange({
       doc: { id: 7, title: 'Created' },
@@ -67,7 +67,7 @@ describe('audit hooks', () => {
     } as never);
     expect(write.create.mock.calls[0][0].data).toEqual(
       expect.objectContaining({
-        apiKeyId: 'key-1',
+        apiKeyId: '42',
         ip: '192.0.2.10',
         userAgent: 'audit-test',
         snapshot: { id: 7, title: 'Created' },

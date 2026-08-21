@@ -35,7 +35,10 @@ function writeAudit(
         operation,
         documentId: String(doc.id),
         user: user?.id,
-        apiKeyId: user?._strategy === 'api-key' ? user.apiKeyId : undefined,
+        apiKeyId:
+          user?._strategy === 'api-key' && user.apiKeyId !== undefined
+            ? String(user.apiKeyId)
+            : undefined,
         changes: operation === 'delete' ? {} : computeChanges(previousDoc, doc),
         snapshot,
         timestamp: new Date().toISOString(),

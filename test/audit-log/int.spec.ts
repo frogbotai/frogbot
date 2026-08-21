@@ -54,7 +54,7 @@ describe('audit log plugin integration', () => {
       overrideAccess: true,
       depth: 0,
       limit: 20,
-      sort: 'timestamp',
+      sort: '-timestamp',
     });
     return result.docs as unknown as AuditEntry[];
   }
