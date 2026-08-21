@@ -26,7 +26,7 @@ export const BEDROCK_CANONICAL_IDS: Record<string, BedrockCanonicalId> = {
   'nova-micro': 'amazon.nova-micro-v1:0',
 
   // Meta Llama
-  'llama-3.3-70b': 'meta.llama3-3-70b-instruct-v1:0',
+  'llama-3.3-70b': 'us.meta.llama3-3-70b-instruct-v1:0',
   'llama-3.2-90b': 'meta.llama3-2-90b-instruct-v1:0',
   'llama-3.2-11b': 'meta.llama3-2-11b-instruct-v1:0',
   'llama-3.2-3b': 'meta.llama3-2-3b-instruct-v1:0',

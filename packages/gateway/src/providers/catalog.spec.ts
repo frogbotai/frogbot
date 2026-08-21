@@ -9,6 +9,7 @@ import {
   presetFor,
   supportsOperation,
 } from './catalog.js';
+import { DEFAULT_MODEL_CATALOG } from './catalog.data.js';
 
 // ---------------------------------------------------------------------------
 // presetFor
@@ -113,6 +114,24 @@ describe('defineModelCatalog', () => {
 
   it('throws on duplicate IDs', () => {
     expect(() => defineModelCatalog(entry1, entry1)).toThrow(/Duplicate model catalog entry/);
+  });
+});
+
+describe('default catalog Bedrock inference profiles', () => {
+  const profiles = [
+    'amazon-bedrock/global.amazon.nova-2-lite-v1:0',
+    'amazon-bedrock/us.meta.llama3-1-8b-instruct-v1:0',
+    'amazon-bedrock/us.meta.llama3-3-70b-instruct-v1:0',
+  ];
+  const bareIds = [
+    'amazon-bedrock/amazon.nova-2-lite-v1:0',
+    'amazon-bedrock/meta.llama3-1-8b-instruct-v1:0',
+    'amazon-bedrock/meta.llama3-3-70b-instruct-v1:0',
+  ];
+
+  it('includes invocable profile IDs and excludes broken bare IDs', () => {
+    for (const id of profiles) expect(DEFAULT_MODEL_CATALOG.has(id)).toBe(true);
+    for (const id of bareIds) expect(DEFAULT_MODEL_CATALOG.has(id)).toBe(false);
   });
 });
 

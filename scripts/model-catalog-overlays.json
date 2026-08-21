@@ -1,35 +1,89 @@
-[
-  {
-    "id": "voyage/voyage-3",
-    "provider": "voyage",
-    "mode": "embedding",
-    "name": "Voyage 3",
-    "modalities": { "input": ["text"], "output": ["embedding"] },
-    "operations": ["embeddings"],
-    "capabilities": {},
-    "context": { "input": 32000, "output": 1024 },
-    "providers": ["voyage"]
+{
+  "amazon-bedrock": {
+    "add": [
+      {
+        "id": "amazon-bedrock/global.amazon.nova-2-lite-v1:0",
+        "mode": "chat",
+        "name": "Nova 2 Lite",
+        "created": "2024-12-01",
+        "modalities": { "input": ["text", "image", "video"], "output": ["text"] },
+        "operations": ["chat.completions"],
+        "capabilities": {
+          "toolCalling": true,
+          "reasoning": true,
+          "vision": true,
+          "streaming": true
+        },
+        "context": { "input": 128000, "output": 4096 },
+        "cost": { "input": 0.33, "output": 2.75 },
+        "providers": ["amazon-bedrock"]
+      },
+      {
+        "id": "amazon-bedrock/us.meta.llama3-1-8b-instruct-v1:0",
+        "mode": "chat",
+        "name": "Llama 3.1 8B Instruct",
+        "created": "2024-07-23",
+        "knowledge": "2023-12",
+        "modalities": { "input": ["text"], "output": ["text"] },
+        "operations": ["chat.completions"],
+        "capabilities": { "toolCalling": true, "streaming": true },
+        "context": { "input": 128000, "output": 4096 },
+        "cost": { "input": 0.22, "output": 0.22 },
+        "providers": ["amazon-bedrock"]
+      },
+      {
+        "id": "amazon-bedrock/us.meta.llama3-3-70b-instruct-v1:0",
+        "mode": "chat",
+        "name": "Llama 3.3 70B Instruct",
+        "created": "2024-12-06",
+        "knowledge": "2023-12",
+        "modalities": { "input": ["text"], "output": ["text"] },
+        "operations": ["chat.completions"],
+        "capabilities": { "toolCalling": true, "streaming": true },
+        "context": { "input": 128000, "output": 4096 },
+        "cost": { "input": 0.72, "output": 0.72 },
+        "providers": ["amazon-bedrock"]
+      }
+    ],
+    "exclude": [
+      "amazon.nova-2-lite-v1:0",
+      "meta.llama3-1-8b-instruct-v1:0",
+      "meta.llama3-3-70b-instruct-v1:0"
+    ]
   },
-  {
-    "id": "voyage/voyage-3-lite",
-    "provider": "voyage",
-    "mode": "embedding",
-    "name": "Voyage 3 Lite",
-    "modalities": { "input": ["text"], "output": ["embedding"] },
-    "operations": ["embeddings"],
-    "capabilities": {},
-    "context": { "input": 32000, "output": 1024 },
-    "providers": ["voyage"]
-  },
-  {
-    "id": "voyage/voyage-code-3",
-    "provider": "voyage",
-    "mode": "embedding",
-    "name": "Voyage Code 3",
-    "modalities": { "input": ["text"], "output": ["embedding"] },
-    "operations": ["embeddings"],
-    "capabilities": {},
-    "context": { "input": 32000, "output": 1024 },
-    "providers": ["voyage"]
+  "voyage": {
+    "add": [
+      {
+        "id": "voyage/voyage-3",
+        "mode": "embedding",
+        "name": "Voyage 3",
+        "modalities": { "input": ["text"], "output": ["embedding"] },
+        "operations": ["embeddings"],
+        "capabilities": {},
+        "context": { "input": 32000, "output": 1024 },
+        "providers": ["voyage"]
+      },
+      {
+        "id": "voyage/voyage-3-lite",
+        "mode": "embedding",
+        "name": "Voyage 3 Lite",
+        "modalities": { "input": ["text"], "output": ["embedding"] },
+        "operations": ["embeddings"],
+        "capabilities": {},
+        "context": { "input": 32000, "output": 1024 },
+        "providers": ["voyage"]
+      },
+      {
+        "id": "voyage/voyage-code-3",
+        "mode": "embedding",
+        "name": "Voyage Code 3",
+        "modalities": { "input": ["text"], "output": ["embedding"] },
+        "operations": ["embeddings"],
+        "capabilities": {},
+        "context": { "input": 32000, "output": 1024 },
+        "providers": ["voyage"]
+      }
+    ],
+    "exclude": []
   }
-]
+}

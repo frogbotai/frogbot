@@ -31,6 +31,15 @@ Each ships its own credential shape (`apiKey`, `region`, `accessKeyId`, ...) and
 
 Built-in providers route only models in the catalog. Config also accepts an optional `models` allowlist of unprefixed catalog IDs to narrow that set. The list is enforced after alias canonicalization across HTTP routes and in-process model resolvers. See [Restrict built-in models](/gateway/configuration#restrict-built-in-models).
 
+<Warning>
+  Bedrock inference profiles replace the non-invocable bare IDs for Nova 2 Lite,
+  Llama 3.1 8B, and Llama 3.3 70B. Replace
+  `amazon.nova-2-lite-v1:0` with `global.amazon.nova-2-lite-v1:0`,
+  `meta.llama3-1-8b-instruct-v1:0` with `us.meta.llama3-1-8b-instruct-v1:0`,
+  and `meta.llama3-3-70b-instruct-v1:0` with
+  `us.meta.llama3-3-70b-instruct-v1:0` in model allowlists and requests.
+</Warning>
+
 ---
 
 ## Bedrock prompt caching

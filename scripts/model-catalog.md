@@ -12,10 +12,11 @@ artifacts together:
 - `packages/gateway/src/providers/catalog.data.ts`
 
 `scripts/sync-catalog.mjs` contains the pinned field transformations and provider
-aliases. Models marked `deprecated` by models.dev are excluded. Voyage models,
-which models.dev does not currently provide, are reviewed in
-`scripts/model-catalog-overlays.json`. Replicate is reserved as an overlay-only
-provider but has no catalog entries until reviewed metadata is available.
+aliases. Models marked `deprecated` by models.dev are excluded. The provider-keyed
+`add` and `exclude` corrections in `scripts/model-catalog-overlays.json` supplement
+or remove reviewed source entries. Voyage uses this mechanism because models.dev
+does not currently provide it. Replicate is reserved as an overlay-only provider
+but has no catalog entries until reviewed metadata is available.
 
 The generated files are sorted by model ID. A second `pnpm sync:catalog` against
 the same source data must leave the worktree unchanged.

@@ -15,7 +15,6 @@ export type ProviderSlug =
   | 'xai';
 
 export type AmazonBedrockModelId =
-  | 'amazon-bedrock/amazon.nova-2-lite-v1:0'
   | 'amazon-bedrock/amazon.nova-lite-v1:0'
   | 'amazon-bedrock/amazon.nova-micro-v1:0'
   | 'amazon-bedrock/amazon.nova-pro-v1:0'
@@ -49,6 +48,7 @@ export type AmazonBedrockModelId =
   | 'amazon-bedrock/eu.anthropic.claude-sonnet-4-5-20250929-v1:0'
   | 'amazon-bedrock/eu.anthropic.claude-sonnet-4-6'
   | 'amazon-bedrock/eu.anthropic.claude-sonnet-5'
+  | 'amazon-bedrock/global.amazon.nova-2-lite-v1:0'
   | 'amazon-bedrock/global.anthropic.claude-fable-5'
   | 'amazon-bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0'
   | 'amazon-bedrock/global.anthropic.claude-opus-4-5-20251101-v1:0'
@@ -70,8 +70,6 @@ export type AmazonBedrockModelId =
   | 'amazon-bedrock/jp.anthropic.claude-sonnet-4-6'
   | 'amazon-bedrock/jp.anthropic.claude-sonnet-5'
   | 'amazon-bedrock/meta.llama3-1-70b-instruct-v1:0'
-  | 'amazon-bedrock/meta.llama3-1-8b-instruct-v1:0'
-  | 'amazon-bedrock/meta.llama3-3-70b-instruct-v1:0'
   | 'amazon-bedrock/meta.llama4-maverick-17b-instruct-v1:0'
   | 'amazon-bedrock/meta.llama4-scout-17b-instruct-v1:0'
   | 'amazon-bedrock/minimax.minimax-m2'
@@ -121,6 +119,8 @@ export type AmazonBedrockModelId =
   | 'amazon-bedrock/us.anthropic.claude-sonnet-4-6'
   | 'amazon-bedrock/us.anthropic.claude-sonnet-5'
   | 'amazon-bedrock/us.deepseek.r1-v1:0'
+  | 'amazon-bedrock/us.meta.llama3-1-8b-instruct-v1:0'
+  | 'amazon-bedrock/us.meta.llama3-3-70b-instruct-v1:0'
   | 'amazon-bedrock/us.meta.llama4-maverick-17b-instruct-v1:0'
   | 'amazon-bedrock/us.meta.llama4-scout-17b-instruct-v1:0'
   | 'amazon-bedrock/writer.palmyra-x4-v1:0'

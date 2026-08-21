@@ -24,6 +24,7 @@ const PROVIDERS = {
   togetherai: 'togetherai',
   xai: 'xai',
 };
+const SYNCED_PROVIDERS = new Set(Object.values(PROVIDERS));
 const OVERLAY_PROVIDERS = new Set(['replicate', 'voyage']);
 
 const MODALITIES = new Set(['text', 'image', 'audio', 'video', 'embedding']);
@@ -99,22 +100,31 @@ function mapModel({ model, provider }) {
 }
 
 export function buildCatalogs({ overlays, source }) {
-  const gateway = [];
+  const entries = new Map();
+  const excluded = new Set(
+    Object.entries(overlays).flatMap(([provider, correction]) =>
+      correction.exclude.map((modelId) => `${provider}/${modelId}`),
+    ),
+  );
   for (const [sourceProvider, provider] of Object.entries(PROVIDERS)) {
     const models = source[sourceProvider]?.models ?? {};
     for (const model of Object.values(models)) {
       if (model.status !== 'deprecated') {
-        gateway.push(mapModel({ model, provider }));
+        const entry = mapModel({ model, provider });
+        if (!excluded.has(entry.id)) entries.set(entry.id, entry);
       }
     }
   }
-  for (const overlay of overlays) {
-    if (!OVERLAY_PROVIDERS.has(overlay.provider)) {
-      throw new Error(`Unexpected model catalog overlay provider: ${overlay.provider}`);
+  for (const [provider, correction] of Object.entries(overlays)) {
+    if (!SYNCED_PROVIDERS.has(provider) && !OVERLAY_PROVIDERS.has(provider)) {
+      throw new Error(`Unexpected model catalog overlay provider: ${provider}`);
     }
-    const { mode: _mode, provider: _provider, ...entry } = overlay;
-    gateway.push(entry);
+    for (const overlay of correction.add) {
+      const { mode: _mode, ...entry } = overlay;
+      entries.set(entry.id, entry);
+    }
   }
+  const gateway = [...entries.values()];
   gateway.sort((a, b) => a.id.localeCompare(b.id));
   const catalog = gateway
     .map((entry) => ({

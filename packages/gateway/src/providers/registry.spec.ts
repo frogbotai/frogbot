@@ -11,6 +11,7 @@ import {
   ProviderNotConfiguredError,
 } from '../errors/gatewayError.js';
 import { defineModelCatalog, presetFor } from './catalog.js';
+import { DEFAULT_MODEL_CATALOG } from './catalog.data.js';
 import {
   buildProviderRegistry,
   PROVIDER_NAMES,
@@ -195,6 +196,31 @@ describe('resolveProvider', () => {
         operation: 'chat.completions',
         providers: registry,
         models: catalog,
+      }),
+    ).toThrow(ModelNotFoundError);
+  });
+
+  it('routes Bedrock inference profiles and rejects excluded bare IDs', () => {
+    const bedrockProvider = new MockProviderV4();
+    const bedrockRegistry = {
+      'amazon-bedrock': bedrockProvider,
+    } as unknown as ProviderRegistry;
+    const profileId = 'amazon-bedrock/us.meta.llama3-3-70b-instruct-v1:0';
+
+    expect(
+      resolveProvider({
+        modelId: profileId,
+        operation: 'chat.completions',
+        providers: bedrockRegistry,
+        models: DEFAULT_MODEL_CATALOG,
+      }).modelName,
+    ).toBe('us.meta.llama3-3-70b-instruct-v1:0');
+    expect(() =>
+      resolveProvider({
+        modelId: 'amazon-bedrock/meta.llama3-3-70b-instruct-v1:0',
+        operation: 'chat.completions',
+        providers: bedrockRegistry,
+        models: DEFAULT_MODEL_CATALOG,
       }),
     ).toThrow(ModelNotFoundError);
   });

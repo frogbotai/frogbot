@@ -1,6 +1,6 @@
 [
   {
-    "id": "amazon-bedrock/amazon.nova-2-lite-v1:0",
+    "id": "amazon-bedrock/global.amazon.nova-2-lite-v1:0",
     "provider": "amazon-bedrock",
     "mode": "chat"
   },
@@ -275,12 +275,12 @@
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/meta.llama3-1-8b-instruct-v1:0",
+    "id": "amazon-bedrock/us.meta.llama3-1-8b-instruct-v1:0",
     "provider": "amazon-bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/meta.llama3-3-70b-instruct-v1:0",
+    "id": "amazon-bedrock/us.meta.llama3-3-70b-instruct-v1:0",
     "provider": "amazon-bedrock",
     "mode": "chat"
   },

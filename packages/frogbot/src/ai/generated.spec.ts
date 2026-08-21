@@ -18,4 +18,28 @@ describe('generated AI model types', () => {
     expect(ids).toContain('anthropic/claude-opus-4-8');
     expect(ids).not.toContain('anthropic/claude-3-5-sonnet-20241022');
   });
+
+  it('contains invocable Bedrock profiles without broken bare IDs', async () => {
+    const generated = await readFile(new URL('./generated.ts', import.meta.url), 'utf8');
+    const profiles = [
+      'amazon-bedrock/global.amazon.nova-2-lite-v1:0',
+      'amazon-bedrock/us.meta.llama3-1-8b-instruct-v1:0',
+      'amazon-bedrock/us.meta.llama3-3-70b-instruct-v1:0',
+    ];
+    const bareIds = [
+      'amazon-bedrock/amazon.nova-2-lite-v1:0',
+      'amazon-bedrock/meta.llama3-1-8b-instruct-v1:0',
+      'amazon-bedrock/meta.llama3-3-70b-instruct-v1:0',
+    ];
+    const ids = catalog.map(({ id }) => id);
+
+    for (const id of profiles) {
+      expect(ids).toContain(id);
+      expect(generated).toContain(`'${id}'`);
+    }
+    for (const id of bareIds) {
+      expect(ids).not.toContain(id);
+      expect(generated).not.toContain(`'${id}'`);
+    }
+  });
 });

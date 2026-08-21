@@ -22,7 +22,7 @@ describe('resolveBedrockModelId', () => {
   });
 
   it('maps Llama model shorthands', () => {
-    expect(resolveBedrockModelId('llama-3.3-70b')).toBe('meta.llama3-3-70b-instruct-v1:0');
+    expect(resolveBedrockModelId('llama-3.3-70b')).toBe('us.meta.llama3-3-70b-instruct-v1:0');
     expect(resolveBedrockModelId('llama-3.2-3b')).toBe('meta.llama3-2-3b-instruct-v1:0');
   });
 

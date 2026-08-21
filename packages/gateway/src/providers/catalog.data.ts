@@ -3,7 +3,7 @@ import { defineModelCatalog, type ModelCatalog, presetFor } from './catalog.js';
 const model = presetFor<string>();
 
 export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
-  model('amazon-bedrock/amazon.nova-2-lite-v1:0', {
+  model('amazon-bedrock/global.amazon.nova-2-lite-v1:0', {
     name: 'Nova 2 Lite',
     created: '2024-12-01',
     modalities: {
@@ -1532,7 +1532,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['amazon-bedrock'],
   }),
-  model('amazon-bedrock/meta.llama3-1-8b-instruct-v1:0', {
+  model('amazon-bedrock/us.meta.llama3-1-8b-instruct-v1:0', {
     name: 'Llama 3.1 8B Instruct',
     created: '2024-07-23',
     knowledge: '2023-12',
@@ -1555,7 +1555,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['amazon-bedrock'],
   }),
-  model('amazon-bedrock/meta.llama3-3-70b-instruct-v1:0', {
+  model('amazon-bedrock/us.meta.llama3-3-70b-instruct-v1:0', {
     name: 'Llama 3.3 70B Instruct',
     created: '2024-12-06',
     knowledge: '2023-12',
