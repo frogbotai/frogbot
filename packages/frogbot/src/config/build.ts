@@ -50,15 +50,22 @@ function validatePluginMarkers(config: FrogbotConfig): FrogbotConfig {
   ) {
     return config;
   }
-  const onInit = config.onInit;
+  const onInit =
+    config.onInit === undefined
+      ? []
+      : Array.isArray(config.onInit)
+        ? config.onInit
+        : [config.onInit];
   return {
     ...config,
-    onInit: async (frogbot) => {
-      await onInit?.(frogbot);
-      frogbot.logger.warn(
-        '[plugin-roles] No auth-enabled collection is configured; role assignments are unavailable.',
-      );
-    },
+    onInit: [
+      ...onInit,
+      (frogbot) => {
+        frogbot.logger.warn(
+          '[plugin-roles] No auth-enabled collection is configured; role assignments are unavailable.',
+        );
+      },
+    ],
   };
 }
 

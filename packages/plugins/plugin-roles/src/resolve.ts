@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { Frogbot, FrogbotRequest } from 'frogbot';
 
 import type { RoleResolver, RoleSlug } from './types.js';
 
@@ -20,7 +20,7 @@ export const defaultRoleResolver: RoleResolver = (req) => {
     : [];
 };
 
-export function attachRoleResolver(frogbot: object, resolver: RoleResolver): void {
+export function attachRoleResolver(frogbot: Frogbot, resolver: RoleResolver): void {
   Object.defineProperty(frogbot, configuredResolver, { configurable: true, value: resolver });
 }
 

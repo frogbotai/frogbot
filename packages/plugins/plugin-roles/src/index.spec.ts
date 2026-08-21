@@ -151,7 +151,9 @@ describe('predicates and resolution', () => {
       find: vi.fn().mockResolvedValue({ docs: [], hasNextPage: false }),
       logger: { warn: vi.fn() },
     };
-    await result.onInit!(frogbot as never);
+    for (const onInit of Array.isArray(result.onInit) ? result.onInit : [result.onInit!]) {
+      await onInit(frogbot as never);
+    }
     const request = { ...req([]), frogbot } as unknown as FrogbotRequest;
     expect(hasRole(request, 'finance')).toBe(true);
     expect(rolesOf(request)).toEqual(['finance']);

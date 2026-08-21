@@ -7,6 +7,7 @@
 // Users import this from `'frogbot'` and never see the underlying Payload
 // type name or import path.
 
+import type { Frogbot } from '../frogbot.js';
 import type { RootAdminConfig } from './admin.js';
 import type { AgentConfig } from './agent.js';
 import type { AIConfig } from './ai.js';
@@ -39,7 +40,17 @@ export type RolesPrewiring = {
 /** Root config keys FrogBot overrides or forbids. Excluded from the
  *  Payload pass-through so FrogBot can declare its own shape for them. */
 type FrogbotOverridden =
-  'admin' | 'collections' | 'db' | 'endpoints' | 'globals' | 'hooks' | 'plugins' | 'secret';
+  | 'admin'
+  | 'collections'
+  | 'db'
+  | 'endpoints'
+  | 'globals'
+  | 'hooks'
+  | 'onInit'
+  | 'plugins'
+  | 'secret';
+
+export type OnInit = (frogbot: Frogbot) => Promise<void> | void;
 
 export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   /** Server-side secret used for tokens, cookies, and signing. */
@@ -61,6 +72,7 @@ export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   /** Root-level custom endpoints. Handler receives FrogbotRequest. */
   endpoints?: Endpoint[];
   hooks?: RootHooks;
+  onInit?: OnInit | OnInit[];
   /** AI configuration — providers, routers, hooks, and access control. */
   ai?: AIConfig;
   _roles?: RolesPrewiring;

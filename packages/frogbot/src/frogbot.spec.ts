@@ -269,11 +269,15 @@ describe('Frogbot class', () => {
       expect(onInit).toHaveBeenCalledWith(frogbot);
     });
 
-    it('does not call onInit when disableOnInit is true', async () => {
-      const onInit = vi.fn();
+    it('does not call any onInit callback when disableOnInit is true', async () => {
+      const optionOnInit = vi.fn();
+      const configOnInit = vi.fn();
+      const config = makeConfig();
+      config.onInit = configOnInit;
       const frogbot = new Frogbot();
-      await frogbot.init({ config: makeConfig(), onInit, disableOnInit: true });
-      expect(onInit).not.toHaveBeenCalled();
+      await frogbot.init({ config, onInit: optionOnInit, disableOnInit: true });
+      expect(optionOnInit).not.toHaveBeenCalled();
+      expect(configOnInit).not.toHaveBeenCalled();
     });
   });
 

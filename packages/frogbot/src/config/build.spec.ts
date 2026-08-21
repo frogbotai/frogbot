@@ -179,6 +179,46 @@ describe('frogbot buildConfig', () => {
   });
 
   describe('sanitization passthrough', () => {
+    it('runs onInit arrays sequentially and shares the Frogbot instance', async () => {
+      const order: number[] = [];
+      const config = makeConfig({
+        onInit: [
+          (frogbot) => {
+            order.push(1);
+            (frogbot as FrogbotWithState).state = 'ready';
+          },
+          (frogbot) => {
+            expect((frogbot as FrogbotWithState).state).toBe('ready');
+            order.push(2);
+          },
+        ],
+      });
+      const result = await buildConfig(config);
+      await result.onInit?.({} as never);
+      expect(order).toEqual([1, 2]);
+    });
+
+    it('stops an onInit array at the first failure and propagates it', async () => {
+      const later = vi.fn();
+      const result = await buildConfig(
+        makeConfig({
+          onInit: [
+            () => {
+              throw new Error('init failed');
+            },
+            later,
+          ],
+        }),
+      );
+      await expect(result.onInit?.({} as never)).rejects.toThrow('init failed');
+      expect(later).not.toHaveBeenCalled();
+    });
+
+    it('accepts an empty onInit array as a no-op', async () => {
+      const result = await buildConfig(makeConfig({ onInit: [] }));
+      expect(result.onInit).toBeUndefined();
+    });
+
     it('builds a minimal valid config and returns a FrogbotSanitizedConfig', async () => {
       const config = makeConfig();
       const result = await buildConfig(config);
@@ -243,6 +283,26 @@ describe('frogbot buildConfig', () => {
     });
   });
 
+  describe('plugin marker validation', () => {
+    it.each([
+      ['single', vi.fn()],
+      ['array', [vi.fn()]],
+    ])('preserves %s app onInit and appends the warning last', async (_name, appOnInit) => {
+      const calls: string[] = [];
+      const callbacks = Array.isArray(appOnInit) ? appOnInit : [appOnInit];
+      callbacks[0]!.mockImplementation(() => calls.push('app'));
+      const result = await buildConfig(
+        makeConfig({
+          collections: [{ slug: 'posts', fields: [] }],
+          _roles: { configured: true },
+          onInit: appOnInit,
+        }),
+      );
+      await result.onInit?.({ logger: { warn: () => calls.push('warning') } } as never);
+      expect(calls).toEqual(['app', 'warning']);
+    });
+  });
+
   describe('edge cases', () => {
     it('works with zero plugins', async () => {
       const config = makeConfig({ plugins: [] });
@@ -268,3 +328,5 @@ describe('frogbot buildConfig', () => {
     });
   });
 });
+
+type FrogbotWithState = { state?: string };

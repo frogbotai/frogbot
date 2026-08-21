@@ -44,6 +44,7 @@ export default buildConfig({
 | `ai` | No | Configures providers, aliases, access, hooks, and telemetry |
 | `agents` | No | Registers an array of code-defined agent configs |
 | `plugins` | No | Transforms the config serially before sanitization |
+| `onInit` | No | Runs one callback or an ordered array after initialization |
 | `admin` | No | Sets `user`, `meta`, or `theme` for the root admin surface |
 | `endpoints` | No | Registers root handlers that receive `FrogbotRequest` |
 
@@ -199,6 +200,37 @@ export default buildConfig({
 ```
 
 A plugin failure stops the build and reports its array index.
+
+Plugins that need initialization should append a callback instead of wrapping an existing one.
+
+```ts
+const addWarmup: Plugin = config => ({
+  ...config,
+  onInit: [
+    ...(config.onInit === undefined
+      ? []
+      : Array.isArray(config.onInit)
+        ? config.onInit
+        : [config.onInit]),
+    async frogbot => {
+      await warmCache(frogbot)
+    }
+  ]
+})
+```
+
+---
+
+## Run initialization steps
+
+Pass one callback or an array to `onInit`. Array callbacks are awaited sequentially in declared order, and each receives the initialized `Frogbot` instance. If a callback throws or rejects, startup fails immediately and later callbacks do not run. An empty array is a no-op.
+
+```ts
+export default buildConfig({
+  // required options omitted
+  onInit: [runMigrations, seedDefaults, warmCache]
+})
+```
 
 ---
 

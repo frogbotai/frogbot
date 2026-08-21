@@ -310,15 +310,16 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
           },
     );
 
-    const previousOnInit = config.onInit;
-    const onInit: FrogbotConfig['onInit'] = async (frogbot) => {
-      await previousOnInit?.(frogbot);
-      attachRoleResolver(frogbot, resolver);
-    };
+    const onInit =
+      config.onInit === undefined
+        ? []
+        : Array.isArray(config.onInit)
+          ? config.onInit
+          : [config.onInit];
     const result = {
       ...config,
       collections,
-      onInit,
+      onInit: [...onInit, (frogbot) => attachRoleResolver(frogbot, resolver)],
       _roles: prewiring,
     } as FrogbotConfig;
     validateCompiledAccess(result, roleSlugs);

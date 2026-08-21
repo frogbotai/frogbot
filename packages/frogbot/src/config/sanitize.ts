@@ -52,7 +52,7 @@ import type { AgentConfig } from '../types/agent.js';
 import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../types/ai.js';
 import type { CollectionConfig } from '../types/collection.js';
 import { COLLECTION_MARKERS } from '../types/collection.js';
-import type { FrogbotConfig } from '../types/config.js';
+import type { FrogbotConfig, OnInit } from '../types/config.js';
 import type { Endpoint } from '../types/endpoint.js';
 import type { Piece, SanitizedPiecesConfig } from '../types/piece.js';
 import type { FrogbotRequest } from '../types/request.js';
@@ -850,6 +850,14 @@ function buildPayloadConfig(
   return out as unknown as PayloadConfig;
 }
 
+function normalizeOnInit(onInit: OnInit | OnInit[] | undefined): OnInit | undefined {
+  if (!Array.isArray(onInit)) return onInit;
+  if (onInit.length === 0) return undefined;
+  return async (frogbot) => {
+    for (const callback of onInit) await callback(frogbot);
+  };
+}
+
 export function sanitize(
   config: FrogbotConfig,
   { mode = getValidationMode() }: { mode?: ValidationMode } = {},
@@ -1017,7 +1025,7 @@ export function sanitize(
     collections: collectionsMeta,
     secret: config.secret,
     port: (config as any).port, // eslint-disable-line @typescript-eslint/no-explicit-any
-    onInit: (config as any).onInit, // eslint-disable-line @typescript-eslint/no-explicit-any
+    onInit: normalizeOnInit(config.onInit),
     ai: sanitizedAI && { ...sanitizedAI, usage: { slug: usageSlug } },
     agents,
     chat,
