@@ -10,6 +10,7 @@ import type { SanitizedAIConfig, StreamTextOpts } from '../../types/ai.js';
 import type { FrogbotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
+import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
 
 export type StreamTextDeps = {
@@ -38,6 +39,7 @@ export async function streamTextOperation(
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
   // 1. Resolve model (router slug → model ID).
+  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogbotRequest, target: input });
   const modelId = resolveModel(input, config);
 
   // 2. Access control.

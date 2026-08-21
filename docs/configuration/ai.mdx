@@ -5,6 +5,36 @@ description: "Configure providers, inference, access, hooks, and HTTP routes."
 keywords: ["AI", "providers", "models", "routers", "hooks", "gateway"]
 ---
 
+## User model and budget policy
+
+When AI is configured, FrogBot adds policy fields to the auth collection. `modelAccess` defaults to `all`, which includes models and routers configured later. `selected` requires at least one exact target in `models`. Granting a router permits that router slug, not direct calls to the model behind it.
+
+`monthlyBudget` is an optional USD limit. Completed billable usage increments `spendThisPeriodUSD`, including configured custom-provider prices. Requests stop when spend reaches the limit, and FrogBot resets spend at midnight UTC on the first day of each month. Counter updates are serialized within one process; deployments with multiple writers should use database-level serialization if exact concurrent accounting is required.
+
+### Customizing the fields
+
+Policy fields have no default access restrictions. Define a same-name field on your auth collection to override labels, admin settings, defaults, or access while FrogBot supplies omitted policy behavior.
+
+Leave the fields out for fully open field access.
+
+Block updates with your own check:
+
+```ts
+{ name: 'monthlyBudget', type: 'number', access: {
+  update: ({ req }) => req.user?.isAdmin === true,
+} }
+```
+
+Compose access from the roles plugin:
+
+```ts
+{ name: 'monthlyBudget', type: 'number', access: {
+  update: allow('admin'),
+} }
+```
+
+`spendThisPeriodUSD` is update-locked and read-only by default because FrogBot maintains it. A same-name override can replace that access or admin setting when needed.
+
 The `ai` block creates an embedded `@frogbotai/gateway` instance when FrogBot starts. Local operations use AI SDK v7 against that in-process gateway, so no separate proxy service is required.
 
 ---

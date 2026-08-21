@@ -71,6 +71,41 @@ describe('frogbot sanitize', () => {
     ]);
   });
 
+  it('adds policy fields to the injected default users collection', async () => {
+    const result = sanitize(
+      makeConfig({
+        collections: [{ slug: 'posts', fields: [] }],
+        ai: { providers: { openai: { apiKey: 'test' } } },
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const users = payloadConfig.collections?.find(({ slug }) => slug === 'users');
+    expect(users?.fields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'modelAccess', defaultValue: 'all' }),
+        expect.objectContaining({ name: 'models', hasMany: true }),
+        expect.objectContaining({ name: 'monthlyBudget', min: 0 }),
+        expect.objectContaining({ name: 'spendThisPeriodUSD', defaultValue: 0 }),
+      ]),
+    );
+  });
+
+  it('registers a monthly reset that updates the resolved auth collection', async () => {
+    const result = sanitize(makeConfig({ ai: { providers: { openai: { apiKey: 'test' } } } }));
+    const payloadConfig = await result._internal.payloadConfig;
+    const task = payloadConfig.jobs?.tasks?.find(({ slug }) => slug === 'frogbot-reset-ai-budgets');
+    const update = vi.fn();
+    await task?.handler({ req: { payload: { update } } } as never);
+    expect(task?.schedule).toEqual([{ cron: '0 0 1 * *', queue: 'frogbot-reset-ai-budgets' }]);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'users',
+        data: { spendThisPeriodUSD: 0 },
+        overrideAccess: true,
+      }),
+    );
+  });
+
   it('preserves the secret in the sanitized config', () => {
     const config = makeConfig();
     const result = sanitize(config);
@@ -1243,6 +1278,7 @@ describe('frogbot sanitize', () => {
       const payloadConfig = await result._internal.payloadConfig;
       expect(payloadConfig.jobs.tasks.map(({ slug }) => slug)).toEqual([
         'user-task',
+        'frogbot-reset-ai-budgets',
         'frogbot-run-agent-schedule',
       ]);
       expect(payloadConfig.jobs.autoRun).toEqual([

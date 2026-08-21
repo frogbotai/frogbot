@@ -1,4 +1,5 @@
 import { AIAccessError, enforceAIAccess } from '../ai/access.js';
+import { enforcePolicy } from '../ai/policy.js';
 import type { Frogbot } from '../frogbot.js';
 import type { AIMethod } from '../types/ai.js';
 
@@ -24,6 +25,16 @@ function methodForPath(pathname: string): AIMethod | undefined {
   if (/\/embeddings$/.test(pathname)) return 'embed';
   if (/\/audio\/transcriptions$/.test(pathname)) return 'transcribe';
   if (/\/rerank$/.test(pathname)) return 'rerank';
+}
+
+async function readRequestedModel(request: Request): Promise<string | undefined> {
+  const contentType = request.headers.get('content-type') ?? '';
+  if (contentType.startsWith('multipart/form-data')) {
+    const model = (await request.clone().formData()).get('model');
+    return typeof model === 'string' ? model : undefined;
+  }
+  const body = (await request.clone().json()) as { model?: unknown };
+  return typeof body?.model === 'string' ? body.model : undefined;
 }
 
 export async function handleGatewayRequest({
@@ -52,10 +63,23 @@ export async function handleGatewayRequest({
   if (method) {
     try {
       await enforceAIAccess({ req, method, input: '', config: ai });
+      const model = await readRequestedModel(request);
+      if (model) enforcePolicy({ req, target: model });
     } catch (error) {
       if (error instanceof AIAccessError) {
         return Response.json(
           { error: { message: error.message, type: 'permission_error' } },
+          { status: error.status },
+        );
+      }
+      if (
+        error instanceof Error &&
+        'status' in error &&
+        'code' in error &&
+        typeof error.status === 'number'
+      ) {
+        return Response.json(
+          { error: { message: error.message, type: String(error.code) } },
           { status: error.status },
         );
       }

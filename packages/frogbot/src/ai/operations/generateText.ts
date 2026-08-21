@@ -9,6 +9,7 @@ import type { GenerateTextOpts, SanitizedAIConfig } from '../../types/ai.js';
 import type { FrogbotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
+import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
 
 export type GenerateTextDeps = {
@@ -25,6 +26,8 @@ export async function generateTextOperation(
   const { gateway, config, frogbot } = deps;
   const { model: input, req, overrideAccess, tools, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
+
+  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogbotRequest, target: input });
 
   // 1. Resolve model.
   const modelId = resolveModel(input, config);

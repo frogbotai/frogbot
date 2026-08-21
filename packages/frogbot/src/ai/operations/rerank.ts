@@ -8,6 +8,7 @@ import type { Logger } from '../../frogbot.js';
 import type { RerankOpts, SanitizedAIConfig } from '../../types/ai.js';
 import type { FrogbotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
+import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
 
 export type RerankDeps = {
@@ -25,6 +26,7 @@ export async function rerankOperation(
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
   // 1. Resolve model.
+  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogbotRequest, target: input });
   const modelId = resolveModel(input, config);
 
   // 2. Access control.

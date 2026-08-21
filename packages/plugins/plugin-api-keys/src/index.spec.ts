@@ -76,7 +76,7 @@ describe('apiKeysPlugin', () => {
     expect(result.ai).toBeUndefined();
   });
 
-  it('injects protected key and user policy fields', async () => {
+  it('does not inject user policy fields', async () => {
     const config = {
       secret: 'test',
       db: {},
@@ -85,20 +85,13 @@ describe('apiKeysPlugin', () => {
     const result = await apiKeysPlugin()(config);
     const users = result.collections.find(({ slug }) => slug === 'users');
     const keys = result.collections.find(({ slug }) => slug === 'api-keys');
-    expect(users?.fields).toEqual(
-      expect.arrayContaining([expect.objectContaining({ name: 'monthlyBudget' })]),
-    );
+    expect(users?.fields).toEqual([]);
     expect(keys?.fields.some((field) => 'name' in field && field.name === 'monthlyBudget')).toBe(
       false,
     );
-    const spend = users?.fields.find(
-      (field) => 'name' in field && field.name === 'spendThisPeriodUSD',
-    );
-    const update = spend && 'access' in spend ? spend.access?.update : undefined;
-    expect(await update?.({ req: { user: { id: 'admin-1' } } } as never)).toBe(false);
   });
 
-  it('blocks exhausted budgets and disallowed models', async () => {
+  it('adds API key usage attribution without policy hooks', async () => {
     const config = {
       secret: 'test',
       db: {},
@@ -106,23 +99,10 @@ describe('apiKeysPlugin', () => {
       ai: { providers: { openai: { apiKey: 'test' } } },
     } as FrogbotConfig;
     const result = await apiKeysPlugin()(config);
-    const req = {
-      user: {
-        id: 'user-1',
-        apiKeyId: 'key-1',
-        monthlyBudget: 10,
-        spendThisPeriodUSD: 10,
-        models: ['openai/gpt-4o-mini'],
-      },
-    };
+    const req = { user: { id: 'user-1', apiKeyId: 'key-1' } };
     const context = {};
-    await expect(
-      result.ai?.hooks?.beforeOperation?.at(-1)?.({ req, context } as never),
-    ).rejects.toMatchObject({ code: 'budget_exceeded', status: 403 });
-    req.user.spendThisPeriodUSD = 0;
     await result.ai?.hooks?.beforeOperation?.at(-1)?.({ req, context } as never);
-    expect(() =>
-      result.ai?.hooks?.beforeUpstream?.at(-1)?.({ context, model: 'openai/gpt-4o' } as never),
-    ).toThrow(expect.objectContaining({ code: 'model_not_allowed', status: 403 }));
+    expect(context).toEqual({ usageFields: { apiKey: 'key-1' } });
+    expect(result.ai?.hooks?.beforeUpstream).toBeUndefined();
   });
 });

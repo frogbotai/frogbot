@@ -27,10 +27,14 @@ import {
   resolveScheduleTasks,
 } from '../agents/resolveScheduleTasks.js';
 import { isKnownModelId } from '../ai/catalog.js';
+import { getConfiguredModelIds } from '../ai/models.js';
+import { createPolicyFields, mergePolicyFields } from '../ai/policyFields.js';
+import { createPolicyHooks } from '../ai/policy.js';
 import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
 import { resolveUsageCollection } from '../ai/usageCollection.js';
 import { buildManifestEndpoint } from '../chat/manifest.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
+import { resolveUserSlug } from '../chat/resolveUserSlug.js';
 import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
 import {
   buildSecretEndpoints,
@@ -871,7 +875,66 @@ export function sanitize(
   };
 
   // Sanitize AI config if present.
-  const sanitizedAI = config.ai ? sanitizeAI(config.ai) : undefined;
+  let sanitizedAI = config.ai ? sanitizeAI(config.ai) : undefined;
+  if (sanitizedAI) {
+    const authCollection = resolveUserSlug(config);
+    const policyHooks = createPolicyHooks({
+      authCollection,
+      providers: sanitizedAI.providers as Record<string, unknown>,
+    });
+    sanitizedAI = {
+      ...sanitizedAI,
+      hooks: {
+        ...sanitizedAI.hooks,
+        beforeOperation: [policyHooks.beforeOperation, ...sanitizedAI.hooks.beforeOperation],
+        afterOperation: [...sanitizedAI.hooks.afterOperation, policyHooks.afterOperation],
+      },
+    };
+    const policyFields = createPolicyFields(getConfiguredModelIds(config.ai));
+    const hasAuthCollection = config.collections.some(
+      (collection) => collection.slug === authCollection,
+    );
+    config = {
+      ...config,
+      collections: [
+        ...config.collections.map((collection) =>
+          collection.slug === authCollection
+            ? { ...collection, fields: mergePolicyFields(collection.fields, policyFields) }
+            : collection,
+        ),
+        ...(hasAuthCollection
+          ? []
+          : [
+              {
+                slug: authCollection,
+                admin: { useAsTitle: 'name' },
+                auth: { tokenExpiration: 7200 },
+                fields: [{ name: 'name', type: 'text' }, ...policyFields],
+              } as CollectionConfig,
+            ]),
+      ],
+      jobs: {
+        ...config.jobs,
+        tasks: [
+          ...(config.jobs?.tasks ?? []).filter((task) => task.slug !== 'frogbot-reset-ai-budgets'),
+          {
+            slug: 'frogbot-reset-ai-budgets',
+            schedule: [{ cron: '0 0 1 * *', queue: 'frogbot-reset-ai-budgets' }],
+            handler: async ({ req }) => {
+              await req.payload.update({
+                collection: authCollection,
+                where: { id: { exists: true } },
+                data: { spendThisPeriodUSD: 0 },
+                overrideAccess: true,
+                req,
+              });
+              return { output: {} };
+            },
+          },
+        ],
+      },
+    };
+  }
   const pieces = sanitizePieces(config.pieces);
   if (config.tools !== undefined && !Array.isArray(config.tools)) {
     throw new Error('[frogbot] Root tools must be an array when configured.');
