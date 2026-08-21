@@ -32,9 +32,10 @@ export async function exportCaptures(args: string[]): Promise<void> {
   try {
     const parsed = parseExportCapturesArgs(args);
     const config = await loadConfig({ cwd: process.cwd() });
-    frogbot = await new Frogbot().init({ config, disableOnInit: true });
-    const registration = frogbot.config.custom?.frogbotCapture as CaptureRegistration | undefined;
+    const payloadConfig = await config._internal.payloadConfig;
+    const registration = payloadConfig.custom?.frogbotCapture as CaptureRegistration | undefined;
     if (!registration) throw new Error('@frogbotai/plugin-capture is not configured');
+    frogbot = await new Frogbot().init({ config, disableOnInit: true });
     destination = parsed.output ? createWriteStream(parsed.output) : undefined;
     const output = destination ?? process.stdout;
     let page = 1;

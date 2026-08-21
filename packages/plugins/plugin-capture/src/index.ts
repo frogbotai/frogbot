@@ -3,7 +3,7 @@ import type { Field, Plugin } from 'frogbot';
 import { createCapturesCollection } from './collection.js';
 import { createCaptureHooks } from './hooks.js';
 import { filesystemCaptureStorage } from './storage/filesystem.js';
-import type { CapturePluginOptions, CaptureRegistration, CaptureStorage } from './types.js';
+import type { CapturePluginOptions, CaptureRegistration } from './types.js';
 
 export { decodeCapture, encodeCapture } from './blob.js';
 export { createCapturesCollection } from './collection.js';

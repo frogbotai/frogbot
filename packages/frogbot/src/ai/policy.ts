@@ -47,7 +47,8 @@ export async function backfillAIUserPolicy({
   api: PolicyBackfillAPI;
   authCollection: string;
 }): Promise<void> {
-  do {
+  let hasMore = true;
+  while (hasMore) {
     const result = await api.find({
       collection: authCollection,
       where: { modelAccess: { exists: false } },
@@ -64,8 +65,8 @@ export async function backfillAIUserPolicy({
         overrideAccess: true,
       });
     }
-    if (result.docs.length < 100) break;
-  } while (true);
+    hasMore = result.docs.length === 100;
+  }
 }
 
 export function enforcePolicy({
