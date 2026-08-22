@@ -2,7 +2,7 @@ import { render } from '@testing-library/react';
 import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { iconNames, iconRegistry } from './registry';
+import { iconNames, iconRegistry, isIconName } from './registry';
 import { iconNames as configuredIconNames } from '../../../frogbot/src/adminIcons';
 
 describe('iconRegistry', () => {
@@ -17,5 +17,10 @@ describe('iconRegistry', () => {
   it('renders registered icons', () => {
     const { container } = render(createElement(iconRegistry.robot, { size: 24 }));
     expect(container.querySelector('svg')).not.toBeNull();
+  });
+
+  it('identifies registered icon names', () => {
+    expect(isIconName('robot')).toBe(true);
+    expect(isIconName('unknown')).toBe(false);
   });
 });
