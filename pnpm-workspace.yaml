@@ -6,3 +6,4 @@ packages:
   - 'templates/blank'
   - 'e2e-fixtures/tool-agent'
   - 'examples/business-qa'
+  - 'examples/tailwind'

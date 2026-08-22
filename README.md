@@ -173,6 +173,7 @@ This monorepo publishes the following packages:
 The [`examples/`](./examples) directory shows how to set up FrogBot in different ways:
 
 - [**Simple**](./examples/simple) — the smallest possible setup: one config, one agent, one tool, SQLite. No Docker, no external database.
+- [**Tailwind CSS**](./examples/tailwind) — Tailwind CSS 4 in custom admin components without replacing admin base styles.
 - [**Business QA**](./examples/business-qa) — a comprehensive release-readiness showcase with authenticated agents, curated integration tools, OAuth, API keys, uploads, and connections.
 
 ## Development

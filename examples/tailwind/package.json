@@ -1,0 +1,46 @@
+{
+  "name": "frogbot-example-tailwind",
+  "version": "0.20.0",
+  "private": true,
+  "description": "FrogBot example using Tailwind CSS 4 in custom admin components.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "frogbot dev",
+    "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
+    "start": "frogbot start",
+    "generate:types": "frogbot generate:types",
+    "generate:importmap": "frogbot generate:importmap",
+    "migrate": "frogbot migrate",
+    "migrate:create": "frogbot migrate:create",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@frogbotai/db-sqlite": "0.20.0",
+    "@frogbotai/next": "0.20.0",
+    "cross-env": "^7.0.3",
+    "drizzle-kit": "^0.31.7",
+    "frogbot": "0.20.0",
+    "graphql": "^16.8.1",
+    "json-schema-to-typescript": "^15.0.3",
+    "libsql": "^0.4.7",
+    "next": "15.4.11",
+    "pino": "^9.14.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "sharp": "^0.34.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/node": "^22.10.2",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "postcss": "^8.4.38",
+    "prettier": "^3.2.5",
+    "sass": "^1.77.4",
+    "tailwindcss": "^4.1.18",
+    "typescript": "5.6.2"
+  }
+}
