@@ -12,8 +12,9 @@ expectTypeOf<
   >
 >().toEqualTypeOf<boolean>();
 
-const level = env.enum(['info', 'error']);
-expectTypeOf<EnvBuilderOutput<typeof level>>().toEqualTypeOf<'info' | 'error' | undefined>();
-
-const custom = env.custom((raw) => ({ raw }));
-expectTypeOf<EnvBuilderOutput<typeof custom>>().toEqualTypeOf<{ raw: string } | undefined>();
+expectTypeOf<
+  EnvBuilderOutput<ReturnType<typeof env.enum<readonly ['info', 'error']>>>
+>().toEqualTypeOf<'info' | 'error' | undefined>();
+expectTypeOf<EnvBuilderOutput<ReturnType<typeof env.custom<{ raw: string }>>>>().toEqualTypeOf<
+  { raw: string } | undefined
+>();

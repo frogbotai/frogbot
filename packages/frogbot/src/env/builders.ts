@@ -7,7 +7,7 @@ export type EnvBuilder<T, TResolved extends boolean = false> = Readonly<{
   name: (name: string) => EnvBuilder<T, TResolved>;
   required: () => EnvBuilder<T, true>;
   requiredWhen: (predicate: RequiredWhen) => EnvBuilder<T, true>;
-  _output?: TResolved extends true ? T : T | undefined;
+  _output: TResolved extends true ? T : T | undefined;
 }>;
 
 export type EnvBuilderOutput<TBuilder> =
@@ -35,7 +35,7 @@ type BuilderState<T> = Pick<
 const envNamePattern = /^[A-Z_][A-Z0-9_]*$/;
 
 const createBuilder = <T>(state: BuilderState<T>): EnvBuilder<T> => {
-  const builder: EnvBuilderDescriptor<T> = {
+  const builder = {
     ...state,
     default(value) {
       if (state.requiredMode)
@@ -67,7 +67,7 @@ const createBuilder = <T>(state: BuilderState<T>): EnvBuilder<T> => {
         requiredPredicate: predicate,
       }) as EnvBuilder<T, true>;
     },
-  };
+  } as unknown as EnvBuilderDescriptor<T>;
 
   return Object.freeze(builder);
 };

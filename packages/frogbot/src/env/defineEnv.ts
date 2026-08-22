@@ -2,11 +2,11 @@ import { type EnvBuilderDescriptor } from './builders.js';
 import { deriveName } from './deriveName.js';
 import { FrogbotEnvError, type EnvIssue } from './error.js';
 
-type SchemaBuilder = { readonly _output?: unknown };
+type SchemaBuilder = { readonly _output: unknown };
 type EnvSchema = Record<string, SchemaBuilder>;
 
 export type DefinedEnv<TSchema extends EnvSchema> = Readonly<{
-  [TKey in keyof TSchema]: TSchema[TKey] extends { readonly _output?: infer TOutput }
+  [TKey in keyof TSchema]: TSchema[TKey] extends { readonly _output: infer TOutput }
     ? TOutput
     : never;
 }>;

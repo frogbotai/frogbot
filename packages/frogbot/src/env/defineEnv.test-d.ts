@@ -1,16 +1,24 @@
 import { expectTypeOf } from 'vitest';
 
 import { env } from './builders.js';
-import { defineEnv } from './defineEnv.js';
+import type { DefinedEnv } from './defineEnv.js';
 
-const service = defineEnv({
-  enabled: env.boolean().default(false),
-  level: env.enum(['info', 'error']),
-  port: env.number().required(),
-  secret: env.string(),
-});
+type DefaultBoolean = ReturnType<typeof env.boolean>['default'] extends (
+  value: boolean,
+) => infer TBuilder
+  ? TBuilder
+  : never;
+type RequiredNumber = ReturnType<typeof env.number>['required'] extends () => infer TBuilder
+  ? TBuilder
+  : never;
+type Service = DefinedEnv<{
+  enabled: DefaultBoolean;
+  level: ReturnType<typeof env.enum<readonly ['info', 'error']>>;
+  port: RequiredNumber;
+  secret: ReturnType<typeof env.string>;
+}>;
 
-expectTypeOf(service.enabled).toEqualTypeOf<boolean>();
-expectTypeOf(service.level).toEqualTypeOf<'info' | 'error' | undefined>();
-expectTypeOf(service.port).toEqualTypeOf<number>();
-expectTypeOf(service.secret).toEqualTypeOf<string | undefined>();
+expectTypeOf<Service['enabled']>().toEqualTypeOf<boolean>();
+expectTypeOf<Service['level']>().toEqualTypeOf<'info' | 'error' | undefined>();
+expectTypeOf<Service['port']>().toEqualTypeOf<number>();
+expectTypeOf<Service['secret']>().toEqualTypeOf<string | undefined>();
