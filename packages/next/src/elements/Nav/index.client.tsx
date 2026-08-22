@@ -3,7 +3,7 @@
 import { useNav, usePreferences, useRouteTransition } from '@payloadcms/ui';
 import { usePathname, useRouter } from 'next/navigation.js';
 import { PREFERENCE_KEYS } from 'payload/shared';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 import type { NavItem, NavItemGroup } from './AppSidebar.js';
 import { AppSidebar } from './AppSidebar.js';
@@ -14,6 +14,7 @@ export type FrogbotNavClientProps = {
   bottom?: ReactNode;
   groups: NavItemGroup[];
   homePath: string;
+  initialOpen?: boolean;
   items: NavItem[];
   logo?: ReactNode;
 };
@@ -24,6 +25,7 @@ export function FrogbotNavClient({
   bottom,
   groups,
   homePath,
+  initialOpen,
   items,
   logo,
 }: FrogbotNavClientProps) {
@@ -32,6 +34,10 @@ export function FrogbotNavClient({
   const { setPreference } = usePreferences();
   const { startRouteTransition } = useRouteTransition();
   const { hydrated, navOpen, navRef, setNavOpen, shouldAnimate } = useNav();
+
+  useEffect(() => {
+    if (initialOpen !== undefined) setNavOpen(initialOpen);
+  }, [initialOpen, setNavOpen]);
 
   return (
     <aside
@@ -62,7 +68,11 @@ export function FrogbotNavClient({
               if (/^https?:\/\//.test(path)) window.location.assign(path);
               else startRouteTransition(() => router.push(path));
             }}
-            onToggle={() => setNavOpen(!navOpen)}
+            onToggle={() => {
+              const open = !navOpen;
+              setNavOpen(open);
+              void setPreference(PREFERENCE_KEYS.NAV, { open }, true);
+            }}
             open={navOpen}
           />
         </div>

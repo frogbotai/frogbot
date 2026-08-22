@@ -103,6 +103,7 @@ export async function FrogbotNav(props: FrogbotNavProps) {
       bottom={<>{settings}{logout}</>}
       groups={mappedGroups}
       homePath={homePath}
+      initialOpen={navPreferences?.open}
       items={configuredItems}
       logo={logo}
     />
