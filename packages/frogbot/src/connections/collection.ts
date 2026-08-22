@@ -13,6 +13,7 @@ export function defaultConnectionsCollection({
   return {
     slug,
     admin: {
+      icon: 'link-square',
       group: 'Connections',
       useAsTitle: 'accountLabel',
       defaultColumns: ['services', 'accountLabel', 'status', 'updatedAt'],

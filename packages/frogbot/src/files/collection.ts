@@ -14,6 +14,7 @@ export function defaultFilesCollection({ slug }: DefaultFilesCollectionProps): C
     folders: true,
     trash: true,
     admin: {
+      icon: 'file',
       group: 'Files',
       useAsTitle: 'filename',
       defaultColumns: ['filename', 'mimeType', 'filesize', 'updatedAt'],

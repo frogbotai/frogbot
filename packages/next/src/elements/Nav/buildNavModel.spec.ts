@@ -38,6 +38,12 @@ function config(): SanitizedConfig {
         labels: { plural: 'Hidden', singular: 'Hidden' },
         slug: 'hidden',
       },
+      {
+        admin: { group: null, icon: 'robot' },
+        label: 'Projects',
+        labels: { plural: 'Projects', singular: 'Project' },
+        slug: 'projects',
+      },
     ],
     globals: [],
     routes: { admin: '/control' },
@@ -51,14 +57,17 @@ describe('buildNavModel', () => {
         config: config(),
         i18n,
         permissions,
-        visibleEntities: { collections: ['posts', 'users', 'hidden'], globals: [] },
+        visibleEntities: { collections: ['posts', 'users', 'hidden', 'projects'], globals: [] },
       }),
     ).toEqual({
       groups: [
         { items: [{ label: 'Posts', path: '/control/collections/posts' }], label: 'Collections' },
         { items: [{ label: 'Users', path: '/control/collections/users' }], label: 'Accounts' },
       ],
-      items: [{ label: 'Home', path: '/admin' }],
+      items: [
+        { label: 'Home', path: '/admin' },
+        { icon: 'robot', label: 'Projects', path: '/control/collections/projects' },
+      ],
     });
   });
 

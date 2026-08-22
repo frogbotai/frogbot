@@ -739,14 +739,19 @@ function buildPayloadConfig(
     'tools',
   ]);
   const collections = config.collections.map((collection) =>
-    sanitizeCollection(collection, attachFrogbot),
+    sanitizeCollection(
+      collection.auth && !collection.admin?.icon
+        ? { ...collection, admin: { ...collection.admin, icon: 'people' } }
+        : collection,
+      attachFrogbot,
+    ),
   );
   if (!collections.some((collection) => Boolean(collection.auth))) {
     collections.push(
       sanitizeCollection(
         {
           slug: 'users',
-          admin: { useAsTitle: 'name' },
+          admin: { icon: 'people', useAsTitle: 'name' },
           auth: { tokenExpiration: 7200 },
           fields: [{ name: 'name', type: 'text' }],
         },
