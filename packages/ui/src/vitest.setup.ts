@@ -11,5 +11,13 @@ globalThis.ResizeObserver = class {
   observe() {}
   unobserve() {}
 };
+globalThis.IntersectionObserver = class {
+  disconnect() {}
+  observe() {}
+  takeRecords() {
+    return [];
+  }
+  unobserve() {}
+} as unknown as typeof IntersectionObserver;
 
 afterEach(cleanup);

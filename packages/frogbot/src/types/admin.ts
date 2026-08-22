@@ -25,6 +25,12 @@ export interface RootAdminGraphics {
   Logo?: Component;
 }
 
+export interface NavItem {
+  icon?: Component;
+  label: string;
+  path: string;
+}
+
 export interface RootAdminComponents {
   /** Add components to the top right of the admin panel. */
   actions?: Component[];
@@ -32,8 +38,11 @@ export interface RootAdminComponents {
   afterLogin?: Component[];
   /** Add components before the login form's email and password fields. */
   beforeLogin?: Component[];
+  afterNavLinks?: Component[];
+  beforeNavLinks?: Component[];
   /** Component slots for admin branding. */
   graphics?: RootAdminGraphics;
+  Nav?: Component;
   /** Wrap the admin panel in custom context providers. */
   providers?: ProviderComponent[];
   /** Replace, modify, or add top-level admin routes. */
@@ -59,6 +68,9 @@ export interface RootAdminConfig {
   components?: RootAdminComponents;
   /** Metadata for generated/admin surfaces. */
   meta?: RootAdminMetaConfig;
+  nav?: {
+    items?: NavItem[];
+  };
   /**
    * Restrict the Admin Panel theme to one of these values.
    *

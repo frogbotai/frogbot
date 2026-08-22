@@ -52,10 +52,10 @@ vi.mock('payload', () => ({
   handleEndpoints: vi.fn(),
 }));
 
-vi.mock('./bin/generateTypes.js', () => ({ writeGeneratedTypes: vi.fn(() => Promise.resolve()) }));
+vi.mock('./typegen/index.js', () => ({ writeGeneratedTypes: vi.fn(() => Promise.resolve()) }));
 vi.mock('./importMap/index.js', () => ({ generateImportMap: vi.fn(() => Promise.resolve()) }));
 
-const { writeGeneratedTypes } = await import('./bin/generateTypes.js');
+const { writeGeneratedTypes } = await import('./typegen/index.js');
 const { resolveConfigDir } = await import('./config/load.js');
 const { sanitize } = await import('./config/sanitize.js');
 const { getCachedFrogbot, getFrogbot, resetFrogbotCache } = await import('./getFrogbot.js');

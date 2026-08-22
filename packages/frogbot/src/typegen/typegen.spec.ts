@@ -14,10 +14,10 @@ import {
   buildGeneratedTypesFooter,
   stripInternalCollections,
   writeGeneratedTypes,
-} from './generateTypes.js';
+} from './index.js';
 
 const execFileAsync = promisify(execFile);
-const binURL = pathToFileURL(new URL('./index.ts', import.meta.url).pathname).href;
+const binURL = pathToFileURL(new URL('../bin/index.ts', import.meta.url).pathname).href;
 const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
 
 describe('frogbot generate:types', () => {

@@ -17,12 +17,14 @@ export default defineConfig({
         test: {
           name: 'ui',
           include: [
+            'packages/next/src/**/*.spec.tsx',
             'packages/ui/src/**/*.spec.tsx',
             'packages/plugins/plugin-api-keys/src/**/*.spec.tsx',
             'packages/plugins/plugin-usage-reports/src/**/*.spec.tsx',
           ],
           exclude: ['**/node_modules/**', '**/dist/**'],
           environment: 'jsdom',
+          server: { deps: { inline: [/@payloadcms\/ui/] } },
           setupFiles: ['./packages/ui/src/vitest.setup.ts'],
         },
       },

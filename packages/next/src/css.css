@@ -1,1 +1,45 @@
 @import "@payloadcms/next/css";
+@import "./elements/Nav/index.css";
+
+.template-default:has(.frogbot-nav) {
+  --nav-width: 17rem;
+}
+
+.template-default:has(.frogbot-admin-sidebar[data-collapsed="true"]) {
+  grid-template-columns: 60px minmax(0, 1fr) !important;
+}
+
+.template-default:has(.frogbot-nav) > .template-default__wrap {
+  min-width: 0;
+}
+
+.template-default:has(.frogbot-nav) .template-default__nav-toggler-wrapper,
+body:has(.frogbot-nav-shell) .template-default__nav-toggler-container,
+body:has(.frogbot-nav-shell) .step-nav__home {
+  display: none;
+}
+
+.frogbot-nav-shell {
+  opacity: 1;
+  overflow: hidden;
+  width: 100%;
+}
+
+.frogbot-nav-shell:has(.frogbot-admin-sidebar[data-collapsed="true"]) {
+  width: 60px;
+}
+
+.frogbot-nav-shell .nav__scroll {
+  overflow-x: hidden;
+  padding: 8px;
+}
+
+@media (max-width: 767px) {
+  .template-default:has(.frogbot-admin-sidebar[data-collapsed="true"]) {
+    grid-template-columns: 0 minmax(0, 1fr);
+  }
+
+  .template-default:has(.frogbot-nav) .template-default__nav-toggler-wrapper {
+    display: flex;
+  }
+}

@@ -3,51 +3,16 @@
  * filesystem and returns its sanitized config (the awaited default
  * export). Internal to the CLI; never exported publicly.
  */
-import { existsSync } from 'node:fs';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import type { InitOptions } from '../frogbot.js';
 import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
 import type { ValidationMode } from './validationContext.js';
 import { runWithValidationMode } from './validationContext.js';
+import { findConfigFile, resolveEnvConfigPath } from './resolveConfigPath.js';
 
-const CONFIG_FILENAMES = ['frogbot.config.ts', 'frogbot.config.mjs', 'frogbot.config.js'] as const;
-
-function resolveEnvConfigPath(cwd: string): string | null {
-  const fromEnv = process.env.FROGBOT_CONFIG_PATH;
-  if (!fromEnv) return null;
-  const abs = isAbsolute(fromEnv) ? fromEnv : resolve(cwd, fromEnv);
-  if (!existsSync(abs)) {
-    throw new Error(`[frogbot] FROGBOT_CONFIG_PATH points to a missing file: ${abs}`);
-  }
-  return abs;
-}
-
-function findConfigFile(startDir: string): string | null {
-  let dir = resolve(startDir);
-  for (;;) {
-    for (const subDir of ['src', '.']) {
-      for (const name of CONFIG_FILENAMES) {
-        const candidate = join(dir, subDir, name);
-        if (existsSync(candidate)) return candidate;
-      }
-    }
-    const parent = dirname(dir);
-    if (parent === dir) return null;
-    dir = parent;
-  }
-}
-
-export function resolveConfigDir(cwd: string): string | null {
-  const fromEnv = process.env.FROGBOT_CONFIG_PATH;
-  if (fromEnv) {
-    const abs = isAbsolute(fromEnv) ? fromEnv : resolve(cwd, fromEnv);
-    return existsSync(abs) ? dirname(abs) : null;
-  }
-  const configPath = findConfigFile(cwd);
-  return configPath ? dirname(configPath) : null;
-}
+export { resolveConfigDir } from './resolveConfigPath.js';
 
 function isSanitizedConfig(value: unknown): value is FrogbotSanitizedConfig {
   return (

@@ -216,13 +216,11 @@ export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plu
         components: {
           ...config.admin?.components,
           afterNavLinks: [
-            ...(((config.admin?.components as Record<string, unknown> | undefined)
-              ?.afterNavLinks as unknown[] | undefined) ?? []),
+            ...(config.admin?.components?.afterNavLinks ?? []),
             '@frogbotai/plugin-usage-reports/client#UsageReportsNavLink',
           ],
           views: {
-            ...(((config.admin?.components as Record<string, unknown> | undefined)?.views as
-              Record<string, unknown> | undefined) ?? {}),
+            ...(config.admin?.components?.views ?? {}),
             usageReports: {
               Component: '@frogbotai/plugin-usage-reports/client#UsageReports',
               path: '/usage-analytics',

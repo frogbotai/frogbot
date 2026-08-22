@@ -1,0 +1,223 @@
+.frogbot-nav {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  display: block;
+  height: 100vh;
+  min-height: 100%;
+  overflow: hidden;
+  width: 100%;
+}
+
+.frogbot-nav,
+.frogbot-nav * {
+  box-sizing: border-box;
+}
+
+.frogbot-admin-sidebar {
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.frogbot-admin-sidebar--collapsed {
+  cursor: pointer;
+}
+
+.frogbot-admin-sidebar--collapsed .frogbot-admin-sidebar__group-label,
+.frogbot-admin-sidebar--collapsed .frogbot-admin-sidebar__label {
+  display: none;
+}
+
+.frogbot-admin-sidebar--collapsed .frogbot-admin-sidebar__item {
+  justify-content: center;
+  padding: 8px;
+}
+
+.frogbot-admin-sidebar__header {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: space-between;
+  margin-block-end: 8px;
+}
+
+.frogbot-admin-sidebar__logo,
+.frogbot-admin-sidebar__collapse {
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  transition: transform 200ms ease-out;
+}
+
+.frogbot-admin-sidebar__logo {
+  height: 40px;
+  margin-inline-start: 3px;
+  width: 40px;
+}
+
+.frogbot-admin-sidebar__logo > *,
+.frogbot-admin-sidebar__logo svg {
+  height: 100%;
+  width: 100%;
+}
+
+.frogbot-admin-sidebar__logo:hover {
+  transform: translateX(4px);
+}
+
+.frogbot-admin-sidebar__logo--toggle {
+  padding: 8px;
+}
+
+.frogbot-admin-sidebar__collapse {
+  height: 32px;
+  width: 32px;
+}
+
+.frogbot-admin-sidebar__collapse:hover {
+  transform: translateX(-4px);
+}
+
+.frogbot-admin-sidebar__logo--toggle:hover,
+.frogbot-admin-sidebar__collapse:hover,
+.frogbot-admin-sidebar__item:hover {
+  background: var(--theme-elevation-100);
+}
+
+.frogbot-admin-sidebar__tooltip {
+  position: fixed;
+  z-index: 100;
+}
+
+.frogbot-admin-sidebar__tooltip .tooltip {
+  bottom: auto;
+  left: 0;
+  top: 0;
+  transform: translate3d(8px, -50%, 0);
+}
+
+.frogbot-admin-sidebar__tooltip .tooltip::after {
+  display: none;
+}
+
+.frogbot-admin-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.frogbot-admin-sidebar__group {
+  margin-block-start: 12px;
+}
+
+.frogbot-admin-sidebar__group:first-child {
+  margin-block-start: 0;
+}
+
+.frogbot-admin-sidebar__group-label {
+  color: var(--theme-elevation-600);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  list-style: none;
+  padding: 0 10px 4px;
+}
+
+.frogbot-admin-sidebar__group-label::-webkit-details-marker {
+  display: none;
+}
+
+.frogbot-admin-sidebar__group-label::marker {
+  content: "";
+}
+
+.frogbot-admin-sidebar__items,
+.frogbot-admin-sidebar__bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.frogbot-admin-sidebar__spacer {
+  flex: 1;
+}
+
+.frogbot-admin-sidebar__bottom {
+  flex: 0 0 auto;
+}
+
+.frogbot-admin-sidebar__item,
+.frogbot-admin-sidebar__bottom .nav__log-out {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--theme-elevation-700);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  justify-content: flex-start;
+  padding: 8px 10px;
+  text-align: start;
+  width: 100%;
+}
+
+.frogbot-admin-sidebar__item--active,
+.frogbot-admin-sidebar__bottom .nav__log-out:hover {
+  background: var(--theme-elevation-150);
+  color: var(--theme-elevation-900);
+}
+
+.frogbot-admin-sidebar--collapsed .frogbot-admin-sidebar__bottom .nav__log-out {
+  justify-content: center;
+  padding: 8px;
+}
+
+.frogbot-admin-sidebar__item svg,
+.frogbot-admin-sidebar__bottom .nav__log-out svg {
+  flex: 0 0 auto;
+  height: 20px;
+  width: 20px;
+}
+
+.frogbot-admin-sidebar__icon {
+  flex: 0 0 auto;
+  padding: 2px;
+}
+
+.frogbot-admin-sidebar__label {
+  margin-inline-start: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.frogbot-nav .usage-reports-nav-link {
+  color: var(--theme-elevation-700);
+  display: flex;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 10px;
+  text-decoration: none;
+}
+
+.frogbot-nav .usage-reports-nav-link:hover {
+  background: var(--theme-elevation-100);
+  border-radius: 8px;
+  color: var(--theme-elevation-900);
+}

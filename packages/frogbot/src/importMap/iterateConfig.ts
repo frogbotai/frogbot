@@ -61,6 +61,9 @@ export function iterateConfig({
   addToImportMap(config.admin?.components?.graphics?.Icon);
   addToImportMap(config.admin?.components?.graphics?.Logo);
 
+  const navItems = (config.admin as { nav?: { items?: { icon?: string }[] } }).nav?.items;
+  for (const item of navItems ?? []) addToImportMap(item.icon);
+
   addToImportMap(config.admin?.components?.actions);
   addToImportMap(config.admin?.components?.afterDashboard);
   addToImportMap(config.admin?.components?.afterLogin);

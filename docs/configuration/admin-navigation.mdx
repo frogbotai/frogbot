@@ -1,0 +1,42 @@
+---
+title: "Admin navigation"
+sidebarTitle: "Admin navigation"
+description: "Add links to FrogBot's default admin sidebar or replace it."
+keywords: ["admin", "navigation", "sidebar", "components"]
+---
+
+FrogBot's default admin sidebar lists the collections you can access, organized by their configured groups. It supports desktop collapse, mobile navigation, active links, and saved group state without additional configuration.
+
+## Add a navigation item
+
+Add links under `admin.nav.items`. Each item requires a label and path. Set `icon` to a component import path when the link needs a custom icon.
+
+```ts
+admin: {
+  nav: {
+    items: [
+      {
+        label: 'Operations',
+        path: '/admin/operations',
+        icon: './src/components/OperationsIcon#OperationsIcon'
+      }
+    ]
+  }
+}
+```
+
+The icon component receives `size` and `className` props. FrogBot adds the component to the generated import map.
+
+## Replace the sidebar
+
+Set `admin.components.Nav` to replace the default sidebar. Your component receives the standard admin server props, including the current user, permissions, and visible collections.
+
+```ts
+admin: {
+  components: {
+    Nav: './src/components/WorkspaceNav#WorkspaceNav'
+  }
+}
+```
+
+A custom `Nav` fully owns navigation rendering and does not receive FrogBot's default sidebar styles or configured `admin.nav.items` automatically.

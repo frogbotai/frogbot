@@ -800,6 +800,7 @@ function buildPayloadConfig(
     ...admin,
     components: {
       ...admin?.components,
+      Nav: admin?.components?.Nav ?? '@frogbotai/next/rsc#FrogbotNav',
       graphics: {
         Icon: '@frogbotai/next/rsc#FrogbotIcon',
         Logo: '@frogbotai/next/rsc#FrogbotLogo',

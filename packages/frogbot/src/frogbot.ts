@@ -19,8 +19,7 @@ import { generateVideoOperation } from './ai/operations/generateVideo.js';
 import { rerankOperation } from './ai/operations/rerank.js';
 import { streamTextOperation } from './ai/operations/streamText.js';
 import { transcribeOperation } from './ai/operations/transcribe.js';
-import { writeGeneratedTypes } from './bin/generateTypes.js';
-import { resolveConfigDir } from './config/load.js';
+import { resolveConfigDir } from './config/resolveConfigPath.js';
 import { Connections } from './connections/api.js';
 import { generateImportMap } from './importMap/index.js';
 import {
@@ -33,6 +32,7 @@ import { createFrogbotLocalAPI } from './localAPI.js';
 import { encodeTrainingData } from './training/encodeTrainingData.js';
 import { readTrainingData } from './training/readTrainingData.js';
 import type { ReadTrainingDataOptions } from './training/types.js';
+import { writeGeneratedTypes } from './typegen/index.js';
 import type { AgentRegistry } from './types/agent.js';
 import type {
   EmbedManyOpts,

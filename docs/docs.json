@@ -49,6 +49,7 @@
                 "expanded": false,
                 "pages": [
                   "configuration/overview",
+                  "configuration/admin-navigation",
                   "configuration/collections",
                   "configuration/environment-vars",
                   "configuration/ai",

@@ -53,6 +53,7 @@ export type {
   RootAdminConfig,
   RootAdminGraphics,
   RootAdminMetaConfig,
+  NavItem,
 } from './types/admin.js';
 export type {
   AgentAccess,
