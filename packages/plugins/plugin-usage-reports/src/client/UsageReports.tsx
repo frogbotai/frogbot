@@ -3,6 +3,7 @@
 import './styles.css';
 
 import { useConfig } from '@payloadcms/ui';
+import { formatAdminURL } from '@payloadcms/ui/shared';
 import { useEffect, useState } from 'react';
 
 import type { UsageReport, UsageReportGroup, UsageReportRow } from '../index.js';
@@ -55,7 +56,10 @@ function formatTokens(value: number): string {
 export function UsageReportsNavLink() {
   const { config } = useConfig();
   return (
-    <a className="usage-reports-nav-link" href={`${config.routes.admin}/usage-analytics`}>
+    <a
+      className="usage-reports-nav-link"
+      href={formatAdminURL({ adminRoute: config.routes.admin, path: '/usage-analytics' })}
+    >
       Usage Analytics
     </a>
   );
