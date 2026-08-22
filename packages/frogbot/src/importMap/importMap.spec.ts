@@ -32,6 +32,7 @@ async function makePayloadConfig(): Promise<SanitizedConfig> {
       {
         slug: 'users',
         auth: true,
+        admin: { icon: './components/UserIcon.tsx#UserIcon' },
         fields: [
           {
             name: 'name',
@@ -42,6 +43,7 @@ async function makePayloadConfig(): Promise<SanitizedConfig> {
       },
     ],
     admin: {
+      nav: { items: [{ icon: './components/HomeIcon.tsx#HomeIcon', label: 'Home', path: '/' }] },
       components: {
         Nav: './components/Nav.tsx#CustomNav',
         logout: { Button: '/components/LogoutButton.tsx' },
@@ -88,6 +90,8 @@ describe('frogbot importMap generator', () => {
     expect(output).toContain("from '@frogbotai/next/rsc'");
     expect(output).toContain('"@frogbotai/next/rsc#CollectionCards"');
     expect(output).toContain("from './fields/NameField.tsx'");
+    expect(output).toContain("from './components/UserIcon.tsx'");
+    expect(output).toContain("from './components/HomeIcon.tsx'");
     expect(output).toContain("from 'my-ui/client'");
     expect(output).not.toContain('@payloadcms');
     expect(output).not.toContain("import('payload')");
