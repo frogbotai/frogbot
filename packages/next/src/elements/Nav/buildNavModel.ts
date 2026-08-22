@@ -33,11 +33,15 @@ export function buildNavModel({ config, i18n, permissions, visibleEntities }: Bu
     label: Parameters<typeof getTranslation>[0];
     slug: string;
     type: EntityType;
-  }) => ({
-    icon: (entityByKey.get(`${entity.type}:${entity.slug}`)?.admin as { icon?: EntityIcon })?.icon,
-    label: getTranslation(entity.label, i18n),
-    path: formatAdminURL({ adminRoute: routes.admin, path: `/${entity.type}/${entity.slug}` }),
-  });
+  }) => {
+    const label = getTranslation(entity.label, i18n);
+    return {
+      icon: (entityByKey.get(`${entity.type}:${entity.slug}`)?.admin as { icon?: EntityIcon })
+        ?.icon,
+      label: typeof label === 'string' ? label : entity.slug,
+      path: formatAdminURL({ adminRoute: routes.admin, path: `/${entity.type}/${entity.slug}` }),
+    };
+  };
   const topLevelItems = entities
     .filter(({ entity, type }) => {
       const entityPermissions = permissions[type]?.[entity.slug];
@@ -46,7 +50,7 @@ export function buildNavModel({ config, i18n, permissions, visibleEntities }: Bu
     .map(({ entity, type }) => {
       const label = 'labels' in entity ? entity.labels.plural : entity.label;
       return mapEntity({
-        label: typeof label === 'function' ? label({ i18n, t: i18n.t }) : label,
+        label,
         slug: entity.slug,
         type,
       });

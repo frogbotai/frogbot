@@ -1,7 +1,7 @@
 'use client';
 
 import { FolderIcon, FrogBotFavicon, SidebarLeftIcon } from '@frogbotai/ui/icons';
-import { iconRegistry, type IconName } from '@frogbotai/ui/icons/registry';
+import { iconRegistry, type IconName, isIconName } from '@frogbotai/ui/icons/registry';
 import { Tooltip } from '@payloadcms/ui/elements/Tooltip';
 import {
   type ComponentType,
@@ -119,7 +119,11 @@ export function AppSidebar({
 
   const renderItem = (item: NavItem) => {
     const Icon =
-      typeof item.icon === 'string' ? iconRegistry[item.icon] : (item.icon ?? FolderIcon);
+      typeof item.icon === 'string'
+        ? isIconName(item.icon)
+          ? iconRegistry[item.icon]
+          : FolderIcon
+        : (item.icon ?? FolderIcon);
     const active =
       currentPath === item.path || (item.path !== '/' && currentPath.startsWith(`${item.path}/`));
     return (
