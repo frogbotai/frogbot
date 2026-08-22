@@ -3,6 +3,7 @@ import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { iconNames, iconRegistry } from './registry';
+import { iconNames as configuredIconNames } from '../../../frogbot/src/adminIcons';
 
 describe('iconRegistry', () => {
   it('maps every component icon export to a sorted kebab-case name', () => {
@@ -10,6 +11,7 @@ describe('iconRegistry', () => {
     expect(iconNames).toContain('robot');
     expect(iconNames).toContain('bubble-chat');
     expect(iconNames).not.toContain('create-lucide');
+    expect(iconNames).toEqual(configuredIconNames);
   });
 
   it('renders registered icons', () => {
