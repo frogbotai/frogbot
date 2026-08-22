@@ -37,6 +37,89 @@ export default buildConfig({
 })
 ```
 
+## Typed environment variables
+
+Use `defineEnv` to parse and validate your server-side environment when your application starts. It reports all invalid or missing variables together and returns a typed, frozen object.
+
+Create `src/env.ts`:
+
+```ts
+import { defineEnv, env, frogbotEnv } from 'frogbot/env'
+
+export const envService = defineEnv({
+  ...frogbotEnv,
+  emailEnabled: env.boolean().default(false),
+  smtpUrl: env
+    .string()
+    .requiredWhen((values) => values.emailEnabled === true),
+})
+```
+
+Then use the resolved values in your FrogBot config:
+
+```ts
+import { buildConfig } from 'frogbot'
+
+import { envService } from './env.js'
+
+export default buildConfig({
+  secret: envService.frogbotSecret,
+  client: {
+    url: envService.databaseUrl,
+  },
+})
+```
+
+This replaces fallback expressions such as `process.env.FROGBOT_SECRET || ''` with values that have already been validated.
+
+### Builders and modifiers
+
+The `env` factory provides these builders:
+
+| Builder | Result |
+| --- | --- |
+| `env.string()` | String value |
+| `env.number()` | Number value |
+| `env.boolean()` | Boolean value |
+| `env.enum(['one', 'two'])` | One of the listed strings |
+| `env.custom(parse)` | Value returned by your parser |
+
+Chain builders with `.default(value)`, `.required()`, `.requiredWhen(predicate)`, or `.name('CUSTOM_NAME')`. A variable cannot have both a default and a required modifier. Required predicates receive all values resolved during the first parsing pass.
+
+`frogbotEnv` includes these common builders:
+
+| Property | Environment variable | Behavior |
+| --- | --- | --- |
+| `nodeEnv` | `NODE_ENV` | `development`, `production`, or `test`; defaults to `production` |
+| `logLevel` | `LOG_LEVEL` | `trace`, `debug`, `info`, `warn`, `error`, `fatal`, or `silent`; defaults to `info` |
+| `port` | `PORT` | Number; defaults to `3000` |
+| `frogbotSecret` | `FROGBOT_SECRET` | Required string |
+| `databaseUrl` | `DATABASE_URL` | Required string |
+
+You can replace a base builder after spreading `frogbotEnv`:
+
+```ts
+const envService = defineEnv({
+  ...frogbotEnv,
+  port: env.number().default(4000),
+})
+```
+
+### Names and parsing
+
+Property names become uppercase environment variable names with underscores before uppercase letters. For example, `apiUrl` becomes `API_URL`, `gitSha1` becomes `GIT_SHA1`, and `s3Bucket` becomes `S3_BUCKET`. Use `.name()` when the environment variable follows another convention.
+
+Empty strings count as unset values. This is stricter than provider SDKs that may accept an empty API key as present.
+
+Numbers use JavaScript number parsing, so `PORT=0` resolves to `0` and invalid numbers fail validation. Boolean parsing is case-insensitive and accepts:
+
+- True: `1`, `on`, `t`, `true`, `y`, `yes`
+- False: `0`, `f`, `false`, `n`, `no`, `off`
+
+Other boolean values fail validation.
+
+When `NODE_ENV=test`, required checks are skipped so tests do not need every application secret. Present values are still parsed and can still produce validation errors.
+
 ## Client-side Environments
 
 For security and safety reasons, the [Admin Panel](/admin/overview) does **not** include Environment Variables in its _client-side_ bundle by default. But, Next.js provides a mechanism to expose Environment Variables to the client-side bundle when needed.

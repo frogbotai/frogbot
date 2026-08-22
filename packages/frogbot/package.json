@@ -43,6 +43,11 @@
       "types": "./dist/exports/tools.d.ts",
       "import": "./dist/exports/tools.js",
       "default": "./dist/exports/tools.js"
+    },
+    "./env": {
+      "types": "./dist/exports/env.d.ts",
+      "import": "./dist/exports/env.js",
+      "default": "./dist/exports/env.js"
     }
   },
   "bin": {
@@ -126,6 +131,11 @@
         "types": "./dist/exports/tools.d.ts",
         "import": "./dist/exports/tools.js",
         "default": "./dist/exports/tools.js"
+      },
+      "./env": {
+        "types": "./dist/exports/env.d.ts",
+        "import": "./dist/exports/env.js",
+        "default": "./dist/exports/env.js"
       }
     }
   }
