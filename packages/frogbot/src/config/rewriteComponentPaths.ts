@@ -65,6 +65,11 @@ function rewriteFields(fields: unknown[]): void {
 export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig {
   const admin = config.admin;
 
+  const nav = admin as typeof admin & { nav?: { items?: { icon?: PayloadComponent }[] } };
+  for (const item of nav?.nav?.items ?? []) {
+    if (item.icon) item.icon = rewriteComponent(item.icon);
+  }
+
   if (admin?.dashboard?.widgets) {
     admin.dashboard.widgets = admin.dashboard.widgets.map((widget) => ({
       ...widget,
@@ -87,12 +92,24 @@ export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig 
 
   if (config.collections) {
     for (const collection of config.collections) {
+      const collectionAdmin = collection.admin as typeof collection.admin & {
+        icon?: PayloadComponent;
+      };
+      if (collectionAdmin?.icon) collectionAdmin.icon = rewriteComponent(collectionAdmin.icon);
       if (collection.admin?.components) {
         collection.admin.components = rewriteComponents(
           collection.admin.components,
         ) as typeof collection.admin.components;
       }
       if (collection.fields) rewriteFields(collection.fields);
+    }
+  }
+
+  if (config.globals) {
+    for (const global of config.globals) {
+      const globalAdmin = global.admin as typeof global.admin & { icon?: PayloadComponent };
+      if (globalAdmin?.icon) globalAdmin.icon = rewriteComponent(globalAdmin.icon);
+      if (global.fields) rewriteFields(global.fields);
     }
   }
 

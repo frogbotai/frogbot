@@ -48,6 +48,7 @@ export function defaultMessagesCollection({
     slug,
     trash: true,
     admin: {
+      icon: 'bubble-chat',
       group: 'Chat',
       defaultColumns: ['thread', 'role', 'createdAt'],
     },

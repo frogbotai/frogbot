@@ -24,6 +24,20 @@ describe('AppSidebar', () => {
     );
   });
 
+  it('renders built-in and fallback collection icons', () => {
+    const { container } = render(
+      <AppSidebar
+        {...props}
+        navItems={[
+          { icon: 'robot', label: 'Robot', path: '/robot' },
+          { label: 'Folder', path: '/folder' },
+        ]}
+        open
+      />,
+    );
+    expect(container.querySelectorAll('.frogbot-admin-sidebar__icon')).toHaveLength(3);
+  });
+
   it('opens when a collapsed sidebar is clicked anywhere', () => {
     const onToggle = vi.fn();
     render(<AppSidebar {...props} onToggle={onToggle} open={false} />);

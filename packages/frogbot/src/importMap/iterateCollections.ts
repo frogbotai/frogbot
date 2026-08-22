@@ -19,6 +19,9 @@ export function iterateCollections({
   imports: Imports;
 }) {
   for (const collection of collections) {
+    const icon = (collection.admin as typeof collection.admin & { icon?: PayloadComponent })?.icon;
+    if (typeof icon !== 'string' || icon.includes('#')) addToImportMap(icon);
+
     genImportMapIterateFields({
       addToImportMap,
       baseDir,

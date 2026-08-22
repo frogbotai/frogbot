@@ -7,6 +7,37 @@ keywords: ["admin", "navigation", "sidebar", "components"]
 
 FrogBot's default admin sidebar lists the collections you can access, organized by their configured groups. It supports desktop collapse, mobile navigation, active links, and saved group state without additional configuration.
 
+## Collection icons and placement
+
+Set `admin.icon` on a collection to a built-in kebab-case icon name or a component import path. `IconName` provides autocomplete for every built-in name, including `robot`, `bubble-chat`, `file`, `link-square`, `ai-search`, and `people`.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Projects: CollectionConfig = {
+  slug: 'projects',
+  admin: {
+    icon: 'robot',
+    group: null,
+  },
+  fields: [],
+}
+```
+
+Use `group: null` for a top-level collection. Leave `group` undefined for the default Collections group, provide a string or localized value for a named group, or use `false` to hide only the navigation link.
+
+Component icons receive `size` and `className` props and are added to the generated import map:
+
+```ts
+admin: {
+  icon: './src/components/ProjectsIcon#ProjectsIcon'
+}
+```
+
+FrogBot orders configured `admin.nav.items` first, then top-level collections in collection configuration order. Named groups follow in first-seen order, with their collections in configuration order. Injected `afterNavLinks` render last.
+
+When collapsed, group headings are hidden and each item displays its label in a tooltip. The expanded or collapsed state and named-group state persist for the current user.
+
 ## Add a navigation item
 
 Add links under `admin.nav.items`. Each item requires a label and path. Set `icon` to a component import path when the link needs a custom icon.
@@ -26,6 +57,8 @@ admin: {
 ```
 
 The icon component receives `size` and `className` props. FrogBot adds the component to the generated import map.
+
+Configured items are application-authored links and are not filtered by collection permissions or visibility. Apply any required access behavior in the component or destination.
 
 ## Replace the sidebar
 

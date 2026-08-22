@@ -60,6 +60,7 @@ import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from '../types/s
 import type { SkillConfig } from '../types/skill.js';
 import type { AnyTool } from '../types/tool.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
+import { iconNames } from '../adminIcons.js';
 import { resolveSourceDir } from './sourceDir.js';
 import type { ValidationMode } from './validationContext.js';
 import { getValidationMode } from './validationContext.js';
@@ -738,14 +739,19 @@ function buildPayloadConfig(
     'tools',
   ]);
   const collections = config.collections.map((collection) =>
-    sanitizeCollection(collection, attachFrogbot),
+    sanitizeCollection(
+      collection.auth && !collection.admin?.icon
+        ? { ...collection, admin: { ...collection.admin, icon: 'people' } }
+        : collection,
+      attachFrogbot,
+    ),
   );
   if (!collections.some((collection) => Boolean(collection.auth))) {
     collections.push(
       sanitizeCollection(
         {
           slug: 'users',
-          admin: { useAsTitle: 'name' },
+          admin: { icon: 'people', useAsTitle: 'name' },
           auth: { tokenExpiration: 7200 },
           fields: [{ name: 'name', type: 'text' }],
         },
@@ -865,6 +871,12 @@ export function sanitize(
 ): FrogbotSanitizedConfig {
   if ((config as unknown as Record<string, unknown>).globals !== undefined) {
     throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections instead.');
+  }
+  for (const collection of config.collections) {
+    const icon = collection.admin?.icon;
+    if (typeof icon === 'string' && !icon.includes('#') && !iconNames.includes(icon as never)) {
+      throw new Error(`[frogbot] Unknown admin icon '${icon}'. Valid: ${iconNames.join(', ')}`);
+    }
   }
   validateInternalPathReservations(config);
   const sanitizedConfigRef: { current?: FrogbotSanitizedConfig } = {};

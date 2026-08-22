@@ -48,6 +48,18 @@ function emailWarnings(warn: ReturnType<typeof vi.fn>) {
 }
 
 describe('frogbot sanitize', () => {
+  it('rejects unknown built-in collection icons', () => {
+    expect(() =>
+      sanitize(
+        makeConfig({
+          collections: [
+            { slug: 'users', auth: true, fields: [], admin: { icon: 'unknown' as never } },
+          ],
+        }),
+      ),
+    ).toThrowError("[frogbot] Unknown admin icon 'unknown'. Valid:");
+  });
+
   it('throws `[frogbot] `globals` is not a FrogBot concept` when `globals` is present', () => {
     const config = makeConfig() as unknown as Record<string, unknown>;
     config.globals = [{ slug: 'site', fields: [] }];

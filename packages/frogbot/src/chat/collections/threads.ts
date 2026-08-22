@@ -26,6 +26,7 @@ export function defaultThreadsCollection({
     slug,
     trash: true,
     admin: {
+      icon: 'bubble-chat',
       group: 'Chat',
       useAsTitle: 'title',
       defaultColumns: ['title', 'user', 'agent', 'lastMessageAt'],

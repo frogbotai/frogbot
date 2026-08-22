@@ -29,6 +29,11 @@
       "import": "./src/icons/*.ts",
       "default": "./src/icons/*.ts"
     },
+    "./icons/registry": {
+      "types": "./src/icons/registry.ts",
+      "import": "./src/icons/registry.ts",
+      "default": "./src/icons/registry.ts"
+    },
     "./theme": {
       "types": "./src/exports/theme.ts",
       "import": "./src/exports/theme.ts",
@@ -103,6 +108,11 @@
         "types": "./dist/icons/*.d.ts",
         "import": "./dist/icons/*.js",
         "default": "./dist/icons/*.js"
+      },
+      "./icons/registry": {
+        "types": "./dist/icons/registry.d.ts",
+        "import": "./dist/icons/registry.js",
+        "default": "./dist/icons/registry.js"
       },
       "./theme": {
         "types": "./dist/exports/theme.d.ts",

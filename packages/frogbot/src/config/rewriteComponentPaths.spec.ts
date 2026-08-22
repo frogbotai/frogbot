@@ -107,6 +107,26 @@ describe('rewriteComponentPaths', () => {
     expect(() => rewriteComponentPaths(config)).not.toThrow();
   });
 
+  it('rewrites navigation item and entity icon component paths', () => {
+    const config = {
+      admin: { nav: { items: [{ icon: '@payloadcms/next/client#ItemIcon' }] } },
+      collections: [{ admin: { icon: '@payloadcms/next/rsc#CollectionIcon' }, fields: [] }],
+      globals: [{ admin: { icon: '@payloadcms/next/rsc#GlobalIcon' }, fields: [] }],
+    } as unknown as SanitizedConfig;
+
+    rewriteComponentPaths(config);
+
+    expect(
+      (config.admin as never as { nav: { items: { icon: string }[] } }).nav.items[0]?.icon,
+    ).toBe('@frogbotai/next/client#ItemIcon');
+    expect((config.collections[0]?.admin as never as { icon: string }).icon).toBe(
+      '@frogbotai/next/rsc#CollectionIcon',
+    );
+    expect((config.globals[0]?.admin as never as { icon: string }).icon).toBe(
+      '@frogbotai/next/rsc#GlobalIcon',
+    );
+  });
+
   it('rewrites Payload folder field components', () => {
     const config = {
       collections: [

@@ -13,7 +13,7 @@ function makeBase(overrides?: Partial<CollectionConfig>): CollectionConfig {
   return {
     slug: 'threads',
     trash: true,
-    admin: { group: 'Chat', useAsTitle: 'title' },
+    admin: { group: 'Chat', icon: 'bubble-chat', useAsTitle: 'title' },
     access: {
       create: () => true,
       read: () => ({ user: { equals: 'base' } }),
@@ -127,7 +127,11 @@ describe('mergeCollection', () => {
       base: makeBase(),
       reservedFields: [],
     });
-    expect(merged.admin).toMatchObject({ group: 'Chat', useAsTitle: 'department' });
+    expect(merged.admin).toMatchObject({
+      group: 'Chat',
+      icon: 'bubble-chat',
+      useAsTitle: 'department',
+    });
   });
 
   it('user top-level options win, base fills the rest', () => {

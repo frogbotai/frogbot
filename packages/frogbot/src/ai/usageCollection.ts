@@ -20,6 +20,7 @@ export function defaultUsageCollection({
   return {
     slug: USAGE_LOGS_SLUG,
     admin: {
+      icon: 'ai-search',
       group: 'AI',
       defaultColumns: ['model', 'operation', 'user', 'costUSD', 'requestedAt'],
     },

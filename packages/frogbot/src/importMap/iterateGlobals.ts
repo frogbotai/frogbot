@@ -1,4 +1,4 @@
-import type { SanitizedConfig, SanitizedGlobalConfig } from 'payload';
+import type { PayloadComponent, SanitizedConfig, SanitizedGlobalConfig } from 'payload';
 import { genImportMapIterateFields } from 'payload';
 
 import type { AddToImportMap, Imports, InternalImportMap } from './index.js';
@@ -19,6 +19,9 @@ export function iterateGlobals({
   imports: Imports;
 }) {
   for (const global of globals) {
+    const icon = (global.admin as typeof global.admin & { icon?: PayloadComponent })?.icon;
+    if (typeof icon !== 'string' || icon.includes('#')) addToImportMap(icon);
+
     genImportMapIterateFields({
       addToImportMap,
       baseDir,
