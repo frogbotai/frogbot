@@ -1,14 +1,10 @@
-import { getTranslation } from '@payloadcms/translations';
 import { Logout } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
-import type { EntityToGroup } from '@payloadcms/ui/shared';
-import { EntityType, groupNavItems } from '@payloadcms/ui/shared';
-import type { CustomComponent, NavPreferences, PayloadRequest, ServerProps } from 'payload';
+import type { NavPreferences, PayloadRequest, ServerProps } from 'payload';
 import { formatAdminURL, PREFERENCE_KEYS } from 'payload/shared';
 
+import { buildNavModel } from './buildNavModel.js';
 import { FrogbotNavClient } from './index.client.js';
-
-type NavConfigItem = { icon?: CustomComponent; label: string; path: string };
 
 async function getNavPreferences(req?: PayloadRequest): Promise<NavPreferences | null> {
   if (!req?.user?.collection) return null;
@@ -47,26 +43,14 @@ export async function FrogbotNav(props: FrogbotNavProps) {
   } = props;
   if (!payload?.config || !permissions || !visibleEntities) return null;
 
-  const { admin, collections, globals, routes } = payload.config;
-  const groups = groupNavItems(
-    [
-      ...collections
-        .filter(({ slug }) => visibleEntities.collections.includes(slug))
-        .map((entity) => ({ entity, type: EntityType.collection }) satisfies EntityToGroup),
-      ...globals
-        .filter(({ slug }) => visibleEntities.globals.includes(slug))
-        .map((entity) => ({ entity, type: EntityType.global }) satisfies EntityToGroup),
-    ],
-    permissions,
-    i18n,
-  );
+  const { admin, routes } = payload.config;
+  const navModel = buildNavModel({ config: payload.config, i18n, permissions, visibleEntities });
   const navPreferences = await getNavPreferences(req);
   const serverProps = { i18n, locale, params, payload, permissions, searchParams, user };
   const clientProps = { documentSubViewType, viewType };
   const render = (Component: Parameters<typeof RenderServerComponent>[0]['Component'], key?: string) =>
     RenderServerComponent({ Component, clientProps, importMap: payload.importMap, key, serverProps });
-  const configuredItems = ((admin as typeof admin & { nav?: { items?: NavConfigItem[] } }).nav?.items ?? []).map(
-    (item) => ({
+  const configuredItems = navModel.items.map((item) => ({
       ...item,
       icon: item.icon
         ? RenderServerComponent({
@@ -78,16 +62,9 @@ export async function FrogbotNav(props: FrogbotNavProps) {
         : undefined,
     }),
   );
-  const mappedGroups = groups.map(({ entities, label }) => ({
-    label,
-    open: navPreferences?.groups?.[label]?.open,
-    items: entities.map((entity) => ({
-      label: getTranslation(entity.label, i18n),
-      path: formatAdminURL({
-        adminRoute: routes.admin,
-        path: `/${entity.type}/${entity.slug}`,
-      }),
-    })),
+  const mappedGroups = navModel.groups.map((group) => ({
+    ...group,
+    open: navPreferences?.groups?.[group.label]?.open,
   }));
   const beforeNavLinks = admin.components.beforeNavLinks?.map((component, index) =>
     render(component, `before-nav-${index}`),
