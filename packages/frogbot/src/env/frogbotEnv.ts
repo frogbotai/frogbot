@@ -1,4 +1,4 @@
-import { env } from './builders.js'
+import { env } from './builders.js';
 
 export const frogbotEnv = Object.freeze({
   databaseUrl: env.string().required(),
@@ -8,4 +8,4 @@ export const frogbotEnv = Object.freeze({
     .default('info'),
   nodeEnv: env.enum(['development', 'production', 'test']).default('production'),
   port: env.number().default(3000),
-})
+});

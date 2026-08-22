@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest';
 
-import { deriveName } from './deriveName.js'
+import { deriveName } from './deriveName.js';
 
 describe('deriveName', () => {
   it.each([
@@ -11,6 +11,6 @@ describe('deriveName', () => {
     ['s3Bucket', 'S3_BUCKET'],
     ['redisRlHost', 'REDIS_RL_HOST'],
   ])('derives %s as %s', (key, expected) => {
-    expect(deriveName(key)).toBe(expected)
-  })
-})
+    expect(deriveName(key)).toBe(expected);
+  });
+});
