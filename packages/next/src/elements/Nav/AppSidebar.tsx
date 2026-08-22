@@ -118,7 +118,8 @@ export function AppSidebar({
         };
 
   const renderItem = (item: NavItem) => {
-    const Icon = typeof item.icon === 'string' ? iconRegistry[item.icon] : item.icon ?? FolderIcon;
+    const Icon =
+      typeof item.icon === 'string' ? iconRegistry[item.icon] : (item.icon ?? FolderIcon);
     const active =
       currentPath === item.path || (item.path !== '/' && currentPath.startsWith(`${item.path}/`));
     return (
@@ -154,10 +155,7 @@ export function AppSidebar({
       <div className={`${baseClass}__header`}>
         <button
           aria-label={open ? 'Home' : 'Open sidebar'}
-          className={classes(
-            `${baseClass}__logo`,
-            showToggleIcon && `${baseClass}__logo--toggle`,
-          )}
+          className={classes(`${baseClass}__logo`, showToggleIcon && `${baseClass}__logo--toggle`)}
           onClick={(event) => {
             if (!open) return;
             navigate(event, homePath);
@@ -214,10 +212,7 @@ export function AppSidebar({
 
       {tooltip &&
         createPortal(
-          <div
-            className={`${baseClass}__tooltip`}
-            style={{ left: tooltip.left, top: tooltip.top }}
-          >
+          <div className={`${baseClass}__tooltip`} style={{ left: tooltip.left, top: tooltip.top }}>
             <Tooltip staticPositioning>{tooltip.label}</Tooltip>
           </div>,
           document.body,

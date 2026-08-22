@@ -14,12 +14,7 @@ type BuildNavModelProps = {
   visibleEntities: NonNullable<ServerProps['visibleEntities']>;
 };
 
-export function buildNavModel({
-  config,
-  i18n,
-  permissions,
-  visibleEntities,
-}: BuildNavModelProps) {
+export function buildNavModel({ config, i18n, permissions, visibleEntities }: BuildNavModelProps) {
   const { admin, collections, globals, routes } = config;
   const entities = [
     ...collections
@@ -30,13 +25,15 @@ export function buildNavModel({
       .map((entity) => ({ entity, type: EntityType.global }) satisfies EntityToGroup),
   ];
   const groupedEntities = entities.filter(({ entity }) => entity.admin.group !== null);
-  const groups = groupNavItems(
-    groupedEntities,
-    permissions,
-    i18n,
+  const groups = groupNavItems(groupedEntities, permissions, i18n);
+  const entityByKey = new Map(
+    entities.map(({ entity, type }) => [`${type}:${entity.slug}`, entity]),
   );
-  const entityByKey = new Map(entities.map(({ entity, type }) => [`${type}:${entity.slug}`, entity]));
-  const mapEntity = (entity: { label: Parameters<typeof getTranslation>[0]; slug: string; type: EntityType }) => ({
+  const mapEntity = (entity: {
+    label: Parameters<typeof getTranslation>[0];
+    slug: string;
+    type: EntityType;
+  }) => ({
     icon: (entityByKey.get(`${entity.type}:${entity.slug}`)?.admin as { icon?: EntityIcon })?.icon,
     label: getTranslation(entity.label, i18n),
     path: formatAdminURL({ adminRoute: routes.admin, path: `/${entity.type}/${entity.slug}` }),
@@ -48,7 +45,11 @@ export function buildNavModel({
     })
     .map(({ entity, type }) => {
       const label = 'labels' in entity ? entity.labels.plural : entity.label;
-      return mapEntity({ label: typeof label === 'function' ? label({ i18n, t: i18n.t }) : label, slug: entity.slug, type });
+      return mapEntity({
+        label: typeof label === 'function' ? label({ i18n, t: i18n.t }) : label,
+        slug: entity.slug,
+        type,
+      });
     });
 
   return {

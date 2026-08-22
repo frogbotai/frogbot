@@ -48,11 +48,21 @@ export async function FrogbotNav(props: FrogbotNavProps) {
   const navPreferences = await getNavPreferences(req);
   const serverProps = { i18n, locale, params, payload, permissions, searchParams, user };
   const clientProps = { documentSubViewType, viewType };
-  const render = (Component: Parameters<typeof RenderServerComponent>[0]['Component'], key?: string) =>
-    RenderServerComponent({ Component, clientProps, importMap: payload.importMap, key, serverProps });
+  const render = (
+    Component: Parameters<typeof RenderServerComponent>[0]['Component'],
+    key?: string,
+  ) =>
+    RenderServerComponent({
+      Component,
+      clientProps,
+      importMap: payload.importMap,
+      key,
+      serverProps,
+    });
   const configuredItems = navModel.items.map((item) => ({
-      ...item,
-      icon: item.icon && (typeof item.icon !== 'string' || item.icon.includes('#'))
+    ...item,
+    icon:
+      item.icon && (typeof item.icon !== 'string' || item.icon.includes('#'))
         ? RenderServerComponent({
             Component: item.icon,
             clientProps: { className: 'frogbot-admin-sidebar__icon', size: 24 },
@@ -60,21 +70,21 @@ export async function FrogbotNav(props: FrogbotNavProps) {
             serverProps,
           })
         : item.icon,
-    }),
-  );
+  }));
   const mappedGroups = navModel.groups.map((group) => ({
     ...group,
     open: navPreferences?.groups?.[group.label]?.open,
     items: group.items.map((item) => ({
       ...item,
-      icon: item.icon && (typeof item.icon !== 'string' || item.icon.includes('#'))
-        ? RenderServerComponent({
-            Component: item.icon,
-            clientProps: { className: 'frogbot-admin-sidebar__icon', size: 24 },
-            importMap: payload.importMap,
-            serverProps,
-          })
-        : item.icon,
+      icon:
+        item.icon && (typeof item.icon !== 'string' || item.icon.includes('#'))
+          ? RenderServerComponent({
+              Component: item.icon,
+              clientProps: { className: 'frogbot-admin-sidebar__icon', size: 24 },
+              importMap: payload.importMap,
+              serverProps,
+            })
+          : item.icon,
     })),
   }));
   const beforeNavLinks = admin.components.beforeNavLinks?.map((component, index) =>
@@ -84,7 +94,9 @@ export async function FrogbotNav(props: FrogbotNavProps) {
     render(component, `after-nav-${index}`),
   );
   const settings = Array.isArray(admin.components.settingsMenu)
-    ? admin.components.settingsMenu.map((component, index) => render(component, `settings-${index}`))
+    ? admin.components.settingsMenu.map((component, index) =>
+        render(component, `settings-${index}`),
+      )
     : [];
   const logout = RenderServerComponent({
     Component: admin.components.logout?.Button,
@@ -100,7 +112,12 @@ export async function FrogbotNav(props: FrogbotNavProps) {
     <FrogbotNavClient
       afterNavLinks={afterNavLinks}
       beforeNavLinks={beforeNavLinks}
-      bottom={<>{settings}{logout}</>}
+      bottom={
+        <>
+          {settings}
+          {logout}
+        </>
+      }
       groups={mappedGroups}
       homePath={homePath}
       initialOpen={navPreferences?.open}

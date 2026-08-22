@@ -28,7 +28,10 @@ describe('AppSidebar', () => {
     const { container } = render(
       <AppSidebar
         {...props}
-        navItems={[{ icon: 'robot', label: 'Robot', path: '/robot' }, { label: 'Folder', path: '/folder' }]}
+        navItems={[
+          { icon: 'robot', label: 'Robot', path: '/robot' },
+          { label: 'Folder', path: '/folder' },
+        ]}
         open
       />,
     );

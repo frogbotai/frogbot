@@ -116,9 +116,9 @@ describe('rewriteComponentPaths', () => {
 
     rewriteComponentPaths(config);
 
-    expect((config.admin as never as { nav: { items: { icon: string }[] } }).nav.items[0]?.icon).toBe(
-      '@frogbotai/next/client#ItemIcon',
-    );
+    expect(
+      (config.admin as never as { nav: { items: { icon: string }[] } }).nav.items[0]?.icon,
+    ).toBe('@frogbotai/next/client#ItemIcon');
     expect((config.collections[0]?.admin as never as { icon: string }).icon).toBe(
       '@frogbotai/next/rsc#CollectionIcon',
     );

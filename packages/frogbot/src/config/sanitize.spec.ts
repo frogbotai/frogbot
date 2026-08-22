@@ -52,7 +52,9 @@ describe('frogbot sanitize', () => {
     expect(() =>
       sanitize(
         makeConfig({
-          collections: [{ slug: 'users', auth: true, fields: [], admin: { icon: 'unknown' as never } }],
+          collections: [
+            { slug: 'users', auth: true, fields: [], admin: { icon: 'unknown' as never } },
+          ],
         }),
       ),
     ).toThrowError("[frogbot] Unknown admin icon 'unknown'. Valid:");

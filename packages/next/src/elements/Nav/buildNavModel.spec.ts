@@ -5,10 +5,11 @@ import { buildNavModel } from './buildNavModel';
 
 const i18n = {
   language: 'en',
-  t: (key: string) => ({
-    'general:collections': 'Collections',
-    'general:globals': 'Globals',
-  })[key] ?? key,
+  t: (key: string) =>
+    ({
+      'general:collections': 'Collections',
+      'general:globals': 'Globals',
+    })[key] ?? key,
 } as ServerProps['i18n'];
 
 const permissions = {

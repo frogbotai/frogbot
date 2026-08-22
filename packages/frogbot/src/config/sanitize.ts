@@ -875,9 +875,7 @@ export function sanitize(
   for (const collection of config.collections) {
     const icon = collection.admin?.icon;
     if (typeof icon === 'string' && !icon.includes('#') && !iconNames.includes(icon as never)) {
-      throw new Error(
-        `[frogbot] Unknown admin icon '${icon}'. Valid: ${iconNames.join(', ')}`,
-      );
+      throw new Error(`[frogbot] Unknown admin icon '${icon}'. Valid: ${iconNames.join(', ')}`);
     }
   }
   validateInternalPathReservations(config);
