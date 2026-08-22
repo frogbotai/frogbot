@@ -63,30 +63,21 @@ export async function FrogbotNav(props: FrogbotNavProps) {
   const navPreferences = await getNavPreferences(req);
   const serverProps = { i18n, locale, params, payload, permissions, searchParams, user };
   const clientProps = { documentSubViewType, viewType };
-  const render = (
-    Component: Parameters<typeof RenderServerComponent>[0]['Component'],
-    key?: string,
-  ) =>
-    RenderServerComponent({
-      Component,
-      clientProps,
-      importMap: payload.importMap,
-      key,
-      serverProps,
-    });
-  const configuredItems = (
-    (admin as typeof admin & { nav?: { items?: NavConfigItem[] } }).nav?.items ?? []
-  ).map((item) => ({
-    ...item,
-    icon: item.icon
-      ? RenderServerComponent({
-          Component: item.icon,
-          clientProps: { className: 'frogbot-admin-sidebar__icon', size: 24 },
-          importMap: payload.importMap,
-          serverProps,
-        })
-      : undefined,
-  }));
+  const render = (Component: Parameters<typeof RenderServerComponent>[0]['Component'], key?: string) =>
+    RenderServerComponent({ Component, clientProps, importMap: payload.importMap, key, serverProps });
+  const configuredItems = ((admin as typeof admin & { nav?: { items?: NavConfigItem[] } }).nav?.items ?? []).map(
+    (item) => ({
+      ...item,
+      icon: item.icon
+        ? RenderServerComponent({
+            Component: item.icon,
+            clientProps: { className: 'frogbot-admin-sidebar__icon', size: 24 },
+            importMap: payload.importMap,
+            serverProps,
+          })
+        : undefined,
+    }),
+  );
   const mappedGroups = groups.map(({ entities, label }) => ({
     label,
     open: navPreferences?.groups?.[label]?.open,
@@ -105,9 +96,7 @@ export async function FrogbotNav(props: FrogbotNavProps) {
     render(component, `after-nav-${index}`),
   );
   const settings = Array.isArray(admin.components.settingsMenu)
-    ? admin.components.settingsMenu.map((component, index) =>
-        render(component, `settings-${index}`),
-      )
+    ? admin.components.settingsMenu.map((component, index) => render(component, `settings-${index}`))
     : [];
   const logout = RenderServerComponent({
     Component: admin.components.logout?.Button,
@@ -123,12 +112,7 @@ export async function FrogbotNav(props: FrogbotNavProps) {
     <FrogbotNavClient
       afterNavLinks={afterNavLinks}
       beforeNavLinks={beforeNavLinks}
-      bottom={
-        <>
-          {settings}
-          {logout}
-        </>
-      }
+      bottom={<>{settings}{logout}</>}
       groups={mappedGroups}
       homePath={homePath}
       items={configuredItems}
