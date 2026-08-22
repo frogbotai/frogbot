@@ -2,22 +2,19 @@ import { parseBoolean, parseEnum, parseNumber, parseString, type ParseResult } f
 
 export type RequiredWhen<TValues = Record<string, unknown>> = (values: TValues) => boolean;
 
-export type EnvBuilder<T, TResolved extends boolean = false> = Readonly<{
-  default: (value: T) => EnvBuilder<T, true>;
-  name: (name: string) => EnvBuilder<T, TResolved>;
-  required: () => EnvBuilder<T, true>;
-  requiredWhen: (predicate: RequiredWhen) => EnvBuilder<T, true>;
-  _output: TResolved extends true ? T : T | undefined;
+export type EnvBuilder<T, TOutput = T | undefined> = Readonly<{
+  default: (value: T) => EnvBuilder<T, T>;
+  name: (name: string) => EnvBuilder<T, TOutput>;
+  required: () => EnvBuilder<T, T>;
+  requiredWhen: (predicate: RequiredWhen) => EnvBuilder<T, T>;
+  _output: TOutput;
 }>;
 
-export type EnvBuilderOutput<TBuilder> =
-  TBuilder extends EnvBuilder<infer T, infer TResolved>
-    ? TResolved extends true
-      ? T
-      : T | undefined
-    : never;
+export type EnvBuilderOutput<TBuilder> = TBuilder extends { readonly _output: infer TOutput }
+  ? TOutput
+  : never;
 
-export type EnvBuilderDescriptor<T = unknown> = EnvBuilder<T, boolean> &
+export type EnvBuilderDescriptor<T = unknown> = EnvBuilder<T, unknown> &
   Readonly<{
     defaultValue?: T;
     hasDefault: boolean;
@@ -40,10 +37,7 @@ const createBuilder = <T>(state: BuilderState<T>): EnvBuilder<T> => {
     default(value: T) {
       if (state.requiredMode)
         throw new Error('An env variable cannot be both required and defaulted');
-      return createBuilder({ ...state, defaultValue: value, hasDefault: true }) as EnvBuilder<
-        T,
-        true
-      >;
+      return createBuilder({ ...state, defaultValue: value, hasDefault: true }) as EnvBuilder<T, T>;
     },
     name(name: string) {
       if (!envNamePattern.test(name)) throw new Error(`Invalid env variable name: ${name}`);
@@ -54,7 +48,7 @@ const createBuilder = <T>(state: BuilderState<T>): EnvBuilder<T> => {
         throw new Error('An env variable cannot be both required and defaulted');
       if (state.requiredMode)
         throw new Error('An env variable can only have one required modifier');
-      return createBuilder({ ...state, requiredMode: 'always' }) as EnvBuilder<T, true>;
+      return createBuilder({ ...state, requiredMode: 'always' }) as EnvBuilder<T, T>;
     },
     requiredWhen(predicate: RequiredWhen) {
       if (state.hasDefault)
@@ -65,11 +59,11 @@ const createBuilder = <T>(state: BuilderState<T>): EnvBuilder<T> => {
         ...state,
         requiredMode: 'conditional',
         requiredPredicate: predicate,
-      }) as EnvBuilder<T, true>;
+      }) as EnvBuilder<T, T>;
     },
   } as unknown as EnvBuilderDescriptor<T>;
 
-  return Object.freeze(builder);
+  return Object.freeze(builder) as EnvBuilder<T>;
 };
 
 const fromParser = <T>(parse: (raw: string) => ParseResult<T>): EnvBuilder<T> =>
