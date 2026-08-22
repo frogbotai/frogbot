@@ -1,6 +1,7 @@
 'use client';
 
 import { FolderIcon, FrogBotFavicon, SidebarLeftIcon } from '@frogbotai/ui/icons';
+import { iconRegistry, type IconName } from '@frogbotai/ui/icons/registry';
 import { Tooltip } from '@payloadcms/ui/elements/Tooltip';
 import {
   type ComponentType,
@@ -14,7 +15,7 @@ import {
 import { createPortal } from 'react-dom';
 
 export type NavItem = {
-  icon?: ComponentType<{ className?: string; size: number }> | ReactNode;
+  icon?: ComponentType<{ className?: string; size: number }> | IconName | ReactNode;
   label: string;
   path: string;
 };
@@ -117,7 +118,7 @@ export function AppSidebar({
         };
 
   const renderItem = (item: NavItem) => {
-    const Icon = item.icon ?? FolderIcon;
+    const Icon = typeof item.icon === 'string' ? iconRegistry[item.icon] : item.icon ?? FolderIcon;
     const active =
       currentPath === item.path || (item.path !== '/' && currentPath.startsWith(`${item.path}/`));
     return (

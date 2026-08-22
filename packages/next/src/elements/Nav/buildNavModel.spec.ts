@@ -16,6 +16,7 @@ const permissions = {
     hidden: { read: true },
     posts: { read: true },
     users: { read: true },
+    projects: { read: true },
   },
   globals: {},
 } as unknown as NonNullable<ServerProps['permissions']>;

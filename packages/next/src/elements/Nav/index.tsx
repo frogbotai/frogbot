@@ -52,19 +52,30 @@ export async function FrogbotNav(props: FrogbotNavProps) {
     RenderServerComponent({ Component, clientProps, importMap: payload.importMap, key, serverProps });
   const configuredItems = navModel.items.map((item) => ({
       ...item,
-      icon: item.icon
+      icon: item.icon && (typeof item.icon !== 'string' || item.icon.includes('#'))
         ? RenderServerComponent({
             Component: item.icon,
             clientProps: { className: 'frogbot-admin-sidebar__icon', size: 24 },
             importMap: payload.importMap,
             serverProps,
           })
-        : undefined,
+        : item.icon,
     }),
   );
   const mappedGroups = navModel.groups.map((group) => ({
     ...group,
     open: navPreferences?.groups?.[group.label]?.open,
+    items: group.items.map((item) => ({
+      ...item,
+      icon: item.icon && (typeof item.icon !== 'string' || item.icon.includes('#'))
+        ? RenderServerComponent({
+            Component: item.icon,
+            clientProps: { className: 'frogbot-admin-sidebar__icon', size: 24 },
+            importMap: payload.importMap,
+            serverProps,
+          })
+        : item.icon,
+    })),
   }));
   const beforeNavLinks = admin.components.beforeNavLinks?.map((component, index) =>
     render(component, `before-nav-${index}`),
