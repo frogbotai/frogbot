@@ -15,6 +15,7 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
       "createdAt",
     ],
     "group": "Chat",
+    "icon": "bubble-chat",
   },
   "fields": [
     {
