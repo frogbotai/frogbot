@@ -18,16 +18,24 @@ type IconExportName = {
 
 export type IconName = IconExportName extends `${infer Base}Icon` ? KebabCase<Base> : never;
 
-const toKebabCase = (value: string) =>
+type IconComponent = ComponentType<{ className?: string; size?: number }>;
+
+const isIconExportName = (name: string): name is IconExportName => /^[A-Z].*Icon$/.test(name);
+
+const toKebabCase = <Name extends IconExportName>(value: Name) =>
   value
     .replace(/Icon$/, '')
     .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-    .toLowerCase();
+    .toLowerCase() as Name extends `${infer Base}Icon` ? KebabCase<Base> : never;
 
-export const iconRegistry = Object.fromEntries(
-  Object.entries(icons)
-    .filter(([name]) => /^[A-Z].*Icon$/.test(name))
-    .map(([name, icon]) => [toKebabCase(name), icon]),
-) as Record<IconName, ComponentType<{ className?: string; size?: number }>>;
+const buildIconRegistry = () => {
+  const registry: Partial<Record<IconName, IconComponent>> = {};
+  for (const name of Object.keys(icons)) {
+    if (isIconExportName(name)) registry[toKebabCase(name)] = icons[name];
+  }
+  return registry as Record<IconName, IconComponent>;
+};
+
+export const iconRegistry = buildIconRegistry();
 
 export const iconNames = Object.keys(iconRegistry).sort() as IconName[];

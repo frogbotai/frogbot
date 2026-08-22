@@ -16,6 +16,7 @@ exports[`defaultThreadsCollection > produces the base config shape 1`] = `
       "lastMessageAt",
     ],
     "group": "Chat",
+    "icon": "bubble-chat",
     "useAsTitle": "title",
   },
   "fields": [

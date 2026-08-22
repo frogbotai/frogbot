@@ -24,7 +24,7 @@ afterAll(async () => {
   await Promise.all(dirs.map((dir) => rm(dir, { recursive: true, force: true })));
 });
 
-async function makePayloadConfig(): Promise<SanitizedConfig> {
+async function makePayloadConfig({ includeNavIcons = true } = {}): Promise<SanitizedConfig> {
   const config = await buildConfig({
     secret: 'test-secret',
     db: { defaultIDType: 'number' } as never,
@@ -32,7 +32,7 @@ async function makePayloadConfig(): Promise<SanitizedConfig> {
       {
         slug: 'users',
         auth: true,
-        admin: { icon: './components/UserIcon.tsx#UserIcon' },
+        admin: includeNavIcons ? { icon: './components/UserIcon.tsx#UserIcon' } : undefined,
         fields: [
           {
             name: 'name',
@@ -43,7 +43,9 @@ async function makePayloadConfig(): Promise<SanitizedConfig> {
       },
     ],
     admin: {
-      nav: { items: [{ icon: './components/HomeIcon.tsx#HomeIcon', label: 'Home', path: '/' }] },
+      nav: includeNavIcons
+        ? { items: [{ icon: './components/HomeIcon.tsx#HomeIcon', label: 'Home', path: '/' }] }
+        : undefined,
       components: {
         Nav: './components/Nav.tsx#CustomNav',
         logout: { Button: '/components/LogoutButton.tsx' },
@@ -61,7 +63,7 @@ describe('frogbot importMap generator', () => {
     await mkdir(join(dir, 'a'));
     await mkdir(join(dir, 'b'));
 
-    const payloadConfig = await makePayloadConfig();
+    const payloadConfig = await makePayloadConfig({ includeNavIcons: false });
     payloadConfig.admin.importMap.baseDir = dir;
 
     payloadConfig.admin.importMap.importMapFile = join(dir, 'a', 'importMap.js');
