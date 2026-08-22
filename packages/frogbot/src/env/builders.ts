@@ -37,7 +37,7 @@ const envNamePattern = /^[A-Z_][A-Z0-9_]*$/;
 const createBuilder = <T>(state: BuilderState<T>): EnvBuilder<T> => {
   const builder = {
     ...state,
-    default(value) {
+    default(value: T) {
       if (state.requiredMode)
         throw new Error('An env variable cannot be both required and defaulted');
       return createBuilder({ ...state, defaultValue: value, hasDefault: true }) as EnvBuilder<
@@ -45,7 +45,7 @@ const createBuilder = <T>(state: BuilderState<T>): EnvBuilder<T> => {
         true
       >;
     },
-    name(name) {
+    name(name: string) {
       if (!envNamePattern.test(name)) throw new Error(`Invalid env variable name: ${name}`);
       return createBuilder({ ...state, envName: name });
     },
@@ -56,7 +56,7 @@ const createBuilder = <T>(state: BuilderState<T>): EnvBuilder<T> => {
         throw new Error('An env variable can only have one required modifier');
       return createBuilder({ ...state, requiredMode: 'always' }) as EnvBuilder<T, true>;
     },
-    requiredWhen(predicate) {
+    requiredWhen(predicate: RequiredWhen) {
       if (state.hasDefault)
         throw new Error('An env variable cannot be both required and defaulted');
       if (state.requiredMode)
