@@ -13,6 +13,7 @@ const subpaths = [
   '.',
   './icons',
   './icons/*',
+  './icons/registry',
   './theme',
   './chat',
   './chat/tools',
@@ -109,12 +110,13 @@ try {
     `import { Button, Card, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Sidebar, SidebarInset, SidebarProvider } from '@frogbotai/ui'
 import * as artifacts from '@frogbotai/ui/chat/artifacts'
 import * as chat from '@frogbotai/ui/chat'
+import { iconNames } from '@frogbotai/ui/icons/registry'
 import { ThemeProvider } from '@frogbotai/ui/theme'
 import * as tools from '@frogbotai/ui/chat/tools'
 import '@frogbotai/ui/styles.css'
 import { createRoot } from 'react-dom/client'
 
-void [artifacts, tools]
+void [artifacts, iconNames, tools]
 createRoot(document.getElementById('root')!).render(
   <ThemeProvider mode="dark" theme={{ '--primary': 'oklch(0.7 0.2 40)' }}>
     <SidebarProvider><Sidebar>Navigation</Sidebar><SidebarInset><chat.MessageList messages={[{ id: '1', role: 'assistant', parts: [{ type: 'text', text: 'Bundled chat' }] }]} /><Card><Input aria-label="Message" /><Button>Send</Button></Card><Select defaultValue="one"><SelectTrigger aria-label="Choice"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="one">One</SelectItem></SelectContent></Select></SidebarInset></SidebarProvider>
