@@ -6,4 +6,4 @@ export {
 } from './elements/Nav/CollectionsSection.js';
 export { NavItem, type NavItemIcon, type NavItemProps } from './elements/Nav/NavItem.js';
 export { NavSection, type NavSectionProps } from './elements/Nav/NavSection.js';
-export { RecentsSection } from './elements/Nav/RecentsSection.js';
+export { RecentsSection, type RecentsSectionProps } from './elements/Nav/RecentsSection.js';

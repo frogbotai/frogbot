@@ -47,6 +47,7 @@ vi.mock('./provider', () => ({
 }));
 vi.mock('./use-chat', () => ({ useChatMessages: () => state.history }));
 vi.mock('./use-chats', () => ({
+  emitChatMutation: vi.fn(),
   useChats: () => ({
     docs: [
       { id: 'one', agent: 'support', title: 'One' },

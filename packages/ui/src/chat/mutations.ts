@@ -2,7 +2,7 @@ import type { FrogBotSDK } from '@frogbotai/sdk';
 
 import type { MessageDocument } from './messages';
 import { chatRequest, type PayloadPage } from './rest';
-import type { ChatDocument } from './use-chats';
+import { emitChatMutation, type ChatDocument } from './use-chats';
 
 type ChatMutationOptions = {
   sdk: FrogBotSDK;
@@ -10,11 +10,11 @@ type ChatMutationOptions = {
   chatId: string | number;
 };
 
-export function renameChat(
+export async function renameChat(
   { sdk, chatsSlug, chatId }: ChatMutationOptions,
   title: string,
 ): Promise<ChatDocument> {
-  return chatRequest(
+  const chat = await chatRequest<ChatDocument>(
     sdk,
     `/${encodeURIComponent(chatsSlug)}/${encodeURIComponent(String(chatId))}`,
     {
@@ -23,6 +23,8 @@ export function renameChat(
       headers: { 'Content-Type': 'application/json' },
     },
   );
+  emitChatMutation();
+  return chat;
 }
 
 export async function deleteChat({
@@ -54,4 +56,5 @@ export async function deleteChat({
     `/${encodeURIComponent(chatsSlug)}/${encodeURIComponent(String(chatId))}`,
     { method: 'DELETE' },
   );
+  emitChatMutation();
 }

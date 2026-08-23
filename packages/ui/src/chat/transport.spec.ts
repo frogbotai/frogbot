@@ -43,6 +43,8 @@ describe('FrogbotChatTransport', () => {
 
   it('targets the agent endpoint and captures the chat id', async () => {
     const onChatId = vi.fn();
+    const dispatchEvent = vi.fn();
+    vi.stubGlobal('window', { dispatchEvent });
     const fetch = vi.fn(() =>
       Promise.resolve(
         new Response('data: {"type":"finish"}\n\n', {
@@ -64,6 +66,10 @@ describe('FrogbotChatTransport', () => {
     );
     expect(transport.chatId).toBe('chat-1');
     expect(onChatId).toHaveBeenCalledWith('chat-1');
+    expect(dispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'frogbot:chats:mutated' }),
+    );
+    vi.unstubAllGlobals();
   });
 
   it('requests the event stream response by default', async () => {

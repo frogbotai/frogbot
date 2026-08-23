@@ -5,6 +5,8 @@ import { deleteChat, renameChat } from './mutations';
 
 describe('chat mutations', () => {
   it('renames through the dynamic chat collection', async () => {
+    const dispatchEvent = vi.fn();
+    vi.stubGlobal('window', { dispatchEvent });
     const fetch = vi.fn(() => Promise.resolve(Response.json({ id: 't1', title: 'New' })));
     await renameChat(
       {
@@ -18,6 +20,10 @@ describe('chat mutations', () => {
       '/api/conversations/c1',
       expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ title: 'New' }) }),
     );
+    expect(dispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'frogbot:chats:mutated' }),
+    );
+    vi.unstubAllGlobals();
   });
 
   it('deletes messages before their chat', async () => {

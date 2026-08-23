@@ -32,6 +32,7 @@
 
 .frogbot-admin-sidebar--collapsed .frogbot-nav-section__toggle,
 .frogbot-admin-sidebar--collapsed .frogbot-collections-section__group-label,
+.frogbot-admin-sidebar--collapsed .frogbot-recents-section__group-label,
 .frogbot-admin-sidebar--collapsed .frogbot-recents-section__empty {
   display: none;
 }

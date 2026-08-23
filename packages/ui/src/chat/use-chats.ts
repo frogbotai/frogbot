@@ -1,7 +1,7 @@
 'use client';
 
 import type { FrogBotSDK } from '@frogbotai/sdk';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { chatRequest, type PayloadPage } from './rest';
 
@@ -18,7 +18,16 @@ export type UseChatsOptions = {
   agent?: string;
   page?: number;
   limit?: number;
+  initialData?: PayloadPage<ChatDocument>;
+  revalidate?: boolean;
+  refreshInterval?: number;
 };
+
+export const CHAT_MUTATION_EVENT = 'frogbot:chats:mutated';
+
+export function emitChatMutation() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(CHAT_MUTATION_EVENT));
+}
 
 export async function loadChats({
   sdk,
@@ -38,40 +47,53 @@ export async function loadChats({
 }
 
 export function useChats(options: UseChatsOptions) {
-  const [result, setResult] = useState<PayloadPage<ChatDocument>>();
+  const [result, setResult] = useState<PayloadPage<ChatDocument> | undefined>(options.initialData);
   const [error, setError] = useState<Error>();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!options.initialData);
+  const request = useRef(0);
 
   const refresh = useCallback(() => {
-    let active = true;
-    setLoading(true);
+    const current = ++request.current;
+    if (!result) setLoading(true);
     void loadChats(options)
       .then((next) => {
-        if (active) {
+        if (request.current === current) {
           setResult(next);
           setError(undefined);
           setLoading(false);
         }
       })
       .catch((value: unknown) => {
-        if (active) {
+        if (request.current === current) {
           setError(value instanceof Error ? value : new Error(String(value)));
           setLoading(false);
         }
       });
-    return () => {
-      active = false;
-    };
-  }, [options.sdk, options.agent, options.chatsSlug, options.limit, options.page]);
+  }, [options.sdk, options.agent, options.chatsSlug, options.limit, options.page, result]);
 
-  useEffect(() => refresh(), [refresh]);
+  useEffect(() => {
+    if (!options.initialData) refresh();
+    return () => {
+      request.current++;
+    };
+  }, [options.initialData, refresh]);
+
+  useEffect(() => {
+    if (!options.revalidate) return;
+    const interval = window.setInterval(refresh, options.refreshInterval ?? 30_000);
+    window.addEventListener('focus', refresh);
+    window.addEventListener(CHAT_MUTATION_EVENT, refresh);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener(CHAT_MUTATION_EVENT, refresh);
+    };
+  }, [options.refreshInterval, options.revalidate, refresh]);
 
   return {
     ...result,
     error,
     loading,
-    refresh: () => {
-      refresh();
-    },
+    refresh,
   };
 }

@@ -62,7 +62,7 @@ export async function FrogbotNav(props: FrogbotNavProps) {
     visibleEntities,
   });
   const navPreferences = await getNavPreferences(req);
-  const serverProps = { i18n, locale, params, payload, permissions, searchParams, user };
+  const serverProps = { i18n, locale, params, payload, permissions, req, searchParams, user };
   const clientProps = { documentSubViewType, viewType };
   const render = (
     Component: Parameters<typeof RenderServerComponent>[0]['Component'],

@@ -24,7 +24,15 @@ admin: {
 
 Setting `sections` replaces that default array, so include every section you want rendered. Sections appear after New Chat and configured `admin.nav.items`, in array order. Plugin navigation items follow configured items. The bottom rail renders after all sections.
 
+Remove Recents by omitting `@frogbotai/next#RecentsSection`. To move it, place that path at the desired position in `sections`.
+
 `NavSection` gives each section a title, collapsible body, and scrolling content. Its collapsed state is saved for the current user under `frogbot-nav-section:{id}` and restored on reload. Give every section a stable, unique `id`.
+
+## Recents behavior
+
+Recents is enabled by default. FrogBot server-renders up to 30 chats available to the signed-in user, ordered by latest message, then refreshes the list after chat mutations, when the window regains focus, and every 30 seconds.
+
+Chats are grouped under Today, Yesterday, Previous 7 days, Previous 30 days, and Older. Empty groups are hidden. The current chat remains active for its nested admin routes, and View all opens the configured chats collection list.
 
 ## Collection icons and placement
 
@@ -81,19 +89,57 @@ Configured items are application-authored links and are not filtered by collecti
 
 ## Copy and customize a section
 
-The default sections are exported from `@frogbotai/next`. Copy one into your application, change its markup or data, and register the copied component in `admin.nav.sections`. Use public exports such as `NavSection` and `NavItem` rather than importing internal files.
+The default sections and their prop types are exported from `@frogbotai/next`. Copy `RecentsSection` into your application when you need to change its query, heading, or server-rendered content. Keep its server component contract and import the reusable client renderer from the public client entry point:
 
 ```tsx
-import { NavSection } from '@frogbotai/next'
+import { NavSection, type RecentsSectionProps } from '@frogbotai/next'
+import {
+  RecentsSectionClient,
+  type RecentsSectionClientProps
+} from '@frogbotai/next/client'
+import { getCachedFrogbot } from 'frogbot'
+import { formatAdminURL } from 'payload/shared'
 
-export function WorkspaceRecents() {
+export async function WorkspaceRecents({ payload, req }: RecentsSectionProps) {
+  const chat = getCachedFrogbot()?.config.chat
+  const chatsSlug = chat?.enabled ? chat.chatsSlug : ''
+  let recents: RecentsSectionClientProps['recents'] = []
+  let collectionPath = ''
+
+  if (chat?.enabled && req?.user) {
+    const result = await payload.find({
+      collection: chat.chatsSlug,
+      depth: 0,
+      limit: 30,
+      overrideAccess: false,
+      req,
+      sort: '-lastMessageAt'
+    })
+    collectionPath = formatAdminURL({
+      adminRoute: payload.config.routes.admin,
+      path: `/collections/${chat.chatsSlug}`
+    })
+    recents = result.docs.map(doc => ({
+      id: doc.id,
+      title: typeof doc.title === 'string' && doc.title ? doc.title : 'Untitled Chat',
+      agent: typeof doc.agent === 'string' ? doc.agent : '',
+      lastMessageAt: typeof doc.lastMessageAt === 'string' ? doc.lastMessageAt : null
+    }))
+  }
+
   return (
     <NavSection id="workspace-recents" title="Recents">
-      <p>No recent chats</p>
+      <RecentsSectionClient
+        chatsSlug={chatsSlug}
+        collectionPath={collectionPath}
+        recents={recents}
+      />
     </NavSection>
   )
 }
 ```
+
+`RecentsSectionClient` preserves live refresh, date buckets, active rows, and View all. Its public `RecentsSectionClientProps` contract requires `chatsSlug`, `collectionPath`, and normalized `recents`. `bucketRecents` is also exported from `@frogbotai/next/client` when only the default grouping is needed.
 
 ```ts
 admin: {
