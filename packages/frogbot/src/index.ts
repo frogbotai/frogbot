@@ -91,7 +91,7 @@ export type { AuthConfig } from './types/auth.js';
 export type { ManifestResponse } from './types/chat.js';
 export type { Collection, CollectionAdminConfig, CollectionConfig } from './types/collection.js';
 export type { IconName } from './adminIcons.js';
-export type { AdminViews, Component, ProviderComponent } from './types/component.js';
+export type { AdminViews, FrogbotComponent, ProviderComponent } from './types/component.js';
 export type { AfterErrorHook, FrogbotConfig, OnInit, RootHooks } from './types/config.js';
 export type { DatabaseAdapter } from './types/database.js';
 export type {

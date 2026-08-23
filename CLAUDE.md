@@ -45,7 +45,7 @@
 - **Only use `Frogbot*` prefix when wrapping a Payload type that uses `Payload*` prefix** (e.g., `FrogbotConfig` wraps `PayloadConfig`, `FrogbotRequest` wraps `PayloadRequest`)
 - **New domain types should NOT get the `Frogbot` prefix** — the package context is sufficient (e.g., `CollectionConfig`, `Field`, `Endpoint`, `Plugin`)
 - **If there's a name collision** with a Payload type, import the Payload type with a `Payload*` alias rather than prefixing our type
-- Current valid prefixed types: `FrogbotConfig`, `FrogbotRequest`, `FrogbotInstance`, `FrogbotTypes`, `UntypedFrogbotTypes`
+- Current valid prefixed types: `FrogbotConfig`, `FrogbotRequest`, `FrogbotComponent`, `FrogbotInstance`, `FrogbotTypes`, `UntypedFrogbotTypes`
 
 ## Type Generation (`packages/frogbot`)
 

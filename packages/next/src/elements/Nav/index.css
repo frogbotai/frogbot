@@ -30,6 +30,25 @@
   display: none;
 }
 
+.frogbot-admin-sidebar--collapsed .frogbot-nav-section__toggle,
+.frogbot-admin-sidebar--collapsed .frogbot-collections-section__group-label,
+.frogbot-admin-sidebar--collapsed .frogbot-recents-section__empty {
+  display: none;
+}
+
+.frogbot-admin-sidebar--collapsed .frogbot-collections-section__items {
+  padding-inline-start: 0;
+}
+
+.frogbot-admin-sidebar--collapsed .frogbot-nav-item {
+  justify-content: center;
+  padding: 8px;
+}
+
+.frogbot-admin-sidebar--collapsed .frogbot-nav-item__label {
+  display: none;
+}
+
 .frogbot-admin-sidebar--collapsed .frogbot-admin-sidebar__item {
   justify-content: center;
   padding: 8px;
@@ -41,6 +60,12 @@
   flex: 0 0 auto;
   justify-content: space-between;
   margin-block-end: 8px;
+}
+
+.frogbot-admin-sidebar__header-controls {
+  align-items: center;
+  display: flex;
+  gap: 4px;
 }
 
 .frogbot-admin-sidebar__logo,

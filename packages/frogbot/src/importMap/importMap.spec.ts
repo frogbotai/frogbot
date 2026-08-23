@@ -44,9 +44,19 @@ async function makePayloadConfig({ includeNavIcons = true } = {}): Promise<Sanit
     ],
     admin: {
       nav: includeNavIcons
-        ? { items: [{ icon: './components/HomeIcon.tsx#HomeIcon', label: 'Home', path: '/' }] }
+        ? {
+            items: [{ icon: './components/HomeIcon.tsx#HomeIcon', label: 'Home', path: '/' }],
+            sections: ['./components/CustomSection.tsx#CustomSection'],
+          }
         : undefined,
       components: {
+        ...(includeNavIcons
+          ? {
+              afterBottomRail: ['./components/AfterBottom.tsx#AfterBottom'],
+              beforeBottomRail: ['./components/BeforeBottom.tsx#BeforeBottom'],
+              beforeSidebarClose: ['./components/BeforeClose.tsx#BeforeClose'],
+            }
+          : {}),
         Nav: './components/Nav.tsx#CustomNav',
         logout: { Button: '/components/LogoutButton.tsx' },
         providers: ['my-ui/client#ThemeProvider'],
@@ -65,6 +75,7 @@ describe('frogbot importMap generator', () => {
 
     const payloadConfig = await makePayloadConfig({ includeNavIcons: false });
     payloadConfig.admin.importMap.baseDir = dir;
+    (payloadConfig.admin as never as { nav: { sections: string[] } }).nav.sections = [];
 
     payloadConfig.admin.importMap.importMapFile = join(dir, 'a', 'importMap.js');
     await payloadGenerateImportMap(payloadConfig, { log: false });
@@ -94,6 +105,10 @@ describe('frogbot importMap generator', () => {
     expect(output).toContain("from './fields/NameField.tsx'");
     expect(output).toContain("from './components/UserIcon.tsx'");
     expect(output).toContain("from './components/HomeIcon.tsx'");
+    expect(output).toContain("from './components/CustomSection.tsx'");
+    expect(output).toContain("from './components/AfterBottom.tsx'");
+    expect(output).toContain("from './components/BeforeBottom.tsx'");
+    expect(output).toContain("from './components/BeforeClose.tsx'");
     expect(output).toContain("from 'my-ui/client'");
     expect(output).not.toContain('@payloadcms');
     expect(output).not.toContain("import('payload')");

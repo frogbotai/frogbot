@@ -1,6 +1,11 @@
 'use client';
 
-import { FolderIcon, FrogBotFavicon, SidebarLeftIcon } from '@frogbotai/ui/icons';
+import {
+  FolderIcon,
+  FrogBotFavicon,
+  SettingIcon,
+  SidebarLeftIcon,
+} from '@frogbotai/ui/icons';
 import { iconRegistry, type IconName, isIconName } from '@frogbotai/ui/icons/registry';
 import { Tooltip } from '@payloadcms/ui/elements/Tooltip';
 import {
@@ -14,28 +19,27 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
-export type NavItem = {
+export type AppSidebarNavItem = {
   icon?: ComponentType<{ className?: string; size: number }> | IconName | ReactNode;
   label: string;
   path: string;
 };
 
-export type NavItemGroup = {
-  items: NavItem[];
-  label: string;
-  open?: boolean;
-};
-
 export type AppSidebarProps = {
+  accountIcon?: ReactNode;
   afterNavLinks?: ReactNode;
+  afterBottomRail?: ReactNode;
   beforeNavLinks?: ReactNode;
+  beforeBottomRail?: ReactNode;
+  beforeSidebarClose?: ReactNode;
   bottom?: ReactNode;
   currentPath: string;
-  groups?: NavItemGroup[];
   homePath: string;
   logo?: ReactNode;
-  navItems?: NavItem[];
-  onGroupToggle?: (label: string, open: boolean) => void;
+  navItems?: AppSidebarNavItem[];
+  accountPath: string;
+  sections?: ReactNode;
+  settingsPath: string;
   onNavigate: (path: string) => void;
   onToggle: () => void;
   open: boolean;
@@ -45,46 +49,24 @@ const baseClass = 'frogbot-admin-sidebar';
 
 const classes = (...values: (false | string | undefined)[]) => values.filter(Boolean).join(' ');
 
-function NavGroup({
-  children,
-  initialOpen,
-  label,
-  onToggle,
-}: {
-  children: ReactNode;
-  initialOpen: boolean;
-  label: string;
-  onToggle?: (open: boolean) => void;
-}) {
-  const [open, setOpen] = useState(initialOpen);
-  return (
-    <details
-      className={`${baseClass}__group`}
-      onToggle={(event) => {
-        setOpen(event.currentTarget.open);
-        onToggle?.(event.currentTarget.open);
-      }}
-      open={open}
-    >
-      <summary className={`${baseClass}__group-label`}>{label}</summary>
-      {children}
-    </details>
-  );
-}
-
 export function AppSidebar({
+  accountIcon,
+  accountPath,
+  afterBottomRail,
   afterNavLinks,
+  beforeBottomRail,
   beforeNavLinks,
+  beforeSidebarClose,
   bottom,
   currentPath,
-  groups = [],
   homePath,
   logo,
   navItems = [],
-  onGroupToggle,
   onNavigate,
   onToggle,
   open,
+  sections,
+  settingsPath,
 }: AppSidebarProps) {
   const [labelsVisible, setLabelsVisible] = useState(open);
   const [stripHovered, setStripHovered] = useState(false);
@@ -117,7 +99,7 @@ export function AppSidebar({
           onMouseLeave: () => setTooltip(null),
         };
 
-  const renderItem = (item: NavItem) => {
+  const renderItem = (item: AppSidebarNavItem) => {
     const Icon =
       typeof item.icon === 'string'
         ? isIconName(item.icon)
@@ -173,39 +155,27 @@ export function AppSidebar({
           {showToggleIcon ? <SidebarLeftIcon size={20} /> : logo || <FrogBotFavicon size={40} />}
         </button>
         {labelsVisible && (
-          <button
-            aria-label="Close sidebar"
-            className={`${baseClass}__collapse`}
-            onClick={(event) => {
-              event.stopPropagation();
-              onToggle();
-            }}
-            type="button"
-          >
-            <SidebarLeftIcon size={20} />
-          </button>
+          <div className={`${baseClass}__header-controls`}>
+            {beforeSidebarClose}
+            <button
+              aria-label="Close sidebar"
+              className={`${baseClass}__collapse`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggle();
+              }}
+              type="button"
+            >
+              <SidebarLeftIcon size={20} />
+            </button>
+          </div>
         )}
       </div>
 
       <nav className={`${baseClass}__nav`}>
         {beforeNavLinks}
         {navItems.map(renderItem)}
-        {groups.map((group) =>
-          open ? (
-            <NavGroup
-              initialOpen={group.open !== false}
-              key={group.label}
-              label={group.label}
-              onToggle={(nextOpen) => onGroupToggle?.(group.label, nextOpen)}
-            >
-              <div className={`${baseClass}__items`}>{group.items.map(renderItem)}</div>
-            </NavGroup>
-          ) : (
-            <div className={`${baseClass}__group`} key={group.label}>
-              <div className={`${baseClass}__items`}>{group.items.map(renderItem)}</div>
-            </div>
-          ),
-        )}
+        {sections}
         {afterNavLinks}
       </nav>
 
@@ -214,7 +184,11 @@ export function AppSidebar({
         className={`${baseClass}__bottom`}
         onClick={open ? (event) => event.stopPropagation() : undefined}
       >
+        {beforeBottomRail}
+        {renderItem({ icon: accountIcon, label: 'Account', path: accountPath })}
+        {renderItem({ icon: SettingIcon, label: 'Settings', path: settingsPath })}
         {bottom}
+        {afterBottomRail}
       </div>
 
       {tooltip &&

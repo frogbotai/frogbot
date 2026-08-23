@@ -14,7 +14,8 @@ import type { PayloadConfig } from './payload.js';
  * Either an import path (`'@app/components/Banner#Banner'`) or an object with
  * `path` plus optional `clientProps` / `serverProps`.
  */
-export type Component<TProps extends object = Record<string, unknown>> = CustomComponent<TProps>;
+export type FrogbotComponent<TProps extends object = Record<string, unknown>> =
+  CustomComponent<TProps>;
 
 /** Payload's root `admin.components` block. Source for the slot value types
  *  Payload does not export under a usable name. */

@@ -1,5 +1,6 @@
 @import "@payloadcms/next/css";
 @import "./elements/Nav/index.css";
+@import "./elements/Nav/sections.css";
 
 .template-default:has(.frogbot-nav) {
   --nav-width: 17rem;
@@ -15,8 +16,13 @@
 
 .template-default:has(.frogbot-nav) .template-default__nav-toggler-wrapper,
 body:has(.frogbot-nav-shell) .template-default__nav-toggler-container,
-body:has(.frogbot-nav-shell) .step-nav__home {
+body:has(.frogbot-nav-shell) .app-header__account,
+body:has(.frogbot-nav-shell) .app-header__step-nav-wrapper {
   display: none;
+}
+
+body:has(.frogbot-nav-shell) .app-header__controls-wrapper {
+  justify-content: flex-end;
 }
 
 .frogbot-nav-shell {

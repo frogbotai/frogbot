@@ -7,25 +7,27 @@ import { formatAdminURL } from 'payload/shared';
 export type NavConfigItem = { icon?: CustomComponent; label: string; path: string };
 type EntityIcon = CustomComponent | string;
 
-type BuildNavModelProps = {
+export type BuildNavModelProps = {
   config: SanitizedConfig;
   i18n: ServerProps['i18n'];
   permissions: NonNullable<ServerProps['permissions']>;
   visibleEntities: NonNullable<ServerProps['visibleEntities']>;
 };
 
-export function buildNavModel({ config, i18n, permissions, visibleEntities }: BuildNavModelProps) {
-  const { admin, collections, globals, routes } = config;
+export function buildCollectionGroups({
+  config,
+  i18n,
+  permissions,
+  visibleEntities,
+}: BuildNavModelProps) {
   const entities = [
-    ...collections
+    ...config.collections
       .filter(({ slug }) => visibleEntities.collections.includes(slug))
       .map((entity) => ({ entity, type: EntityType.collection }) satisfies EntityToGroup),
-    ...globals
+    ...config.globals
       .filter(({ slug }) => visibleEntities.globals.includes(slug))
       .map((entity) => ({ entity, type: EntityType.global }) satisfies EntityToGroup),
   ];
-  const groupedEntities = entities.filter(({ entity }) => entity.admin.group !== null);
-  const groups = groupNavItems(groupedEntities, permissions, i18n);
   const entityByKey = new Map(
     entities.map(({ entity, type }) => [`${type}:${entity.slug}`, entity]),
   );
@@ -39,9 +41,35 @@ export function buildNavModel({ config, i18n, permissions, visibleEntities }: Bu
       icon: (entityByKey.get(`${entity.type}:${entity.slug}`)?.admin as { icon?: EntityIcon })
         ?.icon,
       label: typeof label === 'string' ? label : entity.slug,
-      path: formatAdminURL({ adminRoute: routes.admin, path: `/${entity.type}/${entity.slug}` }),
+      path: formatAdminURL({
+        adminRoute: config.routes.admin,
+        path: `/${entity.type}/${entity.slug}`,
+      }),
     };
   };
+
+  return {
+    entities,
+    groups: groupNavItems(
+      entities.filter(({ entity }) => entity.admin.group !== null),
+      permissions,
+      i18n,
+    ).map(({ entities: groupedEntities, label }) => ({
+      label,
+      items: groupedEntities.map(mapEntity),
+    })),
+    mapEntity,
+  };
+}
+
+export function buildNavModel({ config, i18n, permissions, visibleEntities }: BuildNavModelProps) {
+  const { admin, routes } = config;
+  const { entities, groups, mapEntity } = buildCollectionGroups({
+    config,
+    i18n,
+    permissions,
+    visibleEntities,
+  });
   const topLevelItems = entities
     .filter(({ entity, type }) => {
       const entityPermissions = permissions[type]?.[entity.slug];
@@ -57,15 +85,12 @@ export function buildNavModel({ config, i18n, permissions, visibleEntities }: Bu
     });
 
   return {
-    groups: groups.map(({ entities, label }) => ({
-      label,
-      items: entities.map(mapEntity),
-    })),
+    groups,
     items: [
       {
-        icon: 'home',
-        label: 'Home',
-        path: formatAdminURL({ adminRoute: routes.admin, path: '' }),
+        icon: 'pencil-edit',
+        label: 'New Chat',
+        path: formatAdminURL({ adminRoute: routes.admin, path: '/collections/chats/create' }),
       },
       ...((admin as typeof admin & { nav?: { items?: NavConfigItem[] } }).nav?.items ?? []),
       ...topLevelItems,

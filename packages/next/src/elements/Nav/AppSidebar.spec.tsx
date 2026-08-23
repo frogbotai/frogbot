@@ -4,16 +4,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { AppSidebar } from './AppSidebar';
 
 const props = {
+  accountIcon: <span />,
+  accountPath: '/admin/account',
   currentPath: '/admin/collections/users',
-  groups: [
-    {
-      items: [{ label: 'Users', path: '/admin/collections/users' }],
-      label: 'Content',
-    },
-  ],
   homePath: '/admin',
+  navItems: [{ label: 'Users', path: '/admin/collections/users' }],
   onNavigate: vi.fn(),
   onToggle: vi.fn(),
+  settingsPath: '/admin/settings',
 };
 
 describe('AppSidebar', () => {
@@ -78,5 +76,40 @@ describe('AppSidebar', () => {
         (name) => name && !name.startsWith('frogbot-admin-sidebar') && !name.startsWith('lucide'),
       ),
     ).toEqual([]);
+  });
+
+  it('renders sections, shell slots, and bottom rail items', () => {
+    const { rerender } = render(
+      <AppSidebar
+        {...props}
+        afterBottomRail={<span>After bottom</span>}
+        beforeBottomRail={<span>Before bottom</span>}
+        beforeSidebarClose={<span>Header action</span>}
+        open
+        sections={<span>Sections</span>}
+      />,
+    );
+    expect(screen.getByText('Sections')).toBeTruthy();
+    expect(screen.getByText('Header action')).toBeTruthy();
+    expect(screen.getByText('Before bottom')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Account' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeTruthy();
+    expect(screen.getByText('After bottom')).toBeTruthy();
+
+    const headerAction = screen.getByText('Header action');
+    const close = screen.getByRole('button', { name: 'Close sidebar' });
+    expect(headerAction.nextElementSibling).toBe(close);
+
+    rerender(
+      <AppSidebar
+        {...props}
+        beforeSidebarClose={<span>Header action</span>}
+        open={false}
+        sections={<span>Sections</span>}
+      />,
+    );
+    expect(screen.queryByText('Header action')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Close sidebar' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Open sidebar' })).toBeTruthy();
   });
 });

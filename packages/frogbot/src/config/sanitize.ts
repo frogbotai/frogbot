@@ -277,6 +277,22 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
     }
   }
 
+  if (ai.defaultModel !== undefined) {
+    const model = routers[ai.defaultModel]?.model ?? ai.defaultModel;
+    const separator = model.indexOf('/');
+    const provider = separator > 0 ? model.slice(0, separator) : '';
+    const providers = new Set(
+      Object.entries(ai.providers)
+        .filter(([, entry]) => entry != null)
+        .map(([name]) => (isProviderName(name) ? getGatewayProviderName(name) : name)),
+    );
+    if (!provider || !providers.has(provider)) {
+      throw new Error(
+        `[frogbot] defaultModel '${ai.defaultModel}' does not resolve to a configured provider or router.`,
+      );
+    }
+  }
+
   // Normalize hooks to arrays.
   const hooks = {
     beforeOperation: ai.hooks?.beforeOperation ?? [],
@@ -309,6 +325,7 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
     providers: ai.providers,
     routers,
     defaultRouter: ai.defaultRouter,
+    defaultModel: ai.defaultModel,
     hooks,
     access,
     telemetry,
@@ -804,6 +821,12 @@ function buildPayloadConfig(
   ).admin;
   out.admin = {
     ...admin,
+    nav: {
+      ...((admin?.nav as Record<string, unknown> | undefined) ?? {}),
+      sections:
+        (admin?.nav as { sections?: unknown[] } | undefined)?.sections ??
+        ['@frogbotai/next#CollectionsSection', '@frogbotai/next#RecentsSection'],
+    },
     components: {
       ...admin?.components,
       Nav: admin?.components?.Nav ?? '@frogbotai/next/rsc#FrogbotNav',

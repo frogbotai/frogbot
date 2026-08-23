@@ -14,7 +14,7 @@ import type { Endpoint } from './endpoint.js';
 import type { Field } from './fields.js';
 import type { CollectionHooks } from './hooks.js';
 import type { PayloadCollectionConfig } from './payload.js';
-import type { Component } from './component.js';
+import type { FrogbotComponent } from './component.js';
 import type { IconName } from '../adminIcons.js';
 
 type Overridden = 'auth' | 'hooks' | 'access' | 'endpoints' | 'fields' | 'admin';
@@ -22,7 +22,7 @@ type PayloadAdmin = NonNullable<PayloadCollectionConfig['admin']>;
 
 export type CollectionAdminConfig = Omit<PayloadAdmin, 'group'> & {
   group?: PayloadAdmin['group'] | null;
-  icon?: Component | IconName;
+  icon?: FrogbotComponent | IconName;
 };
 
 export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {

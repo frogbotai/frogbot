@@ -536,6 +536,52 @@ describe('frogbot sanitize', () => {
     expect(payloadConfig.admin.importMap.autoGenerate).toBe(false);
   });
 
+  it('defaults admin nav sections', async () => {
+    const result = sanitize(makeConfig());
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect((payloadConfig.admin as never as { nav: { sections: string[] } }).nav.sections).toEqual([
+      '@frogbotai/next#CollectionsSection',
+      '@frogbotai/next#RecentsSection',
+    ]);
+  });
+
+  it('preserves configured admin nav sections and items', async () => {
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          components: {
+            afterBottomRail: ['./components/AfterBottom#AfterBottom'],
+            beforeBottomRail: ['./components/BeforeBottom#BeforeBottom'],
+            beforeSidebarClose: ['./components/BeforeClose#BeforeClose'],
+          },
+          nav: {
+            items: [{ label: 'Home', path: '/' }],
+            sections: ['./components/Section#Section'],
+          },
+        },
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const nav = (payloadConfig.admin as never as {
+      nav: { items: { label: string; path: string }[]; sections: string[] };
+    }).nav;
+
+    expect(nav).toEqual({
+      items: [{ label: 'Home', path: '/' }],
+      sections: ['./components/Section#Section'],
+    });
+    expect(payloadConfig.admin.components.afterBottomRail).toEqual([
+      './components/AfterBottom#AfterBottom',
+    ]);
+    expect(payloadConfig.admin.components.beforeBottomRail).toEqual([
+      './components/BeforeBottom#BeforeBottom',
+    ]);
+    expect(payloadConfig.admin.components.beforeSidebarClose).toEqual([
+      './components/BeforeClose#BeforeClose',
+    ]);
+  });
+
   it('injects FrogBot branding defaults into the payload config', async () => {
     const result = sanitize(makeConfig());
     const payloadConfig = (await result._internal.payloadConfig) as any;
@@ -800,6 +846,40 @@ describe('frogbot sanitize', () => {
       expect(() => sanitize(config)).toThrow(
         "[frogbot] Custom provider 'internal' requires a non-empty models array.",
       );
+    });
+  });
+
+  describe('ai.defaultModel', () => {
+    it('preserves a model that resolves through a configured router', () => {
+      const result = sanitize(
+        makeConfig({
+          ai: {
+            providers: { openai: true },
+            routers: { fast: { model: 'openai/gpt-4o-mini' } },
+            defaultModel: 'fast',
+          },
+        }),
+      );
+
+      expect(result.ai?.defaultModel).toBe('fast');
+    });
+
+    it('rejects a model that does not resolve to a configured provider or router', () => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai: { providers: { anthropic: true }, defaultModel: 'openai/gpt-4o-mini' },
+          }),
+        ),
+      ).toThrow(
+        "[frogbot] defaultModel 'openai/gpt-4o-mini' does not resolve to a configured provider or router.",
+      );
+    });
+
+    it('keeps defaultModel absent when omitted', () => {
+      const result = sanitize(makeConfig({ ai: { providers: { openai: true } } }));
+
+      expect(result.ai?.defaultModel).toBeUndefined();
     });
   });
 

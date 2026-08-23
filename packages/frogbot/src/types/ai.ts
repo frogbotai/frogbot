@@ -182,6 +182,7 @@ export type AIConfig = {
   providers: ProviderConfig;
   routers?: Record<string, RouterConfig>;
   defaultRouter?: string;
+  defaultModel?: string;
   hooks?: AIHooks;
   access?: AIAccessConfig;
   /** Deployment identifier attached to telemetry spans. Default: `FROGBOT_DEPLOYMENT_ID` env or `'local'`. */
@@ -200,6 +201,7 @@ export type SanitizedAIConfig = {
   providers: ProviderConfig;
   routers: Record<string, RouterConfig>;
   defaultRouter?: string;
+  defaultModel?: string;
   hooks: SanitizedAIHooks;
   access: Required<AIAccessConfig>;
   telemetry: SanitizedAITelemetryConfig;

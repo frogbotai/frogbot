@@ -66,14 +66,14 @@ describe('buildNavModel', () => {
         { items: [{ label: 'Users', path: '/control/collections/users' }], label: 'Accounts' },
       ],
       items: [
-        { icon: 'home', label: 'Home', path: '/control' },
+        { icon: 'pencil-edit', label: 'New Chat', path: '/control/collections/chats/create' },
         { label: 'Home', path: '/admin' },
         { icon: 'robot', label: 'Projects', path: '/control/collections/projects' },
       ],
     });
   });
 
-  it('always renders the home item first', () => {
+  it('always renders the new chat item first', () => {
     const bare = config();
     delete (bare.admin as { nav?: unknown }).nav;
     const result = buildNavModel({
@@ -82,7 +82,9 @@ describe('buildNavModel', () => {
       permissions,
       visibleEntities: { collections: [], globals: [] },
     });
-    expect(result.items).toEqual([{ icon: 'home', label: 'Home', path: '/control' }]);
+    expect(result.items).toEqual([
+      { icon: 'pencil-edit', label: 'New Chat', path: '/control/collections/chats/create' },
+    ]);
   });
 
   it('excludes entities without visibility or read permission', () => {

@@ -5,29 +5,41 @@ import { usePathname, useRouter } from 'next/navigation.js';
 import { PREFERENCE_KEYS } from 'payload/shared';
 import { type ReactNode, useEffect } from 'react';
 
-import type { NavItem, NavItemGroup } from './AppSidebar.js';
+import type { AppSidebarNavItem } from './AppSidebar.js';
 import { AppSidebar } from './AppSidebar.js';
 
 export type FrogbotNavClientProps = {
+  accountIcon?: ReactNode;
   afterNavLinks?: ReactNode;
+  afterBottomRail?: ReactNode;
   beforeNavLinks?: ReactNode;
+  beforeBottomRail?: ReactNode;
+  beforeSidebarClose?: ReactNode;
   bottom?: ReactNode;
-  groups: NavItemGroup[];
+  accountPath: string;
   homePath: string;
   initialOpen?: boolean;
-  items: NavItem[];
+  items: AppSidebarNavItem[];
   logo?: ReactNode;
+  sections?: ReactNode;
+  settingsPath: string;
 };
 
 export function FrogbotNavClient({
+  accountIcon,
+  accountPath,
+  afterBottomRail,
   afterNavLinks,
+  beforeBottomRail,
   beforeNavLinks,
+  beforeSidebarClose,
   bottom,
-  groups,
   homePath,
   initialOpen,
   items,
   logo,
+  sections,
+  settingsPath,
 }: FrogbotNavClientProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -53,17 +65,18 @@ export function FrogbotNavClient({
       <div className="nav__scroll" ref={navRef}>
         <div className="frogbot-nav">
           <AppSidebar
+            accountIcon={accountIcon}
+            accountPath={accountPath}
+            afterBottomRail={afterBottomRail}
             afterNavLinks={afterNavLinks}
+            beforeBottomRail={beforeBottomRail}
             beforeNavLinks={beforeNavLinks}
+            beforeSidebarClose={beforeSidebarClose}
             bottom={bottom}
             currentPath={pathname}
-            groups={groups}
             homePath={homePath}
             logo={logo}
             navItems={items}
-            onGroupToggle={(label, open) => {
-              void setPreference(PREFERENCE_KEYS.NAV, { groups: { [label]: { open } } }, true);
-            }}
             onNavigate={(path) => {
               if (/^https?:\/\//.test(path)) window.location.assign(path);
               else startRouteTransition(() => router.push(path));
@@ -74,6 +87,8 @@ export function FrogbotNavClient({
               void setPreference(PREFERENCE_KEYS.NAV, { open }, true);
             }}
             open={navOpen}
+            sections={sections}
+            settingsPath={settingsPath}
           />
         </div>
       </div>

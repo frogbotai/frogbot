@@ -1,11 +1,30 @@
 ---
 title: "Admin navigation"
 sidebarTitle: "Admin navigation"
-description: "Add links to FrogBot's default admin sidebar or replace it."
+description: "Order, extend, customize, or replace FrogBot's admin sidebar."
 keywords: ["admin", "navigation", "sidebar", "components"]
 ---
 
-FrogBot's default admin sidebar lists the collections you can access, organized by their configured groups. It supports desktop collapse, mobile navigation, active links, and saved group state without additional configuration.
+FrogBot's default admin sidebar starts with New Chat, followed by configurable sections and a bottom rail. It supports desktop collapse, mobile navigation, active links, and saved section state without additional configuration.
+
+## Configure sections
+
+`admin.nav.sections` is an ordered array of component import paths. By default, FrogBot renders `CollectionsSection` followed by `RecentsSection`:
+
+```ts
+admin: {
+  nav: {
+    sections: [
+      '@frogbotai/next#CollectionsSection',
+      '@frogbotai/next#RecentsSection'
+    ]
+  }
+}
+```
+
+Setting `sections` replaces that default array, so include every section you want rendered. Sections appear after New Chat and configured `admin.nav.items`, in array order. Plugin navigation items follow configured items. The bottom rail renders after all sections.
+
+`NavSection` gives each section a title, collapsible body, and scrolling content. Its collapsed state is saved for the current user under `frogbot-nav-section:{id}` and restored on reload. Give every section a stable, unique `id`.
 
 ## Collection icons and placement
 
@@ -34,9 +53,9 @@ admin: {
 }
 ```
 
-FrogBot orders configured `admin.nav.items` first, then top-level collections in collection configuration order. Named groups follow in first-seen order, with their collections in configuration order. Injected `afterNavLinks` render last.
+Within `CollectionsSection`, top-level collections retain collection configuration order. Named groups follow in first-seen order, with their collections in configuration order.
 
-When collapsed, group headings are hidden and each item displays its label in a tooltip. The expanded or collapsed state and named-group state persist for the current user.
+When the sidebar is collapsed, section headings and labels are hidden and each item displays its label in a tooltip. Section state and named-group state persist for the current user.
 
 ## Add a navigation item
 
@@ -60,6 +79,49 @@ The icon component receives `size` and `className` props. FrogBot adds the compo
 
 Configured items are application-authored links and are not filtered by collection permissions or visibility. Apply any required access behavior in the component or destination.
 
+## Copy and customize a section
+
+The default sections are exported from `@frogbotai/next`. Copy one into your application, change its markup or data, and register the copied component in `admin.nav.sections`. Use public exports such as `NavSection` and `NavItem` rather than importing internal files.
+
+```tsx
+import { NavSection } from '@frogbotai/next'
+
+export function WorkspaceRecents() {
+  return (
+    <NavSection id="workspace-recents" title="Recents">
+      <p>No recent chats</p>
+    </NavSection>
+  )
+}
+```
+
+```ts
+admin: {
+  nav: {
+    sections: [
+      '@frogbotai/next#CollectionsSection',
+      './src/components/WorkspaceRecents#WorkspaceRecents'
+    ]
+  }
+}
+```
+
+Component paths in `sections`, navigation icons, and admin component slots use `FrogbotComponent`. This type accepts either an import-map path string or a component definition and is exported from `frogbot` for reusable configuration types.
+
+## Customize the bottom rail
+
+Account and Settings appear in the default bottom rail. Add components around them with `admin.components.beforeBottomRail` and `admin.components.afterBottomRail`. Use `beforeSidebarClose` for controls immediately left of the expanded sidebar close button.
+
+```ts
+admin: {
+  components: {
+    beforeBottomRail: ['./src/components/WorkspaceSwitcher#WorkspaceSwitcher'],
+    afterBottomRail: ['./src/components/SupportLink#SupportLink'],
+    beforeSidebarClose: ['./src/components/SidebarAction#SidebarAction']
+  }
+}
+```
+
 ## Replace the sidebar
 
 Set `admin.components.Nav` to replace the default sidebar. Your component receives the standard admin server props, including the current user, permissions, and visible collections.
@@ -72,4 +134,4 @@ admin: {
 }
 ```
 
-A custom `Nav` fully owns navigation rendering and does not receive FrogBot's default sidebar styles or configured `admin.nav.items` automatically.
+A custom `Nav` fully owns navigation rendering. It does not receive FrogBot's default sidebar styles, New Chat preset, configured items or sections, bottom rail, or shell slots automatically.

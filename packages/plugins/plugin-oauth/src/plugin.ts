@@ -1,4 +1,4 @@
-import type { Component, Plugin } from 'frogbot';
+import type { FrogbotComponent, Plugin } from 'frogbot';
 import { createCredentialEncryption } from 'frogbot/connections';
 
 import { createOAuthStatesCollection } from './collections/states.js';
@@ -163,7 +163,7 @@ export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
       existing: existingStates,
     });
     const signInProviders = derived.filter((provider) => provider.signIn);
-    const loginButtons: Component[] =
+    const loginButtons: FrogbotComponent[] =
       options.adminLoginButtons && signInProviders.length > 0
         ? [
             {

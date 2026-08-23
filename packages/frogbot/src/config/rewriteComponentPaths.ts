@@ -1,5 +1,11 @@
 import type { PayloadComponent, SanitizedConfig } from 'payload';
 
+type BottomRailComponents = {
+  afterBottomRail?: PayloadComponent[];
+  beforeBottomRail?: PayloadComponent[];
+  beforeSidebarClose?: PayloadComponent[];
+};
+
 function rewritePath(path: string): string {
   if (path.startsWith('@payloadcms/next/rsc#') || path.startsWith('@payloadcms/next/client#')) {
     return path.replace('@payloadcms/next/', '@frogbotai/next/');
@@ -64,11 +70,22 @@ function rewriteFields(fields: unknown[]): void {
 
 export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig {
   const admin = config.admin;
+  const bottomRailComponents = admin?.components as BottomRailComponents | undefined;
 
-  const nav = admin as typeof admin & { nav?: { items?: { icon?: PayloadComponent }[] } };
+  for (const key of ['afterBottomRail', 'beforeBottomRail', 'beforeSidebarClose'] as const) {
+    const components = bottomRailComponents?.[key];
+    if (components) {
+      bottomRailComponents[key] = components.map(rewriteComponent);
+    }
+  }
+
+  const nav = admin as typeof admin & {
+    nav?: { items?: { icon?: PayloadComponent }[]; sections?: PayloadComponent[] };
+  };
   for (const item of nav?.nav?.items ?? []) {
     if (item.icon) item.icon = rewriteComponent(item.icon);
   }
+  if (nav?.nav?.sections) nav.nav.sections = nav.nav.sections.map(rewriteComponent);
 
   if (admin?.dashboard?.widgets) {
     admin.dashboard.widgets = admin.dashboard.widgets.map((widget) => ({

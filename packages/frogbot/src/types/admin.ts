@@ -7,7 +7,7 @@
 
 import type { Metadata } from 'next';
 
-import type { AdminViews, Component, ProviderComponent } from './component.js';
+import type { AdminViews, FrogbotComponent, ProviderComponent } from './component.js';
 
 type DeepClone<T> = T extends object ? { [K in keyof T]: DeepClone<T[K]> } : T;
 
@@ -20,29 +20,32 @@ export type RootAdminMetaConfig = {
 
 export interface RootAdminGraphics {
   /** Replace the icon in the admin navigation. Defaults to the FrogBot head mark. */
-  Icon?: Component;
+  Icon?: FrogbotComponent;
   /** Replace the logo on the login page. Defaults to the FrogBot wordmark. */
-  Logo?: Component;
+  Logo?: FrogbotComponent;
 }
 
 export interface NavItem {
-  icon?: Component;
+  icon?: FrogbotComponent;
   label: string;
   path: string;
 }
 
 export interface RootAdminComponents {
   /** Add components to the top right of the admin panel. */
-  actions?: Component[];
+  actions?: FrogbotComponent[];
   /** Add components after the login form's email and password fields. */
-  afterLogin?: Component[];
+  afterLogin?: FrogbotComponent[];
   /** Add components before the login form's email and password fields. */
-  beforeLogin?: Component[];
-  afterNavLinks?: Component[];
-  beforeNavLinks?: Component[];
+  beforeLogin?: FrogbotComponent[];
+  afterNavLinks?: FrogbotComponent[];
+  afterBottomRail?: FrogbotComponent[];
+  beforeBottomRail?: FrogbotComponent[];
+  beforeSidebarClose?: FrogbotComponent[];
+  beforeNavLinks?: FrogbotComponent[];
   /** Component slots for admin branding. */
   graphics?: RootAdminGraphics;
-  Nav?: Component;
+  Nav?: FrogbotComponent;
   /** Wrap the admin panel in custom context providers. */
   providers?: ProviderComponent[];
   /** Replace, modify, or add top-level admin routes. */
@@ -63,13 +66,14 @@ export interface RootAdminConfig {
    *
    * @default 'gravatar'
    */
-  avatar?: 'default' | 'gravatar' | { Component: Component };
+  avatar?: 'default' | 'gravatar' | { Component: FrogbotComponent };
   /** Component slots for admin branding and injected UI. */
   components?: RootAdminComponents;
   /** Metadata for generated/admin surfaces. */
   meta?: RootAdminMetaConfig;
   nav?: {
     items?: NavItem[];
+    sections?: FrogbotComponent[];
   };
   /**
    * Restrict the Admin Panel theme to one of these values.
