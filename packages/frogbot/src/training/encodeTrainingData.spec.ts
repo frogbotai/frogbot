@@ -22,13 +22,13 @@ describe('encodeTrainingData', () => {
   it('writes one lossless parseable line per conversation', async () => {
     const records: TrainingDataRecord[] = [
       {
-        thread: { id: 1, title: 'first' },
+        chat: { id: 1, title: 'first' },
         messages: [
           { id: 'a', role: 'user', parts: [{ type: 'text', text: 'hello' }] },
           { id: 'b', role: 'assistant', parts: [{ type: 'tool-call', input: { nested: [1, 2] } }] },
         ],
       },
-      { thread: { id: 2 }, messages: [] },
+      { chat: { id: 2 }, messages: [] },
     ];
 
     const output = await readAll(encodeTrainingData(iterate(records)));
@@ -43,7 +43,7 @@ describe('encodeTrainingData', () => {
     async function* slow(): AsyncGenerator<TrainingDataRecord> {
       while (true) {
         yielded += 1;
-        yield { thread: { id: yielded }, messages: [] };
+        yield { chat: { id: yielded }, messages: [] };
       }
     }
 
@@ -68,7 +68,7 @@ describe('encodeTrainingData', () => {
     const onReturn = vi.fn();
     const records = {
       [Symbol.asyncIterator]: () => ({
-        next: async () => ({ done: false, value: { thread: {}, messages: [] } }),
+        next: async () => ({ done: false, value: { chat: {}, messages: [] } }),
         return: async () => {
           onReturn();
           return { done: true, value: undefined };

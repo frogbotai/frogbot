@@ -5,18 +5,18 @@ import { readTrainingData } from './readTrainingData.js';
 
 type Page = { docs: Record<string, unknown>[]; hasNextPage: boolean };
 
-function stubFrogbot(pages: { threads: Page[]; messages: Record<string, Page[]> }) {
+function stubFrogbot(pages: { chats: Page[]; messages: Record<string, Page[]> }) {
   const find = vi.fn(async (args: Record<string, unknown>) => {
     const page = (args.page as number) - 1;
-    if (args.collection === 'threads') return pages.threads[page];
-    const threadID = String((args.where as { thread: { equals: unknown } }).thread.equals);
-    return pages.messages[threadID][page];
+    if (args.collection === 'chats') return pages.chats[page];
+    const chatID = String((args.where as { chat: { equals: unknown } }).chat.equals);
+    return pages.messages[chatID][page];
   });
 
   return {
     find,
     frogbot: {
-      config: { chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' } },
+      config: { chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' } },
       find,
     } as unknown as Frogbot,
   };
@@ -29,9 +29,9 @@ async function collect<T>(iterable: AsyncIterable<T>): Promise<T[]> {
 }
 
 describe('readTrainingData', () => {
-  it('pages threads and messages and preserves persisted parts', async () => {
+  it('pages chats and messages and preserves persisted parts', async () => {
     const { frogbot, find } = stubFrogbot({
-      threads: [
+      chats: [
         { docs: [{ id: 1 }], hasNextPage: true },
         { docs: [{ id: 2 }], hasNextPage: false },
       ],
@@ -51,17 +51,17 @@ describe('readTrainingData', () => {
 
     expect(records).toEqual([
       {
-        thread: { id: 1 },
+        chat: { id: 1 },
         messages: [
           { id: 'a', parts: [{ type: 'text', text: 'hi' }] },
           { id: 'b', parts: [{ type: 'future-part', payload: { deep: true } }] },
         ],
       },
-      { thread: { id: 2 }, messages: [] },
+      { chat: { id: 2 }, messages: [] },
     ]);
     expect(find).toHaveBeenCalledWith(
       expect.objectContaining({
-        collection: 'threads',
+        collection: 'chats',
         depth: 0,
         limit: 1,
         sort: ['createdAt', 'id'],
@@ -71,7 +71,7 @@ describe('readTrainingData', () => {
 
   it('forwards filters and access options', async () => {
     const { frogbot, find } = stubFrogbot({
-      threads: [{ docs: [], hasNextPage: false }],
+      chats: [{ docs: [], hasNextPage: false }],
       messages: {},
     });
     const where = { agent: { equals: 'support' } };
@@ -90,7 +90,7 @@ describe('readTrainingData', () => {
   });
 
   it('rejects invalid page sizes', async () => {
-    const { frogbot } = stubFrogbot({ threads: [], messages: {} });
+    const { frogbot } = stubFrogbot({ chats: [], messages: {} });
 
     await expect(collect(readTrainingData(frogbot, { pageSize: 0 }))).rejects.toThrow(
       'pageSize must be a positive integer',

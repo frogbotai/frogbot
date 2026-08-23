@@ -7,7 +7,7 @@ import { ChatProvider } from './provider';
 
 const manifest = {
   ai: { transcribe: false as const },
-  chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' },
+  chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
   files: { slug: 'files' },
   agents: [{ slug: 'support', profile: { name: 'Ada', avatar: '/ada.png' } }, { slug: 'sales' }],
 };

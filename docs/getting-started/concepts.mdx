@@ -21,7 +21,7 @@ FrogBot provides an application and data layer alongside the AI SDK's model and 
     Code-defined tool loops combine instructions, a model, tools, stopping rules, and access control.
   </Card>
   <Card title="Chat" icon="messages-square" href="/chat/overview">
-    Owner-scoped threads store AI SDK UI messages and restore server-owned history on later turns.
+    Owner-scoped chats store AI SDK UI messages and restore server-owned history on later turns.
   </Card>
   <Card title="Plugins" icon="package" href="/plugins/overview">
     Config transforms add or adjust application behavior before sanitization.
@@ -63,10 +63,10 @@ Collections are source-controlled schema definitions. FrogBot turns them into Lo
 
 FrogBot adds role markers for chat customization:
 
-- `thread: true` adopts a collection as the thread store.
+- `chat: true` adopts a collection as the chat store.
 - `message: true` adopts a collection as the message store.
 
-If agents are configured and neither role is marked, FrogBot injects default `threads` and `messages` collections. Generated FrogBot types include the final merged schemas.
+If agents are configured and neither role is marked, FrogBot injects default `chats` and `messages` collections. Generated FrogBot types include the final merged schemas.
 
 ## Agents run tool loops
 
@@ -102,11 +102,11 @@ Each run has a stable `runId` shared by tools and AI lifecycle hooks.
 
 ## Chat stores model trajectories
 
-Authenticated agent HTTP calls create or continue owner-scoped threads. Messages retain the complete `UIMessage.parts` structure, including tool calls and results, so later inference sees the same trajectory rather than a flattened transcript.
+Authenticated agent HTTP calls create or continue owner-scoped chats. Messages retain the complete `UIMessage.parts` structure, including tool calls and results, so later inference sees the same trajectory rather than a flattened transcript.
 
-The server owns history. A continuation request sends `threadId` and only the next user message; FrogBot loads existing messages, validates them against the agent's tools, and persists both sides of the new turn.
+The server owns history. A continuation request sends `chatId` and only the next user message; FrogBot loads existing messages, validates them against the agent's tools, and persists both sides of the new turn.
 
-Anonymous calls remain stateless. Local `generate()` calls also remain stateless unless you pass an existing `threadId`.
+Anonymous calls remain stateless. Local `generate()` calls also remain stateless unless you pass an existing `chatId`.
 
 ## Requests connect the layers
 

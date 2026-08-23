@@ -14,7 +14,7 @@ export type AIHookContext = {
   agent?: {
     slug: string;
     runId: string;
-    threadId?: number | string;
+    chatId?: number | string;
   };
 };
 

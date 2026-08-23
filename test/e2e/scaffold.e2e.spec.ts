@@ -141,16 +141,16 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     expect(new TextDecoder().decode(value)).toContain('data:');
   });
 
-  function expectPersisted(threadId: string | number) {
+  function expectPersisted(chatId: string | number) {
     const db = new DatabaseSync(join(dataDir, 'e2e.db'));
-    const thread = db
-      .prepare('SELECT count(*) AS count FROM threads WHERE id = ?')
-      .get(threadId) as { count: number };
+    const chat = db
+      .prepare('SELECT count(*) AS count FROM chats WHERE id = ?')
+      .get(chatId) as { count: number };
     const messages = db
-      .prepare('SELECT role FROM messages WHERE thread_id = ? ORDER BY role')
-      .all(threadId) as Array<{ role: string }>;
+      .prepare('SELECT role FROM messages WHERE chat_id = ? ORDER BY role')
+      .all(chatId) as Array<{ role: string }>;
     db.close();
-    expect(thread.count).toBe(1);
+    expect(chat.count).toBe(1);
     expect(messages.map(({ role }) => role)).toEqual(['assistant', 'user']);
   }
 
@@ -163,12 +163,12 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     const body = (await response.json()) as {
       text: string;
       finishReason: string;
-      threadId: string | number;
+      chatId: string | number;
     };
     expect(response.status, JSON.stringify(body)).toBe(200);
     expect(body.text).toBe('hello');
     expect(body.finishReason).toBe('stop');
-    expectPersisted(body.threadId);
+    expectPersisted(body.chatId);
   });
 
   it('fully consumed SSE agent POST persists one complete turn', async () => {
@@ -182,9 +182,9 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     for (;;) {
       if ((await reader.read()).done) break;
     }
-    const threadId = response.headers.get('X-Frogbot-Thread-Id');
-    expect(threadId).not.toBeNull();
-    expectPersisted(threadId!);
+    const chatId = response.headers.get('X-Frogbot-Chat-Id');
+    expect(chatId).not.toBeNull();
+    expectPersisted(chatId!);
   });
 
   it('sends homepage chat messages through the FrogBot transport', async () => {
@@ -223,8 +223,8 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
       chunks.some((chunk) => chunk.type === 'text-delta'),
       JSON.stringify(chunks),
     ).toBe(true);
-    expect(transport.threadId).toBeDefined();
-    expectPersisted(transport.threadId!);
+    expect(transport.chatId).toBeDefined();
+    expectPersisted(transport.chatId!);
   });
 
   it('serves the REST API under /api', async () => {

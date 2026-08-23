@@ -4,9 +4,9 @@ import type { UIMessage } from 'ai';
 import type { ReactNode } from 'react';
 
 import { cn } from '../lib/utils';
-import type { ThreadDocument } from './use-threads';
+import type { ChatDocument } from './use-chats';
 
-export function deriveThreadTitle(messages: UIMessage[], fallback: string, maxLength = 48): string {
+export function deriveChatTitle(messages: UIMessage[], fallback: string, maxLength = 48): string {
   const text = messages
     .find((message) => message.role === 'user')
     ?.parts.find((part) => part.type === 'text')
@@ -15,43 +15,43 @@ export function deriveThreadTitle(messages: UIMessage[], fallback: string, maxLe
   return text.length > maxLength ? `${text.slice(0, maxLength - 1).trimEnd()}…` : text;
 }
 
-export type ThreadHistoryProps = {
-  threads: ThreadDocument[];
-  activeThreadId?: string | number;
-  onThreadChange: (threadId: string | number) => void;
+export type ChatHistoryProps = {
+  chats: ChatDocument[];
+  activeChatId?: string | number;
+  onChatChange: (chatId: string | number) => void;
   fallbackTitle: ReactNode;
-  renderActions?: (thread: ThreadDocument) => ReactNode;
+  renderActions?: (chat: ChatDocument) => ReactNode;
   className?: string;
 };
 
-export function ThreadHistory({
-  activeThreadId,
+export function ChatHistory({
+  activeChatId,
   className,
   fallbackTitle,
-  onThreadChange,
+  onChatChange,
   renderActions,
-  threads,
-}: ThreadHistoryProps) {
+  chats,
+}: ChatHistoryProps) {
   return (
     <nav className={cn('flex flex-col gap-1', className)}>
-      {threads.map((thread) => (
+      {chats.map((chat) => (
         <div
-          key={thread.id}
+          key={chat.id}
           className={cn(
             'group flex items-center rounded-lg',
-            String(activeThreadId) === String(thread.id) &&
+            String(activeChatId) === String(chat.id) &&
               'bg-sidebar-accent text-sidebar-accent-foreground',
           )}
         >
           <button
             type="button"
-            aria-current={String(activeThreadId) === String(thread.id) ? 'page' : undefined}
-            onClick={() => onThreadChange(thread.id)}
+            aria-current={String(activeChatId) === String(chat.id) ? 'page' : undefined}
+            onClick={() => onChatChange(chat.id)}
             className="min-w-0 flex-1 truncate px-3 py-2 text-left"
           >
-            {thread.title || fallbackTitle}
+            {chat.title || fallbackTitle}
           </button>
-          {renderActions?.(thread)}
+          {renderActions?.(chat)}
         </div>
       ))}
     </nav>

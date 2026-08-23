@@ -7,13 +7,13 @@ async function loadTools() {
 }
 
 function makeCtx(...args: [] | [number | string | undefined]) {
-  const threadId = args.length === 0 ? 'thread-1' : args[0];
+  const chatId = args.length === 0 ? 'chat-1' : args[0];
   const update = vi.fn();
   const findByID = vi
     .fn()
     .mockResolvedValue({ todos: [{ content: 'Ship it', status: 'completed' }] });
   const frogbot = {
-    config: { chat: { enabled: true, threadsSlug: 'conversations' } },
+    config: { chat: { enabled: true, chatsSlug: 'conversations' } },
     update,
     findByID,
   };
@@ -21,7 +21,7 @@ function makeCtx(...args: [] | [number | string | undefined]) {
     ctx: {
       req: { frogbot },
       frogbot,
-      agent: { slug: 'support', runId: 'run-1', threadId },
+      agent: { slug: 'support', runId: 'run-1', chatId },
     },
     findByID,
     update,
@@ -29,7 +29,7 @@ function makeCtx(...args: [] | [number | string | undefined]) {
 }
 
 describe('todo tools', () => {
-  it('overwrites the current thread todos', async () => {
+  it('overwrites the current chat todos', async () => {
     const { write_todos } = await loadTools();
     const { ctx, update } = makeCtx();
     const todos = [{ content: 'Ship it', status: 'in_progress' }];
@@ -38,14 +38,14 @@ describe('todo tools', () => {
 
     expect(update).toHaveBeenCalledWith({
       collection: 'conversations',
-      id: 'thread-1',
+      id: 'chat-1',
       data: { todos },
       req: ctx.req,
       overrideAccess: true,
     });
   });
 
-  it('rejects writes without a persisted thread', async () => {
+  it('rejects writes without a persisted chat', async () => {
     const { write_todos } = await loadTools();
     const { ctx, update } = makeCtx(undefined);
 
@@ -53,7 +53,7 @@ describe('todo tools', () => {
     expect(update).not.toHaveBeenCalled();
   });
 
-  it('reads todos from the current thread', async () => {
+  it('reads todos from the current chat', async () => {
     const { read_todos } = await loadTools();
     const { ctx, findByID } = makeCtx();
 
@@ -62,7 +62,7 @@ describe('todo tools', () => {
     ]);
     expect(findByID).toHaveBeenCalledWith({
       collection: 'conversations',
-      id: 'thread-1',
+      id: 'chat-1',
       depth: 0,
       req: ctx.req,
       overrideAccess: true,

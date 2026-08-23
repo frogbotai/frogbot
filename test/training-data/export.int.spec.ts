@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
-import { messagesSlug, threadsSlug, usersSlug } from './shared.js';
+import { messagesSlug, chatsSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -43,7 +43,7 @@ describe('training data export', () => {
   let booted: BootedFrogbot;
   let owner: { id: number | string };
   let otherUser: { id: number | string };
-  let exportedThreadId: number | string;
+  let exportedChatId: number | string;
 
   beforeAll(async () => {
     booted = await bootFrogbot(dirname);
@@ -60,14 +60,14 @@ describe('training data export', () => {
     })) as { id: number | string };
 
     const exported = (await booted.frogbot.create({
-      collection: threadsSlug,
+      collection: chatsSlug,
       data: { title: 'exported', agent: 'support', user: owner.id },
       overrideAccess: true,
     })) as { id: number | string };
-    exportedThreadId = exported.id;
+    exportedChatId = exported.id;
 
     const excluded = (await booted.frogbot.create({
-      collection: threadsSlug,
+      collection: chatsSlug,
       data: { title: 'excluded', agent: 'other', user: otherUser.id },
       overrideAccess: true,
     })) as { id: number | string };
@@ -81,7 +81,7 @@ describe('training data export', () => {
     for (const message of messages) {
       await booted.frogbot.create({
         collection: messagesSlug,
-        data: { ...message, thread: exportedThreadId },
+        data: { ...message, chat: exportedChatId },
         overrideAccess: true,
       });
     }
@@ -92,7 +92,7 @@ describe('training data export', () => {
         id: 'x1',
         role: 'user',
         parts: [{ type: 'text', text: 'excluded' }],
-        thread: excluded.id,
+        chat: excluded.id,
       },
       overrideAccess: true,
     });
@@ -111,7 +111,7 @@ describe('training data export', () => {
     );
 
     expect(records).toHaveLength(1);
-    expect(records[0].thread).toMatchObject({ id: exportedThreadId, title: 'exported' });
+    expect(records[0].chat).toMatchObject({ id: exportedChatId, title: 'exported' });
     expect(records[0].messages.map((message) => message.id)).toEqual(['m1', 'm2', 'm3', 'm4']);
     expect(records[0].messages.map((message) => message.parts)).toEqual([
       [{ type: 'text', text: 'Hello' }, imagePart],
@@ -125,7 +125,7 @@ describe('training data export', () => {
   it('exports every conversation when unfiltered', async () => {
     const records = await readRecords(booted.frogbot.exportTrainingData({ overrideAccess: true }));
 
-    expect(records.map((record) => record.thread.title).sort()).toEqual(['excluded', 'exported']);
+    expect(records.map((record) => record.chat.title).sort()).toEqual(['excluded', 'exported']);
   });
 
   it('returns identical output across page sizes', async () => {
@@ -145,7 +145,7 @@ describe('training data export', () => {
     const records = await readRecords(booted.frogbot.exportTrainingData({ req }));
 
     expect(records).toHaveLength(1);
-    expect(records[0].thread.id).toBe(exportedThreadId);
+    expect(records[0].chat.id).toBe(exportedChatId);
   });
 
   it('surfaces access denial instead of exporting silently', async () => {

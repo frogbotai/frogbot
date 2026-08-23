@@ -39,7 +39,7 @@ const conversation: UIMessage[] = [
 describe('chat acceptance', () => {
   it('renders a streamed conversation identically after database round-trip', () => {
     const live = render(<MessageList messages={conversation} />).container.innerHTML;
-    const documents = conversation.map((message) => uiMessageToDocument(message, 'thread-1'));
+    const documents = conversation.map((message) => uiMessageToDocument(message, 'chat-1'));
     const reloaded = documents.map((message) =>
       messageDocumentToUIMessage(JSON.parse(JSON.stringify(message))),
     );

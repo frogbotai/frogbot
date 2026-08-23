@@ -59,15 +59,15 @@ function makeRequest({
   accept,
   agent = makeAgent(),
   body = { prompt: 'Hello' },
-  create = vi.fn(() => Promise.resolve({ id: 'thread-1' })),
+  create = vi.fn(() => Promise.resolve({ id: 'chat-1' })),
   authorizations,
   find = vi.fn(() =>
     Promise.resolve({
       docs: [{ id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
     }),
   ),
-  findByID = vi.fn(() => Promise.resolve({ id: 'thread-1', user: user?.id ?? null })),
-  update = vi.fn(() => Promise.resolve({ id: 'thread-1' })),
+  findByID = vi.fn(() => Promise.resolve({ id: 'chat-1', user: user?.id ?? null })),
+  update = vi.fn(() => Promise.resolve({ id: 'chat-1' })),
   signal,
   slug = 'support',
   user = { id: 'user-1' },
@@ -101,7 +101,7 @@ function makeRequest({
       connections: authorizations ? { authorizations } : undefined,
       config: {
         ai: { routers: {} },
-        chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' },
+        chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
       },
       create,
       find,
@@ -242,7 +242,7 @@ describe('agent endpoints', () => {
     expect(response.status).toBe(403);
   });
 
-  it('checks agent access before writing thread data', async () => {
+  it('checks agent access before writing chat data', async () => {
     const create = vi.fn();
     const agent = makeAgent();
     agent.config.access = () => false;
@@ -274,35 +274,35 @@ describe('agent endpoints', () => {
     expect(response.status).toBe(404);
   });
 
-  it('creates a thread and echoes threadId in the JSON body', async () => {
-    const create = vi.fn(() => Promise.resolve({ id: 'thread-9' }));
+  it('creates a chat and echoes chatId in the JSON body', async () => {
+    const create = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
     const request = makeRequest({ create });
     const response = await postHandler()(request);
 
     expect(create).toHaveBeenCalledWith({
-      collection: 'threads',
+      collection: 'chats',
       data: { user: 'user-1', agent: 'support' },
       req: request,
       overrideAccess: true,
     });
-    expect(await response.json()).toMatchObject({ threadId: 'thread-9' });
+    expect(await response.json()).toMatchObject({ chatId: 'chat-9' });
   });
 
-  it('sets X-Frogbot-Thread-Id on streamed responses', async () => {
-    const create = vi.fn(() => Promise.resolve({ id: 'thread-9' }));
+  it('sets X-Frogbot-Chat-Id on streamed responses', async () => {
+    const create = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
     await postHandler()(makeRequest({ create, accept: 'text/event-stream' }));
 
     expect(createAgentUIStreamResponse).toHaveBeenCalledWith(
-      expect.objectContaining({ headers: { 'X-Frogbot-Thread-Id': 'thread-9' } }),
+      expect.objectContaining({ headers: { 'X-Frogbot-Chat-Id': 'chat-9' } }),
     );
   });
 
   it('persists the streamed assistant message with finish usage', async () => {
     const create = vi
       .fn()
-      .mockResolvedValueOnce({ id: 'thread-9' })
+      .mockResolvedValueOnce({ id: 'chat-9' })
       .mockResolvedValue({ id: 'assistant-1' });
-    const update = vi.fn(() => Promise.resolve({ id: 'thread-9' }));
+    const update = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
     const request = makeRequest({ create, update, accept: 'text/event-stream' });
     await postHandler()(request);
 
@@ -340,14 +340,14 @@ describe('agent endpoints', () => {
       }),
     );
     expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'threads', id: 'thread-9' }),
+      expect.objectContaining({ collection: 'chats', id: 'chat-9' }),
     );
   });
 
   it('persists partial assistant parts when the stream ends without usage', async () => {
     const create = vi
       .fn()
-      .mockResolvedValueOnce({ id: 'thread-9' })
+      .mockResolvedValueOnce({ id: 'chat-9' })
       .mockResolvedValue({ id: 'assistant-1' });
     const request = makeRequest({ create, accept: 'text/event-stream' });
     await postHandler()(request);
@@ -378,57 +378,57 @@ describe('agent endpoints', () => {
     );
   });
 
-  it('loads an owned existing thread with overrideAccess true and echoes its id', async () => {
+  it('loads an owned existing chat with overrideAccess true and echoes its id', async () => {
     const create = vi.fn(() => Promise.resolve({ id: 'msg-1' }));
-    const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7', user: 'user-1' }));
+    const findByID = vi.fn(() => Promise.resolve({ id: 'chat-7', user: 'user-1' }));
     const request = makeRequest({
       create,
       findByID,
-      body: { prompt: 'Hello', threadId: 'thread-7' },
+      body: { prompt: 'Hello', chatId: 'chat-7' },
     });
     const response = await postHandler()(request);
 
     expect(findByID).toHaveBeenCalledWith({
-      collection: 'threads',
-      id: 'thread-7',
+      collection: 'chats',
+      id: 'chat-7',
       depth: 0,
       req: request,
       overrideAccess: true,
     });
-    expect(create).not.toHaveBeenCalledWith(expect.objectContaining({ collection: 'threads' }));
-    expect(await response.json()).toMatchObject({ threadId: 'thread-7' });
+    expect(create).not.toHaveBeenCalledWith(expect.objectContaining({ collection: 'chats' }));
+    expect(await response.json()).toMatchObject({ chatId: 'chat-7' });
   });
 
-  it('propagates thread load failures as their status', async () => {
+  it('propagates chat load failures as their status', async () => {
     const findByID = vi.fn(() =>
       Promise.reject(Object.assign(new Error('not found'), { status: 404 })),
     );
     const response = await postHandler()(
-      makeRequest({ findByID, body: { prompt: 'Hello', threadId: 'gone' } }),
+      makeRequest({ findByID, body: { prompt: 'Hello', chatId: 'gone' } }),
     );
 
     expect(response.status).toBe(404);
   });
 
-  it('persists anonymous calls and returns a threadId', async () => {
+  it('persists anonymous calls and returns a chatId', async () => {
     const agent = makeAgent();
     agent.config.access = () => true;
-    const create = vi.fn(() => Promise.resolve({ id: 'thread-9' }));
+    const create = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
     const response = await postHandler()(makeRequest({ agent, create, user: null }));
 
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
-        collection: 'threads',
+        collection: 'chats',
         data: { user: null, agent: 'support' },
         overrideAccess: true,
       }),
     );
-    expect(await response.json()).toMatchObject({ threadId: 'thread-9' });
+    expect(await response.json()).toMatchObject({ chatId: 'chat-9' });
   });
 
   it('persists the user message and runs the agent on server history', async () => {
     const agent = makeAgent();
-    const create = vi.fn(() => Promise.resolve({ id: 'thread-9' }));
+    const create = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
     const find = vi.fn(() =>
       Promise.resolve({
         docs: [
@@ -445,7 +445,7 @@ describe('agent endpoints', () => {
       expect.objectContaining({
         collection: 'messages',
         data: expect.objectContaining({
-          thread: 'thread-9',
+          chat: 'chat-9',
           role: 'user',
           parts: [{ type: 'text', text: 'Hello' }],
         }),
@@ -462,32 +462,32 @@ describe('agent endpoints', () => {
           expect.objectContaining({ role: 'assistant' }),
           expect.objectContaining({ role: 'user' }),
         ],
-        options: expect.objectContaining({ threadId: 'thread-9' }),
+        options: expect.objectContaining({ chatId: 'chat-9' }),
       }),
     );
   });
 
-  it('continues anonymous threads after agent access succeeds', async () => {
+  it('continues anonymous chats after agent access succeeds', async () => {
     const agent = makeAgent();
     agent.config.access = () => true;
-    const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7', user: null }));
+    const findByID = vi.fn(() => Promise.resolve({ id: 'chat-7', user: null }));
     const response = await postHandler()(
-      makeRequest({ agent, findByID, user: null, body: { prompt: 'Hello', threadId: 'thread-7' } }),
+      makeRequest({ agent, findByID, user: null, body: { prompt: 'Hello', chatId: 'chat-7' } }),
     );
 
     expect(response.status).toBe(200);
     expect(findByID).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'thread-7', overrideAccess: true }),
+      expect.objectContaining({ id: 'chat-7', overrideAccess: true }),
     );
-    expect(await response.json()).toMatchObject({ threadId: 'thread-7' });
+    expect(await response.json()).toMatchObject({ chatId: 'chat-7' });
   });
 
-  it('rejects an anonymous caller continuing an authenticated thread', async () => {
+  it('rejects an anonymous caller continuing an authenticated chat', async () => {
     const agent = makeAgent();
     agent.config.access = () => true;
     const create = vi.fn();
     const find = vi.fn();
-    const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7', user: 'user-1' }));
+    const findByID = vi.fn(() => Promise.resolve({ id: 'chat-7', user: 'user-1' }));
     const response = await postHandler()(
       makeRequest({
         agent,
@@ -495,7 +495,7 @@ describe('agent endpoints', () => {
         find,
         findByID,
         user: null,
-        body: { prompt: 'Hello', threadId: 'thread-7' },
+        body: { prompt: 'Hello', chatId: 'chat-7' },
       }),
     );
 
@@ -504,12 +504,12 @@ describe('agent endpoints', () => {
     expect(find).not.toHaveBeenCalled();
   });
 
-  it('checks the target agent access before continuing a thread', async () => {
+  it('checks the target agent access before continuing a chat', async () => {
     const agent = makeAgent();
     agent.config.access = () => false;
     const findByID = vi.fn();
     const response = await postHandler()(
-      makeRequest({ agent, findByID, user: null, body: { prompt: 'Hello', threadId: 'thread-7' } }),
+      makeRequest({ agent, findByID, user: null, body: { prompt: 'Hello', chatId: 'chat-7' } }),
     );
 
     expect(response.status).toBe(403);

@@ -4,7 +4,7 @@ import { consumeStream, convertToModelMessages, generateId } from 'ai';
 import { resolveModel } from '../ai/resolve.js';
 import { generateMessage } from '../chat/generateMessage.js';
 import { createMessageUsage, persistAssistantMessage } from '../chat/messagePersistence.js';
-import { resolveThreadContext } from '../chat/threadContext.js';
+import { resolveChatContext } from '../chat/chatContext.js';
 import type { AgentInstance } from '../types/agent.js';
 import type { ManifestResponse } from '../types/chat.js';
 import type { DocID } from '../types/operations.js';
@@ -86,18 +86,18 @@ export async function getAgentAuthorizations({
 export async function prepareAgentRequest({
   req,
   agent,
-  requestedThreadId,
+  requestedChatId,
   uiMessages,
 }: {
   req: FrogbotRequest;
   agent: AgentInstance;
-  requestedThreadId?: DocID;
+  requestedChatId?: DocID;
   uiMessages: UIMessage[];
 }) {
-  return resolveThreadContext({
+  return resolveChatContext({
     req,
     agentSlug: agent.slug,
-    threadId: requestedThreadId,
+    chatId: requestedChatId,
     incoming: uiMessages,
     tools: agent.aiAgent.tools,
   });
@@ -106,12 +106,12 @@ export async function prepareAgentRequest({
 export function getAgentStreamOptions({
   req,
   agent,
-  threadId,
+  chatId,
   uiMessages,
 }: {
   req: FrogbotRequest;
   agent: AgentInstance;
-  threadId?: DocID;
+  chatId?: DocID;
   uiMessages: UIMessage[];
 }): Parameters<typeof createAgentUIStreamResponse>[0] {
   const model = resolveModel(agent.config.model, req.frogbot.config.ai!);
@@ -125,40 +125,40 @@ export function getAgentStreamOptions({
     messageMetadata: ({ part }) =>
       part.type === 'finish' ? { usage: createMessageUsage(part.totalUsage, model) } : undefined,
     onFinish:
-      threadId === undefined
+      chatId === undefined
         ? undefined
         : ({ responseMessage, isContinuation }) =>
-            persistAssistantMessage({ req, threadId, message: responseMessage, isContinuation }),
+            persistAssistantMessage({ req, chatId, message: responseMessage, isContinuation }),
     options: { req, overrideAccess: true },
     abortSignal: req.signal ?? undefined,
-    headers: threadId !== undefined ? { 'X-Frogbot-Thread-Id': String(threadId) } : undefined,
+    headers: chatId !== undefined ? { 'X-Frogbot-Chat-Id': String(chatId) } : undefined,
   };
 }
 
 export async function generateAgentRequest({
   req,
   agent,
-  threadId,
+  chatId,
   uiMessages,
 }: {
   req: FrogbotRequest;
   agent: AgentInstance;
-  threadId?: DocID;
+  chatId?: DocID;
   uiMessages: UIMessage[];
 }) {
   const result = await agent.aiAgent.generate({
     messages: await convertToModelMessages(uiMessages, { tools: agent.aiAgent.tools }),
-    options: { req, overrideAccess: true, threadId },
+    options: { req, overrideAccess: true, chatId },
     abortSignal: req.signal ?? undefined,
   });
-  if (threadId !== undefined) {
+  if (chatId !== undefined) {
     const message = await generateMessage({
       result,
       originalMessages: uiMessages,
       tools: agent.aiAgent.tools,
       model: resolveModel(agent.config.model, req.frogbot.config.ai!),
     });
-    await persistAssistantMessage({ req, threadId, message, isContinuation: false });
+    await persistAssistantMessage({ req, chatId, message, isContinuation: false });
   }
   return result;
 }

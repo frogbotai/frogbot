@@ -174,8 +174,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "threads": {
-      "name": "threads",
+    "chats": {
+      "name": "chats",
       "columns": {
         "id": {
           "name": "id",
@@ -244,41 +244,41 @@
         }
       },
       "indexes": {
-        "threads_user_idx": {
-          "name": "threads_user_idx",
+        "chats_user_idx": {
+          "name": "chats_user_idx",
           "columns": ["user_id"],
           "isUnique": false
         },
-        "threads_agent_idx": {
-          "name": "threads_agent_idx",
+        "chats_agent_idx": {
+          "name": "chats_agent_idx",
           "columns": ["agent"],
           "isUnique": false
         },
-        "threads_last_message_at_idx": {
-          "name": "threads_last_message_at_idx",
+        "chats_last_message_at_idx": {
+          "name": "chats_last_message_at_idx",
           "columns": ["last_message_at"],
           "isUnique": false
         },
-        "threads_updated_at_idx": {
-          "name": "threads_updated_at_idx",
+        "chats_updated_at_idx": {
+          "name": "chats_updated_at_idx",
           "columns": ["updated_at"],
           "isUnique": false
         },
-        "threads_created_at_idx": {
-          "name": "threads_created_at_idx",
+        "chats_created_at_idx": {
+          "name": "chats_created_at_idx",
           "columns": ["created_at"],
           "isUnique": false
         },
-        "threads_deleted_at_idx": {
-          "name": "threads_deleted_at_idx",
+        "chats_deleted_at_idx": {
+          "name": "chats_deleted_at_idx",
           "columns": ["deleted_at"],
           "isUnique": false
         }
       },
       "foreignKeys": {
-        "threads_user_id_users_id_fk": {
-          "name": "threads_user_id_users_id_fk",
-          "tableFrom": "threads",
+        "chats_user_id_users_id_fk": {
+          "name": "chats_user_id_users_id_fk",
+          "tableFrom": "chats",
           "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
@@ -300,8 +300,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "thread_id": {
-          "name": "thread_id",
+        "chat_id": {
+          "name": "chat_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -402,9 +402,9 @@
         }
       },
       "indexes": {
-        "messages_thread_idx": {
-          "name": "messages_thread_idx",
-          "columns": ["thread_id"],
+        "messages_chat_idx": {
+          "name": "messages_chat_idx",
+          "columns": ["chat_id"],
           "isUnique": false
         },
         "messages_updated_at_idx": {
@@ -424,11 +424,11 @@
         }
       },
       "foreignKeys": {
-        "messages_thread_id_threads_id_fk": {
-          "name": "messages_thread_id_threads_id_fk",
+        "messages_chat_id_chats_id_fk": {
+          "name": "messages_chat_id_chats_id_fk",
           "tableFrom": "messages",
-          "tableTo": "threads",
-          "columnsFrom": ["thread_id"],
+          "tableTo": "chats",
+          "columnsFrom": ["chat_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -455,8 +455,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "thread_id": {
-          "name": "thread_id",
+        "chat_id": {
+          "name": "chat_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -580,9 +580,9 @@
           "columns": ["user_id"],
           "isUnique": false
         },
-        "usage_logs_thread_idx": {
-          "name": "usage_logs_thread_idx",
-          "columns": ["thread_id"],
+        "usage_logs_chat_idx": {
+          "name": "usage_logs_chat_idx",
+          "columns": ["chat_id"],
           "isUnique": false
         },
         "usage_logs_request_id_idx": {
@@ -626,11 +626,11 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "usage_logs_thread_id_threads_id_fk": {
-          "name": "usage_logs_thread_id_threads_id_fk",
+        "usage_logs_chat_id_chats_id_fk": {
+          "name": "usage_logs_chat_id_chats_id_fk",
           "tableFrom": "usage_logs",
-          "tableTo": "threads",
-          "columnsFrom": ["thread_id"],
+          "tableTo": "chats",
+          "columnsFrom": ["chat_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -1054,8 +1054,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "threads_id": {
-          "name": "threads_id",
+        "chats_id": {
+          "name": "chats_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -1111,9 +1111,9 @@
           "columns": ["users_id"],
           "isUnique": false
         },
-        "payload_locked_documents_rels_threads_id_idx": {
-          "name": "payload_locked_documents_rels_threads_id_idx",
-          "columns": ["threads_id"],
+        "payload_locked_documents_rels_chats_id_idx": {
+          "name": "payload_locked_documents_rels_chats_id_idx",
+          "columns": ["chats_id"],
           "isUnique": false
         },
         "payload_locked_documents_rels_messages_id_idx": {
@@ -1156,11 +1156,11 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "payload_locked_documents_rels_threads_fk": {
-          "name": "payload_locked_documents_rels_threads_fk",
+        "payload_locked_documents_rels_chats_fk": {
+          "name": "payload_locked_documents_rels_chats_fk",
           "tableFrom": "payload_locked_documents_rels",
-          "tableTo": "threads",
-          "columnsFrom": ["threads_id"],
+          "tableTo": "chats",
+          "columnsFrom": ["chats_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"

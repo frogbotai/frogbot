@@ -17,7 +17,7 @@ export const logUsage: AfterOperationHook = (args) => {
       data: {
         ...(context.usageFields ?? {}),
         ...(req.user?.id !== undefined ? { user: req.user.id } : {}),
-        ...(context.agent?.threadId !== undefined ? { thread: context.agent.threadId } : {}),
+        ...(context.agent?.chatId !== undefined ? { chat: context.agent.chatId } : {}),
         requestId: args.requestId,
         runId: context.agent?.runId,
         model: args.model,

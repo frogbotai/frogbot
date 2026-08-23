@@ -20,14 +20,14 @@ describe('renamed collection acceptance', () => {
       const url = String(input);
       if (url === 'https://frogbot.example/api/frogbot') {
         return Response.json({
-          chat: { enabled: true, threadsSlug: 'conversations', messagesSlug: 'turns' },
+          chat: { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns' },
           files: { slug: 'assets' },
           agents: [{ slug: 'support' }],
         });
       }
       if (url.startsWith('https://frogbot.example/api/conversations?')) {
         return Response.json({
-          docs: [{ id: 'thread-1', agent: 'support', title: 'Renamed thread' }],
+          docs: [{ id: 'chat-1', agent: 'support', title: 'Renamed chat' }],
           page: 1,
           totalDocs: 1,
           totalPages: 1,
@@ -38,7 +38,7 @@ describe('renamed collection acceptance', () => {
           docs: [
             {
               id: 'message-1',
-              thread: 'thread-1',
+              chat: 'chat-1',
               role: 'user',
               parts: [{ type: 'text', text: 'Loaded through renamed endpoint' }],
             },
@@ -59,11 +59,11 @@ describe('renamed collection acceptance', () => {
           headers: { Authorization: 'Bearer runtime' },
         }}
       >
-        <Chat agent="support" defaultThreadId="thread-1" />
+        <Chat agent="support" defaultChatId="chat-1" />
       </ChatProvider>,
     );
 
-    await screen.findByText('Renamed thread');
+    await screen.findByText('Renamed chat');
     await waitFor(() =>
       expect(
         fetch.mock.calls.some(([url]) => {

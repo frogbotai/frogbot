@@ -27,7 +27,7 @@ function makeReq() {
   const req = {
     user: { id: 'user-1' },
     frogbot: {
-      config: { chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' } },
+      config: { chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' } },
       create,
       update,
     },
@@ -36,16 +36,16 @@ function makeReq() {
 }
 
 describe('assistant message persistence', () => {
-  it('creates an assistant message with usage in hook context and bumps the thread', async () => {
+  it('creates an assistant message with usage in hook context and bumps the chat', async () => {
     const { req, create, update } = makeReq();
 
-    await persistAssistantMessage({ req, threadId: 'thread-1', message, isContinuation: false });
+    await persistAssistantMessage({ req, chatId: 'chat-1', message, isContinuation: false });
 
     expect(create).toHaveBeenCalledWith({
       collection: 'messages',
       data: {
         id: 'assistant-1',
-        thread: 'thread-1',
+        chat: 'chat-1',
         role: 'assistant',
         parts: message.parts,
         metadata: { source: 'agent' },
@@ -61,8 +61,8 @@ describe('assistant message persistence', () => {
     });
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({
-        collection: 'threads',
-        id: 'thread-1',
+        collection: 'chats',
+        id: 'chat-1',
         data: { lastMessageAt: expect.any(String) },
       }),
     );
@@ -71,7 +71,7 @@ describe('assistant message persistence', () => {
   it('updates the existing message for continuations', async () => {
     const { req, create, update } = makeReq();
 
-    await persistAssistantMessage({ req, threadId: 'thread-1', message, isContinuation: true });
+    await persistAssistantMessage({ req, chatId: 'chat-1', message, isContinuation: true });
 
     expect(create).not.toHaveBeenCalled();
     expect(update).toHaveBeenNthCalledWith(

@@ -22,7 +22,7 @@ type RegisterBody = {
 
 type AgentBody = {
   text: string;
-  threadId: string | number;
+  chatId: string | number;
 };
 
 type FindBody<T> = {
@@ -49,7 +49,7 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
   let dataDir: string;
   let token: string;
   let userId: string | number;
-  let threadId: string | number;
+  let chatId: string | number;
 
   beforeAll(async () => {
     mkdirSync(tempRoot, { recursive: true });
@@ -107,29 +107,29 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
 
     expect(response.status, JSON.stringify(response.body)).toBe(200);
     expect(response.body.text).toContain(sentinel);
-    expect(response.body.threadId).toBeDefined();
-    threadId = response.body.threadId;
+    expect(response.body.chatId).toBeDefined();
+    chatId = response.body.chatId;
   });
 
   it('persists one transcript with the completed tool call', { retry: 2 }, async () => {
     const auth = { headers: { authorization: `Bearer ${token}` } };
-    const threads = await client.get<
+    const chats = await client.get<
       FindBody<{
         id: string | number;
         agent: string;
         user: string | number | { id: string | number };
       }>
-    >('/api/threads', auth);
+    >('/api/chats', auth);
 
-    expect(threads.status, JSON.stringify(threads.body)).toBe(200);
-    expect(threads.body.docs).toHaveLength(1);
-    expect(threads.body.docs[0]?.agent).toBe('tool-demo');
-    const owner = threads.body.docs[0]?.user;
+    expect(chats.status, JSON.stringify(chats.body)).toBe(200);
+    expect(chats.body.docs).toHaveLength(1);
+    expect(chats.body.docs[0]?.agent).toBe('tool-demo');
+    const owner = chats.body.docs[0]?.user;
     expect(typeof owner === 'object' ? owner.id : owner).toBe(userId);
 
     const messages = await client.get<
       FindBody<{ role: string; parts: Array<Record<string, unknown>> }>
-    >(`/api/messages?where[thread][equals]=${threadId}&sort=createdAt`, auth);
+    >(`/api/messages?where[chat][equals]=${chatId}&sort=createdAt`, auth);
 
     expect(messages.status, JSON.stringify(messages.body)).toBe(200);
     expect(messages.body.docs).toHaveLength(2);

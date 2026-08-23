@@ -2,21 +2,21 @@ import { describe, expect, it } from 'vitest';
 
 import type { FieldHook } from '../../types/fields.js';
 import type { FrogbotRequest } from '../../types/request.js';
-import { defaultThreadsCollection } from './threads.js';
+import { defaultChatsCollection } from './chats.js';
 
-const collection = defaultThreadsCollection({ slug: 'threads', userSlug: 'users' });
+const collection = defaultChatsCollection({ slug: 'chats', userSlug: 'users' });
 
 function reqWithUser(id?: string) {
   return (id ? { user: { id } } : {}) as FrogbotRequest;
 }
 
-describe('defaultThreadsCollection', () => {
+describe('defaultChatsCollection', () => {
   it('produces the base config shape', () => {
     expect(collection).toMatchSnapshot();
   });
 
   it('binds the provided slug and user relation', () => {
-    const renamed = defaultThreadsCollection({ slug: 'conversations', userSlug: 'members' });
+    const renamed = defaultChatsCollection({ slug: 'conversations', userSlug: 'members' });
     expect(renamed.slug).toBe('conversations');
     const user = renamed.fields.find((f) => 'name' in f && f.name === 'user');
     expect(user).toMatchObject({ type: 'relationship', relationTo: 'members', index: true });
@@ -52,8 +52,8 @@ describe('defaultThreadsCollection', () => {
 
     it('permits per-operation access overrides', async () => {
       const read = () => true as const;
-      const configured = defaultThreadsCollection({
-        slug: 'threads',
+      const configured = defaultChatsCollection({
+        slug: 'chats',
         userSlug: 'users',
         access: { read },
       });

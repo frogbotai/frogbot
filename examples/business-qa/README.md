@@ -10,7 +10,7 @@ A comprehensive release-readiness assistant built as the second tier beside the 
 - Google Sheets, Drive, Calendar, Linear, Resend, date helper, data summarizer, and PDF pieces
 - One Google OAuth consent with scopes derived from all registered Google pieces
 - Named inbound API keys and owner-scoped outbound credentials
-- JSON, SSE, and persisted authenticated thread continuation
+- JSON, SSE, and persisted authenticated chat continuation
 
 ## Prerequisites
 
@@ -123,7 +123,7 @@ curl -s http://localhost:3000/api/agents/qa-analyst/authorizations \
 
 ## Call the agents
 
-The analyst has only read and analysis actions. JSON responses include a `threadId` for authenticated calls:
+The analyst has only read and analysis actions. JSON responses include a `chatId` for authenticated calls:
 
 ```bash
 curl -s http://localhost:3000/api/agents/qa-analyst \
@@ -151,20 +151,20 @@ curl -s http://localhost:3000/api/agents/release-manager \
   -d '{"prompt":"Create a Linear issue for the missing rollback test. Do not send email."}' | jq
 ```
 
-## Continue a thread
+## Continue a chat
 
-Capture the `threadId` from a JSON response and send it with the next prompt:
+Capture the `chatId` from a JSON response and send it with the next prompt:
 
 ```bash
-export THREAD_ID='replace-with-response-thread-id'
+export CHAT_ID='replace-with-response-chat-id'
 
 curl -s http://localhost:3000/api/agents/qa-analyst \
   -H "Authorization: Bearer $FROGBOT_API_KEY" \
   -H 'Content-Type: application/json' \
-  -d "{\"threadId\":\"$THREAD_ID\",\"prompt\":\"Now rank those blockers by launch risk.\"}" | jq
+  -d "{\"chatId\":\"$CHAT_ID\",\"prompt\":\"Now rank those blockers by launch risk.\"}" | jq
 ```
 
-Threads are owner-scoped. SSE responses expose the persisted thread ID in the `X-Frogbot-Thread-Id` response header.
+Chats are owner-scoped. SSE responses expose the persisted chat ID in the `X-Frogbot-Chat-Id` response header.
 
 ## QA checklist
 
@@ -176,7 +176,7 @@ Threads are owner-scoped. SSE responses expose the persisted thread ID in the `X
 - Confirm the authorization preflight excludes deployment-provided Resend credentials.
 - Ask `qa-analyst` to use only read-oriented actions.
 - Ask `release-manager` to create one approved Linear item and confirm the mutation.
-- Exercise JSON, SSE, and thread continuation.
+- Exercise JSON, SSE, and chat continuation.
 - Regenerate types and the import map after config or admin component changes.
 
 ## Scripts

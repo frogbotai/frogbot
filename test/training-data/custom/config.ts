@@ -11,7 +11,7 @@ const Users: CollectionConfig = {
 
 const Conversations: CollectionConfig = {
   slug: 'conversations',
-  thread: true,
+  chat: true,
   fields: [],
 } as never;
 

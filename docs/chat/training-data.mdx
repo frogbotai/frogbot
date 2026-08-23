@@ -1,16 +1,16 @@
 ---
 title: "Training data export"
 sidebarTitle: "Training data"
-description: "Export persisted threads and messages as lossless JSONL for model training."
-keywords: ["training", "export", "jsonl", "threads", "messages", "fine-tuning"]
+description: "Export persisted chats and messages as lossless JSONL for model training."
+keywords: ["training", "export", "jsonl", "chats", "messages", "fine-tuning"]
 ---
 
-FrogBot exports the conversations it already persists. Threads and messages stay the single source of truth — nothing is copied into a separate capture store, and no extra fields are written when a conversation happens.
+FrogBot exports the conversations it already persists. Chats and messages stay the single source of truth — nothing is copied into a separate capture store, and no extra fields are written when a conversation happens.
 
-Each line of the output is one conversation: the thread document and its messages in creation order.
+Each line of the output is one conversation: the chat document and its messages in creation order.
 
 ```json
-{"thread":{"id":1,"title":"Refund request","agent":"support"},"messages":[{"id":"m1","role":"user","parts":[{"type":"text","text":"Where is my refund?"}]}]}
+{"chat":{"id":1,"title":"Refund request","agent":"support"},"messages":[{"id":"m1","role":"user","parts":[{"type":"text","text":"Where is my refund?"}]}]}
 ```
 
 ## Export from the Local API
@@ -25,11 +25,11 @@ await stream.pipeTo(destination)
 ```
 
 <ParamField path="where" type="Where">
-  Filters which threads are exported. Omit it to export every readable thread.
+  Filters which chats are exported. Omit it to export every readable chat.
 </ParamField>
 
 <ParamField path="pageSize" type="number" default="100">
-  How many threads and messages are read per query.
+  How many chats and messages are read per query.
 </ParamField>
 
 <ParamField path="req" type="FrogbotRequest">
@@ -40,7 +40,7 @@ await stream.pipeTo(destination)
   Bypasses access control. Required for unauthenticated server-side exports.
 </ParamField>
 
-Access control is enforced by default. If the caller cannot read the thread or message collections, the export fails instead of quietly returning fewer conversations.
+Access control is enforced by default. If the caller cannot read the chat or message collections, the export fails instead of quietly returning fewer conversations.
 
 ## Export from the CLI
 
@@ -54,7 +54,7 @@ frogbot export:training-data --page-size 500 > training.jsonl
 
 ## What the export contains
 
-Every persisted message part is emitted exactly as stored — text, reasoning, tool calls and results, images, video, files, and any custom or future part type your app writes. Message `metadata` and thread fields such as `title`, `agent`, and `todos` are included too.
+Every persisted message part is emitted exactly as stored — text, reasoning, tool calls and results, images, video, files, and any custom or future part type your app writes. Message `metadata` and chat fields such as `title`, `agent`, and `todos` are included too.
 
 Two things are deliberately absent because FrogBot does not persist them with the conversation:
 

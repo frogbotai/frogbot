@@ -211,9 +211,9 @@ Root tools with `pieceService` use the same validation as agent tools. The match
 
 ---
 
-## Track thread todos
+## Track chat todos
 
-FrogBot provides `write_todos` and `read_todos` as an optional toolkit. `write_todos` replaces the entire list, and `read_todos` returns the current thread's list.
+FrogBot provides `write_todos` and `read_todos` as an optional toolkit. `write_todos` replaces the entire list, and `read_todos` returns the current chat's list.
 
 ```ts
 import { todoTools } from 'frogbot/tools'
@@ -235,7 +235,7 @@ export const supportAgent: AgentConfig = {
 }
 ```
 
-Each item has `content` and a `status` of `pending`, `in_progress`, or `completed`. Keep one item `in_progress` at a time. Todos are stored on the current thread, survive continuations, and are deleted with that thread. Chat persistence must be enabled and the tool must run within a persisted agent thread.
+Each item has `content` and a `status` of `pending`, `in_progress`, or `completed`. Keep one item `in_progress` at a time. Todos are stored on the current chat, survive continuations, and are deleted with that chat. Chat persistence must be enabled and the tool must run within a persisted agent chat.
 
 ---
 
@@ -315,18 +315,18 @@ await frogbot.agents.support.generate({
 })
 ```
 
-Local calls are stateless by default. Pass an existing `threadId` to `generate` to persist the new user message and assistant response against server-owned history.
+Local calls are stateless by default. Pass an existing `chatId` to `generate` to persist the new user message and assistant response against server-owned history.
 
 ```ts
 await frogbot.agents.support.generate({
   prompt: 'Review ticket SUP-42 again',
-  threadId,
+  chatId,
   req,
   overrideAccess: false
 })
 ```
 
-Thread persistence accepts prompts or `UIMessage[]`; it does not accept `ModelMessage[]`. Local `stream()` calls remain stateless.
+Chat persistence accepts prompts or `UIMessage[]`; it does not accept `ModelMessage[]`. Local `stream()` calls remain stateless.
 
 ---
 
@@ -365,7 +365,7 @@ export const reportingAgent: AgentConfig = {
 
 FrogBot runs schedules and skips an occurrence while the same trigger already has an active or runnable scheduled job. User-defined jobs, workflows, queues, and automatic runners remain configured alongside FrogBot schedules.
 
-Each prompt trigger creates a fresh thread with `user: null` and persists its user and assistant messages. A handler may invoke the owning agent, another agent, or no agent. Every handler receives `{ frogbot, agent, req, job }`, and `req.context` contains `source`, `agentSlug`, `triggerSlug`, and `jobId`. Removing an agent or trigger makes already-queued work for it complete without running.
+Each prompt trigger creates a fresh chat with `user: null` and persists its user and assistant messages. A handler may invoke the owning agent, another agent, or no agent. Every handler receives `{ frogbot, agent, req, job }`, and `req.context` contains `source`, `agentSlug`, `triggerSlug`, and `jobId`. Removing an agent or trigger makes already-queued work for it complete without running.
 
 ---
 
@@ -378,7 +378,7 @@ Configuring at least one worker mounts two FrogBot endpoints at the root API pat
 | `GET` | `/api/agents` | Accessible agents as `{ agents: [{ slug, profile? }] }` |
 | `POST` | `/api/agents/:slug` | Generated JSON or an AI SDK UI message stream |
 
-POST exactly one non-empty `prompt` or non-empty `messages` array. Authenticated calls create a thread when `threadId` is absent. Without an explicit event-stream accept header, the response is `{ text, usage, finishReason, threadId }`.
+POST exactly one non-empty `prompt` or non-empty `messages` array. Authenticated calls create a chat when `chatId` is absent. Without an explicit event-stream accept header, the response is `{ text, usage, finishReason, chatId }`.
 
 ```bash
 curl http://localhost:3000/api/agents/support \
@@ -399,17 +399,17 @@ curl http://localhost:3000/api/agents/support \
   --data '{ "prompt": "Help with ticket SUP-42" }'
 ```
 
-Stream responses return the thread ID in the `X-Frogbot-Thread-Id` header. Continue the conversation by sending that ID with only the next user message.
+Stream responses return the chat ID in the `X-Frogbot-Chat-Id` header. Continue the conversation by sending that ID with only the next user message.
 
 ```bash
 curl http://localhost:3000/api/agents/support \
   --request POST \
   --header "Authorization: Bearer $FROGBOT_TOKEN" \
   --header "Content-Type: application/json" \
-  --data '{ "prompt": "What changed since then?", "threadId": "THREAD_ID" }'
+  --data '{ "prompt": "What changed since then?", "chatId": "CHAT_ID" }'
 ```
 
-FrogBot loads stored history, rejects threads owned by another authenticated user, and rejects client-supplied assistant or system messages. Custom access rules can allow anonymous callers to create and continue threads, but those threads are not private to the anonymous caller who created them because there is no anonymous identity to verify. Applications handling sensitive conversations should require authentication.
+FrogBot loads stored history, rejects chats owned by another authenticated user, and rejects client-supplied assistant or system messages. Custom access rules can allow anonymous callers to create and continue chats, but those chats are not private to the anonymous caller who created them because there is no anonymous identity to verify. Applications handling sensitive conversations should require authentication.
 
 Malformed input returns `400`, an unknown slug returns `404`, and an aborted request returns a bodyless `499`.
 

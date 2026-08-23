@@ -4,7 +4,7 @@ import type { FieldAccess } from '../../types/access.js';
 import type { FrogbotRequest } from '../../types/request.js';
 import { defaultMessagesCollection } from './messages.js';
 
-const collection = defaultMessagesCollection({ slug: 'messages', threadsSlug: 'threads' });
+const collection = defaultMessagesCollection({ slug: 'messages', chatsSlug: 'chats' });
 
 function reqWithUser(id?: string) {
   return (id ? { user: { id } } : {}) as FrogbotRequest;
@@ -15,11 +15,11 @@ describe('defaultMessagesCollection', () => {
     expect(collection).toMatchSnapshot();
   });
 
-  it('binds the provided slug and thread relation', () => {
-    const renamed = defaultMessagesCollection({ slug: 'turns', threadsSlug: 'conversations' });
+  it('binds the provided slug and chat relation', () => {
+    const renamed = defaultMessagesCollection({ slug: 'turns', chatsSlug: 'conversations' });
     expect(renamed.slug).toBe('turns');
-    const thread = renamed.fields.find((f) => 'name' in f && f.name === 'thread');
-    expect(thread).toMatchObject({
+    const chat = renamed.fields.find((f) => 'name' in f && f.name === 'chat');
+    expect(chat).toMatchObject({
       type: 'relationship',
       relationTo: 'conversations',
       required: true,
@@ -27,9 +27,9 @@ describe('defaultMessagesCollection', () => {
     });
   });
 
-  it('defines id, thread, role, parts, metadata, and usage fields', () => {
+  it('defines id, chat, role, parts, metadata, and usage fields', () => {
     const names = collection.fields.map((f) => ('name' in f ? f.name : undefined));
-    expect(names).toEqual(['id', 'thread', 'role', 'parts', 'metadata', 'usage']);
+    expect(names).toEqual(['id', 'chat', 'role', 'parts', 'metadata', 'usage']);
   });
 
   it('types parts as UIMessage parts via typescriptSchema', () => {
@@ -72,10 +72,10 @@ describe('defaultMessagesCollection', () => {
       expect(await collection.access?.create?.({ req: reqWithUser() })).toBe(false);
     });
 
-    it('read/update/delete resolve ownership through the thread relation', async () => {
+    it('read/update/delete resolve ownership through the chat relation', async () => {
       for (const op of ['read', 'update', 'delete'] as const) {
         expect(await collection.access?.[op]?.({ req: reqWithUser('u1') })).toEqual({
-          'thread.user': { equals: 'u1' },
+          'chat.user': { equals: 'u1' },
         });
         expect(await collection.access?.[op]?.({ req: reqWithUser() })).toBe(false);
       }
@@ -85,12 +85,12 @@ describe('defaultMessagesCollection', () => {
       const read = () => true as const;
       const configured = defaultMessagesCollection({
         slug: 'messages',
-        threadsSlug: 'threads',
+        chatsSlug: 'chats',
         access: { read },
       });
       expect(configured.access?.read).toBe(read);
       expect(await configured.access?.update?.({ req: reqWithUser('u1') })).toEqual({
-        'thread.user': { equals: 'u1' },
+        'chat.user': { equals: 'u1' },
       });
     });
   });

@@ -3,31 +3,31 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ChatShell } from './chat-shell';
 import { ChatStatus } from './chat-status';
-import { deriveThreadTitle, ThreadHistory } from './thread-history';
+import { ChatHistory, deriveChatTitle } from './chat-history';
 
 describe('provider-free chat shell', () => {
   it('selects history and exposes active state', () => {
-    const onThreadChange = vi.fn();
+    const onChatChange = vi.fn();
     render(
-      <ThreadHistory
-        threads={[
+      <ChatHistory
+        chats={[
           { id: 1, agent: 'a', title: 'First' },
           { id: 2, agent: 'a' },
         ]}
-        activeThreadId={1}
+        activeChatId={1}
         fallbackTitle="Untitled"
-        onThreadChange={onThreadChange}
+        onChatChange={onChatChange}
         renderActions={() => <button>Actions</button>}
       />,
     );
     expect(screen.getByText('First').getAttribute('aria-current')).toBe('page');
     fireEvent.click(screen.getByText('Untitled'));
-    expect(onThreadChange).toHaveBeenCalledWith(2);
+    expect(onChatChange).toHaveBeenCalledWith(2);
   });
 
   it('derives and truncates a title from the first user message', () => {
     expect(
-      deriveThreadTitle(
+      deriveChatTitle(
         [
           { id: '1', role: 'assistant', parts: [{ type: 'text', text: 'Ignore' }] },
           { id: '2', role: 'user', parts: [{ type: 'text', text: 'A title that is too long' }] },
@@ -36,7 +36,7 @@ describe('provider-free chat shell', () => {
         12,
       ),
     ).toBe('A title tha…');
-    expect(deriveThreadTitle([], 'Fallback')).toBe('Fallback');
+    expect(deriveChatTitle([], 'Fallback')).toBe('Fallback');
   });
 
   it('renders shell and injected status content without a provider', () => {

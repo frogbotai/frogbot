@@ -15,7 +15,7 @@ describe('training data export: custom chat collections', () => {
   beforeAll(async () => {
     booted = await bootFrogbot(dirname, 'training-data-custom');
 
-    const thread = (await booted.frogbot.create({
+    const chat = (await booted.frogbot.create({
       collection: 'conversations',
       data: { title: 'custom' },
       overrideAccess: true,
@@ -27,7 +27,7 @@ describe('training data export: custom chat collections', () => {
         id: 't1',
         role: 'user',
         parts: [{ type: 'text', text: 'custom slug' }],
-        thread: thread.id,
+        chat: chat.id,
       },
       overrideAccess: true,
     });
@@ -37,7 +37,7 @@ describe('training data export: custom chat collections', () => {
     await booted.shutdown();
   });
 
-  it('exports from the marked thread and message collections', async () => {
+  it('exports from the marked chat and message collections', async () => {
     const chunks: Buffer[] = [];
     const reader = booted.frogbot.exportTrainingData({ overrideAccess: true }).getReader();
     for (;;) {
@@ -50,7 +50,7 @@ describe('training data export: custom chat collections', () => {
     const records = lines.map((line) => JSON.parse(line) as TrainingDataRecord);
 
     expect(records).toHaveLength(1);
-    expect(records[0].thread).toMatchObject({ title: 'custom' });
+    expect(records[0].chat).toMatchObject({ title: 'custom' });
     expect(records[0].messages[0].parts).toEqual([{ type: 'text', text: 'custom slug' }]);
   });
 });

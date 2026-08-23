@@ -86,7 +86,7 @@ describe.skipIf(!RUN_E2E || !hasSearchKey)('web search e2e', () => {
 
   async function runSearch(agent: string, toolType: string): Promise<void> {
     const auth = { headers: { authorization: `Bearer ${token}` } };
-    const response = await client.post<{ text: string; threadId: string | number }>(
+    const response = await client.post<{ text: string; chatId: string | number }>(
       `/api/agents/${agent}`,
       { prompt: 'Search the web for the official FrogBot GitHub repository.' },
       auth,
@@ -94,7 +94,7 @@ describe.skipIf(!RUN_E2E || !hasSearchKey)('web search e2e', () => {
     expect(response.status, JSON.stringify(response.body)).toBe(200);
     expect(response.body.text).toMatch(/https?:\/\//);
     const messages = await client.get<{ docs: Array<{ parts: Array<Record<string, unknown>> }> }>(
-      `/api/messages?where[thread][equals]=${response.body.threadId}&sort=createdAt`,
+      `/api/messages?where[chat][equals]=${response.body.chatId}&sort=createdAt`,
       auth,
     );
     expect(messages.status, JSON.stringify(messages.body)).toBe(200);

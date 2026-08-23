@@ -150,7 +150,7 @@ describe('frogbot generate:types', () => {
       await rm(dir, { recursive: true, force: true });
     });
 
-    it('emits Thread/Message interfaces with UIMessage-typed parts for injected chat collections', async () => {
+    it('emits Chat/Message interfaces with UIMessage-typed parts for injected chat collections', async () => {
       dir = await mkdtemp(join(tmpdir(), 'frogbot-types-'));
       const { buildConfig } = await import('../config/build.js');
       const config = await buildConfig({
@@ -170,10 +170,10 @@ describe('frogbot generate:types', () => {
       const { outputPath } = await writeGeneratedTypes(config, dir);
       const output = await readFile(outputPath, 'utf-8');
 
-      expect(output).toContain('export interface Thread {');
+      expect(output).toContain('export interface Chat {');
       expect(output).toContain('export interface Message {');
       expect(output).toContain("parts: import('frogbot').UIMessage['parts'];");
-      expect(output).toContain('threads: Thread;');
+      expect(output).toContain('chats: Chat;');
       expect(output).toContain('messages: Message;');
       expect(output).toContain("role: 'user' | 'assistant' | 'system';");
       expect(output).toContain('assistant: unknown;');

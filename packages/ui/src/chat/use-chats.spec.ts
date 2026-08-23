@@ -1,10 +1,10 @@
 import { createFrogbotSDK } from '@frogbotai/sdk';
 import { describe, expect, it, vi } from 'vitest';
 
-import { loadThreads } from './use-threads';
+import { loadChats } from './use-chats';
 
-describe('loadThreads', () => {
-  it('uses the dynamic thread slug, descending activity sort, and pagination', async () => {
+describe('loadChats', () => {
+  it('uses the dynamic chat slug, descending activity sort, and pagination', async () => {
     const result = {
       docs: [],
       page: 2,
@@ -15,10 +15,10 @@ describe('loadThreads', () => {
     };
     const fetch = vi.fn(() => Promise.resolve(Response.json(result)));
     await expect(
-      loadThreads({
+      loadChats({
         sdk: createFrogbotSDK({ baseURL: '/api', fetch }),
         agent: 'support',
-        threadsSlug: 'conversations',
+        chatsSlug: 'conversations',
         page: 2,
         limit: 10,
       }),

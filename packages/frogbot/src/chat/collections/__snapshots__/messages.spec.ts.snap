@@ -10,7 +10,7 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
   },
   "admin": {
     "defaultColumns": [
-      "thread",
+      "chat",
       "role",
       "createdAt",
     ],
@@ -25,8 +25,8 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
     },
     {
       "index": true,
-      "name": "thread",
-      "relationTo": "threads",
+      "name": "chat",
+      "relationTo": "chats",
       "required": true,
       "type": "relationship",
     },

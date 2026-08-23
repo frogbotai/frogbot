@@ -59,7 +59,7 @@ Your config lives in [`src/frogbot.config.ts`](./src/frogbot.config.ts):
   one tool (`get_time`). FrogBot registers `GET /api/agents` and
   `POST /api/agents/:slug` automatically — you never write routing code.
 - **`collections`** — a single `users` auth collection, the minimum FrogBot
-  example for customizing authentication. The agent also injects `threads` and
+  example for customizing authentication. The agent also injects `chats` and
   `messages`; authenticated calls persist automatically, while this example's
   anonymous calls stay stateless.
 

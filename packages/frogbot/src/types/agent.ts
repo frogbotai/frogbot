@@ -68,7 +68,7 @@ type AgentRunOpts = (
   abortSignal?: AbortSignal;
 };
 
-export type AgentGenerateOpts = AgentRunOpts & { threadId?: DocID };
+export type AgentGenerateOpts = AgentRunOpts & { chatId?: DocID };
 
 export type AgentStreamOpts = AgentRunOpts;
 
@@ -79,7 +79,7 @@ export type AgentCallOptions = {
   req?: FrogbotRequest;
   overrideAccess?: boolean;
   runId?: string;
-  threadId?: DocID;
+  chatId?: DocID;
 };
 
 export type AgentInstance = {

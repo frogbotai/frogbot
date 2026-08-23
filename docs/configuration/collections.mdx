@@ -11,10 +11,10 @@ To define a Collection Config, use the `collections` property in your [FrogBot C
 
 ```ts
 import { buildConfig } from 'frogbot'
-import { Users, Projects, Files, Threads, Messages } from './collections'
+import { Users, Projects, Files, Chats, Messages } from './collections'
 
 export default buildConfig({
-  collections: [Users, Projects, Files, Threads, Messages],
+  collections: [Users, Projects, Files, Chats, Messages],
 })
 ```
 
@@ -24,18 +24,18 @@ export default buildConfig({
 
 ## FrogBot collection model
 
-Collections you configure remain ordinary FrogBot collections. FrogBot injects a files collection, and agents also need thread and message stores. You can adopt those roles into collections you own.
+Collections you configure remain ordinary FrogBot collections. FrogBot injects a files collection, and agents also need chat and message stores. You can adopt those roles into collections you own.
 
 ### Role markers
 
-FrogBot identifies managed collections by role, not by a required slug. Mark a collection with `thread: true`, `message: true`, or `file: true`; FrogBot keeps its slug and merges in the required configuration.
+FrogBot identifies managed collections by role, not by a required slug. Mark a collection with `chat: true`, `message: true`, or `file: true`; FrogBot keeps its slug and merges in the required configuration.
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
 
 export const Conversations: CollectionConfig = {
   slug: 'conversations',
-  thread: true,
+  chat: true,
   fields: [{ name: 'channel', type: 'text' }]
 }
 
@@ -46,7 +46,7 @@ export const Turns: CollectionConfig = {
 }
 ```
 
-Mark at most one collection per role. With no marker, agents cause FrogBot to inject defaults at `threads` and `messages`. An unmarked collection already using either default slug causes a configuration error rather than implicit adoption.
+Mark at most one collection per role. With no marker, agents cause FrogBot to inject defaults at `chats` and `messages`. An unmarked collection already using either default slug causes a configuration error rather than implicit adoption.
 
 ### Field contribution per role
 
@@ -54,17 +54,17 @@ Your compatible field, access, admin, and option values win during the merge. Mi
 
 | Role marker | FrogBot contributes |
 | --- | --- |
-| `thread: true` | `title`, owner `user` relationship, agent slug, and `lastMessageAt` |
-| `message: true` | Text `id`, thread relationship, role, `UIMessage.parts`, metadata, and usage |
+| `chat: true` | `title`, owner `user` relationship, agent slug, and `lastMessageAt` |
+| `message: true` | Text `id`, chat relationship, role, `UIMessage.parts`, metadata, and usage |
 | `file: true` | Uploads, folders, soft deletion, admin defaults, and authenticated access |
 
-FrogBot rejects incompatible base field types. `threads.user` and `messages.id`, `messages.thread`, and `messages.parts` are reserved and cannot be redefined.
+FrogBot rejects incompatible base field types. `chats.user` and `messages.id`, `messages.chat`, and `messages.parts` are reserved and cannot be redefined.
 
 ### Default collections
 
-The default collections use soft deletion, appear under **Chat** in the admin panel, and scope access to the authenticated thread owner. The message ID is the AI SDK UI message ID, allowing an interrupted assistant message to be continued in place across database adapters.
+The default collections use soft deletion, appear under **Chat** in the admin panel, and scope access to the authenticated chat owner. The message ID is the AI SDK UI message ID, allowing an interrupted assistant message to be continued in place across database adapters.
 
-The thread's `user` relationship resolves as follows:
+The chat's `user` relationship resolves as follows:
 
 - No auth collection: FrogBot's default `users` collection.
 - One auth collection: that collection, regardless of slug.
@@ -74,7 +74,7 @@ See [Chat persistence](/chat/overview) for request behavior and durability guara
 
 ## Collection config options
 
-The following options are available on any `CollectionConfig`. FrogBot adds `thread`, `message`, `connections`, and `file` to the built-in set; every other option below is part of the FrogBot configuration API.
+The following options are available on any `CollectionConfig`. FrogBot adds `chat`, `message`, `connections`, and `file` to the built-in set; every other option below is part of the FrogBot configuration API.
 
 It's best practice to write Collections in separate files and import them into the root config.
 
@@ -105,7 +105,7 @@ The following options are available:
 
 | Option               | Description                                                                                                                                                                                                                                                |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `thread`             | **FrogBot** — adopts this collection as the thread store. At most one collection may be marked. [More details](#role-markers).                                                                                                                           |
+| `chat`             | **FrogBot** — adopts this collection as the chat store. At most one collection may be marked. [More details](#role-markers).                                                                                                                           |
 | `message`            | **FrogBot** — adopts this collection as the message store. At most one collection may be marked. [More details](#role-markers).                                                                                                                         |
 | `file`               | **FrogBot** — adopts this collection as the files store. At most one collection may be marked. [More details](/configuration/files).                                                                                                                    |
 | `admin`              | The configuration options for the Admin Panel. [More details](#admin-options).                                                                                                                                                                             |

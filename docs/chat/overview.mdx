@@ -1,11 +1,11 @@
 ---
 title: "Chat persistence"
 sidebarTitle: "Overview"
-description: "Store agent threads and messages with FrogBot's built-in chat collections."
-keywords: ["chat", "threads", "messages", "persistence", "UIMessage"]
+description: "Store agent chats and messages with FrogBot's built-in chat collections."
+keywords: ["chat", "chats", "messages", "persistence", "UIMessage"]
 ---
 
-When you configure an agent, FrogBot stores authenticated HTTP conversations in FrogBot collections. You can use the default `threads` and `messages` collections without adding configuration, or adopt the roles into your own collections.
+When you configure an agent, FrogBot stores authenticated HTTP conversations in FrogBot collections. You can use the default `chats` and `messages` collections without adding configuration, or adopt the roles into your own collections.
 
 Anonymous agent calls remain stateless, even when a custom agent access rule allows them.
 
@@ -17,23 +17,23 @@ FrogBot injects both collections when agents are configured and no collection cl
 
 | Collection | Stored fields |
 | --- | --- |
-| `threads` | `title`, `user`, `agent`, `lastMessageAt` |
-| `messages` | Text `id`, `thread`, `role`, `parts`, `metadata`, `usage` |
+| `chats` | `title`, `user`, `agent`, `lastMessageAt` |
+| `messages` | Text `id`, `chat`, `role`, `parts`, `metadata`, `usage` |
 
-Thread and message collections use soft deletion and appear under **Chat** in the admin panel. Access is owner-scoped through the thread's `user` relationship.
+Chat and message collections use soft deletion and appear under **Chat** in the admin panel. Access is owner-scoped through the chat's `user` relationship.
 
 Messages store the AI SDK `UIMessage.parts` array. Tool calls, tool results, reasoning, and custom data parts therefore remain available on later turns instead of being flattened into text.
 
 ## Customize the collections
 
-Add `thread: true` or `message: true` to adopt a collection. FrogBot keeps your slug and merges in its required fields, hooks, access rules, and admin defaults.
+Add `chat: true` or `message: true` to adopt a collection. FrogBot keeps your slug and merges in its required fields, hooks, access rules, and admin defaults.
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
 
 export const Conversations: CollectionConfig = {
   slug: 'conversations',
-  thread: true,
+  chat: true,
   fields: [
     {
       name: 'channel',
@@ -52,16 +52,16 @@ export const Turns: CollectionConfig = {
 
 Your field definitions win when they are compatible with the base schema. FrogBot appends missing base fields and combines hooks. It rejects incompatible field types and protects these fields:
 
-- `threads.user`
+- `chats.user`
 - `messages.id`
-- `messages.thread`
+- `messages.chat`
 - `messages.parts`
 
-Mark at most one collection for each role. If an unmarked collection already uses the default `threads` or `messages` slug, sanitization asks you to mark or rename it rather than adopting it implicitly.
+Mark at most one collection for each role. If an unmarked collection already uses the default `chats` or `messages` slug, sanitization asks you to mark or rename it rather than adopting it implicitly.
 
-## Continue a thread
+## Continue a chat
 
-The first authenticated HTTP request creates a thread and returns its ID.
+The first authenticated HTTP request creates a chat and returns its ID.
 
 ```bash
 curl http://localhost:3000/api/agents/support \
@@ -71,7 +71,7 @@ curl http://localhost:3000/api/agents/support \
   --data '{ "prompt": "Review campaign performance" }'
 ```
 
-JSON responses include `threadId`. Stream responses provide the same value in `X-Frogbot-Thread-Id`.
+JSON responses include `chatId`. Stream responses provide the same value in `X-Frogbot-Chat-Id`.
 
 Send that ID with only the next user message. FrogBot loads and validates stored history before running the agent.
 
@@ -80,32 +80,32 @@ curl http://localhost:3000/api/agents/support \
   --request POST \
   --header "Authorization: Bearer $FROGBOT_TOKEN" \
   --header "Content-Type: application/json" \
-  --data '{ "prompt": "Now compare it with last week", "threadId": "THREAD_ID" }'
+  --data '{ "prompt": "Now compare it with last week", "chatId": "CHAT_ID" }'
 ```
 
-FrogBot rejects a thread owned by another user. It also rejects client-supplied assistant or system messages; only the server persists assistant output.
+FrogBot rejects a chat owned by another user. It also rejects client-supplied assistant or system messages; only the server persists assistant output.
 
 ## Persist local generation
 
-Local generation is stateless unless you provide an existing thread ID.
+Local generation is stateless unless you provide an existing chat ID.
 
 ```ts
 const result = await frogbot.agents.support.generate({
   prompt: 'Check the latest campaign changes',
-  threadId,
+  chatId,
   req,
   overrideAccess: false
 })
 ```
 
-`generate({ threadId })` persists the new user message, loads stored history, runs the agent, and stores the resulting assistant message. Local `stream()` calls remain stateless.
+`generate({ chatId })` persists the new user message, loads stored history, runs the agent, and stores the resulting assistant message. Local `stream()` calls remain stateless.
 
 ## Understand durability
 
 FrogBot awaits the user-message write before inference begins. Streaming responses save finalized or partial assistant parts on completion, error, abort, or client disconnect. Usage is attached when the model emits it but never blocks the message save.
 
 <Warning>
-  FrogBot's SQLite adapter disables transactions unless you configure `transactionOptions`. Without transactions, a failure between thread creation and the first message write can leave an empty thread. MongoDB and transaction-enabled adapters roll back the pair.
+  FrogBot's SQLite adapter disables transactions unless you configure `transactionOptions`. Without transactions, a failure between chat creation and the first message write can leave an empty chat. MongoDB and transaction-enabled adapters roll back the pair.
 </Warning>
 
-A hard process exit during inference can still leave a user message without an assistant reply. The thread remains valid and can be continued; incremental part persistence and resumable streams are planned separately.
+A hard process exit during inference can still leave a user message without an assistant reply. The chat remains valid and can be continued; incremental part persistence and resumable streams are planned separately.

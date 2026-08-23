@@ -5,28 +5,28 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { chatRequest, type PayloadPage } from './rest';
 
-export type ThreadDocument = {
+export type ChatDocument = {
   id: string | number;
   title?: string | null;
   agent: string;
   lastMessageAt?: string | null;
 };
 
-export type UseThreadsOptions = {
+export type UseChatsOptions = {
   sdk: FrogBotSDK;
-  threadsSlug: string;
+  chatsSlug: string;
   agent?: string;
   page?: number;
   limit?: number;
 };
 
-export async function loadThreads({
+export async function loadChats({
   sdk,
   agent,
-  threadsSlug,
+  chatsSlug,
   page = 1,
   limit = 20,
-}: UseThreadsOptions): Promise<PayloadPage<ThreadDocument>> {
+}: UseChatsOptions): Promise<PayloadPage<ChatDocument>> {
   const params = new URLSearchParams({
     depth: '0',
     sort: '-lastMessageAt',
@@ -34,18 +34,18 @@ export async function loadThreads({
     limit: String(limit),
   });
   if (agent) params.set('where[agent][equals]', agent);
-  return chatRequest(sdk, `/${encodeURIComponent(threadsSlug)}?${params}`);
+  return chatRequest(sdk, `/${encodeURIComponent(chatsSlug)}?${params}`);
 }
 
-export function useThreads(options: UseThreadsOptions) {
-  const [result, setResult] = useState<PayloadPage<ThreadDocument>>();
+export function useChats(options: UseChatsOptions) {
+  const [result, setResult] = useState<PayloadPage<ChatDocument>>();
   const [error, setError] = useState<Error>();
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(() => {
     let active = true;
     setLoading(true);
-    void loadThreads(options)
+    void loadChats(options)
       .then((next) => {
         if (active) {
           setResult(next);
@@ -62,7 +62,7 @@ export function useThreads(options: UseThreadsOptions) {
     return () => {
       active = false;
     };
-  }, [options.sdk, options.agent, options.limit, options.page, options.threadsSlug]);
+  }, [options.sdk, options.agent, options.chatsSlug, options.limit, options.page]);
 
   useEffect(() => refresh(), [refresh]);
 

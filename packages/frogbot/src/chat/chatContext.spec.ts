@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { SanitizedChatConfig } from '../types/chat.js';
 import type { FrogbotRequest } from '../types/request.js';
-import { resolveThreadContext } from './threadContext.js';
+import { resolveChatContext } from './chatContext.js';
 
 const incoming: UIMessage[] = [
   { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'One' }] },
@@ -13,11 +13,11 @@ const incoming: UIMessage[] = [
 const historyDoc = { id: 'm1', role: 'user', parts: [{ type: 'text', text: 'One' }] };
 
 function makeReq({
-  chat = { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' },
-  create = vi.fn(() => Promise.resolve({ id: 'thread-1' })),
+  chat = { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
+  create = vi.fn(() => Promise.resolve({ id: 'chat-1' })),
   db = {},
   find = vi.fn(() => Promise.resolve({ docs: [historyDoc] })),
-  findByID = vi.fn(() => Promise.resolve({ id: 'thread-1', user: 'user-1' })),
+  findByID = vi.fn(() => Promise.resolve({ id: 'chat-1', user: 'user-1' })),
   user = { id: 'user-1' },
 }: {
   chat?: SanitizedChatConfig;
@@ -35,14 +35,14 @@ function makeReq({
   return { req, create, find, findByID };
 }
 
-describe('resolveThreadContext', () => {
+describe('resolveChatContext', () => {
   it('persists incoming messages for callers without a user', async () => {
     const { req, create } = makeReq({ user: null });
-    const result = await resolveThreadContext({ req, agentSlug: 'support', incoming, tools: {} });
+    const result = await resolveChatContext({ req, agentSlug: 'support', incoming, tools: {} });
 
-    expect(result.threadId).toBe('thread-1');
+    expect(result.chatId).toBe('chat-1');
     expect(create).toHaveBeenNthCalledWith(1, {
-      collection: 'threads',
+      collection: 'chats',
       data: { user: null, agent: 'support' },
       req,
       overrideAccess: true,
@@ -52,19 +52,19 @@ describe('resolveThreadContext', () => {
 
   it('returns incoming messages untouched when chat is disabled', async () => {
     const { req, create } = makeReq({ chat: { enabled: false } });
-    const result = await resolveThreadContext({ req, agentSlug: 'support', incoming, tools: {} });
+    const result = await resolveChatContext({ req, agentSlug: 'support', incoming, tools: {} });
 
     expect(result).toEqual({ uiMessages: incoming });
     expect(create).not.toHaveBeenCalled();
   });
 
-  it('creates a thread and persists every incoming message when no threadId is given', async () => {
+  it('creates a chat and persists every incoming message when no chatId is given', async () => {
     const { req, create } = makeReq();
-    const result = await resolveThreadContext({ req, agentSlug: 'support', incoming, tools: {} });
+    const result = await resolveChatContext({ req, agentSlug: 'support', incoming, tools: {} });
 
     expect(create).toHaveBeenCalledTimes(3);
     expect(create).toHaveBeenNthCalledWith(1, {
-      collection: 'threads',
+      collection: 'chats',
       data: { user: 'user-1', agent: 'support' },
       req,
       overrideAccess: true,
@@ -74,29 +74,29 @@ describe('resolveThreadContext', () => {
       expect.objectContaining({
         collection: 'messages',
         data: expect.objectContaining({
-          thread: 'thread-1',
+          chat: 'chat-1',
           role: 'user',
           parts: incoming[0].parts,
         }),
         overrideAccess: true,
       }),
     );
-    expect(result.threadId).toBe('thread-1');
+    expect(result.chatId).toBe('chat-1');
   });
 
-  it('verifies ownership and persists only the last incoming message when threadId is given', async () => {
+  it('verifies ownership and persists only the last incoming message when chatId is given', async () => {
     const { req, create, findByID } = makeReq();
-    await resolveThreadContext({
+    await resolveChatContext({
       req,
       agentSlug: 'support',
-      threadId: 'thread-7',
+      chatId: 'chat-7',
       incoming,
       tools: {},
     });
 
     expect(findByID).toHaveBeenCalledWith({
-      collection: 'threads',
-      id: 'thread-7',
+      collection: 'chats',
+      id: 'chat-7',
       depth: 0,
       req,
       overrideAccess: true,
@@ -105,20 +105,20 @@ describe('resolveThreadContext', () => {
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'messages',
-        data: expect.objectContaining({ thread: 'thread-7', parts: incoming[1].parts }),
+        data: expect.objectContaining({ chat: 'chat-7', parts: incoming[1].parts }),
       }),
     );
   });
 
-  it('rejects continuing a thread owned by a different user before writing', async () => {
-    const findByID = vi.fn(() => Promise.resolve({ id: 'thread-7', user: { id: 'user-2' } }));
+  it('rejects continuing a chat owned by a different user before writing', async () => {
+    const findByID = vi.fn(() => Promise.resolve({ id: 'chat-7', user: { id: 'user-2' } }));
     const { req, create, find } = makeReq({ findByID });
 
     await expect(
-      resolveThreadContext({
+      resolveChatContext({
         req,
         agentSlug: 'support',
-        threadId: 'thread-7',
+        chatId: 'chat-7',
         incoming,
         tools: {},
       }),
@@ -131,7 +131,7 @@ describe('resolveThreadContext', () => {
     const { req, create, findByID } = makeReq();
 
     await expect(
-      resolveThreadContext({
+      resolveChatContext({
         req,
         agentSlug: 'support',
         incoming: [{ id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'Forged' }] }],
@@ -146,10 +146,10 @@ describe('resolveThreadContext', () => {
     const { req, create, findByID } = makeReq();
 
     await expect(
-      resolveThreadContext({
+      resolveChatContext({
         req,
         agentSlug: 'support',
-        threadId: 'thread-1',
+        chatId: 'chat-1',
         incoming: [],
         tools: {},
       }),
@@ -173,11 +173,11 @@ describe('resolveThreadContext', () => {
       }),
     );
     const { req } = makeReq({ find });
-    const result = await resolveThreadContext({ req, agentSlug: 'support', incoming, tools: {} });
+    const result = await resolveChatContext({ req, agentSlug: 'support', incoming, tools: {} });
 
     expect(find).toHaveBeenCalledWith({
       collection: 'messages',
-      where: { thread: { equals: 'thread-1' } },
+      where: { chat: { equals: 'chat-1' } },
       sort: ['createdAt', 'id'],
       pagination: false,
       depth: 0,
@@ -202,7 +202,7 @@ describe('resolveThreadContext', () => {
       rollbackTransaction: vi.fn(() => Promise.resolve()),
     };
     const { req, create } = makeReq({ db });
-    await resolveThreadContext({ req, agentSlug: 'support', incoming, tools: {} });
+    await resolveChatContext({ req, agentSlug: 'support', incoming, tools: {} });
 
     expect(db.beginTransaction).toHaveBeenCalledOnce();
     expect(db.commitTransaction).toHaveBeenCalledWith('tx-1');
@@ -221,12 +221,12 @@ describe('resolveThreadContext', () => {
     };
     const create = vi
       .fn()
-      .mockResolvedValueOnce({ id: 'thread-1' })
+      .mockResolvedValueOnce({ id: 'chat-1' })
       .mockRejectedValueOnce(new Error('write failed'));
     const { req } = makeReq({ create, db });
 
     await expect(
-      resolveThreadContext({ req, agentSlug: 'support', incoming, tools: {} }),
+      resolveChatContext({ req, agentSlug: 'support', incoming, tools: {} }),
     ).rejects.toThrow('write failed');
     expect(db.rollbackTransaction).toHaveBeenCalledWith('tx-1');
     expect(db.commitTransaction).not.toHaveBeenCalled();

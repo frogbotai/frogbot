@@ -2,21 +2,21 @@ import type { FrogBotSDK } from '@frogbotai/sdk';
 
 import type { MessageDocument } from './messages';
 import { chatRequest, type PayloadPage } from './rest';
-import type { ThreadDocument } from './use-threads';
+import type { ChatDocument } from './use-chats';
 
-type ThreadMutationOptions = {
+type ChatMutationOptions = {
   sdk: FrogBotSDK;
-  threadsSlug: string;
-  threadId: string | number;
+  chatsSlug: string;
+  chatId: string | number;
 };
 
-export function renameThread(
-  { sdk, threadsSlug, threadId }: ThreadMutationOptions,
+export function renameChat(
+  { sdk, chatsSlug, chatId }: ChatMutationOptions,
   title: string,
-): Promise<ThreadDocument> {
+): Promise<ChatDocument> {
   return chatRequest(
     sdk,
-    `/${encodeURIComponent(threadsSlug)}/${encodeURIComponent(String(threadId))}`,
+    `/${encodeURIComponent(chatsSlug)}/${encodeURIComponent(String(chatId))}`,
     {
       method: 'PATCH',
       body: JSON.stringify({ title }),
@@ -25,16 +25,16 @@ export function renameThread(
   );
 }
 
-export async function deleteThread({
+export async function deleteChat({
   sdk,
-  threadsSlug,
+  chatsSlug,
   messagesSlug,
-  threadId,
-}: ThreadMutationOptions & { messagesSlug: string }): Promise<void> {
+  chatId,
+}: ChatMutationOptions & { messagesSlug: string }): Promise<void> {
   const params = new URLSearchParams({
     depth: '0',
     limit: '0',
-    'where[thread][equals]': String(threadId),
+    'where[chat][equals]': String(chatId),
   });
   const messages = await chatRequest<PayloadPage<MessageDocument>>(
     sdk,
@@ -51,7 +51,7 @@ export async function deleteThread({
   );
   await chatRequest(
     sdk,
-    `/${encodeURIComponent(threadsSlug)}/${encodeURIComponent(String(threadId))}`,
+    `/${encodeURIComponent(chatsSlug)}/${encodeURIComponent(String(chatId))}`,
     { method: 'DELETE' },
   );
 }

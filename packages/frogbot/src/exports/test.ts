@@ -5,7 +5,7 @@
 // import from `frogbot/test`.
 
 export { persistAssistantMessage } from '../chat/messagePersistence.js';
-export { resolveThreadContext } from '../chat/threadContext.js';
+export { resolveChatContext } from '../chat/chatContext.js';
 export type { InitOptions } from '../frogbot.js';
 export type { Frogbot as FrogbotInstance } from '../frogbot.js';
 export { Frogbot } from '../frogbot.js';

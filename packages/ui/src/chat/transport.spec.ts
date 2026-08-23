@@ -11,7 +11,7 @@ const message = {
 const sdk = (fetch: typeof globalThis.fetch = globalThis.fetch) =>
   createFrogbotSDK({ baseURL: '/api', fetch });
 
-async function captureBody(threadId?: string) {
+async function captureBody(chatId?: string) {
   const fetch = vi.fn(() =>
     Promise.resolve(
       new Response(new ReadableStream({ start: (controller) => controller.close() })),
@@ -20,7 +20,7 @@ async function captureBody(threadId?: string) {
   const transport = new FrogbotChatTransport({
     agentSlug: 'agent',
     sdk: sdk(fetch),
-    prepareSendMessagesRequest: prepareChatRequest(threadId),
+    prepareSendMessagesRequest: prepareChatRequest(chatId),
     body: { unsupported: true },
   });
   await transport.sendMessages({
@@ -33,27 +33,27 @@ async function captureBody(threadId?: string) {
 }
 
 describe('FrogbotChatTransport', () => {
-  it('serializes the strict new-thread body', async () => {
+  it('serializes the strict new-chat body', async () => {
     expect(await captureBody()).toEqual({ messages: [message] });
   });
 
-  it('serializes the strict existing-thread body', async () => {
-    expect(await captureBody('thread-1')).toEqual({ messages: [message], threadId: 'thread-1' });
+  it('serializes the strict existing-chat body', async () => {
+    expect(await captureBody('chat-1')).toEqual({ messages: [message], chatId: 'chat-1' });
   });
 
-  it('targets the agent endpoint and captures the thread id', async () => {
-    const onThreadId = vi.fn();
+  it('targets the agent endpoint and captures the chat id', async () => {
+    const onChatId = vi.fn();
     const fetch = vi.fn(() =>
       Promise.resolve(
         new Response('data: {"type":"finish"}\n\n', {
-          headers: { 'Content-Type': 'text/event-stream', 'X-Frogbot-Thread-Id': 'thread-1' },
+          headers: { 'Content-Type': 'text/event-stream', 'X-Frogbot-Chat-Id': 'chat-1' },
         }),
       ),
     );
     const transport = new FrogbotChatTransport({
       agentSlug: 'support agent',
       sdk: sdk(fetch),
-      onThreadId,
+      onChatId,
     });
     await transport
       .sendMessages({ chatId: 'chat', messages: [], trigger: 'submit-message' })
@@ -62,8 +62,8 @@ describe('FrogbotChatTransport', () => {
       '/api/agents/support%20agent',
       expect.objectContaining({ method: 'POST' }),
     );
-    expect(transport.threadId).toBe('thread-1');
-    expect(onThreadId).toHaveBeenCalledWith('thread-1');
+    expect(transport.chatId).toBe('chat-1');
+    expect(onChatId).toHaveBeenCalledWith('chat-1');
   });
 
   it('requests the event stream response by default', async () => {

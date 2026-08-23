@@ -16,7 +16,7 @@ import type { FrogbotRequest } from '../types/request.js';
 /** Shape FrogBot seeds into the gateway `context` bag for every operation. */
 export type AIOperationContext = {
   req?: FrogbotRequest;
-  agent?: { slug: string; runId: string; threadId?: number | string };
+  agent?: { slug: string; runId: string; chatId?: number | string };
   trackUsage?: boolean;
   usageFields?: Record<string, unknown>;
 };

@@ -21,7 +21,7 @@ const state = vi.hoisted(() => ({
   agents: [] as Array<{ slug: string; profile?: { name?: string; avatar?: string } }>,
   history: {
     messages: [] as import('ai').UIMessage[],
-    loadedThreadId: undefined as string | undefined,
+    loadedChatId: undefined as string | undefined,
     loading: false,
   },
 }));
@@ -39,15 +39,15 @@ vi.mock('./provider', () => ({
     loading: false,
     manifest: {
       ai: { transcribe: false },
-      chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' },
+      chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
       files: { slug: 'files' },
       agents: state.agents,
     },
   }),
 }));
-vi.mock('./use-thread', () => ({ useThread: () => state.history }));
-vi.mock('./use-threads', () => ({
-  useThreads: () => ({
+vi.mock('./use-chat', () => ({ useChatMessages: () => state.history }));
+vi.mock('./use-chats', () => ({
+  useChats: () => ({
     docs: [
       { id: 'one', agent: 'support', title: 'One' },
       { id: 'two', agent: 'support', title: null },
@@ -102,7 +102,7 @@ describe('Chat', () => {
     state.refresh.mockReset();
     state.adapter.executeClientTool.mockReset();
     state.adapter.fetch.mockReset();
-    state.history = { messages: [], loadedThreadId: undefined, loading: false };
+    state.history = { messages: [], loadedChatId: undefined, loading: false };
     state.agents = [];
   });
 
@@ -154,10 +154,10 @@ describe('Chat', () => {
   });
 
   it('submits metadata and updates uncontrolled history', async () => {
-    const onThreadIdChange = vi.fn();
-    render(<Chat {...props} defaultThreadId="one" onThreadIdChange={onThreadIdChange} />);
+    const onChatIdChange = vi.fn();
+    render(<Chat {...props} defaultChatId="one" onChatIdChange={onChatIdChange} />);
     fireEvent.click(screen.getByText('Untitled'));
-    expect(onThreadIdChange).toHaveBeenCalledWith('two');
+    expect(onChatIdChange).toHaveBeenCalledWith('two');
     expect(screen.getByText('Untitled').getAttribute('aria-current')).toBe('page');
     const input = screen.getByRole('textbox');
     fireEvent.change(input, { target: { value: 'Hello' } });
@@ -190,29 +190,29 @@ describe('Chat', () => {
     expect(state.adapter.fetch).not.toHaveBeenCalled();
   });
 
-  it('sends the strict request body for a new thread', async () => {
+  it('sends the strict request body for a new chat', async () => {
     render(<Chat agent="support" />);
     expect(await sendTransportMessage()).toEqual({ messages: [message] });
   });
 
-  it('sends the strict request body for an existing thread', async () => {
-    render(<Chat agent="support" defaultThreadId="thread-1" />);
-    expect(await sendTransportMessage()).toEqual({ messages: [message], threadId: 'thread-1' });
+  it('sends the strict request body for an existing chat', async () => {
+    render(<Chat agent="support" defaultChatId="chat-1" />);
+    expect(await sendTransportMessage()).toEqual({ messages: [message], chatId: 'chat-1' });
   });
 
-  it('reports controlled changes without replacing the active thread', () => {
-    const onThreadIdChange = vi.fn();
-    render(<Chat {...props} threadId="one" onThreadIdChange={onThreadIdChange} />);
+  it('reports controlled changes without replacing the active chat', () => {
+    const onChatIdChange = vi.fn();
+    render(<Chat {...props} chatId="one" onChatIdChange={onChatIdChange} />);
     fireEvent.click(screen.getByText('Untitled'));
-    expect(onThreadIdChange).toHaveBeenCalledWith('two');
+    expect(onChatIdChange).toHaveBeenCalledWith('two');
     expect(screen.getByText('One').getAttribute('aria-current')).toBe('page');
   });
 
-  it('works with only an agent and derives an untitled active thread', () => {
+  it('works with only an agent and derives an untitled active chat', () => {
     state.messages = [
       { id: 'user', role: 'user', parts: [{ type: 'text', text: 'Derived conversation title' }] },
     ];
-    render(<Chat agent="support" defaultThreadId="two" />);
+    render(<Chat agent="support" defaultChatId="two" />);
     expect(
       screen
         .getByRole('button', { name: 'Derived conversation title' })
@@ -241,13 +241,13 @@ describe('Chat', () => {
     });
   });
 
-  it('does not replace live messages when a new thread ID arrives', async () => {
+  it('does not replace live messages when a new chat ID arrives', async () => {
     state.messages = [
       { id: 'live', role: 'assistant', parts: [{ type: 'text', text: 'Live response' }] },
     ];
     state.adapter.fetch.mockResolvedValue(
       new Response(new ReadableStream({ start: (controller) => controller.close() }), {
-        headers: { 'X-Frogbot-Thread-Id': 'created' },
+        headers: { 'X-Frogbot-Chat-Id': 'created' },
       }),
     );
     const { rerender } = render(<Chat agent="support" />);
@@ -268,7 +268,7 @@ describe('Chat', () => {
     });
     state.history = {
       messages: [{ id: 'stale', role: 'user', parts: [{ type: 'text', text: 'Stale history' }] }],
-      loadedThreadId: 'created',
+      loadedChatId: 'created',
       loading: false,
     };
     rerender(<Chat agent="support" />);
@@ -277,18 +277,18 @@ describe('Chat', () => {
   });
 
   it('refreshes history after rename and delete', async () => {
-    state.messages = [{ id: 'old', role: 'user', parts: [{ type: 'text', text: 'Old thread' }] }];
+    state.messages = [{ id: 'old', role: 'user', parts: [{ type: 'text', text: 'Old chat' }] }];
     state.adapter.fetch.mockImplementation(async (input) =>
       String(input).startsWith('/api/messages?') ? Response.json({ docs: [] }) : Response.json({}),
     );
     render(
       <Chat
         agent="support"
-        defaultThreadId="one"
-        renderThreadActions={(thread, actions) => (
+        defaultChatId="one"
+        renderChatActions={(chat, actions) => (
           <>
-            <button onClick={() => void actions.rename('Renamed')}>Rename {thread.id}</button>
-            <button onClick={() => void actions.delete()}>Delete {thread.id}</button>
+            <button onClick={() => void actions.rename('Renamed')}>Rename {chat.id}</button>
+            <button onClick={() => void actions.delete()}>Delete {chat.id}</button>
           </>
         )}
       />,
@@ -300,28 +300,28 @@ describe('Chat', () => {
     expect(state.setMessages).toHaveBeenCalledWith([]);
   });
 
-  it('treats an explicit undefined threadId as controlled and clears the conversation', async () => {
-    state.messages = [{ id: 'old', role: 'user', parts: [{ type: 'text', text: 'Old thread' }] }];
-    const onThreadIdChange = vi.fn();
+  it('treats an explicit undefined chatId as controlled and clears the conversation', async () => {
+    state.messages = [{ id: 'old', role: 'user', parts: [{ type: 'text', text: 'Old chat' }] }];
+    const onChatIdChange = vi.fn();
     const { rerender } = render(
-      <Chat agent="support" threadId="one" onThreadIdChange={onThreadIdChange} />,
+      <Chat agent="support" chatId="one" onChatIdChange={onChatIdChange} />,
     );
     state.setMessages.mockClear();
-    rerender(<Chat agent="support" threadId={undefined} onThreadIdChange={onThreadIdChange} />);
+    rerender(<Chat agent="support" chatId={undefined} onChatIdChange={onChatIdChange} />);
     await waitFor(() => expect(state.setMessages).toHaveBeenCalledWith([]));
-    expect(onThreadIdChange).not.toHaveBeenCalled();
+    expect(onChatIdChange).not.toHaveBeenCalled();
   });
 
-  it('clears the active thread and messages when the agent changes', async () => {
+  it('clears the active chat and messages when the agent changes', async () => {
     state.messages = [{ id: 'old', role: 'user', parts: [{ type: 'text', text: 'Old agent' }] }];
-    const onThreadIdChange = vi.fn();
+    const onChatIdChange = vi.fn();
     const { rerender } = render(
-      <Chat agent="support" defaultThreadId="one" onThreadIdChange={onThreadIdChange} />,
+      <Chat agent="support" defaultChatId="one" onChatIdChange={onChatIdChange} />,
     );
     state.setMessages.mockClear();
-    rerender(<Chat agent="sales" defaultThreadId="one" onThreadIdChange={onThreadIdChange} />);
+    rerender(<Chat agent="sales" defaultChatId="one" onChatIdChange={onChatIdChange} />);
     await waitFor(() => expect(state.setMessages).toHaveBeenCalledWith([]));
-    expect(onThreadIdChange).toHaveBeenCalledWith(undefined);
+    expect(onChatIdChange).toHaveBeenCalledWith(undefined);
   });
 
   it('stops and renders injected abort and stream error content', () => {

@@ -7,23 +7,23 @@ import { useEffect, useState } from 'react';
 import { type MessageDocument, messageDocumentToUIMessage } from './messages';
 import { chatRequest, type PayloadPage } from './rest';
 
-export type UseThreadOptions = {
+export type UseChatOptions = {
   sdk: FrogBotSDK;
   messagesSlug: string;
-  threadId?: string | number;
+  chatId?: string | number;
 };
 
-export async function loadThread({
+export async function loadChat({
   sdk,
   messagesSlug,
-  threadId,
-}: UseThreadOptions): Promise<UIMessage[]> {
-  if (threadId === undefined) return [];
+  chatId,
+}: UseChatOptions): Promise<UIMessage[]> {
+  if (chatId === undefined) return [];
   const params = new URLSearchParams({
     depth: '0',
     limit: '0',
     sort: 'createdAt',
-    'where[thread][equals]': String(threadId),
+    'where[chat][equals]': String(chatId),
   });
   const page = await chatRequest<PayloadPage<MessageDocument>>(
     sdk,
@@ -32,20 +32,20 @@ export async function loadThread({
   return page.docs.map(messageDocumentToUIMessage);
 }
 
-export function useThread(options: UseThreadOptions) {
+export function useChatMessages(options: UseChatOptions) {
   const [messages, setMessages] = useState<UIMessage[]>([]);
-  const [loadedThreadId, setLoadedThreadId] = useState<string | number>();
+  const [loadedChatId, setLoadedChatId] = useState<string | number>();
   const [error, setError] = useState<Error>();
-  const [loading, setLoading] = useState(options.threadId !== undefined);
+  const [loading, setLoading] = useState(options.chatId !== undefined);
 
   useEffect(() => {
     let active = true;
-    setLoading(options.threadId !== undefined);
-    void loadThread(options)
+    setLoading(options.chatId !== undefined);
+    void loadChat(options)
       .then((next) => {
         if (active) {
           setMessages(next);
-          setLoadedThreadId(options.threadId);
+          setLoadedChatId(options.chatId);
           setError(undefined);
           setLoading(false);
         }
@@ -59,7 +59,7 @@ export function useThread(options: UseThreadOptions) {
     return () => {
       active = false;
     };
-  }, [options.sdk, options.messagesSlug, options.threadId]);
+  }, [options.sdk, options.messagesSlug, options.chatId]);
 
-  return { messages, loadedThreadId, error, loading };
+  return { messages, loadedChatId, error, loading };
 }

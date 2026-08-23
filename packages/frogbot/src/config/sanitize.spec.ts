@@ -1487,34 +1487,34 @@ describe('frogbot sanitize', () => {
       const result = sanitize(makeConfig({ ai, agents }));
       expect(result.chat).toEqual({
         enabled: true,
-        threadsSlug: 'threads',
+        chatsSlug: 'chats',
         messagesSlug: 'messages',
       });
     });
 
-    it('resolves slugs from thread/message markers', () => {
+    it('resolves slugs from chat/message markers', () => {
       const result = sanitize(
         makeConfig({
           collections: [
             { slug: 'users', auth: true, fields: [] },
-            { slug: 'conversations', thread: true, fields: [] },
+            { slug: 'conversations', chat: true, fields: [] },
             { slug: 'turns', message: true, fields: [] },
           ],
         }),
       );
       expect(result.chat).toEqual({
         enabled: true,
-        threadsSlug: 'conversations',
+        chatsSlug: 'conversations',
         messagesSlug: 'turns',
       });
     });
 
-    it('merges todos into a marked thread collection', async () => {
+    it('merges todos into a marked chat collection', async () => {
       const result = sanitize(
         makeConfig({
           collections: [
             { slug: 'users', auth: true, fields: [] },
-            { slug: 'conversations', thread: true, fields: [] },
+            { slug: 'conversations', chat: true, fields: [] },
           ],
         }),
       );
@@ -1532,7 +1532,7 @@ describe('frogbot sanitize', () => {
         makeConfig({
           collections: [
             { slug: 'users', auth: true, fields: [] },
-            { slug: 'conversations', thread: true, fields: [] },
+            { slug: 'conversations', chat: true, fields: [] },
           ],
         }),
       );
@@ -1540,28 +1540,28 @@ describe('frogbot sanitize', () => {
       const conversations = (payloadConfig as any).collections.find(
         (c: any) => c.slug === 'conversations',
       );
-      expect(conversations.thread).toBeUndefined();
+      expect(conversations.chat).toBeUndefined();
     });
 
     it('injects chat collections into the payload config and collections metadata', async () => {
       const result = sanitize(makeConfig({ ai, agents }));
       expect(result.collections.map((c) => c.slug)).toEqual([
         'users',
-        'threads',
+        'chats',
         'messages',
         'usage-logs',
         'files',
       ]);
       const payloadConfig = await result._internal.payloadConfig;
       const payloadSlugs = (payloadConfig as any).collections.map((c: any) => c.slug);
-      expect(payloadSlugs).toEqual(['users', 'threads', 'messages', 'usage-logs', 'files']);
+      expect(payloadSlugs).toEqual(['users', 'chats', 'messages', 'usage-logs', 'files']);
     });
 
     it('injected chat collections get the bootstrap beforeOperation hook', async () => {
       const result = sanitize(makeConfig({ ai, agents }));
       const payloadConfig = await result._internal.payloadConfig;
-      const threads = (payloadConfig as any).collections.find((c: any) => c.slug === 'threads');
-      expect(threads.hooks?.beforeOperation?.length).toBeGreaterThan(0);
+      const chats = (payloadConfig as any).collections.find((c: any) => c.slug === 'chats');
+      expect(chats.hooks?.beforeOperation?.length).toBeGreaterThan(0);
     });
 
     it('throws when an unmarked collection occupies a default chat slug', () => {
@@ -1572,12 +1572,12 @@ describe('frogbot sanitize', () => {
             agents,
             collections: [
               { slug: 'users', auth: true, fields: [] },
-              { slug: 'threads', fields: [] },
+              { slug: 'chats', fields: [] },
             ],
           }),
         ),
       ).toThrow(
-        "[frogbot] Collection slug 'threads' conflicts with the default chat thread collection.",
+        "[frogbot] Collection slug 'chats' conflicts with the default chat collection. Add `chat: true` to adopt it, or rename it.",
       );
     });
   });

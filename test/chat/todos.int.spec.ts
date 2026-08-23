@@ -2,12 +2,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { UIMessage } from 'frogbot';
-import { resolveThreadContext } from 'frogbot/test';
+import { resolveChatContext } from 'frogbot/test';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
-import { agentSlug, threadsSlug, usersSlug } from './shared.js';
+import { agentSlug, chatsSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const toolsPath = 'frogbot/tools';
@@ -38,7 +38,7 @@ describe('chat persistence: todos', () => {
     id: string,
   ) {
     const { write_todos, read_todos } = await import(toolsPath);
-    const first = await resolveThreadContext({
+    const first = await resolveChatContext({
       req,
       agentSlug,
       incoming: [userMessage('Create a plan', `${id}-1`)],
@@ -48,36 +48,36 @@ describe('chat persistence: todos', () => {
     const ctx = {
       req,
       frogbot: booted.frogbot,
-      agent: { slug: agentSlug, runId: id, threadId: first.threadId },
+      agent: { slug: agentSlug, runId: id, chatId: first.chatId },
     };
     await write_todos.execute({ todos }, ctx);
-    const continuation = await resolveThreadContext({
+    const continuation = await resolveChatContext({
       req,
       agentSlug,
-      threadId: first.threadId,
+      chatId: first.chatId,
       incoming: [userMessage('Continue', `${id}-2`)],
       tools: {},
     });
-    expect(continuation.threadId).toBe(first.threadId);
+    expect(continuation.chatId).toBe(first.chatId);
     await expect(read_todos.execute({}, ctx)).resolves.toEqual(todos);
-    const thread = (await booted.frogbot.findByID({
-      collection: threadsSlug,
-      id: first.threadId!,
+    const chat = (await booted.frogbot.findByID({
+      collection: chatsSlug,
+      id: first.chatId!,
       depth: 0,
       overrideAccess: true,
     })) as { todos: unknown };
-    expect(thread.todos).toEqual(todos);
-    return first.threadId;
+    expect(chat.todos).toEqual(todos);
+    return first.chatId;
   }
 
-  it('persists todos across an authenticated thread continuation', async () => {
+  it('persists todos across an authenticated chat continuation', async () => {
     const req = await booted.frogbot.createRequest({
       user: { ...owner, collection: usersSlug },
     } as never);
     await expect(exerciseTodos(req, 'authenticated')).resolves.toBeDefined();
   });
 
-  it('persists todos across an anonymous thread continuation', async () => {
+  it('persists todos across an anonymous chat continuation', async () => {
     await expect(
       exerciseTodos(await booted.frogbot.createRequest({}), 'anonymous'),
     ).resolves.toBeDefined();

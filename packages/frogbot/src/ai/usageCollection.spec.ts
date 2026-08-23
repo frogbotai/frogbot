@@ -18,13 +18,13 @@ describe('resolveUsageCollection', () => {
     expect(resolveUsageCollection(makeConfig({ ai: undefined })).collections).toEqual([]);
   });
 
-  it('adds an indexed thread relationship when chat is enabled', () => {
-    const collection = resolveUsageCollection(makeConfig(), 'threads').collections.at(-1);
+  it('adds an indexed chat relationship when chat is enabled', () => {
+    const collection = resolveUsageCollection(makeConfig(), 'chats').collections.at(-1);
     expect(collection?.fields).toContainEqual(
       expect.objectContaining({
-        name: 'thread',
+        name: 'chat',
         type: 'relationship',
-        relationTo: 'threads',
+        relationTo: 'chats',
         index: true,
       }),
     );

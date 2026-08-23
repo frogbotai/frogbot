@@ -986,7 +986,7 @@ export function sanitize(
   const chatResult = resolveChatCollections({ ...config, agents });
   const { collections: usageCollections, slug: usageSlug } = resolveUsageCollection(
     { ...config, agents, collections: chatResult.collections },
-    chatResult.chat.enabled ? chatResult.chat.threadsSlug : undefined,
+    chatResult.chat.enabled ? chatResult.chat.chatsSlug : undefined,
   );
   const connectionsResult = resolveConnectionsCollections(
     { ...config, agents, credentialSources, collections: usageCollections },

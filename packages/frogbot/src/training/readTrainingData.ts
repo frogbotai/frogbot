@@ -23,18 +23,18 @@ export async function* readTrainingData(
     overrideAccess: options.overrideAccess ?? false,
     req: options.req,
   };
-  let threadPage = 1;
+  let chatPage = 1;
 
   while (true) {
-    const threads = await frogbot.find({
+    const chats = await frogbot.find({
       ...common,
-      collection: frogbot.config.chat.threadsSlug as CollectionSlug,
-      page: threadPage,
+      collection: frogbot.config.chat.chatsSlug as CollectionSlug,
+      page: chatPage,
       sort: ['createdAt', 'id'],
       where: options.where,
     });
 
-    for (const thread of threads.docs) {
+    for (const chat of chats.docs) {
       const messages: TrainingDataDocument[] = [];
       let messagePage = 1;
 
@@ -44,17 +44,17 @@ export async function* readTrainingData(
           collection: frogbot.config.chat.messagesSlug as CollectionSlug,
           page: messagePage,
           sort: ['createdAt', 'id'],
-          where: { thread: { equals: thread.id } },
+          where: { chat: { equals: chat.id } },
         });
         messages.push(...result.docs);
         if (!result.hasNextPage) break;
         messagePage += 1;
       }
 
-      yield { thread, messages };
+      yield { chat, messages };
     }
 
-    if (!threads.hasNextPage) break;
-    threadPage += 1;
+    if (!chats.hasNextPage) break;
+    chatPage += 1;
   }
 }

@@ -1,8 +1,8 @@
 // Marker-based resolver for chat collections:
-//   - `thread: true` / `message: true` marks a collection as the thread
+//   - `chat: true` / `message: true` marks a collection as the chat
 //     or message store — FrogBot merges its default fields in; the slug
 //     stays the user's
-//   - no marked collection → inject the default (`threads` / `messages`),
+//   - no marked collection → inject the default (`chats` / `messages`),
 //     mirroring Payload's `defaultUserCollection` injection
 //   - persistence is on whenever agents are configured or a collection
 //     is marked; there is no opt-out
@@ -11,13 +11,13 @@ import { resolveMarkedCollection } from '../collections/resolveMarkedCollection.
 import type { SanitizedChatConfig } from '../types/chat.js';
 import type { CollectionConfig } from '../types/collection.js';
 import type { FrogbotConfig } from '../types/config.js';
+import { defaultChatsCollection } from './collections/chats.js';
 import { defaultMessagesCollection } from './collections/messages.js';
-import { defaultThreadsCollection } from './collections/threads.js';
 import { resolveUserSlug } from './resolveUserSlug.js';
 
 export const CHAT_ASSETS_SLUG = '_frogbot_chat_assets';
 
-export const DEFAULT_THREADS_SLUG = 'threads';
+export const DEFAULT_CHATS_SLUG = 'chats';
 export const DEFAULT_MESSAGES_SLUG = 'messages';
 
 type ResolvedChat = {
@@ -27,7 +27,7 @@ type ResolvedChat = {
 
 function findChatCollection(
   collections: CollectionConfig[],
-  marker: 'thread' | 'message',
+  marker: 'chat' | 'message',
 ): CollectionConfig | undefined {
   const marked = collections.filter((c) => c[marker] === true);
   if (marked.length > 1) {
@@ -46,49 +46,49 @@ export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
     );
   }
 
-  const threadCollection = findChatCollection(config.collections, 'thread');
+  const chatCollection = findChatCollection(config.collections, 'chat');
   const messageCollection = findChatCollection(config.collections, 'message');
-  if (threadCollection && threadCollection === messageCollection) {
+  if (chatCollection && chatCollection === messageCollection) {
     throw new Error(
-      `[frogbot] Collection '${threadCollection.slug}' is marked as both \`thread\` and \`message\`. Pick one.`,
+      `[frogbot] Collection '${chatCollection.slug}' is marked as both \`chat\` and \`message\`. Pick one.`,
     );
   }
 
   const enabled =
     config.agents !== undefined ||
-    threadCollection !== undefined ||
+    chatCollection !== undefined ||
     messageCollection !== undefined;
   if (!enabled) {
     return { collections: config.collections, chat: { enabled: false } };
   }
 
-  const threadsSlug = threadCollection?.slug ?? DEFAULT_THREADS_SLUG;
+  const chatsSlug = chatCollection?.slug ?? DEFAULT_CHATS_SLUG;
   const messagesSlug = messageCollection?.slug ?? DEFAULT_MESSAGES_SLUG;
-  if (threadsSlug === messagesSlug) {
+  if (chatsSlug === messagesSlug) {
     throw new Error(
-      `[frogbot] Thread and message collections must differ (both '${threadsSlug}').`,
+      `[frogbot] Chat and message collections must differ (both '${chatsSlug}').`,
     );
   }
 
   const userSlug = resolveUserSlug(config);
-  const withThreads = resolveMarkedCollection({
-    collectionLabel: 'chat thread',
+  const withChats = resolveMarkedCollection({
+    collectionLabel: 'chat',
     collections: config.collections,
-    existing: threadCollection,
-    marker: 'thread',
+    existing: chatCollection,
+    marker: 'chat',
     feature: 'chat persistence',
-    defaultCollection: defaultThreadsCollection({ slug: threadsSlug, userSlug }),
+    defaultCollection: defaultChatsCollection({ slug: chatsSlug, userSlug }),
     reservedFields: ['user'],
   });
   const collections = resolveMarkedCollection({
     collectionLabel: 'chat message',
-    collections: withThreads,
+    collections: withChats,
     existing: messageCollection,
     marker: 'message',
     feature: 'chat persistence',
-    defaultCollection: defaultMessagesCollection({ slug: messagesSlug, threadsSlug }),
-    reservedFields: ['id', 'parts', 'thread'],
+    defaultCollection: defaultMessagesCollection({ slug: messagesSlug, chatsSlug }),
+    reservedFields: ['id', 'parts', 'chat'],
   });
 
-  return { collections, chat: { enabled: true, threadsSlug, messagesSlug } };
+  return { collections, chat: { enabled: true, chatsSlug, messagesSlug } };
 }

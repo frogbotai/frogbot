@@ -18,7 +18,7 @@ describe('logUsage', () => {
       startedAt: 1,
       context: {
         req,
-        agent: { slug: 'support', runId: 'run-1', threadId: 'thread-1' },
+        agent: { slug: 'support', runId: 'run-1', chatId: 'chat-1' },
       },
       otel: {},
       model: 'openai/gpt-4o',
@@ -41,7 +41,7 @@ describe('logUsage', () => {
         overrideAccess: true,
         data: expect.objectContaining({
           user: 'user-1',
-          thread: 'thread-1',
+          chat: 'chat-1',
           requestId: 'req-1',
           runId: 'run-1',
           inputTokens: 100,

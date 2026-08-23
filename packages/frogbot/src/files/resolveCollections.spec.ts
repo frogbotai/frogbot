@@ -56,7 +56,7 @@ describe('resolveFilesCollection', () => {
     ).toThrow('cannot set `upload: false`');
     expect(() =>
       resolveFilesCollection({
-        collections: [{ slug: 'documents', file: true, thread: true, fields: [] }],
+        collections: [{ slug: 'documents', file: true, chat: true, fields: [] }],
       }),
     ).toThrow('marked as multiple roles');
   });

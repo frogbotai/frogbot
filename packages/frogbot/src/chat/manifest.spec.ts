@@ -26,12 +26,12 @@ function makeAgent(
 
 function makeRequest({
   agents = [makeAgent('support')],
-  chat = { enabled: true, threadsSlug: 'conversations', messagesSlug: 'turns' } as const,
+  chat = { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns' } as const,
   providers = {},
   user = { id: 'user-1' },
 }: {
   agents?: AgentInstance[];
-  chat?: { enabled: false } | { enabled: true; threadsSlug: string; messagesSlug: string };
+  chat?: { enabled: false } | { enabled: true; chatsSlug: string; messagesSlug: string };
   providers?: Record<string, unknown>;
   user?: { id: string } | null;
 } = {}): FrogbotRequest {
@@ -82,7 +82,7 @@ describe('manifest endpoint', () => {
 
     expect(await response.json()).toEqual({
       ai: { transcribe: false },
-      chat: { enabled: true, threadsSlug: 'conversations', messagesSlug: 'turns' },
+      chat: { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns' },
       files: { slug: 'uploads' },
       agents: [{ slug: 'support' }],
     });

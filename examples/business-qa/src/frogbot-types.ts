@@ -72,8 +72,9 @@ export interface Config {
     releases: Release;
     connections: Connection;
     'api-keys': ApiKey;
+    'usage-logs': UsageLog;
     'oauth-states': OauthState;
-    threads: Thread;
+    chats: Chat;
     messages: Message;
   };
   collectionsJoins: {};
@@ -83,8 +84,9 @@ export interface Config {
     releases: ReleasesSelect;
     connections: ConnectionsSelect;
     'api-keys': ApiKeysSelect;
+    'usage-logs': UsageLogsSelect;
     'oauth-states': OauthStatesSelect;
-    threads: ThreadsSelect;
+    chats: ChatsSelect;
     messages: MessagesSelect;
   };
   db: {
@@ -99,7 +101,13 @@ export interface Config {
   };
   user: User;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      'frogbot-reset-ai-budgets': TaskFrogbotResetAiBudgets;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -128,6 +136,50 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name: string;
+  modelAccess?: ('all' | 'selected') | null;
+  models?:
+    | (
+        | 'openai/chatgpt-image-latest'
+        | 'openai/gpt-4.1'
+        | 'openai/gpt-4.1-mini'
+        | 'openai/gpt-4o'
+        | 'openai/gpt-4o-2024-08-06'
+        | 'openai/gpt-4o-2024-11-20'
+        | 'openai/gpt-4o-mini'
+        | 'openai/gpt-5'
+        | 'openai/gpt-5-mini'
+        | 'openai/gpt-5-nano'
+        | 'openai/gpt-5-pro'
+        | 'openai/gpt-5.1'
+        | 'openai/gpt-5.2'
+        | 'openai/gpt-5.2-chat-latest'
+        | 'openai/gpt-5.2-pro'
+        | 'openai/gpt-5.3-chat-latest'
+        | 'openai/gpt-5.3-codex'
+        | 'openai/gpt-5.3-codex-spark'
+        | 'openai/gpt-5.4'
+        | 'openai/gpt-5.4-mini'
+        | 'openai/gpt-5.4-nano'
+        | 'openai/gpt-5.4-pro'
+        | 'openai/gpt-5.5'
+        | 'openai/gpt-5.5-pro'
+        | 'openai/gpt-5.6'
+        | 'openai/gpt-5.6-luna'
+        | 'openai/gpt-5.6-sol'
+        | 'openai/gpt-5.6-terra'
+        | 'openai/gpt-image-1-mini'
+        | 'openai/gpt-image-1.5'
+        | 'openai/gpt-image-2'
+        | 'openai/gpt-realtime-2.1'
+        | 'openai/o3'
+        | 'openai/o3-pro'
+        | 'openai/text-embedding-3-large'
+        | 'openai/text-embedding-3-small'
+        | 'openai/text-embedding-ada-002'
+      )[]
+    | null;
+  monthlyBudget?: number | null;
+  spendThisPeriodUSD?: number | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -230,8 +282,58 @@ export interface ApiKey {
   tokenHash: string;
   lastUsedAt?: string | null;
   revokedAt?: string | null;
+  totalCostUSD?: number | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs".
+ */
+export interface UsageLog {
+  id: number;
+  apiKey?: (number | null) | ApiKey;
+  user?: (number | null) | User;
+  chat?: (number | null) | Chat;
+  requestId: string;
+  runId?: string | null;
+  model: string;
+  operation:
+    | 'chat.completions'
+    | 'messages'
+    | 'responses'
+    | 'embeddings'
+    | 'images'
+    | 'speech'
+    | 'transcriptions'
+    | 'videos'
+    | 'rerank';
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens?: number | null;
+  cacheWriteTokens?: number | null;
+  reasoningTokens?: number | null;
+  totalTokens: number;
+  costUSD: number;
+  finishReason?: string | null;
+  requestedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chats".
+ */
+export interface Chat {
+  id: number;
+  title?: string | null;
+  user?: (number | null) | User;
+  agent?: string | null;
+  lastMessageAt?: string | null;
+  todos?: import('frogbot/tools').TodoItem[];
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -240,7 +342,7 @@ export interface ApiKey {
 export interface OauthState {
   id: number;
   state: string;
-  owner: number | User;
+  owner?: (number | null) | User;
   provider: string;
   returnUrl: string;
   codeVerifier: string;
@@ -250,25 +352,11 @@ export interface OauthState {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "threads".
- */
-export interface Thread {
-  id: number;
-  title?: string | null;
-  user?: (number | null) | User;
-  agent?: string | null;
-  lastMessageAt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  deletedAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "messages".
  */
 export interface Message {
   id: string;
-  thread: number | Thread;
+  chat: number | Chat;
   role: 'user' | 'assistant' | 'system';
   parts: import('frogbot').UIMessage['parts'];
   metadata?:
@@ -299,6 +387,10 @@ export interface Message {
  */
 export interface UsersSelect {
   name?: boolean;
+  modelAccess?: boolean;
+  models?: boolean;
+  monthlyBudget?: boolean;
+  spendThisPeriodUSD?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   email?: boolean;
@@ -386,6 +478,31 @@ export interface ApiKeysSelect {
   tokenHash?: boolean;
   lastUsedAt?: boolean;
   revokedAt?: boolean;
+  totalCostUSD?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs_select".
+ */
+export interface UsageLogsSelect {
+  apiKey?: boolean;
+  user?: boolean;
+  chat?: boolean;
+  requestId?: boolean;
+  runId?: boolean;
+  model?: boolean;
+  operation?: boolean;
+  inputTokens?: boolean;
+  outputTokens?: boolean;
+  cachedInputTokens?: boolean;
+  cacheWriteTokens?: boolean;
+  reasoningTokens?: boolean;
+  totalTokens?: boolean;
+  costUSD?: boolean;
+  finishReason?: boolean;
+  requestedAt?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -405,13 +522,14 @@ export interface OauthStatesSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "threads_select".
+ * via the `definition` "chats_select".
  */
-export interface ThreadsSelect {
+export interface ChatsSelect {
   title?: boolean;
   user?: boolean;
   agent?: boolean;
   lastMessageAt?: boolean;
+  todos?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   deletedAt?: boolean;
@@ -422,7 +540,7 @@ export interface ThreadsSelect {
  */
 export interface MessagesSelect {
   id?: boolean;
-  thread?: boolean;
+  chat?: boolean;
   role?: boolean;
   parts?: boolean;
   metadata?: boolean;
@@ -450,6 +568,14 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-reset-ai-budgets".
+ */
+export interface TaskFrogbotResetAiBudgets {
+  input?: unknown;
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -503,5 +629,6 @@ declare module 'frogbot' {
       | 'openai/text-embedding-3-large'
       | 'openai/text-embedding-3-small'
       | 'openai/text-embedding-ada-002';
+    roles: never;
   }
 }

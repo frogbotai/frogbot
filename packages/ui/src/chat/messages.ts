@@ -18,11 +18,11 @@ export function messageDocumentToUIMessage(message: MessageDocument): UIMessage 
 
 export function uiMessageToDocument(
   message: UIMessage,
-  thread: string | number,
-): MessageDocument & { thread: string | number } {
+  chat: string | number,
+): MessageDocument & { chat: string | number } {
   return {
     id: String(message.id),
-    thread,
+    chat,
     role: message.role,
     parts: message.parts,
     ...(message.metadata == null ? {} : { metadata: message.metadata }),

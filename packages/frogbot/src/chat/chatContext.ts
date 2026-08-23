@@ -5,34 +5,34 @@ import type { DocID } from '../types/operations.js';
 import type { FrogbotRequest } from '../types/request.js';
 import { validateChatMessages } from './validateMessages.js';
 
-export type ThreadContext = {
-  threadId?: DocID;
+export type ChatContext = {
+  chatId?: DocID;
   uiMessages: UIMessage[];
 };
 
-export type ResolveThreadContextProps = {
+export type ResolveChatContextProps = {
   req: FrogbotRequest;
   agentSlug: string;
-  threadId?: DocID;
+  chatId?: DocID;
   incoming: UIMessage[];
   tools: unknown;
 };
 
 type TransactionReq = Parameters<typeof initTransaction>[0];
 
-export async function resolveThreadContext({
+export async function resolveChatContext({
   req,
   agentSlug,
-  threadId,
+  chatId,
   incoming,
   tools,
-}: ResolveThreadContextProps): Promise<ThreadContext> {
+}: ResolveChatContextProps): Promise<ChatContext> {
   const chat = req.frogbot.config.chat;
   if (!chat.enabled) return { uiMessages: incoming };
 
   const overrideAccess = true;
 
-  const newMessages = threadId !== undefined ? incoming.slice(-1) : incoming;
+  const newMessages = chatId !== undefined ? incoming.slice(-1) : incoming;
   if (newMessages.length === 0) {
     throw Object.assign(new Error('At least one user message is required'), { status: 400 });
   }
@@ -42,13 +42,13 @@ export async function resolveThreadContext({
   const transactionReq = req as unknown as TransactionReq;
   const ownsTransaction = await initTransaction(transactionReq);
 
-  let resolvedThreadId: DocID;
+  let resolvedChatId: DocID;
   try {
-    resolvedThreadId = await resolveThreadId({
+    resolvedChatId = await resolveChatId({
       req,
       agentSlug,
-      threadId,
-      threadsSlug: chat.threadsSlug,
+      chatId,
+      chatsSlug: chat.chatsSlug,
     });
 
     for (const message of newMessages) {
@@ -56,7 +56,7 @@ export async function resolveThreadContext({
         collection: chat.messagesSlug,
         data: {
           id: message.id,
-          thread: resolvedThreadId,
+          chat: resolvedChatId,
           role: message.role,
           parts: message.parts,
           metadata: message.metadata,
@@ -74,7 +74,7 @@ export async function resolveThreadContext({
 
   const history = await req.frogbot.find({
     collection: chat.messagesSlug,
-    where: { thread: { equals: resolvedThreadId } },
+    where: { chat: { equals: resolvedChatId } },
     sort: ['createdAt', 'id'],
     pagination: false,
     depth: 0,
@@ -84,39 +84,39 @@ export async function resolveThreadContext({
 
   const uiMessages = await validateChatMessages(history.docs.map(toUIMessage), tools as never);
 
-  return { threadId: resolvedThreadId, uiMessages };
+  return { chatId: resolvedChatId, uiMessages };
 }
 
-type ResolveThreadIdProps = {
+type ResolveChatIdProps = {
   req: FrogbotRequest;
   agentSlug: string;
-  threadId?: DocID;
-  threadsSlug: string;
+  chatId?: DocID;
+  chatsSlug: string;
 };
 
-async function resolveThreadId({
+async function resolveChatId({
   req,
   agentSlug,
-  threadId,
-  threadsSlug,
-}: ResolveThreadIdProps): Promise<DocID> {
+  chatId,
+  chatsSlug,
+}: ResolveChatIdProps): Promise<DocID> {
   const overrideAccess = true;
-  if (threadId !== undefined) {
-    const thread = (await req.frogbot.findByID({
-      collection: threadsSlug,
-      id: threadId,
+  if (chatId !== undefined) {
+    const chat = (await req.frogbot.findByID({
+      collection: chatsSlug,
+      id: chatId,
       depth: 0,
       req,
       overrideAccess,
     })) as { user?: { id: DocID } | DocID | null };
     const ownerId =
-      typeof thread.user === 'object' && thread.user !== null ? thread.user.id : thread.user;
+      typeof chat.user === 'object' && chat.user !== null ? chat.user.id : chat.user;
     if ((ownerId ?? null) !== (req.user?.id ?? null)) throw new NotFound(req.t);
-    return threadId;
+    return chatId;
   }
 
-  const thread = await req.frogbot.create({
-    collection: threadsSlug,
+  const chat = await req.frogbot.create({
+    collection: chatsSlug,
     data: {
       user: req.user?.id ?? null,
       agent: agentSlug,
@@ -124,7 +124,7 @@ async function resolveThreadId({
     req,
     overrideAccess,
   });
-  return thread.id;
+  return chat.id;
 }
 
 function toUIMessage(doc: unknown): UIMessage {

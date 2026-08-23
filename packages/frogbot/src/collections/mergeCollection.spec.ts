@@ -11,7 +11,7 @@ const userHook = () => 'user';
 
 function makeBase(overrides?: Partial<CollectionConfig>): CollectionConfig {
   return {
-    slug: 'threads',
+    slug: 'chats',
     trash: true,
     admin: { group: 'Chat', icon: 'bubble-chat', useAsTitle: 'title' },
     access: {
@@ -29,7 +29,7 @@ function makeBase(overrides?: Partial<CollectionConfig>): CollectionConfig {
 describe('mergeCollection', () => {
   it('appends base fields missing from the user collection', () => {
     const merged = mergeChatCollection({
-      user: { slug: 'threads', fields: [{ name: 'department', type: 'text' }] },
+      user: { slug: 'chats', fields: [{ name: 'department', type: 'text' }] },
       base: makeBase(),
       reservedFields: [],
     });
@@ -43,12 +43,12 @@ describe('mergeCollection', () => {
   it('deep-merges matching fields with user props winning', () => {
     const merged = mergeChatCollection({
       user: {
-        slug: 'threads',
+        slug: 'chats',
         fields: [{ name: 'title', type: 'text', label: 'Subject', admin: { readOnly: true } }],
       },
       base: makeBase({
         fields: [
-          { name: 'title', type: 'text', index: true, admin: { description: 'Thread title' } },
+          { name: 'title', type: 'text', index: true, admin: { description: 'Chat title' } },
         ],
       }),
       reservedFields: [],
@@ -58,14 +58,14 @@ describe('mergeCollection', () => {
       type: 'text',
       label: 'Subject',
       index: true,
-      admin: { readOnly: true, description: 'Thread title' },
+      admin: { readOnly: true, description: 'Chat title' },
     });
   });
 
   it('concatenates field hooks — base first, then user', () => {
     const merged = mergeChatCollection({
       user: {
-        slug: 'threads',
+        slug: 'chats',
         fields: [{ name: 'title', type: 'text', hooks: { beforeChange: [userHook] } }],
       },
       base: makeBase({
@@ -79,7 +79,7 @@ describe('mergeCollection', () => {
 
   it('concatenates collection hooks — base first, then user', () => {
     const merged = mergeChatCollection({
-      user: { slug: 'threads', fields: [], hooks: { afterChange: [userHook as never] } },
+      user: { slug: 'chats', fields: [], hooks: { afterChange: [userHook as never] } },
       base: makeBase({ hooks: { afterChange: [baseHook as never] } }),
       reservedFields: [],
     });
@@ -113,7 +113,7 @@ describe('mergeCollection', () => {
   it('user access keys win per-key, base fills the rest', async () => {
     const userRead = () => true as const;
     const merged = mergeChatCollection({
-      user: { slug: 'threads', fields: [], access: { read: userRead } },
+      user: { slug: 'chats', fields: [], access: { read: userRead } },
       base: makeBase(),
       reservedFields: [],
     });
@@ -123,7 +123,7 @@ describe('mergeCollection', () => {
 
   it('user admin keys win per-key, base fills the rest', () => {
     const merged = mergeChatCollection({
-      user: { slug: 'threads', fields: [], admin: { useAsTitle: 'department' } },
+      user: { slug: 'chats', fields: [], admin: { useAsTitle: 'department' } },
       base: makeBase(),
       reservedFields: [],
     });
@@ -136,13 +136,13 @@ describe('mergeCollection', () => {
 
   it('user top-level options win, base fills the rest', () => {
     const merged = mergeChatCollection({
-      user: { slug: 'threads', fields: [], trash: false },
+      user: { slug: 'chats', fields: [], trash: false },
       base: makeBase(),
       reservedFields: [],
     });
     expect(merged.trash).toBe(false);
     const defaulted = mergeChatCollection({
-      user: { slug: 'threads', fields: [] },
+      user: { slug: 'chats', fields: [] },
       base: makeBase(),
       reservedFields: [],
     });
@@ -154,7 +154,7 @@ describe('mergeCollection', () => {
       mergeChatCollection({
         user: { slug: 'messages', fields: [{ name: 'parts', type: 'json' }] },
         base: makeBase({ slug: 'messages' }),
-        reservedFields: ['parts', 'thread'],
+        reservedFields: ['parts', 'chat'],
       }),
     ).toThrow("[frogbot] Field 'parts' on collection 'messages' is reserved by chat persistence.");
   });
@@ -162,12 +162,12 @@ describe('mergeCollection', () => {
   it("throws when the user changes a base field's type", () => {
     expect(() =>
       mergeChatCollection({
-        user: { slug: 'threads', fields: [{ name: 'agent', type: 'number' }] },
+        user: { slug: 'chats', fields: [{ name: 'agent', type: 'number' }] },
         base: makeBase(),
         reservedFields: [],
       }),
     ).toThrow(
-      "[frogbot] Field 'agent' on collection 'threads' has type 'text' required by chat persistence and cannot be changed to 'number'.",
+      "[frogbot] Field 'agent' on collection 'chats' has type 'text' required by chat persistence and cannot be changed to 'number'.",
     );
   });
 
@@ -195,7 +195,7 @@ describe('mergeCollection', () => {
 
   it('allows cosmetic overrides when the type is unchanged or omitted', () => {
     const merged = mergeChatCollection({
-      user: { slug: 'threads', fields: [{ name: 'agent', label: 'Assistant' }] },
+      user: { slug: 'chats', fields: [{ name: 'agent', label: 'Assistant' }] },
       base: makeBase(),
       reservedFields: [],
     });
@@ -210,7 +210,7 @@ describe('mergeCollection', () => {
   it('allows the user to repoint relationTo (follows renamed collections)', () => {
     const merged = mergeChatCollection({
       user: {
-        slug: 'threads',
+        slug: 'chats',
         fields: [{ name: 'user', type: 'relationship', relationTo: 'admins' }],
       },
       base: makeBase({

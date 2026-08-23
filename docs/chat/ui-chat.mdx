@@ -2,10 +2,10 @@
 title: "Render Chat"
 sidebarTitle: "Chat component"
 description: "Render the complete conversation shell with history and message composition."
-keywords: ["Chat", "conversation", "thread history", "composer"]
+keywords: ["Chat", "conversation", "chat history", "composer"]
 ---
 
-Place `<Chat>` under `ChatProvider`. The component loads thread history, streams messages, persists the active thread ID, and exposes slots for application-specific content.
+Place `<Chat>` under `ChatProvider`. The component loads chat history, streams messages, persists the active chat ID, and exposes slots for application-specific content.
 
 ```tsx
 'use client'
@@ -25,7 +25,7 @@ export function SupportChat() {
 }
 ```
 
-Use `threadId` and `onThreadIdChange` for controlled routing. Use `defaultThreadId` when the component should manage selection internally. `headerSlot`, `composerStartSlot`, `composerEndSlot`, `panel`, and `renderThreadActions` add product-specific controls without replacing the shell.
+Use `chatId` and `onChatIdChange` for controlled routing. Use `defaultChatId` when the component should manage selection internally. `headerSlot`, `composerStartSlot`, `composerEndSlot`, `panel`, and `renderChatActions` add product-specific controls without replacing the shell.
 
 ## Composer selectors
 

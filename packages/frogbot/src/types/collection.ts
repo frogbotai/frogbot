@@ -42,9 +42,9 @@ export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {
   /** Field definitions with frogbot's hook/access types. */
   fields: Field[];
 
-  /** Marks this collection as the chat thread collection. FrogBot merges
-   *  its base thread fields in; the slug stays yours. At most one. */
-  thread?: boolean;
+  /** Marks this collection as the chat collection. FrogBot merges
+   *  its base chat fields in; the slug stays yours. At most one. */
+  chat?: boolean;
 
   /** Marks this collection as the chat message collection. FrogBot merges
    *  its base message fields in; the slug stays yours. At most one. */
@@ -62,7 +62,7 @@ export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {
 };
 
 /** Collection markers. Sanitization strips these before Payload. */
-export const COLLECTION_MARKERS = ['thread', 'message', 'connections', 'file', 'usageLog'] as const;
+export const COLLECTION_MARKERS = ['chat', 'message', 'connections', 'file', 'usageLog'] as const;
 export type CollectionMarker = (typeof COLLECTION_MARKERS)[number];
 
 /**

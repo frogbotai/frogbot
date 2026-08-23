@@ -13,24 +13,24 @@ import { isFlagPart, renderFlagPart } from './flag-parts';
 import { Message } from './message';
 import { MessageList, type MessageListProps } from './message-list';
 import { MessagePart } from './message-part';
-import { deleteThread, renameThread } from './mutations';
+import { deleteChat, renameChat } from './mutations';
 import { type ChatManifest, useChatProvider } from './provider';
-import { deriveThreadTitle, ThreadHistory } from './thread-history';
+import { ChatHistory, deriveChatTitle } from './chat-history';
 import { FrogbotChatTransport, prepareChatRequest } from './transport';
-import { useThread } from './use-thread';
-import type { ThreadDocument } from './use-threads';
-import { useThreads } from './use-threads';
+import { useChatMessages } from './use-chat';
+import type { ChatDocument } from './use-chats';
+import { useChats } from './use-chats';
 
-type ThreadActions = {
+type ChatActions = {
   rename: (title: string) => Promise<void>;
   delete: () => Promise<void>;
 };
 
 export type ChatProps = {
   agent: string;
-  threadId?: string | number;
-  defaultThreadId?: string | number;
-  onThreadIdChange?: (threadId: string | number | undefined) => void;
+  chatId?: string | number;
+  defaultChatId?: string | number;
+  onChatIdChange?: (chatId: string | number | undefined) => void;
   throttle?: number;
   emptyContent?: ReactNode;
   loadingContent?: ReactNode;
@@ -43,7 +43,7 @@ export type ChatProps = {
   errorContent?: (error: Error) => ReactNode;
   abortedContent?: ReactNode;
   warningContent?: ReactNode;
-  renderThreadActions?: (thread: ThreadDocument, actions: ThreadActions) => ReactNode;
+  renderChatActions?: (chat: ChatDocument, actions: ChatActions) => ReactNode;
   renderMessage?: MessageListProps['renderMessage'];
   panel?: ReactNode;
 };
@@ -57,13 +57,13 @@ export function Chat(props: ChatProps) {
   return (
     <ChatOrchestrator
       {...props}
-      threadIdControlled={Object.prototype.hasOwnProperty.call(props, 'threadId')}
+      chatIdControlled={Object.prototype.hasOwnProperty.call(props, 'chatId')}
       adapter={provider.adapter}
       sdk={provider.sdk}
       agents={provider.manifest.agents}
       filesSlug={provider.manifest.files.slug}
       messagesSlug={provider.manifest.chat.messagesSlug}
-      threadsSlug={provider.manifest.chat.threadsSlug}
+      chatsSlug={provider.manifest.chat.chatsSlug}
     />
   );
 }
@@ -74,8 +74,8 @@ type ChatOrchestratorProps = ChatProps & {
   agents: ChatManifest['agents'];
   filesSlug: string;
   messagesSlug: string;
-  threadsSlug: string;
-  threadIdControlled: boolean;
+  chatsSlug: string;
+  chatIdControlled: boolean;
 };
 
 function ChatOrchestrator({
@@ -85,54 +85,56 @@ function ChatOrchestrator({
   agents,
   composerEndSlot,
   composerStartSlot,
-  defaultThreadId,
+  defaultChatId,
   emptyContent,
   errorContent,
   fallbackTitle = 'New chat',
   filesSlug,
   headerSlot,
   messagesSlug,
-  onThreadIdChange,
+  onChatIdChange,
   panel,
   renderMessage,
-  renderThreadActions,
+  renderChatActions,
   sdk,
   stopContent = 'Stop',
   submitContent = 'Send',
-  threadId: controlledThreadId,
-  threadIdControlled,
-  threadsSlug,
+  chatId: controlledChatId,
+  chatIdControlled,
+  chatsSlug,
   throttle,
   warningContent,
 }: ChatOrchestratorProps) {
-  const [threadId, setThreadId] = useControlledState<string | number | undefined>({
-    controlled: threadIdControlled,
-    defaultValue: defaultThreadId,
-    onChange: onThreadIdChange,
-    value: controlledThreadId,
+  const [activeChatId, setActiveChatId] = useControlledState<string | number | undefined>({
+    controlled: chatIdControlled,
+    defaultValue: defaultChatId,
+    onChange: onChatIdChange,
+    value: controlledChatId,
   });
-  const [chatId, setChatId] = useState(threadId === undefined ? `new:${agent}` : String(threadId));
-  const createdThreadId = useRef<string | undefined>(undefined);
-  const reportedThreadId = useRef<string | undefined>(undefined);
+  const [runtimeChatId, setRuntimeChatId] = useState(
+    activeChatId === undefined ? `new:${agent}` : String(activeChatId),
+  );
+  const createdChatId = useRef<string | undefined>(undefined);
+  const reportedChatId = useRef<string | undefined>(undefined);
   const previousAgent = useRef(agent);
-  const history = useThread({ sdk, messagesSlug, threadId });
-  const threads = useThreads({ sdk, agent, threadsSlug });
+  const history = useChatMessages({ sdk, messagesSlug, chatId: activeChatId });
+  const chats = useChats({ sdk, agent, chatsSlug });
   const [aborted, setAborted] = useState(false);
   const transport = useMemo(
     () =>
       new FrogbotChatTransport({
         agentSlug: agent,
         sdk,
-        onThreadId: (nextThreadId) => {
-          createdThreadId.current = nextThreadId;
+        onChatId: (nextChatId) => {
+          createdChatId.current = nextChatId;
         },
-        prepareSendMessagesRequest: prepareChatRequest(threadId),
+        prepareSendMessagesRequest: prepareChatRequest(activeChatId),
       }),
-    [agent, sdk, threadId],
+    [activeChatId, agent, sdk],
   );
   let addToolOutput: ReturnType<typeof useChat>['addToolOutput'] | undefined;
   const chat = useChat({
-    id: chatId,
+    id: runtimeChatId,
     transport,
     experimental_throttle: throttle,
     onToolCall: adapter.executeClientTool
@@ -146,71 +148,71 @@ function ChatOrchestrator({
         }
       : undefined,
     onFinish: () => {
-      if (!createdThreadId.current) return;
-      reportedThreadId.current = createdThreadId.current;
-      setThreadId(createdThreadId.current);
-      createdThreadId.current = undefined;
-      threads.refresh();
+      if (!createdChatId.current) return;
+      reportedChatId.current = createdChatId.current;
+      setActiveChatId(createdChatId.current);
+      createdChatId.current = undefined;
+      chats.refresh();
     },
   });
   addToolOutput = chat.addToolOutput;
 
   const clearConversation = () => {
-    createdThreadId.current = undefined;
-    reportedThreadId.current = undefined;
-    setChatId(`new:${agent}`);
+    createdChatId.current = undefined;
+    reportedChatId.current = undefined;
+    setRuntimeChatId(`new:${agent}`);
     chat.setMessages([]);
   };
 
   useEffect(() => {
     if (
       !history.loading &&
-      history.loadedThreadId !== undefined &&
-      String(history.loadedThreadId) === String(threadId) &&
-      String(history.loadedThreadId) !== reportedThreadId.current
+      history.loadedChatId !== undefined &&
+      String(history.loadedChatId) === String(activeChatId) &&
+      String(history.loadedChatId) !== reportedChatId.current
     ) {
       chat.setMessages(history.messages);
     }
-  }, [history.loadedThreadId, history.loading, history.messages, threadId, chat.setMessages]);
+  }, [activeChatId, history.loadedChatId, history.loading, history.messages, chat.setMessages]);
 
   useEffect(() => {
-    if (!threadIdControlled) return;
-    if (controlledThreadId === undefined) {
+    if (!chatIdControlled) return;
+    if (controlledChatId === undefined) {
       clearConversation();
       return;
     }
-    if (String(controlledThreadId) === reportedThreadId.current) {
-      reportedThreadId.current = undefined;
+    if (String(controlledChatId) === reportedChatId.current) {
+      reportedChatId.current = undefined;
       return;
     }
-    if (String(controlledThreadId) !== chatId) setChatId(String(controlledThreadId));
-  }, [chatId, controlledThreadId, threadIdControlled]);
+    if (String(controlledChatId) !== runtimeChatId) setRuntimeChatId(String(controlledChatId));
+  }, [chatIdControlled, controlledChatId, runtimeChatId]);
 
   useEffect(() => {
     if (previousAgent.current === agent) return;
     previousAgent.current = agent;
     clearConversation();
-    setThreadId(undefined);
+    setActiveChatId(undefined);
   }, [agent]);
 
-  const selectThread = (nextThreadId: string | number) => {
+  const selectChat = (nextChatId: string | number) => {
     setAborted(false);
-    reportedThreadId.current = undefined;
-    setChatId(String(nextThreadId));
-    setThreadId(nextThreadId);
+    reportedChatId.current = undefined;
+    setRuntimeChatId(String(nextChatId));
+    setActiveChatId(nextChatId);
   };
-  const mutate = (thread: ThreadDocument): ThreadActions => ({
+  const mutate = (chatDocument: ChatDocument): ChatActions => ({
     rename: async (title) => {
-      await renameThread({ sdk, threadsSlug, threadId: thread.id }, title);
-      threads.refresh();
+      await renameChat({ sdk, chatsSlug, chatId: chatDocument.id }, title);
+      chats.refresh();
     },
     delete: async () => {
-      await deleteThread({ sdk, messagesSlug, threadsSlug, threadId: thread.id });
-      if (String(threadId) === String(thread.id)) {
+      await deleteChat({ sdk, messagesSlug, chatsSlug, chatId: chatDocument.id });
+      if (String(activeChatId) === String(chatDocument.id)) {
         clearConversation();
-        setThreadId(undefined);
+        setActiveChatId(undefined);
       }
-      threads.refresh();
+      chats.refresh();
     },
   });
   const submit = async (text: string, attachments: ComposerAttachment[]) => {
@@ -234,11 +236,11 @@ function ChatOrchestrator({
     setAborted(true);
     void chat.stop();
   };
-  const error = history.error ?? threads.error ?? chat.error;
-  const displayedThreads = (threads.docs ?? []).map((thread) =>
-    String(thread.id) === String(threadId) && !thread.title
-      ? { ...thread, title: deriveThreadTitle(chat.messages, fallbackTitle) }
-      : thread,
+  const error = history.error ?? chats.error ?? chat.error;
+  const displayedChats = (chats.docs ?? []).map((chatDocument) =>
+    String(chatDocument.id) === String(activeChatId) && !chatDocument.title
+      ? { ...chatDocument, title: deriveChatTitle(chat.messages, fallbackTitle) }
+      : chatDocument,
   );
   const profile = agents.find(({ slug }) => slug === agent)?.profile;
   const displayName = profile?.name ?? agent;
@@ -278,14 +280,14 @@ function ChatOrchestrator({
     <ChatShell
       panel={panel}
       sidebar={
-        <ThreadHistory
-          threads={displayedThreads}
-          activeThreadId={threadId}
+        <ChatHistory
+          chats={displayedChats}
+          activeChatId={activeChatId}
           fallbackTitle={fallbackTitle}
-          onThreadChange={selectThread}
+          onChatChange={selectChat}
           renderActions={
-            renderThreadActions
-              ? (thread) => renderThreadActions(thread, mutate(thread))
+            renderChatActions
+              ? (chatDocument) => renderChatActions(chatDocument, mutate(chatDocument))
               : undefined
           }
         />

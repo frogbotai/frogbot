@@ -6,7 +6,7 @@ import type { FrogbotRequest } from './request.js';
 export type ToolCtx = {
   req: FrogbotRequest;
   frogbot: Frogbot;
-  agent: { slug: string; runId: string; threadId?: number | string };
+  agent: { slug: string; runId: string; chatId?: number | string };
 };
 
 export type Tool<TSchema extends z.ZodType = z.ZodType, TResult = unknown> = {

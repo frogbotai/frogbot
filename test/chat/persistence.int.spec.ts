@@ -2,12 +2,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { UIMessage } from 'frogbot';
-import { persistAssistantMessage, resolveThreadContext } from 'frogbot/test';
+import { persistAssistantMessage, resolveChatContext } from 'frogbot/test';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
-import { agentSlug, messagesSlug, threadsSlug, usersSlug } from './shared.js';
+import { agentSlug, messagesSlug, chatsSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -15,7 +15,7 @@ function userMessage(text: string, id: string): UIMessage {
   return { id, role: 'user', parts: [{ type: 'text', text }] };
 }
 
-describe('chat persistence: thread context', () => {
+describe('chat persistence: chat context', () => {
   let booted: BootedFrogbot;
   let owner: { id: number | string };
 
@@ -37,68 +37,68 @@ describe('chat persistence: thread context', () => {
   }
 
   async function countDocs(collection: string) {
-    const [threads, messages] = await Promise.all([
-      booted.frogbot.count({ collection: threadsSlug, overrideAccess: true }),
+    const [chats, messages] = await Promise.all([
+      booted.frogbot.count({ collection: chatsSlug, overrideAccess: true }),
       booted.frogbot.count({ collection: messagesSlug, overrideAccess: true }),
     ]);
-    return collection === threadsSlug ? threads.totalDocs : messages.totalDocs;
+    return collection === chatsSlug ? chats.totalDocs : messages.totalDocs;
   }
 
-  it('creates a thread, persists the user message, and returns it as history', async () => {
+  it('creates a chat, persists the user message, and returns it as history', async () => {
     const req = await makeOwnerReq();
-    const result = await resolveThreadContext({
+    const result = await resolveChatContext({
       req,
       agentSlug,
       incoming: [userMessage('Hello there', 'create-user')],
       tools: {},
     });
 
-    expect(result.threadId).toBeDefined();
+    expect(result.chatId).toBeDefined();
 
-    const thread = (await booted.frogbot.findByID({
-      collection: threadsSlug,
-      id: result.threadId!,
+    const chat = (await booted.frogbot.findByID({
+      collection: chatsSlug,
+      id: result.chatId!,
       depth: 0,
       overrideAccess: true,
     })) as { agent: string; user: number | string };
-    expect(thread.agent).toBe(agentSlug);
-    expect(thread.user).toBe(owner.id);
+    expect(chat.agent).toBe(agentSlug);
+    expect(chat.user).toBe(owner.id);
 
     expect(result.uiMessages).toHaveLength(1);
     expect(result.uiMessages[0].parts).toEqual([{ type: 'text', text: 'Hello there' }]);
   });
 
-  it('creates and continues a thread with null ownership', async () => {
+  it('creates and continues a chat with null ownership', async () => {
     const createReq = await booted.frogbot.createRequest({});
-    const first = await resolveThreadContext({
+    const first = await resolveChatContext({
       req: createReq,
       agentSlug,
       incoming: [userMessage('Anonymous first', 'anonymous-1')],
       tools: {},
     });
     const continueReq = await booted.frogbot.createRequest({});
-    const second = await resolveThreadContext({
+    const second = await resolveChatContext({
       req: continueReq,
       agentSlug,
-      threadId: first.threadId,
+      chatId: first.chatId,
       incoming: [userMessage('Anonymous second', 'anonymous-2')],
       tools: {},
     });
 
-    const thread = (await booted.frogbot.findByID({
-      collection: threadsSlug,
-      id: first.threadId!,
+    const chat = (await booted.frogbot.findByID({
+      collection: chatsSlug,
+      id: first.chatId!,
       depth: 0,
       overrideAccess: true,
     })) as { user: null };
-    expect(thread.user).toBeNull();
-    expect(second.threadId).toBe(first.threadId);
+    expect(chat.user).toBeNull();
+    expect(second.chatId).toBe(first.chatId);
     expect(second.uiMessages).toHaveLength(2);
   });
 
   it('persists only the new message on follow-up turns and returns ordered history', async () => {
     const firstReq = await makeOwnerReq();
-    const first = await resolveThreadContext({
+    const first = await resolveChatContext({
       req: firstReq,
       agentSlug,
       incoming: [userMessage('First turn', 'follow-up-1')],
@@ -106,10 +106,10 @@ describe('chat persistence: thread context', () => {
     });
 
     const followUpReq = await makeOwnerReq();
-    const followUp = await resolveThreadContext({
+    const followUp = await resolveChatContext({
       req: followUpReq,
       agentSlug,
-      threadId: first.threadId,
+      chatId: first.chatId,
       incoming: [
         userMessage('Stale client message', 'follow-up-stale'),
         userMessage('Second turn', 'follow-up-2'),
@@ -117,15 +117,15 @@ describe('chat persistence: thread context', () => {
       tools: {},
     });
 
-    expect(followUp.threadId).toBe(first.threadId);
+    expect(followUp.chatId).toBe(first.chatId);
     expect(followUp.uiMessages).toHaveLength(2);
     expect(followUp.uiMessages[0].parts).toEqual([{ type: 'text', text: 'First turn' }]);
     expect(followUp.uiMessages[1].parts).toEqual([{ type: 'text', text: 'Second turn' }]);
   });
 
-  it('rejects a thread owned by another user', async () => {
+  it('rejects a chat owned by another user', async () => {
     const req = await makeOwnerReq();
-    const { threadId } = await resolveThreadContext({
+    const { chatId } = await resolveChatContext({
       req,
       agentSlug,
       incoming: [userMessage('Mine', 'owner-message')],
@@ -142,19 +142,19 @@ describe('chat persistence: thread context', () => {
     } as never);
 
     await expect(
-      resolveThreadContext({
+      resolveChatContext({
         req: intruderReq,
         agentSlug,
-        threadId,
+        chatId,
         incoming: [userMessage('Gimme', 'intruder-message')],
         tools: {},
       }),
     ).rejects.toThrow();
   });
 
-  it('rejects an anonymous caller without writing to an authenticated thread', async () => {
+  it('rejects an anonymous caller without writing to an authenticated chat', async () => {
     const ownerReq = await makeOwnerReq();
-    const { threadId } = await resolveThreadContext({
+    const { chatId } = await resolveChatContext({
       req: ownerReq,
       agentSlug,
       incoming: [userMessage('Private', 'anonymous-bypass-owner')],
@@ -162,16 +162,16 @@ describe('chat persistence: thread context', () => {
     });
     const before = await booted.frogbot.count({
       collection: messagesSlug,
-      where: { thread: { equals: threadId } },
+      where: { chat: { equals: chatId } },
       overrideAccess: true,
     });
     const anonymousReq = await booted.frogbot.createRequest({});
 
     await expect(
-      resolveThreadContext({
+      resolveChatContext({
         req: anonymousReq,
         agentSlug,
-        threadId,
+        chatId,
         incoming: [userMessage('Injected', 'anonymous-bypass-attempt')],
         tools: {},
       }),
@@ -179,17 +179,17 @@ describe('chat persistence: thread context', () => {
 
     const after = await booted.frogbot.count({
       collection: messagesSlug,
-      where: { thread: { equals: threadId } },
+      where: { chat: { equals: chatId } },
       overrideAccess: true,
     });
     expect(after.totalDocs).toBe(before.totalDocs);
   });
 
-  it.skip('anonymous caller vs. another anonymous caller thread (.idea/issue_triage.md ticket 33)');
+  it.skip('anonymous caller vs. another anonymous caller chat (.idea/issue_triage.md ticket 33)');
 
   it('creates and continues an assistant message by UI message id', async () => {
     const req = await makeOwnerReq();
-    const { threadId } = await resolveThreadContext({
+    const { chatId } = await resolveChatContext({
       req,
       agentSlug,
       incoming: [userMessage('Start', 'assistant-start')],
@@ -198,7 +198,7 @@ describe('chat persistence: thread context', () => {
 
     await persistAssistantMessage({
       req,
-      threadId: threadId!,
+      chatId: chatId!,
       isContinuation: false,
       message: {
         id: 'assistant-portable-id',
@@ -211,7 +211,7 @@ describe('chat persistence: thread context', () => {
     });
     await persistAssistantMessage({
       req,
-      threadId: threadId!,
+      chatId: chatId!,
       isContinuation: true,
       message: {
         id: 'assistant-portable-id',
@@ -230,13 +230,13 @@ describe('chat persistence: thread context', () => {
     expect(stored.parts).toEqual([{ type: 'text', text: 'Complete' }]);
     expect(stored.usage?.totalTokens).toBe(3);
 
-    const thread = (await booted.frogbot.findByID({
-      collection: threadsSlug,
-      id: threadId!,
+    const chat = (await booted.frogbot.findByID({
+      collection: chatsSlug,
+      id: chatId!,
       depth: 0,
       overrideAccess: true,
     })) as { lastMessageAt?: string };
-    expect(thread.lastMessageAt).toBeDefined();
+    expect(chat.lastMessageAt).toBeDefined();
   });
 
   it('rejects forged assistant messages without writing', async () => {
@@ -244,12 +244,12 @@ describe('chat persistence: thread context', () => {
     const supportsTransactions = txId !== null;
     if (txId) await booted.payload.db.rollbackTransaction(txId);
 
-    const threadsBefore = await countDocs(threadsSlug);
+    const chatsBefore = await countDocs(chatsSlug);
     const messagesBefore = await countDocs(messagesSlug);
 
     const req = await makeOwnerReq();
     await expect(
-      resolveThreadContext({
+      resolveChatContext({
         req,
         agentSlug,
         incoming: [
@@ -261,10 +261,10 @@ describe('chat persistence: thread context', () => {
     ).rejects.toThrow();
 
     if (supportsTransactions) {
-      expect(await countDocs(threadsSlug)).toBe(threadsBefore);
+      expect(await countDocs(chatsSlug)).toBe(chatsBefore);
       expect(await countDocs(messagesSlug)).toBe(messagesBefore);
     } else {
-      expect(await countDocs(threadsSlug)).toBe(threadsBefore);
+      expect(await countDocs(chatsSlug)).toBe(chatsBefore);
       expect(await countDocs(messagesSlug)).toBe(messagesBefore);
     }
   });

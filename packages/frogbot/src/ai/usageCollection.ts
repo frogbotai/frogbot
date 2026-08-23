@@ -8,13 +8,13 @@ export const USAGE_LOGS_SLUG = 'usage-logs';
 
 type UsageCollectionProps = {
   userSlug: string;
-  threadsSlug?: string;
+  chatsSlug?: string;
   access?: CollectionAccess;
 };
 
 export function defaultUsageCollection({
   userSlug,
-  threadsSlug,
+  chatsSlug,
   access,
 }: UsageCollectionProps): CollectionConfig {
   return {
@@ -33,12 +33,12 @@ export function defaultUsageCollection({
     },
     fields: [
       { name: 'user', type: 'relationship', relationTo: userSlug, index: true },
-      ...(threadsSlug
+      ...(chatsSlug
         ? [
             {
-              name: 'thread',
+              name: 'chat',
               type: 'relationship' as const,
-              relationTo: threadsSlug,
+              relationTo: chatsSlug,
               index: true,
             },
           ]
@@ -77,7 +77,7 @@ export function defaultUsageCollection({
 
 export function resolveUsageCollection(
   config: FrogbotConfig,
-  threadsSlug?: string,
+  chatsSlug?: string,
 ): { collections: CollectionConfig[]; slug: string } {
   if (!config.ai) {
     return { collections: config.collections, slug: USAGE_LOGS_SLUG };
@@ -92,7 +92,7 @@ export function resolveUsageCollection(
   const slug = existing?.slug ?? USAGE_LOGS_SLUG;
   const base = defaultUsageCollection({
     userSlug: resolveUserSlug(config),
-    threadsSlug,
+    chatsSlug,
   });
   const collections = resolveMarkedCollection({
     collectionLabel: 'AI usage-log',

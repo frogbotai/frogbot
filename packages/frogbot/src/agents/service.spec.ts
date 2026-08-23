@@ -55,10 +55,10 @@ function makeRequest({
       connections: authorizations ? { authorizations } : undefined,
       config: {
         ai: { routers: {} },
-        chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' },
+        chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
       },
       create,
-      update: vi.fn(() => Promise.resolve({ id: 'thread-1' })),
+      update: vi.fn(() => Promise.resolve({ id: 'chat-1' })),
     },
   } as unknown as FrogbotRequest;
 }
@@ -108,17 +108,17 @@ describe('agent service', () => {
       { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
     ];
 
-    const result = await generateAgentRequest({ req, agent, threadId: 'thread-1', uiMessages });
+    const result = await generateAgentRequest({ req, agent, chatId: 'chat-1', uiMessages });
 
     expect(result.text).toBe('hello');
     expect(agent.aiAgent.generate).toHaveBeenCalledWith(
-      expect.objectContaining({ options: expect.objectContaining({ threadId: 'thread-1' }) }),
+      expect.objectContaining({ options: expect.objectContaining({ chatId: 'chat-1' }) }),
     );
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'messages',
         data: expect.objectContaining({
-          thread: 'thread-1',
+          chat: 'chat-1',
           role: 'assistant',
           parts: expect.arrayContaining([expect.objectContaining({ type: 'text', text: 'hello' })]),
         }),

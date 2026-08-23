@@ -12,11 +12,11 @@ export type FrogbotChatTransportOptions<UI_MESSAGE extends UIMessage> = Omit<
 > & {
   agentSlug: string;
   sdk: FrogBotSDK;
-  onThreadId?: (threadId: string) => void;
+  onChatId?: (chatId: string) => void;
 };
 
 export function prepareChatRequest<UI_MESSAGE extends UIMessage>(
-  threadId?: string | number,
+  chatId?: string | number,
 ): PrepareSendMessagesRequest<UI_MESSAGE> {
   return ({ messages }) => {
     const unsafe = messages.some((message) =>
@@ -25,17 +25,17 @@ export function prepareChatRequest<UI_MESSAGE extends UIMessage>(
       ),
     );
     if (unsafe) throw new Error('Chat attachments require a stable FrogBot file reference');
-    return { body: { messages, ...(threadId === undefined ? {} : { threadId }) } };
+    return { body: { messages, ...(chatId === undefined ? {} : { chatId }) } };
   };
 }
 
 export class FrogbotChatTransport<
   UI_MESSAGE extends UIMessage = UIMessage,
 > extends DefaultChatTransport<UI_MESSAGE> {
-  threadId?: string;
+  chatId?: string;
 
-  constructor({ agentSlug, sdk, onThreadId, ...options }: FrogbotChatTransportOptions<UI_MESSAGE>) {
-    const capture = { threadId: (_threadId: string) => undefined };
+  constructor({ agentSlug, sdk, onChatId, ...options }: FrogbotChatTransportOptions<UI_MESSAGE>) {
+    const capture = { chatId: (_chatId: string) => undefined };
     const configuredHeaders = options.headers;
     super({
       ...options,
@@ -50,8 +50,8 @@ export class FrogbotChatTransport<
       },
       fetch: async (input, init) => {
         const response = await sdk.fetch(input, init);
-        const threadId = response.headers.get('X-Frogbot-Thread-Id');
-        if (threadId) capture.threadId(threadId);
+        const chatId = response.headers.get('X-Frogbot-Chat-Id');
+        if (chatId) capture.chatId(chatId);
         if (response.status === 499) {
           return new Response(new ReadableStream({ start: (controller) => controller.close() }), {
             status: 200,
@@ -60,9 +60,9 @@ export class FrogbotChatTransport<
         return response;
       },
     });
-    capture.threadId = (threadId) => {
-      this.threadId = threadId;
-      onThreadId?.(threadId);
+    capture.chatId = (chatId) => {
+      this.chatId = chatId;
+      onChatId?.(chatId);
     };
   }
 

@@ -17,17 +17,17 @@ import {
   prepareAgentRequest,
 } from './service.js';
 
-const threadIdSchema = z.union([z.string(), z.number()]).optional();
+const chatIdSchema = z.union([z.string(), z.number()]).optional();
 
 const bodySchema = z.union([
   z
-    .object({ prompt: z.string().min(1), messages: z.never().optional(), threadId: threadIdSchema })
+    .object({ prompt: z.string().min(1), messages: z.never().optional(), chatId: chatIdSchema })
     .strict(),
   z
     .object({
       messages: z.array(z.unknown()).min(1),
       prompt: z.never().optional(),
-      threadId: threadIdSchema,
+      chatId: chatIdSchema,
     })
     .strict(),
 ]);
@@ -47,10 +47,10 @@ export function buildAgentEndpoints() {
           await assertAgentAccess({ req, agent });
 
           let body: AgentRequestBody;
-          let requestedThreadId: DocID | undefined;
+          let requestedChatId: DocID | undefined;
           try {
-            const { threadId, ...parsed } = bodySchema.parse(await req.json!());
-            requestedThreadId = threadId;
+            const { chatId, ...parsed } = bodySchema.parse(await req.json!());
+            requestedChatId = chatId;
             body =
               'messages' in parsed && parsed.messages
                 ? {
@@ -67,24 +67,24 @@ export function buildAgentEndpoints() {
             );
           }
 
-          const { threadId, uiMessages } = await prepareAgentRequest({
+          const { chatId, uiMessages } = await prepareAgentRequest({
             req,
             agent,
-            requestedThreadId,
+            requestedChatId,
             uiMessages: toUIMessages(body),
           });
           const providerMessages = await resolveChatAttachments({ req, messages: uiMessages });
 
           if (acceptsEventStream(req.headers.get('accept'))) {
             return await createAgentUIStreamResponse(
-              getAgentStreamOptions({ req, agent, threadId, uiMessages: providerMessages }),
+              getAgentStreamOptions({ req, agent, chatId, uiMessages: providerMessages }),
             );
           }
 
           const result = await generateAgentRequest({
             req,
             agent,
-            threadId,
+            chatId,
             uiMessages: providerMessages,
           });
 
@@ -93,7 +93,7 @@ export function buildAgentEndpoints() {
             usage: result.totalUsage,
             finishReason: result.finishReason,
             authorizations: req.user ? await getAgentAuthorizations({ req, agent }) : [],
-            ...(threadId !== undefined ? { threadId } : {}),
+            ...(chatId !== undefined ? { chatId } : {}),
           });
         } catch (error) {
           if (req.signal?.aborted) return new Response(null, { status: 499 });

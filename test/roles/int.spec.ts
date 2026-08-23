@@ -105,8 +105,8 @@ describe('roles', () => {
   it('does not grant admins implicit access to another user chat data', async () => {
     const owner = await createUser('chat-owner@frogbot.local', ['owner']);
     const admin = await createUser('chat-admin@frogbot.local', ['admin']);
-    const thread = await booted.frogbot.create({
-      collection: 'threads',
+    const chat = await booted.frogbot.create({
+      collection: 'chats',
       data: { title: 'Private', user: owner.id },
       overrideAccess: true,
     });
@@ -114,7 +114,7 @@ describe('roles', () => {
       collection: 'messages',
       data: {
         id: 'private-message',
-        thread: thread.id,
+        chat: chat.id,
         role: 'user',
         parts: [{ type: 'text', text: 'Private' }],
       },
@@ -123,8 +123,8 @@ describe('roles', () => {
 
     const adminReq = await requestFor(admin);
     const ownerReq = await requestFor(owner);
-    const adminThreads = await booted.frogbot.find({
-      collection: 'threads',
+    const adminChats = await booted.frogbot.find({
+      collection: 'chats',
       req: adminReq,
       overrideAccess: false,
     });
@@ -133,8 +133,8 @@ describe('roles', () => {
       req: adminReq,
       overrideAccess: false,
     });
-    const ownerThreads = await booted.frogbot.find({
-      collection: 'threads',
+    const ownerChats = await booted.frogbot.find({
+      collection: 'chats',
       req: ownerReq,
       overrideAccess: false,
     });
@@ -144,9 +144,9 @@ describe('roles', () => {
       overrideAccess: false,
     });
 
-    expect(adminThreads.docs).toHaveLength(0);
+    expect(adminChats.docs).toHaveLength(0);
     expect(adminMessages.docs).toHaveLength(0);
-    expect(ownerThreads.docs.map(({ id }) => id)).toContain(thread.id);
+    expect(ownerChats.docs.map(({ id }) => id)).toContain(chat.id);
     expect(ownerMessages.docs.map(({ id }) => id)).toContain('private-message');
   });
 });

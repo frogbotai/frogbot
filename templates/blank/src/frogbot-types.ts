@@ -68,7 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
-    threads: Thread;
+    chats: Chat;
     messages: Message;
     'usage-logs': UsageLog;
     files: File;
@@ -76,7 +76,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect;
-    threads: ThreadsSelect;
+    chats: ChatsSelect;
     messages: MessagesSelect;
     'usage-logs': UsageLogsSelect;
     files: FilesSelect;
@@ -153,9 +153,9 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "threads".
+ * via the `definition` "chats".
  */
-export interface Thread {
+export interface Chat {
   id: number;
   title?: string | null;
   user?: (number | null) | User;
@@ -172,7 +172,7 @@ export interface Thread {
  */
 export interface Message {
   id: string;
-  thread: number | Thread;
+  chat: number | Chat;
   role: 'user' | 'assistant' | 'system';
   parts: import('frogbot').UIMessage['parts'];
   metadata?:
@@ -204,7 +204,7 @@ export interface Message {
 export interface UsageLog {
   id: number;
   user?: (number | null) | User;
-  thread?: (number | null) | Thread;
+  chat?: (number | null) | Chat;
   requestId: string;
   runId?: string | null;
   model: string;
@@ -279,9 +279,9 @@ export interface UsersSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "threads_select".
+ * via the `definition` "chats_select".
  */
-export interface ThreadsSelect {
+export interface ChatsSelect {
   title?: boolean;
   user?: boolean;
   agent?: boolean;
@@ -297,7 +297,7 @@ export interface ThreadsSelect {
  */
 export interface MessagesSelect {
   id?: boolean;
-  thread?: boolean;
+  chat?: boolean;
   role?: boolean;
   parts?: boolean;
   metadata?: boolean;
@@ -322,7 +322,7 @@ export interface MessagesSelect {
  */
 export interface UsageLogsSelect {
   user?: boolean;
-  thread?: boolean;
+  chat?: boolean;
   requestId?: boolean;
   runId?: boolean;
   model?: boolean;

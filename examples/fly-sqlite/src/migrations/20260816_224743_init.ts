@@ -39,7 +39,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.run(
     sql`CREATE UNIQUE INDEX \`users_email_idx\` ON \`users\` (\`email\`);`,
   );
-  await db.run(sql`CREATE TABLE \`threads\` (
+  await db.run(sql`CREATE TABLE \`chats\` (
   	\`id\` integer PRIMARY KEY NOT NULL,
   	\`title\` text,
   	\`user_id\` integer,
@@ -53,26 +53,26 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   );
   `);
   await db.run(
-    sql`CREATE INDEX \`threads_user_idx\` ON \`threads\` (\`user_id\`);`,
+    sql`CREATE INDEX \`chats_user_idx\` ON \`chats\` (\`user_id\`);`,
   );
   await db.run(
-    sql`CREATE INDEX \`threads_agent_idx\` ON \`threads\` (\`agent\`);`,
+    sql`CREATE INDEX \`chats_agent_idx\` ON \`chats\` (\`agent\`);`,
   );
   await db.run(
-    sql`CREATE INDEX \`threads_last_message_at_idx\` ON \`threads\` (\`last_message_at\`);`,
+    sql`CREATE INDEX \`chats_last_message_at_idx\` ON \`chats\` (\`last_message_at\`);`,
   );
   await db.run(
-    sql`CREATE INDEX \`threads_updated_at_idx\` ON \`threads\` (\`updated_at\`);`,
+    sql`CREATE INDEX \`chats_updated_at_idx\` ON \`chats\` (\`updated_at\`);`,
   );
   await db.run(
-    sql`CREATE INDEX \`threads_created_at_idx\` ON \`threads\` (\`created_at\`);`,
+    sql`CREATE INDEX \`chats_created_at_idx\` ON \`chats\` (\`created_at\`);`,
   );
   await db.run(
-    sql`CREATE INDEX \`threads_deleted_at_idx\` ON \`threads\` (\`deleted_at\`);`,
+    sql`CREATE INDEX \`chats_deleted_at_idx\` ON \`chats\` (\`deleted_at\`);`,
   );
   await db.run(sql`CREATE TABLE \`messages\` (
   	\`id\` text PRIMARY KEY NOT NULL,
-  	\`thread_id\` integer NOT NULL,
+	\`chat_id\` integer NOT NULL,
   	\`role\` text NOT NULL,
   	\`parts\` text NOT NULL,
   	\`metadata\` text,
@@ -86,11 +86,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	\`updated_at\` text DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
   	\`created_at\` text DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
   	\`deleted_at\` text,
-  	FOREIGN KEY (\`thread_id\`) REFERENCES \`threads\`(\`id\`) ON UPDATE no action ON DELETE set null
+	FOREIGN KEY (\`chat_id\`) REFERENCES \`chats\`(\`id\`) ON UPDATE no action ON DELETE set null
   );
   `);
   await db.run(
-    sql`CREATE INDEX \`messages_thread_idx\` ON \`messages\` (\`thread_id\`);`,
+    sql`CREATE INDEX \`messages_chat_idx\` ON \`messages\` (\`chat_id\`);`,
   );
   await db.run(
     sql`CREATE INDEX \`messages_updated_at_idx\` ON \`messages\` (\`updated_at\`);`,
@@ -104,7 +104,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.run(sql`CREATE TABLE \`usage_logs\` (
   	\`id\` integer PRIMARY KEY NOT NULL,
   	\`user_id\` integer,
-  	\`thread_id\` integer,
+	\`chat_id\` integer,
   	\`request_id\` text NOT NULL,
   	\`run_id\` text,
   	\`model\` text NOT NULL,
@@ -121,14 +121,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	\`updated_at\` text DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
   	\`created_at\` text DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
   	FOREIGN KEY (\`user_id\`) REFERENCES \`users\`(\`id\`) ON UPDATE no action ON DELETE set null,
-  	FOREIGN KEY (\`thread_id\`) REFERENCES \`threads\`(\`id\`) ON UPDATE no action ON DELETE set null
+	FOREIGN KEY (\`chat_id\`) REFERENCES \`chats\`(\`id\`) ON UPDATE no action ON DELETE set null
   );
   `);
   await db.run(
     sql`CREATE INDEX \`usage_logs_user_idx\` ON \`usage_logs\` (\`user_id\`);`,
   );
   await db.run(
-    sql`CREATE INDEX \`usage_logs_thread_idx\` ON \`usage_logs\` (\`thread_id\`);`,
+    sql`CREATE INDEX \`usage_logs_chat_idx\` ON \`usage_logs\` (\`chat_id\`);`,
   );
   await db.run(
     sql`CREATE INDEX \`usage_logs_request_id_idx\` ON \`usage_logs\` (\`request_id\`);`,
@@ -247,14 +247,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	\`parent_id\` integer NOT NULL,
   	\`path\` text NOT NULL,
   	\`users_id\` integer,
-  	\`threads_id\` integer,
+	\`chats_id\` integer,
   	\`messages_id\` text,
   	\`usage_logs_id\` integer,
   	\`files_id\` integer,
   	\`payload_folders_id\` integer,
   	FOREIGN KEY (\`parent_id\`) REFERENCES \`payload_locked_documents\`(\`id\`) ON UPDATE no action ON DELETE cascade,
   	FOREIGN KEY (\`users_id\`) REFERENCES \`users\`(\`id\`) ON UPDATE no action ON DELETE cascade,
-  	FOREIGN KEY (\`threads_id\`) REFERENCES \`threads\`(\`id\`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (\`chats_id\`) REFERENCES \`chats\`(\`id\`) ON UPDATE no action ON DELETE cascade,
   	FOREIGN KEY (\`messages_id\`) REFERENCES \`messages\`(\`id\`) ON UPDATE no action ON DELETE cascade,
   	FOREIGN KEY (\`usage_logs_id\`) REFERENCES \`usage_logs\`(\`id\`) ON UPDATE no action ON DELETE cascade,
   	FOREIGN KEY (\`files_id\`) REFERENCES \`files\`(\`id\`) ON UPDATE no action ON DELETE cascade,
@@ -274,7 +274,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
     sql`CREATE INDEX \`payload_locked_documents_rels_users_id_idx\` ON \`payload_locked_documents_rels\` (\`users_id\`);`,
   );
   await db.run(
-    sql`CREATE INDEX \`payload_locked_documents_rels_threads_id_idx\` ON \`payload_locked_documents_rels\` (\`threads_id\`);`,
+    sql`CREATE INDEX \`payload_locked_documents_rels_chats_id_idx\` ON \`payload_locked_documents_rels\` (\`chats_id\`);`,
   );
   await db.run(
     sql`CREATE INDEX \`payload_locked_documents_rels_messages_id_idx\` ON \`payload_locked_documents_rels\` (\`messages_id\`);`,
@@ -350,7 +350,7 @@ export async function down({
 }: MigrateDownArgs): Promise<void> {
   await db.run(sql`DROP TABLE \`users_sessions\`;`);
   await db.run(sql`DROP TABLE \`users\`;`);
-  await db.run(sql`DROP TABLE \`threads\`;`);
+  await db.run(sql`DROP TABLE \`chats\`;`);
   await db.run(sql`DROP TABLE \`messages\`;`);
   await db.run(sql`DROP TABLE \`usage_logs\`;`);
   await db.run(sql`DROP TABLE \`files\`;`);

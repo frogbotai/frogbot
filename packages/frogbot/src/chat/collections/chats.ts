@@ -2,7 +2,7 @@ import type { Access, CollectionAccess } from '../../types/access.js';
 import type { CollectionConfig } from '../../types/collection.js';
 import type { FrogbotRequest } from '../../types/request.js';
 
-export type DefaultThreadsCollectionProps = {
+export type DefaultChatsCollectionProps = {
   slug: string;
   userSlug: string;
   access?: CollectionAccess;
@@ -17,11 +17,11 @@ const owner: Access = ({ req }) => {
   return id !== undefined ? { user: { equals: id } } : false;
 };
 
-export function defaultThreadsCollection({
+export function defaultChatsCollection({
   slug,
   userSlug,
   access,
-}: DefaultThreadsCollectionProps): CollectionConfig {
+}: DefaultChatsCollectionProps): CollectionConfig {
   return {
     slug,
     trash: true,

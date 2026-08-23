@@ -1,3 +1,3 @@
 export const usersSlug = 'users';
-export const threadsSlug = 'threads';
+export const chatsSlug = 'chats';
 export const messagesSlug = 'messages';

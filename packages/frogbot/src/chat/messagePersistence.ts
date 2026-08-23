@@ -17,7 +17,7 @@ export type MessageUsage = {
 
 export type PersistAssistantMessageProps = {
   req: FrogbotRequest;
-  threadId: DocID;
+  chatId: DocID;
   message: UIMessage;
   isContinuation: boolean;
 };
@@ -42,7 +42,7 @@ export function createMessageUsage(
 
 export async function persistAssistantMessage({
   req,
-  threadId,
+  chatId,
   message,
   isContinuation,
 }: PersistAssistantMessageProps): Promise<void> {
@@ -53,7 +53,7 @@ export async function persistAssistantMessage({
 
   const { metadata, usage } = splitMetadata(message.metadata);
   const data = {
-    thread: threadId,
+    chat: chatId,
     role: 'assistant',
     parts: message.parts,
     ...(metadata === undefined ? {} : { metadata }),
@@ -80,8 +80,8 @@ export async function persistAssistantMessage({
   }
 
   await req.frogbot.update({
-    collection: chat.threadsSlug,
-    id: threadId,
+    collection: chat.chatsSlug,
+    id: chatId,
     data: { lastMessageAt: new Date().toISOString() },
     req,
     overrideAccess,

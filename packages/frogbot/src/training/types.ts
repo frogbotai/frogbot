@@ -4,7 +4,7 @@ import type { FrogbotRequest } from '../types/request.js';
 export type TrainingDataDocument = Record<string, unknown>;
 
 export type TrainingDataRecord = {
-  thread: TrainingDataDocument;
+  chat: TrainingDataDocument;
   messages: TrainingDataDocument[];
 };
 

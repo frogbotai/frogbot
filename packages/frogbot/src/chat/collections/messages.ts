@@ -30,18 +30,18 @@ function mergeUsage(previous: MessageUsage | undefined, next: MessageUsage): Mes
 
 export type DefaultMessagesCollectionProps = {
   slug: string;
-  threadsSlug: string;
+  chatsSlug: string;
   access?: CollectionAccess;
 };
 
-const threadOwner: Access = ({ req }) => {
+const chatOwner: Access = ({ req }) => {
   const id = req.user?.id;
-  return id !== undefined ? { 'thread.user': { equals: id } } : false;
+  return id !== undefined ? { 'chat.user': { equals: id } } : false;
 };
 
 export function defaultMessagesCollection({
   slug,
-  threadsSlug,
+  chatsSlug,
   access,
 }: DefaultMessagesCollectionProps): CollectionConfig {
   return {
@@ -50,13 +50,13 @@ export function defaultMessagesCollection({
     admin: {
       icon: 'bubble-chat',
       group: 'Chat',
-      defaultColumns: ['thread', 'role', 'createdAt'],
+      defaultColumns: ['chat', 'role', 'createdAt'],
     },
     access: {
       create: ({ req }) => !!req.user,
-      read: threadOwner,
-      update: threadOwner,
-      delete: threadOwner,
+      read: chatOwner,
+      update: chatOwner,
+      delete: chatOwner,
       ...access,
     },
     hooks: {
@@ -71,9 +71,9 @@ export function defaultMessagesCollection({
     fields: [
       { name: 'id', type: 'text', required: true },
       {
-        name: 'thread',
+        name: 'chat',
         type: 'relationship',
-        relationTo: threadsSlug,
+        relationTo: chatsSlug,
         required: true,
         index: true,
       },

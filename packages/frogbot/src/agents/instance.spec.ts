@@ -153,15 +153,15 @@ function makeDeps(config: SanitizedAIConfig, req: FrogbotRequest) {
     },
   );
   const frogbot = {
-    config: { chat: { enabled: true, threadsSlug: 'threads', messagesSlug: 'messages' } },
+    config: { chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' } },
     create: vi.fn(() => Promise.resolve({ id: 'message-1' })),
     find: vi.fn(() =>
       Promise.resolve({
         docs: [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
       }),
     ),
-    findByID: vi.fn(() => Promise.resolve({ id: 'thread-1', user: req.user?.id ?? null })),
-    update: vi.fn(() => Promise.resolve({ id: 'thread-1' })),
+    findByID: vi.fn(() => Promise.resolve({ id: 'chat-1', user: req.user?.id ?? null })),
+    update: vi.fn(() => Promise.resolve({ id: 'chat-1' })),
     createRequest: vi.fn(() => {
       Object.assign(req, { frogbot });
       return Promise.resolve(req);
@@ -296,16 +296,16 @@ describe('agent hook lifecycle', () => {
     await agent.generate({ prompt: 'Create', req });
     expect(deps.frogbot.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        collection: 'threads',
+        collection: 'chats',
         data: { user: 'user-1', agent: 'support' },
       }),
     );
 
     deps.frogbot.create.mockClear();
-    await agent.generate({ prompt: 'Hello', threadId: 'thread-1', req, overrideAccess: false });
+    await agent.generate({ prompt: 'Hello', chatId: 'chat-1', req, overrideAccess: false });
 
     expect(deps.frogbot.findByID).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'threads', id: 'thread-1', overrideAccess: true }),
+      expect.objectContaining({ collection: 'chats', id: 'chat-1', overrideAccess: true }),
     );
     const messageCreates = deps.frogbot.create.mock.calls.filter(
       ([args]) => args.collection === 'messages',
@@ -314,23 +314,23 @@ describe('agent hook lifecycle', () => {
     expect(messageCreates[0]?.[0]).toEqual(
       expect.objectContaining({
         collection: 'messages',
-        data: expect.objectContaining({ role: 'user', thread: 'thread-1' }),
+        data: expect.objectContaining({ role: 'user', chat: 'chat-1' }),
       }),
     );
     expect(messageCreates[1]?.[0]).toEqual(
       expect.objectContaining({
         collection: 'messages',
-        data: expect.objectContaining({ role: 'assistant', thread: 'thread-1' }),
+        data: expect.objectContaining({ role: 'assistant', chat: 'chat-1' }),
       }),
     );
     expect(deps.frogbot.create).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'usage-logs',
-        data: expect.objectContaining({ runId: expect.any(String), thread: 'thread-1' }),
+        data: expect.objectContaining({ runId: expect.any(String), chat: 'chat-1' }),
       }),
     );
     expect(deps.frogbot.update).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'threads', id: 'thread-1' }),
+      expect.objectContaining({ collection: 'chats', id: 'chat-1' }),
     );
   });
 
@@ -343,24 +343,24 @@ describe('agent hook lifecycle', () => {
         findByID: ReturnType<typeof vi.fn>;
       };
     };
-    deps.frogbot.create.mockResolvedValue({ id: 'thread-1' });
+    deps.frogbot.create.mockResolvedValue({ id: 'chat-1' });
     const agent = createAgentInstance(
       { slug: 'support', model: 'openai/test', instructions: 'Help', access: () => false },
       deps as never,
     );
 
     await agent.generate({ prompt: 'Create', req });
-    await agent.generate({ prompt: 'Continue', threadId: 'thread-1', req });
+    await agent.generate({ prompt: 'Continue', chatId: 'chat-1', req });
 
     expect(deps.frogbot.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        collection: 'threads',
+        collection: 'chats',
         data: { user: null, agent: 'support' },
         overrideAccess: true,
       }),
     );
     expect(deps.frogbot.findByID).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'threads', id: 'thread-1', overrideAccess: true }),
+      expect.objectContaining({ collection: 'chats', id: 'chat-1', overrideAccess: true }),
     );
   });
 });
