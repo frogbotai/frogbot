@@ -125,7 +125,10 @@ export function AppSidebar({
           : FolderIcon
         : (item.icon ?? FolderIcon);
     const active =
-      currentPath === item.path || (item.path !== '/' && currentPath.startsWith(`${item.path}/`));
+      item.path === homePath
+        ? currentPath === item.path
+        : currentPath === item.path ||
+          (item.path !== '/' && currentPath.startsWith(`${item.path}/`));
     return (
       <button
         aria-label={item.label}

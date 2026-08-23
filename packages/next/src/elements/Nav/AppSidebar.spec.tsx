@@ -64,6 +64,7 @@ describe('AppSidebar', () => {
   it('shows no tooltip while open', () => {
     render(<AppSidebar {...props} open />);
     fireEvent.mouseEnter(screen.getByRole('button', { name: 'Users' }));
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Home' }));
     expect(document.querySelector('.frogbot-admin-sidebar__tooltip')).toBeNull();
   });
 

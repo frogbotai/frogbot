@@ -62,6 +62,11 @@ export function buildNavModel({ config, i18n, permissions, visibleEntities }: Bu
       items: entities.map(mapEntity),
     })),
     items: [
+      {
+        icon: 'home',
+        label: 'Home',
+        path: formatAdminURL({ adminRoute: routes.admin, path: '' }),
+      },
       ...((admin as typeof admin & { nav?: { items?: NavConfigItem[] } }).nav?.items ?? []),
       ...topLevelItems,
     ],

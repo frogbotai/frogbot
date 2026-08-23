@@ -106,7 +106,7 @@ export async function FrogbotNav(props: FrogbotNavProps) {
     serverProps,
   });
   const logo = render(admin.components.graphics?.Icon);
-  const homePath = formatAdminURL({ adminRoute: routes.admin, path: '/' });
+  const homePath = formatAdminURL({ adminRoute: routes.admin, path: '' });
 
   return (
     <FrogbotNavClient

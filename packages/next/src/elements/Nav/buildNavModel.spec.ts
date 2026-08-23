@@ -66,10 +66,23 @@ describe('buildNavModel', () => {
         { items: [{ label: 'Users', path: '/control/collections/users' }], label: 'Accounts' },
       ],
       items: [
+        { icon: 'home', label: 'Home', path: '/control' },
         { label: 'Home', path: '/admin' },
         { icon: 'robot', label: 'Projects', path: '/control/collections/projects' },
       ],
     });
+  });
+
+  it('always renders the home item first', () => {
+    const bare = config();
+    delete (bare.admin as { nav?: unknown }).nav;
+    const result = buildNavModel({
+      config: bare,
+      i18n,
+      permissions,
+      visibleEntities: { collections: [], globals: [] },
+    });
+    expect(result.items).toEqual([{ icon: 'home', label: 'Home', path: '/control' }]);
   });
 
   it('excludes entities without visibility or read permission', () => {
