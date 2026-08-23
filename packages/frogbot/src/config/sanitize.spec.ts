@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import type { Frogbot } from '../frogbot.js';
+import { general } from '../agents/presets/general.js';
 import { getCachedFrogbot, resetFrogbotCache } from '../getFrogbot.js';
 import { getFrogbotInstance, registerFrogbotInstance } from '../instanceRegistry.js';
 import type { CollectionConfig } from '../types/collection.js';
@@ -546,6 +547,71 @@ describe('frogbot sanitize', () => {
     ]);
   });
 
+  it('defaults the dashboard and resolved chat collection views', async () => {
+    const result = sanitize(
+      makeConfig({
+        ai: { providers: { openai: true } },
+        agents: [{ slug: 'support', model: 'openai/test', instructions: 'Help' }],
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const chats = payloadConfig.collections.find(({ slug }) => slug === result.chat.chatsSlug);
+
+    expect(payloadConfig.admin.components.views.dashboard).toEqual({
+      Component: '@frogbotai/next/views#ChatView',
+      path: '/',
+    });
+    expect(chats?.admin.components.views).toMatchObject({
+      edit: { root: { Component: '@frogbotai/next/views#ChatView' } },
+      list: { Component: '@frogbotai/next/views#ChatListView' },
+    });
+  });
+
+  it('defaults chat views on a marked custom collection', async () => {
+    const result = sanitize(
+      makeConfig({
+        collections: [
+          { slug: 'users', auth: true, fields: [] },
+          { slug: 'conversations', chat: true, fields: [] },
+        ],
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const chats = payloadConfig.collections.find(({ slug }) => slug === 'conversations');
+
+    expect(result.chat.chatsSlug).toBe('conversations');
+    expect(chats?.admin.components.views).toMatchObject({
+      edit: { root: { Component: '@frogbotai/next/views#ChatView' } },
+      list: { Component: '@frogbotai/next/views#ChatListView' },
+    });
+  });
+
+  it('preserves dashboard, chat list, and chat edit root overrides', async () => {
+    const dashboard = { Component: './Dashboard#Dashboard', path: '/' as const };
+    const list = { Component: './ChatList#ChatList' };
+    const root = { Component: './ChatEdit#ChatEdit' };
+    const result = sanitize(
+      makeConfig({
+        admin: { components: { views: { dashboard } } },
+        collections: [
+          { slug: 'users', auth: true, fields: [] },
+          {
+            slug: 'conversations',
+            chat: true,
+            fields: [],
+            admin: { components: { views: { edit: { root }, list } } },
+          },
+        ],
+      } as never),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const chats = payloadConfig.collections.find(({ slug }) => slug === 'conversations');
+
+    expect(payloadConfig.admin.components.views.dashboard).toEqual(dashboard);
+    expect(chats?.admin.components.views.list).toEqual(list);
+    expect(chats?.admin.components.views.edit.root).toEqual(root);
+  });
+
   it('preserves configured admin nav sections and items', async () => {
     const result = sanitize(
       makeConfig({
@@ -896,6 +962,49 @@ describe('frogbot sanitize', () => {
       inputSchema: {},
       execute: vi.fn(),
       ...overrides,
+    });
+
+    it('preserves an agent model when configured', () => {
+      const result = sanitize(makeConfig({ ai, agents: [agent] } as never));
+
+      expect(result.agents?.[0]?.model).toBe('openai/test');
+    });
+
+    it('uses ai.defaultModel when the agent model is omitted', () => {
+      const result = sanitize(
+        makeConfig({
+          ai: { ...ai, defaultModel: 'openai/default' },
+          agents: [{ slug: 'support', instructions: 'Help the user' }],
+        } as never),
+      );
+
+      expect(result.agents?.[0]?.model).toBe('openai/default');
+    });
+
+    it('sanitizes and registers the general preset using ai.defaultModel', async () => {
+      const result = sanitize(
+        makeConfig({
+          ai: { ...ai, defaultModel: 'openai/default' },
+          agents: [general()],
+        } as never),
+      );
+      const payloadConfig = await result._internal.payloadConfig;
+
+      expect(result.agents?.[0]).toMatchObject({ slug: 'general', model: 'openai/default' });
+      expect((payloadConfig as any).endpoints.map((endpoint: any) => endpoint.path)).toContain(
+        '/agents/:slug',
+      );
+    });
+
+    it('rejects an agent when neither agent model nor ai.defaultModel is configured', () => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai,
+            agents: [{ slug: 'support', instructions: 'Help the user' }],
+          } as never),
+        ),
+      ).toThrow("[frogbot] Agent 'support' requires a `model` or `ai.defaultModel`.");
     });
 
     it('accepts an agent profile', () => {

@@ -1,9 +1,9 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import type { FrogbotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
+import { general } from 'frogbot/agents';
 import { todoTools } from 'frogbot/tools';
 
-import { assistant } from './agents';
 import { Users } from './collections';
 
 const config: FrogbotConfig = {
@@ -14,6 +14,7 @@ const config: FrogbotConfig = {
   collections: [Users],
   tools: [...todoTools],
   ai: {
+    defaultModel: 'zen/big-pickle',
     providers: {
       zen: {
         type: 'openai-compatible',
@@ -23,7 +24,7 @@ const config: FrogbotConfig = {
       },
     },
   },
-  agents: [assistant],
+  agents: [general()],
 };
 
 export default buildConfig(config);

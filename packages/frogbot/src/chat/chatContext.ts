@@ -3,6 +3,7 @@ import { commitTransaction, initTransaction, killTransaction, NotFound } from 'p
 
 import type { DocID } from '../types/operations.js';
 import type { FrogbotRequest } from '../types/request.js';
+import { messagesToUIMessages } from './messagesToUIMessages.js';
 import { validateChatMessages } from './validateMessages.js';
 
 export type ChatContext = {
@@ -82,7 +83,7 @@ export async function resolveChatContext({
     overrideAccess,
   });
 
-  const uiMessages = await validateChatMessages(history.docs.map(toUIMessage), tools as never);
+  const uiMessages = await validateChatMessages(messagesToUIMessages(history.docs as never), tools as never);
 
   return { chatId: resolvedChatId, uiMessages };
 }
@@ -125,19 +126,4 @@ async function resolveChatId({
     overrideAccess,
   });
   return chat.id;
-}
-
-function toUIMessage(doc: unknown): UIMessage {
-  const message = doc as {
-    id: DocID;
-    role: UIMessage['role'];
-    parts: UIMessage['parts'];
-    metadata?: unknown;
-  };
-  return {
-    id: String(message.id),
-    role: message.role,
-    parts: message.parts,
-    ...(message.metadata == null ? {} : { metadata: message.metadata }),
-  };
 }

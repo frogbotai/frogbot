@@ -87,6 +87,17 @@ describe('buildNavModel', () => {
     ]);
   });
 
+  it('targets the resolved chat collection create route', () => {
+    const result = buildNavModel({
+      chatsSlug: 'conversations',
+      config: config(),
+      i18n,
+      permissions,
+      visibleEntities: { collections: [], globals: [] },
+    });
+    expect(result.items[0]?.path).toBe('/control/collections/conversations/create');
+  });
+
   it('excludes entities without visibility or read permission', () => {
     const nextPermissions = structuredClone(permissions);
     nextPermissions.collections.users.read = false;

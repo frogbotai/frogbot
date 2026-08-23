@@ -46,8 +46,8 @@ assert.ok(href);
 
 const css = fs.readFileSync(path.join(nextRoot, href.replace('/_next/', '')), 'utf8');
 assert.ok(css.length > 0);
-assert.match(css, /\.bg-background/);
-assert.match(css, /var\(--background\)/);
+assert.match(css, /\.fb-button/);
+assert.match(css, /var\(--color-background\)/);
 assert.match(css, /data-fb-theme/);
 
 const bundles = [...html.matchAll(/src="(\/_next\/static\/[^"?]+\.js)"/g)]

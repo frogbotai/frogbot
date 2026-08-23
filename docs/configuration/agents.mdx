@@ -11,7 +11,7 @@ Agents wrap AI SDK v7 `ToolLoopAgent` with FrogBot model resolution, request con
 
 ## Define one
 
-Provide a URL-safe `slug`, a provider-prefixed model ID or router alias, and instructions.
+Provide a URL-safe `slug` and instructions. Set `model` to a provider-prefixed model ID or router alias, or omit it to use `ai.defaultModel`.
 
 ```ts
 import { isStepCount } from 'frogbot'
@@ -29,7 +29,7 @@ export const supportAgent: AgentConfig = {
 ```ts
 type AgentConfig = {
   slug: string
-  model: ModelId
+  model?: ModelId
   instructions: string
   profile?: AgentProfile
   skills?: readonly SkillConfig[]
@@ -42,6 +42,32 @@ type AgentConfig = {
 ```
 
 `stopWhen` defaults to the AI SDK's `isStepCount(20)`. If provided as an array, `stopWhen` must be non-empty.
+
+### Use the general preset
+
+`general()` provides FrogBot's default general-purpose instructions and the `general` slug. It uses `ai.defaultModel`, so configure that model and its provider.
+
+```ts
+import { buildConfig } from 'frogbot'
+import { general } from 'frogbot/agents'
+
+export default buildConfig({
+  // required options omitted
+  ai: {
+    defaultModel: 'openai/gpt-4o-mini',
+    providers: {
+      openai: true
+    }
+  },
+  agents: [general()]
+})
+```
+
+Pass agent fields to override the preset. The `general` slug is fixed, but options such as `tools`, `profile`, and `access` can be replaced.
+
+```ts
+agents: [general({ tools: [lookupTicket] })]
+```
 
 ---
 

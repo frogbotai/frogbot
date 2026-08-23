@@ -101,6 +101,8 @@ describe('frogbot importMap generator', () => {
     const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
 
     expect(output).toContain("from '@frogbotai/next/rsc'");
+    expect(output).toContain("from '@frogbotai/next/views'");
+    expect(output).toContain('"@frogbotai/next/views#ChatView"');
     expect(output).toContain('"@frogbotai/next/rsc#CollectionCards"');
     expect(output).toContain("from './fields/NameField.tsx'");
     expect(output).toContain("from './components/UserIcon.tsx'");
@@ -112,6 +114,27 @@ describe('frogbot importMap generator', () => {
     expect(output).toContain("from 'my-ui/client'");
     expect(output).not.toContain('@payloadcms');
     expect(output).not.toContain("import('payload')");
+  });
+
+  it('maps the default chat collection views', async () => {
+    const dir = await makeDir('frogbot-importmap-chat-views-');
+    const config = sanitize({
+      secret: 'test-secret',
+      db: { defaultIDType: 'number' } as never,
+      collections: [
+        { slug: 'users', auth: true, fields: [] },
+        { slug: 'conversations', chat: true, fields: [] },
+      ],
+    });
+    const payloadConfig = await config._internal.payloadConfig;
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+    const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
+
+    expect(output).toContain('"@frogbotai/next/views#ChatListView"');
+    expect(output).toContain('"@frogbotai/next/views#ChatView"');
   });
 
   it('writes an import map when an agent model does not match the configured providers', async () => {

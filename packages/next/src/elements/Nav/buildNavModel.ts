@@ -8,6 +8,7 @@ export type NavConfigItem = { icon?: CustomComponent; label: string; path: strin
 type EntityIcon = CustomComponent | string;
 
 export type BuildNavModelProps = {
+  chatsSlug?: string;
   config: SanitizedConfig;
   i18n: ServerProps['i18n'];
   permissions: NonNullable<ServerProps['permissions']>;
@@ -62,7 +63,13 @@ export function buildCollectionGroups({
   };
 }
 
-export function buildNavModel({ config, i18n, permissions, visibleEntities }: BuildNavModelProps) {
+export function buildNavModel({
+  chatsSlug = 'chats',
+  config,
+  i18n,
+  permissions,
+  visibleEntities,
+}: BuildNavModelProps) {
   const { admin, routes } = config;
   const { entities, groups, mapEntity } = buildCollectionGroups({
     config,
@@ -90,7 +97,10 @@ export function buildNavModel({ config, i18n, permissions, visibleEntities }: Bu
       {
         icon: 'pencil-edit',
         label: 'New Chat',
-        path: formatAdminURL({ adminRoute: routes.admin, path: '/collections/chats/create' }),
+        path: formatAdminURL({
+          adminRoute: routes.admin,
+          path: `/collections/${chatsSlug}/create`,
+        }),
       },
       ...((admin as typeof admin & { nav?: { items?: NavConfigItem[] } }).nav?.items ?? []),
       ...topLevelItems,

@@ -48,7 +48,7 @@ import { initFrogbotFromPayload } from '../frogbot.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
 import { ensureFrogbotInstance } from '../instanceRegistry.js';
 import { buildSkillTools } from '../skills/tools.js';
-import type { AgentConfig } from '../types/agent.js';
+import type { AgentConfig, AgentModelId, SanitizedAgentConfig } from '../types/agent.js';
 import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../types/ai.js';
 import type { CollectionConfig } from '../types/collection.js';
 import { COLLECTION_MARKERS } from '../types/collection.js';
@@ -125,8 +125,31 @@ function sanitizeCollection(
   c: CollectionConfig,
   attachFrogbot: AttachFrogbot,
 ): PayloadCollectionConfig {
+  const views = c.admin?.components?.views;
   const out: Record<string, unknown> = {
     ...(c as unknown as Record<string, unknown>),
+    ...(c.chat === true
+      ? {
+          admin: {
+            ...c.admin,
+            components: {
+              ...c.admin?.components,
+              views: {
+                ...views,
+                edit: {
+                  ...views?.edit,
+                  root: views?.edit?.root ?? {
+                    Component: '@frogbotai/next/views#ChatView',
+                  },
+                },
+                list: views?.list ?? {
+                  Component: '@frogbotai/next/views#ChatListView',
+                },
+              },
+            },
+          },
+        }
+      : {}),
   };
 
   // Strip chat role markers — FrogBot-only keys.
@@ -461,7 +484,7 @@ function sanitizeAgents(
   pieces: SanitizedPiecesConfig,
   mode: ValidationMode,
   rootTools: AnyTool[],
-): AgentConfig[] | undefined {
+): SanitizedAgentConfig[] | undefined {
   if (!Array.isArray(agents)) {
     throw new Error('[frogbot] `agents` must be an array.');
   }
@@ -493,9 +516,13 @@ function sanitizeAgents(
     }
     slugs.add(agent.slug);
 
-    if (typeof agent.model !== 'string' || !agent.model.trim()) {
-      throw new Error(`[frogbot] Agent '${agent.slug}' requires a \`model\`.`);
+    const modelId = agent.model ?? ai.defaultModel;
+    if (typeof modelId !== 'string' || !modelId.trim()) {
+      throw new Error(
+        `[frogbot] Agent '${agent.slug}' requires a \`model\` or \`ai.defaultModel\`.`,
+      );
     }
+    agent = { ...agent, model: modelId as AgentModelId };
     if (typeof agent.instructions !== 'string' || !agent.instructions.trim()) {
       throw new Error(`[frogbot] Agent '${agent.slug}' requires \`instructions\`.`);
     }
@@ -527,11 +554,11 @@ function sanitizeAgents(
       );
     }
 
-    const model = ai.routers[agent.model]?.model ?? agent.model;
+    const model = ai.routers[modelId]?.model ?? modelId;
     const separator = model.indexOf('/');
     const provider = separator > 0 ? model.slice(0, separator) : '';
     if (!provider || !providers.has(provider)) {
-      const message = `[frogbot] Agent '${agent.slug}' model '${agent.model}' does not resolve to a configured provider. Configured providers: ${[...providers].join(', ')}. Update the agent model or configure its provider under \`ai.providers\`.`;
+      const message = `[frogbot] Agent '${agent.slug}' model '${modelId}' does not resolve to a configured provider. Configured providers: ${[...providers].join(', ')}. Update the agent model or configure its provider under \`ai.providers\`.`;
       if (mode === 'runtime') throw new Error(message);
       console.warn(message);
     }
@@ -648,7 +675,11 @@ function sanitizeAgents(
       }
     }
 
-    return { ...agent, access: agent.access ?? defaultAccessFn };
+    return {
+      ...agent,
+      model: modelId as AgentModelId,
+      access: agent.access ?? defaultAccessFn,
+    };
   });
 }
 
@@ -834,6 +865,12 @@ function buildPayloadConfig(
         Icon: '@frogbotai/next/rsc#FrogbotIcon',
         Logo: '@frogbotai/next/rsc#FrogbotLogo',
         ...admin?.components?.graphics,
+      },
+      views: {
+        ...(admin?.components?.views as Record<string, unknown> | undefined),
+        dashboard:
+          (admin?.components?.views as Record<string, unknown> | undefined)?.dashboard ??
+          ({ Component: '@frogbotai/next/views#ChatView', path: '/' } as const),
       },
     },
     meta: {
@@ -1025,6 +1062,11 @@ export function sanitize(
     pieces: pieces.pieces,
   });
   const chat = chatResult.chat;
+  const payloadCollections = chat.enabled
+    ? collections.map((collection) =>
+        collection.slug === chat.chatsSlug ? { ...collection, chat: true as const } : collection,
+      )
+    : collections;
 
   // Build collection metadata for FrogBot's sanitized config.
   const collectionsMeta: SanitizedCollectionMeta[] = collections.map((c) => ({
@@ -1034,7 +1076,7 @@ export function sanitize(
 
   // Build the Payload config and pass it through Payload's buildConfig.
   const payloadConfig = buildPayloadConfig(
-    { ...config, agents, collections, jobs },
+    { ...config, agents, collections: payloadCollections, jobs },
     async (payload) => {
       const sanitizedConfig = sanitizedConfigRef.current;
       if (!sanitizedConfig) {

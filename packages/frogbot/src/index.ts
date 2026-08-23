@@ -29,6 +29,8 @@ export type { CredentialEncryption } from './connections/encryption.js';
 export { createCredentialEncryption, CredentialCryptoError } from './connections/encryption.js';
 export type { Frogbot as FrogbotInstance } from './frogbot.js';
 export { getCachedFrogbot, getFrogbot } from './getFrogbot.js';
+export type { PersistedMessage } from './chat/messagesToUIMessages.js';
+export { messagesToUIMessages } from './chat/messagesToUIMessages.js';
 export type { GatewayHandler } from './server/gateway.js';
 export { createGatewayHandler } from './server/gateway.js';
 export type {

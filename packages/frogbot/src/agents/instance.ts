@@ -11,12 +11,12 @@ import { resolveChatContext } from '../chat/chatContext.js';
 import type { Frogbot } from '../frogbot.js';
 import type {
   AgentCallOptions,
-  AgentConfig,
   AgentGenerateOpts,
   AgentGenerateResult,
   AgentInstance,
   AgentStreamOpts,
   AgentStreamResult,
+  SanitizedAgentConfig,
 } from '../types/agent.js';
 import type { SanitizedAIConfig } from '../types/ai.js';
 import type { FrogbotRequest } from '../types/request.js';
@@ -30,7 +30,7 @@ export type AgentInstanceDeps = {
 };
 
 export function createAgentInstance(
-  agentConfig: AgentConfig,
+  agentConfig: SanitizedAgentConfig,
   deps: AgentInstanceDeps,
 ): AgentInstance {
   const { gateway, config, frogbot } = deps;

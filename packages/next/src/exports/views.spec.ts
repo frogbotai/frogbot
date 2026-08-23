@@ -2,14 +2,33 @@ import type { FrogbotSanitizedConfig } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  getCachedFrogbot: vi.fn(() => ({
+    config: {
+      agents: [{ slug: 'general' }],
+      chat: { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns' },
+    },
+  })),
   RootPage: vi.fn(() => null),
   NotFoundPage: vi.fn(() => null),
   generatePageMetadata: vi.fn((args: unknown) => Promise.resolve(args)),
 }));
 
 vi.mock('@payloadcms/next/views', () => mocks);
+vi.mock('frogbot', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('frogbot')>()),
+  getCachedFrogbot: mocks.getCachedFrogbot,
+  messagesToUIMessages: (messages: Array<Record<string, unknown>>) =>
+    messages.map(({ id, role, parts, metadata }) => ({
+      id: String(id),
+      role,
+      parts,
+      ...(metadata == null ? {} : { metadata }),
+    })),
+}));
 
-const { RootPage, NotFoundPage, generatePageMetadata } = await import('./views.js');
+const { ChatListView, ChatView, RootPage, NotFoundPage, generatePageMetadata } = await import(
+  './views.js'
+);
 
 function makeConfig(admin?: Record<string, unknown>) {
   const payloadConfig = { admin, collections: [] };
@@ -23,6 +42,132 @@ const params = Promise.resolve({ segments: [] });
 const searchParams = Promise.resolve({});
 
 describe('@frogbotai/next views', () => {
+  it('ChatView prefetches bounded, access-filtered messages for the document route', async () => {
+    const parts = [{ type: 'file', mediaType: 'image/png', url: '/api/files/1' }];
+    const user = { id: 'user-1' };
+    const find = vi.fn(() =>
+      Promise.resolve({
+        docs: [{ id: 12, role: 'assistant', parts, metadata: { source: 'test' } }],
+      }),
+    );
+
+    const element = await ChatView({
+      doc: { id: 'ignored-doc-id', agent: 'general' },
+      payload: { config: { routes: { admin: '/admin' } }, find },
+      routeSegments: ['collections', 'conversations', 'chat-1'],
+      user,
+    } as never);
+
+    expect(find).toHaveBeenCalledWith({
+      collection: 'turns',
+      depth: 0,
+      limit: 500,
+      overrideAccess: false,
+      sort: ['createdAt', 'id'],
+      user,
+      where: { chat: { equals: 'chat-1' } },
+    });
+    expect(element?.props).toEqual({
+      agent: 'general',
+      chatId: 'chat-1',
+      documentPath: '/admin/collections/conversations',
+      initialMessages: [
+        { id: '12', role: 'assistant', parts, metadata: { source: 'test' } },
+      ],
+    });
+  });
+
+  it('ChatView renders an empty uncontrolled chat on the canonical create route', async () => {
+    const find = vi.fn();
+    const element = await ChatView({
+      doc: {},
+      payload: { config: { routes: { admin: '/control' } }, find },
+      routeSegments: ['collections', 'conversations', 'create'],
+      user: { id: 'user-1' },
+    } as never);
+
+    expect(find).not.toHaveBeenCalled();
+    expect(element?.props).toEqual({
+      agent: 'general',
+      documentPath: '/control/collections/conversations',
+      initialMessages: [],
+    });
+  });
+
+  it('ChatView renders an empty uncontrolled chat on the dashboard route', async () => {
+    const find = vi.fn();
+    const element = await ChatView({
+      doc: {},
+      payload: { config: { routes: { admin: '/admin' } }, find },
+      routeSegments: [],
+      user: { id: 'user-1' },
+    } as never);
+
+    expect(find).not.toHaveBeenCalled();
+    expect(element?.props).toEqual({
+      agent: 'general',
+      documentPath: '/admin/collections/conversations',
+      initialMessages: [],
+    });
+  });
+
+  it('ChatView does not query when canonical view auth has no user', async () => {
+    const find = vi.fn();
+
+    await expect(
+      ChatView({
+        doc: { id: 'chat-1', agent: 'general' },
+        payload: { find },
+        routeSegments: ['collections', 'conversations', 'chat-1'],
+      } as never),
+    ).resolves.toBeNull();
+    expect(find).not.toHaveBeenCalled();
+  });
+
+  it('ChatListView queries the resolved collection with access enforcement', async () => {
+    const user = { id: 'user-1' };
+    const find = vi.fn(() =>
+      Promise.resolve({
+        docs: [
+          {
+            id: 'chat-1',
+            agent: 'general',
+            title: 'First chat',
+            lastMessageAt: '2026-08-23T00:00:00.000Z',
+            private: 'excluded',
+          },
+        ],
+      }),
+    );
+
+    const element = await ChatListView({
+      collectionConfig: { slug: 'conversations' },
+      limit: 20,
+      payload: { find },
+      user,
+    } as never);
+
+    expect(find).toHaveBeenCalledWith({
+      collection: 'conversations',
+      depth: 0,
+      limit: 20,
+      overrideAccess: false,
+      sort: '-lastMessageAt',
+      user,
+    });
+    expect(element.props).toEqual({
+      chats: [
+        {
+          id: 'chat-1',
+          agent: 'general',
+          title: 'First chat',
+          lastMessageAt: '2026-08-23T00:00:00.000Z',
+        },
+      ],
+      collectionSlug: 'conversations',
+    });
+  });
+
   it('RootPage forwards props with the unwrapped payload config promise', async () => {
     const { config, payloadConfig } = makeConfig();
 

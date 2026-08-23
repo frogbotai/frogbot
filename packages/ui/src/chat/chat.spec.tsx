@@ -106,6 +106,12 @@ describe('Chat', () => {
     state.agents = [];
   });
 
+  it('seeds AI SDK chat state with prefetched messages', () => {
+    render(<Chat {...props} chatId="chat-1" initialMessages={[message]} />);
+
+    expect(state.options).toMatchObject({ id: 'chat-1', messages: [message] });
+  });
+
   it('forwards custom message rendering', () => {
     state.messages = [
       { id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },

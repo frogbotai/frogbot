@@ -28,6 +28,7 @@ type ChatActions = {
 
 export type ChatProps = {
   agent: string;
+  initialMessages?: UIMessage[];
   chatId?: string | number;
   defaultChatId?: string | number;
   onChatIdChange?: (chatId: string | number | undefined) => void;
@@ -90,7 +91,8 @@ function ChatOrchestrator({
   errorContent,
   fallbackTitle = 'New chat',
   filesSlug,
-  headerSlot,
+    headerSlot,
+    initialMessages,
   messagesSlug,
   onChatIdChange,
   panel,
@@ -135,6 +137,7 @@ function ChatOrchestrator({
   let addToolOutput: ReturnType<typeof useChat>['addToolOutput'] | undefined;
   const chat = useChat({
     id: runtimeChatId,
+    messages: initialMessages,
     transport,
     experimental_throttle: throttle,
     onToolCall: adapter.executeClientTool

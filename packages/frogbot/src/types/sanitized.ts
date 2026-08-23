@@ -5,7 +5,7 @@
 // never exposed to users.
 
 import type { Frogbot } from '../frogbot.js';
-import type { AgentConfig } from './agent.js';
+import type { SanitizedAgentConfig } from './agent.js';
 import type { SanitizedAIConfig } from './ai.js';
 import type { SanitizedChatConfig } from './chat.js';
 import type { SanitizedConnectionsConfig } from './connections.js';
@@ -28,7 +28,7 @@ export type FrogbotSanitizedConfig = {
   port?: number;
   onInit?: (frogbot: Frogbot) => Promise<void> | void;
   ai?: SanitizedAIConfig;
-  agents?: AgentConfig[];
+  agents?: SanitizedAgentConfig[];
   chat: SanitizedChatConfig;
   connections: SanitizedConnectionsConfig;
   files: SanitizedFilesConfig;

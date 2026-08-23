@@ -1,8 +1,8 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import type { FrogbotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
+import { general } from 'frogbot/agents';
 
-import { assistant } from './agents';
 import { Users } from './collections';
 
 const config: FrogbotConfig = {
@@ -12,11 +12,12 @@ const config: FrogbotConfig = {
   }),
   collections: [Users],
   ai: {
+    defaultModel: 'openai/gpt-4o-mini',
     providers: {
       openai: true,
     },
   },
-  agents: [assistant],
+  agents: [general()],
 };
 
 export default buildConfig(config);

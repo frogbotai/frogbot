@@ -49,7 +49,7 @@ export type AgentProfile = {
 
 export type AgentConfig = {
   slug: string;
-  model: AgentModelId;
+  model?: AgentModelId;
   instructions: string;
   profile?: AgentProfile;
   skills?: readonly SkillConfig[];
@@ -59,6 +59,8 @@ export type AgentConfig = {
   access?: AgentAccess;
   triggers?: readonly AgentScheduleTrigger[];
 };
+
+export type SanitizedAgentConfig = AgentConfig & { model: AgentModelId };
 
 type AgentRunOpts = (
   { prompt: string; messages?: never } | { prompt?: never; messages: UIMessage[] | ModelMessage[] }
@@ -84,7 +86,7 @@ export type AgentCallOptions = {
 
 export type AgentInstance = {
   slug: string;
-  config: AgentConfig;
+  config: SanitizedAgentConfig;
   aiAgent: Agent<AgentCallOptions, ToolSet, Record<string, unknown>, never>;
   generate: (opts: AgentGenerateOpts) => Promise<AgentGenerateResult>;
   stream: (opts: AgentStreamOpts) => Promise<AgentStreamResult>;

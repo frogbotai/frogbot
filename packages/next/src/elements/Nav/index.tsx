@@ -1,5 +1,6 @@
 import { Account, Logout } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
+import { getCachedFrogbot } from 'frogbot';
 import type { NavPreferences, PayloadRequest, ServerProps } from 'payload';
 import { formatAdminURL, PREFERENCE_KEYS } from 'payload/shared';
 
@@ -52,7 +53,14 @@ export async function FrogbotNav(props: FrogbotNavProps) {
   const navConfig = (admin as typeof admin & {
     nav?: { sections?: Parameters<typeof RenderServerComponent>[0]['Component'][] };
   }).nav;
-  const navModel = buildNavModel({ config: payload.config, i18n, permissions, visibleEntities });
+  const chat = getCachedFrogbot()?.config.chat;
+  const navModel = buildNavModel({
+    chatsSlug: chat?.enabled ? chat.chatsSlug : undefined,
+    config: payload.config,
+    i18n,
+    permissions,
+    visibleEntities,
+  });
   const navPreferences = await getNavPreferences(req);
   const serverProps = { i18n, locale, params, payload, permissions, searchParams, user };
   const clientProps = { documentSubViewType, viewType };

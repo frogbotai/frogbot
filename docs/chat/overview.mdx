@@ -24,6 +24,62 @@ Chat and message collections use soft deletion and appear under **Chat** in the 
 
 Messages store the AI SDK `UIMessage.parts` array. Tool calls, tool results, reasoning, and custom data parts therefore remain available on later turns instead of being flattened into text.
 
+## Use the default chat views
+
+When an agent is configured, the admin dashboard and chat collection create route open an empty chat with the first configured agent. Sending the first message creates the chat and updates the URL to its document route without remounting the conversation.
+
+The chat collection list shows the signed-in user's readable chats. Selecting a chat opens its document view, restores up to 500 stored messages in chronological order, and continues the same conversation.
+
+These defaults also apply when your own collection uses `chat: true`. FrogBot uses that collection's slug for create, list, and document routes.
+
+## Override the chat views
+
+Set collection view components under `admin.components.views`. FrogBot preserves each configured list or edit root override on the `chat: true` collection.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Conversations: CollectionConfig = {
+  slug: 'conversations',
+  chat: true,
+  fields: [],
+  admin: {
+    components: {
+      views: {
+        list: {
+          Component: '/components/ConversationList#ConversationList'
+        },
+        edit: {
+          root: {
+            Component: '/components/Conversation#Conversation'
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Override the dashboard independently through the root config. Its path must remain `/`.
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  // required options omitted
+  admin: {
+    components: {
+      views: {
+        dashboard: {
+          Component: '/components/Dashboard#Dashboard',
+          path: '/'
+        }
+      }
+    }
+  }
+})
+```
+
 ## Customize the collections
 
 Add `chat: true` or `message: true` to adopt a collection. FrogBot keeps your slug and merges in its required fields, hooks, access rules, and admin defaults.

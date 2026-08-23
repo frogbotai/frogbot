@@ -44,6 +44,11 @@
       "import": "./dist/exports/tools.js",
       "default": "./dist/exports/tools.js"
     },
+    "./agents": {
+      "types": "./dist/exports/agents.d.ts",
+      "import": "./dist/exports/agents.js",
+      "default": "./dist/exports/agents.js"
+    },
     "./env": {
       "types": "./dist/exports/env.d.ts",
       "import": "./dist/exports/env.js",
@@ -131,6 +136,11 @@
         "types": "./dist/exports/tools.d.ts",
         "import": "./dist/exports/tools.js",
         "default": "./dist/exports/tools.js"
+      },
+      "./agents": {
+        "types": "./dist/exports/agents.d.ts",
+        "import": "./dist/exports/agents.js",
+        "default": "./dist/exports/agents.js"
       },
       "./env": {
         "types": "./dist/exports/env.d.ts",
