@@ -211,23 +211,14 @@ export function usageReportsPlugin(options: UsageReportsPluginOptions = {}): Plu
           access: options.access ?? loggedIn,
         }),
       ],
-      admin: {
-        ...config.admin,
-        components: {
-          ...config.admin?.components,
-          afterNavLinks: [
-            ...(config.admin?.components?.afterNavLinks ?? []),
-            '@frogbotai/plugin-usage-reports/client#UsageReportsNavLink',
-          ],
-          views: {
-            ...(config.admin?.components?.views ?? {}),
-            usageReports: {
-              Component: '@frogbotai/plugin-usage-reports/client#UsageReports',
-              path: '/usage-analytics',
-            },
-          },
+      settings: [
+        ...(config.settings ?? []),
+        {
+          label: 'Usage',
+          path: 'usage',
+          Component: '@frogbotai/plugin-usage-reports/client#UsageReports',
         },
-      },
+      ],
     };
   };
 }

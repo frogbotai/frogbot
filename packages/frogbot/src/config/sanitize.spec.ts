@@ -49,6 +49,62 @@ function emailWarnings(warn: ReturnType<typeof vi.fn>) {
 }
 
 describe('frogbot sanitize', () => {
+  it('preserves valid nested settings entries in order', async () => {
+    const settings = [
+      { label: 'Usage', path: 'usage', Component: './settings/Usage#Page' },
+      { label: 'Invoices', path: 'billing/invoices', Component: './settings/Invoices#Page' },
+    ];
+    const result = sanitize(makeConfig({ settings }));
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(result.settings).toEqual(settings);
+    expect((payloadConfig.admin as never as { settings: unknown[] }).settings).toEqual(settings);
+  });
+
+  it('preserves a custom settings root view', async () => {
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          components: {
+            views: {
+              settings: { Component: './Settings#Custom', path: '/custom-settings' },
+            },
+          },
+        },
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.components.views.settings).toEqual({
+      Component: './Settings#Custom',
+      path: '/custom-settings',
+    });
+  });
+
+  it.each(['', '/usage', '../usage', 'billing/../usage', 'billing//usage', 'billing\\usage'])(
+    'rejects invalid settings path %j',
+    (path) => {
+      expect(() =>
+        sanitize(
+          makeConfig({ settings: [{ label: 'Usage', path, Component: './settings/Usage#Page' }] }),
+        ),
+      ).toThrow('must be a normalized relative path');
+    },
+  );
+
+  it('rejects duplicate settings paths', () => {
+    expect(() =>
+      sanitize(
+        makeConfig({
+          settings: [
+            { label: 'Usage', path: 'usage', Component: './settings/Usage#Page' },
+            { label: 'Other', path: 'usage', Component: './settings/Other#Page' },
+          ],
+        }),
+      ),
+    ).toThrow("Duplicate settings path 'usage'");
+  });
+
   it('rejects unknown built-in collection icons', () => {
     expect(() =>
       sanitize(
@@ -629,9 +685,11 @@ describe('frogbot sanitize', () => {
       }),
     );
     const payloadConfig = await result._internal.payloadConfig;
-    const nav = (payloadConfig.admin as never as {
-      nav: { items: { label: string; path: string }[]; sections: string[] };
-    }).nav;
+    const nav = (
+      payloadConfig.admin as never as {
+        nav: { items: { label: string; path: string }[]; sections: string[] };
+      }
+    ).nav;
 
     expect(nav).toEqual({
       items: [{ label: 'Home', path: '/' }],

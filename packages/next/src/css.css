@@ -1,6 +1,7 @@
 @import "@payloadcms/next/css";
 @import "./elements/Nav/index.css";
 @import "./elements/Nav/sections.css";
+@import "./views/SettingsView.css";
 
 .template-default:has(.frogbot-nav) {
   --nav-width: 17rem;

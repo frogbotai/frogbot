@@ -46,6 +46,10 @@ async function importMap(adminLoginButtons: boolean) {
 }
 
 describe('OAuth import map', () => {
+  it('registers the canonical collection redirect', async () => {
+    expect(await importMap(false)).toContain('"@frogbotai/next/views#CollectionSettingsRedirect"');
+  });
+
   it('registers login buttons only when enabled', async () => {
     expect(await importMap(true)).toContain('"@frogbotai/plugin-oauth/client#OAuthLoginButtons"');
     expect(await importMap(false)).not.toContain(

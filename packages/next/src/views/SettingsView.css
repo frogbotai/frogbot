@@ -1,0 +1,121 @@
+.frogbot-settings-template {
+  display: grid;
+  grid-template-columns: var(--nav-width, 17rem) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.frogbot-settings-template__main {
+  background: var(--theme-bg);
+  min-width: 0;
+}
+
+.frogbot-settings-template__header {
+  align-items: center;
+  border-bottom: 1px solid var(--theme-elevation-100);
+  display: flex;
+  font-size: 1rem;
+  font-weight: 600;
+  height: 4rem;
+  padding: 0 2rem;
+}
+
+.frogbot-settings-template__content {
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: 3rem 2rem;
+}
+
+.frogbot-settings__landing h1,
+.frogbot-settings__collections h1,
+.frogbot-settings__not-found h1 {
+  margin: 0 0 0.75rem;
+}
+
+.frogbot-settings__collection-group {
+  margin-top: 2rem;
+}
+
+.frogbot-settings__collection-group h2 {
+  font-size: 1.125rem;
+  margin: 0 0 1rem;
+}
+
+.frogbot-settings__collection-list {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.frogbot-settings__landing p,
+.frogbot-settings__not-found p {
+  color: var(--theme-elevation-600);
+  margin: 0;
+}
+
+.frogbot-settings__card-list {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  list-style: none;
+  margin: 2rem 0 0;
+  padding: 0;
+}
+
+.frogbot-settings-card {
+  align-items: center;
+  background: var(--theme-elevation-0);
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-m);
+  color: var(--theme-text);
+  display: flex;
+  gap: 1rem;
+  min-height: 5.5rem;
+  padding: 1.25rem;
+  text-decoration: none;
+  transition: border-color 100ms ease, box-shadow 100ms ease;
+}
+
+.frogbot-settings-card:hover,
+.frogbot-settings-card:focus-visible {
+  border-color: var(--theme-elevation-300);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-elevation-1000) 8%, transparent);
+}
+
+.frogbot-settings-card__icon {
+  align-items: center;
+  background: var(--theme-elevation-100);
+  border-radius: var(--style-radius-s);
+  display: flex;
+  flex: 0 0 2.75rem;
+  height: 2.75rem;
+  justify-content: center;
+}
+
+.frogbot-settings-card__icon svg {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.frogbot-settings-card__label {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  .frogbot-settings-template {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .frogbot-settings-template > .frogbot-nav-shell {
+    display: none;
+  }
+
+  .frogbot-settings-template__header,
+  .frogbot-settings-template__content {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}

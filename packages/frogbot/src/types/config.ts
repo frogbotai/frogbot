@@ -19,6 +19,7 @@ import type { PayloadConfig } from './payload.js';
 import type { Piece } from './piece.js';
 import type { Plugin } from './plugin.js';
 import type { FrogbotRequest } from './request.js';
+import type { SettingsEntry } from './settings.js';
 import type { AnyTool } from './tool.js';
 
 type PayloadAfterErrorHook = NonNullable<NonNullable<PayloadConfig['hooks']>['afterError']>[number];
@@ -67,6 +68,7 @@ export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   credentialSources?: CredentialSource[];
   /** Plugin pipeline — runs serially, in order, before sanitization. */
   plugins?: Plugin[];
+  settings?: SettingsEntry[];
   /** Root-level admin configuration. */
   admin?: RootAdminConfig;
   /** Root-level custom endpoints. Handler receives FrogbotRequest. */

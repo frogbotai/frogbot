@@ -3,7 +3,6 @@
 import './styles.css';
 
 import { useConfig } from '@payloadcms/ui';
-import { formatAdminURL } from '@payloadcms/ui/shared';
 import { useEffect, useState } from 'react';
 
 import type { UsageReport, UsageReportGroup, UsageReportRow } from '../index.js';
@@ -51,18 +50,6 @@ function formatTokens(value: number): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
   return value.toLocaleString();
-}
-
-export function UsageReportsNavLink() {
-  const { config } = useConfig();
-  return (
-    <a
-      className="usage-reports-nav-link"
-      href={formatAdminURL({ adminRoute: config.routes.admin, path: '/usage-analytics' })}
-    >
-      Usage Analytics
-    </a>
-  );
 }
 
 export function UsageReports() {

@@ -6,6 +6,11 @@ type BottomRailComponents = {
   beforeSidebarClose?: PayloadComponent[];
 };
 
+type SettingsComponents = {
+  Component: PayloadComponent;
+  icon?: PayloadComponent;
+};
+
 function rewritePath(path: string): string {
   if (path.startsWith('@payloadcms/next/rsc#') || path.startsWith('@payloadcms/next/client#')) {
     return path.replace('@payloadcms/next/', '@frogbotai/next/');
@@ -105,6 +110,14 @@ export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig 
 
   if (admin?.components) {
     admin.components = rewriteComponents(admin.components) as typeof admin.components;
+  }
+
+  const settings = (admin as typeof admin & { settings?: SettingsComponents[] })?.settings;
+  if (settings) {
+    for (const entry of settings) {
+      entry.Component = rewriteComponent(entry.Component);
+      if (entry.icon) entry.icon = rewriteComponent(entry.icon);
+    }
   }
 
   if (config.collections) {

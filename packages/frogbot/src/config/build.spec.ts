@@ -176,6 +176,30 @@ describe('frogbot buildConfig', () => {
       const slugs = result.collections.map((c) => c.slug);
       expect(slugs).toContain('audits');
     });
+
+    it('plugins append settings entries in pipeline order', async () => {
+      const append =
+        (path: string): Plugin =>
+        (config) => ({
+          ...config,
+          settings: [
+            ...(config.settings ?? []),
+            { label: path, path, Component: `./settings/${path}#Page` },
+          ],
+        });
+      const result = await buildConfig(
+        makeConfig({
+          settings: [{ label: 'Account', path: 'account', Component: './settings/Account#Page' }],
+          plugins: [append('usage'), append('billing/invoices')],
+        }),
+      );
+
+      expect(result.settings.map(({ path }) => path)).toEqual([
+        'account',
+        'usage',
+        'billing/invoices',
+      ]);
+    });
   });
 
   describe('sanitization passthrough', () => {

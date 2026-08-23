@@ -1,4 +1,6 @@
 import type { FrogbotSanitizedConfig } from 'frogbot';
+import { type ComponentProps, createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -11,9 +13,22 @@ const mocks = vi.hoisted(() => ({
   RootPage: vi.fn(() => null),
   NotFoundPage: vi.fn(() => null),
   generatePageMetadata: vi.fn((args: unknown) => Promise.resolve(args)),
+  RenderServerComponent: vi.fn(() => 'rendered-setting'),
+  redirect: vi.fn(),
 }));
 
 vi.mock('@payloadcms/next/views', () => mocks);
+vi.mock('@payloadcms/ui/elements/RenderServerComponent', () => ({
+  RenderServerComponent: mocks.RenderServerComponent,
+}));
+vi.mock('@payloadcms/ui', () => ({
+  Card: ({ buttonAriaLabel, href, id, title }: Record<string, string>) =>
+    createElement('a', { 'aria-label': buttonAriaLabel, href, id }, title),
+  Link: ({ children, href, ...props }: ComponentProps<'a'>) =>
+    createElement('a', { href, ...props }, children),
+}));
+vi.mock('next/navigation', () => ({ redirect: mocks.redirect }));
+vi.mock('../elements/Nav/index.js', () => ({ FrogbotNav: () => null }));
 vi.mock('frogbot', async (importOriginal) => ({
   ...(await importOriginal<typeof import('frogbot')>()),
   getCachedFrogbot: mocks.getCachedFrogbot,
@@ -26,9 +41,15 @@ vi.mock('frogbot', async (importOriginal) => ({
     })),
 }));
 
-const { ChatListView, ChatView, RootPage, NotFoundPage, generatePageMetadata } = await import(
-  './views.js'
-);
+const {
+  ChatListView,
+  ChatView,
+  CollectionSettingsRedirect,
+  RootPage,
+  NotFoundPage,
+  SettingsView,
+  generatePageMetadata,
+} = await import('./views.js');
 
 function makeConfig(admin?: Record<string, unknown>) {
   const payloadConfig = { admin, collections: [] };
@@ -42,6 +63,282 @@ const params = Promise.resolve({ segments: [] });
 const searchParams = Promise.resolve({});
 
 describe('@frogbotai/next views', () => {
+  it('redirects collection settings entries through the configured admin route', () => {
+    CollectionSettingsRedirect({
+      collectionSlug: 'service-accounts',
+      payload: { config: { routes: { admin: '/workspace' } } },
+    } as never);
+
+    expect(mocks.redirect).toHaveBeenCalledWith('/workspace/collections/service-accounts');
+  });
+
+  it('SettingsView resolves the longest exact or prefix entry and enforces access', async () => {
+    const req = { user: { id: 'user-1' } };
+    const parentAccess = vi.fn(() => true);
+    const nestedAccess = vi.fn(() => true);
+    const payload = {
+      config: {
+        admin: {
+          settings: [
+            { access: parentAccess, Component: 'Parent', path: 'billing' },
+            { access: nestedAccess, Component: 'Nested', path: 'billing/invoices' },
+          ],
+        },
+      },
+    };
+    const props = {
+      importMap: {},
+      initPageResult: { req, visibleEntities: { collections: [], globals: [] } },
+      payload,
+      routeSegments: ['settings', 'billing', 'invoices', 'invoice-1'],
+    } as never;
+
+    await SettingsView(props);
+
+    expect(parentAccess).not.toHaveBeenCalled();
+    expect(nestedAccess).toHaveBeenCalledWith({ req });
+    expect(mocks.RenderServerComponent).toHaveBeenCalledWith({
+      Component: 'Nested',
+      importMap: {},
+      serverProps: props,
+    });
+  });
+
+  it('SettingsView defaults access to authenticated users and hides denied routes', async () => {
+    mocks.RenderServerComponent.mockClear();
+    const payload = {
+      config: { admin: { settings: [{ Component: 'Usage', path: 'usage' }] } },
+    };
+    const element = await SettingsView({
+      importMap: {},
+      initPageResult: {
+        req: { user: null },
+        visibleEntities: { collections: [], globals: [] },
+      },
+      payload,
+      routeSegments: ['settings', 'usage'],
+    } as never);
+
+    expect(mocks.RenderServerComponent).not.toHaveBeenCalled();
+    const content = element.props.children[1].props.children[1].props.children;
+    expect(content.props.className).toBe('frogbot-settings__not-found');
+  });
+
+  it('SettingsView renders the bare Account and Collections landing cards', async () => {
+    const element = await SettingsView({
+      importMap: {},
+      initPageResult: {
+        req: { user: { id: 'user-1' } },
+        visibleEntities: { collections: [], globals: [] },
+      },
+      params: { segments: ['settings'] },
+      payload: {
+        config: {
+          admin: { routes: { account: '/account' }, settings: [] },
+          routes: { admin: '/admin' },
+        },
+      },
+    } as never);
+
+    const content = element.props.children[1].props.children[1].props.children;
+    expect(content.props.className).toBe('frogbot-settings__landing');
+    const html = renderToStaticMarkup(content);
+    expect(html).toContain('href="/admin/account"');
+    expect(html).toContain('>Account<');
+    expect(html).toContain('href="/admin/settings/collections"');
+    expect(html).toContain('>Collections<');
+    expect(html.match(/frogbot-settings-card"/g)).toHaveLength(2);
+  });
+
+  it('SettingsView renders accessible nested entries with their icon and canonical path', async () => {
+    mocks.RenderServerComponent.mockClear();
+    mocks.RenderServerComponent.mockReturnValueOnce(
+      createElement('svg', { 'data-icon': 'usage' }) as never,
+    );
+    const access = vi.fn(() => true);
+    const props = {
+      importMap: { Icon: 'resolved' },
+      initPageResult: {
+        req: { user: { id: 'user-1' } },
+        visibleEntities: { collections: [], globals: [] },
+      },
+      payload: {
+        config: {
+          admin: {
+            routes: { account: '/account' },
+            settings: [
+              {
+                access,
+                Component: 'UsagePage',
+                icon: 'UsageIcon',
+                label: 'Usage',
+                path: 'workspace/usage',
+              },
+            ],
+          },
+          routes: { admin: '/control' },
+        },
+      },
+      routeSegments: ['settings'],
+    } as never;
+
+    const element = await SettingsView(props);
+    const content = element.props.children[1].props.children[1].props.children;
+    const html = renderToStaticMarkup(content);
+
+    expect(access).toHaveBeenCalledWith({ req: props.initPageResult.req });
+    expect(html).toContain('href="/control/settings/workspace/usage"');
+    expect(html).toContain('>Usage<');
+    expect(html).toContain('data-icon="usage"');
+    expect(mocks.RenderServerComponent).toHaveBeenCalledWith({
+      Component: 'UsageIcon',
+      importMap: props.importMap,
+      serverProps: props,
+    });
+  });
+
+  it.each([
+    ['root', '/', '/settings/usage'],
+    ['default', '/admin', '/admin/settings/usage'],
+    ['custom', '/control', '/control/settings/usage'],
+  ])(
+    'SettingsView formats the %s admin route without a protocol-relative URL',
+    async (_, adminRoute, expected) => {
+      const element = await SettingsView({
+        importMap: {},
+        initPageResult: {
+          req: { user: { id: 'user-1' } },
+          visibleEntities: { collections: [], globals: [] },
+        },
+        payload: {
+          config: {
+            admin: {
+              routes: { account: '/account' },
+              settings: [{ Component: 'UsagePage', label: 'Usage', path: 'usage' }],
+            },
+            routes: { admin: adminRoute },
+          },
+        },
+        routeSegments: ['settings'],
+      } as never);
+
+      const content = element.props.children[1].props.children[1].props.children;
+      const html = renderToStaticMarkup(content);
+      expect(html).toContain(`href="${expected}"`);
+      expect(html).not.toContain('href="//');
+    },
+  );
+
+  it('SettingsView omits denied entries from the server-rendered landing', async () => {
+    const denied = vi.fn(() => false);
+    const element = await SettingsView({
+      importMap: {},
+      initPageResult: {
+        req: { user: { id: 'user-1' } },
+        visibleEntities: { collections: [], globals: [] },
+      },
+      payload: {
+        config: {
+          admin: {
+            routes: { account: '/account' },
+            settings: [
+              { access: denied, Component: 'Secret', label: 'Secret', path: 'secret/nested' },
+            ],
+          },
+          routes: { admin: '/admin' },
+        },
+      },
+      routeSegments: ['settings'],
+    } as never);
+
+    const content = element.props.children[1].props.children[1].props.children;
+    const html = renderToStaticMarkup(content);
+    expect(denied).toHaveBeenCalledOnce();
+    expect(html).not.toContain('Secret');
+    expect(html.match(/frogbot-settings-card"/g)).toHaveLength(2);
+  });
+
+  it('SettingsView groups visible readable collections and links canonical custom admin routes', async () => {
+    const i18n = {
+      t: (key: string, args?: { label?: string }) =>
+        key === 'general:collections'
+          ? 'Collections'
+          : key === 'general:globals'
+            ? 'Globals'
+            : `Show all ${args?.label}`,
+    };
+    const element = await SettingsView({
+      importMap: {},
+      initPageResult: {
+        permissions: {
+          collections: {
+            posts: { read: true },
+            secrets: { read: false },
+            users: { read: true },
+          },
+        },
+        req: { i18n, user: { id: 'user-1' } },
+        visibleEntities: { collections: ['posts', 'secrets', 'users'], globals: [] },
+      },
+      payload: {
+        config: {
+          admin: { routes: { account: '/account' }, settings: [] },
+          collections: [
+            { admin: { group: 'Content' }, labels: { plural: 'Posts' }, slug: 'posts' },
+            { admin: { group: 'Content' }, labels: { plural: 'Secrets' }, slug: 'secrets' },
+            { admin: { group: 'Team' }, labels: { plural: 'Users' }, slug: 'users' },
+            { admin: { group: 'Content' }, labels: { plural: 'Hidden' }, slug: 'hidden' },
+          ],
+          routes: { admin: '/control' },
+        },
+      },
+      routeSegments: ['settings', 'collections'],
+    } as never);
+
+    const content = element.props.children[1].props.children[1].props.children;
+    const html = renderToStaticMarkup(content);
+
+    expect(html).toContain('<h2>Content</h2>');
+    expect(html).toContain('<h2>Team</h2>');
+    expect(html).toContain('href="/control/collections/posts"');
+    expect(html).toContain('href="/control/collections/users"');
+    expect(html).toContain('aria-label="Show all Posts"');
+    expect(html).not.toContain('Secrets');
+    expect(html).not.toContain('Hidden');
+  });
+
+  it('SettingsView excludes collections hidden from canonical navigation groups', async () => {
+    const i18n = {
+      t: (key: string) =>
+        ({ 'general:collections': 'Collections', 'general:globals': 'Globals' })[key] ?? key,
+    };
+    const element = await SettingsView({
+      importMap: {},
+      initPageResult: {
+        permissions: { collections: { internal: { read: true }, posts: { read: true } } },
+        req: { i18n, user: { id: 'user-1' } },
+        visibleEntities: { collections: ['internal', 'posts'], globals: [] },
+      },
+      payload: {
+        config: {
+          admin: { settings: [] },
+          collections: [
+            { admin: { group: false }, labels: { plural: 'Internal' }, slug: 'internal' },
+            { admin: {}, labels: { plural: 'Posts' }, slug: 'posts' },
+          ],
+          routes: { admin: '/admin' },
+        },
+      },
+      routeSegments: ['settings', 'collections'],
+    } as never);
+
+    const content = element.props.children[1].props.children[1].props.children;
+    const html = renderToStaticMarkup(content);
+
+    expect(html).toContain('href="/admin/collections/posts"');
+    expect(html).not.toContain('Internal');
+  });
+
   it('ChatView prefetches bounded, access-filtered messages for the document route', async () => {
     const parts = [{ type: 'file', mediaType: 'image/png', url: '/api/files/1' }];
     const user = { id: 'user-1' };
@@ -71,9 +368,7 @@ describe('@frogbotai/next views', () => {
       agent: 'general',
       chatId: 'chat-1',
       documentPath: '/admin/collections/conversations',
-      initialMessages: [
-        { id: '12', role: 'assistant', parts, metadata: { source: 'test' } },
-      ],
+      initialMessages: [{ id: '12', role: 'assistant', parts, metadata: { source: 'test' } }],
     });
   });
 

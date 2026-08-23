@@ -1,13 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { UsageReports, UsageReportsNavLink } from './UsageReports.js';
-
-const adminRoute = vi.hoisted(() => ({ value: '/admin' as string | undefined }));
+import { UsageReports } from './UsageReports.js';
 
 vi.mock('@payloadcms/ui', () => ({
   useConfig: () => ({
-    config: { routes: { admin: adminRoute.value ?? '/admin', api: '/api' } },
+    config: { routes: { admin: '/admin', api: '/api' } },
   }),
 }));
 
@@ -37,25 +35,6 @@ const modelRows = [
     costUSD: 0.5,
   },
 ];
-
-describe('UsageReportsNavLink', () => {
-  afterEach(() => {
-    adminRoute.value = '/admin';
-  });
-
-  it.each([
-    ['root admin route', '/', '/usage-analytics'],
-    ['nested admin route', '/admin', '/admin/usage-analytics'],
-    ['default admin route', undefined, '/admin/usage-analytics'],
-  ])('uses the %s', (_, configuredAdminRoute, expected) => {
-    adminRoute.value = configuredAdminRoute;
-    render(<UsageReportsNavLink />);
-
-    const href = screen.getByRole('link', { name: 'Usage Analytics' }).getAttribute('href');
-    expect(href).toBe(expected);
-    expect(href).not.toMatch(/^\/\//);
-  });
-});
 
 describe('UsageReports', () => {
   afterEach(() => vi.unstubAllGlobals());

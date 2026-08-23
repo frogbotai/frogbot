@@ -154,6 +154,62 @@ admin: {
 
 Component paths in `sections`, navigation icons, and admin component slots use `FrogbotComponent`. This type accepts either an import-map path string or a component definition and is exported from `frogbot` for reusable configuration types.
 
+## Register a settings page
+
+Add pages to the Settings card grid with the root `settings` array. Each entry requires a `label`, a relative `path`, and a `Component`. Paths may be nested, such as `security/audit`, but every normalized path must be unique. Do not include `/settings` or a leading slash.
+
+```ts
+import type { SettingsEntry } from 'frogbot'
+
+const usageSettings: SettingsEntry = {
+  label: 'Usage',
+  path: 'usage',
+  Component: './src/settings/Usage#Usage',
+  icon: './src/settings/UsageIcon#UsageIcon',
+  access: ({ req }) => Boolean(req.user)
+}
+
+export default buildConfig({
+  settings: [usageSettings]
+})
+```
+
+`icon` and `access` are optional. Without `access`, FrogBot allows any authenticated user. The access function runs before FrogBot shows the card or renders the page. Component and icon references are added to the generated import map.
+
+Plugins append entries after existing settings so they compose in plugin order:
+
+```ts
+return {
+  ...config,
+  settings: [
+    ...(config.settings ?? []),
+    {
+      label: 'Usage',
+      path: 'usage',
+      Component: '@workspace/plugin/client#UsageSettings'
+    }
+  ]
+}
+```
+
+The usage reports, OAuth, and API keys plugins follow this convention. Their cards appear only when the corresponding plugin is installed. OAuth links to the existing Connections collection, while API Keys links to its existing collection list and key-creation modal; the settings registry does not duplicate those interfaces. Both links follow custom admin routes and custom collection slugs.
+
+Registry entries add pages within FrogBot's default Settings shell; they do not override its core routes. To replace the entire Settings surface, configure a custom root view:
+
+```ts
+admin: {
+  components: {
+    views: {
+      settings: {
+        Component: './src/components/Settings#Settings',
+        exact: false,
+        path: '/settings'
+      }
+    }
+  }
+}
+```
+
 ## Customize the bottom rail
 
 Account and Settings appear in the default bottom rail. Add components around them with `admin.components.beforeBottomRail` and `admin.components.afterBottomRail`. Use `beforeSidebarClose` for controls immediately left of the expanded sidebar close button.

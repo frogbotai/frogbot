@@ -133,9 +133,7 @@ describe('rewriteComponentPaths', () => {
       '@frogbotai/next/rsc#Section',
       './components/Section#Section',
     ]);
-    expect(config.admin.components.afterBottomRail).toEqual([
-      '@frogbotai/next/rsc#AfterBottom',
-    ]);
+    expect(config.admin.components.afterBottomRail).toEqual(['@frogbotai/next/rsc#AfterBottom']);
     expect(config.admin.components.beforeBottomRail).toEqual([
       './components/BeforeBottom#BeforeBottom',
     ]);
@@ -148,6 +146,30 @@ describe('rewriteComponentPaths', () => {
     expect((config.globals[0]?.admin as never as { icon: string }).icon).toBe(
       '@frogbotai/next/rsc#GlobalIcon',
     );
+  });
+
+  it('rewrites settings component and icon paths', () => {
+    const config = makeConfig({
+      settings: [
+        {
+          label: 'Usage',
+          path: 'usage',
+          Component: '@payloadcms/next/rsc#Usage',
+          icon: '@payloadcms/next/client#UsageIcon',
+        },
+      ],
+    });
+
+    rewriteComponentPaths(config);
+
+    expect((config.admin as never as { settings: unknown[] }).settings).toEqual([
+      {
+        label: 'Usage',
+        path: 'usage',
+        Component: '@frogbotai/next/rsc#Usage',
+        icon: '@frogbotai/next/client#UsageIcon',
+      },
+    ]);
   });
 
   it('rewrites Payload folder field components', () => {

@@ -15,6 +15,38 @@ describe('apiKeysPlugin', () => {
     const result = await plugin(config);
     expect(result.collections.map((collection) => collection.slug)).toEqual(['users', 'api-keys']);
     expect(result.collections[0]?.auth).toMatchObject({ strategies: [{ name: 'api-key' }] });
+    expect(result.settings).toEqual([
+      expect.objectContaining({
+        label: 'API Keys',
+        path: 'api-keys',
+        Component: {
+          path: '@frogbotai/next/views#CollectionSettingsRedirect',
+          serverProps: { collectionSlug: 'api-keys' },
+        },
+      }),
+    ]);
+    expect(result.collections.at(-1)?.admin?.components?.beforeListTable).toEqual([
+      '@frogbotai/plugin-api-keys/client#ApiKeysManager',
+    ]);
+  });
+
+  it('uses the configured collection route and appends its settings entry', async () => {
+    const existing = { label: 'Usage', path: 'usage', Component: '@app/Usage' };
+    const result = await apiKeysPlugin({ collectionSlug: 'credentials' })({
+      secret: 'test',
+      db: {},
+      settings: [existing],
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+    } as FrogbotConfig);
+
+    expect(result.settings).toEqual([
+      existing,
+      expect.objectContaining({
+        label: 'API Keys',
+        path: 'api-keys',
+        Component: expect.objectContaining({ serverProps: { collectionSlug: 'credentials' } }),
+      }),
+    ]);
   });
 
   it('appends to existing authentication strategies', async () => {

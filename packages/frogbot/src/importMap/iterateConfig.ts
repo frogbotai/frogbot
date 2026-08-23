@@ -69,12 +69,20 @@ export function iterateConfig({
   addToImportMap(shellComponents.beforeBottomRail);
   addToImportMap(shellComponents.beforeSidebarClose);
 
-  const nav = (
-    config.admin as { nav?: { items?: { icon?: string }[]; sections?: string[] } }
-  ).nav;
+  const nav = (config.admin as { nav?: { items?: { icon?: string }[]; sections?: string[] } }).nav;
   const navItems = nav?.items;
   for (const item of navItems ?? []) addToImportMap(item.icon);
   addToImportMap(nav?.sections);
+
+  const settings = (
+    config.admin as typeof config.admin & {
+      settings?: { Component: string; icon?: string }[];
+    }
+  ).settings;
+  for (const entry of settings ?? []) {
+    addToImportMap(entry.Component);
+    addToImportMap(entry.icon);
+  }
 
   addToImportMap(config.admin?.components?.actions);
   addToImportMap(config.admin?.components?.afterDashboard);

@@ -25,6 +25,19 @@ afterAll(async () => {
 });
 
 describe('api keys import map', () => {
+  it('omits plugin settings from a core config', async () => {
+    const config = await buildConfig({
+      secret: 'test-secret',
+      db: { defaultIDType: 'number' } as never,
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+    } as FrogbotConfig);
+    const payloadConfig = await config._internal.payloadConfig;
+
+    expect(
+      (payloadConfig.admin as typeof payloadConfig.admin & { settings: unknown[] }).settings,
+    ).toEqual([]);
+  });
+
   it('generates a resolvable ApiKeysManager entry', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'frogbot-api-keys-importmap-'));
     dirs.push(dir);
@@ -43,6 +56,7 @@ describe('api keys import map', () => {
 
     expect(output).toContain("from '@frogbotai/plugin-api-keys/client'");
     expect(output).toContain('"@frogbotai/plugin-api-keys/client#ApiKeysManager"');
+    expect(output).toContain('"@frogbotai/next/views#CollectionSettingsRedirect"');
     expect(ApiKeysManager).toBeTypeOf('function');
   });
 });

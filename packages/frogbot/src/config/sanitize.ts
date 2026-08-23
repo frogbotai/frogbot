@@ -57,6 +57,7 @@ import type { Endpoint } from '../types/endpoint.js';
 import type { Piece, SanitizedPiecesConfig } from '../types/piece.js';
 import type { FrogbotRequest } from '../types/request.js';
 import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from '../types/sanitized.js';
+import type { SettingsEntry } from '../types/settings.js';
 import type { SkillConfig } from '../types/skill.js';
 import type { AnyTool } from '../types/tool.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
@@ -767,6 +768,37 @@ function validateInternalPathReservations(
   }
 }
 
+function sanitizeSettings(settings: SettingsEntry[] | undefined): SettingsEntry[] {
+  if (settings === undefined) return [];
+  if (!Array.isArray(settings)) {
+    throw new Error('[frogbot] `settings` must be an array.');
+  }
+  const paths = new Set<string>();
+  return settings.map((entry) => {
+    if (!isRecord(entry) || typeof entry.path !== 'string') {
+      throw new Error('[frogbot] Every settings entry requires a path.');
+    }
+    const path = entry.path;
+    const segments = path.split('/');
+    if (
+      !path ||
+      path !== path.trim() ||
+      path.startsWith('/') ||
+      path.includes('\\') ||
+      path.includes('?') ||
+      path.includes('#') ||
+      segments.some((segment) => !segment || segment === '.' || segment === '..')
+    ) {
+      throw new Error(`[frogbot] Settings path '${path}' must be a normalized relative path.`);
+    }
+    if (paths.has(path)) {
+      throw new Error(`[frogbot] Duplicate settings path '${path}'.`);
+    }
+    paths.add(path);
+    return entry;
+  });
+}
+
 // ─── Payload Config Building ─────────────────────────────────────────────────
 
 function buildPayloadConfig(
@@ -784,6 +816,7 @@ function buildPayloadConfig(
     'pieces',
     'plugins',
     'port',
+    'settings',
     'tools',
   ]);
   const collections = config.collections.map((collection) =>
@@ -850,13 +883,15 @@ function buildPayloadConfig(
       } & Record<string, unknown>;
     }
   ).admin;
+  const settings = sanitizeSettings(config.settings);
   out.admin = {
     ...admin,
     nav: {
       ...((admin?.nav as Record<string, unknown> | undefined) ?? {}),
-      sections:
-        (admin?.nav as { sections?: unknown[] } | undefined)?.sections ??
-        ['@frogbotai/next#CollectionsSection', '@frogbotai/next#RecentsSection'],
+      sections: (admin?.nav as { sections?: unknown[] } | undefined)?.sections ?? [
+        '@frogbotai/next#CollectionsSection',
+        '@frogbotai/next#RecentsSection',
+      ],
     },
     components: {
       ...admin?.components,
@@ -871,6 +906,13 @@ function buildPayloadConfig(
         dashboard:
           (admin?.components?.views as Record<string, unknown> | undefined)?.dashboard ??
           ({ Component: '@frogbotai/next/views#ChatView', path: '/' } as const),
+        settings:
+          (admin?.components?.views as Record<string, unknown> | undefined)?.settings ??
+          ({
+            Component: '@frogbotai/next/views#SettingsView',
+            exact: false,
+            path: '/settings',
+          } as const),
       },
     },
     meta: {
@@ -889,6 +931,7 @@ function buildPayloadConfig(
       ...admin?.importMap,
       autoGenerate: false,
     },
+    settings,
   };
 
   const i18n = (
@@ -939,6 +982,7 @@ export function sanitize(
     }
   }
   validateInternalPathReservations(config);
+  const settings = sanitizeSettings(config.settings);
   const sanitizedConfigRef: { current?: FrogbotSanitizedConfig } = {};
   const attachFrogbot: AttachFrogbot = async (req) => {
     const sanitizedConfig = sanitizedConfigRef.current;
@@ -1111,6 +1155,7 @@ export function sanitize(
     files,
     pieces,
     roles: config._roles?.roles ?? [],
+    settings,
     typescript: {
       autoGenerate:
         (config as { typescript?: { autoGenerate?: boolean } }).typescript?.autoGenerate !== false,

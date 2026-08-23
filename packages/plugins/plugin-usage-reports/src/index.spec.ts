@@ -52,12 +52,13 @@ describe('usageReportsPlugin', () => {
     const { result } = await setup();
     const usage = result.collections.find((item) => item.slug === 'ai-usage');
     expect(usage?.admin).toMatchObject({ group: 'AI', groupBy: true });
-    expect((result.admin?.components as Record<string, unknown>).views).toMatchObject({
-      usageReports: { path: '/usage-analytics' },
+    expect(result.settings).toContainEqual({
+      label: 'Usage',
+      path: 'usage',
+      Component: '@frogbotai/plugin-usage-reports/client#UsageReports',
     });
-    expect((result.admin?.components as Record<string, unknown>).afterNavLinks).toContain(
-      '@frogbotai/plugin-usage-reports/client#UsageReportsNavLink',
-    );
+    expect(result.admin?.components?.views).toBeUndefined();
+    expect(result.admin?.components?.afterNavLinks).toBeUndefined();
   });
 
   it('composes with an explicitly configured import-export plugin exactly once', async () => {

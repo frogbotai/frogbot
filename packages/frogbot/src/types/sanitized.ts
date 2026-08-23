@@ -11,6 +11,7 @@ import type { SanitizedChatConfig } from './chat.js';
 import type { SanitizedConnectionsConfig } from './connections.js';
 import type { SanitizedFilesConfig } from './files.js';
 import type { SanitizedPiecesConfig } from './piece.js';
+import type { SettingsEntry } from './settings.js';
 
 export type SanitizedCollectionMeta = {
   slug: string;
@@ -34,6 +35,7 @@ export type FrogbotSanitizedConfig = {
   files: SanitizedFilesConfig;
   pieces: SanitizedPiecesConfig;
   roles: string[];
+  settings: SettingsEntry[];
   typescript?: {
     autoGenerate?: boolean;
   };

@@ -32,6 +32,6 @@ describe('usageReportsPlugin without @frogbotai/plugin-import-export', () => {
     expect(result.endpoints?.some((item) => item.path === '/usage/report')).toBe(true);
     expect(result.collections.map((item) => item.slug)).toEqual(['users', 'ai-usage']);
     expect(usage?.admin?.components?.listMenuItems).toBeUndefined();
-    expect((result.admin?.components as Record<string, unknown>).providers).toBeUndefined();
+    expect(result.admin?.components?.providers).toBeUndefined();
   });
 });

@@ -40,6 +40,43 @@ describe('oauthPlugin', () => {
         credentialTypes: ['oauth2'],
       }),
     ]);
+    expect(result.settings).toEqual([
+      expect.objectContaining({
+        label: 'Connections',
+        path: 'connections',
+        Component: {
+          path: '@frogbotai/next/views#CollectionSettingsRedirect',
+          serverProps: { collectionSlug: 'connections' },
+        },
+      }),
+    ]);
+  });
+
+  it('uses the adopted connections route and access without changing login surfaces', async () => {
+    const read = () => false;
+    const result = await oauthPlugin({ providers: [provider] })({
+      secret: 'test',
+      db: {},
+      settings: [{ label: 'Usage', path: 'usage', Component: '@app/Usage' }],
+      admin: { components: { afterLogin: ['@app/Login'] } },
+      collections: [
+        { slug: 'users', auth: true, fields: [] },
+        { slug: 'service-accounts', connections: true, access: { read }, fields: [] },
+      ],
+    } as FrogbotConfig);
+
+    expect(result.settings).toEqual([
+      expect.objectContaining({ path: 'usage' }),
+      expect.objectContaining({
+        label: 'Connections',
+        path: 'connections',
+        access: read,
+        Component: expect.objectContaining({
+          serverProps: { collectionSlug: 'service-accounts' },
+        }),
+      }),
+    ]);
+    expect(result.admin?.components?.afterLogin).toEqual(['@app/Login']);
   });
 
   it('rejects duplicate and empty provider IDs', () => {

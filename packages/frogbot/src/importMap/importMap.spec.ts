@@ -24,7 +24,10 @@ afterAll(async () => {
   await Promise.all(dirs.map((dir) => rm(dir, { recursive: true, force: true })));
 });
 
-async function makePayloadConfig({ includeNavIcons = true } = {}): Promise<SanitizedConfig> {
+async function makePayloadConfig({
+  includeNavIcons = true,
+  includeSettings = true,
+} = {}): Promise<SanitizedConfig> {
   const config = await buildConfig({
     secret: 'test-secret',
     db: { defaultIDType: 'number' } as never,
@@ -62,6 +65,16 @@ async function makePayloadConfig({ includeNavIcons = true } = {}): Promise<Sanit
         providers: ['my-ui/client#ThemeProvider'],
       },
     },
+    settings: includeSettings
+      ? [
+          {
+            label: 'Usage',
+            path: 'usage/reports',
+            Component: './settings/Usage.tsx#Usage',
+            icon: './settings/UsageIcon.tsx#UsageIcon',
+          },
+        ]
+      : undefined,
   } as FrogbotConfig);
 
   return config._internal.payloadConfig;
@@ -73,7 +86,10 @@ describe('frogbot importMap generator', () => {
     await mkdir(join(dir, 'a'));
     await mkdir(join(dir, 'b'));
 
-    const payloadConfig = await makePayloadConfig({ includeNavIcons: false });
+    const payloadConfig = await makePayloadConfig({
+      includeNavIcons: false,
+      includeSettings: false,
+    });
     payloadConfig.admin.importMap.baseDir = dir;
     (payloadConfig.admin as never as { nav: { sections: string[] } }).nav.sections = [];
 
@@ -103,6 +119,7 @@ describe('frogbot importMap generator', () => {
     expect(output).toContain("from '@frogbotai/next/rsc'");
     expect(output).toContain("from '@frogbotai/next/views'");
     expect(output).toContain('"@frogbotai/next/views#ChatView"');
+    expect(output).toContain('"@frogbotai/next/views#SettingsView"');
     expect(output).toContain('"@frogbotai/next/rsc#CollectionCards"');
     expect(output).toContain("from './fields/NameField.tsx'");
     expect(output).toContain("from './components/UserIcon.tsx'");
@@ -112,6 +129,8 @@ describe('frogbot importMap generator', () => {
     expect(output).toContain("from './components/BeforeBottom.tsx'");
     expect(output).toContain("from './components/BeforeClose.tsx'");
     expect(output).toContain("from 'my-ui/client'");
+    expect(output).toContain("from './settings/Usage.tsx'");
+    expect(output).toContain("from './settings/UsageIcon.tsx'");
     expect(output).not.toContain('@payloadcms');
     expect(output).not.toContain("import('payload')");
   });

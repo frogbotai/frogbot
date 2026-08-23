@@ -63,6 +63,9 @@ export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
     const authCollection = options.authCollection ?? 'users';
     const connectionsSlug =
       config.collections.find((collection) => collection.connections)?.slug ?? 'connections';
+    const connectionsAccess = config.collections.find(
+      (collection) => collection.slug === connectionsSlug,
+    )?.access?.read;
     const statesSlug = options.statesSlug ?? 'oauth-states';
     const auth = config.collections.find((collection) => collection.slug === authCollection);
     if (!auth || auth.auth === undefined || auth.auth === false) {
@@ -181,6 +184,18 @@ export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
         : [];
     return {
       ...config,
+      settings: [
+        ...(config.settings ?? []),
+        {
+          label: 'Connections',
+          path: 'connections',
+          Component: {
+            path: '@frogbotai/next/views#CollectionSettingsRedirect',
+            serverProps: { collectionSlug: connectionsSlug },
+          },
+          access: connectionsAccess,
+        },
+      ],
       admin: {
         ...config.admin,
         components: {
