@@ -50,6 +50,58 @@ describe('flag parts', () => {
     expect(screen.getByTestId('data-prompt')).toBeTruthy();
   });
 
+  it('renders its BEM inventory', async () => {
+    const { renderFlagPart } = await loadFlagParts();
+    const { rerender } = render(
+      <MessagePart
+        part={{ type: 'data-paste', data: { text: 'Pasted content' } }}
+        renderData={renderFlagPart}
+      />,
+    );
+    expect(screen.getByTestId('data-paste').className).toBe(
+      'fb-flag-part fb-flag-part--paste',
+    );
+    expect(screen.getByText('Pasted content').className).toBe('fb-flag-part__preview');
+    expect(screen.getByText('PASTED').className).toBe('fb-flag-part__label');
+
+    rerender(
+      <MessagePart
+        part={{
+          type: 'data-page-context',
+          data: {
+            tabId: 1,
+            url: 'https://example.com',
+            title: 'Example',
+            content: 'Page content',
+            favicon: '/favicon.ico',
+          },
+        }}
+        renderData={renderFlagPart}
+      />,
+    );
+    expect(screen.getByTestId('data-page-context').className).toBe(
+      'fb-flag-part fb-flag-part--page-context',
+    );
+    expect(screen.getByText('Example').parentElement?.className).toBe('fb-flag-part__header');
+    expect(screen.getByRole('presentation').className).toBe('fb-flag-part__favicon');
+    expect(screen.getByRole('link').className).toBe('fb-flag-part__url');
+    expect(screen.getByText('Page content').className).toBe('fb-flag-part__content');
+
+    rerender(
+      <MessagePart
+        part={{ type: 'data-prompt', data: { id: 'prompt-1', title: 'Reusable prompt' } }}
+        renderData={renderFlagPart}
+      />,
+    );
+    expect(screen.getByTestId('data-prompt').className).toBe(
+      'fb-flag-part fb-flag-part--prompt',
+    );
+    expect(screen.getByText('Reusable prompt').className).toBe(
+      'fb-flag-part__preview fb-flag-part__preview--prompt',
+    );
+    expect(screen.getByText('PROMPT').className).toBe('fb-flag-part__label');
+  });
+
   it('preserves data-paste while stripping unknown standard-part fields', async () => {
     const { renderFlagPart } = await loadFlagParts();
     expect(renderFlagPart).toBeTypeOf('function');

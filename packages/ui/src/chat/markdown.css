@@ -1,0 +1,152 @@
+.fb-markdown__paragraph,
+.fb-markdown__ordered-list,
+.fb-markdown__unordered-list,
+.fb-markdown__list-item {
+  font-size: 1rem;
+  line-height: 1.75rem;
+}
+
+.fb-markdown__paragraph,
+.fb-markdown__heading-1,
+.fb-markdown__heading-2,
+.fb-markdown__heading-3,
+.fb-markdown__heading-4,
+.fb-markdown__heading-5,
+.fb-markdown__heading-6 {
+  overflow-wrap: break-word;
+}
+
+.fb-markdown__inline-code {
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  background-color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+}
+
+.fb-markdown__rule {
+  width: 100%;
+  margin-block: 1rem;
+  border-color: var(--theme-base-200);
+}
+
+.fb-markdown__ordered-list,
+.fb-markdown__unordered-list {
+  margin-left: 1rem;
+  list-style-position: outside;
+}
+
+.fb-markdown__ordered-list {
+  list-style-type: decimal;
+}
+
+.fb-markdown__unordered-list {
+  list-style-type: disc;
+}
+
+.fb-markdown__strong,
+.fb-markdown__heading-1,
+.fb-markdown__heading-2,
+.fb-markdown__heading-3,
+.fb-markdown__heading-4,
+.fb-markdown__heading-5,
+.fb-markdown__heading-6,
+.fb-markdown__table-header {
+  font-weight: 600;
+}
+
+.fb-markdown__emphasis,
+.fb-markdown__blockquote {
+  font-style: italic;
+}
+
+.fb-markdown__blockquote {
+  margin-inline: 0;
+  padding-left: 1rem;
+  border: 0;
+  border-left: 2px solid var(--theme-brand-400);
+}
+
+.fb-markdown__strikethrough {
+  text-decoration-line: line-through;
+}
+
+.fb-markdown__link {
+  overflow-wrap: anywhere;
+  color: #2563eb;
+}
+
+.fb-markdown__link:hover {
+  text-decoration-line: underline;
+}
+
+.fb-markdown__heading-1 {
+  font-size: 2rem;
+  line-height: 2.5rem;
+}
+
+.fb-markdown__heading-2 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.fb-markdown__heading-3 {
+  font-size: 1.25rem;
+  line-height: 1.625rem;
+}
+
+.fb-markdown__heading-4 {
+  font-size: 1.125rem;
+  line-height: 1.625rem;
+}
+
+.fb-markdown__heading-5 {
+  font-size: 1rem;
+  line-height: 1.75rem;
+}
+
+.fb-markdown__heading-6 {
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+}
+
+.fb-markdown__table-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-block: 1rem;
+  border: 1px solid var(--theme-base-300);
+  border-radius: var(--radius-md);
+}
+
+.fb-markdown__table {
+  min-width: 100%;
+  border-collapse: collapse;
+}
+
+.fb-markdown__table-head {
+  background-color: var(--theme-base-200);
+}
+
+.fb-markdown__table-row {
+  border-bottom: 1px solid var(--theme-base-300);
+}
+
+.fb-markdown__table-row:last-child {
+  border-bottom-width: 0;
+}
+
+.fb-markdown__table-header,
+.fb-markdown__table-cell {
+  padding: 0.5rem 1rem;
+  border-right: 1px solid var(--theme-base-300);
+}
+
+.fb-markdown__table-header {
+  text-align: left;
+}
+
+.fb-markdown__table-header:last-child,
+.fb-markdown__table-cell:last-child {
+  border-right-width: 0;
+}

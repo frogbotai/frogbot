@@ -17,13 +17,13 @@ function safeUrl(url: string) {
 }
 
 const createComponents = (role: MessageRole): Components => ({
-  p: ({ node: _, ...props }) => <p className="break-words text-base" {...props} />,
+  p: ({ node: _, ...props }) => <p className="fb-markdown__paragraph" {...props} />,
   code: ({ children, className, node: _, ...props }) => {
     const value = String(children);
     const code = value.replace(/\n$/, '');
     if (!value.includes('\n')) {
       return (
-        <code className="rounded bg-muted px-1 py-0.5 font-mono text-sm" {...props}>
+        <code className="fb-markdown__inline-code" {...props}>
           {code}
         </code>
       );
@@ -32,28 +32,24 @@ const createComponents = (role: MessageRole): Components => ({
     return <CodeBlock code={code} language={language} role={role} />;
   },
   pre: ({ children }) => <>{children}</>,
-  hr: ({ node: _, ...props }) => <hr className="border-base-200 my-4 w-full" {...props} />,
-  ol: ({ node: _, ...props }) => (
-    <ol className="ml-4 list-outside list-decimal text-base" {...props} />
-  ),
-  li: ({ node: _, ...props }) => <li className="text-base" {...props} />,
-  ul: ({ node: _, ...props }) => (
-    <ul className="ml-4 list-outside list-disc text-base" {...props} />
-  ),
-  strong: ({ node: _, ...props }) => <strong className="font-semibold" {...props} />,
-  em: ({ node: _, ...props }) => <span className="italic" {...props} />,
+  hr: ({ node: _, ...props }) => <hr className="fb-markdown__rule" {...props} />,
+  ol: ({ node: _, ...props }) => <ol className="fb-markdown__ordered-list" {...props} />,
+  li: ({ node: _, ...props }) => <li className="fb-markdown__list-item" {...props} />,
+  ul: ({ node: _, ...props }) => <ul className="fb-markdown__unordered-list" {...props} />,
+  strong: ({ node: _, ...props }) => <strong className="fb-markdown__strong" {...props} />,
+  em: ({ node: _, ...props }) => <span className="fb-markdown__emphasis" {...props} />,
   blockquote: ({ node: _, ...props }) => (
     <blockquote
-      className="border-brand-400 mx-0 border-0 border-l-[2px] border-solid pl-4 italic"
+      className="fb-markdown__blockquote"
       {...props}
     />
   ),
-  del: ({ node: _, ...props }) => <span className="line-through" {...props} />,
+  del: ({ node: _, ...props }) => <span className="fb-markdown__strikethrough" {...props} />,
   a: ({ children, href, node: _, ...props }) => {
     if (!href || !safeUrl(href)) return <Fragment>{children}</Fragment>;
     return (
       <a
-        className="break-all text-blue-600 hover:underline"
+        className="fb-markdown__link"
         href={href}
         rel="noreferrer"
         target={href.startsWith('http') ? '_blank' : undefined}
@@ -63,32 +59,32 @@ const createComponents = (role: MessageRole): Components => ({
       </a>
     );
   },
-  h1: ({ node: _, ...props }) => <h1 className="break-words text-3xl font-semibold" {...props} />,
-  h2: ({ node: _, ...props }) => <h2 className="break-words text-2xl font-semibold" {...props} />,
-  h3: ({ node: _, ...props }) => <h3 className="break-words text-xl font-semibold" {...props} />,
-  h4: ({ node: _, ...props }) => <h4 className="break-words text-lg font-semibold" {...props} />,
-  h5: ({ node: _, ...props }) => <h5 className="break-words text-base font-semibold" {...props} />,
-  h6: ({ node: _, ...props }) => <h6 className="break-words text-sm font-semibold" {...props} />,
+  h1: ({ node: _, ...props }) => <h1 className="fb-markdown__heading-1" {...props} />,
+  h2: ({ node: _, ...props }) => <h2 className="fb-markdown__heading-2" {...props} />,
+  h3: ({ node: _, ...props }) => <h3 className="fb-markdown__heading-3" {...props} />,
+  h4: ({ node: _, ...props }) => <h4 className="fb-markdown__heading-4" {...props} />,
+  h5: ({ node: _, ...props }) => <h5 className="fb-markdown__heading-5" {...props} />,
+  h6: ({ node: _, ...props }) => <h6 className="fb-markdown__heading-6" {...props} />,
   table: ({ children, node: _, ...props }) => (
-    <div className="border-base-300 my-4 overflow-hidden overflow-x-auto rounded-md border border-solid">
-      <table className="min-w-full border-collapse" {...props}>
+    <div className="fb-markdown__table-container">
+      <table className="fb-markdown__table" {...props}>
         {children}
       </table>
     </div>
   ),
-  thead: ({ node: _, ...props }) => <thead className="bg-base-200" {...props} />,
+  thead: ({ node: _, ...props }) => <thead className="fb-markdown__table-head" {...props} />,
   tbody: ({ node: _, ...props }) => <tbody {...props} />,
   tr: ({ node: _, ...props }) => (
-    <tr className="border-base-300 border-b border-solid last:border-b-0" {...props} />
+    <tr className="fb-markdown__table-row" {...props} />
   ),
   th: ({ node: _, ...props }) => (
     <th
-      className="border-base-300 border-r border-solid px-4 py-2 text-left font-semibold last:border-r-0"
+      className="fb-markdown__table-header"
       {...props}
     />
   ),
   td: ({ node: _, ...props }) => (
-    <td className="border-base-300 border-r border-solid px-4 py-2 last:border-r-0" {...props} />
+    <td className="fb-markdown__table-cell" {...props} />
   ),
 });
 

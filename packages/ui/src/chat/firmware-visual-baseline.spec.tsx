@@ -7,22 +7,11 @@ import { expect, it, vi } from 'vitest';
 import { Composer } from './composer';
 
 const firmwareComposerBaseline = {
-  shell: [
-    'gradient-wrapper',
-    'gradient-container',
-    'rounded-[20px]',
-    'border-base-300',
-    'bg-base-200',
-    'p-3',
-  ],
-  textarea: [
-    'gradient-textarea',
-    'font-payload',
-    'bg-base-200',
-    'placeholder:text-base-500',
-    'max-h-[calc(75dvh)]',
-  ],
-  submit: ['rounded-full'],
+  wrapper: 'fb-composer__gradient',
+  gradientContainer: 'fb-composer__gradient-container',
+  panel: 'fb-composer__panel',
+  textarea: 'fb-composer__textarea',
+  submit: 'fb-composer__action fb-composer__submit',
 };
 
 it('matches the canonical Firmware theme foundation', () => {
@@ -43,22 +32,18 @@ it('matches the canonical Firmware composer shell', () => {
     <Composer aria-label="Message" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />,
   );
 
-  const wrapper = container.querySelector('.gradient-wrapper');
-  const gradientContainer = container.querySelector('.gradient-container');
+  const wrapper = container.querySelector(`.${firmwareComposerBaseline.wrapper}`);
+  const gradientContainer = container.querySelector(
+    `.${firmwareComposerBaseline.gradientContainer}`,
+  );
   const panel = gradientContainer?.firstElementChild;
   const textarea = screen.getByLabelText('Message');
   fireEvent.change(textarea, { target: { value: 'Hello' } });
   const submit = screen.getByRole('button', { name: 'Send' });
 
-  expect(wrapper?.classList).toContain(firmwareComposerBaseline.shell[0]);
-  expect(gradientContainer?.classList).toContain(firmwareComposerBaseline.shell[1]);
-  for (const className of firmwareComposerBaseline.shell.slice(2)) {
-    expect(panel?.classList).toContain(className);
-  }
-  for (const className of firmwareComposerBaseline.textarea) {
-    expect(textarea.classList).toContain(className);
-  }
-  for (const className of firmwareComposerBaseline.submit) {
-    expect(submit.classList).toContain(className);
-  }
+  expect(wrapper?.className).toBe(firmwareComposerBaseline.wrapper);
+  expect(gradientContainer?.className).toBe(firmwareComposerBaseline.gradientContainer);
+  expect(panel?.className).toBe(firmwareComposerBaseline.panel);
+  expect(textarea.className).toBe(firmwareComposerBaseline.textarea);
+  expect(submit.className).toBe(firmwareComposerBaseline.submit);
 });

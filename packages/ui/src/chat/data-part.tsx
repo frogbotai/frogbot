@@ -35,7 +35,7 @@ export function DataPart({
       <pre
         data-part="data"
         data-data-type={part.type.slice(5)}
-        className="overflow-x-auto rounded-lg border border-border bg-muted p-3 text-xs"
+        className="fb-data-part"
       >
         {content}
       </pre>

@@ -4,7 +4,6 @@ import { type ComponentProps, createContext, useContext, useState } from 'react'
 
 import { useHotkey } from '../hooks/use-hotkey';
 import { useIsMobile } from '../hooks/use-mobile';
-import { cn } from '../lib/utils';
 import { Sheet, SheetContent, SheetTitle } from './sheet';
 
 interface SidebarValue {
@@ -47,7 +46,7 @@ export function SidebarProvider({
     <SidebarContext.Provider
       value={{ isMobile, open, openMobile, setOpen, setOpenMobile, toggleSidebar }}
     >
-      <div className={cn('flex min-h-svh w-full', className)} {...props}>
+      <div className={`fb-sidebar-provider${className ? ` ${className}` : ''}`} {...props}>
         {children}
       </div>
     </SidebarContext.Provider>
@@ -63,8 +62,8 @@ export function Sidebar({
   if (isMobile) {
     return (
       <Sheet open={openMobile} onOpenChange={setOpenMobile}>
-        <SheetContent className="w-72 bg-sidebar p-0 text-sidebar-foreground" side={side}>
-          <SheetTitle className="sr-only">Sidebar</SheetTitle>
+        <SheetContent className="fb-sidebar fb-sidebar--mobile" side={side}>
+          <SheetTitle className="fb-sidebar__title">Sidebar</SheetTitle>
           {children}
         </SheetContent>
       </Sheet>
@@ -72,10 +71,7 @@ export function Sidebar({
   }
   return (
     <aside
-      className={cn(
-        'w-64 border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] data-[closed=true]:w-0',
-        className,
-      )}
+      className={`fb-sidebar fb-sidebar--desktop${className ? ` ${className}` : ''}`}
       data-closed={!open}
       {...props}
     >
@@ -84,7 +80,7 @@ export function Sidebar({
   );
 }
 export function SidebarInset({ className, ...props }: ComponentProps<'main'>) {
-  return <main className={cn('min-w-0 flex-1', className)} {...props} />;
+  return <main className={`fb-sidebar__inset${className ? ` ${className}` : ''}`} {...props} />;
 }
 export function SidebarTrigger({ className, ...props }: ComponentProps<'button'>) {
   const { toggleSidebar } = useSidebar();

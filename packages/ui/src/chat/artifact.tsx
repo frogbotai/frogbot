@@ -96,11 +96,9 @@ export function ArtifactView({ artifact: artifactProp }: { artifact?: Artifact }
     return <definition.render artifact={artifact} setArtifact={context.setArtifact} />;
   }
   return (
-    <div data-artifact-kind={artifact.kind} className="rounded-lg border border-border p-3">
+    <div data-artifact-kind={artifact.kind} className="fb-artifact">
       <strong>{artifact.title ?? artifact.kind}</strong>
-      <pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-xs">
-        {serialize(artifact.content)}
-      </pre>
+      <pre className="fb-artifact__content">{serialize(artifact.content)}</pre>
     </div>
   );
 }
@@ -115,11 +113,11 @@ export function ArtifactViewer({ id, onClose }: { id?: string; onClose?: () => v
   return (
     <aside
       data-artifact-viewer
-      className="fixed inset-y-0 right-0 z-40 flex w-[min(48rem,90vw)] min-w-80 resize-x flex-col overflow-auto border-l border-border bg-background shadow-xl"
+      className="fb-artifact__viewer"
     >
-      <header className="flex items-center justify-between border-b border-border p-3">
+      <header className="fb-artifact__header">
         <strong>{context.artifact.title ?? context.artifact.kind}</strong>
-        <div className="flex gap-2">
+        <div className="fb-artifact__actions">
           <button type="button" onClick={() => void context.saveArtifact()}>
             Save
           </button>
@@ -130,7 +128,7 @@ export function ArtifactViewer({ id, onClose }: { id?: string; onClose?: () => v
           )}
         </div>
       </header>
-      <div className="min-h-0 flex-1 overflow-auto p-4">
+      <div className="fb-artifact__body">
         <ArtifactView />
       </div>
     </aside>

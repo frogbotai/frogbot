@@ -11,9 +11,9 @@ export function MessageActions({ onCopy, onEdit, onRegenerate, text }: MessageAc
     onCopy?.();
   };
   return (
-    <div className="flex items-center gap-1" aria-label="Message actions">
+    <div className="fb-message-actions" aria-label="Message actions">
       {(text != null || onCopy) && (
-        <button type="button" onClick={copy} className="rounded px-2 py-1 text-xs hover:bg-muted">
+        <button type="button" onClick={copy} className="fb-message-actions__button">
           Copy
         </button>
       )}
@@ -21,13 +21,13 @@ export function MessageActions({ onCopy, onEdit, onRegenerate, text }: MessageAc
         <button
           type="button"
           onClick={onRegenerate}
-          className="rounded px-2 py-1 text-xs hover:bg-muted"
+          className="fb-message-actions__button"
         >
           Regenerate
         </button>
       )}
       {onEdit && (
-        <button type="button" onClick={onEdit} className="rounded px-2 py-1 text-xs hover:bg-muted">
+        <button type="button" onClick={onEdit} className="fb-message-actions__button">
           Edit
         </button>
       )}

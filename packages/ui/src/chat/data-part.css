@@ -1,0 +1,9 @@
+.fb-data-part {
+  overflow-x: auto;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-muted);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+}

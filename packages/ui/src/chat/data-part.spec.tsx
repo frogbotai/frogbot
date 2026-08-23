@@ -8,7 +8,7 @@ describe('data and boundary parts', () => {
   it('renders data by default or through a consumer renderer', () => {
     const part = { type: 'data-weather' as const, data: { temperature: 72 } };
     const { rerender } = render(<MessagePart part={part} />);
-    expect(screen.getByText(/"temperature": 72/)).toBeTruthy();
+    expect(screen.getByText(/"temperature": 72/).className).toBe('fb-data-part');
     rerender(
       <MessagePart
         part={part}

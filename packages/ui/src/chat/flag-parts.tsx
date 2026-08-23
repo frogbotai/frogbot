@@ -22,12 +22,12 @@ export function renderFlagPart(part: DataPartValue) {
     return (
       <div
         data-testid="data-paste"
-        className="relative mb-2 size-[120px] rounded-lg border border-solid border-border bg-base-200 p-2 text-xs text-[var(--theme-text)]"
+        className="fb-flag-part fb-flag-part--paste"
       >
-        <div className="line-clamp-6 whitespace-pre-wrap break-words font-mono text-[10px] leading-snug opacity-90">
+        <div className="fb-flag-part__preview">
           {data.text}
         </div>
-        <div className="pointer-events-none absolute -bottom-2 left-2 rounded-full bg-base-300 px-2 py-[2px] text-[9px] font-semibold tracking-wide text-zinc-300">
+        <div className="fb-flag-part__label">
           PASTED
         </div>
       </div>
@@ -38,16 +38,16 @@ export function renderFlagPart(part: DataPartValue) {
     return (
       <article
         data-testid="data-page-context"
-        className="rounded-lg border border-border bg-muted p-3"
+        className="fb-flag-part fb-flag-part--page-context"
       >
-        <div className="flex items-center gap-2">
-          {data.favicon && <img src={data.favicon} alt="" className="size-5 rounded" />}
+        <div className="fb-flag-part__header">
+          {data.favicon && <img src={data.favicon} alt="" className="fb-flag-part__favicon" />}
           <strong>{data.title}</strong>
         </div>
-        <a href={data.url} className="text-xs text-base-600">
+        <a href={data.url} className="fb-flag-part__url">
           {data.url}
         </a>
-        <p className="mt-2 whitespace-pre-wrap text-sm">{data.content}</p>
+        <p className="fb-flag-part__content">{data.content}</p>
       </article>
     );
   }
@@ -55,12 +55,12 @@ export function renderFlagPart(part: DataPartValue) {
   return (
     <div
       data-testid="data-prompt"
-      className="relative mb-2 max-h-[120px] w-[120px] rounded-lg border border-solid border-border bg-base-200 p-2 text-xs text-[var(--theme-text)]"
+      className="fb-flag-part fb-flag-part--prompt"
     >
-      <div className="line-clamp-6 whitespace-pre-wrap break-words pb-3 font-mono text-[10px] leading-snug opacity-90">
+      <div className="fb-flag-part__preview fb-flag-part__preview--prompt">
         {data.title}
       </div>
-      <div className="pointer-events-none absolute -bottom-2 left-2 rounded-full bg-base-300 px-2 py-[2px] text-[9px] font-semibold tracking-wide text-zinc-300">
+      <div className="fb-flag-part__label">
         PROMPT
       </div>
     </div>

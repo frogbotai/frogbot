@@ -30,15 +30,15 @@ export const AgentSelector = memo(function AgentSelector({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="min-h-6 gap-1.5 rounded-lg p-2 pl-3">
+        <Button variant="outline" className="fb-agent-selector__trigger">
           <AgentAvatar agent={selected} name={selectedName} />
-          <span className="max-w-[120px] truncate">{selectedName}</span>
-          <ChevronDownIcon className="size-4 text-base-600" />
+          <span className="fb-agent-selector__trigger-name">{selectedName}</span>
+          <ChevronDownIcon className="fb-agent-selector__chevron" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="w-[200px] rounded-lg border-base-300 bg-base-250 p-2"
+        className="fb-agent-selector__content"
       >
         {agents.map((agent) => {
           const name = agent.profile?.name ?? agent.slug;
@@ -46,14 +46,14 @@ export const AgentSelector = memo(function AgentSelector({
             <DropdownMenuItem
               key={agent.slug}
               onSelect={() => onAgentChange(agent.slug)}
-              className="justify-between rounded-lg px-3 py-2.5"
+              className="fb-agent-selector__item"
             >
-              <span className="flex min-w-0 items-center gap-3">
+              <span className="fb-agent-selector__item-agent">
                 <AgentAvatar agent={agent} name={name} />
-                <span className="truncate font-medium">{name}</span>
+                <span className="fb-agent-selector__item-name">{name}</span>
               </span>
               {selectedAgent === agent.slug ? (
-                <CheckIcon className="size-4 shrink-0 text-brand-550" strokeWidth={4} />
+                <CheckIcon className="fb-agent-selector__check" strokeWidth={4} />
               ) : null}
             </DropdownMenuItem>
           );
@@ -66,8 +66,8 @@ export const AgentSelector = memo(function AgentSelector({
 function AgentAvatar({ agent, name }: { agent?: { profile?: { avatar?: string } }; name: string }) {
   if (agent?.profile?.avatar) {
     return (
-      <img src={agent.profile.avatar} alt={name} className="size-5 rounded-full object-cover" />
+      <img src={agent.profile.avatar} alt={name} className="fb-agent-selector__avatar" />
     );
   }
-  return <RobotIcon className="size-5" aria-hidden="true" />;
+  return <RobotIcon className="fb-agent-selector__avatar" aria-hidden="true" />;
 }

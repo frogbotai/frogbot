@@ -10,7 +10,7 @@ describe('MessageList', () => {
         messages={[{ id: '1', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] }]}
       />,
     );
-    const scroller = container.querySelector('.overflow-y-auto') as HTMLDivElement;
+    const scroller = container.querySelector('.fb-message-list__scroller') as HTMLDivElement;
     Object.defineProperties(scroller, {
       scrollHeight: { value: 1000 },
       clientHeight: { value: 200 },

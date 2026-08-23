@@ -1,0 +1,28 @@
+.fb-file-part__image {
+  max-width: 100%;
+  max-height: 20rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  object-fit: contain;
+}
+
+.fb-file-part__caption {
+  margin-top: 0.25rem;
+  color: var(--color-muted-foreground);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+}
+
+.fb-file-part--download {
+  display: inline-flex;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-primary);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+}
+
+.fb-file-part--download:hover {
+  background-color: var(--color-muted);
+}

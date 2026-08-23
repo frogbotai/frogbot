@@ -1,8 +1,38 @@
-@import "tailwindcss";
+@import "./components/button.css";
+@import "./components/card.css";
+@import "./components/dropdown-menu.css";
+@import "./components/input.css";
+@import "./components/select.css";
+@import "./components/sheet.css";
+@import "./components/sidebar.css";
+@import "./components/skeleton.css";
+@import "./components/tooltip.css";
+@import "./chat/agent-selector.css";
+@import "./chat/artifact.css";
+@import "./chat/attachments.css";
+@import "./chat/chat-history.css";
+@import "./chat/chat-shell.css";
+@import "./chat/chat.css";
+@import "./chat/code-block.css";
+@import "./chat/composer.css";
+@import "./chat/data-part.css";
+@import "./chat/file-part.css";
+@import "./chat/flag-parts.css";
+@import "./chat/markdown.css";
+@import "./chat/message-actions.css";
+@import "./chat/message-editor.css";
+@import "./chat/message-list.css";
+@import "./chat/message.css";
+@import "./chat/mic-control.css";
+@import "./chat/model-selector.css";
+@import "./chat/page-context-button.css";
+@import "./chat/reasoning-part.css";
+@import "./chat/source-part.css";
+@import "./chat/step-start-part.css";
+@import "./chat/tool-part.css";
+@import "./chat/tool-selector.css";
 
-@source "./**/*.{ts,tsx}";
-
-@theme inline {
+[data-fb-ui] {
   --font-payload: var(--font-body);
   --font-gilda: "Gilda Display";
   --text-xs: 0.75rem;
@@ -23,41 +53,6 @@
   --text-4xl--line-height: 2.75rem;
   --text-5xl: 3rem;
   --text-5xl--line-height: 3rem;
-  --color-base-0: var(--theme-base-0);
-  --color-base-50: var(--theme-base-50);
-  --color-base-100: var(--theme-base-100);
-  --color-base-150: var(--theme-base-150);
-  --color-base-200: var(--theme-base-200);
-  --color-base-250: var(--theme-base-250);
-  --color-base-300: var(--theme-base-300);
-  --color-base-350: var(--theme-base-350);
-  --color-base-400: var(--theme-base-400);
-  --color-base-450: var(--theme-base-450);
-  --color-base-500: var(--theme-base-500);
-  --color-base-550: var(--theme-base-550);
-  --color-base-600: var(--theme-base-600);
-  --color-base-650: var(--theme-base-650);
-  --color-base-700: var(--theme-base-700);
-  --color-base-750: var(--theme-base-750);
-  --color-base-800: var(--theme-base-800);
-  --color-base-850: var(--theme-base-850);
-  --color-base-900: var(--theme-base-900);
-  --color-base-950: var(--theme-base-950);
-  --color-base-1000: var(--theme-base-1000);
-  --color-brand-100: var(--theme-brand-100);
-  --color-brand-200: var(--theme-brand-200);
-  --color-brand-300: var(--theme-brand-300);
-  --color-brand-400: var(--theme-brand-400);
-  --color-brand-500: var(--theme-brand-500);
-  --color-brand-600: var(--theme-brand-600);
-  --color-brand-700: var(--theme-brand-700);
-  --color-brand-800: var(--theme-brand-800);
-  --color-brand-900: var(--theme-brand-900);
-  --color-red-500: var(--theme-red-500);
-  --color-red-600: var(--theme-red-600);
-  --color-red-700: var(--theme-red-700);
-  --color-green-350: var(--theme-green-350);
-  --color-orange-350: var(--theme-orange-350);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: hsl(var(--card));
@@ -89,13 +84,6 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
-  --radius-xl: var(--radius-xl);
-}
-
-[data-fb-ui] {
   --font-body:
     "Satoshi-Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;

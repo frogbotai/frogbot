@@ -5,6 +5,17 @@ import { MessageActions } from './message-actions';
 import { MessageEditor } from './message-editor';
 
 describe('message controls', () => {
+  it('renders the message actions BEM inventory', () => {
+    render(<MessageActions text="Answer" onRegenerate={() => {}} onEdit={() => {}} />);
+
+    expect(screen.getByLabelText('Message actions').className).toBe('fb-message-actions');
+    expect(screen.getAllByRole('button').map(({ className }) => className)).toEqual([
+      'fb-message-actions__button',
+      'fb-message-actions__button',
+      'fb-message-actions__button',
+    ]);
+  });
+
   it('delegates copy, regenerate, and edit actions', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });

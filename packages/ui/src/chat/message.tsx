@@ -1,7 +1,5 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 
-import { cn } from '../lib/utils';
-
 export interface MessageProps extends HTMLAttributes<HTMLElement> {
   actions?: ReactNode;
   avatar?: ReactNode;
@@ -11,26 +9,17 @@ export interface MessageProps extends HTMLAttributes<HTMLElement> {
 export function Message({ actions, avatar, children, className, role, ...props }: MessageProps) {
   return (
     <article
-      className={cn(
-        'group flex w-full gap-3 py-3',
-        role === 'user' && 'flex-row-reverse',
-        className,
-      )}
+      className={`fb-message fb-message--${role}${className ? ` ${className}` : ''}`}
       data-role={role}
       {...props}
     >
-      {avatar && <div className="shrink-0">{avatar}</div>}
+      {avatar && <div className="fb-message__avatar">{avatar}</div>}
       <div
-        className={cn(
-          'min-w-0 max-w-[85%]',
-          role === 'user' && 'rounded-2xl rounded-tr-none bg-base-300 px-5 pb-4 pt-3',
-        )}
+        className={`fb-message__body${role === 'user' ? ' fb-message__body--user' : ''}`}
       >
-        <div className="space-y-3">{children}</div>
+        <div className="fb-message__content">{children}</div>
         {actions && (
-          <div className="mt-2 flex items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-            {actions}
-          </div>
+          <div className="fb-message__actions">{actions}</div>
         )}
       </div>
     </article>

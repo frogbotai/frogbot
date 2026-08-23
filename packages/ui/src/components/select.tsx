@@ -1,10 +1,11 @@
 'use client';
 
 import * as Primitive from '@radix-ui/react-select';
-import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import type { ComponentProps } from 'react';
 
-import { cn } from '../lib/utils';
+import CheckIcon from '../icons/icons/CheckIcon';
+import ChevronDownIcon from '../icons/icons/ChevronDownIcon';
+import ChevronUpIcon from '../icons/icons/ChevronUpIcon';
 
 export const Select = Primitive.Root;
 export const SelectGroup = Primitive.Group;
@@ -16,15 +17,12 @@ export function SelectTrigger({
 }: ComponentProps<typeof Primitive.Trigger>) {
   return (
     <Primitive.Trigger
-      className={cn(
-        'flex h-9 w-full items-center justify-between whitespace-nowrap rounded-lg border border-solid border-base-300 bg-base-200 px-3 py-2 text-sm shadow-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
-        className,
-      )}
+      className={`fb-select__trigger${className ? ` ${className}` : ''}`}
       {...props}
     >
       {children}
       <Primitive.Icon>
-        <ChevronDown className="size-4 opacity-50" />
+        <ChevronDownIcon className="fb-select__trigger-icon" />
       </Primitive.Icon>
     </Primitive.Trigger>
   );
@@ -38,19 +36,16 @@ export function SelectContent({
   return (
     <Primitive.Portal>
       <Primitive.Content
-        className={cn(
-          'relative z-50 max-h-96 min-w-32 overflow-hidden rounded-lg border border-solid border-base-300 bg-base-150 shadow-md',
-          className,
-        )}
+        className={`fb-select__content${className ? ` ${className}` : ''}`}
         position={position}
         {...props}
       >
-        <Primitive.ScrollUpButton className="flex justify-center py-1">
-          <ChevronUp className="size-4" />
+        <Primitive.ScrollUpButton className="fb-select__scroll-up">
+          <ChevronUpIcon className="fb-select__scroll-up-icon" />
         </Primitive.ScrollUpButton>
-        <Primitive.Viewport className="p-1">{children}</Primitive.Viewport>
-        <Primitive.ScrollDownButton className="flex justify-center py-1">
-          <ChevronDown className="size-4" />
+        <Primitive.Viewport className="fb-select__viewport">{children}</Primitive.Viewport>
+        <Primitive.ScrollDownButton className="fb-select__scroll-down">
+          <ChevronDownIcon className="fb-select__scroll-down-icon" />
         </Primitive.ScrollDownButton>
       </Primitive.Content>
     </Primitive.Portal>
@@ -58,7 +53,10 @@ export function SelectContent({
 }
 export function SelectLabel({ className, ...props }: ComponentProps<typeof Primitive.Label>) {
   return (
-    <Primitive.Label className={cn('px-2 py-1.5 text-sm font-semibold', className)} {...props} />
+    <Primitive.Label
+      className={`fb-select__label${className ? ` ${className}` : ''}`}
+      {...props}
+    />
   );
 }
 export function SelectItem({
@@ -68,15 +66,12 @@ export function SelectItem({
 }: ComponentProps<typeof Primitive.Item>) {
   return (
     <Primitive.Item
-      className={cn(
-        'relative flex w-full cursor-default select-none items-center rounded-lg py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-base-200 focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-        className,
-      )}
+      className={`fb-select__item${className ? ` ${className}` : ''}`}
       {...props}
     >
       <Primitive.ItemText>{children}</Primitive.ItemText>
-      <Primitive.ItemIndicator className="absolute right-2">
-        <Check className="size-4" />
+      <Primitive.ItemIndicator className="fb-select__item-indicator">
+        <CheckIcon className="fb-select__item-indicator-icon" />
       </Primitive.ItemIndicator>
     </Primitive.Item>
   );
@@ -85,5 +80,10 @@ export function SelectSeparator({
   className,
   ...props
 }: ComponentProps<typeof Primitive.Separator>) {
-  return <Primitive.Separator className={cn('-mx-1 my-1 h-px bg-muted', className)} {...props} />;
+  return (
+    <Primitive.Separator
+      className={`fb-select__separator${className ? ` ${className}` : ''}`}
+      {...props}
+    />
+  );
 }

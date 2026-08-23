@@ -1,7 +1,6 @@
 'use client';
 
 import type { FrogBotSDK } from '@frogbotai/sdk';
-import { ArrowUp, Square } from 'lucide-react';
 import {
   type ClipboardEvent,
   type DragEvent,
@@ -14,7 +13,8 @@ import {
   useState,
 } from 'react';
 
-import { cn } from '../lib/utils';
+import ArrowUpIcon from '../icons/icons/ArrowUpIcon';
+import SquareIcon from '../icons/icons/SquareIcon';
 import {
   AttachmentControl,
   AttachmentPreviews,
@@ -127,7 +127,9 @@ export function Composer({
 
   return (
     <form
-      className={cn('relative w-full min-w-0', disabled && 'opacity-50', className)}
+      className={['fb-composer', disabled && 'fb-composer--disabled', className]
+        .filter(Boolean)
+        .join(' ')}
       onSubmit={submit}
       onDragEnter={handleDrag}
       onDragOver={handleDrag}
@@ -150,13 +152,15 @@ export function Composer({
         }
       />
       <div
-        className={cn(
-          'gradient-wrapper relative z-10 w-full',
-          dragging && 'gradient-wrapper-dragging',
-        )}
+        className={[
+          'fb-composer__gradient',
+          dragging && 'fb-composer__gradient--dragging',
+        ]
+          .filter(Boolean)
+          .join(' ')}
       >
-        <div className="gradient-container block w-full">
-          <div className="rounded-[20px] border border-solid border-base-300 bg-base-200 p-3">
+        <div className="fb-composer__gradient-container">
+          <div className="fb-composer__panel">
             <textarea
               {...props}
               ref={textareaRef}
@@ -169,16 +173,16 @@ export function Composer({
               }}
               onPaste={handlePaste}
               onKeyDown={handleKeyDown}
-              className="gradient-textarea mb-4 max-h-[calc(75dvh)] min-h-10 w-full resize-none overflow-y-auto border-none bg-base-200 pl-2 pt-2 font-payload text-base outline-none transition-all duration-300 placeholder:text-base-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="fb-composer__textarea"
             />
-            <div className="flex items-end justify-between">
-              <div className="flex min-w-0 flex-wrap gap-1">
+            <div className="fb-composer__controls">
+              <div className="fb-composer__start">
                 {sdk && filesSlug && (
                   <AttachmentControl add={attachments.add} disabled={disabled || pending} />
                 )}
                 {startSlot}
               </div>
-              <div className="flex items-center justify-end gap-1">
+              <div className="fb-composer__end">
                 {endSlot}
                 {!disabled && !pending && (
                   <MicControl
@@ -194,11 +198,11 @@ export function Composer({
                     <button
                       type="button"
                       onClick={onStop}
-                      className="slide-up-1 clear-button rounded-full bg-base-300 p-1.5 text-base-700 hover:bg-base-400 hover:text-base-1000 active:text-base-1000 sm:p-2"
+                      className="fb-composer__action fb-composer__stop"
                       aria-label={typeof stopContent === 'string' ? stopContent : 'Stop response'}
                     >
-                      <Square className="size-5 fill-current sm:size-6" />
-                      <span className="sr-only">{stopContent}</span>
+                      <SquareIcon className="fb-composer__action-icon fb-composer__stop-icon" />
+                      <span className="fb-composer__sr-only">{stopContent}</span>
                     </button>
                   ) : (
                     (currentValue.trim() ||
@@ -207,11 +211,11 @@ export function Composer({
                     !attachments.uploading && (
                       <button
                         type="submit"
-                        className="slide-up-1 clear-button -ml-1 rounded-full bg-brand-500 p-1.5 text-base-1000 hover:bg-brand-600 active:bg-brand-300 sm:p-2"
+                        className="fb-composer__action fb-composer__submit"
                         aria-label={typeof submitContent === 'string' ? submitContent : 'Submit'}
                       >
-                        <ArrowUp className="size-5 sm:size-6" />
-                        <span className="sr-only">{submitContent}</span>
+                        <ArrowUpIcon className="fb-composer__action-icon" />
+                        <span className="fb-composer__sr-only">{submitContent}</span>
                       </button>
                     )
                   ))}

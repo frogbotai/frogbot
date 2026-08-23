@@ -91,7 +91,7 @@ export function ThemeProvider({
   return (
     <ThemeContext.Provider value={{ mode, resolvedMode, setMode }}>
       <div
-        className={mode === 'dark' ? 'dark' : undefined}
+        className={`fb-theme${mode === 'dark' ? ' fb-theme--dark' : ''}`}
         data-fb-ui=""
         data-theme={mode}
         style={{ ...brand?.tokens, ...theme } as CSSProperties}

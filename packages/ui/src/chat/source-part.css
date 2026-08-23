@@ -1,0 +1,17 @@
+.fb-source-part--url {
+  color: var(--color-primary);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+}
+
+.fb-source-part--document {
+  display: inline-flex;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background-color: var(--color-muted);
+  color: var(--color-muted-foreground);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+}

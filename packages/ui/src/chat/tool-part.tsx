@@ -38,14 +38,14 @@ export function ToolPart({
     <div
       data-part="tool"
       data-state={part.state}
-      className="rounded-lg border border-border p-3 text-sm"
+      className="fb-tool-part"
     >
-      <div className="flex justify-between gap-3">
+      <div className="fb-tool-part__header">
         <strong>{getToolName(part)}</strong>
-        <span className="text-xs text-muted-foreground">{part.state}</span>
+        <span className="fb-tool-part__state">{part.state}</span>
       </div>
       {content !== undefined && (
-        <pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-xs">{serialize(content)}</pre>
+        <pre className="fb-tool-part__content">{serialize(content)}</pre>
       )}
     </div>
   );

@@ -1,0 +1,16 @@
+.fb-message-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.fb-message-actions__button {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.fb-message-actions__button:hover {
+  background-color: var(--muted);
+}

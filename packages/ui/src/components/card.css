@@ -1,0 +1,35 @@
+.fb-card {
+  color: var(--color-card-foreground);
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
+}
+
+.fb-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 1.5rem;
+}
+
+.fb-card__title {
+  font-weight: 600;
+  line-height: 1;
+}
+
+.fb-card__description {
+  color: var(--color-muted-foreground);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+}
+
+.fb-card__content {
+  padding: 0 1.5rem 1.5rem;
+}
+
+.fb-card__footer {
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem 1.5rem;
+}

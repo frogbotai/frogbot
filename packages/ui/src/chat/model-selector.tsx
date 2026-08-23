@@ -44,40 +44,43 @@ export const ModelSelector = memo(function ModelSelector({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="min-h-6 gap-1.5 rounded-lg p-2 pl-3">
-          <span className="max-w-[140px] truncate">{selected?.name ?? 'Default'}</span>
-          <ChevronDownIcon className="size-4 text-base-600" />
+        <Button variant="outline" className="fb-model-selector__trigger">
+          <span className="fb-model-selector__selected">{selected?.name ?? 'Default'}</span>
+          <ChevronDownIcon className="fb-model-selector__icon" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="w-[175px] rounded-lg border-base-300 bg-base-250 p-2"
+        className="fb-model-selector__content"
       >
         <DropdownMenuItem
           onSelect={() => onModelChange(undefined)}
-          className="justify-between rounded-lg px-3 py-2.5"
+          className="fb-model-selector__item"
         >
-          <span className="font-medium">Default</span>
+          <span className="fb-model-selector__label">Default</span>
           {selectedModelId === undefined ? (
-            <CheckIcon className="size-4 text-brand-550" strokeWidth={4} />
+            <CheckIcon className="fb-model-selector__check" strokeWidth={4} />
           ) : null}
         </DropdownMenuItem>
         {[...providers].map(([provider, providerModels]) => (
           <DropdownMenuSub key={provider}>
-            <DropdownMenuSubTrigger className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent">
-              <span className="font-medium">{provider}</span>
-              <ChevronRightIcon className="size-4 text-base-600" />
+            <DropdownMenuSubTrigger className="fb-model-selector__sub-trigger">
+              <span className="fb-model-selector__label">{provider}</span>
+              <ChevronRightIcon className="fb-model-selector__icon" />
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="z-50 min-w-64 rounded-lg border border-base-300 bg-base-250 p-2 shadow-md">
+            <DropdownMenuSubContent className="fb-model-selector__sub-content">
               {providerModels.map((model) => (
                 <DropdownMenuItem
                   key={model.id}
                   onSelect={() => onModelChange(model.id)}
-                  className="justify-between rounded-lg px-3 py-2.5"
+                  className="fb-model-selector__item"
                 >
-                  <span className="truncate">{model.name}</span>
+                  <span className="fb-model-selector__model-name">{model.name}</span>
                   {model.id === selectedModelId ? (
-                    <CheckIcon className="size-4 shrink-0 text-brand-550" strokeWidth={4} />
+                    <CheckIcon
+                      className="fb-model-selector__check fb-model-selector__check--fixed"
+                      strokeWidth={4}
+                    />
                   ) : null}
                 </DropdownMenuItem>
               ))}

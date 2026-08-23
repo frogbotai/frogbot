@@ -24,6 +24,7 @@ describe('ThemeProvider', () => {
     expect(container.firstElementChild?.getAttribute('style')).toContain('--primary');
     fireEvent.click(screen.getByRole('button'));
     expect(storage.set).toHaveBeenCalledWith('fb-ui-theme', 'dark');
+    expect(container.firstElementChild?.className).toBe('fb-theme fb-theme--dark');
     expect(container.firstElementChild?.getAttribute('data-theme')).toBe('dark');
   });
 

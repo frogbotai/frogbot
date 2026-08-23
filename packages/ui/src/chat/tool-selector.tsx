@@ -36,16 +36,16 @@ export const ToolSelector = memo(function ToolSelector({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-1.5 rounded-lg px-2">
-          <WrenchIcon className="size-5" />
+        <Button variant="ghost" size="sm" className="fb-tool-selector__trigger">
+          <WrenchIcon className="fb-tool-selector__trigger-icon" />
           <span>Tools</span>
-          <ChevronDownIcon className="size-4 text-base-600" />
+          <ChevronDownIcon className="fb-tool-selector__chevron" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
         side="top"
-        className="w-[220px] rounded-lg border-base-300 bg-base-250 p-2"
+        className="fb-tool-selector__content"
       >
         {tools.map((tool) => {
           const checked = selected.includes(tool.id);
@@ -59,12 +59,12 @@ export const ToolSelector = memo(function ToolSelector({
                   checked ? selected.filter((id) => id !== tool.id) : [...selected, tool.id],
                 )
               }
-              className="relative flex cursor-default select-none items-center gap-3 rounded-lg px-3 py-2.5 pr-8 text-sm outline-none focus:bg-accent"
+              className="fb-tool-selector__item"
             >
               {tool.icon}
-              <span className="truncate font-medium">{tool.name}</span>
-              <DropdownMenuItemIndicator className="absolute right-3">
-                <CheckIcon className="size-4 text-brand-550" strokeWidth={4} />
+              <span className="fb-tool-selector__name">{tool.name}</span>
+              <DropdownMenuItemIndicator className="fb-tool-selector__indicator">
+                <CheckIcon className="fb-tool-selector__check" strokeWidth={4} />
               </DropdownMenuItemIndicator>
             </DropdownMenuCheckboxItem>
           );

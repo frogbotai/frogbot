@@ -1,6 +1,7 @@
-import { createLucideIcon } from 'lucide-react';
+import createLucideIcon from '../createLucideIcon';
+import type { IconNode } from '../types';
 
-export const invalidStepIcon: any = [
+export const invalidStepIcon: IconNode = [
   [
     'circle',
     {

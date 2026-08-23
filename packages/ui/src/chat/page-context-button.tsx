@@ -1,14 +1,13 @@
 'use client';
 
-import { PlusCircleIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/tooltip';
 import { CheckIcon } from '../icons/check';
 import BookOpenIcon from '../icons/icons/BookOpenIcon';
+import PlusSignIcon from '../icons/icons/PlusSignIcon';
 import XIcon from '../icons/icons/XIcon';
-import { cn } from '../lib/utils';
 
 export interface PageContextTab {
   active: boolean;
@@ -79,21 +78,20 @@ export function PageContextButton({
   );
 
   return (
-    <div className="relative inline-block overflow-visible border-none bg-base-200 p-0 outline-none">
+    <div className="fb-page-context-button">
       <Tooltip>
         <TooltipTrigger asChild>
           <button
             ref={buttonRef}
             type="button"
             aria-label="Add tab context"
-            className={cn(
-              'slide-up-1 clear-button rounded-full p-1.5 text-base-700 hover:bg-base-300 hover:text-base-1000 active:bg-base-400 active:text-base-1000 sm:p-[9px]',
-              showMenu && 'bg-base-300',
-            )}
+            className={`fb-page-context-button__trigger${showMenu ? ' fb-page-context-button__trigger--open' : ''}`}
             onClick={handleClick}
             disabled={isLoading}
           >
-            <BookOpenIcon className={cn('size-5', !isCompact && 'sm:size-[22px]')} />
+            <BookOpenIcon
+              className={`fb-page-context-button__trigger-icon${isCompact ? '' : ' fb-page-context-button__trigger-icon--expanded'}`}
+            />
           </button>
         </TooltipTrigger>
         <TooltipContent align="center" side="top">
@@ -105,7 +103,7 @@ export function PageContextButton({
         createPortal(
           <div
             ref={menuRef}
-            className="fixed z-50 flex w-[400px] max-w-[calc(100vw-16px)] flex-col rounded-lg border border-solid border-base-300 bg-base-250 py-4 shadow-lg"
+            className="fb-page-context-button__menu"
             style={{
               left: (() => {
                 const buttonRect = buttonRef.current!.getBoundingClientRect();
@@ -116,18 +114,18 @@ export function PageContextButton({
               bottom: window.innerHeight - buttonRef.current.getBoundingClientRect().top + 10,
             }}
           >
-            <div className="flex items-center justify-between px-4 pb-2">
-              <h3 className="text-base font-bold text-base-700">Add tabs</h3>
+            <div className="fb-page-context-button__header">
+              <h3 className="fb-page-context-button__title">Add tabs</h3>
               <button
                 type="button"
                 aria-label="Close tab menu"
                 onClick={closeMenu}
-                className="clear-button text-base-600 transition-colors hover:text-base-800"
+                className="fb-page-context-button__close"
               >
-                <XIcon className="size-5" />
+                <XIcon className="fb-page-context-button__close-icon" />
               </button>
             </div>
-            <div className="flex max-h-[300px] flex-col gap-1 overflow-y-auto pl-1 pr-2">
+            <div className="fb-page-context-button__tabs">
               {tabs.map((tab) => {
                 const faviconUrl = tab.url
                   ? `https://www.google.com/s2/favicons?domain=${new URL(tab.url).hostname}&sz=32`
@@ -136,26 +134,21 @@ export function PageContextButton({
                   <div
                     key={tab.id}
                     onClick={() => handleTabToggle(tab.id)}
-                    className="clear-button slide-right-1 flex w-full items-center gap-2 rounded-lg border-none px-3 py-2 text-left transition-colors hover:bg-base-300"
+                    className="fb-page-context-button__tab"
                   >
                     {faviconUrl ? (
-                      <img src={faviconUrl} alt="" className="size-6 rounded" />
+                      <img src={faviconUrl} alt="" className="fb-page-context-button__favicon" />
                     ) : (
-                      <div className="size-6 rounded-full bg-base-800" />
+                      <div className="fb-page-context-button__favicon-placeholder" />
                     )}
-                    <p className="flex-1 truncate text-sm font-medium text-base-700">{tab.title}</p>
+                    <p className="fb-page-context-button__tab-title">{tab.title}</p>
                     <div
-                      className={cn(
-                        'flex size-4 items-center justify-center rounded-full transition-colors',
-                        selectedTabIds.has(tab.id)
-                          ? 'border-green-500 bg-green-400'
-                          : 'border-base-400 bg-transparent',
-                      )}
+                      className={`fb-page-context-button__selection${selectedTabIds.has(tab.id) ? ' fb-page-context-button__selection--selected' : ''}`}
                     >
                       {selectedTabIds.has(tab.id) ? (
-                        <CheckIcon size={10} className="text-base-100" />
+                        <CheckIcon size={10} className="fb-page-context-button__check" />
                       ) : (
-                        <PlusCircleIcon size={16} />
+                        <PlusSignIcon size={16} />
                       )}
                     </div>
                   </div>

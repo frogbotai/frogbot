@@ -1,0 +1,4 @@
+.fb-step-start {
+  margin-block: 1rem;
+  border-top: 1px solid var(--border);
+}

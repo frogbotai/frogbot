@@ -5,15 +5,15 @@ import { Markdown } from './markdown';
 export function ReasoningPart({ part }: { part: ReasoningUIPart }) {
   return (
     <details
-      className="rounded-lg border border-border bg-muted/40 p-3"
+      className="fb-reasoning-part"
       data-part="reasoning"
       data-state={part.state}
       open={part.state === 'streaming' || undefined}
     >
-      <summary className="cursor-pointer text-sm font-medium text-muted-foreground">
+      <summary className="fb-reasoning-part__summary">
         {part.state === 'streaming' ? 'Thinking...' : 'Reasoning'}
       </summary>
-      <div className="mt-3 text-sm text-muted-foreground">
+      <div className="fb-reasoning-part__content">
         <Markdown>{part.text}</Markdown>
       </div>
     </details>

@@ -57,5 +57,5 @@ export { useControlledState } from './hooks/use-controlled-state';
 export { useHotkey } from './hooks/use-hotkey';
 export { useIsMobile } from './hooks/use-mobile';
 export { useScrollToBottom } from './hooks/use-scroll-to-bottom';
-export { cn, composeRefs } from './lib/utils';
+export { composeRefs } from './lib/utils';
 export { Placeholder } from './placeholder';

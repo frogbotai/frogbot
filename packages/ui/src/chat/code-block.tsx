@@ -1,6 +1,5 @@
 import type { HTMLAttributes } from 'react';
 
-import { cn } from '../lib/utils';
 import { useTheme } from '../theme/provider';
 
 export interface CodeBlockProps extends HTMLAttributes<HTMLPreElement> {
@@ -17,13 +16,17 @@ export function CodeBlock({
   ...props
 }: CodeBlockProps) {
   const { resolvedMode } = useTheme();
+  const classes = [
+    'fb-code-block',
+    resolvedMode === 'dark' && role === 'user' ? 'fb-code-block--dark-user' : '',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <pre
-      className={cn(
-        'overflow-x-auto rounded-lg p-4 text-sm',
-        resolvedMode === 'dark' && role === 'user' ? 'bg-muted-foreground' : 'bg-muted',
-        className,
-      )}
+      className={classes}
       data-language={language}
       {...props}
     >

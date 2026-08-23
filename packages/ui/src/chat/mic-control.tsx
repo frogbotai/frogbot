@@ -2,7 +2,6 @@
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/tooltip';
 import MicIcon from '../icons/icons/MicIcon';
-import { cn } from '../lib/utils';
 import { useChatProvider } from './provider';
 import { useTranscription } from './use-transcription';
 
@@ -18,20 +17,12 @@ export function MicControl({ onText }: { onText: (text: string) => void }) {
   const active = transcription.status === 'recording' || transcription.status === 'transcribing';
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className="fb-mic-control">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <div
-              className={cn(
-                'slide-up-1 flex items-center justify-center rounded-full',
-                active && 'animate-pulse',
-              )}
-              style={{
-                boxShadow: active
-                  ? '0px 0px 0px 4px var(--theme-base-500), 0px 0px 0px 12px var(--theme-base-600)'
-                  : undefined,
-              }}
+              className={`fb-mic-control__indicator${active ? ' fb-mic-control__indicator--active animate-pulse' : ''}`}
             >
               <button
                 type="button"
@@ -42,12 +33,9 @@ export function MicControl({ onText }: { onText: (text: string) => void }) {
                     ? transcription.stop()
                     : void transcription.start()
                 }
-                className={cn(
-                  'clear-button rounded-full p-1.5 text-base-700 hover:bg-base-300 hover:text-base-1000 active:bg-base-400 active:text-base-1000 disabled:cursor-wait sm:p-2',
-                  active && 'bg-base-300 text-brand-600',
-                )}
+                className={`fb-mic-control__button${active ? ' fb-mic-control__button--active' : ''}`}
               >
-                <MicIcon className="size-5 sm:size-6" />
+                <MicIcon className="fb-mic-control__icon" />
               </button>
             </div>
           </TooltipTrigger>
@@ -57,7 +45,7 @@ export function MicControl({ onText }: { onText: (text: string) => void }) {
         </Tooltip>
       </TooltipProvider>
       {transcription.error && (
-        <span role="alert" className="text-xs text-error">
+        <span role="alert" className="fb-mic-control__error">
           {transcription.error}
         </span>
       )}

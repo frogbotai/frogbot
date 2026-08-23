@@ -8,7 +8,7 @@ export function SourcePart({ part }: { part: SourceDocumentUIPart | SourceUrlUIP
         href={part.url}
         target="_blank"
         rel="noreferrer"
-        className="text-sm text-primary underline underline-offset-2"
+        className="fb-source-part fb-source-part--url"
       >
         {part.title || part.url}
       </a>
@@ -17,7 +17,7 @@ export function SourcePart({ part }: { part: SourceDocumentUIPart | SourceUrlUIP
   return (
     <span
       data-part="source-document"
-      className="inline-flex rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground"
+      className="fb-source-part fb-source-part--document"
     >
       {part.title}
       {part.filename ? ` (${part.filename})` : ''}

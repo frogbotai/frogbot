@@ -1,0 +1,46 @@
+.fb-message {
+  display: flex;
+  width: 100%;
+  gap: 0.75rem;
+  padding-block: 0.75rem;
+}
+
+.fb-message--user {
+  flex-direction: row-reverse;
+}
+
+.fb-message__avatar {
+  flex-shrink: 0;
+}
+
+.fb-message__body {
+  min-width: 0;
+  max-width: 85%;
+}
+
+.fb-message__body--user {
+  padding: 0.75rem 1.25rem 1rem;
+  border-radius: calc(var(--radius-xl) + 0.25rem);
+  border-top-right-radius: 0;
+  background-color: var(--muted);
+}
+
+.fb-message__content > :not(:last-child) {
+  margin-bottom: 0.75rem;
+}
+
+.fb-message__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  opacity: 0;
+  transition-property: opacity;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fb-message:hover .fb-message__actions,
+.fb-message__actions:focus-within {
+  opacity: 1;
+}

@@ -40,12 +40,12 @@ describe('primitives', () => {
 
   it('exposes every button variant', () => {
     const variants = {
-      default: 'bg-base-1000',
-      destructive: 'bg-red-500',
-      outline: 'border-base-400',
-      secondary: 'bg-base-250',
-      ghost: 'hover:bg-base-400',
-      link: 'hover:underline',
+      default: 'fb-button--default',
+      destructive: 'fb-button--destructive',
+      outline: 'fb-button--outline',
+      secondary: 'fb-button--secondary',
+      ghost: 'fb-button--ghost',
+      link: 'fb-button--link',
     } as const;
     for (const variant of Object.keys(variants) as Array<keyof typeof variants>) {
       const { unmount } = render(<Button variant={variant}>{variant}</Button>);

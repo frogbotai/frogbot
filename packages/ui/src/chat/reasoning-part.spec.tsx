@@ -8,9 +8,12 @@ describe('ReasoningPart', () => {
     const { container, rerender } = render(
       <ReasoningPart part={{ type: 'reasoning', text: 'Work', state: 'streaming' }} />,
     );
-    expect(container.querySelector('details')?.open).toBe(true);
-    expect(screen.getByText('Thinking...')).toBeTruthy();
+    const details = container.querySelector('details');
+    expect(details?.className).toBe('fb-reasoning-part');
+    expect(details?.open).toBe(true);
+    expect(screen.getByText('Thinking...').className).toBe('fb-reasoning-part__summary');
+    expect(screen.getByText('Work').parentElement?.className).toBe('fb-reasoning-part__content');
     rerender(<ReasoningPart part={{ type: 'reasoning', text: 'Work', state: 'done' }} />);
-    expect(container.querySelector('details')?.open).toBe(false);
+    expect(details?.open).toBe(false);
   });
 });

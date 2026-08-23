@@ -1,8 +1,13 @@
 'use client';
 
 import type { FrogBotSDK } from '@frogbotai/sdk';
-import { FileIcon, LoaderCircle, Plus, RotateCcw, X } from 'lucide-react';
 import { type ChangeEvent, useRef, useState } from 'react';
+
+import CloseIcon from '../icons/icons/CloseIcon';
+import FileIcon from '../icons/icons/FileIcon';
+import LoadingIcon from '../icons/icons/LoadingIcon';
+import PlusSignIcon from '../icons/icons/PlusSignIcon';
+import RefreshIcon from '../icons/icons/RefreshIcon';
 
 export type FileReference = {
   id: string | number;
@@ -126,7 +131,7 @@ export function AttachmentControl({
         type="file"
         multiple
         tabIndex={-1}
-        className="pointer-events-none fixed -left-4 -top-4 size-0.5 opacity-0"
+        className="fb-attachments__input"
         onChange={select}
       />
       <button
@@ -134,9 +139,9 @@ export function AttachmentControl({
         disabled={disabled}
         aria-label="Add files"
         onClick={() => input.current?.click()}
-        className="slide-up-1 clear-button rounded-full p-1.5 text-base-700 hover:bg-base-300 hover:text-base-1000 active:bg-base-400 sm:p-2"
+        className="fb-attachments__add"
       >
-        <Plus className="size-5 sm:size-6" />
+        <PlusSignIcon className="fb-attachments__add-icon" />
       </button>
     </>
   );
@@ -153,27 +158,27 @@ export function AttachmentPreviews({
 }) {
   if (!items.length) return null;
   return (
-    <div className="relative mb-4 w-full">
-      <div className="flex w-0 min-w-full flex-row items-end gap-2 overflow-x-auto">
+    <div className="fb-attachments__previews">
+      <div className="fb-attachments__scroll">
         {items.map((item) => (
-          <div key={item.key} className="mb-4 flex flex-col gap-2">
-            <div className="relative flex aspect-video size-[120px] flex-col items-center justify-center rounded-md border border-solid border-muted bg-muted hover:border-border">
+          <div key={item.key} className="fb-attachments__item">
+            <div className="fb-attachments__preview">
               {item.preview ? (
                 <img
                   src={item.preview}
                   alt={item.file.name}
-                  className="size-full rounded-md object-cover"
+                  className="fb-attachments__image"
                 />
               ) : (
                 <>
-                  <FileIcon className="size-4" />
-                  <p className="max-w-24 truncate text-xs">{item.file.name}</p>
+                  <FileIcon className="fb-attachments__file-icon" />
+                  <p className="fb-attachments__filename">{item.file.name}</p>
                 </>
               )}
               {item.uploading && (
-                <LoaderCircle
+                <LoadingIcon
                   aria-label={`Uploading ${item.file.name}`}
-                  className="absolute size-5 animate-spin text-base-500"
+                  className="fb-attachments__loader"
                 />
               )}
               {item.error && (
@@ -182,18 +187,18 @@ export function AttachmentPreviews({
                   aria-label={`Retry ${item.file.name}`}
                   title={item.error}
                   onClick={() => retry(item.key)}
-                  className="absolute bottom-1 left-1 rounded-full bg-base-300 p-1 text-red-500"
+                  className="fb-attachments__retry"
                 >
-                  <RotateCcw className="size-3" />
+                  <RefreshIcon className="fb-attachments__retry-icon" />
                 </button>
               )}
               <button
                 type="button"
                 aria-label={`Remove ${item.file.name}`}
                 onClick={() => remove(item.key)}
-                className="absolute right-0 top-0 mr-1 mt-1 flex size-5 items-center justify-center rounded-full border-0 bg-border p-0 hover:bg-red-500"
+                className="fb-attachments__remove"
               >
-                <X className="size-3" />
+                <CloseIcon className="fb-attachments__remove-icon" />
               </button>
             </div>
           </div>
@@ -212,26 +217,26 @@ export function PastePreviews({
 }) {
   if (!items.length) return null;
   return (
-    <div className="relative mb-4 w-full">
-      <div className="flex w-0 min-w-full flex-row items-end gap-2 overflow-x-auto">
+    <div className="fb-attachments__previews">
+      <div className="fb-attachments__scroll">
         {items.map((item, index) => (
           <div
             key={item.filename}
             data-testid="paste-attachment"
-            className="relative mb-2 size-[120px] shrink-0 rounded-lg border border-solid border-border bg-base-200 p-2 text-xs text-[var(--theme-text)]"
+            className="fb-attachments__paste"
           >
-            <div className="line-clamp-6 whitespace-pre-wrap break-words font-mono text-[10px] leading-snug opacity-90">
+            <div className="fb-attachments__paste-text">
               {item.text}
             </div>
             <button
               type="button"
               aria-label={`Remove ${item.filename}`}
               onClick={() => remove(index)}
-              className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full border-0 bg-border p-0 hover:bg-red-500"
+              className="fb-attachments__remove fb-attachments__remove--paste"
             >
-              <X className="size-3" />
+              <CloseIcon className="fb-attachments__remove-icon" />
             </button>
-            <div className="pointer-events-none absolute -bottom-2 left-2 rounded-full bg-base-300 px-2 py-[2px] text-[9px] font-semibold tracking-wide text-zinc-300">
+            <div className="fb-attachments__paste-label">
               PASTED
             </div>
           </div>

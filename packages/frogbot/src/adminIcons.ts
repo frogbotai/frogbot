@@ -85,6 +85,7 @@ export const adminIconExports = [
   'SidebarLeftIcon',
   'SlackIcon',
   'SparkleIcon',
+  'SquareIcon',
   'SquareLockIcon',
   'StopIcon',
   'StoplightIcon',

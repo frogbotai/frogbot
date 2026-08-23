@@ -15,19 +15,19 @@ export function MessageEditor({ initialValue, onCancel, onSubmit }: MessageEdito
     if (value.trim()) void onSubmit(value);
   };
   return (
-    <form onSubmit={submit} className="space-y-2">
+    <form onSubmit={submit} className="fb-message-editor">
       <textarea
         aria-label="Edit message"
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        className="min-h-24 w-full resize-y rounded-lg border border-input bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        className="fb-message-editor__textarea"
       />
-      <div className="flex justify-end gap-2">
+      <div className="fb-message-editor__actions">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-md px-3 py-2 text-sm hover:bg-muted"
+            className="fb-message-editor__cancel"
           >
             Cancel
           </button>
@@ -35,7 +35,7 @@ export function MessageEditor({ initialValue, onCancel, onSubmit }: MessageEdito
         <button
           type="submit"
           disabled={!value.trim()}
-          className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground disabled:opacity-50"
+          className="fb-message-editor__submit"
         >
           Send
         </button>

@@ -256,9 +256,9 @@ function ChatOrchestrator({
       role={message.role}
       avatar={
         profile && message.role === 'assistant' ? (
-          <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-background">
+          <div className="fb-chat__assistant-avatar">
             {profile.avatar ? (
-              <img src={profile.avatar} alt={displayName} className="size-full object-cover" />
+              <img src={profile.avatar} alt={displayName} className="fb-chat__assistant-avatar-image" />
             ) : (
               initials
             )}
@@ -302,7 +302,7 @@ function ChatOrchestrator({
           renderMessage={renderMessage ?? defaultRenderMessage}
         />
       )}
-      <div className="p-4">
+      <div className="fb-chat__composer">
         <ChatStatus
           aborted={aborted}
           abortedContent={abortedContent}

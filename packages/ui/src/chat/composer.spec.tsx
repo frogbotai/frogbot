@@ -117,12 +117,12 @@ describe('Composer', () => {
     );
     const form = container.querySelector('form') as HTMLFormElement;
     fireEvent.dragEnter(form);
-    expect(container.querySelector('.gradient-wrapper')?.classList).toContain(
-      'gradient-wrapper-dragging',
+    expect(container.querySelector('.fb-composer__gradient')?.classList).toContain(
+      'fb-composer__gradient--dragging',
     );
     fireEvent.drop(form, { dataTransfer: { files: [new File(['x'], 'x.txt')] } });
-    expect(container.querySelector('.gradient-wrapper')?.classList).not.toContain(
-      'gradient-wrapper-dragging',
+    expect(container.querySelector('.fb-composer__gradient')?.classList).not.toContain(
+      'fb-composer__gradient--dragging',
     );
 
     rerender(

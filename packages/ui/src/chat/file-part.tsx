@@ -6,14 +6,14 @@ export function FilePart({ part }: { part: FileUIPart | ReasoningFileUIPart }) {
     filename || (part.type === 'reasoning-file' ? 'Reasoning attachment' : 'Attachment');
   if (part.mediaType.startsWith('image/')) {
     return (
-      <figure data-part={part.type}>
+      <figure data-part={part.type} className="fb-file-part fb-file-part--image">
         <img
           src={part.url}
           alt={label}
-          className="max-h-80 max-w-full rounded-lg border border-border object-contain"
+          className="fb-file-part__image"
         />
         {filename && (
-          <figcaption className="mt-1 text-xs text-muted-foreground">{filename}</figcaption>
+          <figcaption className="fb-file-part__caption">{filename}</figcaption>
         )}
       </figure>
     );
@@ -23,7 +23,7 @@ export function FilePart({ part }: { part: FileUIPart | ReasoningFileUIPart }) {
       data-part={part.type}
       href={part.url}
       download={filename}
-      className="inline-flex rounded-lg border border-border px-3 py-2 text-sm text-primary hover:bg-muted"
+      className="fb-file-part fb-file-part--download"
     >
       {label}
     </a>

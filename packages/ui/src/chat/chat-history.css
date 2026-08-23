@@ -1,0 +1,26 @@
+.fb-chat-history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.fb-chat-history__item {
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-lg);
+}
+
+.fb-chat-history__item--active {
+  color: var(--color-sidebar-accent-foreground);
+  background-color: var(--color-sidebar-accent);
+}
+
+.fb-chat-history__button {
+  min-width: 0;
+  flex: 1 1 0%;
+  padding: 0.5rem 0.75rem;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -4,6 +4,63 @@ import { describe, expect, it } from 'vitest';
 import { Markdown } from './markdown';
 
 describe('Markdown', () => {
+  it('renders its exact BEM inventory', () => {
+    const { container } = render(
+      <Markdown>{`# h1
+## h2
+### h3
+#### h4
+##### h5
+###### h6
+
+Paragraph with **strong**, *emphasis*, ~~removed~~, [link](https://example.com), and \`code\`.
+
+> quote
+
+1. ordered
+
+- unordered
+
+---
+
+| A | B |
+| - | - |
+| 1 | 2 |`}</Markdown>,
+    );
+
+    const inventory = new Set(
+      Array.from(container.querySelectorAll('[class]')).map((element) => element.className),
+    );
+
+    expect([...inventory].sort()).toEqual(
+      [
+        'fb-markdown__blockquote',
+        'fb-markdown__emphasis',
+        'fb-markdown__heading-1',
+        'fb-markdown__heading-2',
+        'fb-markdown__heading-3',
+        'fb-markdown__heading-4',
+        'fb-markdown__heading-5',
+        'fb-markdown__heading-6',
+        'fb-markdown__inline-code',
+        'fb-markdown__link',
+        'fb-markdown__list-item',
+        'fb-markdown__ordered-list',
+        'fb-markdown__paragraph',
+        'fb-markdown__rule',
+        'fb-markdown__strikethrough',
+        'fb-markdown__strong',
+        'fb-markdown__table',
+        'fb-markdown__table-cell',
+        'fb-markdown__table-container',
+        'fb-markdown__table-head',
+        'fb-markdown__table-header',
+        'fb-markdown__table-row',
+        'fb-markdown__unordered-list',
+      ].sort(),
+    );
+  });
+
   it('renders basic formatting and blocks raw HTML', () => {
     const { container } = render(
       <Markdown>{'## Title\n\n**bold** `code` <script>alert(1)</script>'}</Markdown>,
@@ -27,7 +84,7 @@ describe('Markdown', () => {
   it('renders ordered lists', () => {
     const { container } = render(<Markdown>{'1. one\n2. two'}</Markdown>);
     const list = container.querySelector('ol');
-    expect(list?.classList.contains('list-decimal')).toBe(true);
+    expect(list?.className).toBe('fb-markdown__ordered-list');
     expect(list?.querySelectorAll(':scope > li')).toHaveLength(2);
   });
 
@@ -39,8 +96,7 @@ describe('Markdown', () => {
   it('renders blockquotes', () => {
     const { container } = render(<Markdown>{'> quoted'}</Markdown>);
     const blockquote = container.querySelector('blockquote');
-    expect(blockquote?.classList.contains('border-brand-400')).toBe(true);
-    expect(blockquote?.classList.contains('italic')).toBe(true);
+    expect(blockquote?.className).toBe('fb-markdown__blockquote');
     expect(blockquote?.textContent).not.toContain('>');
   });
 
@@ -49,25 +105,24 @@ describe('Markdown', () => {
     const table = container.querySelector('table');
     expect(table?.querySelector('thead')).not.toBeNull();
     expect(table?.querySelectorAll('th')).toHaveLength(2);
-    expect(table?.parentElement?.classList.contains('border-base-300')).toBe(true);
-    expect(table?.parentElement?.classList.contains('overflow-x-auto')).toBe(true);
+    expect(table?.parentElement?.className).toBe('fb-markdown__table-container');
   });
 
   it('renders horizontal rules', () => {
     const { container } = render(<Markdown>---</Markdown>);
-    expect(container.querySelector('hr')?.className).toBe('border-base-200 my-4 w-full');
+    expect(container.querySelector('hr')?.className).toBe('fb-markdown__rule');
   });
 
   it('renders strikethrough', () => {
     const { container } = render(<Markdown>~~removed~~</Markdown>);
-    expect(container.querySelector('.line-through')?.textContent).toBe('removed');
+    expect(container.querySelector('.fb-markdown__strikethrough')?.textContent).toBe('removed');
   });
 
   it('renders h4 through h6 typography', () => {
     render(<Markdown>{'#### h4\n\n##### h5\n\n###### h6'}</Markdown>);
-    expect(screen.getByRole('heading', { level: 4 }).classList.contains('text-lg')).toBe(true);
-    expect(screen.getByRole('heading', { level: 5 }).classList.contains('text-base')).toBe(true);
-    expect(screen.getByRole('heading', { level: 6 }).classList.contains('text-sm')).toBe(true);
+    expect(screen.getByRole('heading', { level: 4 }).className).toBe('fb-markdown__heading-4');
+    expect(screen.getByRole('heading', { level: 5 }).className).toBe('fb-markdown__heading-5');
+    expect(screen.getByRole('heading', { level: 6 }).className).toBe('fb-markdown__heading-6');
   });
 
   it('rejects data link protocols', () => {
@@ -78,17 +133,13 @@ describe('Markdown', () => {
   it('renders safe links with Firmware typography', () => {
     render(<Markdown>{'[safe](https://example.com)'}</Markdown>);
     const link = screen.getByRole('link', { name: 'safe' });
-    expect(link.classList.contains('text-blue-600')).toBe(true);
-    expect(link.classList.contains('hover:underline')).toBe(true);
-    expect(link.classList.contains('underline')).toBe(false);
+    expect(link.className).toBe('fb-markdown__link');
   });
 
   it('renders inline code without a code block wrapper', () => {
     const { container } = render(<Markdown>{'Use `x` here'}</Markdown>);
     expect(container.querySelector('pre')).toBeNull();
-    expect(container.querySelector('code')?.className).toBe(
-      'rounded bg-muted px-1 py-0.5 font-mono text-sm',
-    );
+    expect(container.querySelector('code')?.className).toBe('fb-markdown__inline-code');
   });
 
   it('preserves plain text line breaks', () => {

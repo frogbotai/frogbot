@@ -3,7 +3,6 @@
 import type { UIMessage } from 'ai';
 import { type HTMLAttributes, type ReactNode, useEffect, useRef, useState } from 'react';
 
-import { cn } from '../lib/utils';
 import { Message } from './message';
 import { MessagePart } from './message-part';
 
@@ -26,10 +25,10 @@ export function MessageList({ className, messages, renderMessage, ...props }: Me
   }, [messages]);
 
   return (
-    <div className="relative min-h-0 flex-1">
+    <div className="fb-message-list">
       <div
         ref={ref}
-        className={cn('h-full overflow-y-auto px-4', className)}
+        className={`fb-message-list__scroller${className ? ` ${className}` : ''}`}
         onScroll={(event) => {
           const node = event.currentTarget;
           anchored.current = node.scrollHeight - node.scrollTop - node.clientHeight < 48;
@@ -57,7 +56,7 @@ export function MessageList({ className, messages, renderMessage, ...props }: Me
             setShowJump(false);
             scrollToBottom();
           }}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-border bg-background px-3 py-1 text-sm shadow"
+          className="fb-message-list__jump"
         >
           Jump to latest
         </button>

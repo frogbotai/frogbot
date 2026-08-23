@@ -1,0 +1,50 @@
+.fb-artifact {
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.fb-artifact__content {
+  margin-top: 0.5rem;
+  overflow-x: auto;
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  white-space: pre-wrap;
+}
+
+.fb-artifact__viewer {
+  position: fixed;
+  z-index: 40;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(48rem, 90vw);
+  min-width: 20rem;
+  overflow: auto;
+  resize: horizontal;
+  border-left: 1px solid var(--border);
+  background-color: var(--background);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 10%), 0 8px 10px -6px rgb(0 0 0 / 10%);
+}
+
+.fb-artifact__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.fb-artifact__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.fb-artifact__body {
+  flex: 1 1 0%;
+  min-height: 0;
+  padding: 1rem;
+  overflow: auto;
+}

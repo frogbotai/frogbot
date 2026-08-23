@@ -23,6 +23,7 @@ describe('CodeBlock', () => {
     );
     expect(screen.getByText('<script>bad()</script>')).toBeTruthy();
     expect(container.querySelector('pre')?.dataset.language).toBe('html');
+    expect(container.querySelector('pre')?.className).toBe('fb-code-block');
     expect(container.querySelector('script')).toBeNull();
   });
 
@@ -37,6 +38,6 @@ describe('CodeBlock', () => {
         </Message>
       </ThemeProvider>,
     );
-    expect(container.querySelector('pre')?.classList.contains('bg-muted-foreground')).toBe(true);
+    expect(container.querySelector('pre')?.classList.contains('fb-code-block--dark-user')).toBe(true);
   });
 });
