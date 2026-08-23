@@ -17,6 +17,7 @@
 - Do NOT add the opencode attribution footer to commit messages
 - Keep commit messages clean and focused on the actual changes
 - Only include the commit message content, no additional attribution or co-authored-by lines
+- In multi-feature programs, commit each completed and verified F feature separately; never combine multiple F features in one commit
 
 ## Communication Style
 
