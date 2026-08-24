@@ -28,6 +28,7 @@ type ChatActions = {
 
 export type ChatProps = {
   agent: string;
+  model?: string;
   initialMessages?: UIMessage[];
   chatId?: string | number;
   defaultChatId?: string | number;
@@ -94,6 +95,7 @@ function ChatOrchestrator({
     headerSlot,
     initialMessages,
   messagesSlug,
+  model,
   onChatIdChange,
   panel,
   renderMessage,
@@ -130,9 +132,9 @@ function ChatOrchestrator({
         onChatId: (nextChatId) => {
           createdChatId.current = nextChatId;
         },
-        prepareSendMessagesRequest: prepareChatRequest(activeChatId),
+        prepareSendMessagesRequest: prepareChatRequest(activeChatId, model),
       }),
-    [activeChatId, agent, sdk],
+    [activeChatId, agent, model, sdk],
   );
   let addToolOutput: ReturnType<typeof useChat>['addToolOutput'] | undefined;
   const chat = useChat({

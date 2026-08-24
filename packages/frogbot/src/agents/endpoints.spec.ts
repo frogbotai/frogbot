@@ -136,7 +136,7 @@ describe('agent endpoints', () => {
     resolveChatAttachments.mockClear();
   });
 
-  it('lists the same agent profile shape as the manifest', async () => {
+  it('returns the agent manifest', async () => {
     const agent = makeAgent();
     agent.config = {
       ...agent.config,
@@ -145,7 +145,16 @@ describe('agent endpoints', () => {
     const response = await listHandler()(makeRequest({ agent }));
 
     expect(await response.json()).toEqual({
-      agents: [{ slug: 'support', profile: agent.config.profile }],
+      defaultAgent: 'support',
+      agents: [
+        {
+          slug: 'support',
+          label: 'Ada',
+          source: 'config',
+          defaultModel: 'openai/test',
+          models: ['openai/test'],
+        },
+      ],
     });
   });
 
@@ -198,6 +207,28 @@ describe('agent endpoints', () => {
     );
 
     expect(response.status).toBe(400);
+  });
+
+  it('rejects a model outside the agent allowlist', async () => {
+    const response = await postHandler()(makeRequest({ body: { prompt: 'Hello', model: 'x/test' } }));
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: "Model 'x/test' is not allowed for agent 'support'",
+    });
+  });
+
+  it('passes an allowed model to the agent', async () => {
+    const agent = makeAgent();
+    agent.config.allowModels = ['openai/other'];
+    const response = await postHandler()(
+      makeRequest({ agent, body: { prompt: 'Hello', model: 'openai/other' } }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(agent.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ options: expect.objectContaining({ model: 'openai/other' }) }),
+    );
   });
 
   it('accepts stable file references and resolves them before invocation', async () => {

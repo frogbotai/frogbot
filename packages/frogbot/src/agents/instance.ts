@@ -5,9 +5,9 @@ import { convertToModelMessages, generateId, ToolLoopAgent, validateUIMessages }
 import { toHookUsage } from '../ai/hooks.js';
 import { logUsage } from '../ai/logUsage.js';
 import { resolveModel } from '../ai/resolve.js';
+import { resolveChatContext } from '../chat/chatContext.js';
 import { generateMessage } from '../chat/generateMessage.js';
 import { persistAssistantMessage } from '../chat/messagePersistence.js';
-import { resolveChatContext } from '../chat/chatContext.js';
 import type { Frogbot } from '../frogbot.js';
 import type {
   AgentCallOptions,
@@ -57,7 +57,7 @@ export function createAgentInstance(
 
       return {
         ...call,
-        model: gateway.chatModel(resolveModel(agentConfig.model, config)),
+        model: gateway.chatModel(resolveModel(options.model ?? agentConfig.model, config)),
         runtimeContext: { agent: ctx.agent },
         toolsContext: toAISDKToolsContext(agentConfig.tools, ctx),
       };

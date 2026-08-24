@@ -7,13 +7,19 @@ import {
   assertAgentAccess,
   generateAgentRequest,
   getAgentAuthorizations,
+  getAgentManifest,
   listAgents,
 } from './service.js';
 
 function makeAgent({
   slug = 'support',
   access,
-}: { slug?: string; access?: AgentInstance['config']['access'] } = {}): AgentInstance {
+  allowModels,
+}: {
+  slug?: string;
+  access?: AgentInstance['config']['access'];
+  allowModels?: AgentInstance['config']['allowModels'];
+} = {}): AgentInstance {
   const generate = vi.fn(() =>
     Promise.resolve({
       text: 'hello',
@@ -30,6 +36,7 @@ function makeAgent({
       model: 'openai/test',
       instructions: 'Help',
       access,
+      allowModels,
       tools: [{ slug: 'google-sheets_find', pieceService: 'google-sheets' } as never],
     },
     aiAgent: { tools: {}, generate } as unknown as AgentInstance['aiAgent'],
@@ -86,6 +93,28 @@ describe('agent service', () => {
 
     await expect(assertAgentAccess({ req, agent: support })).resolves.toBeUndefined();
     expect(access).toHaveBeenCalledWith({ req, agent: support });
+  });
+
+  it('builds a permission-filtered agent manifest', async () => {
+    const req = makeRequest({
+      agents: {
+        support: makeAgent({ allowModels: ['openai/other', 'openai/test'] }),
+        denied: makeAgent({ slug: 'denied', access: () => false }),
+      },
+    });
+
+    await expect(getAgentManifest({ req })).resolves.toEqual({
+      defaultAgent: 'support',
+      agents: [
+        {
+          slug: 'support',
+          label: 'support',
+          source: 'config',
+          defaultModel: 'openai/test',
+          models: ['openai/test', 'openai/other'],
+        },
+      ],
+    });
   });
 
   it('resolves authorization services from agent tools', async () => {

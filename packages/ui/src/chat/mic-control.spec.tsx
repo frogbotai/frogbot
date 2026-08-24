@@ -38,7 +38,9 @@ describe('MicControl', () => {
               files: { slug: 'files' },
               agents: [],
             })
-          : transcribe,
+          : String(input).endsWith('/agents')
+            ? Response.json({ defaultAgent: '', agents: [] })
+            : transcribe,
       ),
     );
     return { fetch, adapter: { fetch } as ChatPlatformAdapter };
@@ -72,8 +74,9 @@ describe('MicControl', () => {
     await waitFor(() => expect(button.parentElement?.className).toContain('animate-pulse'));
     fireEvent.click(button);
     await waitFor(() => expect(onText).toHaveBeenCalledWith('hello'));
-    const [, init] = value.fetch.mock.calls[1] as [string, RequestInit];
-    expect(value.fetch.mock.calls[1]?.[0]).toBe('/api/v1/audio/transcriptions');
+    const [, init] = value.fetch.mock.calls.find(([url]) =>
+      String(url).endsWith('/v1/audio/transcriptions'),
+    ) as [string, RequestInit];
     expect(init.body).toBeInstanceOf(FormData);
     expect((init.body as FormData).get('model')).toBe('whisper-1');
     expect((init.body as FormData).get('file')).toBeInstanceOf(File);

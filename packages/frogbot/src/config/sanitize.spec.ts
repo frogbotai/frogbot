@@ -1028,6 +1028,24 @@ describe('frogbot sanitize', () => {
       expect(result.agents?.[0]?.model).toBe('openai/test');
     });
 
+    it('preserves allowed agent models', () => {
+      const result = sanitize(
+        makeConfig({ ai, agents: [{ ...agent, allowModels: ['openai/other'] }] } as never),
+      );
+
+      expect(result.agents?.[0]?.allowModels).toEqual(['openai/other']);
+    });
+
+    it('rejects an allowed model without a configured provider', () => {
+      expect(() =>
+        sanitize(
+          makeConfig({ ai, agents: [{ ...agent, allowModels: ['anthropic/test'] }] } as never),
+        ),
+      ).toThrow(
+        "[frogbot] Agent 'support' allowModels model 'anthropic/test' does not resolve to a configured provider.",
+      );
+    });
+
     it('uses ai.defaultModel when the agent model is omitted', () => {
       const result = sanitize(
         makeConfig({

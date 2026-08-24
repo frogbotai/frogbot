@@ -51,13 +51,15 @@ export function useChats(options: UseChatsOptions) {
   const [error, setError] = useState<Error>();
   const [loading, setLoading] = useState(!options.initialData);
   const request = useRef(0);
+  const hasResult = useRef(Boolean(options.initialData));
 
   const refresh = useCallback(() => {
     const current = ++request.current;
-    if (!result) setLoading(true);
+    if (!hasResult.current) setLoading(true);
     void loadChats(options)
       .then((next) => {
         if (request.current === current) {
+          hasResult.current = true;
           setResult(next);
           setError(undefined);
           setLoading(false);
@@ -69,7 +71,7 @@ export function useChats(options: UseChatsOptions) {
           setLoading(false);
         }
       });
-  }, [options.sdk, options.agent, options.chatsSlug, options.limit, options.page, result]);
+  }, [options.sdk, options.agent, options.chatsSlug, options.limit, options.page]);
 
   useEffect(() => {
     if (!options.initialData) refresh();

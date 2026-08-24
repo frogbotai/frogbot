@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { validateChatMessages } from '../chat/validateMessages.js';
 import { resolveChatAttachments } from '../files/resolveChatAttachments.js';
+import type { AgentInstance } from '../types/agent.js';
 import type { DocID } from '../types/operations.js';
 import type { FrogbotRequest } from '../types/request.js';
 import {
@@ -12,8 +13,8 @@ import {
   generateAgentRequest,
   getAgent,
   getAgentAuthorizations,
+  getAgentManifest,
   getAgentStreamOptions,
-  listAgents,
   prepareAgentRequest,
 } from './service.js';
 
@@ -21,13 +22,19 @@ const chatIdSchema = z.union([z.string(), z.number()]).optional();
 
 const bodySchema = z.union([
   z
-    .object({ prompt: z.string().min(1), messages: z.never().optional(), chatId: chatIdSchema })
+    .object({
+      prompt: z.string().min(1),
+      messages: z.never().optional(),
+      chatId: chatIdSchema,
+      model: z.string().min(1).optional(),
+    })
     .strict(),
   z
     .object({
       messages: z.array(z.unknown()).min(1),
       prompt: z.never().optional(),
       chatId: chatIdSchema,
+      model: z.string().min(1).optional(),
     })
     .strict(),
 ]);
@@ -48,9 +55,11 @@ export function buildAgentEndpoints() {
 
           let body: AgentRequestBody;
           let requestedChatId: DocID | undefined;
+          let requestedModel: string | undefined;
           try {
-            const { chatId, ...parsed } = bodySchema.parse(await req.json!());
+            const { chatId, model, ...parsed } = bodySchema.parse(await req.json!());
             requestedChatId = chatId;
+            requestedModel = model;
             body =
               'messages' in parsed && parsed.messages
                 ? {
@@ -70,6 +79,7 @@ export function buildAgentEndpoints() {
           const { chatId, uiMessages } = await prepareAgentRequest({
             req,
             agent,
+            requestedModel,
             requestedChatId,
             uiMessages: toUIMessages(body),
           });
@@ -77,7 +87,13 @@ export function buildAgentEndpoints() {
 
           if (acceptsEventStream(req.headers.get('accept'))) {
             return await createAgentUIStreamResponse(
-              getAgentStreamOptions({ req, agent, chatId, uiMessages: providerMessages }),
+              getAgentStreamOptions({
+                req,
+                agent,
+                chatId,
+                uiMessages: providerMessages,
+                model: requestedModel as AgentInstance['config']['model'] | undefined,
+              }),
             );
           }
 
@@ -86,6 +102,7 @@ export function buildAgentEndpoints() {
             agent,
             chatId,
             uiMessages: providerMessages,
+            model: requestedModel as AgentInstance['config']['model'] | undefined,
           });
 
           return Response.json({
@@ -129,7 +146,7 @@ export function buildAgentEndpoints() {
       path: '/agents',
       method: 'get' as const,
       handler: async (req: FrogbotRequest) => {
-        return Response.json({ agents: await listAgents({ req }) });
+        return Response.json(await getAgentManifest({ req }));
       },
     },
   ];

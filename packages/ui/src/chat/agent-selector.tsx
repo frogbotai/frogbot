@@ -23,15 +23,15 @@ export const AgentSelector = memo(function AgentSelector({
   selectedAgent,
   onAgentChange,
 }: AgentSelectorProps) {
-  const agents = useChatProvider()?.manifest?.agents ?? [];
+  const agents = useChatProvider()?.agentManifest?.agents ?? [];
   const selected = agents.find(({ slug }) => slug === selectedAgent);
-  const selectedName = selected?.profile?.name ?? selected?.slug ?? selectedAgent;
+  const selectedName = selected?.label ?? selected?.slug ?? selectedAgent;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="fb-agent-selector__trigger">
-          <AgentAvatar agent={selected} name={selectedName} />
+          <AgentAvatar />
           <span className="fb-agent-selector__trigger-name">{selectedName}</span>
           <ChevronDownIcon className="fb-agent-selector__chevron" />
         </Button>
@@ -41,7 +41,7 @@ export const AgentSelector = memo(function AgentSelector({
         className="fb-agent-selector__content"
       >
         {agents.map((agent) => {
-          const name = agent.profile?.name ?? agent.slug;
+          const name = agent.label;
           return (
             <DropdownMenuItem
               key={agent.slug}
@@ -49,7 +49,7 @@ export const AgentSelector = memo(function AgentSelector({
               className="fb-agent-selector__item"
             >
               <span className="fb-agent-selector__item-agent">
-                <AgentAvatar agent={agent} name={name} />
+                <AgentAvatar />
                 <span className="fb-agent-selector__item-name">{name}</span>
               </span>
               {selectedAgent === agent.slug ? (
@@ -63,11 +63,6 @@ export const AgentSelector = memo(function AgentSelector({
   );
 });
 
-function AgentAvatar({ agent, name }: { agent?: { profile?: { avatar?: string } }; name: string }) {
-  if (agent?.profile?.avatar) {
-    return (
-      <img src={agent.profile.avatar} alt={name} className="fb-agent-selector__avatar" />
-    );
-  }
+function AgentAvatar() {
   return <RobotIcon className="fb-agent-selector__avatar" aria-hidden="true" />;
 }

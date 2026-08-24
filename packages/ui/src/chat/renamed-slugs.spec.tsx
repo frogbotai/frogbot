@@ -25,6 +25,20 @@ describe('renamed collection acceptance', () => {
           agents: [{ slug: 'support' }],
         });
       }
+      if (url === 'https://frogbot.example/api/agents') {
+        return Response.json({
+          defaultAgent: 'support',
+          agents: [
+            {
+              slug: 'support',
+              label: 'Support',
+              source: 'config',
+              defaultModel: 'openai/test',
+              models: ['openai/test'],
+            },
+          ],
+        });
+      }
       if (url.startsWith('https://frogbot.example/api/conversations?')) {
         return Response.json({
           docs: [{ id: 'chat-1', agent: 'support', title: 'Renamed chat' }],

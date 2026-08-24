@@ -387,7 +387,7 @@ export interface Auth {
 declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {
-      assistant: unknown;
+      general: unknown;
     };
     models: 'zen/big-pickle';
     roles: never;

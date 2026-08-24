@@ -1,10 +1,25 @@
 'use client';
 
-import { Chat, ChatProvider, cookieFetch } from '@frogbotai/ui/chat';
+import {
+  AgentSelector,
+  Chat,
+  ChatProvider,
+  cookieFetch,
+  ModelSelector,
+  useChatProvider,
+} from '@frogbotai/ui/chat';
+import { ThemeProvider } from '@frogbotai/ui/theme';
+import { usePreferences, useTheme } from '@payloadcms/ui';
 import type { UIMessage } from 'frogbot';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const adapter = { fetch: cookieFetch() };
+const chatPicksPreference = 'frogbot-chat-picks';
+
+type ChatPicks = {
+  agent: string;
+  model: string;
+};
 
 export type ChatViewClientProps = {
   agent: string;
@@ -14,6 +29,7 @@ export type ChatViewClientProps = {
 };
 
 export function ChatViewClient({ agent, chatId, documentPath, initialMessages }: ChatViewClientProps) {
+  const { theme } = useTheme();
   const replaced = useRef(false);
   const onChatIdChange = (nextChatId: string | number | undefined) => {
     if (chatId !== undefined || nextChatId === undefined || replaced.current) return;
@@ -26,13 +42,121 @@ export function ChatViewClient({ agent, chatId, documentPath, initialMessages }:
   };
 
   return (
-    <ChatProvider adapter={adapter}>
-      <Chat
-        agent={agent}
-        {...(chatId === undefined ? {} : { chatId })}
-        initialMessages={initialMessages}
-        onChatIdChange={onChatIdChange}
-      />
-    </ChatProvider>
+    <div className="frogbot-chat-view">
+      <ThemeProvider mode={theme}>
+        <ChatProvider adapter={adapter}>
+          <ManifestChat
+            agent={agent}
+            {...(chatId === undefined ? {} : { chatId })}
+            initialMessages={initialMessages}
+            onChatIdChange={onChatIdChange}
+          />
+        </ChatProvider>
+      </ThemeProvider>
+    </div>
+  );
+}
+
+function ManifestChat({
+  agent,
+  chatId,
+  initialMessages,
+  onChatIdChange,
+}: Omit<ChatViewClientProps, 'documentPath'> & {
+  onChatIdChange: (chatId: string | number | undefined) => void;
+}) {
+  const provider = useChatProvider();
+  const { getPreference, setPreference } = usePreferences();
+  const manifest = provider?.agentManifest;
+  const [selectedAgent, setSelectedAgent] = useState(agent);
+  const entry = manifest?.agents.find(({ slug }) => slug === selectedAgent);
+  const [selectedModel, setSelectedModel] = useState<string>();
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!manifest || entry || chatId !== undefined) return;
+    setSelectedAgent(manifest.defaultAgent);
+  }, [chatId, entry, manifest]);
+
+  useEffect(() => {
+    if (!manifest) return;
+    let current = true;
+    void getPreference<ChatPicks | null>(chatPicksPreference).then((preference) => {
+      if (!current) return;
+      const preferredAgent = manifest.agents.find(({ slug }) => slug === preference?.agent);
+      const nextAgent = chatId === undefined ? preferredAgent?.slug ?? manifest.defaultAgent : agent;
+      const nextEntry = manifest.agents.find(({ slug }) => slug === nextAgent);
+      setSelectedAgent(nextAgent);
+      setSelectedModel(
+        preference?.model && nextEntry?.models.some((model) => model === preference.model)
+          ? preference.model
+          : undefined,
+      );
+      setPreferencesLoaded(true);
+    });
+    return () => {
+      current = false;
+    };
+  }, [agent, chatId, getPreference, manifest]);
+
+  const activeModel =
+    entry && selectedModel && entry.models.some((model) => model === selectedModel)
+      ? selectedModel
+      : entry?.defaultModel;
+
+  const controls = (
+    <>
+      {chatId === undefined && (manifest?.agents.length ?? 0) > 1 ? (
+        <AgentSelector
+          selectedAgent={selectedAgent}
+          onAgentChange={(nextAgent) => {
+            const nextEntry = manifest?.agents.find(({ slug }) => slug === nextAgent);
+            setSelectedAgent(nextAgent);
+            setSelectedModel(undefined);
+            if (nextEntry) {
+              void setPreference<ChatPicks>(chatPicksPreference, {
+                agent: nextAgent,
+                model: nextEntry.defaultModel,
+              });
+            }
+          }}
+        />
+      ) : null}
+      {(entry?.models.length ?? 0) > 1 ? (
+        <ModelSelector
+          models={entry?.models.map((id) => {
+            const separator = id.indexOf('/');
+            return {
+              id,
+              name: separator === -1 ? id : id.slice(separator + 1),
+              provider: separator === -1 ? undefined : id.slice(0, separator),
+            };
+          })}
+          selectedModelId={activeModel}
+          onModelChange={(model) => {
+            const nextModel = model ?? entry?.defaultModel;
+            setSelectedModel(nextModel);
+            if (nextModel) {
+              void setPreference<ChatPicks>(chatPicksPreference, {
+                agent: selectedAgent,
+                model: nextModel,
+              });
+            }
+          }}
+        />
+      ) : null}
+    </>
+  );
+
+  if (!entry || !preferencesLoaded) return null;
+  return (
+    <Chat
+      agent={selectedAgent}
+      model={activeModel}
+      {...(chatId === undefined ? {} : { chatId })}
+      initialMessages={initialMessages}
+      onChatIdChange={onChatIdChange}
+      composerStartSlot={controls}
+    />
   );
 }

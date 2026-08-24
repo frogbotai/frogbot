@@ -1,3 +1,5 @@
+export type { AgentManifest, AgentManifestEntry } from 'frogbot';
+
 export type FrogBotSDKConfig = {
   baseURL: string;
   fetch?: typeof fetch;

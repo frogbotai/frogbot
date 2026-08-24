@@ -30,6 +30,7 @@ export const supportAgent: AgentConfig = {
 type AgentConfig = {
   slug: string
   model?: ModelId
+  allowModels?: readonly ModelId[]
   instructions: string
   profile?: AgentProfile
   skills?: readonly SkillConfig[]
@@ -42,6 +43,8 @@ type AgentConfig = {
 ```
 
 `stopWhen` defaults to the AI SDK's `isStepCount(20)`. If provided as an array, `stopWhen` must be non-empty.
+
+`allowModels` adds models the user may select for this agent. FrogBot validates each model against configured providers and routers. The composer hides the model selector when only the default model is allowed, stores valid selections as a user preference, and falls back to the current default when a saved selection is no longer allowed.
 
 ### Use the general preset
 
@@ -401,10 +404,10 @@ Configuring at least one worker mounts two FrogBot endpoints at the root API pat
 
 | Method | Path | Result |
 | --- | --- | --- |
-| `GET` | `/api/agents` | Accessible agents as `{ agents: [{ slug, profile? }] }` |
+| `GET` | `/api/agents` | Permission-filtered agent manifest with defaults and allowed models |
 | `POST` | `/api/agents/:slug` | Generated JSON or an AI SDK UI message stream |
 
-POST exactly one non-empty `prompt` or non-empty `messages` array. Authenticated calls create a chat when `chatId` is absent. Without an explicit event-stream accept header, the response is `{ text, usage, finishReason, chatId }`.
+POST exactly one non-empty `prompt` or non-empty `messages` array. Add `model` to select one of the agent's allowed models; FrogBot rejects other models with a 403 response. Authenticated calls create a chat when `chatId` is absent. Without an explicit event-stream accept header, the response is `{ text, usage, finishReason, chatId }`.
 
 ```bash
 curl http://localhost:3000/api/agents/support \

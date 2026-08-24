@@ -524,6 +524,9 @@ function sanitizeAgents(
       );
     }
     agent = { ...agent, model: modelId as AgentModelId };
+    if (agent.allowModels !== undefined && !Array.isArray(agent.allowModels)) {
+      throw new Error(`[frogbot] Agent '${agent.slug}' allowModels must be an array.`);
+    }
     if (typeof agent.instructions !== 'string' || !agent.instructions.trim()) {
       throw new Error(`[frogbot] Agent '${agent.slug}' requires \`instructions\`.`);
     }
@@ -555,13 +558,23 @@ function sanitizeAgents(
       );
     }
 
-    const model = ai.routers[modelId]?.model ?? modelId;
-    const separator = model.indexOf('/');
-    const provider = separator > 0 ? model.slice(0, separator) : '';
-    if (!provider || !providers.has(provider)) {
-      const message = `[frogbot] Agent '${agent.slug}' model '${modelId}' does not resolve to a configured provider. Configured providers: ${[...providers].join(', ')}. Update the agent model or configure its provider under \`ai.providers\`.`;
-      if (mode === 'runtime') throw new Error(message);
-      console.warn(message);
+    for (const [field, candidate] of [
+      ['model', modelId],
+      ...((agent.allowModels ?? []).map((allowed) => ['allowModels', allowed]) as Array<
+        [string, unknown]
+      >),
+    ] as Array<[string, unknown]>) {
+      if (typeof candidate !== 'string' || !candidate.trim()) {
+        throw new Error(`[frogbot] Agent '${agent.slug}' ${field} must contain model IDs.`);
+      }
+      const model = ai.routers[candidate]?.model ?? candidate;
+      const separator = model.indexOf('/');
+      const provider = separator > 0 ? model.slice(0, separator) : '';
+      if (!provider || !providers.has(provider)) {
+        const message = `[frogbot] Agent '${agent.slug}' ${field === 'model' ? '' : `${field} `}model '${candidate}' does not resolve to a configured provider. Configured providers: ${[...providers].join(', ')}. Update the agent model or configure its provider under \`ai.providers\`.`;
+        if (mode === 'runtime') throw new Error(message);
+        console.warn(message);
+      }
     }
 
     let agentTools: AnyTool[] | undefined;

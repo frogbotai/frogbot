@@ -66,8 +66,9 @@ export async function ChatListView({
 }
 
 export async function ChatView({ doc, payload, routeSegments, user }: DocumentViewServerProps) {
-  const isDashboard = routeSegments.length === 0;
-  const [, collectionSlug, documentID] = routeSegments;
+  const segments = routeSegments ?? [];
+  const isDashboard = segments.length === 0;
+  const [, collectionSlug, documentID] = segments;
   const routeID = isDashboard ? 'create' : documentID;
   const frogbot = getCachedFrogbot();
   const chatsSlug = frogbot?.config.chat.enabled ? frogbot.config.chat.chatsSlug : undefined;

@@ -1,6 +1,10 @@
 'use client';
 
-import { createFrogbotSDK, type FrogBotSDK } from '@frogbotai/sdk';
+import {
+  type AgentManifest,
+  createFrogbotSDK,
+  type FrogBotSDK,
+} from '@frogbotai/sdk';
 import type { ManifestResponse } from 'frogbot';
 import { createContext, type ReactNode, use, useEffect, useMemo, useState } from 'react';
 
@@ -15,6 +19,7 @@ export type ChatProviderValue = {
   adapter: ChatPlatformAdapter;
   sdk: FrogBotSDK;
   manifest?: ChatManifest;
+  agentManifest?: AgentManifest;
   error?: Error;
   loading: boolean;
   toolRenderers: readonly ToolRenderer[];
@@ -55,10 +60,15 @@ export function ChatProvider({
 
   useEffect(() => {
     const controller = new AbortController();
-    void sdk
-      .request('/frogbot', { signal: controller.signal })
-      .then((response) => response.json() as Promise<ChatManifest>)
-      .then((manifest) => setState({ manifest, loading: false }))
+    void Promise.all([
+      sdk
+        .request('/frogbot', { signal: controller.signal })
+        .then((response) => response.json() as Promise<ChatManifest>),
+      sdk
+        .request('/agents', { signal: controller.signal })
+        .then((response) => response.json() as Promise<AgentManifest>),
+    ])
+      .then(([manifest, agentManifest]) => setState({ manifest, agentManifest, loading: false }))
       .catch((error: unknown) => {
         if (!controller.signal.aborted) {
           setState({

@@ -406,6 +406,22 @@ describe('@frogbotai/next views', () => {
     });
   });
 
+  it('ChatView treats missing routeSegments as the dashboard route', async () => {
+    const find = vi.fn();
+    const element = await ChatView({
+      doc: {},
+      payload: { config: { routes: { admin: '/admin' } }, find },
+      user: { id: 'user-1' },
+    } as never);
+
+    expect(find).not.toHaveBeenCalled();
+    expect(element?.props).toEqual({
+      agent: 'general',
+      documentPath: '/admin/collections/conversations',
+      initialMessages: [],
+    });
+  });
+
   it('ChatView does not query when canonical view auth has no user', async () => {
     const find = vi.fn();
 

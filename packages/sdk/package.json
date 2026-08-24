@@ -24,6 +24,9 @@
     "dist"
   ],
   "sideEffects": false,
+  "dependencies": {
+    "frogbot": "workspace:*"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",

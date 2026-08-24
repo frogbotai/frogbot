@@ -50,6 +50,7 @@ export type AgentProfile = {
 export type AgentConfig = {
   slug: string;
   model?: AgentModelId;
+  allowModels?: readonly AgentModelId[];
   instructions: string;
   profile?: AgentProfile;
   skills?: readonly SkillConfig[];
@@ -61,6 +62,19 @@ export type AgentConfig = {
 };
 
 export type SanitizedAgentConfig = AgentConfig & { model: AgentModelId };
+
+export type AgentManifestEntry = {
+  slug: string;
+  label: string;
+  source: 'config' | 'collection';
+  defaultModel: AgentModelId;
+  models: AgentModelId[];
+};
+
+export type AgentManifest = {
+  defaultAgent: string;
+  agents: AgentManifestEntry[];
+};
 
 type AgentRunOpts = (
   { prompt: string; messages?: never } | { prompt?: never; messages: UIMessage[] | ModelMessage[] }
@@ -82,6 +96,7 @@ export type AgentCallOptions = {
   overrideAccess?: boolean;
   runId?: string;
   chatId?: DocID;
+  model?: AgentModelId;
 };
 
 export type AgentInstance = {

@@ -1468,6 +1468,10 @@ importers:
         version: 5.6.2
 
   packages/sdk:
+    dependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../frogbot
     devDependencies:
       typescript:
         specifier: 5.6.2
