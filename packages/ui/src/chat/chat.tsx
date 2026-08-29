@@ -6,6 +6,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useControlledState } from '../hooks/use-controlled-state';
 import type { ComposerAttachment } from './attachments';
+import { ChatHistory, deriveChatTitle } from './chat-history';
 import { ChatShell } from './chat-shell';
 import { ChatStatus } from './chat-status';
 import { Composer } from './composer';
@@ -15,7 +16,6 @@ import { MessageList, type MessageListProps } from './message-list';
 import { MessagePart } from './message-part';
 import { deleteChat, renameChat } from './mutations';
 import { type ChatManifest, useChatProvider } from './provider';
-import { ChatHistory, deriveChatTitle } from './chat-history';
 import { FrogbotChatTransport, prepareChatRequest } from './transport';
 import { useChatMessages } from './use-chat';
 import type { ChatDocument } from './use-chats';
@@ -92,8 +92,8 @@ function ChatOrchestrator({
   errorContent,
   fallbackTitle = 'New chat',
   filesSlug,
-    headerSlot,
-    initialMessages,
+  headerSlot,
+  initialMessages,
   messagesSlug,
   model,
   onChatIdChange,
@@ -124,6 +124,8 @@ function ChatOrchestrator({
   const history = useChatMessages({ sdk, messagesSlug, chatId: activeChatId });
   const chats = useChats({ sdk, agent, chatsSlug });
   const [aborted, setAborted] = useState(false);
+  const request = useRef({ chatId: activeChatId, model });
+  request.current = { chatId: activeChatId, model };
   const transport = useMemo(
     () =>
       new FrogbotChatTransport({
@@ -132,9 +134,12 @@ function ChatOrchestrator({
         onChatId: (nextChatId) => {
           createdChatId.current = nextChatId;
         },
-        prepareSendMessagesRequest: prepareChatRequest(activeChatId, model),
+        prepareSendMessagesRequest: prepareChatRequest(
+          () => request.current.chatId,
+          () => request.current.model,
+        ),
       }),
-    [activeChatId, agent, model, sdk],
+    [agent, sdk],
   );
   let addToolOutput: ReturnType<typeof useChat>['addToolOutput'] | undefined;
   const chat = useChat({
@@ -153,14 +158,21 @@ function ChatOrchestrator({
         }
       : undefined,
     onFinish: () => {
-      if (!createdChatId.current) return;
-      reportedChatId.current = createdChatId.current;
-      setActiveChatId(createdChatId.current);
-      createdChatId.current = undefined;
-      chats.refresh();
+      flushChatId();
+    },
+    onError: () => {
+      flushChatId();
     },
   });
   addToolOutput = chat.addToolOutput;
+
+  function flushChatId() {
+    if (!createdChatId.current) return;
+    reportedChatId.current = createdChatId.current;
+    setActiveChatId(createdChatId.current);
+    createdChatId.current = undefined;
+    chats.refresh();
+  }
 
   const clearConversation = () => {
     createdChatId.current = undefined;
@@ -263,7 +275,11 @@ function ChatOrchestrator({
         profile && message.role === 'assistant' ? (
           <div className="fb-chat__assistant-avatar">
             {profile.avatar ? (
-              <img src={profile.avatar} alt={displayName} className="fb-chat__assistant-avatar-image" />
+              <img
+                src={profile.avatar}
+                alt={displayName}
+                className="fb-chat__assistant-avatar-image"
+              />
             ) : (
               initials
             )}
@@ -284,19 +300,19 @@ function ChatOrchestrator({
   return (
     <ChatShell
       panel={panel}
-      sidebar={
-        <ChatHistory
-          chats={displayedChats}
-          activeChatId={activeChatId}
-          fallbackTitle={fallbackTitle}
-          onChatChange={selectChat}
-          renderActions={
-            renderChatActions
-              ? (chatDocument) => renderChatActions(chatDocument, mutate(chatDocument))
-              : undefined
-          }
-        />
-      }
+      // sidebar={
+      //   <ChatHistory
+      //     chats={displayedChats}
+      //     activeChatId={activeChatId}
+      //     fallbackTitle={fallbackTitle}
+      //     onChatChange={selectChat}
+      //     renderActions={
+      //       renderChatActions
+      //         ? (chatDocument) => renderChatActions(chatDocument, mutate(chatDocument))
+      //         : undefined
+      //     }
+      //   />
+      // }
     >
       {headerSlot}
       {chat.messages.length === 0 && !history.loading ? (

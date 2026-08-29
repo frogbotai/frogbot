@@ -28,7 +28,9 @@ export function MessageList({ className, messages, renderMessage, ...props }: Me
     <div className="fb-message-list">
       <div
         ref={ref}
+        aria-live="polite"
         className={`fb-message-list__scroller${className ? ` ${className}` : ''}`}
+        role="log"
         onScroll={(event) => {
           const node = event.currentTarget;
           anchored.current = node.scrollHeight - node.scrollTop - node.clientHeight < 48;

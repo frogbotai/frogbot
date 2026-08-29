@@ -18,8 +18,8 @@ export type FrogbotChatTransportOptions<UI_MESSAGE extends UIMessage> = Omit<
 };
 
 export function prepareChatRequest<UI_MESSAGE extends UIMessage>(
-  chatId?: string | number,
-  model?: string,
+  chatId?: string | number | (() => string | number | undefined),
+  model?: string | (() => string | undefined),
 ): PrepareSendMessagesRequest<UI_MESSAGE> {
   return ({ messages }) => {
     const unsafe = messages.some((message) =>
@@ -28,11 +28,13 @@ export function prepareChatRequest<UI_MESSAGE extends UIMessage>(
       ),
     );
     if (unsafe) throw new Error('Chat attachments require a stable FrogBot file reference');
+    const resolvedChatId = typeof chatId === 'function' ? chatId() : chatId;
+    const resolvedModel = typeof model === 'function' ? model() : model;
     return {
       body: {
         messages,
-        ...(chatId === undefined ? {} : { chatId }),
-        ...(model === undefined ? {} : { model }),
+        ...(resolvedChatId === undefined ? {} : { chatId: resolvedChatId }),
+        ...(resolvedModel === undefined ? {} : { model: resolvedModel }),
       },
     };
   };

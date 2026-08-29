@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 
-export interface MessageProps extends HTMLAttributes<HTMLElement> {
+export interface MessageProps extends Omit<HTMLAttributes<HTMLDivElement>, 'role'> {
   actions?: ReactNode;
   avatar?: ReactNode;
   role: 'system' | 'user' | 'assistant';
@@ -8,8 +8,9 @@ export interface MessageProps extends HTMLAttributes<HTMLElement> {
 
 export function Message({ actions, avatar, children, className, role, ...props }: MessageProps) {
   return (
-    <article
+    <div
       className={`fb-message fb-message--${role}${className ? ` ${className}` : ''}`}
+      data-message
       data-role={role}
       {...props}
     >
@@ -22,6 +23,6 @@ export function Message({ actions, avatar, children, className, role, ...props }
           <div className="fb-message__actions">{actions}</div>
         )}
       </div>
-    </article>
+    </div>
   );
 }

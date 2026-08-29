@@ -1,5 +1,5 @@
 import { createFrogbotSDK } from '@frogbotai/sdk';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
@@ -155,9 +155,9 @@ describe('Chat', () => {
       { id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
     ];
     render(<Chat agent="support" />);
-    expect(screen.getByText('Hello').closest('article')?.firstElementChild?.textContent).toBe(
-      'Hello',
-    );
+    expect(
+      screen.getByText('Hello').closest('[data-message]')?.firstElementChild?.textContent,
+    ).toBe('Hello');
   });
 
   it('submits metadata and updates uncontrolled history', async () => {
@@ -205,6 +205,41 @@ describe('Chat', () => {
   it('sends the strict request body for an existing chat', async () => {
     render(<Chat agent="support" defaultChatId="chat-1" />);
     expect(await sendTransportMessage()).toEqual({ messages: [message], chatId: 'chat-1' });
+  });
+
+  it('carries a server-created chat id into the next turn on the same transport', async () => {
+    render(<Chat agent="support" />);
+    const chatInit = () => state.options as import('ai').ChatInit<import('ai').UIMessage>;
+    const transport = chatInit().transport;
+    const send = () =>
+      transport?.sendMessages({
+        trigger: 'submit-message',
+        chatId: 'chat',
+        messageId: message.id,
+        messages: [message],
+        abortSignal: undefined,
+      });
+    state.adapter.fetch.mockResolvedValue(
+      new Response(new ReadableStream({ start: (controller) => controller.close() }), {
+        headers: { 'X-Frogbot-Chat-Id': 'chat-9' },
+      }),
+    );
+
+    await send();
+    expect(JSON.parse(state.adapter.fetch.mock.calls[0][1].body as string)).toEqual({
+      messages: [message],
+    });
+
+    await act(async () => {
+      await (state.options as { onFinish?: () => void }).onFinish?.();
+    });
+
+    expect(chatInit().transport).toBe(transport);
+    await send();
+    expect(JSON.parse(state.adapter.fetch.mock.calls[1][1].body as string)).toEqual({
+      messages: [message],
+      chatId: 'chat-9',
+    });
   });
 
   it('reports controlled changes without replacing the active chat', () => {

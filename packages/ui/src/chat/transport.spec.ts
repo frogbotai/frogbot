@@ -11,7 +11,7 @@ const message = {
 const sdk = (fetch: typeof globalThis.fetch = globalThis.fetch) =>
   createFrogbotSDK({ baseURL: '/api', fetch });
 
-async function captureBody(chatId?: string) {
+async function captureBody(chatId?: string | (() => string | undefined)) {
   const fetch = vi.fn(() =>
     Promise.resolve(
       new Response(new ReadableStream({ start: (controller) => controller.close() })),
@@ -39,6 +39,42 @@ describe('FrogbotChatTransport', () => {
 
   it('serializes the strict existing-chat body', async () => {
     expect(await captureBody('chat-1')).toEqual({ messages: [message], chatId: 'chat-1' });
+  });
+
+  it('resolves a lazy chat id at send time', async () => {
+    let chatId: string | undefined;
+    const fetch = vi.fn(() =>
+      Promise.resolve(
+        new Response(new ReadableStream({ start: (controller) => controller.close() })),
+      ),
+    );
+    const transport = new FrogbotChatTransport({
+      agentSlug: 'agent',
+      sdk: sdk(fetch),
+      prepareSendMessagesRequest: prepareChatRequest(
+        () => chatId,
+        () => 'zen/big-pickle',
+      ),
+    });
+    const send = () =>
+      transport.sendMessages({
+        chatId: 'chat',
+        messageId: message.id,
+        messages: [message],
+        trigger: 'submit-message',
+      });
+    await send();
+    chatId = 'chat-1';
+    await send();
+    expect(JSON.parse(fetch.mock.calls[0][1]?.body as string)).toEqual({
+      messages: [message],
+      model: 'zen/big-pickle',
+    });
+    expect(JSON.parse(fetch.mock.calls[1][1]?.body as string)).toEqual({
+      messages: [message],
+      chatId: 'chat-1',
+      model: 'zen/big-pickle',
+    });
   });
 
   it('targets the agent endpoint and captures the chat id', async () => {
