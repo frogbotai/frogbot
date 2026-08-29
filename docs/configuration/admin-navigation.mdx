@@ -9,12 +9,12 @@ FrogBot's default admin sidebar starts with New Chat, followed by configurable s
 
 ## Configure sections
 
-`admin.nav.sections` is an ordered array of component import paths. By default, FrogBot renders `CollectionsSection` followed by `RecentsSection`:
+`admin.components.navSections` is an ordered array of component import paths. By default, FrogBot renders `CollectionsSection` followed by `RecentsSection`:
 
 ```ts
 admin: {
-  nav: {
-    sections: [
+  components: {
+    navSections: [
       '@frogbotai/next#CollectionsSection',
       '@frogbotai/next#RecentsSection'
     ]
@@ -22,9 +22,9 @@ admin: {
 }
 ```
 
-Setting `sections` replaces that default array, so include every section you want rendered. Sections appear after New Chat and configured `admin.nav.items`, in array order. Plugin navigation items follow configured items. The bottom rail renders after all sections.
+Setting `navSections` replaces that default array, so include every section you want rendered. Sections appear after New Chat and configured `admin.components.navItems`, in array order. Plugin navigation items follow configured items. The bottom rail renders after all sections.
 
-Remove Recents by omitting `@frogbotai/next#RecentsSection`. To move it, place that path at the desired position in `sections`.
+Remove Recents by omitting `@frogbotai/next#RecentsSection`. To move it, place that path at the desired position in `navSections`.
 
 `NavSection` gives each section a title, collapsible body, and scrolling content. Its collapsed state is saved for the current user under `frogbot-nav-section:{id}` and restored on reload. Give every section a stable, unique `id`.
 
@@ -67,12 +67,12 @@ When the sidebar is collapsed, section headings and labels are hidden and each i
 
 ## Add a navigation item
 
-Add links under `admin.nav.items`. Each item requires a label and path. Set `icon` to a component import path when the link needs a custom icon.
+`admin.components.navItems` holds the links above your collections. By default it is a single New Chat link pointing at the create route of the resolved chats collection. Each item requires a `label` and a full `path`. Set `icon` to a built-in kebab-case icon name or a component import path.
 
 ```ts
 admin: {
-  nav: {
-    items: [
+  components: {
+    navItems: [
       {
         label: 'Operations',
         path: '/admin/operations',
@@ -83,7 +83,22 @@ admin: {
 }
 ```
 
-The icon component receives `size` and `className` props. FrogBot adds the component to the generated import map.
+Setting `navItems` replaces the default array, so the configuration above removes New Chat. Include it yourself to keep it, in whatever position you want:
+
+```ts
+admin: {
+  components: {
+    navItems: [
+      { label: 'New Chat', path: '/admin/collections/chats/create', icon: 'pencil-edit' },
+      { label: 'Operations', path: '/admin/operations' }
+    ]
+  }
+}
+```
+
+Use your own admin route and chats collection slug in that path when either is customized. Set `navItems: []` to render no links above your collections.
+
+Component icons receive `size` and `className` props and are added to the generated import map.
 
 Configured items are application-authored links and are not filtered by collection permissions or visibility. Apply any required access behavior in the component or destination.
 
@@ -143,8 +158,8 @@ export async function WorkspaceRecents({ payload, req }: RecentsSectionProps) {
 
 ```ts
 admin: {
-  nav: {
-    sections: [
+  components: {
+    navSections: [
       '@frogbotai/next#CollectionsSection',
       './src/components/WorkspaceRecents#WorkspaceRecents'
     ]
@@ -152,7 +167,7 @@ admin: {
 }
 ```
 
-Component paths in `sections`, navigation icons, and admin component slots use `FrogbotComponent`. This type accepts either an import-map path string or a component definition and is exported from `frogbot` for reusable configuration types.
+Component paths in `navSections`, navigation icons, and admin component slots use `FrogbotComponent`. This type accepts either an import-map path string or a component definition and is exported from `frogbot` for reusable configuration types.
 
 ## Register a settings page
 
@@ -236,4 +251,4 @@ admin: {
 }
 ```
 
-A custom `Nav` fully owns navigation rendering. It does not receive FrogBot's default sidebar styles, New Chat preset, configured items or sections, bottom rail, or shell slots automatically.
+A custom `Nav` fully owns navigation rendering. It does not receive FrogBot's default sidebar styles, default New Chat link, configured items or sections, bottom rail, or shell slots automatically.

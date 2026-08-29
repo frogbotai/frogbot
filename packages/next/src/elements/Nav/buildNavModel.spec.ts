@@ -24,7 +24,7 @@ const permissions = {
 
 function config(): SanitizedConfig {
   return {
-    admin: { nav: { items: [{ label: 'Home', path: '/admin' }] } },
+    admin: { components: { navItems: [{ label: 'Home', path: '/admin' }] } },
     collections: [
       { admin: {}, label: 'Posts', labels: { plural: 'Posts', singular: 'Post' }, slug: 'posts' },
       {
@@ -51,6 +51,12 @@ function config(): SanitizedConfig {
   } as unknown as SanitizedConfig;
 }
 
+function bareConfig(): SanitizedConfig {
+  const bare = config();
+  delete (bare.admin as { components?: unknown }).components;
+  return bare;
+}
+
 describe('buildNavModel', () => {
   it('builds configured items and translated entity groups in config order', () => {
     expect(
@@ -66,18 +72,15 @@ describe('buildNavModel', () => {
         { items: [{ label: 'Users', path: '/control/collections/users' }], label: 'Accounts' },
       ],
       items: [
-        { icon: 'pencil-edit', label: 'New Chat', path: '/control/collections/chats/create' },
         { label: 'Home', path: '/admin' },
         { icon: 'robot', label: 'Projects', path: '/control/collections/projects' },
       ],
     });
   });
 
-  it('always renders the new chat item first', () => {
-    const bare = config();
-    delete (bare.admin as { nav?: unknown }).nav;
+  it('defaults to the new chat item when navItems is unset', () => {
     const result = buildNavModel({
-      config: bare,
+      config: bareConfig(),
       i18n,
       permissions,
       visibleEntities: { collections: [], globals: [] },
@@ -87,10 +90,20 @@ describe('buildNavModel', () => {
     ]);
   });
 
+  it('drops the new chat default when navItems is configured', () => {
+    const result = buildNavModel({
+      config: config(),
+      i18n,
+      permissions,
+      visibleEntities: { collections: [], globals: [] },
+    });
+    expect(result.items).toEqual([{ label: 'Home', path: '/admin' }]);
+  });
+
   it('targets the resolved chat collection create route', () => {
     const result = buildNavModel({
       chatsSlug: 'conversations',
-      config: config(),
+      config: bareConfig(),
       i18n,
       permissions,
       visibleEntities: { collections: [], globals: [] },

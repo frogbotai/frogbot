@@ -26,8 +26,11 @@ export interface RootAdminGraphics {
 }
 
 export interface NavItem {
+  /** Icon shown next to the label in the sidebar. */
   icon?: FrogbotComponent;
+  /** Text shown in the sidebar. */
   label: string;
+  /** Full path the link navigates to, e.g. `/admin/operations`. */
   path: string;
 }
 
@@ -38,14 +41,27 @@ export interface RootAdminComponents {
   afterLogin?: FrogbotComponent[];
   /** Add components before the login form's email and password fields. */
   beforeLogin?: FrogbotComponent[];
+  /** Add components to the sidebar below the nav links and nav sections. */
   afterNavLinks?: FrogbotComponent[];
+  /** Add components to the bottom sidebar rail, below Account and Settings. */
   afterBottomRail?: FrogbotComponent[];
+  /** Add components to the bottom sidebar rail, above Account and Settings. */
   beforeBottomRail?: FrogbotComponent[];
+  /** Add components to the sidebar header, left of the collapse button. */
   beforeSidebarClose?: FrogbotComponent[];
+  /** Add components to the sidebar above the nav links. */
   beforeNavLinks?: FrogbotComponent[];
   /** Component slots for admin branding. */
   graphics?: RootAdminGraphics;
+  /** Replace the entire admin sidebar navigation. */
   Nav?: FrogbotComponent;
+  /** Sidebar links above your collections. Defaults to a single New Chat
+   *  link; setting this replaces it, so include New Chat yourself if you
+   *  still want it. */
+  navItems?: NavItem[];
+  /** Sidebar sections below the links. Defaults to Collections + Recents;
+   *  setting this replaces those defaults. */
+  navSections?: FrogbotComponent[];
   /** Wrap the admin panel in custom context providers. */
   providers?: ProviderComponent[];
   /** Replace, modify, or add top-level admin routes. */
@@ -54,6 +70,7 @@ export interface RootAdminComponents {
 
 export interface RootAdminConfig {
   importMap?: {
+    /** Regenerate the admin import map on boot. */
     autoGenerate?: boolean;
   };
   /**
@@ -71,10 +88,6 @@ export interface RootAdminConfig {
   components?: RootAdminComponents;
   /** Metadata for generated/admin surfaces. */
   meta?: RootAdminMetaConfig;
-  nav?: {
-    items?: NavItem[];
-    sections?: FrogbotComponent[];
-  };
   /**
    * Restrict the Admin Panel theme to one of these values.
    *

@@ -84,13 +84,11 @@ export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig 
     }
   }
 
-  const nav = admin as typeof admin & {
-    nav?: { items?: { icon?: PayloadComponent }[]; sections?: PayloadComponent[] };
-  };
-  for (const item of nav?.nav?.items ?? []) {
+  const navItems = (admin?.components as { navItems?: { icon?: PayloadComponent }[] } | undefined)
+    ?.navItems;
+  for (const item of navItems ?? []) {
     if (item.icon) item.icon = rewriteComponent(item.icon);
   }
-  if (nav?.nav?.sections) nav.nav.sections = nav.nav.sections.map(rewriteComponent);
 
   if (admin?.dashboard?.widgets) {
     admin.dashboard.widgets = admin.dashboard.widgets.map((widget) => ({

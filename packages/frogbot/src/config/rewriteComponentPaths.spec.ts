@@ -114,10 +114,8 @@ describe('rewriteComponentPaths', () => {
           afterBottomRail: ['@payloadcms/next/rsc#AfterBottom'],
           beforeBottomRail: ['./components/BeforeBottom#BeforeBottom'],
           beforeSidebarClose: ['@payloadcms/next/client#BeforeClose'],
-        },
-        nav: {
-          items: [{ icon: '@payloadcms/next/client#ItemIcon' }],
-          sections: ['@payloadcms/next/rsc#Section', './components/Section#Section'],
+          navItems: [{ icon: '@payloadcms/next/client#ItemIcon' }],
+          navSections: ['@payloadcms/next/rsc#Section', './components/Section#Section'],
         },
       },
       collections: [{ admin: { icon: '@payloadcms/next/rsc#CollectionIcon' }, fields: [] }],
@@ -127,12 +125,11 @@ describe('rewriteComponentPaths', () => {
     rewriteComponentPaths(config);
 
     expect(
-      (config.admin as never as { nav: { items: { icon: string }[] } }).nav.items[0]?.icon,
+      (config.admin.components as never as { navItems: { icon: string }[] }).navItems[0]?.icon,
     ).toBe('@frogbotai/next/client#ItemIcon');
-    expect((config.admin as never as { nav: { sections: string[] } }).nav.sections).toEqual([
-      '@frogbotai/next/rsc#Section',
-      './components/Section#Section',
-    ]);
+    expect(
+      (config.admin.components as never as { navSections: string[] }).navSections,
+    ).toEqual(['@frogbotai/next/rsc#Section', './components/Section#Section']);
     expect(config.admin.components.afterBottomRail).toEqual(['@frogbotai/next/rsc#AfterBottom']);
     expect(config.admin.components.beforeBottomRail).toEqual([
       './components/BeforeBottom#BeforeBottom',

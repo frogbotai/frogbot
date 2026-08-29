@@ -62,20 +62,28 @@ export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   collections: CollectionConfig[];
   /** Agent configs registered at boot and exposed via frogbot.agents. */
   agents?: AgentConfig[];
+  /** Pieces — bundled tools, triggers, and auth for a third-party service. */
   pieces?: Piece[];
+  /** Standalone tools available to agents, outside of any piece. */
   tools?: readonly AnyTool[];
+  /** Third-party account linking — which providers users can connect. */
   connections?: ConnectionsConfig;
+  /** Where connection credentials are read from and written to. */
   credentialSources?: CredentialSource[];
   /** Plugin pipeline — runs serially, in order, before sanitization. */
   plugins?: Plugin[];
+  /** Pages added to the admin settings area, each with its own route. */
   settings?: SettingsEntry[];
   /** Root-level admin configuration. */
   admin?: RootAdminConfig;
   /** Root-level custom endpoints. Handler receives FrogbotRequest. */
   endpoints?: Endpoint[];
+  /** Root-level hooks. `req` is `FrogbotRequest`. */
   hooks?: RootHooks;
+  /** Runs once after FrogBot boots, with the initialized instance. */
   onInit?: OnInit | OnInit[];
   /** AI configuration — providers, routers, hooks, and access control. */
   ai?: AIConfig;
+  /** Internal. Set by plugin-roles; not authored by users. */
   _roles?: RolesPrewiring;
 };

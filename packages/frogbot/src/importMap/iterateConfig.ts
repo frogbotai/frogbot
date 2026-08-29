@@ -64,15 +64,15 @@ export function iterateConfig({
     afterBottomRail?: string[];
     beforeBottomRail?: string[];
     beforeSidebarClose?: string[];
+    navItems?: { icon?: string }[];
+    navSections?: string[];
   };
   addToImportMap(shellComponents.afterBottomRail);
   addToImportMap(shellComponents.beforeBottomRail);
   addToImportMap(shellComponents.beforeSidebarClose);
 
-  const nav = (config.admin as { nav?: { items?: { icon?: string }[]; sections?: string[] } }).nav;
-  const navItems = nav?.items;
-  for (const item of navItems ?? []) addToImportMap(item.icon);
-  addToImportMap(nav?.sections);
+  for (const item of shellComponents.navItems ?? []) addToImportMap(item.icon);
+  addToImportMap(shellComponents.navSections);
 
   const settings = (
     config.admin as typeof config.admin & {

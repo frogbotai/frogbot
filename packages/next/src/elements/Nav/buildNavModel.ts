@@ -91,19 +91,20 @@ export function buildNavModel({
       });
     });
 
+  const configuredItems = (
+    admin.components as typeof admin.components & { navItems?: NavConfigItem[] }
+  )?.navItems;
+  const newChatItem: NavConfigItem = {
+    icon: 'pencil-edit',
+    label: 'New Chat',
+    path: formatAdminURL({
+      adminRoute: routes.admin,
+      path: `/collections/${chatsSlug}/create`,
+    }),
+  };
+
   return {
     groups,
-    items: [
-      {
-        icon: 'pencil-edit',
-        label: 'New Chat',
-        path: formatAdminURL({
-          adminRoute: routes.admin,
-          path: `/collections/${chatsSlug}/create`,
-        }),
-      },
-      ...((admin as typeof admin & { nav?: { items?: NavConfigItem[] } }).nav?.items ?? []),
-      ...topLevelItems,
-    ],
+    items: [...(configuredItems ?? [newChatItem]), ...topLevelItems],
   };
 }

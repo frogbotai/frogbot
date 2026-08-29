@@ -49,10 +49,8 @@ export async function FrogbotNav(props: FrogbotNavProps) {
     afterBottomRail?: Parameters<typeof RenderServerComponent>[0]['Component'][];
     beforeBottomRail?: Parameters<typeof RenderServerComponent>[0]['Component'][];
     beforeSidebarClose?: Parameters<typeof RenderServerComponent>[0]['Component'][];
+    navSections?: Parameters<typeof RenderServerComponent>[0]['Component'][];
   };
-  const navConfig = (admin as typeof admin & {
-    nav?: { sections?: Parameters<typeof RenderServerComponent>[0]['Component'][] };
-  }).nav;
   const chat = getCachedFrogbot()?.config.chat;
   const navModel = buildNavModel({
     chatsSlug: chat?.enabled ? chat.chatsSlug : undefined,
@@ -131,7 +129,7 @@ export async function FrogbotNav(props: FrogbotNavProps) {
       initialOpen={navPreferences?.open}
       items={configuredItems}
       logo={logo}
-      sections={renderMany(navConfig?.sections, 'nav-section')}
+      sections={renderMany(shellComponents.navSections, 'nav-section')}
       settingsPath={formatAdminURL({ adminRoute: routes.admin, path: '/settings' })}
     />
   );

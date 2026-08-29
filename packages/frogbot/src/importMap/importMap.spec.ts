@@ -46,18 +46,14 @@ async function makePayloadConfig({
       },
     ],
     admin: {
-      nav: includeNavIcons
-        ? {
-            items: [{ icon: './components/HomeIcon.tsx#HomeIcon', label: 'Home', path: '/' }],
-            sections: ['./components/CustomSection.tsx#CustomSection'],
-          }
-        : undefined,
       components: {
         ...(includeNavIcons
           ? {
               afterBottomRail: ['./components/AfterBottom.tsx#AfterBottom'],
               beforeBottomRail: ['./components/BeforeBottom.tsx#BeforeBottom'],
               beforeSidebarClose: ['./components/BeforeClose.tsx#BeforeClose'],
+              navItems: [{ icon: './components/HomeIcon.tsx#HomeIcon', label: 'Home', path: '/' }],
+              navSections: ['./components/CustomSection.tsx#CustomSection'],
             }
           : {}),
         Nav: './components/Nav.tsx#CustomNav',
@@ -91,7 +87,7 @@ describe('frogbot importMap generator', () => {
       includeSettings: false,
     });
     payloadConfig.admin.importMap.baseDir = dir;
-    (payloadConfig.admin as never as { nav: { sections: string[] } }).nav.sections = [];
+    (payloadConfig.admin.components as never as { navSections: string[] }).navSections = [];
 
     payloadConfig.admin.importMap.importMapFile = join(dir, 'a', 'importMap.js');
     await payloadGenerateImportMap(payloadConfig, { log: false });

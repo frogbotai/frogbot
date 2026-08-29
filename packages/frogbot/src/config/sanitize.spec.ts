@@ -597,10 +597,9 @@ describe('frogbot sanitize', () => {
     const result = sanitize(makeConfig());
     const payloadConfig = await result._internal.payloadConfig;
 
-    expect((payloadConfig.admin as never as { nav: { sections: string[] } }).nav.sections).toEqual([
-      '@frogbotai/next#CollectionsSection',
-      '@frogbotai/next#RecentsSection',
-    ]);
+    expect(
+      (payloadConfig.admin.components as never as { navSections: string[] }).navSections,
+    ).toEqual(['@frogbotai/next#CollectionsSection', '@frogbotai/next#RecentsSection']);
   });
 
   it('defaults the dashboard and resolved chat collection views', async () => {
@@ -676,25 +675,20 @@ describe('frogbot sanitize', () => {
             afterBottomRail: ['./components/AfterBottom#AfterBottom'],
             beforeBottomRail: ['./components/BeforeBottom#BeforeBottom'],
             beforeSidebarClose: ['./components/BeforeClose#BeforeClose'],
-          },
-          nav: {
-            items: [{ label: 'Home', path: '/' }],
-            sections: ['./components/Section#Section'],
+            navItems: [{ label: 'Home', path: '/' }],
+            navSections: ['./components/Section#Section'],
           },
         },
       }),
     );
     const payloadConfig = await result._internal.payloadConfig;
-    const nav = (
-      payloadConfig.admin as never as {
-        nav: { items: { label: string; path: string }[]; sections: string[] };
-      }
-    ).nav;
+    const components = payloadConfig.admin.components as never as {
+      navItems: { label: string; path: string }[];
+      navSections: string[];
+    };
 
-    expect(nav).toEqual({
-      items: [{ label: 'Home', path: '/' }],
-      sections: ['./components/Section#Section'],
-    });
+    expect(components.navItems).toEqual([{ label: 'Home', path: '/' }]);
+    expect(components.navSections).toEqual(['./components/Section#Section']);
     expect(payloadConfig.admin.components.afterBottomRail).toEqual([
       './components/AfterBottom#AfterBottom',
     ]);

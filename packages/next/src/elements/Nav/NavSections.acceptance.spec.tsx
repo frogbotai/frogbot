@@ -37,7 +37,7 @@ describe('navigation section acceptance', () => {
     } as unknown as { req: PayloadRequest } & ServerProps;
     render(await RecentsSection(props));
 
-    expect(admin.nav.sections).toEqual(['./RecentsSection#RecentsSection']);
+    expect(admin.components.navSections).toEqual(['./RecentsSection#RecentsSection']);
     expect(screen.getByRole('region', { name: 'Recents' })).not.toBeNull();
     expect(screen.getByRole('link', { name: 'View all' }).getAttribute('href')).toBe(
       '/control/collections/custom-chats',

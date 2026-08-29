@@ -899,16 +899,13 @@ function buildPayloadConfig(
   const settings = sanitizeSettings(config.settings);
   out.admin = {
     ...admin,
-    nav: {
-      ...((admin?.nav as Record<string, unknown> | undefined) ?? {}),
-      sections: (admin?.nav as { sections?: unknown[] } | undefined)?.sections ?? [
-        '@frogbotai/next#CollectionsSection',
-        '@frogbotai/next#RecentsSection',
-      ],
-    },
     components: {
       ...admin?.components,
       Nav: admin?.components?.Nav ?? '@frogbotai/next/rsc#FrogbotNav',
+      navSections: admin?.components?.navSections ?? [
+        '@frogbotai/next#CollectionsSection',
+        '@frogbotai/next#RecentsSection',
+      ],
       graphics: {
         Icon: '@frogbotai/next/rsc#FrogbotIcon',
         Logo: '@frogbotai/next/rsc#FrogbotLogo',

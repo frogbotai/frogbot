@@ -1,7 +1,7 @@
 import type { RootAdminConfig } from 'frogbot';
 
 export const admin = {
-  nav: {
-    sections: ['./RecentsSection#RecentsSection'],
+  components: {
+    navSections: ['./RecentsSection#RecentsSection'],
   },
 } satisfies RootAdminConfig;
