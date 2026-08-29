@@ -3,7 +3,7 @@ export type { AgentSelectorProps } from '../chat/agent-selector';
 export { AgentSelector } from '../chat/agent-selector';
 export type { ComposerAttachment, FileReference, PasteAttachment } from '../chat/attachments';
 export { bearerFetch, cookieFetch, createCookieSDK } from '../chat/auth';
-export type { ChatProps } from '../chat/chat';
+export type { ChatProps, ChatSidebarContext } from '../chat/chat';
 export { Chat } from '../chat/chat';
 export type { ChatShellProps } from '../chat/chat-shell';
 export { ChatShell } from '../chat/chat-shell';

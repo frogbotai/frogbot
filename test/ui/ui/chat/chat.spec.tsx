@@ -60,7 +60,17 @@ vi.mock('../../../../packages/ui/src/chat/use-chats', () => ({
   }),
 }));
 
-import { Chat } from '../../../../packages/ui/src/chat/chat';
+import { Chat, type ChatSidebarContext } from '../../../../packages/ui/src/chat/chat';
+import { ChatHistory } from '../../../../packages/ui/src/chat/chat-history';
+
+const renderSidebar = (context: ChatSidebarContext) => (
+  <ChatHistory
+    chats={context.chats}
+    activeChatId={context.activeChatId}
+    fallbackTitle="Untitled"
+    onChatChange={context.selectChat}
+  />
+);
 
 const props = {
   agent: 'support',
@@ -70,6 +80,7 @@ const props = {
   emptyContent: 'Empty',
   errorContent: (error: Error) => error.message,
   abortedContent: 'Aborted',
+  renderSidebar,
 };
 const message: import('ai').UIMessage = {
   id: 'user-1',
@@ -113,6 +124,17 @@ describe('Chat', () => {
     render(<Chat {...props} chatId="chat-1" initialMessages={[message]} />);
 
     expect(state.options).toMatchObject({ id: 'chat-1', messages: [message] });
+  });
+
+  it('renders no sidebar by default', () => {
+    const { container } = render(<Chat agent="support" />);
+    expect(container.querySelector('.fb-chat-shell__sidebar')).toBeNull();
+  });
+
+  it('renders a caller-provided sidebar with history context', () => {
+    const { container } = render(<Chat {...props} defaultChatId="one" />);
+    expect(container.querySelector('.fb-chat-shell__sidebar')).toBeTruthy();
+    expect(screen.getByText('One').getAttribute('aria-current')).toBe('page');
   });
 
   it('forwards custom message rendering', () => {
@@ -256,7 +278,7 @@ describe('Chat', () => {
     state.messages = [
       { id: 'user', role: 'user', parts: [{ type: 'text', text: 'Derived conversation title' }] },
     ];
-    render(<Chat agent="support" defaultChatId="two" />);
+    render(<Chat agent="support" defaultChatId="two" renderSidebar={renderSidebar} />);
     expect(
       screen
         .getByRole('button', { name: 'Derived conversation title' })
@@ -329,10 +351,17 @@ describe('Chat', () => {
       <Chat
         agent="support"
         defaultChatId="one"
-        renderChatActions={(chat, actions) => (
+        renderSidebar={(context) => (
           <>
-            <button onClick={() => void actions.rename('Renamed')}>Rename {chat.id}</button>
-            <button onClick={() => void actions.delete()}>Delete {chat.id}</button>
+            {context.chats.map((chat) => {
+              const actions = context.actions(chat);
+              return (
+                <div key={chat.id}>
+                  <button onClick={() => void actions.rename('Renamed')}>Rename {chat.id}</button>
+                  <button onClick={() => void actions.delete()}>Delete {chat.id}</button>
+                </div>
+              );
+            })}
           </>
         )}
       />,

@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { Chat } from '../../../../packages/ui/src/chat/chat';
+import { ChatHistory } from '../../../../packages/ui/src/chat/chat-history';
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
 
 vi.mock('@ai-sdk/react', () => ({
@@ -73,7 +74,13 @@ describe('renamed collection acceptance', () => {
           headers: { Authorization: 'Bearer runtime' },
         }}
       >
-        <Chat agent="support" defaultChatId="chat-1" />
+        <Chat
+          agent="support"
+          defaultChatId="chat-1"
+          renderSidebar={({ chats, activeChatId, selectChat }) => (
+            <ChatHistory chats={chats} activeChatId={activeChatId} onChatChange={selectChat} />
+          )}
+        />
       </ChatProvider>,
     );
 

@@ -6,7 +6,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useControlledState } from '../hooks/use-controlled-state';
 import type { ComposerAttachment } from './attachments';
-import { ChatHistory, deriveChatTitle } from './chat-history';
+import { deriveChatTitle } from './chat-history';
 import { ChatShell } from './chat-shell';
 import { ChatStatus } from './chat-status';
 import { Composer } from './composer';
@@ -24,6 +24,13 @@ import { useChats } from './use-chats';
 type ChatActions = {
   rename: (title: string) => Promise<void>;
   delete: () => Promise<void>;
+};
+
+export type ChatSidebarContext = {
+  chats: ChatDocument[];
+  activeChatId: string | number | undefined;
+  selectChat: (chatId: string | number) => void;
+  actions: (chat: ChatDocument) => ChatActions;
 };
 
 export type ChatProps = {
@@ -45,7 +52,7 @@ export type ChatProps = {
   errorContent?: (error: Error) => ReactNode;
   abortedContent?: ReactNode;
   warningContent?: ReactNode;
-  renderChatActions?: (chat: ChatDocument, actions: ChatActions) => ReactNode;
+  renderSidebar?: (context: ChatSidebarContext) => ReactNode;
   renderMessage?: MessageListProps['renderMessage'];
   panel?: ReactNode;
 };
@@ -99,7 +106,7 @@ function ChatOrchestrator({
   onChatIdChange,
   panel,
   renderMessage,
-  renderChatActions,
+  renderSidebar,
   sdk,
   stopContent = 'Stop',
   submitContent = 'Send',
@@ -300,19 +307,12 @@ function ChatOrchestrator({
   return (
     <ChatShell
       panel={panel}
-      sidebar={
-        <ChatHistory
-          chats={displayedChats}
-          activeChatId={activeChatId}
-          fallbackTitle={fallbackTitle}
-          onChatChange={selectChat}
-          renderActions={
-            renderChatActions
-              ? (chatDocument) => renderChatActions(chatDocument, mutate(chatDocument))
-              : undefined
-          }
-        />
-      }
+      sidebar={renderSidebar?.({
+        chats: displayedChats,
+        activeChatId,
+        selectChat,
+        actions: mutate,
+      })}
     >
       {headerSlot}
       {chat.messages.length === 0 && !history.loading ? (

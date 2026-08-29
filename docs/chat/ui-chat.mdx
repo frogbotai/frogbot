@@ -25,7 +25,18 @@ export function SupportChat() {
 }
 ```
 
-Use `chatId` and `onChatIdChange` for controlled routing. Use `defaultChatId` when the component should manage selection internally. `headerSlot`, `composerStartSlot`, `composerEndSlot`, `panel`, and `renderChatActions` add product-specific controls without replacing the shell.
+Use `chatId` and `onChatIdChange` for controlled routing. Use `defaultChatId` when the component should manage selection internally. `headerSlot`, `composerStartSlot`, `composerEndSlot`, and `panel` add product-specific controls without replacing the shell.
+
+Chat renders no sidebar by default because the FrogBot admin navigation already lists conversations. Pass `renderSidebar` to embed your own history surface; it receives `{ chats, activeChatId, selectChat, actions }`, so the exported `ChatHistory` component drops straight in:
+
+```tsx
+<Chat
+  agent="support"
+  renderSidebar={({ chats, activeChatId, selectChat }) => (
+    <ChatHistory chats={chats} activeChatId={activeChatId} onChatChange={selectChat} />
+  )}
+/>
+```
 
 ## Composer selectors
 

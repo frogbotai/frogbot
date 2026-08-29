@@ -5,6 +5,7 @@ import { general } from 'frogbot/agents';
 import { todoTools } from 'frogbot/tools';
 
 import { Users } from './collections';
+import { assistant } from './agents/assistant';
 
 const config: FrogbotConfig = {
   secret: process.env.FROGBOT_SECRET || '',
@@ -24,7 +25,8 @@ const config: FrogbotConfig = {
       },
     },
   },
-  agents: [general()],
+  admin: {},
+  agents: [general(), assistant],
 };
 
 export default buildConfig(config);
