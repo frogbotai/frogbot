@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { ToolCtx } from '../types/tool.js';
+import type { ToolCtx } from '../tools/types.js';
 
 type ActivepiecesProperty = {
   type: string;

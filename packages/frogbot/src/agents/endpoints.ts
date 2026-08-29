@@ -3,9 +3,9 @@ import { createAgentUIStreamResponse, generateId } from 'ai';
 import { z } from 'zod';
 
 import { validateChatMessages } from '../chat/validateMessages.js';
-import { resolveChatAttachments } from '../files/resolveChatAttachments.js';
-import type { AgentInstance } from '../types/agent.js';
-import type { DocID } from '../types/operations.js';
+import { resolveChatAttachments } from '../uploads/resolveChatAttachments.js';
+import type { AgentInstance } from './types.js';
+import type { DocID } from '../collections/config/types.js';
 import type { FrogbotRequest } from '../types/request.js';
 import {
   AgentServiceError,

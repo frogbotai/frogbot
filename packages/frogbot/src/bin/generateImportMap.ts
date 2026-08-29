@@ -1,5 +1,5 @@
 import { loadConfig } from '../config/load.js';
-import { generateImportMap as generate } from '../importMap/index.js';
+import { generateImportMap as generate } from './generateImportMap/index.js';
 
 export async function generateImportMap(): Promise<void> {
   const cwd = process.cwd();

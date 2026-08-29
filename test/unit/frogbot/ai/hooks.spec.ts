@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { SanitizedAIHooks } from '../../../../packages/frogbot/src/types/hooks-ai.js';
+import type { SanitizedAIHooks } from '../../../../packages/frogbot/src/collections/config/types-ai.js';
 import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { toGatewayHooks, toHookUsage } from '../../../../packages/frogbot/src/ai/hooks.js';
 

@@ -10,7 +10,7 @@
 
 import type { Hooks, HookUsage } from '@frogbotai/gateway';
 
-import type { AIHookContext, SanitizedAIHooks } from '../types/hooks-ai.js';
+import type { AIHookContext, SanitizedAIHooks } from './hooks/types.js';
 import type { FrogbotRequest } from '../types/request.js';
 
 /** Shape FrogBot seeds into the gateway `context` bag for every operation. */

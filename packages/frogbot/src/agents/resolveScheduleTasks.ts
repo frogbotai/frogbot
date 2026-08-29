@@ -1,7 +1,7 @@
 import type { JobsConfig, TaskConfig } from 'payload';
 
 import { getFrogbotInstance } from '../instanceRegistry.js';
-import type { AgentConfig, AgentScheduleTrigger } from '../types/agent.js';
+import type { AgentConfig, AgentScheduleTrigger } from './types.js';
 
 export const AGENT_SCHEDULE_TASK_SLUG = 'frogbot-run-agent-schedule';
 

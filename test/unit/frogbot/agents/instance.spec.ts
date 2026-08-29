@@ -3,7 +3,7 @@ import type * as AI from 'ai';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/types/ai.js';
+import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/ai/types.js';
 import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const agentState = vi.hoisted(() => ({

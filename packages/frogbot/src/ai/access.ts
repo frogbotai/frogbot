@@ -1,6 +1,6 @@
 // AI access control enforcement.
 
-import type { AIAccessConfig, AIMethod, SanitizedAIConfig } from '../types/ai.js';
+import type { AIAccessConfig, AIMethod, SanitizedAIConfig } from './types.js';
 import type { FrogbotRequest } from '../types/request.js';
 
 export type EnforceAccessArgs = {

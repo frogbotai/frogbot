@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Piece } from '../types/piece.js';
+import type { Piece } from './types.js';
 
 export function pieceContract({
   piece,

@@ -17,10 +17,10 @@ import type {
   AgentStreamOpts,
   AgentStreamResult,
   SanitizedAgentConfig,
-} from '../types/agent.js';
-import type { SanitizedAIConfig } from '../types/ai.js';
+} from './types.js';
+import type { SanitizedAIConfig } from '../ai/types.js';
 import type { FrogbotRequest } from '../types/request.js';
-import type { ToolCtx } from '../types/tool.js';
+import type { ToolCtx } from '../tools/types.js';
 import { toAISDKTools, toAISDKToolsContext } from './tools.js';
 
 export type AgentInstanceDeps = {

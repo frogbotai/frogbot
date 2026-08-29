@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CollectionConfig } from '../../../../packages/frogbot/src/types/collection.js';
-import type { FrogbotConfig } from '../../../../packages/frogbot/src/types/config.js';
-import type { SanitizedPiecesConfig } from '../../../../packages/frogbot/src/types/piece.js';
+import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
+import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { SanitizedPiecesConfig } from '../../../../packages/frogbot/src/pieces/types.js';
 import { DEFAULT_CONNECTIONS_SLUG, resolveConnectionsCollections } from '../../../../packages/frogbot/src/connections/resolveCollections.js';
 
 const pieces = {

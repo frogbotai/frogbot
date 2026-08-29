@@ -1,7 +1,7 @@
 import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
 
-import type { AgentGenerateResult } from '../../../../packages/frogbot/src/types/agent.js';
+import type { AgentGenerateResult } from '../../../../packages/frogbot/src/agents/types.js';
 import { generateMessage } from '../../../../packages/frogbot/src/chat/generateMessage.js';
 
 describe('generateMessage', () => {

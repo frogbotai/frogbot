@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CollectionConfig } from '../../../../packages/frogbot/src/types/collection.js';
-import type { FrogbotConfig } from '../../../../packages/frogbot/src/types/config.js';
+import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
+import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import { CHAT_ASSETS_SLUG, resolveChatCollections } from '../../../../packages/frogbot/src/chat/resolveChatCollections.js';
 
 const agents = [

@@ -5,7 +5,7 @@ import type { Gateway } from '@frogbotai/gateway';
 import { transcribe as aiTranscribe } from 'ai';
 
 import type { Logger } from '../../frogbot.js';
-import type { SanitizedAIConfig, TranscribeOpts } from '../../types/ai.js';
+import type { SanitizedAIConfig, TranscribeOpts } from '../types.js';
 import type { FrogbotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { enforcePolicy } from '../policy.js';

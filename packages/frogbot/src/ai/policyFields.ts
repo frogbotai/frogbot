@@ -1,4 +1,4 @@
-import type { Field } from '../types/fields.js';
+import type { Field } from '../fields/config/types.js';
 
 const names = new Set(['modelAccess', 'models', 'monthlyBudget', 'spendThisPeriodUSD']);
 

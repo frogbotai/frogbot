@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { FrogbotSanitizedConfig } from '../../../../packages/frogbot/src/types/sanitized.js';
+import type { FrogbotSanitizedConfig } from '../../../../packages/frogbot/src/config/sanitized.js';
 import { getPayloadConfig } from '../../../../packages/frogbot/src/config/getPayloadConfig.js';
 
 function makeConfig() {

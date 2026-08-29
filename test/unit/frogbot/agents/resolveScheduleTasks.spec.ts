@@ -2,7 +2,7 @@ import type { JobsConfig, TaskConfig } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 
 import { registerFrogbotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
-import type { AgentConfig, AgentInstance } from '../../../../packages/frogbot/src/types/agent.js';
+import type { AgentConfig, AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
 import {
   AGENT_SCHEDULE_TASK_SLUG,
   everyToCron,

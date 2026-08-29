@@ -2,7 +2,7 @@ import type { AfterOperationHook } from '@frogbotai/gateway';
 import { calculateModelCostUSD } from '@frogbotai/gateway';
 
 import type { AIOperationContext } from './hooks.js';
-import { USAGE_LOGS_SLUG } from './usageCollection.js';
+import { USAGE_LOGS_SLUG } from './usage/collection.js';
 
 export const logUsage: AfterOperationHook = (args) => {
   const context = args.context as AIOperationContext;

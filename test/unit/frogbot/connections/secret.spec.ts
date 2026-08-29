@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Piece } from '../../../../packages/frogbot/src/types/piece.js';
+import type { Piece } from '../../../../packages/frogbot/src/pieces/types.js';
 import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
 import { buildSecretEndpoints } from '../../../../packages/frogbot/src/connections/secret.js';
 

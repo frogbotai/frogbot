@@ -1,4 +1,4 @@
-import type { AIConfig, CustomProviderEntry, SanitizedAIConfig } from '../types/ai.js';
+import type { AIConfig, CustomProviderEntry, SanitizedAIConfig } from './types.js';
 import { catalog } from './catalog.js';
 import { getGatewayProviderName, isProviderName } from './providerNames.js';
 

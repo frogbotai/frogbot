@@ -2,7 +2,7 @@ import type * as AI from 'ai';
 import type { UIMessage } from 'ai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { AgentInstance } from '../../../../packages/frogbot/src/types/agent.js';
+import type { AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
 import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const { createAgentUIStreamResponse, resolveChatAttachments } = vi.hoisted(() => ({
@@ -31,7 +31,7 @@ vi.mock('ai', async (importOriginal) => ({
   createAgentUIStreamResponse,
 }));
 
-vi.mock('../../../../packages/frogbot/src/files/resolveChatAttachments.js', () => ({ resolveChatAttachments }));
+vi.mock('../../../../packages/frogbot/src/uploads/resolveChatAttachments.js', () => ({ resolveChatAttachments }));
 
 const { buildAgentEndpoints } = await import('../../../../packages/frogbot/src/agents/endpoints.js');
 

@@ -6,7 +6,7 @@ import { generateId, streamText as aiStreamText } from 'ai';
 
 import { toAISDKTools, toAISDKToolsContext } from '../../agents/tools.js';
 import type { Frogbot, Logger } from '../../frogbot.js';
-import type { SanitizedAIConfig, StreamTextOpts } from '../../types/ai.js';
+import type { SanitizedAIConfig, StreamTextOpts } from '../types.js';
 import type { FrogbotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';

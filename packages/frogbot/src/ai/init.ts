@@ -16,7 +16,7 @@ import type {
   BuiltInProviderEntry,
   CustomProviderEntry,
   SanitizedAIConfig,
-} from '../types/ai.js';
+} from './types.js';
 import { toGatewayHooks } from './hooks.js';
 import { logUsage } from './logUsage.js';
 import { getGatewayProviderName, isProviderName } from './providerNames.js';

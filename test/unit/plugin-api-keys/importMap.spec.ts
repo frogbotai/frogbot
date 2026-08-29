@@ -5,8 +5,8 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
-import { generateImportMap } from '../../../packages/frogbot/src/importMap/index.js';
-import type { FrogbotConfig } from '../../../packages/frogbot/src/types/config.js';
+import { generateImportMap } from '../../../packages/frogbot/src/bin/generateImportMap/index.js';
+import type { FrogbotConfig } from '../../../packages/frogbot/src/config/types.js';
 import { apiKeysPlugin } from '../../../packages/plugins/plugin-api-keys/src/index.js';
 
 vi.mock('@payloadcms/ui', () => ({

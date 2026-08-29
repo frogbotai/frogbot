@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Piece } from '../../../../packages/frogbot/src/types/piece.js';
+import type { Piece } from '../../../../packages/frogbot/src/pieces/types.js';
 import { resolveCredentialSources } from '../../../../packages/frogbot/src/connections/sources.js';
 
 const piece = {

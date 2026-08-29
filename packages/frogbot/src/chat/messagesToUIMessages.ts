@@ -1,6 +1,6 @@
 import type { UIMessage } from 'ai';
 
-import type { DocID } from '../types/operations.js';
+import type { DocID } from '../collections/config/types.js';
 
 export type PersistedMessage = {
   id: DocID;

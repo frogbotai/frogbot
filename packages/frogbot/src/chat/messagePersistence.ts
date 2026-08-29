@@ -1,7 +1,7 @@
 import type { LanguageModelUsage, UIMessage } from 'ai';
 
 import { toHookUsage } from '../ai/hooks.js';
-import type { DocID } from '../types/operations.js';
+import type { DocID } from '../collections/config/types.js';
 import type { FrogbotRequest } from '../types/request.js';
 import { MESSAGE_USAGE_CONTEXT_KEY } from './collections/messages.js';
 

@@ -7,10 +7,10 @@
 //   - persistence is on whenever agents are configured or a collection
 //     is marked; there is no opt-out
 
-import { resolveMarkedCollection } from '../collections/resolveMarkedCollection.js';
-import type { SanitizedChatConfig } from '../types/chat.js';
-import type { CollectionConfig } from '../types/collection.js';
-import type { FrogbotConfig } from '../types/config.js';
+import { resolveMarkedCollection } from '../collections/config/resolveMarkedCollection.js';
+import type { SanitizedChatConfig } from './types.js';
+import type { CollectionConfig } from '../collections/config/types.js';
+import type { FrogbotConfig } from '../config/types.js';
 import { defaultChatsCollection } from './collections/chats.js';
 import { defaultMessagesCollection } from './collections/messages.js';
 import { resolveUserSlug } from './resolveUserSlug.js';

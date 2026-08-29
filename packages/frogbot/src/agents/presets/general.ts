@@ -1,4 +1,4 @@
-import type { AgentConfig } from '../../types/agent.js';
+import type { AgentConfig } from '../types.js';
 
 const instructions = 'You are a concise and helpful general assistant.';
 

@@ -1,7 +1,7 @@
 import type { UIMessage } from 'ai';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { SanitizedChatConfig } from '../../../../packages/frogbot/src/types/chat.js';
+import type { SanitizedChatConfig } from '../../../../packages/frogbot/src/chat/types.js';
 import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { resolveChatContext } from '../../../../packages/frogbot/src/chat/chatContext.js';
 

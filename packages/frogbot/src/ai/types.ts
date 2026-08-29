@@ -1,0 +1,306 @@
+// AI-related types for FrogBot's AI configuration surface.
+//
+// Near-passthrough of AI SDK 7 — developers who know the AI SDK feel at home.
+// FrogBot adds: typed model resolution, access control, hooks, and routers.
+
+import type { ModelMessage, Output, StopCondition, ToolChoice, ToolSet } from 'ai';
+
+import type { CatalogModelId } from '../ai/generated.js';
+import type { ProviderName } from '../ai/providerNames.js';
+import type { AIHooks, SanitizedAIHooks } from './hooks/types.js';
+import type { Tool } from '../tools/types.js';
+import type { FrogbotTypes } from '../types/generated.js';
+import type { FrogbotRequest } from '../types/request.js';
+
+export type AIOutput = ReturnType<(typeof Output)[keyof typeof Output]>;
+
+// ─── Provider Configuration ──────────────────────────────────────────────────
+
+type GatewayProviderName<P extends ProviderName> = P extends 'bedrock'
+  ? 'amazon-bedrock'
+  : P extends 'together'
+    ? 'togetherai'
+    : P;
+
+type ProviderModelName<
+  P extends ProviderName,
+  Id extends CatalogModelId = CatalogModelId,
+> = Id extends `${GatewayProviderName<P>}/${infer Model}` ? Model : never;
+
+export type BuiltInProviderEntry<P extends ProviderName = ProviderName> = {
+  apiKey: string | undefined;
+  models?: ProviderModelName<P>[];
+};
+
+type BedrockModels = { models?: ProviderModelName<'bedrock'>[] };
+
+export type BedrockProviderEntry = (
+  | {
+      region: string;
+      accessKeyId?: never;
+      secretAccessKey?: never;
+      sessionToken?: never;
+    }
+  | {
+      region?: string;
+      accessKeyId: string;
+      secretAccessKey: string;
+      sessionToken?: string;
+    }
+  | {
+      region?: string;
+      credentialProvider: () => Promise<{
+        accessKeyId: string;
+        secretAccessKey: string;
+        sessionToken?: string;
+      }>;
+      accessKeyId?: never;
+      secretAccessKey?: never;
+      sessionToken?: never;
+    }
+) &
+  BedrockModels;
+
+type ProviderEntry<P extends ProviderName = ProviderName> = true | BuiltInProviderEntry<P>;
+
+type BedrockEntry = true | BedrockProviderEntry;
+
+export type CustomProviderEntry = {
+  type: 'openai-compatible';
+  baseUrl: string;
+  apiKey?: string;
+  headers?: Record<string, string>;
+  models: ModelConfig[];
+};
+
+export type ProviderConfig = {
+  [K in ProviderName]?: K extends 'bedrock' ? BedrockEntry : ProviderEntry<K>;
+} & {
+  [customKey: string]: ProviderEntry | BedrockEntry | CustomProviderEntry | undefined;
+};
+
+// ─── Model Configuration ─────────────────────────────────────────────────────
+
+export type ModelMode =
+  | 'chat'
+  | 'embedding'
+  | 'image_generation'
+  | 'audio_speech'
+  | 'audio_transcription'
+  | 'rerank'
+  | 'video_generation';
+
+export type ModelModality = 'text' | 'image' | 'audio' | 'video' | 'file';
+
+export type ModelConfig = {
+  id: string;
+  mode: ModelMode;
+  name?: string;
+  limit?: {
+    context?: number;
+    input?: number;
+    output?: number;
+  };
+  cost?: {
+    input?: number;
+    output?: number;
+    cache_read?: number;
+  };
+  modalities?: {
+    input: ModelModality[];
+    output: ModelModality[];
+  };
+  reasoning?: boolean;
+  tool_call?: boolean;
+  structured_output?: boolean;
+  temperature?: boolean;
+  status?: 'alpha' | 'beta' | 'deprecated';
+};
+
+// ─── Router Configuration ────────────────────────────────────────────────────
+
+export type RouterConfig = {
+  model: string;
+  /** @notImplemented — reserved for future admin UI integration. */
+  hidden?: boolean;
+};
+
+// ─── Access Control ──────────────────────────────────────────────────────────
+
+export type AIAccessFn = (args: { req: FrogbotRequest }) => boolean | Promise<boolean>;
+
+export type AIAccessConfig = {
+  generate?: AIAccessFn;
+  embed?: AIAccessFn;
+  transcribe?: AIAccessFn;
+  rerank?: AIAccessFn;
+};
+
+export type AIMethod =
+  | 'generateText'
+  | 'streamText'
+  | 'embed'
+  | 'embedMany'
+  | 'generateImage'
+  | 'generateSpeech'
+  | 'transcribe'
+  | 'generateVideo'
+  | 'rerank';
+
+// ─── Telemetry Configuration ─────────────────────────────────────────────────
+
+/**
+ * Span types emitted by `@ai-sdk/otel`. Matches `OpenTelemetrySpanType`
+ * from `@ai-sdk/otel` without taking a hard dependency.
+ */
+export type AITelemetrySpanType =
+  'operation' | 'step' | 'languageModel' | 'tool' | 'embedding' | 'reranking';
+
+export type AIEnrichSpanArgs = {
+  spanType: AITelemetrySpanType;
+  operationId: string;
+  callId: string;
+  runtimeContext: Record<string, unknown> | undefined;
+};
+
+/**
+ * Custom attributes added to every AI SDK span. Returned attribute values
+ * are stringified by `@ai-sdk/otel` before being attached to the span.
+ */
+export type AIEnrichSpan = (args: AIEnrichSpanArgs) => Record<string, unknown> | undefined;
+
+export type AITelemetryConfig = {
+  /** Auto-register `@ai-sdk/otel` if available. Default: `true`. */
+  enabled?: boolean;
+  /** User-provided span attributes merged on top of FrogBot's defaults. */
+  enrichSpan?: AIEnrichSpan;
+};
+
+// ─── Top-Level AI Config ─────────────────────────────────────────────────────
+
+export type AIConfig = {
+  providers: ProviderConfig;
+  routers?: Record<string, RouterConfig>;
+  defaultRouter?: string;
+  defaultModel?: string;
+  hooks?: AIHooks;
+  access?: AIAccessConfig;
+  /** Deployment identifier attached to telemetry spans. Default: `FROGBOT_DEPLOYMENT_ID` env or `'local'`. */
+  deploymentId?: string;
+  telemetry?: AITelemetryConfig;
+};
+
+// ─── Sanitized AI Config ─────────────────────────────────────────────────────
+
+export type SanitizedAITelemetryConfig = {
+  enabled: boolean;
+  enrichSpan?: AIEnrichSpan;
+};
+
+export type SanitizedAIConfig = {
+  providers: ProviderConfig;
+  routers: Record<string, RouterConfig>;
+  defaultRouter?: string;
+  defaultModel?: string;
+  hooks: SanitizedAIHooks;
+  access: Required<AIAccessConfig>;
+  telemetry: SanitizedAITelemetryConfig;
+  usage: {
+    slug: string;
+  };
+  _internal: {
+    deploymentId: string;
+  };
+};
+
+// ─── Model ID Type ───────────────────────────────────────────────────────────
+//
+export type ModelId = FrogbotTypes['models'];
+
+// ─── Operation Options Types ─────────────────────────────────────────────────
+
+export type BaseAIOpts = {
+  model: ModelId;
+  req?: Partial<FrogbotRequest>;
+  overrideAccess?: boolean;
+};
+
+export type GenerateTextOpts = BaseAIOpts &
+  ({ prompt: string; messages?: never } | { prompt?: never; messages: ModelMessage[] }) & {
+    instructions?: string;
+    tools?: Tool[];
+    toolChoice?: ToolChoice<ToolSet>;
+    output?: AIOutput;
+    stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];
+    maxOutputTokens?: number;
+    temperature?: number;
+    topP?: number;
+    topK?: number;
+    presencePenalty?: number;
+    frequencyPenalty?: number;
+    seed?: number;
+    maxRetries?: number;
+    timeout?: number;
+    stopSequences?: string[];
+    providerOptions?: Record<string, unknown>;
+    abortSignal?: AbortSignal;
+    headers?: Record<string, string>;
+    onStepEnd?: (event: unknown) => void | Promise<void>;
+  };
+
+export type StreamTextOpts = GenerateTextOpts & {
+  onFinish?: (event: unknown) => void | Promise<void>;
+  onEnd?: (event: unknown) => void | Promise<void>;
+  onError?: (event: { error: unknown }) => void | Promise<void>;
+  onAbort?: (event: unknown) => void | Promise<void>;
+};
+
+export type EmbedOpts = BaseAIOpts & {
+  value: string;
+  abortSignal?: AbortSignal;
+  headers?: Record<string, string>;
+};
+
+export type EmbedManyOpts = BaseAIOpts & {
+  values: string[];
+  maxParallelCalls?: number;
+  abortSignal?: AbortSignal;
+  headers?: Record<string, string>;
+};
+
+export type GenerateImageOpts = BaseAIOpts & {
+  prompt: string;
+  n?: number;
+  size?: string;
+  providerOptions?: Record<string, unknown>;
+  abortSignal?: AbortSignal;
+  headers?: Record<string, string>;
+};
+
+export type GenerateSpeechOpts = BaseAIOpts & {
+  text: string;
+  voice?: string;
+  speed?: number;
+  providerOptions?: Record<string, unknown>;
+  abortSignal?: AbortSignal;
+};
+
+export type TranscribeOpts = BaseAIOpts & {
+  audio: Blob | ArrayBuffer | ReadableStream;
+  language?: string;
+  providerOptions?: Record<string, unknown>;
+  abortSignal?: AbortSignal;
+};
+
+export type GenerateVideoOpts = BaseAIOpts & {
+  prompt: string;
+  providerOptions?: Record<string, unknown>;
+  abortSignal?: AbortSignal;
+};
+
+export type RerankOpts = BaseAIOpts & {
+  query: string;
+  documents: string[];
+  topN?: number;
+  abortSignal?: AbortSignal;
+};

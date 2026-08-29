@@ -6,7 +6,7 @@
 
 import type { InitOptions } from './frogbot.js';
 import { Frogbot } from './frogbot.js';
-import type { FrogbotSanitizedConfig } from './types/sanitized.js';
+import type { FrogbotSanitizedConfig } from './config/sanitized.js';
 
 type FrogbotCache = {
   frogbot: Frogbot | null;

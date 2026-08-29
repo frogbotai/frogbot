@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import type { Piece } from '../../../../packages/frogbot/src/types/piece.js';
+import type { Piece } from '../../../../packages/frogbot/src/pieces/types.js';
 import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
 
 const db = {} as never;

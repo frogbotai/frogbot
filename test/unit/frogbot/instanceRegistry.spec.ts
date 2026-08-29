@@ -6,7 +6,7 @@ import {
   refreshFrogbotConfig,
   registerFrogbotInstance,
 } from '../../../packages/frogbot/src/instanceRegistry.js';
-import type { FrogbotSanitizedConfig } from '../../../packages/frogbot/src/types/sanitized.js';
+import type { FrogbotSanitizedConfig } from '../../../packages/frogbot/src/config/sanitized.js';
 
 describe('ensureFrogbotInstance', () => {
   it('returns a registered instance without initializing', async () => {

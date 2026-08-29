@@ -79,6 +79,18 @@
 
 - **Internal structure is for contributors, exports are for consumers** — define types/code wherever makes sense for devs working inside the package. Control public API surface separately via the exports layer. Don't conflate "where to define" with "what to export".
 
+### FrogBot Core Project Structure
+
+`packages/frogbot/src` follows Payload core's file and folder structure where FrogBot implements an equivalent concept.
+
+1. Check Payload core for an equivalent domain; if one exists, use that name and nesting.
+2. Co-locate types with the domain that owns them; never add domain types to a horizontal catch-all.
+3. Keep a FrogBot-specific top-level domain only when Payload has no equivalent.
+4. Do not create a Payload domain FrogBot does not implement.
+5. Keep the public boundary in `src/index.ts` and `src/exports/` regardless of internal layout.
+
+Representative mappings include collection configuration in `collections/config/`, file handling in `uploads/`, import-map generation in `bin/generateImportMap/`, field types in `fields/config/`, and operation types split across `auth/`, `collections/`, and `versions/`. FrogBot-specific domains such as `agents/`, `ai/`, `chat/`, `connections/`, `pieces/`, `skills/`, and `tools/` remain top-level and own their types.
+
 ## Reference Repos
 
 - **Payload source:** `/Users/colbygilbert/Documents/Code/payload` — ALWAYS check this repo for Payload internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what Payload supports.

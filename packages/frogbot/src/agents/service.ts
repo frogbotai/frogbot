@@ -5,9 +5,9 @@ import { resolveModel } from '../ai/resolve.js';
 import { resolveChatContext } from '../chat/chatContext.js';
 import { generateMessage } from '../chat/generateMessage.js';
 import { createMessageUsage, persistAssistantMessage } from '../chat/messagePersistence.js';
-import type { AgentInstance, AgentManifest } from '../types/agent.js';
-import type { ManifestResponse } from '../types/chat.js';
-import type { DocID } from '../types/operations.js';
+import type { AgentInstance, AgentManifest } from './types.js';
+import type { ManifestResponse } from '../chat/types.js';
+import type { DocID } from '../collections/config/types.js';
 import type { FrogbotRequest } from '../types/request.js';
 
 export class AgentServiceError extends Error {

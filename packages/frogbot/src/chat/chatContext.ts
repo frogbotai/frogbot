@@ -1,7 +1,7 @@
 import type { UIMessage } from 'ai';
 import { commitTransaction, initTransaction, killTransaction, NotFound } from 'payload';
 
-import type { DocID } from '../types/operations.js';
+import type { DocID } from '../collections/config/types.js';
 import type { FrogbotRequest } from '../types/request.js';
 import { messagesToUIMessages } from './messagesToUIMessages.js';
 import { validateChatMessages } from './validateMessages.js';

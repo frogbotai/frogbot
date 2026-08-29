@@ -1,5 +1,5 @@
-import type { Access } from '../types/access.js';
-import type { CollectionConfig } from '../types/collection.js';
+import type { Access } from '../collections/config/types.js';
+import type { CollectionConfig } from '../collections/config/types.js';
 
 const owner: Access = ({ req }) => (req.user ? { owner: { equals: req.user.id } } : false);
 

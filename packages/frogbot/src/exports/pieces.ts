@@ -4,11 +4,11 @@ import {
   loadActivepiecesPiece,
   propertiesSchema,
 } from '../pieces/activepieces.js';
-import type { CredentialType, Piece, PieceFactoryConfig, PiecePolicy } from '../types/piece.js';
-import type { AnyTool } from '../types/tool.js';
+import type { CredentialType, Piece, PieceFactoryConfig, PiecePolicy } from '../pieces/types.js';
+import type { AnyTool } from '../tools/types.js';
 
 export { UnsupportedPieceContextError } from '../pieces/activepieces.js';
-export type { Piece, PieceFactoryConfig, PiecePolicy } from '../types/piece.js';
+export type { Piece, PieceFactoryConfig, PiecePolicy } from '../pieces/types.js';
 
 function derivePolicy(
   credentialType: CredentialType,

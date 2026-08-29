@@ -1,7 +1,7 @@
 import type { UIMessage } from 'ai';
 import { consumeStream, generateId, toUIMessageStream } from 'ai';
 
-import type { AgentGenerateResult } from '../types/agent.js';
+import type { AgentGenerateResult } from '../agents/types.js';
 import { createMessageUsage } from './messagePersistence.js';
 
 export type GenerateMessageProps = {

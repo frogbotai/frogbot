@@ -1,6 +1,6 @@
 import type { SanitizedConfig } from 'payload';
 
-import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
+import type { FrogbotSanitizedConfig } from './sanitized.js';
 
 /** @internal — consumed by `@frogbotai/next`; not intended for user code. */
 export function getPayloadConfig(

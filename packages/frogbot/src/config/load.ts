@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import type { InitOptions } from '../frogbot.js';
-import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
+import type { FrogbotSanitizedConfig } from './sanitized.js';
 import type { ValidationMode } from './validationContext.js';
 import { runWithValidationMode } from './validationContext.js';
 import { findConfigFile, resolveEnvConfigPath } from './resolveConfigPath.js';

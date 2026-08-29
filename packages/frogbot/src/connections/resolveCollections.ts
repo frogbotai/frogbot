@@ -1,8 +1,8 @@
 import { resolveUserSlug } from '../chat/resolveUserSlug.js';
-import type { CollectionConfig } from '../types/collection.js';
-import type { FrogbotConfig } from '../types/config.js';
-import type { SanitizedConnectionsConfig } from '../types/connections.js';
-import type { SanitizedPiecesConfig } from '../types/piece.js';
+import type { CollectionConfig } from '../collections/config/types.js';
+import type { FrogbotConfig } from '../config/types.js';
+import type { SanitizedConnectionsConfig } from './types.js';
+import type { SanitizedPiecesConfig } from '../pieces/types.js';
 import { defaultConnectionsCollection } from './collection.js';
 import { createCredentialEncryption } from './encryption.js';
 

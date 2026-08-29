@@ -1,5 +1,5 @@
 import { loadConfig } from '../config/load.js';
-import { generateImportMap } from '../importMap/index.js';
+import { generateImportMap } from './generateImportMap/index.js';
 import { runNext } from './runNext.js';
 
 export async function dev(args: string[] = []) {

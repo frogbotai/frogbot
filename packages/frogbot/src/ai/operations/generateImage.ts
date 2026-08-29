@@ -4,7 +4,7 @@ import type { Gateway } from '@frogbotai/gateway';
 import { generateImage as aiGenerateImage } from 'ai';
 
 import type { Logger } from '../../frogbot.js';
-import type { GenerateImageOpts, SanitizedAIConfig } from '../../types/ai.js';
+import type { GenerateImageOpts, SanitizedAIConfig } from '../types.js';
 import type { FrogbotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';

@@ -21,7 +21,7 @@ import { streamTextOperation } from './ai/operations/streamText.js';
 import { transcribeOperation } from './ai/operations/transcribe.js';
 import { resolveConfigDir } from './config/resolveConfigPath.js';
 import { Connections } from './connections/api.js';
-import { generateImportMap } from './importMap/index.js';
+import { generateImportMap } from './bin/generateImportMap/index.js';
 import {
   ensureFrogbotInstance,
   refreshFrogbotConfig,
@@ -33,7 +33,7 @@ import { encodeTrainingData } from './training/encodeTrainingData.js';
 import { readTrainingData } from './training/readTrainingData.js';
 import type { ReadTrainingDataOptions } from './training/types.js';
 import { writeGeneratedTypes } from './typegen/index.js';
-import type { AgentRegistry } from './types/agent.js';
+import type { AgentRegistry } from './agents/types.js';
 import type {
   EmbedManyOpts,
   EmbedOpts,
@@ -45,15 +45,23 @@ import type {
   SanitizedAIConfig,
   StreamTextOpts,
   TranscribeOpts,
-} from './types/ai.js';
-import type { Collection } from './types/collection.js';
-import type { CollectionSlug, TypedCollection } from './types/generated.js';
+} from './ai/types.js';
+import type { Collection } from './collections/config/types.js';
 import type {
   AuthArgs,
   AuthResult,
+  ForgotPasswordArgs,
+  LoginArgs,
+  LoginResult,
+  ResetPasswordArgs,
+  ResetPasswordResult,
+  UnlockArgs,
+  VerifyEmailArgs,
+} from './auth/types.js';
+import type { CollectionSlug, TypedCollection } from './types/generated.js';
+import type {
   BulkResult,
   CountArgs,
-  CountVersionsArgs,
   CreateArgs,
   DeleteByIDArgs,
   DeleteManyArgs,
@@ -61,25 +69,21 @@ import type {
   FindArgs,
   FindByIDArgs,
   FindDistinctArgs,
-  FindVersionByIDArgs,
-  FindVersionsArgs,
-  ForgotPasswordArgs,
-  LoginArgs,
-  LoginResult,
   PaginatedDistinctDocs,
   PaginatedDocs,
-  ResetPasswordArgs,
-  ResetPasswordResult,
-  RestoreVersionArgs,
-  TypeWithVersion,
-  UnlockArgs,
   UpdateArgs,
   UpdateByIDArgs,
   UpdateManyArgs,
-  VerifyEmailArgs,
-} from './types/operations.js';
+} from './collections/config/types.js';
+import type {
+  CountVersionsArgs,
+  FindVersionByIDArgs,
+  FindVersionsArgs,
+  RestoreVersionArgs,
+  TypeWithVersion,
+} from './versions/types.js';
 import type { FrogbotRequest } from './types/request.js';
-import type { FrogbotSanitizedConfig } from './types/sanitized.js';
+import type { FrogbotSanitizedConfig } from './config/sanitized.js';
 
 type LogFn = {
   (obj: Record<string, unknown>, msg?: string): void;

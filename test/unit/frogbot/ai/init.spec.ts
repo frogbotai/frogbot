@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Logger } from '../../../../packages/frogbot/src/frogbot.js';
-import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/types/ai.js';
+import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/ai/types.js';
 import { buildGatewayConfig, createAIGateway } from '../../../../packages/frogbot/src/ai/init.js';
 
 afterEach(() => {

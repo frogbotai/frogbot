@@ -5,7 +5,7 @@ import type { ToolSet } from 'ai';
 import { tool as aiTool } from 'ai';
 import { z } from 'zod';
 
-import type { AnyTool, ToolCtx } from '../types/tool.js';
+import type { AnyTool, ToolCtx } from '../tools/types.js';
 
 export function toAISDKTools(tools: readonly AnyTool[] | undefined): ToolSet {
   if (!tools || tools.length === 0) return {};

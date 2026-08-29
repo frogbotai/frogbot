@@ -1,5 +1,5 @@
-import type { Access, CollectionAccess } from '../../types/access.js';
-import type { CollectionConfig } from '../../types/collection.js';
+import type { Access, CollectionAccess } from '../../collections/config/types.js';
+import type { CollectionConfig } from '../../collections/config/types.js';
 import type { FrogbotRequest } from '../../types/request.js';
 
 export type DefaultChatsCollectionProps = {

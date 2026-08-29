@@ -1,6 +1,6 @@
 import { listAgents } from '../agents/service.js';
 import { getFilteredCatalog } from '../ai/catalog.js';
-import type { ManifestResponse } from '../types/chat.js';
+import type { ManifestResponse } from './types.js';
 import type { FrogbotRequest } from '../types/request.js';
 
 export function buildManifestEndpoint() {

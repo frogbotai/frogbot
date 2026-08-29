@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { Frogbot } from '../../../packages/frogbot/src/frogbot.js';
 import { createGatewayHandler } from '../../../packages/frogbot/src/server/gateway.js';
-import type { FrogbotSanitizedConfig } from '../../../packages/frogbot/src/types/sanitized.js';
+import type { FrogbotSanitizedConfig } from '../../../packages/frogbot/src/config/sanitized.js';
 
 vi.mock('payload', () => {
   let mockPayload = createMockPayload();

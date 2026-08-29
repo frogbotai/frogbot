@@ -1,7 +1,7 @@
 import { AIAccessError, enforceAIAccess } from '../ai/access.js';
 import { enforcePolicy } from '../ai/policy.js';
 import type { Frogbot } from '../frogbot.js';
-import type { AIMethod } from '../types/ai.js';
+import type { AIMethod } from '../ai/types.js';
 
 type HandleGatewayRequestArgs = {
   frogbot: Frogbot;

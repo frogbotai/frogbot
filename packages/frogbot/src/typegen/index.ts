@@ -24,8 +24,8 @@ import { configToJSONSchema } from 'payload';
 import { format } from 'prettier';
 
 import { getConfiguredModelIds } from '../ai/models.js';
-import type { SanitizedAIConfig } from '../types/ai.js';
-import type { FrogbotSanitizedConfig } from '../types/sanitized.js';
+import type { SanitizedAIConfig } from '../ai/types.js';
+import type { FrogbotSanitizedConfig } from '../config/sanitized.js';
 
 const BANNER = `/* tslint:disable */
 /* eslint-disable */

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { Tool, ToolCtx } from '../types/tool.js';
+import type { Tool, ToolCtx } from './types.js';
 
 export const TodoItem = z.object({
   content: z.string(),

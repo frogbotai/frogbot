@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { FieldHook } from '../../../../../packages/frogbot/src/types/fields.js';
+import type { FieldHook } from '../../../../../packages/frogbot/src/fields/config/types.js';
 import type { FrogbotRequest } from '../../../../../packages/frogbot/src/types/request.js';
 import { defaultChatsCollection } from '../../../../../packages/frogbot/src/chat/collections/chats.js';
 

@@ -1,7 +1,7 @@
 import { describe, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
 
-import type { Tool, ToolCtx } from '../../../../packages/frogbot/src/types/tool.js';
+import type { Tool, ToolCtx } from '../../../../packages/frogbot/src/tools/types.js';
 
 describe('agent types', () => {
   it('infers annotated tool input and context', () => {
