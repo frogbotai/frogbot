@@ -1,0 +1,19 @@
+import * as module from '@activepieces/piece-stripe';
+import { pieceContract } from 'frogbot/pieces/test';
+
+import { credentialExecution } from '../../../packages/pieces/credential-execution.js';
+import { createStripe, stripeActions } from '../../../packages/pieces/piece-stripe/src/index.js';
+
+const stripe = createStripe();
+pieceContract({
+  piece: stripe,
+  service: 'stripe',
+  credentialType: 'secret_text',
+  actions: stripeActions,
+});
+credentialExecution({
+  module,
+  piece: stripe,
+  service: 'stripe',
+  credential: { type: 'SECRET_TEXT', secret_text: 'stripe_test_key' },
+});

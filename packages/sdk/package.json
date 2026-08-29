@@ -30,7 +30,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
-    "test": "vitest run --root ../.. --project=unit packages/sdk/src/index.spec.ts",
+    "test": "vitest run --root ../.. --project=unit test/unit/sdk/index.spec.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

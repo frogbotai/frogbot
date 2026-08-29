@@ -1,0 +1,19 @@
+import * as module from '@activepieces/piece-microsoft-teams';
+import { pieceContract } from 'frogbot/pieces/test';
+
+import { credentialExecution } from '../../../packages/pieces/credential-execution.js';
+import { createMicrosoftTeams, microsoftTeamsActions } from '../../../packages/pieces/piece-microsoft-teams/src/index.js';
+
+const microsoftTeams = createMicrosoftTeams();
+pieceContract({
+  piece: microsoftTeams,
+  service: 'microsoft-teams',
+  credentialType: 'oauth2',
+  actions: microsoftTeamsActions,
+});
+credentialExecution({
+  module,
+  piece: microsoftTeams,
+  service: 'microsoft-teams',
+  credential: { access_token: 'microsoft-test' },
+});

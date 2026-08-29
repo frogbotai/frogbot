@@ -1,27 +1,61 @@
+import { createRequire } from 'node:module';
+import { existsSync } from 'node:fs';
+import { dirname, join, relative, resolve, sep } from 'node:path';
+
 import { defineConfig } from 'vitest/config';
 
+const packageRoots = ['packages', 'packages/plugins', 'packages/pieces'];
+
+function packageTestResolver() {
+  return {
+    name: 'package-test-resolver',
+    resolveId(source: string, importer?: string) {
+      if (!importer || source.startsWith('.') || source.startsWith('/') || source.startsWith('\0')) {
+        return;
+      }
+      const parts = relative(process.cwd(), importer).split(sep);
+      let root =
+        parts[0] === 'test' && ['ui', 'unit'].includes(parts[1]) && parts[2]
+          ? packageRoots.map((path) => join(path, parts[2])).find((path) =>
+              existsSync(join(path, 'package.json')),
+            )
+          : undefined;
+      let current = dirname(importer);
+      while (!root && current.startsWith(process.cwd())) {
+        if (existsSync(join(current, 'package.json'))) root = current;
+        current = dirname(current);
+      }
+      if (!root) return;
+      try {
+        return createRequire(resolve(root, 'package.json')).resolve(source);
+      } catch {
+        return;
+      }
+    },
+  };
+}
+
 export default defineConfig({
+  plugins: [packageTestResolver()],
   test: {
     watch: false,
     retry: process.env.CI ? 2 : 0,
     projects: [
       {
+        plugins: [packageTestResolver()],
         test: {
           name: 'unit',
-          include: ['packages/**/*.spec.ts'],
-          exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', 'packages/gateway/**'],
+          include: ['test/unit/**/*.spec.ts'],
+          exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', 'test/unit/gateway/**'],
           environment: 'node',
         },
       },
       {
+        esbuild: { jsx: 'automatic' },
+        plugins: [packageTestResolver()],
         test: {
           name: 'ui',
-          include: [
-            'packages/next/src/**/*.spec.tsx',
-            'packages/ui/src/**/*.spec.tsx',
-            'packages/plugins/plugin-api-keys/src/**/*.spec.tsx',
-            'packages/plugins/plugin-usage-reports/src/**/*.spec.tsx',
-          ],
+          include: ['test/ui/**/*.spec.tsx'],
           exclude: ['**/node_modules/**', '**/dist/**'],
           environment: 'jsdom',
           server: { deps: { inline: [/@payloadcms\/ui/] } },
@@ -53,9 +87,10 @@ export default defineConfig({
         },
       },
       {
+        plugins: [packageTestResolver()],
         test: {
           name: 'gateway-unit',
-          include: ['packages/gateway/src/**/*.spec.ts'],
+          include: ['test/unit/gateway/**/*.spec.ts'],
           exclude: ['**/node_modules/**', '**/dist/**'],
           environment: 'node',
         },
@@ -63,7 +98,7 @@ export default defineConfig({
       {
         test: {
           name: 'gateway-integration',
-          include: ['test/gateway/**/*.int.spec.ts', 'packages/gateway/test/**/*.spec.ts'],
+          include: ['test/gateway/**/*.int.spec.ts'],
           exclude: ['**/node_modules/**', '**/dist/**'],
           environment: 'node',
           fileParallelism: false,

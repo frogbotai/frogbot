@@ -1,0 +1,550 @@
+import type * as AI from 'ai';
+import type { UIMessage } from 'ai';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { AgentInstance } from '../../../../packages/frogbot/src/types/agent.js';
+import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+
+const { createAgentUIStreamResponse, resolveChatAttachments } = vi.hoisted(() => ({
+  createAgentUIStreamResponse: vi.fn(() => Promise.resolve(new Response('stream'))),
+  resolveChatAttachments: vi.fn(({ messages }) =>
+    Promise.resolve(
+      messages.map((message: UIMessage) => ({
+        ...message,
+        parts: message.parts.map((part) =>
+          part.type === 'file-reference'
+            ? {
+                type: 'file',
+                filename: 'server.txt',
+                mediaType: 'text/plain',
+                url: 'data:text/plain;base64,ZmlsZQ==',
+              }
+            : part,
+        ),
+      })),
+    ),
+  ),
+}));
+
+vi.mock('ai', async (importOriginal) => ({
+  ...(await importOriginal<typeof AI>()),
+  createAgentUIStreamResponse,
+}));
+
+vi.mock('../../../../packages/frogbot/src/files/resolveChatAttachments.js', () => ({ resolveChatAttachments }));
+
+const { buildAgentEndpoints } = await import('../../../../packages/frogbot/src/agents/endpoints.js');
+
+function makeAgent(
+  generate = vi.fn(() =>
+    Promise.resolve({
+      text: 'hello',
+      totalUsage: { inputTokens: 1, outputTokens: 2 },
+      finishReason: 'stop',
+      rawFinishReason: 'stop',
+      steps: [{ content: [{ type: 'text', text: 'hello' }] }],
+    }),
+  ),
+): AgentInstance {
+  return {
+    slug: 'support',
+    config: { slug: 'support', model: 'openai/test', instructions: 'Help' },
+    aiAgent: { tools: {}, generate } as unknown as AgentInstance['aiAgent'],
+    generate: generate as AgentInstance['generate'],
+    stream: vi.fn() as AgentInstance['stream'],
+  };
+}
+
+function makeRequest({
+  accept,
+  agent = makeAgent(),
+  body = { prompt: 'Hello' },
+  create = vi.fn(() => Promise.resolve({ id: 'chat-1' })),
+  authorizations,
+  find = vi.fn(() =>
+    Promise.resolve({
+      docs: [{ id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+    }),
+  ),
+  findByID = vi.fn(() => Promise.resolve({ id: 'chat-1', user: user?.id ?? null })),
+  update = vi.fn(() => Promise.resolve({ id: 'chat-1' })),
+  signal,
+  slug = 'support',
+  user = { id: 'user-1' },
+}: {
+  accept?: string;
+  authorizations?: ReturnType<typeof vi.fn>;
+  agent?: AgentInstance;
+  body?: unknown;
+  create?: ReturnType<typeof vi.fn>;
+  find?: ReturnType<typeof vi.fn>;
+  findByID?: ReturnType<typeof vi.fn>;
+  update?: ReturnType<typeof vi.fn>;
+  signal?: AbortSignal;
+  slug?: string;
+  user?: { id: string } | null;
+} = {}): FrogbotRequest {
+  const headers = new Headers({ 'content-type': 'application/json' });
+  if (accept) {
+    headers.set('accept', accept);
+  }
+  const request = new Request('http://localhost/api/agents/support', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+    signal,
+  });
+  return Object.assign(request, {
+    routeParams: { slug },
+    frogbot: {
+      agents: { support: agent },
+      connections: authorizations ? { authorizations } : undefined,
+      config: {
+        ai: { routers: {} },
+        chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
+      },
+      create,
+      find,
+      findByID,
+      update,
+    },
+    payload: { db: {} },
+    user,
+  }) as unknown as FrogbotRequest;
+}
+
+function postHandler() {
+  return buildAgentEndpoints().find(
+    ({ path, method }) => path === '/agents/:slug' && method === 'post',
+  )!.handler;
+}
+
+function listHandler() {
+  return buildAgentEndpoints().find(({ path, method }) => path === '/agents' && method === 'get')!
+    .handler;
+}
+
+function authorizationsHandler() {
+  return buildAgentEndpoints().find(
+    ({ path, method }) => path === '/agents/:slug/authorizations' && method === 'get',
+  )!.handler;
+}
+
+describe('agent endpoints', () => {
+  beforeEach(() => {
+    createAgentUIStreamResponse.mockClear();
+    resolveChatAttachments.mockClear();
+  });
+
+  it('returns the agent manifest', async () => {
+    const agent = makeAgent();
+    agent.config = {
+      ...agent.config,
+      profile: { name: 'Ada', avatar: '/ada.png' },
+    } as AgentInstance['config'];
+    const response = await listHandler()(makeRequest({ agent }));
+
+    expect(await response.json()).toEqual({
+      defaultAgent: 'support',
+      agents: [
+        {
+          slug: 'support',
+          label: 'Ada',
+          source: 'config',
+          defaultModel: 'openai/test',
+          models: ['openai/test'],
+        },
+      ],
+    });
+  });
+
+  it('returns authorization preflight requirements and requires authentication', async () => {
+    const authorizations = vi
+      .fn()
+      .mockResolvedValue([
+        { source: 'google', services: ['google-sheets'], type: 'oauth', scopes: ['sheets'] },
+      ]);
+    const agent = makeAgent();
+    agent.config.tools = [{ slug: 'google-sheets_find', pieceService: 'google-sheets' } as never];
+    const response = await authorizationsHandler()(makeRequest({ agent, authorizations }));
+    expect(await response.json()).toEqual({
+      authorizations: [
+        { source: 'google', services: ['google-sheets'], type: 'oauth', scopes: ['sheets'] },
+      ],
+    });
+    expect(authorizations).toHaveBeenCalledWith({
+      owner: { id: 'user-1' },
+      services: ['google-sheets'],
+    });
+    expect((await authorizationsHandler()(makeRequest({ user: null }))).status).toBe(401);
+  });
+
+  it('returns JSON unless text/event-stream is explicitly accepted', async () => {
+    const agent = makeAgent();
+    const response = await postHandler()(makeRequest({ agent, accept: 'text/plain' }));
+
+    expect(response.headers.get('content-type')).toContain('application/json');
+    expect(agent.generate).toHaveBeenCalledOnce();
+    expect(createAgentUIStreamResponse).not.toHaveBeenCalled();
+  });
+
+  it('streams for an explicit text/event-stream media range', async () => {
+    const response = await postHandler()(
+      makeRequest({
+        accept: 'application/json, text/event-stream; q=1',
+      }),
+    );
+
+    expect(await response.text()).toBe('stream');
+    expect(createAgentUIStreamResponse).toHaveBeenCalledOnce();
+  });
+
+  it('rejects malformed UI messages with 400', async () => {
+    const response = await postHandler()(
+      makeRequest({
+        body: { messages: [{ role: 'user' }] },
+      }),
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  it('rejects a model outside the agent allowlist', async () => {
+    const response = await postHandler()(makeRequest({ body: { prompt: 'Hello', model: 'x/test' } }));
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: "Model 'x/test' is not allowed for agent 'support'",
+    });
+  });
+
+  it('passes an allowed model to the agent', async () => {
+    const agent = makeAgent();
+    agent.config.allowModels = ['openai/other'];
+    const response = await postHandler()(
+      makeRequest({ agent, body: { prompt: 'Hello', model: 'openai/other' } }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(agent.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ options: expect.objectContaining({ model: 'openai/other' }) }),
+    );
+  });
+
+  it('accepts stable file references and resolves them before invocation', async () => {
+    const agent = makeAgent();
+    const parts = [
+      { type: 'text', text: 'Read' },
+      { type: 'file-reference', id: 'file-1', filename: 'client.txt', mediaType: 'text/plain' },
+    ];
+    const request = makeRequest({
+      agent,
+      accept: 'text/event-stream',
+      body: { messages: [{ id: 'one', role: 'user', parts }] },
+      find: vi.fn().mockResolvedValue({ docs: [{ id: 'one', role: 'user', parts }] }),
+    });
+    const response = await postHandler()(request);
+
+    expect(await response.text()).toBe('stream');
+    expect(resolveChatAttachments).toHaveBeenCalledWith({
+      req: request,
+      messages: [
+        expect.objectContaining({
+          parts: [
+            { type: 'text', text: 'Read' },
+            {
+              type: 'file-reference',
+              id: 'file-1',
+              filename: 'client.txt',
+              mediaType: 'text/plain',
+            },
+          ],
+        }),
+      ],
+    });
+  });
+
+  it('preserves safe status values from agent errors', async () => {
+    const generate = vi.fn(() =>
+      Promise.reject(Object.assign(new Error('denied'), { statusCode: 403 })),
+    );
+    const response = await postHandler()(makeRequest({ agent: makeAgent(generate) }));
+
+    expect(response.status).toBe(403);
+  });
+
+  it('checks agent access before writing chat data', async () => {
+    const create = vi.fn();
+    const agent = makeAgent();
+    agent.config.access = () => false;
+
+    const response = await postHandler()(makeRequest({ agent, create }));
+
+    expect(response.status).toBe(403);
+    expect(create).not.toHaveBeenCalled();
+    expect(agent.generate).not.toHaveBeenCalled();
+  });
+
+  it('returns a bodyless 499 when the inbound request is aborted', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const generate = vi.fn(() => Promise.reject(new DOMException('aborted', 'AbortError')));
+    const response = await postHandler()(
+      makeRequest({
+        agent: makeAgent(generate),
+        signal: controller.signal,
+      }),
+    );
+
+    expect(response.status).toBe(499);
+    expect(await response.text()).toBe('');
+  });
+
+  it('returns 404 for unknown agent slugs', async () => {
+    const response = await postHandler()(makeRequest({ slug: 'missing' }));
+    expect(response.status).toBe(404);
+  });
+
+  it('creates a chat and echoes chatId in the JSON body', async () => {
+    const create = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
+    const request = makeRequest({ create });
+    const response = await postHandler()(request);
+
+    expect(create).toHaveBeenCalledWith({
+      collection: 'chats',
+      data: { user: 'user-1', agent: 'support' },
+      req: request,
+      overrideAccess: true,
+    });
+    expect(await response.json()).toMatchObject({ chatId: 'chat-9' });
+  });
+
+  it('sets X-Frogbot-Chat-Id on streamed responses', async () => {
+    const create = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
+    await postHandler()(makeRequest({ create, accept: 'text/event-stream' }));
+
+    expect(createAgentUIStreamResponse).toHaveBeenCalledWith(
+      expect.objectContaining({ headers: { 'X-Frogbot-Chat-Id': 'chat-9' } }),
+    );
+  });
+
+  it('persists the streamed assistant message with finish usage', async () => {
+    const create = vi
+      .fn()
+      .mockResolvedValueOnce({ id: 'chat-9' })
+      .mockResolvedValue({ id: 'assistant-1' });
+    const update = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
+    const request = makeRequest({ create, update, accept: 'text/event-stream' });
+    await postHandler()(request);
+
+    const options = createAgentUIStreamResponse.mock.calls[0][0] as {
+      consumeSseStream: unknown;
+      messageMetadata: (args: { part: unknown }) => unknown;
+      onFinish: (event: { responseMessage: UIMessage; isContinuation: boolean }) => Promise<void>;
+    };
+    const usage = options.messageMetadata({
+      part: {
+        type: 'finish',
+        finishReason: 'stop',
+        rawFinishReason: undefined,
+        totalUsage: { inputTokens: 2, outputTokens: 1, totalTokens: 3 },
+      },
+    });
+    await options.onFinish({
+      responseMessage: {
+        id: 'assistant-1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Hello' }],
+        metadata: usage,
+      },
+      isContinuation: false,
+    });
+
+    expect(options.consumeSseStream).toEqual(expect.any(Function));
+    expect(create).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        collection: 'messages',
+        data: expect.objectContaining({ id: 'assistant-1', role: 'assistant' }),
+        context: {
+          frogbotMessageUsage: expect.objectContaining({ totalTokens: 3, model: 'openai/test' }),
+        },
+      }),
+    );
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'chats', id: 'chat-9' }),
+    );
+  });
+
+  it('persists partial assistant parts when the stream ends without usage', async () => {
+    const create = vi
+      .fn()
+      .mockResolvedValueOnce({ id: 'chat-9' })
+      .mockResolvedValue({ id: 'assistant-1' });
+    const request = makeRequest({ create, accept: 'text/event-stream' });
+    await postHandler()(request);
+
+    const options = createAgentUIStreamResponse.mock.calls[0][0] as {
+      onFinish: (event: {
+        responseMessage: UIMessage;
+        isContinuation: boolean;
+        isAborted: boolean;
+      }) => Promise<void>;
+    };
+    await options.onFinish({
+      responseMessage: {
+        id: 'assistant-1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Part' }],
+      },
+      isContinuation: false,
+      isAborted: true,
+    });
+
+    expect(create).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        collection: 'messages',
+        data: expect.objectContaining({ parts: [{ type: 'text', text: 'Part' }] }),
+        context: { frogbotMessageUsage: null },
+      }),
+    );
+  });
+
+  it('loads an owned existing chat with overrideAccess true and echoes its id', async () => {
+    const create = vi.fn(() => Promise.resolve({ id: 'msg-1' }));
+    const findByID = vi.fn(() => Promise.resolve({ id: 'chat-7', user: 'user-1' }));
+    const request = makeRequest({
+      create,
+      findByID,
+      body: { prompt: 'Hello', chatId: 'chat-7' },
+    });
+    const response = await postHandler()(request);
+
+    expect(findByID).toHaveBeenCalledWith({
+      collection: 'chats',
+      id: 'chat-7',
+      depth: 0,
+      req: request,
+      overrideAccess: true,
+    });
+    expect(create).not.toHaveBeenCalledWith(expect.objectContaining({ collection: 'chats' }));
+    expect(await response.json()).toMatchObject({ chatId: 'chat-7' });
+  });
+
+  it('propagates chat load failures as their status', async () => {
+    const findByID = vi.fn(() =>
+      Promise.reject(Object.assign(new Error('not found'), { status: 404 })),
+    );
+    const response = await postHandler()(
+      makeRequest({ findByID, body: { prompt: 'Hello', chatId: 'gone' } }),
+    );
+
+    expect(response.status).toBe(404);
+  });
+
+  it('persists anonymous calls and returns a chatId', async () => {
+    const agent = makeAgent();
+    agent.config.access = () => true;
+    const create = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
+    const response = await postHandler()(makeRequest({ agent, create, user: null }));
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'chats',
+        data: { user: null, agent: 'support' },
+        overrideAccess: true,
+      }),
+    );
+    expect(await response.json()).toMatchObject({ chatId: 'chat-9' });
+  });
+
+  it('persists the user message and runs the agent on server history', async () => {
+    const agent = makeAgent();
+    const create = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
+    const find = vi.fn(() =>
+      Promise.resolve({
+        docs: [
+          { id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Earlier' }] },
+          { id: 'm2', role: 'assistant', parts: [{ type: 'text', text: 'Reply' }] },
+          { id: 'm3', role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
+        ],
+      }),
+    );
+    const request = makeRequest({ agent, create, find });
+    await postHandler()(request);
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'messages',
+        data: expect.objectContaining({
+          chat: 'chat-9',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Hello' }],
+        }),
+        overrideAccess: true,
+      }),
+    );
+    expect(create.mock.invocationCallOrder[0]).toBeLessThan(
+      (agent.generate as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0],
+    );
+    expect(agent.generate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({ role: 'user' }),
+          expect.objectContaining({ role: 'assistant' }),
+          expect.objectContaining({ role: 'user' }),
+        ],
+        options: expect.objectContaining({ chatId: 'chat-9' }),
+      }),
+    );
+  });
+
+  it('continues anonymous chats after agent access succeeds', async () => {
+    const agent = makeAgent();
+    agent.config.access = () => true;
+    const findByID = vi.fn(() => Promise.resolve({ id: 'chat-7', user: null }));
+    const response = await postHandler()(
+      makeRequest({ agent, findByID, user: null, body: { prompt: 'Hello', chatId: 'chat-7' } }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(findByID).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'chat-7', overrideAccess: true }),
+    );
+    expect(await response.json()).toMatchObject({ chatId: 'chat-7' });
+  });
+
+  it('rejects an anonymous caller continuing an authenticated chat', async () => {
+    const agent = makeAgent();
+    agent.config.access = () => true;
+    const create = vi.fn();
+    const find = vi.fn();
+    const findByID = vi.fn(() => Promise.resolve({ id: 'chat-7', user: 'user-1' }));
+    const response = await postHandler()(
+      makeRequest({
+        agent,
+        create,
+        find,
+        findByID,
+        user: null,
+        body: { prompt: 'Hello', chatId: 'chat-7' },
+      }),
+    );
+
+    expect(response.status).toBe(404);
+    expect(create).not.toHaveBeenCalled();
+    expect(find).not.toHaveBeenCalled();
+  });
+
+  it('checks the target agent access before continuing a chat', async () => {
+    const agent = makeAgent();
+    agent.config.access = () => false;
+    const findByID = vi.fn();
+    const response = await postHandler()(
+      makeRequest({ agent, findByID, user: null, body: { prompt: 'Hello', chatId: 'chat-7' } }),
+    );
+
+    expect(response.status).toBe(403);
+    expect(findByID).not.toHaveBeenCalled();
+    expect(agent.generate).not.toHaveBeenCalled();
+  });
+});

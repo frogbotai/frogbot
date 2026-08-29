@@ -1,0 +1,350 @@
+// Registry unit tests — resolveProvider, buildProviderRegistry.
+
+import { MockProviderV4 } from 'ai/test';
+import { describe, expect, it } from 'vitest';
+
+import {
+  ModelIdError,
+  ModelNotFoundError,
+  ModelUnsupportedOperationError,
+  NoProvidersError,
+  ProviderNotConfiguredError,
+} from '../../../../packages/gateway/src/errors/gatewayError.js';
+import { DEFAULT_MODEL_CATALOG } from '../../../../packages/gateway/src/providers/catalog.data.js';
+import { defineModelCatalog, presetFor } from '../../../../packages/gateway/src/providers/catalog.js';
+import {
+  buildProviderRegistry,
+  PROVIDER_NAMES,
+  type ProviderRegistry,
+  providers,
+  resolveProvider,
+} from '../../../../packages/gateway/src/providers/registry.js';
+
+// ---------------------------------------------------------------------------
+// resolveProvider
+// ---------------------------------------------------------------------------
+
+describe('resolveProvider', () => {
+  const mockProvider = new MockProviderV4();
+  const registry = { openai: mockProvider } as unknown as ProviderRegistry;
+
+  it('resolves a valid provider/model ID', () => {
+    const result = resolveProvider({
+      modelId: 'openai/gpt-4o',
+      operation: 'chat.completions',
+      providers: registry,
+    });
+    expect(result.providerName).toBe('openai');
+    expect(result.modelName).toBe('gpt-4o');
+    expect(result.instance).toBe(mockProvider);
+  });
+
+  it('splits on first slash only (multi-slash model IDs)', () => {
+    const result = resolveProvider({
+      modelId: 'openai/ft:gpt-4o-mini:org::abc',
+      operation: 'chat.completions',
+      providers: registry,
+    });
+    expect(result.providerName).toBe('openai');
+    expect(result.modelName).toBe('ft:gpt-4o-mini:org::abc');
+  });
+
+  it('throws NoProvidersError when registry is empty', () => {
+    expect(() =>
+      resolveProvider({
+        modelId: 'openai/gpt-4o',
+        operation: 'chat.completions',
+        providers: {},
+      }),
+    ).toThrow(NoProvidersError);
+  });
+
+  it('throws ModelIdError for empty model ID', () => {
+    expect(() =>
+      resolveProvider({
+        modelId: '',
+        operation: 'chat.completions',
+        providers: registry,
+      }),
+    ).toThrow(ModelIdError);
+  });
+
+  it('throws ModelIdError for bare model name (no slash)', () => {
+    expect(() =>
+      resolveProvider({
+        modelId: 'gpt-4o',
+        operation: 'chat.completions',
+        providers: registry,
+      }),
+    ).toThrow(ModelIdError);
+  });
+
+  it('throws ModelIdError for trailing slash', () => {
+    expect(() =>
+      resolveProvider({
+        modelId: 'openai/',
+        operation: 'chat.completions',
+        providers: registry,
+      }),
+    ).toThrow(ModelIdError);
+  });
+
+  it('throws ModelIdError for leading slash', () => {
+    expect(() =>
+      resolveProvider({
+        modelId: '/gpt-4o',
+        operation: 'chat.completions',
+        providers: registry,
+      }),
+    ).toThrow(ModelIdError);
+  });
+
+  it('throws ProviderNotConfiguredError for known but unconfigured provider', () => {
+    expect(() =>
+      resolveProvider({
+        modelId: 'groq/llama-3.3-70b-versatile',
+        operation: 'chat.completions',
+        providers: registry,
+      }),
+    ).toThrow(ProviderNotConfiguredError);
+  });
+
+  it('throws ModelNotFoundError for completely unknown provider', () => {
+    expect(() =>
+      resolveProvider({
+        modelId: 'unknown-provider/some-model',
+        operation: 'chat.completions',
+        providers: registry,
+      }),
+    ).toThrow(ModelNotFoundError);
+  });
+
+  // G36.1
+  it('throws ModelNotFoundError for prototype key "constructor" as provider', () => {
+    expect(() =>
+      resolveProvider({
+        modelId: 'constructor/x',
+        operation: 'chat.completions',
+        providers: registry,
+      }),
+    ).toThrow(ModelNotFoundError);
+  });
+
+  // G36.2
+  it('throws ModelNotFoundError for prototype key "__proto__" as provider', () => {
+    expect(() =>
+      resolveProvider({
+        modelId: '__proto__/x',
+        operation: 'chat.completions',
+        providers: registry,
+      }),
+    ).toThrow(ModelNotFoundError);
+  });
+
+  // G36.3
+  it('throws ModelNotFoundError for prototype key "toString" as provider', () => {
+    expect(() =>
+      resolveProvider({
+        modelId: 'toString/x',
+        operation: 'chat.completions',
+        providers: registry,
+      }),
+    ).toThrow(ModelNotFoundError);
+  });
+
+  // G36.3 (companion prototype keys)
+  it('throws ModelNotFoundError for "hasOwnProperty" and "valueOf" as provider', () => {
+    for (const key of ['hasOwnProperty', 'valueOf']) {
+      expect(() =>
+        resolveProvider({
+          modelId: `${key}/x`,
+          operation: 'chat.completions',
+          providers: registry,
+        }),
+      ).toThrow(ModelNotFoundError);
+    }
+  });
+
+  it('validates operation against catalog when provided', () => {
+    type TestIds = 'openai/text-embedding-3-small';
+    const preset = presetFor<TestIds>();
+    const entry = preset('openai/text-embedding-3-small', {
+      name: 'Text Embedding 3 Small',
+      modalities: { input: ['text'], output: ['embedding'] },
+      operations: ['embeddings'],
+      capabilities: {},
+      context: { input: 8192, output: 0 },
+      providers: ['openai'],
+    });
+    const catalog = defineModelCatalog(entry);
+
+    expect(() =>
+      resolveProvider({
+        modelId: 'openai/text-embedding-3-small',
+        operation: 'chat.completions',
+        providers: registry,
+        models: catalog,
+      }),
+    ).toThrow(ModelUnsupportedOperationError);
+  });
+
+  it('rejects models not in the catalog when no allowlist is configured', () => {
+    const catalog = defineModelCatalog();
+    expect(() =>
+      resolveProvider({
+        modelId: 'openai/gpt-4o',
+        operation: 'chat.completions',
+        providers: registry,
+        models: catalog,
+      }),
+    ).toThrow(ModelNotFoundError);
+  });
+
+  it('routes Bedrock inference profiles and rejects excluded bare IDs', () => {
+    const bedrockProvider = new MockProviderV4();
+    const bedrockRegistry = {
+      'amazon-bedrock': bedrockProvider,
+    } as unknown as ProviderRegistry;
+    const profileId = 'amazon-bedrock/us.meta.llama3-3-70b-instruct-v1:0';
+
+    expect(
+      resolveProvider({
+        modelId: profileId,
+        operation: 'chat.completions',
+        providers: bedrockRegistry,
+        models: DEFAULT_MODEL_CATALOG,
+      }).modelName,
+    ).toBe('us.meta.llama3-3-70b-instruct-v1:0');
+    expect(() =>
+      resolveProvider({
+        modelId: 'amazon-bedrock/meta.llama3-3-70b-instruct-v1:0',
+        operation: 'chat.completions',
+        providers: bedrockRegistry,
+        models: DEFAULT_MODEL_CATALOG,
+      }),
+    ).toThrow(ModelNotFoundError);
+  });
+
+  it('allows uncatalogued models for custom providers', () => {
+    const customRegistry = { internal: new MockProviderV4() } as unknown as ProviderRegistry;
+    const result = resolveProvider({
+      modelId: 'internal/chat-v1',
+      operation: 'chat.completions',
+      providers: customRegistry,
+      models: defineModelCatalog(),
+    });
+
+    expect(result.providerName).toBe('internal');
+  });
+
+  it('enforces allowlists after canonicalizing model aliases', () => {
+    const allowlists = new Map([
+      ['amazon-bedrock', new Set(['amazon-bedrock/anthropic.claude-sonnet-4-20250514-v1:0'])],
+    ]);
+    const bedrockRegistry = {
+      'amazon-bedrock': new MockProviderV4(),
+    } as unknown as ProviderRegistry;
+
+    expect(
+      resolveProvider({
+        modelId: 'amazon-bedrock/claude-4-sonnet',
+        operation: 'chat.completions',
+        providers: bedrockRegistry,
+        allowlists,
+      }).modelName,
+    ).toBe('anthropic.claude-sonnet-4-20250514-v1:0');
+    expect(() =>
+      resolveProvider({
+        modelId: 'amazon-bedrock/claude-4-opus',
+        operation: 'chat.completions',
+        providers: bedrockRegistry,
+        allowlists,
+      }),
+    ).toThrow(ModelNotFoundError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildProviderRegistry
+// ---------------------------------------------------------------------------
+
+describe('buildProviderRegistry', () => {
+  it('builds registry from provider configs', () => {
+    const registry = buildProviderRegistry({
+      openai: { apiKey: 'sk-test' },
+    });
+    expect(registry.openai).toBeDefined();
+  });
+
+  it('builds an unknown provider key as an openai-compatible endpoint', () => {
+    const registry = buildProviderRegistry({
+      openai: { apiKey: 'sk-test' },
+      ollama: { baseURL: 'http://localhost:11434/v1' },
+    });
+    expect(registry.openai).toBeDefined();
+    expect((registry as Record<string, unknown>)['ollama']).toBeDefined();
+  });
+
+  it('skips providers with undefined config', () => {
+    const registry = buildProviderRegistry({
+      openai: { apiKey: 'sk-test' },
+      groq: undefined,
+    });
+    expect(registry.openai).toBeDefined();
+    expect(registry.groq).toBeUndefined();
+  });
+
+  // G36.4
+  it('does not mutate Object.prototype for a hostile openai-compatible key', () => {
+    const before = Object.getOwnPropertyDescriptor(Object.prototype, '__proto__');
+    // A JSON-sourced config can carry a genuine own `__proto__` key.
+    const hostile = JSON.parse('{"__proto__": {"baseURL": "http://localhost:11434/v1"}}') as Record<
+      string,
+      unknown
+    >;
+    const registry = buildProviderRegistry(hostile);
+    // Object.prototype's native __proto__ accessor is untouched (still an accessor,
+    // not a data property holding the provider instance).
+    expect(Object.getOwnPropertyDescriptor(Object.prototype, '__proto__')).toEqual(before);
+    expect(({} as Record<string, unknown>)['languageModel']).toBeUndefined();
+    // The entry lands as an own property of the registry, not on the prototype.
+    expect(Object.hasOwn(registry, '__proto__')).toBe(true);
+  });
+
+  // G36.5
+  it('builds a null-prototype registry so prototype keys resolve to undefined', () => {
+    const registry = buildProviderRegistry({ openai: { apiKey: 'sk-test' } });
+    expect(Object.getPrototypeOf(registry)).toBe(null);
+    expect((registry as Record<string, unknown>)['constructor']).toBeUndefined();
+    expect((registry as Record<string, unknown>)['toString']).toBeUndefined();
+  });
+
+  // G80 — config value shape #2: pre-built provider instance used as-is.
+  it('passes a pre-built provider instance through as-is (no rebuild)', () => {
+    const prebuilt = new MockProviderV4();
+    const registry = buildProviderRegistry({ openai: prebuilt });
+    expect(registry.openai).toBe(prebuilt);
+  });
+
+  // G80 — instance passthrough coexists with shorthand-built providers.
+  it('mixes pre-built instances and shorthand configs in one registry', () => {
+    const prebuilt = new MockProviderV4();
+    const registry = buildProviderRegistry({
+      openai: prebuilt,
+      groq: { apiKey: 'gsk-test' },
+    });
+    expect(registry.openai).toBe(prebuilt);
+    expect(registry.groq).toBeDefined();
+    expect(registry.groq).not.toBe(prebuilt);
+  });
+});
+
+describe('provider table', () => {
+  it('has 36 built-in providers', () => {
+    expect(PROVIDER_NAMES.length).toBe(36);
+  });
+
+  it('providers table keys match PROVIDER_NAMES', () => {
+    expect(Object.keys(providers).sort()).toEqual([...PROVIDER_NAMES].sort());
+  });
+});

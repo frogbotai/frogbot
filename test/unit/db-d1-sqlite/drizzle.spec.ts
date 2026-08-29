@@ -1,0 +1,17 @@
+import { describe, expect, it } from 'vitest';
+
+import { and, eq, sql } from '../../../packages/db-d1-sqlite/src/drizzle';
+
+describe('@frogbotai/db-d1-sqlite drizzle subpath', () => {
+  it('exports eq as a function', () => {
+    expect(typeof eq).toBe('function');
+  });
+
+  it('exports and as a function', () => {
+    expect(typeof and).toBe('function');
+  });
+
+  it('exports sql as a function', () => {
+    expect(typeof sql).toBe('function');
+  });
+});
