@@ -3,7 +3,10 @@
 
 import { describe, expect, test } from 'vitest';
 
-import { mapStopReason, toAnthropicResponse } from '../../../../../../packages/gateway/src/routes/messages/translators/toAnthropicResponse.js';
+import {
+  mapStopReason,
+  toAnthropicResponse,
+} from '../../../../../../packages/gateway/src/routes/messages/translators/toAnthropicResponse.js';
 
 const baseArgs = {
   text: '',

@@ -152,10 +152,7 @@ export function Composer({
         }
       />
       <div
-        className={[
-          'fb-composer__gradient',
-          dragging && 'fb-composer__gradient--dragging',
-        ]
+        className={['fb-composer__gradient', dragging && 'fb-composer__gradient--dragging']
           .filter(Boolean)
           .join(' ')}
       >

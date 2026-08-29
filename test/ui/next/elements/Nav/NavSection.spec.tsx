@@ -7,7 +7,15 @@ const getPreference = vi.fn();
 const setPreference = vi.fn();
 
 vi.mock('@payloadcms/ui', () => ({
-  AnimateHeight: ({ children, height, id }: { children: React.ReactNode; height: number | string; id: string }) => (
+  AnimateHeight: ({
+    children,
+    height,
+    id,
+  }: {
+    children: React.ReactNode;
+    height: number | string;
+    id: string;
+  }) => (
     <div aria-hidden={height === 0} id={id}>
       {children}
     </div>
@@ -49,7 +57,9 @@ describe('NavSection', () => {
     );
 
     await waitFor(() =>
-      expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Recents' }).disabled).toBe(false),
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Recents' }).disabled).toBe(
+        false,
+      ),
     );
     expect(container.querySelector('.frogbot-nav-section__scroll')?.textContent).toBe(
       'Latest thread',

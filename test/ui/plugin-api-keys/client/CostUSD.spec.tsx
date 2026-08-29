@@ -6,7 +6,8 @@ vi.mock('@payloadcms/ui', () => ({
   useField: () => ({ value: 0 }),
 }));
 
-const { CostUSDCell, formatCostUSD } = await import('../../../../packages/plugins/plugin-api-keys/src/client/CostUSD.js');
+const { CostUSDCell, formatCostUSD } =
+  await import('../../../../packages/plugins/plugin-api-keys/src/client/CostUSD.js');
 
 describe('USD cost formatting', () => {
   it('formats dollars with sub-cent precision', () => {

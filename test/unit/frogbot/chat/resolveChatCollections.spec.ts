@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
-import { CHAT_ASSETS_SLUG, resolveChatCollections } from '../../../../packages/frogbot/src/chat/resolveChatCollections.js';
+import {
+  CHAT_ASSETS_SLUG,
+  resolveChatCollections,
+} from '../../../../packages/frogbot/src/chat/resolveChatCollections.js';
 
 const agents = [
   { slug: 'assistant', model: 'openai/test', instructions: 'Assist.' },
@@ -55,9 +58,7 @@ describe('resolveChatCollections', () => {
 
   it('adopts a `chat: true` collection under its own slug and merges base fields', () => {
     const result = resolveChatCollections(
-      make([
-        { slug: 'conversations', chat: true, fields: [{ name: 'department', type: 'text' }] },
-      ]),
+      make([{ slug: 'conversations', chat: true, fields: [{ name: 'department', type: 'text' }] }]),
     );
     expect(result.chat).toEqual({
       enabled: true,

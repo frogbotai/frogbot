@@ -58,9 +58,7 @@ describe('flag parts', () => {
         renderData={renderFlagPart}
       />,
     );
-    expect(screen.getByTestId('data-paste').className).toBe(
-      'fb-flag-part fb-flag-part--paste',
-    );
+    expect(screen.getByTestId('data-paste').className).toBe('fb-flag-part fb-flag-part--paste');
     expect(screen.getByText('Pasted content').className).toBe('fb-flag-part__preview');
     expect(screen.getByText('PASTED').className).toBe('fb-flag-part__label');
 
@@ -93,9 +91,7 @@ describe('flag parts', () => {
         renderData={renderFlagPart}
       />,
     );
-    expect(screen.getByTestId('data-prompt').className).toBe(
-      'fb-flag-part fb-flag-part--prompt',
-    );
+    expect(screen.getByTestId('data-prompt').className).toBe('fb-flag-part fb-flag-part--prompt');
     expect(screen.getByText('Reusable prompt').className).toBe(
       'fb-flag-part__preview fb-flag-part__preview--prompt',
     );

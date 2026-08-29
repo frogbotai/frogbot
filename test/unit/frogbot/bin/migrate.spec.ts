@@ -7,7 +7,9 @@ import { promisify } from 'node:util';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const execFileAsync = promisify(execFile);
-const binURL = pathToFileURL(new URL('../../../../packages/frogbot/src/bin/index.ts', import.meta.url).pathname).href;
+const binURL = pathToFileURL(
+  new URL('../../../../packages/frogbot/src/bin/index.ts', import.meta.url).pathname,
+).href;
 const repoRoot = resolve(import.meta.dirname, '../../../..');
 const templateDir = join(repoRoot, 'templates', 'blank');
 const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
@@ -33,7 +35,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock('payload', () => ({
   default: { db: mocks.adapter, find: mocks.find, init: mocks.init },
 }));
-vi.mock('../../../../packages/frogbot/src/config/load.js', () => ({ loadConfig: mocks.loadConfig }));
+vi.mock('../../../../packages/frogbot/src/config/load.js', () => ({
+  loadConfig: mocks.loadConfig,
+}));
 
 import { migrate } from '../../../../packages/frogbot/src/bin/migrate.js';
 

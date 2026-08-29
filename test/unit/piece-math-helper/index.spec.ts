@@ -1,7 +1,10 @@
 import { pieceContract } from 'frogbot/pieces/test';
 import { describe, expect, it } from 'vitest';
 
-import { createMathHelper, mathHelperActions } from '../../../packages/pieces/piece-math-helper/src/index.js';
+import {
+  createMathHelper,
+  mathHelperActions,
+} from '../../../packages/pieces/piece-math-helper/src/index.js';
 
 const mathHelper = createMathHelper();
 

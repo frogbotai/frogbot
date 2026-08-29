@@ -49,10 +49,7 @@ export const ModelSelector = memo(function ModelSelector({
           <ChevronDownIcon className="fb-model-selector__icon" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        className="fb-model-selector__content"
-      >
+      <DropdownMenuContent align="start" className="fb-model-selector__content">
         <DropdownMenuItem
           onSelect={() => onModelChange(undefined)}
           className="fb-model-selector__item"

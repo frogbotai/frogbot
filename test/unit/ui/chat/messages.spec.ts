@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { messageDocumentToUIMessage, uiMessageToDocument } from '../../../../packages/ui/src/chat/messages';
+import {
+  messageDocumentToUIMessage,
+  uiMessageToDocument,
+} from '../../../../packages/ui/src/chat/messages';
 
 describe('message mapping', () => {
   it('matches the live UIMessage shape and coerces ids', () => {

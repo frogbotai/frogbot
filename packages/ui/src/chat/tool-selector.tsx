@@ -42,11 +42,7 @@ export const ToolSelector = memo(function ToolSelector({
           <ChevronDownIcon className="fb-tool-selector__chevron" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        side="top"
-        className="fb-tool-selector__content"
-      >
+      <DropdownMenuContent align="start" side="top" className="fb-tool-selector__content">
         {tools.map((tool) => {
           const checked = selected.includes(tool.id);
           return (

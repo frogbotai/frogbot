@@ -857,6 +857,10 @@ function buildPayloadConfig(
     ...Object.fromEntries(Object.entries(config).filter(([key]) => !frogbotKeys.has(key))),
     collections,
     hooks: wrapRootHooks(config.hooks, attachFrogbot),
+    routes: {
+      ...config.routes,
+      admin: config.routes?.admin ?? '/',
+    },
   };
 
   const userEndpoints = config.endpoints as Endpoint[] | false | undefined;

@@ -33,7 +33,11 @@ function props(): ServerProps {
     payload: {
       config: {
         collections: [
-          { admin: { group: 'Content', icon: 'CustomIcon' }, labels: { plural: 'Posts' }, slug: 'posts' },
+          {
+            admin: { group: 'Content', icon: 'CustomIcon' },
+            labels: { plural: 'Posts' },
+            slug: 'posts',
+          },
           { admin: { group: 'Content' }, labels: { plural: 'Drafts' }, slug: 'drafts' },
           { admin: { group: false }, labels: { plural: 'Hidden' }, slug: 'hidden' },
           { admin: { group: 'Content' }, labels: { plural: 'Secret' }, slug: 'secret' },

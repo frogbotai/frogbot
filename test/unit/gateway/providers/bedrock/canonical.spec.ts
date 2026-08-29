@@ -2,7 +2,10 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { BEDROCK_CANONICAL_IDS, resolveBedrockModelId } from '../../../../../packages/gateway/src/providers/bedrock/canonical.js';
+import {
+  BEDROCK_CANONICAL_IDS,
+  resolveBedrockModelId,
+} from '../../../../../packages/gateway/src/providers/bedrock/canonical.js';
 
 describe('resolveBedrockModelId', () => {
   it('maps shorthand Claude IDs to full ARN-style IDs', () => {

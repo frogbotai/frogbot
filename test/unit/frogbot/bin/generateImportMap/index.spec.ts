@@ -264,13 +264,13 @@ describe('frogbot importMap generator', () => {
 });
 
 describe('resolveImportMapFilePath', () => {
-  it('resolves app/(frogbot)<adminRoute> and creates importMap.js', async () => {
+  it('resolves the default app/(frogbot) root and creates importMap.js', async () => {
     const root = await makeDir('frogbot-resolve-app-');
-    await mkdir(join(root, 'app', '(frogbot)', 'admin'), { recursive: true });
+    await mkdir(join(root, 'app', '(frogbot)'), { recursive: true });
 
-    const result = await resolveImportMapFilePath({ adminRoute: '/admin', rootDir: root });
+    const result = await resolveImportMapFilePath({ rootDir: root });
 
-    expect(result).toBe(join(root, 'app', '(frogbot)', 'admin', 'importMap.js'));
+    expect(result).toBe(join(root, 'app', '(frogbot)', 'importMap.js'));
     await expect(stat(result as string)).resolves.toBeTruthy();
   });
 
@@ -296,11 +296,11 @@ describe('resolveImportMapFilePath', () => {
   it('returns an Error mentioning both candidate locations when nothing resolves', async () => {
     const root = await makeDir('frogbot-resolve-missing-');
 
-    const result = await resolveImportMapFilePath({ adminRoute: '/admin', rootDir: root });
+    const result = await resolveImportMapFilePath({ rootDir: root });
 
     expect(result).toBeInstanceOf(Error);
-    expect((result as Error).message).toContain(join(root, 'app', '(frogbot)', 'admin'));
-    expect((result as Error).message).toContain(join(root, 'src', 'app', '(frogbot)', 'admin'));
+    expect((result as Error).message).toContain(join(root, 'app', '(frogbot)'));
+    expect((result as Error).message).toContain(join(root, 'src', 'app', '(frogbot)'));
     expect((result as Error).message).not.toContain('Payload');
   });
 });

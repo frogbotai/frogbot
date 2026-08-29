@@ -9,7 +9,9 @@ import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
 
 const execFileAsync = promisify(execFile);
-const binURL = pathToFileURL(new URL('../../../../packages/frogbot/src/bin/index.ts', import.meta.url).pathname).href;
+const binURL = pathToFileURL(
+  new URL('../../../../packages/frogbot/src/bin/index.ts', import.meta.url).pathname,
+).href;
 const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
 
 describe('frogbot generate:importmap', () => {

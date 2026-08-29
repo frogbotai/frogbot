@@ -28,7 +28,9 @@ export function ChatList({ chats, collectionSlug }: ChatListProps) {
           chats={chats}
           fallbackTitle="Untitled Chat"
           onChatChange={(id) =>
-            router.push(`/admin/collections/${encodeURIComponent(collectionSlug)}/${encodeURIComponent(String(id))}`)
+            router.push(
+              `/admin/collections/${encodeURIComponent(collectionSlug)}/${encodeURIComponent(String(id))}`,
+            )
           }
         />
       </ThemeProvider>

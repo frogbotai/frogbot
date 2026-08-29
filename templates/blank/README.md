@@ -25,7 +25,7 @@ the default `assistant` agent runs on opencode Zen's free
 FrogBot commands load `.env`, `.env.local`, and mode-specific `.env*` files with Next.js
 precedence. Existing shell variables take priority.
 
-Then open [http://localhost:3000/admin](http://localhost:3000/admin) to create
+Then open [http://localhost:3000](http://localhost:3000) to create
 your first user.
 
 ## Try it
@@ -65,5 +65,5 @@ type-generation changes are needed — both layouts are detected automatically.
 | `build`              | Production build (`next build`)                    |
 | `start`              | Serve the production build (`frogbot start`)       |
 | `generate:types`     | Regenerate `src/frogbot-types.ts` from this config |
-| `generate:importmap` | Regenerate `src/app/(frogbot)/admin/importMap.js`  |
+| `generate:importmap` | Regenerate `src/app/(frogbot)/importMap.js`        |
 | `typecheck`          | Type-check the project                             |

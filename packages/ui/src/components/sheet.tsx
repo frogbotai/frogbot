@@ -37,7 +37,9 @@ export function SheetFooter({ className, ...props }: ComponentProps<'div'>) {
   return <div className={`fb-sheet__footer${className ? ` ${className}` : ''}`} {...props} />;
 }
 export function SheetTitle({ className, ...props }: ComponentProps<typeof Primitive.Title>) {
-  return <Primitive.Title className={`fb-sheet__title${className ? ` ${className}` : ''}`} {...props} />;
+  return (
+    <Primitive.Title className={`fb-sheet__title${className ? ` ${className}` : ''}`} {...props} />
+  );
 }
 export function SheetDescription({
   className,

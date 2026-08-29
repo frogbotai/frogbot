@@ -2,7 +2,10 @@ import type { Span, SpanOptions, Tracer } from '@opentelemetry/api';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { BeforeUpstreamHookArgs } from '../../../../packages/gateway/src/hooks.js';
-import { createGatewayTracer, createTracingHooks } from '../../../../packages/gateway/src/observability/tracing.js';
+import {
+  createGatewayTracer,
+  createTracingHooks,
+} from '../../../../packages/gateway/src/observability/tracing.js';
 
 function makeArgs(): BeforeUpstreamHookArgs {
   return {

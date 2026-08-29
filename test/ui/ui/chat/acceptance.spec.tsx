@@ -3,7 +3,10 @@ import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
 
 import { MessageList } from '../../../../packages/ui/src/chat/message-list';
-import { messageDocumentToUIMessage, uiMessageToDocument } from '../../../../packages/ui/src/chat/messages';
+import {
+  messageDocumentToUIMessage,
+  uiMessageToDocument,
+} from '../../../../packages/ui/src/chat/messages';
 
 const conversation: UIMessage[] = [
   { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Summarize the report' }] },

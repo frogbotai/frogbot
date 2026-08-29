@@ -3,7 +3,11 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { assertPublicHttpsUrl, guardedDownload, isPrivateAddress } from '../../../../packages/gateway/src/utils/downloadGuard.js';
+import {
+  assertPublicHttpsUrl,
+  guardedDownload,
+  isPrivateAddress,
+} from '../../../../packages/gateway/src/utils/downloadGuard.js';
 
 describe('isPrivateAddress', () => {
   it.each([

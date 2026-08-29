@@ -18,11 +18,7 @@ export function MessageActions({ onCopy, onEdit, onRegenerate, text }: MessageAc
         </button>
       )}
       {onRegenerate && (
-        <button
-          type="button"
-          onClick={onRegenerate}
-          className="fb-message-actions__button"
-        >
+        <button type="button" onClick={onRegenerate} className="fb-message-actions__button">
           Regenerate
         </button>
       )}

@@ -1,7 +1,10 @@
 import type { TextStreamPart, ToolSet } from 'ai';
 import { describe, expect, test } from 'vitest';
 
-import { createOpenAIStreamTransform, type OpenAIStreamChunk } from '../../../../../../packages/gateway/src/routes/chatCompletions/translators/stream.js';
+import {
+  createOpenAIStreamTransform,
+  type OpenAIStreamChunk,
+} from '../../../../../../packages/gateway/src/routes/chatCompletions/translators/stream.js';
 
 async function collectChunks(
   parts: TextStreamPart<ToolSet>[],

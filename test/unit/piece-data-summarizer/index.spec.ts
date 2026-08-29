@@ -1,7 +1,10 @@
 import { pieceContract } from 'frogbot/pieces/test';
 import { describe, expect, it } from 'vitest';
 
-import { createDataSummarizer, dataSummarizerActions } from '../../../packages/pieces/piece-data-summarizer/src/index.js';
+import {
+  createDataSummarizer,
+  dataSummarizerActions,
+} from '../../../packages/pieces/piece-data-summarizer/src/index.js';
 
 const dataSummarizer = createDataSummarizer();
 

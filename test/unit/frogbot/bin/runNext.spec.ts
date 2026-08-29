@@ -16,7 +16,11 @@ vi.mock('node:module', () => ({
   default: { createRequire: () => ({ resolve: mocks.resolve }) },
 }));
 
-import { canResolveFromProject, findNextConfig, runNext } from '../../../../packages/frogbot/src/bin/runNext.js';
+import {
+  canResolveFromProject,
+  findNextConfig,
+  runNext,
+} from '../../../../packages/frogbot/src/bin/runNext.js';
 
 type SpawnedChild = {
   kill: ReturnType<typeof vi.fn>;

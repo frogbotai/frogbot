@@ -14,7 +14,8 @@ vi.mock('../../../packages/frogbot/src/frogbot.js', () => ({
   },
 }));
 
-const { getFrogbot, getCachedFrogbot, resetFrogbotCache } = await import('../../../packages/frogbot/src/getFrogbot.js');
+const { getFrogbot, getCachedFrogbot, resetFrogbotCache } =
+  await import('../../../packages/frogbot/src/getFrogbot.js');
 
 const options = { config: Promise.resolve({}) } as never;
 

@@ -18,7 +18,7 @@ pnpm dev
 
 FrogBot commands load `.env*` files automatically.
 
-Then open [http://localhost:3000/admin](http://localhost:3000/admin) to create
+Then open [http://localhost:3000](http://localhost:3000) to create
 your first user and browse the admin panel.
 
 ## Try it
@@ -65,12 +65,12 @@ Your config lives in [`src/frogbot.config.ts`](./src/frogbot.config.ts):
 
 The `src/app/(frogbot)/` directory is the Next.js scaffold that serves everything:
 
-| Path                                    | Description                                    |
-| --------------------------------------- | ---------------------------------------------- |
-| `src/app/(frogbot)/admin/`              | The admin panel (catch-all route + import map) |
-| `src/app/(frogbot)/api/[...slug]/`      | The REST API, including agent endpoints        |
-| `src/app/(frogbot)/api/v1/[[...slug]]/` | The OpenAI-compatible AI gateway               |
-| `src/app/(app)/`                        | Your app — replace the placeholder home page   |
+| Path                                    | Description                                  |
+| --------------------------------------- | -------------------------------------------- |
+| `src/app/(frogbot)/[[...segments]]/`    | The admin panel catch-all route              |
+| `src/app/(frogbot)/api/[...slug]/`      | The REST API, including agent endpoints      |
+| `src/app/(frogbot)/api/v1/[[...slug]]/` | The OpenAI-compatible AI gateway             |
+| `src/app/(app)/`                        | Your app — replace the placeholder home page |
 
 The `access: () => true` on the agent is dev-only — it makes `curl` work
 without authentication. Restrict it (e.g. `({ req }) => !!req.user`) before
@@ -84,7 +84,7 @@ deploying anywhere real.
 | `pnpm build`              | Production build (`next build`)                    |
 | `pnpm start`              | Serve the production build (`frogbot start`)       |
 | `pnpm generate:types`     | Regenerate `src/frogbot-types.ts` from this config |
-| `pnpm generate:importmap` | Regenerate `src/app/(frogbot)/admin/importMap.js`  |
+| `pnpm generate:importmap` | Regenerate `src/app/(frogbot)/importMap.js`        |
 | `pnpm typecheck`          | Type-check the project                             |
 
 ## Next steps

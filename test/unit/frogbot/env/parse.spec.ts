@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseBoolean, parseEnum, parseNumber, parseString } from '../../../../packages/frogbot/src/env/parse.js';
+import {
+  parseBoolean,
+  parseEnum,
+  parseNumber,
+  parseString,
+} from '../../../../packages/frogbot/src/env/parse.js';
 
 describe('env parsers', () => {
   it('parses strings', () => {

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { includesSignalLevel, resolveSignalLevels, signalLevelFromBody } from '../../../../packages/gateway/src/observability/signalLevel.js';
+import {
+  includesSignalLevel,
+  resolveSignalLevels,
+  signalLevelFromBody,
+} from '../../../../packages/gateway/src/observability/signalLevel.js';
 
 describe('signalLevel', () => {
   it('resolves defaults, global overrides, and namespace overrides', () => {

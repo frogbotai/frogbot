@@ -25,7 +25,8 @@ vi.mock('@payloadcms/ui', () => ({
   useRouteCache: () => ({ clearRouteCache }),
 }));
 
-const { ApiKeysManager, RevokeApiKey } = await import('../../../../packages/plugins/plugin-api-keys/src/client/ApiKeysManager.js');
+const { ApiKeysManager, RevokeApiKey } =
+  await import('../../../../packages/plugins/plugin-api-keys/src/client/ApiKeysManager.js');
 
 describe('API key controls', () => {
   beforeEach(() => {

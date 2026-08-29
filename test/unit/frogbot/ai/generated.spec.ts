@@ -7,7 +7,10 @@ import catalog from '../../../../packages/frogbot/src/ai/catalog.json' with { ty
 
 describe('generated AI model types', () => {
   it('matches the canonical catalog', async () => {
-    const generated = await readFile(new URL('../../../../packages/frogbot/src/ai/generated.ts', import.meta.url), 'utf8');
+    const generated = await readFile(
+      new URL('../../../../packages/frogbot/src/ai/generated.ts', import.meta.url),
+      'utf8',
+    );
 
     expect(generated).toBe(await renderAIModelTypes(catalog));
   });
@@ -20,7 +23,10 @@ describe('generated AI model types', () => {
   });
 
   it('contains invocable Bedrock profiles without broken bare IDs', async () => {
-    const generated = await readFile(new URL('../../../../packages/frogbot/src/ai/generated.ts', import.meta.url), 'utf8');
+    const generated = await readFile(
+      new URL('../../../../packages/frogbot/src/ai/generated.ts', import.meta.url),
+      'utf8',
+    );
     const profiles = [
       'amazon-bedrock/global.amazon.nova-2-lite-v1:0',
       'amazon-bedrock/us.meta.llama3-1-8b-instruct-v1:0',

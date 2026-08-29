@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { encodeEmbedding, toOpenAIEmbeddingsResponse } from '../../../../../../packages/gateway/src/routes/embeddings/translators/toOpenAIResponse.js';
+import {
+  encodeEmbedding,
+  toOpenAIEmbeddingsResponse,
+} from '../../../../../../packages/gateway/src/routes/embeddings/translators/toOpenAIResponse.js';
 
 describe('toOpenAIEmbeddingsResponse', () => {
   it('maps float embeddings', () => {

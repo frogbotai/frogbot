@@ -13,8 +13,7 @@
   z-index: 10;
   width: 100%;
   filter: drop-shadow(0 0 6px rgba(134, 239, 172, 0.6))
-    drop-shadow(0 0 12px rgba(147, 197, 253, 0.4))
-    drop-shadow(0 0 18px rgba(216, 180, 254, 0.3));
+    drop-shadow(0 0 12px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 18px rgba(216, 180, 254, 0.3));
 }
 
 .fb-composer__gradient-container {
@@ -53,8 +52,7 @@
 .fb-composer__gradient:has(.fb-composer__textarea:focus),
 .fb-composer__gradient--dragging {
   filter: drop-shadow(0 0 12px rgba(134, 239, 172, 0.6))
-    drop-shadow(0 0 24px rgba(147, 197, 253, 0.4))
-    drop-shadow(0 0 36px rgba(216, 180, 254, 0.3));
+    drop-shadow(0 0 24px rgba(147, 197, 253, 0.4)) drop-shadow(0 0 36px rgba(216, 180, 254, 0.3));
 }
 
 .fb-composer__panel {

@@ -6,8 +6,12 @@ const mocks = vi.hoisted(() => ({
   runNext: vi.fn(),
 }));
 
-vi.mock('../../../../packages/frogbot/src/config/load.js', () => ({ loadConfig: mocks.loadConfig }));
-vi.mock('../../../../packages/frogbot/src/bin/generateImportMap/index.js', () => ({ generateImportMap: mocks.generateImportMap }));
+vi.mock('../../../../packages/frogbot/src/config/load.js', () => ({
+  loadConfig: mocks.loadConfig,
+}));
+vi.mock('../../../../packages/frogbot/src/bin/generateImportMap/index.js', () => ({
+  generateImportMap: mocks.generateImportMap,
+}));
 vi.mock('../../../../packages/frogbot/src/bin/runNext.js', () => ({ runNext: mocks.runNext }));
 
 import { start } from '../../../../packages/frogbot/src/bin/start.js';

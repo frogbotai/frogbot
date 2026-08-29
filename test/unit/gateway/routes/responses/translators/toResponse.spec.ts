@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { toResponsesResponse, toResponseStatus } from '../../../../../../packages/gateway/src/routes/responses/translators/toResponse.js';
+import {
+  toResponsesResponse,
+  toResponseStatus,
+} from '../../../../../../packages/gateway/src/routes/responses/translators/toResponse.js';
 
 const baseResponse = { timestamp: new Date('2026-07-03T00:00:00.000Z') };
 const baseUsage = { inputTokens: 3, outputTokens: 2, totalTokens: 5 };

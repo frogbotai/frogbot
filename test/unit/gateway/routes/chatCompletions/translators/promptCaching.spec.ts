@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { parseAssistantMessage } from '../../../../../../packages/gateway/src/routes/chatCompletions/translators/toModelMessages/assistant.js';
 import { parseSystemMessage } from '../../../../../../packages/gateway/src/routes/chatCompletions/translators/toModelMessages/system.js';
 import { parseUserMessage } from '../../../../../../packages/gateway/src/routes/chatCompletions/translators/toModelMessages/user.js';
-import type { OpenAIAssistantMessage, OpenAISystemMessage, OpenAIUserMessage } from '../../../../../../packages/gateway/src/routes/chatCompletions/translators/types.js';
+import type {
+  OpenAIAssistantMessage,
+  OpenAISystemMessage,
+  OpenAIUserMessage,
+} from '../../../../../../packages/gateway/src/routes/chatCompletions/translators/types.js';
 
 describe('cache_control on messages', () => {
   describe('system message', () => {

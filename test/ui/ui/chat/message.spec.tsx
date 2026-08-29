@@ -14,12 +14,7 @@ describe('Message', () => {
 
   it('renders its BEM inventory and passes through className', () => {
     const { container } = render(
-      <Message
-        role="user"
-        avatar="You"
-        actions={<button>Copy</button>}
-        className="external-class"
-      >
+      <Message role="user" avatar="You" actions={<button>Copy</button>} className="external-class">
         Hello
       </Message>,
     );

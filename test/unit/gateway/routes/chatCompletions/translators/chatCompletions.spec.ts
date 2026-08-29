@@ -22,7 +22,10 @@
 
 import { describe, expect, test } from 'vitest';
 
-import { type OpenAIMessage, toModelMessages } from '../../../../../../packages/gateway/src/routes/chatCompletions/translators/index.js';
+import {
+  type OpenAIMessage,
+  toModelMessages,
+} from '../../../../../../packages/gateway/src/routes/chatCompletions/translators/index.js';
 
 // ---------------------------------------------------------------------------
 // system messages

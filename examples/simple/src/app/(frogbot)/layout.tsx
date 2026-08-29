@@ -6,7 +6,7 @@ import type { ServerFunctionClient } from '@frogbotai/next/layouts';
 import { handleServerFunctions, RootLayout } from '@frogbotai/next/layouts';
 import React from 'react';
 
-import { importMap } from './admin/importMap.js';
+import { importMap } from './importMap.js';
 
 type Args = {
   children: React.ReactNode;

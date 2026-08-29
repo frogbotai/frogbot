@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { CONTEXT_OVERFLOW_ENVELOPE, isContextOverflow } from '../../../../packages/gateway/src/errors/overflow.js';
+import {
+  CONTEXT_OVERFLOW_ENVELOPE,
+  isContextOverflow,
+} from '../../../../packages/gateway/src/errors/overflow.js';
 
 describe('isContextOverflow — provider message patterns', () => {
   it.each([

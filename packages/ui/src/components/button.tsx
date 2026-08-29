@@ -16,8 +16,7 @@ export function buttonVariants({
   return `fb-button fb-button--${variant ?? 'default'} fb-button--size-${size ?? 'default'}${className ? ` ${className}` : ''}`;
 }
 
-export interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
   size?: ButtonSize | null;
   variant?: ButtonVariant | null;

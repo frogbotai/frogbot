@@ -3,7 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { MESSAGE_USAGE_CONTEXT_KEY } from '../../../../packages/frogbot/src/chat/collections/messages.js';
-import { createMessageUsage, persistAssistantMessage } from '../../../../packages/frogbot/src/chat/messagePersistence.js';
+import {
+  createMessageUsage,
+  persistAssistantMessage,
+} from '../../../../packages/frogbot/src/chat/messagePersistence.js';
 
 const message: UIMessage = {
   id: 'assistant-1',

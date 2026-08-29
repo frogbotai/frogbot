@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { UnsupportedModalityError } from '../../../../../../packages/gateway/src/errors/gatewayError.js';
-import { toResponsesToolChoice, toResponsesTools } from '../../../../../../packages/gateway/src/routes/responses/translators/tools.js';
+import {
+  toResponsesToolChoice,
+  toResponsesTools,
+} from '../../../../../../packages/gateway/src/routes/responses/translators/tools.js';
 
 describe('toResponsesTools', () => {
   it('maps flat Responses function tools to an AI SDK tool set', () => {

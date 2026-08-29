@@ -35,18 +35,12 @@ export function ToolPart({
           ? part.approval.reason || 'Denied'
           : part.input;
   return (
-    <div
-      data-part="tool"
-      data-state={part.state}
-      className="fb-tool-part"
-    >
+    <div data-part="tool" data-state={part.state} className="fb-tool-part">
       <div className="fb-tool-part__header">
         <strong>{getToolName(part)}</strong>
         <span className="fb-tool-part__state">{part.state}</span>
       </div>
-      {content !== undefined && (
-        <pre className="fb-tool-part__content">{serialize(content)}</pre>
-      )}
+      {content !== undefined && <pre className="fb-tool-part__content">{serialize(content)}</pre>}
     </div>
   );
 }

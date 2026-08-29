@@ -53,10 +53,7 @@ export function SelectContent({
 }
 export function SelectLabel({ className, ...props }: ComponentProps<typeof Primitive.Label>) {
   return (
-    <Primitive.Label
-      className={`fb-select__label${className ? ` ${className}` : ''}`}
-      {...props}
-    />
+    <Primitive.Label className={`fb-select__label${className ? ` ${className}` : ''}`} {...props} />
   );
 }
 export function SelectItem({
@@ -65,10 +62,7 @@ export function SelectItem({
   ...props
 }: ComponentProps<typeof Primitive.Item>) {
   return (
-    <Primitive.Item
-      className={`fb-select__item${className ? ` ${className}` : ''}`}
-      {...props}
-    >
+    <Primitive.Item className={`fb-select__item${className ? ` ${className}` : ''}`} {...props}>
       <Primitive.ItemText>{children}</Primitive.ItemText>
       <Primitive.ItemIndicator className="fb-select__item-indicator">
         <CheckIcon className="fb-select__item-indicator-icon" />

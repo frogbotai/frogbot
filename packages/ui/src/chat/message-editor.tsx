@@ -24,19 +24,11 @@ export function MessageEditor({ initialValue, onCancel, onSubmit }: MessageEdito
       />
       <div className="fb-message-editor__actions">
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="fb-message-editor__cancel"
-          >
+          <button type="button" onClick={onCancel} className="fb-message-editor__cancel">
             Cancel
           </button>
         )}
-        <button
-          type="submit"
-          disabled={!value.trim()}
-          className="fb-message-editor__submit"
-        >
+        <button type="submit" disabled={!value.trim()} className="fb-message-editor__submit">
           Send
         </button>
       </div>

@@ -25,11 +25,7 @@ export function CodeBlock({
     .join(' ');
 
   return (
-    <pre
-      className={classes}
-      data-language={language}
-      {...props}
-    >
+    <pre className={classes} data-language={language} {...props}>
       <code>{code}</code>
     </pre>
   );

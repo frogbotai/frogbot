@@ -8,7 +8,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@payloadcms/next/layouts', () => mocks);
 
-const { RootLayout, handleServerFunctions } = await import('../../../../packages/next/src/exports/layouts.js');
+const { RootLayout, handleServerFunctions } =
+  await import('../../../../packages/next/src/exports/layouts.js');
 
 function makeConfig() {
   const payloadConfig = { collections: [] };

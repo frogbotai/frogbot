@@ -10,7 +10,10 @@ import {
 import { RetryError } from 'ai';
 import { describe, expect, it } from 'vitest';
 
-import { toAnthropicErrorResponse, toOpenAIErrorResponse } from '../../../../packages/gateway/src/errors/envelope.js';
+import {
+  toAnthropicErrorResponse,
+  toOpenAIErrorResponse,
+} from '../../../../packages/gateway/src/errors/envelope.js';
 import {
   BudgetExceededError,
   ConfigError,

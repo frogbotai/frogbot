@@ -27,7 +27,7 @@ fly deploy
 fly scale count 1
 ```
 
-Visit `https://<your-app>.fly.dev/admin` to create your first admin user.
+Visit `https://<your-app>.fly.dev` to create your first admin user.
 
 ## Why a single machine?
 

@@ -24,10 +24,18 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../packages/frogbot/src/bin/dev.js', () => ({ dev: mocks.dev }));
-vi.mock('../../../../packages/frogbot/src/bin/exportTrainingData.js', () => ({ exportTrainingData: mocks.exportTrainingData }));
-vi.mock('../../../../packages/frogbot/src/bin/exportCaptures.js', () => ({ exportCaptures: mocks.exportCaptures }));
-vi.mock('../../../../packages/frogbot/src/bin/generateImportMap.js', () => ({ generateImportMap: mocks.generateImportMap }));
-vi.mock('../../../../packages/frogbot/src/bin/generateTypes.js', () => ({ generateTypes: mocks.generateTypes }));
+vi.mock('../../../../packages/frogbot/src/bin/exportTrainingData.js', () => ({
+  exportTrainingData: mocks.exportTrainingData,
+}));
+vi.mock('../../../../packages/frogbot/src/bin/exportCaptures.js', () => ({
+  exportCaptures: mocks.exportCaptures,
+}));
+vi.mock('../../../../packages/frogbot/src/bin/generateImportMap.js', () => ({
+  generateImportMap: mocks.generateImportMap,
+}));
+vi.mock('../../../../packages/frogbot/src/bin/generateTypes.js', () => ({
+  generateTypes: mocks.generateTypes,
+}));
 vi.mock('../../../../packages/frogbot/src/bin/loadEnv.js', () => ({ loadEnv: mocks.loadEnv }));
 vi.mock('../../../../packages/frogbot/src/bin/migrate.js', () => ({ migrate: mocks.migrate }));
 vi.mock('../../../../packages/frogbot/src/bin/start.js', () => ({ start: mocks.start }));

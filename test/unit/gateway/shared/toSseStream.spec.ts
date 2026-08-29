@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { serializeSseFrame } from '../../../../packages/gateway/src/shared/sseFrame.js';
-import { createSseResponse, toSseStream } from '../../../../packages/gateway/src/shared/toSseStream.js';
+import {
+  createSseResponse,
+  toSseStream,
+} from '../../../../packages/gateway/src/shared/toSseStream.js';
 
 function streamFrom(chunks: string[]): ReadableStream<string> {
   let i = 0;

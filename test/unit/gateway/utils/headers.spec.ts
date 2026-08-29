@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { FORWARD_HEADER_ALLOWLIST, prepareForwardHeaders } from '../../../../packages/gateway/src/utils/headers.js';
+import {
+  FORWARD_HEADER_ALLOWLIST,
+  prepareForwardHeaders,
+} from '../../../../packages/gateway/src/utils/headers.js';
 
 describe('FORWARD_HEADER_ALLOWLIST', () => {
   it('contains 40+ entries', () => {

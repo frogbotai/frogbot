@@ -83,7 +83,10 @@ export async function resolveChatContext({
     overrideAccess,
   });
 
-  const uiMessages = await validateChatMessages(messagesToUIMessages(history.docs as never), tools as never);
+  const uiMessages = await validateChatMessages(
+    messagesToUIMessages(history.docs as never),
+    tools as never,
+  );
 
   return { chatId: resolvedChatId, uiMessages };
 }
@@ -110,8 +113,7 @@ async function resolveChatId({
       req,
       overrideAccess,
     })) as { user?: { id: DocID } | DocID | null };
-    const ownerId =
-      typeof chat.user === 'object' && chat.user !== null ? chat.user.id : chat.user;
+    const ownerId = typeof chat.user === 'object' && chat.user !== null ? chat.user.id : chat.user;
     if ((ownerId ?? null) !== (req.user?.id ?? null)) throw new NotFound(req.t);
     return chatId;
   }

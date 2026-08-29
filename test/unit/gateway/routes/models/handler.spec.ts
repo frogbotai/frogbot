@@ -1,7 +1,10 @@
 import { MockProviderV4 } from 'ai/test';
 import { describe, expect, it } from 'vitest';
 
-import { defineModelCatalog, presetFor } from '../../../../../packages/gateway/src/providers/catalog.js';
+import {
+  defineModelCatalog,
+  presetFor,
+} from '../../../../../packages/gateway/src/providers/catalog.js';
 import type { ProviderRegistry } from '../../../../../packages/gateway/src/providers/registry.js';
 import { modelsRoute } from '../../../../../packages/gateway/src/routes/models/handler.js';
 

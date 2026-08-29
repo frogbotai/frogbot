@@ -1,7 +1,10 @@
 import { createFrogbotSDK } from '@frogbotai/sdk';
 import { describe, expect, it, vi } from 'vitest';
 
-import { FrogbotChatTransport, prepareChatRequest } from '../../../../packages/ui/src/chat/transport';
+import {
+  FrogbotChatTransport,
+  prepareChatRequest,
+} from '../../../../packages/ui/src/chat/transport';
 
 const message = {
   id: 'user-1',

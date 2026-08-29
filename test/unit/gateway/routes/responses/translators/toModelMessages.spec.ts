@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { RequestValidationError, UnsupportedModalityError } from '../../../../../../packages/gateway/src/errors/gatewayError.js';
+import {
+  RequestValidationError,
+  UnsupportedModalityError,
+} from '../../../../../../packages/gateway/src/errors/gatewayError.js';
 import { toModelMessages } from '../../../../../../packages/gateway/src/routes/responses/translators/toModelMessages.js';
 
 describe('toModelMessages', () => {

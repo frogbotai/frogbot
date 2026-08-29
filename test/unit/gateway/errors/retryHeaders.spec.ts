@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildRetryHeaders, isRetryableStatus } from '../../../../packages/gateway/src/errors/retryHeaders.js';
+import {
+  buildRetryHeaders,
+  isRetryableStatus,
+} from '../../../../packages/gateway/src/errors/retryHeaders.js';
 
 describe('isRetryableStatus', () => {
   it('marks 408/429/5xx as retryable', () => {

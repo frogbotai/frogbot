@@ -9,7 +9,9 @@ import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
 
 const execFileAsync = promisify(execFile);
-const loadEnvURL = pathToFileURL(new URL('../../../../packages/frogbot/src/bin/loadEnv.ts', import.meta.url).pathname).href;
+const loadEnvURL = pathToFileURL(
+  new URL('../../../../packages/frogbot/src/bin/loadEnv.ts', import.meta.url).pathname,
+).href;
 const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
 
 async function loadEnvInFreshProcess(dir: string, env: NodeJS.ProcessEnv): Promise<string> {

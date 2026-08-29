@@ -1,7 +1,15 @@
 import type { FrogbotConfig, FrogbotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
-import { allow, hasRole, isLoggedIn, ownRows, rolesOf, rolesPlugin, viaApiKey } from '../../../packages/plugins/plugin-roles/src/index.js';
+import {
+  allow,
+  hasRole,
+  isLoggedIn,
+  ownRows,
+  rolesOf,
+  rolesPlugin,
+  viaApiKey,
+} from '../../../packages/plugins/plugin-roles/src/index.js';
 
 function config(): FrogbotConfig {
   return {

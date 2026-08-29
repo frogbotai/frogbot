@@ -7,14 +7,8 @@ export function FilePart({ part }: { part: FileUIPart | ReasoningFileUIPart }) {
   if (part.mediaType.startsWith('image/')) {
     return (
       <figure data-part={part.type} className="fb-file-part fb-file-part--image">
-        <img
-          src={part.url}
-          alt={label}
-          className="fb-file-part__image"
-        />
-        {filename && (
-          <figcaption className="fb-file-part__caption">{filename}</figcaption>
-        )}
+        <img src={part.url} alt={label} className="fb-file-part__image" />
+        {filename && <figcaption className="fb-file-part__caption">{filename}</figcaption>}
       </figure>
     );
   }

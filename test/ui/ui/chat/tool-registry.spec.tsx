@@ -2,7 +2,10 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { ToolPart } from '../../../../packages/ui/src/chat/tool-part';
-import { resolveToolRenderer, type ToolRenderer } from '../../../../packages/ui/src/chat/tool-registry';
+import {
+  resolveToolRenderer,
+  type ToolRenderer,
+} from '../../../../packages/ui/src/chat/tool-registry';
 
 const First = () => <div>first</div>;
 const Second = () => <div>second</div>;

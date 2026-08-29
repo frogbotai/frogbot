@@ -94,7 +94,11 @@ export type {
 } from './ai/types.js';
 export type { AuthConfig } from './auth/types.js';
 export type { ManifestResponse } from './chat/types.js';
-export type { Collection, CollectionAdminConfig, CollectionConfig } from './collections/config/types.js';
+export type {
+  Collection,
+  CollectionAdminConfig,
+  CollectionConfig,
+} from './collections/config/types.js';
 export type { IconName } from './admin/icons.js';
 export type { AdminViews, FrogbotComponent, ProviderComponent } from './admin/types.js';
 export type { AfterErrorHook, FrogbotConfig, OnInit, RootHooks } from './config/types.js';
@@ -205,7 +209,13 @@ export type {
   FieldAccessArgs,
 } from './collections/config/types.js';
 export type { Endpoint, Handler } from './endpoints/types.js';
-export type { Field, FieldHook, FieldHookArgs, Validate, ValidateOptions } from './fields/config/types.js';
+export type {
+  Field,
+  FieldHook,
+  FieldHookArgs,
+  Validate,
+  ValidateOptions,
+} from './fields/config/types.js';
 export type {
   AfterChangeHook,
   AfterDeleteHook,

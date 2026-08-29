@@ -7,7 +7,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { detectPackageManager, scaffold } from '../../../packages/create-frogbot-app/src/index.js';
 
-const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../packages/create-frogbot-app');
+const packageRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../../packages/create-frogbot-app',
+);
 const templateDir = path.join(packageRoot, 'dist', 'templates', 'blank');
 const roots: string[] = [];
 

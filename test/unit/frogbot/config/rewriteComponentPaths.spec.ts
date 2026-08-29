@@ -127,9 +127,10 @@ describe('rewriteComponentPaths', () => {
     expect(
       (config.admin.components as never as { navItems: { icon: string }[] }).navItems[0]?.icon,
     ).toBe('@frogbotai/next/client#ItemIcon');
-    expect(
-      (config.admin.components as never as { navSections: string[] }).navSections,
-    ).toEqual(['@frogbotai/next/rsc#Section', './components/Section#Section']);
+    expect((config.admin.components as never as { navSections: string[] }).navSections).toEqual([
+      '@frogbotai/next/rsc#Section',
+      './components/Section#Section',
+    ]);
     expect(config.admin.components.afterBottomRail).toEqual(['@frogbotai/next/rsc#AfterBottom']);
     expect(config.admin.components.beforeBottomRail).toEqual([
       './components/BeforeBottom#BeforeBottom',

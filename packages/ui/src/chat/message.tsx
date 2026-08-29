@@ -15,13 +15,9 @@ export function Message({ actions, avatar, children, className, role, ...props }
       {...props}
     >
       {avatar && <div className="fb-message__avatar">{avatar}</div>}
-      <div
-        className={`fb-message__body${role === 'user' ? ' fb-message__body--user' : ''}`}
-      >
+      <div className={`fb-message__body${role === 'user' ? ' fb-message__body--user' : ''}`}>
         <div className="fb-message__content">{children}</div>
-        {actions && (
-          <div className="fb-message__actions">{actions}</div>
-        )}
+        {actions && <div className="fb-message__actions">{actions}</div>}
       </div>
     </div>
   );

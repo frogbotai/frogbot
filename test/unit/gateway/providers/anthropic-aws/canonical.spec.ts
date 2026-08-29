@@ -2,7 +2,10 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { ANTHROPIC_AWS_CANONICAL_IDS, resolveAnthropicAwsModelId } from '../../../../../packages/gateway/src/providers/anthropic-aws/canonical.js';
+import {
+  ANTHROPIC_AWS_CANONICAL_IDS,
+  resolveAnthropicAwsModelId,
+} from '../../../../../packages/gateway/src/providers/anthropic-aws/canonical.js';
 
 describe('resolveAnthropicAwsModelId', () => {
   it('maps Claude shorthands to native Anthropic model IDs', () => {

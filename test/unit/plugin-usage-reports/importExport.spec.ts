@@ -10,7 +10,8 @@ vi.mock('@frogbotai/plugin-import-export', () => {
   );
 });
 
-const { usageReportsPlugin } = await import('../../../packages/plugins/plugin-usage-reports/src/index.js');
+const { usageReportsPlugin } =
+  await import('../../../packages/plugins/plugin-usage-reports/src/index.js');
 
 function createConfig() {
   return {

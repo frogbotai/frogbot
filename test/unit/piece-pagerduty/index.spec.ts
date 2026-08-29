@@ -2,7 +2,10 @@ import * as module from '@activepieces/piece-pagerduty';
 import { pieceContract } from 'frogbot/pieces/test';
 
 import { credentialExecution } from '../../../packages/pieces/credential-execution.js';
-import { createPagerduty, pagerdutyActions } from '../../../packages/pieces/piece-pagerduty/src/index.js';
+import {
+  createPagerduty,
+  pagerdutyActions,
+} from '../../../packages/pieces/piece-pagerduty/src/index.js';
 
 const pagerduty = createPagerduty();
 pieceContract({

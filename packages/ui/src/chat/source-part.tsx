@@ -15,10 +15,7 @@ export function SourcePart({ part }: { part: SourceDocumentUIPart | SourceUrlUIP
     );
   }
   return (
-    <span
-      data-part="source-document"
-      className="fb-source-part fb-source-part--document"
-    >
+    <span data-part="source-document" className="fb-source-part fb-source-part--document">
       {part.title}
       {part.filename ? ` (${part.filename})` : ''}
     </span>

@@ -32,11 +32,7 @@ export function DataPart({
   return (
     <>
       <ArtifactStreamPart part={part} />
-      <pre
-        data-part="data"
-        data-data-type={part.type.slice(5)}
-        className="fb-data-part"
-      >
+      <pre data-part="data" data-data-type={part.type.slice(5)} className="fb-data-part">
         {content}
       </pre>
     </>

@@ -120,7 +120,8 @@ describe('setupTracing OTLP endpoint resolution (G28)', () => {
     const captured: { exporterConfig?: { url?: string }; exporterConstructed?: boolean } = {};
     mockSetupModules(captured);
 
-    const { setupTracing } = await import('../../../../packages/gateway/src/observability/setup.js');
+    const { setupTracing } =
+      await import('../../../../packages/gateway/src/observability/setup.js');
     setupTracing();
 
     expect(captured.exporterConstructed).toBe(true);
@@ -145,7 +146,8 @@ describe('setupTracing OTLP endpoint resolution (G28)', () => {
     const captured: { exporterConfig?: { url?: string } } = {};
     mockSetupModules(captured);
 
-    const { setupTracing } = await import('../../../../packages/gateway/src/observability/setup.js');
+    const { setupTracing } =
+      await import('../../../../packages/gateway/src/observability/setup.js');
     setupTracing({ endpoint: 'http://collector.internal:4318/v1/traces' });
 
     expect(captured.exporterConfig?.url).toBe('http://collector.internal:4318/v1/traces');
@@ -178,7 +180,8 @@ describe('setupTracing resource / service identity (G94)', () => {
       {};
     mockSetupModules(captured);
 
-    const { setupTracing } = await import('../../../../packages/gateway/src/observability/setup.js');
+    const { setupTracing } =
+      await import('../../../../packages/gateway/src/observability/setup.js');
     setupTracing();
 
     const attributes = captured.providerOptions?.resource?.attributes;
@@ -195,7 +198,8 @@ describe('setupTracing resource / service identity (G94)', () => {
       {};
     mockSetupModules(captured);
 
-    const { setupTracing } = await import('../../../../packages/gateway/src/observability/setup.js');
+    const { setupTracing } =
+      await import('../../../../packages/gateway/src/observability/setup.js');
     setupTracing();
 
     expect(captured.providerOptions?.resource?.attributes['service.name']).toBe('my-gateway');

@@ -45,7 +45,9 @@ vi.mock('../../../../packages/ui/src/chat/provider', () => ({
     },
   }),
 }));
-vi.mock('../../../../packages/ui/src/chat/use-chat', () => ({ useChatMessages: () => state.history }));
+vi.mock('../../../../packages/ui/src/chat/use-chat', () => ({
+  useChatMessages: () => state.history,
+}));
 vi.mock('../../../../packages/ui/src/chat/use-chats', () => ({
   emitChatMutation: vi.fn(),
   useChats: () => ({

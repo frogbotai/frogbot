@@ -2,7 +2,12 @@ import { describe, expectTypeOf, it } from 'vitest';
 
 import type { CatalogModelId } from '../../../../packages/frogbot/src/ai/generated.js';
 import type { AgentConfig, AgentModelId } from '../../../../packages/frogbot/src/agents/types.js';
-import type { BedrockProviderEntry, BuiltInProviderEntry, ModelId, ProviderConfig } from '../../../../packages/frogbot/src/ai/types.js';
+import type {
+  BedrockProviderEntry,
+  BuiltInProviderEntry,
+  ModelId,
+  ProviderConfig,
+} from '../../../../packages/frogbot/src/ai/types.js';
 import type { FrogbotTypes } from '../../../../packages/frogbot/src/types/generated.js';
 
 describe('AI config types', () => {
@@ -45,6 +50,8 @@ describe('AI config types', () => {
     expectTypeOf<'internal/chat-v2'>().not.toMatchTypeOf<AgentModelId>();
     expectTypeOf<'future/model'>().not.toMatchTypeOf<AgentConfig['model']>();
     expectTypeOf<'future/model'>().not.toMatchTypeOf<ModelId>();
-    expectTypeOf<ModelId>().toEqualTypeOf<import('../../../../packages/frogbot/src/ai/types.js').BaseAIOpts['model']>();
+    expectTypeOf<ModelId>().toEqualTypeOf<
+      import('../../../../packages/frogbot/src/ai/types.js').BaseAIOpts['model']
+    >();
   });
 });

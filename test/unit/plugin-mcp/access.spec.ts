@@ -1,7 +1,10 @@
 import { UnauthorizedError } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createApiKeyToken, hashApiKeyToken } from '../../../packages/plugins/plugin-api-keys/src/server/token.js';
+import {
+  createApiKeyToken,
+  hashApiKeyToken,
+} from '../../../packages/plugins/plugin-api-keys/src/server/token.js';
 import { createApiKeyStrategy } from '../../../packages/plugins/plugin-api-keys/src/strategy.js';
 import { resolveMcpAccess } from '../../../packages/plugins/plugin-mcp/src/access.js';
 

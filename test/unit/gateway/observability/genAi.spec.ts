@@ -31,7 +31,8 @@ describe('genAi metrics', () => {
   });
 
   it('is a no-op without a registered MeterProvider and does not throw', async () => {
-    const { recordGenAiTokenUsage } = await import('../../../../packages/gateway/src/observability/genAi.js');
+    const { recordGenAiTokenUsage } =
+      await import('../../../../packages/gateway/src/observability/genAi.js');
     expect(() => recordGenAiTokenUsage(ctx, usage, 'recommended')).not.toThrow();
   });
 
@@ -43,7 +44,8 @@ describe('genAi metrics', () => {
     } as unknown as MeterProvider;
     metrics.setGlobalMeterProvider(provider);
 
-    const { recordGenAiTokenUsage } = await import('../../../../packages/gateway/src/observability/genAi.js');
+    const { recordGenAiTokenUsage } =
+      await import('../../../../packages/gateway/src/observability/genAi.js');
 
     // Importing the module must not create any histograms.
     expect(createHistogram).not.toHaveBeenCalled();
@@ -75,7 +77,8 @@ describe('genAi metrics', () => {
     const createHistogram = vi.fn(() => ({ record: vi.fn() }));
     metrics.setGlobalMeterProvider({ getMeter: () => ({ createHistogram }) as unknown as Meter });
 
-    const { createGenAiHooks } = await import('../../../../packages/gateway/src/observability/genAi.js');
+    const { createGenAiHooks } =
+      await import('../../../../packages/gateway/src/observability/genAi.js');
     const hooks = createGenAiHooks('required');
     hooks.afterOperation?.[0]?.({
       phase: 'afterOperation',
@@ -164,7 +167,8 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   });
 
   it('emits partitioned input and output points with values and attributes', async () => {
-    const { recordGenAiTokenUsage } = await import('../../../../packages/gateway/src/observability/genAi.js');
+    const { recordGenAiTokenUsage } =
+      await import('../../../../packages/gateway/src/observability/genAi.js');
     recordGenAiTokenUsage(ctx, usage, 'recommended');
 
     const inputs = await inputPoints();
@@ -214,7 +218,8 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
 
   // RED at baseline: pre-fix silently clamped textOutput to 0 with no warning.
   it('clamps and warns on output sum-invariant violation (outputTokens < reasoningTokens)', async () => {
-    const { recordGenAiTokenUsage } = await import('../../../../packages/gateway/src/observability/genAi.js');
+    const { recordGenAiTokenUsage } =
+      await import('../../../../packages/gateway/src/observability/genAi.js');
     const { logger, warn } = makeLogger();
 
     recordGenAiTokenUsage(
@@ -236,7 +241,8 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
 
   // RED at baseline: pre-fix silently clamped uncachedInput to 0 with no warning.
   it('clamps and warns on input sum-invariant violation (inputTokens < cachedInputTokens)', async () => {
-    const { recordGenAiTokenUsage } = await import('../../../../packages/gateway/src/observability/genAi.js');
+    const { recordGenAiTokenUsage } =
+      await import('../../../../packages/gateway/src/observability/genAi.js');
     const { logger, warn } = makeLogger();
 
     recordGenAiTokenUsage(
@@ -258,7 +264,8 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
 
   // RED at baseline: pre-fix had no non-finite guard; NaN/Infinity poisoned the histogram.
   it('records 0 for non-finite token values without throwing or poisoning', async () => {
-    const { recordGenAiTokenUsage } = await import('../../../../packages/gateway/src/observability/genAi.js');
+    const { recordGenAiTokenUsage } =
+      await import('../../../../packages/gateway/src/observability/genAi.js');
 
     expect(() =>
       recordGenAiTokenUsage(
@@ -283,7 +290,8 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   });
 
   it('handles zero-token usage as all-zero points', async () => {
-    const { recordGenAiTokenUsage } = await import('../../../../packages/gateway/src/observability/genAi.js');
+    const { recordGenAiTokenUsage } =
+      await import('../../../../packages/gateway/src/observability/genAi.js');
     recordGenAiTokenUsage(ctx, { inputTokens: 0, outputTokens: 0, totalTokens: 0 }, 'recommended');
 
     const inputs = await inputPoints();
@@ -294,7 +302,8 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   });
 
   it('emits bare (unpartitioned) points when no cache/reasoning breakdown is reported', async () => {
-    const { recordGenAiTokenUsage } = await import('../../../../packages/gateway/src/observability/genAi.js');
+    const { recordGenAiTokenUsage } =
+      await import('../../../../packages/gateway/src/observability/genAi.js');
     recordGenAiTokenUsage(
       ctx,
       { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
@@ -316,7 +325,8 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   });
 
   it('emits a cache=creation partition point for cache-write tokens', async () => {
-    const { recordGenAiTokenUsage } = await import('../../../../packages/gateway/src/observability/genAi.js');
+    const { recordGenAiTokenUsage } =
+      await import('../../../../packages/gateway/src/observability/genAi.js');
     recordGenAiTokenUsage(
       ctx,
       {
@@ -339,7 +349,8 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   const durationPoints = () => collectPoints('gen_ai.server.request.duration');
 
   it('records request duration in seconds with the required gen_ai attributes', async () => {
-    const { recordRequestDuration } = await import('../../../../packages/gateway/src/observability/genAi.js');
+    const { recordRequestDuration } =
+      await import('../../../../packages/gateway/src/observability/genAi.js');
     recordRequestDuration(ctx, 1500, undefined, 'recommended');
 
     const points = await durationPoints();
@@ -354,8 +365,10 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   });
 
   it('adds error.type derived from the error status when the operation failed', async () => {
-    const { recordRequestDuration } = await import('../../../../packages/gateway/src/observability/genAi.js');
-    const { ModelNotFoundError } = await import('../../../../packages/gateway/src/errors/gatewayError.js');
+    const { recordRequestDuration } =
+      await import('../../../../packages/gateway/src/observability/genAi.js');
+    const { ModelNotFoundError } =
+      await import('../../../../packages/gateway/src/errors/gatewayError.js');
     recordRequestDuration(ctx, 200, new ModelNotFoundError('openai/nope'), 'recommended');
 
     const points = await durationPoints();
@@ -364,7 +377,8 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   });
 
   it('prefers the abort-effective status code from the otel bag for error.type', async () => {
-    const { recordRequestDuration } = await import('../../../../packages/gateway/src/observability/genAi.js');
+    const { recordRequestDuration } =
+      await import('../../../../packages/gateway/src/observability/genAi.js');
     recordRequestDuration(
       { ...ctx, otel: { 'frogbot.status_code_effective': 499 } },
       200,
@@ -378,7 +392,8 @@ describe('genAi metrics — real InMemoryMetricExporter pipeline', () => {
   });
 
   it('does not record duration when the gen_ai signal level is below recommended', async () => {
-    const { recordRequestDuration } = await import('../../../../packages/gateway/src/observability/genAi.js');
+    const { recordRequestDuration } =
+      await import('../../../../packages/gateway/src/observability/genAi.js');
     recordRequestDuration(ctx, 1000, undefined, 'required');
 
     expect(await durationPoints()).toHaveLength(0);

@@ -1,7 +1,12 @@
 import type { FrogbotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from '../../../packages/plugins/plugin-api-keys/src/index.js';
+import {
+  ApiKeyServiceError,
+  mintApiKey,
+  revokeApiKey,
+  rotateApiKey,
+} from '../../../packages/plugins/plugin-api-keys/src/index.js';
 
 function request(overrides: Record<string, unknown> = {}) {
   return {

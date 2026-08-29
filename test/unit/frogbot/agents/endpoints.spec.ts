@@ -31,9 +31,12 @@ vi.mock('ai', async (importOriginal) => ({
   createAgentUIStreamResponse,
 }));
 
-vi.mock('../../../../packages/frogbot/src/uploads/resolveChatAttachments.js', () => ({ resolveChatAttachments }));
+vi.mock('../../../../packages/frogbot/src/uploads/resolveChatAttachments.js', () => ({
+  resolveChatAttachments,
+}));
 
-const { buildAgentEndpoints } = await import('../../../../packages/frogbot/src/agents/endpoints.js');
+const { buildAgentEndpoints } =
+  await import('../../../../packages/frogbot/src/agents/endpoints.js');
 
 function makeAgent(
   generate = vi.fn(() =>
@@ -210,7 +213,9 @@ describe('agent endpoints', () => {
   });
 
   it('rejects a model outside the agent allowlist', async () => {
-    const response = await postHandler()(makeRequest({ body: { prompt: 'Hello', model: 'x/test' } }));
+    const response = await postHandler()(
+      makeRequest({ body: { prompt: 'Hello', model: 'x/test' } }),
+    );
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({

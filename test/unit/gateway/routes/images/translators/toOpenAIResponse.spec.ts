@@ -2,7 +2,10 @@ import { DefaultGeneratedFile } from 'ai';
 import { describe, expect, it } from 'vitest';
 
 import { RequestValidationError } from '../../../../../../packages/gateway/src/errors/gatewayError.js';
-import { assertSupportedResponseFormat, toOpenAIImagesResponse } from '../../../../../../packages/gateway/src/routes/images/translators/toOpenAIResponse.js';
+import {
+  assertSupportedResponseFormat,
+  toOpenAIImagesResponse,
+} from '../../../../../../packages/gateway/src/routes/images/translators/toOpenAIResponse.js';
 
 describe('toOpenAIImagesResponse', () => {
   it('maps generated files to b64_json data', () => {

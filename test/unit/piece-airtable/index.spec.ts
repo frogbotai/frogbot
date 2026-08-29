@@ -2,7 +2,10 @@ import * as module from '@activepieces/piece-airtable';
 import { pieceContract } from 'frogbot/pieces/test';
 
 import { credentialExecution } from '../../../packages/pieces/credential-execution.js';
-import { airtableActions, createAirtable } from '../../../packages/pieces/piece-airtable/src/index.js';
+import {
+  airtableActions,
+  createAirtable,
+} from '../../../packages/pieces/piece-airtable/src/index.js';
 
 const airtable = createAirtable();
 pieceContract({

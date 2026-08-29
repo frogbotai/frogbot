@@ -300,19 +300,19 @@ function ChatOrchestrator({
   return (
     <ChatShell
       panel={panel}
-      // sidebar={
-      //   <ChatHistory
-      //     chats={displayedChats}
-      //     activeChatId={activeChatId}
-      //     fallbackTitle={fallbackTitle}
-      //     onChatChange={selectChat}
-      //     renderActions={
-      //       renderChatActions
-      //         ? (chatDocument) => renderChatActions(chatDocument, mutate(chatDocument))
-      //         : undefined
-      //     }
-      //   />
-      // }
+      sidebar={
+        <ChatHistory
+          chats={displayedChats}
+          activeChatId={activeChatId}
+          fallbackTitle={fallbackTitle}
+          onChatChange={selectChat}
+          renderActions={
+            renderChatActions
+              ? (chatDocument) => renderChatActions(chatDocument, mutate(chatDocument))
+              : undefined
+          }
+        />
+      }
     >
       {headerSlot}
       {chat.messages.length === 0 && !history.loading ? (

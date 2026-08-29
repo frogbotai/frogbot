@@ -39,10 +39,7 @@ const createComponents = (role: MessageRole): Components => ({
   strong: ({ node: _, ...props }) => <strong className="fb-markdown__strong" {...props} />,
   em: ({ node: _, ...props }) => <span className="fb-markdown__emphasis" {...props} />,
   blockquote: ({ node: _, ...props }) => (
-    <blockquote
-      className="fb-markdown__blockquote"
-      {...props}
-    />
+    <blockquote className="fb-markdown__blockquote" {...props} />
   ),
   del: ({ node: _, ...props }) => <span className="fb-markdown__strikethrough" {...props} />,
   a: ({ children, href, node: _, ...props }) => {
@@ -74,18 +71,9 @@ const createComponents = (role: MessageRole): Components => ({
   ),
   thead: ({ node: _, ...props }) => <thead className="fb-markdown__table-head" {...props} />,
   tbody: ({ node: _, ...props }) => <tbody {...props} />,
-  tr: ({ node: _, ...props }) => (
-    <tr className="fb-markdown__table-row" {...props} />
-  ),
-  th: ({ node: _, ...props }) => (
-    <th
-      className="fb-markdown__table-header"
-      {...props}
-    />
-  ),
-  td: ({ node: _, ...props }) => (
-    <td className="fb-markdown__table-cell" {...props} />
-  ),
+  tr: ({ node: _, ...props }) => <tr className="fb-markdown__table-row" {...props} />,
+  th: ({ node: _, ...props }) => <th className="fb-markdown__table-header" {...props} />,
+  td: ({ node: _, ...props }) => <td className="fb-markdown__table-cell" {...props} />,
 });
 
 export function Markdown({ children, role = 'assistant' }: MarkdownProps) {

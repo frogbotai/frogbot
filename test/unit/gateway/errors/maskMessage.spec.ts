@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { maybeMaskMessage, redactKeyFragments } from '../../../../packages/gateway/src/errors/maskMessage.js';
+import {
+  maybeMaskMessage,
+  redactKeyFragments,
+} from '../../../../packages/gateway/src/errors/maskMessage.js';
 
 describe('maybeMaskMessage', () => {
   it('passes through in non-production', () => {

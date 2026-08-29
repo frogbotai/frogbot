@@ -1,7 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../../../packages/ui/src/components/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '../../../../packages/ui/src/components/card';
 
 describe('Card', () => {
   it('renders the BEM classes and preserves external classes', () => {

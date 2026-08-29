@@ -2,7 +2,10 @@ import { pieceContract } from 'frogbot/pieces/test';
 import { afterEach, expect, it, vi } from 'vitest';
 
 import { adaptCredential } from '../../../packages/frogbot/src/connections/adapters.js';
-import { braveSearchActions, createBraveSearch } from '../../../packages/pieces/piece-brave-search/src/index.js';
+import {
+  braveSearchActions,
+  createBraveSearch,
+} from '../../../packages/pieces/piece-brave-search/src/index.js';
 
 const braveSearch = createBraveSearch();
 pieceContract({

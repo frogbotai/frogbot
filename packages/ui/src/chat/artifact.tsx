@@ -111,10 +111,7 @@ export function ArtifactViewer({ id, onClose }: { id?: string; onClose?: () => v
   }, [id, loadArtifact]);
   if (!context?.artifact) return null;
   return (
-    <aside
-      data-artifact-viewer
-      className="fb-artifact__viewer"
-    >
+    <aside data-artifact-viewer className="fb-artifact__viewer">
       <header className="fb-artifact__header">
         <strong>{context.artifact.title ?? context.artifact.kind}</strong>
         <div className="fb-artifact__actions">

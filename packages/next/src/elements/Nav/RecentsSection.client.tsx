@@ -25,11 +25,8 @@ export const recentBucketLabels = [
 type RecentBucketLabel = (typeof recentBucketLabels)[number];
 
 export function bucketRecents(recents: ChatDocument[], now = new Date()) {
-  const boundary = (days: number) => new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() - days,
-  ).getTime();
+  const boundary = (days: number) =>
+    new Date(now.getFullYear(), now.getMonth(), now.getDate() - days).getTime();
   const today = boundary(0);
   const yesterday = boundary(1);
   const previous7Days = boundary(7);
@@ -38,15 +35,16 @@ export function bucketRecents(recents: ChatDocument[], now = new Date()) {
 
   for (const recent of recents) {
     const timestamp = recent.lastMessageAt ? new Date(recent.lastMessageAt).getTime() : Number.NaN;
-    const label = !Number.isFinite(timestamp) || timestamp <= previous30Days
-      ? 'Older'
-      : timestamp <= previous7Days
-        ? 'Previous 30 days'
-        : timestamp < yesterday
-          ? 'Previous 7 days'
-          : timestamp < today
-            ? 'Yesterday'
-            : 'Today';
+    const label =
+      !Number.isFinite(timestamp) || timestamp <= previous30Days
+        ? 'Older'
+        : timestamp <= previous7Days
+          ? 'Previous 30 days'
+          : timestamp < yesterday
+            ? 'Previous 7 days'
+            : timestamp < today
+              ? 'Yesterday'
+              : 'Today';
     buckets.set(label, [...(buckets.get(label) ?? []), recent]);
   }
 
@@ -56,13 +54,14 @@ export function bucketRecents(recents: ChatDocument[], now = new Date()) {
   });
 }
 
-export function RecentsSectionClient({ chatsSlug, collectionPath, recents }: RecentsSectionClientProps) {
+export function RecentsSectionClient({
+  chatsSlug,
+  collectionPath,
+  recents,
+}: RecentsSectionClientProps) {
   const { config } = useConfig();
   const pathname = usePathname();
-  const sdk = useMemo(
-    () => createCookieSDK(config.routes.api),
-    [config.routes.api],
-  );
+  const sdk = useMemo(() => createCookieSDK(config.routes.api), [config.routes.api]);
   const chats = useChats({
     sdk,
     chatsSlug,
@@ -82,9 +81,7 @@ export function RecentsSectionClient({ chatsSlug, collectionPath, recents }: Rec
 
   return (
     <div className="frogbot-recents-section__groups">
-      {docs.length === 0 && (
-        <p className="frogbot-recents-section__empty">No recent chats</p>
-      )}
+      {docs.length === 0 && <p className="frogbot-recents-section__empty">No recent chats</p>}
       {buckets.map((bucket) => (
         <section className="frogbot-recents-section__group" key={bucket.label}>
           <h3 className="frogbot-recents-section__group-label">{bucket.label}</h3>

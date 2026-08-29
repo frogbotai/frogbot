@@ -7,7 +7,10 @@ import {
   isTargetAllowed,
   resolvePolicy,
 } from '../../../../packages/frogbot/src/ai/policy.js';
-import { createPolicyFields, mergePolicyFields } from '../../../../packages/frogbot/src/ai/policyFields.js';
+import {
+  createPolicyFields,
+  mergePolicyFields,
+} from '../../../../packages/frogbot/src/ai/policyFields.js';
 
 describe('AI user policy', () => {
   it('normalizes missing and legacy policy values', () => {

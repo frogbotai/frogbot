@@ -1,8 +1,15 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ArtifactProvider, ArtifactStreamPart, ArtifactView } from '../../../../packages/ui/src/chat/artifact';
-import { type ArtifactRegistryItem, resolveArtifact } from '../../../../packages/ui/src/chat/artifact-registry';
+import {
+  ArtifactProvider,
+  ArtifactStreamPart,
+  ArtifactView,
+} from '../../../../packages/ui/src/chat/artifact';
+import {
+  type ArtifactRegistryItem,
+  resolveArtifact,
+} from '../../../../packages/ui/src/chat/artifact-registry';
 
 const First = () => <div>first artifact</div>;
 const Second = () => <div>second artifact</div>;

@@ -10,15 +10,20 @@ function packageTestResolver() {
   return {
     name: 'package-test-resolver',
     resolveId(source: string, importer?: string) {
-      if (!importer || source.startsWith('.') || source.startsWith('/') || source.startsWith('\0')) {
+      if (
+        !importer ||
+        source.startsWith('.') ||
+        source.startsWith('/') ||
+        source.startsWith('\0')
+      ) {
         return;
       }
       const parts = relative(process.cwd(), importer).split(sep);
       let root =
         parts[0] === 'test' && ['ui', 'unit'].includes(parts[1]) && parts[2]
-          ? packageRoots.map((path) => join(path, parts[2])).find((path) =>
-              existsSync(join(path, 'package.json')),
-            )
+          ? packageRoots
+              .map((path) => join(path, parts[2]))
+              .find((path) => existsSync(join(path, 'package.json')))
           : undefined;
       let current = dirname(importer);
       while (!root && current.startsWith(process.cwd())) {

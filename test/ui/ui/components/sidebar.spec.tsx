@@ -1,7 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger } from '../../../../packages/ui/src/index';
+import {
+  Sidebar,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from '../../../../packages/ui/src/index';
 
 describe('Sidebar', () => {
   it('toggles from its trigger', () => {

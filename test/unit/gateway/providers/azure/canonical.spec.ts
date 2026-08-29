@@ -2,7 +2,10 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { AZURE_CANONICAL_IDS, resolveAzureModelId } from '../../../../../packages/gateway/src/providers/azure/canonical.js';
+import {
+  AZURE_CANONICAL_IDS,
+  resolveAzureModelId,
+} from '../../../../../packages/gateway/src/providers/azure/canonical.js';
 
 describe('resolveAzureModelId', () => {
   it('maps known model names', () => {

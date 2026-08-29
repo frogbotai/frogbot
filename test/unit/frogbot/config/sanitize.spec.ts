@@ -3,8 +3,14 @@ import { z } from 'zod';
 
 import type { Frogbot } from '../../../../packages/frogbot/src/frogbot.js';
 import { general } from '../../../../packages/frogbot/src/agents/presets/general.js';
-import { getCachedFrogbot, resetFrogbotCache } from '../../../../packages/frogbot/src/getFrogbot.js';
-import { getFrogbotInstance, registerFrogbotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
+import {
+  getCachedFrogbot,
+  resetFrogbotCache,
+} from '../../../../packages/frogbot/src/getFrogbot.js';
+import {
+  getFrogbotInstance,
+  registerFrogbotInstance,
+} from '../../../../packages/frogbot/src/instanceRegistry.js';
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
 
@@ -565,6 +571,7 @@ describe('frogbot sanitize', () => {
   it('forces admin.importMap.autoGenerate false while preserving other admin keys', async () => {
     const config = makeConfig({
       admin: { theme: 'dark', importMap: { baseDir: '/tmp/base' } },
+      routes: { api: '/internal' },
     } as unknown as Partial<FrogbotConfig>);
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
@@ -573,6 +580,10 @@ describe('frogbot sanitize', () => {
       autoGenerate: false,
     });
     expect((payloadConfig as any).admin.theme).toBe('dark');
+    expect(payloadConfig.routes).toMatchObject({ admin: '/', api: '/internal' });
+
+    const custom = sanitize(makeConfig({ routes: { admin: '/control' } }));
+    expect((await custom._internal.payloadConfig).routes.admin).toBe('/control');
   });
 
   it('defaults FrogBot import-map generation to enabled', () => {

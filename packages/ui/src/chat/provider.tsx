@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  type AgentManifest,
-  createFrogbotSDK,
-  type FrogBotSDK,
-} from '@frogbotai/sdk';
+import { type AgentManifest, createFrogbotSDK, type FrogBotSDK } from '@frogbotai/sdk';
 import type { ManifestResponse } from 'frogbot';
 import { createContext, type ReactNode, use, useEffect, useMemo, useState } from 'react';
 

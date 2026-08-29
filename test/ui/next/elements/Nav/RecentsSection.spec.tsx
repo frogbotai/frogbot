@@ -12,7 +12,9 @@ vi.mock('next/navigation.js', () => ({
 
 vi.mock('@payloadcms/ui', () => ({
   Link: ({ children, href, ...props }: React.ComponentProps<'a'>) => (
-    <a href={href} {...props}>{children}</a>
+    <a href={href} {...props}>
+      {children}
+    </a>
   ),
   useConfig: () => ({ config: { routes: { api: '/api' } } }),
 }));
@@ -31,7 +33,9 @@ vi.mock('../../../../../packages/next/src/elements/Nav/NavSection', () => ({
 
 vi.mock('../../../../../packages/next/src/elements/Nav/NavItem', () => ({
   NavItem: ({ active, label, path }: { active?: boolean; label: string; path: string }) => (
-    <a aria-current={active ? 'page' : undefined} href={path}>{label}</a>
+    <a aria-current={active ? 'page' : undefined} href={path}>
+      {label}
+    </a>
   ),
 }));
 
@@ -173,10 +177,12 @@ describe('RecentsSection', () => {
       { id: 'thirty', agent: '', lastMessageAt: new Date(at(30)).toISOString() },
     ];
 
-    expect(bucketRecents(docs, now).map(({ label, docs: bucketDocs }) => [
-      label,
-      bucketDocs.map(({ id }) => id),
-    ])).toEqual([
+    expect(
+      bucketRecents(docs, now).map(({ label, docs: bucketDocs }) => [
+        label,
+        bucketDocs.map(({ id }) => id),
+      ]),
+    ).toEqual([
       ['Today', ['today']],
       ['Yesterday', ['today-before', 'yesterday']],
       ['Previous 7 days', ['yesterday-before', 'seven-after']],
@@ -196,12 +202,19 @@ describe('RecentsSection', () => {
     pathname = '/control/collections/conversations/today';
     const view = render(await RecentsSection(props()));
 
-    expect(screen.getAllByRole('heading').map(({ textContent }) => textContent)).toEqual(['Today', 'Older']);
-    expect(screen.getByRole('link', { name: 'Today chat' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getAllByRole('heading').map(({ textContent }) => textContent)).toEqual([
+      'Today',
+      'Older',
+    ]);
+    expect(screen.getByRole('link', { name: 'Today chat' }).getAttribute('aria-current')).toBe(
+      'page',
+    );
     expect(screen.getByRole('link', { name: 'Old chat' }).getAttribute('aria-current')).toBeNull();
 
     pathname = '/control/collections/conversations/old';
     view.rerender(await RecentsSection(props()));
-    expect(screen.getByRole('link', { name: 'Old chat' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('link', { name: 'Old chat' }).getAttribute('aria-current')).toBe(
+      'page',
+    );
   });
 });

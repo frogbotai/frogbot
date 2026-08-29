@@ -164,11 +164,7 @@ export function AttachmentPreviews({
           <div key={item.key} className="fb-attachments__item">
             <div className="fb-attachments__preview">
               {item.preview ? (
-                <img
-                  src={item.preview}
-                  alt={item.file.name}
-                  className="fb-attachments__image"
-                />
+                <img src={item.preview} alt={item.file.name} className="fb-attachments__image" />
               ) : (
                 <>
                   <FileIcon className="fb-attachments__file-icon" />
@@ -220,14 +216,8 @@ export function PastePreviews({
     <div className="fb-attachments__previews">
       <div className="fb-attachments__scroll">
         {items.map((item, index) => (
-          <div
-            key={item.filename}
-            data-testid="paste-attachment"
-            className="fb-attachments__paste"
-          >
-            <div className="fb-attachments__paste-text">
-              {item.text}
-            </div>
+          <div key={item.filename} data-testid="paste-attachment" className="fb-attachments__paste">
+            <div className="fb-attachments__paste-text">{item.text}</div>
             <button
               type="button"
               aria-label={`Remove ${item.filename}`}
@@ -236,9 +226,7 @@ export function PastePreviews({
             >
               <CloseIcon className="fb-attachments__remove-icon" />
             </button>
-            <div className="fb-attachments__paste-label">
-              PASTED
-            </div>
+            <div className="fb-attachments__paste-label">PASTED</div>
           </div>
         ))}
       </div>

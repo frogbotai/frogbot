@@ -38,6 +38,8 @@ describe('CodeBlock', () => {
         </Message>
       </ThemeProvider>,
     );
-    expect(container.querySelector('pre')?.classList.contains('fb-code-block--dark-user')).toBe(true);
+    expect(container.querySelector('pre')?.classList.contains('fb-code-block--dark-user')).toBe(
+      true,
+    );
   });
 });

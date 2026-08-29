@@ -88,8 +88,6 @@ export type Collection = {
 // Same shape as Payload's but with `FrogbotRequest`. Users write access
 // functions against these; sanitize() wraps them for Payload at runtime.
 
-
-
 export type AccessResult = boolean | Where;
 
 export type AccessArgs<TData = any> = {
@@ -130,8 +128,6 @@ export type FieldAccess<TData extends TypeWithID = any, TSiblingData = any> = (
 // Same shape as Payload's hooks but with `FrogbotRequest` instead of
 // `PayloadRequest`. Users write hooks against these types; at runtime,
 // sanitize() wraps them so Payload sees PayloadRequest-compatible functions.
-
-
 
 type CreateOrUpdateOperation = 'create' | 'update';
 

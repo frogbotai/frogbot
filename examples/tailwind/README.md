@@ -10,7 +10,7 @@ cp .env.example .env
 pnpm dev
 ```
 
-Open [http://localhost:3000/admin](http://localhost:3000/admin). The custom logo and navigation icon use Tailwind utilities and follow the admin panel's light and dark themes.
+Open [http://localhost:3000](http://localhost:3000). The custom logo and navigation icon use Tailwind utilities and follow the admin panel's light and dark themes.
 
 ## How It Works
 

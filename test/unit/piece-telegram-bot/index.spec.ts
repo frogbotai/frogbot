@@ -2,7 +2,10 @@ import * as module from '@activepieces/piece-telegram-bot';
 import { pieceContract } from 'frogbot/pieces/test';
 
 import { credentialExecution } from '../../../packages/pieces/credential-execution.js';
-import { createTelegramBot, telegramBotActions } from '../../../packages/pieces/piece-telegram-bot/src/index.js';
+import {
+  createTelegramBot,
+  telegramBotActions,
+} from '../../../packages/pieces/piece-telegram-bot/src/index.js';
 
 const telegramBot = createTelegramBot();
 pieceContract({

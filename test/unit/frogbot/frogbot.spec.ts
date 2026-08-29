@@ -193,7 +193,8 @@ describe('Frogbot class', () => {
         payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> }
       ).__getMockPayload();
       const lifecycleFrogbot = new Frogbot();
-      const { registerFrogbotInstance } = await import('../../../packages/frogbot/src/instanceRegistry.js');
+      const { registerFrogbotInstance } =
+        await import('../../../packages/frogbot/src/instanceRegistry.js');
       registerFrogbotInstance(payload, lifecycleFrogbot);
 
       const result = await new Frogbot().init({ config: makeConfig(), disableOnInit: true });

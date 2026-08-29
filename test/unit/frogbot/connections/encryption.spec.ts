@@ -2,7 +2,10 @@ import { createCipheriv, createHash } from 'node:crypto';
 
 import { describe, expect, it } from 'vitest';
 
-import { createCredentialEncryption, CredentialCryptoError } from '../../../../packages/frogbot/src/connections/encryption.js';
+import {
+  createCredentialEncryption,
+  CredentialCryptoError,
+} from '../../../../packages/frogbot/src/connections/encryption.js';
 
 function legacyEncrypt(value: string, secret: string): string {
   const key = createHash('sha256').update('frogbot:plugin-oauth:').update(secret).digest();

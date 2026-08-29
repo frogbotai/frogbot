@@ -3,7 +3,10 @@ import { RetryError } from 'ai';
 import { describe, expect, it } from 'vitest';
 
 import { RateLimitExceededError } from '../../../../packages/gateway/src/errors/gatewayError.js';
-import { headersForError, isRetryableError } from '../../../../packages/gateway/src/errors/normalizeAiSdkError.js';
+import {
+  headersForError,
+  isRetryableError,
+} from '../../../../packages/gateway/src/errors/normalizeAiSdkError.js';
 
 // ---------------------------------------------------------------------------
 // Test helpers

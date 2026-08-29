@@ -2,7 +2,10 @@ import * as module from '@activepieces/piece-google-sheets';
 import { pieceContract } from 'frogbot/pieces/test';
 
 import { credentialExecution } from '../../../packages/pieces/credential-execution.js';
-import { createGoogleSheets, googleSheetsActions } from '../../../packages/pieces/piece-google-sheets/src/index.js';
+import {
+  createGoogleSheets,
+  googleSheetsActions,
+} from '../../../packages/pieces/piece-google-sheets/src/index.js';
 
 const googleSheets = createGoogleSheets();
 pieceContract({

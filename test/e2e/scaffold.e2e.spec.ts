@@ -110,7 +110,7 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
   });
 
   it('serves a FrogBot-branded admin login page', async () => {
-    const res = await fetch(`${baseURL}/admin/login`);
+    const res = await fetch(`${baseURL}/login`);
     expect(res.status).toBe(200);
 
     const html = await res.text();
@@ -143,9 +143,9 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
 
   function expectPersisted(chatId: string | number) {
     const db = new DatabaseSync(join(dataDir, 'e2e.db'));
-    const chat = db
-      .prepare('SELECT count(*) AS count FROM chats WHERE id = ?')
-      .get(chatId) as { count: number };
+    const chat = db.prepare('SELECT count(*) AS count FROM chats WHERE id = ?').get(chatId) as {
+      count: number;
+    };
     const messages = db
       .prepare('SELECT role FROM messages WHERE chat_id = ? ORDER BY role')
       .all(chatId) as Array<{ role: string }>;

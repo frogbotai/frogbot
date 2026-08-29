@@ -55,9 +55,7 @@ export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
   }
 
   const enabled =
-    config.agents !== undefined ||
-    chatCollection !== undefined ||
-    messageCollection !== undefined;
+    config.agents !== undefined || chatCollection !== undefined || messageCollection !== undefined;
   if (!enabled) {
     return { collections: config.collections, chat: { enabled: false } };
   }
@@ -65,9 +63,7 @@ export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
   const chatsSlug = chatCollection?.slug ?? DEFAULT_CHATS_SLUG;
   const messagesSlug = messageCollection?.slug ?? DEFAULT_MESSAGES_SLUG;
   if (chatsSlug === messagesSlug) {
-    throw new Error(
-      `[frogbot] Chat and message collections must differ (both '${chatsSlug}').`,
-    );
+    throw new Error(`[frogbot] Chat and message collections must differ (both '${chatsSlug}').`);
   }
 
   const userSlug = resolveUserSlug(config);

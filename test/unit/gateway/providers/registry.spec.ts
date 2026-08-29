@@ -11,7 +11,10 @@ import {
   ProviderNotConfiguredError,
 } from '../../../../packages/gateway/src/errors/gatewayError.js';
 import { DEFAULT_MODEL_CATALOG } from '../../../../packages/gateway/src/providers/catalog.data.js';
-import { defineModelCatalog, presetFor } from '../../../../packages/gateway/src/providers/catalog.js';
+import {
+  defineModelCatalog,
+  presetFor,
+} from '../../../../packages/gateway/src/providers/catalog.js';
 import {
   buildProviderRegistry,
   PROVIDER_NAMES,

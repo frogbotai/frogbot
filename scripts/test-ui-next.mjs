@@ -4,9 +4,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const nextRoot = path.resolve('templates/blank/.next');
-const registryRouteRoot = path.resolve('templates/blank/src/app/(app)/icon-registry-resolution');
+const registryRouteRoot = path.resolve(
+  'templates/blank/src/app/(frogbot)/icon-registry-resolution',
+);
 const registryRoute = path.join(registryRouteRoot, 'page.tsx');
-const importMap = path.resolve('templates/blank/src/app/(frogbot)/admin/importMap.js');
+const importMap = path.resolve('templates/blank/src/app/(frogbot)/importMap.js');
 const originalImportMap = fs.readFileSync(importMap);
 
 fs.rmSync(nextRoot, { recursive: true, force: true });
@@ -28,30 +30,25 @@ try {
   fs.writeFileSync(importMap, originalImportMap);
 }
 
-const html = fs.readFileSync(path.join(nextRoot, 'server/app/index.html'), 'utf8');
+const rootPage = path.join(nextRoot, 'server/app/(frogbot)/[[...segments]]/page.js');
+const registryPage = path.join(nextRoot, 'server/app/(frogbot)/icon-registry-resolution/page.js');
+assert.ok(fs.existsSync(rootPage));
+assert.match(fs.readFileSync(registryPage, 'utf8'), /icon registry resolved/);
 
-assert.match(html, /data-fb-ui=""/);
-assert.match(html, /data-theme="system"/);
-assert.match(html, /Loading chat/);
-assert.match(html, /localStorage\.getItem/);
-
-const registryHTML = fs.readFileSync(
-  path.join(nextRoot, 'server/app/icon-registry-resolution.html'),
-  'utf8',
-);
-assert.match(registryHTML, /icon registry resolved/);
-
-const href = html.match(/href="(\/_next\/static\/css\/[^"?]+\.css)"/)?.[1];
-assert.ok(href);
-
-const css = fs.readFileSync(path.join(nextRoot, href.replace('/_next/', '')), 'utf8');
+const staticRoot = path.join(nextRoot, 'static');
+const staticFiles = fs.readdirSync(staticRoot, { recursive: true });
+const css = staticFiles
+  .filter((file) => file.endsWith('.css'))
+  .map((file) => fs.readFileSync(path.join(staticRoot, file), 'utf8'))
+  .join('\n');
 assert.ok(css.length > 0);
 assert.match(css, /\.fb-button/);
 assert.match(css, /var\(--color-background\)/);
 assert.match(css, /data-fb-theme/);
 
-const bundles = [...html.matchAll(/src="(\/_next\/static\/[^"?]+\.js)"/g)]
-  .map((match) => fs.readFileSync(path.join(nextRoot, match[1].replace('/_next/', '')), 'utf8'))
+const bundles = staticFiles
+  .filter((file) => file.endsWith('.js'))
+  .map((file) => fs.readFileSync(path.join(staticRoot, file), 'utf8'))
   .join('\n');
 for (const forbidden of [
   '@payloadcms/',

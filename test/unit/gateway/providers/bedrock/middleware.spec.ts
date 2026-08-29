@@ -3,7 +3,10 @@
 import { describe, expect, it } from 'vitest';
 
 import type { BeforeUpstreamHookArgs } from '../../../../../packages/gateway/src/hooks.js';
-import { bedrockCachePoint, bedrockThinkingEffort } from '../../../../../packages/gateway/src/providers/bedrock/middleware.js';
+import {
+  bedrockCachePoint,
+  bedrockThinkingEffort,
+} from '../../../../../packages/gateway/src/providers/bedrock/middleware.js';
 
 function makeArgs(
   model: string,

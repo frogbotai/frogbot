@@ -36,10 +36,7 @@ export const AgentSelector = memo(function AgentSelector({
           <ChevronDownIcon className="fb-agent-selector__chevron" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        className="fb-agent-selector__content"
-      >
+      <DropdownMenuContent align="start" className="fb-agent-selector__content">
         {agents.map((agent) => {
           const name = agent.label;
           return (

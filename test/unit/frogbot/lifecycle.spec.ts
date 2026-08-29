@@ -52,13 +52,18 @@ vi.mock('payload', () => ({
   handleEndpoints: vi.fn(),
 }));
 
-vi.mock('../../../packages/frogbot/src/typegen/index.js', () => ({ writeGeneratedTypes: vi.fn(() => Promise.resolve()) }));
-vi.mock('../../../packages/frogbot/src/bin/generateImportMap/index.js', () => ({ generateImportMap: vi.fn(() => Promise.resolve()) }));
+vi.mock('../../../packages/frogbot/src/typegen/index.js', () => ({
+  writeGeneratedTypes: vi.fn(() => Promise.resolve()),
+}));
+vi.mock('../../../packages/frogbot/src/bin/generateImportMap/index.js', () => ({
+  generateImportMap: vi.fn(() => Promise.resolve()),
+}));
 
 const { writeGeneratedTypes } = await import('../../../packages/frogbot/src/typegen/index.js');
 const { resolveConfigDir } = await import('../../../packages/frogbot/src/config/load.js');
 const { sanitize } = await import('../../../packages/frogbot/src/config/sanitize.js');
-const { getCachedFrogbot, getFrogbot, resetFrogbotCache } = await import('../../../packages/frogbot/src/getFrogbot.js');
+const { getCachedFrogbot, getFrogbot, resetFrogbotCache } =
+  await import('../../../packages/frogbot/src/getFrogbot.js');
 const { getFrogbotInstance } = await import('../../../packages/frogbot/src/instanceRegistry.js');
 
 describe('Frogbot lifecycle', () => {

@@ -38,7 +38,7 @@ pnpm dev
 Open:
 
 - App: <http://localhost:3000>
-- Admin: <http://localhost:3000/admin>
+- Admin: <http://localhost:3000>
 - REST API: <http://localhost:3000/api>
 - Agent catalog: <http://localhost:3000/api/agents>
 
@@ -95,7 +95,7 @@ http://localhost:3000/api/users/oauth/google/callback
 While logged into the admin panel in the same browser, open the authorization URL:
 
 ```text
-http://localhost:3000/api/users/oauth/google/authorize?returnUrl=/admin
+http://localhost:3000/api/users/oauth/google/authorize?returnUrl=/
 ```
 
 The plugin derives one provider from the shared credentials object and unions the scopes declared by Sheets, Drive, and Calendar.

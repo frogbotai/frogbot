@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
-import { DEFAULT_FILES_SLUG, resolveFilesCollection } from '../../../../packages/frogbot/src/uploads/resolveCollections.js';
+import {
+  DEFAULT_FILES_SLUG,
+  resolveFilesCollection,
+} from '../../../../packages/frogbot/src/uploads/resolveCollections.js';
 
 describe('resolveFilesCollection', () => {
   it('injects the default collection', () => {

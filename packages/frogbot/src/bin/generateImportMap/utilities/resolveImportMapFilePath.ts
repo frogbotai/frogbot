@@ -11,7 +11,7 @@ async function pathOrFileExists(path: string): Promise<boolean> {
 }
 
 export async function resolveImportMapFilePath({
-  adminRoute = '/admin',
+  adminRoute = '/',
   create = true,
   importMapFile,
   rootDir,

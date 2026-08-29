@@ -55,9 +55,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.run(
     sql`CREATE INDEX \`chats_user_idx\` ON \`chats\` (\`user_id\`);`,
   );
-  await db.run(
-    sql`CREATE INDEX \`chats_agent_idx\` ON \`chats\` (\`agent\`);`,
-  );
+  await db.run(sql`CREATE INDEX \`chats_agent_idx\` ON \`chats\` (\`agent\`);`);
   await db.run(
     sql`CREATE INDEX \`chats_last_message_at_idx\` ON \`chats\` (\`last_message_at\`);`,
   );

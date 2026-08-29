@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import type { FrogbotConfig } from '../../../../../packages/frogbot/src/config/types.js';
-import { resolveUsageCollection, USAGE_LOGS_SLUG } from '../../../../../packages/frogbot/src/ai/usage/collection.js';
+import {
+  resolveUsageCollection,
+  USAGE_LOGS_SLUG,
+} from '../../../../../packages/frogbot/src/ai/usage/collection.js';
 
 function makeConfig(overrides: Partial<FrogbotConfig> = {}): FrogbotConfig {
   return {

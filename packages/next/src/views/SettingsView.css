@@ -75,7 +75,9 @@
   min-height: 5.5rem;
   padding: 1.25rem;
   text-decoration: none;
-  transition: border-color 100ms ease, box-shadow 100ms ease;
+  transition:
+    border-color 100ms ease,
+    box-shadow 100ms ease;
 }
 
 .frogbot-settings-card:hover,

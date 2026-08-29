@@ -17,7 +17,9 @@ import {
 } from '../../../../packages/frogbot/src/typegen/index.js';
 
 const execFileAsync = promisify(execFile);
-const binURL = pathToFileURL(new URL('../../../../packages/frogbot/src/bin/index.ts', import.meta.url).pathname).href;
+const binURL = pathToFileURL(
+  new URL('../../../../packages/frogbot/src/bin/index.ts', import.meta.url).pathname,
+).href;
 const tsxLoader = createRequire(import.meta.url).resolve('tsx/esm');
 
 describe('frogbot generate:types', () => {

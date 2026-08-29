@@ -4,7 +4,10 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const pkg = JSON.parse(
-  readFileSync(fileURLToPath(new URL('../../../packages/gateway/package.json', import.meta.url)), 'utf8'),
+  readFileSync(
+    fileURLToPath(new URL('../../../packages/gateway/package.json', import.meta.url)),
+    'utf8',
+  ),
 ) as {
   bin?: Record<string, string>;
   engines?: Record<string, string>;

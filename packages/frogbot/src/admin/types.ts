@@ -104,8 +104,6 @@ export interface RootAdminConfig {
 // plus props — never React elements. These aliases keep Payload's component
 // type names out of user-facing hovers and error messages.
 
-
-
 /**
  * Reference to a React component rendered by the admin panel.
  *

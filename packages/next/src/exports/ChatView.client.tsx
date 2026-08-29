@@ -28,7 +28,12 @@ export type ChatViewClientProps = {
   initialMessages: UIMessage[];
 };
 
-export function ChatViewClient({ agent, chatId, documentPath, initialMessages }: ChatViewClientProps) {
+export function ChatViewClient({
+  agent,
+  chatId,
+  documentPath,
+  initialMessages,
+}: ChatViewClientProps) {
   const { theme } = useTheme();
   const replaced = useRef(false);
   const onChatIdChange = (nextChatId: string | number | undefined) => {
@@ -84,7 +89,8 @@ function ManifestChat({
     void getPreference<ChatPicks | null>(chatPicksPreference).then((preference) => {
       if (!current) return;
       const preferredAgent = manifest.agents.find(({ slug }) => slug === preference?.agent);
-      const nextAgent = chatId === undefined ? preferredAgent?.slug ?? manifest.defaultAgent : agent;
+      const nextAgent =
+        chatId === undefined ? (preferredAgent?.slug ?? manifest.defaultAgent) : agent;
       const nextEntry = manifest.agents.find(({ slug }) => slug === nextAgent);
       setSelectedAgent(nextAgent);
       setSelectedModel(

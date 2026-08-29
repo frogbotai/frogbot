@@ -4,11 +4,22 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { captureBlobKey, decodeCapture, encodeCapture } from '../../../packages/plugins/plugin-capture/src/blob.js';
+import {
+  captureBlobKey,
+  decodeCapture,
+  encodeCapture,
+} from '../../../packages/plugins/plugin-capture/src/blob.js';
 import { createCapturesCollection } from '../../../packages/plugins/plugin-capture/src/collection.js';
 import { createCaptureHooks } from '../../../packages/plugins/plugin-capture/src/hooks.js';
-import { captureConfigKey, capturePlugin, filesystemCaptureStorage } from '../../../packages/plugins/plugin-capture/src/index.js';
-import type { CaptureRecord, CaptureStorage } from '../../../packages/plugins/plugin-capture/src/types.js';
+import {
+  captureConfigKey,
+  capturePlugin,
+  filesystemCaptureStorage,
+} from '../../../packages/plugins/plugin-capture/src/index.js';
+import type {
+  CaptureRecord,
+  CaptureStorage,
+} from '../../../packages/plugins/plugin-capture/src/types.js';
 
 const roots: string[] = [];
 

@@ -3,7 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../../../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../../../../packages/gateway/src/providers/registry.js';
-import { buildLanguageParams, extractReasoningDetails } from '../../../../../packages/gateway/src/routes/chatCompletions/handler.js';
+import {
+  buildLanguageParams,
+  extractReasoningDetails,
+} from '../../../../../packages/gateway/src/routes/chatCompletions/handler.js';
 import type { ChatCompletionRequest } from '../../../../../packages/gateway/src/routes/chatCompletions/schema.js';
 
 function baseRequest(overrides: Partial<ChatCompletionRequest> = {}): ChatCompletionRequest {

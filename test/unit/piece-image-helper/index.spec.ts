@@ -4,7 +4,10 @@ import { createServer } from 'node:http';
 import { pieceContract } from 'frogbot/pieces/test';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createImageHelper, imageHelperActions } from '../../../packages/pieces/piece-image-helper/src/index.js';
+import {
+  createImageHelper,
+  imageHelperActions,
+} from '../../../packages/pieces/piece-image-helper/src/index.js';
 
 const imageHelper = createImageHelper();
 
