@@ -144,9 +144,6 @@ function sanitizeCollection(
                     Component: '@frogbotai/next/views#ChatView',
                   },
                 },
-                list: views?.list ?? {
-                  Component: '@frogbotai/next/views#ChatListView',
-                },
               },
             },
           },

@@ -131,7 +131,7 @@ describe('frogbot importMap generator', () => {
     expect(output).not.toContain("import('payload')");
   });
 
-  it('maps the default chat collection views', async () => {
+  it('maps the default chat collection edit view', async () => {
     const dir = await makeDir('frogbot-importmap-chat-views-');
     const config = sanitize({
       secret: 'test-secret',
@@ -148,8 +148,8 @@ describe('frogbot importMap generator', () => {
     await generateImportMap(payloadConfig);
     const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
 
-    expect(output).toContain('"@frogbotai/next/views#ChatListView"');
     expect(output).toContain('"@frogbotai/next/views#ChatView"');
+    expect(output).not.toContain('ChatListView');
   });
 
   it('writes an import map when an agent model does not match the configured providers', async () => {

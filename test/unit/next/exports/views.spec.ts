@@ -42,7 +42,6 @@ vi.mock('frogbot', async (importOriginal) => ({
 }));
 
 const {
-  ChatListView,
   ChatView,
   CollectionSettingsRedirect,
   RootPage,
@@ -433,50 +432,6 @@ describe('@frogbotai/next views', () => {
       } as never),
     ).resolves.toBeNull();
     expect(find).not.toHaveBeenCalled();
-  });
-
-  it('ChatListView queries the resolved collection with access enforcement', async () => {
-    const user = { id: 'user-1' };
-    const find = vi.fn(() =>
-      Promise.resolve({
-        docs: [
-          {
-            id: 'chat-1',
-            agent: 'general',
-            title: 'First chat',
-            lastMessageAt: '2026-08-23T00:00:00.000Z',
-            private: 'excluded',
-          },
-        ],
-      }),
-    );
-
-    const element = await ChatListView({
-      collectionConfig: { slug: 'conversations' },
-      limit: 20,
-      payload: { find },
-      user,
-    } as never);
-
-    expect(find).toHaveBeenCalledWith({
-      collection: 'conversations',
-      depth: 0,
-      limit: 20,
-      overrideAccess: false,
-      sort: '-lastMessageAt',
-      user,
-    });
-    expect(element.props).toEqual({
-      chats: [
-        {
-          id: 'chat-1',
-          agent: 'general',
-          title: 'First chat',
-          lastMessageAt: '2026-08-23T00:00:00.000Z',
-        },
-      ],
-      collectionSlug: 'conversations',
-    });
   });
 
   it('RootPage forwards props with the unwrapped payload config promise', async () => {

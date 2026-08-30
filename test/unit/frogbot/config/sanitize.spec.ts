@@ -629,8 +629,8 @@ describe('frogbot sanitize', () => {
     });
     expect(chats?.admin.components.views).toMatchObject({
       edit: { root: { Component: '@frogbotai/next/views#ChatView' } },
-      list: { Component: '@frogbotai/next/views#ChatListView' },
     });
+    expect(chats?.admin.components.views.list).toBeUndefined();
   });
 
   it('defaults chat views on a marked custom collection', async () => {
@@ -648,8 +648,8 @@ describe('frogbot sanitize', () => {
     expect(result.chat.chatsSlug).toBe('conversations');
     expect(chats?.admin.components.views).toMatchObject({
       edit: { root: { Component: '@frogbotai/next/views#ChatView' } },
-      list: { Component: '@frogbotai/next/views#ChatListView' },
     });
+    expect(chats?.admin.components.views.list).toBeUndefined();
   });
 
   it('preserves dashboard, chat list, and chat edit root overrides', async () => {

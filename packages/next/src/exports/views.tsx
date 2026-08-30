@@ -15,7 +15,6 @@ import type { ComponentProps, ComponentType } from 'react';
 import type {
   AdminViewServerProps,
   DocumentViewServerProps,
-  ListViewServerProps,
   PayloadComponent,
 } from 'payload';
 import { formatAdminURL } from 'payload/shared';
@@ -26,7 +25,6 @@ import frogbotFavicon from '../assets/frogbot-favicon.png';
 import frogbotOGImage from '../assets/frogbot-og.jpg';
 import { FrogbotNav } from '../elements/Nav/index.js';
 import type { FrogbotConfigArg } from '../types.js';
-import { ChatList, type ChatListItem } from './ChatListView.client.js';
 import { ChatViewClient } from './ChatView.client.js';
 
 const assetURL = (asset: { src: string } | string): string =>
@@ -46,30 +44,6 @@ type NotFoundPageProps = Omit<ComponentProps<typeof PayloadNotFoundPage>, 'confi
 
 export function NotFoundPage({ config, ...rest }: NotFoundPageProps) {
   return <PayloadNotFoundPage {...rest} config={getPayloadConfig(config)} />;
-}
-
-export async function ChatListView({
-  collectionConfig,
-  limit,
-  payload,
-  user,
-}: ListViewServerProps) {
-  const result = await payload.find({
-    collection: collectionConfig.slug,
-    depth: 0,
-    limit,
-    overrideAccess: false,
-    sort: '-lastMessageAt',
-    user,
-  });
-  const chats = result.docs.map((doc): ChatListItem => ({
-    id: doc.id,
-    agent: typeof doc.agent === 'string' ? doc.agent : '',
-    lastMessageAt: typeof doc.lastMessageAt === 'string' ? doc.lastMessageAt : null,
-    title: typeof doc.title === 'string' ? doc.title : null,
-  }));
-
-  return <ChatList chats={chats} collectionSlug={collectionConfig.slug} />;
 }
 
 export async function ChatView({ doc, payload, routeSegments, user }: DocumentViewServerProps) {
