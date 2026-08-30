@@ -33,6 +33,7 @@ import { createPolicyFields, mergePolicyFields } from '../ai/policyFields.js';
 import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
 import { resolveUsageCollection } from '../ai/usage/collection.js';
 import { buildManifestEndpoint } from '../chat/manifest.js';
+import { buildChatEndpoints } from '../chat/endpoints.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { resolveUserSlug } from '../chat/resolveUserSlug.js';
 import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
@@ -1147,7 +1148,10 @@ export function sanitize(
       );
       seedFrogbotCache(frogbot, sanitizedConfig);
     },
-    buildSecretEndpoints({ connections, pieces: pieces.pieces }),
+    [
+      ...buildSecretEndpoints({ connections, pieces: pieces.pieces }),
+      ...(chat.enabled ? buildChatEndpoints() : []),
+    ],
     attachFrogbot,
   );
   const payloadSanitizedPromise = payloadBuildConfig(payloadConfig).then(rewriteComponentPaths);

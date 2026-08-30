@@ -11,18 +11,32 @@ export type { ChatStatusProps } from '../chat/chat-status';
 export { ChatStatus } from '../chat/chat-status';
 export type { CodeBlockProps } from '../chat/code-block';
 export { CodeBlock } from '../chat/code-block';
+export { copyMarkdown } from '../chat/copy-markdown';
 export type { ComposerProps } from '../chat/composer';
 export { Composer } from '../chat/composer';
 export type { DataPartValue } from '../chat/data-part';
 export { DataPart } from '../chat/data-part';
 export { FilePart } from '../chat/file-part';
 export type { PageContextPartData, PastePartData, PromptPartData } from '../chat/flag-parts';
+export { formatMessageTimestamp } from '../chat/format-timestamp';
 export type { MarkdownProps } from '../chat/markdown';
 export { Markdown } from '../chat/markdown';
 export type { MessageProps } from '../chat/message';
 export { Message } from '../chat/message';
-export type { MessageActionsProps } from '../chat/message-actions';
-export { MessageActions } from '../chat/message-actions';
+export type {
+  BranchMessageActionProps,
+  CopyMessageActionProps,
+  EditMessageActionProps,
+  MessageActionsProps,
+  MessageTimestampProps,
+} from '../chat/message-actions';
+export {
+  BranchMessageAction,
+  CopyMessageAction,
+  EditMessageAction,
+  MessageActions,
+  MessageTimestamp,
+} from '../chat/message-actions';
 export type { MessageEditorProps } from '../chat/message-editor';
 export { MessageEditor } from '../chat/message-editor';
 export type { MessageListProps } from '../chat/message-list';
@@ -34,7 +48,7 @@ export { messageDocumentToUIMessage, uiMessageToDocument } from '../chat/message
 export { MicControl } from '../chat/mic-control';
 export type { ModelSelectorModel, ModelSelectorProps } from '../chat/model-selector';
 export { ModelSelector } from '../chat/model-selector';
-export { deleteChat, renameChat, updateChatAgent } from '../chat/mutations';
+export { branchChat, deleteChat, renameChat, updateChatAgent } from '../chat/mutations';
 export type { PageContextButtonProps, PageContextTab } from '../chat/page-context-button';
 export { PageContextButton } from '../chat/page-context-button';
 export type { ChatManifest, ChatProviderValue } from '../chat/provider';

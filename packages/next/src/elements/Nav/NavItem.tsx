@@ -7,7 +7,7 @@ export type NavItemIcon = ComponentType<{ className?: string; size?: number }> |
 
 export type NavItemProps = {
   active?: boolean;
-  icon: NavItemIcon;
+  icon?: NavItemIcon;
   label: string;
   path: string;
 };
@@ -18,19 +18,26 @@ export function NavItem({ active = false, icon, label, path }: NavItemProps) {
   return (
     <Link
       aria-current={active ? 'page' : undefined}
-      className={[baseClass, 'fb-slide-right-1', active && `${baseClass}--active`]
+      className={[
+        baseClass,
+        'fb-slide-right-1',
+        active && `${baseClass}--active`,
+        icon && `${baseClass}--with-icon`,
+      ]
         .filter(Boolean)
         .join(' ')}
       href={path}
     >
-      <span aria-hidden="true" className={`${baseClass}__icon`}>
-        {isValidElement(icon)
-          ? icon
-          : createElement(icon as ComponentType<{ className?: string; size?: number }>, {
-              className: `${baseClass}__icon-svg`,
-              size: 20,
-            })}
-      </span>
+      {icon ? (
+        <span aria-hidden="true" className={`${baseClass}__icon`}>
+          {isValidElement(icon)
+            ? icon
+            : createElement(icon as ComponentType<{ className?: string; size?: number }>, {
+                className: `${baseClass}__icon-svg`,
+                size: 20,
+              })}
+        </span>
+      ) : null}
       <span className={`${baseClass}__label`}>{label}</span>
     </Link>
   );

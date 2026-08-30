@@ -30,6 +30,24 @@ describe('message controls', () => {
     expect(edit).toHaveBeenCalledOnce();
   });
 
+  it('places the timestamp before user actions and after assistant actions', () => {
+    const timestamp = new Date(2026, 0, 12, 18, 58);
+    const { container: userActions } = render(
+      <MessageActions text="Question" timestamp={timestamp} timestampPlacement="start" />,
+    );
+    const { container: assistantActions } = render(
+      <MessageActions text="Answer" timestamp={timestamp} timestampPlacement="end" />,
+    );
+
+    const children = (container: HTMLElement) =>
+      Array.from(container.querySelector('.fb-message-actions')!.children).map(
+        (child) => child.tagName,
+      );
+    expect(children(userActions)[0]).toBe('TIME');
+    expect(children(assistantActions).at(-1)).toBe('TIME');
+    expect(screen.getAllByText('Jan 12 6:58 PM')).toHaveLength(2);
+  });
+
   it('edits and resubmits without owning chat state', () => {
     const submit = vi.fn();
     render(<MessageEditor initialValue="Original" onSubmit={submit} />);

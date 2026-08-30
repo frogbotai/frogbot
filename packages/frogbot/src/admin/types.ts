@@ -53,6 +53,11 @@ export interface RootAdminComponents {
   beforeSidebarClose?: FrogbotComponent[];
   /** Add components to the sidebar above the nav links. */
   beforeNavLinks?: FrogbotComponent[];
+  chat?: {
+    AssistantMessageActions?: FrogbotComponent;
+    Chat?: FrogbotComponent;
+    UserMessageActions?: FrogbotComponent;
+  };
   /** Component slots for admin branding. */
   graphics?: RootAdminGraphics;
   /** Replace the entire admin sidebar navigation. */

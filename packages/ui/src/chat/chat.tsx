@@ -16,7 +16,7 @@ import { MessageActions } from './message-actions';
 import { MessageEditor } from './message-editor';
 import { MessageList, type MessageListProps } from './message-list';
 import { MessagePart } from './message-part';
-import { deleteChat, renameChat } from './mutations';
+import { branchChat, deleteChat, renameChat } from './mutations';
 import { type ChatManifest, useChatProvider } from './provider';
 import { FrogbotChatTransport, prepareChatRequest } from './transport';
 import { useChatMessages } from './use-chat';
@@ -62,7 +62,8 @@ export type ChatProps = {
   warningContent?: ReactNode;
   renderSidebar?: (context: ChatSidebarContext) => ReactNode;
   renderMessage?: MessageListProps['renderMessage'];
-  messageActions?: ComponentType<MessageActionsSlotProps> | false;
+  userMessageActions?: ComponentType<MessageActionsSlotProps> | false;
+  assistantMessageActions?: ComponentType<MessageActionsSlotProps> | false;
   panel?: ReactNode;
 };
 
@@ -111,7 +112,7 @@ function ChatInner({
   headerSlot,
   initialMessages,
   messagesSlug,
-  messageActions: MessageActionsSlot,
+  assistantMessageActions: AssistantMessageActions,
   model,
   onChatIdChange,
   panel,
@@ -125,6 +126,7 @@ function ChatInner({
   chatsSlug,
   throttle,
   warningContent,
+  userMessageActions: UserMessageActions,
 }: ChatInnerProps) {
   const [activeChatId, setActiveChatId] = useControlledState<string | number | undefined>({
     controlled: chatIdControlled,
@@ -138,9 +140,11 @@ function ChatInner({
   const createdChatId = useRef<string | undefined>(undefined);
   const reportedChatId = useRef<string | undefined>(undefined);
   const previousAgent = useRef(agent);
+  const renderedAt = useRef(new Map<string, string>());
   const history = useChatMessages({ sdk, messagesSlug, chatId: activeChatId });
   const chats = useChats({ sdk, agent, chatsSlug });
   const [aborted, setAborted] = useState(false);
+  const [branchError, setBranchError] = useState<Error>();
   const [editingMessageId, setEditingMessageId] = useState<string>();
   const request = useRef({ chatId: activeChatId, model });
   request.current = { chatId: activeChatId, model };
@@ -284,7 +288,18 @@ function ChatInner({
     await chat.sendMessage({ messageId: message.id, parts, metadata } as never);
     setEditingMessageId(undefined);
   };
-  const error = history.error ?? chats.error ?? chat.error;
+  const branchMessage = async (message: UIMessage) => {
+    if (activeChatId === undefined) return;
+    setBranchError(undefined);
+    try {
+      const nextChatId = await branchChat({ sdk, chatId: activeChatId }, message.id);
+      chats.refresh();
+      selectChat(nextChatId);
+    } catch (error) {
+      setBranchError(error instanceof Error ? error : new Error('Failed to branch chat'));
+    }
+  };
+  const error = branchError ?? history.error ?? chats.error ?? chat.error;
   const pending = chat.status === 'submitted' || chat.status === 'streaming';
   const displayedChats = (chats.docs ?? []).map((chatDocument) =>
     String(chatDocument.id) === String(activeChatId) && !chatDocument.title
@@ -299,29 +314,50 @@ function ChatInner({
     .join('')
     .slice(0, 2)
     .toUpperCase();
+  const timestampFor = (message: UIMessage) => {
+    const createdAt = (message.metadata as { createdAt?: unknown } | undefined)?.createdAt;
+    if (typeof createdAt === 'string' || typeof createdAt === 'number') return createdAt;
+    const seen = renderedAt.current.get(message.id);
+    if (seen) return seen;
+    const now = new Date().toISOString();
+    renderedAt.current.set(message.id, now);
+    return now;
+  };
   const defaultRenderMessage: MessageListProps['renderMessage'] = (message) => {
     const text = message.parts
-      .filter((part): part is Extract<(typeof message.parts)[number], { type: 'text' }> =>
-        part.type === 'text',
+      .filter(
+        (part): part is Extract<(typeof message.parts)[number], { type: 'text' }> =>
+          part.type === 'text',
       )
       .map((part) => part.text)
       .join('\n\n');
-    const defaultActions =
-      message.role === 'user' && !pending ? (
-        <MessageActions text={text} onEdit={() => setEditingMessageId(message.id)} />
-      ) : null;
+    const defaultActions = !pending ? (
+      <MessageActions
+        text={text}
+        timestamp={timestampFor(message)}
+        timestampPlacement={message.role === 'user' ? 'start' : 'end'}
+        onBranch={
+          message.role === 'assistant' && activeChatId !== undefined
+            ? () => branchMessage(message)
+            : undefined
+        }
+        onEdit={message.role === 'user' ? () => setEditingMessageId(message.id) : undefined}
+      />
+    ) : null;
+    const MessageActionsSlot =
+      message.role === 'user'
+        ? UserMessageActions
+        : message.role === 'assistant'
+          ? AssistantMessageActions
+          : false;
     const actions =
-      message.role !== 'user' || editingMessageId === message.id || MessageActionsSlot === false
-        ? null
-        : MessageActionsSlot ? (
-            <MessageActionsSlot
-              message={message}
-              pending={pending}
-              defaultActions={defaultActions}
-            />
-          ) : (
-            defaultActions
-          );
+      (message.role !== 'user' && message.role !== 'assistant') ||
+      editingMessageId === message.id ||
+      MessageActionsSlot === false ? null : MessageActionsSlot ? (
+        <MessageActionsSlot message={message} pending={pending} defaultActions={defaultActions} />
+      ) : (
+        defaultActions
+      );
 
     return (
       <Message

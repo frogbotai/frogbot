@@ -169,6 +169,8 @@ admin: {
 
 Component paths in `navSections`, navigation icons, and admin component slots use `FrogbotComponent`. This type accepts either an import-map path string or a component definition and is exported from `frogbot` for reusable configuration types.
 
+Chat-wide component slots are grouped under `admin.components.chat`. Use `Chat` to replace the canonical conversation surface, or `UserMessageActions` and `AssistantMessageActions` to customize only role-specific controls. See [Chat persistence](/chat/overview#customize-admin-chat-components).
+
 ## Register a settings page
 
 Add pages to the Settings card grid with the root `settings` array. Each entry requires a `label`, a relative `path`, and a `Component`. Paths may be nested, such as `security/audit`, but every normalized path must be unique. Do not include `/settings` or a leading slash.

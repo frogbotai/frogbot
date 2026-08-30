@@ -24,8 +24,7 @@ export async function loadChat({
     limit: '0',
     sort: 'createdAt',
     'where[chat][equals]': String(chatId),
-  });
-  const page = await chatRequest<PayloadPage<MessageDocument>>(
+  });  const page = await chatRequest<PayloadPage<MessageDocument>>(
     sdk,
     `/${encodeURIComponent(messagesSlug)}?${params}`,
   );

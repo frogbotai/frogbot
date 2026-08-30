@@ -32,6 +32,30 @@ The chat collection list shows the signed-in user's readable chats. Selecting a 
 
 These defaults also apply when your own collection uses `chat: true`. FrogBot uses that collection's slug for create, list, and document routes.
 
+## Customize admin chat components
+
+Use `admin.components.chat` for chat-wide component overrides. `Chat` replaces the canonical chat surface on both the dashboard and chat document routes. The role-specific action slots receive the current message, pending state, and `defaultActions`.
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  // required options omitted
+  admin: {
+    components: {
+      chat: {
+        Chat: '/components/WorkspaceChat#WorkspaceChat',
+        UserMessageActions: '/components/UserMessageActions#UserMessageActions',
+        AssistantMessageActions:
+          '/components/AssistantMessageActions#AssistantMessageActions'
+      }
+    }
+  }
+})
+```
+
+Each entry can also use a component definition with `clientProps`. Use the role slots for small additions or replacements. Use `Chat` when you need to replace the conversation shell while retaining FrogBot's default route loading and navigation.
+
 ## Override the chat views
 
 Set collection view components under `admin.components.views`. FrogBot preserves each configured list or edit root override on the `chat: true` collection.
@@ -60,7 +84,7 @@ export const Conversations: CollectionConfig = {
 }
 ```
 
-Override the dashboard independently through the root config. Its path must remain `/`.
+Override a route view when you need to replace its surrounding page behavior instead of only the chat surface. The dashboard path must remain `/`.
 
 ```ts
 import { buildConfig } from 'frogbot'

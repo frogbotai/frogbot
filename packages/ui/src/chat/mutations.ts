@@ -10,6 +10,19 @@ type ChatMutationOptions = {
   chatId: string | number;
 };
 
+export async function branchChat(
+  { sdk, chatId }: Pick<ChatMutationOptions, 'sdk' | 'chatId'>,
+  messageId: string | number,
+): Promise<string | number> {
+  const result = await chatRequest<{ chatId: string | number }>(sdk, '/frogbot/chat/branch', {
+    method: 'POST',
+    body: JSON.stringify({ chatId, messageId }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+  emitChatMutation();
+  return result.chatId;
+}
+
 export async function renameChat(
   { sdk, chatsSlug, chatId }: ChatMutationOptions,
   title: string,

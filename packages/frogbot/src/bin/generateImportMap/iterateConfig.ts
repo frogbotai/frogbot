@@ -73,6 +73,12 @@ export function iterateConfig({
 
   for (const item of shellComponents.navItems ?? []) addToImportMap(item.icon);
   addToImportMap(shellComponents.navSections);
+  const chatComponents = shellComponents as typeof shellComponents & {
+    chat?: { AssistantMessageActions?: string; Chat?: string; UserMessageActions?: string };
+  };
+  addToImportMap(chatComponents.chat?.Chat);
+  addToImportMap(chatComponents.chat?.UserMessageActions);
+  addToImportMap(chatComponents.chat?.AssistantMessageActions);
 
   const settings = (
     config.admin as typeof config.admin & {

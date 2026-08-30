@@ -1,7 +1,6 @@
 'use client';
 
 import { createCookieSDK, type ChatDocument, useChats } from '@frogbotai/ui/chat';
-import { BubbleChatIcon } from '@frogbotai/ui/icons';
 import { Link, useConfig } from '@payloadcms/ui';
 import { usePathname } from 'next/navigation.js';
 import { useMemo } from 'react';
@@ -89,10 +88,9 @@ export function RecentsSectionClient({
             {bucket.docs.map((recent) => {
               const path = `${collectionPath}/${encodeURIComponent(String(recent.id))}`;
               return (
-                <NavItem
-                  active={pathname === path || pathname.startsWith(`${path}/`)}
-                  icon={BubbleChatIcon}
-                  key={recent.id}
+                  <NavItem
+                    active={pathname === path || pathname.startsWith(`${path}/`)}
+                    key={recent.id}
                   label={recent.title || 'Untitled Chat'}
                   path={path}
                 />

@@ -9,10 +9,11 @@ import {
   updateChatAgent,
   useChatProvider,
 } from '@frogbotai/ui/chat';
+import type { ChatProps, MessageActionsSlotProps } from '@frogbotai/ui/chat';
 import { ThemeProvider } from '@frogbotai/ui/theme';
 import { usePreferences, useTheme } from '@payloadcms/ui';
 import type { UIMessage } from 'frogbot';
-import { useEffect, useRef, useState } from 'react';
+import { type ComponentType, useEffect, useRef, useState } from 'react';
 
 const adapter = { fetch: cookieFetch() };
 const chatPicksPreference = 'frogbot-chat-picks';
@@ -23,6 +24,12 @@ type ChatPicks = {
 };
 
 export type ChatViewClientProps = {
+  AssistantMessageActions?: ComponentType<MessageActionsSlotProps>;
+  assistantMessageActionsProps?: object;
+  ChatComponent?: ComponentType<ChatProps>;
+  chatComponentProps?: object;
+  UserMessageActions?: ComponentType<MessageActionsSlotProps>;
+  userMessageActionsProps?: object;
   agent: string;
   chatId?: string | number;
   documentPath: string;
@@ -30,6 +37,12 @@ export type ChatViewClientProps = {
 };
 
 export function ChatViewClient({
+  AssistantMessageActions,
+  assistantMessageActionsProps,
+  ChatComponent,
+  chatComponentProps,
+  UserMessageActions,
+  userMessageActionsProps,
   agent,
   chatId,
   documentPath,
@@ -56,6 +69,12 @@ export function ChatViewClient({
             {...(chatId === undefined ? {} : { chatId })}
             initialMessages={initialMessages}
             onChatIdChange={onChatIdChange}
+            ChatComponent={ChatComponent}
+            UserMessageActions={UserMessageActions}
+            AssistantMessageActions={AssistantMessageActions}
+            assistantMessageActionsProps={assistantMessageActionsProps}
+            chatComponentProps={chatComponentProps}
+            userMessageActionsProps={userMessageActionsProps}
           />
         </ChatProvider>
       </ThemeProvider>
@@ -64,6 +83,12 @@ export function ChatViewClient({
 }
 
 function ChatViewInner({
+  AssistantMessageActions,
+  assistantMessageActionsProps,
+  ChatComponent = Chat,
+  chatComponentProps,
+  UserMessageActions,
+  userMessageActionsProps,
   agent,
   chatId,
   initialMessages,
@@ -168,14 +193,27 @@ function ChatViewInner({
   );
 
   if (!entry || !preferencesLoaded) return null;
+  const UserActions = UserMessageActions
+    ? (props: MessageActionsSlotProps) => (
+        <UserMessageActions {...userMessageActionsProps} {...props} />
+      )
+    : undefined;
+  const AssistantActions = AssistantMessageActions
+    ? (props: MessageActionsSlotProps) => (
+        <AssistantMessageActions {...assistantMessageActionsProps} {...props} />
+      )
+    : undefined;
   return (
-    <Chat
+    <ChatComponent
+      {...chatComponentProps}
       agent={selectedAgent}
       model={activeModel}
       {...(chatId === undefined ? {} : { chatId })}
       initialMessages={initialMessages}
       onChatIdChange={onChatIdChange}
       composerStartSlot={controls}
+      userMessageActions={UserActions}
+      assistantMessageActions={AssistantActions}
     />
   );
 }

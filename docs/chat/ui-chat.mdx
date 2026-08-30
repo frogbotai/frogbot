@@ -40,9 +40,13 @@ Chat renders no sidebar by default because the FrogBot admin navigation already 
 
 ## Message actions
 
-Completed user messages include Copy and Edit actions. Editing preserves non-text parts, replaces the selected message, removes later responses, and retries the conversation from that point.
+Completed user messages include Copy, Edit, and Branch actions. Assistant messages include Copy and Branch. Editing preserves non-text parts, replaces the selected message, removes later responses, and retries the conversation from that point. Branch creates and opens a separate chat containing the conversation through the selected message.
 
-Pass a component to `messageActions` to compose application actions with the defaults. Because the slot is a component, it can use your provider hooks. Render `defaultActions` to retain FrogBot's controls, omit it to replace them, or pass `false` to hide all user-message actions.
+Copy writes rendered HTML and original Markdown to the clipboard. Formatting is preserved when pasted into rich-text editors, while plain-text destinations receive the original Markdown.
+
+Each message's send time appears with its actions: leading the controls on user messages and trailing them on assistant messages. Messages from the last seven days read `Saturday 6:58 PM`, older messages read `Jan 12 6:58 PM`, and messages from earlier years include the year. Stored history uses the recorded creation time.
+
+Pass components to `userMessageActions` and `assistantMessageActions` to compose application actions with the defaults. Because each slot is a component, it can use your provider hooks. Render `defaultActions` to retain FrogBot's controls, omit it to replace them, or pass `false` to hide that role's actions.
 
 ```tsx
 import type { MessageActionsSlotProps } from '@frogbotai/ui/chat'
@@ -60,7 +64,22 @@ function SupportMessageActions({ defaultActions, message, pending }: MessageActi
   )
 }
 
-<Chat agent="support" messageActions={SupportMessageActions} />
+<Chat
+  agent="support"
+  userMessageActions={SupportMessageActions}
+  assistantMessageActions={SupportMessageActions}
+/>
+```
+
+The built-in controls are also independently importable for custom compositions:
+
+```tsx
+import {
+  BranchMessageAction,
+  CopyMessageAction,
+  EditMessageAction,
+  MessageTimestamp
+} from '@frogbotai/ui/chat'
 ```
 
 ## Composer selectors

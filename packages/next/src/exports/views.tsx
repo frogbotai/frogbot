@@ -6,13 +6,20 @@ import {
 import { getTranslation } from '@payloadcms/translations';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import { ProfileIcon, SettingIcon, TileIcon } from '@frogbotai/ui/icons';
+import type { ChatProps, MessageActionsSlotProps } from '@frogbotai/ui/chat';
 import { Card, Link } from '@payloadcms/ui';
 import type { EntityToGroup } from '@payloadcms/ui/shared';
 import { EntityType, groupNavItems } from '@payloadcms/ui/shared';
 import { getCachedFrogbot, getPayloadConfig, messagesToUIMessages } from 'frogbot';
-import type { ComponentProps } from 'react';
-import type { AdminViewServerProps, DocumentViewServerProps, ListViewServerProps } from 'payload';
+import type { ComponentProps, ComponentType } from 'react';
+import type {
+  AdminViewServerProps,
+  DocumentViewServerProps,
+  ListViewServerProps,
+  PayloadComponent,
+} from 'payload';
 import { formatAdminURL } from 'payload/shared';
+import { getFromImportMap } from 'payload/shared';
 import { redirect } from 'next/navigation';
 
 import frogbotFavicon from '../assets/frogbot-favicon.png';
@@ -73,6 +80,42 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
   const frogbot = getCachedFrogbot();
   const chatsSlug = frogbot?.config.chat.enabled ? frogbot.config.chat.chatsSlug : undefined;
   const messagesSlug = frogbot?.config.chat.enabled ? frogbot.config.chat.messagesSlug : undefined;
+  const chatComponents = (
+    payload.config.admin.components as typeof payload.config.admin.components & {
+      chat?: {
+        AssistantMessageActions?: PayloadComponent;
+        Chat?: PayloadComponent;
+        UserMessageActions?: PayloadComponent;
+      };
+    }
+  ).chat;
+  const resolveChatComponent = <TProps extends object>(
+    component: NonNullable<typeof chatComponents>['Chat'],
+  ) =>
+    component
+      ? getFromImportMap<ComponentType<TProps>>({
+          importMap: payload.importMap,
+          PayloadComponent: component as never,
+          schemaPath: '',
+        })
+      : undefined;
+  const ChatComponent = resolveChatComponent<ChatProps>(chatComponents?.Chat);
+  const UserMessageActions = resolveChatComponent<MessageActionsSlotProps>(
+    chatComponents?.UserMessageActions,
+  );
+  const AssistantMessageActions = resolveChatComponent<MessageActionsSlotProps>(
+    chatComponents?.AssistantMessageActions,
+  );
+  const clientProps = (component: NonNullable<typeof chatComponents>['Chat']) =>
+    component && typeof component === 'object' ? component.clientProps : undefined;
+  const componentProps = {
+    ChatComponent,
+    UserMessageActions,
+    AssistantMessageActions,
+    chatComponentProps: clientProps(chatComponents?.Chat),
+    userMessageActionsProps: clientProps(chatComponents?.UserMessageActions),
+    assistantMessageActionsProps: clientProps(chatComponents?.AssistantMessageActions),
+  };
 
   if (
     !user ||
@@ -89,7 +132,12 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
   if (routeID === 'create') {
     const agent = frogbot?.config.agents?.[0]?.slug;
     return agent ? (
-      <ChatViewClient agent={agent} documentPath={documentPath} initialMessages={[]} />
+      <ChatViewClient
+        agent={agent}
+        documentPath={documentPath}
+        initialMessages={[]}
+        {...componentProps}
+      />
     ) : null;
   }
 
@@ -109,6 +157,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
       chatId={routeID}
       documentPath={documentPath}
       initialMessages={messagesToUIMessages(result.docs as never)}
+      {...componentProps}
     />
   );
 }

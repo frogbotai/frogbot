@@ -179,9 +179,9 @@ describe('Chat', () => {
       { id: 'assistant', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
     ];
     render(<Chat agent="support" />);
-    expect(
-      screen.getByText('Hello').closest('[data-message]')?.firstElementChild?.textContent,
-    ).toBe('Hello');
+    const message = screen.getByText('Hello').closest('[data-message]');
+    expect(message?.querySelector('.fb-chat__assistant-avatar')).toBeNull();
+    expect(message?.querySelector('.fb-message__content')?.textContent).toBe('Hello');
   });
 
   it('submits metadata and updates uncontrolled history', async () => {
