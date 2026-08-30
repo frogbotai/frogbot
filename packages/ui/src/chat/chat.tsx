@@ -11,6 +11,7 @@ import { ChatShell } from './chat-shell';
 import { ChatStatus } from './chat-status';
 import { Composer } from './composer';
 import { isFlagPart, renderFlagPart } from './flag-parts';
+import { Greeting, type GreetingProps } from './greeting';
 import { Message } from './message';
 import { MessageActions } from './message-actions';
 import { MessageEditor } from './message-editor';
@@ -50,6 +51,10 @@ export type ChatProps = {
   onChatIdChange?: (chatId: string | number | undefined) => void;
   throttle?: number;
   emptyContent?: ReactNode;
+  disabledContent?: ReactNode;
+  greeting?: ComponentType<GreetingProps> | false;
+  logo?: ReactNode;
+  userName?: string;
   loadingContent?: ReactNode;
   headerSlot?: ReactNode;
   composerStartSlot?: ReactNode;
@@ -72,7 +77,7 @@ export function Chat(props: ChatProps) {
   if (!provider) throw new Error('Chat requires ChatProvider');
   if (provider.loading) return props.loadingContent;
   if (provider.error) return props.errorContent?.(provider.error);
-  if (!provider.manifest || !provider.manifest.chat.enabled) return props.emptyContent;
+  if (!provider.manifest || !provider.manifest.chat.enabled) return props.disabledContent;
   return (
     <ChatInner
       {...props}
@@ -109,8 +114,10 @@ function ChatInner({
   errorContent,
   fallbackTitle = 'New chat',
   filesSlug,
+  greeting: GreetingComponent = Greeting,
   headerSlot,
   initialMessages,
+  logo,
   messagesSlug,
   assistantMessageActions: AssistantMessageActions,
   model,
@@ -125,6 +132,7 @@ function ChatInner({
   chatIdControlled,
   chatsSlug,
   throttle,
+  userName,
   warningContent,
   userMessageActions: UserMessageActions,
 }: ChatInnerProps) {
@@ -412,7 +420,17 @@ function ChatInner({
     >
       {headerSlot}
       {chat.messages.length === 0 && !history.loading ? (
-        emptyContent
+        <div className="fb-chat__empty">
+          {emptyContent ??
+            (GreetingComponent === false ? null : (
+              <GreetingComponent
+                avatar={profile?.avatar}
+                logo={logo}
+                name={displayName}
+                userName={userName}
+              />
+            ))}
+        </div>
       ) : (
         <MessageList
           messages={chat.messages}

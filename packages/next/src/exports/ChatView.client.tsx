@@ -9,11 +9,11 @@ import {
   updateChatAgent,
   useChatProvider,
 } from '@frogbotai/ui/chat';
-import type { ChatProps, MessageActionsSlotProps } from '@frogbotai/ui/chat';
+import type { ChatProps, GreetingProps, MessageActionsSlotProps } from '@frogbotai/ui/chat';
 import { ThemeProvider } from '@frogbotai/ui/theme';
 import { usePreferences, useTheme } from '@payloadcms/ui';
 import type { UIMessage } from 'frogbot';
-import { type ComponentType, useEffect, useRef, useState } from 'react';
+import { type ComponentType, type ReactNode, useEffect, useRef, useState } from 'react';
 
 const adapter = { fetch: cookieFetch() };
 const chatPicksPreference = 'frogbot-chat-picks';
@@ -28,12 +28,16 @@ export type ChatViewClientProps = {
   assistantMessageActionsProps?: object;
   ChatComponent?: ComponentType<ChatProps>;
   chatComponentProps?: object;
+  GreetingComponent?: ComponentType<GreetingProps>;
+  greetingProps?: object;
   UserMessageActions?: ComponentType<MessageActionsSlotProps>;
   userMessageActionsProps?: object;
   agent: string;
   chatId?: string | number;
   documentPath: string;
   initialMessages: UIMessage[];
+  logo?: ReactNode;
+  userName?: string;
 };
 
 export function ChatViewClient({
@@ -41,12 +45,16 @@ export function ChatViewClient({
   assistantMessageActionsProps,
   ChatComponent,
   chatComponentProps,
+  GreetingComponent,
+  greetingProps,
   UserMessageActions,
   userMessageActionsProps,
   agent,
   chatId,
   documentPath,
   initialMessages,
+  logo,
+  userName,
 }: ChatViewClientProps) {
   const { theme } = useTheme();
   const replaced = useRef(false);
@@ -70,6 +78,10 @@ export function ChatViewClient({
             initialMessages={initialMessages}
             onChatIdChange={onChatIdChange}
             ChatComponent={ChatComponent}
+            GreetingComponent={GreetingComponent}
+            greetingProps={greetingProps}
+            logo={logo}
+            userName={userName}
             UserMessageActions={UserMessageActions}
             AssistantMessageActions={AssistantMessageActions}
             assistantMessageActionsProps={assistantMessageActionsProps}
@@ -87,12 +99,16 @@ function ChatViewInner({
   assistantMessageActionsProps,
   ChatComponent = Chat,
   chatComponentProps,
+  GreetingComponent,
+  greetingProps,
   UserMessageActions,
   userMessageActionsProps,
   agent,
   chatId,
   initialMessages,
+  logo,
   onChatIdChange,
+  userName,
 }: Omit<ChatViewClientProps, 'documentPath'> & {
   onChatIdChange: (chatId: string | number | undefined) => void;
 }) {
@@ -203,16 +219,22 @@ function ChatViewInner({
         <AssistantMessageActions {...assistantMessageActionsProps} {...props} />
       )
     : undefined;
+  const ChatGreeting = GreetingComponent
+    ? (props: GreetingProps) => <GreetingComponent {...greetingProps} {...props} />
+    : undefined;
   return (
     <ChatComponent
       {...chatComponentProps}
       agent={selectedAgent}
       model={activeModel}
       {...(chatId === undefined ? {} : { chatId })}
+      {...(ChatGreeting ? { greeting: ChatGreeting } : {})}
       initialMessages={initialMessages}
+      logo={logo}
       onChatIdChange={onChatIdChange}
       composerStartSlot={controls}
       userMessageActions={UserActions}
+      userName={userName}
       assistantMessageActions={AssistantActions}
     />
   );

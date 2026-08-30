@@ -19,6 +19,7 @@
 @import "./chat/data-part.css";
 @import "./chat/file-part.css";
 @import "./chat/flag-parts.css";
+@import "./chat/greeting.css";
 @import "./chat/markdown.css";
 @import "./chat/message-actions.css";
 @import "./chat/message-editor.css";

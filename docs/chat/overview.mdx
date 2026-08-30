@@ -34,7 +34,7 @@ These defaults also apply when your own collection uses `chat: true`. FrogBot us
 
 ## Customize admin chat components
 
-Use `admin.components.chat` for chat-wide component overrides. `Chat` replaces the canonical chat surface on both the dashboard and chat document routes. The role-specific action slots receive the current message, pending state, and `defaultActions`.
+Use `admin.components.chat` for chat-wide component overrides. `Chat` replaces the canonical chat surface on both the dashboard and chat document routes. `Greeting` replaces the block shown above the composer while a chat has no messages. The role-specific action slots receive the current message, pending state, and `defaultActions`.
 
 ```ts
 import { buildConfig } from 'frogbot'
@@ -45,6 +45,7 @@ export default buildConfig({
     components: {
       chat: {
         Chat: '/components/WorkspaceChat#WorkspaceChat',
+        Greeting: '/components/WorkspaceGreeting#WorkspaceGreeting',
         UserMessageActions: '/components/UserMessageActions#UserMessageActions',
         AssistantMessageActions:
           '/components/AssistantMessageActions#AssistantMessageActions'
@@ -55,6 +56,12 @@ export default buildConfig({
 ```
 
 Each entry can also use a component definition with `clientProps`. Use the role slots for small additions or replacements. Use `Chat` when you need to replace the conversation shell while retaining FrogBot's default route loading and navigation.
+
+## Greeting an empty chat
+
+A chat with no messages shows a greeting above the composer. It renders the active agent's avatar when the agent profile sets one, and otherwise falls back to the logo from `admin.components.graphics.Logo`, so a custom logo appears without extra configuration. The greeting line varies by time of day and includes the signed-in user's name when the user record has one.
+
+`Greeting` receives `avatar`, `logo`, `name`, and `userName`, so an override can reuse those values or ignore them entirely.
 
 ## Override the chat views
 

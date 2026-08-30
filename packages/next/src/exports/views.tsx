@@ -6,7 +6,7 @@ import {
 import { getTranslation } from '@payloadcms/translations';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import { ProfileIcon, SettingIcon, TileIcon } from '@frogbotai/ui/icons';
-import type { ChatProps, MessageActionsSlotProps } from '@frogbotai/ui/chat';
+import type { ChatProps, GreetingProps, MessageActionsSlotProps } from '@frogbotai/ui/chat';
 import { Card, Link } from '@payloadcms/ui';
 import type { EntityToGroup } from '@payloadcms/ui/shared';
 import { EntityType, groupNavItems } from '@payloadcms/ui/shared';
@@ -85,6 +85,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
       chat?: {
         AssistantMessageActions?: PayloadComponent;
         Chat?: PayloadComponent;
+        Greeting?: PayloadComponent;
         UserMessageActions?: PayloadComponent;
       };
     }
@@ -100,6 +101,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
         })
       : undefined;
   const ChatComponent = resolveChatComponent<ChatProps>(chatComponents?.Chat);
+  const GreetingComponent = resolveChatComponent<GreetingProps>(chatComponents?.Greeting);
   const UserMessageActions = resolveChatComponent<MessageActionsSlotProps>(
     chatComponents?.UserMessageActions,
   );
@@ -108,12 +110,25 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
   );
   const clientProps = (component: NonNullable<typeof chatComponents>['Chat']) =>
     component && typeof component === 'object' ? component.clientProps : undefined;
+  const graphicsLogo = payload.config.admin.components.graphics?.Logo;
+  const chatUser = user as { firstName?: unknown; name?: unknown } | undefined;
   const componentProps = {
     ChatComponent,
+    GreetingComponent,
     UserMessageActions,
     AssistantMessageActions,
     chatComponentProps: clientProps(chatComponents?.Chat),
+    greetingProps: clientProps(chatComponents?.Greeting),
+    logo: graphicsLogo
+      ? RenderServerComponent({ Component: graphicsLogo, importMap: payload.importMap })
+      : undefined,
     userMessageActionsProps: clientProps(chatComponents?.UserMessageActions),
+    userName:
+      typeof chatUser?.name === 'string'
+        ? chatUser.name
+        : typeof chatUser?.firstName === 'string'
+          ? chatUser.firstName
+          : undefined,
     assistantMessageActionsProps: clientProps(chatComponents?.AssistantMessageActions),
   };
 

@@ -16,6 +16,22 @@
   object-fit: cover;
 }
 
+.fb-chat__empty {
+  display: flex;
+  flex: 1 1 0%;
+  min-height: 0;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.fb-chat__empty .fb-greeting {
+  margin-bottom: 1.5rem;
+}
+
 .fb-chat__composer {
   padding: 1rem;
+}
+
+.fb-chat__empty ~ .fb-chat__composer {
+  flex: 1 1 0%;
 }

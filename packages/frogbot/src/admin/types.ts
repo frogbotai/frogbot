@@ -56,6 +56,7 @@ export interface RootAdminComponents {
   chat?: {
     AssistantMessageActions?: FrogbotComponent;
     Chat?: FrogbotComponent;
+    Greeting?: FrogbotComponent;
     UserMessageActions?: FrogbotComponent;
   };
   /** Component slots for admin branding. */

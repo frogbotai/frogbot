@@ -19,6 +19,8 @@ export { DataPart } from '../chat/data-part';
 export { FilePart } from '../chat/file-part';
 export type { PageContextPartData, PastePartData, PromptPartData } from '../chat/flag-parts';
 export { formatMessageTimestamp } from '../chat/format-timestamp';
+export type { GreetingProps } from '../chat/greeting';
+export { Greeting, greetingForHour } from '../chat/greeting';
 export type { MarkdownProps } from '../chat/markdown';
 export { Markdown } from '../chat/markdown';
 export type { MessageProps } from '../chat/message';

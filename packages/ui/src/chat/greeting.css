@@ -1,0 +1,45 @@
+.fb-greeting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 550px;
+  margin: 0 auto;
+  padding-inline: 1rem;
+  text-align: center;
+}
+
+.fb-greeting__media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fb-greeting__avatar {
+  height: 6rem;
+  width: 6rem;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.fb-greeting__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 14rem;
+}
+
+.fb-greeting__logo svg,
+.fb-greeting__logo img {
+  height: auto;
+  width: 100%;
+}
+
+.fb-greeting__title {
+  margin: 1.25rem 0 0;
+  color: var(--theme-base-900);
+  font-size: var(--text-lg);
+  line-height: var(--text-lg--line-height);
+  font-weight: 600;
+}
