@@ -15,7 +15,7 @@ const config: FrogbotConfig = {
   collections: [Users],
   tools: [...todoTools],
   ai: {
-    defaultModel: 'amazon-bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0',
+    defaultModel: 'bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0',
     providers: {
       // zen: {
       //   type: 'openai-compatible',

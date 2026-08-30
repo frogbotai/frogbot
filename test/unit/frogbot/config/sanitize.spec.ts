@@ -1012,6 +1012,40 @@ describe('frogbot sanitize', () => {
     });
   });
 
+  describe('ai.smallModel', () => {
+    it('preserves a model that resolves through a configured router', () => {
+      const result = sanitize(
+        makeConfig({
+          ai: {
+            providers: { openai: true },
+            routers: { fast: { model: 'openai/gpt-5-nano' } },
+            smallModel: 'fast',
+          },
+        }),
+      );
+
+      expect(result.ai?.smallModel).toBe('fast');
+    });
+
+    it('rejects a model that does not resolve to a configured provider or router', () => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai: { providers: { anthropic: true }, smallModel: 'openai/gpt-5-nano' },
+          }),
+        ),
+      ).toThrow(
+        "[frogbot] smallModel 'openai/gpt-5-nano' does not resolve to a configured provider or router.",
+      );
+    });
+
+    it('keeps smallModel absent when omitted', () => {
+      const result = sanitize(makeConfig({ ai: { providers: { openai: true } } }));
+
+      expect(result.ai?.smallModel).toBeUndefined();
+    });
+  });
+
   describe('agents', () => {
     const ai = { providers: { openai: { apiKey: 'sk-test' } } };
     const agent = {

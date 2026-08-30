@@ -25,16 +25,18 @@ describe('provider-free chat shell', () => {
     expect(onChatChange).toHaveBeenCalledWith(2);
   });
 
-  it('derives and truncates a title from the first user message', () => {
+  it('derives the full first user message and supports an explicit limit', () => {
+    const messages = [
+      { id: '1', role: 'assistant' as const, parts: [{ type: 'text' as const, text: 'Ignore' }] },
+      {
+        id: '2',
+        role: 'user' as const,
+        parts: [{ type: 'text' as const, text: 'A title that is too long' }],
+      },
+    ];
+    expect(deriveChatTitle(messages, 'Fallback')).toBe('A title that is too long');
     expect(
-      deriveChatTitle(
-        [
-          { id: '1', role: 'assistant', parts: [{ type: 'text', text: 'Ignore' }] },
-          { id: '2', role: 'user', parts: [{ type: 'text', text: 'A title that is too long' }] },
-        ],
-        'Fallback',
-        12,
-      ),
+      deriveChatTitle(messages, 'Fallback', 12),
     ).toBe('A title tha…');
     expect(deriveChatTitle([], 'Fallback')).toBe('Fallback');
   });

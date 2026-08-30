@@ -22,7 +22,7 @@ import { type ChatManifest, useChatProvider } from './provider';
 import { FrogbotChatTransport, prepareChatRequest } from './transport';
 import { useChatMessages } from './use-chat';
 import type { ChatDocument } from './use-chats';
-import { useChats } from './use-chats';
+import { emitChatMutation, useChats } from './use-chats';
 
 type ChatActions = {
   rename: (title: string) => Promise<void>;
@@ -112,7 +112,7 @@ function ChatInner({
   defaultChatId,
   emptyContent,
   errorContent,
-  fallbackTitle = 'New chat',
+  fallbackTitle = 'Untitled',
   filesSlug,
   greeting: GreetingComponent = Greeting,
   headerSlot,
@@ -188,7 +188,7 @@ function ChatInner({
         }
       : undefined,
     onFinish: () => {
-      flushChatId();
+      if (flushChatId()) window.setTimeout(emitChatMutation, 2_500);
     },
     onError: () => {
       flushChatId();
@@ -197,11 +197,12 @@ function ChatInner({
   addToolOutput = chat.addToolOutput;
 
   function flushChatId() {
-    if (!createdChatId.current) return;
+    if (!createdChatId.current) return false;
     reportedChatId.current = createdChatId.current;
     setActiveChatId(createdChatId.current);
     createdChatId.current = undefined;
     chats.refresh();
+    return true;
   }
 
   const clearConversation = () => {

@@ -84,7 +84,7 @@ describe('RecentsSection', () => {
     expect(screen.getByRole('link', { name: 'Latest chat' }).getAttribute('href')).toBe(
       '/control/collections/conversations/chat%2F1',
     );
-    expect(screen.getByRole('link', { name: 'Untitled Chat' }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: 'Untitled' }).getAttribute('href')).toBe(
       '/control/collections/conversations/2',
     );
     expect(screen.getByRole('link', { name: 'View all' }).getAttribute('href')).toBe(

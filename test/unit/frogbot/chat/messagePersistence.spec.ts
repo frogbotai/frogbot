@@ -87,6 +87,26 @@ describe('assistant message persistence', () => {
     );
   });
 
+  it('starts title generation after durable writes when context is provided', async () => {
+    const { req, update } = makeReq();
+    const findByID = vi.fn().mockResolvedValue({ id: 'chat-1', title: 'Existing' });
+    req.frogbot.findByID = findByID as never;
+
+    await persistAssistantMessage({
+      req,
+      chatId: 'chat-1',
+      message,
+      isContinuation: false,
+      history: [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+      mainModel: 'openai/test',
+    });
+
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'chats', data: { lastMessageAt: expect.any(String) } }),
+    );
+    expect(findByID).toHaveBeenCalled();
+  });
+
   it('maps model usage into the stored usage shape', () => {
     expect(
       createMessageUsage(

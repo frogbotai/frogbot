@@ -91,7 +91,7 @@ export function RecentsSectionClient({
                   <NavItem
                     active={pathname === path || pathname.startsWith(`${path}/`)}
                     key={recent.id}
-                  label={recent.title || 'Untitled Chat'}
+                  label={recent.title || 'Untitled'}
                   path={path}
                 />
               );

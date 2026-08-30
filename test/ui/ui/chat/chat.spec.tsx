@@ -62,6 +62,7 @@ vi.mock('../../../../packages/ui/src/chat/use-chats', () => ({
 
 import { Chat, type ChatSidebarContext } from '../../../../packages/ui/src/chat/chat';
 import { ChatHistory } from '../../../../packages/ui/src/chat/chat-history';
+import { emitChatMutation } from '../../../../packages/ui/src/chat/use-chats';
 
 const renderSidebar = (context: ChatSidebarContext) => (
   <ChatHistory
@@ -264,6 +265,31 @@ describe('Chat', () => {
       messages: [message],
       chatId: 'chat-9',
     });
+  });
+
+  it('broadcasts a delayed refresh after a new chat finishes', async () => {
+    vi.useFakeTimers();
+    render(<Chat agent="support" />);
+    state.adapter.fetch.mockResolvedValue(
+      new Response(new ReadableStream({ start: (controller) => controller.close() }), {
+        headers: { 'X-Frogbot-Chat-Id': 'chat-9' },
+      }),
+    );
+    const transport = (state.options as import('ai').ChatInit<import('ai').UIMessage>).transport;
+    await transport?.sendMessages({
+      trigger: 'submit-message',
+      chatId: 'new:support',
+      messageId: message.id,
+      messages: [message],
+      abortSignal: undefined,
+    });
+    vi.mocked(emitChatMutation).mockClear();
+
+    state.options?.onFinish?.({} as never);
+    expect(emitChatMutation).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(2_500);
+    expect(emitChatMutation).toHaveBeenCalledOnce();
+    vi.useRealTimers();
   });
 
   it('reports controlled changes without replacing the active chat', () => {

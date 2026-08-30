@@ -160,7 +160,14 @@ export function getAgentStreamOptions({
       chatId === undefined
         ? undefined
         : ({ responseMessage, isContinuation }) =>
-            persistAssistantMessage({ req, chatId, message: responseMessage, isContinuation }),
+            persistAssistantMessage({
+              req,
+              chatId,
+              message: responseMessage,
+              isContinuation,
+              history: uiMessages,
+              mainModel: resolvedModel,
+            }),
     options: { req, overrideAccess: true, model },
     abortSignal: req.signal ?? undefined,
     headers: chatId !== undefined ? { 'X-Frogbot-Chat-Id': String(chatId) } : undefined,
@@ -180,6 +187,7 @@ export async function generateAgentRequest({
   uiMessages: UIMessage[];
   model?: AgentInstance['config']['model'];
 }) {
+  const resolvedModel = resolveModel(model ?? agent.config.model, req.frogbot.config.ai!);
   const result = await agent.aiAgent.generate({
     messages: await convertToModelMessages(uiMessages, { tools: agent.aiAgent.tools }),
     options: { req, overrideAccess: true, chatId, model },
@@ -190,9 +198,16 @@ export async function generateAgentRequest({
       result,
       originalMessages: uiMessages,
       tools: agent.aiAgent.tools,
-      model: resolveModel(model ?? agent.config.model, req.frogbot.config.ai!),
+      model: resolvedModel,
     });
-    await persistAssistantMessage({ req, chatId, message, isContinuation: false });
+    await persistAssistantMessage({
+      req,
+      chatId,
+      message,
+      isContinuation: false,
+      history: uiMessages,
+      mainModel: resolvedModel,
+    });
   }
   return result;
 }

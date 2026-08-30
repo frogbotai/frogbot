@@ -29,7 +29,7 @@ export async function RecentsSection({ payload, req }: RecentsSectionProps) {
     });
     recents = result.docs.map((doc) => ({
       id: doc.id,
-      title: typeof doc.title === 'string' && doc.title ? doc.title : 'Untitled Chat',
+      title: typeof doc.title === 'string' && doc.title ? doc.title : 'Untitled',
       agent: typeof doc.agent === 'string' ? doc.agent : '',
       lastMessageAt: typeof doc.lastMessageAt === 'string' ? doc.lastMessageAt : null,
     }));

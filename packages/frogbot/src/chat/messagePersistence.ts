@@ -4,6 +4,7 @@ import { toHookUsage } from '../ai/hooks.js';
 import type { DocID } from '../collections/config/types.js';
 import type { FrogbotRequest } from '../types/request.js';
 import { MESSAGE_USAGE_CONTEXT_KEY } from './collections/messages.js';
+import { generateChatTitle } from './title.js';
 
 export type MessageUsage = {
   inputTokens?: number;
@@ -20,6 +21,8 @@ export type PersistAssistantMessageProps = {
   chatId: DocID;
   message: UIMessage;
   isContinuation: boolean;
+  history?: UIMessage[];
+  mainModel?: string;
 };
 
 export function createMessageUsage(
@@ -45,6 +48,8 @@ export async function persistAssistantMessage({
   chatId,
   message,
   isContinuation,
+  history,
+  mainModel,
 }: PersistAssistantMessageProps): Promise<void> {
   const chat = req.frogbot.config.chat;
   if (!chat.enabled) return;
@@ -86,6 +91,16 @@ export async function persistAssistantMessage({
     req,
     overrideAccess,
   });
+
+  if (history && mainModel) {
+    void generateChatTitle({
+      req,
+      chatId,
+      history,
+      mainModel,
+      assistantMessage: message,
+    });
+  }
 }
 
 function splitMetadata(metadata: unknown): { metadata?: unknown; usage?: MessageUsage } {

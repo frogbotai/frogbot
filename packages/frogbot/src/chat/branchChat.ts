@@ -4,6 +4,7 @@ import { commitTransaction, initTransaction, killTransaction, NotFound } from 'p
 import type { DocID } from '../collections/config/types.js';
 import type { FrogbotRequest } from '../types/request.js';
 import { MESSAGE_USAGE_CONTEXT_KEY } from './collections/messages.js';
+import { firstUserText } from './firstUserText.js';
 
 export type BranchChatProps = {
   req: FrogbotRequest;
@@ -35,18 +36,6 @@ type TransactionReq = Parameters<typeof initTransaction>[0];
 
 function relationID(value: { id: DocID } | DocID | null | undefined): DocID | null {
   return typeof value === 'object' && value !== null ? value.id : (value ?? null);
-}
-
-function firstUserText(messages: MessageDocument[]): string | undefined {
-  for (const message of messages) {
-    if (message.role !== 'user') continue;
-    for (const part of message.parts) {
-      if (part.type === 'text' && typeof part.text === 'string' && part.text.trim()) {
-        const text = part.text.trim();
-        return text.length > 48 ? `${text.slice(0, 47).trimEnd()}…` : text;
-      }
-    }
-  }
 }
 
 function duplicateBase(title: string): string {
@@ -114,7 +103,7 @@ export async function branchChat({
   );
   if (selectedIndex === -1) throw new NotFound(req.t);
   const messages = sourceMessages.docs.slice(0, selectedIndex + 1);
-  const sourceTitle = source.title?.trim() || firstUserText(messages) || 'New chat';
+  const sourceTitle = source.title?.trim() || firstUserText(messages, 48) || 'New chat';
 
   const transactionReq = req as unknown as TransactionReq;
   const ownsTransaction = await initTransaction(transactionReq);

@@ -116,6 +116,28 @@ An alias has no fallback chain or access rule. `hidden` exists on `RouterConfig`
 
 ---
 
+## Choose a utility model
+
+FrogBot uses a small chat model for internal work such as naming new chats. By default, it chooses a recent low-cost model from the same provider as the active agent model. If no catalog candidate is available, it uses the active model.
+
+Set `smallModel` to pin these calls to a configured model or alias:
+
+```ts
+ai: {
+  providers: {
+    openai: true
+  },
+  routers: {
+    utility: { model: 'openai/gpt-5-nano' }
+  },
+  smallModel: 'utility' // or 'openai/gpt-5-nano'
+}
+```
+
+The model or alias must resolve to a configured provider. Utility calls use the normal operation lifecycle and appear in usage reporting.
+
+---
+
 ## Call operations
 
 Call methods on a `Frogbot` instance or `req.frogbot`. Text generation accepts either `prompt` or `messages`, never both.

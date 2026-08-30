@@ -21,6 +21,7 @@
   padding: 0.5rem 0.75rem;
   overflow: hidden;
   text-align: left;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 0.75rem), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 0.75rem), transparent);
 }

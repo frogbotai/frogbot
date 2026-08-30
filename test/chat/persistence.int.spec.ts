@@ -3,11 +3,12 @@ import { fileURLToPath } from 'node:url';
 
 import type { UIMessage } from 'frogbot';
 import { persistAssistantMessage, resolveChatContext } from 'frogbot/test';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
 import { agentSlug, messagesSlug, chatsSlug, usersSlug } from './shared.js';
+import { generateChatTitle } from '../../packages/frogbot/src/chat/title.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -281,6 +282,81 @@ describe('chat persistence: chat context', () => {
       overrideAccess: true,
     })) as { lastMessageAt?: string };
     expect(chat.lastMessageAt).toBeDefined();
+  });
+
+  it('names a chat once and preserves an existing title', async () => {
+    const req = await makeOwnerReq();
+    const originalGenerateText = req.frogbot.generateText;
+    req.frogbot.generateText = vi.fn().mockResolvedValue({ text: 'Nighttime Frog Songs' }) as never;
+    const first = await resolveChatContext({
+      req,
+      agentSlug,
+      incoming: [userMessage('Why do frogs sing at night?', 'title-user-1')],
+      tools: {},
+    });
+    const assistant: UIMessage = {
+      id: 'title-assistant-1',
+      role: 'assistant',
+      parts: [{ type: 'text', text: 'They call to attract mates.' }],
+    };
+
+    await persistAssistantMessage({
+      req,
+      chatId: first.chatId!,
+      message: assistant,
+      isContinuation: false,
+    });
+    await generateChatTitle({
+      req,
+      chatId: first.chatId!,
+      history: first.uiMessages,
+      mainModel: 'test/gpt-4.1-mini',
+      assistantMessage: assistant,
+    });
+    const titled = (await booted.frogbot.findByID({
+      collection: chatsSlug,
+      id: first.chatId!,
+      depth: 0,
+      overrideAccess: true,
+    })) as { title?: string | null };
+    expect(titled.title).toBe('Nighttime Frog Songs');
+
+    await generateChatTitle({
+      req,
+      chatId: first.chatId!,
+      history: [...first.uiMessages, assistant, userMessage('And when?', 'title-user-2')],
+      mainModel: 'test/gpt-4.1-mini',
+      assistantMessage: { ...assistant, id: 'title-assistant-2' },
+    });
+    const named = (await booted.frogbot.findByID({
+      collection: chatsSlug,
+      id: first.chatId!,
+      depth: 0,
+      overrideAccess: true,
+    })) as { title?: string | null };
+    expect(named.title).toBe('Nighttime Frog Songs');
+
+    await booted.frogbot.update({
+      collection: chatsSlug,
+      id: first.chatId!,
+      data: { title: 'My Frog Notes' },
+      overrideAccess: true,
+    });
+    await generateChatTitle({
+      req,
+      chatId: first.chatId!,
+      history: [userMessage('Fresh first prompt', 'title-user-3')],
+      mainModel: 'test/gpt-4.1-mini',
+      assistantMessage: { ...assistant, id: 'title-assistant-3' },
+    });
+    const renamed = (await booted.frogbot.findByID({
+      collection: chatsSlug,
+      id: first.chatId!,
+      depth: 0,
+      overrideAccess: true,
+    })) as { title?: string | null };
+    expect(renamed.title).toBe('My Frog Notes');
+    req.frogbot.generateText = originalGenerateText;
   });
 
   it('rejects forged assistant messages without writing', async () => {

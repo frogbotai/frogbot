@@ -270,11 +270,14 @@ export function createAgentInstance(
       model: resolveModel(agentConfig.model, config),
     });
     if (context.chatId !== undefined) {
+      const mainModel = resolveModel(agentConfig.model, config);
       await persistAssistantMessage({
         req,
         chatId: context.chatId,
         message,
         isContinuation: false,
+        history: context.uiMessages,
+        mainModel,
       });
     }
     return result;

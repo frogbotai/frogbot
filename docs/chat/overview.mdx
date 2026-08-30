@@ -32,6 +32,14 @@ The chat collection list uses the standard collection list view, so filtering, s
 
 These defaults also apply when your own collection uses `chat: true`. FrogBot uses that collection's slug for create, list, and document routes.
 
+## Automatic chat titles
+
+FrogBot names a new chat after its first assistant reply. It uses the configured [utility model](/configuration/ai#choose-a-utility-model) and records the call through normal usage reporting.
+
+Naming runs in the background and never delays or fails the assistant response. While naming runs, and if generation fails, FrogBot uses the first user message. Long titles fade at the edge of the chat list instead of showing an ellipsis. A hard process exit can interrupt this best-effort background work and leave the chat untitled.
+
+FrogBot only names chats whose title is empty. Later turns do not regenerate the title, and a title set by your application or by a user is never overwritten.
+
 ## Customize admin chat components
 
 Use `admin.components.chat` for chat-wide component overrides. `Chat` replaces the canonical chat surface on both the dashboard and chat document routes. `Greeting` replaces the block shown above the composer while a chat has no messages. The role-specific action slots receive the current message, pending state, and `defaultActions`.

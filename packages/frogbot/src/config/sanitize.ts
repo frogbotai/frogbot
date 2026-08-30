@@ -298,21 +298,25 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
     }
   }
 
-  if (ai.defaultModel !== undefined) {
-    const model = routers[ai.defaultModel]?.model ?? ai.defaultModel;
+  const providers = new Set(
+    Object.entries(ai.providers)
+      .filter(([, entry]) => entry != null)
+      .map(([name]) => name),
+  );
+  const validateModel = (key: 'defaultModel' | 'smallModel') => {
+    const configuredModel = ai[key];
+    if (configuredModel === undefined) return;
+    const model = routers[configuredModel]?.model ?? configuredModel;
     const separator = model.indexOf('/');
     const provider = separator > 0 ? model.slice(0, separator) : '';
-    const providers = new Set(
-      Object.entries(ai.providers)
-        .filter(([, entry]) => entry != null)
-        .map(([name]) => name),
-    );
     if (!provider || !providers.has(provider)) {
       throw new Error(
-        `[frogbot] defaultModel '${ai.defaultModel}' does not resolve to a configured provider or router.`,
+        `[frogbot] ${key} '${configuredModel}' does not resolve to a configured provider or router.`,
       );
     }
-  }
+  };
+  validateModel('defaultModel');
+  validateModel('smallModel');
 
   // Normalize hooks to arrays.
   const hooks = {
@@ -347,6 +351,7 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
     routers,
     defaultRouter: ai.defaultRouter,
     defaultModel: ai.defaultModel,
+    smallModel: ai.smallModel,
     hooks,
     access,
     telemetry,

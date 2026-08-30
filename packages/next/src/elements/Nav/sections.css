@@ -108,6 +108,15 @@
   white-space: nowrap;
 }
 
+.frogbot-recents-section__items .frogbot-nav-item__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-right: 24px;
+  text-overflow: clip;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+}
+
 .frogbot-nav-item--with-icon .frogbot-nav-item__label {
   margin-inline-start: 8px;
 }
