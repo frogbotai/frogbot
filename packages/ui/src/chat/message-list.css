@@ -18,9 +18,9 @@
   left: 50%;
   transform: translateX(-50%);
   padding: 0.25rem 0.75rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--theme-base-150);
   border-radius: 9999px;
-  background-color: var(--background);
+  background-color: var(--theme-base-0);
   font-size: var(--text-sm);
   line-height: var(--text-sm--line-height);
   box-shadow:

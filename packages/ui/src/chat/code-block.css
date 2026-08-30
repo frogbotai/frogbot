@@ -2,11 +2,11 @@
   overflow-x: auto;
   padding: 1rem;
   border-radius: var(--radius-lg);
-  background-color: var(--color-muted);
+  background-color: var(--theme-base-50);
   font-size: var(--text-sm);
   line-height: var(--text-sm--line-height);
 }
 
 .fb-code-block--dark-user {
-  background-color: var(--color-muted-foreground);
+  background-color: var(--theme-base-750);
 }

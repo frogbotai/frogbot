@@ -2,8 +2,8 @@
   display: flex;
   height: 100%;
   min-height: 0;
-  color: var(--foreground);
-  background-color: var(--background);
+  color: var(--theme-base-900);
+  background-color: var(--theme-base-100);
   max-width: 640px;
   margin: 0 auto;
 }
@@ -14,8 +14,8 @@
   flex-shrink: 0;
   padding: 0.75rem;
   overflow-y: auto;
-  border-right: 1px solid var(--sidebar-border);
-  background-color: var(--sidebar);
+  border-right: 1px solid var(--theme-base-150);
+  background-color: var(--theme-base-50);
 }
 
 .fb-chat-shell__main {
@@ -30,7 +30,7 @@
   width: 24rem;
   flex-shrink: 0;
   overflow-y: auto;
-  border-left: 1px solid var(--border);
+  border-left: 1px solid var(--theme-base-150);
 }
 
 @media (min-width: 48rem) {

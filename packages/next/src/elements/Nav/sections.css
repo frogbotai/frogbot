@@ -103,10 +103,13 @@
 }
 
 .frogbot-nav-item__label {
-  margin-inline-start: 8px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.frogbot-nav-item--with-icon .frogbot-nav-item__label {
+  margin-inline-start: 8px;
 }
 
 .frogbot-collections-section__group {

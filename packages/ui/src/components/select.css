@@ -87,7 +87,7 @@
 }
 
 .fb-select__item:focus {
-  color: var(--color-accent-foreground);
+  color: var(--theme-base-800);
   background: var(--theme-base-200);
 }
 
@@ -104,5 +104,5 @@
 .fb-select__separator {
   height: 1px;
   margin: 0.25rem -0.25rem;
-  background: var(--color-muted);
+  background: var(--theme-base-50);
 }

@@ -202,7 +202,7 @@ html {
   --sidebar-border: 220 13% 91%;
   --sidebar-ring: 217.2 91.2% 59.8%;
   font-family: var(--font-body);
-  color: var(--foreground);
+  color: var(--theme-base-900);
 }
 
 .gradient-wrapper {

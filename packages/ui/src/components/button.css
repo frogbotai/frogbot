@@ -16,8 +16,8 @@
 }
 
 .fb-button:focus-visible {
-  border-color: var(--color-ring);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-ring) 50%, transparent);
+  border-color: var(--theme-brand-500);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-brand-500) 50%, transparent);
 }
 
 .fb-button:disabled {
@@ -45,15 +45,15 @@
 
 .fb-button--destructive {
   color: var(--color-base-900);
-  background: var(--color-red-500);
+  background: var(--theme-red-500);
 }
 
 .fb-button--destructive:hover {
-  background: var(--color-red-700);
+  background: var(--theme-red-700);
 }
 
 .fb-button--destructive:active {
-  background: var(--color-red-600);
+  background: var(--theme-red-600);
 }
 
 .fb-button--outline {
@@ -89,7 +89,7 @@
 }
 
 .fb-button--link {
-  color: var(--color-primary);
+  color: var(--theme-base-850);
   text-underline-offset: 4px;
 }
 

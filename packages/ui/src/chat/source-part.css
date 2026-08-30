@@ -1,5 +1,5 @@
 .fb-source-part--url {
-  color: var(--color-primary);
+  color: var(--theme-base-850);
   font-size: var(--text-sm);
   line-height: var(--text-sm--line-height);
   text-decoration-line: underline;
@@ -10,8 +10,8 @@
   display: inline-flex;
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
-  background-color: var(--color-muted);
-  color: var(--color-muted-foreground);
+  background-color: var(--theme-base-50);
+  color: var(--theme-base-750);
   font-size: var(--text-xs);
   line-height: var(--text-xs--line-height);
 }

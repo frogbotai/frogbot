@@ -41,7 +41,7 @@
 .fb-model-selector__check {
   width: 1rem;
   height: 1rem;
-  color: var(--color-brand-550);
+  color: var(--theme-brand-600);
 }
 
 .fb-model-selector__check--fixed {
@@ -57,7 +57,7 @@
 
 .fb-model-selector__sub-trigger:focus,
 .fb-model-selector__sub-trigger[data-state="open"] {
-  background-color: var(--color-accent);
+  background-color: var(--theme-base-100);
 }
 
 .fb-model-selector__sub-content {

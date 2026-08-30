@@ -7,7 +7,7 @@
   justify-content: center;
   overflow: hidden;
   border-radius: 9999px;
-  background-color: var(--background);
+  background-color: var(--theme-base-100);
 }
 
 .fb-chat__assistant-avatar-image {

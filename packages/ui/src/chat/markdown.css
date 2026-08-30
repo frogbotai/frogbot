@@ -19,7 +19,7 @@
 .fb-markdown__inline-code {
   padding: 0.125rem 0.25rem;
   border-radius: 0.25rem;
-  background-color: var(--muted);
+  background-color: var(--theme-base-50);
   font-family:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
     monospace;

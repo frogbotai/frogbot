@@ -39,7 +39,7 @@
 }
 
 .fb-tool-selector__item:focus {
-  background-color: var(--accent);
+  background-color: var(--theme-base-150);
 }
 
 .fb-tool-selector__name {

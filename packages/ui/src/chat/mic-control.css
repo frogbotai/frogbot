@@ -47,7 +47,7 @@
 }
 
 .fb-mic-control__button--active {
-  color: var(--color-brand-600);
+  color: var(--theme-brand-600);
   background-color: var(--theme-base-300);
 }
 
@@ -57,7 +57,7 @@
 }
 
 .fb-mic-control__error {
-  color: var(--destructive);
+  color: var(--theme-red-500);
   font-size: 0.75rem;
   line-height: 1rem;
 }
