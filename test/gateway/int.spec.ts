@@ -480,9 +480,9 @@ describe('gateway integration — provider sprawl (MockLanguageModelV4)', () => 
   });
 
   it('bedrock provider resolves and returns mock response', async () => {
-    const app = makeAppWithMockProvider('amazon-bedrock');
+    const app = makeAppWithMockProvider('bedrock');
     const { status, body } = await postJson(app, '/v1/chat/completions', {
-      model: 'amazon-bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0',
+      model: 'bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0',
       messages: [{ role: 'user', content: 'hi' }],
     });
     expect(status).toBe(200);
@@ -1931,7 +1931,7 @@ describe('gateway integration — credential validation', () => {
       registry: buildProviderRegistry({ openai: { apiKey: 'sk-test' } }),
     });
     const { status, body } = await postJson(app, '/v1/chat/completions', {
-      model: 'amazon-bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0',
+      model: 'bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0',
       messages: [{ role: 'user', content: 'hi' }],
     });
     expect(status).toBe(404);

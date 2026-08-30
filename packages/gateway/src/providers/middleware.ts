@@ -9,7 +9,7 @@ import { voyageBeforeUpstream } from './voyage/middleware.js';
 
 export function getProviderHooks(providerName: string): Hooks {
   if (providerName === 'anthropic') return { beforeUpstream: anthropicBeforeUpstream };
-  if (providerName === 'amazon-bedrock') return { beforeUpstream: bedrockBeforeUpstream };
+  if (providerName === 'bedrock') return { beforeUpstream: bedrockBeforeUpstream };
   if (providerName === 'cohere') return { beforeUpstream: cohereBeforeUpstream };
   if (providerName === 'google') return { beforeUpstream: googleBeforeUpstream };
   if (providerName === 'openai') return { beforeUpstream: openaiBeforeUpstream };

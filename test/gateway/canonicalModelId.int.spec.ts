@@ -1,6 +1,6 @@
 // G38 (PR2 + DT3) — the Bedrock canonical-ID map (BEDROCK_CANONICAL_IDS) is
 // wired into resolveProvider: a client sending a shorthand alias like
-// `amazon-bedrock/claude-4-sonnet` gets the resolved canonical ID
+// `bedrock/claude-4-sonnet` gets the resolved canonical ID
 // (`anthropic.claude-sonnet-4-20250514-v1:0`) forwarded upstream, not the
 // raw alias Bedrock would reject.
 //
@@ -42,7 +42,7 @@ function createMockModel(): LanguageModelV4 {
 }
 
 describe('bedrock shorthand alias resolves to canonical ID before upstream — G38', () => {
-  // A client sends the documented shorthand `amazon-bedrock/claude-4-sonnet`.
+  // A client sends the documented shorthand `bedrock/claude-4-sonnet`.
   // The gateway resolves it through BEDROCK_CANONICAL_IDS in resolveProvider
   // and calls languageModel() with the full canonical ID that Bedrock
   // actually accepts.
@@ -58,11 +58,11 @@ describe('bedrock shorthand alias resolves to canonical ID before upstream — G
         return createMockModel();
       },
     };
-    const registry = { 'amazon-bedrock': fakeProvider } as ProviderRegistry;
+    const registry = { 'bedrock': fakeProvider } as ProviderRegistry;
     const app = createApp({ registry });
 
     const { status } = await postJson(app, '/v1/chat/completions', {
-      model: `amazon-bedrock/${alias}`,
+      model: `bedrock/${alias}`,
       messages: [{ role: 'user', content: 'hi' }],
     });
 

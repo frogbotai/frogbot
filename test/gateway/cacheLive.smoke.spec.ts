@@ -28,14 +28,14 @@ const cases = [
     }),
   },
   {
-    name: 'amazon-bedrock',
+    name: 'bedrock',
     enabled: Boolean(
       process.env.AWS_BEARER_TOKEN_BEDROCK ||
       (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY),
     ),
     model: process.env.E2E_MODEL_BEDROCK_CACHE ?? 'anthropic.claude-sonnet-4-20250514-v1:0',
     config: () => ({
-      'amazon-bedrock': process.env.AWS_BEARER_TOKEN_BEDROCK
+      'bedrock': process.env.AWS_BEARER_TOKEN_BEDROCK
         ? {
             apiKey: process.env.AWS_BEARER_TOKEN_BEDROCK,
             region: process.env.AWS_REGION ?? 'us-east-1',

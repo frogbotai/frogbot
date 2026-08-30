@@ -1,572 +1,572 @@
 [
   {
-    "id": "amazon-bedrock/global.amazon.nova-2-lite-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/global.amazon.nova-2-lite-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/amazon.nova-lite-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/amazon.nova-lite-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/amazon.nova-micro-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/amazon.nova-micro-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/amazon.nova-pro-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/amazon.nova-pro-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/anthropic.claude-fable-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/anthropic.claude-fable-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/anthropic.claude-haiku-4-5-20251001-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/anthropic.claude-opus-4-5-20251101-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/anthropic.claude-opus-4-5-20251101-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/anthropic.claude-opus-4-6-v1",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/anthropic.claude-opus-4-6-v1",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/anthropic.claude-opus-4-7",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/anthropic.claude-opus-4-7",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/anthropic.claude-opus-4-8",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/anthropic.claude-opus-4-8",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/anthropic.claude-opus-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/anthropic.claude-opus-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/anthropic.claude-sonnet-4-6",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/anthropic.claude-sonnet-4-6",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/anthropic.claude-sonnet-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/anthropic.claude-sonnet-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/au.anthropic.claude-haiku-4-5-20251001-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/au.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/au.anthropic.claude-opus-4-6-v1",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/au.anthropic.claude-opus-4-6-v1",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/au.anthropic.claude-opus-4-8",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/au.anthropic.claude-opus-4-8",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/au.anthropic.claude-opus-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/au.anthropic.claude-opus-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/au.anthropic.claude-sonnet-4-5-20250929-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/au.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/au.anthropic.claude-sonnet-4-6",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/au.anthropic.claude-sonnet-4-6",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/au.anthropic.claude-sonnet-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/au.anthropic.claude-sonnet-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/deepseek.r1-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/deepseek.r1-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/deepseek.v3-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/deepseek.v3-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/deepseek.v3.2",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/deepseek.v3.2",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/eu.anthropic.claude-fable-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/eu.anthropic.claude-fable-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/eu.anthropic.claude-haiku-4-5-20251001-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/eu.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/eu.anthropic.claude-opus-4-5-20251101-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/eu.anthropic.claude-opus-4-5-20251101-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/eu.anthropic.claude-opus-4-6-v1",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/eu.anthropic.claude-opus-4-6-v1",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/eu.anthropic.claude-opus-4-7",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/eu.anthropic.claude-opus-4-7",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/eu.anthropic.claude-opus-4-8",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/eu.anthropic.claude-opus-4-8",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/eu.anthropic.claude-opus-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/eu.anthropic.claude-opus-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/eu.anthropic.claude-sonnet-4-6",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/eu.anthropic.claude-sonnet-4-6",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/eu.anthropic.claude-sonnet-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/eu.anthropic.claude-sonnet-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/global.anthropic.claude-fable-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/global.anthropic.claude-fable-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/global.anthropic.claude-opus-4-5-20251101-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/global.anthropic.claude-opus-4-5-20251101-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/global.anthropic.claude-opus-4-6-v1",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/global.anthropic.claude-opus-4-6-v1",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/global.anthropic.claude-opus-4-7",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/global.anthropic.claude-opus-4-7",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/global.anthropic.claude-opus-4-8",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/global.anthropic.claude-opus-4-8",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/global.anthropic.claude-opus-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/global.anthropic.claude-opus-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/global.anthropic.claude-sonnet-4-6",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/global.anthropic.claude-sonnet-4-6",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/global.anthropic.claude-sonnet-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/global.anthropic.claude-sonnet-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/google.gemma-3-12b-it",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/google.gemma-3-12b-it",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/google.gemma-3-27b-it",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/google.gemma-3-27b-it",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/google.gemma-3-4b-it",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/google.gemma-3-4b-it",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/jp.anthropic.claude-haiku-4-5-20251001-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/jp.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/jp.anthropic.claude-opus-4-7",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/jp.anthropic.claude-opus-4-7",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/jp.anthropic.claude-opus-4-8",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/jp.anthropic.claude-opus-4-8",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/jp.anthropic.claude-opus-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/jp.anthropic.claude-opus-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/jp.anthropic.claude-sonnet-4-5-20250929-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/jp.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/jp.anthropic.claude-sonnet-4-6",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/jp.anthropic.claude-sonnet-4-6",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/jp.anthropic.claude-sonnet-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/jp.anthropic.claude-sonnet-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/meta.llama3-1-70b-instruct-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/meta.llama3-1-70b-instruct-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.meta.llama3-1-8b-instruct-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.meta.llama3-1-8b-instruct-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.meta.llama3-3-70b-instruct-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.meta.llama3-3-70b-instruct-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/meta.llama4-maverick-17b-instruct-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/meta.llama4-maverick-17b-instruct-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/meta.llama4-scout-17b-instruct-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/meta.llama4-scout-17b-instruct-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/minimax.minimax-m2",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/minimax.minimax-m2",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/minimax.minimax-m2.1",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/minimax.minimax-m2.1",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/minimax.minimax-m2.5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/minimax.minimax-m2.5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/mistral.devstral-2-123b",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/mistral.devstral-2-123b",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/mistral.magistral-small-2509",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/mistral.magistral-small-2509",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/mistral.ministral-3-14b-instruct",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/mistral.ministral-3-14b-instruct",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/mistral.ministral-3-3b-instruct",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/mistral.ministral-3-3b-instruct",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/mistral.ministral-3-8b-instruct",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/mistral.ministral-3-8b-instruct",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/mistral.mistral-large-3-675b-instruct",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/mistral.mistral-large-3-675b-instruct",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/mistral.pixtral-large-2502-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/mistral.pixtral-large-2502-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/mistral.voxtral-mini-3b-2507",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/mistral.voxtral-mini-3b-2507",
+    "provider": "bedrock",
     "mode": "audio_transcription"
   },
   {
-    "id": "amazon-bedrock/mistral.voxtral-small-24b-2507",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/mistral.voxtral-small-24b-2507",
+    "provider": "bedrock",
     "mode": "audio_transcription"
   },
   {
-    "id": "amazon-bedrock/moonshot.kimi-k2-thinking",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/moonshot.kimi-k2-thinking",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/moonshotai.kimi-k2.5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/moonshotai.kimi-k2.5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/nvidia.nemotron-nano-12b-v2",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/nvidia.nemotron-nano-12b-v2",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/nvidia.nemotron-nano-3-30b",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/nvidia.nemotron-nano-3-30b",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/nvidia.nemotron-nano-9b-v2",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/nvidia.nemotron-nano-9b-v2",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/nvidia.nemotron-super-3-120b",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/nvidia.nemotron-super-3-120b",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/openai.gpt-5.4",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/openai.gpt-5.4",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/openai.gpt-5.5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/openai.gpt-5.5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/openai.gpt-5.6-luna",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/openai.gpt-5.6-luna",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/openai.gpt-5.6-sol",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/openai.gpt-5.6-sol",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/openai.gpt-5.6-terra",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/openai.gpt-5.6-terra",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/openai.gpt-oss-120b",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/openai.gpt-oss-120b",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/openai.gpt-oss-120b-1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/openai.gpt-oss-120b-1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/openai.gpt-oss-20b",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/openai.gpt-oss-20b",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/openai.gpt-oss-20b-1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/openai.gpt-oss-20b-1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/openai.gpt-oss-safeguard-120b",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/openai.gpt-oss-safeguard-120b",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/openai.gpt-oss-safeguard-20b",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/openai.gpt-oss-safeguard-20b",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/qwen.qwen3-235b-a22b-2507-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/qwen.qwen3-235b-a22b-2507-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/qwen.qwen3-32b-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/qwen.qwen3-32b-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/qwen.qwen3-coder-30b-a3b-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/qwen.qwen3-coder-30b-a3b-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/qwen.qwen3-coder-480b-a35b-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/qwen.qwen3-coder-480b-a35b-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/qwen.qwen3-coder-next",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/qwen.qwen3-coder-next",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/qwen.qwen3-next-80b-a3b",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/qwen.qwen3-next-80b-a3b",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/qwen.qwen3-vl-235b-a22b",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/qwen.qwen3-vl-235b-a22b",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.anthropic.claude-fable-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.anthropic.claude-fable-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.anthropic.claude-opus-4-5-20251101-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.anthropic.claude-opus-4-5-20251101-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.anthropic.claude-opus-4-6-v1",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.anthropic.claude-opus-4-6-v1",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.anthropic.claude-opus-4-7",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.anthropic.claude-opus-4-7",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.anthropic.claude-opus-4-8",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.anthropic.claude-opus-4-8",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.anthropic.claude-opus-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.anthropic.claude-opus-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.anthropic.claude-sonnet-4-6",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.anthropic.claude-sonnet-4-6",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.anthropic.claude-sonnet-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.anthropic.claude-sonnet-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.deepseek.r1-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.deepseek.r1-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.meta.llama4-maverick-17b-instruct-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.meta.llama4-maverick-17b-instruct-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/us.meta.llama4-scout-17b-instruct-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/us.meta.llama4-scout-17b-instruct-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/writer.palmyra-x4-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/writer.palmyra-x4-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/writer.palmyra-x5-v1:0",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/writer.palmyra-x5-v1:0",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/xai.grok-4.3",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/xai.grok-4.3",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/zai.glm-4.7",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/zai.glm-4.7",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/zai.glm-4.7-flash",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/zai.glm-4.7-flash",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {
-    "id": "amazon-bedrock/zai.glm-5",
-    "provider": "amazon-bedrock",
+    "id": "bedrock/zai.glm-5",
+    "provider": "bedrock",
     "mode": "chat"
   },
   {

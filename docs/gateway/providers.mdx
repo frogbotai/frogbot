@@ -13,13 +13,13 @@ import { createGateway } from '@frogbotai/gateway'
 const gw = createGateway({
   providers: {
     openai: {},
-    'amazon-bedrock': {},
+    'bedrock': {},
     ollama: { baseURL: 'http://localhost:11434/v1' }
   }
 })
 ```
 
-`openai` and `amazon-bedrock` are recognized provider names, so they take that provider's typed config. `ollama` isn't a built-in name, so it's treated as a generic OpenAI-compatible endpoint — the key becomes its dispatch prefix (`ollama/llama3.2`).
+`openai` and `bedrock` are recognized provider names, so they take that provider's typed config. `ollama` isn't a built-in name, so it's treated as a generic OpenAI-compatible endpoint — the key becomes its dispatch prefix (`ollama/llama3.2`).
 
 ---
 
@@ -114,4 +114,4 @@ For a known key, the instance is checked against that provider's real AI SDK typ
 
 ## Model IDs
 
-Every route dispatches on a canonical `<provider>/<model>` ID. Built-in model IDs must exist in the configured catalog. Bedrock, Anthropic-on-Bedrock, and Azure additionally resolve friendly aliases to the exact ID the upstream API requires — for example `amazon-bedrock/claude-4-sonnet` resolves to `anthropic.claude-sonnet-4-20250514-v1:0` before catalog validation and the AI SDK sees it.
+Every route dispatches on a canonical `<provider>/<model>` ID. Built-in model IDs must exist in the configured catalog. Bedrock, Anthropic-on-Bedrock, and Azure additionally resolve friendly aliases to the exact ID the upstream API requires — for example `bedrock/claude-4-sonnet` resolves to `anthropic.claude-sonnet-4-20250514-v1:0` before catalog validation and the AI SDK sees it.

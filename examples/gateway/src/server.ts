@@ -37,7 +37,7 @@ const { ANTHROPIC_API_KEY, OPENAI_API_KEY, FIREWORKS_API_KEY } = process.env;
 
 const gateway = createGateway({
   providers: {
-    ...(bedrock ? { 'amazon-bedrock': bedrock } : {}),
+    ...(bedrock ? { 'bedrock': bedrock } : {}),
     ...(ANTHROPIC_API_KEY ? { anthropic: { apiKey: ANTHROPIC_API_KEY } } : {}),
     ...(OPENAI_API_KEY ? { openai: { apiKey: OPENAI_API_KEY } } : {}),
     ...(FIREWORKS_API_KEY ? { fireworks: { apiKey: FIREWORKS_API_KEY } } : {}),
@@ -60,7 +60,7 @@ const gateway = createGateway({
 });
 
 const activeProviders = [
-  bedrock ? 'amazon-bedrock' : null,
+  bedrock ? 'bedrock' : null,
   ANTHROPIC_API_KEY ? 'anthropic' : null,
   OPENAI_API_KEY ? 'openai' : null,
   FIREWORKS_API_KEY ? 'fireworks' : null,

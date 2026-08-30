@@ -3,6 +3,7 @@ import { describe, expectTypeOf, it } from 'vitest';
 import type { CatalogModelId } from '../../../../packages/frogbot/src/ai/generated.js';
 import type { AgentConfig, AgentModelId } from '../../../../packages/frogbot/src/agents/types.js';
 import type {
+  AIConfig,
   BedrockProviderEntry,
   BuiltInProviderEntry,
   ModelId,
@@ -42,7 +43,9 @@ describe('AI config types', () => {
   it('uses the catalog as the pre-generation agent model fallback', () => {
     expectTypeOf<FrogbotTypes['models']>().toEqualTypeOf<CatalogModelId>();
     expectTypeOf<ModelId>().toEqualTypeOf<CatalogModelId>();
+    expectTypeOf<NonNullable<AIConfig['defaultModel']>>().toEqualTypeOf<ModelId>();
     expectTypeOf<'openai/gpt-4o'>().toMatchTypeOf<AgentModelId>();
+    expectTypeOf<'bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0'>().toMatchTypeOf<ModelId>();
     expectTypeOf<'anthropic/claude-sonnet-4-5'>().toMatchTypeOf<AgentConfig['model']>();
   });
 

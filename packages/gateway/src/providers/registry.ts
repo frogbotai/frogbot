@@ -86,7 +86,7 @@ export const providers = {
   anthropic: anthropicProvider,
   'anthropic-aws': anthropicAwsProvider,
   assemblyai: assemblyaiProvider,
-  'amazon-bedrock': bedrockProvider,
+  bedrock: bedrockProvider,
   azure: azureProvider,
   baseten: basetenProvider,
   'black-forest-labs': blackForestLabsProvider,
@@ -248,12 +248,12 @@ export function buildProviderRegistry(configProviders: ProviderConfigMap): Provi
 // ---------------------------------------------------------------------------
 // Canonical model-ID resolution — friendly aliases are resolved to the exact
 // IDs the upstream API requires before the AI SDK sees them (e.g.
-// `amazon-bedrock/claude-4-sonnet` → `anthropic.claude-sonnet-4-20250514-v1:0`).
+// `bedrock/claude-4-sonnet` → `anthropic.claude-sonnet-4-20250514-v1:0`).
 // Full IDs pass through unchanged.
 // ---------------------------------------------------------------------------
 
 const canonicalIdResolvers = new Map<string, (modelId: string) => string>([
-  ['amazon-bedrock', resolveBedrockModelId],
+  ['bedrock', resolveBedrockModelId],
   ['anthropic-aws', resolveAnthropicAwsModelId],
   ['azure', resolveAzureModelId],
 ]);

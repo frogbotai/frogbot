@@ -3,7 +3,7 @@ import { defineModelCatalog, type ModelCatalog, presetFor } from './catalog.js';
 const model = presetFor<string>();
 
 export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
-  model('amazon-bedrock/global.amazon.nova-2-lite-v1:0', {
+  model('bedrock/global.amazon.nova-2-lite-v1:0', {
     name: 'Nova 2 Lite',
     created: '2024-12-01',
     modalities: {
@@ -25,9 +25,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.33,
       output: 2.75,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/amazon.nova-lite-v1:0', {
+  model('bedrock/amazon.nova-lite-v1:0', {
     name: 'Nova Lite',
     created: '2024-12-03',
     knowledge: '2024-10',
@@ -51,9 +51,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 0.24,
       cache_read: 0.015,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/amazon.nova-micro-v1:0', {
+  model('bedrock/amazon.nova-micro-v1:0', {
     name: 'Nova Micro',
     created: '2024-12-03',
     knowledge: '2024-10',
@@ -76,9 +76,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 0.14,
       cache_read: 0.00875,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/amazon.nova-pro-v1:0', {
+  model('bedrock/amazon.nova-pro-v1:0', {
     name: 'Nova Pro',
     created: '2024-12-03',
     knowledge: '2024-10',
@@ -102,9 +102,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 3.2,
       cache_read: 0.2,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/anthropic.claude-fable-5', {
+  model('bedrock/anthropic.claude-fable-5', {
     name: 'Claude Fable 5',
     created: '2026-06-09',
     knowledge: '2026-01-31',
@@ -130,9 +130,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 1,
       cache_write: 12.5,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/anthropic.claude-haiku-4-5-20251001-v1:0', {
+  model('bedrock/anthropic.claude-haiku-4-5-20251001-v1:0', {
     name: 'Claude Haiku 4.5',
     created: '2025-10-15',
     knowledge: '2025-02-28',
@@ -159,9 +159,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.1,
       cache_write: 1.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/anthropic.claude-opus-4-5-20251101-v1:0', {
+  model('bedrock/anthropic.claude-opus-4-5-20251101-v1:0', {
     name: 'Claude Opus 4.5',
     created: '2025-11-24',
     knowledge: '2025-03-31',
@@ -188,9 +188,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/anthropic.claude-opus-4-6-v1', {
+  model('bedrock/anthropic.claude-opus-4-6-v1', {
     name: 'Claude Opus 4.6',
     created: '2026-02-05',
     knowledge: '2025-05-31',
@@ -217,9 +217,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/anthropic.claude-opus-4-7', {
+  model('bedrock/anthropic.claude-opus-4-7', {
     name: 'Claude Opus 4.7',
     created: '2026-04-16',
     knowledge: '2026-01-31',
@@ -245,9 +245,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/anthropic.claude-opus-4-8', {
+  model('bedrock/anthropic.claude-opus-4-8', {
     name: 'Claude Opus 4.8',
     created: '2026-05-28',
     knowledge: '2026-01',
@@ -273,9 +273,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/anthropic.claude-opus-5', {
+  model('bedrock/anthropic.claude-opus-5', {
     name: 'Claude Opus 5',
     created: '2026-07-24',
     knowledge: '2026-05',
@@ -301,9 +301,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0', {
+  model('bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0', {
     name: 'Claude Sonnet 4.5',
     created: '2025-09-29',
     knowledge: '2025-07-31',
@@ -330,9 +330,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.3,
       cache_write: 3.75,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/anthropic.claude-sonnet-4-6', {
+  model('bedrock/anthropic.claude-sonnet-4-6', {
     name: 'Claude Sonnet 4.6',
     created: '2026-02-17',
     knowledge: '2025-08-31',
@@ -359,9 +359,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.3,
       cache_write: 3.75,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/anthropic.claude-sonnet-5', {
+  model('bedrock/anthropic.claude-sonnet-5', {
     name: 'Claude Sonnet 5',
     created: '2026-06-30',
     knowledge: '2026-01-31',
@@ -388,9 +388,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.2,
       cache_write: 2.5,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/au.anthropic.claude-haiku-4-5-20251001-v1:0', {
+  model('bedrock/au.anthropic.claude-haiku-4-5-20251001-v1:0', {
     name: 'Claude Haiku 4.5 (AU)',
     created: '2025-10-15',
     knowledge: '2025-02-28',
@@ -417,9 +417,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.1,
       cache_write: 1.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/au.anthropic.claude-opus-4-6-v1', {
+  model('bedrock/au.anthropic.claude-opus-4-6-v1', {
     name: 'AU Anthropic Claude Opus 4.6',
     created: '2026-02-05',
     knowledge: '2025-05',
@@ -446,9 +446,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 1.65,
       cache_write: 20.625,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/au.anthropic.claude-opus-4-8', {
+  model('bedrock/au.anthropic.claude-opus-4-8', {
     name: 'Claude Opus 4.8 (AU)',
     created: '2026-05-28',
     knowledge: '2026-01',
@@ -474,9 +474,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/au.anthropic.claude-opus-5', {
+  model('bedrock/au.anthropic.claude-opus-5', {
     name: 'Claude Opus 5 (AU)',
     created: '2026-07-24',
     knowledge: '2026-05',
@@ -502,9 +502,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/au.anthropic.claude-sonnet-4-5-20250929-v1:0', {
+  model('bedrock/au.anthropic.claude-sonnet-4-5-20250929-v1:0', {
     name: 'Claude Sonnet 4.5 (AU)',
     created: '2025-09-29',
     knowledge: '2025-07-31',
@@ -531,9 +531,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.3,
       cache_write: 3.75,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/au.anthropic.claude-sonnet-4-6', {
+  model('bedrock/au.anthropic.claude-sonnet-4-6', {
     name: 'AU Anthropic Claude Sonnet 4.6',
     created: '2026-02-17',
     knowledge: '2025-08',
@@ -560,9 +560,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.33,
       cache_write: 4.125,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/au.anthropic.claude-sonnet-5', {
+  model('bedrock/au.anthropic.claude-sonnet-5', {
     name: 'Claude Sonnet 5 (AU)',
     created: '2026-06-30',
     knowledge: '2026-01-31',
@@ -589,9 +589,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.2,
       cache_write: 2.5,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/deepseek.r1-v1:0', {
+  model('bedrock/deepseek.r1-v1:0', {
     name: 'DeepSeek-R1',
     created: '2025-01-20',
     knowledge: '2024-07',
@@ -613,9 +613,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 1.35,
       output: 5.4,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/deepseek.v3-v1:0', {
+  model('bedrock/deepseek.v3-v1:0', {
     name: 'DeepSeek-V3.1',
     created: '2025-09-18',
     knowledge: '2024-07',
@@ -638,9 +638,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.58,
       output: 1.68,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/deepseek.v3.2', {
+  model('bedrock/deepseek.v3.2', {
     name: 'DeepSeek-V3.2',
     created: '2026-02-06',
     knowledge: '2024-07',
@@ -663,9 +663,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.62,
       output: 1.85,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/eu.anthropic.claude-fable-5', {
+  model('bedrock/eu.anthropic.claude-fable-5', {
     name: 'Claude Fable 5 (EU)',
     created: '2026-06-09',
     knowledge: '2026-01-31',
@@ -691,9 +691,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 1.1,
       cache_write: 13.75,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/eu.anthropic.claude-haiku-4-5-20251001-v1:0', {
+  model('bedrock/eu.anthropic.claude-haiku-4-5-20251001-v1:0', {
     name: 'Claude Haiku 4.5 (EU)',
     created: '2025-10-15',
     knowledge: '2025-02-28',
@@ -720,9 +720,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.11,
       cache_write: 1.375,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/eu.anthropic.claude-opus-4-5-20251101-v1:0', {
+  model('bedrock/eu.anthropic.claude-opus-4-5-20251101-v1:0', {
     name: 'Claude Opus 4.5 (EU)',
     created: '2025-11-24',
     knowledge: '2025-03-31',
@@ -749,9 +749,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.55,
       cache_write: 6.875,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/eu.anthropic.claude-opus-4-6-v1', {
+  model('bedrock/eu.anthropic.claude-opus-4-6-v1', {
     name: 'Claude Opus 4.6 (EU)',
     created: '2026-02-05',
     knowledge: '2025-05-31',
@@ -778,9 +778,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.55,
       cache_write: 6.875,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/eu.anthropic.claude-opus-4-7', {
+  model('bedrock/eu.anthropic.claude-opus-4-7', {
     name: 'Claude Opus 4.7 (EU)',
     created: '2026-04-16',
     knowledge: '2026-01-31',
@@ -806,9 +806,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.55,
       cache_write: 6.875,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/eu.anthropic.claude-opus-4-8', {
+  model('bedrock/eu.anthropic.claude-opus-4-8', {
     name: 'Claude Opus 4.8 (EU)',
     created: '2026-05-28',
     knowledge: '2026-01',
@@ -834,9 +834,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.55,
       cache_write: 6.875,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/eu.anthropic.claude-opus-5', {
+  model('bedrock/eu.anthropic.claude-opus-5', {
     name: 'Claude Opus 5 (EU)',
     created: '2026-07-24',
     knowledge: '2026-05',
@@ -862,9 +862,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.55,
       cache_write: 6.875,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/eu.anthropic.claude-sonnet-4-5-20250929-v1:0', {
+  model('bedrock/eu.anthropic.claude-sonnet-4-5-20250929-v1:0', {
     name: 'Claude Sonnet 4.5 (EU)',
     created: '2025-09-29',
     knowledge: '2025-07-31',
@@ -891,9 +891,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.33,
       cache_write: 4.125,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/eu.anthropic.claude-sonnet-4-6', {
+  model('bedrock/eu.anthropic.claude-sonnet-4-6', {
     name: 'Claude Sonnet 4.6 (EU)',
     created: '2026-02-17',
     knowledge: '2025-08-31',
@@ -920,9 +920,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.33,
       cache_write: 4.125,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/eu.anthropic.claude-sonnet-5', {
+  model('bedrock/eu.anthropic.claude-sonnet-5', {
     name: 'Claude Sonnet 5 (EU)',
     created: '2026-06-30',
     knowledge: '2026-01-31',
@@ -949,9 +949,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.22,
       cache_write: 2.75,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/global.anthropic.claude-fable-5', {
+  model('bedrock/global.anthropic.claude-fable-5', {
     name: 'Claude Fable 5 (Global)',
     created: '2026-06-09',
     knowledge: '2026-01-31',
@@ -977,9 +977,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 1,
       cache_write: 12.5,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0', {
+  model('bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0', {
     name: 'Claude Haiku 4.5 (Global)',
     created: '2025-10-15',
     knowledge: '2025-02-28',
@@ -1006,9 +1006,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.1,
       cache_write: 1.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/global.anthropic.claude-opus-4-5-20251101-v1:0', {
+  model('bedrock/global.anthropic.claude-opus-4-5-20251101-v1:0', {
     name: 'Claude Opus 4.5 (Global)',
     created: '2025-11-24',
     knowledge: '2025-03-31',
@@ -1035,9 +1035,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/global.anthropic.claude-opus-4-6-v1', {
+  model('bedrock/global.anthropic.claude-opus-4-6-v1', {
     name: 'Claude Opus 4.6 (Global)',
     created: '2026-02-05',
     knowledge: '2025-05-31',
@@ -1064,9 +1064,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/global.anthropic.claude-opus-4-7', {
+  model('bedrock/global.anthropic.claude-opus-4-7', {
     name: 'Claude Opus 4.7 (Global)',
     created: '2026-04-16',
     knowledge: '2026-01-31',
@@ -1092,9 +1092,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/global.anthropic.claude-opus-4-8', {
+  model('bedrock/global.anthropic.claude-opus-4-8', {
     name: 'Claude Opus 4.8 (Global)',
     created: '2026-05-28',
     knowledge: '2026-01',
@@ -1120,9 +1120,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/global.anthropic.claude-opus-5', {
+  model('bedrock/global.anthropic.claude-opus-5', {
     name: 'Claude Opus 5 (Global)',
     created: '2026-07-24',
     knowledge: '2026-05',
@@ -1148,9 +1148,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0', {
+  model('bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0', {
     name: 'Claude Sonnet 4.5 (Global)',
     created: '2025-09-29',
     knowledge: '2025-07-31',
@@ -1177,9 +1177,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.3,
       cache_write: 3.75,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/global.anthropic.claude-sonnet-4-6', {
+  model('bedrock/global.anthropic.claude-sonnet-4-6', {
     name: 'Claude Sonnet 4.6 (Global)',
     created: '2026-02-17',
     knowledge: '2025-08-31',
@@ -1206,9 +1206,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.3,
       cache_write: 3.75,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/global.anthropic.claude-sonnet-5', {
+  model('bedrock/global.anthropic.claude-sonnet-5', {
     name: 'Claude Sonnet 5 (Global)',
     created: '2026-06-30',
     knowledge: '2026-01-31',
@@ -1235,9 +1235,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.2,
       cache_write: 2.5,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/google.gemma-3-12b-it', {
+  model('bedrock/google.gemma-3-12b-it', {
     name: 'Google Gemma 3 12B',
     created: '2024-12-01',
     knowledge: '2024-12',
@@ -1259,9 +1259,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.049999999999999996,
       output: 0.09999999999999999,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/google.gemma-3-27b-it', {
+  model('bedrock/google.gemma-3-27b-it', {
     name: 'Google Gemma 3 27B Instruct',
     created: '2025-07-27',
     knowledge: '2025-07',
@@ -1284,9 +1284,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.12,
       output: 0.2,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/google.gemma-3-4b-it', {
+  model('bedrock/google.gemma-3-4b-it', {
     name: 'Gemma 3 4B IT',
     created: '2024-12-01',
     modalities: {
@@ -1307,9 +1307,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.04,
       output: 0.08,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/jp.anthropic.claude-haiku-4-5-20251001-v1:0', {
+  model('bedrock/jp.anthropic.claude-haiku-4-5-20251001-v1:0', {
     name: 'Claude Haiku 4.5 (JP)',
     created: '2025-10-15',
     knowledge: '2025-02-28',
@@ -1336,9 +1336,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.1,
       cache_write: 1.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/jp.anthropic.claude-opus-4-7', {
+  model('bedrock/jp.anthropic.claude-opus-4-7', {
     name: 'Claude Opus 4.7 (JP)',
     created: '2026-04-16',
     knowledge: '2026-01-31',
@@ -1364,9 +1364,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/jp.anthropic.claude-opus-4-8', {
+  model('bedrock/jp.anthropic.claude-opus-4-8', {
     name: 'Claude Opus 4.8 (JP)',
     created: '2026-05-28',
     knowledge: '2026-01',
@@ -1392,9 +1392,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/jp.anthropic.claude-opus-5', {
+  model('bedrock/jp.anthropic.claude-opus-5', {
     name: 'Claude Opus 5 (JP)',
     created: '2026-07-24',
     knowledge: '2026-05',
@@ -1420,9 +1420,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/jp.anthropic.claude-sonnet-4-5-20250929-v1:0', {
+  model('bedrock/jp.anthropic.claude-sonnet-4-5-20250929-v1:0', {
     name: 'Claude Sonnet 4.5 (JP)',
     created: '2025-09-29',
     knowledge: '2025-07-31',
@@ -1449,9 +1449,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.3,
       cache_write: 3.75,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/jp.anthropic.claude-sonnet-4-6', {
+  model('bedrock/jp.anthropic.claude-sonnet-4-6', {
     name: 'Claude Sonnet 4.6 (JP)',
     created: '2026-02-17',
     knowledge: '2025-08-31',
@@ -1478,9 +1478,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.3,
       cache_write: 3.75,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/jp.anthropic.claude-sonnet-5', {
+  model('bedrock/jp.anthropic.claude-sonnet-5', {
     name: 'Claude Sonnet 5 (JP)',
     created: '2026-06-30',
     knowledge: '2026-01-31',
@@ -1507,9 +1507,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.2,
       cache_write: 2.5,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/meta.llama3-1-70b-instruct-v1:0', {
+  model('bedrock/meta.llama3-1-70b-instruct-v1:0', {
     name: 'Llama 3.1 70B Instruct',
     created: '2024-07-23',
     knowledge: '2023-12',
@@ -1530,9 +1530,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.72,
       output: 0.72,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.meta.llama3-1-8b-instruct-v1:0', {
+  model('bedrock/us.meta.llama3-1-8b-instruct-v1:0', {
     name: 'Llama 3.1 8B Instruct',
     created: '2024-07-23',
     knowledge: '2023-12',
@@ -1553,9 +1553,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.22,
       output: 0.22,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.meta.llama3-3-70b-instruct-v1:0', {
+  model('bedrock/us.meta.llama3-3-70b-instruct-v1:0', {
     name: 'Llama 3.3 70B Instruct',
     created: '2024-12-06',
     knowledge: '2023-12',
@@ -1576,9 +1576,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.72,
       output: 0.72,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/meta.llama4-maverick-17b-instruct-v1:0', {
+  model('bedrock/meta.llama4-maverick-17b-instruct-v1:0', {
     name: 'Llama 4 Maverick 17B Instruct',
     created: '2025-04-05',
     knowledge: '2024-08',
@@ -1600,9 +1600,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.24,
       output: 0.97,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/meta.llama4-scout-17b-instruct-v1:0', {
+  model('bedrock/meta.llama4-scout-17b-instruct-v1:0', {
     name: 'Llama 4 Scout 17B Instruct',
     created: '2025-04-05',
     knowledge: '2024-08',
@@ -1624,9 +1624,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.17,
       output: 0.66,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/minimax.minimax-m2', {
+  model('bedrock/minimax.minimax-m2', {
     name: 'MiniMax M2',
     created: '2025-10-27',
     modalities: {
@@ -1647,9 +1647,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.3,
       output: 1.2,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/minimax.minimax-m2.1', {
+  model('bedrock/minimax.minimax-m2.1', {
     name: 'MiniMax M2.1',
     created: '2025-12-23',
     modalities: {
@@ -1670,9 +1670,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.3,
       output: 1.2,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/minimax.minimax-m2.5', {
+  model('bedrock/minimax.minimax-m2.5', {
     name: 'MiniMax M2.5',
     created: '2026-03-18',
     modalities: {
@@ -1693,9 +1693,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.3,
       output: 1.2,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/mistral.devstral-2-123b', {
+  model('bedrock/mistral.devstral-2-123b', {
     name: 'Devstral 2 123B',
     created: '2026-02-17',
     modalities: {
@@ -1716,9 +1716,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.4,
       output: 2,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/mistral.magistral-small-2509', {
+  model('bedrock/mistral.magistral-small-2509', {
     name: 'Magistral Small 1.2',
     created: '2025-12-02',
     modalities: {
@@ -1741,9 +1741,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.5,
       output: 1.5,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/mistral.ministral-3-14b-instruct', {
+  model('bedrock/mistral.ministral-3-14b-instruct', {
     name: 'Ministral 14B 3.0',
     created: '2024-12-01',
     modalities: {
@@ -1764,9 +1764,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.2,
       output: 0.2,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/mistral.ministral-3-3b-instruct', {
+  model('bedrock/mistral.ministral-3-3b-instruct', {
     name: 'Ministral 3 3B',
     created: '2025-12-02',
     modalities: {
@@ -1788,9 +1788,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.1,
       output: 0.1,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/mistral.ministral-3-8b-instruct', {
+  model('bedrock/mistral.ministral-3-8b-instruct', {
     name: 'Ministral 3 8B',
     created: '2024-12-01',
     modalities: {
@@ -1811,9 +1811,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.15,
       output: 0.15,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/mistral.mistral-large-3-675b-instruct', {
+  model('bedrock/mistral.mistral-large-3-675b-instruct', {
     name: 'Mistral Large 3',
     created: '2025-12-02',
     modalities: {
@@ -1835,9 +1835,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.5,
       output: 1.5,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/mistral.pixtral-large-2502-v1:0', {
+  model('bedrock/mistral.pixtral-large-2502-v1:0', {
     name: 'Pixtral Large (25.02)',
     created: '2025-04-08',
     modalities: {
@@ -1858,9 +1858,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 2,
       output: 6,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/mistral.voxtral-mini-3b-2507', {
+  model('bedrock/mistral.voxtral-mini-3b-2507', {
     name: 'Voxtral Mini 3B 2507',
     created: '2024-12-01',
     modalities: {
@@ -1881,9 +1881,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.04,
       output: 0.04,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/mistral.voxtral-small-24b-2507', {
+  model('bedrock/mistral.voxtral-small-24b-2507', {
     name: 'Voxtral Small 24B 2507',
     created: '2025-07-01',
     modalities: {
@@ -1904,9 +1904,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.15,
       output: 0.35,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/moonshot.kimi-k2-thinking', {
+  model('bedrock/moonshot.kimi-k2-thinking', {
     name: 'Kimi K2 Thinking',
     created: '2025-12-02',
     modalities: {
@@ -1928,9 +1928,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.6,
       output: 2.5,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/moonshotai.kimi-k2.5', {
+  model('bedrock/moonshotai.kimi-k2.5', {
     name: 'Kimi K2.5',
     created: '2026-02-06',
     modalities: {
@@ -1953,9 +1953,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.6,
       output: 3,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/nvidia.nemotron-nano-12b-v2', {
+  model('bedrock/nvidia.nemotron-nano-12b-v2', {
     name: 'NVIDIA Nemotron Nano 12B v2 VL BF16',
     created: '2024-12-01',
     modalities: {
@@ -1977,9 +1977,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.2,
       output: 0.6,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/nvidia.nemotron-nano-3-30b', {
+  model('bedrock/nvidia.nemotron-nano-3-30b', {
     name: 'NVIDIA Nemotron Nano 3 30B',
     created: '2025-12-23',
     modalities: {
@@ -2001,9 +2001,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.06,
       output: 0.24,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/nvidia.nemotron-nano-9b-v2', {
+  model('bedrock/nvidia.nemotron-nano-9b-v2', {
     name: 'NVIDIA Nemotron Nano 9B v2',
     created: '2024-12-01',
     modalities: {
@@ -2024,9 +2024,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.06,
       output: 0.23,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/nvidia.nemotron-super-3-120b', {
+  model('bedrock/nvidia.nemotron-super-3-120b', {
     name: 'NVIDIA Nemotron 3 Super 120B A12B',
     created: '2026-03-11',
     modalities: {
@@ -2048,9 +2048,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.15,
       output: 0.65,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/openai.gpt-5.4', {
+  model('bedrock/openai.gpt-5.4', {
     name: 'GPT-5.4',
     created: '2026-03-05',
     knowledge: '2025-08-31',
@@ -2081,9 +2081,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
       shape: 'responses',
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/openai.gpt-5.5', {
+  model('bedrock/openai.gpt-5.5', {
     name: 'GPT-5.5',
     created: '2026-04-23',
     knowledge: '2025-12-01',
@@ -2114,9 +2114,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
       shape: 'responses',
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/openai.gpt-5.6-luna', {
+  model('bedrock/openai.gpt-5.6-luna', {
     name: 'GPT-5.6 Luna',
     created: '2026-07-09',
     knowledge: '2026-02-16',
@@ -2148,9 +2148,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
       shape: 'responses',
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/openai.gpt-5.6-sol', {
+  model('bedrock/openai.gpt-5.6-sol', {
     name: 'GPT-5.6 Sol',
     created: '2026-07-09',
     knowledge: '2026-02-16',
@@ -2182,9 +2182,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
       shape: 'responses',
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/openai.gpt-5.6-terra', {
+  model('bedrock/openai.gpt-5.6-terra', {
     name: 'GPT-5.6 Terra',
     created: '2026-07-09',
     knowledge: '2026-02-16',
@@ -2216,9 +2216,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
       shape: 'responses',
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/openai.gpt-oss-120b', {
+  model('bedrock/openai.gpt-oss-120b', {
     name: 'gpt-oss-120b',
     created: '2025-08-05',
     modalities: {
@@ -2245,9 +2245,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/v1',
       shape: 'responses',
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/openai.gpt-oss-120b-1:0', {
+  model('bedrock/openai.gpt-oss-120b-1:0', {
     name: 'gpt-oss-120b',
     created: '2025-08-05',
     modalities: {
@@ -2269,9 +2269,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.15,
       output: 0.6,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/openai.gpt-oss-20b', {
+  model('bedrock/openai.gpt-oss-20b', {
     name: 'gpt-oss-20b',
     created: '2025-08-05',
     modalities: {
@@ -2298,9 +2298,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/v1',
       shape: 'responses',
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/openai.gpt-oss-20b-1:0', {
+  model('bedrock/openai.gpt-oss-20b-1:0', {
     name: 'gpt-oss-20b',
     created: '2025-08-05',
     modalities: {
@@ -2322,9 +2322,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.07,
       output: 0.3,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/openai.gpt-oss-safeguard-120b', {
+  model('bedrock/openai.gpt-oss-safeguard-120b', {
     name: 'GPT OSS Safeguard 120B',
     created: '2025-10-29',
     modalities: {
@@ -2345,9 +2345,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.15,
       output: 0.6,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/openai.gpt-oss-safeguard-20b', {
+  model('bedrock/openai.gpt-oss-safeguard-20b', {
     name: 'GPT OSS Safeguard 20B',
     created: '2025-10-29',
     modalities: {
@@ -2368,9 +2368,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.07,
       output: 0.2,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/qwen.qwen3-235b-a22b-2507-v1:0', {
+  model('bedrock/qwen.qwen3-235b-a22b-2507-v1:0', {
     name: 'Qwen3 235B A22B 2507',
     created: '2025-09-18',
     knowledge: '2024-04',
@@ -2392,9 +2392,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.22,
       output: 0.88,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/qwen.qwen3-32b-v1:0', {
+  model('bedrock/qwen.qwen3-32b-v1:0', {
     name: 'Qwen3 32B (dense)',
     created: '2025-09-18',
     knowledge: '2024-04',
@@ -2417,9 +2417,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.15,
       output: 0.6,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/qwen.qwen3-coder-30b-a3b-v1:0', {
+  model('bedrock/qwen.qwen3-coder-30b-a3b-v1:0', {
     name: 'Qwen3 Coder 30B A3B Instruct',
     created: '2025-09-18',
     knowledge: '2024-04',
@@ -2441,9 +2441,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.15,
       output: 0.6,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/qwen.qwen3-coder-480b-a35b-v1:0', {
+  model('bedrock/qwen.qwen3-coder-480b-a35b-v1:0', {
     name: 'Qwen3 Coder 480B A35B Instruct',
     created: '2025-09-18',
     knowledge: '2024-04',
@@ -2465,9 +2465,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.22,
       output: 1.8,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/qwen.qwen3-coder-next', {
+  model('bedrock/qwen.qwen3-coder-next', {
     name: 'Qwen3 Coder Next',
     created: '2026-02-06',
     modalities: {
@@ -2489,9 +2489,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.22,
       output: 1.8,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/qwen.qwen3-next-80b-a3b', {
+  model('bedrock/qwen.qwen3-next-80b-a3b', {
     name: 'Qwen/Qwen3-Next-80B-A3B-Instruct',
     created: '2025-09-18',
     modalities: {
@@ -2512,9 +2512,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.14,
       output: 1.4,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/qwen.qwen3-vl-235b-a22b', {
+  model('bedrock/qwen.qwen3-vl-235b-a22b', {
     name: 'Qwen/Qwen3-VL-235B-A22B-Instruct',
     created: '2025-10-04',
     modalities: {
@@ -2536,9 +2536,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.3,
       output: 1.5,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.anthropic.claude-fable-5', {
+  model('bedrock/us.anthropic.claude-fable-5', {
     name: 'Claude Fable 5 (US)',
     created: '2026-06-09',
     knowledge: '2026-01-31',
@@ -2564,9 +2564,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 1,
       cache_write: 12.5,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0', {
+  model('bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0', {
     name: 'Claude Haiku 4.5 (US)',
     created: '2025-10-15',
     knowledge: '2025-02-28',
@@ -2593,9 +2593,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.1,
       cache_write: 1.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.anthropic.claude-opus-4-5-20251101-v1:0', {
+  model('bedrock/us.anthropic.claude-opus-4-5-20251101-v1:0', {
     name: 'Claude Opus 4.5 (US)',
     created: '2025-11-24',
     knowledge: '2025-03-31',
@@ -2622,9 +2622,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.anthropic.claude-opus-4-6-v1', {
+  model('bedrock/us.anthropic.claude-opus-4-6-v1', {
     name: 'Claude Opus 4.6 (US)',
     created: '2026-02-05',
     knowledge: '2025-05-31',
@@ -2651,9 +2651,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.anthropic.claude-opus-4-7', {
+  model('bedrock/us.anthropic.claude-opus-4-7', {
     name: 'Claude Opus 4.7 (US)',
     created: '2026-04-16',
     knowledge: '2026-01-31',
@@ -2679,9 +2679,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.anthropic.claude-opus-4-8', {
+  model('bedrock/us.anthropic.claude-opus-4-8', {
     name: 'Claude Opus 4.8 (US)',
     created: '2026-05-28',
     knowledge: '2026-01',
@@ -2707,9 +2707,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.anthropic.claude-opus-5', {
+  model('bedrock/us.anthropic.claude-opus-5', {
     name: 'Claude Opus 5 (US)',
     created: '2026-07-24',
     knowledge: '2026-05',
@@ -2735,9 +2735,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.5,
       cache_write: 6.25,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0', {
+  model('bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0', {
     name: 'Claude Sonnet 4.5 (US)',
     created: '2025-09-29',
     knowledge: '2025-07-31',
@@ -2764,9 +2764,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.3,
       cache_write: 3.75,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.anthropic.claude-sonnet-4-6', {
+  model('bedrock/us.anthropic.claude-sonnet-4-6', {
     name: 'Claude Sonnet 4.6 (US)',
     created: '2026-02-17',
     knowledge: '2025-08-31',
@@ -2793,9 +2793,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.3,
       cache_write: 3.75,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.anthropic.claude-sonnet-5', {
+  model('bedrock/us.anthropic.claude-sonnet-5', {
     name: 'Claude Sonnet 5 (US)',
     created: '2026-06-30',
     knowledge: '2026-01-31',
@@ -2822,9 +2822,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       cache_read: 0.2,
       cache_write: 2.5,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.deepseek.r1-v1:0', {
+  model('bedrock/us.deepseek.r1-v1:0', {
     name: 'DeepSeek-R1 (US)',
     created: '2025-01-20',
     knowledge: '2024-07',
@@ -2846,9 +2846,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 1.35,
       output: 5.4,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.meta.llama4-maverick-17b-instruct-v1:0', {
+  model('bedrock/us.meta.llama4-maverick-17b-instruct-v1:0', {
     name: 'Llama 4 Maverick 17B Instruct (US)',
     created: '2025-04-05',
     knowledge: '2024-08',
@@ -2870,9 +2870,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.24,
       output: 0.97,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/us.meta.llama4-scout-17b-instruct-v1:0', {
+  model('bedrock/us.meta.llama4-scout-17b-instruct-v1:0', {
     name: 'Llama 4 Scout 17B Instruct (US)',
     created: '2025-04-05',
     knowledge: '2024-08',
@@ -2894,9 +2894,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.17,
       output: 0.66,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/writer.palmyra-x4-v1:0', {
+  model('bedrock/writer.palmyra-x4-v1:0', {
     name: 'Palmyra X4',
     created: '2025-04-28',
     modalities: {
@@ -2917,9 +2917,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 2.5,
       output: 10,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/writer.palmyra-x5-v1:0', {
+  model('bedrock/writer.palmyra-x5-v1:0', {
     name: 'Palmyra X5',
     created: '2025-04-28',
     modalities: {
@@ -2940,9 +2940,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.6,
       output: 6,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/xai.grok-4.3', {
+  model('bedrock/xai.grok-4.3', {
     name: 'Grok 4.3',
     created: '2026-04-17',
     modalities: {
@@ -2972,9 +2972,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
       shape: 'responses',
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/zai.glm-4.7', {
+  model('bedrock/zai.glm-4.7', {
     name: 'GLM-4.7',
     created: '2025-12-22',
     knowledge: '2025-04',
@@ -2997,9 +2997,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.6,
       output: 2.2,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/zai.glm-4.7-flash', {
+  model('bedrock/zai.glm-4.7-flash', {
     name: 'GLM-4.7-Flash',
     created: '2026-01-19',
     knowledge: '2025-04',
@@ -3022,9 +3022,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.07,
       output: 0.4,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
-  model('amazon-bedrock/zai.glm-5', {
+  model('bedrock/zai.glm-5', {
     name: 'GLM-5',
     created: '2026-03-18',
     modalities: {
@@ -3046,7 +3046,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 1,
       output: 3.2,
     },
-    providers: ['amazon-bedrock'],
+    providers: ['bedrock'],
   }),
   model('anthropic/claude-fable-5', {
     name: 'Claude Fable 5',

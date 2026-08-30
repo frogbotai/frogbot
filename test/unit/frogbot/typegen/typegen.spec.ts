@@ -419,13 +419,13 @@ describe('frogbot generate:types', () => {
       expect(output).toContain("'fast'");
     });
 
-    it('uses runtime provider prefixes for aliased built-ins', async () => {
+    it('uses configured provider keys for aliased built-ins', async () => {
       const output = await generateModelTypes({
-        providers: { bedrock: true, together: true },
+        providers: { bedrock: true, togetherai: true },
       });
 
       expect(output).toContain("'togetherai/");
-      expect(output).not.toContain("'together/");
+      expect(output).toContain("'bedrock/");
     });
 
     it('removes stale models when configured providers change', async () => {

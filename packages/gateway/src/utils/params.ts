@@ -87,9 +87,6 @@ export function calculateReasoningBudgetFromEffort(
  * is the package's own namespace string — never the model ID, never a hyphen.
  * Only registry keys whose SDK namespace differs are listed here:
  *
- *   - `amazon-bedrock` builds `@ai-sdk/amazon-bedrock` v4, which reads
- *     `bedrock` — never the hyphenated `amazon-bedrock` string. Version 5
- *     retains `bedrock` as a fallback namespace.
  *   - `anthropic-aws` builds `@ai-sdk/anthropic-aws`, whose message, part, and
  *     tool metadata reads use the `anthropic` namespace. Request-level options
  *     accept both namespaces, so remapping is safe at every level.
@@ -99,7 +96,6 @@ export function calculateReasoningBudgetFromEffort(
  *     SDK-read namespace.
  */
 const PROVIDER_OPTIONS_NAMESPACE: Record<string, string> = {
-  'amazon-bedrock': 'bedrock',
   'anthropic-aws': 'anthropic',
 };
 
@@ -280,4 +276,4 @@ export function parsePromptCachingOptions(opts: {
  * Providers that explicitly reject cache_control fields. `forwardLanguageParams`
  * should NOT forward caching options to these providers.
  */
-export const CACHE_FIELD_REJECTING_PROVIDERS = new Set(['amazon-bedrock']);
+export const CACHE_FIELD_REJECTING_PROVIDERS = new Set(['bedrock']);

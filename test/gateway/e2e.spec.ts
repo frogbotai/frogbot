@@ -52,7 +52,7 @@ function makeE2EApp(recordScenario?: string) {
   if (ANTHROPIC_API_KEY) providers.anthropic = { apiKey: ANTHROPIC_API_KEY };
   if (GROQ_API_KEY) providers.groq = { apiKey: GROQ_API_KEY };
   if (AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY && AWS_REGION) {
-    providers['amazon-bedrock'] = {
+    providers['bedrock'] = {
       accessKeyId: AWS_ACCESS_KEY_ID,
       secretAccessKey: AWS_SECRET_ACCESS_KEY,
       region: AWS_REGION,
@@ -173,7 +173,7 @@ describeE2E('gateway E2E — real providers', () => {
   if (AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY && AWS_REGION) {
     it('Bedrock (Claude) non-streaming round-trip', async () => {
       const { status, body } = await postJson(app, '/v1/chat/completions', {
-        model: 'amazon-bedrock/anthropic.claude-3-5-haiku-20241022-v1:0',
+        model: 'bedrock/anthropic.claude-3-5-haiku-20241022-v1:0',
         messages: [{ role: 'user', content: 'Say "hello" and nothing else.' }],
       });
       expect(status).toBe(200);

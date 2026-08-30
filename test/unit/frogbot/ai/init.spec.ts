@@ -48,10 +48,10 @@ describe('buildGatewayConfig', () => {
     });
   });
 
-  it('renames bedrock → amazon-bedrock', () => {
+  it('configures Bedrock', () => {
     const entry = { region: 'us-east-1', accessKeyId: 'ak', secretAccessKey: 'sk' };
     const config = buildGatewayConfig(makeAIConfig({ bedrock: entry }));
-    expect(config.providers).toEqual({ 'amazon-bedrock': entry });
+    expect(config.providers).toEqual({ bedrock: entry });
   });
 
   it('preserves built-in model allowlists', () => {
@@ -67,7 +67,7 @@ describe('buildGatewayConfig', () => {
         bedrock: { region: 'us-east-1', models: ['zai.glm-4.7-flash'] },
       }),
     );
-    expect(config.providers['amazon-bedrock']).toEqual({
+    expect(config.providers.bedrock).toEqual({
       region: 'us-east-1',
       models: ['zai.glm-4.7-flash'],
     });
@@ -82,18 +82,18 @@ describe('buildGatewayConfig', () => {
 
   it('maps true Bedrock to ambient AWS config', () => {
     const config = buildGatewayConfig(makeAIConfig({ bedrock: true }));
-    expect(config.providers).toEqual({ 'amazon-bedrock': {} });
+    expect(config.providers).toEqual({ bedrock: {} });
   });
 
   it('maps a Bedrock credential provider unchanged', () => {
     const credentialProvider = () => Promise.resolve({ accessKeyId: 'ak', secretAccessKey: 'sk' });
     const entry = { region: 'us-east-1', credentialProvider };
     const config = buildGatewayConfig(makeAIConfig({ bedrock: entry }));
-    expect(config.providers).toEqual({ 'amazon-bedrock': entry });
+    expect(config.providers).toEqual({ bedrock: entry });
   });
 
-  it('renames together → togetherai', () => {
-    const config = buildGatewayConfig(makeAIConfig({ together: { apiKey: 'sk-t' } }));
+  it('configures Together AI', () => {
+    const config = buildGatewayConfig(makeAIConfig({ togetherai: { apiKey: 'sk-t' } }));
     expect(config.providers).toEqual({ togetherai: { apiKey: 'sk-t' } });
   });
 

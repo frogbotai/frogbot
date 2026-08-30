@@ -38,7 +38,7 @@ describe('isCliEntry', () => {
 
 describe('buildProvidersFromEnv', () => {
   it('discovers Bedrock from an AWS profile', () => {
-    expect(buildProvidersFromEnv({ AWS_PROFILE: 'dev' })['amazon-bedrock']).toEqual({
+    expect(buildProvidersFromEnv({ AWS_PROFILE: 'dev' })['bedrock']).toEqual({
       region: 'us-east-1',
     });
   });
@@ -49,7 +49,7 @@ describe('buildProvidersFromEnv', () => {
         AWS_ROLE_ARN: 'arn:aws:iam::123456789012:role/test',
         AWS_WEB_IDENTITY_TOKEN_FILE: '/tmp/token',
         AWS_REGION: 'us-west-2',
-      })['amazon-bedrock'],
+      })['bedrock'],
     ).toEqual({ region: 'us-west-2' });
   });
 });

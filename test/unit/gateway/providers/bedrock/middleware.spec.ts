@@ -20,7 +20,7 @@ function makeArgs(
     context: {},
     otel: {},
     model,
-    provider: 'amazon-bedrock',
+    provider: 'bedrock',
     messages: [],
     params: {},
     headers: new Headers(),

@@ -32,11 +32,11 @@ function hasExplicitBedrockAuth(cfg: BedrockConfig): boolean {
 }
 
 export const bedrockProvider: ProviderDefinition<
-  'amazon-bedrock',
+  'bedrock',
   BedrockConfig,
   AmazonBedrockProvider
 > = {
-  name: 'amazon-bedrock',
+  name: 'bedrock',
   envVars: [
     'AWS_BEARER_TOKEN_BEDROCK',
     'AWS_ACCESS_KEY_ID',
@@ -105,7 +105,7 @@ export const bedrockProvider: ProviderDefinition<
     const standard = createAmazonBedrock(settings);
     const mantleProviders = new Map<string, BedrockMantleProvider>();
     const languageModel: AmazonBedrockProvider['languageModel'] = (modelId) => {
-      const sdk = DEFAULT_MODEL_CATALOG.get(`amazon-bedrock/${modelId}`)?.sdk;
+      const sdk = DEFAULT_MODEL_CATALOG.get(`bedrock/${modelId}`)?.sdk;
       if (sdk?.npm !== '@ai-sdk/amazon-bedrock/mantle') {
         return standard.languageModel(modelId);
       }

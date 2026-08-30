@@ -28,24 +28,24 @@ describe('generated AI model types', () => {
       'utf8',
     );
     const profiles = [
-      'amazon-bedrock/global.amazon.nova-2-lite-v1:0',
-      'amazon-bedrock/us.meta.llama3-1-8b-instruct-v1:0',
-      'amazon-bedrock/us.meta.llama3-3-70b-instruct-v1:0',
+      'global.amazon.nova-2-lite-v1:0',
+      'us.meta.llama3-1-8b-instruct-v1:0',
+      'us.meta.llama3-3-70b-instruct-v1:0',
     ];
     const bareIds = [
-      'amazon-bedrock/amazon.nova-2-lite-v1:0',
-      'amazon-bedrock/meta.llama3-1-8b-instruct-v1:0',
-      'amazon-bedrock/meta.llama3-3-70b-instruct-v1:0',
+      'amazon.nova-2-lite-v1:0',
+      'meta.llama3-1-8b-instruct-v1:0',
+      'meta.llama3-3-70b-instruct-v1:0',
     ];
     const ids = catalog.map(({ id }) => id);
 
-    for (const id of profiles) {
-      expect(ids).toContain(id);
-      expect(generated).toContain(`'${id}'`);
+    for (const model of profiles) {
+      expect(ids).toContain(`bedrock/${model}`);
+      expect(generated).toContain(`'bedrock/${model}'`);
     }
-    for (const id of bareIds) {
-      expect(ids).not.toContain(id);
-      expect(generated).not.toContain(`'${id}'`);
+    for (const model of bareIds) {
+      expect(ids).not.toContain(`bedrock/${model}`);
+      expect(generated).not.toContain(`'bedrock/${model}'`);
     }
   });
 });

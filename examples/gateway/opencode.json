@@ -9,25 +9,25 @@
         "apiKey": "local"
       },
       "models": {
-        "amazon-bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0": {
+        "bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0": {
           "name": "Claude Sonnet 4.5 (Bedrock)",
           "tool_call": true,
           "reasoning": true,
           "limit": { "context": 200000, "output": 8192 }
         },
-        "amazon-bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0": {
+        "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0": {
           "name": "Claude Sonnet 4 (Bedrock)",
           "tool_call": true,
           "reasoning": true,
           "limit": { "context": 200000, "output": 8192 }
         },
-        "amazon-bedrock/us.anthropic.claude-opus-4-20250514-v1:0": {
+        "bedrock/us.anthropic.claude-opus-4-20250514-v1:0": {
           "name": "Claude Opus 4 (Bedrock)",
           "tool_call": true,
           "reasoning": true,
           "limit": { "context": 200000, "output": 8192 }
         },
-        "amazon-bedrock/us.amazon.nova-pro-v1:0": {
+        "bedrock/us.amazon.nova-pro-v1:0": {
           "name": "Nova Pro (Bedrock)",
           "tool_call": true,
           "limit": { "context": 300000, "output": 5000 }

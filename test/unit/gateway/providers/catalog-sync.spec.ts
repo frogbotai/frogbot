@@ -49,16 +49,16 @@ describe('catalog sync SDK metadata', () => {
     const replacement = { ...model, id: `global.${model.id}` };
     const { gateway } = buildCatalogs({
       overlays: {
-        'amazon-bedrock': {
+        'bedrock': {
           add: [
             {
               ...replacement,
-              id: `amazon-bedrock/${replacement.id}`,
+              id: `bedrock/${replacement.id}`,
               mode: 'chat',
               operations: ['chat.completions'],
               capabilities: {},
               context: { input: 128_000, output: 16_384 },
-              providers: ['amazon-bedrock'],
+              providers: ['bedrock'],
             },
           ],
           exclude: [model.id],
@@ -67,7 +67,7 @@ describe('catalog sync SDK metadata', () => {
       source: { 'amazon-bedrock': { models: { [model.id]: model } } },
     });
 
-    expect(gateway.map(({ id }) => id)).toEqual([`amazon-bedrock/${replacement.id}`]);
+    expect(gateway.map(({ id }) => id)).toEqual([`bedrock/${replacement.id}`]);
   });
 
   it('preserves overlay-only provider entries', () => {
@@ -108,17 +108,17 @@ describe('catalog sync SDK metadata', () => {
   it('uses the overlay entry when a synced provider adds the same ID', () => {
     const { gateway } = buildCatalogs({
       overlays: {
-        'amazon-bedrock': {
+        'bedrock': {
           add: [
             {
-              id: `amazon-bedrock/${model.id}`,
+              id: `bedrock/${model.id}`,
               mode: 'chat',
               name: 'Reviewed profile metadata',
               modalities: model.modalities,
               operations: ['chat.completions'],
               capabilities: {},
               context: { input: 128_000, output: 16_384 },
-              providers: ['amazon-bedrock'],
+              providers: ['bedrock'],
             },
           ],
           exclude: [],

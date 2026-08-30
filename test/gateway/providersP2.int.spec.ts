@@ -174,7 +174,7 @@ describe('G82 — provider config type errors surface at first request, not star
 //     'anthropic-aws' key (same file:266-282). Filing under 'anthropic-aws'
 //     is VALID.
 //
-//   - registry 'amazon-bedrock' → the installed Bedrock v4 SDK reads 'bedrock'.
+//   - registry 'bedrock' → the installed Bedrock v4 SDK reads 'bedrock'.
 //     The gateway maps the registry key there after stripping cache fields.
 //
 // Conclusion: the registry key the gateway uses is a key the SDK actually

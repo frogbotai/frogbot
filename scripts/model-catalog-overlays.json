@@ -1,8 +1,8 @@
 {
-  "amazon-bedrock": {
+  "bedrock": {
     "add": [
       {
-        "id": "amazon-bedrock/global.amazon.nova-2-lite-v1:0",
+        "id": "bedrock/global.amazon.nova-2-lite-v1:0",
         "mode": "chat",
         "name": "Nova 2 Lite",
         "created": "2024-12-01",
@@ -16,10 +16,10 @@
         },
         "context": { "input": 128000, "output": 4096 },
         "cost": { "input": 0.33, "output": 2.75 },
-        "providers": ["amazon-bedrock"]
+        "providers": ["bedrock"]
       },
       {
-        "id": "amazon-bedrock/us.meta.llama3-1-8b-instruct-v1:0",
+        "id": "bedrock/us.meta.llama3-1-8b-instruct-v1:0",
         "mode": "chat",
         "name": "Llama 3.1 8B Instruct",
         "created": "2024-07-23",
@@ -29,10 +29,10 @@
         "capabilities": { "toolCalling": true, "streaming": true },
         "context": { "input": 128000, "output": 4096 },
         "cost": { "input": 0.22, "output": 0.22 },
-        "providers": ["amazon-bedrock"]
+        "providers": ["bedrock"]
       },
       {
-        "id": "amazon-bedrock/us.meta.llama3-3-70b-instruct-v1:0",
+        "id": "bedrock/us.meta.llama3-3-70b-instruct-v1:0",
         "mode": "chat",
         "name": "Llama 3.3 70B Instruct",
         "created": "2024-12-06",
@@ -42,7 +42,7 @@
         "capabilities": { "toolCalling": true, "streaming": true },
         "context": { "input": 128000, "output": 4096 },
         "cost": { "input": 0.72, "output": 0.72 },
-        "providers": ["amazon-bedrock"]
+        "providers": ["bedrock"]
       }
     ],
     "exclude": [

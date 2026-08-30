@@ -29,7 +29,7 @@ function makeApp() {
     fetch,
   } as BedrockConfig);
   return createApp({
-    registry: { 'amazon-bedrock': bedrock } as unknown as ProviderRegistry,
+    registry: { 'bedrock': bedrock } as unknown as ProviderRegistry,
   });
 }
 
@@ -40,7 +40,7 @@ beforeEach(() => {
 describe('Bedrock prompt caching wire contract', () => {
   it('emits cachePoint blocks for chat system and user markers', async () => {
     const { status } = await postJson(makeApp(), '/v1/chat/completions', {
-      model: 'amazon-bedrock/anthropic.claude-sonnet-4-20250514-v1:0',
+      model: 'bedrock/anthropic.claude-sonnet-4-20250514-v1:0',
       messages: [
         { role: 'system', content: 'Reusable context', cache_control: { type: 'ephemeral' } },
         { role: 'user', content: 'Question', cache_control: { type: 'ephemeral' } },
@@ -61,7 +61,7 @@ describe('Bedrock prompt caching wire contract', () => {
 
   it('emits cachePoint blocks for messages system, text, and tool_result markers', async () => {
     const { status } = await postJson(makeApp(), '/v1/messages', {
-      model: 'amazon-bedrock/anthropic.claude-sonnet-4-20250514-v1:0',
+      model: 'bedrock/anthropic.claude-sonnet-4-20250514-v1:0',
       max_tokens: 100,
       system: [{ type: 'text', text: 'Reusable context', cache_control: { type: 'ephemeral' } }],
       tools: [

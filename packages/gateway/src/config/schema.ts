@@ -31,7 +31,7 @@ import {
 
 export type GatewayConfig = {
   /**
-   * Provider map. Known provider keys (e.g. `openai`, `amazon-bedrock`) take
+   * Provider map. Known provider keys (e.g. `openai`, `bedrock`) take
    * that provider's typed config or a pre-built instance. Any other key is a
    * generic OpenAI-compatible endpoint and requires a `baseURL` — the key
    * becomes the `<name>/<model>` dispatch prefix (e.g. `ollama`, `lm-studio`).

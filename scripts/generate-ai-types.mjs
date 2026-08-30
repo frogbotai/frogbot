@@ -14,7 +14,7 @@ function typeName(provider) {
     .map((part) => {
       if (part === 'openai') return 'OpenAI';
       if (part === 'xai') return 'XAI';
-      if (part === 'togetherai') return 'Together';
+      if (part === 'togetherai') return 'TogetherAI';
       return `${part[0].toUpperCase()}${part.slice(1)}`;
     })
     .join('');

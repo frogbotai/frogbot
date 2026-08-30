@@ -16,16 +16,10 @@ export type AIOutput = ReturnType<(typeof Output)[keyof typeof Output]>;
 
 // ─── Provider Configuration ──────────────────────────────────────────────────
 
-type GatewayProviderName<P extends ProviderName> = P extends 'bedrock'
-  ? 'amazon-bedrock'
-  : P extends 'together'
-    ? 'togetherai'
-    : P;
-
 type ProviderModelName<
   P extends ProviderName,
   Id extends CatalogModelId = CatalogModelId,
-> = Id extends `${GatewayProviderName<P>}/${infer Model}` ? Model : never;
+> = Id extends `${P}/${infer Model}` ? Model : never;
 
 export type BuiltInProviderEntry<P extends ProviderName = ProviderName> = {
   apiKey: string | undefined;
@@ -182,7 +176,7 @@ export type AIConfig = {
   providers: ProviderConfig;
   routers?: Record<string, RouterConfig>;
   defaultRouter?: string;
-  defaultModel?: string;
+  defaultModel?: ModelId;
   hooks?: AIHooks;
   access?: AIAccessConfig;
   /** Deployment identifier attached to telemetry spans. Default: `FROGBOT_DEPLOYMENT_ID` env or `'local'`. */
@@ -201,7 +195,7 @@ export type SanitizedAIConfig = {
   providers: ProviderConfig;
   routers: Record<string, RouterConfig>;
   defaultRouter?: string;
-  defaultModel?: string;
+  defaultModel?: ModelId;
   hooks: SanitizedAIHooks;
   access: Required<AIAccessConfig>;
   telemetry: SanitizedAITelemetryConfig;

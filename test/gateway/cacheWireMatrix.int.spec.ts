@@ -133,7 +133,7 @@ const providers = [
     factory: (fetch: typeof globalThis.fetch) => createAnthropic({ apiKey: 'test', fetch }),
   },
   {
-    name: 'amazon-bedrock',
+    name: 'bedrock',
     model: 'anthropic.claude-sonnet-4-20250514-v1:0',
     successBody: successBodies.bedrock,
     factory: (fetch: typeof globalThis.fetch) =>
@@ -286,7 +286,7 @@ const wireCases: WireCase[] = [
   },
   {
     name: 'bedrock request cache point',
-    provider: 'amazon-bedrock',
+    provider: 'bedrock',
     route: '/v1/chat/completions',
     body: {
       cache_control: { type: 'ephemeral', ttl: '1h' },
@@ -297,7 +297,7 @@ const wireCases: WireCase[] = [
   },
   {
     name: 'bedrock system cache point',
-    provider: 'amazon-bedrock',
+    provider: 'bedrock',
     route: '/v1/messages',
     body: {
       system: [{ type: 'text', text: 'system', cache_control: { type: 'ephemeral', ttl: '5m' } }],
@@ -307,7 +307,7 @@ const wireCases: WireCase[] = [
   },
   {
     name: 'bedrock non-Anthropic model has no cache point',
-    provider: 'amazon-bedrock',
+    provider: 'bedrock',
     model: 'amazon.nova-pro-v1:0',
     route: '/v1/chat/completions',
     body: { cache_control: { type: 'ephemeral' }, messages: [{ role: 'user', content: 'hello' }] },
@@ -315,7 +315,7 @@ const wireCases: WireCase[] = [
   },
   {
     name: 'bedrock content cache point',
-    provider: 'amazon-bedrock',
+    provider: 'bedrock',
     route: '/v1/messages',
     body: {
       messages: [

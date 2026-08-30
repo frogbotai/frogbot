@@ -94,7 +94,7 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     };
     void bedrockCachePoint(
       makeArgs({
-        model: 'amazon-bedrock/anthropic.claude-sonnet-4',
+        model: 'bedrock/anthropic.claude-sonnet-4',
         providerOptions,
         messages: [message],
       }),

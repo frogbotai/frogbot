@@ -131,12 +131,12 @@ describe('message provider options ordering', () => {
 
   it('forwards messages service_tier to Bedrock', async () => {
     let callOptions: LanguageModelV4CallOptions | undefined;
-    const app = makeApp('amazon-bedrock', (options) => {
+    const app = makeApp('bedrock', (options) => {
       callOptions = options;
     });
 
     const { status } = await postJson(app, '/v1/messages', {
-      model: 'amazon-bedrock/anthropic.claude-sonnet-4-20250514-v1:0',
+      model: 'bedrock/anthropic.claude-sonnet-4-20250514-v1:0',
       max_tokens: 100,
       service_tier: 'standard_only',
       messages: [{ role: 'user', content: 'hello' }],

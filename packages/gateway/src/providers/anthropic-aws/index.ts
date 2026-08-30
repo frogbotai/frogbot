@@ -14,7 +14,7 @@
 // Separate from the full `bedrock` provider because:
 //   1. Anthropic-specific features (thinking, cache_control) map natively
 //      through the Anthropic wire format.
-//   2. The canonical ID prefix is `anthropic-aws/` rather than `amazon-bedrock/`.
+//   2. The canonical ID prefix is `anthropic-aws/` rather than `bedrock/`.
 
 import {
   type AnthropicAwsProvider,

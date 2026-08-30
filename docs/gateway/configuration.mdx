@@ -42,7 +42,7 @@ Set `models` on a built-in provider to allow only those models. IDs are unprefix
 ```ts
 export default defineConfig({
   providers: {
-    'amazon-bedrock': {
+    'bedrock': {
       models: [
         'zai.glm-4.7-flash',
         'us.anthropic.claude-sonnet-5'
@@ -68,7 +68,7 @@ OPENAI_API_KEY=sk-... ANTHROPIC_API_KEY=sk-ant-... npx @frogbotai/gateway
 | --- | --- |
 | `openai` | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_ORGANIZATION`, `OPENAI_PROJECT` |
 | `anthropic` | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL` |
-| `amazon-bedrock` | `AWS_BEARER_TOKEN_BEDROCK`, or `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` + `AWS_REGION` (+ optional `AWS_SESSION_TOKEN`) |
+| `bedrock` | `AWS_BEARER_TOKEN_BEDROCK`, or `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` + `AWS_REGION` (+ optional `AWS_SESSION_TOKEN`) |
 
 Every built-in provider has an equivalent list. If none resolve, the CLI exits with an error naming every env var it checked. A config file merges on top of env-discovered providers rather than replacing them — the file wins on conflicts.
 

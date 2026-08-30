@@ -237,7 +237,7 @@ describe('bedrockProvider.build', () => {
   });
 
   it('routes catalogued Chat models through Mantle', () => {
-    const entry = DEFAULT_MODEL_CATALOG.get('amazon-bedrock/openai.gpt-5.6-luna') as
+    const entry = DEFAULT_MODEL_CATALOG.get('bedrock/openai.gpt-5.6-luna') as
       (object & { sdk?: { api: string; npm: string; shape: string } }) | undefined;
     const original = entry?.sdk;
     if (entry) {

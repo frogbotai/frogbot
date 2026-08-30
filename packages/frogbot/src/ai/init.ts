@@ -2,8 +2,7 @@
 // `@frogbotai/gateway` and creates the in-process gateway instance at boot.
 //
 // FrogBot's provider keys mostly match the gateway's provider table; the
-// two renames (`bedrock` → `amazon-bedrock`, `together` → `togetherai`) and
-// replicate's `apiKey` → `apiToken` are normalized here. Custom
+// Replicate's `apiKey` → `apiToken` is normalized here. Custom
 // `openai-compatible` entries become gateway providers under their configured
 // key.
 
@@ -19,7 +18,7 @@ import type {
 } from './types.js';
 import { toGatewayHooks } from './hooks.js';
 import { logUsage } from './logUsage.js';
-import { getGatewayProviderName, isProviderName } from './providerNames.js';
+import { isProviderName } from './providerNames.js';
 
 function isCustomProvider(entry: object): entry is CustomProviderEntry {
   return 'type' in entry && entry.type === 'openai-compatible';
@@ -51,7 +50,7 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
       if (!isProviderName(key)) {
         throw new Error(`[frogbot] Custom provider '${key}' must have type: 'openai-compatible'.`);
       }
-      setGatewayProvider(providers, getGatewayProviderName(key), {});
+      setGatewayProvider(providers, key, {});
       continue;
     }
 
@@ -92,7 +91,7 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
           "[frogbot] Provider 'bedrock' requires a region or explicit AWS credentials.",
         );
       }
-      providers['amazon-bedrock'] = entry;
+      providers.bedrock = entry;
       continue;
     }
 
@@ -101,7 +100,7 @@ export function buildGatewayConfig(config: SanitizedAIConfig): GatewayConfig {
         `[frogbot] Provider '${key}' requires a non-empty apiKey when configured with an object.`,
       );
     }
-    setGatewayProvider(providers, getGatewayProviderName(key), {
+    setGatewayProvider(providers, key, {
       apiKey: entry.apiKey,
       ...(entry.models !== undefined && { models: entry.models }),
     });

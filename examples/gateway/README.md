@@ -8,14 +8,14 @@ One `@frogbotai/gateway` instance — embedded in a ~65-line Hono server (`src/s
 > This example runs `@frogbotai/gateway` standalone, with zero FrogBot dependencies. FrogBot's core framework embeds this exact package internally to power its own `ai` config block — see [Configure AI in FrogBot](https://docs.frogbot.ai/configuration/ai) if that's what you're looking for instead.
 
 ```
-                          ┌──────────────────────┐──── amazon-bedrock/... ───▶ AWS Bedrock
+                          ┌──────────────────────┐──── bedrock/... ───▶ AWS Bedrock
   opencode / OpenAI SDK   │  @frogbotai/gateway  │──── anthropic/... ───────▶ Anthropic
   curl / any client  ────▶│  localhost:3939/v1   │──── openai/... ──────────▶ OpenAI
                           │                      │──── fireworks/... ──────▶ Fireworks
                           └──────────────────────┘──── ollama/... ──────────▶ Ollama (:11434)
 ```
 
-Clients pick the backend with the model prefix: `amazon-bedrock/<model>`, `anthropic/<model>`, `openai/<model>`, `fireworks/<model>`, or `ollama/<model>`. Nothing else about the request changes.
+Clients pick the backend with the model prefix: `bedrock/<model>`, `anthropic/<model>`, `openai/<model>`, `fireworks/<model>`, or `ollama/<model>`. Nothing else about the request changes.
 
 ## Setup
 
@@ -41,7 +41,7 @@ Fill in whichever provider slots you want in `.env`. AWS Bedrock supports two au
 | `FIREWORKS_API_KEY`                                          | Fireworks provider — enables `fireworks/...` routes                           |
 | `OLLAMA_BASE_URL`                                            | Ollama's OpenAI-compatible endpoint (defaults to `http://localhost:11434/v1`) |
 
-Every provider slot is optional and independent: leave a slot empty and that provider is simply skipped — the startup log prints exactly which providers registered. Reasoning (`reasoning_effort`) is translated to native extended-thinking for Claude on both `amazon-bedrock/...` and `anthropic/...`.
+Every provider slot is optional and independent: leave a slot empty and that provider is simply skipped — the startup log prints exactly which providers registered. Reasoning (`reasoning_effort`) is translated to native extended-thinking for Claude on both `bedrock/...` and `anthropic/...`.
 
 ## Run
 
@@ -71,12 +71,12 @@ Bedrock route:
 curl http://localhost:3939/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
-    "model": "amazon-bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0",
+    "model": "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0",
     "messages": [{ "role": "user", "content": "Hello from Bedrock" }]
   }'
 ```
 
-Bedrock model IDs pass through as-is, so use whatever your account has access to — cross-region inference profiles (`us.anthropic...`, `eu.amazon...`) or base IDs. Shorthands like `amazon-bedrock/claude-4-sonnet` and `amazon-bedrock/nova-pro` resolve to the base model IDs, which require on-demand access rather than an inference profile.
+Bedrock model IDs pass through as-is, so use whatever your account has access to — cross-region inference profiles (`us.anthropic...`, `eu.amazon...`) or base IDs. Shorthands like `bedrock/claude-4-sonnet` and `bedrock/nova-pro` resolve to the base model IDs, which require on-demand access rather than an inference profile.
 
 ## Point opencode at it
 
@@ -88,8 +88,8 @@ opencode
 
 Models available under the `frogbot-gateway` provider:
 
-- `amazon-bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0` — Claude Sonnet 4 via Bedrock
-- `amazon-bedrock/us.amazon.nova-pro-v1:0` — Nova Pro via Bedrock
+- `bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0` — Claude Sonnet 4 via Bedrock
+- `bedrock/us.amazon.nova-pro-v1:0` — Nova Pro via Bedrock
 - `ollama/llama3.2` — local inference via Ollama
 
 opencode never sees an upstream credential — it talks plain OpenAI wire format to `localhost:3939/v1` and the gateway holds the provider keys. Any other OpenAI-compatible client (OpenAI SDK, LangChain, LiteLLM, curl) works the same way.

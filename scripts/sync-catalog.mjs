@@ -10,7 +10,7 @@ const catalogPath = resolve(root, 'packages/frogbot/src/ai/catalog.json');
 const gatewayPath = resolve(root, 'packages/gateway/src/providers/catalog.data.ts');
 
 const PROVIDERS = {
-  'amazon-bedrock': 'amazon-bedrock',
+  'amazon-bedrock': 'bedrock',
   anthropic: 'anthropic',
   cerebras: 'cerebras',
   cohere: 'cohere',

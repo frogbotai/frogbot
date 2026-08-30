@@ -82,7 +82,7 @@ describe('SDK cache contracts', () => {
       ],
     });
 
-    expect(providerOptionsNamespace('amazon-bedrock')).toBe('bedrock');
+    expect(providerOptionsNamespace('bedrock')).toBe('bedrock');
     expect(capture.getBody().messages[0].content[1].cachePoint).toEqual({
       type: 'default',
       ttl: '1h',

@@ -206,9 +206,9 @@ describe('resolveProvider', () => {
   it('routes Bedrock inference profiles and rejects excluded bare IDs', () => {
     const bedrockProvider = new MockProviderV4();
     const bedrockRegistry = {
-      'amazon-bedrock': bedrockProvider,
+      'bedrock': bedrockProvider,
     } as unknown as ProviderRegistry;
-    const profileId = 'amazon-bedrock/us.meta.llama3-3-70b-instruct-v1:0';
+    const profileId = 'bedrock/us.meta.llama3-3-70b-instruct-v1:0';
 
     expect(
       resolveProvider({
@@ -220,7 +220,7 @@ describe('resolveProvider', () => {
     ).toBe('us.meta.llama3-3-70b-instruct-v1:0');
     expect(() =>
       resolveProvider({
-        modelId: 'amazon-bedrock/meta.llama3-3-70b-instruct-v1:0',
+        modelId: 'bedrock/meta.llama3-3-70b-instruct-v1:0',
         operation: 'chat.completions',
         providers: bedrockRegistry,
         models: DEFAULT_MODEL_CATALOG,
@@ -242,15 +242,15 @@ describe('resolveProvider', () => {
 
   it('enforces allowlists after canonicalizing model aliases', () => {
     const allowlists = new Map([
-      ['amazon-bedrock', new Set(['amazon-bedrock/anthropic.claude-sonnet-4-20250514-v1:0'])],
+      ['bedrock', new Set(['bedrock/anthropic.claude-sonnet-4-20250514-v1:0'])],
     ]);
     const bedrockRegistry = {
-      'amazon-bedrock': new MockProviderV4(),
+      'bedrock': new MockProviderV4(),
     } as unknown as ProviderRegistry;
 
     expect(
       resolveProvider({
-        modelId: 'amazon-bedrock/claude-4-sonnet',
+        modelId: 'bedrock/claude-4-sonnet',
         operation: 'chat.completions',
         providers: bedrockRegistry,
         allowlists,
@@ -258,7 +258,7 @@ describe('resolveProvider', () => {
     ).toBe('anthropic.claude-sonnet-4-20250514-v1:0');
     expect(() =>
       resolveProvider({
-        modelId: 'amazon-bedrock/claude-4-opus',
+        modelId: 'bedrock/claude-4-opus',
         operation: 'chat.completions',
         providers: bedrockRegistry,
         allowlists,

@@ -45,12 +45,12 @@ describe('presetFor', () => {
       operations: ['chat.completions'],
       capabilities: { reasoning: true, promptCaching: true },
       context: { input: 200000, output: 8192 },
-      providers: ['anthropic', 'amazon-bedrock'],
+      providers: ['anthropic', 'bedrock'],
     });
 
     expect(entry.created).toBe('2025-05-14');
     expect(entry.knowledge).toBe('2025-04-01');
-    expect(entry.providers).toEqual(['anthropic', 'amazon-bedrock']);
+    expect(entry.providers).toEqual(['anthropic', 'bedrock']);
   });
 });
 
@@ -119,14 +119,14 @@ describe('defineModelCatalog', () => {
 
 describe('default catalog Bedrock inference profiles', () => {
   const profiles = [
-    'amazon-bedrock/global.amazon.nova-2-lite-v1:0',
-    'amazon-bedrock/us.meta.llama3-1-8b-instruct-v1:0',
-    'amazon-bedrock/us.meta.llama3-3-70b-instruct-v1:0',
+    'bedrock/global.amazon.nova-2-lite-v1:0',
+    'bedrock/us.meta.llama3-1-8b-instruct-v1:0',
+    'bedrock/us.meta.llama3-3-70b-instruct-v1:0',
   ];
   const bareIds = [
-    'amazon-bedrock/amazon.nova-2-lite-v1:0',
-    'amazon-bedrock/meta.llama3-1-8b-instruct-v1:0',
-    'amazon-bedrock/meta.llama3-3-70b-instruct-v1:0',
+    'bedrock/amazon.nova-2-lite-v1:0',
+    'bedrock/meta.llama3-1-8b-instruct-v1:0',
+    'bedrock/meta.llama3-3-70b-instruct-v1:0',
   ];
 
   it('includes invocable profile IDs and excludes broken bare IDs', () => {

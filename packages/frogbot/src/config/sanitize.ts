@@ -30,7 +30,7 @@ import { isKnownModelId } from '../ai/catalog.js';
 import { getConfiguredModelIds } from '../ai/models.js';
 import { createPolicyHooks } from '../ai/policy.js';
 import { createPolicyFields, mergePolicyFields } from '../ai/policyFields.js';
-import { getGatewayProviderName, isProviderName } from '../ai/providerNames.js';
+import { isProviderName } from '../ai/providerNames.js';
 import { resolveUsageCollection } from '../ai/usage/collection.js';
 import { buildManifestEndpoint } from '../chat/manifest.js';
 import { buildChatEndpoints } from '../chat/endpoints.js';
@@ -246,11 +246,10 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
       if (!Array.isArray(provider.models)) {
         throw new Error(`[frogbot] Provider '${key}' models must be an array.`);
       }
-      const gatewayProvider = getGatewayProviderName(key);
       for (const model of provider.models) {
         if (
           typeof model !== 'string' ||
-          !isKnownModelId(`${gatewayProvider}/${model}`, new Set([gatewayProvider]))
+          !isKnownModelId(`${key}/${model}`, new Set([key]))
         ) {
           throw new Error(
             `[frogbot] Provider '${key}' models contains unknown model: ${String(model)}.`,
@@ -306,7 +305,7 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
     const providers = new Set(
       Object.entries(ai.providers)
         .filter(([, entry]) => entry != null)
-        .map(([name]) => (isProviderName(name) ? getGatewayProviderName(name) : name)),
+        .map(([name]) => name),
     );
     if (!provider || !providers.has(provider)) {
       throw new Error(
@@ -497,9 +496,7 @@ function sanitizeAgents(
   const providers = new Set<string>(
     Object.entries(ai.providers)
       .filter(([, entry]) => entry != null)
-      .map(([provider]) =>
-        isProviderName(provider) ? getGatewayProviderName(provider) : provider,
-      ),
+      .map(([provider]) => provider),
   );
   const slugs = new Set<string>();
 

@@ -79,7 +79,7 @@ function makeBedrock() {
 
 function makeApp() {
   return createApp({
-    registry: { 'amazon-bedrock': makeBedrock() } as unknown as ProviderRegistry,
+    registry: { 'bedrock': makeBedrock() } as unknown as ProviderRegistry,
   });
 }
 
@@ -98,7 +98,7 @@ afterEach(() => {
 describe('Bedrock file content wire contract', () => {
   it('sends chat completion inline image bytes as base64', async () => {
     await postJson(makeApp(), '/v1/chat/completions', {
-      model: `amazon-bedrock/${STANDARD_MODEL}`,
+      model: `bedrock/${STANDARD_MODEL}`,
       messages: [
         {
           role: 'user',
@@ -112,7 +112,7 @@ describe('Bedrock file content wire contract', () => {
 
   it('sends messages inline image bytes as base64', async () => {
     await postJson(makeApp(), '/v1/messages', {
-      model: `amazon-bedrock/${STANDARD_MODEL}`,
+      model: `bedrock/${STANDARD_MODEL}`,
       max_tokens: 10,
       messages: [
         {
@@ -129,7 +129,7 @@ describe('Bedrock file content wire contract', () => {
 
   it('sends messages inline PDF bytes as base64', async () => {
     await postJson(makeApp(), '/v1/messages', {
-      model: `amazon-bedrock/${STANDARD_MODEL}`,
+      model: `bedrock/${STANDARD_MODEL}`,
       max_tokens: 10,
       messages: [
         {
@@ -149,7 +149,7 @@ describe('Bedrock file content wire contract', () => {
 
   it('sends tool-result image bytes without throwing', async () => {
     const { status } = await postJson(makeApp(), '/v1/messages', {
-      model: `amazon-bedrock/${STANDARD_MODEL}`,
+      model: `bedrock/${STANDARD_MODEL}`,
       max_tokens: 10,
       tools: [
         { name: 'look', description: 'Look', input_schema: { type: 'object', properties: {} } },
@@ -182,7 +182,7 @@ describe('Bedrock file content wire contract', () => {
   });
 
   it('sends Mantle chat image data as a valid data URL', async () => {
-    const key = `amazon-bedrock/${MANTLE_CHAT_MODEL}`;
+    const key = `bedrock/${MANTLE_CHAT_MODEL}`;
     const get = DEFAULT_MODEL_CATALOG.get.bind(DEFAULT_MODEL_CATALOG);
     vi.spyOn(DEFAULT_MODEL_CATALOG, 'get').mockImplementation((id) =>
       id === key
@@ -197,7 +197,7 @@ describe('Bedrock file content wire contract', () => {
         : get(id),
     );
     await postJson(makeApp(), '/v1/chat/completions', {
-      model: `amazon-bedrock/${MANTLE_CHAT_MODEL}`,
+      model: `bedrock/${MANTLE_CHAT_MODEL}`,
       messages: [
         {
           role: 'user',
@@ -213,7 +213,7 @@ describe('Bedrock file content wire contract', () => {
 
   it('sends Mantle responses image data as a valid data URL', async () => {
     await postJson(makeApp(), '/v1/chat/completions', {
-      model: `amazon-bedrock/${MANTLE_RESPONSES_MODEL}`,
+      model: `bedrock/${MANTLE_RESPONSES_MODEL}`,
       messages: [
         {
           role: 'user',
@@ -232,7 +232,7 @@ describe('Bedrock file content wire contract', () => {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        model: `amazon-bedrock/${STANDARD_MODEL}`,
+        model: `bedrock/${STANDARD_MODEL}`,
         stream: true,
         messages: [
           {
@@ -249,14 +249,14 @@ describe('Bedrock file content wire contract', () => {
 
   it('sends in-process gateway image bytes as base64', async () => {
     const provider = Object.assign({}, makeBedrock(), { embeddingModel: vi.fn() });
-    const gateway = createGateway({ providers: { 'amazon-bedrock': provider } });
+    const gateway = createGateway({ providers: { 'bedrock': provider } });
     const prompt: LanguageModelV4Prompt = [
       {
         role: 'user',
         content: [{ type: 'file', mediaType: 'image/png', data: { type: 'data', data: PNG } }],
       },
     ];
-    await gateway.chatModel(`amazon-bedrock/${STANDARD_MODEL}`).doGenerate({ prompt });
+    await gateway.chatModel(`bedrock/${STANDARD_MODEL}`).doGenerate({ prompt });
 
     expect(imageContent()).toEqual({ format: 'png', source: { bytes: PNG } });
   });

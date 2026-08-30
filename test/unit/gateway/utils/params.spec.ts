@@ -116,7 +116,7 @@ describe('forwardLanguageParams', () => {
         service_tier: 'reserved',
       },
     };
-    forwardLanguageParams(opts, 'amazon-bedrock');
+    forwardLanguageParams(opts, 'bedrock');
     expect(opts['bedrock']).toEqual({ serviceTier: 'reserved' });
     expect(opts['unknown']).toBeUndefined();
   });
@@ -152,8 +152,8 @@ describe('forwardLanguageParams', () => {
 });
 
 describe('providerOptionsNamespace', () => {
-  it('maps amazon-bedrock to the SDK bedrock namespace', () => {
-    expect(providerOptionsNamespace('amazon-bedrock')).toBe('bedrock');
+  it('maps bedrock to the SDK bedrock namespace', () => {
+    expect(providerOptionsNamespace('bedrock')).toBe('bedrock');
   });
 
   it('maps anthropic-aws to the SDK anthropic namespace', () => {
@@ -162,8 +162,8 @@ describe('providerOptionsNamespace', () => {
 });
 
 describe('CACHE_FIELD_REJECTING_PROVIDERS', () => {
-  it('contains amazon-bedrock', () => {
-    expect(CACHE_FIELD_REJECTING_PROVIDERS.has('amazon-bedrock')).toBe(true);
+  it('contains bedrock', () => {
+    expect(CACHE_FIELD_REJECTING_PROVIDERS.has('bedrock')).toBe(true);
   });
 });
 
