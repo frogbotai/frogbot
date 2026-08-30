@@ -1,9 +1,11 @@
+import type { FrogBotSDK } from '@frogbotai/sdk';
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import { ChatHistory, deriveChatTitle } from '../../../../packages/ui/src/chat/chat-history';
 import { ChatShell } from '../../../../packages/ui/src/chat/chat-shell';
 import { ChatStatus } from '../../../../packages/ui/src/chat/chat-status';
-import { ChatHistory, deriveChatTitle } from '../../../../packages/ui/src/chat/chat-history';
 
 describe('provider-free chat shell', () => {
   it('selects history and exposes active state', () => {
@@ -37,6 +39,45 @@ describe('provider-free chat shell', () => {
     expect(deriveChatTitle(messages, 'Fallback')).toBe('A title that is too long');
     expect(deriveChatTitle(messages, 'Fallback', 12)).toBe('A title tha…');
     expect(deriveChatTitle([], 'Fallback')).toBe('Fallback');
+  });
+
+  it('deletes an active chat through confirmation and enters the new-chat state', async () => {
+    const user = userEvent.setup();
+    const onNewChat = vi.fn();
+    const request = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            docs: [{ id: 'message-1' }],
+            page: 1,
+            totalDocs: 1,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPrevPage: false,
+          }),
+        ),
+      )
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    render(
+      <ChatHistory
+        activeChatId="chat-1"
+        chats={[{ id: 'chat-1', agent: 'a', title: 'First' }]}
+        chatsSlug="chats"
+        fallbackTitle="Untitled"
+        messagesSlug="messages"
+        onChatChange={vi.fn()}
+        onNewChat={onNewChat}
+        sdk={{ request } as unknown as FrogBotSDK}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Chat actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+
+    await vi.waitFor(() => expect(onNewChat).toHaveBeenCalledOnce());
+    expect(request).toHaveBeenLastCalledWith('/chats/chat-1', { method: 'DELETE' });
   });
 
   it('renders shell and injected status content without a provider', () => {

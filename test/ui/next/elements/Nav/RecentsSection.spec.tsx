@@ -1,13 +1,16 @@
 import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { PayloadRequest, ServerProps } from 'payload';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const find = vi.fn();
 const fetch = vi.fn();
 let pathname = '/control';
+const push = vi.fn();
 
 vi.mock('next/navigation.js', () => ({
   usePathname: () => pathname,
+  useRouter: () => ({ push }),
 }));
 
 vi.mock('@payloadcms/ui', () => ({
@@ -39,8 +42,8 @@ vi.mock('../../../../../packages/next/src/elements/Nav/NavItem', () => ({
   ),
 }));
 
-import { NavSection, RecentsSection } from '../../../../../packages/next/src/index';
 import { bucketRecents } from '../../../../../packages/next/src/elements/Nav/RecentsSection.client';
+import { NavSection, RecentsSection } from '../../../../../packages/next/src/index';
 
 function props(): { req: PayloadRequest } & ServerProps {
   const req = { user: { id: 'user-1' } } as PayloadRequest;
@@ -60,6 +63,7 @@ describe('RecentsSection', () => {
     fetch.mockReset();
     find.mockReset();
     pathname = '/control';
+    push.mockReset();
   });
 
   it('queries with authenticated access and renders normalized seeds on first paint', async () => {
@@ -90,6 +94,7 @@ describe('RecentsSection', () => {
     expect(screen.getByRole('link', { name: 'View all' }).getAttribute('href')).toBe(
       '/control/collections/conversations',
     );
+    expect(screen.getAllByRole('button', { name: 'Chat actions' })).toHaveLength(2);
   });
 
   it('renders the empty state without querying when unauthenticated', async () => {
@@ -137,6 +142,43 @@ describe('RecentsSection', () => {
 
     expect(await screen.findByRole('link', { name: 'New chat' })).not.toBeNull();
     expect(fetch).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+
+  it('confirms deletion and leaves an active recent document', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', fetch);
+    fetch
+      .mockResolvedValueOnce(
+        Response.json({
+          docs: [],
+          page: 1,
+          totalDocs: 0,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPrevPage: false,
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          docs: [],
+          page: 1,
+          totalDocs: 0,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPrevPage: false,
+        }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    find.mockResolvedValueOnce({ docs: [{ id: 'seed', title: 'Seed chat', agent: 'general' }] });
+    pathname = '/control/collections/conversations/seed';
+    render(await RecentsSection(props()));
+
+    await user.click(screen.getByRole('button', { name: 'Chat actions' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+
+    await vi.waitFor(() => expect(push).toHaveBeenCalledWith('/control/collections/conversations'));
     vi.unstubAllGlobals();
   });
 

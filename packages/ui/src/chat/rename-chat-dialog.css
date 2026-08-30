@@ -1,0 +1,28 @@
+.fb-rename-chat-dialog {
+  max-width: 28rem;
+}
+
+.fb-rename-chat-dialog__suggestion {
+  align-items: center;
+  background: var(--theme-base-100);
+  border: 1px solid var(--theme-base-200);
+  border-radius: 0.375rem;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  width: 100%;
+}
+
+.fb-rename-chat-dialog__suggestion:hover,
+.fb-rename-chat-dialog__suggestion:focus-visible {
+  background: var(--theme-base-150);
+}
+
+.fb-rename-chat-dialog__suggestion svg {
+  flex: 0 0 auto;
+  height: 1rem;
+  width: 1rem;
+}

@@ -1,0 +1,36 @@
+.fb-chat-row-actions__trigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0.25rem;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  height: 1.5rem;
+  justify-content: center;
+  opacity: 0;
+  padding: 0;
+  width: 1.5rem;
+}
+
+.fb-chat-row-actions__trigger:focus-visible,
+.fb-chat-row-actions__trigger--open,
+*:hover > .fb-chat-row-actions__trigger,
+*:focus-within > .fb-chat-row-actions__trigger {
+  opacity: 1;
+}
+
+.fb-chat-row-actions__trigger:hover {
+  background: var(--theme-base-200);
+}
+
+.fb-chat-row-actions__trigger svg,
+.fb-dropdown-menu__item svg,
+.fb-context-menu__item svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.fb-chat-row-actions__delete {
+  color: var(--theme-error-500, #dc2626);
+}

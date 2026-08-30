@@ -1,10 +1,13 @@
 import type { UIMessage } from 'ai';
 
+import { getAgent } from '../agents/service.js';
 import { resolveSmallModel } from '../ai/models.js';
+import { resolveModel } from '../ai/resolve.js';
 import type { ModelId } from '../ai/types.js';
 import type { DocID } from '../collections/config/types.js';
 import type { FrogbotRequest } from '../types/request.js';
 import { firstUserText } from './firstUserText.js';
+import { messagesToUIMessages, type PersistedMessage } from './messagesToUIMessages.js';
 
 type SuggestChatTitleProps = {
   req: FrogbotRequest;
@@ -18,8 +21,53 @@ type GenerateChatTitleProps = SuggestChatTitleProps & {
 };
 
 type ChatDocument = {
+  id?: DocID;
+  agent?: string | null;
   title?: string | null;
+  user?: { id: DocID } | DocID | null;
 };
+
+export async function suggestChatTitleForChat({
+  req,
+  chatId,
+}: {
+  req: FrogbotRequest;
+  chatId: DocID;
+}): Promise<string | undefined> {
+  const config = req.frogbot.config.chat;
+  if (!config.enabled) return undefined;
+  const chat = (await req.frogbot.findByID({
+    collection: config.chatsSlug,
+    id: chatId,
+    depth: 0,
+    req,
+    overrideAccess: false,
+  })) as ChatDocument;
+  const owner = typeof chat.user === 'object' && chat.user !== null ? chat.user.id : chat.user;
+  if (owner === undefined || owner === null || String(owner) !== String(req.user?.id)) {
+    return undefined;
+  }
+  const messages = (await req.frogbot.find({
+    collection: config.messagesSlug,
+    where: { chat: { equals: chatId } },
+    sort: ['createdAt', 'id'],
+    pagination: false,
+    depth: 0,
+    req,
+    overrideAccess: false,
+  })) as unknown as { docs: PersistedMessage[] };
+  const agent = getAgent({ req, slug: chat.agent ?? undefined });
+  try {
+    return await suggestChatTitle({
+      req,
+      history: messagesToUIMessages(messages.docs),
+      mainModel: resolveModel(agent.config.model, req.frogbot.config.ai!),
+    });
+  } catch (error) {
+    req.frogbot.logger.error({ err: error, chatId }, '[frogbot] Failed to suggest chat title');
+    return undefined;
+  }
+}
 
 function messageText(message: UIMessage): string {
   return message.parts

@@ -5,15 +5,21 @@ export type { ComposerAttachment, FileReference, PasteAttachment } from '../chat
 export { bearerFetch, cookieFetch, createCookieSDK } from '../chat/auth';
 export type { ChatProps, ChatSidebarContext, MessageActionsSlotProps } from '../chat/chat';
 export { Chat } from '../chat/chat';
+export type { ChatHistoryProps } from '../chat/chat-history';
+export { ChatHistory, deriveChatTitle } from '../chat/chat-history';
+export type { ChatHistoryActionsProps } from '../chat/chat-history-actions';
+export { ChatHistoryActions } from '../chat/chat-history-actions';
+export type { ChatRowActionsProps, ChatRowMenuItemsProps } from '../chat/chat-row-actions';
+export { ChatRowActions, ChatRowMenuItems } from '../chat/chat-row-actions';
 export type { ChatShellProps } from '../chat/chat-shell';
 export { ChatShell } from '../chat/chat-shell';
 export type { ChatStatusProps } from '../chat/chat-status';
 export { ChatStatus } from '../chat/chat-status';
 export type { CodeBlockProps } from '../chat/code-block';
 export { CodeBlock } from '../chat/code-block';
-export { copyMarkdown } from '../chat/copy-markdown';
 export type { ComposerProps } from '../chat/composer';
 export { Composer } from '../chat/composer';
+export { copyMarkdown } from '../chat/copy-markdown';
 export type { DataPartValue } from '../chat/data-part';
 export { DataPart } from '../chat/data-part';
 export { FilePart } from '../chat/file-part';
@@ -50,16 +56,22 @@ export { messageDocumentToUIMessage, uiMessageToDocument } from '../chat/message
 export { MicControl } from '../chat/mic-control';
 export type { ModelSelectorModel, ModelSelectorProps } from '../chat/model-selector';
 export { ModelSelector } from '../chat/model-selector';
-export { branchChat, deleteChat, renameChat, updateChatAgent } from '../chat/mutations';
+export {
+  branchChat,
+  deleteChat,
+  renameChat,
+  suggestChatTitle,
+  updateChatAgent,
+} from '../chat/mutations';
 export type { PageContextButtonProps, PageContextTab } from '../chat/page-context-button';
 export { PageContextButton } from '../chat/page-context-button';
 export type { ChatManifest, ChatProviderValue } from '../chat/provider';
 export { ChatProvider, useChatProvider } from '../chat/provider';
 export { ReasoningPart } from '../chat/reasoning-part';
+export type { RenameChatDialogProps } from '../chat/rename-chat-dialog';
+export { RenameChatDialog } from '../chat/rename-chat-dialog';
 export { SourcePart } from '../chat/source-part';
 export { TextPart } from '../chat/text-part';
-export type { ChatHistoryProps } from '../chat/chat-history';
-export { ChatHistory, deriveChatTitle } from '../chat/chat-history';
 export { ToolPart } from '../chat/tool-part';
 export type { ToolSelectorProps, ToolSelectorTool } from '../chat/tool-selector';
 export { ToolSelector } from '../chat/tool-selector';

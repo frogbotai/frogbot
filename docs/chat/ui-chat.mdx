@@ -38,6 +38,27 @@ Chat renders no sidebar by default because the FrogBot admin navigation already 
 />
 ```
 
+## Chat row actions
+
+Admin recents include Rename and Delete actions. Hover a row to reveal its menu button, or right-click the row to open the same keyboard-accessible menu. Rename opens with the current title selected and requests one AI title suggestion; selecting the suggestion fills the input without saving it. Delete always asks for confirmation and removes the chat with its messages.
+
+Pass the SDK and configured collection slugs to add the same actions to a portable `ChatHistory`. Use `onNewChat` to clear controlled routing after the active chat is deleted:
+
+```tsx
+<ChatHistory
+  chats={chats}
+  activeChatId={activeChatId}
+  onChatChange={selectChat}
+  onNewChat={() => setChatId(undefined)}
+  fallbackTitle="Untitled"
+  sdk={sdk}
+  chatsSlug="chats"
+  messagesSlug="messages"
+/>
+```
+
+`ChatRowActions`, `ChatRowMenuItems`, `ChatHistoryActions`, and `RenameChatDialog` are independently exported from `@frogbotai/ui/chat` for custom row composition. `suggestChatTitle({ sdk, chatId })` calls the authenticated `POST /frogbot/chat/suggest-title` endpoint and resolves to the suggestion or `undefined` when generation produces no title.
+
 ## Message actions
 
 Completed user messages include Copy, Edit, and Branch actions. Assistant messages include Copy and Branch. Editing preserves non-text parts, replaces the selected message, removes later responses, and retries the conversation from that point. Branch creates and opens a separate chat containing the conversation through the selected message.

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   generateChatTitle,
   suggestChatTitle,
+  suggestChatTitleForChat,
 } from '../../../../packages/frogbot/src/chat/title.js';
 import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
@@ -20,7 +21,10 @@ const assistantMessage: UIMessage = {
 
 function makeReq({ title = null, text = 'Why Frogs Sing at Night' } = {}) {
   const generateText = vi.fn().mockResolvedValue({ text });
-  const findByID = vi.fn().mockResolvedValue({ id: 'chat-1', title });
+  const findByID = vi
+    .fn()
+    .mockResolvedValue({ id: 'chat-1', title, user: 'user-1', agent: 'helper' });
+  const find = vi.fn().mockResolvedValue({ docs: [userMessage] });
   const update = vi.fn().mockResolvedValue({ id: 'chat-1' });
   const error = vi.fn();
   const req = {
@@ -40,11 +44,14 @@ function makeReq({ title = null, text = 'Why Frogs Sing at Night' } = {}) {
       },
       generateText,
       findByID,
+      find,
       update,
       logger: { error },
+      agents: { helper: { config: { model: 'internal/chat' } } },
     },
+    user: { id: 'user-1' },
   } as unknown as FrogbotRequest;
-  return { req, generateText, findByID, update, error };
+  return { req, generateText, findByID, find, update, error };
 }
 
 describe('chat titles', () => {
@@ -71,6 +78,37 @@ describe('chat titles', () => {
 
     expect(title).toHaveLength(100);
     expect(title?.endsWith('…')).toBe(true);
+  });
+
+  it('suggests a title from an owned chat history', async () => {
+    const { req, find } = makeReq();
+
+    await expect(suggestChatTitleForChat({ req, chatId: 'chat-1' })).resolves.toBe(
+      'Why Frogs Sing at Night',
+    );
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'messages',
+        overrideAccess: false,
+        where: { chat: { equals: 'chat-1' } },
+      }),
+    );
+  });
+
+  it('does not suggest a title for a chat owned by another user', async () => {
+    const { req, findByID, generateText } = makeReq();
+    findByID.mockResolvedValue({ id: 'chat-1', user: 'user-2', agent: 'helper' });
+
+    await expect(suggestChatTitleForChat({ req, chatId: 'chat-1' })).resolves.toBeUndefined();
+    expect(generateText).not.toHaveBeenCalled();
+  });
+
+  it('returns no suggestion when generation fails', async () => {
+    const { req, generateText, error } = makeReq();
+    generateText.mockRejectedValue(new Error('upstream failed'));
+
+    await expect(suggestChatTitleForChat({ req, chatId: 'chat-1' })).resolves.toBeUndefined();
+    expect(error).toHaveBeenCalled();
   });
 
   it('skips chats whose history already has an assistant response', async () => {

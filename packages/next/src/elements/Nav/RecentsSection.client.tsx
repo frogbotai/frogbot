@@ -1,8 +1,13 @@
 'use client';
 
-import { createCookieSDK, type ChatDocument, useChats } from '@frogbotai/ui/chat';
+import {
+  type ChatDocument,
+  ChatHistoryActions,
+  createCookieSDK,
+  useChats,
+} from '@frogbotai/ui/chat';
 import { Link, useConfig } from '@payloadcms/ui';
-import { usePathname } from 'next/navigation.js';
+import { usePathname, useRouter } from 'next/navigation.js';
 import { useMemo } from 'react';
 
 import { NavItem } from './NavItem.js';
@@ -10,6 +15,7 @@ import { NavItem } from './NavItem.js';
 export type RecentsSectionClientProps = {
   chatsSlug: string;
   collectionPath: string;
+  messagesSlug: string;
   recents: ChatDocument[];
 };
 
@@ -56,10 +62,12 @@ export function bucketRecents(recents: ChatDocument[], now = new Date()) {
 export function RecentsSectionClient({
   chatsSlug,
   collectionPath,
+  messagesSlug,
   recents,
 }: RecentsSectionClientProps) {
   const { config } = useConfig();
   const pathname = usePathname();
+  const router = useRouter();
   const sdk = useMemo(() => createCookieSDK(config.routes.api), [config.routes.api]);
   const chats = useChats({
     sdk,
@@ -88,12 +96,26 @@ export function RecentsSectionClient({
             {bucket.docs.map((recent) => {
               const path = `${collectionPath}/${encodeURIComponent(String(recent.id))}`;
               return (
-                <NavItem
-                  active={pathname === path || pathname.startsWith(`${path}/`)}
+                <ChatHistoryActions
+                  chat={recent}
+                  chatsSlug={chatsSlug}
                   key={recent.id}
-                  label={recent.title || 'Untitled'}
-                  path={path}
-                />
+                  messagesSlug={messagesSlug}
+                  onDeleted={() => {
+                    if (pathname === path || pathname.startsWith(`${path}/`)) {
+                      router.push(collectionPath);
+                    }
+                  }}
+                  sdk={sdk}
+                >
+                  <div className="frogbot-recents-section__item">
+                    <NavItem
+                      active={pathname === path || pathname.startsWith(`${path}/`)}
+                      label={recent.title || 'Untitled'}
+                      path={path}
+                    />
+                  </div>
+                </ChatHistoryActions>
               );
             })}
           </div>

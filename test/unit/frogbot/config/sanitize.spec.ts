@@ -1251,6 +1251,7 @@ describe('frogbot sanitize', () => {
         '/agents/:slug/authorizations',
         '/agents',
         '/frogbot/chat/branch',
+        '/frogbot/chat/suggest-title',
       ]);
     });
 

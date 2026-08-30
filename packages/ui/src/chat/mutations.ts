@@ -2,7 +2,7 @@ import type { FrogBotSDK } from '@frogbotai/sdk';
 
 import type { MessageDocument } from './messages';
 import { chatRequest, type PayloadPage } from './rest';
-import { emitChatMutation, type ChatDocument } from './use-chats';
+import { type ChatDocument, emitChatMutation } from './use-chats';
 
 type ChatMutationOptions = {
   sdk: FrogBotSDK;
@@ -21,6 +21,22 @@ export async function branchChat(
   });
   emitChatMutation();
   return result.chatId;
+}
+
+export async function suggestChatTitle({
+  sdk,
+  chatId,
+}: Pick<ChatMutationOptions, 'sdk' | 'chatId'>): Promise<string | undefined> {
+  const result = await chatRequest<{ suggestion: string | null }>(
+    sdk,
+    '/frogbot/chat/suggest-title',
+    {
+      method: 'POST',
+      body: JSON.stringify({ chatId }),
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
+  return result.suggestion ?? undefined;
 }
 
 export async function renameChat(

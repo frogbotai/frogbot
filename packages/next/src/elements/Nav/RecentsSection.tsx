@@ -11,6 +11,7 @@ export type RecentsSectionProps = { req?: PayloadRequest } & ServerProps;
 export async function RecentsSection({ payload, req }: RecentsSectionProps) {
   const chat = getCachedFrogbot()?.config.chat;
   const chatsSlug = chat?.enabled ? chat.chatsSlug : '';
+  const messagesSlug = chat?.enabled ? chat.messagesSlug : '';
   let recents: ChatDocument[] = [];
   let collectionPath = '';
 
@@ -40,6 +41,7 @@ export async function RecentsSection({ payload, req }: RecentsSectionProps) {
       <RecentsSectionClient
         chatsSlug={chatsSlug}
         collectionPath={collectionPath}
+        messagesSlug={messagesSlug}
         recents={recents}
       />
     </NavSection>

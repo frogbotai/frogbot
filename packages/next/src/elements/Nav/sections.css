@@ -170,6 +170,16 @@
   gap: 2px;
 }
 
+.frogbot-recents-section__item {
+  align-items: center;
+  display: flex;
+}
+
+.frogbot-recents-section__item .frogbot-nav-item {
+  flex: 1;
+  min-width: 0;
+}
+
 .frogbot-recents-section__view-all {
   color: var(--theme-elevation-600);
   font-size: 12px;

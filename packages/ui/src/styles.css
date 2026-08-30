@@ -37,6 +37,7 @@
 @import "./chat/artifact.css";
 @import "./chat/attachments.css";
 @import "./chat/chat-history.css";
+@import "./chat/chat-row-actions.css";
 @import "./chat/chat-shell.css";
 @import "./chat/chat.css";
 @import "./chat/code-block.css";
@@ -54,6 +55,7 @@
 @import "./chat/model-selector.css";
 @import "./chat/page-context-button.css";
 @import "./chat/reasoning-part.css";
+@import "./chat/rename-chat-dialog.css";
 @import "./chat/source-part.css";
 @import "./chat/tool-part.css";
 @import "./chat/tool-selector.css";
