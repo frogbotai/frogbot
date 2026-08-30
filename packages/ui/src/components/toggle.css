@@ -1,0 +1,29 @@
+.fb-toggle {
+  display: inline-flex;
+  height: 2.5rem;
+  padding: 0 0.75rem;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-base-600);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-lg);
+}
+.fb-toggle:hover,
+.fb-toggle[data-state="on"] {
+  color: var(--theme-base-1000);
+  background: var(--theme-base-300);
+}
+.fb-toggle--outline {
+  border: 1px solid var(--theme-base-250);
+}
+.fb-toggle--sm {
+  height: 2.25rem;
+  padding: 0 0.625rem;
+}
+.fb-toggle--lg {
+  height: 2.75rem;
+  padding: 0 1.25rem;
+}

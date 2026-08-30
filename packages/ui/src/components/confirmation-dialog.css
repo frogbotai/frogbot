@@ -1,0 +1,13 @@
+.fb-confirmation-dialog {
+  position: fixed;
+}
+.fb-confirmation-dialog__loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-base-900);
+  background: color-mix(in srgb, var(--theme-base-0) 85%, transparent);
+  border-radius: inherit;
+}

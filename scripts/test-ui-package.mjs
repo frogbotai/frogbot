@@ -33,7 +33,10 @@ try {
   run('tar', ['-xzf', path.join(temporaryRoot, tarball), '-C', temporaryRoot]);
 
   const packageJSON = JSON.parse(fs.readFileSync(path.join(extractedRoot, 'package.json'), 'utf8'));
-  assert.deepEqual(Object.keys(packageJSON.exports).sort(), [...subpaths, './styles.css'].sort());
+  assert.deepEqual(
+    Object.keys(packageJSON.exports).sort(),
+    [...subpaths, './styles.css', './utilities.css'].sort(),
+  );
 
   for (const subpath of subpaths) {
     const entry = packageJSON.exports[subpath];
@@ -46,8 +49,10 @@ try {
   const cssFiles = fs
     .readdirSync(extractedRoot, { recursive: true })
     .filter((file) => file.endsWith('.css'));
-  assert.deepEqual(cssFiles, ['dist/styles.css']);
+  assert.ok(cssFiles.includes('dist/styles.css'));
+  assert.ok(cssFiles.includes('src/utilities.css'));
   assert.ok(fs.statSync(path.join(extractedRoot, 'dist/styles.css')).size > 0);
+  assert.ok(fs.statSync(path.join(extractedRoot, 'src/utilities.css')).size > 0);
   const css = fs.readFileSync(path.join(extractedRoot, 'dist/styles.css'), 'utf8');
   assert.match(css, /\.bg-background/);
   assert.match(css, /var\(--background\)/);

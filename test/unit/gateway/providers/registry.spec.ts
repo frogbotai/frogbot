@@ -206,7 +206,7 @@ describe('resolveProvider', () => {
   it('routes Bedrock inference profiles and rejects excluded bare IDs', () => {
     const bedrockProvider = new MockProviderV4();
     const bedrockRegistry = {
-      'bedrock': bedrockProvider,
+      bedrock: bedrockProvider,
     } as unknown as ProviderRegistry;
     const profileId = 'bedrock/us.meta.llama3-3-70b-instruct-v1:0';
 
@@ -245,7 +245,7 @@ describe('resolveProvider', () => {
       ['bedrock', new Set(['bedrock/anthropic.claude-sonnet-4-20250514-v1:0'])],
     ]);
     const bedrockRegistry = {
-      'bedrock': new MockProviderV4(),
+      bedrock: new MockProviderV4(),
     } as unknown as ProviderRegistry;
 
     expect(

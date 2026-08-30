@@ -34,12 +34,7 @@ describe('AccountMenu', () => {
     const user = userEvent.setup();
     const onNavigate = vi.fn();
     render(
-      <AccountMenu
-        {...props}
-        email="colby@frogbot.ai"
-        name="Colby Gilbert"
-        onNavigate={onNavigate}
-      >
+      <AccountMenu {...props} email="colby@frogbot.ai" name="Colby Gilbert" onNavigate={onNavigate}>
         <button type="button">Open account</button>
       </AccountMenu>,
     );

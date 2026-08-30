@@ -1,0 +1,51 @@
+.fb-switch {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 1.25rem;
+  padding: 2px;
+  align-items: center;
+  background: var(--theme-base-300);
+  border: 0;
+  border-radius: 9999px;
+}
+.fb-switch[data-state="checked"] {
+  background: var(--theme-base-850);
+}
+.fb-switch--secondary[data-state="checked"] {
+  background: var(--theme-brand-500);
+}
+.fb-switch--square {
+  border-radius: var(--radius-md);
+}
+.fb-switch--sm {
+  width: 2rem;
+  height: 1rem;
+}
+.fb-switch--lg {
+  width: 3.5rem;
+  height: 1.75rem;
+}
+.fb-switch--xl {
+  width: 4rem;
+  height: 2rem;
+}
+.fb-switch__thumb {
+  display: flex;
+  width: calc(50% - 1px);
+  aspect-ratio: 1;
+  align-items: center;
+  justify-content: center;
+  background: var(--theme-base-100);
+  border-radius: inherit;
+  transition: transform 150ms;
+}
+.fb-switch[data-state="checked"] .fb-switch__thumb {
+  transform: translateX(100%);
+}
+.fb-switch__checked-icon,
+.fb-switch[data-state="checked"] .fb-switch__unchecked-icon {
+  display: none;
+}
+.fb-switch[data-state="checked"] .fb-switch__checked-icon {
+  display: contents;
+}

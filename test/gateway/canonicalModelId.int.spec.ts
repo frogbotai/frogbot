@@ -58,7 +58,7 @@ describe('bedrock shorthand alias resolves to canonical ID before upstream — G
         return createMockModel();
       },
     };
-    const registry = { 'bedrock': fakeProvider } as ProviderRegistry;
+    const registry = { bedrock: fakeProvider } as ProviderRegistry;
     const app = createApp({ registry });
 
     const { status } = await postJson(app, '/v1/chat/completions', {

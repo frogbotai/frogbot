@@ -5,15 +5,17 @@ import type { ReactNode } from 'react';
 
 import type { ChatDocument } from './use-chats';
 
-export function deriveChatTitle(messages: UIMessage[], fallback: string, maxLength?: number): string {
+export function deriveChatTitle(
+  messages: UIMessage[],
+  fallback: string,
+  maxLength?: number,
+): string {
   const text = messages
     .find((message) => message.role === 'user')
     ?.parts.find((part) => part.type === 'text')
     ?.text.trim();
   if (!text) return fallback;
-  return maxLength && text.length > maxLength
-    ? `${text.slice(0, maxLength - 1).trimEnd()}…`
-    : text;
+  return maxLength && text.length > maxLength ? `${text.slice(0, maxLength - 1).trimEnd()}…` : text;
 }
 
 export type ChatHistoryProps = {

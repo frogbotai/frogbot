@@ -35,10 +35,7 @@ export function getConfiguredModelIds(ai: AIConfig | SanitizedAIConfig | undefin
   return [...modelIds].sort();
 }
 
-export function resolveSmallModel(
-  ai: AIConfig | SanitizedAIConfig,
-  mainModel: string,
-): string {
+export function resolveSmallModel(ai: AIConfig | SanitizedAIConfig, mainModel: string): string {
   if (ai.smallModel) return ai.smallModel;
   const provider = providerName(mainModel);
   if (!provider) return mainModel;
@@ -49,9 +46,9 @@ export function resolveSmallModel(
     .filter((model) =>
       Boolean(
         model &&
-          model.status !== 'deprecated' &&
-          model.cost &&
-          (model.operations.includes('chat.completions') || model.operations.includes('responses')),
+        model.status !== 'deprecated' &&
+        model.cost &&
+        (model.operations.includes('chat.completions') || model.operations.includes('responses')),
       ),
     )
     .map((model) => {
@@ -70,7 +67,8 @@ export function resolveSmallModel(
     const maxAge = Math.max(...items.map((item) => item.age), 0.01);
     return [...items].sort(
       (a, b) =>
-        (a.cost / maxCost) * 0.8 + (a.age / maxAge) * 0.2 -
+        (a.cost / maxCost) * 0.8 +
+        (a.age / maxAge) * 0.2 -
         ((b.cost / maxCost) * 0.8 + (b.age / maxAge) * 0.2),
     )[0]?.model.id;
   };

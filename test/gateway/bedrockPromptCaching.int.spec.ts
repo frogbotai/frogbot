@@ -29,7 +29,7 @@ function makeApp() {
     fetch,
   } as BedrockConfig);
   return createApp({
-    registry: { 'bedrock': bedrock } as unknown as ProviderRegistry,
+    registry: { bedrock: bedrock } as unknown as ProviderRegistry,
   });
 }
 

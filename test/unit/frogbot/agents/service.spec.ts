@@ -65,6 +65,9 @@ function makeRequest({
         chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
       },
       create,
+      findByID: vi.fn(() => Promise.resolve({ id: 'chat-1', title: null })),
+      generateText: vi.fn(() => Promise.resolve({ text: 'Chat title' })),
+      logger: { error: vi.fn() },
       update: vi.fn(() => Promise.resolve({ id: 'chat-1' })),
     },
   } as unknown as FrogbotRequest;

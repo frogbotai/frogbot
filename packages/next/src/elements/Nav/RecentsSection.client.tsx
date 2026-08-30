@@ -88,9 +88,9 @@ export function RecentsSectionClient({
             {bucket.docs.map((recent) => {
               const path = `${collectionPath}/${encodeURIComponent(String(recent.id))}`;
               return (
-                  <NavItem
-                    active={pathname === path || pathname.startsWith(`${path}/`)}
-                    key={recent.id}
+                <NavItem
+                  active={pathname === path || pathname.startsWith(`${path}/`)}
+                  key={recent.id}
                   label={recent.title || 'Untitled'}
                   path={path}
                 />

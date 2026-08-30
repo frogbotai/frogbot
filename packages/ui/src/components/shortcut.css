@@ -1,0 +1,6 @@
+.fb-shortcut {
+  flex-grow: 1;
+  color: var(--theme-base-600);
+  font-size: var(--text-xs);
+  letter-spacing: 0.1em;
+}

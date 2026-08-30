@@ -16,6 +16,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { FrogbotChatTransport, prepareChatRequest } from '../../packages/ui/src/chat/transport';
 import { createFrogbotSDK } from '../../packages/sdk/src/index';
+import { terminateProcess } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
@@ -67,6 +68,7 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
   let baseURL: string;
   let server: ChildProcess;
   let dataDir: string;
+  let token: string;
 
   beforeAll(async () => {
     const port = await getEphemeralPort();
@@ -96,17 +98,24 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
       if (Date.now() > deadline) throw new Error('scaffold dev server did not become ready');
       await new Promise((r) => setTimeout(r, 2000));
     }
+
+    const registration = await fetch(`${baseURL}/api/users/first-register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'scaffold@frogbot.test',
+        password: 'frogbot-e2e-password',
+        name: 'Scaffold Test',
+      }),
+    });
+    const body = (await registration.json()) as { token: string };
+    expect(registration.status, JSON.stringify(body)).toBe(200);
+    token = body.token;
   }, 240000);
 
-  afterAll(() => {
-    if (server?.pid) {
-      try {
-        process.kill(-server.pid, 'SIGKILL');
-      } catch {
-        server.kill('SIGKILL');
-      }
-    }
-    rmSync(dataDir, { recursive: true, force: true });
+  afterAll(async () => {
+    await terminateProcess(server);
+    if (dataDir) rmSync(dataDir, { recursive: true, force: true });
   });
 
   it('serves a FrogBot-branded admin login page', async () => {
@@ -120,15 +129,39 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
   });
 
   it('lists the scaffold agent at /api/agents', async () => {
-    const res = await fetch(`${baseURL}/api/agents`);
+    const res = await fetch(`${baseURL}/api/agents`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ agents: [{ slug: 'assistant' }] });
+    expect(await res.json()).toEqual({
+      defaultAgent: 'general',
+      agents: [
+        {
+          slug: 'general',
+          label: 'general',
+          source: 'config',
+          defaultModel: 'bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0',
+          models: ['bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0'],
+        },
+        {
+          slug: 'assistant',
+          label: 'assistant',
+          source: 'config',
+          defaultModel: 'bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0',
+          models: ['bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0'],
+        },
+      ],
+    });
   });
 
   it('streams SSE from the agent endpoint', async () => {
     const res = await fetch(`${baseURL}/api/agents/assistant`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
+      headers: {
+        'content-type': 'application/json',
+        accept: 'text/event-stream',
+        authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ prompt: 'Hello!' }),
     });
 
@@ -157,7 +190,10 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
   it('JSON agent POST returns 200 and persists one complete turn', async () => {
     const response = await fetch(`${baseURL}/api/agents/assistant`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ prompt: 'Reply with exactly: hello' }),
     });
     const body = (await response.json()) as {
@@ -174,7 +210,11 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
   it('fully consumed SSE agent POST persists one complete turn', async () => {
     const response = await fetch(`${baseURL}/api/agents/assistant`, {
       method: 'POST',
-      headers: { accept: 'text/event-stream', 'content-type': 'application/json' },
+      headers: {
+        accept: 'text/event-stream',
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ prompt: 'Reply with exactly: hello' }),
     });
     expect(response.status).toBe(200);
@@ -196,6 +236,7 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
       agentSlug: 'assistant',
       sdk: createFrogbotSDK({
         baseURL: `${baseURL}/api`,
+        headers: { authorization: `Bearer ${token}` },
         fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
           const response = await fetch(input, init);
           responseStatus = response.status;

@@ -1,0 +1,39 @@
+.fb-scroll-area {
+  position: relative;
+  overflow: hidden;
+}
+.fb-scroll-area__viewport {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+.fb-scroll-area__scrollbar {
+  display: flex;
+  padding: 1px;
+  touch-action: none;
+  user-select: none;
+}
+.fb-scroll-area__scrollbar--vertical {
+  width: 0.625rem;
+  height: 100%;
+}
+.fb-scroll-area__scrollbar--horizontal {
+  width: 100%;
+  height: 0.625rem;
+  flex-direction: column;
+}
+.fb-scroll-area__thumb {
+  position: relative;
+  flex: 1;
+  background: var(--theme-base-300);
+  border-radius: 9999px;
+}
+.fb-scroll-area__gradient {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 20%;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--color-sidebar), transparent);
+}

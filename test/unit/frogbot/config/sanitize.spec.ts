@@ -1250,6 +1250,7 @@ describe('frogbot sanitize', () => {
         '/agents/:slug',
         '/agents/:slug/authorizations',
         '/agents',
+        '/frogbot/chat/branch',
       ]);
     });
 

@@ -47,10 +47,7 @@ const renderIcon = (icon: AccountMenuIcon | undefined) => {
 
 export function AccountMenuItem({ icon, label, onSelect }: AccountMenuItemProps) {
   return (
-    <DropdownMenuItem
-      className={`${baseClass}__item fb-slide-right-1`}
-      onSelect={() => onSelect()}
-    >
+    <DropdownMenuItem className={`${baseClass}__item fb-slide-right-1`} onSelect={() => onSelect()}>
       {renderIcon(icon)}
       <span className={`${baseClass}__item-label`}>{label}</span>
     </DropdownMenuItem>

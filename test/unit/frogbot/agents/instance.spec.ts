@@ -153,7 +153,10 @@ function makeDeps(config: SanitizedAIConfig, req: FrogbotRequest) {
     },
   );
   const frogbot = {
-    config: { chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' } },
+    config: {
+      ai: { routers: {} },
+      chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
+    },
     create: vi.fn(() => Promise.resolve({ id: 'message-1' })),
     delete: vi.fn(() => Promise.resolve({})),
     find: vi.fn((args: { limit?: number }) =>
@@ -165,6 +168,8 @@ function makeDeps(config: SanitizedAIConfig, req: FrogbotRequest) {
       }),
     ),
     findByID: vi.fn(() => Promise.resolve({ id: 'chat-1', user: req.user?.id ?? null })),
+    generateText: vi.fn(() => Promise.resolve({ text: 'Chat title' })),
+    logger: { error: vi.fn() },
     update: vi.fn(() => Promise.resolve({ id: 'chat-1' })),
     createRequest: vi.fn(() => {
       Object.assign(req, { frogbot });

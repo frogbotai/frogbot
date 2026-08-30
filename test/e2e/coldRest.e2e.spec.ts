@@ -8,6 +8,8 @@ import { join, resolve } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { terminateProcess } from './process';
+
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
 
@@ -28,6 +30,7 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
   const baseURL = `http://localhost:${port}`;
   let server: ChildProcess;
   let dataDir: string;
+  let token: string;
 
   beforeAll(async () => {
     dataDir = mkdtempSync(join(tmpdir(), 'frogbot-e2e-cold-'));
@@ -51,26 +54,39 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
     const deadline = Date.now() + 210000;
     for (;;) {
       if (await isListening(port)) break;
+      if (server.exitCode !== null)
+        throw new Error(`cold REST dev server exited with code ${server.exitCode}`);
       if (Date.now() > deadline) throw new Error('cold REST dev server did not become ready');
       await new Promise((r) => setTimeout(r, 2000));
     }
+
+    const registration = await fetch(`${baseURL}/api/users/first-register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'cold-rest@frogbot.test',
+        password: 'frogbot-e2e-password',
+        name: 'Cold REST Test',
+      }),
+    });
+    const body = (await registration.json()) as { token: string };
+    expect(registration.status, JSON.stringify(body)).toBe(200);
+    token = body.token;
   }, 240000);
 
-  afterAll(() => {
-    if (server?.pid) {
-      try {
-        process.kill(-server.pid, 'SIGKILL');
-      } catch {
-        server.kill('SIGKILL');
-      }
-    }
-    rmSync(dataDir, { recursive: true, force: true });
+  afterAll(async () => {
+    await terminateProcess(server);
+    if (dataDir) rmSync(dataDir, { recursive: true, force: true });
   });
 
-  it('serves agent REST endpoints when POST /api/agents/:slug is the first HTTP request', async () => {
+  it('serves agent REST endpoints after cold initialization', async () => {
     const res = await fetch(`${baseURL}/api/agents/assistant`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
+      headers: {
+        'content-type': 'application/json',
+        accept: 'text/event-stream',
+        authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ prompt: 'Hello!' }),
     });
 
@@ -84,8 +100,28 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
   });
 
   it('lists agents at GET /api/agents after the cold request', async () => {
-    const listResponse = await fetch(`${baseURL}/api/agents`);
+    const listResponse = await fetch(`${baseURL}/api/agents`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
     expect(listResponse.status).toBe(200);
-    expect(await listResponse.json()).toEqual({ agents: [{ slug: 'assistant' }] });
+    expect(await listResponse.json()).toEqual({
+      defaultAgent: 'general',
+      agents: [
+        {
+          slug: 'general',
+          label: 'general',
+          source: 'config',
+          defaultModel: 'bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0',
+          models: ['bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0'],
+        },
+        {
+          slug: 'assistant',
+          label: 'assistant',
+          source: 'config',
+          defaultModel: 'bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0',
+          models: ['bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0'],
+        },
+      ],
+    });
   });
 });

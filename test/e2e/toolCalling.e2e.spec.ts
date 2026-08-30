@@ -8,6 +8,7 @@ import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { FrogbotRESTClient } from '../__helpers/shared/FrogbotRESTClient';
+import { terminateProcess } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
@@ -73,6 +74,8 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
 
     const deadline = Date.now() + 210000;
     while (!(await isListening(port))) {
+      if (server.exitCode !== null)
+        throw new Error(`tool agent dev server exited with code ${server.exitCode}`);
       if (Date.now() > deadline) throw new Error('tool agent dev server did not become ready');
       await new Promise((resolveWait) => setTimeout(resolveWait, 2000));
     }
@@ -87,18 +90,17 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
     userId = registration.body.user.id;
   }, 240000);
 
-  afterAll(() => {
-    if (server?.pid) {
-      try {
-        process.kill(-server.pid, 'SIGKILL');
-      } catch {
-        server.kill('SIGKILL');
-      }
-    }
-    rmSync(dataDir, { recursive: true, force: true });
+  afterAll(async () => {
+    await terminateProcess(server);
+    if (dataDir) rmSync(dataDir, { recursive: true, force: true });
   });
 
-  it('round-trips a tool result into the final answer', { retry: 2 }, async () => {
+  it('boots and registers a user', () => {
+    expect(token).toBeDefined();
+    expect(userId).toBeDefined();
+  });
+
+  it('round-trips a tool result into the final answer', async () => {
     const response = await client.post<AgentBody>(
       '/api/agents/tool-demo',
       { prompt },
@@ -111,7 +113,7 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
     chatId = response.body.chatId;
   });
 
-  it('persists one transcript with the completed tool call', { retry: 2 }, async () => {
+  it('persists one transcript with the completed tool call', async () => {
     const auth = { headers: { authorization: `Bearer ${token}` } };
     const chats = await client.get<
       FindBody<{

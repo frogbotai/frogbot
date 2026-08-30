@@ -1,7 +1,10 @@
 import type { UIMessage } from 'ai';
 import { describe, expect, it, vi } from 'vitest';
 
-import { generateChatTitle, suggestChatTitle } from '../../../../packages/frogbot/src/chat/title.js';
+import {
+  generateChatTitle,
+  suggestChatTitle,
+} from '../../../../packages/frogbot/src/chat/title.js';
 import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const userMessage: UIMessage = {
@@ -49,7 +52,11 @@ describe('chat titles', () => {
     const { req } = makeReq({ text: '<think>analysis</think>\n"Nighttime Frog Songs"\nMore' });
 
     await expect(
-      suggestChatTitle({ req, history: [userMessage, assistantMessage], mainModel: 'internal/chat' }),
+      suggestChatTitle({
+        req,
+        history: [userMessage, assistantMessage],
+        mainModel: 'internal/chat',
+      }),
     ).resolves.toBe('Nighttime Frog Songs');
   });
 

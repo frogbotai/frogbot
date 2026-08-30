@@ -9,6 +9,7 @@
 
 ## Git Commits
 
+- Never stage or commit anything under `.idea/`. Feature-process artifacts are local planning state only, even when implementation updates them.
 - Use Conventional Commits format: `type(scope): message`
   - Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `perf`, `build`, `ci`, `style`
   - Scope: the package or area (e.g. `gateway`, `frogbot`, `payload-plugin`)

@@ -1,0 +1,28 @@
+.fb-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: var(--theme-base-200);
+  border-radius: var(--radius-lg);
+}
+.fb-shimmer__shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--theme-base-0) 70%, transparent),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: fb-shimmer 1.5s infinite;
+}
+@keyframes fb-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fb-shimmer__shine {
+    animation: none;
+  }
+}

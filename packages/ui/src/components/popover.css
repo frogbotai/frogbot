@@ -1,0 +1,11 @@
+.fb-popover__content {
+  z-index: 50;
+  width: 18rem;
+  padding: 1rem;
+  color: var(--theme-base-900);
+  background: var(--theme-base-200);
+  border: 1px solid var(--theme-base-300);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%);
+  outline: none;
+}

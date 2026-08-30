@@ -156,7 +156,9 @@ function ChatViewInner({
     const nextEntry = manifest?.agents.find(({ slug }) => slug === nextAgent);
     if (!nextEntry) return;
     if (chatId !== undefined) {
-      const chatsSlug = provider?.manifest?.chat.enabled ? provider.manifest.chat.chatsSlug : undefined;
+      const chatsSlug = provider?.manifest?.chat.enabled
+        ? provider.manifest.chat.chatsSlug
+        : undefined;
       if (!provider || !chatsSlug) return;
       try {
         await updateChatAgent({ sdk: provider.sdk, chatsSlug, chatId }, nextAgent);

@@ -1,0 +1,37 @@
+.fb-search-input {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  padding: 0 0.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--theme-base-150);
+}
+.fb-search-input__icon,
+.fb-search-input__clear svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+.fb-search-input__control {
+  height: 2.25rem;
+  flex-grow: 1;
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-sm);
+  background: transparent;
+  border: 0;
+  outline: none;
+}
+.fb-search-input__clear {
+  display: flex;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+}

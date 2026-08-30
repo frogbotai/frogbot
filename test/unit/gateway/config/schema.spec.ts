@@ -65,8 +65,8 @@ describe('parseGatewayConfig — provider credentials', () => {
   });
 
   it('does not require static credentials for providers without requiredKeys', () => {
-    expect(parseGatewayConfig({ providers: { 'bedrock': {} } })).toEqual({
-      providers: { 'bedrock': {} },
+    expect(parseGatewayConfig({ providers: { bedrock: {} } })).toEqual({
+      providers: { bedrock: {} },
     });
   });
 

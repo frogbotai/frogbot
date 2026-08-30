@@ -48,7 +48,7 @@ describe('scaffold', () => {
     expect(fs.existsSync(path.join(options.dest, '.gitignore'))).toBe(true);
     expect(fs.existsSync(path.join(options.dest, '.prettierrc.json'))).toBe(true);
     expect(fs.existsSync(path.join(options.dest, 'gitignore'))).toBe(false);
-    expect(fs.existsSync(path.join(options.dest, 'src', 'agents', 'index.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(options.dest, 'src', 'agents', 'assistant.ts'))).toBe(true);
     expect(fs.existsSync(path.join(options.dest, 'src', 'app'))).toBe(true);
     expect(fs.existsSync(path.join(options.dest, 'src', 'collections', 'index.ts'))).toBe(true);
     expect(fs.existsSync(path.join(options.dest, 'src', 'frogbot.config.ts'))).toBe(true);

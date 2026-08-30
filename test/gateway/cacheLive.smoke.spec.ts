@@ -35,7 +35,7 @@ const cases = [
     ),
     model: process.env.E2E_MODEL_BEDROCK_CACHE ?? 'anthropic.claude-sonnet-4-20250514-v1:0',
     config: () => ({
-      'bedrock': process.env.AWS_BEARER_TOKEN_BEDROCK
+      bedrock: process.env.AWS_BEARER_TOKEN_BEDROCK
         ? {
             apiKey: process.env.AWS_BEARER_TOKEN_BEDROCK,
             region: process.env.AWS_REGION ?? 'us-east-1',

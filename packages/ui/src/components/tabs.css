@@ -1,0 +1,37 @@
+.fb-tabs__list {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem;
+  color: var(--theme-base-750);
+  background: var(--theme-base-150);
+  border-radius: var(--radius-md);
+}
+.fb-tabs__list--outline {
+  padding: 0;
+  background: transparent;
+}
+.fb-tabs__trigger {
+  padding: 0.375rem 0.75rem;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+}
+.fb-tabs__trigger[data-state="active"] {
+  color: var(--theme-base-900);
+  background: var(--theme-base-100);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+}
+.fb-tabs__trigger--outline {
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+}
+.fb-tabs__trigger--outline[data-state="active"] {
+  background: transparent;
+  border-color: var(--theme-brand-500);
+  box-shadow: none;
+}
+.fb-tabs__content {
+  margin-top: 1.25rem;
+}

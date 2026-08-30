@@ -35,9 +35,7 @@ describe('provider-free chat shell', () => {
       },
     ];
     expect(deriveChatTitle(messages, 'Fallback')).toBe('A title that is too long');
-    expect(
-      deriveChatTitle(messages, 'Fallback', 12),
-    ).toBe('A title tha…');
+    expect(deriveChatTitle(messages, 'Fallback', 12)).toBe('A title tha…');
     expect(deriveChatTitle([], 'Fallback')).toBe('Fallback');
   });
 

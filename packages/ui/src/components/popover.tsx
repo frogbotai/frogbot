@@ -1,0 +1,23 @@
+'use client';
+import * as Primitive from '@radix-ui/react-popover';
+import type { ComponentProps } from 'react';
+export const Popover = Primitive.Root;
+export const PopoverTrigger = Primitive.Trigger;
+export const PopoverAnchor = Primitive.Anchor;
+export function PopoverContent({
+  className,
+  align = 'center',
+  sideOffset = 4,
+  ...props
+}: ComponentProps<typeof Primitive.Content>) {
+  return (
+    <Primitive.Portal>
+      <Primitive.Content
+        align={align}
+        sideOffset={sideOffset}
+        className={`fb-popover__content${className ? ` ${className}` : ''}`}
+        {...props}
+      />
+    </Primitive.Portal>
+  );
+}

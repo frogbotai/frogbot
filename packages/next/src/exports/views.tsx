@@ -12,11 +12,7 @@ import type { EntityToGroup } from '@payloadcms/ui/shared';
 import { EntityType, groupNavItems } from '@payloadcms/ui/shared';
 import { getCachedFrogbot, getPayloadConfig, messagesToUIMessages } from 'frogbot';
 import type { ComponentProps, ComponentType } from 'react';
-import type {
-  AdminViewServerProps,
-  DocumentViewServerProps,
-  PayloadComponent,
-} from 'payload';
+import type { AdminViewServerProps, DocumentViewServerProps, PayloadComponent } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 import { getFromImportMap } from 'payload/shared';
 import { redirect } from 'next/navigation';
@@ -54,8 +50,9 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
   const frogbot = getCachedFrogbot();
   const chatsSlug = frogbot?.config.chat.enabled ? frogbot.config.chat.chatsSlug : undefined;
   const messagesSlug = frogbot?.config.chat.enabled ? frogbot.config.chat.messagesSlug : undefined;
+  const adminComponents = payload.config?.admin?.components;
   const chatComponents = (
-    payload.config.admin.components as typeof payload.config.admin.components & {
+    adminComponents as typeof adminComponents & {
       chat?: {
         AssistantMessageActions?: PayloadComponent;
         Chat?: PayloadComponent;
@@ -63,7 +60,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
         UserMessageActions?: PayloadComponent;
       };
     }
-  ).chat;
+  )?.chat;
   const resolveChatComponent = <TProps extends object>(
     component: NonNullable<typeof chatComponents>['Chat'],
   ) =>
@@ -84,26 +81,29 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
   );
   const clientProps = (component: NonNullable<typeof chatComponents>['Chat']) =>
     component && typeof component === 'object' ? component.clientProps : undefined;
-  const graphicsLogo = payload.config.admin.components.graphics?.Logo;
+  const graphicsLogo = adminComponents?.graphics?.Logo;
   const chatUser = user as { firstName?: unknown; name?: unknown } | undefined;
+  const chatComponentProps = clientProps(chatComponents?.Chat);
+  const greetingProps = clientProps(chatComponents?.Greeting);
+  const userMessageActionsProps = clientProps(chatComponents?.UserMessageActions);
+  const assistantMessageActionsProps = clientProps(chatComponents?.AssistantMessageActions);
   const componentProps = {
-    ChatComponent,
-    GreetingComponent,
-    UserMessageActions,
-    AssistantMessageActions,
-    chatComponentProps: clientProps(chatComponents?.Chat),
-    greetingProps: clientProps(chatComponents?.Greeting),
-    logo: graphicsLogo
-      ? RenderServerComponent({ Component: graphicsLogo, importMap: payload.importMap })
-      : undefined,
-    userMessageActionsProps: clientProps(chatComponents?.UserMessageActions),
-    userName:
-      typeof chatUser?.name === 'string'
-        ? chatUser.name
-        : typeof chatUser?.firstName === 'string'
-          ? chatUser.firstName
-          : undefined,
-    assistantMessageActionsProps: clientProps(chatComponents?.AssistantMessageActions),
+    ...(ChatComponent ? { ChatComponent } : {}),
+    ...(GreetingComponent ? { GreetingComponent } : {}),
+    ...(UserMessageActions ? { UserMessageActions } : {}),
+    ...(AssistantMessageActions ? { AssistantMessageActions } : {}),
+    ...(chatComponentProps ? { chatComponentProps } : {}),
+    ...(greetingProps ? { greetingProps } : {}),
+    ...(graphicsLogo
+      ? { logo: RenderServerComponent({ Component: graphicsLogo, importMap: payload.importMap }) }
+      : {}),
+    ...(userMessageActionsProps ? { userMessageActionsProps } : {}),
+    ...(typeof chatUser?.name === 'string'
+      ? { userName: chatUser.name }
+      : typeof chatUser?.firstName === 'string'
+        ? { userName: chatUser.firstName }
+        : {}),
+    ...(assistantMessageActionsProps ? { assistantMessageActionsProps } : {}),
   };
 
   if (

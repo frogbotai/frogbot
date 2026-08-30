@@ -1,0 +1,27 @@
+.fb-status-icon-text {
+  display: inline-flex;
+  padding: 0.25rem 0.625rem;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--color-accent-foreground);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  background: var(--color-accent);
+  border-radius: var(--radius-sm);
+}
+.fb-status-icon-text--success {
+  color: var(--success-foreground);
+  background: var(--color-success);
+}
+.fb-status-icon-text--error {
+  color: var(--theme-red-700);
+  background: color-mix(in srgb, var(--theme-red-500) 15%, transparent);
+}
+.fb-status-icon-text--secondary {
+  color: var(--color-secondary-foreground);
+  background: var(--color-secondary);
+}
+.fb-status-icon-text__icon {
+  width: 1rem;
+  height: 1rem;
+}

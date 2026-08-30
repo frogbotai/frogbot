@@ -1,0 +1,20 @@
+.fb-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background: currentColor;
+  border-radius: 50%;
+}
+.fb-dot--destructive {
+  background: var(--color-destructive);
+}
+.fb-dot--primary {
+  background: var(--color-primary);
+}
+.fb-dot--animated {
+  animation: fb-dot-pulse 2s infinite;
+}
+@keyframes fb-dot-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}

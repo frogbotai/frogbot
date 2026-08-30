@@ -79,7 +79,7 @@ function makeBedrock() {
 
 function makeApp() {
   return createApp({
-    registry: { 'bedrock': makeBedrock() } as unknown as ProviderRegistry,
+    registry: { bedrock: makeBedrock() } as unknown as ProviderRegistry,
   });
 }
 
@@ -249,7 +249,7 @@ describe('Bedrock file content wire contract', () => {
 
   it('sends in-process gateway image bytes as base64', async () => {
     const provider = Object.assign({}, makeBedrock(), { embeddingModel: vi.fn() });
-    const gateway = createGateway({ providers: { 'bedrock': provider } });
+    const gateway = createGateway({ providers: { bedrock: provider } });
     const prompt: LanguageModelV4Prompt = [
       {
         role: 'user',

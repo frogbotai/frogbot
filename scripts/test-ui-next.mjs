@@ -25,39 +25,40 @@ export default function IconRegistryResolutionPage() {
 
 try {
   execFileSync('pnpm', ['--filter', 'blank...', 'build'], { stdio: 'inherit' });
+
+  const rootPage = path.join(nextRoot, 'server/app/(frogbot)/[[...segments]]/page.js');
+  const registryPage = path.join(nextRoot, 'server/app/(frogbot)/icon-registry-resolution/page.js');
+  assert.ok(fs.existsSync(rootPage));
+  assert.match(fs.readFileSync(registryPage, 'utf8'), /icon registry resolved/);
+
+  const staticRoot = path.join(nextRoot, 'static');
+  const staticFiles = fs.readdirSync(staticRoot, { recursive: true });
+  const css = staticFiles
+    .filter((file) => file.endsWith('.css'))
+    .map((file) => fs.readFileSync(path.join(staticRoot, file), 'utf8'))
+    .join('\n');
+  assert.ok(css.length > 0);
+  assert.match(css, /\.fb-button/);
+  assert.match(css, /var\(--theme-base-/);
+  assert.match(css, /data-fb-theme/);
+
+  const bundles = staticFiles
+    .filter((file) => file.endsWith('.js'))
+    .map((file) => fs.readFileSync(path.join(staticRoot, file), 'utf8'))
+    .join('\n');
+  for (const forbidden of [
+    '@payloadcms/',
+    '@tauri-apps/',
+    '@capacitor/',
+    'FrogBot Pro',
+    'firmware.ai',
+  ]) {
+    assert.ok(!bundles.includes(forbidden), `Next client bundle contains ${forbidden}`);
+  }
+
+  console.log('[test-ui-next] Next rendered the UI package with its compiled stylesheet.');
 } finally {
+  fs.rmSync(nextRoot, { recursive: true, force: true });
   fs.rmSync(registryRouteRoot, { recursive: true, force: true });
   fs.writeFileSync(importMap, originalImportMap);
 }
-
-const rootPage = path.join(nextRoot, 'server/app/(frogbot)/[[...segments]]/page.js');
-const registryPage = path.join(nextRoot, 'server/app/(frogbot)/icon-registry-resolution/page.js');
-assert.ok(fs.existsSync(rootPage));
-assert.match(fs.readFileSync(registryPage, 'utf8'), /icon registry resolved/);
-
-const staticRoot = path.join(nextRoot, 'static');
-const staticFiles = fs.readdirSync(staticRoot, { recursive: true });
-const css = staticFiles
-  .filter((file) => file.endsWith('.css'))
-  .map((file) => fs.readFileSync(path.join(staticRoot, file), 'utf8'))
-  .join('\n');
-assert.ok(css.length > 0);
-assert.match(css, /\.fb-button/);
-assert.match(css, /var\(--color-background\)/);
-assert.match(css, /data-fb-theme/);
-
-const bundles = staticFiles
-  .filter((file) => file.endsWith('.js'))
-  .map((file) => fs.readFileSync(path.join(staticRoot, file), 'utf8'))
-  .join('\n');
-for (const forbidden of [
-  '@payloadcms/',
-  '@tauri-apps/',
-  '@capacitor/',
-  'FrogBot Pro',
-  'firmware.ai',
-]) {
-  assert.ok(!bundles.includes(forbidden), `Next client bundle contains ${forbidden}`);
-}
-
-console.log('[test-ui-next] Next rendered the UI package with its compiled stylesheet.');

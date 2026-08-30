@@ -247,10 +247,7 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
         throw new Error(`[frogbot] Provider '${key}' models must be an array.`);
       }
       for (const model of provider.models) {
-        if (
-          typeof model !== 'string' ||
-          !isKnownModelId(`${key}/${model}`, new Set([key]))
-        ) {
+        if (typeof model !== 'string' || !isKnownModelId(`${key}/${model}`, new Set([key]))) {
           throw new Error(
             `[frogbot] Provider '${key}' models contains unknown model: ${String(model)}.`,
           );

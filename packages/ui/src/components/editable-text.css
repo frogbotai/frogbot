@@ -1,0 +1,12 @@
+.fb-editable-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fb-editable-text--editing {
+  padding: 0 0.5rem;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  border-radius: var(--radius-md);
+  outline: 2px solid var(--theme-base-400);
+}

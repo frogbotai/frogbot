@@ -49,7 +49,7 @@ describe('catalog sync SDK metadata', () => {
     const replacement = { ...model, id: `global.${model.id}` };
     const { gateway } = buildCatalogs({
       overlays: {
-        'bedrock': {
+        bedrock: {
           add: [
             {
               ...replacement,
@@ -108,7 +108,7 @@ describe('catalog sync SDK metadata', () => {
   it('uses the overlay entry when a synced provider adds the same ID', () => {
     const { gateway } = buildCatalogs({
       overlays: {
-        'bedrock': {
+        bedrock: {
           add: [
             {
               id: `bedrock/${model.id}`,

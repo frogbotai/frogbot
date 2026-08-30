@@ -30,7 +30,10 @@ function copyWithTextarea(text: string) {
 export async function copyMarkdown(text: string): Promise<boolean> {
   try {
     if (!navigator.clipboard) return copyWithTextarea(text);
-    if (!markdownPatterns.some((pattern) => pattern.test(text)) || typeof ClipboardItem === 'undefined') {
+    if (
+      !markdownPatterns.some((pattern) => pattern.test(text)) ||
+      typeof ClipboardItem === 'undefined'
+    ) {
       await navigator.clipboard.writeText(text);
       return true;
     }
