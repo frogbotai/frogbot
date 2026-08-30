@@ -4,6 +4,8 @@
   min-height: 0;
   color: var(--foreground);
   background-color: var(--background);
+  max-width: 640px;
+  margin: 0 auto;
 }
 
 .fb-chat-shell__sidebar {

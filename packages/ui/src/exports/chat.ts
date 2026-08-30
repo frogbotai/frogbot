@@ -34,14 +34,13 @@ export { messageDocumentToUIMessage, uiMessageToDocument } from '../chat/message
 export { MicControl } from '../chat/mic-control';
 export type { ModelSelectorModel, ModelSelectorProps } from '../chat/model-selector';
 export { ModelSelector } from '../chat/model-selector';
-export { deleteChat, renameChat } from '../chat/mutations';
+export { deleteChat, renameChat, updateChatAgent } from '../chat/mutations';
 export type { PageContextButtonProps, PageContextTab } from '../chat/page-context-button';
 export { PageContextButton } from '../chat/page-context-button';
 export type { ChatManifest, ChatProviderValue } from '../chat/provider';
 export { ChatProvider, useChatProvider } from '../chat/provider';
 export { ReasoningPart } from '../chat/reasoning-part';
 export { SourcePart } from '../chat/source-part';
-export { StepStartPart } from '../chat/step-start-part';
 export { TextPart } from '../chat/text-part';
 export type { ChatHistoryProps } from '../chat/chat-history';
 export { ChatHistory, deriveChatTitle } from '../chat/chat-history';

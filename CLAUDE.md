@@ -39,6 +39,7 @@
 - **Function naming**: Match types to functions (`dbCreate` → `ArtifactDBCreateProps`)
 - **Shorter names**: `createTextDoc` vs `saveTextDocumentToDatabase`
 - **Two-case simplification**: Handle exactly what's needed, no over-engineering
+- **Component wrappers**: Name a private component that continues past a provider or readiness guard `*Inner` (for example, `ChatInner`)
 
 ## FrogBot Type Naming (`packages/frogbot`)
 
@@ -60,6 +61,12 @@
 - **When building any FrogBot admin/UI surface, find the corresponding Firmware implementation first** (`apps/web`, `apps/desktop`, `packages/app`, `packages/ui`, admin panel customizations) and follow it exactly. Not everything ports over, but where a Firmware design exists, it is the spec.
 - **Concrete example (issue #35):** the api-keys plugin UI must be a single button injected into the Payload collection list view that opens a modal (create → one-time key reveal in the same modal) — exactly how Firmware did it (`apps/web/src/collections/ApiKeys/components/CreateApiKeyButton.tsx`). Inline always-visible panels above the list table are wrong.
 - **Direction of travel:** FrogBot's default Payload admin panel is progressively moving toward the Firmware desktop app / aggressively-masked web admin look, with FrogBot providing the components. Don't go fully there in one step, but new UI work must trend toward that design, never away from it.
+
+### UI color tokens
+
+- Use `--theme-base-*` for neutral component colors that should invert between light and dark themes.
+- Use `--color-base-*` only for fixed palette colors that must not invert, such as dark scrims or fixed-contrast text on brand/status surfaces.
+- Use `--theme-elevation-*` only in admin-only styles where the admin runtime supplies those tokens; reusable `packages/ui` styles must use `--theme-base-*`.
 
 ## What NOT to do
 

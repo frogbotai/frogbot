@@ -6,6 +6,7 @@ import {
   ChatProvider,
   cookieFetch,
   ModelSelector,
+  updateChatAgent,
   useChatProvider,
 } from '@frogbotai/ui/chat';
 import { ThemeProvider } from '@frogbotai/ui/theme';
@@ -50,7 +51,7 @@ export function ChatViewClient({
     <div className="frogbot-chat-view">
       <ThemeProvider mode={theme}>
         <ChatProvider adapter={adapter}>
-          <ManifestChat
+          <ChatViewInner
             agent={agent}
             {...(chatId === undefined ? {} : { chatId })}
             initialMessages={initialMessages}
@@ -62,7 +63,7 @@ export function ChatViewClient({
   );
 }
 
-function ManifestChat({
+function ChatViewInner({
   agent,
   chatId,
   initialMessages,
@@ -110,21 +111,33 @@ function ManifestChat({
       ? selectedModel
       : entry?.defaultModel;
 
+  const changeAgent = async (nextAgent: string) => {
+    const nextEntry = manifest?.agents.find(({ slug }) => slug === nextAgent);
+    if (!nextEntry) return;
+    if (chatId !== undefined) {
+      const chatsSlug = provider?.manifest?.chat.enabled ? provider.manifest.chat.chatsSlug : undefined;
+      if (!provider || !chatsSlug) return;
+      try {
+        await updateChatAgent({ sdk: provider.sdk, chatsSlug, chatId }, nextAgent);
+      } catch {
+        return;
+      }
+    }
+    setSelectedAgent(nextAgent);
+    setSelectedModel(undefined);
+    void setPreference<ChatPicks>(chatPicksPreference, {
+      agent: nextAgent,
+      model: nextEntry.defaultModel,
+    });
+  };
+
   const controls = (
     <>
-      {chatId === undefined && (manifest?.agents.length ?? 0) > 1 ? (
+      {(manifest?.agents.length ?? 0) > 1 ? (
         <AgentSelector
           selectedAgent={selectedAgent}
           onAgentChange={(nextAgent) => {
-            const nextEntry = manifest?.agents.find(({ slug }) => slug === nextAgent);
-            setSelectedAgent(nextAgent);
-            setSelectedModel(undefined);
-            if (nextEntry) {
-              void setPreference<ChatPicks>(chatPicksPreference, {
-                agent: nextAgent,
-                model: nextEntry.defaultModel,
-              });
-            }
+            void changeAgent(nextAgent);
           }}
         />
       ) : null}

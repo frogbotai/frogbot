@@ -15,14 +15,14 @@
 .fb-agent-selector__chevron {
   width: 1rem;
   height: 1rem;
-  color: var(--color-base-600);
+  color: var(--theme-base-600);
 }
 
 .fb-agent-selector__content {
   width: 200px;
   padding: 0.5rem;
-  background-color: var(--color-base-250);
-  border-color: var(--color-base-300);
+  background-color: var(--theme-base-250);
+  border-color: var(--theme-base-300);
   border-radius: var(--radius-lg);
 }
 

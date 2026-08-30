@@ -29,16 +29,16 @@
 }
 
 .fb-button--default {
-  color: var(--color-base-200);
-  background: var(--color-base-1000);
+  color: var(--theme-base-200);
+  background: var(--theme-base-1000);
 }
 
 .fb-button--default:hover {
-  background: var(--color-base-700);
+  background: var(--theme-base-700);
 }
 
 .fb-button--default:active {
-  background: var(--color-base-600);
+  background: var(--theme-base-600);
 }
 
 .fb-button--destructive {
@@ -55,35 +55,35 @@
 }
 
 .fb-button--outline {
-  border: 1px solid var(--color-base-400);
-  background: var(--color-base-250);
+  border: 1px solid var(--theme-base-400);
+  background: var(--theme-base-250);
 }
 
 .fb-button--outline:hover,
 .fb-button--secondary:hover {
-  background: var(--color-base-350);
+  background: var(--theme-base-350);
 }
 
 .fb-button--outline:active,
 .fb-button--secondary:active {
-  background: var(--color-base-400);
+  background: var(--theme-base-400);
 }
 
 .fb-button--secondary {
-  background: var(--color-base-250);
+  background: var(--theme-base-250);
 }
 
 .fb-button--ghost {
-  color: var(--color-base-700);
+  color: var(--theme-base-700);
 }
 
 .fb-button--ghost:hover {
-  color: var(--color-base-1000);
-  background: var(--color-base-400);
+  color: var(--theme-base-1000);
+  background: var(--theme-base-400);
 }
 
 .fb-button--ghost:active {
-  color: var(--color-base-1000);
+  color: var(--theme-base-1000);
 }
 
 .fb-button--link {

@@ -64,7 +64,7 @@ export function Chat(props: ChatProps) {
   if (provider.error) return props.errorContent?.(provider.error);
   if (!provider.manifest || !provider.manifest.chat.enabled) return props.emptyContent;
   return (
-    <ChatOrchestrator
+    <ChatInner
       {...props}
       chatIdControlled={Object.prototype.hasOwnProperty.call(props, 'chatId')}
       adapter={provider.adapter}
@@ -77,7 +77,7 @@ export function Chat(props: ChatProps) {
   );
 }
 
-type ChatOrchestratorProps = ChatProps & {
+type ChatInnerProps = ChatProps & {
   adapter: NonNullable<ReturnType<typeof useChatProvider>>['adapter'];
   sdk: NonNullable<ReturnType<typeof useChatProvider>>['sdk'];
   agents: ChatManifest['agents'];
@@ -87,7 +87,7 @@ type ChatOrchestratorProps = ChatProps & {
   chatIdControlled: boolean;
 };
 
-function ChatOrchestrator({
+function ChatInner({
   abortedContent,
   adapter,
   agent,
@@ -115,7 +115,7 @@ function ChatOrchestrator({
   chatsSlug,
   throttle,
   warningContent,
-}: ChatOrchestratorProps) {
+}: ChatInnerProps) {
   const [activeChatId, setActiveChatId] = useControlledState<string | number | undefined>({
     controlled: chatIdControlled,
     defaultValue: defaultChatId,
@@ -215,9 +215,10 @@ function ChatOrchestrator({
   useEffect(() => {
     if (previousAgent.current === agent) return;
     previousAgent.current = agent;
+    if (activeChatId !== undefined) return;
     clearConversation();
     setActiveChatId(undefined);
-  }, [agent]);
+  }, [activeChatId, agent]);
 
   const selectChat = (nextChatId: string | number) => {
     setAborted(false);

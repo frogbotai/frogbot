@@ -15,7 +15,6 @@ import { DataPart, type DataPartValue } from './data-part';
 import { FilePart } from './file-part';
 import { ReasoningPart } from './reasoning-part';
 import { SourcePart } from './source-part';
-import { StepStartPart } from './step-start-part';
 import { TextPart } from './text-part';
 import { ToolPart } from './tool-part';
 
@@ -39,7 +38,7 @@ export function MessagePart({ fallback, part, renderData, role }: MessagePartPro
   if (known.type === 'source-url' || known.type === 'source-document') {
     return <SourcePart part={known} />;
   }
-  if (part.type === 'step-start') return <StepStartPart />;
+  if (part.type === 'step-start') return null;
   return fallback ? (
     fallback(part)
   ) : (

@@ -18,7 +18,9 @@ export function NavItem({ active = false, icon, label, path }: NavItemProps) {
   return (
     <Link
       aria-current={active ? 'page' : undefined}
-      className={[baseClass, active && `${baseClass}--active`].filter(Boolean).join(' ')}
+      className={[baseClass, 'fb-slide-right-1', active && `${baseClass}--active`]
+        .filter(Boolean)
+        .join(' ')}
       href={path}
     >
       <span aria-hidden="true" className={`${baseClass}__icon`}>

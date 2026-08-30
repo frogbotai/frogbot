@@ -73,7 +73,11 @@ describe('AppSidebar', () => {
     );
     expect(
       classNames.filter(
-        (name) => name && !name.startsWith('frogbot-admin-sidebar') && !name.startsWith('lucide'),
+        (name) =>
+          name &&
+          !name.startsWith('frogbot-admin-sidebar') &&
+          !name.startsWith('fb-') &&
+          !name.startsWith('lucide'),
       ),
     ).toEqual([]);
   });
@@ -110,6 +114,7 @@ describe('AppSidebar', () => {
     );
     expect(screen.queryByText('Header action')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Close sidebar' })).toBeNull();
+    expect(screen.queryByText('Sections')).toBeNull();
     expect(screen.getByRole('button', { name: 'Open sidebar' })).toBeTruthy();
   });
 });

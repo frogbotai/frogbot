@@ -385,7 +385,7 @@ describe('Chat', () => {
     expect(onChatIdChange).not.toHaveBeenCalled();
   });
 
-  it('clears the active chat and messages when the agent changes', async () => {
+  it('retains the active chat and messages when the agent changes', () => {
     state.messages = [{ id: 'old', role: 'user', parts: [{ type: 'text', text: 'Old agent' }] }];
     const onChatIdChange = vi.fn();
     const { rerender } = render(
@@ -393,8 +393,9 @@ describe('Chat', () => {
     );
     state.setMessages.mockClear();
     rerender(<Chat agent="sales" defaultChatId="one" onChatIdChange={onChatIdChange} />);
-    await waitFor(() => expect(state.setMessages).toHaveBeenCalledWith([]));
-    expect(onChatIdChange).toHaveBeenCalledWith(undefined);
+    expect(state.setMessages).not.toHaveBeenCalled();
+    expect(onChatIdChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Old agent')).toBeTruthy();
   });
 
   it('stops and renders injected abort and stream error content', () => {

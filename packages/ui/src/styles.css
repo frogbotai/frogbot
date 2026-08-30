@@ -1,3 +1,4 @@
+@import "./utilities.css";
 @import "./components/button.css";
 @import "./components/card.css";
 @import "./components/dropdown-menu.css";
@@ -28,7 +29,6 @@
 @import "./chat/page-context-button.css";
 @import "./chat/reasoning-part.css";
 @import "./chat/source-part.css";
-@import "./chat/step-start-part.css";
 @import "./chat/tool-part.css";
 @import "./chat/tool-selector.css";
 
@@ -273,6 +273,7 @@
   --theme-base-350: var(--color-base-650);
   --theme-base-400: var(--color-base-600);
   --theme-base-450: var(--color-base-550);
+  --theme-base-500: var(--color-base-500);
   --theme-base-550: var(--color-base-450);
   --theme-base-600: var(--color-base-400);
   --theme-base-650: var(--color-base-350);
@@ -342,6 +343,7 @@
     --theme-base-350: var(--color-base-650);
     --theme-base-400: var(--color-base-600);
     --theme-base-450: var(--color-base-550);
+    --theme-base-500: var(--color-base-500);
     --theme-base-550: var(--color-base-450);
     --theme-base-600: var(--color-base-400);
     --theme-base-650: var(--color-base-350);

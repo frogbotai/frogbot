@@ -8,8 +8,8 @@
   white-space: nowrap;
   font-size: var(--text-sm);
   line-height: var(--text-sm--line-height);
-  background: var(--color-base-200);
-  border: 1px solid var(--color-base-300);
+  background: var(--theme-base-200);
+  border: 1px solid var(--theme-base-300);
   border-radius: var(--radius-lg);
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   outline: none;
@@ -39,8 +39,8 @@
   min-width: 8rem;
   max-height: 24rem;
   overflow: hidden;
-  background: var(--color-base-150);
-  border: 1px solid var(--color-base-300);
+  background: var(--theme-base-150);
+  border: 1px solid var(--theme-base-300);
   border-radius: var(--radius-lg);
   box-shadow:
     0 4px 6px -1px rgb(0 0 0 / 0.1),
@@ -88,7 +88,7 @@
 
 .fb-select__item:focus {
   color: var(--color-accent-foreground);
-  background: var(--color-base-200);
+  background: var(--theme-base-200);
 }
 
 .fb-select__item[data-disabled] {

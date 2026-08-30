@@ -109,7 +109,11 @@ export function AppSidebar({
     return (
       <button
         aria-label={item.label}
-        className={classes(`${baseClass}__item`, active && `${baseClass}__item--active`)}
+        className={classes(
+          `${baseClass}__item`,
+          'fb-slide-right-1',
+          active && `${baseClass}__item--active`,
+        )}
         key={item.path}
         onClick={(event) => navigate(event, item.path)}
         type="button"
@@ -139,7 +143,11 @@ export function AppSidebar({
       <div className={`${baseClass}__header`}>
         <button
           aria-label={open ? 'Home' : 'Open sidebar'}
-          className={classes(`${baseClass}__logo`, showToggleIcon && `${baseClass}__logo--toggle`)}
+          className={classes(
+            `${baseClass}__logo`,
+            'fb-slide-right-1',
+            showToggleIcon && `${baseClass}__logo--toggle`,
+          )}
           onClick={(event) => {
             if (!open) return;
             navigate(event, homePath);
@@ -154,7 +162,7 @@ export function AppSidebar({
             {beforeSidebarClose}
             <button
               aria-label="Close sidebar"
-              className={`${baseClass}__collapse`}
+              className={`${baseClass}__collapse fb-slide-left-1`}
               onClick={(event) => {
                 event.stopPropagation();
                 onToggle();
@@ -170,7 +178,7 @@ export function AppSidebar({
       <nav className={`${baseClass}__nav`}>
         {beforeNavLinks}
         {navItems.map(renderItem)}
-        {sections}
+        {open && sections}
         {afterNavLinks}
       </nav>
 

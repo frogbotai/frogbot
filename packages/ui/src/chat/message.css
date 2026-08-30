@@ -22,7 +22,8 @@
   padding: 0.75rem 1.25rem 1rem;
   border-radius: calc(var(--radius-xl) + 0.25rem);
   border-top-right-radius: 0;
-  background-color: var(--muted);
+  color: var(--theme-base-100);
+  background-color: var(--theme-base-700);
 }
 
 .fb-message__content > :not(:last-child) {

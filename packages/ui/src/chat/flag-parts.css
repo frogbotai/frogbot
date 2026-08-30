@@ -10,7 +10,7 @@
   margin-bottom: 0.5rem;
   padding: 0.5rem;
   color: var(--foreground);
-  background-color: var(--color-base-200);
+  background-color: var(--theme-base-200);
   font-size: var(--text-xs);
   line-height: var(--text-xs--line-height);
 }
@@ -46,8 +46,8 @@
   left: 0.5rem;
   padding: 2px 0.5rem;
   border-radius: 9999px;
-  color: var(--color-base-300);
-  background-color: var(--color-base-300);
+  color: var(--theme-base-300);
+  background-color: var(--theme-base-300);
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.025em;
@@ -72,7 +72,7 @@
 }
 
 .fb-flag-part__url {
-  color: var(--color-base-600);
+  color: var(--theme-base-600);
   font-size: var(--text-xs);
   line-height: var(--text-xs--line-height);
 }

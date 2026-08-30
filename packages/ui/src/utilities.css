@@ -1,0 +1,90 @@
+.fb-clear-button {
+  background: none;
+  border: none;
+  box-shadow: none;
+  box-sizing: border-box;
+  cursor: pointer;
+  line-height: 1;
+  margin: 0;
+  outline: none;
+}
+
+.fb-slide-right-1,
+.fb-slide-right-2,
+.fb-slide-right-3,
+.fb-slide-left-1,
+.fb-slide-left-2,
+.fb-slide-left-3,
+.fb-slide-down-1,
+.fb-slide-down-2,
+.fb-slide-down-3,
+.fb-slide-up-1,
+.fb-slide-up-2,
+.fb-slide-up-3 {
+  transition: transform 200ms ease-out;
+}
+
+.fb-slide-right-1:hover {
+  transform: translateX(4px);
+}
+
+.fb-slide-right-2:hover {
+  transform: translateX(8px);
+}
+
+.fb-slide-right-3:hover {
+  transform: translateX(12px);
+}
+
+.fb-slide-left-1:hover {
+  transform: translateX(-4px);
+}
+
+.fb-slide-left-2:hover {
+  transform: translateX(-8px);
+}
+
+.fb-slide-left-3:hover {
+  transform: translateX(-12px);
+}
+
+.fb-slide-down-1:hover {
+  transform: translateY(4px);
+}
+
+.fb-slide-down-2:hover {
+  transform: translateY(8px);
+}
+
+.fb-slide-down-3:hover {
+  transform: translateY(12px);
+}
+
+.fb-slide-up-1:hover {
+  transform: translateY(-4px);
+}
+
+.fb-slide-up-2:hover {
+  transform: translateY(-8px);
+}
+
+.fb-slide-up-3:hover {
+  transform: translateY(-12px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fb-slide-right-1:hover,
+  .fb-slide-right-2:hover,
+  .fb-slide-right-3:hover,
+  .fb-slide-left-1:hover,
+  .fb-slide-left-2:hover,
+  .fb-slide-left-3:hover,
+  .fb-slide-down-1:hover,
+  .fb-slide-down-2:hover,
+  .fb-slide-down-3:hover,
+  .fb-slide-up-1:hover,
+  .fb-slide-up-2:hover,
+  .fb-slide-up-3:hover {
+    transform: none;
+  }
+}

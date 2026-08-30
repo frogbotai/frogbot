@@ -80,7 +80,6 @@
 .frogbot-nav-item:hover {
   background: var(--theme-elevation-100);
   color: var(--theme-elevation-900);
-  transform: translateX(4px);
 }
 
 .frogbot-nav-item--active {

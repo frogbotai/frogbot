@@ -27,6 +27,23 @@ export async function renameChat(
   return chat;
 }
 
+export async function updateChatAgent(
+  { sdk, chatsSlug, chatId }: ChatMutationOptions,
+  agent: string,
+): Promise<ChatDocument> {
+  const chat = await chatRequest<ChatDocument>(
+    sdk,
+    `/${encodeURIComponent(chatsSlug)}/${encodeURIComponent(String(chatId))}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ agent }),
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
+  emitChatMutation();
+  return chat;
+}
+
 export async function deleteChat({
   sdk,
   chatsSlug,

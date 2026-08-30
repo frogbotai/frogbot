@@ -20,9 +20,9 @@ describe('data and boundary parts', () => {
     expect(screen.getByText('72 degrees')).toBeTruthy();
   });
 
-  it('renders step boundaries', () => {
-    render(<MessagePart part={{ type: 'step-start' }} />);
-    expect(screen.getByRole('separator')).toBeTruthy();
+  it('does not render step boundaries', () => {
+    const { container } = render(<MessagePart part={{ type: 'step-start' }} />);
+    expect(container.innerHTML).toBe('');
   });
 
   it('streams custom-rendered data into artifacts', () => {
