@@ -136,6 +136,52 @@ describe('agent endpoint composition', () => {
     await expectPersisted(chatId!);
   });
 
+  async function streamTurn(body: Record<string, unknown>) {
+    const response = await fetch(`${booted.baseUrl}/api/agents/${agentSlug}`, {
+      method: 'POST',
+      headers: { accept: 'text/event-stream', 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    expect(response.status).toBe(200);
+    await response.text();
+    return response.headers.get('X-Frogbot-Chat-Id');
+  }
+
+  async function storedRoles(chatId: string) {
+    const messages = await booted.frogbot.find({
+      collection: messagesSlug,
+      where: { chat: { equals: chatId } },
+      sort: ['createdAt', 'id'],
+      pagination: false,
+      depth: 0,
+      overrideAccess: true,
+    });
+    return messages.docs.map((message) => (message as { role: string }).role);
+  }
+
+  it('persists follow-up and edited turns when the client sends the chat id as a string', async () => {
+    const chatId = await streamTurn({
+      messages: [{ id: 'turn-1-user', role: 'user', parts: [{ type: 'text', text: 'first' }] }],
+    });
+    expect(chatId).not.toBeNull();
+    expect(await storedRoles(chatId!)).toEqual(['user', 'assistant']);
+
+    await streamTurn({
+      chatId: chatId!,
+      messages: [
+        { id: 'turn-1-user', role: 'user', parts: [{ type: 'text', text: 'first' }] },
+        { id: 'turn-2-user', role: 'user', parts: [{ type: 'text', text: 'second' }] },
+      ],
+    });
+    expect(await storedRoles(chatId!)).toEqual(['user', 'assistant', 'user', 'assistant']);
+
+    await streamTurn({
+      chatId: chatId!,
+      messages: [{ id: 'turn-2-user', role: 'user', parts: [{ type: 'text', text: 'edited' }] }],
+    });
+    expect(await storedRoles(chatId!)).toEqual(['user', 'assistant', 'user', 'assistant']);
+  });
+
   it('anonymous JSON POST cannot read or write an authenticated chat', async () => {
     await expectAnonymousRejected();
   });

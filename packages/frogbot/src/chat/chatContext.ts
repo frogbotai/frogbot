@@ -149,10 +149,10 @@ async function resolveChatId({
       depth: 0,
       req,
       overrideAccess,
-    })) as { user?: { id: DocID } | DocID | null };
+    })) as { id: DocID; user?: { id: DocID } | DocID | null };
     const ownerId = typeof chat.user === 'object' && chat.user !== null ? chat.user.id : chat.user;
     if ((ownerId ?? null) !== (req.user?.id ?? null)) throw new NotFound(req.t);
-    return chatId;
+    return chat.id;
   }
 
   const chat = await req.frogbot.create({

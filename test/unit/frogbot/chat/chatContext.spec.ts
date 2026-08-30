@@ -95,14 +95,14 @@ describe('resolveChatContext', () => {
     await resolveChatContext({
       req,
       agentSlug: 'support',
-      chatId: 'chat-7',
+      chatId: 'chat-1',
       incoming,
       tools: {},
     });
 
     expect(findByID).toHaveBeenCalledWith({
       collection: 'chats',
-      id: 'chat-7',
+      id: 'chat-1',
       depth: 0,
       req,
       overrideAccess: true,
@@ -111,25 +111,44 @@ describe('resolveChatContext', () => {
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'messages',
-        data: expect.objectContaining({ chat: 'chat-7', parts: incoming[1].parts }),
+        data: expect.objectContaining({ chat: 'chat-1', parts: incoming[1].parts }),
       }),
     );
+  });
+
+  it('writes relationships with the stored chat id when the caller sends a different id type', async () => {
+    const findByID = vi.fn(() => Promise.resolve({ id: 7, user: 'user-1' }));
+    const { req, create, find } = makeReq({ findByID });
+    const result = await resolveChatContext({
+      req,
+      agentSlug: 'support',
+      chatId: '7',
+      incoming,
+      tools: {},
+    });
+
+    expect(result.chatId).toBe(7);
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'messages',
+        data: expect.objectContaining({ chat: 7 }),
+      }),
+    );
+    expect(find).toHaveBeenCalledWith(expect.objectContaining({ where: { chat: { equals: 7 } } }));
   });
 
   it('replaces an edited message and deletes later messages when its id already exists', async () => {
     const find = vi.fn((args: { limit?: number }) =>
       Promise.resolve({
         docs:
-          args.limit === 1
-            ? [{ id: 'u2', createdAt: '2026-08-29T00:00:00.000Z' }]
-            : [historyDoc],
+          args.limit === 1 ? [{ id: 'u2', createdAt: '2026-08-29T00:00:00.000Z' }] : [historyDoc],
       }),
     );
     const { req, create, deleteFn, update } = makeReq({ find });
     await resolveChatContext({
       req,
       agentSlug: 'support',
-      chatId: 'chat-7',
+      chatId: 'chat-1',
       incoming,
       tools: {},
     });
@@ -147,7 +166,7 @@ describe('resolveChatContext', () => {
         collection: 'messages',
         where: {
           and: [
-            { chat: { equals: 'chat-7' } },
+            { chat: { equals: 'chat-1' } },
             { createdAt: { greater_than: '2026-08-29T00:00:00.000Z' } },
           ],
         },
