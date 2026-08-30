@@ -53,18 +53,55 @@ export async function resolveChatContext({
     });
 
     for (const message of newMessages) {
-      await req.frogbot.create({
-        collection: chat.messagesSlug,
-        data: {
-          id: message.id,
-          chat: resolvedChatId,
-          role: message.role,
-          parts: message.parts,
-          metadata: message.metadata,
-        },
-        req,
-        overrideAccess,
-      });
+      const existing =
+        chatId === undefined
+          ? undefined
+          : (
+              (await req.frogbot.find({
+                collection: chat.messagesSlug,
+                where: {
+                  and: [{ id: { equals: message.id } }, { chat: { equals: resolvedChatId } }],
+                },
+                limit: 1,
+                depth: 0,
+                req,
+                overrideAccess,
+              })) as unknown as { docs: Array<{ id: DocID; createdAt: string }> }
+            ).docs[0];
+
+      if (existing) {
+        await req.frogbot.update({
+          collection: chat.messagesSlug,
+          id: existing.id,
+          data: { parts: message.parts, metadata: message.metadata },
+          req,
+          overrideAccess,
+        });
+        await req.frogbot.delete({
+          collection: chat.messagesSlug,
+          where: {
+            and: [
+              { chat: { equals: resolvedChatId } },
+              { createdAt: { greater_than: existing.createdAt } },
+            ],
+          },
+          req,
+          overrideAccess,
+        });
+      } else {
+        await req.frogbot.create({
+          collection: chat.messagesSlug,
+          data: {
+            id: message.id,
+            chat: resolvedChatId,
+            role: message.role,
+            parts: message.parts,
+            metadata: message.metadata,
+          },
+          req,
+          overrideAccess,
+        });
+      }
     }
 
     if (ownsTransaction) await commitTransaction(transactionReq);

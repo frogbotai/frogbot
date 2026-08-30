@@ -32,6 +32,10 @@
 @import "./chat/tool-part.css";
 @import "./chat/tool-selector.css";
 
+html {
+  font-size: 14px;
+}
+
 [data-fb-ui] {
   --font-payload: var(--font-body);
   --font-gilda: "Gilda Display";

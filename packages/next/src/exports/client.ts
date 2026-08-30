@@ -1,4 +1,11 @@
 export {
+  AccountMenu,
+  type AccountMenuIcon,
+  AccountMenuItem,
+  type AccountMenuItemProps,
+  type AccountMenuProps,
+} from '../elements/Nav/AccountMenu.js';
+export {
   AppSidebar,
   type AppSidebarProps,
   type AppSidebarNavItem,

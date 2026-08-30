@@ -85,7 +85,7 @@ export function PageContextButton({
             ref={buttonRef}
             type="button"
             aria-label="Add tab context"
-            className={`fb-page-context-button__trigger${showMenu ? ' fb-page-context-button__trigger--open' : ''}`}
+            className={`fb-page-context-button__trigger fb-slide-up-1${showMenu ? ' fb-page-context-button__trigger--open' : ''}`}
             onClick={handleClick}
             disabled={isLoading}
           >
@@ -134,7 +134,7 @@ export function PageContextButton({
                   <div
                     key={tab.id}
                     onClick={() => handleTabToggle(tab.id)}
-                    className="fb-page-context-button__tab"
+                    className="fb-page-context-button__tab fb-slide-right-1"
                   >
                     {faviconUrl ? (
                       <img src={faviconUrl} alt="" className="fb-page-context-button__favicon" />

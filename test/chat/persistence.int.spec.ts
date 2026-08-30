@@ -187,6 +187,50 @@ describe('chat persistence: chat context', () => {
 
   it.skip('anonymous caller vs. another anonymous caller chat (.idea/issue_triage.md ticket 33)');
 
+  it('replaces an edited user message and truncates later history', async () => {
+    const req = await makeOwnerReq();
+    const { chatId } = await resolveChatContext({
+      req,
+      agentSlug,
+      incoming: [userMessage('Original question', 'edit-user-1')],
+      tools: {},
+    });
+    await persistAssistantMessage({
+      req,
+      chatId: chatId!,
+      isContinuation: false,
+      message: {
+        id: 'edit-assistant-1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Original answer' }],
+      },
+    });
+
+    const retryReq = await makeOwnerReq();
+    const retry = await resolveChatContext({
+      req: retryReq,
+      agentSlug,
+      chatId,
+      incoming: [userMessage('Corrected question', 'edit-user-1')],
+      tools: {},
+    });
+
+    expect(retry.chatId).toBe(chatId);
+    expect(retry.uiMessages).toHaveLength(1);
+    expect(retry.uiMessages[0]).toMatchObject({
+      id: 'edit-user-1',
+      role: 'user',
+      parts: [{ type: 'text', text: 'Corrected question' }],
+    });
+
+    const remaining = await booted.frogbot.count({
+      collection: messagesSlug,
+      where: { chat: { equals: chatId } },
+      overrideAccess: true,
+    });
+    expect(remaining.totalDocs).toBe(1);
+  });
+
   it('creates and continues an assistant message by UI message id', async () => {
     const req = await makeOwnerReq();
     const { chatId } = await resolveChatContext({

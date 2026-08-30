@@ -1,6 +1,6 @@
 'use client';
 
-import { FolderIcon, FrogBotFavicon, SettingIcon, SidebarLeftIcon } from '@frogbotai/ui/icons';
+import { FolderIcon, FrogBotFavicon, SidebarLeftIcon } from '@frogbotai/ui/icons';
 import { iconRegistry, type IconName, isIconName } from '@frogbotai/ui/icons/registry';
 import { Tooltip } from '@payloadcms/ui/elements/Tooltip';
 import {
@@ -14,6 +14,8 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
+import { AccountMenu } from './AccountMenu.js';
+
 export type AppSidebarNavItem = {
   icon?: ComponentType<{ className?: string; size: number }> | IconName | ReactNode;
   label: string;
@@ -21,9 +23,13 @@ export type AppSidebarNavItem = {
 };
 
 export type AppSidebarProps = {
+  accountEmail?: string;
   accountIcon?: ReactNode;
+  accountName?: string;
+  afterAccountMenu?: ReactNode;
   afterNavLinks?: ReactNode;
   afterBottomRail?: ReactNode;
+  beforeAccountMenu?: ReactNode;
   beforeNavLinks?: ReactNode;
   beforeBottomRail?: ReactNode;
   beforeSidebarClose?: ReactNode;
@@ -31,6 +37,8 @@ export type AppSidebarProps = {
   currentPath: string;
   homePath: string;
   logo?: ReactNode;
+  logout?: ReactNode;
+  logoutPath?: string;
   navItems?: AppSidebarNavItem[];
   accountPath: string;
   sections?: ReactNode;
@@ -45,10 +53,14 @@ const baseClass = 'frogbot-admin-sidebar';
 const classes = (...values: (false | string | undefined)[]) => values.filter(Boolean).join(' ');
 
 export function AppSidebar({
+  accountEmail,
   accountIcon,
+  accountName,
   accountPath,
+  afterAccountMenu,
   afterBottomRail,
   afterNavLinks,
+  beforeAccountMenu,
   beforeBottomRail,
   beforeNavLinks,
   beforeSidebarClose,
@@ -56,6 +68,8 @@ export function AppSidebar({
   currentPath,
   homePath,
   logo,
+  logout,
+  logoutPath,
   navItems = [],
   onNavigate,
   onToggle,
@@ -188,8 +202,35 @@ export function AppSidebar({
         onClick={open ? (event) => event.stopPropagation() : undefined}
       >
         {beforeBottomRail}
-        {renderItem({ icon: accountIcon, label: 'Account', path: accountPath })}
-        {renderItem({ icon: SettingIcon, label: 'Settings', path: settingsPath })}
+        <AccountMenu
+          accountPath={accountPath}
+          afterMenuItems={afterAccountMenu}
+          avatar={accountIcon}
+          beforeMenuItems={beforeAccountMenu}
+          email={accountEmail}
+          logout={logout}
+          logoutPath={logoutPath}
+          name={accountName}
+          onNavigate={onNavigate}
+          settingsPath={settingsPath}
+        >
+          <button
+            aria-label="Account"
+            className={classes(`${baseClass}__item`, 'fb-slide-right-1')}
+            onClick={(event) => event.stopPropagation()}
+            type="button"
+            {...tooltipHandlers('Account')}
+          >
+            {isValidElement(accountIcon) ? (
+              accountIcon
+            ) : (
+              <FolderIcon className={`${baseClass}__icon`} size={24} />
+            )}
+            {labelsVisible && (
+              <span className={`${baseClass}__label`}>{accountName || 'Account'}</span>
+            )}
+          </button>
+        </AccountMenu>
         {bottom}
         {afterBottomRail}
       </div>

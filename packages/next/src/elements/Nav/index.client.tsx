@@ -9,9 +9,13 @@ import type { AppSidebarNavItem } from './AppSidebar.js';
 import { AppSidebar } from './AppSidebar.js';
 
 export type FrogbotNavClientProps = {
+  accountEmail?: string;
   accountIcon?: ReactNode;
+  accountName?: string;
+  afterAccountMenu?: ReactNode;
   afterNavLinks?: ReactNode;
   afterBottomRail?: ReactNode;
+  beforeAccountMenu?: ReactNode;
   beforeNavLinks?: ReactNode;
   beforeBottomRail?: ReactNode;
   beforeSidebarClose?: ReactNode;
@@ -21,15 +25,21 @@ export type FrogbotNavClientProps = {
   initialOpen?: boolean;
   items: AppSidebarNavItem[];
   logo?: ReactNode;
+  logout?: ReactNode;
+  logoutPath?: string;
   sections?: ReactNode;
   settingsPath: string;
 };
 
 export function FrogbotNavClient({
+  accountEmail,
   accountIcon,
+  accountName,
   accountPath,
+  afterAccountMenu,
   afterBottomRail,
   afterNavLinks,
+  beforeAccountMenu,
   beforeBottomRail,
   beforeNavLinks,
   beforeSidebarClose,
@@ -38,6 +48,8 @@ export function FrogbotNavClient({
   initialOpen,
   items,
   logo,
+  logout,
+  logoutPath,
   sections,
   settingsPath,
 }: FrogbotNavClientProps) {
@@ -65,10 +77,14 @@ export function FrogbotNavClient({
       <div className="nav__scroll" ref={navRef}>
         <div className="frogbot-nav">
           <AppSidebar
+            accountEmail={accountEmail}
             accountIcon={accountIcon}
+            accountName={accountName}
             accountPath={accountPath}
+            afterAccountMenu={afterAccountMenu}
             afterBottomRail={afterBottomRail}
             afterNavLinks={afterNavLinks}
+            beforeAccountMenu={beforeAccountMenu}
             beforeBottomRail={beforeBottomRail}
             beforeNavLinks={beforeNavLinks}
             beforeSidebarClose={beforeSidebarClose}
@@ -76,6 +92,8 @@ export function FrogbotNavClient({
             currentPath={pathname}
             homePath={homePath}
             logo={logo}
+            logout={logout}
+            logoutPath={logoutPath}
             navItems={items}
             onNavigate={(path) => {
               if (/^https?:\/\//.test(path)) window.location.assign(path);

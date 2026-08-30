@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { AppSidebar } from '../../../../../packages/next/src/elements/Nav/AppSidebar';
@@ -33,7 +34,7 @@ describe('AppSidebar', () => {
         open
       />,
     );
-    expect(container.querySelectorAll('.frogbot-admin-sidebar__icon')).toHaveLength(3);
+    expect(container.querySelectorAll('.frogbot-admin-sidebar__icon')).toHaveLength(2);
   });
 
   it('opens when a collapsed sidebar is clicked anywhere', () => {
@@ -82,6 +83,58 @@ describe('AppSidebar', () => {
     ).toEqual([]);
   });
 
+  it('renders only the account control in the bottom rail', () => {
+    render(<AppSidebar {...props} open />);
+    expect(screen.getByRole('button', { name: 'Account' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
+  });
+
+  it('opens the account menu and navigates from its items', async () => {
+    const user = userEvent.setup();
+    const onNavigate = vi.fn();
+    render(<AppSidebar {...props} logoutPath="/admin/logout" onNavigate={onNavigate} open />);
+    await user.click(screen.getByRole('button', { name: 'Account' }));
+    expect(screen.getByRole('menu')).toBeTruthy();
+    await user.click(screen.getByRole('menuitem', { name: 'Settings' }));
+    expect(onNavigate).toHaveBeenCalledWith('/admin/settings');
+    await user.click(screen.getByRole('button', { name: 'Account' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Log out' }));
+    expect(onNavigate).toHaveBeenCalledWith('/admin/logout');
+  });
+
+  it('shows identity and account menu slots in order', async () => {
+    const user = userEvent.setup();
+    render(
+      <AppSidebar
+        {...props}
+        accountEmail="colby@frogbot.ai"
+        accountName="Colby Gilbert"
+        afterAccountMenu={<span>After menu</span>}
+        beforeAccountMenu={<span>Before menu</span>}
+        open
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: 'Account' }));
+    const menu = screen.getByRole('menu');
+    expect(menu.textContent).toContain('Colby Gilbert');
+    expect(menu.textContent).toContain('colby@frogbot.ai');
+    const order = [...menu.children]
+      .map((node) => node.textContent)
+      .filter((text) => ['After menu', 'Before menu', 'Settings'].includes(text ?? ''));
+    expect(order).toEqual(['Before menu', 'Settings', 'After menu']);
+  });
+
+  it('opens the account menu without expanding a collapsed sidebar', async () => {
+    const user = userEvent.setup();
+    const onToggle = vi.fn();
+    render(<AppSidebar {...props} onToggle={onToggle} open={false} />);
+    await user.click(screen.getByRole('button', { name: 'Account' }));
+    expect(screen.getByRole('menu')).toBeTruthy();
+    expect(onToggle).not.toHaveBeenCalled();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
   it('renders sections, shell slots, and bottom rail items', () => {
     const { rerender } = render(
       <AppSidebar
@@ -97,7 +150,6 @@ describe('AppSidebar', () => {
     expect(screen.getByText('Header action')).toBeTruthy();
     expect(screen.getByText('Before bottom')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Account' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Settings' })).toBeTruthy();
     expect(screen.getByText('After bottom')).toBeTruthy();
 
     const headerAction = screen.getByText('Header action');

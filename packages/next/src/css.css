@@ -104,3 +104,18 @@ body:has(.frogbot-nav-shell) .app-header__controls-wrapper {
     display: flex;
   }
 }
+
+a.step-nav__home,
+button[aria-label="Open Menu"],
+button[aria-label="Close Menu"] {
+  transition: transform 200ms ease-out;
+}
+
+a.step-nav__home:hover {
+  transform: translateY(-4px);
+}
+
+button[aria-label="Open Menu"]:hover,
+button[aria-label="Close Menu"]:hover {
+  transform: translateX(4px);
+}

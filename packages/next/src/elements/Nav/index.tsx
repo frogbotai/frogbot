@@ -1,4 +1,4 @@
-import { Account, Logout } from '@payloadcms/ui';
+import { Account } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import { getCachedFrogbot } from 'frogbot';
 import type { NavPreferences, PayloadRequest, ServerProps } from 'payload';
@@ -46,7 +46,9 @@ export async function FrogbotNav(props: FrogbotNavProps) {
 
   const { admin, routes } = payload.config;
   const shellComponents = admin.components as typeof admin.components & {
+    afterAccountMenu?: Parameters<typeof RenderServerComponent>[0]['Component'][];
     afterBottomRail?: Parameters<typeof RenderServerComponent>[0]['Component'][];
+    beforeAccountMenu?: Parameters<typeof RenderServerComponent>[0]['Component'][];
     beforeBottomRail?: Parameters<typeof RenderServerComponent>[0]['Component'][];
     beforeSidebarClose?: Parameters<typeof RenderServerComponent>[0]['Component'][];
     navSections?: Parameters<typeof RenderServerComponent>[0]['Component'][];
@@ -96,13 +98,17 @@ export async function FrogbotNav(props: FrogbotNavProps) {
         render(component, `settings-${index}`),
       )
     : [];
-  const logout = RenderServerComponent({
-    Component: admin.components.logout?.Button,
-    Fallback: Logout,
-    clientProps,
-    importMap: payload.importMap,
-    serverProps,
-  });
+  const logout = admin.components.logout?.Button
+    ? RenderServerComponent({
+        Component: admin.components.logout.Button,
+        clientProps,
+        importMap: payload.importMap,
+        serverProps,
+      })
+    : undefined;
+  const accountUser = user as { email?: unknown; name?: unknown } | undefined;
+  const accountEmail = typeof accountUser?.email === 'string' ? accountUser.email : undefined;
+  const accountName = typeof accountUser?.name === 'string' ? accountUser.name : undefined;
   const logo = render(admin.components.graphics?.Icon);
   const homePath = formatAdminURL({ adminRoute: routes.admin, path: '' });
   const renderMany = (
@@ -112,23 +118,28 @@ export async function FrogbotNav(props: FrogbotNavProps) {
 
   return (
     <FrogbotNavClient
+      accountEmail={accountEmail}
       accountIcon={<Account />}
+      accountName={accountName}
       accountPath={formatAdminURL({ adminRoute: routes.admin, path: admin.routes.account })}
+      afterAccountMenu={
+        <>
+          {renderMany(shellComponents.afterAccountMenu, 'after-account-menu')}
+          {settings}
+        </>
+      }
       afterBottomRail={renderMany(shellComponents.afterBottomRail, 'after-bottom-rail')}
       afterNavLinks={afterNavLinks}
+      beforeAccountMenu={renderMany(shellComponents.beforeAccountMenu, 'before-account-menu')}
       beforeBottomRail={renderMany(shellComponents.beforeBottomRail, 'before-bottom-rail')}
       beforeNavLinks={beforeNavLinks}
       beforeSidebarClose={renderMany(shellComponents.beforeSidebarClose, 'before-sidebar-close')}
-      bottom={
-        <>
-          {settings}
-          {logout}
-        </>
-      }
       homePath={homePath}
       initialOpen={navPreferences?.open}
       items={configuredItems}
       logo={logo}
+      logout={logout}
+      logoutPath={formatAdminURL({ adminRoute: routes.admin, path: admin.routes.logout })}
       sections={renderMany(shellComponents.navSections, 'nav-section')}
       settingsPath={formatAdminURL({ adminRoute: routes.admin, path: '/settings' })}
     />

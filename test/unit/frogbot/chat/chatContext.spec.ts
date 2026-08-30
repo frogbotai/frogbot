@@ -16,23 +16,29 @@ function makeReq({
   chat = { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
   create = vi.fn(() => Promise.resolve({ id: 'chat-1' })),
   db = {},
-  find = vi.fn(() => Promise.resolve({ docs: [historyDoc] })),
+  deleteFn = vi.fn(() => Promise.resolve({})),
+  find = vi.fn((args: { limit?: number }) =>
+    Promise.resolve({ docs: args.limit === 1 ? [] : [historyDoc] }),
+  ),
   findByID = vi.fn(() => Promise.resolve({ id: 'chat-1', user: 'user-1' })),
+  update = vi.fn(() => Promise.resolve({})),
   user = { id: 'user-1' },
 }: {
   chat?: SanitizedChatConfig;
   create?: ReturnType<typeof vi.fn>;
   db?: Record<string, unknown>;
+  deleteFn?: ReturnType<typeof vi.fn>;
   find?: ReturnType<typeof vi.fn>;
   findByID?: ReturnType<typeof vi.fn>;
+  update?: ReturnType<typeof vi.fn>;
   user?: { id: string } | null;
 } = {}) {
   const req = {
     user,
     payload: { db },
-    frogbot: { config: { chat }, create, find, findByID },
+    frogbot: { config: { chat }, create, delete: deleteFn, find, findByID, update },
   } as unknown as FrogbotRequest;
-  return { req, create, find, findByID };
+  return { req, create, deleteFn, find, findByID, update };
 }
 
 describe('resolveChatContext', () => {
@@ -106,6 +112,45 @@ describe('resolveChatContext', () => {
       expect.objectContaining({
         collection: 'messages',
         data: expect.objectContaining({ chat: 'chat-7', parts: incoming[1].parts }),
+      }),
+    );
+  });
+
+  it('replaces an edited message and deletes later messages when its id already exists', async () => {
+    const find = vi.fn((args: { limit?: number }) =>
+      Promise.resolve({
+        docs:
+          args.limit === 1
+            ? [{ id: 'u2', createdAt: '2026-08-29T00:00:00.000Z' }]
+            : [historyDoc],
+      }),
+    );
+    const { req, create, deleteFn, update } = makeReq({ find });
+    await resolveChatContext({
+      req,
+      agentSlug: 'support',
+      chatId: 'chat-7',
+      incoming,
+      tools: {},
+    });
+
+    expect(create).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'messages',
+        id: 'u2',
+        data: { parts: incoming[1].parts, metadata: undefined },
+      }),
+    );
+    expect(deleteFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'messages',
+        where: {
+          and: [
+            { chat: { equals: 'chat-7' } },
+            { createdAt: { greater_than: '2026-08-29T00:00:00.000Z' } },
+          ],
+        },
       }),
     );
   });

@@ -54,7 +54,8 @@
       "import": "./src/exports/chat-artifacts.ts",
       "default": "./src/exports/chat-artifacts.ts"
     },
-    "./styles.css": "./src/styles.css"
+    "./styles.css": "./src/styles.css",
+    "./utilities.css": "./src/utilities.css"
   },
   "files": [
     "dist",
@@ -132,7 +133,8 @@
         "import": "./dist/exports/chat-artifacts.js",
         "default": "./dist/exports/chat-artifacts.js"
       },
-      "./styles.css": "./src/styles.css"
+      "./styles.css": "./src/styles.css",
+      "./utilities.css": "./src/utilities.css"
     }
   },
   "dependencies": {

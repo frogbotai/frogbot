@@ -259,3 +259,120 @@
   border-radius: 8px;
   color: var(--theme-elevation-900);
 }
+
+.frogbot-account-menu.fb-dropdown-menu__content {
+  background: var(--theme-input-bg);
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: 12px;
+  box-shadow:
+    0 8px 24px rgb(0 0 0 / 0.12),
+    0 2px 8px rgb(0 0 0 / 0.08);
+  color: var(--theme-text);
+  min-width: 240px;
+  padding: 8px;
+  z-index: 100;
+}
+
+.frogbot-account-menu__header {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  padding: 8px 10px;
+}
+
+.frogbot-account-menu__header.fb-dropdown-menu__item {
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.frogbot-account-menu__header.fb-dropdown-menu__item:focus,
+.frogbot-account-menu__header.fb-dropdown-menu__item[data-highlighted] {
+  background: var(--theme-elevation-100);
+}
+
+.frogbot-account-menu__avatar {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: center;
+}
+
+.frogbot-account-menu__avatar svg {
+  height: 32px;
+  width: 32px;
+}
+
+.frogbot-account-menu__identity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.frogbot-account-menu__name {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.frogbot-account-menu__email {
+  color: var(--theme-elevation-600);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.frogbot-account-menu__separator.fb-dropdown-menu__separator {
+  background: var(--theme-elevation-150);
+  margin: 6px 0;
+}
+
+.frogbot-account-menu__item.fb-dropdown-menu__item {
+  align-items: center;
+  border-radius: 8px;
+  color: var(--theme-elevation-700);
+  cursor: pointer;
+  display: flex;
+  font-size: 14px;
+  font-weight: 500;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.frogbot-account-menu__item.fb-dropdown-menu__item:focus,
+.frogbot-account-menu__item.fb-dropdown-menu__item[data-highlighted] {
+  background: var(--theme-elevation-100);
+  color: var(--theme-elevation-900);
+}
+
+.frogbot-account-menu__item-icon {
+  flex: 0 0 auto;
+  height: 20px;
+  width: 20px;
+}
+
+.frogbot-account-menu__item-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.frogbot-account-menu .nav__log-out {
+  align-items: center;
+  border-radius: 8px;
+  color: var(--theme-elevation-700);
+  display: flex;
+  font-size: 14px;
+  font-weight: 500;
+  gap: 8px;
+  padding: 8px 10px;
+  text-decoration: none;
+  width: 100%;
+}
+
+.frogbot-account-menu .nav__log-out:hover {
+  background: var(--theme-elevation-100);
+  color: var(--theme-elevation-900);
+}

@@ -10,9 +10,9 @@ describe('message controls', () => {
 
     expect(screen.getByLabelText('Message actions').className).toBe('fb-message-actions');
     expect(screen.getAllByRole('button').map(({ className }) => className)).toEqual([
-      'fb-message-actions__button',
-      'fb-message-actions__button',
-      'fb-message-actions__button',
+      'fb-message-actions__button fb-slide-up-1',
+      'fb-message-actions__button fb-slide-up-1',
+      'fb-message-actions__button fb-slide-up-1',
     ]);
   });
 

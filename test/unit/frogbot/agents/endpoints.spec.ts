@@ -64,9 +64,12 @@ function makeRequest({
   body = { prompt: 'Hello' },
   create = vi.fn(() => Promise.resolve({ id: 'chat-1' })),
   authorizations,
-  find = vi.fn(() =>
+  find = vi.fn((args: { limit?: number }) =>
     Promise.resolve({
-      docs: [{ id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+      docs:
+        args.limit === 1
+          ? []
+          : [{ id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
     }),
   ),
   findByID = vi.fn(() => Promise.resolve({ id: 'chat-1', user: user?.id ?? null })),
@@ -107,8 +110,10 @@ function makeRequest({
         chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
       },
       create,
+      delete: vi.fn(() => Promise.resolve({})),
       find,
       findByID,
+      logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
       update,
     },
     payload: { db: {} },

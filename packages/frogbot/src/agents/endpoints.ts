@@ -69,7 +69,11 @@ export function buildAgentEndpoints() {
                     ),
                   }
                 : parsed;
-          } catch {
+          } catch (error) {
+            req.frogbot.logger.error(
+              { err: error, agent: slug },
+              '[frogbot] Invalid agent request body',
+            );
             return Response.json(
               { error: 'Body must include `prompt` (string) or `messages` (array)' },
               { status: 400 },
@@ -114,6 +118,7 @@ export function buildAgentEndpoints() {
           });
         } catch (error) {
           if (req.signal?.aborted) return new Response(null, { status: 499 });
+          req.frogbot.logger.error({ err: error, agent: slug }, '[frogbot] Agent request failed');
           return Response.json(
             {
               error: error instanceof Error ? error.message : 'Agent request failed',

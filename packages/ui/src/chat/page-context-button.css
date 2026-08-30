@@ -24,11 +24,9 @@
   border-radius: 9999px;
   color: var(--theme-base-700);
   line-height: 1;
-  transition: transform 200ms ease-out;
 }
 
 .fb-page-context-button__trigger:hover {
-  transform: translateY(-4px);
   background-color: var(--theme-base-300);
   color: var(--theme-base-1000);
 }
@@ -123,7 +121,6 @@
 }
 
 .fb-page-context-button__tab:hover {
-  transform: translateX(4px);
   background-color: var(--theme-base-300);
 }
 

@@ -1,47 +1,35 @@
-.fb-message-editor > :not(:last-child) {
-  margin-bottom: 0.5rem;
+.fb-message-editor {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .fb-message-editor__textarea {
   width: 100%;
-  min-height: 6rem;
-  resize: vertical;
-  padding: 0.75rem;
-  border: 1px solid var(--input);
-  border-radius: var(--radius-lg);
-  background-color: var(--background);
-  font-size: var(--text-sm);
-  line-height: var(--text-sm--line-height);
+  resize: none;
+  overflow: hidden;
+  padding: 0.75rem 1.25rem 1rem;
+  border: 1px solid var(--theme-base-500);
+  border-radius: calc(var(--radius-xl) + 0.25rem);
+  border-top-right-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-payload);
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
+  outline: none;
 }
 
-.fb-message-editor__textarea:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--ring));
+.fb-message-editor__textarea:hover,
+.fb-message-editor__textarea:focus,
+.fb-message-editor__textarea:active {
+  border-color: var(--theme-base-600);
 }
 
 .fb-message-editor__actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
-}
-
-.fb-message-editor__cancel,
-.fb-message-editor__submit {
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  line-height: var(--text-sm--line-height);
-}
-
-.fb-message-editor__cancel:hover {
-  background-color: var(--muted);
-}
-
-.fb-message-editor__submit {
-  background-color: var(--primary);
-  color: var(--primary-foreground);
-}
-
-.fb-message-editor__submit:disabled {
-  opacity: 0.5;
+  margin-bottom: 1.25rem;
 }

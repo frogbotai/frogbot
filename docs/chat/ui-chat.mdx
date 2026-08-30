@@ -38,6 +38,31 @@ Chat renders no sidebar by default because the FrogBot admin navigation already 
 />
 ```
 
+## Message actions
+
+Completed user messages include Copy and Edit actions. Editing preserves non-text parts, replaces the selected message, removes later responses, and retries the conversation from that point.
+
+Pass a component to `messageActions` to compose application actions with the defaults. Because the slot is a component, it can use your provider hooks. Render `defaultActions` to retain FrogBot's controls, omit it to replace them, or pass `false` to hide all user-message actions.
+
+```tsx
+import type { MessageActionsSlotProps } from '@frogbotai/ui/chat'
+
+function SupportMessageActions({ defaultActions, message, pending }: MessageActionsSlotProps) {
+  const { saveMessage } = useSavedMessages()
+
+  return (
+    <>
+      {defaultActions}
+      <button type="button" disabled={pending} onClick={() => saveMessage(message)}>
+        Save
+      </button>
+    </>
+  )
+}
+
+<Chat agent="support" messageActions={SupportMessageActions} />
+```
+
 ## Composer selectors
 
 `AgentSelector` reads the agents available to the current user from `ChatProvider`. Keep the selected agent in your application state and pass it to both the selector and `<Chat>`. Changing it starts a new conversation.

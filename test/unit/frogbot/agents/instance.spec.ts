@@ -155,9 +155,13 @@ function makeDeps(config: SanitizedAIConfig, req: FrogbotRequest) {
   const frogbot = {
     config: { chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' } },
     create: vi.fn(() => Promise.resolve({ id: 'message-1' })),
-    find: vi.fn(() =>
+    delete: vi.fn(() => Promise.resolve({})),
+    find: vi.fn((args: { limit?: number }) =>
       Promise.resolve({
-        docs: [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+        docs:
+          args.limit === 1
+            ? []
+            : [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
       }),
     ),
     findByID: vi.fn(() => Promise.resolve({ id: 'chat-1', user: req.user?.id ?? null })),

@@ -2,7 +2,7 @@
 
 import { useChat } from '@ai-sdk/react';
 import type { UIMessage } from 'ai';
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { type ComponentType, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useControlledState } from '../hooks/use-controlled-state';
 import type { ComposerAttachment } from './attachments';
@@ -12,6 +12,8 @@ import { ChatStatus } from './chat-status';
 import { Composer } from './composer';
 import { isFlagPart, renderFlagPart } from './flag-parts';
 import { Message } from './message';
+import { MessageActions } from './message-actions';
+import { MessageEditor } from './message-editor';
 import { MessageList, type MessageListProps } from './message-list';
 import { MessagePart } from './message-part';
 import { deleteChat, renameChat } from './mutations';
@@ -31,6 +33,12 @@ export type ChatSidebarContext = {
   activeChatId: string | number | undefined;
   selectChat: (chatId: string | number) => void;
   actions: (chat: ChatDocument) => ChatActions;
+};
+
+export type MessageActionsSlotProps = {
+  defaultActions: ReactNode;
+  message: UIMessage;
+  pending: boolean;
 };
 
 export type ChatProps = {
@@ -54,6 +62,7 @@ export type ChatProps = {
   warningContent?: ReactNode;
   renderSidebar?: (context: ChatSidebarContext) => ReactNode;
   renderMessage?: MessageListProps['renderMessage'];
+  messageActions?: ComponentType<MessageActionsSlotProps> | false;
   panel?: ReactNode;
 };
 
@@ -102,6 +111,7 @@ function ChatInner({
   headerSlot,
   initialMessages,
   messagesSlug,
+  messageActions: MessageActionsSlot,
   model,
   onChatIdChange,
   panel,
@@ -131,6 +141,7 @@ function ChatInner({
   const history = useChatMessages({ sdk, messagesSlug, chatId: activeChatId });
   const chats = useChats({ sdk, agent, chatsSlug });
   const [aborted, setAborted] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string>();
   const request = useRef({ chatId: activeChatId, model });
   request.current = { chatId: activeChatId, model };
   const transport = useMemo(
@@ -184,6 +195,7 @@ function ChatInner({
   const clearConversation = () => {
     createdChatId.current = undefined;
     reportedChatId.current = undefined;
+    setEditingMessageId(undefined);
     setRuntimeChatId(`new:${agent}`);
     chat.setMessages([]);
   };
@@ -222,6 +234,7 @@ function ChatInner({
 
   const selectChat = (nextChatId: string | number) => {
     setAborted(false);
+    setEditingMessageId(undefined);
     reportedChatId.current = undefined;
     setRuntimeChatId(String(nextChatId));
     setActiveChatId(nextChatId);
@@ -261,7 +274,18 @@ function ChatInner({
     setAborted(true);
     void chat.stop();
   };
+  const editMessage = async (message: UIMessage, text: string) => {
+    const parts = [
+      ...message.parts.filter((part) => part.type !== 'text'),
+      { type: 'text' as const, text },
+    ] as UIMessage['parts'];
+    const revisedMessage = { ...message, parts };
+    const metadata = (await adapter.buildMetadata?.(revisedMessage)) ?? message.metadata;
+    await chat.sendMessage({ messageId: message.id, parts, metadata } as never);
+    setEditingMessageId(undefined);
+  };
   const error = history.error ?? chats.error ?? chat.error;
+  const pending = chat.status === 'submitted' || chat.status === 'streaming';
   const displayedChats = (chats.docs ?? []).map((chatDocument) =>
     String(chatDocument.id) === String(activeChatId) && !chatDocument.title
       ? { ...chatDocument, title: deriveChatTitle(chat.messages, fallbackTitle) }
@@ -275,35 +299,70 @@ function ChatInner({
     .join('')
     .slice(0, 2)
     .toUpperCase();
-  const defaultRenderMessage: MessageListProps['renderMessage'] = (message) => (
-    <Message
-      key={message.id}
-      role={message.role}
-      avatar={
-        profile && message.role === 'assistant' ? (
-          <div className="fb-chat__assistant-avatar">
-            {profile.avatar ? (
-              <img
-                src={profile.avatar}
-                alt={displayName}
-                className="fb-chat__assistant-avatar-image"
-              />
-            ) : (
-              initials
-            )}
-          </div>
-        ) : undefined
-      }
-    >
-      {message.parts.map((part, index) => (
-        <MessagePart
-          key={`${message.id}-${index}`}
-          part={part}
-          renderData={isFlagPart(part) ? renderFlagPart : undefined}
-        />
-      ))}
-    </Message>
-  );
+  const defaultRenderMessage: MessageListProps['renderMessage'] = (message) => {
+    const text = message.parts
+      .filter((part): part is Extract<(typeof message.parts)[number], { type: 'text' }> =>
+        part.type === 'text',
+      )
+      .map((part) => part.text)
+      .join('\n\n');
+    const defaultActions =
+      message.role === 'user' && !pending ? (
+        <MessageActions text={text} onEdit={() => setEditingMessageId(message.id)} />
+      ) : null;
+    const actions =
+      message.role !== 'user' || editingMessageId === message.id || MessageActionsSlot === false
+        ? null
+        : MessageActionsSlot ? (
+            <MessageActionsSlot
+              message={message}
+              pending={pending}
+              defaultActions={defaultActions}
+            />
+          ) : (
+            defaultActions
+          );
+
+    return (
+      <Message
+        key={message.id}
+        role={message.role}
+        actions={actions}
+        className={editingMessageId === message.id ? 'fb-message--editing' : undefined}
+        avatar={
+          profile && message.role === 'assistant' ? (
+            <div className="fb-chat__assistant-avatar">
+              {profile.avatar ? (
+                <img
+                  src={profile.avatar}
+                  alt={displayName}
+                  className="fb-chat__assistant-avatar-image"
+                />
+              ) : (
+                initials
+              )}
+            </div>
+          ) : undefined
+        }
+      >
+        {editingMessageId === message.id ? (
+          <MessageEditor
+            initialValue={text}
+            onCancel={() => setEditingMessageId(undefined)}
+            onSubmit={(value) => editMessage(message, value)}
+          />
+        ) : (
+          message.parts.map((part, index) => (
+            <MessagePart
+              key={`${message.id}-${index}`}
+              part={part}
+              renderData={isFlagPart(part) ? renderFlagPart : undefined}
+            />
+          ))
+        )}
+      </Message>
+    );
+  };
 
   return (
     <ChatShell
@@ -335,7 +394,7 @@ function ChatInner({
         <Composer
           sdk={sdk}
           filesSlug={filesSlug}
-          pending={chat.status === 'submitted' || chat.status === 'streaming'}
+          pending={pending}
           onStop={stop}
           onSubmit={submit}
           startSlot={composerStartSlot}

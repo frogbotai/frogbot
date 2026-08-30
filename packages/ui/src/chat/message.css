@@ -19,11 +19,29 @@
 }
 
 .fb-message__body--user {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.fb-message__content--user {
   padding: 0.75rem 1.25rem 1rem;
   border-radius: calc(var(--radius-xl) + 0.25rem);
   border-top-right-radius: 0;
-  color: var(--theme-base-100);
-  background-color: var(--theme-base-700);
+  color: var(--theme-base-900);
+  background-color: var(--theme-base-200);
+}
+
+.fb-message--editing .fb-message__body--user {
+  width: 100%;
+  align-items: stretch;
+}
+
+.fb-message--editing .fb-message__content--user {
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  background-color: transparent;
 }
 
 .fb-message__content > :not(:last-child) {
@@ -41,7 +59,18 @@
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.fb-message--user .fb-message__actions {
+  justify-content: flex-end;
+}
+
 .fb-message:hover .fb-message__actions,
+.fb-message:focus-within .fb-message__actions,
 .fb-message__actions:focus-within {
   opacity: 1;
+}
+
+@media (hover: none) {
+  .fb-message__actions {
+    opacity: 1;
+  }
 }

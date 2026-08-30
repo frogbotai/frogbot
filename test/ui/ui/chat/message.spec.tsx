@@ -26,7 +26,9 @@ describe('Message', () => {
     expect(screen.getByText('Hello').parentElement?.className).toBe(
       'fb-message__body fb-message__body--user',
     );
-    expect(screen.getByText('Hello').className).toBe('fb-message__content');
+    expect(screen.getByText('Hello').className).toBe(
+      'fb-message__content fb-message__content--user',
+    );
     expect(screen.getByRole('button', { name: 'Copy' }).parentElement?.className).toBe(
       'fb-message__actions',
     );
