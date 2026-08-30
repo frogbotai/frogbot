@@ -3,6 +3,7 @@
 import type { UIMessage } from 'ai';
 import { type HTMLAttributes, type ReactNode, useEffect, useRef, useState } from 'react';
 
+import ArrowDownIcon from '../icons/icons/ArrowDownIcon';
 import { Message } from './message';
 import { MessagePart } from './message-part';
 
@@ -38,17 +39,19 @@ export function MessageList({ className, messages, renderMessage, ...props }: Me
         }}
         {...props}
       >
-        {messages.map((message) =>
-          renderMessage ? (
-            renderMessage(message)
-          ) : (
-            <Message key={message.id} role={message.role}>
-              {message.parts.map((part, index) => (
-                <MessagePart key={`${message.id}-${index}`} part={part} role={message.role} />
-              ))}
-            </Message>
-          ),
-        )}
+        <div className="fb-message-list__content">
+          {messages.map((message) =>
+            renderMessage ? (
+              renderMessage(message)
+            ) : (
+              <Message key={message.id} role={message.role}>
+                {message.parts.map((part, index) => (
+                  <MessagePart key={`${message.id}-${index}`} part={part} role={message.role} />
+                ))}
+              </Message>
+            ),
+          )}
+        </div>
       </div>
       {showJump && (
         <button
@@ -58,9 +61,10 @@ export function MessageList({ className, messages, renderMessage, ...props }: Me
             setShowJump(false);
             scrollToBottom();
           }}
-          className="fb-message-list__jump"
+          className="fb-message-list__jump fb-slide-up-1"
+          aria-label="Jump to latest"
         >
-          Jump to latest
+          <ArrowDownIcon className="fb-message-list__jump-icon" />
         </button>
       )}
     </div>

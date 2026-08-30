@@ -149,6 +149,7 @@ function ChatInner({
   const reportedChatId = useRef<string | undefined>(undefined);
   const previousAgent = useRef(agent);
   const renderedAt = useRef(new Map<string, string>());
+  const composerRef = useRef<HTMLDivElement>(null);
   const history = useChatMessages({ sdk, messagesSlug, chatId: activeChatId });
   const chats = useChats({ sdk, agent, chatsSlug });
   const [aborted, setAborted] = useState(false);
@@ -212,6 +213,20 @@ function ChatInner({
     setRuntimeChatId(`new:${agent}`);
     chat.setMessages([]);
   };
+
+  useEffect(() => {
+    const node = composerRef.current;
+    const main = node?.parentElement;
+    if (!node || !main) return;
+    const observer = new ResizeObserver(() => {
+      main.style.setProperty('--fb-composer-height', `${node.offsetHeight}px`);
+    });
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+      main.style.removeProperty('--fb-composer-height');
+    };
+  }, []);
 
   useEffect(() => {
     if (
@@ -438,7 +453,7 @@ function ChatInner({
           renderMessage={renderMessage ?? defaultRenderMessage}
         />
       )}
-      <div className="fb-chat__composer">
+      <div ref={composerRef} className="fb-chat__composer">
         <ChatStatus
           aborted={aborted}
           abortedContent={abortedContent}

@@ -3,9 +3,7 @@
   height: 100%;
   min-height: 0;
   color: var(--theme-base-900);
-  background-color: var(--theme-base-100);
-  max-width: 640px;
-  margin: 0 auto;
+  background-color: var(--theme-base-0);
 }
 
 .fb-chat-shell__sidebar {
@@ -19,6 +17,7 @@
 }
 
 .fb-chat-shell__main {
+  position: relative;
   display: flex;
   min-width: 0;
   flex: 1 1 0%;

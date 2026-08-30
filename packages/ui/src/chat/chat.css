@@ -29,7 +29,18 @@
 }
 
 .fb-chat__composer {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
   padding: 1rem;
+}
+
+.fb-message-list ~ .fb-chat__composer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, var(--theme-base-0) calc(100% - 1.5rem), transparent);
 }
 
 .fb-chat__empty ~ .fb-chat__composer {
