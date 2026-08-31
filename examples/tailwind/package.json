@@ -17,11 +17,11 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@frogbotai/db-sqlite": "0.20.0",
-    "@frogbotai/next": "0.20.0",
+    "@frogbotai/db-sqlite": "workspace:*",
+    "@frogbotai/next": "workspace:*",
     "cross-env": "^7.0.3",
     "drizzle-kit": "^0.31.7",
-    "frogbot": "0.20.0",
+    "frogbot": "workspace:*",
     "graphql": "^16.8.1",
     "json-schema-to-typescript": "^15.0.3",
     "libsql": "^0.4.7",

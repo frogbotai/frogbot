@@ -1,4 +1,4 @@
-import { withFrogbot } from '@frogbotai/next';
+import { withFrogbot } from '@frogbotai/next/config';
 
 const nextConfig = {
   serverExternalPackages: [

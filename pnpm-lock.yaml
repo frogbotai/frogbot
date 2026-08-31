@@ -253,11 +253,11 @@ importers:
   examples/tailwind:
     dependencies:
       '@frogbotai/db-sqlite':
-        specifier: 0.20.0
-        version: 0.20.0(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(bufferutil@4.1.0)(frogbot@0.20.0(@ai-sdk/otel@1.0.31(zod@4.4.3))(@aws-sdk/credential-providers@3.1097.0)(@opentelemetry/context-async-hooks@2.9.0(@opentelemetry/api@1.9.1))(@opentelemetry/exporter-metrics-otlp-http@0.203.0(@opentelemetry/api@1.9.1))(@opentelemetry/exporter-trace-otlp-http@0.203.0(@opentelemetry/api@1.9.1))(@opentelemetry/resources@2.9.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-metrics@2.9.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.9.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-node@2.9.0(@opentelemetry/api@1.9.1))(bufferutil@4.1.0)(graphql@16.14.2)(next@15.4.11(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(pino@9.14.0)(typescript@5.6.2))(payload@3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)
+        specifier: workspace:*
+        version: link:../../packages/db-sqlite
       '@frogbotai/next':
-        specifier: 0.20.0
-        version: 0.20.0(@types/react@19.2.14)(frogbot@0.20.0(@ai-sdk/otel@1.0.31(zod@4.4.3))(@aws-sdk/credential-providers@3.1097.0)(@opentelemetry/context-async-hooks@2.9.0(@opentelemetry/api@1.9.1))(@opentelemetry/exporter-metrics-otlp-http@0.203.0(@opentelemetry/api@1.9.1))(@opentelemetry/exporter-trace-otlp-http@0.203.0(@opentelemetry/api@1.9.1))(@opentelemetry/resources@2.9.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-metrics@2.9.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.9.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-node@2.9.0(@opentelemetry/api@1.9.1))(bufferutil@4.1.0)(graphql@16.14.2)(next@15.4.11(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(pino@9.14.0)(typescript@5.6.2))(graphql@16.14.2)(next@15.4.11(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.85.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
+        specifier: workspace:*
+        version: link:../../packages/next
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
@@ -265,8 +265,8 @@ importers:
         specifier: ^0.31.7
         version: 0.31.7
       frogbot:
-        specifier: 0.20.0
-        version: 0.20.0(@ai-sdk/otel@1.0.31(zod@4.4.3))(@aws-sdk/credential-providers@3.1097.0)(@opentelemetry/context-async-hooks@2.9.0(@opentelemetry/api@1.9.1))(@opentelemetry/exporter-metrics-otlp-http@0.203.0(@opentelemetry/api@1.9.1))(@opentelemetry/exporter-trace-otlp-http@0.203.0(@opentelemetry/api@1.9.1))(@opentelemetry/resources@2.9.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-metrics@2.9.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.9.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-node@2.9.0(@opentelemetry/api@1.9.1))(bufferutil@4.1.0)(graphql@16.14.2)(next@15.4.11(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(pino@9.14.0)(typescript@5.6.2)
+        specifier: workspace:*
+        version: link:../../packages/frogbot
       graphql:
         specifier: ^16.8.1
         version: 16.14.2
