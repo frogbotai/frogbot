@@ -3,6 +3,8 @@
 import * as Primitive from '@radix-ui/react-dropdown-menu';
 import type { ComponentProps } from 'react';
 
+import { PortalTheme } from '../theme/provider';
+
 export const DropdownMenu = Primitive.Root;
 export const DropdownMenuTrigger = Primitive.Trigger;
 export const DropdownMenuGroup = Primitive.Group;
@@ -15,11 +17,13 @@ export function DropdownMenuContent({
 }: ComponentProps<typeof Primitive.Content>) {
   return (
     <Primitive.Portal>
-      <Primitive.Content
-        className={`fb-dropdown-menu__content${className ? ` ${className}` : ''}`}
-        sideOffset={sideOffset}
-        {...props}
-      />
+      <PortalTheme>
+        <Primitive.Content
+          className={`fb-dropdown-menu__content${className ? ` ${className}` : ''}`}
+          sideOffset={sideOffset}
+          {...props}
+        />
+      </PortalTheme>
     </Primitive.Portal>
   );
 }

@@ -1,6 +1,8 @@
 'use client';
 import * as Primitive from '@radix-ui/react-popover';
 import type { ComponentProps } from 'react';
+
+import { PortalTheme } from '../theme/provider';
 export const Popover = Primitive.Root;
 export const PopoverTrigger = Primitive.Trigger;
 export const PopoverAnchor = Primitive.Anchor;
@@ -12,12 +14,14 @@ export function PopoverContent({
 }: ComponentProps<typeof Primitive.Content>) {
   return (
     <Primitive.Portal>
-      <Primitive.Content
-        align={align}
-        sideOffset={sideOffset}
-        className={`fb-popover__content${className ? ` ${className}` : ''}`}
-        {...props}
-      />
+      <PortalTheme>
+        <Primitive.Content
+          align={align}
+          sideOffset={sideOffset}
+          className={`fb-popover__content${className ? ` ${className}` : ''}`}
+          {...props}
+        />
+      </PortalTheme>
     </Primitive.Portal>
   );
 }

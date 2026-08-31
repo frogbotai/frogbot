@@ -29,11 +29,11 @@ export function ChatRowMenuItems({ context, onDelete, onRename }: ChatRowMenuIte
   const Item = context ? ContextMenuItem : DropdownMenuItem;
   return (
     <>
-      <Item onSelect={onRename}>
+      <Item className="fb-slide-right-1" onSelect={onRename}>
         <PencilIcon />
         <span>Rename</span>
       </Item>
-      <Item className="fb-chat-row-actions__delete" onSelect={onDelete}>
+      <Item className="fb-chat-row-actions__delete fb-slide-right-1" onSelect={onDelete}>
         <DeleteIcon />
         <span>Delete</span>
       </Item>
@@ -42,22 +42,32 @@ export function ChatRowMenuItems({ context, onDelete, onRename }: ChatRowMenuIte
 }
 
 export type ChatRowActionsProps = {
-  children: ReactElement<{ children?: ReactNode }>;
+  children: ReactElement<{ children?: ReactNode; className?: string }>;
   onRename: () => void;
   onDelete: () => void;
 };
 
 export function ChatRowActions({ children, onDelete, onRename }: ChatRowActionsProps) {
-  const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [contextOpen, setContextOpen] = useState(false);
+  const open = menuOpen || contextOpen;
+  const rowClassName = [
+    children.props.className,
+    'fb-chat-row-actions__row',
+    'fb-slide-right-1',
+    open ? 'fb-slide-active fb-chat-row-actions__row--open' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
   const row = cloneElement(
     children,
-    undefined,
+    { className: rowClassName },
     children.props.children,
-    <DropdownMenu open={open} onOpenChange={setOpen} modal>
+    <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen} modal>
       <DropdownMenuTrigger asChild>
         <button
           aria-label="Chat actions"
-          className={`fb-chat-row-actions__trigger${open ? ' fb-chat-row-actions__trigger--open' : ''}`}
+          className={`fb-chat-row-actions__trigger${menuOpen ? ' fb-chat-row-actions__trigger--open' : ''}`}
           onClick={(event) => event.stopPropagation()}
           type="button"
         >
@@ -70,7 +80,7 @@ export function ChatRowActions({ children, onDelete, onRename }: ChatRowActionsP
     </DropdownMenu>,
   );
   return (
-    <ContextMenu>
+    <ContextMenu onOpenChange={setContextOpen}>
       <ContextMenuTrigger asChild>{row}</ContextMenuTrigger>
       <ContextMenuContent>
         <ChatRowMenuItems context onDelete={onDelete} onRename={onRename} />

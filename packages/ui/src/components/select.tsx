@@ -6,6 +6,7 @@ import type { ComponentProps } from 'react';
 import CheckIcon from '../icons/icons/CheckIcon';
 import ChevronDownIcon from '../icons/icons/ChevronDownIcon';
 import ChevronUpIcon from '../icons/icons/ChevronUpIcon';
+import { PortalTheme } from '../theme/provider';
 
 export const Select = Primitive.Root;
 export const SelectGroup = Primitive.Group;
@@ -35,19 +36,21 @@ export function SelectContent({
 }: ComponentProps<typeof Primitive.Content>) {
   return (
     <Primitive.Portal>
-      <Primitive.Content
-        className={`fb-select__content${className ? ` ${className}` : ''}`}
-        position={position}
-        {...props}
-      >
-        <Primitive.ScrollUpButton className="fb-select__scroll-up">
-          <ChevronUpIcon className="fb-select__scroll-up-icon" />
-        </Primitive.ScrollUpButton>
-        <Primitive.Viewport className="fb-select__viewport">{children}</Primitive.Viewport>
-        <Primitive.ScrollDownButton className="fb-select__scroll-down">
-          <ChevronDownIcon className="fb-select__scroll-down-icon" />
-        </Primitive.ScrollDownButton>
-      </Primitive.Content>
+      <PortalTheme>
+        <Primitive.Content
+          className={`fb-select__content${className ? ` ${className}` : ''}`}
+          position={position}
+          {...props}
+        >
+          <Primitive.ScrollUpButton className="fb-select__scroll-up">
+            <ChevronUpIcon className="fb-select__scroll-up-icon" />
+          </Primitive.ScrollUpButton>
+          <Primitive.Viewport className="fb-select__viewport">{children}</Primitive.Viewport>
+          <Primitive.ScrollDownButton className="fb-select__scroll-down">
+            <ChevronDownIcon className="fb-select__scroll-down-icon" />
+          </Primitive.ScrollDownButton>
+        </Primitive.Content>
+      </PortalTheme>
     </Primitive.Portal>
   );
 }

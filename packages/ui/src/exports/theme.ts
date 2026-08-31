@@ -1,6 +1,7 @@
 export {};
 export { type BrandConfig, type BrandTheme } from '../theme/brand';
 export {
+  PortalTheme,
   type ResolvedThemeMode,
   type ThemeMode,
   ThemeProvider,

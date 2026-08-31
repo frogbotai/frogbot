@@ -7,6 +7,7 @@ export type NavItemIcon = ComponentType<{ className?: string; size?: number }> |
 
 export type NavItemProps = {
   active?: boolean;
+  className?: string;
   icon?: NavItemIcon;
   label: string;
   path: string;
@@ -14,13 +15,13 @@ export type NavItemProps = {
 
 const baseClass = 'frogbot-nav-item';
 
-export function NavItem({ active = false, icon, label, path }: NavItemProps) {
+export function NavItem({ active = false, className, icon, label, path }: NavItemProps) {
   return (
     <Link
       aria-current={active ? 'page' : undefined}
       className={[
         baseClass,
-        'fb-slide-right-1',
+        className,
         active && `${baseClass}--active`,
         icon && `${baseClass}--with-icon`,
       ]

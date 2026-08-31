@@ -8,9 +8,16 @@
   display: flex;
   align-items: center;
   border-radius: var(--radius-lg);
+  transition: background 200ms ease-out;
 }
 
-.fb-chat-history__item--active {
+.fb-chat-history__item:hover,
+.fb-chat-history__item.fb-chat-row-actions__row--open {
+  background-color: var(--theme-base-100);
+}
+
+.fb-chat-history__item--active,
+.fb-chat-history__item--active:hover {
   color: var(--theme-base-800);
   background-color: var(--theme-base-150);
 }
@@ -22,6 +29,12 @@
   overflow: hidden;
   text-align: left;
   white-space: nowrap;
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 0.75rem), transparent);
-  mask-image: linear-gradient(to right, #000 calc(100% - 0.75rem), transparent);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1rem), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 1rem), transparent);
+}
+
+.fb-chat-history__item:hover .fb-chat-history__button,
+.fb-chat-history__item:focus-within .fb-chat-history__button,
+.fb-chat-history__item.fb-chat-row-actions__row--open .fb-chat-history__button {
+  padding-inline-end: 2.25rem;
 }

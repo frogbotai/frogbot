@@ -4,6 +4,7 @@ import * as Primitive from '@radix-ui/react-dialog';
 import type { ComponentProps } from 'react';
 
 import XIcon from '../icons/icons/XIcon';
+import { PortalTheme } from '../theme/provider';
 
 export const Sheet = Primitive.Root;
 export const SheetTrigger = Primitive.Trigger;
@@ -16,17 +17,19 @@ export function SheetContent({
 }: ComponentProps<typeof Primitive.Content> & { side?: 'top' | 'right' | 'bottom' | 'left' }) {
   return (
     <Primitive.Portal>
-      <Primitive.Overlay className="fb-sheet__overlay" />
-      <Primitive.Content
-        className={`fb-sheet__content fb-sheet__content--${side}${className ? ` ${className}` : ''}`}
-        {...props}
-      >
-        {children}
-        <Primitive.Close className="fb-sheet__close">
-          <XIcon className="fb-sheet__close-icon" />
-          <span className="fb-sheet__close-label">Close</span>
-        </Primitive.Close>
-      </Primitive.Content>
+      <PortalTheme>
+        <Primitive.Overlay className="fb-sheet__overlay" />
+        <Primitive.Content
+          className={`fb-sheet__content fb-sheet__content--${side}${className ? ` ${className}` : ''}`}
+          {...props}
+        >
+          {children}
+          <Primitive.Close className="fb-sheet__close">
+            <XIcon className="fb-sheet__close-icon" />
+            <span className="fb-sheet__close-label">Close</span>
+          </Primitive.Close>
+        </Primitive.Content>
+      </PortalTheme>
     </Primitive.Portal>
   );
 }

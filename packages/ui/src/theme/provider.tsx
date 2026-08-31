@@ -28,6 +28,7 @@ interface ThemeContextValue {
   mode: ThemeMode;
   resolvedMode: ResolvedThemeMode;
   setMode: (mode: ThemeMode) => void;
+  tokens?: CSSProperties;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -68,6 +69,7 @@ export function ThemeProvider({
   const [internalMode, setInternalMode] = useState<ThemeMode>(controlledMode ?? 'system');
   const mode = controlledMode ?? internalMode;
   const resolvedMode = mode === 'system' ? systemMode : mode;
+  const tokens = { ...brand?.tokens, ...theme } as CSSProperties;
 
   useLayoutEffect(() => {
     if (controlledMode) {
@@ -89,12 +91,12 @@ export function ThemeProvider({
   };
 
   return (
-    <ThemeContext.Provider value={{ mode, resolvedMode, setMode }}>
+    <ThemeContext.Provider value={{ mode, resolvedMode, setMode, tokens }}>
       <div
         className={`fb-theme${mode === 'dark' ? ' fb-theme--dark' : ''}`}
         data-fb-ui=""
         data-theme={mode}
-        style={{ ...brand?.tokens, ...theme } as CSSProperties}
+        style={tokens}
       >
         {children}
       </div>
@@ -117,4 +119,18 @@ export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) throw new Error('useTheme must be used within ThemeProvider');
   return context;
+}
+
+export function PortalTheme({ children }: { children: ReactNode }) {
+  const context = useContext(ThemeContext);
+  return (
+    <div
+      className="fb-portal"
+      data-fb-ui=""
+      data-theme={context?.mode ?? 'system'}
+      style={context?.tokens}
+    >
+      {children}
+    </div>
+  );
 }

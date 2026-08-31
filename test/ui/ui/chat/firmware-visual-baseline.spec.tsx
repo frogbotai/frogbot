@@ -23,7 +23,7 @@ it('matches the canonical Firmware theme foundation', () => {
   expect(styles).toContain('--theme-base-0: var(--color-base-1000)');
   expect(styles).toContain('--theme-base-1000: var(--color-base-0)');
   expect(styles).toContain('--radius: 0.5rem');
-  expect(styles).toContain('"Satoshi-Variable"');
+  expect(styles).not.toContain('Satoshi');
   expect(styles).not.toContain('oklch(');
 });
 

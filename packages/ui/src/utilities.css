@@ -24,7 +24,8 @@
   transition: transform 200ms ease-out;
 }
 
-.fb-slide-right-1:hover {
+.fb-slide-right-1:hover,
+.fb-slide-right-1.fb-slide-active {
   transform: translateX(4px);
 }
 
@@ -74,6 +75,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .fb-slide-right-1:hover,
+  .fb-slide-right-1.fb-slide-active,
   .fb-slide-right-2:hover,
   .fb-slide-right-3:hover,
   .fb-slide-left-1:hover,

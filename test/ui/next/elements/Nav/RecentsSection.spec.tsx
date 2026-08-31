@@ -20,6 +20,7 @@ vi.mock('@payloadcms/ui', () => ({
     </a>
   ),
   useConfig: () => ({ config: { routes: { api: '/api' } } }),
+  useTheme: () => ({ theme: 'light' }),
 }));
 
 vi.mock('frogbot', () => ({
@@ -64,6 +65,11 @@ describe('RecentsSection', () => {
     find.mockReset();
     pathname = '/control';
     push.mockReset();
+    vi.stubGlobal('matchMedia', () => ({
+      addEventListener: vi.fn(),
+      matches: false,
+      removeEventListener: vi.fn(),
+    }));
   });
 
   it('queries with authenticated access and renders normalized seeds on first paint', async () => {

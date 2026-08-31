@@ -4,8 +4,8 @@
 @import "./elements/Nav/sections.css";
 @import "./views/SettingsView.css";
 
-.frogbot-chat-view {
-  height: calc(100dvh - var(--app-header-height));
+:root {
+  --payload-font-body: var(--font-body);
   --payload-base-0: var(--color-base-0);
   --payload-base-50: var(--color-base-50);
   --payload-base-100: var(--color-base-100);
@@ -29,7 +29,11 @@
   --payload-base-1000: var(--color-base-1000);
 }
 
-.frogbot-chat-view [data-fb-ui] {
+.frogbot-chat-view {
+  height: calc(100dvh - var(--app-header-height));
+}
+
+[data-fb-ui] {
   --color-base-0: var(--payload-base-0);
   --color-base-50: var(--payload-base-50);
   --color-base-100: var(--payload-base-100);
@@ -55,6 +59,11 @@
 
 .frogbot-chat-view > [data-fb-ui] {
   height: 100%;
+}
+
+.frogbot-nav [data-fb-ui] {
+  --font-body: var(--payload-font-body);
+  display: contents;
 }
 
 .template-default:has(.frogbot-nav) {

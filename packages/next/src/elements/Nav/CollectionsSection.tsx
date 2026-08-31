@@ -31,6 +31,7 @@ export function CollectionsSection({
           <div className="frogbot-collections-section__items">
             {group.items.map((item) => (
               <NavItem
+                className="fb-slide-right-1"
                 icon={
                   item.icon
                     ? RenderServerComponent({

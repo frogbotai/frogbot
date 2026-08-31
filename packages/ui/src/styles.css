@@ -64,9 +64,12 @@ html {
   font-size: 14px;
 }
 
+.fb-portal {
+  display: contents;
+}
+
 [data-fb-ui] {
   --font-payload: var(--font-body);
-  --font-gilda: "Gilda Display";
   --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;
   --text-sm: 0.875rem;
@@ -117,9 +120,7 @@ html {
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --font-body:
-    "Satoshi-Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
-  --font-gilda: "Gilda Display";
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --color-base-0: rgb(249, 250, 251);
   --color-base-50: rgb(246, 247, 249);
   --color-base-100: rgb(243, 244, 246);
@@ -413,24 +414,4 @@ html {
     --sidebar-accent: var(--color-base-800);
     color-scheme: dark;
   }
-}
-
-@font-face {
-  font-family: "Satoshi-Variable";
-  src:
-    url("/fonts/Satoshi-Variable.woff2") format("woff2"),
-    url("/fonts/Satoshi-Variable.woff") format("woff");
-  font-style: normal;
-  font-weight: 300 900;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Satoshi-Variable";
-  src:
-    url("/fonts/Satoshi-VariableItalic.woff2") format("woff2"),
-    url("/fonts/Satoshi-VariableItalic.woff") format("woff");
-  font-style: italic;
-  font-weight: 300 900;
-  font-display: swap;
 }

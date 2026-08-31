@@ -4,6 +4,7 @@ import * as Primitive from '@radix-ui/react-dialog';
 import type { ComponentProps } from 'react';
 
 import XIcon from '../icons/icons/XIcon';
+import { PortalTheme } from '../theme/provider';
 
 export const Dialog = Primitive.Root;
 export const DialogTrigger = Primitive.Trigger;
@@ -31,19 +32,21 @@ export function DialogContent({
 }) {
   return (
     <DialogPortal>
-      {showOverlay && <DialogOverlay />}
-      <Primitive.Content
-        className={`fb-dialog__content${className ? ` ${className}` : ''}`}
-        {...props}
-      >
-        {children}
-        {withCloseButton && (
-          <Primitive.Close className="fb-dialog__close">
-            <XIcon className="fb-dialog__close-icon" />
-            <span className="fb-dialog__close-label">Close</span>
-          </Primitive.Close>
-        )}
-      </Primitive.Content>
+      <PortalTheme>
+        {showOverlay && <DialogOverlay />}
+        <Primitive.Content
+          className={`fb-dialog__content${className ? ` ${className}` : ''}`}
+          {...props}
+        >
+          {children}
+          {withCloseButton && (
+            <Primitive.Close className="fb-dialog__close">
+              <XIcon className="fb-dialog__close-icon" />
+              <span className="fb-dialog__close-label">Close</span>
+            </Primitive.Close>
+          )}
+        </Primitive.Content>
+      </PortalTheme>
     </DialogPortal>
   );
 }

@@ -111,10 +111,9 @@
 .frogbot-recents-section__items .frogbot-nav-item__label {
   flex: 1 1 auto;
   min-width: 0;
-  padding-right: 24px;
   text-overflow: clip;
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
-  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 16px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 16px), transparent);
 }
 
 .frogbot-nav-item--with-icon .frogbot-nav-item__label {
@@ -172,12 +171,44 @@
 
 .frogbot-recents-section__item {
   align-items: center;
+  border-radius: 8px;
   display: flex;
+  transition: background 200ms ease-out;
+}
+
+.frogbot-recents-section__item:hover,
+.frogbot-recents-section__item.fb-chat-row-actions__row--open {
+  background: var(--theme-elevation-100);
+}
+
+.frogbot-recents-section__item:has(.frogbot-nav-item--active) {
+  background: var(--theme-elevation-150);
+}
+
+.frogbot-recents-section__item .frogbot-nav-item:hover,
+.frogbot-recents-section__item .frogbot-nav-item--active {
+  background: transparent;
+}
+
+.frogbot-recents-section__item:hover .frogbot-nav-item,
+.frogbot-recents-section__item.fb-chat-row-actions__row--open .frogbot-nav-item,
+.frogbot-recents-section__item .frogbot-nav-item--active {
+  color: var(--theme-elevation-900);
+}
+
+.frogbot-recents-section__item .fb-chat-row-actions__trigger:hover {
+  background: var(--theme-elevation-250);
 }
 
 .frogbot-recents-section__item .frogbot-nav-item {
   flex: 1;
   min-width: 0;
+}
+
+.frogbot-recents-section__item:hover .frogbot-nav-item,
+.frogbot-recents-section__item:focus-within .frogbot-nav-item,
+.frogbot-recents-section__item.fb-chat-row-actions__row--open .frogbot-nav-item {
+  padding-inline-end: 34px;
 }
 
 .frogbot-recents-section__view-all {

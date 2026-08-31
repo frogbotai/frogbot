@@ -1,6 +1,13 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../../../packages/ui/src/components/dropdown-menu';
 import { ThemeProvider, ThemeScript, useTheme } from '../../../../packages/ui/src/theme/provider';
 
 function Toggle() {
@@ -42,6 +49,30 @@ describe('ThemeProvider', () => {
     );
     expect(container.firstElementChild?.getAttribute('data-theme')).toBe('dark');
     expect(container.firstElementChild?.getAttribute('style')).toContain('oklch(0.4 0.2 120)');
+  });
+
+  it('themes portaled overlay content outside the provider subtree', async () => {
+    vi.stubGlobal('matchMedia', () => ({
+      addEventListener: vi.fn(),
+      matches: false,
+      removeEventListener: vi.fn(),
+    }));
+    const { container } = render(
+      <ThemeProvider mode="dark" theme={{ '--primary': 'red' }}>
+        <DropdownMenu>
+          <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem>Rename</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </ThemeProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+    const item = await screen.findByRole('menuitem', { name: 'Rename' });
+    expect(container.firstElementChild?.contains(item)).toBe(false);
+    const frame = item.closest('[data-fb-ui]');
+    expect(frame?.getAttribute('data-theme')).toBe('dark');
+    expect(frame?.getAttribute('style')).toContain('--primary: red');
   });
 
   it('emits a pre-hydration stored-theme bootstrap', () => {

@@ -1,8 +1,10 @@
 'use client';
 import * as Primitive from '@radix-ui/react-context-menu';
 import type { ComponentProps } from 'react';
+
 import CheckIcon from '../icons/icons/CheckIcon';
 import ChevronRightIcon from '../icons/icons/ChevronRightIcon';
+import { PortalTheme } from '../theme/provider';
 export const ContextMenu = Primitive.Root;
 export const ContextMenuTrigger = Primitive.Trigger;
 export const ContextMenuGroup = Primitive.Group;
@@ -15,10 +17,12 @@ export function ContextMenuContent({
 }: ComponentProps<typeof Primitive.Content>) {
   return (
     <Primitive.Portal>
-      <Primitive.Content
-        className={`fb-context-menu__content${className ? ` ${className}` : ''}`}
-        {...props}
-      />
+      <PortalTheme>
+        <Primitive.Content
+          className={`fb-context-menu__content${className ? ` ${className}` : ''}`}
+          {...props}
+        />
+      </PortalTheme>
     </Primitive.Portal>
   );
 }
