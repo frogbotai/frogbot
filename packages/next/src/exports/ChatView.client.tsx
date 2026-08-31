@@ -1,5 +1,6 @@
 'use client';
 
+import type { ChatProps, GreetingProps, MessageActionsSlotProps } from '@frogbotai/ui/chat';
 import {
   AgentSelector,
   Chat,
@@ -9,7 +10,6 @@ import {
   updateChatAgent,
   useChatProvider,
 } from '@frogbotai/ui/chat';
-import type { ChatProps, GreetingProps, MessageActionsSlotProps } from '@frogbotai/ui/chat';
 import { ThemeProvider } from '@frogbotai/ui/theme';
 import { usePreferences, useTheme } from '@payloadcms/ui';
 import type { UIMessage } from 'frogbot';

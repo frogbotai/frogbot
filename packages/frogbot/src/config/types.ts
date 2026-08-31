@@ -7,7 +7,6 @@
 // Users import this from `'frogbot'` and never see the underlying Payload
 // type name or import path.
 
-import type { Frogbot } from '../frogbot.js';
 import type { RootAdminConfig, SettingsEntry } from '../admin/types.js';
 import type { AgentConfig } from '../agents/types.js';
 import type { AIConfig } from '../ai/types.js';
@@ -15,6 +14,7 @@ import type { CollectionConfig } from '../collections/config/types.js';
 import type { ConnectionsConfig, CredentialSource } from '../connections/types.js';
 import type { DatabaseAdapter } from '../database/types.js';
 import type { Endpoint } from '../endpoints/types.js';
+import type { Frogbot } from '../frogbot.js';
 import type { Piece } from '../pieces/types.js';
 import type { Plugin } from '../plugin.js';
 import type { AnyTool } from '../tools/types.js';

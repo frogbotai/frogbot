@@ -2,6 +2,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { expect, it, vi } from 'vitest';
+
+import CheckIcon from '../../../../packages/ui/src/icons/icons/CheckIcon';
 import {
   ConfirmationDialog,
   EditableText,
@@ -10,7 +12,6 @@ import {
   StatusIconWithText,
   TextWithIcon,
 } from '../../../../packages/ui/src/index';
-import CheckIcon from '../../../../packages/ui/src/icons/icons/CheckIcon';
 it('runs a real confirmation flow', async () => {
   const user = userEvent.setup();
   const confirm = vi.fn();

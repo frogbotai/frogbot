@@ -4,13 +4,13 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { ConfigError } from '../../../../packages/gateway/src/errors/gatewayError.js';
 import {
   finalizeConfig,
   kParsed,
   loadConfigFile,
   mergeConfigs,
 } from '../../../../packages/gateway/src/config/parse.js';
+import { ConfigError } from '../../../../packages/gateway/src/errors/gatewayError.js';
 
 const scratch = () => mkdtempSync(join(tmpdir(), 'frogbotai-gateway-config-'));
 

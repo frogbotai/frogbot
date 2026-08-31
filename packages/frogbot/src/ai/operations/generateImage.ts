@@ -4,12 +4,12 @@ import type { Gateway } from '@frogbotai/gateway';
 import { generateImage as aiGenerateImage } from 'ai';
 
 import type { Logger } from '../../frogbot.js';
-import type { GenerateImageOpts, SanitizedAIConfig } from '../types.js';
 import type { FrogbotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
 import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
+import type { GenerateImageOpts, SanitizedAIConfig } from '../types.js';
 
 export type GenerateImageDeps = {
   gateway: Gateway;

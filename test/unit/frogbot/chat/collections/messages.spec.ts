@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import { defaultMessagesCollection } from '../../../../../packages/frogbot/src/chat/collections/messages.js';
 import type { FieldAccess } from '../../../../../packages/frogbot/src/collections/config/types.js';
 import type { FrogbotRequest } from '../../../../../packages/frogbot/src/types/request.js';
-import { defaultMessagesCollection } from '../../../../../packages/frogbot/src/chat/collections/messages.js';
 
 const collection = defaultMessagesCollection({ slug: 'messages', chatsSlug: 'chats' });
 

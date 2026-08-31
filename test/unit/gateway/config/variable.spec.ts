@@ -5,8 +5,8 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { ConfigError } from '../../../../packages/gateway/src/errors/gatewayError.js';
 import { interpolateConfigText } from '../../../../packages/gateway/src/config/variable.js';
+import { ConfigError } from '../../../../packages/gateway/src/errors/gatewayError.js';
 
 const scratch = () => realpathSync(mkdtempSync(join(tmpdir(), 'frogbotai-gateway-variable-')));
 

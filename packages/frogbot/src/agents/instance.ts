@@ -5,10 +5,14 @@ import { convertToModelMessages, generateId, ToolLoopAgent, validateUIMessages }
 import { toHookUsage } from '../ai/hooks.js';
 import { logUsage } from '../ai/logUsage.js';
 import { resolveModel } from '../ai/resolve.js';
+import type { SanitizedAIConfig } from '../ai/types.js';
 import { resolveChatContext } from '../chat/chatContext.js';
 import { generateMessage } from '../chat/generateMessage.js';
 import { persistAssistantMessage } from '../chat/messagePersistence.js';
 import type { Frogbot } from '../frogbot.js';
+import type { ToolCtx } from '../tools/types.js';
+import type { FrogbotRequest } from '../types/request.js';
+import { toAISDKTools, toAISDKToolsContext } from './tools.js';
 import type {
   AgentCallOptions,
   AgentGenerateOpts,
@@ -18,10 +22,6 @@ import type {
   AgentStreamResult,
   SanitizedAgentConfig,
 } from './types.js';
-import type { SanitizedAIConfig } from '../ai/types.js';
-import type { FrogbotRequest } from '../types/request.js';
-import type { ToolCtx } from '../tools/types.js';
-import { toAISDKTools, toAISDKToolsContext } from './tools.js';
 
 export type AgentInstanceDeps = {
   gateway: Gateway;

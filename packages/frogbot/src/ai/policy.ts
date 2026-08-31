@@ -1,8 +1,8 @@
 import { calculateCostUSD, calculateModelCostUSD, type ModelCost } from '@frogbotai/gateway';
 import { BudgetExceededError, ModelNotAllowedError } from '@frogbotai/gateway/errors';
 
-import type { CustomProviderEntry } from './types.js';
 import type { FrogbotRequest } from '../types/request.js';
+import type { CustomProviderEntry } from './types.js';
 
 export type AIUserPolicy = {
   models: { mode: 'all' } | { mode: 'selected'; targets: string[] };

@@ -1,6 +1,7 @@
 'use client';
 import * as Primitive from '@radix-ui/react-accordion';
 import type { ComponentProps } from 'react';
+
 import ChevronDownIcon from '../icons/icons/ChevronDownIcon';
 export const Accordion = Primitive.Root;
 export function AccordionItem({ className, ...props }: ComponentProps<typeof Primitive.Item>) {

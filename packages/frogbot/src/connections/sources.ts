@@ -1,5 +1,5 @@
-import type { CredentialSource } from './types.js';
 import type { Piece } from '../pieces/types.js';
+import type { CredentialSource } from './types.js';
 
 export function resolveCredentialSources({
   sources,

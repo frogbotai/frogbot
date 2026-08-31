@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Piece } from '../../../../packages/frogbot/src/pieces/types.js';
 import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
 import { buildSecretEndpoints } from '../../../../packages/frogbot/src/connections/secret.js';
+import type { Piece } from '../../../../packages/frogbot/src/pieces/types.js';
 
 const pieces: Piece[] = [
   { service: 'resend', credentialType: 'secret_text', actions: [], tools: () => [] },

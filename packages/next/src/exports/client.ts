@@ -7,8 +7,8 @@ export {
 } from '../elements/Nav/AccountMenu.js';
 export {
   AppSidebar,
-  type AppSidebarProps,
   type AppSidebarNavItem,
+  type AppSidebarProps,
 } from '../elements/Nav/AppSidebar.js';
 export { FrogbotNavClient, type FrogbotNavClientProps } from '../elements/Nav/index.client.js';
 export { NavItem, type NavItemIcon, type NavItemProps } from '../elements/Nav/NavItem.js';

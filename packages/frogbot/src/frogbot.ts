@@ -9,6 +9,7 @@ import type { Payload } from 'payload';
 import { createLocalReq, getPayload, handleEndpoints } from 'payload';
 
 import { createAgentInstance } from './agents/instance.js';
+import type { AgentRegistry } from './agents/types.js';
 import { createAIGateway } from './ai/index.js';
 import { embedOperation } from './ai/operations/embed.js';
 import { embedManyOperation } from './ai/operations/embedMany.js';
@@ -19,21 +20,6 @@ import { generateVideoOperation } from './ai/operations/generateVideo.js';
 import { rerankOperation } from './ai/operations/rerank.js';
 import { streamTextOperation } from './ai/operations/streamText.js';
 import { transcribeOperation } from './ai/operations/transcribe.js';
-import { resolveConfigDir } from './config/resolveConfigPath.js';
-import { Connections } from './connections/api.js';
-import { generateImportMap } from './bin/generateImportMap/index.js';
-import {
-  ensureFrogbotInstance,
-  refreshFrogbotConfig,
-  registerFrogbotInstance,
-} from './instanceRegistry.js';
-import type { FrogbotLocalAPI } from './localAPI.js';
-import { createFrogbotLocalAPI } from './localAPI.js';
-import { encodeTrainingData } from './training/encodeTrainingData.js';
-import { readTrainingData } from './training/readTrainingData.js';
-import type { ReadTrainingDataOptions } from './training/types.js';
-import { writeGeneratedTypes } from './typegen/index.js';
-import type { AgentRegistry } from './agents/types.js';
 import type {
   EmbedManyOpts,
   EmbedOpts,
@@ -46,7 +32,6 @@ import type {
   StreamTextOpts,
   TranscribeOpts,
 } from './ai/types.js';
-import type { Collection } from './collections/config/types.js';
 import type {
   AuthArgs,
   AuthResult,
@@ -58,7 +43,8 @@ import type {
   UnlockArgs,
   VerifyEmailArgs,
 } from './auth/types.js';
-import type { CollectionSlug, TypedCollection } from './types/generated.js';
+import { generateImportMap } from './bin/generateImportMap/index.js';
+import type { Collection } from './collections/config/types.js';
 import type {
   BulkResult,
   CountArgs,
@@ -75,6 +61,22 @@ import type {
   UpdateByIDArgs,
   UpdateManyArgs,
 } from './collections/config/types.js';
+import { resolveConfigDir } from './config/resolveConfigPath.js';
+import type { FrogbotSanitizedConfig } from './config/sanitized.js';
+import { Connections } from './connections/api.js';
+import {
+  ensureFrogbotInstance,
+  refreshFrogbotConfig,
+  registerFrogbotInstance,
+} from './instanceRegistry.js';
+import type { FrogbotLocalAPI } from './localAPI.js';
+import { createFrogbotLocalAPI } from './localAPI.js';
+import { encodeTrainingData } from './training/encodeTrainingData.js';
+import { readTrainingData } from './training/readTrainingData.js';
+import type { ReadTrainingDataOptions } from './training/types.js';
+import { writeGeneratedTypes } from './typegen/index.js';
+import type { CollectionSlug, TypedCollection } from './types/generated.js';
+import type { FrogbotRequest } from './types/request.js';
 import type {
   CountVersionsArgs,
   FindVersionByIDArgs,
@@ -82,8 +84,6 @@ import type {
   RestoreVersionArgs,
   TypeWithVersion,
 } from './versions/types.js';
-import type { FrogbotRequest } from './types/request.js';
-import type { FrogbotSanitizedConfig } from './config/sanitized.js';
 
 type LogFn = {
   (obj: Record<string, unknown>, msg?: string): void;

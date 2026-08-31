@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import { resolveUserSlug } from '../../../../packages/frogbot/src/chat/resolveUserSlug.js';
+import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 
 function make(collections: CollectionConfig[], adminUser?: string) {
   return { collections, admin: adminUser ? { user: adminUser } : undefined };

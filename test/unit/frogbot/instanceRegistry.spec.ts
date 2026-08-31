@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { FrogbotSanitizedConfig } from '../../../packages/frogbot/src/config/sanitized.js';
 import type { Frogbot } from '../../../packages/frogbot/src/frogbot.js';
 import {
   ensureFrogbotInstance,
   refreshFrogbotConfig,
   registerFrogbotInstance,
 } from '../../../packages/frogbot/src/instanceRegistry.js';
-import type { FrogbotSanitizedConfig } from '../../../packages/frogbot/src/config/sanitized.js';
 
 describe('ensureFrogbotInstance', () => {
   it('returns a registered instance without initializing', async () => {

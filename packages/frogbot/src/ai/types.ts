@@ -7,10 +7,10 @@ import type { ModelMessage, Output, StopCondition, ToolChoice, ToolSet } from 'a
 
 import type { CatalogModelId } from '../ai/generated.js';
 import type { ProviderName } from '../ai/providerNames.js';
-import type { AIHooks, SanitizedAIHooks } from './hooks/types.js';
 import type { Tool } from '../tools/types.js';
 import type { FrogbotTypes } from '../types/generated.js';
 import type { FrogbotRequest } from '../types/request.js';
+import type { AIHooks, SanitizedAIHooks } from './hooks/types.js';
 
 export type AIOutput = ReturnType<(typeof Output)[keyof typeof Output]>;
 

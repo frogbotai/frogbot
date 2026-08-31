@@ -4,11 +4,11 @@ import type { Gateway } from '@frogbotai/gateway';
 import { experimental_generateVideo as aiGenerateVideo } from 'ai';
 
 import type { Logger } from '../../frogbot.js';
-import type { GenerateVideoOpts, SanitizedAIConfig } from '../types.js';
 import type { FrogbotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
+import type { GenerateVideoOpts, SanitizedAIConfig } from '../types.js';
 
 export type GenerateVideoDeps = {
   gateway: Gateway;

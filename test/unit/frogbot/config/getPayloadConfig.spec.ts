@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { FrogbotSanitizedConfig } from '../../../../packages/frogbot/src/config/sanitized.js';
 import { getPayloadConfig } from '../../../../packages/frogbot/src/config/getPayloadConfig.js';
+import type { FrogbotSanitizedConfig } from '../../../../packages/frogbot/src/config/sanitized.js';
 
 function makeConfig() {
   const payloadConfig = { collections: [] };

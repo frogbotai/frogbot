@@ -4,9 +4,9 @@
 // `globalThis` so repeated calls return the same object even when the
 // module graph is re-evaluated (e.g. Next.js dev HMR).
 
+import type { FrogbotSanitizedConfig } from './config/sanitized.js';
 import type { InitOptions } from './frogbot.js';
 import { Frogbot } from './frogbot.js';
-import type { FrogbotSanitizedConfig } from './config/sanitized.js';
 
 type FrogbotCache = {
   frogbot: Frogbot | null;

@@ -1,8 +1,8 @@
 import { mergeCollection } from '../collections/config/merge.js';
-import { validateCollectionMarkers } from '../collections/config/validateMarkers.js';
 import type { CollectionConfig } from '../collections/config/types.js';
-import type { SanitizedFilesConfig } from './types.js';
+import { validateCollectionMarkers } from '../collections/config/validateMarkers.js';
 import { defaultFilesCollection } from './collection.js';
+import type { SanitizedFilesConfig } from './types.js';
 
 export const DEFAULT_FILES_SLUG = 'files';
 

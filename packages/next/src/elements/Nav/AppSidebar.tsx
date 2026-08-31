@@ -1,7 +1,7 @@
 'use client';
 
 import { FolderIcon, FrogBotFavicon, SidebarLeftIcon } from '@frogbotai/ui/icons';
-import { iconRegistry, type IconName, isIconName } from '@frogbotai/ui/icons/registry';
+import { type IconName, iconRegistry, isIconName } from '@frogbotai/ui/icons/registry';
 import { Tooltip } from '@payloadcms/ui/elements/Tooltip';
 import {
   type ComponentType,

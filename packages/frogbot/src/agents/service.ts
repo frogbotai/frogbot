@@ -5,10 +5,10 @@ import { resolveModel } from '../ai/resolve.js';
 import { resolveChatContext } from '../chat/chatContext.js';
 import { generateMessage } from '../chat/generateMessage.js';
 import { createMessageUsage, persistAssistantMessage } from '../chat/messagePersistence.js';
-import type { AgentInstance, AgentManifest } from './types.js';
 import type { ManifestResponse } from '../chat/types.js';
 import type { DocID } from '../collections/config/types.js';
 import type { FrogbotRequest } from '../types/request.js';
+import type { AgentInstance, AgentManifest } from './types.js';
 
 export class AgentServiceError extends Error {
   constructor(

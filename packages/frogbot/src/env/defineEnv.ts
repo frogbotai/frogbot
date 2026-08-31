@@ -1,6 +1,6 @@
 import { type EnvBuilderDescriptor } from './builders.js';
 import { deriveName } from './deriveName.js';
-import { FrogbotEnvError, type EnvIssue } from './error.js';
+import { type EnvIssue, FrogbotEnvError } from './error.js';
 
 type SchemaBuilder = { readonly _output: unknown };
 type EnvSchema = Record<string, SchemaBuilder>;

@@ -1,21 +1,21 @@
+import type { ChatProps, GreetingProps, MessageActionsSlotProps } from '@frogbotai/ui/chat';
+import { ProfileIcon, SettingIcon, TileIcon } from '@frogbotai/ui/icons';
 import {
   generatePageMetadata as payloadGeneratePageMetadata,
   NotFoundPage as PayloadNotFoundPage,
   RootPage as PayloadRootPage,
 } from '@payloadcms/next/views';
 import { getTranslation } from '@payloadcms/translations';
-import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
-import { ProfileIcon, SettingIcon, TileIcon } from '@frogbotai/ui/icons';
-import type { ChatProps, GreetingProps, MessageActionsSlotProps } from '@frogbotai/ui/chat';
 import { Card, Link } from '@payloadcms/ui';
+import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import type { EntityToGroup } from '@payloadcms/ui/shared';
 import { EntityType, groupNavItems } from '@payloadcms/ui/shared';
 import { getCachedFrogbot, getPayloadConfig, messagesToUIMessages } from 'frogbot';
-import type { ComponentProps, ComponentType } from 'react';
+import { redirect } from 'next/navigation';
 import type { AdminViewServerProps, DocumentViewServerProps, PayloadComponent } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 import { getFromImportMap } from 'payload/shared';
-import { redirect } from 'next/navigation';
+import type { ComponentProps, ComponentType } from 'react';
 
 import frogbotFavicon from '../assets/frogbot-favicon.png';
 import frogbotOGImage from '../assets/frogbot-og.jpg';
@@ -111,8 +111,9 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
     (!isDashboard && collectionSlug !== chatsSlug) ||
     routeID === undefined ||
     !messagesSlug
-  )
+  ) {
     return null;
+  }
 
   const documentPath = formatAdminURL({
     adminRoute: payload.config.routes.admin,

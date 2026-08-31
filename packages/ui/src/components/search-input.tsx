@@ -1,4 +1,5 @@
 import type { ChangeEvent, ComponentProps } from 'react';
+
 import AiSearchIcon from '../icons/icons/AiSearchIcon';
 import XIcon from '../icons/icons/XIcon';
 export type SearchInputProps = Omit<ComponentProps<'input'>, 'onChange'> & {

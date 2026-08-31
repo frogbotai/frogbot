@@ -1,8 +1,8 @@
 // Model catalog — static snapshot of known model IDs from built-in providers.
 // Filtered at runtime to only include models from configured providers.
 
-import type { ModelMode } from './types.js';
 import catalogData from './catalog.json' with { type: 'json' };
+import type { ModelMode } from './types.js';
 
 export type CatalogEntry = {
   id: string;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CollectionConfig } from '../../../../../packages/frogbot/src/collections/config/types.js';
 import { mergeCollection as merge } from '../../../../../packages/frogbot/src/collections/config/merge.js';
+import type { CollectionConfig } from '../../../../../packages/frogbot/src/collections/config/types.js';
 
 const mergeChatCollection = (props: Omit<Parameters<typeof merge>[0], 'feature'>) =>
   merge({ ...props, feature: 'chat persistence' });

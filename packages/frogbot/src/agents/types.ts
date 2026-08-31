@@ -8,12 +8,12 @@ import type {
   UIMessage,
 } from 'ai';
 
+import type { DocID } from '../collections/config/types.js';
 import type { Frogbot } from '../frogbot.js';
 import type { SkillConfig } from '../skills/types.js';
 import type { AnyTool } from '../tools/types.js';
 import type { AgentSlug, FrogbotTypes } from '../types/generated.js';
 import type { FrogbotRequest } from '../types/request.js';
-import type { DocID } from '../collections/config/types.js';
 
 export type AgentAccess = (args: {
   req: FrogbotRequest;

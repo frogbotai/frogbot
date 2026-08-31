@@ -1,4 +1,4 @@
-import { parseBoolean, parseEnum, parseNumber, parseString, type ParseResult } from './parse.js';
+import { parseBoolean, parseEnum, parseNumber, type ParseResult, parseString } from './parse.js';
 
 export type RequiredWhen<TValues = Record<string, unknown>> = (values: TValues) => boolean;
 
@@ -35,8 +35,9 @@ const createBuilder = <T>(state: BuilderState<T>): EnvBuilder<T> => {
   const builder = {
     ...state,
     default(value: T) {
-      if (state.requiredMode)
+      if (state.requiredMode) {
         throw new Error('An env variable cannot be both required and defaulted');
+      }
       return createBuilder({ ...state, defaultValue: value, hasDefault: true }) as EnvBuilder<T, T>;
     },
     name(name: string) {
@@ -44,17 +45,21 @@ const createBuilder = <T>(state: BuilderState<T>): EnvBuilder<T> => {
       return createBuilder({ ...state, envName: name });
     },
     required() {
-      if (state.hasDefault)
+      if (state.hasDefault) {
         throw new Error('An env variable cannot be both required and defaulted');
-      if (state.requiredMode)
+      }
+      if (state.requiredMode) {
         throw new Error('An env variable can only have one required modifier');
+      }
       return createBuilder({ ...state, requiredMode: 'always' }) as EnvBuilder<T, T>;
     },
     requiredWhen(predicate: RequiredWhen) {
-      if (state.hasDefault)
+      if (state.hasDefault) {
         throw new Error('An env variable cannot be both required and defaulted');
-      if (state.requiredMode)
+      }
+      if (state.requiredMode) {
         throw new Error('An env variable can only have one required modifier');
+      }
       return createBuilder({
         ...state,
         requiredMode: 'conditional',

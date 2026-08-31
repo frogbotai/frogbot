@@ -1,7 +1,7 @@
 import { DEFAULT_MODEL_CATALOG } from '@frogbotai/gateway';
 
-import type { AIConfig, CustomProviderEntry, SanitizedAIConfig } from './types.js';
 import { catalog } from './catalog.js';
+import type { AIConfig, CustomProviderEntry, SanitizedAIConfig } from './types.js';
 
 const SMALL_MODEL_RE = /\b(nano|flash|lite|mini|haiku|small|fast)\b/;
 

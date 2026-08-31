@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ThemeProvider } from '../../../../packages/ui/src/theme/provider';
 import { CodeBlock } from '../../../../packages/ui/src/chat/code-block';
 import { Message } from '../../../../packages/ui/src/chat/message';
 import { MessagePart } from '../../../../packages/ui/src/chat/message-part';
+import { ThemeProvider } from '../../../../packages/ui/src/theme/provider';
 
 describe('CodeBlock', () => {
   beforeEach(() =>

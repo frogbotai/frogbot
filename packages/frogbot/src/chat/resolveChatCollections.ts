@@ -8,12 +8,12 @@
 //     is marked; there is no opt-out
 
 import { resolveMarkedCollection } from '../collections/config/resolveMarkedCollection.js';
-import type { SanitizedChatConfig } from './types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { FrogbotConfig } from '../config/types.js';
 import { defaultChatsCollection } from './collections/chats.js';
 import { defaultMessagesCollection } from './collections/messages.js';
 import { resolveUserSlug } from './resolveUserSlug.js';
+import type { SanitizedChatConfig } from './types.js';
 
 export const CHAT_ASSETS_SLUG = '_frogbot_chat_assets';
 

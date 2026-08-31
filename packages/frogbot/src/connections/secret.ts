@@ -1,6 +1,6 @@
-import type { SanitizedConnectionsConfig } from './types.js';
 import type { Endpoint } from '../endpoints/types.js';
 import type { Piece } from '../pieces/types.js';
+import type { SanitizedConnectionsConfig } from './types.js';
 
 type SecretBody = {
   service?: unknown;

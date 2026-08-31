@@ -8,13 +8,13 @@ import { promisify } from 'node:util';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { apiKeysPlugin } from '../../../../packages/plugins/plugin-api-keys/src/index.js';
-import { rolesPlugin } from '../../../../packages/plugins/plugin-roles/src/index.js';
 import {
   buildGeneratedTypesFooter,
   stripInternalCollections,
   writeGeneratedTypes,
 } from '../../../../packages/frogbot/src/typegen/index.js';
+import { apiKeysPlugin } from '../../../../packages/plugins/plugin-api-keys/src/index.js';
+import { rolesPlugin } from '../../../../packages/plugins/plugin-roles/src/index.js';
 
 const execFileAsync = promisify(execFile);
 const binURL = pathToFileURL(

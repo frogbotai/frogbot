@@ -1,8 +1,8 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
+import type { SettingsEntry } from '../../../../packages/frogbot/src/admin/types.js';
 import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
-import type { SettingsEntry } from '../../../../packages/frogbot/src/admin/types.js';
 
 describe('FrogbotConfig', () => {
   it('uses FrogbotRequest for root afterError hooks', () => {

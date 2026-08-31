@@ -3,10 +3,9 @@ import { createAgentUIStreamResponse, generateId } from 'ai';
 import { z } from 'zod';
 
 import { validateChatMessages } from '../chat/validateMessages.js';
-import { resolveChatAttachments } from '../uploads/resolveChatAttachments.js';
-import type { AgentInstance } from './types.js';
 import type { DocID } from '../collections/config/types.js';
 import type { FrogbotRequest } from '../types/request.js';
+import { resolveChatAttachments } from '../uploads/resolveChatAttachments.js';
 import {
   AgentServiceError,
   assertAgentAccess,
@@ -17,6 +16,7 @@ import {
   getAgentStreamOptions,
   prepareAgentRequest,
 } from './service.js';
+import type { AgentInstance } from './types.js';
 
 const chatIdSchema = z.union([z.string(), z.number()]).optional();
 

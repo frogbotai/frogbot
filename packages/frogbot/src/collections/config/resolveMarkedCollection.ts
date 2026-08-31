@@ -1,5 +1,5 @@
-import type { CollectionConfig } from './types.js';
 import { mergeCollection } from './merge.js';
+import type { CollectionConfig } from './types.js';
 
 type CollectionMarker = 'chat' | 'message' | 'usageLog';
 

@@ -4,8 +4,8 @@ import { join } from 'node:path';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import { generateImportMap } from '../../../packages/frogbot/src/bin/generateImportMap/index.js';
+import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import type { FrogbotConfig } from '../../../packages/frogbot/src/config/types.js';
 import { usageReportsPlugin } from '../../../packages/plugins/plugin-usage-reports/src/index.js';
 

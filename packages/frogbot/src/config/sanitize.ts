@@ -20,22 +20,28 @@ import type {
 } from 'payload';
 import { buildConfig as payloadBuildConfig } from 'payload';
 
+import { iconNames } from '../admin/icons.js';
+import type { SettingsEntry } from '../admin/types.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
 import {
   AGENT_SCHEDULE_TASK_SLUG,
   everyToCron,
   resolveScheduleTasks,
 } from '../agents/resolveScheduleTasks.js';
+import type { AgentConfig, AgentModelId, SanitizedAgentConfig } from '../agents/types.js';
 import { isKnownModelId } from '../ai/catalog.js';
 import { getConfiguredModelIds } from '../ai/models.js';
 import { createPolicyHooks } from '../ai/policy.js';
 import { createPolicyFields, mergePolicyFields } from '../ai/policyFields.js';
 import { isProviderName } from '../ai/providerNames.js';
+import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../ai/types.js';
 import { resolveUsageCollection } from '../ai/usage/collection.js';
-import { buildManifestEndpoint } from '../chat/manifest.js';
 import { buildChatEndpoints } from '../chat/endpoints.js';
+import { buildManifestEndpoint } from '../chat/manifest.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
 import { resolveUserSlug } from '../chat/resolveUserSlug.js';
+import type { CollectionConfig } from '../collections/config/types.js';
+import { COLLECTION_MARKERS } from '../collections/config/types.js';
 import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
 import {
   buildSecretEndpoints,
@@ -43,27 +49,21 @@ import {
   builtInSecretSource,
 } from '../connections/secret.js';
 import { resolveCredentialSources } from '../connections/sources.js';
-import { resolveFilesCollection } from '../uploads/resolveCollections.js';
+import type { Endpoint } from '../endpoints/types.js';
 import type { Frogbot } from '../frogbot.js';
 import { initFrogbotFromPayload } from '../frogbot.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
 import { ensureFrogbotInstance } from '../instanceRegistry.js';
-import { buildSkillTools } from '../skills/tools.js';
-import type { AgentConfig, AgentModelId, SanitizedAgentConfig } from '../agents/types.js';
-import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../ai/types.js';
-import type { CollectionConfig } from '../collections/config/types.js';
-import { COLLECTION_MARKERS } from '../collections/config/types.js';
-import type { FrogbotConfig, OnInit } from './types.js';
-import type { Endpoint } from '../endpoints/types.js';
 import type { Piece, SanitizedPiecesConfig } from '../pieces/types.js';
-import type { FrogbotRequest } from '../types/request.js';
-import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from './sanitized.js';
-import type { SettingsEntry } from '../admin/types.js';
+import { buildSkillTools } from '../skills/tools.js';
 import type { SkillConfig } from '../skills/types.js';
 import type { AnyTool } from '../tools/types.js';
+import type { FrogbotRequest } from '../types/request.js';
+import { resolveFilesCollection } from '../uploads/resolveCollections.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
-import { iconNames } from '../admin/icons.js';
+import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from './sanitized.js';
 import { resolveSourceDir } from './sourceDir.js';
+import type { FrogbotConfig, OnInit } from './types.js';
 import type { ValidationMode } from './validationContext.js';
 import { getValidationMode } from './validationContext.js';
 

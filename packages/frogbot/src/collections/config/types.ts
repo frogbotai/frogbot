@@ -10,8 +10,8 @@
 
 import type { RequestContext, SanitizedCollectionConfig, TypeWithID } from 'payload';
 
-import type { FrogbotComponent } from '../../admin/types.js';
 import type { IconName } from '../../admin/icons.js';
+import type { FrogbotComponent } from '../../admin/types.js';
 import type { AuthConfig } from '../../auth/types.js';
 import type { Endpoint } from '../../endpoints/types.js';
 import type { Field } from '../../fields/config/types.js';

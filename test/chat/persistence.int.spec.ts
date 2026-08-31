@@ -5,10 +5,10 @@ import type { UIMessage } from 'frogbot';
 import { persistAssistantMessage, resolveChatContext } from 'frogbot/test';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { generateChatTitle } from '../../packages/frogbot/src/chat/title.js';
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
-import { agentSlug, messagesSlug, chatsSlug, usersSlug } from './shared.js';
-import { generateChatTitle } from '../../packages/frogbot/src/chat/title.js';
+import { agentSlug, chatsSlug, messagesSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 

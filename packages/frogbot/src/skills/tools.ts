@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import type { SkillConfig, SkillContent, SkillCtx } from './types.js';
 import type { AnyTool, ToolCtx } from '../tools/types.js';
+import type { SkillConfig, SkillContent, SkillCtx } from './types.js';
 
 function resolveContent(content: SkillContent, ctx: ToolCtx) {
   if (typeof content === 'string') return content;

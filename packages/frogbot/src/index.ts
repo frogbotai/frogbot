@@ -21,16 +21,22 @@ export {
   isTargetAllowed,
   resolvePolicy,
 } from './ai/policy.js';
+export type { PersistedMessage } from './chat/messagesToUIMessages.js';
+export { messagesToUIMessages } from './chat/messagesToUIMessages.js';
 export { buildConfig } from './config/build.js';
 export { getPayloadConfig } from './config/getPayloadConfig.js';
+export type { FrogbotSanitizedConfig } from './config/sanitized.js';
 export type { AppConnectionValue, ConnectionInfo } from './connections/api.js';
 export { ConnectionError, Connections } from './connections/api.js';
 export type { CredentialEncryption } from './connections/encryption.js';
 export { createCredentialEncryption, CredentialCryptoError } from './connections/encryption.js';
+export type {
+  ConnectionsConfig,
+  CredentialSource,
+  SanitizedConnectionsConfig,
+} from './connections/types.js';
 export type { Frogbot as FrogbotInstance } from './frogbot.js';
 export { getCachedFrogbot, getFrogbot } from './getFrogbot.js';
-export type { PersistedMessage } from './chat/messagesToUIMessages.js';
-export { messagesToUIMessages } from './chat/messagesToUIMessages.js';
 export type { GatewayHandler } from './server/gateway.js';
 export { createGatewayHandler } from './server/gateway.js';
 export type {
@@ -38,25 +44,21 @@ export type {
   TrainingDataDocument,
   TrainingDataRecord,
 } from './training/types.js';
-export type {
-  ConnectionsConfig,
-  CredentialSource,
-  SanitizedConnectionsConfig,
-} from './connections/types.js';
-export type { FrogbotSanitizedConfig } from './config/sanitized.js';
 
 // ---------------------------------------------------------------------------
 // Owned types
 // ---------------------------------------------------------------------------
 
-export type { CatalogModelId } from './ai/generated.js';
+export type { IconName } from './admin/icons.js';
 export type {
+  NavItem,
   RootAdminComponents,
   RootAdminConfig,
   RootAdminGraphics,
   RootAdminMetaConfig,
-  NavItem,
 } from './admin/types.js';
+export type { AdminViews, FrogbotComponent, ProviderComponent } from './admin/types.js';
+export type { SettingsEntry } from './admin/types.js';
 export type {
   AgentAccess,
   AgentConfig,
@@ -75,6 +77,21 @@ export type {
   AgentStreamOpts,
   AgentStreamResult,
 } from './agents/types.js';
+export type { CatalogModelId } from './ai/generated.js';
+export type {
+  AIAfterErrorHook,
+  AIAfterErrorHookArgs,
+  AIAfterOperationHook,
+  AIAfterOperationHookArgs,
+  AIAfterUpstreamHook,
+  AIAfterUpstreamHookArgs,
+  AIBeforeOperationHook,
+  AIBeforeOperationHookArgs,
+  AIBeforeUpstreamHook,
+  AIBeforeUpstreamHookArgs,
+  AIHookContext,
+  AIHooks,
+} from './ai/hooks/types.js';
 export type {
   AIAccessFn,
   AIConfig,
@@ -93,39 +110,6 @@ export type {
   TranscribeOpts,
 } from './ai/types.js';
 export type { AuthConfig } from './auth/types.js';
-export type { ManifestResponse } from './chat/types.js';
-export type {
-  Collection,
-  CollectionAdminConfig,
-  CollectionConfig,
-} from './collections/config/types.js';
-export type { IconName } from './admin/icons.js';
-export type { AdminViews, FrogbotComponent, ProviderComponent } from './admin/types.js';
-export type { AfterErrorHook, FrogbotConfig, OnInit, RootHooks } from './config/types.js';
-export type { DatabaseAdapter } from './database/types.js';
-export type {
-  AgentSlug,
-  CollectionSlug,
-  FrogbotTypes,
-  GeneratedTypes,
-  RoleSlug,
-  TypedCollection,
-  UntypedFrogbotTypes,
-} from './types/generated.js';
-export type {
-  AIAfterErrorHook,
-  AIAfterErrorHookArgs,
-  AIAfterOperationHook,
-  AIAfterOperationHookArgs,
-  AIAfterUpstreamHook,
-  AIAfterUpstreamHookArgs,
-  AIBeforeOperationHook,
-  AIBeforeOperationHookArgs,
-  AIBeforeUpstreamHook,
-  AIBeforeUpstreamHookArgs,
-  AIHookContext,
-  AIHooks,
-} from './ai/hooks/types.js';
 export type {
   AuthArgs,
   AuthResult,
@@ -137,6 +121,12 @@ export type {
   UnlockArgs,
   VerifyEmailArgs,
 } from './auth/types.js';
+export type { ManifestResponse } from './chat/types.js';
+export type {
+  Collection,
+  CollectionAdminConfig,
+  CollectionConfig,
+} from './collections/config/types.js';
 export type {
   BulkResult,
   CountArgs,
@@ -155,13 +145,8 @@ export type {
   UpdateByIDArgs,
   UpdateManyArgs,
 } from './collections/config/types.js';
-export type {
-  CountVersionsArgs,
-  FindVersionByIDArgs,
-  FindVersionsArgs,
-  RestoreVersionArgs,
-  TypeWithVersion,
-} from './versions/types.js';
+export type { AfterErrorHook, FrogbotConfig, OnInit, RootHooks } from './config/types.js';
+export type { DatabaseAdapter } from './database/types.js';
 export type {
   CredentialType,
   Piece,
@@ -170,10 +155,25 @@ export type {
   SanitizedPiecesConfig,
 } from './pieces/types.js';
 export type { Plugin } from './plugin.js';
-export type { FrogbotRequest } from './types/request.js';
-export type { SettingsEntry } from './admin/types.js';
 export type { SkillConfig, SkillContent, SkillCtx, SkillResource } from './skills/types.js';
 export type { Tool, ToolCtx } from './tools/types.js';
+export type {
+  AgentSlug,
+  CollectionSlug,
+  FrogbotTypes,
+  GeneratedTypes,
+  RoleSlug,
+  TypedCollection,
+  UntypedFrogbotTypes,
+} from './types/generated.js';
+export type { FrogbotRequest } from './types/request.js';
+export type {
+  CountVersionsArgs,
+  FindVersionByIDArgs,
+  FindVersionsArgs,
+  RestoreVersionArgs,
+  TypeWithVersion,
+} from './versions/types.js';
 export type { StopCondition, UIMessage } from 'ai';
 export { isStepCount, Output, stepCountIs } from 'ai';
 
@@ -208,14 +208,6 @@ export type {
   FieldAccess,
   FieldAccessArgs,
 } from './collections/config/types.js';
-export type { Endpoint, Handler } from './endpoints/types.js';
-export type {
-  Field,
-  FieldHook,
-  FieldHookArgs,
-  Validate,
-  ValidateOptions,
-} from './fields/config/types.js';
 export type {
   AfterChangeHook,
   AfterDeleteHook,
@@ -232,3 +224,11 @@ export type {
   MeHook,
   RefreshHook,
 } from './collections/config/types.js';
+export type { Endpoint, Handler } from './endpoints/types.js';
+export type {
+  Field,
+  FieldHook,
+  FieldHookArgs,
+  Validate,
+  ValidateOptions,
+} from './fields/config/types.js';

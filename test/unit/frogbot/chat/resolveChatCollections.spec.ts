@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
-import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import {
   CHAT_ASSETS_SLUG,
   resolveChatCollections,
 } from '../../../../packages/frogbot/src/chat/resolveChatCollections.js';
+import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
+import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
 
 const agents = [
   { slug: 'assistant', model: 'openai/test', instructions: 'Assist.' },

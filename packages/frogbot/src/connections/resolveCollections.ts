@@ -1,10 +1,10 @@
 import { resolveUserSlug } from '../chat/resolveUserSlug.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { FrogbotConfig } from '../config/types.js';
-import type { SanitizedConnectionsConfig } from './types.js';
 import type { SanitizedPiecesConfig } from '../pieces/types.js';
 import { defaultConnectionsCollection } from './collection.js';
 import { createCredentialEncryption } from './encryption.js';
+import type { SanitizedConnectionsConfig } from './types.js';
 
 export const DEFAULT_CONNECTIONS_SLUG = 'connections';
 

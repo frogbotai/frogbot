@@ -6,11 +6,11 @@ import type { SanitizedConfig } from 'payload';
 import { generateImportMap as payloadGenerateImportMap } from 'payload';
 import { afterAll, describe, expect, it } from 'vitest';
 
+import { generateImportMap } from '../../../../../packages/frogbot/src/bin/generateImportMap/index.js';
+import { resolveImportMapFilePath } from '../../../../../packages/frogbot/src/bin/generateImportMap/utilities/resolveImportMapFilePath.js';
 import { buildConfig } from '../../../../../packages/frogbot/src/config/build.js';
 import { sanitize } from '../../../../../packages/frogbot/src/config/sanitize.js';
 import type { FrogbotConfig } from '../../../../../packages/frogbot/src/config/types.js';
-import { generateImportMap } from '../../../../../packages/frogbot/src/bin/generateImportMap/index.js';
-import { resolveImportMapFilePath } from '../../../../../packages/frogbot/src/bin/generateImportMap/utilities/resolveImportMapFilePath.js';
 
 const dirs: string[] = [];
 

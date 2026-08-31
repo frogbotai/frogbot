@@ -20,11 +20,11 @@ import type { OpenAIChatLanguageModelOptions } from '@ai-sdk/openai';
 import { describe, expect, it } from 'vitest';
 
 import type { BeforeUpstreamHook } from '../../../../packages/gateway/src/hooks.js';
-import { effortFromBudget } from '../../../../packages/gateway/src/utils/params.js';
 import { claudeThinkingEffort } from '../../../../packages/gateway/src/providers/anthropic/middleware.js';
 import { bedrockCachePoint } from '../../../../packages/gateway/src/providers/bedrock/middleware.js';
 import { openaiReasoningEffort } from '../../../../packages/gateway/src/providers/openai/middleware.js';
 import { vertexThinkingBudget } from '../../../../packages/gateway/src/providers/vertex/middleware.js';
+import { effortFromBudget } from '../../../../packages/gateway/src/utils/params.js';
 
 /** Minimal beforeUpstream args factory for driving a middleware in isolation. */
 function makeArgs(overrides: {

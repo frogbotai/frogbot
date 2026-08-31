@@ -20,8 +20,8 @@ vi.mock('@ai-sdk/amazon-bedrock', () => ({ createAmazonBedrock }));
 vi.mock('@ai-sdk/amazon-bedrock/mantle', () => ({ createBedrockMantle }));
 vi.mock('@aws-sdk/credential-providers', () => ({ fromNodeProviderChain }));
 
-import { DEFAULT_MODEL_CATALOG } from '../../../../../packages/gateway/src/providers/catalog.data.js';
 import { bedrockProvider } from '../../../../../packages/gateway/src/providers/bedrock/index.js';
+import { DEFAULT_MODEL_CATALOG } from '../../../../../packages/gateway/src/providers/catalog.data.js';
 
 describe('bedrockProvider.fromEnv', () => {
   it('returns undefined when no AWS credentials are present', () => {

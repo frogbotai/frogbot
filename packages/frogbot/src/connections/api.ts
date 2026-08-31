@@ -1,9 +1,9 @@
 import type { TypeWithID } from 'payload';
 
 import type { Frogbot } from '../frogbot.js';
-import type { SanitizedConnectionsConfig } from './types.js';
 import type { CredentialType } from '../pieces/types.js';
 import { adaptCredential } from './adapters.js';
+import type { SanitizedConnectionsConfig } from './types.js';
 
 export type ConnectionRecord = {
   id: number | string;

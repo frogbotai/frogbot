@@ -4,8 +4,8 @@ import { buildConfig } from 'frogbot';
 import { general } from 'frogbot/agents';
 import { todoTools } from 'frogbot/tools';
 
-import { Users } from './collections';
 import { assistant } from './agents/assistant';
+import { Users } from './collections';
 
 const config: FrogbotConfig = {
   secret: process.env.FROGBOT_SECRET || '',

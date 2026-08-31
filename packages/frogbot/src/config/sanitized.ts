@@ -4,12 +4,12 @@
 // sanitization boundary. The Payload config is stored internally and
 // never exposed to users.
 
-import type { Frogbot } from '../frogbot.js';
 import type { SettingsEntry } from '../admin/types.js';
 import type { SanitizedAgentConfig } from '../agents/types.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
 import type { SanitizedChatConfig } from '../chat/types.js';
 import type { SanitizedConnectionsConfig } from '../connections/types.js';
+import type { Frogbot } from '../frogbot.js';
 import type { SanitizedPiecesConfig } from '../pieces/types.js';
 import type { SanitizedFilesConfig } from '../uploads/types.js';
 

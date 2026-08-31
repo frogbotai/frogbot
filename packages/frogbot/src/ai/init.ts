@@ -10,15 +10,15 @@ import type { Gateway, GatewayConfig } from '@frogbotai/gateway';
 import { createGateway } from '@frogbotai/gateway';
 
 import type { Logger } from '../frogbot.js';
+import { toGatewayHooks } from './hooks.js';
+import { logUsage } from './logUsage.js';
+import { isProviderName } from './providerNames.js';
 import type {
   BedrockProviderEntry,
   BuiltInProviderEntry,
   CustomProviderEntry,
   SanitizedAIConfig,
 } from './types.js';
-import { toGatewayHooks } from './hooks.js';
-import { logUsage } from './logUsage.js';
-import { isProviderName } from './providerNames.js';
 
 function isCustomProvider(entry: object): entry is CustomProviderEntry {
   return 'type' in entry && entry.type === 'openai-compatible';

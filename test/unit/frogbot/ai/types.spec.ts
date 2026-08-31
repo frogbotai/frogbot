@@ -1,7 +1,7 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
-import type { CatalogModelId } from '../../../../packages/frogbot/src/ai/generated.js';
 import type { AgentConfig, AgentModelId } from '../../../../packages/frogbot/src/agents/types.js';
+import type { CatalogModelId } from '../../../../packages/frogbot/src/ai/generated.js';
 import type {
   AIConfig,
   BedrockProviderEntry,

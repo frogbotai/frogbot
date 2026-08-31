@@ -9,8 +9,8 @@
 //     (label, admin, index, hooks, relationTo) but not `type`
 //   - reserved field names throw at build
 
-import type { CollectionConfig } from './types.js';
 import type { Field } from '../../fields/config/types.js';
+import type { CollectionConfig } from './types.js';
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

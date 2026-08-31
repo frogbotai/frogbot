@@ -2,8 +2,8 @@ import { render } from '@testing-library/react';
 import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { iconNames, iconRegistry, isIconName } from '../../../../packages/ui/src/icons/registry';
 import { iconNames as configuredIconNames } from '../../../../packages/frogbot/src/admin/icons';
+import { iconNames, iconRegistry, isIconName } from '../../../../packages/ui/src/icons/registry';
 
 describe('iconRegistry', () => {
   it('maps every component icon export to a sorted kebab-case name', () => {

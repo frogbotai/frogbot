@@ -6,9 +6,9 @@ import { createVertex } from '@ai-sdk/google-vertex';
 import { createOpenAI } from '@ai-sdk/openai';
 import { describe, expect, it } from 'vitest';
 
-import { postJson } from '../__helpers/gateway/post-json.js';
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
+import { postJson } from '../__helpers/gateway/post-json.js';
 
 type CapturedRequest = {
   body: Record<string, unknown>;

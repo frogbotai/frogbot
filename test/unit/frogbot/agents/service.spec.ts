@@ -1,8 +1,6 @@
 import type { UIMessage } from 'ai';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import {
   assertAgentAccess,
   generateAgentRequest,
@@ -10,6 +8,8 @@ import {
   getAgentManifest,
   listAgents,
 } from '../../../../packages/frogbot/src/agents/service.js';
+import type { AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
+import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 function makeAgent({
   slug = 'support',

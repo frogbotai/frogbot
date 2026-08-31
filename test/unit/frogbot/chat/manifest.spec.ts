@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { buildManifestEndpoint } from '../../../../packages/frogbot/src/chat/manifest.js';
+import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 function makeAgent(
   slug: string,

@@ -1,9 +1,9 @@
 import type { UIMessage } from 'ai';
 import { describe, expect, it, vi } from 'vitest';
 
+import { resolveChatContext } from '../../../../packages/frogbot/src/chat/chatContext.js';
 import type { SanitizedChatConfig } from '../../../../packages/frogbot/src/chat/types.js';
 import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
-import { resolveChatContext } from '../../../../packages/frogbot/src/chat/chatContext.js';
 
 const incoming: UIMessage[] = [
   { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'One' }] },

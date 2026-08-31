@@ -1,6 +1,7 @@
 'use client';
 import * as Primitive from '@radix-ui/react-checkbox';
 import type { ComponentProps } from 'react';
+
 import CheckIcon from '../icons/icons/CheckIcon';
 import MinusIcon from '../icons/icons/MinusIcon';
 export type CheckboxProps = ComponentProps<typeof Primitive.Root> & {
