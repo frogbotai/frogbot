@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-nested-docs",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "description": "Payload nested documents integration for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
