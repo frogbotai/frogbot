@@ -73,6 +73,8 @@ export { RenameChatDialog } from '../chat/rename-chat-dialog.js';
 export { SourcePart } from '../chat/source-part.js';
 export { TextPart } from '../chat/text-part.js';
 export { ToolPart } from '../chat/tool-part.js';
+export type { ToolRenderer, ToolRendererProps } from '../chat/tool-registry.js';
+export { TodoToolRender } from '../chat/todo-tool-render.js';
 export type { ToolSelectorProps, ToolSelectorTool } from '../chat/tool-selector.js';
 export { ToolSelector } from '../chat/tool-selector.js';
 export type { FrogbotChatTransportOptions } from '../chat/transport.js';

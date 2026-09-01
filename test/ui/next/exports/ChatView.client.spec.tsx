@@ -1,8 +1,11 @@
-import { render, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ chat: vi.fn(() => null) }));
+const mocks = vi.hoisted(() => ({
+  chat: vi.fn(({ composerStartSlot }: { composerStartSlot?: ReactNode }) => composerStartSlot),
+  provider: vi.fn(),
+}));
 
 vi.mock('@payloadcms/ui', () => ({
   usePreferences: () => ({
@@ -13,9 +16,14 @@ vi.mock('@payloadcms/ui', () => ({
 }));
 
 vi.mock('@frogbotai/ui/chat', () => ({
-  AgentSelector: () => null,
+  AgentSelector: ({ onAgentChange }: { onAgentChange: (agent: string) => void }) => (
+    <button onClick={() => onAgentChange('sales')}>Sales</button>
+  ),
   Chat: mocks.chat,
-  ChatProvider: ({ children }: { children: ReactNode }) => children,
+  ChatProvider: (props: { children: ReactNode; toolRenderers?: unknown }) => {
+    mocks.provider(props);
+    return props.children;
+  },
   cookieFetch: () => vi.fn(),
   ModelSelector: () => null,
   useChatProvider: () => ({
@@ -25,6 +33,13 @@ vi.mock('@frogbotai/ui/chat', () => ({
         {
           slug: 'general',
           label: 'General',
+          source: 'config',
+          defaultModel: 'openai/test',
+          models: ['openai/test'],
+        },
+        {
+          slug: 'sales',
+          label: 'Sales',
           source: 'config',
           defaultModel: 'openai/test',
           models: ['openai/test'],
@@ -45,11 +60,14 @@ describe('ChatViewClient', () => {
       removeEventListener: vi.fn(),
     }));
     const replaceState = vi.spyOn(window.history, 'replaceState');
+    const general = [{ kind: 'lookup', render: () => null }];
+    const sales = [{ kind: 'lookup', render: () => null }];
     render(
       <ChatViewClient
         agent="general"
         documentPath="/admin/collections/conversations"
         initialMessages={[]}
+        toolRenderersByAgent={{ general, sales }}
       />,
     );
     await waitFor(() => expect(mocks.chat).toHaveBeenCalledOnce());
@@ -66,5 +84,8 @@ describe('ChatViewClient', () => {
       '/admin/collections/conversations/chat%2F1',
     );
     expect(mocks.chat).toHaveBeenCalledOnce();
+    expect(mocks.provider.mock.calls.at(-1)?.[0].toolRenderers).toBe(general);
+    fireEvent.click(await screen.findByText('Sales'));
+    await waitFor(() => expect(mocks.provider.mock.calls.at(-1)?.[0].toolRenderers).toBe(sales));
   });
 });

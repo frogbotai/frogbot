@@ -152,6 +152,41 @@ describe('frogbot importMap generator', () => {
     expect(output).not.toContain('ChatListView');
   });
 
+  it('maps tool components', async () => {
+    const dir = await makeDir('frogbot-importmap-tool-components-');
+    const config = sanitize({
+      secret: 'test-secret',
+      db: { defaultIDType: 'number' } as never,
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+      ai: { providers: { openai: true } },
+      agents: [
+        {
+          slug: 'assistant',
+          model: 'openai/gpt-4o-mini',
+          instructions: 'Assist.',
+          tools: [
+            {
+              slug: 'weather',
+              description: 'Weather',
+              inputSchema: {},
+              execute: () => undefined,
+              component: './components/Weather.tsx#Weather',
+            },
+          ],
+        },
+      ],
+    } as never);
+    const payloadConfig = await config._internal.payloadConfig;
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+
+    await expect(readFile(join(dir, 'importMap.js'), 'utf-8')).resolves.toContain(
+      "from './components/Weather.tsx'",
+    );
+  });
+
   it('writes an import map when an agent model does not match the configured providers', async () => {
     const dir = await makeDir('frogbot-importmap-model-mismatch-');
     const config = sanitize(

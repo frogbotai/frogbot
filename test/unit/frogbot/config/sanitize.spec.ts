@@ -1162,6 +1162,7 @@ describe('frogbot sanitize', () => {
     });
 
     it('lets agent tools override root tools', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
       const rootExecute = vi.fn();
       const agentExecute = vi.fn();
       const result = sanitize(
@@ -1174,6 +1175,29 @@ describe('frogbot sanitize', () => {
 
       expect(result.agents?.[0].tools).toHaveLength(1);
       expect(result.agents?.[0].tools?.[0].execute).toBe(agentExecute);
+      expect(warn).toHaveBeenCalledWith(
+        "[frogbot] Agent 'support' tool 'shared' shadows root tool 'shared'.",
+      );
+      warn.mockRestore();
+    });
+
+    it('projects tool components by effective agent toolset', async () => {
+      const result = sanitize(
+        makeConfig({
+          ai,
+          agents: [
+            { ...agent, tools: [makeTool('agent', { component: '/AgentTool' })] },
+            { ...agent, slug: 'sales' },
+          ],
+          tools: [makeTool('shared', { component: '/SharedTool' }), makeTool('plain')],
+        } as never),
+      );
+      const payloadConfig = await result._internal.payloadConfig;
+
+      expect((payloadConfig.admin?.components as any).chat.toolComponents).toEqual({
+        sales: { shared: '/SharedTool' },
+        support: { agent: '/AgentTool', shared: '/SharedTool' },
+      });
     });
 
     it('allows agents to opt out of root tools', () => {

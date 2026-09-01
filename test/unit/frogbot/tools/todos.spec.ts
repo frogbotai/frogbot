@@ -99,4 +99,13 @@ describe('todo tools', () => {
       );
     }
   });
+
+  it('ships the todo renderer on both tools', async () => {
+    const { todoTools } = await loadTools();
+
+    expect(todoTools.map(({ component }) => component)).toEqual([
+      '@frogbotai/ui/chat#TodoToolRender',
+      '@frogbotai/ui/chat#TodoToolRender',
+    ]);
+  });
 });

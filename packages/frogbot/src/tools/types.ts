@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 
 import type { Frogbot } from '../frogbot.js';
+import type { FrogbotComponent } from '../admin/types.js';
 import type { FrogbotRequest } from '../types/request.js';
 
 export type ToolCtx = {
@@ -10,6 +11,7 @@ export type ToolCtx = {
 };
 
 export type Tool<TSchema extends z.ZodType = z.ZodType, TResult = unknown> = {
+  component?: FrogbotComponent;
   slug: string;
   pieceService?: string;
   description: string;

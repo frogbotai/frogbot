@@ -1,6 +1,11 @@
 'use client';
 
-import type { ChatProps, GreetingProps, MessageActionsSlotProps } from '@frogbotai/ui/chat';
+import type {
+  ChatProps,
+  GreetingProps,
+  MessageActionsSlotProps,
+  ToolRenderer,
+} from '@frogbotai/ui/chat';
 import {
   AgentSelector,
   Chat,
@@ -37,6 +42,7 @@ export type ChatViewClientProps = {
   documentPath: string;
   initialMessages: UIMessage[];
   logo?: ReactNode;
+  toolRenderersByAgent?: Record<string, readonly ToolRenderer[]>;
   userName?: string;
 };
 
@@ -54,9 +60,11 @@ export function ChatViewClient({
   documentPath,
   initialMessages,
   logo,
+  toolRenderersByAgent = {},
   userName,
 }: ChatViewClientProps) {
   const { theme } = useTheme();
+  const [selectedAgent, setSelectedAgent] = useState(agent);
   const replaced = useRef(false);
   const onChatIdChange = (nextChatId: string | number | undefined) => {
     if (chatId !== undefined || nextChatId === undefined || replaced.current) return;
@@ -71,7 +79,7 @@ export function ChatViewClient({
   return (
     <div className="frogbot-chat-view">
       <ThemeProvider mode={theme}>
-        <ChatProvider adapter={adapter}>
+        <ChatProvider adapter={adapter} toolRenderers={toolRenderersByAgent[selectedAgent]}>
           <ChatViewInner
             agent={agent}
             {...(chatId === undefined ? {} : { chatId })}
@@ -81,6 +89,8 @@ export function ChatViewClient({
             GreetingComponent={GreetingComponent}
             greetingProps={greetingProps}
             logo={logo}
+            selectedAgent={selectedAgent}
+            setSelectedAgent={setSelectedAgent}
             userName={userName}
             UserMessageActions={UserMessageActions}
             AssistantMessageActions={AssistantMessageActions}
@@ -103,19 +113,22 @@ function ChatViewInner({
   greetingProps,
   UserMessageActions,
   userMessageActionsProps,
-  agent,
   chatId,
+  agent: initialAgent,
   initialMessages,
   logo,
   onChatIdChange,
+  selectedAgent,
+  setSelectedAgent,
   userName,
-}: Omit<ChatViewClientProps, 'documentPath'> & {
+}: Omit<ChatViewClientProps, 'documentPath' | 'toolRenderersByAgent'> & {
   onChatIdChange: (chatId: string | number | undefined) => void;
+  selectedAgent: string;
+  setSelectedAgent: (agent: string) => void;
 }) {
   const provider = useChatProvider();
   const { getPreference, setPreference } = usePreferences();
   const manifest = provider?.agentManifest;
-  const [selectedAgent, setSelectedAgent] = useState(agent);
   const entry = manifest?.agents.find(({ slug }) => slug === selectedAgent);
   const [selectedModel, setSelectedModel] = useState<string>();
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
@@ -132,7 +145,7 @@ function ChatViewInner({
       if (!current) return;
       const preferredAgent = manifest.agents.find(({ slug }) => slug === preference?.agent);
       const nextAgent =
-        chatId === undefined ? (preferredAgent?.slug ?? manifest.defaultAgent) : agent;
+        chatId === undefined ? (preferredAgent?.slug ?? manifest.defaultAgent) : initialAgent;
       const nextEntry = manifest.agents.find(({ slug }) => slug === nextAgent);
       setSelectedAgent(nextAgent);
       setSelectedModel(
@@ -145,7 +158,7 @@ function ChatViewInner({
     return () => {
       current = false;
     };
-  }, [agent, chatId, getPreference, manifest]);
+  }, [chatId, getPreference, initialAgent, manifest, setSelectedAgent]);
 
   const activeModel =
     entry && selectedModel && entry.models.some((model) => model === selectedModel)

@@ -59,6 +59,7 @@
 @import "./chat/rename-chat-dialog.css";
 @import "./chat/source-part.css";
 @import "./chat/tool-part.css";
+@import "./chat/todo-tool-render.css";
 @import "./chat/tool-selector.css";
 
 html {

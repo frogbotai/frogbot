@@ -78,6 +78,7 @@ export function iterateConfig({
       AssistantMessageActions?: string;
       Chat?: string;
       Greeting?: string;
+      toolComponents?: Record<string, Record<string, string>>;
       UserMessageActions?: string;
     };
   };
@@ -85,6 +86,9 @@ export function iterateConfig({
   addToImportMap(chatComponents.chat?.Greeting);
   addToImportMap(chatComponents.chat?.UserMessageActions);
   addToImportMap(chatComponents.chat?.AssistantMessageActions);
+  for (const components of Object.values(chatComponents.chat?.toolComponents ?? {})) {
+    for (const component of Object.values(components)) addToImportMap(component);
+  }
 
   const settings = (
     config.admin as typeof config.admin & {

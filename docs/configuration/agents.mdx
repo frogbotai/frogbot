@@ -155,6 +155,22 @@ export const supportAgent: AgentConfig = {
 
 Inference runs through the embedded gateway. Each model step can request tools, FrogBot executes them with `ToolCtx`, and the loop continues until a stop condition matches.
 
+Set `component` to an import-map component reference when a tool needs purpose-built chat UI.
+
+```ts
+export const lookupTicket: Tool<typeof lookupInput, LookupResult> = {
+  component: '@/components/LookupTicket#LookupTicket',
+  slug: 'lookup-ticket',
+  description: 'Look up the current status of a support ticket',
+  inputSchema: lookupInput,
+  execute: lookupTicketStatus
+}
+```
+
+The component receives `{ part }`, including the tool input, output, state, and error details. Tools without `component` use the generic tool render. `frogbot dev` updates the import map automatically; build-only workflows must run `frogbot generate:importmap` before the app build.
+
+Components resolve from the selected agent's effective tools. When an agent tool shadows an inherited root slug, the agent's component wins and FrogBot logs both definitions during initialization. Omitting `component` on the shadowing tool intentionally restores the generic render for that agent.
+
 ---
 
 ## Add skills
@@ -242,7 +258,7 @@ Root tools with `pieceService` use the same validation as agent tools. The match
 
 ## Track chat todos
 
-FrogBot provides `write_todos` and `read_todos` as an optional toolkit. `write_todos` replaces the entire list, and `read_todos` returns the current chat's list.
+FrogBot provides `write_todos` and `read_todos` as an optional toolkit. `write_todos` replaces the entire list, and `read_todos` returns the current chat's list. Both render a task-list card with pending and completed counts by default.
 
 ```ts
 import { todoTools } from 'frogbot/tools'

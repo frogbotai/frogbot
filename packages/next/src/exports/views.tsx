@@ -1,4 +1,10 @@
-import type { ChatProps, GreetingProps, MessageActionsSlotProps } from '@frogbotai/ui/chat';
+import type {
+  ChatProps,
+  GreetingProps,
+  MessageActionsSlotProps,
+  ToolRenderer,
+  ToolRendererProps,
+} from '@frogbotai/ui/chat';
 import { SettingIcon, TileIcon } from '@frogbotai/ui/icons';
 import {
   generatePageMetadata as payloadGeneratePageMetadata,
@@ -57,6 +63,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
         AssistantMessageActions?: PayloadComponent;
         Chat?: PayloadComponent;
         Greeting?: PayloadComponent;
+        toolComponents?: Record<string, Record<string, PayloadComponent>>;
         UserMessageActions?: PayloadComponent;
       };
     }
@@ -79,6 +86,15 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
   const AssistantMessageActions = resolveChatComponent<MessageActionsSlotProps>(
     chatComponents?.AssistantMessageActions,
   );
+  const toolRenderersByAgent = Object.fromEntries(
+    Object.entries(chatComponents?.toolComponents ?? {}).map(([agent, components]) => [
+      agent,
+      Object.entries(components).map(([kind, component]) => ({
+        kind,
+        render: resolveChatComponent<ToolRendererProps>(component),
+      })) as ToolRenderer[],
+    ]),
+  );
   const clientProps = (component: NonNullable<typeof chatComponents>['Chat']) =>
     component && typeof component === 'object' ? component.clientProps : undefined;
   const graphicsLogo = adminComponents?.graphics?.Logo;
@@ -92,6 +108,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
     ...(GreetingComponent ? { GreetingComponent } : {}),
     ...(UserMessageActions ? { UserMessageActions } : {}),
     ...(AssistantMessageActions ? { AssistantMessageActions } : {}),
+    ...(Object.keys(toolRenderersByAgent).length > 0 ? { toolRenderersByAgent } : {}),
     ...(chatComponentProps ? { chatComponentProps } : {}),
     ...(greetingProps ? { greetingProps } : {}),
     ...(graphicsLogo

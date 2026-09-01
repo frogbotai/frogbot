@@ -583,6 +583,13 @@ function sanitizeAgents(
     }
     if (agent.inheritTools !== false && rootTools.length > 0) {
       const agentToolSlugs = new Set(agentTools?.map(({ slug }) => slug));
+      for (const slug of agentToolSlugs) {
+        if (rootTools.some((tool) => tool.slug === slug)) {
+          console.warn(
+            `[frogbot] Agent '${agent.slug}' tool '${slug}' shadows root tool '${slug}'.`,
+          );
+        }
+      }
       const inheritedTools = rootTools.filter(({ slug }) => !agentToolSlugs.has(slug));
       agent = { ...agent, tools: [...inheritedTools, ...(agentTools ?? [])] };
     } else if (agentTools !== undefined) {
@@ -898,10 +905,28 @@ function buildPayloadConfig(
     }
   ).admin;
   const settings = sanitizeSettings(config.settings);
+  const toolComponents = Object.fromEntries(
+    (config.agents ?? []).flatMap((agent) => {
+      const components = Object.fromEntries(
+        (agent.tools ?? [])
+          .filter((tool) => tool.component !== undefined)
+          .map((tool) => [tool.slug, tool.component]),
+      );
+      return Object.keys(components).length > 0 ? [[agent.slug, components]] : [];
+    }),
+  );
   out.admin = {
     ...admin,
     components: {
       ...admin?.components,
+      ...(admin?.components?.chat || Object.keys(toolComponents).length > 0
+        ? {
+            chat: {
+              ...(admin?.components?.chat as Record<string, unknown> | undefined),
+              ...(Object.keys(toolComponents).length > 0 ? { toolComponents } : {}),
+            },
+          }
+        : {}),
       Nav: admin?.components?.Nav ?? '@frogbotai/next/rsc#FrogbotNav',
       navSections: admin?.components?.navSections ?? [
         '@frogbotai/next#CollectionsSection',
