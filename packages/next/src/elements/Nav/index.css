@@ -13,6 +13,29 @@
   box-sizing: border-box;
 }
 
+.frogbot-mobile-nav-toggle {
+  align-items: center;
+  appearance: none;
+  background: var(--theme-elevation-0);
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: 8px;
+  color: var(--theme-elevation-800);
+  cursor: pointer;
+  display: flex;
+  height: 40px;
+  justify-content: center;
+  left: 12px;
+  padding: 0;
+  position: fixed;
+  top: 12px;
+  width: 40px;
+  z-index: 100;
+}
+
+.frogbot-mobile-nav-toggle:hover {
+  background: var(--theme-elevation-100);
+}
+
 .frogbot-admin-sidebar {
   cursor: default;
   display: flex;

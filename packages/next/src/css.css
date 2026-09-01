@@ -71,7 +71,7 @@
 }
 
 .template-default:has(.frogbot-admin-sidebar[data-collapsed="true"]) {
-  grid-template-columns: 60px minmax(0, 1fr) !important;
+  grid-template-columns: 60px minmax(0, 1fr);
 }
 
 .template-default:has(.frogbot-nav) > .template-default__wrap {
@@ -81,6 +81,7 @@
 .template-default:has(.frogbot-nav) .template-default__nav-toggler-wrapper,
 body:has(.frogbot-nav-shell) .template-default__nav-toggler-container,
 body:has(.frogbot-nav-shell) .app-header__account,
+body:has(.frogbot-nav-shell) .app-header__mobile-nav-toggler,
 body:has(.frogbot-nav-shell) .app-header__step-nav-wrapper {
   display: none;
 }
@@ -90,7 +91,6 @@ body:has(.frogbot-nav-shell) .app-header__controls-wrapper {
 }
 
 .frogbot-nav-shell {
-  opacity: 1;
   overflow: hidden;
   width: 100%;
 }
@@ -109,8 +109,16 @@ body:has(.frogbot-nav-shell) .app-header__controls-wrapper {
     grid-template-columns: 0 minmax(0, 1fr);
   }
 
-  .template-default:has(.frogbot-nav) .template-default__nav-toggler-wrapper {
-    display: flex;
+  .template-default .frogbot-nav-shell {
+    display: none;
+  }
+
+  .template-default .frogbot-nav-shell.nav--nav-open {
+    display: block;
+    inset: 0 auto 0 0;
+    position: fixed;
+    width: var(--nav-width);
+    z-index: 100;
   }
 }
 

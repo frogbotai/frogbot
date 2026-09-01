@@ -41,6 +41,12 @@ try {
   assert.match(css, /\.fb-button/);
   assert.match(css, /var\(--theme-base-/);
   assert.match(css, /data-fb-theme/);
+  assert.match(css, /body:has\(\.frogbot-nav-shell\) \.app-header__mobile-nav-toggler/);
+  assert.match(css, /\.frogbot-mobile-nav-toggle/);
+  assert.doesNotMatch(
+    css,
+    /\.template-default:has\(\.frogbot-admin-sidebar\[data-collapsed=true\]\)\{[^}]*!important/,
+  );
 
   const bundles = staticFiles
     .filter((file) => file.endsWith('.js'))
