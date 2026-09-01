@@ -3,8 +3,8 @@
 import * as Primitive from '@radix-ui/react-dialog';
 import type { ComponentProps } from 'react';
 
-import XIcon from '../icons/icons/XIcon';
-import { PortalTheme } from '../theme/provider';
+import XIcon from '../icons/icons/XIcon.js';
+import { PortalTheme } from '../theme/provider.js';
 
 export const Sheet = Primitive.Root;
 export const SheetTrigger = Primitive.Trigger;

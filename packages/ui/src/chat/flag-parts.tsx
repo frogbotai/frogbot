@@ -1,4 +1,4 @@
-import type { DataPartValue } from './data-part';
+import type { DataPartValue } from './data-part.js';
 
 export type PastePartData = { filename?: string; text: string };
 export type PageContextPartData = {

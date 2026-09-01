@@ -3,11 +3,11 @@
 import type { FrogBotSDK } from '@frogbotai/sdk';
 import { type ChangeEvent, useRef, useState } from 'react';
 
-import CloseIcon from '../icons/icons/CloseIcon';
-import FileIcon from '../icons/icons/FileIcon';
-import LoadingIcon from '../icons/icons/LoadingIcon';
-import PlusSignIcon from '../icons/icons/PlusSignIcon';
-import RefreshIcon from '../icons/icons/RefreshIcon';
+import CloseIcon from '../icons/icons/CloseIcon.js';
+import FileIcon from '../icons/icons/FileIcon.js';
+import LoadingIcon from '../icons/icons/LoadingIcon.js';
+import PlusSignIcon from '../icons/icons/PlusSignIcon.js';
+import RefreshIcon from '../icons/icons/RefreshIcon.js';
 
 export type FileReference = {
   id: string | number;

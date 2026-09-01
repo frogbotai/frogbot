@@ -57,6 +57,10 @@ describe('withFrogbot', () => {
     const webpack = vi.fn((config: { externals?: string[] }) => ({
       ...config,
       externals: ['consumer-external'],
+      resolve: {
+        alias: { consumer: '/consumer' },
+        extensionAlias: { '.custom': ['.custom.ts'] },
+      },
     }));
     const config = withFrogbot({ webpack });
     const webpackContext = { webpack: { IgnorePlugin: class {} } };
@@ -66,5 +70,12 @@ describe('withFrogbot', () => {
     expect(webpack).toHaveBeenCalledWith({ externals: ['base-external'] }, webpackContext);
     expect(result?.externals).toContain('consumer-external');
     expect(result?.externals).toContain('@basetenlabs/performance-client');
+    expect(result?.resolve?.alias).toEqual({ consumer: '/consumer' });
+    expect(result?.resolve?.extensionAlias).toEqual({
+      '.cjs': ['.cts', '.cjs'],
+      '.custom': ['.custom.ts'],
+      '.js': ['.ts', '.tsx', '.js', '.jsx'],
+      '.mjs': ['.mts', '.mjs'],
+    });
   });
 });

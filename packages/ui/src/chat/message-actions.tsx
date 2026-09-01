@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/tooltip';
-import BranchIcon from '../icons/icons/BranchIcon';
-import CopyIcon from '../icons/icons/CopyIcon';
-import PencilIcon from '../icons/icons/PencilIcon';
-import RefreshIcon from '../icons/icons/RefreshIcon';
-import { copyMarkdown } from './copy-markdown';
-import { formatMessageTimestamp } from './format-timestamp';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/tooltip.js';
+import BranchIcon from '../icons/icons/BranchIcon.js';
+import CopyIcon from '../icons/icons/CopyIcon.js';
+import PencilIcon from '../icons/icons/PencilIcon.js';
+import RefreshIcon from '../icons/icons/RefreshIcon.js';
+import { copyMarkdown } from './copy-markdown.js';
+import { formatMessageTimestamp } from './format-timestamp.js';
 
 export interface MessageActionsProps {
   onBranch?: () => void;

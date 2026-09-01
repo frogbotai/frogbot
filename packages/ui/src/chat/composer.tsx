@@ -13,16 +13,16 @@ import {
   useState,
 } from 'react';
 
-import ArrowUpIcon from '../icons/icons/ArrowUpIcon';
-import SquareIcon from '../icons/icons/SquareIcon';
+import ArrowUpIcon from '../icons/icons/ArrowUpIcon.js';
+import SquareIcon from '../icons/icons/SquareIcon.js';
 import {
   AttachmentControl,
   AttachmentPreviews,
   type ComposerAttachment,
   PastePreviews,
   useAttachments,
-} from './attachments';
-import { MicControl } from './mic-control';
+} from './attachments.js';
+import { MicControl } from './mic-control.js';
 
 export type ComposerProps = Omit<
   TextareaHTMLAttributes<HTMLTextAreaElement>,

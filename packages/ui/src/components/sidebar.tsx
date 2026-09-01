@@ -2,9 +2,9 @@
 
 import { type ComponentProps, createContext, useContext, useState } from 'react';
 
-import { useHotkey } from '../hooks/use-hotkey';
-import { useIsMobile } from '../hooks/use-mobile';
-import { Sheet, SheetContent, SheetTitle } from './sheet';
+import { useHotkey } from '../hooks/use-hotkey.js';
+import { useIsMobile } from '../hooks/use-mobile.js';
+import { Sheet, SheetContent, SheetTitle } from './sheet.js';
 
 interface SidebarValue {
   isMobile: boolean;

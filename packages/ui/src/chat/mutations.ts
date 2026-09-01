@@ -1,8 +1,8 @@
 import type { FrogBotSDK } from '@frogbotai/sdk';
 
-import type { MessageDocument } from './messages';
-import { chatRequest, type PayloadPage } from './rest';
-import { type ChatDocument, emitChatMutation } from './use-chats';
+import type { MessageDocument } from './messages.js';
+import { chatRequest, type PayloadPage } from './rest.js';
+import { type ChatDocument, emitChatMutation } from './use-chats.js';
 
 type ChatMutationOptions = {
   sdk: FrogBotSDK;

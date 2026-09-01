@@ -45,6 +45,15 @@ export function withFrogbot(
       return {
         ...incoming,
         externals: [...(incoming?.externals || []), ...NATIVE_EXTERNALS],
+        resolve: {
+          ...incoming?.resolve,
+          extensionAlias: {
+            ...incoming?.resolve?.extensionAlias,
+            '.cjs': ['.cts', '.cjs'],
+            '.js': ['.ts', '.tsx', '.js', '.jsx'],
+            '.mjs': ['.mts', '.mjs'],
+          },
+        },
       };
     },
   };

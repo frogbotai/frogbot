@@ -2,7 +2,7 @@
 import * as Primitive from '@radix-ui/react-scroll-area';
 import { type ComponentProps, type Ref, useEffect, useRef, useState } from 'react';
 
-import { composeRefs } from '../lib/utils';
+import { composeRefs } from '../lib/utils.js';
 export type ScrollAreaProps = ComponentProps<typeof Primitive.Root> & {
   viewPortClassName?: string;
   orientation?: 'vertical' | 'horizontal';

@@ -3,7 +3,7 @@
 import type { FrogBotSDK } from '@frogbotai/sdk';
 import { useEffect, useRef, useState } from 'react';
 
-import { Button } from '../components/button';
+import { Button } from '../components/button.js';
 import {
   Dialog,
   DialogContent,
@@ -11,10 +11,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../components/dialog';
-import { Input } from '../components/input';
-import MagicWandIcon from '../icons/icons/MagicWandIcon';
-import { renameChat, suggestChatTitle } from './mutations';
+} from '../components/dialog.js';
+import { Input } from '../components/input.js';
+import MagicWandIcon from '../icons/icons/MagicWandIcon.js';
+import { renameChat, suggestChatTitle } from './mutations.js';
 
 export type RenameChatDialogProps = {
   sdk: FrogBotSDK;

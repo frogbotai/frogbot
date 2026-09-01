@@ -3,9 +3,9 @@
 import type { UIMessage } from 'ai';
 import { type HTMLAttributes, type ReactNode, useEffect, useRef, useState } from 'react';
 
-import ArrowDownIcon from '../icons/icons/ArrowDownIcon';
-import { Message } from './message';
-import { MessagePart } from './message-part';
+import ArrowDownIcon from '../icons/icons/ArrowDownIcon.js';
+import { Message } from './message.js';
+import { MessagePart } from './message-part.js';
 
 export interface MessageListProps extends HTMLAttributes<HTMLDivElement> {
   messages: UIMessage[];

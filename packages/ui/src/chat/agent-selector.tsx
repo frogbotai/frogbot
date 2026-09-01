@@ -2,17 +2,17 @@
 
 import { memo } from 'react';
 
-import { Button } from '../components/button';
+import { Button } from '../components/button.js';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../components/dropdown-menu';
-import { CheckIcon } from '../icons/check';
-import ChevronDownIcon from '../icons/icons/ChevronDownIcon';
-import RobotIcon from '../icons/icons/RobotIcon';
-import { useChatProvider } from './provider';
+} from '../components/dropdown-menu.js';
+import { CheckIcon } from '../icons/check.js';
+import ChevronDownIcon from '../icons/icons/ChevronDownIcon.js';
+import RobotIcon from '../icons/icons/RobotIcon.js';
+import { useChatProvider } from './provider.js';
 
 export type AgentSelectorProps = {
   selectedAgent: string;

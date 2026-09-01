@@ -3,7 +3,7 @@
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import type { ComponentProps } from 'react';
 
-import { PortalTheme } from '../theme/provider';
+import { PortalTheme } from '../theme/provider.js';
 
 export const TooltipProvider = TooltipPrimitive.Provider;
 export const Tooltip = TooltipPrimitive.Root;

@@ -1,5 +1,5 @@
-import createLucideIcon from '../createLucideIcon';
-import type { IconNode } from '../types';
+import createLucideIcon from '../createLucideIcon.js';
+import type { IconNode } from '../types.js';
 
 export const branchIcon: IconNode = [
   ['circle', { cx: '6', cy: '5', r: '2' }],

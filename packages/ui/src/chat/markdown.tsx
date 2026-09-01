@@ -3,7 +3,7 @@ import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
 
-import { CodeBlock } from './code-block';
+import { CodeBlock } from './code-block.js';
 
 type MessageRole = 'user' | 'assistant' | 'system';
 

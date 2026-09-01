@@ -2,7 +2,7 @@
 
 import { memo } from 'react';
 
-import { Button } from '../components/button';
+import { Button } from '../components/button.js';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,10 +11,10 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '../components/dropdown-menu';
-import { CheckIcon } from '../icons/check';
-import ChevronDownIcon from '../icons/icons/ChevronDownIcon';
-import ChevronRightIcon from '../icons/icons/ChevronRightIcon';
+} from '../components/dropdown-menu.js';
+import { CheckIcon } from '../icons/check.js';
+import ChevronDownIcon from '../icons/icons/ChevronDownIcon.js';
+import ChevronRightIcon from '../icons/icons/ChevronRightIcon.js';
 
 export type ModelSelectorModel = {
   id: string;

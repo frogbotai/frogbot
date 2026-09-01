@@ -16,8 +16,8 @@ import {
   type ArtifactPersistence,
   type ArtifactRegistryItem,
   resolveArtifact,
-} from './artifact-registry';
-import type { DataPartValue } from './data-part';
+} from './artifact-registry.js';
+import type { DataPartValue } from './data-part.js';
 
 export interface ArtifactContextValue {
   artifact?: Artifact;

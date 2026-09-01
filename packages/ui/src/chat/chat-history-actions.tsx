@@ -4,11 +4,11 @@ import type { FrogBotSDK } from '@frogbotai/sdk';
 import type { ReactElement, ReactNode } from 'react';
 import { useState } from 'react';
 
-import { ConfirmationDialog } from '../components/confirmation-dialog';
-import { ChatRowActions } from './chat-row-actions';
-import { deleteChat } from './mutations';
-import { RenameChatDialog } from './rename-chat-dialog';
-import type { ChatDocument } from './use-chats';
+import { ConfirmationDialog } from '../components/confirmation-dialog.js';
+import { ChatRowActions } from './chat-row-actions.js';
+import { deleteChat } from './mutations.js';
+import { RenameChatDialog } from './rename-chat-dialog.js';
+import type { ChatDocument } from './use-chats.js';
 
 export type ChatHistoryActionsProps = {
   children: ReactElement<{ children?: ReactNode }>;

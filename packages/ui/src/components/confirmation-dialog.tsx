@@ -1,6 +1,6 @@
 'use client';
-import { Button } from './button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from './dialog';
+import { Button } from './button.js';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from './dialog.js';
 export type ConfirmationDialogProps = {
   description?: string;
   loadingText?: string;

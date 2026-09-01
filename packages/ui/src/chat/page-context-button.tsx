@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { Tooltip, TooltipContent, TooltipTrigger } from '../components/tooltip';
-import { CheckIcon } from '../icons/check';
-import BookOpenIcon from '../icons/icons/BookOpenIcon';
-import PlusSignIcon from '../icons/icons/PlusSignIcon';
-import XIcon from '../icons/icons/XIcon';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../components/tooltip.js';
+import { CheckIcon } from '../icons/check.js';
+import BookOpenIcon from '../icons/icons/BookOpenIcon.js';
+import PlusSignIcon from '../icons/icons/PlusSignIcon.js';
+import XIcon from '../icons/icons/XIcon.js';
 
 export interface PageContextTab {
   active: boolean;

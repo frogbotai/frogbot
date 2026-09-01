@@ -8,16 +8,16 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
-} from '../components/context-menu';
+} from '../components/context-menu.js';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../components/dropdown-menu';
-import DeleteIcon from '../icons/icons/DeleteIcon';
-import MoreHorizontalIcon from '../icons/icons/MoreHorizontalIcon';
-import PencilIcon from '../icons/icons/PencilIcon';
+} from '../components/dropdown-menu.js';
+import DeleteIcon from '../icons/icons/DeleteIcon.js';
+import MoreHorizontalIcon from '../icons/icons/MoreHorizontalIcon.js';
+import PencilIcon from '../icons/icons/PencilIcon.js';
 
 export type ChatRowMenuItemsProps = {
   onRename: () => void;

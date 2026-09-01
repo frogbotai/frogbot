@@ -1,4 +1,4 @@
-import * as icons from '@frogbotai/ui/icons';
+import * as icons from '../exports/icons.js';
 import type { ComponentType } from 'react';
 
 type KebabCase<Value extends string> = Value extends `${infer First}${infer Rest}`

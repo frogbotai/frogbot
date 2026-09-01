@@ -1,7 +1,7 @@
 import type { ChangeEvent, ComponentProps } from 'react';
 
-import AiSearchIcon from '../icons/icons/AiSearchIcon';
-import XIcon from '../icons/icons/XIcon';
+import AiSearchIcon from '../icons/icons/AiSearchIcon.js';
+import XIcon from '../icons/icons/XIcon.js';
 export type SearchInputProps = Omit<ComponentProps<'input'>, 'onChange'> & {
   onChange: (value: string) => void;
 };

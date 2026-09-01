@@ -1,6 +1,6 @@
 import type { TextUIPart } from 'ai';
 
-import { Markdown } from './markdown';
+import { Markdown } from './markdown.js';
 
 export function TextPart({
   part,

@@ -2,17 +2,17 @@
 
 import { memo, type ReactNode } from 'react';
 
-import { Button } from '../components/button';
+import { Button } from '../components/button.js';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItemIndicator,
   DropdownMenuTrigger,
-} from '../components/dropdown-menu';
-import { CheckIcon } from '../icons/check';
-import ChevronDownIcon from '../icons/icons/ChevronDownIcon';
-import WrenchIcon from '../icons/icons/WrenchIcon';
+} from '../components/dropdown-menu.js';
+import { CheckIcon } from '../icons/check.js';
+import ChevronDownIcon from '../icons/icons/ChevronDownIcon.js';
+import WrenchIcon from '../icons/icons/WrenchIcon.js';
 
 export type ToolSelectorTool = {
   id: string;

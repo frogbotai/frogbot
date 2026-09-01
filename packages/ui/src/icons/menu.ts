@@ -1,5 +1,5 @@
-import createLucideIcon from './createLucideIcon';
-import type { IconNode } from './types';
+import createLucideIcon from './createLucideIcon.js';
+import type { IconNode } from './types.js';
 
 const menu: IconNode = [
   ['path', { d: 'M4 12h16' }],

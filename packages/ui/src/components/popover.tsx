@@ -2,7 +2,7 @@
 import * as Primitive from '@radix-ui/react-popover';
 import type { ComponentProps } from 'react';
 
-import { PortalTheme } from '../theme/provider';
+import { PortalTheme } from '../theme/provider.js';
 export const Popover = Primitive.Root;
 export const PopoverTrigger = Primitive.Trigger;
 export const PopoverAnchor = Primitive.Anchor;

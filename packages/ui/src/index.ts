@@ -3,11 +3,11 @@ export {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from './components/accordion';
-export { Alert, AlertDescription, type AlertProps, AlertTitle } from './components/alert';
-export { Avatar, AvatarFallback, AvatarImage } from './components/avatar';
-export { Badge, type BadgeProps } from './components/badge';
-export { Button, type ButtonProps, buttonVariants } from './components/button';
+} from './components/accordion.js';
+export { Alert, AlertDescription, type AlertProps, AlertTitle } from './components/alert.js';
+export { Avatar, AvatarFallback, AvatarImage } from './components/avatar.js';
+export { Badge, type BadgeProps } from './components/badge.js';
+export { Button, type ButtonProps, buttonVariants } from './components/button.js';
 export {
   Card,
   CardContent,
@@ -15,10 +15,13 @@ export {
   CardFooter,
   CardHeader,
   CardTitle,
-} from './components/card';
-export { Checkbox, type CheckboxProps } from './components/checkbox';
-export { Collapsible, CollapsibleContent, CollapsibleTrigger } from './components/collapsible';
-export { ConfirmationDialog, type ConfirmationDialogProps } from './components/confirmation-dialog';
+} from './components/card.js';
+export { Checkbox, type CheckboxProps } from './components/checkbox.js';
+export { Collapsible, CollapsibleContent, CollapsibleTrigger } from './components/collapsible.js';
+export {
+  ConfirmationDialog,
+  type ConfirmationDialogProps,
+} from './components/confirmation-dialog.js';
 export {
   ContextMenu,
   ContextMenuCheckboxItem,
@@ -35,7 +38,7 @@ export {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuTrigger,
-} from './components/context-menu';
+} from './components/context-menu.js';
 export {
   Dialog,
   DialogClose,
@@ -47,8 +50,8 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
-} from './components/dialog';
-export { Dot, type DotProps } from './components/dot';
+} from './components/dialog.js';
+export { Dot, type DotProps } from './components/dot.js';
 export {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -64,14 +67,14 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from './components/dropdown-menu';
-export { EditableText, type EditableTextProps } from './components/editable-text';
-export { Input } from './components/input';
-export { Label } from './components/label';
-export { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from './components/popover';
-export { RadioGroup, RadioGroupItem } from './components/radio-group';
-export { ScrollArea, type ScrollAreaProps, ScrollBar } from './components/scroll-area';
-export { SearchInput, type SearchInputProps } from './components/search-input';
+} from './components/dropdown-menu.js';
+export { EditableText, type EditableTextProps } from './components/editable-text.js';
+export { Input } from './components/input.js';
+export { Label } from './components/label.js';
+export { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from './components/popover.js';
+export { RadioGroup, RadioGroupItem } from './components/radio-group.js';
+export { ScrollArea, type ScrollAreaProps, ScrollBar } from './components/scroll-area.js';
+export { SearchInput, type SearchInputProps } from './components/search-input.js';
 export {
   Select,
   SelectContent,
@@ -81,8 +84,8 @@ export {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from './components/select';
-export { HorizontalSeparatorWithText, Separator } from './components/separator';
+} from './components/select.js';
+export { HorizontalSeparatorWithText, Separator } from './components/separator.js';
 export {
   Sheet,
   SheetClose,
@@ -92,35 +95,35 @@ export {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from './components/sheet';
+} from './components/sheet.js';
 export {
   ShimmerEffect,
   type ShimmerEffectProps,
   StaggeredShimmers,
   type StaggeredShimmersProps,
-} from './components/shimmer-effect';
-export { Shortcut, type ShortcutProps } from './components/shortcut';
+} from './components/shimmer-effect.js';
+export { Shortcut, type ShortcutProps } from './components/shortcut.js';
 export {
   Sidebar,
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
   useSidebar,
-} from './components/sidebar';
-export { Skeleton } from './components/skeleton';
+} from './components/sidebar.js';
+export { Skeleton } from './components/skeleton.js';
 export {
   StatusIconWithText,
   type StatusIconWithTextProps,
-} from './components/status-icon-with-text';
-export { Switch, type SwitchProps } from './components/switch';
-export { Tabs, TabsContent, TabsList, TabsTrigger } from './components/tabs';
-export { TextWithIcon, type TextWithIconProps } from './components/text-with-icon';
-export { Textarea, type TextareaProps } from './components/textarea';
-export { Toggle, type ToggleProps } from './components/toggle';
-export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './components/tooltip';
-export { useControlledState } from './hooks/use-controlled-state';
-export { useHotkey } from './hooks/use-hotkey';
-export { useIsMobile } from './hooks/use-mobile';
-export { useScrollToBottom } from './hooks/use-scroll-to-bottom';
-export { composeRefs } from './lib/utils';
-export { Placeholder } from './placeholder';
+} from './components/status-icon-with-text.js';
+export { Switch, type SwitchProps } from './components/switch.js';
+export { Tabs, TabsContent, TabsList, TabsTrigger } from './components/tabs.js';
+export { TextWithIcon, type TextWithIconProps } from './components/text-with-icon.js';
+export { Textarea, type TextareaProps } from './components/textarea.js';
+export { Toggle, type ToggleProps } from './components/toggle.js';
+export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './components/tooltip.js';
+export { useControlledState } from './hooks/use-controlled-state.js';
+export { useHotkey } from './hooks/use-hotkey.js';
+export { useIsMobile } from './hooks/use-mobile.js';
+export { useScrollToBottom } from './hooks/use-scroll-to-bottom.js';
+export { composeRefs } from './lib/utils.js';
+export { Placeholder } from './placeholder.js';

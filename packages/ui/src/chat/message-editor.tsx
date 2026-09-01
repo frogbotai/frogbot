@@ -2,7 +2,7 @@
 
 import { type ChangeEvent, type FormEvent, useLayoutEffect, useRef, useState } from 'react';
 
-import { Button } from '../components/button';
+import { Button } from '../components/button.js';
 
 export interface MessageEditorProps {
   initialValue: string;

@@ -3,7 +3,7 @@
 import * as Primitive from '@radix-ui/react-dropdown-menu';
 import type { ComponentProps } from 'react';
 
-import { PortalTheme } from '../theme/provider';
+import { PortalTheme } from '../theme/provider.js';
 
 export const DropdownMenu = Primitive.Root;
 export const DropdownMenuTrigger = Primitive.Trigger;

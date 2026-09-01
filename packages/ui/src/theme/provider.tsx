@@ -3,7 +3,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { createContext, useContext, useLayoutEffect, useState, useSyncExternalStore } from 'react';
 
-import type { BrandTheme } from './brand';
+import type { BrandTheme } from './brand.js';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type ResolvedThemeMode = Exclude<ThemeMode, 'system'>;

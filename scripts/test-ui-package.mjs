@@ -131,6 +131,15 @@ createRoot(document.getElementById('root')!).render(
   );
 
   run('pnpm', ['install', '--ignore-scripts'], appRoot);
+
+  for (const subpath of [
+    ...subpaths.filter((subpath) => !subpath.includes('*')),
+    './icons/check',
+  ]) {
+    const specifier = subpath === '.' ? '@frogbotai/ui' : `@frogbotai/ui/${subpath.slice(2)}`;
+    run('node', ['--input-type=module', '--eval', `await import('${specifier}')`], appRoot);
+  }
+
   run('pnpm', ['build'], appRoot);
 
   const bundle = fs
@@ -173,7 +182,7 @@ export default defineConfig({ build: { lib: { entry: 'src/icon.ts', formats: ['e
   assert.ok(fs.statSync(path.join(appRoot, 'dist', iconBundle)).size < 4000);
 
   console.log(
-    '[test-ui-package] Packed exports, types, CSS, client directive, and Vite consumption passed.',
+    '[test-ui-package] Packed exports, types, CSS, client directive, Node ESM, and Vite consumption passed.',
   );
 } finally {
   fs.rmSync(temporaryRoot, { recursive: true, force: true });

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import type { ThemeTokens } from './provider';
+import type { ThemeTokens } from './provider.js';
 
 export interface BrandConfig {
   icon: ReactNode;

@@ -11,12 +11,12 @@ import {
 } from 'ai';
 import type { ReactNode } from 'react';
 
-import { DataPart, type DataPartValue } from './data-part';
-import { FilePart } from './file-part';
-import { ReasoningPart } from './reasoning-part';
-import { SourcePart } from './source-part';
-import { TextPart } from './text-part';
-import { ToolPart } from './tool-part';
+import { DataPart, type DataPartValue } from './data-part.js';
+import { FilePart } from './file-part.js';
+import { ReasoningPart } from './reasoning-part.js';
+import { SourcePart } from './source-part.js';
+import { TextPart } from './text-part.js';
+import { ToolPart } from './tool-part.js';
 
 export type MessagePartValue =
   UIMessagePart<UIDataTypes, UITools> | ({ type: string } & Record<string, unknown>);

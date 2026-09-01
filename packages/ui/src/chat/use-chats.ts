@@ -3,7 +3,7 @@
 import type { FrogBotSDK } from '@frogbotai/sdk';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { chatRequest, type PayloadPage } from './rest';
+import { chatRequest, type PayloadPage } from './rest.js';
 
 export type ChatDocument = {
   id: string | number;

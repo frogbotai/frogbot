@@ -1,5 +1,5 @@
 export {};
-export { type BrandConfig, type BrandTheme } from '../theme/brand';
+export { type BrandConfig, type BrandTheme } from '../theme/brand.js';
 export {
   PortalTheme,
   type ResolvedThemeMode,
@@ -10,4 +10,4 @@ export {
   type ThemeStorage,
   type ThemeTokens,
   useTheme,
-} from '../theme/provider';
+} from '../theme/provider.js';

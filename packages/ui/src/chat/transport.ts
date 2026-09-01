@@ -6,7 +6,7 @@ import {
   type UIMessage,
 } from 'ai';
 
-import { emitChatMutation } from './use-chats';
+import { emitChatMutation } from './use-chats.js';
 
 export type FrogbotChatTransportOptions<UI_MESSAGE extends UIMessage> = Omit<
   HttpChatTransportInitOptions<UI_MESSAGE>,

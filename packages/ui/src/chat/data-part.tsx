@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { ArtifactStreamPart } from './artifact';
+import { ArtifactStreamPart } from './artifact.js';
 
 export interface DataPartValue {
   data: unknown;

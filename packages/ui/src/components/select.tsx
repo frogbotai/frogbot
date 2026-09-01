@@ -3,10 +3,10 @@
 import * as Primitive from '@radix-ui/react-select';
 import type { ComponentProps } from 'react';
 
-import CheckIcon from '../icons/icons/CheckIcon';
-import ChevronDownIcon from '../icons/icons/ChevronDownIcon';
-import ChevronUpIcon from '../icons/icons/ChevronUpIcon';
-import { PortalTheme } from '../theme/provider';
+import CheckIcon from '../icons/icons/CheckIcon.js';
+import ChevronDownIcon from '../icons/icons/ChevronDownIcon.js';
+import ChevronUpIcon from '../icons/icons/ChevronUpIcon.js';
+import { PortalTheme } from '../theme/provider.js';
 
 export const Select = Primitive.Root;
 export const SelectGroup = Primitive.Group;

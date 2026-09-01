@@ -1,9 +1,9 @@
 'use client';
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/tooltip';
-import MicIcon from '../icons/icons/MicIcon';
-import { useChatProvider } from './provider';
-import { useTranscription } from './use-transcription';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/tooltip.js';
+import MicIcon from '../icons/icons/MicIcon.js';
+import { useChatProvider } from './provider.js';
+import { useTranscription } from './use-transcription.js';
 
 export function MicControl({ onText }: { onText: (text: string) => void }) {
   const provider = useChatProvider();

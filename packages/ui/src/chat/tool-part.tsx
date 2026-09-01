@@ -1,8 +1,8 @@
 import { type DynamicToolUIPart, getToolName, type ToolUIPart, type UITools } from 'ai';
 
-import { useChatProvider } from './provider';
-import type { ToolRenderer } from './tool-registry';
-import { resolveToolRenderer } from './tool-registry';
+import { useChatProvider } from './provider.js';
+import type { ToolRenderer } from './tool-registry.js';
+import { resolveToolRenderer } from './tool-registry.js';
 
 function serialize(value: unknown) {
   if (typeof value === 'string') return value;

@@ -4,8 +4,8 @@ import type { FrogBotSDK } from '@frogbotai/sdk';
 import type { UIMessage } from 'ai';
 import { useEffect, useState } from 'react';
 
-import { type MessageDocument, messageDocumentToUIMessage } from './messages';
-import { chatRequest, type PayloadPage } from './rest';
+import { type MessageDocument, messageDocumentToUIMessage } from './messages.js';
+import { chatRequest, type PayloadPage } from './rest.js';
 
 export type UseChatOptions = {
   sdk: FrogBotSDK;

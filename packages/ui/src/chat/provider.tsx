@@ -4,10 +4,10 @@ import { type AgentManifest, createFrogbotSDK, type FrogBotSDK } from '@frogbota
 import type { ManifestResponse } from 'frogbot';
 import { createContext, type ReactNode, use, useEffect, useMemo, useState } from 'react';
 
-import type { ChatPlatformAdapter } from './adapter';
-import { ArtifactProvider } from './artifact';
-import type { ArtifactPersistence, ArtifactRegistryItem } from './artifact-registry';
-import type { ToolRenderer } from './tool-registry';
+import type { ChatPlatformAdapter } from './adapter.js';
+import { ArtifactProvider } from './artifact.js';
+import type { ArtifactPersistence, ArtifactRegistryItem } from './artifact-registry.js';
+import type { ToolRenderer } from './tool-registry.js';
 
 export type ChatManifest = ManifestResponse;
 

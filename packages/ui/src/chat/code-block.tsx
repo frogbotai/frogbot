@@ -1,6 +1,6 @@
 import type { HTMLAttributes } from 'react';
 
-import { useTheme } from '../theme/provider';
+import { useTheme } from '../theme/provider.js';
 
 export interface CodeBlockProps extends HTMLAttributes<HTMLPreElement> {
   code: string;

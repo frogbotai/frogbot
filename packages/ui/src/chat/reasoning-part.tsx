@@ -1,6 +1,6 @@
 import type { ReasoningUIPart } from 'ai';
 
-import { Markdown } from './markdown';
+import { Markdown } from './markdown.js';
 
 export function ReasoningPart({ part }: { part: ReasoningUIPart }) {
   return (

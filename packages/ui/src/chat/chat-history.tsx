@@ -4,8 +4,8 @@ import type { FrogBotSDK } from '@frogbotai/sdk';
 import type { UIMessage } from 'ai';
 import type { ReactNode } from 'react';
 
-import { ChatHistoryActions } from './chat-history-actions';
-import type { ChatDocument } from './use-chats';
+import { ChatHistoryActions } from './chat-history-actions.js';
+import type { ChatDocument } from './use-chats.js';
 
 export function deriveChatTitle(
   messages: UIMessage[],

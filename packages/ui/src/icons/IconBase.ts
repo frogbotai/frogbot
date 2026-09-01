@@ -1,7 +1,7 @@
 import { createElement, forwardRef } from 'react';
 
-import defaultAttributes from './defaultAttributes';
-import type { IconNode, LucideProps } from './types';
+import defaultAttributes from './defaultAttributes.js';
+import type { IconNode, LucideProps } from './types.js';
 
 // Helper functions (simplified versions)
 const mergeClasses = (...classes: (string | undefined)[]): string => {

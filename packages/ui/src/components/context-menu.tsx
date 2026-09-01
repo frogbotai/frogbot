@@ -2,9 +2,9 @@
 import * as Primitive from '@radix-ui/react-context-menu';
 import type { ComponentProps } from 'react';
 
-import CheckIcon from '../icons/icons/CheckIcon';
-import ChevronRightIcon from '../icons/icons/ChevronRightIcon';
-import { PortalTheme } from '../theme/provider';
+import CheckIcon from '../icons/icons/CheckIcon.js';
+import ChevronRightIcon from '../icons/icons/ChevronRightIcon.js';
+import { PortalTheme } from '../theme/provider.js';
 export const ContextMenu = Primitive.Root;
 export const ContextMenuTrigger = Primitive.Trigger;
 export const ContextMenuGroup = Primitive.Group;
