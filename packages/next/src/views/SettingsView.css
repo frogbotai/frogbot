@@ -1,7 +1,87 @@
 .frogbot-settings-template {
   display: grid;
-  grid-template-columns: var(--nav-width, 17rem) minmax(0, 1fr);
+  grid-template-columns: 220px minmax(0, 1fr);
   min-height: 100vh;
+}
+
+.frogbot-settings-nav {
+  background: var(--theme-elevation-50);
+  border-right: 1px solid var(--theme-elevation-150);
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 0.75rem;
+}
+
+.frogbot-settings-nav__back,
+.frogbot-settings-nav__item {
+  align-items: center;
+  color: var(--theme-elevation-600);
+  display: flex;
+  font-size: 0.875rem;
+  font-weight: 500;
+  gap: 0.625rem;
+  text-decoration: none;
+}
+
+.frogbot-settings-nav__back {
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
+}
+
+.frogbot-settings-nav__back:hover,
+.frogbot-settings-nav__item:hover {
+  color: var(--theme-text);
+}
+
+.frogbot-settings-nav__heading {
+  color: var(--theme-elevation-500);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin: 0 0 1rem;
+  padding: 0 0.5rem;
+  text-transform: uppercase;
+}
+
+.frogbot-settings-nav__items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.frogbot-settings-nav__item {
+  border-radius: var(--style-radius-m);
+  padding: 0.5rem 0.625rem;
+  transition:
+    background-color 100ms ease,
+    color 100ms ease;
+}
+
+.frogbot-settings-nav__item:hover {
+  background: var(--theme-elevation-100);
+}
+
+.frogbot-settings-nav__item--active {
+  background: var(--theme-elevation-150);
+  color: var(--theme-text);
+}
+
+.frogbot-settings-nav__icon {
+  align-items: center;
+  display: flex;
+  flex: 0 0 1.125rem;
+  justify-content: center;
+}
+
+.frogbot-settings-nav__icon svg {
+  height: 1.125rem;
+  width: 1.125rem;
+}
+
+.frogbot-settings-nav__footer {
+  border-top: 1px solid var(--theme-elevation-150);
+  margin-top: auto;
+  padding-top: 0.75rem;
 }
 
 .frogbot-settings-template__main {
@@ -25,8 +105,6 @@
   padding: 3rem 2rem;
 }
 
-.frogbot-settings__landing h1,
-.frogbot-settings__collections h1,
 .frogbot-settings__not-found h1 {
   margin: 0 0 0.75rem;
 }
@@ -49,61 +127,9 @@
   padding: 0;
 }
 
-.frogbot-settings__landing p,
 .frogbot-settings__not-found p {
   color: var(--theme-elevation-600);
   margin: 0;
-}
-
-.frogbot-settings__card-list {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  list-style: none;
-  margin: 2rem 0 0;
-  padding: 0;
-}
-
-.frogbot-settings-card {
-  align-items: center;
-  background: var(--theme-elevation-0);
-  border: 1px solid var(--theme-elevation-150);
-  border-radius: var(--style-radius-m);
-  color: var(--theme-text);
-  display: flex;
-  gap: 1rem;
-  min-height: 5.5rem;
-  padding: 1.25rem;
-  text-decoration: none;
-  transition:
-    border-color 100ms ease,
-    box-shadow 100ms ease;
-}
-
-.frogbot-settings-card:hover,
-.frogbot-settings-card:focus-visible {
-  border-color: var(--theme-elevation-300);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-elevation-1000) 8%, transparent);
-}
-
-.frogbot-settings-card__icon {
-  align-items: center;
-  background: var(--theme-elevation-100);
-  border-radius: var(--style-radius-s);
-  display: flex;
-  flex: 0 0 2.75rem;
-  height: 2.75rem;
-  justify-content: center;
-}
-
-.frogbot-settings-card__icon svg {
-  height: 1.5rem;
-  width: 1.5rem;
-}
-
-.frogbot-settings-card__label {
-  font-size: 1rem;
-  font-weight: 600;
 }
 
 @media (max-width: 767px) {
@@ -111,8 +137,17 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .frogbot-settings-template > .frogbot-nav-shell {
-    display: none;
+  .frogbot-settings-nav {
+    border-bottom: 1px solid var(--theme-elevation-150);
+    border-right: 0;
+  }
+
+  .frogbot-settings-nav__back {
+    margin-bottom: 1rem;
+  }
+
+  .frogbot-settings-nav__footer {
+    margin-top: 0.75rem;
   }
 
   .frogbot-settings-template__header,

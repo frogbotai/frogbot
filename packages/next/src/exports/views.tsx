@@ -1,12 +1,12 @@
 import type { ChatProps, GreetingProps, MessageActionsSlotProps } from '@frogbotai/ui/chat';
-import { ProfileIcon, SettingIcon, TileIcon } from '@frogbotai/ui/icons';
+import { SettingIcon, TileIcon } from '@frogbotai/ui/icons';
 import {
   generatePageMetadata as payloadGeneratePageMetadata,
   NotFoundPage as PayloadNotFoundPage,
   RootPage as PayloadRootPage,
 } from '@payloadcms/next/views';
 import { getTranslation } from '@payloadcms/translations';
-import { Card, Link } from '@payloadcms/ui';
+import { Card } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import type { EntityToGroup } from '@payloadcms/ui/shared';
 import { EntityType, groupNavItems } from '@payloadcms/ui/shared';
@@ -19,7 +19,7 @@ import type { ComponentProps, ComponentType } from 'react';
 
 import frogbotFavicon from '../assets/frogbot-favicon.png';
 import frogbotOGImage from '../assets/frogbot-og.jpg';
-import { FrogbotNav } from '../elements/Nav/index.js';
+import { SettingsNav } from '../elements/SettingsNav/index.js';
 import type { FrogbotConfigArg } from '../types.js';
 import { ChatViewClient } from './ChatView.client.js';
 
@@ -172,6 +172,12 @@ export async function SettingsView(props: SettingsViewProps) {
   const routeSegments = props.routeSegments ?? (params?.segments as string[] | undefined) ?? [];
   const settingsSegments = routeSegments[0] === 'settings' ? routeSegments.slice(1) : routeSegments;
   const routePath = settingsSegments.join('/');
+  const adminRoute = payload.config.routes.admin;
+
+  if (routePath === '') {
+    redirect(formatAdminURL({ adminRoute, path: '/settings/collections' }));
+  }
+
   const settings = (
     payload.config.admin as typeof payload.config.admin & {
       settings?: Array<{
@@ -183,25 +189,34 @@ export async function SettingsView(props: SettingsViewProps) {
       }>;
     }
   ).settings;
-  const matched = [...(settings ?? [])]
+  const accessibleSettings = (
+    await Promise.all(
+      (settings ?? []).map(async (entry) => ({
+        allowed: entry.access ? await entry.access({ req }) : Boolean(req.user),
+        entry,
+      })),
+    )
+  ).filter(({ allowed }) => allowed);
+  const matched = accessibleSettings
+    .map(({ entry }) => entry)
     .sort((a, b) => b.path.length - a.path.length)
     .find((entry) => routePath === entry.path || routePath.startsWith(`${entry.path}/`));
-  const allowed = matched
-    ? matched.access
-      ? await matched.access({ req })
-      : Boolean(req.user)
-    : false;
-  const accessibleSettings =
-    routePath === ''
-      ? (
-          await Promise.all(
-            (settings ?? []).map(async (entry) => ({
-              allowed: entry.access ? await entry.access({ req }) : Boolean(req.user),
-              entry,
-            })),
-          )
-        ).filter(({ allowed: entryAllowed }) => entryAllowed)
-      : [];
+  const entries = [
+    { icon: <TileIcon size={18} />, label: 'Collections', path: 'collections' },
+    ...accessibleSettings.map(({ entry }) => ({
+      icon: entry.icon ? (
+        RenderServerComponent({
+          Component: entry.icon,
+          importMap,
+          serverProps: props,
+        })
+      ) : (
+        <SettingIcon size={18} />
+      ),
+      label: entry.label,
+      path: entry.path,
+    })),
+  ];
   const collectionGroups =
     routePath === 'collections'
       ? groupNavItems(
@@ -212,64 +227,9 @@ export async function SettingsView(props: SettingsViewProps) {
           req.i18n,
         )
       : [];
-  const adminRoute = routePath === '' ? payload.config.routes.admin : '';
   const content =
-    routePath === '' ? (
-      <div className="frogbot-settings__landing">
-        <h1>Settings</h1>
-        <p>Manage your FrogBot workspace.</p>
-        <ul className="frogbot-settings__card-list">
-          <li>
-            <Link
-              className="frogbot-settings-card"
-              href={formatAdminURL({
-                adminRoute,
-                path: payload.config.admin.routes.account,
-              })}
-            >
-              <span aria-hidden="true" className="frogbot-settings-card__icon">
-                <ProfileIcon size={24} />
-              </span>
-              <span className="frogbot-settings-card__label">Account</span>
-            </Link>
-          </li>
-          <li>
-            <Link
-              className="frogbot-settings-card"
-              href={formatAdminURL({ adminRoute, path: '/settings/collections' })}
-            >
-              <span aria-hidden="true" className="frogbot-settings-card__icon">
-                <TileIcon size={24} />
-              </span>
-              <span className="frogbot-settings-card__label">Collections</span>
-            </Link>
-          </li>
-          {accessibleSettings.map(({ entry }) => (
-            <li key={entry.path}>
-              <Link
-                className="frogbot-settings-card"
-                href={formatAdminURL({ adminRoute, path: `/settings/${entry.path}` })}
-              >
-                <span aria-hidden="true" className="frogbot-settings-card__icon">
-                  {entry.icon ? (
-                    RenderServerComponent({
-                      Component: entry.icon,
-                      importMap,
-                      serverProps: props,
-                    })
-                  ) : (
-                    <SettingIcon size={24} />
-                  )}
-                </span>
-                <span className="frogbot-settings-card__label">{entry.label}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-    ) : routePath === 'collections' ? (
+    routePath === 'collections' ? (
       <div className="frogbot-settings__collections">
-        <h1>Collections</h1>
         {collectionGroups.map((group) => (
           <section className="frogbot-settings__collection-group" key={group.label}>
             <h2>{group.label}</h2>
@@ -295,7 +255,7 @@ export async function SettingsView(props: SettingsViewProps) {
           </section>
         ))}
       </div>
-    ) : matched && allowed ? (
+    ) : matched ? (
       RenderServerComponent({
         Component: matched.Component,
         importMap,
@@ -310,14 +270,19 @@ export async function SettingsView(props: SettingsViewProps) {
 
   return (
     <div className="frogbot-settings-template">
-      <FrogbotNav
-        {...props}
-        req={req}
-        user={req.user ?? undefined}
-        visibleEntities={initPageResult.visibleEntities}
+      <SettingsNav
+        accountPath={formatAdminURL({
+          adminRoute,
+          path: payload.config.admin.routes.account,
+        })}
+        activePath={routePath}
+        adminRoute={adminRoute}
+        entries={entries}
       />
       <main className="frogbot-settings-template__main">
-        <div className="frogbot-settings-template__header">FrogBot Settings</div>
+        <div className="frogbot-settings-template__header">
+          {routePath === 'collections' ? 'Collections' : (matched?.label ?? 'Settings')}
+        </div>
         <div className="frogbot-settings-template__content">{content}</div>
       </main>
     </div>

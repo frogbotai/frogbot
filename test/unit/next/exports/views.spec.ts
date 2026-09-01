@@ -78,11 +78,13 @@ describe('@frogbotai/next views', () => {
     const payload = {
       config: {
         admin: {
+          routes: { account: '/account' },
           settings: [
             { access: parentAccess, Component: 'Parent', path: 'billing' },
             { access: nestedAccess, Component: 'Nested', path: 'billing/invoices' },
           ],
         },
+        routes: { admin: '/admin' },
       },
     };
     const props = {
@@ -94,7 +96,7 @@ describe('@frogbotai/next views', () => {
 
     await SettingsView(props);
 
-    expect(parentAccess).not.toHaveBeenCalled();
+    expect(parentAccess).toHaveBeenCalledWith({ req });
     expect(nestedAccess).toHaveBeenCalledWith({ req });
     expect(mocks.RenderServerComponent).toHaveBeenCalledWith({
       Component: 'Nested',
@@ -106,7 +108,13 @@ describe('@frogbotai/next views', () => {
   it('SettingsView defaults access to authenticated users and hides denied routes', async () => {
     mocks.RenderServerComponent.mockClear();
     const payload = {
-      config: { admin: { settings: [{ Component: 'Usage', path: 'usage' }] } },
+      config: {
+        admin: {
+          routes: { account: '/account' },
+          settings: [{ Component: 'Usage', path: 'usage' }],
+        },
+        routes: { admin: '/admin' },
+      },
     };
     const element = await SettingsView({
       importMap: {},
@@ -123,8 +131,8 @@ describe('@frogbotai/next views', () => {
     expect(content.props.className).toBe('frogbot-settings__not-found');
   });
 
-  it('SettingsView renders the bare Account and Collections landing cards', async () => {
-    const element = await SettingsView({
+  it('SettingsView redirects the settings root to Collections', async () => {
+    await SettingsView({
       importMap: {},
       initPageResult: {
         req: { user: { id: 'user-1' } },
@@ -139,14 +147,7 @@ describe('@frogbotai/next views', () => {
       },
     } as never);
 
-    const content = element.props.children[1].props.children[1].props.children;
-    expect(content.props.className).toBe('frogbot-settings__landing');
-    const html = renderToStaticMarkup(content);
-    expect(html).toContain('href="/admin/account"');
-    expect(html).toContain('>Account<');
-    expect(html).toContain('href="/admin/settings/collections"');
-    expect(html).toContain('>Collections<');
-    expect(html.match(/frogbot-settings-card"/g)).toHaveLength(2);
+    expect(mocks.redirect).toHaveBeenCalledWith('/admin/settings/collections');
   });
 
   it('SettingsView renders accessible nested entries with their icon and canonical path', async () => {
@@ -175,15 +176,15 @@ describe('@frogbotai/next views', () => {
               },
             ],
           },
+          collections: [],
           routes: { admin: '/control' },
         },
       },
-      routeSegments: ['settings'],
+      routeSegments: ['settings', 'workspace', 'usage'],
     } as never;
 
     const element = await SettingsView(props);
-    const content = element.props.children[1].props.children[1].props.children;
-    const html = renderToStaticMarkup(content);
+    const html = renderToStaticMarkup(element);
 
     expect(access).toHaveBeenCalledWith({ req: props.initPageResult.req });
     expect(html).toContain('href="/control/settings/workspace/usage"');
@@ -218,17 +219,16 @@ describe('@frogbotai/next views', () => {
             routes: { admin: adminRoute },
           },
         },
-        routeSegments: ['settings'],
+        routeSegments: ['settings', 'usage'],
       } as never);
 
-      const content = element.props.children[1].props.children[1].props.children;
-      const html = renderToStaticMarkup(content);
+      const html = renderToStaticMarkup(element);
       expect(html).toContain(`href="${expected}"`);
       expect(html).not.toContain('href="//');
     },
   );
 
-  it('SettingsView omits denied entries from the server-rendered landing', async () => {
+  it('SettingsView omits denied entries from the server-rendered navigation', async () => {
     const denied = vi.fn(() => false);
     const element = await SettingsView({
       importMap: {},
@@ -244,17 +244,18 @@ describe('@frogbotai/next views', () => {
               { access: denied, Component: 'Secret', label: 'Secret', path: 'secret/nested' },
             ],
           },
+          collections: [],
           routes: { admin: '/admin' },
         },
       },
-      routeSegments: ['settings'],
+      routeSegments: ['settings', 'missing'],
     } as never);
 
-    const content = element.props.children[1].props.children[1].props.children;
-    const html = renderToStaticMarkup(content);
+    const html = renderToStaticMarkup(element);
     expect(denied).toHaveBeenCalledOnce();
     expect(html).not.toContain('Secret');
-    expect(html.match(/frogbot-settings-card"/g)).toHaveLength(2);
+    expect(html).toContain('href="/admin/settings/collections"');
+    expect(html).toContain('href="/admin/account"');
   });
 
   it('SettingsView groups visible readable collections and links canonical custom admin routes', async () => {
@@ -320,7 +321,7 @@ describe('@frogbotai/next views', () => {
       },
       payload: {
         config: {
-          admin: { settings: [] },
+          admin: { routes: { account: '/account' }, settings: [] },
           collections: [
             { admin: { group: false }, labels: { plural: 'Internal' }, slug: 'internal' },
             { admin: {}, labels: { plural: 'Posts' }, slug: 'posts' },
