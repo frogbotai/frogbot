@@ -22,6 +22,7 @@ import {
   PastePreviews,
   useAttachments,
 } from './attachments.js';
+import { AudioWaveform } from './audio-waveform.js';
 import { MicControl } from './mic-control.js';
 
 export type ComposerProps = Omit<
@@ -64,6 +65,7 @@ export function Composer({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [internalValue, setInternalValue] = useState(defaultValue);
   const [dragging, setDragging] = useState(false);
+  const [audioData, setAudioData] = useState<Float32Array | null>();
   const [pastes, setPastes] = useState<Extract<ComposerAttachment, { type: 'paste' }>[]>([]);
   const currentValue = value ?? internalValue;
   const attachments = useAttachments({ filesSlug, sdk });
@@ -158,6 +160,7 @@ export function Composer({
       >
         <div className="fb-composer__gradient-container">
           <div className="fb-composer__panel">
+            {audioData !== undefined && <AudioWaveform audioData={audioData} />}
             <textarea
               {...props}
               ref={textareaRef}
@@ -183,6 +186,7 @@ export function Composer({
                 {endSlot}
                 {!disabled && !pending && (
                   <MicControl
+                    onWaveformChange={setAudioData}
                     onText={(text) => {
                       const next = `${currentValue}${text}`;
                       if (value === undefined) setInternalValue(next);

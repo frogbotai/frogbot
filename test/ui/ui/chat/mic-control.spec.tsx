@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { ChatPlatformAdapter } from '../../../../packages/ui/src/chat/adapter';
+import { Composer } from '../../../../packages/ui/src/chat/composer';
 import { MicControl } from '../../../../packages/ui/src/chat/mic-control';
 import { ChatProvider } from '../../../../packages/ui/src/chat/provider';
 
@@ -80,6 +81,27 @@ describe('MicControl', () => {
     expect(init.body).toBeInstanceOf(FormData);
     expect((init.body as FormData).get('model')).toBe('whisper-1');
     expect((init.body as FormData).get('file')).toBeInstanceOf(File);
+  });
+
+  it('renders the waveform above the textarea only while recording', async () => {
+    vi.stubGlobal('MediaRecorder', Recorder);
+    vi.stubGlobal('navigator', {
+      mediaDevices: { getUserMedia: vi.fn().mockResolvedValue(stream) },
+    });
+    const value = adapter(Response.json({ text: 'hello' }));
+    const { container } = render(
+      <ChatProvider adapter={value.adapter}>
+        <Composer aria-label="Message" onSubmit={vi.fn()} submitContent="Send" stopContent="Stop" />
+      </ChatProvider>,
+    );
+    const button = await screen.findByRole('button', { name: 'Use microphone' });
+    expect(container.querySelector('.fb-audio-waveform')).toBeNull();
+    fireEvent.click(button);
+    await waitFor(() => expect(container.querySelector('.fb-audio-waveform')).toBeTruthy());
+    const panel = container.querySelector('.fb-composer__panel') as HTMLElement;
+    expect(panel.firstElementChild?.className).toBe('fb-audio-waveform');
+    fireEvent.click(button);
+    await waitFor(() => expect(container.querySelector('.fb-audio-waveform')).toBeNull());
   });
 
   it('hides when transcription is unavailable', async () => {

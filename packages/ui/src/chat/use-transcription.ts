@@ -25,8 +25,11 @@ export function useTranscription({
 }) {
   const [status, setStatus] = useState<TranscriptionStatus>('idle');
   const [error, setError] = useState<string>();
+  const [audioData, setAudioData] = useState<Float32Array | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
+  const audioContext = useRef<AudioContext | null>(null);
+  const animationFrame = useRef<number | null>(null);
   const mounted = useRef(true);
   const canRecord =
     typeof MediaRecorder !== 'undefined' &&
@@ -34,6 +37,11 @@ export function useTranscription({
     !!navigator.mediaDevices?.getUserMedia;
 
   const cleanup = () => {
+    if (animationFrame.current !== null) cancelAnimationFrame(animationFrame.current);
+    animationFrame.current = null;
+    void audioContext.current?.close();
+    audioContext.current = null;
+    if (mounted.current) setAudioData(null);
     stream.current?.getTracks().forEach((track) => track.stop());
     stream.current = null;
     recorder.current = null;
@@ -54,6 +62,24 @@ export function useTranscription({
     try {
       stream.current = await navigator.mediaDevices.getUserMedia({ audio: true });
       if (!mounted.current) return cleanup();
+      try {
+        const context = new AudioContext();
+        audioContext.current = context;
+        const analyser = context.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.8;
+        const data = new Float32Array(analyser.frequencyBinCount);
+        context.createMediaStreamSource(stream.current).connect(analyser);
+        const sample = () => {
+          analyser.getFloatTimeDomainData(data);
+          setAudioData(data.slice());
+          animationFrame.current = requestAnimationFrame(sample);
+        };
+        animationFrame.current = requestAnimationFrame(sample);
+      } catch {
+        void audioContext.current?.close();
+        audioContext.current = null;
+      }
       const mimeType = recordingType();
       const chunks: Blob[] = [];
       const mediaRecorder = new MediaRecorder(stream.current, mimeType ? { mimeType } : undefined);
@@ -92,5 +118,5 @@ export function useTranscription({
     if (status === 'recording') recorder.current?.stop();
   };
 
-  return { canRecord, error, start, status, stop };
+  return { audioData, canRecord, error, start, status, stop };
 }

@@ -1,11 +1,19 @@
 'use client';
 
+import { useEffect } from 'react';
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/tooltip.js';
 import MicIcon from '../icons/icons/MicIcon.js';
 import { useChatProvider } from './provider.js';
 import { useTranscription } from './use-transcription.js';
 
-export function MicControl({ onText }: { onText: (text: string) => void }) {
+export function MicControl({
+  onText,
+  onWaveformChange,
+}: {
+  onText: (text: string) => void;
+  onWaveformChange?: (audioData: Float32Array | null | undefined) => void;
+}) {
   const provider = useChatProvider();
   const capability = provider?.manifest?.ai?.transcribe;
   const transcription = useTranscription({
@@ -13,6 +21,10 @@ export function MicControl({ onText }: { onText: (text: string) => void }) {
     transcribe: async (file) =>
       capability ? (await provider.sdk.ai.transcribe({ file, model: capability.model })).text : '',
   });
+  useEffect(() => {
+    onWaveformChange?.(transcription.status === 'recording' ? transcription.audioData : undefined);
+  }, [onWaveformChange, transcription.audioData, transcription.status]);
+  useEffect(() => () => onWaveformChange?.(undefined), [onWaveformChange]);
   if (!capability || !transcription.canRecord) return null;
   const active = transcription.status === 'recording' || transcription.status === 'transcribing';
 

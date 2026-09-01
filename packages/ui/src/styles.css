@@ -36,6 +36,7 @@
 @import "./chat/agent-selector.css";
 @import "./chat/artifact.css";
 @import "./chat/attachments.css";
+@import "./chat/audio-waveform.css";
 @import "./chat/chat-history.css";
 @import "./chat/chat-row-actions.css";
 @import "./chat/chat-shell.css";
