@@ -15,6 +15,9 @@ const mocks = vi.hoisted(() => ({
   generatePageMetadata: vi.fn((args: unknown) => Promise.resolve(args)),
   RenderServerComponent: vi.fn(() => 'rendered-setting'),
   redirect: vi.fn(),
+  ListControls: vi.fn(() => null),
+  ListHeader: vi.fn(() => null),
+  ListQueryProvider: vi.fn(({ children }) => children),
 }));
 
 vi.mock('@payloadcms/next/views', () => mocks);
@@ -26,6 +29,9 @@ vi.mock('@payloadcms/ui', () => ({
     createElement('a', { 'aria-label': buttonAriaLabel, href, id }, title),
   Link: ({ children, href, ...props }: ComponentProps<'a'>) =>
     createElement('a', { href, ...props }, children),
+  ListControls: mocks.ListControls,
+  ListHeader: mocks.ListHeader,
+  ListQueryProvider: mocks.ListQueryProvider,
 }));
 vi.mock('next/navigation', () => ({ redirect: mocks.redirect }));
 vi.mock('../../../../packages/next/src/elements/Nav/index.js', () => ({ FrogbotNav: () => null }));
@@ -48,6 +54,7 @@ const {
   NotFoundPage,
   SettingsView,
   generatePageMetadata,
+  CollectionViewShell,
 } = await import('../../../../packages/next/src/exports/views.js');
 
 function makeConfig(admin?: Record<string, unknown>) {
@@ -62,6 +69,55 @@ const params = Promise.resolve({ segments: [] });
 const searchParams = Promise.resolve({});
 
 describe('@frogbotai/next views', () => {
+  it('CollectionViewShell renders shared slots and custom cell content', () => {
+    mocks.RenderServerComponent.mockImplementation(({ Component }) => `slot:${String(Component)}`);
+    const child = createElement('span', { 'data-cell': 'custom' }, 'Cell');
+    const element = CollectionViewShell({
+      children: child,
+      clientConfig: {
+        collections: [
+          { admin: {}, fields: [], labels: { plural: 'Posts', singular: 'Post' }, slug: 'posts' },
+        ],
+        routes: { admin: '/admin' },
+      },
+      collectionConfig: {
+        admin: {
+          components: {
+            afterList: ['AfterList'],
+            afterListTable: ['AfterListTable'],
+            beforeList: ['BeforeList'],
+            beforeListTable: ['BeforeListTable'],
+            Description: 'Description',
+            listMenuItems: ['Menu'],
+          },
+        },
+        slug: 'posts',
+      },
+      collectionSlug: 'posts',
+      importMap: {},
+      initPageResult: {
+        permissions: { collections: { posts: { create: true, delete: true } } },
+        req: { i18n: {}, query: { sort: '-createdAt', where: { status: { equals: 'draft' } } } },
+      },
+      viewKey: 'stub',
+      viewType: 'stub',
+    } as never);
+
+    expect(element?.props).toMatchObject({
+      AfterList: 'slot:AfterList',
+      AfterListTable: 'slot:AfterListTable',
+      BeforeList: 'slot:BeforeList',
+      BeforeListTable: 'slot:BeforeListTable',
+      Description: 'slot:Description',
+      hasCreatePermission: true,
+      hasDeletePermission: true,
+      listMenuItems: ['slot:Menu'],
+      query: { sort: '-createdAt', where: { status: { equals: 'draft' } } },
+      viewKey: 'stub',
+    });
+    expect(element?.props.children).toBe(child);
+  });
+
   it('redirects collection settings entries through the configured admin route', () => {
     CollectionSettingsRedirect({
       collectionSlug: 'service-accounts',

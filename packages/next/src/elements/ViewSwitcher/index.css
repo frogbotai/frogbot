@@ -1,0 +1,28 @@
+.view-switcher {
+  align-items: center;
+  border-bottom: 1px solid var(--theme-base-150);
+  display: flex;
+  gap: 12px;
+}
+
+.view-switcher__link {
+  color: var(--theme-base-500);
+  padding: 12px 16px;
+  position: relative;
+  text-decoration: none;
+}
+
+.view-switcher__link:hover,
+.view-switcher__link--active {
+  color: var(--theme-base-800);
+}
+
+.view-switcher__link--active::after {
+  background: var(--theme-base-800);
+  bottom: -1px;
+  content: "";
+  height: 2px;
+  left: 0;
+  position: absolute;
+  right: 0;
+}

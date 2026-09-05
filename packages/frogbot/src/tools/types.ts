@@ -1,7 +1,7 @@
 import type { z } from 'zod';
 
-import type { Frogbot } from '../frogbot.js';
 import type { FrogbotComponent } from '../admin/types.js';
+import type { Frogbot } from '../frogbot.js';
 import type { FrogbotRequest } from '../types/request.js';
 
 export type ToolCtx = {

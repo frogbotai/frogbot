@@ -18,4 +18,5 @@ export {
   RecentsSectionClient,
   type RecentsSectionClientProps,
 } from '../elements/Nav/RecentsSection.client.js';
+export { ViewSwitcher, type ViewSwitcherProps } from '../elements/ViewSwitcher/index.client.js';
 export * from '@payloadcms/next/client';

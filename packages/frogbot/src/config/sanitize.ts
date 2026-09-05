@@ -60,6 +60,7 @@ import type { SkillConfig } from '../skills/types.js';
 import type { AnyTool } from '../tools/types.js';
 import type { FrogbotRequest } from '../types/request.js';
 import { resolveFilesCollection } from '../uploads/resolveCollections.js';
+import { compileCollectionViews } from './collectionViews.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
 import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from './sanitized.js';
 import { resolveSourceDir } from './sourceDir.js';
@@ -127,15 +128,17 @@ function sanitizeCollection(
   c: CollectionConfig,
   attachFrogbot: AttachFrogbot,
 ): PayloadCollectionConfig {
-  const views = c.admin?.components?.views;
+  const admin = compileCollectionViews({ collection: c });
+  const views = admin?.components?.views;
   const out: Record<string, unknown> = {
     ...(c as unknown as Record<string, unknown>),
+    ...(admin ? { admin } : {}),
     ...(c.chat === true
       ? {
           admin: {
-            ...c.admin,
+            ...admin,
             components: {
-              ...c.admin?.components,
+              ...admin?.components,
               views: {
                 ...views,
                 edit: {

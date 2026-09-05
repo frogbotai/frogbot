@@ -12,6 +12,7 @@ import type { RequestContext, SanitizedCollectionConfig, TypeWithID } from 'payl
 
 import type { IconName } from '../../admin/icons.js';
 import type { FrogbotComponent } from '../../admin/types.js';
+import type { CollectionViewsConfig } from '../../admin/views/types.js';
 import type { AuthConfig } from '../../auth/types.js';
 import type { Endpoint } from '../../endpoints/types.js';
 import type { Field } from '../../fields/config/types.js';
@@ -22,10 +23,11 @@ import type { FrogbotRequest } from '../../types/request.js';
 type Overridden = 'auth' | 'hooks' | 'access' | 'endpoints' | 'fields' | 'admin';
 type PayloadAdmin = NonNullable<PayloadCollectionConfig['admin']>;
 
-export type CollectionAdminConfig = Omit<PayloadAdmin, 'group'> & {
-  group?: PayloadAdmin['group'] | null;
-  icon?: FrogbotComponent | IconName;
-};
+export type CollectionAdminConfig = Omit<PayloadAdmin, 'group'> &
+  CollectionViewsConfig & {
+    group?: PayloadAdmin['group'] | null;
+    icon?: FrogbotComponent | IconName;
+  };
 
 export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {
   admin?: CollectionAdminConfig;

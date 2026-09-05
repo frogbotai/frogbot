@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { general } from '../../../../packages/frogbot/src/agents/presets/general.js';
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
+import { compileCollectionViews } from '../../../../packages/frogbot/src/config/collectionViews.js';
 import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import type { Frogbot } from '../../../../packages/frogbot/src/frogbot.js';
 import {
@@ -55,6 +56,82 @@ function emailWarnings(warn: ReturnType<typeof vi.fn>) {
 }
 
 describe('frogbot sanitize', () => {
+  it('leaves collection admin config unchanged without configured alternate views', () => {
+    const admin = { group: 'Content' };
+
+    expect(compileCollectionViews({ collection: { slug: 'posts', fields: [], admin } })).toBe(
+      admin,
+    );
+  });
+
+  it('compiles registered collection view keys and removes their raw config', () => {
+    const admin = compileCollectionViews({
+      collection: { slug: 'posts', fields: [], admin: { stub: true } as never },
+      registry: [
+        { key: 'list', label: 'List', path: '' },
+        { key: 'stub', label: 'Stub', path: '/stub', Component: './Stub#StubView' },
+      ],
+    }) as never as Record<string, any>;
+
+    expect(admin.stub).toBeUndefined();
+    expect(admin.components.views.stub).toEqual({
+      Component: './Stub#StubView',
+      exact: true,
+      path: '/stub',
+    });
+    expect(admin.custom.frogbot.views).toEqual([
+      { key: 'list', label: 'List', path: '' },
+      { key: 'stub', label: 'Stub', path: '/stub' },
+    ]);
+    expect(admin.components.beforeListTable).toEqual(['@frogbotai/next/client#ViewSwitcher']);
+    expect(admin.components.beforeList).toEqual(['@frogbotai/next/views#ViewRedirect']);
+  });
+
+  it('preserves explicit collection view overrides', () => {
+    const override = { Component: './Custom#View', exact: true, path: '/custom' };
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'posts',
+        fields: [],
+        admin: { components: { views: { stub: override } }, stub: true } as never,
+      },
+      registry: [
+        { key: 'list', label: 'List', path: '' },
+        { key: 'stub', label: 'Stub', path: '/stub', Component: './Stub#StubView' },
+      ],
+    });
+
+    expect((admin?.components?.views as Record<string, unknown>).stub).toBe(override);
+  });
+
+  it('prepends the switcher to existing list slots only for multiple views', () => {
+    const existing = './Before#Existing';
+    const one = compileCollectionViews({
+      collection: {
+        slug: 'posts',
+        fields: [],
+        admin: { components: { beforeListTable: [existing] } },
+      },
+    });
+    const multiple = compileCollectionViews({
+      collection: {
+        slug: 'posts',
+        fields: [],
+        admin: { components: { beforeListTable: [existing] }, stub: true } as never,
+      },
+      registry: [
+        { key: 'list', label: 'List', path: '' },
+        { key: 'stub', label: 'Stub', path: '/stub', Component: './Stub#StubView' },
+      ],
+    });
+
+    expect(one?.components?.beforeListTable).toEqual([existing]);
+    expect(multiple?.components?.beforeListTable).toEqual([
+      '@frogbotai/next/client#ViewSwitcher',
+      existing,
+    ]);
+  });
+
   it('preserves valid nested settings entries in order', async () => {
     const settings = [
       { label: 'Usage', path: 'usage', Component: './settings/Usage#Page' },

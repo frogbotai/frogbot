@@ -1,0 +1,9 @@
+.collection-view-shell__content {
+  margin-inline: auto;
+  max-width: 1920px;
+  padding-inline: var(--gutter-h);
+}
+
+.collection-view-shell__view {
+  min-width: 0;
+}
