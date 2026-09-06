@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   pathname: '/admin/collections/posts/stub',
   searchParams: new URLSearchParams('where%5Bstatus%5D%5Bequals%5D=draft'),
-  views: [] as Array<{ key: string; label: string; path: string }>,
+  views: [] as Array<{ label: string; path: string; slug: string; type: string }>,
   setPreference: vi.fn(),
   push: vi.fn(),
 }));
@@ -28,18 +28,24 @@ const { ViewSwitcher } =
 
 describe('ViewSwitcher', () => {
   it('renders nothing for one view', () => {
-    mocks.views = [{ key: 'list', label: 'List', path: '' }];
+    mocks.views = [{ label: 'List', path: '', slug: 'list', type: 'list' }];
 
-    expect(renderToStaticMarkup(createElement(ViewSwitcher, { collectionSlug: 'posts' }))).toBe('');
+    expect(
+      renderToStaticMarkup(
+        createElement(ViewSwitcher, { collectionSlug: 'posts', views: mocks.views }),
+      ),
+    ).toBe('');
   });
 
   it('links every view while preserving the current query', () => {
     mocks.views = [
-      { key: 'list', label: 'List', path: '' },
-      { key: 'stub', label: 'Stub', path: '/stub' },
+      { label: 'List', path: '', slug: 'list', type: 'list' },
+      { label: 'Stub', path: '/stub', slug: 'stub', type: 'custom' },
     ];
 
-    const html = renderToStaticMarkup(createElement(ViewSwitcher, { collectionSlug: 'posts' }));
+    const html = renderToStaticMarkup(
+      createElement(ViewSwitcher, { collectionSlug: 'posts', views: mocks.views }),
+    );
 
     expect(html).toContain('href="/admin/collections/posts?where%5Bstatus%5D%5Bequals%5D=draft"');
     expect(html).toContain(
@@ -50,10 +56,10 @@ describe('ViewSwitcher', () => {
 
   it('persists the selected view', async () => {
     mocks.views = [
-      { key: 'list', label: 'List', path: '' },
-      { key: 'stub', label: 'Stub', path: '/stub' },
+      { label: 'List', path: '', slug: 'list', type: 'list' },
+      { label: 'Stub', path: '/stub', slug: 'stub', type: 'custom' },
     ];
-    const element = ViewSwitcher({ collectionSlug: 'posts' });
+    const element = ViewSwitcher({ collectionSlug: 'posts', views: mocks.views });
     const links = element?.props.children as Array<{
       props: { onClick: (event: { preventDefault: () => void }) => Promise<void> };
     }>;
@@ -62,7 +68,9 @@ describe('ViewSwitcher', () => {
     await links[0].props.onClick({ preventDefault });
 
     expect(preventDefault).toHaveBeenCalledOnce();
-    expect(mocks.setPreference).toHaveBeenCalledWith('frogbot-view-posts', { view: 'list' });
+    expect(mocks.setPreference).toHaveBeenCalledWith('frogbot:collection-view:posts', {
+      view: 'list',
+    });
     expect(mocks.push).toHaveBeenCalledWith(
       '/admin/collections/posts?where%5Bstatus%5D%5Bequals%5D=draft',
     );

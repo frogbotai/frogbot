@@ -51,6 +51,7 @@
                   "configuration/overview",
                   "configuration/admin-navigation",
                   "configuration/collections",
+                  "configuration/collection-board",
                   "configuration/environment-vars",
                   "configuration/ai",
                   "configuration/agents",

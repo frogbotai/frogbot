@@ -1,0 +1,77 @@
+---
+title: Collection board
+description: Configure a draggable board for a collection.
+---
+
+Add a board entry to `admin.views` to show documents as cards grouped into columns. Include a list entry when users should be able to switch between table and board layouts.
+
+`admin.views` uses the exported `CollectionView` union. Ticket 108 supports `ListView`, `BoardView`, and `CustomView` only. Grid and calendar views are not available configuration options. See the complete [Collection views reference](/configuration/collections#collection-views).
+
+## Board properties
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `type` | `'board'` | Yes | Selects the board layout. |
+| `slug` | `string` | No; defaults to `'board'` | Unique normalized route and preference key. The first view uses the collection's root route. |
+| `label` | `string` | No; defaults to `'Board'` | Label shown in the view switcher. |
+| `groupBy` | `string` | No | Dot path to the select or single relationship field that determines each card's column. |
+| `defaultFields` | `string[]` | No | Dot paths to the fields rendered on each card, in display order. |
+| `cover` | `string` | No | Dot path to an upload field rendered as the card's cover image. |
+| `filter` | `Where \| ({ req }) => Where \| Promise<Where>` | No | Invisible base filter applied to every board query. |
+| `defaultSort` | `Sort` (`string \| string[]`) | No | Initial card order within columns. Prefix a field with `-` for descending order. |
+| `searchableFields` | `string[]` | No | Adds fields to normal search behavior; `useAsTitle` remains included. |
+| `pagination` | `ViewPagination` | No; `defaultLimit: 50` | Sets the documents fetched per column. Each column lazy-loads additional pages and virtualizes rendered cards. `limits` only drives list page-size choices. |
+| `access` | `({ req }) => boolean \| Promise<boolean>` | No; collection access | Controls whether the current user can open the board without replacing collection operation access. |
+| `components` | `ViewComponents & BoardComponents` | No | Configures shared view slots and board components. |
+
+## Board components
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `actions` | `FrogbotComponent[]` | No; `[]` | Adds actions to the board action area. |
+| `menuItems` | `FrogbotComponent[]` | No; `[]` | Adds entries to the board menu. |
+| `beforeView` | `FrogbotComponent[]` | No; `[]` | Renders inside the collection shell before the board body. |
+| `afterView` | `FrogbotComponent[]` | No; `[]` | Renders inside the collection shell after the board body. |
+| `beforeColumns` | `FrogbotComponent[]` | No; `[]` | Renders before the columns. |
+| `afterColumns` | `FrogbotComponent[]` | No; `[]` | Renders after the columns. |
+| `ColumnHeader` | `FrogbotComponent` | No; built-in header | Replaces each column header. |
+| `Card` | `FrogbotComponent` | No; built-in card | Replaces each card and receives the document as its `row` prop. |
+
+```ts
+export const Tasks: CollectionConfig = {
+  slug: 'tasks',
+  admin: {
+    views: [
+      {
+        type: 'list',
+        defaultFields: ['title', 'stage', 'assignee', 'dueDate'],
+      },
+      {
+        type: 'board',
+        slug: 'workflow',
+        label: 'Workflow',
+        groupBy: 'stage',
+        defaultFields: ['title', 'assignee', 'dueDate'],
+      },
+    ],
+  },
+  fields: [
+    { name: 'title', type: 'text' },
+    {
+      name: 'stage',
+      type: 'select',
+      options: ['Backlog', 'Review', 'Done'],
+    },
+    { name: 'assignee', type: 'relationship', relationTo: 'users' },
+    { name: 'dueDate', type: 'date' },
+  ],
+}
+```
+
+The group field must be a single select or relationship field. Select option order controls column order. Documents without a value appear in **Uncategorized**.
+
+Dragging a card performs a normal collection update, including access checks, validation, and hooks. A rejected update restores the card to its original column and displays the error.
+
+Nested fields use dot paths such as `workflow.stage` and `details.dueDate`.
+
+Board views use `pagination.defaultLimit` for each column, defaulting to 50. Columns lazy-load subsequent pages and virtualize their cards. `pagination.limits` applies only to list page-size controls. Omitting `admin.views` creates one default list view without a switcher, using FrogBot's normal list pagination defaults.

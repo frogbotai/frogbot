@@ -22,6 +22,7 @@ import { buildConfig as payloadBuildConfig } from 'payload';
 
 import { iconNames } from '../admin/icons.js';
 import type { SettingsEntry } from '../admin/types.js';
+import type { CollectionView } from '../admin/views/types.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
 import {
   AGENT_SCHEDULE_TASK_SLUG,
@@ -128,8 +129,14 @@ function sanitizeCollection(
   c: CollectionConfig,
   attachFrogbot: AttachFrogbot,
 ): PayloadCollectionConfig {
-  const admin = compileCollectionViews({ collection: c });
-  const views = admin?.components?.views;
+  let collectionViews: CollectionView[] = [];
+  const admin = compileCollectionViews({
+    collection: c,
+    onRuntimeViews: (views) => {
+      collectionViews = views;
+    },
+  });
+  const views = (admin as PayloadCollectionConfig['admin'])?.components?.views;
   const out: Record<string, unknown> = {
     ...(c as unknown as Record<string, unknown>),
     ...(admin ? { admin } : {}),
@@ -164,7 +171,7 @@ function sanitizeCollection(
   const existingCustom = (c.custom ?? {}) as Record<string, unknown>;
   out.custom = {
     ...existingCustom,
-    frogbot: { auth },
+    frogbot: { auth, collectionViews },
   };
 
   // Inject `req.frogbot` bootstrap as the first `beforeOperation`.

@@ -26,8 +26,10 @@ import type { ComponentProps, ComponentType } from 'react';
 import frogbotFavicon from '../assets/frogbot-favicon.png';
 import frogbotOGImage from '../assets/frogbot-og.jpg';
 import { SettingsNav } from '../elements/SettingsNav/index.js';
-export { ViewRedirect } from '../elements/ViewRedirect/index.js';
+export { BoardView } from '../views/Board/index.js';
 export { CollectionViewShell } from '../views/CollectionViewShell.js';
+export { CollectionViewSwitcher } from '../views/CollectionViewSwitcher.js';
+export { CustomCollectionView } from '../views/CustomCollectionView.js';
 import type { FrogbotConfigArg } from '../types.js';
 import { ChatViewClient } from './ChatView.client.js';
 

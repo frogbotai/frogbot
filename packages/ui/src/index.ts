@@ -1,3 +1,12 @@
+export { Board, type BoardProps } from './board/Board.js';
+export { BoardCard } from './board/BoardCard.js';
+export { BoardColumn } from './board/BoardColumn.js';
+export {
+  type BoardColumn as BoardColumnDefinition,
+  type BoardMove,
+  useBoard,
+  type UseBoardProps,
+} from './board/useBoard.js';
 export {
   Accordion,
   AccordionContent,

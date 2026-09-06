@@ -1,0 +1,62 @@
+.frog-board {
+  display: flex;
+  gap: 12px;
+  min-height: 480px;
+  overflow-x: auto;
+  padding: 4px 0 16px;
+}
+
+.frog-board__column {
+  background: var(--theme-base-50);
+  border: 1px solid var(--theme-base-150);
+  border-radius: 8px;
+  display: flex;
+  flex: 0 0 300px;
+  flex-direction: column;
+  max-height: 70vh;
+}
+
+.frog-board__column-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+}
+
+.frog-board__column-header span {
+  color: var(--theme-base-500);
+  font-size: 12px;
+}
+
+.frog-board__column-scroll {
+  overflow-y: auto;
+  padding: 0 8px 8px;
+}
+.frog-board__column-items {
+  position: relative;
+}
+.frog-board__virtual-row {
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.frog-board__card {
+  background: var(--theme-base-150);
+  border: 1px solid var(--theme-base-250);
+  border-radius: 6px;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--theme-base-1000) 8%, transparent);
+  cursor: grab;
+  margin-bottom: 8px;
+  padding: 12px;
+}
+
+.frog-board__card:active {
+  cursor: grabbing;
+}
+.frog-board__overlay {
+  opacity: 0.9;
+  transform: rotate(2deg);
+  width: 284px;
+}

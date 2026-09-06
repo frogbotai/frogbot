@@ -17,7 +17,12 @@ export function defaultFilesCollection({ slug }: DefaultFilesCollectionProps): C
       icon: 'file',
       group: 'Files',
       useAsTitle: 'filename',
-      defaultColumns: ['filename', 'mimeType', 'filesize', 'updatedAt'],
+      views: [
+        {
+          type: 'list',
+          defaultFields: ['filename', 'mimeType', 'filesize', 'updatedAt'],
+        },
+      ],
     },
     access: {
       create: authenticated,

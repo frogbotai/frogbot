@@ -7,16 +7,23 @@ import { CollectionViewShellClient } from './CollectionViewShell.client.js';
 
 type CollectionViewShellProps = AdminViewServerProps & {
   children: ReactNode;
-  viewKey: string;
+  query?: ListQuery;
+  viewComponents?: Record<string, PayloadComponent | PayloadComponent[]>;
+  views: Array<{ label: string; path: string; slug: string; type: string }>;
+  viewSlug: string;
 };
 
 export function CollectionViewShell(props: CollectionViewShellProps) {
-  const { children, clientConfig, collectionConfig, collectionSlug, importMap, initPageResult } =
-    props;
+  const {
+    children,
+    clientConfig,
+    collectionConfig,
+    collectionSlug,
+    importMap,
+    initPageResult,
+    viewComponents,
+  } = props;
   if (!collectionConfig || !collectionSlug) return null;
-
-  const clientCollection = clientConfig.collections.find(({ slug }) => slug === collectionSlug);
-  if (!clientCollection) return null;
 
   const permissions = initPageResult.permissions.collections?.[collectionSlug];
   const clientProps = {
@@ -33,25 +40,24 @@ export function CollectionViewShell(props: CollectionViewShellProps) {
       ? RenderServerComponent({ Component, clientProps, importMap, serverProps: props })
       : undefined;
   const components = collectionConfig.admin.components;
-  const listMenuItems = components?.listMenuItems
-    ? [render(components.listMenuItems) as ReactNode]
+  const listMenuItems = viewComponents?.menuItems
+    ? [render(viewComponents.menuItems) as ReactNode]
     : undefined;
 
   return (
     <CollectionViewShellClient
-      AfterList={render(components?.afterList)}
-      AfterListTable={render(components?.afterListTable)}
-      BeforeList={render(components?.beforeList)}
-      BeforeListTable={render(components?.beforeListTable)}
-      collectionConfig={clientCollection}
+      Actions={viewComponents?.actions ? [render(viewComponents.actions) as ReactNode] : undefined}
+      AfterList={render(viewComponents?.afterView)}
+      AfterListTable={render(viewComponents?.afterColumns)}
+      BeforeList={render(viewComponents?.beforeView)}
+      BeforeListTable={render(viewComponents?.beforeColumns)}
+      collectionSlug={collectionSlug}
       Description={render(components?.Description)}
       hasCreatePermission={clientProps.hasCreatePermission}
       hasDeletePermission={clientProps.hasDeletePermission}
-      i18n={initPageResult.req.i18n}
       listMenuItems={listMenuItems}
       newDocumentURL={clientProps.newDocumentURL}
-      query={(initPageResult.req.query ?? {}) as ListQuery}
-      viewKey={props.viewType ?? props.viewKey}
+      query={props.query ?? ((initPageResult.req.query ?? {}) as ListQuery)}
     >
       {children}
     </CollectionViewShellClient>

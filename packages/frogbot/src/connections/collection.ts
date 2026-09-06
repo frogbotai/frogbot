@@ -16,7 +16,12 @@ export function defaultConnectionsCollection({
       icon: 'link-square',
       group: 'Connections',
       useAsTitle: 'accountLabel',
-      defaultColumns: ['services', 'accountLabel', 'status', 'updatedAt'],
+      views: [
+        {
+          type: 'list',
+          defaultFields: ['services', 'accountLabel', 'status', 'updatedAt'],
+        },
+      ],
     },
     access: {
       create: () => false,

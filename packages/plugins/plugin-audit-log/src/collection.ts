@@ -13,7 +13,14 @@ const denied: Access = () => false;
 export function createAuditLogCollection(options: CollectionOptions): CollectionConfig {
   return {
     slug: options.slug,
-    admin: { defaultColumns: ['timestamp', 'collection', 'operation', 'documentId', 'user'] },
+    admin: {
+      views: [
+        {
+          type: 'list',
+          defaultFields: ['timestamp', 'collection', 'operation', 'documentId', 'user'],
+        },
+      ],
+    },
     access: {
       read: options.access?.read ?? loggedIn,
       create: denied,

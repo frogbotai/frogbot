@@ -50,7 +50,7 @@ export function defaultMessagesCollection({
     admin: {
       icon: 'bubble-chat',
       group: 'Chat',
-      defaultColumns: ['chat', 'role', 'createdAt'],
+      views: [{ type: 'list', defaultFields: ['chat', 'role', 'createdAt'] }],
     },
     access: {
       create: ({ req }) => !!req.user,

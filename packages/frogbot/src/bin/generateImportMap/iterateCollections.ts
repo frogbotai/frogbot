@@ -21,6 +21,22 @@ export function iterateCollections({
   for (const collection of collections) {
     const icon = (collection.admin as typeof collection.admin & { icon?: PayloadComponent })?.icon;
     if (typeof icon !== 'string' || icon.includes('#')) addToImportMap(icon);
+    const collectionViews = (
+      collection.custom?.frogbot as
+        | {
+            collectionViews?: Array<{
+              component?: PayloadComponent;
+              components?: Record<string, PayloadComponent | PayloadComponent[]>;
+            }>;
+          }
+        | undefined
+    )?.collectionViews;
+    for (const view of collectionViews ?? []) {
+      addToImportMap(view.component);
+      const components = view.components;
+      if (!components) continue;
+      for (const component of Object.values(components)) addToImportMap(component);
+    }
 
     genImportMapIterateFields({
       addToImportMap,
@@ -37,6 +53,10 @@ export function iterateCollections({
     addToImportMap(collection.admin?.components?.beforeList);
     addToImportMap(collection.admin?.components?.beforeListTable);
     addToImportMap(collection.admin?.components?.Description);
+    addToImportMap(
+      (collection.admin?.custom?.frogbot as { descriptionComponent?: PayloadComponent } | undefined)
+        ?.descriptionComponent,
+    );
 
     addToImportMap(collection.admin?.components?.edit?.beforeDocumentControls);
     addToImportMap(collection.admin?.components?.edit?.editMenuItems);

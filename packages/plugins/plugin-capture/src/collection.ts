@@ -9,7 +9,12 @@ export function createCapturesCollection(slug: string, access?: Access): Collect
     access: { create: immutable, update: immutable, delete: immutable, read: access },
     admin: {
       useAsTitle: 'captureId',
-      defaultColumns: ['requestId', 'operation', 'model', 'status', 'requestedAt'],
+      views: [
+        {
+          type: 'list',
+          defaultFields: ['requestId', 'operation', 'model', 'status', 'requestedAt'],
+        },
+      ],
     },
     fields: [
       { name: 'captureId', type: 'text', required: true, unique: true, index: true },

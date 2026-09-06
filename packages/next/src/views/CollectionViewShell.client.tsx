@@ -2,45 +2,52 @@
 
 import './CollectionViewShell.css';
 
-import { ListControls, ListHeader, ListQueryProvider } from '@payloadcms/ui';
-import type { ClientCollectionConfig, ListQuery } from 'payload';
+import {
+  ListControls,
+  ListHeader,
+  ListQueryProvider,
+  useConfig,
+  useTranslation,
+} from '@payloadcms/ui';
+import type { ListQuery } from 'payload';
 import type { ReactNode } from 'react';
 
-import { ViewSwitcher } from '../elements/ViewSwitcher/index.client.js';
-
 export type CollectionViewShellClientProps = {
+  Actions?: ReactNode[];
   BeforeList?: ReactNode;
   BeforeListTable?: ReactNode;
   AfterListTable?: ReactNode;
   AfterList?: ReactNode;
   Description?: ReactNode;
   children: ReactNode;
-  collectionConfig: ClientCollectionConfig;
+  collectionSlug: string;
   hasCreatePermission: boolean;
   hasDeletePermission: boolean;
-  i18n: Parameters<typeof ListHeader>[0]['i18n'];
   listMenuItems?: ReactNode[];
   newDocumentURL: string;
   query: ListQuery;
-  viewKey: string;
 };
 
 export function CollectionViewShellClient({
+  Actions,
   AfterList,
   AfterListTable,
   BeforeList,
   BeforeListTable,
   children,
-  collectionConfig,
+  collectionSlug,
   Description,
   hasCreatePermission,
   hasDeletePermission,
-  i18n,
   listMenuItems,
   newDocumentURL,
   query,
-  viewKey,
 }: CollectionViewShellClientProps) {
+  const { i18n } = useTranslation();
+  const { getEntityConfig } = useConfig();
+  const collectionConfig = getEntityConfig({ collectionSlug });
+  const bulkUploadCompatibility = { openBulkUpload: () => undefined };
+
   return (
     <ListQueryProvider
       collectionSlug={collectionConfig.slug}
@@ -59,11 +66,10 @@ export function CollectionViewShellClient({
             i18n={i18n}
             isBulkUploadEnabled={false}
             newDocumentURL={newDocumentURL}
-            openBulkUpload={() => undefined}
-            smallBreak={false}
-            viewType={viewKey}
+            smallBreak
+            {...bulkUploadCompatibility}
           />
-          <ViewSwitcher collectionSlug={collectionConfig.slug} viewType={viewKey} />
+          {Actions}
           <ListControls
             collectionConfig={collectionConfig}
             collectionSlug={collectionConfig.slug}

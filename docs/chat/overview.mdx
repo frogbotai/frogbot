@@ -73,7 +73,7 @@ A chat with no messages shows a greeting above the composer. It renders the acti
 
 ## Override the chat views
 
-Set collection view components under `admin.components.views`. FrogBot only defaults the edit root view on the `chat: true` collection and preserves a configured override.
+Set document view components under `admin.components.edit.views`. FrogBot only defaults the edit root view on the `chat: true` collection and preserves a configured override.
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -84,8 +84,8 @@ export const Conversations: CollectionConfig = {
   fields: [],
   admin: {
     components: {
-      views: {
-        edit: {
+      edit: {
+        views: {
           root: {
             Component: '/components/Conversation#Conversation'
           }

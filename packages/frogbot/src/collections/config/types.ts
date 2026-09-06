@@ -12,7 +12,7 @@ import type { RequestContext, SanitizedCollectionConfig, TypeWithID } from 'payl
 
 import type { IconName } from '../../admin/icons.js';
 import type { FrogbotComponent } from '../../admin/types.js';
-import type { CollectionViewsConfig } from '../../admin/views/types.js';
+import type { CollectionView } from '../../admin/views/types.js';
 import type { AuthConfig } from '../../auth/types.js';
 import type { Endpoint } from '../../endpoints/types.js';
 import type { Field } from '../../fields/config/types.js';
@@ -22,12 +22,32 @@ import type { FrogbotRequest } from '../../types/request.js';
 
 type Overridden = 'auth' | 'hooks' | 'access' | 'endpoints' | 'fields' | 'admin';
 type PayloadAdmin = NonNullable<PayloadCollectionConfig['admin']>;
+type PayloadComponents = NonNullable<PayloadAdmin['components']>;
+type PayloadEditViews = NonNullable<NonNullable<PayloadComponents['views']>['edit']>;
 
-export type CollectionAdminConfig = Omit<PayloadAdmin, 'group'> &
-  CollectionViewsConfig & {
-    group?: PayloadAdmin['group'] | null;
-    icon?: FrogbotComponent | IconName;
-  };
+export type CollectionAdminComponents = Omit<
+  PayloadComponents,
+  'afterList' | 'afterListTable' | 'beforeList' | 'beforeListTable' | 'listMenuItems' | 'views'
+> & {
+  edit?: NonNullable<PayloadComponents['edit']> & { views?: PayloadEditViews };
+};
+
+export type CollectionAdminConfig = Omit<
+  PayloadAdmin,
+  | 'baseFilter'
+  | 'baseListFilter'
+  | 'components'
+  | 'defaultColumns'
+  | 'defaultSort'
+  | 'group'
+  | 'listSearchableFields'
+  | 'pagination'
+> & {
+  components?: CollectionAdminComponents;
+  group?: PayloadAdmin['group'] | null;
+  icon?: FrogbotComponent | IconName;
+  views?: CollectionView[];
+};
 
 export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {
   admin?: CollectionAdminConfig;

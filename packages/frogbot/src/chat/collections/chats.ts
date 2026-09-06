@@ -29,7 +29,12 @@ export function defaultChatsCollection({
       icon: 'bubble-chat',
       group: 'Chat',
       useAsTitle: 'title',
-      defaultColumns: ['title', 'user', 'agent', 'lastMessageAt'],
+      views: [
+        {
+          type: 'list',
+          defaultFields: ['title', 'user', 'agent', 'lastMessageAt'],
+        },
+      ],
     },
     access: {
       create: ({ req }) => !!req.user,

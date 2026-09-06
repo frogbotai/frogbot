@@ -22,7 +22,12 @@ export function defaultUsageCollection({
     admin: {
       icon: 'ai-search',
       group: 'AI',
-      defaultColumns: ['model', 'operation', 'user', 'costUSD', 'requestedAt'],
+      views: [
+        {
+          type: 'list',
+          defaultFields: ['model', 'operation', 'user', 'costUSD', 'requestedAt'],
+        },
+      ],
     },
     access: {
       create: () => false,

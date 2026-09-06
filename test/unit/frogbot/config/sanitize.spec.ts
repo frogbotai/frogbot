@@ -56,80 +56,47 @@ function emailWarnings(warn: ReturnType<typeof vi.fn>) {
 }
 
 describe('frogbot sanitize', () => {
-  it('leaves collection admin config unchanged without configured alternate views', () => {
-    const admin = { group: 'Content' };
-
-    expect(compileCollectionViews({ collection: { slug: 'posts', fields: [], admin } })).toBe(
-      admin,
-    );
-  });
-
-  it('compiles registered collection view keys and removes their raw config', () => {
+  it('compiles collection views into runtime routes and metadata', () => {
     const admin = compileCollectionViews({
-      collection: { slug: 'posts', fields: [], admin: { stub: true } as never },
-      registry: [
-        { key: 'list', label: 'List', path: '' },
-        { key: 'stub', label: 'Stub', path: '/stub', Component: './Stub#StubView' },
-      ],
+      collection: {
+        slug: 'posts',
+        fields: [],
+        admin: {
+          views: [
+            { type: 'list' },
+            { type: 'custom', slug: 'stub', label: 'Stub', component: './Stub#StubView' },
+          ],
+        },
+      },
     }) as never as Record<string, any>;
 
-    expect(admin.stub).toBeUndefined();
-    expect(admin.components.views.stub).toEqual({
-      Component: './Stub#StubView',
+    expect(admin.components.views.stub).toMatchObject({
+      Component: '@frogbotai/next/views#CustomCollectionView',
       exact: true,
       path: '/stub',
     });
     expect(admin.custom.frogbot.views).toEqual([
-      { key: 'list', label: 'List', path: '' },
-      { key: 'stub', label: 'Stub', path: '/stub' },
+      { type: 'list', slug: 'list', label: 'List', path: '' },
+      { type: 'custom', slug: 'stub', label: 'Stub', path: '/stub' },
     ]);
-    expect(admin.components.beforeListTable).toEqual(['@frogbotai/next/client#ViewSwitcher']);
-    expect(admin.components.beforeList).toEqual(['@frogbotai/next/views#ViewRedirect']);
   });
 
-  it('preserves explicit collection view overrides', () => {
-    const override = { Component: './Custom#View', exact: true, path: '/custom' };
+  it('maps list slots and authoring edit views', () => {
+    const beforeTable = './Before#Existing';
+    const root = { Component: './Edit#Root' };
     const admin = compileCollectionViews({
       collection: {
         slug: 'posts',
         fields: [],
-        admin: { components: { views: { stub: override } }, stub: true } as never,
-      },
-      registry: [
-        { key: 'list', label: 'List', path: '' },
-        { key: 'stub', label: 'Stub', path: '/stub', Component: './Stub#StubView' },
-      ],
-    });
-
-    expect((admin?.components?.views as Record<string, unknown>).stub).toBe(override);
-  });
-
-  it('prepends the switcher to existing list slots only for multiple views', () => {
-    const existing = './Before#Existing';
-    const one = compileCollectionViews({
-      collection: {
-        slug: 'posts',
-        fields: [],
-        admin: { components: { beforeListTable: [existing] } },
+        admin: {
+          components: { edit: { views: { root } } },
+          views: [{ type: 'list', components: { beforeTable } as never }],
+        },
       },
     });
-    const multiple = compileCollectionViews({
-      collection: {
-        slug: 'posts',
-        fields: [],
-        admin: { components: { beforeListTable: [existing] }, stub: true } as never,
-      },
-      registry: [
-        { key: 'list', label: 'List', path: '' },
-        { key: 'stub', label: 'Stub', path: '/stub', Component: './Stub#StubView' },
-      ],
-    });
 
-    expect(one?.components?.beforeListTable).toEqual([existing]);
-    expect(multiple?.components?.beforeListTable).toEqual([
-      '@frogbotai/next/client#ViewSwitcher',
-      existing,
-    ]);
+    expect(admin?.components?.beforeListTable).toBe(beforeTable);
+    expect(admin?.components?.views?.edit?.root).toBe(root);
   });
 
   it('preserves valid nested settings entries in order', async () => {
@@ -742,7 +709,10 @@ describe('frogbot sanitize', () => {
             slug: 'conversations',
             chat: true,
             fields: [],
-            admin: { components: { views: { edit: { root }, list } } },
+            admin: {
+              components: { edit: { views: { root } } },
+              views: [{ type: 'custom', component: list.Component, shell: false }],
+            },
           },
         ],
       } as never),
@@ -751,7 +721,9 @@ describe('frogbot sanitize', () => {
     const chats = payloadConfig.collections.find(({ slug }) => slug === 'conversations');
 
     expect(payloadConfig.admin.components.views.dashboard).toEqual(dashboard);
-    expect(chats?.admin.components.views.list).toEqual(list);
+    expect(chats?.admin.components.views.list).toMatchObject({
+      Component: '@frogbotai/next/views#CustomCollectionView',
+    });
     expect(chats?.admin.components.views.edit.root).toEqual(root);
   });
 

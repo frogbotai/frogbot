@@ -25,4 +25,30 @@ describe('collection import map', () => {
 
     expect(addToImportMap).toHaveBeenCalledWith(['@frogbotai/next/client#ViewSwitcher']);
   });
+
+  it('collects a collection board Card override', () => {
+    const addToImportMap = vi.fn();
+    iterateCollections({
+      addToImportMap,
+      baseDir: '/tmp',
+      collections: [
+        {
+          admin: {},
+          custom: {
+            frogbot: {
+              collectionViews: [
+                { components: { Card: './Card#Card' }, slug: 'board', type: 'board' },
+              ],
+            },
+          },
+          fields: [],
+          slug: 'posts',
+        },
+      ] as never,
+      config: {} as never,
+      importMap: {},
+      imports: {},
+    });
+    expect(addToImportMap).toHaveBeenCalledWith('./Card#Card');
+  });
 });

@@ -83,12 +83,19 @@ describe('@frogbotai/next views', () => {
       collectionConfig: {
         admin: {
           components: {
-            afterList: ['AfterList'],
-            afterListTable: ['AfterListTable'],
-            beforeList: ['BeforeList'],
-            beforeListTable: ['BeforeListTable'],
             Description: 'Description',
-            listMenuItems: ['Menu'],
+            views: {
+              stub: {
+                frogbot: {
+                  components: {
+                    actions: ['Action'],
+                    afterView: ['AfterView'],
+                    beforeView: ['BeforeView'],
+                    menuItems: ['Menu'],
+                  },
+                },
+              },
+            },
           },
         },
         slug: 'posts',
@@ -99,21 +106,25 @@ describe('@frogbotai/next views', () => {
         permissions: { collections: { posts: { create: true, delete: true } } },
         req: { i18n: {}, query: { sort: '-createdAt', where: { status: { equals: 'draft' } } } },
       },
-      viewKey: 'stub',
+      viewSlug: 'stub',
       viewType: 'stub',
+      viewComponents: {
+        actions: ['Action'],
+        afterView: ['AfterView'],
+        beforeView: ['BeforeView'],
+        menuItems: ['Menu'],
+      },
+      views: [{ label: 'Stub', path: '', slug: 'stub', type: 'custom' }],
     } as never);
 
     expect(element?.props).toMatchObject({
-      AfterList: 'slot:AfterList',
-      AfterListTable: 'slot:AfterListTable',
-      BeforeList: 'slot:BeforeList',
-      BeforeListTable: 'slot:BeforeListTable',
+      AfterList: 'slot:AfterView',
+      Actions: ['slot:Action'],
+      BeforeList: 'slot:BeforeView',
       Description: 'slot:Description',
       hasCreatePermission: true,
-      hasDeletePermission: true,
       listMenuItems: ['slot:Menu'],
       query: { sort: '-createdAt', where: { status: { equals: 'draft' } } },
-      viewKey: 'stub',
     });
     expect(element?.props.children).toBe(child);
   });

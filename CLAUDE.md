@@ -82,6 +82,7 @@
 - Use TodoWrite tool for complex tasks
 - Read existing code to understand patterns before changing
 - Make changes incrementally and test as you go
+- Verification must include relevant tests followed by `pnpm prettier:write && pnpm lint:fix`
 
 ## File Organization
 

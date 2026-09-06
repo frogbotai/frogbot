@@ -1,0 +1,22 @@
+.collection-board {
+  min-width: 0;
+}
+
+.collection-board__field {
+  color: var(--theme-base-800);
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+
+.collection-board__field:last-child {
+  margin-bottom: 0;
+}
+
+.collection-board__cover {
+  border-radius: 4px;
+  display: block;
+  margin-bottom: 10px;
+  max-height: 160px;
+  object-fit: cover;
+  width: 100%;
+}

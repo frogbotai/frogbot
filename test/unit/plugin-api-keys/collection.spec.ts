@@ -50,9 +50,13 @@ describe('API keys collection', () => {
       const field = collection.fields.find((item) => 'name' in item && item.name === name);
       expect('access' in field! && field.access?.update?.({} as never)).toBe(false);
     }
-    expect(collection.admin?.components?.beforeListTable).toContain(
-      '@frogbotai/plugin-api-keys/client#ApiKeysManager',
-    );
+    expect(collection.admin?.views).toEqual([
+      {
+        type: 'list',
+        defaultFields: ['name', 'prefix', 'lastUsedAt', 'revokedAt', 'actions'],
+        components: { beforeTable: ['@frogbotai/plugin-api-keys/client#ApiKeysManager'] },
+      },
+    ]);
     expect(collection.fields.at(-1)).toMatchObject({
       name: 'actions',
       admin: { components: { Cell: '@frogbotai/plugin-api-keys/client#RevokeApiKey' } },
@@ -63,13 +67,6 @@ describe('API keys collection', () => {
     const condition = 'admin' in revokedAt! ? revokedAt.admin?.condition : undefined;
     expect(condition?.({}, { revokedAt: null }, {} as never)).toBe(false);
     expect(condition?.({}, { revokedAt: '2026-08-02T00:00:00.000Z' }, {} as never)).toBe(true);
-    expect(collection.admin?.defaultColumns).toEqual([
-      'name',
-      'prefix',
-      'lastUsedAt',
-      'revokedAt',
-      'actions',
-    ]);
   });
 
   it('mints multiple keys while storing only hashes', async () => {
@@ -130,7 +127,10 @@ describe('API keys collection', () => {
         },
       },
     });
-    expect(collection.admin?.defaultColumns).toContain('totalCostUSD');
+    expect(collection.admin?.views?.[0]).toMatchObject({
+      type: 'list',
+      defaultFields: expect.arrayContaining(['totalCostUSD']),
+    });
     await expect(
       hook?.({ data: { id: 'key-1' }, req: { frogbot: { find } } } as never),
     ).resolves.toBeCloseTo(0.015);
@@ -249,7 +249,15 @@ describe('API keys collection', () => {
     config.collections.push({
       slug: 'api-keys',
       fields: [{ name: 'tenant', type: 'text' }],
-      admin: { components: { beforeListTable: ['./TenantControl.js'] } },
+      admin: {
+        views: [
+          {
+            type: 'list',
+            defaultFields: ['name', 'tenant'],
+            components: { beforeTable: ['./TenantControl.js'], afterTable: ['./Footer.js'] },
+          },
+        ],
+      },
       access: { read: () => true },
       endpoints: [{ method: 'get', path: '/custom', handler: () => Response.json({}) }],
     });
@@ -261,10 +269,40 @@ describe('API keys collection', () => {
 
     expect(names).toEqual(expect.arrayContaining(['tokenHash', 'tenant', 'metadata']));
     expect(collection.endpoints?.map((endpoint) => endpoint.path)).toContain('/custom');
-    expect(collection.admin?.components?.beforeListTable).toEqual([
-      '@frogbotai/plugin-api-keys/client#ApiKeysManager',
-      './TenantControl.js',
+    expect(collection.admin?.views).toEqual([
+      {
+        type: 'list',
+        defaultFields: ['name', 'tenant'],
+        components: {
+          beforeTable: ['@frogbotai/plugin-api-keys/client#ApiKeysManager', './TenantControl.js'],
+          afterTable: ['./Footer.js'],
+        },
+      },
     ]);
     expect(await collection.access?.read?.({ req: {} as FrogbotRequest })).toBe(true);
+  });
+
+  it('prefers explicit override views and injects the manager into the first list view', async () => {
+    const collection = await getCollection({
+      collection: {
+        admin: {
+          views: [
+            { type: 'board', groupBy: 'owner' },
+            { type: 'list', slug: 'all', components: { beforeTable: ['./Banner.js'] } },
+          ],
+        },
+      },
+    });
+
+    expect(collection.admin?.views).toEqual([
+      { type: 'board', groupBy: 'owner' },
+      {
+        type: 'list',
+        slug: 'all',
+        components: {
+          beforeTable: ['@frogbotai/plugin-api-keys/client#ApiKeysManager', './Banner.js'],
+        },
+      },
+    ]);
   });
 });

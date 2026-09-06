@@ -25,8 +25,11 @@ describe('apiKeysPlugin', () => {
         },
       }),
     ]);
-    expect(result.collections.at(-1)?.admin?.components?.beforeListTable).toEqual([
-      '@frogbotai/plugin-api-keys/client#ApiKeysManager',
+    expect(result.collections.at(-1)?.admin?.views).toEqual([
+      expect.objectContaining({
+        type: 'list',
+        components: { beforeTable: ['@frogbotai/plugin-api-keys/client#ApiKeysManager'] },
+      }),
     ]);
   });
 

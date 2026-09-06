@@ -60,6 +60,16 @@ export type {
 export type { AdminViews, FrogbotComponent, ProviderComponent } from './admin/types.js';
 export type { SettingsEntry } from './admin/types.js';
 export type {
+  BoardView,
+  CollectionView,
+  CustomView,
+  ListView,
+  ViewAccess,
+  ViewComponents,
+  ViewFilter,
+  ViewPagination,
+} from './admin/views/types.js';
+export type {
   AgentAccess,
   AgentConfig,
   AgentGenerateOpts,

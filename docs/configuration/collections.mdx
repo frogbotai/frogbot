@@ -113,7 +113,6 @@ The following options are available:
 | `auth`               | Specify options if you would like this Collection to feature authentication. Set to `true` for defaults or pass an auth config object. FrogBot extends auth with `providers`, `allowedDomains`, and `allowSignup`. [More details](/authentication/overview).                                                                                         |
 | `custom`             | Extension point for adding custom data (e.g. for plugins)                                                                                                                                                                                                  |
 | `disableDuplicate`   | When true, do not show the "Duplicate" button while editing documents within this Collection and prevent `duplicate` from all APIs.                                                                                                                        |
-| `defaultSort`        | Pass a top-level field to sort by default in the Collection List View. Prefix the name of the field with a minus symbol ("-") to sort in descending order. Multiple fields can be specified by using a string array.                                       |
 | `dbName`             | Custom table or Collection name depending on the Database Adapter. Auto-generated from slug if not defined.                                                                                                                                                |
 | `endpoints`          | Add custom routes to the REST API. Set to `false` to disable routes. [More details](/rest-api/overview#custom-endpoints).                                                                                                                                |
 | `fields` \*          | Array of field types that will determine the structure and functionality of the data stored within this Collection. [More details](/fields/overview).                                                                                                    |
@@ -204,7 +203,7 @@ The following options are available:
 | `hidden`                     | Set to true or a function, called with the current user, returning true to exclude this Collection from navigation and admin routing.                                                                                        |
 | `useAsTitle`                 | Specify a top-level field to use for a document title throughout the Admin Panel. If no field is defined, the ID of the document is used as the title.                                                                       |
 | `description`                | Text to display below the Collection label in the List View to give editors more information. Alternatively, you can use the `admin.components.Description` to render a React component. [More details](#custom-components). |
-| `defaultColumns`             | Array of field names that correspond to which columns to show by default in this Collection's List View.                                                                                                                     |
+| `views`                      | Ordered list of collection views. Ticket 108 supports `list`, `board`, and `custom` views. [More details](/configuration/collection-board).                                                                                  |
 | `disableCopyToLocale`        | Disables the "Copy to Locale" button while editing documents within this Collection. Only applicable when localization is enabled.                                                                                           |
 | `enableRichTextLink`         | The [Rich Text](/fields/rich-text) field features a `Link` element which allows for users to automatically reference related documents within their rich text. Set to `true` by default.                                   |
 | `enableRichTextRelationship` | The [Rich Text](/fields/rich-text) field features a `Relationship` element which allows for users to automatically reference related documents within their rich text. Set to `true` by default.                           |
@@ -214,9 +213,7 @@ The following options are available:
 | `preview`                    | Function to generate preview URLs within the Admin Panel that can point to your app. [More details](/admin/preview).                                                                                                       |
 | `livePreview`                | Enable real-time editing for instant visual feedback of your front-end application. [More details](/live-preview/overview).                                                                                                |
 | `components`                 | Swap in your own React components to be used within this Collection. [More details](#custom-components).                                                                                                                     |
-| `listSearchableFields`       | Specify which fields should be searched in the List search view. [More details](#list-searchable-fields).                                                                                                                    |
 | `pagination`                 | Set pagination-specific options for this Collection in the List View. [More details](#pagination).                                                                                                                           |
-| `baseFilter`                 | Defines a default base filter which will be applied to the List View (along with any other filters applied by the user) and internal links in Lexical Editor,                                                                |
 
 <Warning>
   **Note:** If you set `useAsTitle` to a relationship or join field, it will use
@@ -224,6 +221,116 @@ The following options are available:
   field (i.e. title) from the related document instead, create a virtual field
   that extracts the desired data, and set `useAsTitle` to that virtual field.
 </Warning>
+
+### Collection Views
+
+`admin.views` accepts `CollectionView[]`. `CollectionView` is the exported union `ListView | BoardView | CustomView`. Ticket 108 supports only `list`, `board`, and `custom`; grid and calendar views are not available configuration options.
+
+The array order controls the switcher and first-view fallback. A collection can have at most one list view, and it must be first. Omit `views` to use one default list view without a switcher.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Projects: CollectionConfig = {
+  slug: 'projects',
+  admin: {
+    views: [
+      {
+        type: 'list',
+        slug: 'active',
+        label: 'Active',
+        defaultFields: ['title', 'status'],
+        filter: { archived: { equals: false } },
+        components: {
+          beforeTable: ['/components/ProjectSummary#ProjectSummary'],
+        },
+      },
+      {
+        type: 'custom',
+        slug: 'report',
+        label: 'Report',
+        component: '/components/ProjectReport#ProjectReport',
+      },
+    ],
+  },
+  fields: [],
+}
+```
+
+#### Shared view properties
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `slug` | `string` | No; defaults to `type` | Unique route and saved-preference key after normalization to lowercase kebab case. Duplicate or empty normalized slugs produce a configuration error. The first view uses the collection's root route. |
+| `label` | `string` | No; defaults to the capitalized `type` | Label displayed in the view switcher. |
+| `defaultFields` | `string[]` | No | Ordered field dot paths initially displayed as list columns or board card fields. Users can change list columns through normal list controls. |
+| `filter` | `Where \| ({ req }) => Where \| Promise<Where>` | No | Invisible base filter applied to the view. The function receives the current `FrogbotRequest`. |
+| `defaultSort` | `Sort` (`string \| string[]`) | No | Initial field sort or ordered list of sorts. Prefix a field with `-` for descending order. |
+| `searchableFields` | `string[]` | No | Adds field dot paths to the normal search behavior. The collection's `useAsTitle` field remains included; this option does not replace it. |
+| `pagination` | `ViewPagination` | No | Configures query limits. Defaults depend on the view type. |
+| `access` | `({ req }) => boolean \| Promise<boolean>` | No; defaults to collection access | Controls whether the current user can open the view. It does not replace collection operation access. |
+| `components` | View-specific components | No | Supplies shared shell slots and slots for the selected view type. |
+
+#### ViewPagination
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `defaultLimit` | `number` | No; list uses FrogBot list defaults, board defaults to `50` | List documents per page or board documents fetched per column. Board columns lazy-load additional pages and virtualize rendered cards. |
+| `limits` | `number[]` | No; list uses FrogBot list defaults | Page-size choices shown by list controls. This property does not change board loading or display controls. |
+
+#### ViewComponents
+
+These shell slots are shared by list, board, and custom views. Each value uses a `FrogbotComponent` import path; array slots render in declaration order.
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `actions` | `FrogbotComponent[]` | No; `[]` | Adds actions to the view's action area. |
+| `menuItems` | `FrogbotComponent[]` | No; `[]` | Adds entries to the view menu. |
+| `beforeView` | `FrogbotComponent[]` | No; `[]` | Renders inside the collection shell before the view body. |
+| `afterView` | `FrogbotComponent[]` | No; `[]` | Renders inside the collection shell after the view body. |
+
+#### ListView
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `type` | `'list'` | Yes | Selects the table-based list view. |
+| `components` | `ViewComponents & ListViewComponents` | No | Adds shared shell slots and list table slots. |
+
+**ListView components**
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `beforeTable` | `FrogbotComponent[]` | No; `[]` | Renders after list controls and immediately before the table. |
+| `afterTable` | `FrogbotComponent[]` | No; `[]` | Renders immediately after the table. |
+
+#### BoardView
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `type` | `'board'` | Yes | Selects the column-based board view. |
+| `groupBy` | `string` | No | Dot path to the select or single relationship field used for columns. Documents without a value appear in **Uncategorized**. |
+| `cover` | `string` | No | Dot path to an upload field rendered as each card's cover image. |
+| `components` | `ViewComponents & BoardComponents` | No | Adds shared shell slots and board-specific components. |
+
+**Board components**
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `beforeColumns` | `FrogbotComponent[]` | No; `[]` | Renders before the board columns. |
+| `afterColumns` | `FrogbotComponent[]` | No; `[]` | Renders after the board columns. |
+| `ColumnHeader` | `FrogbotComponent` | No; built-in header | Replaces each column header. |
+| `Card` | `FrogbotComponent` | No; built-in card | Replaces each board card and receives the document as its `row` prop. |
+
+See [Collection board](/configuration/collection-board) for grouping, loading, and drag behavior.
+
+#### CustomView
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `type` | `'custom'` | Yes | Selects a developer-provided view. |
+| `component` | `FrogbotComponent` | Yes | Component that renders the custom view body. |
+| `shell` | `boolean` | No; `true` | When `true`, renders within the collection shell and supports `ViewComponents`. When `false`, replaces the complete collection page and must be the collection's only view. |
+| `components` | `ViewComponents` | No | Configures shared shell slots when the shell is enabled. |
 
 ### Custom Components
 
@@ -248,14 +355,8 @@ The following options are available:
 
 | Option            | Description                                                                                                                                                                        |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `afterList`       | An array of components to inject _after_ the built-in List View. [More details](/custom-components/list-view#afterlist).                                                         |
-| `afterListTable`  | An array of components to inject _after_ the built-in List View's table. [More details](/custom-components/list-view#afterlisttable).                                            |
-| `beforeList`      | An array of components to inject _before_ the built-in List View. [More details](/custom-components/list-view#beforelist).                                                       |
-| `beforeListTable` | An array of components to inject _before_ the built-in List View's table. [More details](/custom-components/list-view#beforelisttable).                                          |
-| `listMenuItems`   | An array of components to render within a menu next to the List Controls (after the Columns and Filters options)                                                                   |
 | `Description`     | A component to render below the Collection label in the List View. An alternative to the `admin.description` property. [More details](/custom-components/list-view#description). |
 | `edit`            | Override specific components within the Edit View. [More details](#edit-view-options).                                                                                             |
-| `views`           | Override or create new views within the Admin Panel. [More details](/custom-components/custom-views).                                                                            |
 
 #### Edit View Options
 
@@ -272,6 +373,11 @@ export const MyCollection: CollectionConfig = {
         Status: '/path/to/CustomStatus',
         SaveButton: '/path/to/CustomSaveButton',
         PublishButton: '/path/to/CustomPublishButton',
+        views: {
+          root: {
+            Component: '/path/to/CustomEditView',
+          },
+        },
       },
     },
   },
@@ -291,6 +397,85 @@ The following components can be customized within `admin.components.edit`:
 | `UnpublishButton`        | Replace the default Unpublish Button within the Edit View. [Drafts](/versions/drafts) must be enabled. [More details](/custom-components/edit-view#unpublishbutton).                                |
 | `PreviewButton`          | Replace the default Preview Button within the Edit View. [Preview](/admin/preview) must be enabled. [More details](/custom-components/edit-view#previewbutton).                                     |
 | `Upload`                 | Replace the default Upload component within the Edit View. [Upload](/upload/overview) must be enabled. [More details](/custom-components/edit-view#upload).                                         |
+| `views`                  | Override built-in document views, add custom routes or tabs, or replace the complete document area. [More details](#document-views).                                                         |
+
+##### Document Views
+
+Use `admin.components.edit.views` to replace a built-in document view or add a custom view. The built-in keys are `default`, `api`, `livePreview`, `version`, and `versions`. Any other key defines a custom view and can add a route, a tab, or both.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  admin: {
+    components: {
+      edit: {
+        views: {
+          default: {
+            actions: ['/components/EditActions#EditActions'],
+          },
+          audit: {
+            Component: '/components/AuditView#AuditView',
+            path: '/audit',
+            tab: {
+              label: 'Audit log',
+              Pill: '/components/AuditCount#AuditCount',
+            },
+          },
+        },
+      },
+    },
+  },
+  fields: [],
+}
+```
+
+| Key | Route | Behavior |
+| --- | --- | --- |
+| `default` | Document root | Main document editor. |
+| `api` | `/api` | API view. |
+| `livePreview` | `/preview` | Live Preview view. |
+| `versions` | `/versions` | Version history. |
+| `version` | `/versions/:version` | A specific version. |
+| Any custom key | The configured `path` | Adds a custom route, tab, or both. |
+| `root` | All document routes | Replaces the entire document area, including its header, controls, tabs, and nested views. |
+
+`root` is mutually exclusive with every built-in and custom nested document view. When `root` is configured, it must be the only key in `views`.
+
+**Built-in and root view config**
+
+| Property | Type | Behavior |
+| --- | --- | --- |
+| `Component` | `FrogbotComponent` | Replaces the view component. Optional, allowing other properties to modify the built-in view. |
+| `actions` | `FrogbotComponent[]` | Adds components to the view's actions. |
+| `meta` | `MetaConfig` | Overrides metadata for the view. |
+| `tab` | `DocumentTabConfig` | Modifies the view's document tab. |
+
+**Custom view config**
+
+| Property | Type | Behavior |
+| --- | --- | --- |
+| `Component` | `FrogbotComponent` | Renders the custom view. Required when `path` is set; otherwise optional. |
+| `path` | `` `/${string}` `` | Adds a route below the document URL. Requires `Component`. Omit both `path` and `Component` to add only a tab. |
+| `actions` | `FrogbotComponent[]` | Adds components to the view's actions. |
+| `meta` | `MetaConfig` | Overrides metadata for the view. |
+| `tab` | `DocumentTabConfig` | Configures the custom document tab. |
+
+Document view configs do not support `exact`; custom `path` values use document-view routing.
+
+**Document tab config**
+
+| Property | Type | Behavior |
+| --- | --- | --- |
+| `Component` | `FrogbotComponent` | Replaces the complete tab component. It receives the resolved `path`. |
+| `Pill` | `FrogbotComponent` | Adds a component beside the tab label. |
+| `label` | `string \| ({ t }) => string` | Sets the tab label. |
+| `href` | `string \| function` | Sets or computes the tab destination. |
+| `condition` | `function` | Returns whether the tab should be shown for the current request and permissions. |
+| `isActive` | `boolean \| ({ href }) => boolean` | Controls whether the tab is active. |
+| `newTab` | `boolean` | Opens the destination in a new browser tab. |
+| `order` | `number` | Sets the tab's render order. Increments of `100` are recommended. |
 
 <Warning>
   **Important:** All edit view components must be configured under
@@ -309,7 +494,7 @@ For example, use `admin.components.edit.Status`, not `admin.components.Status`.
 
 All Collections receive their own List View which displays a paginated list of documents that can be sorted and filtered. The pagination behavior of the List View can be customized on a per-Collection basis, and uses the same [Pagination](/queries/pagination) API that FrogBot provides.
 
-To configure pagination options, use the `admin.pagination` property in your Collection Config:
+To configure pagination options, use `pagination` on a list entry in `admin.views`:
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -317,10 +502,15 @@ import type { CollectionConfig } from 'frogbot'
 export const Posts: CollectionConfig = {
   // ...
   admin: {
-    pagination: {
-      defaultLimit: 10,
-      limits: [10, 20, 50],
-    },
+    views: [
+      {
+        type: 'list',
+        pagination: {
+          defaultLimit: 10,
+          limits: [10, 20, 50],
+        },
+      },
+    ],
   },
 }
 ```
@@ -329,14 +519,14 @@ The following options are available:
 
 | Option         | Description                                                                                         |
 | -------------- | --------------------------------------------------------------------------------------------------- |
-| `defaultLimit` | Integer that specifies the default per-page limit that should be used. Defaults to 10.              |
-| `limits`       | Provide an array of integers to use as per-page options for admins to choose from in the List View. |
+| `defaultLimit` | Integer that specifies the initial per-page limit. When omitted, the List View uses FrogBot's list default. |
+| `limits`       | Integers offered as List View page-size choices. This does not configure Board View loading.             |
 
 ### List Searchable Fields
 
-In the List View, there is a "search" box that allows you to quickly find a document through a simple text search. By default, it searches on the ID field. If defined, the `admin.useAsTitle` field is used. Or, you can explicitly define which fields to search based on the needs of your application.
+In the List View, there is a "search" box that allows you to quickly find a document through a simple text search. Normal search behavior includes the ID and, when defined, `admin.useAsTitle`. `searchableFields` adds fields to that behavior rather than replacing the title field.
 
-To define which fields should be searched, use the `admin.listSearchableFields` property in your Collection Config:
+To define which fields should be searched, use `searchableFields` on a list entry in `admin.views`:
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -344,13 +534,19 @@ import type { CollectionConfig } from 'frogbot'
 export const Posts: CollectionConfig = {
   // ...
   admin: {
-    listSearchableFields: ['title', 'slug'],
+    views: [
+      {
+        type: 'list',
+        defaultFields: ['title', 'slug'],
+        searchableFields: ['title', 'slug'],
+      },
+    ],
   },
 }
 ```
 
 <Warning>
-  **Tip:** If you are adding `listSearchableFields`, make sure you index each of
+  **Tip:** If you are adding searchable fields, make sure you index each of
   these fields so your admin queries can remain performant.
 </Warning>
 

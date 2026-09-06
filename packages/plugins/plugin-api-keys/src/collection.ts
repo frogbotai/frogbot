@@ -1,6 +1,15 @@
-import type { Access, CollectionConfig, Endpoint, Field, FrogbotRequest } from 'frogbot';
+import type {
+  Access,
+  CollectionConfig,
+  CollectionView,
+  Endpoint,
+  Field,
+  FrogbotRequest,
+} from 'frogbot';
 
 import { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
+
+const MANAGER_COMPONENT = '@frogbotai/plugin-api-keys/client#ApiKeysManager';
 
 type CollectionOptions = {
   authCollection: string;
@@ -23,6 +32,40 @@ function mergeFields(...groups: (Field[] | undefined)[]): Field[] {
     }
   }
   return [...fields.values()];
+}
+
+function createViews({
+  usageCollection,
+  views,
+}: Pick<CollectionOptions, 'usageCollection'> & { views?: CollectionView[] }): CollectionView[] {
+  if (!views?.length) {
+    return [
+      {
+        type: 'list',
+        defaultFields: [
+          'name',
+          'prefix',
+          ...(usageCollection ? ['totalCostUSD'] : []),
+          'lastUsedAt',
+          'revokedAt',
+          'actions',
+        ],
+        components: { beforeTable: [MANAGER_COMPONENT] },
+      },
+    ];
+  }
+  const index = views.findIndex((view) => view.type === 'list');
+  return views.map((view, position) =>
+    position === index && view.type === 'list'
+      ? {
+          ...view,
+          components: {
+            ...view.components,
+            beforeTable: [MANAGER_COMPONENT, ...(view.components?.beforeTable ?? [])],
+          },
+        }
+      : view,
+  );
 }
 
 function createEndpoints({
@@ -212,24 +255,11 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
       useAsTitle: 'name',
       ...existing?.admin,
       ...collection?.admin,
-      defaultColumns: collection?.admin?.defaultColumns ??
-        existing?.admin?.defaultColumns ?? [
-          'name',
-          'prefix',
-          ...(usageCollection ? ['totalCostUSD'] : []),
-          'lastUsedAt',
-          'revokedAt',
-          'actions',
-        ],
-      components: {
-        ...existing?.admin?.components,
-        ...collection?.admin?.components,
-        beforeListTable: [
-          '@frogbotai/plugin-api-keys/client#ApiKeysManager',
-          ...(existing?.admin?.components?.beforeListTable ?? []),
-          ...(collection?.admin?.components?.beforeListTable ?? []),
-        ],
-      },
+      components: { ...existing?.admin?.components, ...collection?.admin?.components },
+      views: createViews({
+        usageCollection,
+        views: collection?.admin?.views ?? existing?.admin?.views,
+      }),
     },
     endpoints: [...endpoints, ...(existing?.endpoints ?? []), ...(collection?.endpoints ?? [])],
     fields: mergeFields(fields, existing?.fields, collection?.fields),

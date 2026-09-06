@@ -1,1 +1,0 @@
-export { assistant } from './assistant';

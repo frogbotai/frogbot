@@ -152,6 +152,46 @@ describe('frogbot importMap generator', () => {
     expect(output).not.toContain('ChatListView');
   });
 
+  it('maps collection view, custom, Description, and edit view components', async () => {
+    const dir = await makeDir('frogbot-importmap-collection-views-');
+    const config = sanitize({
+      secret: 'test-secret',
+      db: { defaultIDType: 'number' } as never,
+      collections: [
+        { slug: 'users', auth: true, fields: [] },
+        {
+          slug: 'posts',
+          fields: [],
+          admin: {
+            components: {
+              Description: './components/Description#Description',
+              edit: { views: { details: { Component: './components/EditView#EditView' } } },
+            },
+            views: [
+              {
+                type: 'board',
+                slug: 'pipeline',
+                components: { Card: './components/Card#Card' },
+              },
+              { type: 'custom', slug: 'map', component: './components/Map#Map' },
+            ],
+          },
+        },
+      ],
+    });
+    const payloadConfig = await config._internal.payloadConfig;
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+    const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
+
+    expect(output).toContain("from './components/Description'");
+    expect(output).toContain("from './components/EditView'");
+    expect(output).toContain("from './components/Card'");
+    expect(output).toContain("from './components/Map'");
+  });
+
   it('maps tool components', async () => {
     const dir = await makeDir('frogbot-importmap-tool-components-');
     const config = sanitize({

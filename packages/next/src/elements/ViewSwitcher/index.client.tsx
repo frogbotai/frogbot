@@ -7,36 +7,31 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { formatAdminURL } from 'payload/shared';
 
 type CollectionView = {
-  key: string;
   label: string;
   path: string;
+  slug: string;
+  type: string;
 };
 
 export type ViewSwitcherProps = {
   collectionSlug: string;
-  viewType?: string;
+  viewSlug?: string;
+  views: CollectionView[];
 };
 
-export function ViewSwitcher({ collectionSlug, viewType }: ViewSwitcherProps) {
-  const { config, getEntityConfig } = useConfig();
+export function ViewSwitcher({ collectionSlug, viewSlug, views }: ViewSwitcherProps) {
+  const { config } = useConfig();
   const { setPreference } = usePreferences();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const collection = getEntityConfig({ collectionSlug });
-  const views = (
-    collection?.admin as typeof collection.admin & {
-      custom?: { frogbot?: { views?: CollectionView[] } };
-    }
-  )?.custom?.frogbot?.views;
-
-  if (!views || views.length < 2) return null;
+  if (views.length < 2) return null;
 
   const active =
-    viewType ??
+    viewSlug ??
     views.find(({ path }) =>
       path === '' ? pathname.endsWith(`/collections/${collectionSlug}`) : pathname.endsWith(path),
-    )?.key;
+    )?.slug;
   const search = searchParams.toString();
 
   return (
@@ -46,7 +41,7 @@ export function ViewSwitcher({ collectionSlug, viewType }: ViewSwitcherProps) {
           adminRoute: config.routes.admin,
           path: `/collections/${collectionSlug}${view.path}`,
         });
-        const isActive = active === view.key;
+        const isActive = active === view.slug;
         const url = search ? `${href}?${search}` : href;
 
         return (
@@ -54,10 +49,12 @@ export function ViewSwitcher({ collectionSlug, viewType }: ViewSwitcherProps) {
             aria-current={isActive ? 'page' : undefined}
             className={`view-switcher__link${isActive ? ' view-switcher__link--active' : ''}`}
             href={url}
-            key={view.key}
+            key={view.slug}
             onClick={async (event) => {
               event.preventDefault();
-              await setPreference(`frogbot-view-${collectionSlug}`, { view: view.key });
+              await setPreference(`frogbot:collection-view:${collectionSlug}`, {
+                view: view.slug,
+              });
               router.push(url);
             }}
           >

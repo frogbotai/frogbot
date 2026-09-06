@@ -5,8 +5,13 @@ const authenticated = ({ req }: { req: FrogbotRequest }) => Boolean(req.user);
 export const Releases: CollectionConfig = {
   slug: 'releases',
   admin: {
-    defaultColumns: ['name', 'version', 'status', 'targetDate'],
     useAsTitle: 'name',
+    views: [
+      {
+        type: 'list',
+        defaultFields: ['name', 'version', 'status', 'targetDate'],
+      },
+    ],
   },
   access: {
     create: authenticated,
