@@ -49,12 +49,12 @@ try {
   const cssFiles = fs
     .readdirSync(extractedRoot, { recursive: true })
     .filter((file) => file.endsWith('.css'));
-  assert.ok(cssFiles.includes('dist/styles.css'));
+  assert.ok(cssFiles.includes('src/styles.css'));
   assert.ok(cssFiles.includes('src/utilities.css'));
-  assert.ok(fs.statSync(path.join(extractedRoot, 'dist/styles.css')).size > 0);
+  assert.ok(fs.statSync(path.join(extractedRoot, 'src/styles.css')).size > 0);
   assert.ok(fs.statSync(path.join(extractedRoot, 'src/utilities.css')).size > 0);
-  const css = fs.readFileSync(path.join(extractedRoot, 'dist/styles.css'), 'utf8');
-  assert.match(css, /\.bg-background/);
+  const css = fs.readFileSync(path.join(extractedRoot, 'src/styles.css'), 'utf8');
+  assert.match(css, /@import "\.\/utilities\.css"/);
   assert.match(css, /var\(--background\)/);
 
   const clientEntry = fs.readFileSync(path.join(extractedRoot, 'dist/placeholder.js'), 'utf8');
