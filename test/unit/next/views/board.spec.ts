@@ -2,12 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   buildColumnWhere,
+  getBoardCardColumns,
   getBoardColumnKey,
   getBoardGroupBy,
   getBoardPreferenceKey,
   getBoardPreferenceUpdate,
   getPath,
   parseSort,
+  resolveBoardColumnPreferences,
   resolveBoardGroupBy,
   resolveBoardSort,
   serializeSort,
@@ -210,6 +212,123 @@ describe('collection board', () => {
       { sort: '' },
       true,
     ]);
+    expect(
+      getBoardPreferenceUpdate('posts', 'planning', {
+        columns: [{ accessor: 'title', active: true }],
+      }),
+    ).toEqual([
+      'collection-posts-view-planning',
+      { columns: [{ accessor: 'title', active: true }] },
+      true,
+    ]);
+  });
+
+  it('normalizes the raw URL columns string into column preferences', () => {
+    expect(
+      resolveBoardColumnPreferences({
+        defaultFields: ['title', 'stage'],
+        queryColumns: '["title","-stage","workflow.owner"]',
+        useAsTitle: 'title',
+      }),
+    ).toEqual([
+      { accessor: 'title', active: true },
+      { accessor: 'stage', active: false },
+      { accessor: 'workflow.owner', active: true },
+    ]);
+    expect(
+      resolveBoardColumnPreferences({
+        queryColumns: ['title', '-stage'],
+        useAsTitle: 'title',
+      }),
+    ).toEqual([
+      { accessor: 'title', active: true },
+      { accessor: 'stage', active: false },
+    ]);
+  });
+
+  it('resolves board columns from URL, then the board preference, then board defaultFields', () => {
+    const preferenceColumns = [
+      { accessor: 'title', active: true },
+      { accessor: 'stage', active: false },
+    ];
+
+    expect(
+      resolveBoardColumnPreferences({
+        defaultFields: ['title', 'stage'],
+        preferenceColumns,
+        queryColumns: '["stage"]',
+        useAsTitle: 'title',
+      }),
+    ).toEqual([{ accessor: 'stage', active: true }]);
+    expect(
+      resolveBoardColumnPreferences({
+        defaultFields: ['title', 'stage'],
+        preferenceColumns,
+        useAsTitle: 'title',
+      }),
+    ).toEqual(preferenceColumns);
+    expect(
+      resolveBoardColumnPreferences({
+        defaultFields: ['title', 'stage'],
+        useAsTitle: 'title',
+      }),
+    ).toEqual([
+      { accessor: 'title', active: true },
+      { accessor: 'stage', active: true },
+    ]);
+  });
+
+  it('seeds board columns from useAsTitle when the board declares no defaultFields', () => {
+    expect(resolveBoardColumnPreferences({ useAsTitle: 'title' })).toEqual([
+      { accessor: 'title', active: true },
+    ]);
+    expect(resolveBoardColumnPreferences({ defaultFields: [] })).toEqual([
+      { accessor: 'id', active: true },
+    ]);
+  });
+
+  it('ignores the list view columns when resolving board columns', () => {
+    expect(
+      resolveBoardColumnPreferences({
+        defaultFields: ['stage'],
+        preferenceColumns: undefined,
+        queryColumns: undefined,
+        useAsTitle: 'title',
+      }),
+    ).toEqual([{ accessor: 'stage', active: true }]);
+  });
+
+  it('renders active columns in order and never duplicates the doc title', () => {
+    const columns = [
+      { accessor: 'title', active: true },
+      { accessor: 'stage', active: true },
+      { accessor: 'priority', active: false },
+      { accessor: 'workflow.owner', active: true },
+    ];
+
+    expect(getBoardCardColumns(columns, 'title')).toEqual([
+      { accessor: 'stage', active: true },
+      { accessor: 'workflow.owner', active: true },
+    ]);
+    expect(getBoardCardColumns(columns, 'id')).toEqual([
+      { accessor: 'title', active: true },
+      { accessor: 'stage', active: true },
+      { accessor: 'workflow.owner', active: true },
+    ]);
+  });
+
+  it('renders the doc title alone when no other column is active', () => {
+    expect(
+      getBoardCardColumns(
+        [
+          { accessor: 'title', active: true },
+          { accessor: 'stage', active: false },
+        ],
+        'title',
+      ),
+    ).toEqual([]);
+    expect(getBoardCardColumns(undefined, 'title')).toEqual([]);
+    expect(getBoardCardColumns([{ accessor: '', active: true }], 'title')).toEqual([]);
   });
 
   it('merges shared filters with categorized and uncategorized columns', () => {

@@ -1,7 +1,6 @@
 'use client';
 
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useDraggable } from '@dnd-kit/core';
 import type { ReactNode } from 'react';
 
 export function BoardCard({
@@ -15,18 +14,14 @@ export function BoardCard({
   id: string;
   onClick?: () => void;
 }) {
-  const sortable = useSortable({ disabled, id });
+  const draggable = useDraggable({ disabled, id });
   return (
     <div
-      {...sortable.attributes}
-      {...sortable.listeners}
-      className="frog-board__card"
+      {...draggable.attributes}
+      {...draggable.listeners}
+      className={`frog-board__card${draggable.isDragging ? ' frog-board__card--dragging' : ''}`}
       onClick={onClick}
-      ref={sortable.setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(sortable.transform),
-        transition: sortable.transition,
-      }}
+      ref={draggable.setNodeRef}
     >
       {children}
     </div>

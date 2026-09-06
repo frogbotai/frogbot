@@ -42,5 +42,18 @@ describe('collection view resolution', () => {
   it('resolves root and named routes independently', () => {
     expect(getActiveViewSlug({ viewType: 'list' } as never)).toBeUndefined();
     expect(getActiveViewSlug({ viewType: 'by-stage' } as never)).toBe('by-stage');
+    const collectionConfig = { custom: { frogbot: { collectionViews: [{ slug: 'board' }] } } };
+    expect(
+      getActiveViewSlug({
+        collectionConfig,
+        params: { segments: ['collections', 'pipelines', 'board'] },
+      } as never),
+    ).toBe('board');
+    expect(
+      getActiveViewSlug({
+        collectionConfig,
+        params: { segments: ['collections', 'pipelines'] },
+      } as never),
+    ).toBeUndefined();
   });
 });

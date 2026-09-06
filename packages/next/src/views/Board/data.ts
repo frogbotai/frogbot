@@ -1,3 +1,6 @@
+import type { ColumnPreference } from 'payload';
+import { transformColumnsToPreferences } from 'payload/shared';
+
 export function getBoardGroupBy(groupBy?: string): string | undefined {
   return groupBy?.replace(/^-/, '') || undefined;
 }
@@ -61,11 +64,47 @@ export function resolveBoardGroupBy({
   return configuredGroupBy ?? '';
 }
 
+export type BoardPreferenceValue = {
+  columns?: ColumnPreference[];
+  groupBy?: string;
+  sort?: string;
+};
+
+export type BoardColumnsSource = ColumnPreference[] | string | string[] | undefined;
+
+export function resolveBoardColumnPreferences({
+  defaultFields,
+  preferenceColumns,
+  queryColumns,
+  useAsTitle,
+}: {
+  defaultFields?: string[];
+  preferenceColumns?: BoardColumnsSource;
+  queryColumns?: BoardColumnsSource;
+  useAsTitle?: string;
+}): ColumnPreference[] {
+  const fromQuery = transformColumnsToPreferences(queryColumns);
+  if (fromQuery?.length) return fromQuery;
+  const fromPreference = transformColumnsToPreferences(preferenceColumns);
+  if (fromPreference?.length) return fromPreference;
+  const seed = defaultFields?.length ? defaultFields : [useAsTitle ?? 'id'];
+  return seed.map((accessor) => ({ accessor, active: true }));
+}
+
+export function getBoardCardColumns<T extends { accessor: string; active: boolean }>(
+  columns: T[] | undefined,
+  useAsTitle?: string,
+): T[] {
+  return (columns ?? []).filter(
+    (column) => column.active && Boolean(column.accessor) && column.accessor !== useAsTitle,
+  );
+}
+
 export function getBoardPreferenceUpdate(
   collectionSlug: string,
   viewSlug: string,
-  value: string | { groupBy?: string; sort?: string },
-): [string, { groupBy?: string; sort?: string }, true] {
+  value: string | BoardPreferenceValue,
+): [string, BoardPreferenceValue, true] {
   return [
     getBoardPreferenceKey(collectionSlug, viewSlug),
     typeof value === 'string' ? { groupBy: value } : value,
@@ -83,17 +122,6 @@ export function getPath(value: Record<string, unknown>, path: string): unknown {
           : undefined,
       value,
     );
-}
-
-export function getPathField<T extends { name?: string; fields?: T[] }>(
-  fields: T[],
-  path: string,
-): T | undefined {
-  const [name, ...rest] = path.split('.');
-  const field = fields.find((candidate) => candidate.name === name);
-  return field && rest.length > 0 && Array.isArray(field.fields)
-    ? getPathField(field.fields, rest.join('.'))
-    : field;
 }
 
 export function setPath(path: string, value: unknown): Record<string, unknown> {

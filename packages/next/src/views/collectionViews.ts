@@ -35,5 +35,8 @@ export function getActiveViewSlug(
   props: AdminViewServerProps & { routeSegments?: string[] },
 ): string | undefined {
   const segments = props.routeSegments ?? (props.params?.segments as string[] | undefined) ?? [];
-  return props.viewType === 'list' ? undefined : props.viewType || segments.at(-1);
+  if (props.viewType === 'list') return undefined;
+  if (props.viewType) return props.viewType;
+  const last = segments.at(-1);
+  return getRuntimeViews(props).some(({ slug }) => slug === last) ? last : undefined;
 }

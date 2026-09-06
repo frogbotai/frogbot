@@ -16,4 +16,22 @@ describe('client view UI imports', () => {
 
     expect(hasRootImport && hasBundledSubpathImport).toBe(false);
   });
+
+  it.each(files)('%s only type-imports the payload root package', (file) => {
+    const source = readFileSync(file, 'utf8');
+
+    expect(/^import\s+(?!type\b)[^;]*from\s+['"]payload['"]/m.test(source)).toBe(false);
+  });
+});
+
+describe('view controls admin styles', () => {
+  it('uses admin runtime accent tokens', () => {
+    const source = readFileSync(resolve(viewsPath, 'controls/ViewControls.css'), 'utf8');
+
+    expect(source).toMatch(/--theme-success-150/);
+    expect(source).toMatch(/--theme-success-250/);
+    expect(source).toMatch(/--theme-success-800/);
+    expect(source).not.toMatch(/--theme-base-/);
+    expect(source).not.toMatch(/--color-blue-/);
+  });
 });

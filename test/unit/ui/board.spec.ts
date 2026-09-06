@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { groupBoardRows } from '../../../packages/ui/src/board/useBoard.js';
+import { groupBoardRows, resolveBoardTarget } from '../../../packages/ui/src/board/useBoard.js';
 
 describe('useBoard', () => {
   it('groups rows in column order and adds uncategorized', () => {
@@ -32,5 +32,21 @@ describe('useBoard', () => {
       rows: [{ id: '1', stage: 'review' }],
     });
     expect(result.map(({ rows }) => rows.length)).toEqual([0, 1, 0]);
+  });
+
+  it('resolves drop targets from cards, columns, and overrides', () => {
+    const rows = [{ id: '1', stage: 'review' }, { id: '2' }];
+    const args = {
+      getId: (row: { id: string }) => row.id,
+      groupBy: (row: { stage?: string }) => row.stage,
+      rows,
+    };
+    expect(resolveBoardTarget({ ...args, overId: '1' })).toBe('review');
+    expect(resolveBoardTarget({ ...args, overId: '2' })).toBe('');
+    expect(resolveBoardTarget({ ...args, overId: 'done' })).toBe('done');
+    expect(resolveBoardTarget({ ...args, groupOverrides: { '1': 'done' }, overId: '1' })).toBe(
+      'done',
+    );
+    expect(resolveBoardTarget({ ...args, overId: null })).toBeNull();
   });
 });

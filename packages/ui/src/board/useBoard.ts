@@ -1,6 +1,6 @@
 'use client';
 
-import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 import { useEffect, useState } from 'react';
 
 export type BoardColumn = { key: string; label: string; value?: unknown };
@@ -10,6 +10,8 @@ export type BoardMove<T> = {
   row: T;
   to: string | null;
 };
+
+export type BoardPlacement = { height: number; index: number; key: string };
 
 export type UseBoardProps<T> = {
   columns: BoardColumn[];
@@ -40,6 +42,26 @@ export function groupBoardRows<T>({
   }));
 }
 
+export function resolveBoardTarget<T>({
+  getId,
+  groupBy,
+  groupOverrides = {},
+  overId,
+  rows,
+}: Pick<UseBoardProps<T>, 'getId' | 'groupBy' | 'rows'> & {
+  groupOverrides?: Record<string, string | null>;
+  overId: string | null;
+}): string | null {
+  if (overId === null) return null;
+  const overRow = rows.find((candidate) => getId(candidate) === overId);
+  if (!overRow) return overId;
+  const id = getId(overRow);
+  const group = Object.prototype.hasOwnProperty.call(groupOverrides, id)
+    ? groupOverrides[id]
+    : groupBy(overRow);
+  return group ?? '';
+}
+
 export function useBoard<T>({
   columns,
   getId,
@@ -51,6 +73,7 @@ export function useBoard<T>({
   const [currentRows, setCurrentRows] = useState(rows);
   const [groupOverrides, setGroupOverrides] = useState<Record<string, string | null>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [placement, setPlacement] = useState<BoardPlacement | null>(null);
   useEffect(() => {
     setCurrentRows(rows);
     setGroupOverrides({});
@@ -65,16 +88,30 @@ export function useBoard<T>({
     uncategorizedLabel,
   });
 
-  const onDragStart = ({ active }: DragStartEvent) => setActiveId(String(active.id));
-  const onDragCancel = () => setActiveId(null);
-  const onDragEnd = async ({ active, over }: DragEndEvent) => {
+  const resolveTarget = (overId: string | null) =>
+    resolveBoardTarget({ getId, groupBy, groupOverrides, overId, rows: currentRows });
+
+  const reset = () => {
     setActiveId(null);
+    setPlacement(null);
+  };
+
+  const onDragStart = ({ active }: DragStartEvent) => setActiveId(String(active.id));
+  const onDragOver = ({ active, over }: DragOverEvent) => {
+    const key = over ? resolveTarget(String(over.id)) : null;
+    if (key === null || key === resolveTarget(String(active.id))) return setPlacement(null);
+    const rect = active.rect.current.initial ?? active.rect.current.translated;
+    const column = grouped.find((candidate) => candidate.key === key);
+    setPlacement({ height: rect?.height ?? 140, index: column?.rows.length ?? 0, key });
+  };
+  const onDragCancel = reset;
+  const onDragEnd = async ({ active, over }: DragEndEvent) => {
+    reset();
     if (!over) return;
     const row = currentRows.find((candidate) => getId(candidate) === String(active.id));
     if (!row) return;
     const from = groupBy(row) ?? null;
-    const overRow = currentRows.find((candidate) => getId(candidate) === String(over.id));
-    const to = overRow ? (groupBy(overRow) ?? null) : String(over.id) || null;
+    const to = resolveTarget(String(over.id)) || null;
     if (from === to) return;
     const id = getId(row);
     setGroupOverrides((value) => ({ ...value, [id]: to }));
@@ -93,6 +130,7 @@ export function useBoard<T>({
   return {
     activeId,
     columns: grouped,
-    handlers: { onDragCancel, onDragEnd, onDragStart },
+    handlers: { onDragCancel, onDragEnd, onDragOver, onDragStart },
+    placement,
   };
 }

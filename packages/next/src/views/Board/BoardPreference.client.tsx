@@ -1,33 +1,40 @@
 'use client';
 
 import { usePreferences } from '@payloadcms/ui';
+import type { ColumnPreference } from 'payload';
 import { useEffect } from 'react';
 
-import { getBoardPreferenceUpdate } from './data.js';
+import { type BoardPreferenceValue, getBoardPreferenceUpdate } from './data.js';
 
 export function BoardPreference({
   collectionSlug,
+  columns,
   groupBy,
   sort,
   viewSlug,
 }: {
   collectionSlug: string;
+  columns?: ColumnPreference[];
   groupBy?: string;
   sort?: string;
   viewSlug: string;
 }) {
   const { getPreference, setPreference } = usePreferences();
+  const serializedColumns = columns ? JSON.stringify(columns) : undefined;
 
   useEffect(() => {
-    if (groupBy === undefined && sort === undefined) return;
+    if (groupBy === undefined && sort === undefined && serializedColumns === undefined) return;
     const [key, value] = getBoardPreferenceUpdate(collectionSlug, viewSlug, {
+      ...(serializedColumns === undefined
+        ? {}
+        : { columns: JSON.parse(serializedColumns) as ColumnPreference[] }),
       ...(groupBy === undefined ? {} : { groupBy }),
       ...(sort === undefined ? {} : { sort }),
     });
-    void getPreference<Record<string, unknown>>(key).then((current) =>
+    void getPreference<BoardPreferenceValue>(key).then((current) =>
       setPreference(key, { ...(current ?? {}), ...value }),
     );
-  }, [collectionSlug, getPreference, groupBy, setPreference, sort, viewSlug]);
+  }, [collectionSlug, getPreference, groupBy, serializedColumns, setPreference, sort, viewSlug]);
 
   return null;
 }

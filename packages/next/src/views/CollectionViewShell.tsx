@@ -1,5 +1,5 @@
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
-import type { AdminViewServerProps, ListQuery, PayloadComponent } from 'payload';
+import type { AdminViewServerProps, Column, ListQuery, PayloadComponent } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 import type { ReactNode } from 'react';
 
@@ -7,6 +7,7 @@ import { CollectionViewShellClient } from './CollectionViewShell.client.js';
 
 type CollectionViewShellProps = AdminViewServerProps & {
   children: ReactNode;
+  columnState?: Column[];
   enableSort?: boolean;
   query?: ListQuery;
   viewComponents?: Record<string, PayloadComponent | PayloadComponent[]>;
@@ -53,6 +54,7 @@ export function CollectionViewShell(props: CollectionViewShellProps) {
       BeforeList={render(viewComponents?.beforeView)}
       BeforeListTable={render(viewComponents?.beforeColumns)}
       collectionSlug={collectionSlug}
+      columnState={props.columnState}
       Description={render(components?.Description)}
       hasCreatePermission={clientProps.hasCreatePermission}
       hasDeletePermission={clientProps.hasDeletePermission}

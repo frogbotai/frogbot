@@ -74,6 +74,10 @@ vi.mock('@payloadcms/ui/elements/QueryPresets/QueryPresetBar', () => ({}));
 vi.mock('@payloadcms/ui/elements/SearchBar', () => ({}));
 vi.mock('@payloadcms/ui/elements/WhereBuilder', () => ({}));
 vi.mock('@payloadcms/ui/icons/Dots', () => ({}));
+vi.mock('@payloadcms/ui/rsc', () => ({
+  getColumns: vi.fn(() => []),
+  renderTable: vi.fn(() => ({ columnState: [], Table: null })),
+}));
 vi.mock('@payloadcms/ui/utilities/reduceFieldsToOptions', () => ({}));
 vi.mock('next/navigation', () => ({
   redirect: mocks.redirect,

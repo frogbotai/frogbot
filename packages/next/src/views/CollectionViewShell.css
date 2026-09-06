@@ -1,9 +1,35 @@
-.collection-view-shell__content {
-  margin-inline: auto;
-  max-width: 1920px;
-  padding-inline: var(--gutter-h);
-}
+@layer payload-default {
+  .collection-view-shell {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--app-header-height));
+  }
 
-.collection-view-shell__view {
-  min-width: 0;
+  .collection-view-shell__content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    margin-inline: auto;
+    max-width: 1920px;
+    min-height: 0;
+    padding-bottom: var(--spacing-view-bottom);
+    padding-inline: var(--gutter-h);
+    width: 100%;
+  }
+
+  .collection-view-shell__content > *:not(:last-child) {
+    margin-bottom: var(--base);
+  }
+
+  .collection-view-shell .list-header__after-header-content {
+    padding-top: calc(var(--base) * 0.75);
+  }
+
+  .collection-view-shell__view {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+  }
 }

@@ -1,21 +1,64 @@
+.collection-view-shell__view > .fb-theme,
 .collection-board {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   min-width: 0;
 }
 
-.collection-board__field {
-  color: var(--theme-base-800);
-  margin-bottom: 8px;
+.collection-board .frog-board {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-bottom: 0;
+}
+
+.collection-board .frog-board__column {
+  max-height: none;
+  min-height: 0;
+}
+
+.collection-board .frog-board__overlay .frog-board__card {
+  border-color: var(--theme-success-500);
+  box-shadow:
+    0 0 0 1px var(--theme-success-500),
+    0 8px 24px color-mix(in srgb, var(--theme-base-1000) 25%, transparent);
+}
+
+.collection-board__title {
+  color: var(--theme-base-1000);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
   overflow-wrap: anywhere;
 }
 
-.collection-board__field:last-child {
-  margin-bottom: 0;
+.collection-board__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.collection-board__field-label {
+  color: var(--theme-base-500);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.collection-board__field-value {
+  color: var(--theme-base-850);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .collection-board__cover {
   border-radius: 4px;
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 4px;
   max-height: 160px;
   object-fit: cover;
   width: 100%;

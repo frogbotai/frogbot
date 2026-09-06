@@ -2,6 +2,7 @@
 
 import { Board, BoardCard } from '@frogbotai/ui';
 import { ThemeProvider } from '@frogbotai/ui/theme';
+import { getTranslation } from '@payloadcms/translations';
 import {
   DefaultCell,
   RelationshipProvider,
@@ -9,18 +10,21 @@ import {
   useConfig,
   useDocumentDrawer,
   useListQuery,
+  useTableColumns,
   useTheme,
+  useTranslation,
 } from '@payloadcms/ui';
-import type { ClientField } from 'payload';
-import { type ComponentType, useEffect, useState } from 'react';
+import { formatDocTitle } from '@payloadcms/ui/shared';
+import type { ClientCollectionConfig, Column, TypeWithID } from 'payload';
+import { type ComponentType, useEffect, useMemo, useState } from 'react';
 
 import {
   appendQuery,
   buildColumnWhere,
+  getBoardCardColumns,
   getBoardColumnKey,
   getBoardColumnValue,
   getPath,
-  getPathField,
   setPath,
 } from './data.js';
 import type { ResolvedBoardColumn } from './resolveColumns.js';
@@ -29,7 +33,6 @@ type Row = Record<string, unknown> & { id: number | string };
 export type BoardViewClientProps = {
   Card?: ComponentType<{ disabled: boolean; row: Row }>;
   ColumnHeader?: ComponentType<{ column: ResolvedBoardColumn; count: number }>;
-  cardFields: string[];
   collectionSlug: string;
   columns: ResolvedBoardColumn[];
   cover?: string;
@@ -40,18 +43,32 @@ export type BoardViewClientProps = {
 };
 
 function BoardDocumentCard({
-  cardFields,
+  cardColumns,
+  collectionConfig,
   collectionSlug,
   cover,
   disabled,
-  fields,
   row,
-}: Pick<BoardViewClientProps, 'cardFields' | 'collectionSlug' | 'cover'> & {
+}: Pick<BoardViewClientProps, 'collectionSlug' | 'cover'> & {
+  cardColumns: Column[];
+  collectionConfig: ClientCollectionConfig;
   disabled: boolean;
-  fields: ClientField[];
   row: Row;
 }) {
   const [DocumentDrawer, , drawer] = useDocumentDrawer({ collectionSlug, id: String(row.id) });
+  const { i18n } = useTranslation();
+  const {
+    config: {
+      admin: { dateFormat },
+    },
+  } = useConfig();
+  const title = formatDocTitle({
+    collectionConfig,
+    data: row as unknown as TypeWithID,
+    dateFormat,
+    i18n,
+  });
+
   return (
     <>
       <BoardCard disabled={disabled} id={String(row.id)} onClick={drawer.openDrawer}>
@@ -62,10 +79,9 @@ function BoardDocumentCard({
             src={String((getPath(row, cover) as { url?: unknown } | undefined)?.url ?? '')}
           />
         ) : null}
-        {cardFields.map((path) => {
-          const field = getPathField(fields as never, path) as ClientField | undefined;
-          if (!field) return null;
-          const value = getPath(row, path);
+        <div className="collection-board__title">{title}</div>
+        {cardColumns.map(({ accessor, field }) => {
+          const value = getPath(row, accessor);
           const cellData =
             field.type === 'relationship' || field.type === 'upload'
               ? Array.isArray(value)
@@ -73,15 +89,24 @@ function BoardDocumentCard({
                 : getBoardColumnValue(value)
               : value;
           return (
-            <div className="collection-board__field" key={path}>
-              <DefaultCell
-                cellData={cellData}
-                collectionSlug={collectionSlug}
-                field={field}
-                link={false}
-                rowData={row}
-                viewType="board"
-              />
+            <div className="collection-board__field" key={accessor}>
+              <span className="collection-board__field-label">
+                {getTranslation(('label' in field ? field.label : undefined) || accessor, i18n)}
+              </span>
+              <div className="collection-board__field-value">
+                {accessor === 'id' ? (
+                  String(cellData ?? '')
+                ) : (
+                  <DefaultCell
+                    cellData={cellData}
+                    collectionSlug={collectionSlug}
+                    field={field}
+                    link={false}
+                    rowData={row}
+                    viewType="board"
+                  />
+                )}
+              </div>
             </div>
           );
         })}
@@ -97,7 +122,15 @@ export function BoardViewClient(props: BoardViewClientProps) {
   const { query } = useListQuery();
   const { config, getEntityConfig } = useConfig();
   const { theme } = useTheme();
-  const fields = getEntityConfig({ collectionSlug: props.collectionSlug }).fields;
+  const { columns: columnState } = useTableColumns();
+  const collectionConfig = getEntityConfig({
+    collectionSlug: props.collectionSlug,
+  }) as ClientCollectionConfig;
+  const useAsTitle = collectionConfig.admin?.useAsTitle;
+  const cardColumns = useMemo(
+    () => getBoardCardColumns(columnState, useAsTitle),
+    [columnState, useAsTitle],
+  );
   const [rows, setRows] = useState<Row[]>([]);
   const [pages, setPages] = useState<Record<string, number>>({});
   const [hasMore, setHasMore] = useState<Record<string, boolean>>({});
@@ -196,11 +229,11 @@ export function BoardViewClient(props: BoardViewClientProps) {
                 <Card disabled={!props.canUpdate} row={row} />
               ) : (
                 <BoardDocumentCard
-                  cardFields={props.cardFields}
+                  cardColumns={cardColumns}
+                  collectionConfig={collectionConfig}
                   collectionSlug={props.collectionSlug}
                   cover={props.cover}
                   disabled={!props.canUpdate}
-                  fields={fields}
                   row={row}
                 />
               )

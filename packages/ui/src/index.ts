@@ -4,6 +4,7 @@ export { BoardColumn } from './board/BoardColumn.js';
 export {
   type BoardColumn as BoardColumnDefinition,
   type BoardMove,
+  type BoardPlacement,
   useBoard,
   type UseBoardProps,
 } from './board/useBoard.js';
