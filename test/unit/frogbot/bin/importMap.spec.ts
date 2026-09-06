@@ -51,4 +51,42 @@ describe('collection import map', () => {
     });
     expect(addToImportMap).toHaveBeenCalledWith('./Card#Card');
   });
+
+  it('collects collection calendar slots and Event override', () => {
+    const addToImportMap = vi.fn();
+    iterateCollections({
+      addToImportMap,
+      baseDir: '/tmp',
+      collections: [
+        {
+          admin: {},
+          custom: {
+            frogbot: {
+              collectionViews: [
+                {
+                  components: {
+                    beforeCalendar: ['./Before#Before'],
+                    afterCalendar: ['./After#After'],
+                    Event: './Event#Event',
+                  },
+                  slug: 'calendar',
+                  start: 'startsAt',
+                  type: 'calendar',
+                },
+              ],
+            },
+          },
+          fields: [],
+          slug: 'events',
+        },
+      ] as never,
+      config: {} as never,
+      importMap: {},
+      imports: {},
+    });
+
+    expect(addToImportMap).toHaveBeenCalledWith(['./Before#Before']);
+    expect(addToImportMap).toHaveBeenCalledWith(['./After#After']);
+    expect(addToImportMap).toHaveBeenCalledWith('./Event#Event');
+  });
 });

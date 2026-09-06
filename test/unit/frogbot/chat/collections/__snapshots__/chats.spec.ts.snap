@@ -9,15 +9,20 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
     "update": [Function],
   },
   "admin": {
-    "defaultColumns": [
-      "title",
-      "user",
-      "agent",
-      "lastMessageAt",
-    ],
     "group": "Chat",
     "icon": "bubble-chat",
     "useAsTitle": "title",
+    "views": [
+      {
+        "defaultFields": [
+          "title",
+          "user",
+          "agent",
+          "lastMessageAt",
+        ],
+        "type": "list",
+      },
+    ],
   },
   "fields": [
     {

@@ -8,6 +8,35 @@ export {
   useBoard,
   type UseBoardProps,
 } from './board/useBoard.js';
+export { Calendar, type CalendarProps } from './calendar/Calendar.js';
+export { CalendarHeader } from './calendar/CalendarHeader.js';
+export {
+  type CalendarCellEvent,
+  type CalendarEvent,
+  type CalendarLane,
+  type CalendarMode,
+  type CalendarRange,
+  expandToCells,
+  getVisibleRange,
+  layoutLanes,
+  snapTo,
+} from './calendar/core/index.js';
+export { EventChip } from './calendar/EventChip.js';
+export { MonthGrid, type MonthGridProps } from './calendar/MonthGrid.js';
+export { TimeGrid, type TimeGridProps } from './calendar/TimeGrid.js';
+export {
+  type CalendarChange,
+  type CalendarCreate,
+  type CalendarDropData,
+  type CalendarPlacement,
+  type CalendarResizeEdge,
+  createCalendarRange,
+  isCalendarNoopDrop,
+  moveCalendarEvent,
+  resizeCalendarEvent,
+  useCalendar,
+  type UseCalendarProps,
+} from './calendar/useCalendar.js';
 export {
   Accordion,
   AccordionContent,

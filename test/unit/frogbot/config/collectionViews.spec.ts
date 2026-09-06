@@ -181,6 +181,69 @@ describe('collection views', () => {
     });
   });
 
+  it('compiles calendar routes and safe metadata without board ordering', () => {
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'events',
+        fields: [
+          { name: 'startsAt', type: 'date' },
+          { name: 'endsAt', type: 'date' },
+          { name: 'status', type: 'select', options: [] },
+        ],
+        admin: {
+          views: [
+            { type: 'list' },
+            {
+              type: 'calendar',
+              slug: 'Schedule',
+              start: 'startsAt',
+              end: 'endsAt',
+              color: 'status',
+              filter: { startsAt: { exists: true } },
+              components: { Event: './Event#Event' },
+            },
+          ],
+        },
+      },
+    });
+
+    expect(admin?.components?.views?.schedule).toEqual({
+      Component: '@frogbotai/next/views#CalendarView',
+      exact: true,
+      path: '/schedule',
+    });
+    expect((admin?.custom?.frogbot as any).views[1]).toEqual({
+      type: 'calendar',
+      slug: 'schedule',
+      label: 'Calendar',
+      path: '/schedule',
+      start: 'startsAt',
+      end: 'endsAt',
+      color: 'status',
+    });
+    expect((admin?.custom?.frogbot as any).views[1]).not.toHaveProperty('orderField');
+  });
+
+  it('validates calendar date and color fields', () => {
+    const compile = (view: Record<string, unknown>) =>
+      compileCollectionViews({
+        collection: {
+          slug: 'events',
+          fields: [
+            { name: 'schedule', type: 'group', fields: [{ name: 'start', type: 'date' }] },
+            { name: 'title', type: 'text' },
+            { name: 'category', type: 'radio', options: [] },
+          ],
+          admin: { views: [{ type: 'calendar', start: 'schedule.start', ...view } as never] },
+        },
+      });
+
+    expect(() => compile({ color: 'category' })).not.toThrow();
+    expect(() => compile({ start: 'title' })).toThrow('non-date field "title"');
+    expect(() => compile({ end: 'missing' })).toThrow('non-date field "missing"');
+    expect(() => compile({ color: 'title' })).toThrow('unsupported color field "title"');
+  });
+
   it('preserves list actions on the default list route', () => {
     const actions = ['./Create#Button'];
     const admin = compileCollectionViews({

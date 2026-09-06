@@ -203,7 +203,7 @@ The following options are available:
 | `hidden`                     | Set to true or a function, called with the current user, returning true to exclude this Collection from navigation and admin routing.                                                                                        |
 | `useAsTitle`                 | Specify a top-level field to use for a document title throughout the Admin Panel. If no field is defined, the ID of the document is used as the title.                                                                       |
 | `description`                | Text to display below the Collection label in the List View to give editors more information. Alternatively, you can use the `admin.components.Description` to render a React component. [More details](#custom-components). |
-| `views`                      | Ordered list of collection views. Ticket 108 supports `list`, `board`, and `custom` views. [More details](/configuration/collection-board).                                                                                  |
+| `views`                      | Ordered list of collection views, including list, board, calendar, and custom layouts. [More details](#collection-views).                                                                                                  |
 | `disableCopyToLocale`        | Disables the "Copy to Locale" button while editing documents within this Collection. Only applicable when localization is enabled.                                                                                           |
 | `enableRichTextLink`         | The [Rich Text](/fields/rich-text) field features a `Link` element which allows for users to automatically reference related documents within their rich text. Set to `true` by default.                                   |
 | `enableRichTextRelationship` | The [Rich Text](/fields/rich-text) field features a `Relationship` element which allows for users to automatically reference related documents within their rich text. Set to `true` by default.                           |
@@ -224,7 +224,7 @@ The following options are available:
 
 ### Collection Views
 
-`admin.views` accepts `CollectionView[]`. `CollectionView` is the exported union `ListView | BoardView | CustomView`. Ticket 108 supports only `list`, `board`, and `custom`; grid and calendar views are not available configuration options.
+`admin.views` accepts `CollectionView[]`. `CollectionView` is the exported union `ListView | BoardView | CalendarView | CustomView`.
 
 The array order controls the switcher and first-view fallback. A collection can have at most one list view, and it must be first. Omit `views` to use one default list view without a switcher.
 
@@ -280,7 +280,7 @@ export const Projects: CollectionConfig = {
 
 #### ViewComponents
 
-These shell slots are shared by list, board, and custom views. Each value uses a `FrogbotComponent` import path; array slots render in declaration order.
+These shell slots are shared by list, board, calendar, and custom views. Each value uses a `FrogbotComponent` import path; array slots render in declaration order.
 
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
@@ -322,6 +322,28 @@ These shell slots are shared by list, board, and custom views. Each value uses a
 | `Card` | `FrogbotComponent` | No; built-in card | Replaces each board card and receives the document as its `row` prop. |
 
 See [Collection board](/configuration/collection-board) for grouping, loading, and drag behavior.
+
+#### CalendarView
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `type` | `'calendar'` | Yes | Selects the date-based calendar view. |
+| `start` | `string` | Yes | Dot path to the date field used as each event's start. |
+| `end` | `string` | No | Dot path to the date field used as each event's end. Without it, events use the start as their end. |
+| `color` | `string` | No | Dot path to a select or radio field whose value colors each event. |
+| `modes` | `CalendarMode[]` | No; `['month', 'week', 'day']` | Available modes in display order. The first mode is the default. |
+| `snap` | `number` | No | Minute interval used when creating, moving, or resizing events. |
+| `components` | `ViewComponents & CalendarComponents` | No | Adds shared shell slots and calendar-specific components. |
+
+**Calendar components**
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `beforeCalendar` | `FrogbotComponent[]` | No; `[]` | Renders before the calendar. |
+| `afterCalendar` | `FrogbotComponent[]` | No; `[]` | Renders after the calendar. |
+| `Event` | `FrogbotComponent` | No; built-in event | Replaces each event body and receives the document as its `row` prop. |
+
+See [Collection calendar](/configuration/collection-calendar) for modes, date fields, loading, and editing behavior.
 
 #### CustomView
 

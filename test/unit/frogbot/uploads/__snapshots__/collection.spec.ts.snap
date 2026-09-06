@@ -9,15 +9,20 @@ exports[`defaultFilesCollection > produces the base config shape 1`] = `
     "update": [Function],
   },
   "admin": {
-    "defaultColumns": [
-      "filename",
-      "mimeType",
-      "filesize",
-      "updatedAt",
-    ],
     "group": "Files",
     "icon": "file",
     "useAsTitle": "filename",
+    "views": [
+      {
+        "defaultFields": [
+          "filename",
+          "mimeType",
+          "filesize",
+          "updatedAt",
+        ],
+        "type": "list",
+      },
+    ],
   },
   "fields": [],
   "folders": true,

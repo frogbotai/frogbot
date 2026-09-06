@@ -27,6 +27,7 @@ import frogbotFavicon from '../assets/frogbot-favicon.png';
 import frogbotOGImage from '../assets/frogbot-og.jpg';
 import { SettingsNav } from '../elements/SettingsNav/index.js';
 export { BoardView } from '../views/Board/index.js';
+export { CalendarView } from '../views/Calendar/index.js';
 export { CollectionViewShell } from '../views/CollectionViewShell.js';
 export { CollectionViewSwitcher } from '../views/CollectionViewSwitcher.js';
 export { CustomCollectionView } from '../views/CustomCollectionView.js';

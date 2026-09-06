@@ -1,5 +1,6 @@
 @import "./utilities.css";
 @import "./board/board.css";
+@import "./calendar/calendar.css";
 @import "./components/accordion.css";
 @import "./components/alert.css";
 @import "./components/avatar.css";

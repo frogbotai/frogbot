@@ -9,14 +9,16 @@ import type { ComponentType } from 'react';
 
 import { getActiveViewSlug, resolveCollectionViews } from '../collectionViews.js';
 import { CollectionViewShell } from '../CollectionViewShell.js';
+import {
+  getViewPreferenceKey,
+  resolveViewColumnPreferences,
+  type ViewColumnsSource,
+} from '../preferences.js';
 import { BoardPreference } from './BoardPreference.client.js';
 import { BoardViewClient, type BoardViewClientProps } from './BoardView.client.js';
 import {
-  type BoardColumnsSource,
   type BoardPreferenceValue,
   getBoardGroupBy,
-  getBoardPreferenceKey,
-  resolveBoardColumnPreferences,
   resolveBoardGroupBy,
   resolveBoardSort,
 } from './data.js';
@@ -48,12 +50,12 @@ export async function BoardView(props: AdminViewServerProps) {
       : Object.prototype.hasOwnProperty.call(query, 'sort')
         ? ''
         : undefined;
-  const queryColumns: BoardColumnsSource =
+  const queryColumns: ViewColumnsSource =
     typeof query.columns === 'string' ||
     (Array.isArray(query.columns) && query.columns.every((value) => typeof value === 'string'))
       ? (query.columns as string | string[])
       : undefined;
-  const preferenceKey = getBoardPreferenceKey(collectionSlug, board.slug);
+  const preferenceKey = getViewPreferenceKey(collectionSlug, board.slug);
   const preference = initPageResult.req.user
     ? await payload.find({
         collection: 'payload-preferences',
@@ -92,7 +94,7 @@ export async function BoardView(props: AdminViewServerProps) {
   const clientCollectionConfig = clientConfig.collections.find(
     ({ slug }) => slug === collectionSlug,
   );
-  const columnPreferences = resolveBoardColumnPreferences({
+  const columnPreferences = resolveViewColumnPreferences({
     defaultFields: board.defaultFields,
     preferenceColumns: Array.isArray(preferenceValue?.columns)
       ? preferenceValue.columns

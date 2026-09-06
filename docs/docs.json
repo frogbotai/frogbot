@@ -52,6 +52,7 @@
                   "configuration/admin-navigation",
                   "configuration/collections",
                   "configuration/collection-board",
+                  "configuration/collection-calendar",
                   "configuration/environment-vars",
                   "configuration/ai",
                   "configuration/agents",

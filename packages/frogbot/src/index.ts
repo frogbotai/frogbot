@@ -61,6 +61,8 @@ export type { AdminViews, FrogbotComponent, ProviderComponent } from './admin/ty
 export type { SettingsEntry } from './admin/types.js';
 export type {
   BoardView,
+  CalendarMode,
+  CalendarView,
   CollectionView,
   CustomView,
   ListView,

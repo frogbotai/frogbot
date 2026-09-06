@@ -50,6 +50,22 @@ export type BoardView = ViewConfig & {
   type: 'board';
 };
 
+export type CalendarMode = 'day' | 'month' | 'week';
+
+export type CalendarView = ViewConfig & {
+  color?: string;
+  components?: ViewComponents & {
+    afterCalendar?: FrogbotComponent[];
+    beforeCalendar?: FrogbotComponent[];
+    Event?: FrogbotComponent;
+  };
+  end?: string;
+  modes?: CalendarMode[];
+  snap?: number;
+  start: string;
+  type: 'calendar';
+};
+
 export type CustomView = ViewConfig & {
   component: FrogbotComponent;
   components?: ViewComponents;
@@ -57,7 +73,7 @@ export type CustomView = ViewConfig & {
   type: 'custom';
 };
 
-export type CollectionView = BoardView | CustomView | ListView;
+export type CollectionView = BoardView | CalendarView | CustomView | ListView;
 
 export type CollectionViewMetadata = Omit<
   CollectionView,

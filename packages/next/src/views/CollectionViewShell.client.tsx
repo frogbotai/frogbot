@@ -76,6 +76,7 @@ export function CollectionViewShellClient({
           collectionConfig={collectionConfig}
           collectionSlug={collectionConfig.slug}
           enableColumns={Boolean(columnState)}
+          enableGroupBy={false}
           listMenuItems={listMenuItems}
           enableSort={enableSort}
           manualSortField={manualSortField}

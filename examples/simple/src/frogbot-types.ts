@@ -68,14 +68,20 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    tasks: Task;
     chats: Chat;
     messages: Message;
+    'usage-logs': UsageLog;
+    files: File;
   };
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect;
+    tasks: TasksSelect;
     chats: ChatsSelect;
     messages: MessagesSelect;
+    'usage-logs': UsageLogsSelect;
+    files: FilesSelect;
   };
   db: {
     defaultIDType: number;
@@ -89,7 +95,13 @@ export interface Config {
   };
   user: User;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      'frogbot-reset-ai-budgets': TaskFrogbotResetAiBudgets;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -118,6 +130,50 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name?: string | null;
+  modelAccess?: ('all' | 'selected') | null;
+  models?:
+    | (
+        | 'openai/chatgpt-image-latest'
+        | 'openai/gpt-4.1'
+        | 'openai/gpt-4.1-mini'
+        | 'openai/gpt-4o'
+        | 'openai/gpt-4o-2024-08-06'
+        | 'openai/gpt-4o-2024-11-20'
+        | 'openai/gpt-4o-mini'
+        | 'openai/gpt-5'
+        | 'openai/gpt-5-mini'
+        | 'openai/gpt-5-nano'
+        | 'openai/gpt-5-pro'
+        | 'openai/gpt-5.1'
+        | 'openai/gpt-5.2'
+        | 'openai/gpt-5.2-chat-latest'
+        | 'openai/gpt-5.2-pro'
+        | 'openai/gpt-5.3-chat-latest'
+        | 'openai/gpt-5.3-codex'
+        | 'openai/gpt-5.3-codex-spark'
+        | 'openai/gpt-5.4'
+        | 'openai/gpt-5.4-mini'
+        | 'openai/gpt-5.4-nano'
+        | 'openai/gpt-5.4-pro'
+        | 'openai/gpt-5.5'
+        | 'openai/gpt-5.5-pro'
+        | 'openai/gpt-5.6'
+        | 'openai/gpt-5.6-luna'
+        | 'openai/gpt-5.6-sol'
+        | 'openai/gpt-5.6-terra'
+        | 'openai/gpt-image-1-mini'
+        | 'openai/gpt-image-1.5'
+        | 'openai/gpt-image-2'
+        | 'openai/gpt-realtime-2.1'
+        | 'openai/o3'
+        | 'openai/o3-pro'
+        | 'openai/text-embedding-3-large'
+        | 'openai/text-embedding-3-small'
+        | 'openai/text-embedding-ada-002'
+      )[]
+    | null;
+  monthlyBudget?: number | null;
+  spendThisPeriodUSD?: number | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -139,6 +195,21 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tasks".
+ */
+export interface Task {
+  id: number;
+  _order?: string | null;
+  title: string;
+  stage?: ('backlog' | 'in-progress' | 'done') | null;
+  owner?: (number | null) | User;
+  dueDate?: string | null;
+  _order_board?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "chats".
  */
 export interface Chat {
@@ -147,6 +218,7 @@ export interface Chat {
   user?: (number | null) | User;
   agent?: string | null;
   lastMessageAt?: string | null;
+  todos?: import('frogbot/tools').TodoItem[];
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
@@ -184,10 +256,67 @@ export interface Message {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs".
+ */
+export interface UsageLog {
+  id: number;
+  user?: (number | null) | User;
+  chat?: (number | null) | Chat;
+  requestId: string;
+  runId?: string | null;
+  model: string;
+  operation:
+    | 'chat.completions'
+    | 'messages'
+    | 'responses'
+    | 'embeddings'
+    | 'images'
+    | 'speech'
+    | 'transcriptions'
+    | 'videos'
+    | 'rerank';
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens?: number | null;
+  cacheWriteTokens?: number | null;
+  reasoningTokens?: number | null;
+  totalTokens: number;
+  costUSD: number;
+  finishReason?: string | null;
+  requestedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "files".
+ */
+export interface File {
+  id: number;
+  folder?: (number | null) | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect {
   name?: boolean;
+  modelAccess?: boolean;
+  models?: boolean;
+  monthlyBudget?: boolean;
+  spendThisPeriodUSD?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   email?: boolean;
@@ -207,6 +336,20 @@ export interface UsersSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tasks_select".
+ */
+export interface TasksSelect {
+  _order?: boolean;
+  title?: boolean;
+  stage?: boolean;
+  owner?: boolean;
+  dueDate?: boolean;
+  _order_board?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "chats_select".
  */
 export interface ChatsSelect {
@@ -214,6 +357,7 @@ export interface ChatsSelect {
   user?: boolean;
   agent?: boolean;
   lastMessageAt?: boolean;
+  todos?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   deletedAt?: boolean;
@@ -245,6 +389,48 @@ export interface MessagesSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs_select".
+ */
+export interface UsageLogsSelect {
+  user?: boolean;
+  chat?: boolean;
+  requestId?: boolean;
+  runId?: boolean;
+  model?: boolean;
+  operation?: boolean;
+  inputTokens?: boolean;
+  outputTokens?: boolean;
+  cachedInputTokens?: boolean;
+  cacheWriteTokens?: boolean;
+  reasoningTokens?: boolean;
+  totalTokens?: boolean;
+  costUSD?: boolean;
+  finishReason?: boolean;
+  requestedAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "files_select".
+ */
+export interface FilesSelect {
+  folder?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  deletedAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  focalX?: boolean;
+  focalY?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -252,6 +438,14 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-reset-ai-budgets".
+ */
+export interface TaskFrogbotResetAiBudgets {
+  input?: unknown;
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -264,26 +458,46 @@ export interface Auth {
 declare module 'frogbot' {
   export interface GeneratedTypes extends Config {
     agents: {
-      assistant: unknown;
+      general: unknown;
     };
     models:
-      | 'openai/dall-e-3'
-      | 'openai/gpt-4-turbo'
+      | 'openai/chatgpt-image-latest'
       | 'openai/gpt-4.1'
       | 'openai/gpt-4.1-mini'
-      | 'openai/gpt-4.1-nano'
       | 'openai/gpt-4o'
+      | 'openai/gpt-4o-2024-08-06'
+      | 'openai/gpt-4o-2024-11-20'
       | 'openai/gpt-4o-mini'
-      | 'openai/gpt-image-1'
-      | 'openai/o1'
-      | 'openai/o1-mini'
+      | 'openai/gpt-5'
+      | 'openai/gpt-5-mini'
+      | 'openai/gpt-5-nano'
+      | 'openai/gpt-5-pro'
+      | 'openai/gpt-5.1'
+      | 'openai/gpt-5.2'
+      | 'openai/gpt-5.2-chat-latest'
+      | 'openai/gpt-5.2-pro'
+      | 'openai/gpt-5.3-chat-latest'
+      | 'openai/gpt-5.3-codex'
+      | 'openai/gpt-5.3-codex-spark'
+      | 'openai/gpt-5.4'
+      | 'openai/gpt-5.4-mini'
+      | 'openai/gpt-5.4-nano'
+      | 'openai/gpt-5.4-pro'
+      | 'openai/gpt-5.5'
+      | 'openai/gpt-5.5-pro'
+      | 'openai/gpt-5.6'
+      | 'openai/gpt-5.6-luna'
+      | 'openai/gpt-5.6-sol'
+      | 'openai/gpt-5.6-terra'
+      | 'openai/gpt-image-1-mini'
+      | 'openai/gpt-image-1.5'
+      | 'openai/gpt-image-2'
+      | 'openai/gpt-realtime-2.1'
       | 'openai/o3'
-      | 'openai/o3-mini'
-      | 'openai/o4-mini'
+      | 'openai/o3-pro'
       | 'openai/text-embedding-3-large'
       | 'openai/text-embedding-3-small'
-      | 'openai/tts-1'
-      | 'openai/tts-1-hd'
-      | 'openai/whisper-1';
+      | 'openai/text-embedding-ada-002';
+    roles: never;
   }
 }

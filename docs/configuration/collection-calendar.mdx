@@ -1,0 +1,74 @@
+---
+title: Collection calendar
+description: Configure a date-based calendar for a collection.
+---
+
+Add a calendar entry to `admin.views` to show documents in month, week, or day layouts. Include a list entry when users should be able to switch between table and calendar layouts.
+
+See the complete [Collection views reference](/configuration/collections#collection-views).
+
+## Calendar properties
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `type` | `'calendar'` | Yes | Selects the calendar layout. |
+| `slug` | `string` | No; defaults to `'calendar'` | Unique normalized route and preference key. The first view uses the collection's root route. |
+| `label` | `string` | No; defaults to `'Calendar'` | Label shown in the view switcher. |
+| `start` | `string` | Yes | Dot path to the date field used as each event's start. |
+| `end` | `string` | No | Dot path to the date field used as each event's end. Without it, events use the start as their end. |
+| `color` | `string` | No | Dot path to a select or radio field whose value colors each event. |
+| `modes` | `CalendarMode[]` | No; `['month', 'week', 'day']` | Available modes in display order. The first mode is the default. |
+| `snap` | `number` | No | Minute interval used when creating, moving, or resizing events. |
+| `defaultFields` | `string[]` | No | Dot paths to fields rendered on each event, in display order. |
+| `filter` | `Where \| ({ req }) => Where \| Promise<Where>` | No | Invisible base filter applied to every calendar query. |
+| `defaultSort` | `Sort` (`string \| string[]`) | No | Initial query sort. Prefix a field with `-` for descending order. |
+| `searchableFields` | `string[]` | No | Adds fields to normal search behavior; `useAsTitle` remains included. |
+| `access` | `({ req }) => boolean \| Promise<boolean>` | No; collection access | Controls whether the current user can open the calendar without replacing collection operation access. |
+| `components` | `ViewComponents & CalendarComponents` | No | Configures shared view slots and calendar components. |
+
+## Calendar components
+
+| Property | Type | Required / default | Behavior |
+| --- | --- | --- | --- |
+| `actions` | `FrogbotComponent[]` | No; `[]` | Adds actions to the calendar action area. |
+| `menuItems` | `FrogbotComponent[]` | No; `[]` | Adds entries to the calendar menu. |
+| `beforeView` | `FrogbotComponent[]` | No; `[]` | Renders inside the collection shell before the calendar body. |
+| `afterView` | `FrogbotComponent[]` | No; `[]` | Renders inside the collection shell after the calendar body. |
+| `beforeCalendar` | `FrogbotComponent[]` | No; `[]` | Renders before the calendar. |
+| `afterCalendar` | `FrogbotComponent[]` | No; `[]` | Renders after the calendar. |
+| `Event` | `FrogbotComponent` | No; built-in event | Replaces each event body and receives the document as its `row` prop. |
+
+```ts
+export const Pipelines: CollectionConfig = {
+  slug: 'pipelines',
+  admin: {
+    views: [
+      {
+        type: 'list',
+        defaultFields: ['title', 'stage', 'owner', 'dueDate'],
+      },
+      {
+        type: 'calendar',
+        slug: 'schedule',
+        start: 'dueDate',
+        defaultFields: ['title', 'stage', 'owner'],
+        modes: ['month', 'week', 'day'],
+      },
+    ],
+  },
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'stage', type: 'select', options: ['Backlog', 'Review', 'Done'] },
+    { name: 'owner', type: 'relationship', relationTo: 'users' },
+    { name: 'dueDate', type: 'date' },
+  ],
+}
+```
+
+The `start` and `end` paths must resolve to date fields. Nested date fields use dot paths such as `schedule.startsAt`.
+
+Calendar queries are limited to the visible range and include the collection view's filter and current search. A range displays at most 1000 events.
+
+Dragging or resizing an event performs a normal collection update, including access checks, validation, and hooks. Creating a range opens the document drawer with the configured date fields prefilled. Users without update access can view events but cannot move or resize them.
+
+The selected mode, date, and event fields are saved per user and view. URL values take precedence over saved preferences, which take precedence over the configured defaults.

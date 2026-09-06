@@ -98,6 +98,30 @@ describe('frogbot sanitize', () => {
     );
     expect(users?.hooks?.beforeChange).toBeUndefined();
   });
+  it('leaves calendar-only collections non-orderable', async () => {
+    const result = sanitize(
+      makeConfig({
+        collections: [
+          {
+            slug: 'events',
+            fields: [{ name: 'startsAt', type: 'date' }],
+            admin: { views: [{ type: 'calendar', start: 'startsAt' }] },
+          },
+        ],
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const events = payloadConfig.collections?.find(({ slug }) => slug === 'events');
+
+    expect(events?.orderable).toBeUndefined();
+    expect(events?.fields.some((field) => 'name' in field && field.name.startsWith('_order'))).toBe(
+      false,
+    );
+    expect(events?.admin.components?.views?.list).toEqual({
+      Component: '@frogbotai/next/views#CalendarView',
+    });
+    expect((events?.admin.custom?.frogbot as any).views[0]).not.toHaveProperty('orderField');
+  });
   it('compiles collection views into runtime routes and metadata', () => {
     const admin = compileCollectionViews({
       collection: {

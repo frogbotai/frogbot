@@ -18,16 +18,9 @@ import { formatDocTitle } from '@payloadcms/ui/shared';
 import type { ClientCollectionConfig, Column, TypeWithID } from 'payload';
 import { type ComponentType, useEffect, useMemo, useState } from 'react';
 
-import {
-  appendQuery,
-  buildBoardReorderBody,
-  buildColumnWhere,
-  getBoardCardColumns,
-  getBoardColumnKey,
-  getBoardColumnValue,
-  getPath,
-  setPath,
-} from './data.js';
+import { appendQuery, getPath, setPath, toCellData } from '../cells.js';
+import { getViewCardColumns } from '../preferences.js';
+import { buildBoardReorderBody, buildColumnWhere, getBoardColumnKey } from './data.js';
 import type { ResolvedBoardColumn } from './resolveColumns.js';
 
 type Row = Record<string, unknown> & { id: number | string };
@@ -87,8 +80,8 @@ function BoardDocumentCard({
           const cellData =
             field.type === 'relationship' || field.type === 'upload'
               ? Array.isArray(value)
-                ? value.map(getBoardColumnValue)
-                : getBoardColumnValue(value)
+                ? value.map(toCellData)
+                : toCellData(value)
               : value;
           return (
             <div className="collection-board__field" key={accessor}>
@@ -131,7 +124,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
   }) as ClientCollectionConfig;
   const useAsTitle = collectionConfig.admin?.useAsTitle;
   const cardColumns = useMemo(
-    () => getBoardCardColumns(columnState, useAsTitle),
+    () => getViewCardColumns(columnState, useAsTitle),
     [columnState, useAsTitle],
   );
   const [rows, setRows] = useState<Row[]>([]);
@@ -157,7 +150,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
       replace
         ? [
             ...current.filter((row) => {
-              const value = getBoardColumnValue(getPath(row, props.groupBy));
+              const value = toCellData(getPath(row, props.groupBy));
               return (
                 (value === null || value === undefined ? '' : getBoardColumnKey(value)) !== key
               );
@@ -249,7 +242,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
             columns={props.columns}
             getId={(row) => String(row.id)}
             groupBy={(row) => {
-              const value = getBoardColumnValue(getPath(row, props.groupBy));
+              const value = toCellData(getPath(row, props.groupBy));
               return value === null || value === undefined ? null : getBoardColumnKey(value);
             }}
             hasMore={hasMore}

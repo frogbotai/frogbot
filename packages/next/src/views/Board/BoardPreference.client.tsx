@@ -4,7 +4,8 @@ import { usePreferences } from '@payloadcms/ui';
 import type { ColumnPreference } from 'payload';
 import { useEffect } from 'react';
 
-import { type BoardPreferenceValue, getBoardPreferenceUpdate } from './data.js';
+import { getViewPreferenceUpdate } from '../preferences.js';
+import type { BoardPreferenceValue } from './data.js';
 
 export function BoardPreference({
   collectionSlug,
@@ -24,7 +25,7 @@ export function BoardPreference({
 
   useEffect(() => {
     if (groupBy === undefined && sort === undefined && serializedColumns === undefined) return;
-    const [key, value] = getBoardPreferenceUpdate(collectionSlug, viewSlug, {
+    const [key, value] = getViewPreferenceUpdate(collectionSlug, viewSlug, {
       ...(serializedColumns === undefined
         ? {}
         : { columns: JSON.parse(serializedColumns) as ColumnPreference[] }),

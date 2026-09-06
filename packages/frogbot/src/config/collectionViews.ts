@@ -19,7 +19,7 @@ const GROUP_BY_FIELD_TYPES: Field['type'][] = [
   'upload',
 ];
 
-function resolveGroupByField(fields: unknown[], path: string): Field | undefined {
+function resolveField(fields: unknown[], path: string): Field | undefined {
   const [name, ...rest] = path.replace(/^-/, '').split('.');
   const field = fields.find(
     (candidate): candidate is Field =>
@@ -29,10 +29,15 @@ function resolveGroupByField(fields: unknown[], path: string): Field | undefined
       candidate.name === name,
   );
   if (!field) return undefined;
-  if (rest.length === 0) return GROUP_BY_FIELD_TYPES.includes(field.type) ? field : undefined;
+  if (rest.length === 0) return field;
   return 'fields' in field && Array.isArray(field.fields)
-    ? resolveGroupByField(field.fields, rest.join('.'))
+    ? resolveField(field.fields, rest.join('.'))
     : undefined;
+}
+
+function resolveGroupByField(fields: unknown[], path: string): Field | undefined {
+  const field = resolveField(fields, path);
+  return field && GROUP_BY_FIELD_TYPES.includes(field.type) ? field : undefined;
 }
 
 function normalizeSlug(value: string): string {
@@ -141,6 +146,25 @@ export function compileCollectionViews({
         `[frogbot] Collection "${collection.slug}" board view "${view.slug}" has an unsupported groupBy field "${view.groupBy}".`,
       );
     }
+    if (view.type === 'calendar') {
+      for (const path of [view.start, view.end].filter((value): value is string =>
+        Boolean(value),
+      )) {
+        if (resolveField(collection.fields, path)?.type !== 'date') {
+          throw new Error(
+            `[frogbot] Collection "${collection.slug}" calendar view "${view.slug}" has a non-date field "${path}".`,
+          );
+        }
+      }
+      if (view.color) {
+        const colorField = resolveField(collection.fields, view.color);
+        if (colorField?.type !== 'select' && colorField?.type !== 'radio') {
+          throw new Error(
+            `[frogbot] Collection "${collection.slug}" calendar view "${view.slug}" has an unsupported color field "${view.color}".`,
+          );
+        }
+      }
+    }
   }
   const listViews = views.filter((view) => view.type === 'list');
   if (listViews.length > 1 || (listViews.length === 1 && views[0]?.type !== 'list')) {
@@ -174,6 +198,11 @@ export function compileCollectionViews({
     if (view.type === 'board') {
       runtimeViews[key] = {
         Component: '@frogbotai/next/views#BoardView',
+        ...(isDefault ? {} : { exact: true, path }),
+      };
+    } else if (view.type === 'calendar') {
+      runtimeViews[key] = {
+        Component: '@frogbotai/next/views#CalendarView',
         ...(isDefault ? {} : { exact: true, path }),
       };
     } else if (view.type === 'custom') {

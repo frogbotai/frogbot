@@ -1,5 +1,12 @@
 import type { ColumnPreference, OrderableEndpointBody } from 'payload';
-import { transformColumnsToPreferences } from 'payload/shared';
+
+export { appendQuery, toCellData as getBoardColumnValue, getPath, setPath } from '../cells.js';
+export {
+  getViewCardColumns as getBoardCardColumns,
+  getViewPreferenceKey as getBoardPreferenceKey,
+  resolveViewColumnPreferences as resolveBoardColumnPreferences,
+} from '../preferences.js';
+import { getViewPreferenceKey } from '../preferences.js';
 
 export function getBoardGroupBy(groupBy?: string): string | undefined {
   return groupBy?.replace(/^-/, '') || undefined;
@@ -75,10 +82,6 @@ export function buildBoardReorderBody({
   };
 }
 
-export function getBoardPreferenceKey(collectionSlug: string, viewSlug: string): string {
-  return `collection-${collectionSlug}-view-${viewSlug}`;
-}
-
 export function resolveBoardGroupBy({
   configuredGroupBy,
   hasQueryGroupBy,
@@ -103,64 +106,16 @@ export type BoardPreferenceValue = {
 
 export type BoardColumnsSource = ColumnPreference[] | string | string[] | undefined;
 
-export function resolveBoardColumnPreferences({
-  defaultFields,
-  preferenceColumns,
-  queryColumns,
-  useAsTitle,
-}: {
-  defaultFields?: string[];
-  preferenceColumns?: BoardColumnsSource;
-  queryColumns?: BoardColumnsSource;
-  useAsTitle?: string;
-}): ColumnPreference[] {
-  const fromQuery = transformColumnsToPreferences(queryColumns);
-  if (fromQuery?.length) return fromQuery;
-  const fromPreference = transformColumnsToPreferences(preferenceColumns);
-  if (fromPreference?.length) return fromPreference;
-  const seed = defaultFields?.length ? defaultFields : [useAsTitle ?? 'id'];
-  return seed.map((accessor) => ({ accessor, active: true }));
-}
-
-export function getBoardCardColumns<T extends { accessor: string; active: boolean }>(
-  columns: T[] | undefined,
-  useAsTitle?: string,
-): T[] {
-  return (columns ?? []).filter(
-    (column) => column.active && Boolean(column.accessor) && column.accessor !== useAsTitle,
-  );
-}
-
 export function getBoardPreferenceUpdate(
   collectionSlug: string,
   viewSlug: string,
   value: string | BoardPreferenceValue,
 ): [string, BoardPreferenceValue, true] {
   return [
-    getBoardPreferenceKey(collectionSlug, viewSlug),
+    getViewPreferenceKey(collectionSlug, viewSlug),
     typeof value === 'string' ? { groupBy: value } : value,
     true,
   ];
-}
-
-export function getPath(value: Record<string, unknown>, path: string): unknown {
-  return path
-    .split('.')
-    .reduce<unknown>(
-      (current, key) =>
-        current && typeof current === 'object'
-          ? (current as Record<string, unknown>)[key]
-          : undefined,
-      value,
-    );
-}
-
-export function setPath(path: string, value: unknown): Record<string, unknown> {
-  const keys = path.split('.');
-  return keys.reduceRight<Record<string, unknown>>(
-    (result, key) => ({ [key]: result }),
-    value as never,
-  );
 }
 
 export function getBoardColumnKey(value: unknown): string {
@@ -180,22 +135,6 @@ export function getBoardColumnKey(value: unknown): string {
   return `${typeof value}:${String(value)}`;
 }
 
-export function getBoardColumnValue(value: unknown): unknown {
-  if (!value || typeof value !== 'object') return value;
-  const relationship = value as { id?: unknown; relationTo?: unknown; value?: unknown };
-  if (relationship.relationTo && relationship.value !== undefined) {
-    const relatedValue = relationship.value;
-    return {
-      relationTo: relationship.relationTo,
-      value:
-        relatedValue && typeof relatedValue === 'object'
-          ? (relatedValue as { id?: unknown }).id
-          : relatedValue,
-    };
-  }
-  return relationship.id ?? value;
-}
-
 export function buildColumnWhere(
   where: unknown,
   groupBy: string,
@@ -207,19 +146,4 @@ export function buildColumnWhere(
   return where && typeof where === 'object' && Object.keys(where).length > 0
     ? { and: [where, group] }
     : group;
-}
-
-export function appendQuery(params: URLSearchParams, key: string, value: unknown): void {
-  if (value === undefined || value === null || value === '') return;
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => appendQuery(params, `${key}[${index}]`, item));
-    return;
-  }
-  if (typeof value === 'object') {
-    Object.entries(value as Record<string, unknown>).forEach(([child, item]) =>
-      appendQuery(params, `${key}[${child}]`, item),
-    );
-    return;
-  }
-  params.set(key, String(value));
 }

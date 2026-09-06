@@ -1,0 +1,294 @@
+.frog-calendar {
+  background: var(--theme-base-0);
+  border: 1px solid var(--theme-base-150);
+  border-radius: 8px;
+  color: var(--theme-base-800);
+  overflow: hidden;
+}
+
+.frog-calendar__header {
+  align-items: center;
+  border-bottom: 1px solid var(--theme-base-150);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr auto 1fr;
+  min-height: 56px;
+  padding: 0 12px;
+}
+.frog-calendar__header > strong {
+  font-size: 15px;
+  text-align: center;
+}
+.frog-calendar__navigation,
+.frog-calendar__modes {
+  display: flex;
+  gap: 4px;
+}
+.frog-calendar__modes {
+  justify-content: flex-end;
+}
+.frog-calendar__header button {
+  background: var(--theme-base-50);
+  border: 1px solid var(--theme-base-200);
+  border-radius: 5px;
+  color: var(--theme-base-800);
+  cursor: pointer;
+  font: inherit;
+  min-height: 30px;
+  padding: 4px 9px;
+  text-transform: capitalize;
+}
+.frog-calendar__header button:hover,
+.frog-calendar__header button[aria-pressed="true"] {
+  background: var(--theme-base-150);
+  border-color: var(--theme-base-350);
+}
+
+.frog-calendar__time-grid {
+  min-width: 680px;
+}
+.frog-calendar__days-header,
+.frog-calendar__all-day {
+  display: grid;
+  grid-template-columns: 64px repeat(var(--frog-calendar-days, 7), minmax(0, 1fr));
+}
+.frog-calendar__days-header {
+  border-bottom: 1px solid var(--theme-base-150);
+  min-height: 48px;
+}
+.frog-calendar__days-header strong {
+  align-items: center;
+  border-left: 1px solid var(--theme-base-150);
+  display: flex;
+  font-size: 13px;
+  justify-content: center;
+}
+.frog-calendar__all-day {
+  border-bottom: 1px solid var(--theme-base-150);
+  min-height: 36px;
+}
+.frog-calendar__all-day-label {
+  align-items: center;
+  color: var(--theme-base-500);
+  display: flex;
+  font-size: 11px;
+  justify-content: center;
+  text-transform: uppercase;
+}
+.frog-calendar__all-day-cell {
+  border-left: 1px solid var(--theme-base-150);
+  min-width: 0;
+  padding: 3px;
+}
+.frog-calendar__all-day-cell .frog-calendar__event {
+  position: relative;
+}
+.frog-calendar__time-scroll {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  max-height: 70vh;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.frog-calendar__days-header,
+.frog-calendar__all-day {
+  scrollbar-gutter: stable;
+  overflow-y: hidden;
+}
+.frog-calendar__times {
+  position: relative;
+}
+.frog-calendar__times span {
+  color: var(--theme-base-500);
+  font-size: 11px;
+  position: absolute;
+  right: 8px;
+  transform: translateY(-50%);
+}
+.frog-calendar__day-columns {
+  display: grid;
+}
+.frog-calendar__day-column {
+  border-left: 1px solid var(--theme-base-150);
+  height: 1344px;
+  position: relative;
+}
+.frog-calendar__slot {
+  border-bottom: 1px solid var(--theme-base-100);
+  box-sizing: border-box;
+  height: 56px;
+}
+.frog-calendar__event {
+  background: var(--theme-base-100);
+  border: 1px solid var(--theme-base-250);
+  border-left: 3px solid var(--frog-calendar-event-color, var(--theme-base-600));
+  border-radius: 5px;
+  box-sizing: border-box;
+  cursor: grab;
+  font-size: 13px;
+  min-height: 18px;
+  overflow: hidden;
+  padding: 4px 6px;
+  position: absolute;
+  user-select: none;
+  z-index: 2;
+}
+.collection-calendar__notice {
+  background: var(--theme-base-100);
+  border: 1px solid var(--theme-base-200);
+  border-radius: 5px;
+  color: var(--theme-base-700);
+  margin-bottom: 12px;
+  padding: 8px 12px;
+}
+.collection-calendar__title {
+  font-size: 13px;
+  font-weight: 600;
+}
+.collection-calendar__field {
+  display: flex;
+  gap: 4px;
+  font-size: 11px;
+}
+.collection-calendar__field-label {
+  color: var(--theme-base-500);
+}
+.frog-calendar__event--dragging {
+  opacity: 0;
+  pointer-events: none;
+}
+.frog-calendar__resize {
+  background: transparent;
+  border: 0;
+  cursor: ns-resize;
+  height: 6px;
+  left: 0;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  width: 100%;
+}
+.frog-calendar__resize--start {
+  top: 0;
+}
+.frog-calendar__resize--end {
+  bottom: 0;
+}
+.frog-calendar__preview {
+  background: color-mix(in srgb, var(--theme-base-400) 25%, transparent);
+  border: 1px dashed var(--theme-base-500);
+  border-radius: 5px;
+  left: 2px;
+  pointer-events: none;
+  position: absolute;
+  right: 2px;
+  z-index: 1;
+}
+.frog-calendar__overlay .frog-calendar__event {
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--theme-base-1000) 25%, transparent);
+  cursor: grabbing;
+  min-width: 160px;
+  opacity: 1;
+  position: relative;
+}
+.frog-calendar__now {
+  border-top: 2px solid var(--theme-base-800);
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  z-index: 3;
+}
+.frog-calendar__now span {
+  background: var(--theme-base-800);
+  border-radius: 50%;
+  display: block;
+  height: 8px;
+  transform: translate(-4px, -5px);
+  width: 8px;
+}
+.frog-calendar__month-weekdays,
+.frog-calendar__month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  min-width: 700px;
+}
+.frog-calendar__month-weekdays {
+  border-bottom: 1px solid var(--theme-base-150);
+}
+.frog-calendar__month-weekdays strong {
+  color: var(--theme-base-500);
+  font-size: 11px;
+  padding: 8px;
+  text-align: center;
+  text-transform: uppercase;
+}
+.frog-calendar__month-grid {
+  grid-template-rows: repeat(6, minmax(112px, 1fr));
+}
+.frog-calendar__month-grid > div {
+  border-bottom: 1px solid var(--theme-base-150);
+  border-right: 1px solid var(--theme-base-150);
+  min-width: 0;
+}
+.frog-calendar__month-cell {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 112px;
+  padding: 6px;
+  position: relative;
+}
+.frog-calendar__month-date {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 5px;
+  text-align: right;
+}
+.frog-calendar__month-cell .frog-calendar__event {
+  font-size: 11px;
+  margin-bottom: 3px;
+  overflow: hidden;
+  padding: 3px 5px;
+  position: relative;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+.frog-calendar__month-outside {
+  background: var(--theme-base-50);
+  color: var(--theme-base-400);
+}
+.frog-calendar__more {
+  color: var(--theme-base-600);
+  display: block;
+  font-size: 11px;
+  padding: 2px 5px;
+}
+.frog-calendar__month-preview {
+  background: color-mix(in srgb, var(--theme-base-400) 25%, transparent);
+  border: 1px dashed var(--theme-base-500);
+  border-radius: 5px;
+  height: 24px;
+  left: 6px;
+  pointer-events: none;
+  position: absolute;
+  right: 6px;
+  top: 28px;
+}
+
+@media (max-width: 768px) {
+  .frog-calendar {
+    overflow-x: auto;
+  }
+  .frog-calendar__header {
+    grid-template-columns: 1fr;
+    padding: 8px;
+  }
+  .frog-calendar__header > strong {
+    grid-row: 1;
+  }
+  .frog-calendar__navigation,
+  .frog-calendar__modes {
+    justify-content: center;
+  }
+}

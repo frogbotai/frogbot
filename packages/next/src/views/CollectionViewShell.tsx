@@ -51,9 +51,9 @@ export function CollectionViewShell(props: CollectionViewShellProps) {
     <CollectionViewShellClient
       Actions={viewComponents?.actions ? [render(viewComponents.actions) as ReactNode] : undefined}
       AfterList={render(viewComponents?.afterView)}
-      AfterListTable={render(viewComponents?.afterColumns)}
+      AfterListTable={render(viewComponents?.afterColumns ?? viewComponents?.afterCalendar)}
       BeforeList={render(viewComponents?.beforeView)}
-      BeforeListTable={render(viewComponents?.beforeColumns)}
+      BeforeListTable={render(viewComponents?.beforeColumns ?? viewComponents?.beforeCalendar)}
       collectionSlug={collectionSlug}
       columnState={props.columnState}
       Description={render(components?.Description)}
