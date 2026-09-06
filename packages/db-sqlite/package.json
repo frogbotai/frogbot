@@ -35,7 +35,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@payloadcms/db-sqlite": "3.85.1",
+    "@payloadcms/db-sqlite": "3.88.0",
     "drizzle-orm": "0.45.2"
   },
   "peerDependencies": {

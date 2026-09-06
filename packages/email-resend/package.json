@@ -30,7 +30,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@payloadcms/email-resend": "3.85.1"
+    "@payloadcms/email-resend": "3.88.0"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"
