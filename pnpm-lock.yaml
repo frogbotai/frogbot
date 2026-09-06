@@ -80,7 +80,7 @@ importers:
         specifier: 4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(jsdom@24.1.3(bufferutil@4.1.0))(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.49.2)(tsx@4.23.1))
 
-  e2e-fixtures/tool-agent:
+  test/e2e/fixtures/tool-agent:
     dependencies:
       '@activepieces/piece-brave-search':
         specifier: 0.0.5
@@ -90,19 +90,19 @@ importers:
         version: 0.1.7
       '@frogbotai/db-sqlite':
         specifier: workspace:*
-        version: link:../../packages/db-sqlite
+        version: link:../../../../packages/db-sqlite
       '@frogbotai/next':
         specifier: workspace:*
-        version: link:../../packages/next
+        version: link:../../../../packages/next
       '@frogbotai/piece-brave-search':
         specifier: workspace:*
-        version: link:../../packages/pieces/piece-brave-search
+        version: link:../../../../packages/pieces/piece-brave-search
       '@frogbotai/piece-exa':
         specifier: workspace:*
-        version: link:../../packages/pieces/piece-exa
+        version: link:../../../../packages/pieces/piece-exa
       frogbot:
         specifier: workspace:*
-        version: link:../../packages/frogbot
+        version: link:../../../../packages/frogbot
       graphql:
         specifier: ^16.8.1
         version: 16.14.2

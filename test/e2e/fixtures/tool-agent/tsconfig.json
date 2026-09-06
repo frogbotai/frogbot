@@ -19,7 +19,7 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ES2022",
-    "tsBuildInfoFile": "../../.idea/tmp/tool-agent.tsbuildinfo"
+    "tsBuildInfoFile": "../../../../.idea/tmp/tool-agent.tsbuildinfo"
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]

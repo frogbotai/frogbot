@@ -42,7 +42,7 @@ function isListening(port: number): Promise<boolean> {
 }
 
 describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
-  const fixtureDir = join(repoRoot, 'e2e-fixtures', 'tool-agent');
+  const fixtureDir = join(repoRoot, 'test', 'e2e', 'fixtures', 'tool-agent');
   const tempRoot = join(repoRoot, '.idea', 'tmp');
   const port = 3989;
   const client = new FrogbotRESTClient(`http://localhost:${port}`);
