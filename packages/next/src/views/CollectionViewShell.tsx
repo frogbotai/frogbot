@@ -7,6 +7,7 @@ import { CollectionViewShellClient } from './CollectionViewShell.client.js';
 
 type CollectionViewShellProps = AdminViewServerProps & {
   children: ReactNode;
+  enableSort?: boolean;
   query?: ListQuery;
   viewComponents?: Record<string, PayloadComponent | PayloadComponent[]>;
   views: Array<{ label: string; path: string; slug: string; type: string }>;
@@ -57,6 +58,7 @@ export function CollectionViewShell(props: CollectionViewShellProps) {
       hasDeletePermission={clientProps.hasDeletePermission}
       listMenuItems={listMenuItems}
       newDocumentURL={clientProps.newDocumentURL}
+      enableSort={props.enableSort}
       query={props.query ?? ((initPageResult.req.query ?? {}) as ListQuery)}
     >
       {children}

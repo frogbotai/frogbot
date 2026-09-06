@@ -18,6 +18,8 @@ const mocks = vi.hoisted(() => ({
   ListControls: vi.fn(() => null),
   ListHeader: vi.fn(() => null),
   ListQueryProvider: vi.fn(({ children }) => children),
+  listGroupBy: undefined as boolean | undefined,
+  ViewControls: vi.fn(() => null),
 }));
 
 vi.mock('@payloadcms/next/views', () => mocks);
@@ -25,15 +27,61 @@ vi.mock('@payloadcms/ui/elements/RenderServerComponent', () => ({
   RenderServerComponent: mocks.RenderServerComponent,
 }));
 vi.mock('@payloadcms/ui', () => ({
+  Button: () => null,
   Card: ({ buttonAriaLabel, href, id, title }: Record<string, string>) =>
     createElement('a', { 'aria-label': buttonAriaLabel, href, id }, title),
+  Gutter: ({ children }: ComponentProps<'div'>) => createElement('div', null, children),
   Link: ({ children, href, ...props }: ComponentProps<'a'>) =>
     createElement('a', { href, ...props }, children),
+  ListSelection: () => null,
   ListControls: mocks.ListControls,
   ListHeader: mocks.ListHeader,
   ListQueryProvider: mocks.ListQueryProvider,
+  PageControls: () => null,
+  RelationshipProvider: ({ children }: ComponentProps<'div'>) => children,
+  RenderCustomComponent: () => null,
+  SelectionProvider: ({ children }: ComponentProps<'div'>) => children,
+  SelectMany: () => null,
+  StickyToolbar: ({ children }: ComponentProps<'div'>) => children,
+  TableColumnsProvider: ({ children }: ComponentProps<'div'>) => children,
+  useBulkUpload: () => ({
+    drawerSlug: 'bulk-upload',
+    setCollectionSlug: vi.fn(),
+    setOnSuccess: vi.fn(),
+  }),
+  useConfig: () => ({
+    config: { routes: { admin: '/admin' }, serverURL: '' },
+    getEntityConfig: () => ({
+      admin: { custom: { frogbot: { views: [{ groupBy: mocks.listGroupBy, type: 'list' }] } } },
+      fields: [],
+      labels: { plural: 'Posts', singular: 'Post' },
+      slug: 'posts',
+    }),
+  }),
+  useControllableState: (value: unknown) => [value],
+  useListDrawerContext: () => ({}),
+  useListQuery: () => ({ data: { docs: [], totalDocs: 0 } }),
+  useModal: () => ({ openModal: vi.fn() }),
+  useStepNav: () => ({ setStepNav: vi.fn() }),
+  useTranslation: () => ({ i18n: { t: (key: string) => key } }),
+  useWindowInfo: () => ({ breakpoints: { s: false } }),
+  ViewDescription: () => null,
 }));
-vi.mock('next/navigation', () => ({ redirect: mocks.redirect }));
+vi.mock('@payloadcms/ui/elements/ColumnSelector', () => ({}));
+vi.mock('@payloadcms/ui/elements/GroupByBuilder', () => ({}));
+vi.mock('@payloadcms/ui/elements/NoListResults', () => ({ NoListResults: () => null }));
+vi.mock('@payloadcms/ui/elements/QueryPresets/QueryPresetBar', () => ({}));
+vi.mock('@payloadcms/ui/elements/SearchBar', () => ({}));
+vi.mock('@payloadcms/ui/elements/WhereBuilder', () => ({}));
+vi.mock('@payloadcms/ui/icons/Dots', () => ({}));
+vi.mock('@payloadcms/ui/utilities/reduceFieldsToOptions', () => ({}));
+vi.mock('next/navigation', () => ({
+  redirect: mocks.redirect,
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
+vi.mock('../../../../packages/next/src/views/controls/ViewControls.client.js', () => ({
+  ViewControls: mocks.ViewControls,
+}));
 vi.mock('../../../../packages/next/src/elements/Nav/index.js', () => ({ FrogbotNav: () => null }));
 vi.mock('frogbot', async (importOriginal) => ({
   ...(await importOriginal<typeof import('frogbot')>()),
@@ -55,6 +103,7 @@ const {
   SettingsView,
   generatePageMetadata,
   CollectionViewShell,
+  DefaultListView,
 } = await import('../../../../packages/next/src/exports/views.js');
 
 function makeConfig(admin?: Record<string, unknown>) {
@@ -69,6 +118,41 @@ const params = Promise.resolve({ segments: [] });
 const searchParams = Promise.resolve({});
 
 describe('@frogbotai/next views', () => {
+  it('exports DefaultListView', () => {
+    expect(DefaultListView).toBeTypeOf('function');
+  });
+
+  it.each([
+    ['enabled by default', undefined, true],
+    ['disabled by the list view', false, false],
+  ] as const)(
+    'DefaultListView renders ViewControls with sort enabled and Group By %s',
+    (_, groupBy, expected) => {
+      mocks.ViewControls.mockClear();
+      mocks.listGroupBy = groupBy;
+
+      renderToStaticMarkup(
+        createElement(DefaultListView, {
+          collectionSlug: 'posts',
+          columnState: [],
+          hasCreatePermission: true,
+          hasDeletePermission: true,
+          Table: createElement('table'),
+          viewType: 'default',
+        } as never),
+      );
+
+      expect(mocks.ViewControls).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collectionSlug: 'posts',
+          enableGroupBy: expected,
+          enableSort: true,
+        }),
+        undefined,
+      );
+    },
+  );
+
   it('CollectionViewShell renders shared slots and custom cell content', () => {
     mocks.RenderServerComponent.mockImplementation(({ Component }) => `slot:${String(Component)}`);
     const child = createElement('span', { 'data-cell': 'custom' }, 'Cell');

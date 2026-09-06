@@ -30,6 +30,7 @@ export { BoardView } from '../views/Board/index.js';
 export { CollectionViewShell } from '../views/CollectionViewShell.js';
 export { CollectionViewSwitcher } from '../views/CollectionViewSwitcher.js';
 export { CustomCollectionView } from '../views/CustomCollectionView.js';
+export { DefaultListView } from '../views/List/DefaultListView.client.js';
 import type { FrogbotConfigArg } from '../types.js';
 import { ChatViewClient } from './ChatView.client.js';
 

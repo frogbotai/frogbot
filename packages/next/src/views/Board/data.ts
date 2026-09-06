@@ -2,6 +2,45 @@ export function getBoardGroupBy(groupBy?: string): string | undefined {
   return groupBy?.replace(/^-/, '') || undefined;
 }
 
+export type SortRow = {
+  direction: 'asc' | 'desc';
+  field: string;
+};
+
+export function parseSort(sort?: string | string[]): SortRow[] {
+  return (Array.isArray(sort) ? sort.join(',') : (sort ?? ''))
+    .split(',')
+    .filter(Boolean)
+    .map((value) => ({
+      direction: value.startsWith('-') ? 'desc' : 'asc',
+      field: value.replace(/^-/, ''),
+    }));
+}
+
+export function serializeSort(rows: SortRow[]): string {
+  return rows.map(({ direction, field }) => `${direction === 'desc' ? '-' : ''}${field}`).join(',');
+}
+
+export function syncSortRows(rows: SortRow[], sort?: string | string[]): SortRow[] {
+  const nextRows = parseSort(sort);
+  return serializeSort(rows.filter(({ field }) => field)) === serializeSort(nextRows)
+    ? rows
+    : [...nextRows, ...rows.filter(({ field }) => !field)];
+}
+
+export function resolveBoardSort({
+  defaultSort,
+  preferenceSort,
+  querySort,
+}: {
+  defaultSort?: string | string[];
+  preferenceSort?: string;
+  querySort?: string | string[];
+}): string | undefined {
+  const sort = querySort ?? preferenceSort ?? defaultSort;
+  return Array.isArray(sort) ? sort.join(',') : sort;
+}
+
 export function getBoardPreferenceKey(collectionSlug: string, viewSlug: string): string {
   return `collection-${collectionSlug}-view-${viewSlug}`;
 }
@@ -25,9 +64,13 @@ export function resolveBoardGroupBy({
 export function getBoardPreferenceUpdate(
   collectionSlug: string,
   viewSlug: string,
-  groupBy: string,
-): [string, { groupBy: string }, true] {
-  return [getBoardPreferenceKey(collectionSlug, viewSlug), { groupBy }, true];
+  value: string | { groupBy?: string; sort?: string },
+): [string, { groupBy?: string; sort?: string }, true] {
+  return [
+    getBoardPreferenceKey(collectionSlug, viewSlug),
+    typeof value === 'string' ? { groupBy: value } : value,
+    true,
+  ];
 }
 
 export function getPath(value: Record<string, unknown>, path: string): unknown {

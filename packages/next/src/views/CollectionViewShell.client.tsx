@@ -2,15 +2,11 @@
 
 import './CollectionViewShell.css';
 
-import {
-  ListControls,
-  ListHeader,
-  ListQueryProvider,
-  useConfig,
-  useTranslation,
-} from '@payloadcms/ui';
+import { ListHeader, ListQueryProvider, useConfig, useTranslation } from '@payloadcms/ui';
 import type { ListQuery } from 'payload';
 import type { ReactNode } from 'react';
+
+import { ViewControls } from './controls/ViewControls.client.js';
 
 export type CollectionViewShellClientProps = {
   Actions?: ReactNode[];
@@ -19,6 +15,7 @@ export type CollectionViewShellClientProps = {
   AfterListTable?: ReactNode;
   AfterList?: ReactNode;
   Description?: ReactNode;
+  enableSort?: boolean;
   children: ReactNode;
   collectionSlug: string;
   hasCreatePermission: boolean;
@@ -41,6 +38,7 @@ export function CollectionViewShellClient({
   hasDeletePermission,
   listMenuItems,
   newDocumentURL,
+  enableSort,
   query,
 }: CollectionViewShellClientProps) {
   const { i18n } = useTranslation();
@@ -70,10 +68,11 @@ export function CollectionViewShellClient({
             {...bulkUploadCompatibility}
           />
           {Actions}
-          <ListControls
+          <ViewControls
             collectionConfig={collectionConfig}
             collectionSlug={collectionConfig.slug}
             listMenuItems={listMenuItems}
+            enableSort={enableSort}
           />
           {BeforeListTable}
           <div className="collection-view-shell__view">{children}</div>

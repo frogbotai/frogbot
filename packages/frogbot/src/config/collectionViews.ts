@@ -105,7 +105,9 @@ export function compileCollectionViews({
   const metadata: CollectionViewMetadata[] = [];
 
   for (const view of views) {
-    const path = view === views[0] ? '' : `/${view.slug}`;
+    const isDefault = view === views[0];
+    const key = isDefault ? 'list' : (view.slug as string);
+    const path = isDefault ? '' : `/${view.slug}`;
     const { access: _access, components, filter: _filter, ...clientView } = view;
     const { component: _component, ...safeView } = clientView as typeof clientView & {
       component?: PayloadComponent;
@@ -118,17 +120,20 @@ export function compileCollectionViews({
     } as CollectionViewMetadata);
 
     if (view.type === 'board') {
-      runtimeViews[view === views[0] ? 'list' : (view.slug as string)] = {
+      runtimeViews[key] = {
         Component: '@frogbotai/next/views#BoardView',
-        ...(view === views[0] ? {} : { exact: true, path }),
+        ...(isDefault ? {} : { exact: true, path }),
       };
     } else if (view.type === 'custom') {
-      runtimeViews[view === views[0] ? 'list' : (view.slug as string)] = {
+      runtimeViews[key] = {
         Component: '@frogbotai/next/views#CustomCollectionView',
-        ...(view === views[0] ? {} : { exact: true, path }),
+        ...(isDefault ? {} : { exact: true, path }),
       };
-    } else if (view === views[0] && components?.actions) {
-      runtimeViews.list = { actions: components?.actions };
+    } else if (view.type === 'list' && isDefault) {
+      runtimeViews.list = {
+        Component: '@frogbotai/next/views#DefaultListView',
+        ...(components?.actions ? { actions: components.actions } : {}),
+      };
     }
   }
 
@@ -163,7 +168,9 @@ export function compileCollectionViews({
     ...(list?.defaultFields ? { defaultColumns: list.defaultFields } : {}),
     ...(list?.defaultSort ? { defaultSort: list.defaultSort } : {}),
     ...(list?.filter ? { baseFilter: list.filter } : {}),
-    ...(views.some((view) => view.type === 'board') ? { groupBy: true } : {}),
+    ...((Boolean(list) && list?.groupBy !== false) || views.some((view) => view.type === 'board')
+      ? { groupBy: true }
+      : {}),
     ...(list?.pagination ? { pagination: list.pagination } : {}),
     ...(list?.searchableFields ? { listSearchableFields: list.searchableFields } : {}),
     components,

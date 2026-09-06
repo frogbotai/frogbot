@@ -69,6 +69,12 @@
 - Use `--color-base-*` only for fixed palette colors that must not invert, such as dark scrims or fixed-contrast text on brand/status surfaces.
 - Use `--theme-elevation-*` only in admin-only styles where the admin runtime supplies those tokens; reusable `packages/ui` styles must use `--theme-base-*`.
 
+### Payload UI import identity
+
+- In one client component graph, never mix runtime imports from `@payloadcms/ui` with `@payloadcms/ui/elements/*` or `@payloadcms/ui/icons/*`. The root entry is bundled and creates different React context identities from public subpaths, causing hooks such as `useConfig()` to return `undefined` at runtime.
+- Prefer root-only runtime imports and canonical root components. Utility subpaths and type-only imports are safe. If a required component is not exported from the root, redesign around a canonical root component rather than mixing entries.
+- Typechecking cannot detect this failure. Smoke-test the affected admin interaction in the simple example after rebuilding packages.
+
 ## What NOT to do
 
 - **CRITICAL — documentation branding:** Never refer to Payload or Payload CMS in user-facing documentation, templates, examples, READMEs, scaffolded comments, or other user-visible copy. FrogBot is the product users interact with: describe behavior, APIs, admin features, adapters, collections, migrations, sessions, and configuration as **FrogBot** behavior. Rewrite underlying-framework references as a FrogBot self-reference or neutral wording. Before finishing documentation work, run the case-sensitive whole-word check: `rg -n -w -F 'Payload' -g '*.mdx' .` and remove every match unless the user explicitly requires a literal upstream package name or attribution.

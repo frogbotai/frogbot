@@ -2,15 +2,20 @@ import './BoardView.css';
 
 import type { FrogbotRequest } from 'frogbot';
 import { notFound } from 'next/navigation';
-import type { AdminViewServerProps, Field } from 'payload';
+import type { AdminViewServerProps, Field, SanitizedFieldPermissions } from 'payload';
 import { getFromImportMap } from 'payload/shared';
 import type { ComponentType } from 'react';
 
 import { getActiveViewSlug, resolveCollectionViews } from '../collectionViews.js';
 import { CollectionViewShell } from '../CollectionViewShell.js';
 import { BoardPreference } from './BoardPreference.client.js';
-import { BoardViewClient } from './BoardView.client.js';
-import { getBoardGroupBy, getBoardPreferenceKey, resolveBoardGroupBy } from './data.js';
+import { BoardViewClient, type BoardViewClientProps } from './BoardView.client.js';
+import {
+  getBoardGroupBy,
+  getBoardPreferenceKey,
+  resolveBoardGroupBy,
+  resolveBoardSort,
+} from './data.js';
 import { resolveBoardField, resolveColumns } from './resolveColumns.js';
 
 export async function BoardView(props: AdminViewServerProps) {
@@ -22,9 +27,16 @@ export async function BoardView(props: AdminViewServerProps) {
     ({ slug }) => slug === activeSlug && views.some((item) => item.slug === slug),
   );
   if (!board || board.type !== 'board') notFound();
-  const query = (initPageResult.req.query ?? {}) as { groupBy?: unknown };
+  const query = (initPageResult.req.query ?? {}) as { groupBy?: unknown; sort?: unknown };
   const hasQueryGroupBy = Object.prototype.hasOwnProperty.call(query, 'groupBy');
   const queryGroupBy = typeof query.groupBy === 'string' ? query.groupBy : undefined;
+  const querySort =
+    typeof query.sort === 'string' ||
+    (Array.isArray(query.sort) && query.sort.every((value) => typeof value === 'string'))
+      ? (query.sort as string | string[])
+      : Object.prototype.hasOwnProperty.call(query, 'sort')
+        ? ''
+        : undefined;
   const preferenceKey = getBoardPreferenceKey(collectionSlug, board.slug);
   const preference = initPageResult.req.user
     ? await payload.find({
@@ -42,25 +54,35 @@ export async function BoardView(props: AdminViewServerProps) {
         },
       })
     : undefined;
-  const preferenceValue = preference?.docs[0]?.value as { groupBy?: unknown } | undefined;
+  const preferenceValue = preference?.docs[0]?.value as
+    { groupBy?: unknown; sort?: unknown } | undefined;
   const preferenceGroupBy =
     typeof preferenceValue?.groupBy === 'string' ? preferenceValue.groupBy : undefined;
+  const preferenceSort =
+    typeof preferenceValue?.sort === 'string' ? preferenceValue.sort : undefined;
   const selectedGroupBy = resolveBoardGroupBy({
     configuredGroupBy: board.groupBy,
     hasQueryGroupBy,
     preferenceGroupBy,
     queryGroupBy,
   });
+  const selectedSort = resolveBoardSort({
+    defaultSort: board.defaultSort,
+    preferenceSort,
+    querySort,
+  });
   const groupBy = getBoardGroupBy(selectedGroupBy);
   const initialQuery = {
     ...(initPageResult.req.query ?? {}),
     groupBy: selectedGroupBy,
+    sort: selectedSort,
   };
   if (!groupBy) {
     return (
       <CollectionViewShell
         {...props}
         query={initialQuery}
+        enableSort
         viewComponents={board.components}
         views={views}
         viewSlug={board.slug}
@@ -68,6 +90,7 @@ export async function BoardView(props: AdminViewServerProps) {
         <BoardPreference
           collectionSlug={collectionSlug}
           groupBy={hasQueryGroupBy ? selectedGroupBy : undefined}
+          sort={Array.isArray(querySort) ? querySort.join(',') : querySort}
           viewSlug={board.slug}
         />
         <div className="collection-board__empty">Choose a group field to use this board.</div>
@@ -87,13 +110,20 @@ export async function BoardView(props: AdminViewServerProps) {
     typeof board.filter === 'function'
       ? await board.filter({ req: initPageResult.req as unknown as FrogbotRequest })
       : board.filter;
-  const permissions = initPageResult.permissions.collections?.[collectionSlug] as any;
-  const fieldPermission = groupBy
-    .split('.')
-    .reduce<any>((value, key) => value?.fields?.[key] ?? value?.[key], permissions);
-  const resolve = (component: unknown) =>
+  const permissions = initPageResult.permissions.collections?.[collectionSlug];
+  let fieldPermission: SanitizedFieldPermissions | undefined;
+  let fieldPermissions = permissions?.fields;
+  for (const key of groupBy.split('.')) {
+    if (!fieldPermissions || fieldPermissions === true) {
+      fieldPermission = fieldPermissions;
+      break;
+    }
+    fieldPermission = fieldPermissions[key];
+    fieldPermissions = fieldPermission === true ? true : fieldPermission?.fields;
+  }
+  const resolve = <TProps extends object>(component: unknown) =>
     component
-      ? getFromImportMap<ComponentType<any>>({
+      ? getFromImportMap<ComponentType<TProps>>({
           importMap,
           PayloadComponent: component as never,
           schemaPath: '',
@@ -103,6 +133,7 @@ export async function BoardView(props: AdminViewServerProps) {
     <CollectionViewShell
       {...props}
       query={initialQuery}
+      enableSort
       viewComponents={board.components}
       views={views}
       viewSlug={board.slug}
@@ -110,6 +141,7 @@ export async function BoardView(props: AdminViewServerProps) {
       <BoardPreference
         collectionSlug={collectionSlug}
         groupBy={hasQueryGroupBy ? selectedGroupBy : undefined}
+        sort={Array.isArray(querySort) ? querySort.join(',') : querySort}
         viewSlug={board.slug}
       />
       <BoardViewClient
@@ -120,10 +152,18 @@ export async function BoardView(props: AdminViewServerProps) {
         filter={filter}
         groupBy={groupBy}
         limit={board.pagination?.defaultLimit ?? 50}
-        sort={board.defaultSort}
-        canUpdate={Boolean(permissions?.update && fieldPermission?.update !== false)}
-        Card={resolve(board.components?.Card)}
-        ColumnHeader={resolve(board.components?.ColumnHeader)}
+        canUpdate={Boolean(
+          permissions?.update &&
+          (fieldPermission === true || (fieldPermission && fieldPermission.update)),
+        )}
+        Card={resolve<
+          NonNullable<BoardViewClientProps['Card']> extends ComponentType<infer P> ? P : never
+        >(board.components?.Card)}
+        ColumnHeader={resolve<
+          NonNullable<BoardViewClientProps['ColumnHeader']> extends ComponentType<infer P>
+            ? P
+            : never
+        >(board.components?.ColumnHeader)}
       />
     </CollectionViewShell>
   );

@@ -10,6 +10,43 @@ describe('collection views', () => {
     expect((admin?.custom?.frogbot as any).views).toEqual([
       { type: 'list', slug: 'list', label: 'List', path: '' },
     ]);
+    expect(admin?.components?.views?.list).toEqual({
+      Component: '@frogbotai/next/views#DefaultListView',
+    });
+    expect(admin?.groupBy).toBe(true);
+  });
+
+  it('keeps board Group By runtime support when the list opts out', () => {
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'posts',
+        fields: [{ name: 'stage', type: 'select', options: [] }],
+        admin: {
+          views: [
+            { type: 'list', groupBy: false },
+            { type: 'board', groupBy: 'stage' },
+          ],
+        },
+      },
+    });
+
+    expect(admin?.groupBy).toBe(true);
+    expect((admin?.custom?.frogbot as any).views[0]).toMatchObject({
+      groupBy: false,
+      type: 'list',
+    });
+  });
+
+  it('disables native Group By when an opted-out list has no board', () => {
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'posts',
+        fields: [],
+        admin: { views: [{ type: 'list', groupBy: false }] },
+      },
+    });
+
+    expect(admin?.groupBy).toBeUndefined();
   });
 
   it('normalizes slugs and compiles multiple board and custom routes', () => {
@@ -32,6 +69,7 @@ describe('collection views', () => {
     });
 
     expect(Object.keys(admin?.components?.views ?? {})).toEqual([
+      'list',
       'by-owner',
       'by-stage',
       'map-view',
@@ -45,6 +83,9 @@ describe('collection views', () => {
     expect(admin?.components?.Description).toBe('@frogbotai/next/views#CollectionViewSwitcher');
     expect(admin?.components?.beforeList).toBeUndefined();
     expect(admin?.groupBy).toBe(true);
+    expect(admin?.components?.views?.list).toEqual({
+      Component: '@frogbotai/next/views#DefaultListView',
+    });
 
     const result = getCustomCollectionViewByRoute({
       adminRoute: '/admin',
@@ -75,6 +116,25 @@ describe('collection views', () => {
     expect((admin?.custom?.frogbot as any).views[0]).not.toHaveProperty('filter');
     expect((admin?.custom?.frogbot as any).views[0]).not.toHaveProperty('access');
     expect(runtime[0]).toMatchObject({ access, filter });
+    expect(admin?.components?.views?.list).toMatchObject({
+      Component: '@frogbotai/next/views#BoardView',
+    });
+  });
+
+  it('preserves list actions on the default list route', () => {
+    const actions = ['./Create#Button'];
+    const admin = compileCollectionViews({
+      collection: {
+        slug: 'posts',
+        fields: [],
+        admin: { views: [{ type: 'list', components: { actions } }] },
+      },
+    });
+
+    expect(admin?.components?.views?.list).toEqual({
+      Component: '@frogbotai/next/views#DefaultListView',
+      actions,
+    });
   });
 
   it('maps list defaults and pagination to the native list contract', () => {

@@ -34,6 +34,7 @@ export type ListView = ViewConfig & {
     afterTable?: FrogbotComponent[];
     beforeTable?: FrogbotComponent[];
   };
+  groupBy?: boolean;
   type: 'list';
 };
 

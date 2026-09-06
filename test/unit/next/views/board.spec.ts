@@ -7,8 +7,12 @@ import {
   getBoardPreferenceKey,
   getBoardPreferenceUpdate,
   getPath,
+  parseSort,
   resolveBoardGroupBy,
+  resolveBoardSort,
+  serializeSort,
   setPath,
+  syncSortRows,
 } from '../../../../packages/next/src/views/Board/data.js';
 import { resolveActiveViewSlug } from '../../../../packages/next/src/views/Board/resolveActiveView.js';
 import {
@@ -152,11 +156,58 @@ describe('collection board', () => {
     ).toBe('');
   });
 
+  it('parses and serializes board sort rows', () => {
+    const rows = [
+      { direction: 'asc' as const, field: 'stage' },
+      { direction: 'desc' as const, field: 'priority' },
+    ];
+
+    expect(parseSort('stage,-priority')).toEqual(rows);
+    expect(parseSort(['stage', '-priority'])).toEqual(rows);
+    expect(parseSort('')).toEqual([]);
+    expect(serializeSort(rows)).toBe('stage,-priority');
+  });
+
+  it('synchronizes external sort while preserving unsaved empty rows', () => {
+    const empty = { direction: 'asc' as const, field: '' };
+    const rows = [{ direction: 'asc' as const, field: 'stage' }, empty];
+
+    expect(syncSortRows(rows, 'stage')).toBe(rows);
+    expect(syncSortRows(rows, '-priority')).toEqual([
+      { direction: 'desc', field: 'priority' },
+      empty,
+    ]);
+  });
+
+  it('resolves sort from URL, preference, then board configuration', () => {
+    expect(
+      resolveBoardSort({
+        defaultSort: ['configured', '-createdAt'],
+        preferenceSort: 'saved',
+        querySort: ['query', '-priority'],
+      }),
+    ).toBe('query,-priority');
+    expect(resolveBoardSort({ defaultSort: 'configured', preferenceSort: '-saved' })).toBe(
+      '-saved',
+    );
+    expect(resolveBoardSort({ defaultSort: ['configured', '-createdAt'] })).toBe(
+      'configured,-createdAt',
+    );
+    expect(resolveBoardSort({})).toBeUndefined();
+  });
+
   it('builds per-view merged preference updates', () => {
     expect(getBoardPreferenceKey('posts', 'planning')).toBe('collection-posts-view-planning');
-    expect(getBoardPreferenceUpdate('posts', 'planning', '-stage')).toEqual([
+    expect(
+      getBoardPreferenceUpdate('posts', 'planning', { groupBy: '-stage', sort: 'priority,-name' }),
+    ).toEqual([
       'collection-posts-view-planning',
-      { groupBy: '-stage' },
+      { groupBy: '-stage', sort: 'priority,-name' },
+      true,
+    ]);
+    expect(getBoardPreferenceUpdate('posts', 'planning', { sort: '' })).toEqual([
+      'collection-posts-view-planning',
+      { sort: '' },
       true,
     ]);
   });

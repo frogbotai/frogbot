@@ -36,7 +36,6 @@ export type BoardViewClientProps = {
   filter?: Record<string, unknown>;
   groupBy: string;
   limit: number;
-  sort?: string | string[];
   canUpdate: boolean;
 };
 
@@ -112,7 +111,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
     });
     const where = props.filter ? { and: [props.filter, query.where].filter(Boolean) } : query.where;
     appendQuery(params, 'where', buildColumnWhere(where, props.groupBy, value));
-    appendQuery(params, 'sort', query.sort ?? props.sort);
+    appendQuery(params, 'sort', query.sort);
     const response = await fetch(`${config.routes.api}/${props.collectionSlug}?${params}`, {
       credentials: 'include',
     });

@@ -1,0 +1,108 @@
+@layer payload-default {
+  .list-controls {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .list-controls .pill-selector,
+  .list-controls .where-builder,
+  .list-controls .sort-builder,
+  .list-controls .group-by-builder {
+    margin-top: calc(var(--base) / 2);
+  }
+
+  .sort-builder {
+    background: var(--theme-elevation-50);
+    padding: var(--base);
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--base) / 2);
+  }
+
+  .sort-builder__header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .sort-builder__clear-button {
+    background: transparent;
+    border: none;
+    color: var(--theme-elevation-500);
+    line-height: inherit;
+    cursor: pointer;
+    font-size: inherit;
+    padding: 0;
+    text-decoration: underline;
+  }
+
+  .sort-builder__row {
+    display: flex;
+    align-items: center;
+    gap: var(--base);
+  }
+
+  .sort-builder__inputs {
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+    gap: var(--base);
+  }
+
+  .sort-builder__inputs > * {
+    flex-grow: 1;
+    width: 50%;
+  }
+
+  .sort-builder__actions {
+    flex-shrink: 0;
+    display: flex;
+    gap: calc(var(--base) / 2);
+  }
+
+  .sort-builder .btn {
+    vertical-align: middle;
+    margin: 0;
+  }
+
+  @media (max-width: 1024px) {
+    .sort-builder__row {
+      align-items: initial;
+      gap: calc(var(--base) / 2);
+    }
+
+    .sort-builder__inputs {
+      flex-direction: column;
+      gap: calc(var(--base) / 2);
+      align-items: stretch;
+    }
+
+    .sort-builder__inputs > * {
+      width: 100%;
+    }
+
+    .sort-builder__actions {
+      flex-direction: column;
+      justify-content: space-between;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .list-controls .search-bar__actions .pill {
+      padding: calc(var(--base) * 0.2) calc(var(--base) * 0.2) calc(var(--base) * 0.2)
+        calc(var(--base) * 0.4);
+      justify-content: space-between;
+    }
+
+    .list-controls__toggle-columns,
+    .list-controls__toggle-where,
+    .list-controls__toggle-sort,
+    .list-controls__toggle-group-by {
+      flex: 1;
+    }
+
+    .sort-builder {
+      padding: calc(var(--base) / 2);
+    }
+  }
+}
