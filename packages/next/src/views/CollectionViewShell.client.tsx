@@ -28,6 +28,7 @@ export type CollectionViewShellClientProps = {
   hasCreatePermission: boolean;
   hasDeletePermission: boolean;
   listMenuItems?: ReactNode[];
+  manualSortField?: string;
   newDocumentURL: string;
   query: ListQuery;
 };
@@ -45,6 +46,7 @@ export function CollectionViewShellClient({
   hasCreatePermission,
   hasDeletePermission,
   listMenuItems,
+  manualSortField,
   newDocumentURL,
   enableSort,
   query,
@@ -76,6 +78,7 @@ export function CollectionViewShellClient({
           enableColumns={Boolean(columnState)}
           listMenuItems={listMenuItems}
           enableSort={enableSort}
+          manualSortField={manualSortField}
         />
         {BeforeListTable}
         <div className="collection-view-shell__view">{children}</div>

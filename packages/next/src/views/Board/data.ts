@@ -1,4 +1,4 @@
-import type { ColumnPreference } from 'payload';
+import type { ColumnPreference, OrderableEndpointBody } from 'payload';
 import { transformColumnsToPreferences } from 'payload/shared';
 
 export function getBoardGroupBy(groupBy?: string): string | undefined {
@@ -9,6 +9,10 @@ export type SortRow = {
   direction: 'asc' | 'desc';
   field: string;
 };
+
+export function isBoardOrderField(field: string): boolean {
+  return field.startsWith('_order');
+}
 
 export function parseSort(sort?: string | string[]): SortRow[] {
   return (Array.isArray(sort) ? sort.join(',') : (sort ?? ''))
@@ -33,15 +37,42 @@ export function syncSortRows(rows: SortRow[], sort?: string | string[]): SortRow
 
 export function resolveBoardSort({
   defaultSort,
+  orderField,
   preferenceSort,
   querySort,
 }: {
   defaultSort?: string | string[];
+  orderField?: string;
   preferenceSort?: string;
   querySort?: string | string[];
 }): string | undefined {
-  const sort = querySort ?? preferenceSort ?? defaultSort;
+  const sort =
+    [querySort, preferenceSort, defaultSort].find((value) =>
+      Array.isArray(value) ? value.length > 0 : Boolean(value),
+    ) ?? orderField;
   return Array.isArray(sort) ? sort.join(',') : sort;
+}
+
+export function buildBoardReorderBody({
+  before,
+  collectionSlug,
+  orderField,
+  rowId,
+  target,
+}: {
+  before: boolean;
+  collectionSlug: string;
+  orderField: string;
+  rowId: number | string;
+  target: Record<string, unknown> & { id: number | string };
+}): OrderableEndpointBody {
+  return {
+    collectionSlug,
+    docsToMove: [String(rowId)],
+    newKeyWillBe: before ? 'greater' : 'less',
+    orderableFieldName: orderField,
+    target: { id: String(target.id), key: String(target[orderField] ?? '') },
+  };
 }
 
 export function getBoardPreferenceKey(collectionSlug: string, viewSlug: string): string {

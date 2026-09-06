@@ -12,7 +12,13 @@ import { reduceFieldsToOptions } from '@payloadcms/ui/utilities/reduceFieldsToOp
 import type { ClientField } from 'payload';
 import React, { useEffect, useMemo, useState } from 'react';
 
-import { parseSort, serializeSort, type SortRow, syncSortRows } from '../Board/data.js';
+import {
+  isBoardOrderField,
+  parseSort,
+  serializeSort,
+  type SortRow,
+  syncSortRows,
+} from '../Board/data.js';
 
 const baseClass = 'sort-builder';
 
@@ -33,9 +39,14 @@ const emptyRow: SortRow = { direction: 'asc', field: '' };
 export type SortBuilderProps = {
   readonly collectionSlug: string;
   readonly fields: ClientField[];
+  readonly manualField?: string;
 };
 
-export const SortBuilder: React.FC<SortBuilderProps> = ({ collectionSlug, fields }) => {
+export const SortBuilder: React.FC<SortBuilderProps> = ({
+  collectionSlug,
+  fields,
+  manualField,
+}) => {
   const { i18n, t } = useTranslation();
   const { permissions } = useAuth();
   const { query, refineListData } = useListQuery();
@@ -46,7 +57,9 @@ export const SortBuilder: React.FC<SortBuilderProps> = ({ collectionSlug, fields
     () =>
       reduceFieldsToOptions({ fieldPermissions, fields, i18n }).filter(
         (field) =>
-          !field.field.admin?.disableListColumn && sortableFieldTypes.has(field.field.type),
+          !field.field.admin?.disableListColumn &&
+          sortableFieldTypes.has(field.field.type) &&
+          !isBoardOrderField(String(field.value)),
       ),
     [fields, fieldPermissions, i18n],
   );
@@ -57,13 +70,14 @@ export const SortBuilder: React.FC<SortBuilderProps> = ({ collectionSlug, fields
     setRows((currentRows) => syncSortRows(currentRows, query?.sort));
   }, [query?.sort]);
 
-  const visibleRows = rows.length > 0 ? rows : [emptyRow];
+  const manualActive = query?.sort === manualField;
+  const visibleRows = manualActive ? [emptyRow] : rows.length > 0 ? rows : [emptyRow];
 
   const update = (nextRows: SortRow[]) => {
     setRows(nextRows);
     void refineListData({
       page: 1,
-      sort: serializeSort(nextRows.filter(({ field }) => field)),
+      sort: serializeSort(nextRows.filter(({ field }) => field)) || manualField || '',
     });
   };
 
@@ -71,7 +85,7 @@ export const SortBuilder: React.FC<SortBuilderProps> = ({ collectionSlug, fields
     <div className={baseClass}>
       <div className={`${baseClass}__header`}>
         <p>{t('general:sort')}</p>
-        {query?.sort && (
+        {query?.sort && !manualActive && (
           <button
             className={`${baseClass}__clear-button`}
             id="sort--reset"
@@ -82,6 +96,19 @@ export const SortBuilder: React.FC<SortBuilderProps> = ({ collectionSlug, fields
           </button>
         )}
       </div>
+      {manualField ? (
+        <button
+          aria-pressed={manualActive}
+          className={`${baseClass}__manual${manualActive ? ` ${baseClass}__manual--active` : ''}`}
+          onClick={() => {
+            setRows([]);
+            void refineListData({ page: 1, sort: manualField });
+          }}
+          type="button"
+        >
+          Manual
+        </button>
+      ) : null}
       {visibleRows.map((row, index) => {
         const selected = reducedFields.find((field) => field.value === row.field);
 

@@ -23,7 +23,16 @@ export async function resolveCollectionViews(props: AdminViewServerProps) {
   );
   const metadata = (
     props.collectionConfig?.admin.custom?.frogbot as
-      { views?: Array<{ label: string; path: string; slug: string; type: string }> } | undefined
+      | {
+          views?: Array<{
+            label: string;
+            orderField?: string;
+            path: string;
+            slug: string;
+            type: string;
+          }>;
+        }
+      | undefined
   )?.views;
   return {
     runtime,

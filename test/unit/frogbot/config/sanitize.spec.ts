@@ -56,6 +56,48 @@ function emailWarnings(warn: ReturnType<typeof vi.fn>) {
 }
 
 describe('frogbot sanitize', () => {
+  it('makes board collections orderable with per-view fields and a hook', async () => {
+    const result = sanitize(
+      makeConfig({
+        collections: [
+          {
+            slug: 'posts',
+            fields: [{ name: 'stage', type: 'select', options: [] }],
+            admin: {
+              views: [
+                { type: 'list', defaultSort: '-createdAt' },
+                { type: 'board', slug: 'By Stage', groupBy: 'stage' },
+              ],
+            },
+          },
+        ],
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const posts = payloadConfig.collections?.find(({ slug }) => slug === 'posts');
+
+    expect(posts?.orderable).toBe(true);
+    expect(posts?.fields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: '_order_by_stage', type: 'text', index: true }),
+      ]),
+    );
+    expect(posts?.hooks?.beforeChange).toHaveLength(1);
+    expect(posts?.admin.defaultSort).toBe('-createdAt');
+    expect((posts?.admin.custom?.frogbot as any).views[1].orderField).toBe('_order_by_stage');
+  });
+
+  it('leaves collections without boards non-orderable', async () => {
+    const result = sanitize(makeConfig());
+    const payloadConfig = await result._internal.payloadConfig;
+    const users = payloadConfig.collections?.find(({ slug }) => slug === 'users');
+
+    expect(users?.orderable).toBeUndefined();
+    expect(users?.fields.some((field) => 'name' in field && field.name.startsWith('_order'))).toBe(
+      false,
+    );
+    expect(users?.hooks?.beforeChange).toBeUndefined();
+  });
   it('compiles collection views into runtime routes and metadata', () => {
     const admin = compileCollectionViews({
       collection: {

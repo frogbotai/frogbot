@@ -32,6 +32,8 @@ export async function BoardView(props: AdminViewServerProps) {
     ({ slug }) => slug === activeSlug && views.some((item) => item.slug === slug),
   );
   if (!board || board.type !== 'board') notFound();
+  const orderField = views.find(({ slug }) => slug === board.slug)?.orderField;
+  if (!orderField) notFound();
   const query = (initPageResult.req.query ?? {}) as {
     columns?: unknown;
     groupBy?: unknown;
@@ -81,6 +83,7 @@ export async function BoardView(props: AdminViewServerProps) {
   });
   const selectedSort = resolveBoardSort({
     defaultSort: board.defaultSort,
+    orderField,
     preferenceSort,
     querySort,
   });
@@ -140,6 +143,7 @@ export async function BoardView(props: AdminViewServerProps) {
         columnState={columnState}
         query={initialQuery}
         enableSort
+        manualSortField={orderField}
         viewComponents={board.components}
         views={views}
         viewSlug={board.slug}
@@ -185,6 +189,7 @@ export async function BoardView(props: AdminViewServerProps) {
       columnState={columnState}
       query={initialQuery}
       enableSort
+      manualSortField={orderField}
       viewComponents={board.components}
       views={views}
       viewSlug={board.slug}
@@ -197,6 +202,7 @@ export async function BoardView(props: AdminViewServerProps) {
         filter={filter}
         groupBy={groupBy}
         limit={board.pagination?.defaultLimit ?? 50}
+        orderField={orderField}
         canUpdate={Boolean(
           permissions?.update &&
           (fieldPermission === true || (fieldPermission && fieldPermission.update)),

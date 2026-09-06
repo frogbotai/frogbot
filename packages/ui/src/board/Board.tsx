@@ -36,10 +36,12 @@ export function Board<T>(props: BoardProps<T>) {
       <div className="frog-board">
         {board.columns.map((column) => (
           <BoardColumn
-            key={column.key}
             columnKey={column.key}
             getId={props.getId}
             hasMore={props.hasMore?.[column.key]}
+            key={column.key}
+            activeHeight={board.activeHeight}
+            activeId={board.activeId}
             placement={board.placement?.key === column.key ? board.placement : undefined}
             label={column.label}
             onReachEnd={() => props.onReachEnd?.(column.key)}

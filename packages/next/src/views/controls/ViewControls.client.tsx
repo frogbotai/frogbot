@@ -22,6 +22,7 @@ const baseClass = 'view-controls';
 
 export type ViewControlsProps = React.ComponentProps<typeof ListControls> & {
   enableGroupBy?: boolean;
+  manualSortField?: string;
 };
 
 type ViewControl = {
@@ -43,7 +44,11 @@ export function countWhereConditions(where?: Where): number {
   );
 }
 
-export const ViewControls: React.FC<ViewControlsProps> = ({ enableGroupBy, ...props }) => {
+export const ViewControls: React.FC<ViewControlsProps> = ({
+  enableGroupBy,
+  manualSortField,
+  ...props
+}) => {
   const { enableColumns = true, enableFilters = true, enableSort = false } = props;
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [sortExpanded, setSortExpanded] = useState(false);
@@ -89,7 +94,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({ enableGroupBy, ...pr
 
   const sortRows = parseSort(query?.sort as Sort | undefined);
   const sortValue = serializeSort(sortRows);
-  const defaultSort = serializeSort(parseSort(collectionConfig.defaultSort));
+  const defaultSort = manualSortField ?? serializeSort(parseSort(collectionConfig.defaultSort));
 
   const filterCount = enableFilters ? countWhereConditions(query?.where) : 0;
   const groupByActive = groupByEnabled && Boolean(groupByField);
@@ -125,7 +130,7 @@ export const ViewControls: React.FC<ViewControlsProps> = ({ enableGroupBy, ...pr
       count: sortRows.length,
       key: 'sort',
       label: t('general:sort'),
-      onClear: () => void refineListData({ page: 1, sort: '' }),
+      onClear: () => void refineListData({ page: 1, sort: manualSortField ?? '' }),
       targetID: 'toggle-list-sort',
     });
   }
@@ -192,7 +197,11 @@ export const ViewControls: React.FC<ViewControlsProps> = ({ enableGroupBy, ...pr
           height={sortExpanded ? 'auto' : 0}
           id="list-controls-sort"
         >
-          <SortBuilder collectionSlug={collectionConfig.slug} fields={collectionConfig.fields} />
+          <SortBuilder
+            collectionSlug={collectionConfig.slug}
+            fields={collectionConfig.fields}
+            manualField={manualSortField}
+          />
         </AnimateHeight>
       )}
     </div>

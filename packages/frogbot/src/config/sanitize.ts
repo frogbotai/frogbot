@@ -61,7 +61,12 @@ import type { SkillConfig } from '../skills/types.js';
 import type { AnyTool } from '../tools/types.js';
 import type { FrogbotRequest } from '../types/request.js';
 import { resolveFilesCollection } from '../uploads/resolveCollections.js';
-import { compileCollectionViews } from './collectionViews.js';
+import {
+  buildBoardOrderField,
+  buildBoardOrderHook,
+  compileCollectionViews,
+  getBoardOrderFieldNames,
+} from './collectionViews.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
 import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from './sanitized.js';
 import { resolveSourceDir } from './sourceDir.js';
@@ -137,9 +142,17 @@ function sanitizeCollection(
     },
   });
   const views = (admin as PayloadCollectionConfig['admin'])?.components?.views;
+  const orderFieldNames = getBoardOrderFieldNames(c);
+  const existingHooks = (c.hooks ?? {}) as Record<string, unknown[]>;
   const out: Record<string, unknown> = {
     ...(c as unknown as Record<string, unknown>),
     ...(admin ? { admin } : {}),
+    ...(orderFieldNames.length
+      ? {
+          fields: [...c.fields, ...orderFieldNames.map(buildBoardOrderField)],
+          orderable: true,
+        }
+      : {}),
     ...(c.chat === true
       ? {
           admin: {
@@ -175,10 +188,17 @@ function sanitizeCollection(
   };
 
   // Inject `req.frogbot` bootstrap as the first `beforeOperation`.
-  const existingHooks = (c.hooks ?? {}) as Record<string, unknown[]>;
   const existingBeforeOp = (existingHooks.beforeOperation as unknown[] | undefined) ?? [];
   out.hooks = {
     ...existingHooks,
+    ...(orderFieldNames.length
+      ? {
+          beforeChange: [
+            ...((existingHooks.beforeChange as unknown[] | undefined) ?? []),
+            buildBoardOrderHook(orderFieldNames),
+          ],
+        }
+      : {}),
     beforeOperation: [
       (args: { req: PayloadRequest }) => bootstrapBeforeOperation(args, attachFrogbot),
       ...existingBeforeOp,

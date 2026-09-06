@@ -9,6 +9,7 @@ type CollectionViewShellProps = AdminViewServerProps & {
   children: ReactNode;
   columnState?: Column[];
   enableSort?: boolean;
+  manualSortField?: string;
   query?: ListQuery;
   viewComponents?: Record<string, PayloadComponent | PayloadComponent[]>;
   views: Array<{ label: string; path: string; slug: string; type: string }>;
@@ -61,6 +62,7 @@ export function CollectionViewShell(props: CollectionViewShellProps) {
       listMenuItems={listMenuItems}
       newDocumentURL={clientProps.newDocumentURL}
       enableSort={props.enableSort}
+      manualSortField={props.manualSortField}
       query={props.query ?? ((initPageResult.req.query ?? {}) as ListQuery)}
     >
       {children}

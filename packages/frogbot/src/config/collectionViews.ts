@@ -1,4 +1,5 @@
-import type { PayloadComponent } from 'payload';
+import type { CollectionBeforeChangeHook, PayloadComponent, TextField } from 'payload';
+import { generateKeyBetween } from 'payload/shared';
 
 import type { CollectionView, CollectionViewMetadata } from '../admin/views/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
@@ -40,6 +41,56 @@ function normalizeSlug(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
+}
+
+export function getBoardOrderFieldName(viewSlug: string): string {
+  return `_order_${viewSlug.replaceAll('-', '_')}`;
+}
+
+export function buildBoardOrderField(name: string): TextField {
+  return {
+    name,
+    type: 'text',
+    admin: {
+      disableBulkEdit: true,
+      disabled: true,
+      disableGroupBy: true,
+      disableListColumn: true,
+      disableListFilter: true,
+      hidden: true,
+      readOnly: true,
+    },
+    hooks: {
+      beforeDuplicate: [({ siblingData }) => void delete siblingData[name]],
+    },
+    index: true,
+  };
+}
+
+export function buildBoardOrderHook(names: string[]): CollectionBeforeChangeHook {
+  return async ({ collection, data, originalDoc, req }) => {
+    for (const name of names) {
+      if (data[name] || originalDoc?.[name]) continue;
+      const result = await req.payload.find({
+        collection: collection.slug,
+        depth: 0,
+        limit: 1,
+        pagination: false,
+        req,
+        select: { [name]: true },
+        sort: `-${name}`,
+        where: { [name]: { exists: true } },
+      });
+      data[name] = generateKeyBetween((result.docs[0]?.[name] as string | undefined) ?? null, null);
+    }
+    return data;
+  };
+}
+
+export function getBoardOrderFieldNames(collection: CollectionConfig): string[] {
+  return (collection.admin?.views ?? [DEFAULT_VIEW])
+    .filter((view) => view.type === 'board')
+    .map((view) => getBoardOrderFieldName(normalizeSlug(view.slug ?? view.type)));
 }
 
 function labelFor(type: CollectionView['type']): string {
@@ -115,6 +166,7 @@ export function compileCollectionViews({
     metadata.push({
       ...safeView,
       label: view.label ?? labelFor(view.type),
+      ...(view.type === 'board' ? { orderField: getBoardOrderFieldName(view.slug as string) } : {}),
       path,
       slug: view.slug as string,
     } as CollectionViewMetadata);

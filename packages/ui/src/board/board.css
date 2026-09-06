@@ -64,13 +64,22 @@
 }
 
 .frog-board__card--dragging {
-  opacity: 0.3;
+  opacity: 0;
+}
+
+.frog-board__column--placing .frog-board__virtual-row {
+  transition: transform 150ms ease;
 }
 
 .frog-board__placeholder {
   background: var(--theme-base-150);
   border: 1px dashed var(--theme-base-400);
   border-radius: 6px;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 0;
 }
 
 .frog-board__overlay .frog-board__card {

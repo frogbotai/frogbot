@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  buildBoardReorderBody,
   buildColumnWhere,
   getBoardCardColumns,
   getBoardColumnKey,
@@ -8,6 +9,7 @@ import {
   getBoardPreferenceKey,
   getBoardPreferenceUpdate,
   getPath,
+  isBoardOrderField,
   parseSort,
   resolveBoardColumnPreferences,
   resolveBoardGroupBy,
@@ -23,6 +25,28 @@ import {
 } from '../../../../packages/next/src/views/Board/resolveColumns.js';
 
 describe('collection board', () => {
+  it('identifies hidden order fields for sort-option filtering', () => {
+    expect(isBoardOrderField('_order')).toBe(true);
+    expect(isBoardOrderField('_order_by_stage')).toBe(true);
+    expect(isBoardOrderField('priority')).toBe(false);
+  });
+  it('builds Payload reorder requests from positional neighbours', () => {
+    expect(
+      buildBoardReorderBody({
+        before: true,
+        collectionSlug: 'posts',
+        orderField: '_order_board',
+        rowId: 1,
+        target: { id: 2, _order_board: 'a0' },
+      }),
+    ).toEqual({
+      collectionSlug: 'posts',
+      docsToMove: ['1'],
+      newKeyWillBe: 'greater',
+      orderableFieldName: '_order_board',
+      target: { id: '2', key: 'a0' },
+    });
+  });
   it('resolves repeated board instances by slug and route path', () => {
     const views = [
       { path: '/planning', slug: 'planning' },
@@ -196,6 +220,10 @@ describe('collection board', () => {
       'configured,-createdAt',
     );
     expect(resolveBoardSort({})).toBeUndefined();
+    expect(resolveBoardSort({ orderField: '_order_board' })).toBe('_order_board');
+    expect(resolveBoardSort({ defaultSort: '-priority', orderField: '_order_board' })).toBe(
+      '-priority',
+    );
   });
 
   it('builds per-view merged preference updates', () => {

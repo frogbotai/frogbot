@@ -20,6 +20,7 @@ import { type ComponentType, useEffect, useMemo, useState } from 'react';
 
 import {
   appendQuery,
+  buildBoardReorderBody,
   buildColumnWhere,
   getBoardCardColumns,
   getBoardColumnKey,
@@ -39,6 +40,7 @@ export type BoardViewClientProps = {
   filter?: Record<string, unknown>;
   groupBy: string;
   limit: number;
+  orderField: string;
   canUpdate: boolean;
 };
 
@@ -120,6 +122,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
   const Card = props.Card;
   const ColumnHeader = props.ColumnHeader;
   const { query } = useListQuery();
+  const isManual = query.sort === props.orderField;
   const { config, getEntityConfig } = useConfig();
   const { theme } = useTheme();
   const { columns: columnState } = useTableColumns();
@@ -176,25 +179,65 @@ export function BoardViewClient(props: BoardViewClientProps) {
     );
   }, [query.sort, query.where]);
 
-  const move = async ({ row, to }: { row: Row; to: string | null }) => {
-    const value = props.columns.find((column) => column.key === to)?.value ?? null;
-    const response = await fetch(`${config.routes.api}/${props.collectionSlug}/${row.id}`, {
-      body: JSON.stringify(setPath(props.groupBy, value)),
+  const request = async (path: string, init: RequestInit) => {
+    const response = await fetch(`${config.routes.api}${path}`, {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      method: 'PATCH',
+      ...init,
     });
-    const result = (await response.json().catch(() => ({}))) as {
-      doc?: Row;
+    const result = (await response.json().catch(() => ({}))) as Record<string, unknown> & {
       errors?: { message?: string }[];
-      message?: string;
     };
     if (!response.ok) {
-      const message = result.errors?.[0]?.message ?? result.message ?? response.statusText;
+      const message = String(
+        result.errors?.[0]?.message ?? result.error ?? result.message ?? response.statusText,
+      );
       toast.error(message);
       throw new Error(message);
     }
-    setRows((current) => current.map((item) => (item.id === row.id ? (result.doc ?? item) : item)));
+    return result;
+  };
+
+  const reorder = async (row: Row, target: Row, before: boolean) => {
+    const body = buildBoardReorderBody({
+      before,
+      collectionSlug: props.collectionSlug,
+      orderField: props.orderField,
+      rowId: row.id,
+      target,
+    });
+    const result = await request('/reorder', { body: JSON.stringify(body), method: 'POST' });
+    if (result.message !== 'initial migration') return;
+    const fresh = (await request(
+      `/${props.collectionSlug}/${target.id}?depth=0&select[${props.orderField}]=true`,
+      { method: 'GET' },
+    )) as Row;
+    if (fresh[props.orderField]) await reorder(row, fresh, before);
+  };
+
+  const move = async ({
+    after,
+    before,
+    from,
+    row,
+    to,
+  }: {
+    after?: Row;
+    before?: Row;
+    from: string | null;
+    row: Row;
+    to: string | null;
+  }) => {
+    if (from !== to) {
+      const value = props.columns.find((column) => column.key === to)?.value ?? null;
+      await request(`/${props.collectionSlug}/${row.id}`, {
+        body: JSON.stringify(setPath(props.groupBy, value)),
+        method: 'PATCH',
+      });
+    }
+    const target = before ?? after;
+    if (isManual && target) await reorder(row, target, Boolean(before));
+    await Promise.all([...new Set([from ?? '', to ?? ''])].map((key) => fetchColumn(key, 1, true)));
   };
 
   return (
@@ -202,6 +245,7 @@ export function BoardViewClient(props: BoardViewClientProps) {
       <ThemeProvider mode={theme}>
         <div className="collection-board">
           <Board
+            allowReorder={isManual}
             columns={props.columns}
             getId={(row) => String(row.id)}
             groupBy={(row) => {
