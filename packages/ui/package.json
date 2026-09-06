@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/ui",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "description": "React components for FrogBot chat interfaces.",
   "license": "MIT",
   "author": "Colby Gilbert",

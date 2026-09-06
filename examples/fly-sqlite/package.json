@@ -1,6 +1,6 @@
 {
   "name": "frogbot-example-fly-sqlite",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "private": true,
   "description": "Deploy FrogBot to Fly.io with SQLite on a persistent volume: standalone Docker image, migrations, and scale-to-zero.",
   "license": "MIT",
@@ -19,12 +19,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@frogbotai/db-sqlite": "0.21.0",
-    "@frogbotai/next": "0.21.0",
-    "@frogbotai/ui": "0.21.0",
+    "@frogbotai/db-sqlite": "0.22.0",
+    "@frogbotai/next": "0.22.0",
+    "@frogbotai/ui": "0.22.0",
     "cross-env": "^7.0.3",
     "drizzle-kit": "^0.31.7",
-    "frogbot": "0.21.0",
+    "frogbot": "0.22.0",
     "graphql": "^16.8.1",
     "json-schema-to-typescript": "^15.0.3",
     "libsql": "^0.4.7",

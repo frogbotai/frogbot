@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/plugin-audit-log",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "description": "Immutable collection audit logs for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
