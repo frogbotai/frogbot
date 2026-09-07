@@ -1,29 +1,3 @@
-// Review 056 batch-2 triage — reproduction tests for G12–G18 (all /v1/messages,
-// Anthropic wire) from dev/plans/frogbot_gateway/056_full_gateway_review/00_SUMMARY.md §3
-// and findings/03_anthropic_messages_wire.md (+ findings/07 HE14 for G16).
-//
-// Each test asserts the CORRECT (spec-compliant) behavior at the composed-app
-// seam. Confirmed findings are wrapped as `it.fails(...)` so the suite stays
-// green; flip to `it()` when the corresponding fix lands. Policy-compliant
-// current behavior (G18) is a plain passing `it()`.
-//
-// Expected shapes verified against:
-//   - Anthropic error spec (platform.claude.com/docs/en/api/errors):
-//     402 billing_error, 413 request_too_large, 504 timeout_error,
-//     529 overloaded_error; error bodies carry a top-level `request_id`.
-//   - Anthropic Messages spec: stop_reason includes 'refusal'
-//     (AI SDK map-anthropic-stop-reason.ts maps refusal → 'content-filter');
-//     request `service_tier: 'auto'|'standard_only'`, response
-//     `usage.service_tier: 'standard'|'priority'|'batch'`;
-//     structured output via `output_config.format: {type:'json_schema', schema}`.
-//   - AI SDK anthropic source (~/Documents/Code/ai/packages/anthropic/src):
-//     URL documents accepted only as application/pdf or text/plain
-//     (convert-to-anthropic-prompt.ts, else UnsupportedFunctionalityError);
-//     `providerOptions.anthropic.metadata.userId` → `metadata.user_id`
-//     (anthropic-language-model.ts:495-496); raw usage (incl. service_tier)
-//     surfaces at `providerMetadata.anthropic.usage`; responseFormat
-//     {type:'json', schema} → `output_config.format` on the Anthropic wire.
-
 import type {
   LanguageModelV4,
   LanguageModelV4CallOptions,
@@ -304,7 +278,7 @@ describe('messages URL document defaults to application/pdf', () => {
 // response usage. Spec: request `service_tier: 'auto'|'standard_only'`;
 // response `usage.service_tier: 'standard'|'priority'|'batch'`. NOTE: the
 // current AI SDK anthropic package has no typed serviceTier language-model
-// option (verified against ~/Documents/Code/ai — the finding's proposed
+// option (verified against ~/code/ai — the finding's proposed
 // `providerOptions.anthropic.serviceTier` key does not exist there), so the
 // request-side assertion only requires the value to reach the upstream call's
 // providerOptions under some namespace. Raw usage (incl. service_tier) comes

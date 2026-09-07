@@ -1,37 +1,3 @@
-// Review 056 B2 triage — reproduction tests for G19 (RS3) from
-// dev/plans/frogbot_gateway/056_full_gateway_review/00_SUMMARY.md §3 /
-// findings/04_responses_wire.md.
-//
-// G19: /v1/responses built-in (hosted) tools — web_search, file_search,
-// code_interpreter, mcp, image_generation — and hosted tool_choice shapes are
-// silently stripped by the responses tools translation
-// (translators/tools.ts:13 `if (t.type !== 'function') continue;` and
-// tools.ts:38-39 returning undefined), while schema.ts:66 claims hosted tool
-// types are "passed through untouched". The request proceeds tool-less with
-// HTTP 200 and no warning.
-//
-// Expected (compliant) behavior asserted here, verified against the AI SDK
-// source (/Users/colbygilbert/Documents/Code/ai):
-// - Hosted tools must reach the model as LanguageModelV4ProviderTool entries
-//   `{ type: 'provider', id: 'openai.<tool>', name, args }`
-//   (packages/provider/src/language-model/v4/language-model-v4-provider-tool.ts,
-//   ai-core prepare-tools.ts:63-70). openai-responses then maps
-//   `openai.web_search` → `{ type: 'web_search', ... }` on the wire
-//   (packages/openai/src/responses/openai-responses-prepare-tools.ts:186-202)
-//   and `openai.mcp` → `{ type: 'mcp', server_label, server_url, ... }`
-//   (prepare-tools.ts:246-292).
-// - Hosted tool_choice `{ type: 'web_search' }` must reach the model as
-//   `{ type: 'tool', toolName: 'web_search' }` (ai-core
-//   prepare-tool-choice.ts:14), which openai-responses maps back to
-//   `{ type: 'web_search' }` (openai-responses-prepare-tools.ts:363-383).
-// - For non-OpenAI upstreams hosted OpenAI tools cannot work; the honest
-//   behavior is a typed 400 (invalid_request_error), not a silent tool-less
-//   200 (REASSESSMENT_2 §1.4 "forward or 400").
-//
-// Each test asserts the CORRECT behavior at the composed-app seam. Confirmed
-// findings are wrapped as `it.fails(...)` so the suite stays green; flip to
-// `it()` when the fix lands.
-
 import type { LanguageModelV4, LanguageModelV4CallOptions } from '@ai-sdk/provider';
 import { describe, expect, it } from 'vitest';
 

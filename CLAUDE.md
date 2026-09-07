@@ -58,7 +58,7 @@
 
 ## UI Parity with Firmware (CRITICAL — do not deviate)
 
-- **Firmware (`/Users/colbygilbert/Documents/Code/firmware`) is the previous iteration of FrogBot.** The goal is to port Firmware's existing, already-designed UI into FrogBot as FrogBot features — NOT to design new UI from scratch.
+- **Firmware (`~/code/firmware`) is the previous iteration of FrogBot.** The goal is to port Firmware's existing, already-designed UI into FrogBot as FrogBot features — NOT to design new UI from scratch.
 - **When building any FrogBot admin/UI surface, find the corresponding Firmware implementation first** (`apps/web`, `apps/desktop`, `packages/app`, `packages/ui`, admin panel customizations) and follow it exactly. Not everything ports over, but where a Firmware design exists, it is the spec.
 - **Concrete example (issue #35):** the api-keys plugin UI must be a single button injected into the Payload collection list view that opens a modal (create → one-time key reveal in the same modal) — exactly how Firmware did it (`apps/web/src/collections/ApiKeys/components/CreateApiKeyButton.tsx`). Inline always-visible panels above the list table are wrong.
 - **Direction of travel:** FrogBot's default Payload admin panel is progressively moving toward the Firmware desktop app / aggressively-masked web admin look, with FrogBot providing the components. Don't go fully there in one step, but new UI work must trend toward that design, never away from it.
@@ -108,10 +108,10 @@ Representative mappings include collection configuration in `collections/config/
 
 ## Reference Repos
 
-- **Payload source:** `/Users/colbygilbert/Documents/Code/payload` — ALWAYS check this repo for Payload internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what Payload supports.
+- **Payload source:** `~/code/payload` — ALWAYS check this repo for Payload internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what Payload supports.
 
-- **AI SDK by Vercel source:** `/Users/colbygilbert/Documents/Code/ai` — ALWAYS check this repo for AI SDK by Vercel internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what AI SDK by Vercel supports.
+- **AI SDK by Vercel source:** `~/code/ai` — ALWAYS check this repo for AI SDK by Vercel internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what AI SDK by Vercel supports.
 
-- **`opencode` source:** `/Users/colbygilbert/Documents/Code/opencode` — ALWAYS check this repo for `opencode` internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what `opencode` supports.
+- **`opencode` source:** `~/code/opencode` — ALWAYS check this repo for `opencode` internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what `opencode` supports.
 
-- **`opencode` v2 beta source:** `/Users/colbygilbert/Documents/Code/opencode-v2` — the 2.0 beta line (git worktree on `v2-beta`, tracks `origin/beta`). Check for 2.0 architecture direction (Effect runtime, `core`/`protocol`/`server`/`llm`/`sdk-next` package split). NOT shipped behavior — for what `opencode` does today, use `/Users/colbygilbert/Documents/Code/opencode`.
+- **`opencode` v2 beta source:** `~/code/opencode-v2` — the 2.0 beta line (git worktree on `v2-beta`, tracks `origin/beta`). Check for 2.0 architecture direction (Effect runtime, `core`/`protocol`/`server`/`llm`/`sdk-next` package split). NOT shipped behavior — for what `opencode` does today, use `~/code/opencode`.
