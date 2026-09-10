@@ -39,6 +39,7 @@ export type { Frogbot as FrogbotInstance } from './frogbot.js';
 export { getCachedFrogbot, getFrogbot } from './getFrogbot.js';
 export type { GatewayHandler } from './server/gateway.js';
 export { createGatewayHandler } from './server/gateway.js';
+export { chunkGenerator } from './utilities/chunkGenerator.js';
 export type {
   ReadTrainingDataOptions,
   TrainingDataDocument,
