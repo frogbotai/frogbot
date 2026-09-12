@@ -9,6 +9,7 @@ import { type ReactNode, useEffect } from 'react';
 import type { AppSidebarNavItem } from './AppSidebar.js';
 import { AppSidebar } from './AppSidebar.js';
 import { MobileNavToggle } from './MobileNavToggle.js';
+import { getNavShellState } from './navShellState.js';
 
 export type FrogbotNavClientProps = {
   accountEmail?: string;
@@ -59,26 +60,37 @@ export function FrogbotNavClient({
   const router = useRouter();
   const { setPreference } = usePreferences();
   const { startRouteTransition } = useRouteTransition();
-  const { hydrated, navOpen, navRef, setNavOpen, shouldAnimate } = useNav();
+  const { hydrated, navOpen, navRef, setNavOpen } = useNav();
   const isMobile = useIsMobile();
+  const navState = getNavShellState(isMobile, navOpen);
+
+  useEffect(() => {
+    if (!isMobile && initialOpen !== undefined) setNavOpen(initialOpen);
+  }, [initialOpen, isMobile, setNavOpen]);
 
   useEffect(() => {
     if (isMobile) setNavOpen(false);
-    else if (initialOpen !== undefined) setNavOpen(initialOpen);
-  }, [initialOpen, isMobile, setNavOpen]);
+  }, [isMobile, pathname, setNavOpen]);
+
+  useEffect(() => {
+    if (navState !== 'mobile-nav-open') return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setNavOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [navState, setNavOpen]);
 
   return (
     <>
-      <MobileNavToggle navOpen={navOpen} onOpen={() => setNavOpen(true)} />
+      <MobileNavToggle navState={navState} onOpen={() => setNavOpen(true)} />
+      {navState === 'mobile-nav-open' && (
+        <div aria-hidden className="frogbot-nav-backdrop" onClick={() => setNavOpen(false)} />
+      )}
       <aside
-        className={[
-          'nav frogbot-nav-shell',
-          navOpen && 'nav--nav-open',
-          shouldAnimate && 'nav--nav-animate',
-          hydrated && 'nav--nav-hydrated',
-        ]
-          .filter(Boolean)
-          .join(' ')}
+        className="frogbot-nav-shell"
+        data-nav-hydrated={hydrated || undefined}
+        data-nav-state={navState}
       >
         <div className="nav__scroll" ref={navRef}>
           <div className="frogbot-nav">

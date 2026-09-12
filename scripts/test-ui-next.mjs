@@ -43,10 +43,11 @@ try {
   assert.match(css, /data-fb-theme/);
   assert.match(css, /body:has\(\.frogbot-nav-shell\) \.app-header__mobile-nav-toggler/);
   assert.match(css, /\.frogbot-mobile-nav-toggle/);
-  assert.doesNotMatch(
-    css,
-    /\.template-default:has\(\.frogbot-admin-sidebar\[data-collapsed=true\]\)\{[^}]*!important/,
-  );
+  assert.match(css, /\.frogbot-nav-backdrop/);
+  for (const state of ['desktop-nav-closed', 'mobile-nav-open', 'mobile-nav-closed']) {
+    assert.match(css, new RegExp(`\\.frogbot-nav-shell\\[data-nav-state=${state}\\]`));
+  }
+  assert.doesNotMatch(css, /\.template-default[^{]*\{[^}]*!important/);
 
   const bundles = staticFiles
     .filter((file) => file.endsWith('.js'))

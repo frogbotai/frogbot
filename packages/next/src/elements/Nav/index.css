@@ -36,6 +36,13 @@
   background: var(--theme-elevation-100);
 }
 
+.frogbot-nav-backdrop {
+  background: color-mix(in srgb, var(--theme-elevation-1000) 40%, transparent);
+  inset: 0;
+  position: fixed;
+  z-index: 99;
+}
+
 .frogbot-admin-sidebar {
   cursor: default;
   display: flex;

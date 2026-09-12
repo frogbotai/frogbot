@@ -1,17 +1,16 @@
 'use client';
 
-import { useIsMobile } from '@frogbotai/ui';
 import { MenuIcon } from '@frogbotai/ui/icons';
 
+import type { NavShellState } from './navShellState.js';
+
 export type MobileNavToggleProps = {
-  navOpen: boolean;
+  navState: NavShellState;
   onOpen: () => void;
 };
 
-export function MobileNavToggle({ navOpen, onOpen }: MobileNavToggleProps) {
-  const isMobile = useIsMobile();
-
-  if (!isMobile || navOpen) return null;
+export function MobileNavToggle({ navState, onOpen }: MobileNavToggleProps) {
+  if (navState !== 'mobile-nav-closed') return null;
 
   return (
     <button
