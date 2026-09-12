@@ -12,6 +12,9 @@ const mocks = vi.hoisted(() => ({
   generateImportMap: vi.fn(async () =>
     mocks.calls.push(`generateImportMap:${process.env.FROGBOT_TEST_KEY}`),
   ),
+  generatePieceTypes: vi.fn(async () =>
+    mocks.calls.push(`generatePieceTypes:${process.env.FROGBOT_TEST_KEY}`),
+  ),
   generateTypes: vi.fn(async () =>
     mocks.calls.push(`generateTypes:${process.env.FROGBOT_TEST_KEY}`),
   ),
@@ -20,6 +23,7 @@ const mocks = vi.hoisted(() => ({
     process.env.FROGBOT_TEST_KEY = 'loaded';
   }),
   migrate: vi.fn(async (args: string[]) => mocks.calls.push(`migrate:${args.join(',')}`)),
+  piecesPort: vi.fn(async () => mocks.calls.push(`piecesPort:${process.env.FROGBOT_TEST_KEY}`)),
   start: vi.fn(() => mocks.calls.push(`start:${process.env.FROGBOT_TEST_KEY}`)),
 }));
 
@@ -33,11 +37,17 @@ vi.mock('../../../../packages/frogbot/src/bin/exportCaptures.js', () => ({
 vi.mock('../../../../packages/frogbot/src/bin/generateImportMap.js', () => ({
   generateImportMap: mocks.generateImportMap,
 }));
+vi.mock('../../../../packages/frogbot/src/bin/generatePieceTypes.js', () => ({
+  generatePieceTypesCommand: mocks.generatePieceTypes,
+}));
 vi.mock('../../../../packages/frogbot/src/bin/generateTypes.js', () => ({
   generateTypes: mocks.generateTypes,
 }));
 vi.mock('../../../../packages/frogbot/src/bin/loadEnv.js', () => ({ loadEnv: mocks.loadEnv }));
 vi.mock('../../../../packages/frogbot/src/bin/migrate.js', () => ({ migrate: mocks.migrate }));
+vi.mock('../../../../packages/frogbot/src/bin/piecesPort.js', () => ({
+  piecesPort: mocks.piecesPort,
+}));
 vi.mock('../../../../packages/frogbot/src/bin/start.js', () => ({ start: mocks.start }));
 
 import { bin } from '../../../../packages/frogbot/src/bin/index.js';
@@ -62,7 +72,9 @@ describe('frogbot bin', () => {
     ['start', 'start'],
     ['DEV', 'dev'],
     ['generate:types', 'generateTypes'],
+    ['generate:piece-types', 'generatePieceTypes'],
     ['generate:importmap', 'generateImportMap'],
+    ['pieces:port', 'piecesPort'],
     ['export:training-data', 'exportTrainingData'],
     ['export:captures', 'exportCaptures'],
   ])('loads env before dispatching `%s`', async (command, handler) => {
@@ -91,7 +103,7 @@ describe('frogbot bin', () => {
     await expect(bin()).rejects.toThrow('exit:2');
     expect(mocks.calls).toEqual(['loadEnv']);
     expect(error).toHaveBeenCalledWith(
-      '[frogbot] usage: frogbot <start|dev|generate:types|generate:importmap|export:training-data|export:captures|migrate|migrate:create|migrate:status|migrate:down|migrate:refresh|migrate:reset|migrate:fresh>',
+      '[frogbot] usage: frogbot <start|dev|generate:types|generate:piece-types|generate:importmap|pieces:port|export:training-data|export:captures|migrate|migrate:create|migrate:status|migrate:down|migrate:refresh|migrate:reset|migrate:fresh>',
     );
   });
 

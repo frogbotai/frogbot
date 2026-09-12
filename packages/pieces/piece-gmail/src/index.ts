@@ -1,44 +1,49 @@
-import * as module from '@activepieces/piece-gmail';
-import { createActivepiecesPiece, type PieceFactoryConfig } from 'frogbot/pieces';
+import { definePiece } from 'frogbot/pieces';
+
+import { customApiCall } from './actions/customApiCall.js';
+import { getEmail } from './actions/getEmail.js';
+import { createDraftReply, replyToEmail } from './actions/replyToEmail.js';
+import { searchEmails } from './actions/searchEmails.js';
+import { send } from './actions/send.js';
+import { createGmailClient, type Gmail } from './client.js';
+import { gmailAuth, gmailScopes } from './config.js';
+import { newEmail } from './triggers/newEmail.js';
 
 export const gmailActions = [
-  'send_email',
-  'request_approval_in_mail',
-  'reply_to_email',
-  'create_draft_reply',
-  'gmail_get_mail',
-  'gmail_search_mail',
+  'send',
+  'replyToEmail',
+  'createDraftReply',
+  'getEmail',
+  'searchEmails',
+  'customApiCall',
 ] as const;
-export const gmailScopes = [
-  'https://www.googleapis.com/auth/gmail.send',
-  'https://www.googleapis.com/auth/gmail.readonly',
-  'https://www.googleapis.com/auth/gmail.compose',
-  'email',
-] as const;
+export const gmailTriggers = ['newEmail'] as const;
+export { gmailScopes };
 
-export function createGmail(config?: PieceFactoryConfig) {
-  const piece = createActivepiecesPiece({
-    module: module,
-    service: 'gmail',
-    credentialType: 'oauth2',
-    defaultActions: gmailActions,
-    scopes: gmailScopes,
-    config,
-  });
-  return Object.assign(piece, {
-    /** Send Email: Send an email through a Gmail account */
-    sendEmail: piece.tool('send_email'),
-    /** Request Approval in Email: Send approval request email and then wait until the email is approved or disapproved */
-    requestApprovalInMail: piece.tool('request_approval_in_mail'),
-    /** Reply to Email: Reply to an existing email. */
-    replyToEmail: piece.tool('reply_to_email'),
-    /** Create Draft Reply: Creates a draft reply to an existing email. */
-    createDraftReply: piece.tool('create_draft_reply'),
-    /** Get Email: Get an email via Id. */
-    gmailGetMail: piece.tool('gmail_get_mail'),
-    /** Find Email: Find emails using advanced search criteria. If no filters are provided, the latest emails are returned. */
-    gmailSearchMail: piece.tool('gmail_search_mail'),
-    /** Custom API Call: Make a custom API call to a specific endpoint */
-    customApiCall: piece.tool('custom_api_call'),
-  });
-}
+export const createGmail = definePiece({
+  slug: 'gmail',
+  label: 'Gmail',
+  admin: { description: 'Send, draft, read, and search Gmail messages', group: 'Communication' },
+  auth: gmailAuth,
+  client: createGmailClient,
+  oauth: {
+    authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenUrl: 'https://oauth2.googleapis.com/token',
+    scopes: [...gmailScopes],
+    params: { access_type: 'offline', prompt: 'consent' },
+    toAuth: ({ tokens }) => ({
+      accessToken: tokens.access_token ?? '',
+      refreshToken: tokens.refresh_token,
+    }),
+    async account({ client }) {
+      const profile = (await (client as Gmail).users.getProfile({ userId: 'me' })).data;
+      return {
+        id: profile.emailAddress ?? 'me',
+        label: profile.emailAddress ?? 'Gmail account',
+        email: profile.emailAddress ?? undefined,
+      };
+    },
+  },
+  actions: [send, replyToEmail, createDraftReply, getEmail, searchEmails, customApiCall],
+  triggers: [newEmail],
+});
