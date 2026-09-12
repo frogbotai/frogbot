@@ -66,19 +66,25 @@
   display: contents;
 }
 
-.template-default:has(.frogbot-nav) {
-  --nav-width: 17rem;
+.template-default:has(.frogbot-nav-shell) {
+  --frogbot-nav-width: 17rem;
+  grid-template-columns: var(--frogbot-nav-width) minmax(0, 1fr);
 }
 
-.template-default:has(.frogbot-admin-sidebar[data-collapsed="true"]) {
-  grid-template-columns: 60px minmax(0, 1fr);
+.template-default:has(.frogbot-nav-shell[data-nav-state="desktop-nav-closed"]) {
+  --frogbot-nav-width: 60px;
 }
 
-.template-default:has(.frogbot-nav) > .template-default__wrap {
+.template-default:has(.frogbot-nav-shell[data-nav-state="mobile-nav-open"]),
+.template-default:has(.frogbot-nav-shell[data-nav-state="mobile-nav-closed"]) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.template-default:has(.frogbot-nav-shell) > .template-default__wrap {
   min-width: 0;
 }
 
-.template-default:has(.frogbot-nav) .template-default__nav-toggler-wrapper,
+body:has(.frogbot-nav-shell) .template-default__nav-toggler-wrapper,
 body:has(.frogbot-nav-shell) .template-default__nav-toggler-container,
 body:has(.frogbot-nav-shell) .app-header__account,
 body:has(.frogbot-nav-shell) .app-header__mobile-nav-toggler,
@@ -91,35 +97,39 @@ body:has(.frogbot-nav-shell) .app-header__controls-wrapper {
 }
 
 .frogbot-nav-shell {
+  background: var(--theme-bg);
+  border-right: 1px solid var(--theme-elevation-100);
+  flex-shrink: 0;
+  height: 100vh;
   overflow: hidden;
+  position: sticky;
+  top: 0;
   width: 100%;
 }
 
-.frogbot-nav-shell:has(.frogbot-admin-sidebar[data-collapsed="true"]) {
-  width: 60px;
+[dir="rtl"] .frogbot-nav-shell {
+  border-left: 1px solid var(--theme-elevation-100);
+  border-right: 0;
+}
+
+.frogbot-nav-shell:not([data-nav-hydrated]) {
+  visibility: hidden;
+}
+
+.frogbot-nav-shell[data-nav-state="mobile-nav-closed"] {
+  display: none;
+}
+
+.frogbot-nav-shell[data-nav-state="mobile-nav-open"] {
+  inset: 0 auto 0 0;
+  position: fixed;
+  width: var(--frogbot-nav-width);
+  z-index: 100;
 }
 
 .frogbot-nav-shell .nav__scroll {
   overflow-x: hidden;
   padding: 8px;
-}
-
-@media (max-width: 767px) {
-  .template-default:has(.frogbot-admin-sidebar[data-collapsed="true"]) {
-    grid-template-columns: 0 minmax(0, 1fr);
-  }
-
-  .template-default .frogbot-nav-shell {
-    display: none;
-  }
-
-  .template-default .frogbot-nav-shell.nav--nav-open {
-    display: block;
-    inset: 0 auto 0 0;
-    position: fixed;
-    width: var(--nav-width);
-    z-index: 100;
-  }
 }
 
 a.step-nav__home,
