@@ -15,7 +15,9 @@ const google = {
 export const googleSheets = createGoogleSheets({ auth: google });
 export const googleDrive = createGoogleDrive({ auth: google });
 export const googleCalendar = createGoogleCalendar({ auth: google });
-export const linear = createLinear();
+export const linear = createLinear({
+  auth: { apiKey: process.env.LINEAR_API_KEY ?? '' },
+});
 export const resend = createResend({
   auth: { apiKey: process.env.RESEND_API_KEY ?? '' },
 });
@@ -27,7 +29,6 @@ export const pieces = [
   googleSheets,
   googleDrive,
   googleCalendar,
-  linear,
   dateHelper,
   dataSummarizer,
   pdf,

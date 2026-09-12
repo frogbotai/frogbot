@@ -51,7 +51,13 @@ export default defineConfig({
         test: {
           name: 'unit',
           include: ['test/unit/**/*.spec.ts'],
-          exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', 'test/unit/gateway/**'],
+          exclude: [
+            '**/node_modules/**',
+            '**/dist/**',
+            '**/.next/**',
+            '**/*.legacy/**',
+            'test/unit/gateway/**',
+          ],
           environment: 'node',
         },
       },
@@ -61,7 +67,7 @@ export default defineConfig({
         test: {
           name: 'ui',
           include: ['test/ui/**/*.spec.tsx'],
-          exclude: ['**/node_modules/**', '**/dist/**'],
+          exclude: ['**/node_modules/**', '**/dist/**', '**/*.legacy/**'],
           environment: 'jsdom',
           server: { deps: { inline: [/@payloadcms\/ui/] } },
           setupFiles: ['./packages/ui/src/vitest.setup.ts'],
@@ -71,7 +77,7 @@ export default defineConfig({
         test: {
           name: 'int',
           include: ['test/**/*int.spec.ts'],
-          exclude: ['**/node_modules/**', '**/dist/**', 'test/gateway/**'],
+          exclude: ['**/node_modules/**', '**/dist/**', '**/*.legacy/**', 'test/gateway/**'],
           environment: 'node',
           fileParallelism: false,
           hookTimeout: 90000,
@@ -84,7 +90,7 @@ export default defineConfig({
         test: {
           name: 'e2e',
           include: ['test/e2e/**/*.e2e.spec.ts'],
-          exclude: ['**/node_modules/**', '**/dist/**'],
+          exclude: ['**/node_modules/**', '**/dist/**', '**/*.legacy/**'],
           environment: 'node',
           fileParallelism: false,
           hookTimeout: 240000,
@@ -96,7 +102,7 @@ export default defineConfig({
         test: {
           name: 'gateway-unit',
           include: ['test/unit/gateway/**/*.spec.ts'],
-          exclude: ['**/node_modules/**', '**/dist/**'],
+          exclude: ['**/node_modules/**', '**/dist/**', '**/*.legacy/**'],
           environment: 'node',
         },
       },
@@ -104,7 +110,7 @@ export default defineConfig({
         test: {
           name: 'gateway-integration',
           include: ['test/gateway/**/*.int.spec.ts'],
-          exclude: ['**/node_modules/**', '**/dist/**'],
+          exclude: ['**/node_modules/**', '**/dist/**', '**/*.legacy/**'],
           environment: 'node',
           fileParallelism: false,
           hookTimeout: 90000,

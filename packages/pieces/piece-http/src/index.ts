@@ -1,23 +1,14 @@
-import * as module from '@activepieces/piece-http';
-import { createActivepiecesPiece, type PieceFactoryConfig } from 'frogbot/pieces';
+import { definePiece } from 'frogbot/pieces';
 
-export const httpActions = ['send_request', 'parse_url'] as const;
+import { parseUrl } from './actions/parseUrl.js';
+import { sendRequest } from './actions/sendRequest.js';
+
+export const httpActions = ['sendRequest', 'parseUrl'] as const;
 export const httpScopes = [] as const;
 
-export function createHttp(config?: PieceFactoryConfig) {
-  const piece = createActivepiecesPiece({
-    module: module,
-    service: 'http',
-    credentialType: 'none',
-    defaultActions: httpActions,
-    scopes: httpScopes,
-    config,
-    errorsAsResults: true,
-  });
-  return Object.assign(piece, {
-    /** Send HTTP request: Send HTTP request */
-    sendRequest: piece.tool('send_request'),
-    /** Parse URL: Extract the domain, path, and query parameters from a URL. */
-    parseUrl: piece.tool('parse_url'),
-  });
-}
+export const createHttp = definePiece({
+  slug: 'http',
+  label: 'HTTP',
+  admin: { description: 'Send HTTP requests and parse URLs', group: 'Core' },
+  actions: [sendRequest, parseUrl],
+});

@@ -864,9 +864,12 @@ importers:
 
   packages/pieces/piece-gmail:
     dependencies:
-      '@activepieces/piece-gmail':
-        specifier: 0.12.8
-        version: 0.12.8
+      googleapis:
+        specifier: ^180.0.0
+        version: 180.0.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -929,9 +932,9 @@ importers:
 
   packages/pieces/piece-http:
     dependencies:
-      '@activepieces/piece-http':
-        specifier: 0.11.11
-        version: 0.11.11
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -955,9 +958,12 @@ importers:
 
   packages/pieces/piece-linear:
     dependencies:
-      '@activepieces/piece-linear':
-        specifier: 0.4.4
-        version: 0.4.4
+      '@linear/sdk':
+        specifier: ^92.0.0
+        version: 92.0.0(graphql@16.14.2)
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -1965,12 +1971,6 @@ packages:
         integrity: sha512-527hiVL9Yn21IMpzcCcNpTs7dOsmlH0juDsGixsx/w77imQ6lDaINGwIOSGTQt+x/81FA7oWF4Q4abZ3BGO3Pg==,
       }
 
-  '@activepieces/piece-gmail@0.12.8':
-    resolution:
-      {
-        integrity: sha512-0Y7v7OFV/CW/uM8amz/Xmf2R8Ijk1AfOcz/5+evEpyLXA1mOAukbIiqF5/wZG9QFCyWVJLq9VWH0DOE+ivhZQw==,
-      }
-
   '@activepieces/piece-google-calendar@0.9.5':
     resolution:
       {
@@ -1993,12 +1993,6 @@ packages:
     resolution:
       {
         integrity: sha512-DEOAXrSoh/gqRw+cc+q2xJTVYiqSpPyPYeFT/wTAKR2BAC+oQiz3z/Z8d5AEH1ElXCy5oawl8KFAABFWc1KhYg==,
-      }
-
-  '@activepieces/piece-http@0.11.11':
-    resolution:
-      {
-        integrity: sha512-tYPBaW3pUNYgt4bgRa/pKF4heWVkwV6M97yfJIbZT4ibW+zv00gBLUFMToQt0KJ4nPXIV+kYM8w8nzLexXNQjQ==,
       }
 
   '@activepieces/piece-image-helper@0.1.15':
@@ -4301,6 +4295,14 @@ packages:
       }
     engines: { node: '>=14' }
 
+  '@graphql-typed-document-node/core@3.2.0':
+    resolution:
+      {
+        integrity: sha512-mB9oAsNCm9aM3/SOv4YtBMqZbYj10R7dkq8byBqxGY/ncFwhf2oQzMV+LCRlWoDSEBJ3COiR1yeDvMtsoOsuFQ==,
+      }
+    peerDependencies:
+      graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
+
   '@hono/node-server@1.19.14':
     resolution:
       {
@@ -5170,6 +5172,13 @@ packages:
       }
     cpu: [x64]
     os: [win32]
+
+  '@linear/sdk@92.0.0':
+    resolution:
+      {
+        integrity: sha512-MDqvUcgkvVNg//ivlJx2a4d9bjELrMo2h5qK0xc6hYABTV98oAOsZkepd9RV8n5j1rqfA5vJsQNeIC5en40TkQ==,
+      }
+    engines: { node: '>=18.x' }
 
   '@microsoft/microsoft-graph-types@2.40.0':
     resolution:
@@ -9900,6 +9909,13 @@ packages:
       }
     engines: { node: '>=18' }
 
+  gaxios@7.3.1:
+    resolution:
+      {
+        integrity: sha512-kB3rzJV7d9juLZh8/56QTXCwQfxyhdOMdyYk1HdQKFtF8TJTDTZQJtixWIwXdE9Jji91mC41DUNpjleo4L4eAQ==,
+      }
+    engines: { node: '>=18' }
+
   gcp-metadata@6.1.1:
     resolution:
       {
@@ -9913,6 +9929,13 @@ packages:
         integrity: sha512-zV/5HKTfCeKWnxG0Dmrw51hEWFGfcF2xiXqcA3+J90WDuP0SvoiSO5ORvcBsifmx/FoIjgQN3oNOGaQ5PhLFkg==,
       }
     engines: { node: '>=18' }
+
+  gcp-metadata@9.0.3:
+    resolution:
+      {
+        integrity: sha512-2YYnIlHaKBGT2IPg3G2M57hia9Galz15zsEOvw9T3oRf0lSn6KN6VcHQLqby7x8ksYKnjXvp3rp2KJyLCN6zfQ==,
+      }
+    engines: { node: '>=22' }
 
   generic-pool@3.9.0:
     resolution:
@@ -10051,6 +10074,13 @@ packages:
       }
     engines: { node: '>=18' }
 
+  google-auth-library@11.0.2:
+    resolution:
+      {
+        integrity: sha512-vzpgPutxrghPsnjrjpzLX2bdv8IOL719Rh0oEjGnQu8YCIbnbMuTTQ5zU9LcKvLdOPgCxBwppbvnhgW90Qna5Q==,
+      }
+    engines: { node: '>=22' }
+
   google-auth-library@9.15.1:
     resolution:
       {
@@ -10071,6 +10101,27 @@ packages:
         integrity: sha512-eAmLkjDjAFCVXg7A1unxHsLf961m6y17QFqXqAXGj/gVkKFrEICfStRfwUlGNfeCEjNRa32JEWOUTlYXPyyKvA==,
       }
     engines: { node: '>=14' }
+
+  google-logging-utils@2.0.1:
+    resolution:
+      {
+        integrity: sha512-HMhaQghlOTvbcb3c4T5jmmOMtG3JUF1iOQMezaJXL86CDS+Tm2vHd0IeLFRAx3+ewd+bo9E1HFHoy17X5aJa9A==,
+      }
+    engines: { node: '>=22' }
+
+  googleapis-common@9.0.4:
+    resolution:
+      {
+        integrity: sha512-fcI5bm1gN+9MNb+gvANRPFsxaJ07h/ZYvKCh6H3RoDJBUTwp5ySaCpCqnmX8gnGJUD/9bKmkacivRJT1g+xXyg==,
+      }
+    engines: { node: '>=22' }
+
+  googleapis@180.0.0:
+    resolution:
+      {
+        integrity: sha512-vuIkT4W09kDZn+dQbvSh1p2VU4DMZ7B/zLlxxlQgZjb06U0C6rA+5HSbZSlhp3DiSOZYHCOsuXJ+DUWIOQMVhw==,
+      }
+    engines: { node: '>=22.0.0' }
 
   gopd@1.2.0:
     resolution:
@@ -10799,6 +10850,7 @@ packages:
       {
         integrity: sha512-T9eIRCs6b0J1SHKYIvD8+KCJMcWZ900iZyxdnSCdqxN12Z1ijzT+jY5nrk72Jw4B0HGzms2NgpryArlJqvc3Lw==,
       }
+    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lightningcss-android-arm64@1.32.0:
@@ -13832,6 +13884,12 @@ packages:
         integrity: sha512-WypcfiRhfeUP9vvF0j6rw0J3hrWrw6iZv3+22h6iRMJ/8z1Tj6XfLP4DsUix5MhMPnXpiHDoKyoZ/bdCkwBCiQ==,
       }
 
+  url-template@2.0.8:
+    resolution:
+      {
+        integrity: sha512-XdVKMF4SJ0nP/O7XIPB0JwAEuT9lDIYnNsK8yGVe43y0AWoKeJNdv3ZNWh7ksJ6KqQFjOO6ox/VEitLnaVNufw==,
+      }
+
   use-callback-ref@1.3.3:
     resolution:
       {
@@ -14472,10 +14530,6 @@ snapshots:
 
   '@activepieces/piece-github@0.8.5': {}
 
-  '@activepieces/piece-gmail@0.12.8':
-    dependencies:
-      dayjs: 1.11.9
-
   '@activepieces/piece-google-calendar@0.9.5': {}
 
   '@activepieces/piece-google-drive@0.7.10': {}
@@ -14485,8 +14539,6 @@ snapshots:
       lodash: 4.18.1
 
   '@activepieces/piece-graphql@0.0.13': {}
-
-  '@activepieces/piece-http@0.11.11': {}
 
   '@activepieces/piece-image-helper@0.1.15':
     dependencies:
@@ -16264,6 +16316,10 @@ snapshots:
       - encoding
       - supports-color
 
+  '@graphql-typed-document-node/core@3.2.0(graphql@16.14.2)':
+    dependencies:
+      graphql: 16.14.2
+
   '@hono/node-server@1.19.14(hono@4.12.31)':
     dependencies:
       hono: 4.12.31
@@ -16783,6 +16839,12 @@ snapshots:
 
   '@libsql/win32-x64-msvc@0.4.7':
     optional: true
+
+  '@linear/sdk@92.0.0(graphql@16.14.2)':
+    dependencies:
+      '@graphql-typed-document-node/core': 3.2.0(graphql@16.14.2)
+    transitivePeerDependencies:
+      - graphql
 
   '@microsoft/microsoft-graph-types@2.40.0': {}
 
@@ -20413,6 +20475,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  gaxios@7.3.1:
+    dependencies:
+      extend: 3.0.2
+      https-proxy-agent: 7.0.6
+      node-fetch: 3.3.2
+    transitivePeerDependencies:
+      - supports-color
+
   gcp-metadata@6.1.1:
     dependencies:
       gaxios: 6.7.1
@@ -20426,6 +20496,14 @@ snapshots:
     dependencies:
       gaxios: 7.2.0
       google-logging-utils: 1.1.3
+      json-bigint: 1.0.0
+    transitivePeerDependencies:
+      - supports-color
+
+  gcp-metadata@9.0.3:
+    dependencies:
+      gaxios: 7.2.0
+      google-logging-utils: 2.0.1
       json-bigint: 1.0.0
     transitivePeerDependencies:
       - supports-color
@@ -20529,6 +20607,17 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  google-auth-library@11.0.2:
+    dependencies:
+      base64-js: 1.5.1
+      ecdsa-sig-formatter: 1.0.11
+      gaxios: 7.2.0
+      gcp-metadata: 9.0.3
+      google-logging-utils: 2.0.1
+      jws: 4.0.1
+    transitivePeerDependencies:
+      - supports-color
+
   google-auth-library@9.15.1:
     dependencies:
       base64-js: 1.5.1
@@ -20544,6 +20633,26 @@ snapshots:
   google-logging-utils@0.0.2: {}
 
   google-logging-utils@1.1.3: {}
+
+  google-logging-utils@2.0.1: {}
+
+  googleapis-common@9.0.4:
+    dependencies:
+      extend: 3.0.2
+      gaxios: 7.3.1
+      google-auth-library: 11.0.2
+      google-logging-utils: 2.0.1
+      qs: 6.15.3
+      url-template: 2.0.8
+    transitivePeerDependencies:
+      - supports-color
+
+  googleapis@180.0.0:
+    dependencies:
+      google-auth-library: 11.0.2
+      googleapis-common: 9.0.4
+    transitivePeerDependencies:
+      - supports-color
 
   gopd@1.2.0: {}
 
@@ -23101,6 +23210,8 @@ snapshots:
     dependencies:
       querystringify: 2.2.0
       requires-port: 1.0.0
+
+  url-template@2.0.8: {}
 
   use-callback-ref@1.3.3(@types/react@19.2.14)(react@19.2.6):
     dependencies:

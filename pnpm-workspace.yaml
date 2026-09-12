@@ -1,6 +1,7 @@
 packages:
   - 'packages/*'
   - 'packages/pieces/*'
+  - '!packages/pieces/*.legacy'
   - 'packages/plugins/*'
   - 'test'
   - 'templates/blank'
