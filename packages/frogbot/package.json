@@ -19,6 +19,11 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./kv": {
+      "types": "./dist/exports/kv.d.ts",
+      "import": "./dist/exports/kv.js",
+      "default": "./dist/exports/kv.js"
+    },
     "./test": {
       "types": "./dist/exports/test.d.ts",
       "import": "./dist/exports/test.js",
@@ -75,12 +80,15 @@
   "dependencies": {
     "@frogbotai/gateway": "workspace:*",
     "@next/env": "15.4.10",
+    "@payloadcms/drizzle": "3.88.0",
     "@payloadcms/translations": "3.88.0",
     "ai": "^7.0.4",
     "croner": "10.0.1",
+    "drizzle-orm": "0.45.2",
     "json-schema-to-typescript": "^15.0.3",
     "payload": "3.88.0",
     "prettier": "^3.2.5",
+    "to-snake-case": "1.0.0",
     "tsx": "^4.19.2",
     "zod": "^4.3.6"
   },
@@ -96,6 +104,7 @@
   "devDependencies": {
     "@activepieces/piece-text-helper": "0.4.15",
     "@types/node": "^22.10.2",
+    "@types/to-snake-case": "1.0.0",
     "eslint": "^9.16.0",
     "next": "15.4.10",
     "pino": "^9.14.0",
@@ -111,6 +120,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./kv": {
+        "types": "./dist/exports/kv.d.ts",
+        "import": "./dist/exports/kv.js",
+        "default": "./dist/exports/kv.js"
       },
       "./test": {
         "types": "./dist/exports/test.d.ts",

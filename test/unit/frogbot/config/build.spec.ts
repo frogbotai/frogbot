@@ -4,7 +4,8 @@ import type { CollectionConfig } from '../../../../packages/frogbot/src/collecti
 import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import type { Plugin } from '../../../../packages/frogbot/src/plugin.js';
 
-vi.mock('payload', () => ({
+vi.mock('payload', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('payload')>()),
   buildConfig: vi.fn((config: unknown) => Promise.resolve(config)),
   handleEndpoints: vi.fn(),
 }));

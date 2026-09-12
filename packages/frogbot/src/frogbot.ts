@@ -69,6 +69,8 @@ import {
   refreshFrogbotConfig,
   registerFrogbotInstance,
 } from './instanceRegistry.js';
+import { createKV } from './kv/index.js';
+import type { KV } from './kv/types.js';
 import type { FrogbotLocalAPI } from './localAPI.js';
 import { createFrogbotLocalAPI } from './localAPI.js';
 import { encodeTrainingData } from './training/encodeTrainingData.js';
@@ -123,6 +125,7 @@ export function initFrogbotFromPayload(
 export class Frogbot {
   private payload!: Payload;
   private local!: FrogbotLocalAPI;
+  private keyValue!: KV;
 
   config!: FrogbotSanitizedConfig;
   collections!: Record<string, Collection>;
@@ -140,7 +143,7 @@ export class Frogbot {
     return this.payload.db;
   }
   get kv() {
-    return this.payload.kv;
+    return this.keyValue;
   }
   get email() {
     return this.payload.email;
@@ -170,6 +173,7 @@ export class Frogbot {
   ): Promise<Frogbot> {
     this.config = config;
     this.payload = payload;
+    this.keyValue = createKV({ adapter: payload.kv });
     this.local = createFrogbotLocalAPI(this.payload);
     registerFrogbotInstance(this.payload, this, config);
 

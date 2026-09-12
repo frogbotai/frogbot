@@ -16,7 +16,8 @@ import {
 } from '../../../../packages/frogbot/src/instanceRegistry.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 
-vi.mock('payload', () => ({
+vi.mock('payload', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('payload')>()),
   buildConfig: vi.fn((config: unknown) => Promise.resolve(config)),
   handleEndpoints: vi.fn(),
 }));
@@ -1795,6 +1796,7 @@ describe('frogbot sanitize', () => {
         'user-task',
         'frogbot-reset-ai-budgets',
         'frogbot-run-agent-schedule',
+        'frogbot-cleanup-kv',
       ]);
       expect(payloadConfig.jobs.autoRun).toEqual([
         { queue: 'user' },
