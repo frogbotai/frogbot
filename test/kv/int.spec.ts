@@ -1,19 +1,22 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 
-import { RedisKVAdapter } from '@frogbotai/kv-redis';
+import { RedisKVAdapter, redisKVAdapter } from '@frogbotai/kv-redis';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
 import { isServiceReachable } from '../__helpers/shared/storage/storageServices';
-
-const dirname = path.dirname(fileURLToPath(import.meta.url));
+import { kvContract } from './contract.js';
+import { createKVRuntimeHarness, type KVRuntime } from './runtime.js';
 
 const redisService = { name: 'Redis', host: 'localhost', port: 6379 };
 
 describe('KV Adapters [Redis]', () => {
-  let booted: BootedFrogbot;
+  const keyPrefix = `frogbot-kv-acceptance:${randomUUID()}:`;
+  const harness = createKVRuntimeHarness({
+    kv: () => redisKVAdapter({ redisURL: 'redis://localhost:6379', keyPrefix }),
+  });
+  let booted: KVRuntime;
+  let second: KVRuntime;
   let skipSuite = false;
 
   beforeAll(async () => {
@@ -29,25 +32,35 @@ describe('KV Adapters [Redis]', () => {
       );
       return;
     }
-    booted = await bootFrogbot(dirname);
+    booted = await harness.boot();
+    await booted.frogbot.kv.set('boot-sentinel', 'must survive second boot');
+    second = await harness.boot();
+    assert.equal(await second.frogbot.kv.get('boot-sentinel'), 'must survive second boot');
   });
 
   afterAll(async () => {
-    if (booted) {
-      // Clean up Redis connection before shutdown
-      const kv = booted.frogbot.kv;
-      if (kv instanceof RedisKVAdapter) {
-        await kv.redisClient.quit();
-      }
-      await booted.shutdown();
-    }
+    await harness.close();
   });
 
-  beforeEach((ctx) => {
+  beforeEach(async (ctx) => {
     if (skipSuite) {
       ctx.skip();
       return;
     }
+    await booted.frogbot.kv.clear();
+  });
+
+  it('uses independent Redis connections sharing an isolated prefix', () => {
+    const a = booted.payload.kv as RedisKVAdapter;
+    const b = second.payload.kv as RedisKVAdapter;
+    expect(a).toBeInstanceOf(RedisKVAdapter);
+    expect(b).toBeInstanceOf(RedisKVAdapter);
+    expect(a.redisClient).not.toBe(b.redisClient);
+    expect(a.keyPrefix).toBe(keyPrefix);
+    expect(b.keyPrefix).toBe(keyPrefix);
+    expect(
+      booted.payload.config.jobs.tasks?.filter(({ slug }) => slug === 'frogbot-cleanup-kv') ?? [],
+    ).toEqual([]);
   });
 
   it('set + get stores and retrieves a value', async () => {
@@ -103,5 +116,15 @@ describe('KV Adapters [Redis]', () => {
     const complex = { user: { name: 'test', roles: ['admin', 'editor'] }, count: 42 };
     await booted.frogbot.kv.set('complex', complex);
     expect(await booted.frogbot.kv.get('complex')).toStrictEqual(complex);
+  });
+
+  kvContract({
+    clients: () => [booted.frogbot.kv, second.frogbot.kv],
+    restart: async () => {
+      await booted.shutdown();
+      await second.shutdown();
+      booted = await harness.boot();
+      second = await harness.boot();
+    },
   });
 });

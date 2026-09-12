@@ -55,6 +55,8 @@ import type { Frogbot } from '../frogbot.js';
 import { initFrogbotFromPayload } from '../frogbot.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
 import { ensureFrogbotInstance } from '../instanceRegistry.js';
+import { databaseKVAdapter } from '../kv/adapters/DatabaseKVAdapter.js';
+import { resolveKVCleanupTask } from '../kv/resolveCleanupTask.js';
 import {
   isPieceAction,
   isPieceInstance,
@@ -1192,7 +1194,11 @@ export function sanitize(
       `[frogbot] Job task slug '${AGENT_SCHEDULE_TASK_SLUG}' is reserved for agent schedule triggers.`,
     );
   }
-  const jobs = resolveScheduleTasks({ agents, jobs: config.jobs });
+  const kv = config.kv ?? databaseKVAdapter();
+  const jobs = resolveKVCleanupTask({
+    kv,
+    jobs: resolveScheduleTasks({ agents, jobs: config.jobs }),
+  });
   const secretSource = builtInSecretSource(pieces.pieces);
   const credentialSources = [
     ...(secretSource.services.length ? [secretSource] : []),
@@ -1234,7 +1240,7 @@ export function sanitize(
 
   // Build the Payload config and pass it through Payload's buildConfig.
   const payloadConfig = buildPayloadConfig(
-    { ...config, agents, collections: payloadCollections, jobs },
+    { ...config, agents, collections: payloadCollections, jobs, kv },
     async (payload) => {
       const sanitizedConfig = sanitizedConfigRef.current;
       if (!sanitizedConfig) {

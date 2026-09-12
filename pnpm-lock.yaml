@@ -80,58 +80,6 @@ importers:
         specifier: 4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(jsdom@24.1.3(bufferutil@4.1.0))(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.49.2)(tsx@4.23.1))
 
-  test/e2e/fixtures/tool-agent:
-    dependencies:
-      '@activepieces/piece-brave-search':
-        specifier: 0.0.5
-        version: 0.0.5
-      '@activepieces/piece-exa':
-        specifier: 0.1.7
-        version: 0.1.7
-      '@frogbotai/db-sqlite':
-        specifier: workspace:*
-        version: link:../../../../packages/db-sqlite
-      '@frogbotai/next':
-        specifier: workspace:*
-        version: link:../../../../packages/next
-      '@frogbotai/piece-brave-search':
-        specifier: workspace:*
-        version: link:../../../../packages/pieces/piece-brave-search
-      '@frogbotai/piece-exa':
-        specifier: workspace:*
-        version: link:../../../../packages/pieces/piece-exa
-      frogbot:
-        specifier: workspace:*
-        version: link:../../../../packages/frogbot
-      graphql:
-        specifier: ^16.8.1
-        version: 16.14.2
-      next:
-        specifier: 15.4.11
-        version: 15.4.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4)
-      react:
-        specifier: 19.2.6
-        version: 19.2.6
-      react-dom:
-        specifier: 19.2.6
-        version: 19.2.6(react@19.2.6)
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-    devDependencies:
-      '@types/node':
-        specifier: ^22.10.2
-        version: 22.20.1
-      '@types/react':
-        specifier: 19.2.14
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: 19.2.3
-        version: 19.2.3(@types/react@19.2.14)
-      typescript:
-        specifier: 5.6.2
-        version: 5.6.2
-
   examples/business-qa:
     dependencies:
       '@activepieces/piece-data-summarizer':
@@ -449,6 +397,9 @@ importers:
       '@next/env':
         specifier: 15.4.10
         version: 15.4.10
+      '@payloadcms/drizzle':
+        specifier: 3.88.0
+        version: 3.88.0(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.88.0(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)
       '@payloadcms/translations':
         specifier: 3.88.0
         version: 3.88.0
@@ -458,6 +409,9 @@ importers:
       croner:
         specifier: 10.0.1
         version: 10.0.1
+      drizzle-orm:
+        specifier: 0.45.2
+        version: 0.45.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(pg@8.20.0)
       json-schema-to-typescript:
         specifier: ^15.0.3
         version: 15.0.4
@@ -467,6 +421,9 @@ importers:
       prettier:
         specifier: ^3.2.5
         version: 3.9.5
+      to-snake-case:
+        specifier: 1.0.0
+        version: 1.0.0
       tsx:
         specifier: ^4.19.2
         version: 4.23.1
@@ -480,6 +437,9 @@ importers:
       '@types/node':
         specifier: ^22.10.2
         version: 22.20.1
+      '@types/to-snake-case':
+        specifier: 1.0.0
+        version: 1.0.0
       eslint:
         specifier: ^9.16.0
         version: 9.39.5(jiti@2.7.0)
@@ -1846,21 +1806,85 @@ importers:
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.19.14(hono@4.12.31)
+      '@payloadcms/drizzle':
+        specifier: 3.88.0
+        version: 3.88.0(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(payload@3.88.0(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(pg@8.20.0)
+      '@payloadcms/kv-redis':
+        specifier: 3.88.0
+        version: 3.88.0(payload@3.88.0(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))
       '@types/node':
         specifier: ^22.9.1
         version: 22.20.1
       '@vercel/blob':
         specifier: ^2.5.0
         version: 2.6.1
+      drizzle-orm:
+        specifier: 0.45.2
+        version: 0.45.2(@libsql/client@0.14.0(bufferutil@4.1.0))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@vercel/postgres@0.10.0)(pg@8.20.0)
       frogbot:
         specifier: workspace:^
         version: link:../packages/frogbot
       hono:
         specifier: ^4.6.14
         version: 4.12.31
+      payload:
+        specifier: 3.88.0
+        version: 3.88.0(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
       pino:
         specifier: ^9.14.0
         version: 9.14.0
+
+  test/e2e/fixtures/tool-agent:
+    dependencies:
+      '@activepieces/piece-brave-search':
+        specifier: 0.0.5
+        version: 0.0.5
+      '@activepieces/piece-exa':
+        specifier: 0.1.7
+        version: 0.1.7
+      '@frogbotai/db-sqlite':
+        specifier: workspace:*
+        version: link:../../../../packages/db-sqlite
+      '@frogbotai/next':
+        specifier: workspace:*
+        version: link:../../../../packages/next
+      '@frogbotai/piece-brave-search':
+        specifier: workspace:*
+        version: link:../../../../packages/pieces/piece-brave-search
+      '@frogbotai/piece-exa':
+        specifier: workspace:*
+        version: link:../../../../packages/pieces/piece-exa
+      frogbot:
+        specifier: workspace:*
+        version: link:../../../../packages/frogbot
+      graphql:
+        specifier: ^16.8.1
+        version: 16.14.2
+      next:
+        specifier: 15.4.11
+        version: 15.4.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4)
+      react:
+        specifier: 19.2.6
+        version: 19.2.6
+      react-dom:
+        specifier: 19.2.6
+        version: 19.2.6(react@19.2.6)
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
 
 packages:
   '@activepieces/piece-airtable@0.6.10':
@@ -7652,6 +7676,12 @@ packages:
     resolution:
       {
         integrity: sha512-KHPsfX/FoVbUGbyYvk1q9MMQHLPeRZhRJZdO45Q4YjvFkv4hMNghCWTvy7rdKessBsmtz4euWCWAB6/tVpI1Iw==,
+      }
+
+  '@types/to-snake-case@1.0.0':
+    resolution:
+      {
+        integrity: sha512-9YtLP+wuIL2EwOqyUjwTzWK6CGVnsP13vJ3i0U8S7O+SLAxrsi1jwC2TkHkdqVqfGLQWnk5H+Z+sSPT7SJeGYg==,
       }
 
   '@types/tough-cookie@4.0.5':
@@ -19011,6 +19041,8 @@ snapshots:
   '@types/tedious@4.0.14':
     dependencies:
       '@types/node': 22.20.1
+
+  '@types/to-snake-case@1.0.0': {}
 
   '@types/tough-cookie@4.0.5': {}
 
