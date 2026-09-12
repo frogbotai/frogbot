@@ -7,6 +7,7 @@
 import type { FrogbotSanitizedConfig } from './config/sanitized.js';
 import type { InitOptions } from './frogbot.js';
 import { Frogbot } from './frogbot.js';
+import type { FrogbotRequest } from './types/request.js';
 
 type FrogbotCache = {
   frogbot: Frogbot | null;
@@ -75,6 +76,16 @@ export function getFrogbot(options: InitOptions): Promise<Frogbot> {
  */
 export function getCachedFrogbot(): Frogbot | null {
   return getCache().frogbot;
+}
+
+export async function createDefaultRequest(): Promise<FrogbotRequest> {
+  const frogbot = getCachedFrogbot();
+  if (!frogbot) {
+    throw new Error(
+      '[frogbot] Request-less piece calls require the default FrogBot instance to finish initialization. Pass `req` during `onInit` or when using another runtime.',
+    );
+  }
+  return frogbot.createRequest();
 }
 
 export function seedFrogbotCache(frogbot: Frogbot, config?: FrogbotSanitizedConfig): void {

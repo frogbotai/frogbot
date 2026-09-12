@@ -42,7 +42,12 @@ export function resolveScheduleTasks({
   jobs?: JobsConfig;
 }): JobsConfig | undefined {
   const scheduled = (agents ?? []).flatMap((agent) =>
-    (agent.triggers ?? []).map((trigger) => ({ agent, trigger })),
+    (agent.triggers ?? [])
+      .filter(
+        (trigger): trigger is AgentScheduleTrigger =>
+          'type' in trigger && trigger.type === 'schedule',
+      )
+      .map((trigger) => ({ agent, trigger })),
   );
   if (!scheduled.length) return jobs;
 
@@ -65,12 +70,16 @@ export function resolveScheduleTasks({
       const frogbot = getFrogbotInstance(req.payload);
       const agent = frogbot?.agents[input.agentSlug];
       const trigger = agent?.config.triggers?.find(
-        (candidate) => candidate.slug === input.triggerSlug,
+        (candidate): candidate is AgentScheduleTrigger =>
+          'type' in candidate &&
+          candidate.type === 'schedule' &&
+          candidate.slug === input.triggerSlug,
       );
       if (!frogbot || !agent || !trigger) return { output: {} };
 
       const scheduleReq = await frogbot.createRequest({
         context: {
+          ...req.context,
           source: 'schedule',
           agentSlug: input.agentSlug,
           triggerSlug: input.triggerSlug,

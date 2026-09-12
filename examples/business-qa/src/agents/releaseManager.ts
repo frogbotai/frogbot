@@ -27,7 +27,7 @@ export const releaseManager: AgentConfig = {
     linear.linearCreateIssue,
     linear.linearUpdateIssue,
     linear.linearCreateComment,
-    resend.sendEmail,
+    resend.send,
     dateHelper.getCurrentDate,
     dateHelper.formatDate,
     dateHelper.addSubtractDate,

@@ -28,7 +28,6 @@ export const pieces = [
   googleDrive,
   googleCalendar,
   linear,
-  resend,
   dateHelper,
   dataSummarizer,
   pdf,

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import { ConnectionError, Connections } from '../../../../packages/frogbot/src/connections/api.js';
 import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
@@ -34,7 +35,7 @@ async function setup(
       ]),
     ),
   });
-  return { api, find, update };
+  return { api, find, update, encryption, stored };
 }
 
 describe('connections API', () => {
@@ -72,6 +73,236 @@ describe('connections API', () => {
     ]);
     expect(await api.resolve({ service: 'service' })).toBe('configured');
   });
+
+  it('resolves native credentials from the user before factory auth', async () => {
+    const user = await setup({ credentials: { apiKey: 'user' }, credentialType: 'custom' });
+    await expect(
+      user.api.resolvePieceCredential({
+        piece: 'service',
+        owner: { id: 'owner' },
+        auth: { apiKey: 'factory' },
+        authSchema: z.object({ apiKey: z.string() }),
+      }),
+    ).resolves.toEqual({ auth: { apiKey: 'user' }, key: expect.any(Object) });
+    const factory = await setup(undefined);
+    await expect(
+      factory.api.resolvePieceCredential({ piece: 'service', auth: { apiKey: 'factory' } }),
+    ).resolves.toEqual({ auth: { apiKey: 'factory' }, key: expect.any(Object) });
+    await expect(
+      factory.api.resolvePieceCredential({
+        piece: 'service',
+        owner: { id: 'owner' },
+        auth: { apiKey: 'factory' },
+      }),
+    ).resolves.toEqual({ auth: { apiKey: 'factory' }, key: expect.any(Object) });
+  });
+
+  it('converts and validates native OAuth and legacy secret credentials', async () => {
+    const oauth = await setup({
+      source: 'oauth',
+      credentialType: 'oauth2',
+      credentials: { access_token: 'user' },
+    });
+    await expect(
+      oauth.api.resolvePieceCredential({
+        piece: 'service',
+        owner: { id: 'owner' },
+        oauthToAuth: ({ tokens }) => ({ accessToken: tokens.access_token }),
+        authSchema: z.object({ accessToken: z.string() }),
+      }),
+    ).resolves.toEqual({ auth: { accessToken: 'user' }, key: expect.any(Object) });
+    const legacy = await setup({ credentials: { value: 'legacy' }, credentialType: 'secret_text' });
+    await expect(
+      legacy.api.resolvePieceCredential({
+        piece: 'resend',
+        owner: { id: 'owner' },
+        authSchema: z.object({ apiKey: z.string() }),
+        legacySecretToAuth: (value) => ({ apiKey: value }),
+      }),
+    ).resolves.toEqual({ auth: { apiKey: 'legacy' }, key: expect.any(Object) });
+    const malformed = await setup({
+      source: 'oauth',
+      credentialType: 'oauth2',
+      credentials: {},
+    });
+    await expect(
+      malformed.api.resolvePieceCredential({
+        piece: 'service',
+        owner: { id: 'owner' },
+        oauthToAuth: ({ tokens }) => ({ accessToken: tokens.access_token }),
+        authSchema: z.object({ accessToken: z.string() }),
+      }),
+    ).rejects.toMatchObject({ code: 'error' });
+  });
+
+  it('normalizes malformed native credential failures without factory fallback', async () => {
+    const find = vi.fn().mockResolvedValue({
+      docs: [
+        {
+          id: 'id',
+          services: ['service'],
+          source: 'oauth',
+          sourceKey: 'oauth',
+          credentialType: 'oauth2',
+          encryptedCredentials: 'invalid',
+          status: 'active',
+        },
+      ],
+    });
+    const malformedJSON = new Connections(
+      { find } as never,
+      {
+        enabled: true,
+        slug: 'connections',
+        encryption: { encrypt: vi.fn(), decrypt: vi.fn().mockResolvedValue('{') },
+        sources: [],
+        assignments: {},
+      } as never,
+    );
+    await expect(
+      malformedJSON.resolvePieceCredential({
+        piece: 'service',
+        owner: { id: 'owner' },
+        auth: { accessToken: 'factory' },
+        authSchema: z.object({ accessToken: z.string() }),
+        oauthToAuth: () => ({ accessToken: 'user' }),
+      }),
+    ).rejects.toMatchObject({ code: 'error' });
+
+    const conversion = await setup({
+      source: 'oauth',
+      credentialType: 'oauth2',
+      credentials: { access_token: 'user' },
+    });
+    await expect(
+      conversion.api.resolvePieceCredential({
+        piece: 'service',
+        owner: { id: 'owner' },
+        auth: { accessToken: 'factory' },
+        authSchema: z.object({ accessToken: z.string() }),
+        oauthToAuth: () => {
+          throw new Error('conversion failed');
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'error' });
+  });
+
+  it('refreshes native credentials once and resolves the reread user auth', async () => {
+    const refresh = vi.fn(async ({ connection, frogbot }) => {
+      const encryptedCredentials = await createCredentialEncryption({ secret: 'secret' }).encrypt(
+        JSON.stringify({ access_token: 'next' }),
+      );
+      await frogbot.update({
+        collection: 'connections',
+        id: connection.id,
+        data: { encryptedCredentials, expiresAt: '2100-01-01T00:00:00.000Z' },
+        overrideAccess: true,
+      });
+    });
+    const { api, find } = await setup(
+      {
+        source: 'oauth',
+        credentialType: 'oauth2',
+        credentials: { access_token: 'old' },
+        expiresAt: '2000-01-01T00:00:00.000Z',
+      },
+      [{ key: 'secret', services: ['service'], credentialTypes: ['oauth2'], refresh }],
+    );
+    const factoryKey = {};
+    const result = await api.resolvePieceCredential({
+      piece: 'service',
+      owner: { id: 'owner' },
+      auth: { accessToken: 'factory' },
+      factoryKey,
+      oauthToAuth: ({ tokens }) => ({ accessToken: tokens.access_token }),
+      authSchema: z.object({ accessToken: z.string() }),
+    });
+    expect(result.auth).toEqual({ accessToken: 'next' });
+    expect(result.key).not.toBe(factoryKey);
+    expect(refresh).toHaveBeenCalledOnce();
+    expect(find).toHaveBeenCalledTimes(2);
+  });
+
+  it.each<[string, Record<string, unknown> | undefined, string]>([
+    ['missing row', undefined, 'missing'],
+    ['still expired', { expiresAt: '2000-01-01T00:00:00.000Z' }, 'expired'],
+    ['revoked', { status: 'revoked' }, 'revoked'],
+    ['error state', { status: 'error' }, 'error'],
+    ['missing credentials', { encryptedCredentials: '' }, 'missing'],
+    ['invalid ciphertext', { encryptedCredentials: 'invalid' }, 'error'],
+    ['invalid auth', { credentials: { access_token: 42 } }, 'error'],
+  ])('rejects %s after native refresh without factory fallback', async (_name, data, code) => {
+    const refresh = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValue(new Error('unexpected second refresh'));
+    const { api, find, encryption, stored } = await setup(
+      {
+        source: 'oauth',
+        credentialType: 'oauth2',
+        credentials: { access_token: 'old' },
+        expiresAt: '2000-01-01T00:00:00.000Z',
+      },
+      [{ key: 'secret', services: ['service'], credentialTypes: ['oauth2'], refresh }],
+    );
+    const refreshed = data
+      ? {
+          ...stored!,
+          expiresAt: '2100-01-01T00:00:00.000Z',
+          ...data,
+          ...(data.credentials
+            ? { encryptedCredentials: await encryption.encrypt(JSON.stringify(data.credentials)) }
+            : {}),
+        }
+      : undefined;
+    find.mockResolvedValueOnce({ docs: [stored!] }).mockResolvedValue({
+      docs: refreshed ? [refreshed] : [],
+    });
+    await expect(
+      api.resolvePieceCredential({
+        piece: 'service',
+        owner: { id: 'owner' },
+        auth: { accessToken: 'factory' },
+        factoryKey: {},
+        oauthToAuth: ({ tokens }) => ({ accessToken: tokens.access_token }),
+        authSchema: z.object({ accessToken: z.string() }),
+      }),
+    ).rejects.toMatchObject({ name: 'ConnectionError', code });
+    expect(refresh).toHaveBeenCalledOnce();
+    expect(find).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ['revoked', 'revoked'],
+    ['error', 'error'],
+    ['active', 'error'],
+  ])(
+    'rejects an expired %s native row when refresh fails or is disallowed',
+    async (status, code) => {
+      const refresh = vi.fn().mockRejectedValue(new Error('refresh failed'));
+      const { api, find } = await setup(
+        {
+          source: 'oauth',
+          credentialType: 'oauth2',
+          credentials: { access_token: 'old' },
+          expiresAt: '2000-01-01T00:00:00.000Z',
+          status,
+        },
+        [{ key: 'secret', services: ['service'], credentialTypes: ['oauth2'], refresh }],
+      );
+      await expect(
+        api.resolvePieceCredential({
+          piece: 'service',
+          owner: { id: 'owner' },
+          auth: { accessToken: 'factory' },
+          oauthToAuth: ({ tokens }) => ({ accessToken: tokens.access_token }),
+          authSchema: z.object({ accessToken: z.string() }),
+        }),
+      ).rejects.toMatchObject({ name: 'ConnectionError', code });
+      expect(refresh).toHaveBeenCalledTimes(status === 'active' ? 1 : 0);
+      expect(find).toHaveBeenCalledOnce();
+    },
+  );
 
   it('reports missing required scopes', async () => {
     const { api } = await setup(

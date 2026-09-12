@@ -14,6 +14,7 @@ import {
   getFrogbotInstance,
   registerFrogbotInstance,
 } from '../../../../packages/frogbot/src/instanceRegistry.js';
+import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 
 vi.mock('payload', () => ({
   buildConfig: vi.fn((config: unknown) => Promise.resolve(config)),
@@ -1280,6 +1281,59 @@ describe('frogbot sanitize', () => {
       ]);
     });
 
+    it('expands native piece actions and instances before tool validation', () => {
+      const createExample = definePiece({
+        slug: 'example',
+        label: 'Example',
+        actions: [
+          { slug: 'first', description: 'First', input: z.object({}), async run() {} },
+          { slug: 'second', description: 'Second', input: z.object({}), async run() {} },
+        ],
+      });
+      const example = createExample({});
+      const action = sanitize(
+        makeConfig({ ai, agents: [{ ...agent, tools: [example.first] }] } as never),
+      );
+      expect(action.agents?.[0].tools?.map(({ slug }) => slug)).toEqual(['example_first']);
+      const whole = sanitize(makeConfig({ ai, agents: [{ ...agent, tools: [example] }] } as never));
+      expect(whole.agents?.[0].tools?.map(({ slug }) => slug)).toEqual([
+        'example_first',
+        'example_second',
+      ]);
+    });
+
+    it('preserves piece trigger references without creating a runtime host', async () => {
+      const createExample = definePiece({
+        slug: 'trigger-example',
+        label: 'Trigger example',
+        actions: [],
+        triggers: [
+          {
+            slug: 'created',
+            type: 'app',
+            event: 'created',
+            description: 'Created',
+            input: z.object({}),
+            async run() {
+              return [];
+            },
+          },
+        ],
+      });
+      const example = createExample({});
+      const trigger = {
+        trigger: example.triggers.created,
+        handler: vi.fn(),
+      };
+      const result = sanitize(
+        makeConfig({ ai, agents: [{ ...agent, triggers: [trigger] }] } as never),
+      );
+      expect(result.agents?.[0].triggers).toEqual([trigger]);
+      await expect(result._internal.payloadConfig).resolves.not.toMatchObject({
+        jobs: { tasks: [expect.objectContaining({ slug: 'frogbot-run-agent-schedule' })] },
+      });
+    });
+
     it('lets agent tools override root tools', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
       const rootExecute = vi.fn();
@@ -1909,6 +1963,18 @@ describe('frogbot sanitize', () => {
           }),
         ),
       ).toThrow(`[frogbot] Endpoint path '${path}' is reserved for the AI gateway API.`);
+    });
+
+    it.each(['connections', 'jobs', 'webhooks'])('reserves future %s API paths', (prefix) => {
+      expect(() =>
+        sanitize(
+          makeConfig({
+            endpoints: [
+              { path: `/${prefix}/custom`, method: 'get', handler: () => new Response() },
+            ],
+          }),
+        ),
+      ).toThrow(`Endpoint path '/${prefix}/custom' is reserved`);
     });
 
     it('rejects non-URL-safe agent slugs', () => {

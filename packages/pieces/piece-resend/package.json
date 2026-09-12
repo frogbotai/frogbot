@@ -24,12 +24,14 @@
   ],
   "sideEffects": false,
   "scripts": {
+    "generate:types": "frogbot generate:piece-types src/index.ts --export createResend --output src/piece-types.ts",
+    "check:types": "pnpm generate:types --check",
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "pnpm check:types && tsc --noEmit"
   },
   "dependencies": {
-    "@activepieces/piece-resend": "0.4.3"
+    "zod": "^4.3.6"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"

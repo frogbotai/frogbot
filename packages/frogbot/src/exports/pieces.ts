@@ -4,11 +4,17 @@ import {
   loadActivepiecesPiece,
   propertiesSchema,
 } from '../pieces/activepieces.js';
-import type { CredentialType, Piece, PieceFactoryConfig, PiecePolicy } from '../pieces/types.js';
+import type {
+  CredentialType,
+  LegacyPiece,
+  PieceFactoryConfig,
+  PiecePolicy,
+} from '../pieces/types.js';
 import type { AnyTool } from '../tools/types.js';
 
 export { UnsupportedPieceContextError } from '../pieces/activepieces.js';
-export type { Piece, PieceFactoryConfig, PiecePolicy } from '../pieces/types.js';
+export { definePiece } from '../pieces/definePiece.js';
+export type * from '../pieces/types.js';
 
 function derivePolicy(
   credentialType: CredentialType,
@@ -44,11 +50,11 @@ export function createActivepiecesPiece({
   service: string;
   credentialType: CredentialType;
   defaultActions: readonly string[];
-  credentialFields?: Piece['credentialFields'];
+  credentialFields?: LegacyPiece['credentialFields'];
   errorsAsResults?: boolean;
   config?: PieceFactoryConfig;
   scopes?: readonly string[];
-}): Piece {
+}): LegacyPiece {
   const activepiecesPiece = loadActivepiecesPiece(module);
   const availableActions = Object.keys(activepiecesPiece.actions());
   const policy = derivePolicy(credentialType, config?.auth);

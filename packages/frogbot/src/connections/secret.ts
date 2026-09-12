@@ -1,6 +1,6 @@
 import type { Endpoint } from '../endpoints/types.js';
-import type { Piece } from '../pieces/types.js';
-import type { SanitizedConnectionsConfig } from './types.js';
+import type { LegacyPiece } from '../pieces/types.js';
+import type { CredentialSource, SanitizedConnectionsConfig } from './types.js';
 
 type SecretBody = {
   service?: unknown;
@@ -10,7 +10,7 @@ type SecretBody = {
 };
 
 function credentialData(
-  piece: Piece,
+  piece: LegacyPiece,
   credentials: Record<string, unknown>,
 ): { encrypted: Record<string, unknown>; metadata: Record<string, unknown> } {
   if (piece.credentialType === 'secret_text') {
@@ -45,7 +45,7 @@ function credentialData(
   return { encrypted, metadata };
 }
 
-export function builtInSecretSource(pieces: readonly Piece[]) {
+export function builtInSecretSource(pieces: readonly LegacyPiece[]): CredentialSource {
   return {
     key: 'secret',
     services: pieces
@@ -59,7 +59,7 @@ export function builtInSecretSource(pieces: readonly Piece[]) {
   };
 }
 
-export function builtInDeveloperSources(pieces: readonly Piece[]) {
+export function builtInDeveloperSources(pieces: readonly LegacyPiece[]): CredentialSource[] {
   return pieces.flatMap((piece) =>
     piece.policy.type === 'developer' && piece.credentialType !== 'none'
       ? [
@@ -90,7 +90,7 @@ export function buildSecretEndpoints({
   pieces,
 }: {
   connections: SanitizedConnectionsConfig;
-  pieces: readonly Piece[];
+  pieces: readonly LegacyPiece[];
 }): Endpoint[] {
   if (!connections.enabled || !connections.slug) return [];
   const save = (replace: boolean): Endpoint => ({

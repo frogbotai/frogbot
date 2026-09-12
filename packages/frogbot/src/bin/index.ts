@@ -2,6 +2,7 @@ import { dev } from './dev.js';
 import { exportCaptures } from './exportCaptures.js';
 import { exportTrainingData } from './exportTrainingData.js';
 import { generateImportMap } from './generateImportMap.js';
+import { generatePieceTypesCommand } from './generatePieceTypes.js';
 import { generateTypes } from './generateTypes.js';
 import { loadEnv } from './loadEnv.js';
 import { migrate } from './migrate.js';
@@ -18,6 +19,8 @@ export async function bin() {
     await dev(args);
   } else if (command === 'generate:types') {
     await generateTypes();
+  } else if (command === 'generate:piece-types') {
+    await generatePieceTypesCommand(args);
   } else if (command === 'generate:importmap') {
     await generateImportMap();
   } else if (command === 'export:training-data') {
