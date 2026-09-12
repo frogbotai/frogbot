@@ -55,7 +55,18 @@ import type { Frogbot } from '../frogbot.js';
 import { initFrogbotFromPayload } from '../frogbot.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
 import { ensureFrogbotInstance } from '../instanceRegistry.js';
-import type { Piece, SanitizedPiecesConfig } from '../pieces/types.js';
+import {
+  isPieceAction,
+  isPieceInstance,
+  pieceActionTool,
+  pieceInstanceTools,
+} from '../pieces/definePiece.js';
+import type {
+  LegacyPiece,
+  PieceAction,
+  PieceInstance,
+  SanitizedPiecesConfig,
+} from '../pieces/types.js';
 import { buildSkillTools } from '../skills/tools.js';
 import type { SkillConfig } from '../skills/types.js';
 import type { AnyTool } from '../tools/types.js';
@@ -387,13 +398,27 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
 }
 
 function sanitizeToolList(
-  tools: readonly AnyTool[],
+  tools: readonly (AnyTool | PieceAction | PieceInstance)[],
   pieces: SanitizedPiecesConfig,
   contextLabel: string,
 ): AnyTool[] {
   const context = `${contextLabel[0].toLowerCase()}${contextLabel.slice(1)}`;
   const toolSlugs = new Set<string>();
-  return tools.map((configuredTool) => {
+  const expanded: AnyTool[] = [];
+  for (const configuredTool of tools) {
+    if (isPieceInstance(configuredTool)) {
+      const instanceTools = pieceInstanceTools(configuredTool);
+      if (instanceTools) expanded.push(...instanceTools);
+      continue;
+    }
+    if (isPieceAction(configuredTool)) {
+      const actionTool = pieceActionTool(configuredTool);
+      if (actionTool) expanded.push(actionTool);
+      continue;
+    }
+    expanded.push(configuredTool);
+  }
+  return expanded.map((configuredTool) => {
     let tool = configuredTool;
     if (!isRecord(tool) || typeof tool.slug !== 'string' || !tool.slug.trim()) {
       throw new Error(`[frogbot] A tool in ${context} is missing a \`slug\`.`);
@@ -425,7 +450,14 @@ function sanitizeToolList(
       );
     }
     toolSlugs.add(tool.slug);
-    return tool;
+    const sanitizedTool: AnyTool = {
+      ...tool,
+      description: tool.description,
+      execute: tool.execute,
+      inputSchema: tool.inputSchema,
+      slug: tool.slug,
+    };
+    return sanitizedTool;
   });
 }
 
@@ -532,7 +564,7 @@ function sanitizeAgents(
   );
   const slugs = new Set<string>();
 
-  return agents.map((agent) => {
+  return agents.map<SanitizedAgentConfig>((agent) => {
     if (!isRecord(agent) || typeof agent.slug !== 'string' || !agent.slug.trim()) {
       throw new Error('[frogbot] Every agent must have a `slug`.');
     }
@@ -621,7 +653,8 @@ function sanitizeAgents(
         }
       }
       const inheritedTools = rootTools.filter(({ slug }) => !agentToolSlugs.has(slug));
-      agent = { ...agent, tools: [...inheritedTools, ...(agentTools ?? [])] };
+      agentTools = [...inheritedTools, ...(agentTools ?? [])];
+      agent = { ...agent, tools: agentTools };
     } else if (agentTools !== undefined) {
       agent = { ...agent, tools: agentTools };
     }
@@ -632,7 +665,7 @@ function sanitizeAgents(
       }
       sanitizeSkills(agent.slug, agent.skills);
       if (agent.skills.length > 0) {
-        const toolSlugs = new Set(agent.tools?.map(({ slug }) => slug));
+        const toolSlugs = new Set(agentTools?.map(({ slug }) => slug));
         for (const slug of ['list_skills', 'load_skill', 'load_skill_resource']) {
           if (toolSlugs.has(slug)) {
             throw new Error(`[frogbot] Tool slug '${slug}' is reserved for agent skills.`);
@@ -641,10 +674,10 @@ function sanitizeAgents(
         const skillLines = agent.skills.map(
           ({ slug, description }) => `- **${slug}**${description ? `: ${description}` : ''}`,
         );
+        agentTools = [...(agentTools ?? []), ...buildSkillTools(agent.skills)];
         agent = {
           ...agent,
           instructions: `${agent.instructions}\n\n${skillLines.join('\n')}`,
-          tools: [...(agent.tools ?? []), ...buildSkillTools(agent.skills)],
         };
       }
     }
@@ -657,6 +690,7 @@ function sanitizeAgents(
       }
       const triggerSlugs = new Set<string>();
       for (const trigger of agent.triggers) {
+        if (isRecord(trigger) && 'trigger' in trigger) continue;
         if (
           !isRecord(trigger) ||
           trigger.type !== 'schedule' ||
@@ -727,11 +761,12 @@ function sanitizeAgents(
       ...agent,
       model: modelId as AgentModelId,
       access: agent.access ?? defaultAccessFn,
+      tools: agentTools,
     };
   });
 }
 
-function sanitizePieces(pieces: Piece[] | undefined): SanitizedPiecesConfig {
+function sanitizePieces(pieces: LegacyPiece[] | undefined): SanitizedPiecesConfig {
   if (pieces === undefined) {
     return { enabled: false, pieces: [], services: {}, tools: {} };
   }
@@ -743,7 +778,7 @@ function sanitizePieces(pieces: Piece[] | undefined): SanitizedPiecesConfig {
   }
 
   const services = new Set<string>();
-  const serviceIndex: Record<string, Piece> = {};
+  const serviceIndex: Record<string, LegacyPiece> = {};
   const toolIndex: Record<string, AnyTool> = {};
   for (const piece of pieces) {
     if (!isRecord(piece) || typeof piece.service !== 'string' || !piece.service.trim()) {
@@ -785,8 +820,11 @@ function validateInternalPathReservations(
 ): void {
   for (const [slug, api] of [
     ['agents', 'agent'],
+    ['connections', 'connections'],
     ['frogbot', 'manifest'],
+    ['jobs', 'jobs'],
     ['v1', 'AI gateway'],
+    ['webhooks', 'webhook'],
   ] as const) {
     if (config.collections.some((collection) => collection.slug === slug)) {
       throw new Error(`[frogbot] Collection slug '${slug}' is reserved for the ${api} API.`);
@@ -799,6 +837,13 @@ function validateInternalPathReservations(
   }
 
   for (const endpoint of Array.isArray(endpoints) ? endpoints : []) {
+    for (const prefix of ['connections', 'jobs', 'webhooks']) {
+      if (endpoint.path === `/${prefix}` || endpoint.path.startsWith(`/${prefix}/`)) {
+        throw new Error(
+          `[frogbot] Endpoint path '${endpoint.path}' is reserved for the ${prefix} API.`,
+        );
+      }
+    }
     if (endpoint.path === '/agents' || endpoint.path.startsWith('/agents/')) {
       throw new Error(`[frogbot] Endpoint path '${endpoint.path}' is reserved for the agent API.`);
     }
@@ -866,6 +911,7 @@ function buildPayloadConfig(
     'settings',
     'tools',
   ]);
+  if (isPieceInstance(config.email)) frogbotKeys.add('email');
   const collections = config.collections.map((collection) =>
     sanitizeCollection(
       collection.auth && !collection.admin?.icon
@@ -938,9 +984,9 @@ function buildPayloadConfig(
   const toolComponents = Object.fromEntries(
     (config.agents ?? []).flatMap((agent) => {
       const components = Object.fromEntries(
-        (agent.tools ?? [])
-          .filter((tool) => tool.component !== undefined)
-          .map((tool) => [tool.slug, tool.component]),
+        (agent.tools ?? []).flatMap((tool) =>
+          'component' in tool && tool.component !== undefined ? [[tool.slug, tool.component]] : [],
+        ),
       );
       return Object.keys(components).length > 0 ? [[agent.slug, components]] : [];
     }),
@@ -1135,7 +1181,9 @@ export function sanitize(
     config.agents !== undefined
       ? sanitizeAgents(config.agents, sanitizedAI, pieces, mode, rootTools)
       : undefined;
-  const hasScheduleTriggers = agents?.some((agent) => agent.triggers?.length);
+  const hasScheduleTriggers = agents?.some((agent) =>
+    agent.triggers?.some((trigger) => 'type' in trigger && trigger.type === 'schedule'),
+  );
   if (
     hasScheduleTriggers &&
     config.jobs?.tasks?.some((task) => task.slug === AGENT_SCHEDULE_TASK_SLUG)
@@ -1231,7 +1279,7 @@ export function sanitize(
     },
     _internal: {
       payloadConfig: payloadSanitizedPromise,
-      noEmail: !config.email,
+      noEmail: !config.email || isPieceInstance(config.email),
     },
   };
   sanitizedConfigRef.current = sanitizedConfig;

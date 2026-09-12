@@ -7,9 +7,17 @@ import type {
   ToolSet,
   UIMessage,
 } from 'ai';
+import type { z } from 'zod';
 
 import type { DocID } from '../collections/config/types.js';
 import type { Frogbot } from '../frogbot.js';
+import type {
+  ChannelPieceInstance,
+  PieceAction,
+  PieceInstance,
+  PieceResult,
+  PieceTriggerReference,
+} from '../pieces/types.js';
 import type { SkillConfig } from '../skills/types.js';
 import type { AnyTool } from '../tools/types.js';
 import type { AgentSlug, FrogbotTypes } from '../types/generated.js';
@@ -41,6 +49,17 @@ export type AgentScheduleTrigger = {
   schedule: AgentSchedule;
 } & ({ prompt: string; handler?: never } | { prompt?: never; handler: AgentScheduleHandler });
 
+export type AgentPieceTrigger<TTrigger extends PieceTriggerReference = PieceTriggerReference> = {
+  trigger: TTrigger;
+  input?: TTrigger extends { input: infer TInput extends z.ZodType } ? z.output<TInput> : never;
+  handler(args: {
+    event: TTrigger extends { output: infer TOutput extends z.ZodType }
+      ? z.output<TOutput>
+      : PieceResult;
+    agent: AgentInstance;
+  }): Promise<void> | void;
+};
+
 export type AgentProfile = {
   name?: string;
   avatar?: string;
@@ -53,15 +72,19 @@ export type AgentConfig = {
   allowModels?: readonly AgentModelId[];
   instructions: string;
   profile?: AgentProfile;
+  channels?: readonly ChannelPieceInstance[];
   skills?: readonly SkillConfig[];
-  tools?: readonly AnyTool[];
+  tools?: readonly (AnyTool | PieceAction | PieceInstance)[];
   inheritTools?: false;
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];
   access?: AgentAccess;
-  triggers?: readonly AgentScheduleTrigger[];
+  triggers?: readonly (AgentPieceTrigger | AgentScheduleTrigger)[];
 };
 
-export type SanitizedAgentConfig = AgentConfig & { model: AgentModelId };
+export type SanitizedAgentConfig = Omit<AgentConfig, 'model' | 'tools'> & {
+  model: AgentModelId;
+  tools?: readonly AnyTool[];
+};
 
 export type AgentManifestEntry = {
   slug: string;

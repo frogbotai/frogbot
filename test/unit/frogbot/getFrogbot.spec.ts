@@ -14,7 +14,7 @@ vi.mock('../../../packages/frogbot/src/frogbot.js', () => ({
   },
 }));
 
-const { getFrogbot, getCachedFrogbot, resetFrogbotCache } =
+const { createDefaultRequest, getFrogbot, getCachedFrogbot, resetFrogbotCache, seedFrogbotCache } =
   await import('../../../packages/frogbot/src/getFrogbot.js');
 
 const options = { config: Promise.resolve({}) } as never;
@@ -110,6 +110,13 @@ describe('getFrogbot', () => {
 
   it('getCachedFrogbot returns null before initialization', () => {
     expect(getCachedFrogbot()).toBeNull();
+  });
+
+  it('creates requests only from an initialized default runtime', async () => {
+    await expect(createDefaultRequest()).rejects.toThrow('finish initialization');
+    const req = {};
+    seedFrogbotCache({ createRequest: vi.fn().mockResolvedValue(req) } as never);
+    await expect(createDefaultRequest()).resolves.toBe(req);
   });
 
   it('getCachedFrogbot returns the instance after initialization', async () => {

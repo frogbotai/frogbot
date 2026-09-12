@@ -1,4 +1,4 @@
-import type { Piece } from '../pieces/types.js';
+import type { LegacyPiece } from '../pieces/types.js';
 import type { CredentialSource } from './types.js';
 
 export function resolveCredentialSources({
@@ -8,7 +8,7 @@ export function resolveCredentialSources({
 }: {
   sources: readonly CredentialSource[];
   assignments: Readonly<Record<string, string>>;
-  pieces: readonly Piece[];
+  pieces: readonly LegacyPiece[];
 }): Record<string, string> {
   const keys = new Set<string>();
   for (const source of sources) {

@@ -1112,9 +1112,9 @@ importers:
 
   packages/pieces/piece-resend:
     dependencies:
-      '@activepieces/piece-resend':
-        specifier: 0.4.3
-        version: 0.4.3
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -1795,6 +1795,9 @@ importers:
       '@frogbotai/kv-redis':
         specifier: workspace:*
         version: link:../packages/kv-redis
+      '@frogbotai/piece-resend':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-resend
       '@frogbotai/plugin-api-keys':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-api-keys

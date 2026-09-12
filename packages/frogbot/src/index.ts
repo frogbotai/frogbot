@@ -39,12 +39,12 @@ export type { Frogbot as FrogbotInstance } from './frogbot.js';
 export { getCachedFrogbot, getFrogbot } from './getFrogbot.js';
 export type { GatewayHandler } from './server/gateway.js';
 export { createGatewayHandler } from './server/gateway.js';
-export { chunkGenerator } from './utilities/chunkGenerator.js';
 export type {
   ReadTrainingDataOptions,
   TrainingDataDocument,
   TrainingDataRecord,
 } from './training/types.js';
+export { chunkGenerator } from './utilities/chunkGenerator.js';
 
 // ---------------------------------------------------------------------------
 // Owned types
@@ -81,6 +81,7 @@ export type {
   AgentManifest,
   AgentManifestEntry,
   AgentModelId,
+  AgentPieceTrigger,
   AgentProfile,
   AgentRegistry,
   AgentSchedule,
@@ -160,12 +161,44 @@ export type {
 } from './collections/config/types.js';
 export type { AfterErrorHook, FrogbotConfig, OnInit, RootHooks } from './config/types.js';
 export type { DatabaseAdapter } from './database/types.js';
+export { definePiece } from './pieces/definePiece.js';
 export type {
+  ChannelPieceInstance,
+  ConnectionEntry,
   CredentialType,
+  EmailPieceInstance,
+  LegacyPiece,
+  OAuthApp,
+  OAuthTokens,
   Piece,
+  PieceAction,
+  PieceActionDefinition,
+  PieceActionTypes,
+  PieceAdmin,
+  PieceAppTrigger,
+  PieceCapabilities,
+  PieceChannel,
   PieceConfig,
+  PieceDefinition,
+  PieceEmail,
+  PieceFactory,
+  PieceInstance,
+  PieceJSON,
+  PieceOAuthAccount,
+  PieceOAuthRecipe,
+  PieceOption,
+  PiecePollingTrigger,
+  PieceResult,
+  PieceRunArgs,
   PieceToolsOptions,
+  PieceTriggerDefinition,
+  PieceTriggerReference,
+  PieceTypes,
+  PieceWebhook,
+  PieceWebhookTrigger,
   SanitizedPiecesConfig,
+  SecondFactor,
+  SignInMethod,
 } from './pieces/types.js';
 export type { Plugin } from './plugin.js';
 export type { SkillConfig, SkillContent, SkillCtx, SkillResource } from './skills/types.js';

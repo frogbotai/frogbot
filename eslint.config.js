@@ -13,6 +13,7 @@ export default tseslint.config(
       '**/.next/*',
       '**/*.tsbuildinfo',
       '**/frogbot-types.ts',
+      '**/piece-types.ts',
       '**/importMap.js',
       '**/next-env.d.ts',
       'packages/frogbot/bin.js',

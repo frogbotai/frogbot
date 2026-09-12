@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Piece } from './types.js';
+import type { LegacyPiece } from './types.js';
 
 export function pieceContract({
   piece,
@@ -8,9 +8,9 @@ export function pieceContract({
   credentialType,
   actions,
 }: {
-  piece: Piece;
+  piece: LegacyPiece;
   service: string;
-  credentialType: Piece['credentialType'];
+  credentialType: LegacyPiece['credentialType'];
   actions: readonly string[];
 }): void {
   describe(`${service} piece contract`, () => {
