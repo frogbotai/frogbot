@@ -1,62 +1,89 @@
-import * as module from '@activepieces/piece-resend';
-import { createActivepiecesPiece, type PieceFactoryConfig } from 'frogbot/pieces';
+import { definePiece, type PieceDefinition } from 'frogbot/pieces';
 
-export const resendActions = ['send_email'] as const;
+import { cancelScheduledEmail } from './actions/cancelScheduledEmail.js';
+import { createAudience } from './actions/createAudience.js';
+import { createBroadcast } from './actions/createBroadcast.js';
+import { createContact } from './actions/createContact.js';
+import { createDomain } from './actions/createDomain.js';
+import { customApiCall } from './actions/customApiCall.js';
+import { deleteAudience } from './actions/deleteAudience.js';
+import { deleteBroadcast } from './actions/deleteBroadcast.js';
+import { deleteContact } from './actions/deleteContact.js';
+import { deleteDomain } from './actions/deleteDomain.js';
+import { getEmailStatus } from './actions/getEmailStatus.js';
+import { listAudiences } from './actions/listAudiences.js';
+import { listBroadcasts } from './actions/listBroadcasts.js';
+import { listContacts } from './actions/listContacts.js';
+import { listDomains } from './actions/listDomains.js';
+import { listEmails } from './actions/listEmails.js';
+import { rescheduleEmail } from './actions/rescheduleEmail.js';
+import { send } from './actions/send.js';
+import { sendBatchEmails } from './actions/sendBatchEmails.js';
+import { sendBroadcast } from './actions/sendBroadcast.js';
+import { updateContact } from './actions/updateContact.js';
+import { verifyDomain } from './actions/verifyDomain.js';
+import { createResendClient, type ResendClient } from './client.js';
+import { resendAuth, resendOptions } from './config.js';
+import { resendEmail } from './email.js';
+import type { ResendTypes } from './piece-types.js';
+
+export const resendActions = [
+  'send',
+  'sendBatchEmails',
+  'getEmailStatus',
+  'listEmails',
+  'cancelScheduledEmail',
+  'rescheduleEmail',
+  'createContact',
+  'updateContact',
+  'deleteContact',
+  'listContacts',
+  'listDomains',
+  'createDomain',
+  'deleteDomain',
+  'verifyDomain',
+  'listAudiences',
+  'createAudience',
+  'deleteAudience',
+  'listBroadcasts',
+  'createBroadcast',
+  'sendBroadcast',
+  'deleteBroadcast',
+  'customApiCall',
+] as const;
+
 export const resendScopes = [] as const;
 
-export function createResend(config?: PieceFactoryConfig) {
-  const piece = createActivepiecesPiece({
-    module: module,
-    service: 'resend',
-    credentialType: 'secret_text',
-    defaultActions: resendActions,
-    scopes: resendScopes,
-    config,
-  });
-  return Object.assign(piece, {
-    /** Send Email: Send a text or HTML email */
-    sendEmail: piece.tool('send_email'),
-    /** Send Batch Emails: Send up to 100 emails in a single API call */
-    sendBatchEmails: piece.tool('send_batch_emails'),
-    /** Get Email Status: Retrieve the delivery status of a sent email */
-    getEmailStatus: piece.tool('get_email_status'),
-    /** List Sent Emails: Retrieve a list of emails sent from your Resend account */
-    listEmails: piece.tool('list_emails'),
-    /** Cancel Scheduled Email: Cancel a scheduled email before it is sent */
-    cancelScheduledEmail: piece.tool('cancel_scheduled_email'),
-    /** Reschedule Email: Update the send time of a scheduled email */
-    rescheduleEmail: piece.tool('reschedule_email'),
-    /** Create Contact: Add a contact to a Resend audience */
-    createContact: piece.tool('create_contact'),
-    /** Update Contact: Update the name or subscription status of a contact in an audience */
-    updateContact: piece.tool('update_contact'),
-    /** Delete Contact: Remove a contact from an audience */
-    deleteContact: piece.tool('delete_contact'),
-    /** List Contacts: Retrieve all contacts in an audience */
-    listContacts: piece.tool('list_contacts'),
-    /** List Domains: Retrieve all domains added to your Resend account */
-    listDomains: piece.tool('list_domains'),
-    /** Create Domain: Add a sending domain to your Resend account and get the DNS records to verify it */
-    createDomain: piece.tool('create_domain'),
-    /** Delete Domain: Remove a domain from your Resend account */
-    deleteDomain: piece.tool('delete_domain'),
-    /** Verify Domain: Trigger a DNS verification check for a domain */
-    verifyDomain: piece.tool('verify_domain'),
-    /** List Audiences: Retrieve all contact audiences in your Resend account */
-    listAudiences: piece.tool('list_audiences'),
-    /** Create Audience: Create a new contact audience in Resend */
-    createAudience: piece.tool('create_audience'),
-    /** Delete Audience: Permanently delete an audience and all its contacts */
-    deleteAudience: piece.tool('delete_audience'),
-    /** List Broadcasts: Retrieve all broadcasts in your Resend account */
-    listBroadcasts: piece.tool('list_broadcasts'),
-    /** Create Broadcast: Create a new broadcast email to send to an audience */
-    createBroadcast: piece.tool('create_broadcast'),
-    /** Send Broadcast: Send or schedule a broadcast email to its audience */
-    sendBroadcast: piece.tool('send_broadcast'),
-    /** Delete Broadcast: Permanently delete a broadcast from your Resend account */
-    deleteBroadcast: piece.tool('delete_broadcast'),
-    /** Custom API Call: Make a custom API call to a specific endpoint */
-    customApiCall: piece.tool('custom_api_call'),
-  });
-}
+export const createResend = definePiece({
+  slug: 'resend',
+  label: 'Resend',
+  admin: { description: 'Send email and manage Resend resources', group: 'Communication' },
+  auth: resendAuth,
+  options: resendOptions,
+  client: ({ auth }) => createResendClient(auth),
+  actions: [
+    send,
+    sendBatchEmails,
+    getEmailStatus,
+    listEmails,
+    cancelScheduledEmail,
+    rescheduleEmail,
+    createContact,
+    updateContact,
+    deleteContact,
+    listContacts,
+    listDomains,
+    createDomain,
+    deleteDomain,
+    verifyDomain,
+    listAudiences,
+    createAudience,
+    deleteAudience,
+    listBroadcasts,
+    createBroadcast,
+    sendBroadcast,
+    deleteBroadcast,
+    customApiCall,
+  ],
+  email: resendEmail,
+} satisfies PieceDefinition<ResendTypes, ResendClient>);
