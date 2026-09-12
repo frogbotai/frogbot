@@ -127,3 +127,7 @@ Representative mappings include collection configuration in `collections/config/
 - **`opencode` source:** `~/code/opencode` — ALWAYS check this repo for `opencode` internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what `opencode` supports.
 
 - **`opencode` v2 beta source:** `~/code/opencode-v2` — the 2.0 beta line (git worktree on `v2-beta`, tracks `origin/beta`). Check for 2.0 architecture direction (Effect runtime, `core`/`protocol`/`server`/`llm`/`sdk-next` package split). NOT shipped behavior — for what `opencode` does today, use `~/code/opencode`.
+
+- **Strapi source:** `~/code/strapi` — use for ideas and comparative patterns in headless CMS architecture, extensibility, administration, and developer experience. It is not a source of truth for FrogBot behavior.
+
+- **Directus source:** `~/code/directus` — use for ideas and comparative patterns in data-platform architecture, administration, integrations, and developer experience. It is not a source of truth for FrogBot behavior.
