@@ -1,0 +1,87 @@
+---
+title: Triggers
+description: Receive webhook events in FrogBot agents.
+keywords: [pieces, triggers, webhooks, subscriptions]
+---
+
+Pieces declare `webhook` and `app` triggers. Mount a trigger on an agent using its instance reference. FrogBot discovers the instance from that mount; root `pieces` registration is not required.
+
+## Mount a trigger
+
+```ts
+import { createLinear } from '@frogbotai/piece-linear'
+import type { AgentConfig } from 'frogbot'
+
+const linear = createLinear({
+  slug: 'linear-ops',
+  auth: { apiKey: process.env.LINEAR_API_KEY! },
+  webhookSecret: process.env.LINEAR_WEBHOOK_SECRET!,
+})
+
+export const ops: AgentConfig<typeof linear.triggers.issueCreated> = {
+  slug: 'ops',
+  instructions: 'Handle incoming Linear issues.',
+  triggers: [
+    {
+      trigger: linear.triggers.issueCreated,
+      input: { teamId: process.env.LINEAR_TEAM_ID! },
+      async handler({ event, req }) {
+        console.log(event, req.context.trigger)
+      },
+    },
+  ],
+}
+```
+
+Add `ops` to your configuration's `agents` array. Use `AgentConfig<typeof piece.triggers.ref>` for contextual inference from the trigger's input and output schemas. Plain `AgentConfig` leaves the handler's `event` as `unknown`. The handler receives the emitted event's `data`, the agent, and a request with `{ piece, trigger, agent }` in `req.context.trigger`; `piece` is the instance slug.
+
+Instance slugs default to the piece slug. Give distinct instances unique slugs when they receive webhooks, including channel mounts. You can share one instance across agents.
+
+## Routes and lifecycle
+
+| Trigger type | Default callback path | Setup |
+| --- | --- | --- |
+| `webhook` | `/api/webhooks/<instance-slug>/<subscription-id>` | Set `serverURL`; FrogBot creates provider subscriptions during boot reconciliation. |
+| `app` | `/api/webhooks/<instance-slug>` | Register the public URL with the provider. |
+
+Both paths use your configured `routes.api` prefix instead of `/api` when customized. Generated subscription URLs combine `serverURL`, that prefix, and the instance slug.
+
+Boot reconciliation reuses unchanged subscriptions, replaces changed subscriptions, and cleans up removed mounts. If an instance is missing during cleanup, FrogBot retains its subscription ledger entry and logs a warning: credentials cannot be reconstructed from the database. Restore the instance and its credentials to retry cleanup.
+
+If registration succeeds but saving its state fails, FrogBot attempts provider cleanup and retains recovery state when cleanup fails. An unresolved registration blocks another enable attempt rather than creating a duplicate. A process crash before state is persisted can require manual provider cleanup.
+
+Polling triggers and automatic subscription renewal are not supported yet.
+
+## Delivery and retries
+
+FrogBot verifies incoming requests and queues events before running agent handlers. Each event's required `dedupeKey` is tracked for 24 hours per recipient: agent, instance, and trigger. A provider retry can enqueue failed recipients without re-enqueueing recipients whose queue and dedupe writes succeeded.
+
+FrogBot automatically adds an all-queues job runner scheduled every minute (`* * * * *`), sharing the runner when agent schedules are also configured. The trigger task currently sets no automatic handler retry policy.
+
+Delivery is not exactly once: if enqueue succeeds but persisting the dedupe marker fails, a retry can queue the event again. Make handler side effects idempotent.
+
+## Runtime subscriptions
+
+Use `frogbot.triggers` to manage mounted `webhook` subscriptions:
+
+```ts
+const subscription = await frogbot.triggers.enable({
+  agent: 'ops',
+  instance: 'linear-ops',
+  trigger: 'issueCreated',
+  input: { teamId: process.env.LINEAR_TEAM_ID! },
+})
+
+const subscriptions = await frogbot.triggers.list()
+await frogbot.triggers.disable(subscription.id)
+```
+
+| Method | Behavior |
+| --- | --- |
+| `enable({ agent, instance, trigger, input? })` | Requires an existing agent mount. Uses the mount's input when omitted; validates supplied input. Returns the existing unchanged subscription or replaces it when needed. |
+| `disable(id)` | Runs provider cleanup, then deletes the ledger entry. A missing ID is a no-op; cleanup failures retain the entry and reject the call. |
+| `list()` | Returns all persisted subscription entries, including errors and pending cleanup. |
+
+Subscription entries store raw input as `{ value: input }`, or `{}` when input was omitted. Input must be JSON data; FrogBot reapplies the trigger schema before each callback so schema transforms are preserved.
+
+Runtime changes do not edit your configuration. The next boot restores declarative input and re-enables subscriptions whose mounts remain configured.

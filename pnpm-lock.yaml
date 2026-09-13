@@ -1839,6 +1839,9 @@ importers:
       pino:
         specifier: ^9.14.0
         version: 9.14.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
 
   test/e2e/fixtures/tool-agent:
     dependencies:

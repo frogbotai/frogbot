@@ -17,8 +17,9 @@ export const customApiCall = {
   idempotent: false,
   async run({ client, input }: PieceRunArgs<z.output<typeof inputSchema>, object, Gmail>) {
     const request = client.context._options.auth;
-    if (!request || typeof request === 'string' || !('request' in request))
-      {throw new Error('[frogbot] Gmail client is missing authenticated transport.');}
+    if (!request || typeof request === 'string' || !('request' in request)) {
+      throw new Error('[frogbot] Gmail client is missing authenticated transport.');
+    }
     return (
       await request.request({
         method: input.method,

@@ -207,6 +207,8 @@ export type {
 export type { Plugin } from './plugin.js';
 export type { SkillConfig, SkillContent, SkillCtx, SkillResource } from './skills/types.js';
 export type { Tool, ToolCtx } from './tools/types.js';
+export type { Subscription, SubscriptionEnableProps } from './triggers/subscriptions.js';
+export type { IngressRegistry, TriggerEvent, TriggerSubscriber } from './triggers/types.js';
 export type {
   AgentSlug,
   CollectionSlug,

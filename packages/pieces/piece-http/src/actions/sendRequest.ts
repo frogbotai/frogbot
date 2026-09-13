@@ -47,9 +47,11 @@ export const sendRequest = {
   output,
   async run({ input }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
     const url = new URL(input.url);
-    for (const [key, value] of Object.entries(input.queryParams))
-      {for (const entry of Array.isArray(value) ? value : [value])
-        {url.searchParams.append(key, String(entry));}}
+    for (const [key, value] of Object.entries(input.queryParams)) {
+      for (const entry of Array.isArray(value) ? value : [value]) {
+        url.searchParams.append(key, String(entry));
+      }
+    }
     const requestHeaders = new Headers(input.headers);
     if (input.authType === 'BASIC') {
       const auth = z.object({ username: z.string(), password: z.string() }).parse(input.authFields);
@@ -59,8 +61,9 @@ export const sendRequest = {
       requestHeaders.set('authorization', `Bearer ${auth.token}`);
     }
     const body = createBody(input.bodyType, input.body);
-    if (input.bodyType === 'json' && !requestHeaders.has('content-type'))
-      {requestHeaders.set('content-type', 'application/json');}
+    if (input.bodyType === 'json' && !requestHeaders.has('content-type')) {
+      requestHeaders.set('content-type', 'application/json');
+    }
     const response = await sendHttpRequest({
       url,
       init: {
@@ -82,8 +85,9 @@ export const sendRequest = {
             return text;
           }
         });
-    if (!response.ok)
-      {throw new Error(`HTTP request failed with ${response.status} ${response.statusText}`.trim());}
+    if (!response.ok) {
+      throw new Error(`HTTP request failed with ${response.status} ${response.statusText}`.trim());
+    }
     return { status: response.status, headers: responseHeaders, body: responseBody };
   },
 };

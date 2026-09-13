@@ -155,7 +155,7 @@ describe('linear', () => {
       createWebhook: vi
         .fn()
         .mockResolvedValue({ success: true, webhook: Promise.resolve({ id: 'hook' }) }),
-      deleteWebhook: vi.fn(),
+      deleteWebhook: vi.fn().mockResolvedValue({ success: true }),
     };
     const input = definition.input.parse(slug.startsWith('issue') ? { teamId: 'team' } : {});
     if (definition.type !== 'webhook') throw new Error(`Trigger '${slug}' is not a webhook.`);
@@ -163,21 +163,51 @@ describe('linear', () => {
       client,
       input,
       webhookUrl: 'https://example.com/hook',
-      options: {},
+      options: { webhookSecret: 'linear-webhook-secret' },
       req: req(),
     } as never);
+    const resourceType = slug.startsWith('issue')
+      ? 'Issue'
+      : slug.startsWith('project')
+        ? 'Project'
+        : 'Comment';
     expect(client.createWebhook).toHaveBeenCalledWith(
-      expect.objectContaining({ url: 'https://example.com/hook' }),
+      expect.objectContaining({
+        url: 'https://example.com/hook',
+        secret: 'linear-webhook-secret',
+        resourceTypes: [resourceType],
+        ...(slug.startsWith('issue') ? { teamId: 'team' } : { allPublicTeams: true }),
+      }),
     );
     const action = slug.endsWith('Created')
       ? 'create'
       : slug.endsWith('Updated')
         ? 'update'
         : 'remove';
-    const delivery = { action, data: {}, updatedFrom: { statusId: 'status' } };
-    await expect(
-      definition.run({ client, input, options: {}, req: { data: delivery } } as never),
-    ).resolves.toEqual([delivery]);
+    const delivery = { action, type: resourceType, data: {}, updatedFrom: { statusId: 'status' } };
+    const first = await definition.run({
+      client,
+      input,
+      options: {},
+      req: { data: delivery },
+    } as never);
+    const second = await definition.run({
+      client,
+      input,
+      options: {},
+      req: { data: delivery },
+    } as never);
+    expect(first).toEqual([{ dedupeKey: expect.stringMatching(/^[a-f0-9]{64}$/), data: delivery }]);
+    expect(second).toEqual(first);
+    for (const rejected of [
+      { ...delivery, type: resourceType === 'Issue' ? 'Project' : 'Issue' },
+      { ...delivery, type: undefined },
+      { ...delivery, action: 'unknown' },
+    ]) {
+      await expect(
+        definition.run({ client, input, options: {}, req: { data: rejected } } as never),
+      ).resolves.toEqual([]);
+    }
     await definition.onDisable({ client, input, state, options: {}, req: req() } as never);
     expect(client.deleteWebhook).toHaveBeenCalledWith('hook');
   });

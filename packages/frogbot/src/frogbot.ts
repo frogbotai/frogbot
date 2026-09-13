@@ -76,6 +76,7 @@ import { createFrogbotLocalAPI } from './localAPI.js';
 import { encodeTrainingData } from './training/encodeTrainingData.js';
 import { readTrainingData } from './training/readTrainingData.js';
 import type { ReadTrainingDataOptions } from './training/types.js';
+import { TriggerSubscriptions } from './triggers/subscriptions.js';
 import { writeGeneratedTypes } from './typegen/index.js';
 import type { CollectionSlug, TypedCollection } from './types/generated.js';
 import type { FrogbotRequest } from './types/request.js';
@@ -138,6 +139,7 @@ export class Frogbot {
   /** Registered agents keyed by slug. */
   agents: AgentRegistry = {};
   connections!: Connections;
+  triggers!: TriggerSubscriptions;
 
   get db() {
     return this.payload.db;
@@ -218,6 +220,11 @@ export class Frogbot {
 
     // Run onInit callbacks.
     if (!options.disableOnInit) {
+      void this.triggers.reconcile().catch((error: unknown) => {
+        this.logger.warn(
+          `[frogbot] Trigger reconciliation failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
       if (options.onInit) {
         await options.onInit(this);
       }
@@ -232,6 +239,7 @@ export class Frogbot {
   async [refreshFrogbotConfig](config: FrogbotSanitizedConfig): Promise<void> {
     this.config = config;
     this.connections = new Connections(this, config.connections);
+    this.triggers ??= new TriggerSubscriptions(this);
     this.gateway = config.ai ? createAIGateway(config.ai, this.logger) : undefined;
     this.agents = {};
     if (config.agents?.length && config.ai) {
@@ -270,6 +278,10 @@ export class Frogbot {
     type LocalRequest = NonNullable<Parameters<typeof createLocalReq>[0]['req']>;
     const localReq = await createLocalReq({ req: (req ?? {}) as LocalRequest }, this.payload);
     return Object.assign(localReq, { frogbot: this });
+  }
+
+  async queue(args: { task: string; queue: string; input: unknown }): Promise<void> {
+    await this.payload.jobs.queue(args as never);
   }
 
   // ── CRUD ────────────────────────────────────────────────────────────────

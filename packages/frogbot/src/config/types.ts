@@ -15,7 +15,7 @@ import type { ConnectionsConfig, CredentialSource } from '../connections/types.j
 import type { DatabaseAdapter } from '../database/types.js';
 import type { Endpoint } from '../endpoints/types.js';
 import type { Frogbot } from '../frogbot.js';
-import type { EmailPieceInstance, LegacyPiece } from '../pieces/types.js';
+import type { EmailPieceInstance, Piece } from '../pieces/types.js';
 import type { Plugin } from '../plugin.js';
 import type { AnyTool } from '../tools/types.js';
 import type { PayloadConfig } from '../types/payload.js';
@@ -64,7 +64,7 @@ export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   /** Agent configs registered at boot and exposed via frogbot.agents. */
   agents?: AgentConfig[];
   /** Pieces — bundled tools, triggers, and auth for a third-party service. */
-  pieces?: LegacyPiece[];
+  pieces?: Piece[];
   /** Standalone tools available to agents, outside of any piece. */
   tools?: readonly AnyTool[];
   /** Third-party account linking — which providers users can connect. */
