@@ -5,8 +5,8 @@
 // and standalone servers.
 
 import type { Gateway } from '@frogbotai/gateway';
-import type { Payload } from 'payload';
-import { createLocalReq, getPayload, handleEndpoints } from 'payload';
+import type { Payload, PayloadRequest } from 'payload';
+import { createLocalReq, getPayload, handleEndpoints, resetPasswordOperation } from 'payload';
 
 import { createAgentInstance } from './agents/instance.js';
 import type { AgentRegistry } from './agents/types.js';
@@ -32,6 +32,7 @@ import type {
   StreamTextOpts,
   TranscribeOpts,
 } from './ai/types.js';
+import { coordinatesSessions, withAuthOperation } from './auth/operation.js';
 import type {
   AuthArgs,
   AuthResult,
@@ -365,7 +366,16 @@ export class Frogbot {
   }
 
   async login<T extends CollectionSlug>(args: LoginArgs<T>): Promise<LoginResult<T>> {
-    return this.local.login(args);
+    if (!coordinatesSessions(this.payload.collections[args.collection]?.config)) {
+      return this.local.login(args);
+    }
+    const req = await this.createRequest(args.req);
+    return withAuthOperation({
+      req,
+      collectionSlug: args.collection,
+      operation: 'login',
+      fn: () => this.local.login({ ...args, req }),
+    });
   }
 
   async forgotPassword<T extends CollectionSlug>(args: ForgotPasswordArgs<T>): Promise<string> {
@@ -375,7 +385,27 @@ export class Frogbot {
   async resetPassword<T extends CollectionSlug>(
     args: ResetPasswordArgs<T>,
   ): Promise<ResetPasswordResult> {
-    return this.local.resetPassword(args);
+    if (!coordinatesSessions(this.payload.collections[args.collection]?.config)) {
+      return this.local.resetPassword(args);
+    }
+    const req = await this.createRequest(args.req);
+    return withAuthOperation({
+      req,
+      collectionSlug: args.collection,
+      operation: 'resetPassword',
+      fn: async () => {
+        const payloadReq = req as unknown as PayloadRequest;
+        const collection = this.payload.collections[args.collection]!;
+        const result = await resetPasswordOperation({
+          collection,
+          data: args.data,
+          overrideAccess: args.overrideAccess,
+          req: await createLocalReq({ context: args.context, req: payloadReq }, payloadReq.payload),
+        });
+        if (collection.config.auth.removeTokenFromResponses) delete result.token;
+        return result;
+      },
+    });
   }
 
   async verifyEmail<T extends CollectionSlug>(args: VerifyEmailArgs<T>): Promise<boolean> {

@@ -6,24 +6,39 @@ export type CredentialEncryption = {
 };
 
 const CORE_LABEL = 'frogbot:connections:';
-const LEGACY_LABEL = 'frogbot:plugin-oauth:';
 
 function keyFor(secret: string, label: string): Buffer {
   return createHash('sha256').update(label).update(secret).digest();
 }
 
 function decryptWithKey(value: string, key: Buffer): string {
-  const [version, encodedIV, encodedTag, encodedValue] = value.split('.');
-  if (version !== 'v1' || !encodedIV || !encodedTag || encodedValue === undefined) {
+  const parts = value.split('.');
+  const [version, encodedIV, encodedTag, encodedValue] = parts;
+  if (
+    parts.length !== 4 ||
+    version !== 'v1' ||
+    !encodedIV ||
+    !encodedTag ||
+    encodedValue === undefined
+  ) {
     throw new CredentialCryptoError();
   }
   try {
-    const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(encodedIV, 'base64url'));
-    decipher.setAuthTag(Buffer.from(encodedTag, 'base64url'));
-    return Buffer.concat([
-      decipher.update(Buffer.from(encodedValue, 'base64url')),
-      decipher.final(),
-    ]).toString('utf8');
+    const iv = Buffer.from(encodedIV, 'base64url');
+    const tag = Buffer.from(encodedTag, 'base64url');
+    const encrypted = Buffer.from(encodedValue, 'base64url');
+    if (
+      iv.length !== 12 ||
+      tag.length !== 16 ||
+      iv.toString('base64url') !== encodedIV ||
+      tag.toString('base64url') !== encodedTag ||
+      encrypted.toString('base64url') !== encodedValue
+    ) {
+      throw new CredentialCryptoError();
+    }
+    const decipher = createDecipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });
+    decipher.setAuthTag(tag);
+    return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
   } catch {
     throw new CredentialCryptoError();
   }
@@ -31,7 +46,6 @@ function decryptWithKey(value: string, key: Buffer): string {
 
 export function createCredentialEncryption({ secret }: { secret: string }): CredentialEncryption {
   const key = keyFor(secret, CORE_LABEL);
-  const legacyKey = keyFor(secret, LEGACY_LABEL);
   return {
     encrypt(value) {
       const iv = randomBytes(12);
@@ -45,11 +59,7 @@ export function createCredentialEncryption({ secret }: { secret: string }): Cred
       ].join('.');
     },
     decrypt(value) {
-      try {
-        return decryptWithKey(value, key);
-      } catch {
-        return decryptWithKey(value, legacyKey);
-      }
+      return decryptWithKey(value, key);
     },
   };
 }

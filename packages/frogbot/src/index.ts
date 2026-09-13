@@ -26,13 +26,14 @@ export { messagesToUIMessages } from './chat/messagesToUIMessages.js';
 export { buildConfig } from './config/build.js';
 export { getPayloadConfig } from './config/getPayloadConfig.js';
 export type { FrogbotSanitizedConfig } from './config/sanitized.js';
-export type { AppConnectionValue, ConnectionInfo } from './connections/api.js';
+export type { AuthorizationRequirement, ConnectionResolveArgs } from './connections/api.js';
 export { ConnectionError, Connections } from './connections/api.js';
 export type { CredentialEncryption } from './connections/encryption.js';
 export { createCredentialEncryption, CredentialCryptoError } from './connections/encryption.js';
+export type { ConnectionMetadata } from './connections/store.js';
 export type {
+  ConnectionEntry,
   ConnectionsConfig,
-  CredentialSource,
   SanitizedConnectionsConfig,
 } from './connections/types.js';
 export type { Frogbot as FrogbotInstance } from './frogbot.js';
@@ -168,7 +169,6 @@ export type { KV, KVAtomicAdapter, KVLock, KVLockCallback, KVSetOptions } from '
 export { definePiece } from './pieces/definePiece.js';
 export type {
   ChannelPieceInstance,
-  ConnectionEntry,
   CredentialType,
   EmailPieceInstance,
   LegacyPiece,

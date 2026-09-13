@@ -1,3 +1,4 @@
+import { adaptCredential } from '../connections/adapters.js';
 import { ConnectionError } from '../connections/api.js';
 import {
   executeActivepiecesAction,
@@ -30,7 +31,7 @@ function derivePolicy(
     if (typeof clientId !== 'string' || typeof clientSecret !== 'string') {
       throw new Error('[frogbot] OAuth piece auth requires `clientId` and `clientSecret`.');
     }
-    return { type: 'oauth', clientId, clientSecret, source: auth };
+    return { type: 'oauth', clientId, clientSecret };
   }
   const { allowUserOverride: _, ...credential } = auth;
   return { type: 'developer', credential };
@@ -74,13 +75,21 @@ export function createActivepiecesPiece({
           };
         }
         try {
+          if (credentialType !== 'none' && policy.type !== 'developer') {
+            throw new ConnectionError(
+              `User connections for legacy piece '${service}' require a native piece instance.`,
+              'missing',
+              undefined,
+              service,
+            );
+          }
           const auth =
             credentialType === 'none'
               ? undefined
-              : await ctx.frogbot.connections.resolve({
-                  service,
-                  owner: ctx.req.user ?? undefined,
-                });
+              : await adaptCredential(
+                  credentialType,
+                  policy.type === 'developer' ? (policy.credential as Record<string, unknown>) : {},
+                );
           return await executeActivepiecesAction({ action, propsValue: input, auth, ctx });
         } catch (error) {
           if (error instanceof ConnectionError) return { error: error.message, code: error.code };
@@ -95,7 +104,6 @@ export function createActivepiecesPiece({
     credentialType,
     credentialFields,
     policy,
-    separateConsent: config?.separateConsent,
     actions: availableActions,
     scopes,
     tool,

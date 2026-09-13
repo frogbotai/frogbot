@@ -1,5 +1,6 @@
 import type { UIMessage } from 'ai';
 import { describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import {
   assertAgentAccess,
@@ -9,6 +10,10 @@ import {
   listAgents,
 } from '../../../../packages/frogbot/src/agents/service.js';
 import type { AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
+import {
+  definePiece,
+  pieceInstanceTools,
+} from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 function makeAgent({
@@ -120,15 +125,31 @@ describe('agent service', () => {
     });
   });
 
-  it('resolves authorization services from agent tools', async () => {
-    const authorizations = vi.fn().mockResolvedValue([{ source: 'google' }]);
+  it('discovers native tool origins through sanitized copies and deduplicates instances', async () => {
+    const authorizations = vi.fn().mockResolvedValue([{ piece: 'google-sheets' }]);
     const agent = makeAgent();
+    const piece = definePiece({
+      slug: 'google-sheets',
+      label: 'Sheets',
+      actions: ['read', 'write'].map((slug) => ({
+        slug,
+        description: slug,
+        input: z.object({}),
+        async run() {},
+      })),
+    })({ slug: 'work-sheets' });
+    agent.config.tools = [
+      ...pieceInstanceTools(piece)!.map((tool) => ({ ...tool })),
+      ...agent.config.tools!,
+    ];
     const req = makeRequest({ agents: { support: agent }, authorizations });
 
-    await expect(getAgentAuthorizations({ req, agent })).resolves.toEqual([{ source: 'google' }]);
+    await expect(getAgentAuthorizations({ req, agent })).resolves.toEqual([
+      { piece: 'google-sheets' },
+    ]);
     expect(authorizations).toHaveBeenCalledWith({
-      owner: { id: 'user-1' },
-      services: ['google-sheets'],
+      req,
+      pieces: [piece],
     });
   });
 

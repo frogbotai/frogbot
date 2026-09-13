@@ -1,7 +1,12 @@
 import { createSign } from 'node:crypto';
 
 import type { CredentialType } from '../pieces/types.js';
-import type { AppConnectionValue } from './api.js';
+
+export type AppConnectionValue =
+  | string
+  | { username: string; password: string }
+  | ({ type: 'OAUTH2' } & Record<string, unknown>)
+  | Record<string, unknown>;
 
 const serviceAccountCache = new Map<string, { value: AppConnectionValue; expiresAt: number }>();
 

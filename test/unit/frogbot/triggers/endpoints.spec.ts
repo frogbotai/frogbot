@@ -254,9 +254,9 @@ describe('trigger endpoints', () => {
         ],
       })({ auth: { token: 'developer' } });
       const client = vi.spyOn(instance, 'client');
-      const resolvePieceCredential = vi.fn(async ({ owner, auth, factoryKey }) => ({
-        auth: owner ? { token: 'user' } : auth,
-        key: factoryKey,
+      const resolvePieceCredential = vi.fn(async ({ req, piece }) => ({
+        auth: req.user ? { token: 'user' } : { token: 'developer' },
+        key: piece,
       }));
       const subscriber = {
         agentSlug: 'ops',
@@ -296,7 +296,7 @@ describe('trigger endpoints', () => {
       expect(verificationBodies).toEqual([raw]);
       expect(verify.mock.calls[0]![0].req.user).toBe(user);
       expect(resolvePieceCredential).toHaveBeenCalledTimes(1);
-      expect(resolvePieceCredential.mock.calls[0]![0].owner).toBeNull();
+      expect(resolvePieceCredential.mock.calls[0]![0].req.user).toBeNull();
       expect(client).toHaveBeenCalledWith({
         req: expect.objectContaining({ user: null, data, context: req.context, frogbot }),
       });

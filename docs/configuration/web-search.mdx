@@ -5,7 +5,7 @@ description: "Give agents fetch-based web search with Brave Search or Exa."
 keywords: ["web search", "Brave Search", "Exa", "pieces", "agents"]
 ---
 
-Use the Brave Search or Exa piece when an agent needs current web results. Both pieces support developer-provided keys and per-user connections.
+Use the Brave Search or Exa piece with a developer-provided key when an agent needs current web results.
 
 ## Choose a provider
 
@@ -54,16 +54,6 @@ export default buildConfig({
 ```
 
 For Exa, replace the import and factory with `createExa`, and read `EXA_API_KEY`.
-
-## Use per-user connections
-
-Omit `auth` so authenticated users supply their own provider key through FrogBot connections.
-
-```ts
-const exa = createExa()
-```
-
-Create the connection with service `brave` or `exa` and the provider key as `credentials.value`. See [Connections](/configuration/connections) for the secret connection endpoint.
 
 ## Select opt-in Exa actions
 

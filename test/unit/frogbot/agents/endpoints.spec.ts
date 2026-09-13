@@ -1,8 +1,13 @@
 import type * as AI from 'ai';
 import type { UIMessage } from 'ai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import type { AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
+import {
+  definePiece,
+  pieceInstanceTools,
+} from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const { createAgentUIStreamResponse, resolveChatAttachments } = vi.hoisted(() => ({
@@ -167,24 +172,41 @@ describe('agent endpoints', () => {
   });
 
   it('returns authorization preflight requirements and requires authentication', async () => {
-    const authorizations = vi
-      .fn()
-      .mockResolvedValue([
-        { source: 'google', services: ['google-sheets'], type: 'oauth', scopes: ['sheets'] },
-      ]);
-    const agent = makeAgent();
-    agent.config.tools = [{ slug: 'google-sheets_find', pieceService: 'google-sheets' } as never];
-    const response = await authorizationsHandler()(makeRequest({ agent, authorizations }));
-    expect(await response.json()).toEqual({
-      authorizations: [
-        { source: 'google', services: ['google-sheets'], type: 'oauth', scopes: ['sheets'] },
+    const sheets = definePiece({
+      slug: 'google-sheets',
+      label: 'Google Sheets',
+      auth: z.string(),
+      client: ({ auth }) => ({ auth }),
+      oauth: {
+        authorizationUrl: 'https://example.com/authorize',
+        tokenUrl: 'https://example.com/token',
+        scopes: ['sheets'],
+        toAuth: ({ tokens }) => tokens.access_token,
+      },
+      actions: [
+        { slug: 'find', description: 'Find rows', input: z.object({}), run: async () => [] },
       ],
+    })({ slug: 'sheets', oauth: { clientId: 'client-id', clientSecret: 'client-secret' } });
+    const requirements = [
+      { piece: 'google-sheets', oauth: true, secret: false, scopes: ['sheets'] },
+    ];
+    const authorizations = vi.fn().mockResolvedValue(requirements);
+    const agent = makeAgent();
+    agent.config.tools = pieceInstanceTools(sheets);
+    const req = makeRequest({ agent, authorizations });
+    const response = await authorizationsHandler()(req);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      authorizations: requirements,
     });
     expect(authorizations).toHaveBeenCalledWith({
-      owner: { id: 'user-1' },
-      services: ['google-sheets'],
+      pieces: [sheets],
+      req,
     });
-    expect((await authorizationsHandler()(makeRequest({ user: null }))).status).toBe(401);
+    authorizations.mockClear();
+    const anonymous = await authorizationsHandler()(makeRequest({ user: null, authorizations }));
+    expect(anonymous.status).toBe(401);
+    expect(authorizations).not.toHaveBeenCalled();
   });
 
   it('returns JSON unless text/event-stream is explicitly accepted', async () => {

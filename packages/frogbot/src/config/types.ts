@@ -11,7 +11,7 @@ import type { RootAdminConfig, SettingsEntry } from '../admin/types.js';
 import type { AgentConfig } from '../agents/types.js';
 import type { AIConfig } from '../ai/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
-import type { ConnectionsConfig, CredentialSource } from '../connections/types.js';
+import type { ConnectionsConfig } from '../connections/types.js';
 import type { DatabaseAdapter } from '../database/types.js';
 import type { Endpoint } from '../endpoints/types.js';
 import type { Frogbot } from '../frogbot.js';
@@ -69,8 +69,6 @@ export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   tools?: readonly AnyTool[];
   /** Third-party account linking — which providers users can connect. */
   connections?: ConnectionsConfig;
-  /** Where connection credentials are read from and written to. */
-  credentialSources?: CredentialSource[];
   /** Plugin pipeline — runs serially, in order, before sanitization. */
   plugins?: Plugin[];
   /** Pages added to the admin settings area, each with its own route. */

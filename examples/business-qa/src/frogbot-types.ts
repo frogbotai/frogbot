@@ -70,24 +70,24 @@ export interface Config {
     users: User;
     media: Media;
     releases: Release;
-    connections: Connection;
     'api-keys': ApiKey;
     'usage-logs': UsageLog;
-    'oauth-states': OauthState;
     chats: Chat;
     messages: Message;
+    connections: Connection;
+    'trigger-subscriptions': TriggerSubscription;
   };
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect;
     media: MediaSelect;
     releases: ReleasesSelect;
-    connections: ConnectionsSelect;
     'api-keys': ApiKeysSelect;
     'usage-logs': UsageLogsSelect;
-    'oauth-states': OauthStatesSelect;
     chats: ChatsSelect;
     messages: MessagesSelect;
+    connections: ConnectionsSelect;
+    'trigger-subscriptions': TriggerSubscriptionsSelect;
   };
   db: {
     defaultIDType: number;
@@ -103,6 +103,7 @@ export interface Config {
   jobs: {
     tasks: {
       'frogbot-reset-ai-budgets': TaskFrogbotResetAiBudgets;
+      'frogbot-cleanup-kv': TaskFrogbotCleanupKv;
       inline: {
         input: unknown;
         output: unknown;
@@ -135,7 +136,7 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
-  name: string;
+  name?: string | null;
   modelAccess?: ('all' | 'selected') | null;
   models?:
     | (
@@ -240,38 +241,6 @@ export interface Release {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "connections".
- */
-export interface Connection {
-  id: number;
-  environment?: ('development' | 'staging' | 'production') | null;
-  notes?: string | null;
-  owner: number | User;
-  services: string[];
-  source: 'oauth' | 'secret';
-  credentialType:
-    'oauth2' | 'secret_text' | 'basic_auth' | 'custom' | 'service_account';
-  sourceKey: string;
-  encryptedCredentials: string;
-  scopes?: string[] | null;
-  status: 'active' | 'error' | 'revoked';
-  accountId?: string | null;
-  accountLabel?: string | null;
-  expiresAt?: string | null;
-  metadata?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-keys".
  */
 export interface ApiKey {
@@ -337,21 +306,6 @@ export interface Chat {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "oauth-states".
- */
-export interface OauthState {
-  id: number;
-  state: string;
-  owner?: (number | null) | User;
-  provider: string;
-  returnUrl: string;
-  codeVerifier: string;
-  expiresAt: string;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "messages".
  */
 export interface Message {
@@ -380,6 +334,69 @@ export interface Message {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "connections".
+ */
+export interface Connection {
+  id: number;
+  owner: number | User;
+  piece: string;
+  method: 'oauth' | 'secret';
+  credential: string;
+  account?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  scopes?: string[] | null;
+  expiresAt?: string | null;
+  status: 'active' | 'error' | 'revoked';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trigger-subscriptions".
+ */
+export interface TriggerSubscription {
+  id: number;
+  agent: string;
+  piece: string;
+  instance: string;
+  trigger: string;
+  inputHash: string;
+  input:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  state?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  webhookUrl?: string | null;
+  status: 'active' | 'error';
+  cleanupPending?: boolean | null;
+  enablePending?: boolean | null;
+  enableAttempt?: string | null;
+  expiresAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -447,28 +464,6 @@ export interface ReleasesSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "connections_select".
- */
-export interface ConnectionsSelect {
-  environment?: boolean;
-  notes?: boolean;
-  owner?: boolean;
-  services?: boolean;
-  source?: boolean;
-  credentialType?: boolean;
-  sourceKey?: boolean;
-  encryptedCredentials?: boolean;
-  scopes?: boolean;
-  status?: boolean;
-  accountId?: boolean;
-  accountLabel?: boolean;
-  expiresAt?: boolean;
-  metadata?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "api-keys_select".
  */
 export interface ApiKeysSelect {
@@ -503,20 +498,6 @@ export interface UsageLogsSelect {
   costUSD?: boolean;
   finishReason?: boolean;
   requestedAt?: boolean;
-  updatedAt?: boolean;
-  createdAt?: boolean;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "oauth-states_select".
- */
-export interface OauthStatesSelect {
-  state?: boolean;
-  owner?: boolean;
-  provider?: boolean;
-  returnUrl?: boolean;
-  codeVerifier?: boolean;
-  expiresAt?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }
@@ -561,6 +542,43 @@ export interface MessagesSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "connections_select".
+ */
+export interface ConnectionsSelect {
+  owner?: boolean;
+  piece?: boolean;
+  method?: boolean;
+  credential?: boolean;
+  account?: boolean;
+  scopes?: boolean;
+  expiresAt?: boolean;
+  status?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trigger-subscriptions_select".
+ */
+export interface TriggerSubscriptionsSelect {
+  agent?: boolean;
+  piece?: boolean;
+  instance?: boolean;
+  trigger?: boolean;
+  inputHash?: boolean;
+  input?: boolean;
+  state?: boolean;
+  webhookUrl?: boolean;
+  status?: boolean;
+  cleanupPending?: boolean;
+  enablePending?: boolean;
+  enableAttempt?: boolean;
+  expiresAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -574,6 +592,14 @@ export interface CollectionsWidget {
  * via the `definition` "TaskFrogbot-reset-ai-budgets".
  */
 export interface TaskFrogbotResetAiBudgets {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-cleanup-kv".
+ */
+export interface TaskFrogbotCleanupKv {
   input?: unknown;
   output?: unknown;
 }

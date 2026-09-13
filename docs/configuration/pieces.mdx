@@ -2,7 +2,7 @@
 title: "Pieces"
 sidebarTitle: "Pieces"
 description: "Add integration actions to FrogBot agents as tools."
-keywords: ["pieces", "tools", "agents", "Activepieces", "text helper"]
+keywords: ["pieces", "tools", "agents", "Google Sheets", "native actions"]
 ---
 
 Pieces package related actions as FrogBot tools. Register each piece once in the root `pieces` array, then select its tools for individual agents.
@@ -11,39 +11,40 @@ For fetch-based search, see [Web search via pieces](/configuration/web-search).
 
 ## Install a piece
 
-Install the wrapper package for the integration you need.
+Install the package for the integration you need. The native Google product packages include their runtime dependencies.
 
 ```bash
-pnpm add @frogbotai/piece-text-helper
+pnpm add @frogbotai/piece-google-sheets
 ```
 
 ## Register and select tools
 
 ```ts
-import { textHelper } from '@frogbotai/piece-text-helper'
-import { buildConfig } from 'frogbot'
+import { createGoogleSheets } from '@frogbotai/piece-google-sheets'
+import type { FrogbotConfig } from 'frogbot'
 
-export default buildConfig({
-  // secret, db, collections, and ai omitted
-  pieces: [textHelper],
+export const googleSheets = createGoogleSheets({
+  auth: { accessToken: process.env.GOOGLE_SHEETS_ACCESS_TOKEN! }
+})
+
+export const pieceConfig = {
+  pieces: [googleSheets],
   agents: [
     {
       slug: 'assistant',
       model: 'openai/gpt-4o-mini',
-      instructions: 'Use text tools when transforming user input.',
-      tools: textHelper.tools()
+      instructions: 'Read QA evidence from spreadsheets without changing it.',
+      tools: [googleSheets.findRows, googleSheets.getRows]
     }
   ]
-})
+} satisfies Pick<FrogbotConfig, 'pieces' | 'agents'>
 ```
 
-`tools()` returns the piece's curated default action set. Select a smaller set by action name when an agent has a narrower job.
+Merge `pieceConfig` into your root config alongside your database, collections, secret, and AI provider configuration. This example uses a developer access token. For user-owned credentials, reuse the factory instances from the [OAuth connection example](/configuration/connections#configure-linking).
 
-```ts
-tools: textHelper.tools({ actions: ['concat', 'split'] })
-```
+Native pieces expose actions directly. Pass only the actions your agent needs in `tools`; each action can also be called on the server with `{ input, req }` to use the caller's credentials.
 
-Tool slugs are namespaced by service and action, such as `text_helper_concat`, so tools from different pieces do not collide.
+Tool slugs combine the instance slug and action name, such as `google-sheets_getRows`, so tools from different pieces do not collide. The Google ports use new native action names and schemas; update old wrapper aliases and `.tools()` selections. See [Native Google actions](/pieces/index#native-google-actions) for the action inventory and key input changes.
 
 ## Keep tool sets focused
 
@@ -56,6 +57,12 @@ The HTTP and GraphQL pieces can request arbitrary URLs without an allowlist. Onl
 ## File output
 
 Pieces that create files buffer the complete result in memory and write it to the default `files` collection. Set upload size limits appropriate for your deployment. See [Files](/configuration/files) to adopt another collection.
+
+## Credentials and linked accounts
+
+For native pieces such as Google Sheets, Drive, Calendar, Gmail, Linear, and Resend, pass developer credentials as factory `auth`. To let users link accounts, configure root `connections` entries with `oauth: true`, `secret: true`, or both supported methods. Factory `oauth` holds your app credentials; it does not enable linking by itself. See [Connections](/configuration/connections).
+
+Use the identity-only `createGoogle` factory for [Google sign-in](/authentication/sign-in). Pass `google.oauth` to `createGoogleSheets`, `createGoogleDrive`, `createGoogleCalendar`, or `createGmail` to share the app credentials. Each product has its own scopes, connection entry, and callback. A Google login or identity connection does not authorize product actions.
 
 ## Gmail verification
 

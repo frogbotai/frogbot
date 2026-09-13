@@ -16,7 +16,7 @@ export function credentialExecution({
   service: string;
   credential: unknown;
 }): void {
-  it('passes the resolved connection value to the action', async () => {
+  it('requires a native piece for user connections without resolving credentials or running the action', async () => {
     const activepiecesPiece = Object.values(module).find(
       (value) => typeof value === 'object' && value !== null && 'getAction' in value,
     ) as {
@@ -34,8 +34,23 @@ export function credentialExecution({
           req: { user: { id: 'owner' } },
           frogbot: { connections: { resolve } },
         } as never),
-      ).resolves.toEqual({ auth: credential });
-      expect(resolve).toHaveBeenCalledWith({ service, owner: { id: 'owner' } });
+      ).resolves.toEqual({
+        code: 'missing',
+        error: `User connections for legacy piece '${service}' require a native piece instance.`,
+      });
+      expect(resolve).not.toHaveBeenCalled();
+      expect(action.run).not.toHaveBeenCalled();
+      await expect(
+        tool.execute({}, {
+          req: { user: null },
+          frogbot: { connections: { resolve } },
+        } as never),
+      ).resolves.toEqual({
+        code: 'unauthenticated',
+        error: `Authentication is required to use '${service}'.`,
+      });
+      expect(resolve).not.toHaveBeenCalled();
+      expect(action.run).not.toHaveBeenCalled();
     } finally {
       action.run = run;
     }
