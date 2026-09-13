@@ -3,13 +3,15 @@ import { z } from 'zod';
 
 import type { AgentConfig, AgentInstance, AgentPieceTrigger } from '../agents/types.js';
 import type { FrogbotConfig } from '../config/types.js';
+import type { TriggerEvent } from '../triggers/types.js';
 import type { FrogbotRequest } from '../types/request.js';
-import { definePiece } from './definePiece.js';
+import { definePiece, pieceTriggerInstance } from './definePiece.js';
 import type {
   ChatSdkAuthor,
   ConnectionEntry,
   OAuthTokens,
   PieceDefinition,
+  PieceInstance,
   SignInMethod,
 } from './types.js';
 
@@ -325,15 +327,21 @@ const createTrigger = definePiece({
         expectTypeOf(client).toEqualTypeOf<undefined>();
         expectTypeOf(options).toEqualTypeOf<TriggerTypes['options']>();
         expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
-        return [];
+        return [{ dedupeKey: 'created', data: { id: input.project } }];
       },
     },
   ],
 } satisfies PieceDefinition<TriggerTypes, undefined>);
 const trigger = createTrigger({});
+expectTypeOf(pieceTriggerInstance(trigger.triggers.created)).toEqualTypeOf<
+  PieceInstance | undefined
+>();
 expectTypeOf<keyof typeof trigger.triggers>().toEqualTypeOf<'created'>();
+expectTypeOf<ReturnType<typeof trigger.triggers.created.run>>().toEqualTypeOf<
+  Promise<TriggerEvent<TriggerTypes['triggers']['created']['output']>[]>
+>();
 expectTypeOf<AgentPieceTrigger<typeof trigger.triggers.created>['input']>().toEqualTypeOf<
-  TriggerTypes['triggers']['created']['input'] | undefined
+  TriggerTypes['triggers']['created']['input']
 >();
 const triggerAgent: AgentConfig = {
   slug: 'trigger-agent',
@@ -351,6 +359,87 @@ const triggerAgent: AgentConfig = {
   ],
 };
 expectTypeOf(triggerAgent.triggers).not.toBeNever();
+
+const inferredTriggerAgent: AgentConfig<typeof trigger.triggers.created> = {
+  slug: 'inferred-trigger-agent',
+  instructions: 'Trigger',
+  triggers: [
+    {
+      trigger: trigger.triggers.created,
+      input: { project: 'project' },
+      handler: ({ event, agent, req }) => {
+        expectTypeOf(event).toEqualTypeOf<z.output<typeof triggerOutput>>();
+        expectTypeOf(agent).toEqualTypeOf<AgentInstance>();
+        expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+      },
+    },
+    { type: 'schedule', slug: 'daily', schedule: { every: '1d' }, prompt: 'Run' },
+  ],
+};
+expectTypeOf(inferredTriggerAgent).toMatchTypeOf<AgentConfig>();
+type CreatedBinding = AgentPieceTrigger<typeof trigger.triggers.created>;
+expectTypeOf<{
+  trigger: typeof trigger.triggers.created;
+  input: { project: number };
+  handler: CreatedBinding['handler'];
+}>().not.toMatchTypeOf<CreatedBinding>();
+expectTypeOf<Omit<CreatedBinding, 'input'>>().not.toMatchTypeOf<CreatedBinding>();
+
+const unparameterizedAgent: AgentConfig = {
+  slug: 'unparameterized',
+  instructions: '',
+  triggers: [
+    {
+      trigger: trigger.triggers.created,
+      input: { project: 'project' },
+      handler: ({ event, req }) => {
+        expectTypeOf(event).toBeUnknown();
+        expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+      },
+    },
+  ],
+};
+void unparameterizedAgent;
+
+const createParsedTrigger = definePiece({
+  slug: 'parsed-trigger',
+  label: 'Parsed trigger',
+  actions: [],
+  triggers: [
+    {
+      slug: 'parsed',
+      type: 'app',
+      event: 'parsed',
+      description: 'Parsed',
+      input: z.object({ count: z.string().default('1').transform(Number) }),
+      output: z.object({ count: z.number() }),
+      async run() {
+        return [{ dedupeKey: 'parsed', data: { count: 1 } }];
+      },
+    },
+  ],
+});
+const parsedTrigger = createParsedTrigger();
+type ParsedBinding = AgentPieceTrigger<typeof parsedTrigger.triggers.parsed>;
+expectTypeOf<ParsedBinding['input']>().toEqualTypeOf<{ count?: string } | undefined>();
+expectTypeOf<{
+  trigger: typeof parsedTrigger.triggers.parsed;
+  input: { count: number };
+  handler: ParsedBinding['handler'];
+}>().not.toMatchTypeOf<ParsedBinding>();
+const parsedAgent: AgentConfig<typeof parsedTrigger.triggers.parsed> = {
+  slug: 'parsed',
+  instructions: '',
+  triggers: [
+    {
+      trigger: parsedTrigger.triggers.parsed,
+      handler: ({ event }) => {
+        expectTypeOf(event).toEqualTypeOf<{ count: number }>();
+      },
+    },
+  ],
+};
+expectTypeOf(parsedAgent).toMatchTypeOf<AgentConfig>();
 
 const createSignIn = definePiece({
   slug: 'sign-in',

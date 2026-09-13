@@ -14,6 +14,7 @@ import {
 const actionMetadata = Symbol('pieceAction');
 const instanceMetadata = Symbol('pieceInstance');
 const definitions = new WeakMap<object, PieceDefinition>();
+const triggerInstances = new WeakMap<object, PieceInstance>();
 const reserved = new Set([
   'admin',
   'auth',
@@ -34,7 +35,7 @@ type ActionMetadata = {
   definition: PieceActionDefinition;
   tool: AnyTool;
 };
-type InstanceMetadata = { actions: AnyTool[] };
+type InstanceMetadata = { actions: AnyTool[]; definition: PieceDefinition; options: unknown };
 
 export function isPieceAction(value: unknown): value is PieceAction {
   return typeof value === 'function' && actionMetadata in value;
@@ -66,6 +67,27 @@ export function pieceFactoryDefinition(factory: object): PieceDefinition {
   const definition = definitions.get(factory);
   if (!definition) throw new Error('[frogbot] Expected a factory returned by definePiece.');
   return definition;
+}
+
+export function pieceInstanceDefinition(instance: PieceInstance): PieceDefinition {
+  return pieceInstanceRuntime(instance).definition;
+}
+
+export function pieceTriggerInstance(reference: unknown): PieceInstance | undefined {
+  if (!reference || typeof reference !== 'object') return undefined;
+  return triggerInstances.get(reference);
+}
+
+export function pieceInstanceRuntime(instance: PieceInstance): {
+  client: PieceInstance['client'];
+  definition: PieceDefinition;
+  options: unknown;
+} {
+  if (!isPieceInstance(instance)) {
+    throw new Error('[frogbot] Expected a piece instance returned by definePiece.');
+  }
+  const metadata: InstanceMetadata = Reflect.get(instance, instanceMetadata);
+  return { client: instance.client, definition: metadata.definition, options: metadata.options };
 }
 
 export function definePiece<const T extends PieceDefinition>(definition: T): PieceFactory<T> {
@@ -234,13 +256,16 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
       return pending;
     };
 
+    const triggers = Object.freeze(
+      Object.fromEntries(
+        (definition.triggers ?? []).map((trigger) => [trigger.slug, Object.freeze({ ...trigger })]),
+      ),
+    );
     const instance: Record<string | symbol, unknown> = {
       slug,
       piece: definition.slug,
       ...(oauth ? { oauth } : {}),
-      triggers: Object.fromEntries(
-        (definition.triggers ?? []).map((trigger) => [trigger.slug, trigger]),
-      ),
+      triggers,
       client,
     };
     const tools: AnyTool[] = [];
@@ -266,7 +291,9 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
       Object.defineProperty(instance, action.slug, { value: invoke, enumerable: true });
       tools.push(tool);
     }
-    Object.defineProperty(instance, instanceMetadata, { value: { actions: tools } });
+    Object.defineProperty(instance, instanceMetadata, {
+      value: { actions: tools, definition, options },
+    });
     Object.defineProperty(instance, pieceCapabilities, {
       value: {
         webhook: definition.webhook,
@@ -278,6 +305,9 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
         staticAuth: Boolean(definition.auth),
       },
     });
+    for (const reference of Object.values(triggers)) {
+      triggerInstances.set(reference, instance as PieceInstance);
+    }
     return instance;
   };
   definitions.set(factory, definition);

@@ -2,6 +2,7 @@ import type { SendEmailOptions, TypeWithID } from 'payload';
 import type { z } from 'zod';
 
 import type { AnyTool } from '../tools/types.js';
+import type { TriggerEvent } from '../triggers/types.js';
 import type { FrogbotRequest } from '../types/request.js';
 
 export type CredentialType =
@@ -120,7 +121,7 @@ export type PieceWebhookTrigger<
   };
   run(
     args: PieceRunArgs<z.output<TInput>, TOptions, TClient>,
-  ): Promise<Array<TOutput extends z.ZodType ? z.output<TOutput> : PieceJSON>>;
+  ): Promise<TriggerEvent<TOutput extends z.ZodType ? z.output<TOutput> : PieceJSON>[]>;
 };
 
 export type PieceAppTrigger<
@@ -133,7 +134,7 @@ export type PieceAppTrigger<
   event: string;
   run(
     args: PieceRunArgs<z.output<TInput>, TOptions, TClient>,
-  ): Promise<Array<TOutput extends z.ZodType ? z.output<TOutput> : PieceJSON>>;
+  ): Promise<TriggerEvent<TOutput extends z.ZodType ? z.output<TOutput> : PieceJSON>[]>;
 };
 
 export type PiecePollingTrigger<
@@ -161,11 +162,15 @@ export type PieceTriggerDefinition<
   | PiecePollingTrigger<TInput, TOutput, TOptions, TClient>
   | PieceWebhookTrigger<TInput, TOutput, TOptions, TClient>;
 
-export type PieceTriggerReference = {
-  slug: string;
-  input: z.ZodType;
-  output?: z.ZodType;
-};
+export type PieceTriggerReference = Readonly<
+  | (PieceTriggerBase<z.ZodType, z.ZodType | undefined> & {
+      type: 'app';
+      event: string;
+    })
+  | (PieceTriggerBase<z.ZodType, z.ZodType | undefined> & {
+      type: 'polling' | 'webhook';
+    })
+>;
 
 export type PieceOAuthAccount = { id: string; label: string; email?: string };
 export type PieceOAuthRecipe<
@@ -275,7 +280,7 @@ export type PieceInstance = {
   slug: string;
   piece: string;
   oauth?: OAuthApp;
-  triggers: Record<string, PieceTriggerReference>;
+  readonly triggers: Readonly<Record<string, PieceTriggerReference>>;
   client(args: { req: FrogbotRequest }): Promise<unknown>;
   readonly [pieceCapabilities]: PieceCapabilities;
 };
@@ -306,8 +311,8 @@ type DefinedPiece<T extends PieceDefinition, TConfig> = {
   ): Promise<
     T extends { client: (...args: never[]) => infer TClient } ? Awaited<TClient> : undefined
   >;
-  triggers: T extends { triggers: readonly (infer TTrigger extends { slug: string })[] }
-    ? { [TEntry in TTrigger as TEntry['slug']]: TEntry }
+  readonly triggers: T extends { triggers: readonly (infer TTrigger extends { slug: string })[] }
+    ? { readonly [TEntry in TTrigger as TEntry['slug']]: Readonly<TEntry> }
     : Record<string, never>;
   readonly [pieceCapabilities]: {
     webhook: DefinedCapability<T, 'webhook'>;
@@ -381,10 +386,12 @@ export type SanitizedPiecesConfig =
       pieces: readonly [];
       services: Readonly<Record<string, LegacyPiece>>;
       tools: Readonly<Record<string, AnyTool>>;
+      instances: readonly PieceInstance[];
     }
   | {
       enabled: true;
       pieces: readonly LegacyPiece[];
       services: Readonly<Record<string, LegacyPiece>>;
       tools: Readonly<Record<string, AnyTool>>;
+      instances: readonly PieceInstance[];
     };

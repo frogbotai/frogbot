@@ -97,7 +97,7 @@ export function oauthPlugin(options: OAuthPluginOptions = {}): Plugin {
       }
     >();
     for (const piece of config.pieces ?? []) {
-      if (piece.credentialType !== 'oauth2') continue;
+      if (!('credentialType' in piece) || piece.credentialType !== 'oauth2') continue;
       if (piece.policy.type !== 'oauth') {
         throw new Error(
           `[plugin-oauth] OAuth piece '${piece.service}' requires OAuth app credentials.`,
