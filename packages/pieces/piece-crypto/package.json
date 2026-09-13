@@ -1,17 +1,17 @@
 {
   "name": "@frogbotai/piece-crypto",
   "version": "0.22.0",
-  "description": "Cryptography tools for FrogBot.",
+  "description": "crypto tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./src/index.ts",
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -24,7 +24,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@activepieces/piece-crypto": "0.0.22"
+    "openpgp": "6.2.0",
+    "zod": "^4.3.6"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"
