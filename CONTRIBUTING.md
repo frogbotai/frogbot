@@ -30,12 +30,39 @@ Shared engineering conventions for contributors and coding agents. Read this gui
 
 ### Blank lines
 
-- Use one blank line between distinct logical phases, such as input preparation, validation, side effects, and result construction. Treat blank lines like paragraph breaks when the task or subject changes; keep tightly coupled statements together.
-- Separate top-level functions, classes, and type/interface declarations with one blank line; keep related imports and short constant declarations grouped.
-- Separate a guard clause from the work that follows it. Separate a final return from preceding work when it begins a distinct phase; keep a tiny calculation-and-return operation together.
+- **Favor more breathing room, not fewer lines. When a blank line is debatable, add it.** Concise code means less unnecessary logic, not compressed vertical spacing.
+- Use one blank line between logical steps, even within the same phase. Input preparation, validation, query construction, mutation, side effects, and returning a result should read as separate paragraphs, not one uninterrupted block.
+- Separate multiline declarations from the next statement. Short declarations may stay grouped only when they prepare the same immediate operation; sharing a scope or using the same variable is not enough reason to group statements.
+- Put a blank line before and after standalone loops and iteration calls such as `forEach`, separating setup, iteration, and subsequent work. Apply these rules inside callbacks and nested branches too.
+- Separate a condition's setup from its `if`, a guard from subsequent work, and independent conditionals from each other. Separate calculations from assignments or calls that mutate state, and separate base query construction from optional query modifications.
+- Put a blank line before a final return when other statements precede it, including in short helpers.
+- Separate top-level functions, classes, and type/interface declarations with one blank line; keep related imports grouped.
 - In tests, separate setup, execution, and assertions with blank lines, not explanatory comments.
-- Do not put a blank line after every statement, between every object property, or immediately inside a block. Never use consecutive blank lines.
-- Scan edited code for dense walls of text and excessive fragmentation. Prettier preserves logical blank lines but does not invent missing ones.
+- Use single blank lines, never consecutive blank lines. Do not insert them immediately inside blocks, between every object property, or between every line of one expression. These limits are not a reason to collapse separate steps.
+- Before handing off, review edited code specifically for missing blank lines, not just formatter compliance. Prettier preserves logical blank lines but does not invent missing ones. Do not copy dense surrounding code or remove useful spacing to shorten a diff.
+
+For example, query preparation and mutation need breaks even inside one callback:
+
+```ts
+const manyTables = new Set(
+  joins.filter((join) => join.isOneToMany).map((join) => getTableName(join.table)),
+);
+
+const groups: SQL[] = [sql`${table.id}`];
+const selections: Record<string, SQL | SQL.Aliased> = { id: sql`${table.id}`.as('id') };
+
+orderBy.forEach(({ column, order }, index) => {
+  const many = manyTables.has(getTableName(column.table));
+
+  if (!many) groups.push(sql`${column}`);
+
+  const value = many ? (order === asc ? min(column) : max(column)) : column;
+
+  selections[`order_${index}`] = sql`${value}`.as(`order_${index}`);
+});
+
+const joined = getJoinedJobQuery({ query, dialect, selections, groups });
+```
 
 ## Naming patterns
 
