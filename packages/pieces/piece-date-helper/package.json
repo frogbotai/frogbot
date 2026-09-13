@@ -1,7 +1,7 @@
 {
   "name": "@frogbotai/piece-date-helper",
   "version": "0.22.0",
-  "description": "Date tools for FrogBot.",
+  "description": "date-helper tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
   "type": "module",
@@ -24,7 +24,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@activepieces/piece-date-helper": "0.1.28"
+    "dayjs": "^1.11.9",
+    "zod": "^4.3.6"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"

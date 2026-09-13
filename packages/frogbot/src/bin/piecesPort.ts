@@ -1,4 +1,4 @@
-import { access, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 
@@ -21,16 +21,23 @@ async function readPackage(path: string): Promise<PackageJson> {
 
 async function findPackageRoot(path: string, name: string): Promise<string> {
   let directory = dirname(path);
+
   while (true) {
     const packagePath = join(directory, 'package.json');
+
     if (await exists(packagePath)) {
       const pkg = await readPackage(packagePath);
+
       if (pkg.name === name) return directory;
     }
+
     const parent = dirname(directory);
+
     if (parent === directory) break;
+
     directory = parent;
   }
+
   throw new Error(`[frogbot] Could not locate source for ${name}`);
 }
 
@@ -50,12 +57,19 @@ export async function piecesPort(args: string[], root = process.cwd()): Promise<
   const piece = resolve(root, 'packages', 'pieces', `piece-${slug}`);
   const legacy = `${piece}.legacy`;
   const test = resolve(root, 'test', 'unit', `piece-${slug}`);
+  const legacyTest = `${test}.legacy`;
   const packagePath = join(piece, 'package.json');
   const prompt = resolve(root, 'packages', 'pieces', 'PORTING.md');
 
   if (!(await exists(packagePath))) throw new Error(`[frogbot] Piece package not found: ${piece}`);
   if (await exists(legacy)) throw new Error(`[frogbot] Legacy package already exists: ${legacy}`);
-  if (await exists(test)) throw new Error(`[frogbot] Test directory already exists: ${test}`);
+
+  const hasTest = await exists(test);
+
+  if (hasTest && (await exists(legacyTest))) {
+    throw new Error(`[frogbot] Legacy test directory already exists: ${legacyTest}`);
+  }
+
   if (!(await exists(prompt))) throw new Error(`[frogbot] Porting prompt not found: ${prompt}`);
 
   const oldPackage = await readPackage(packagePath);
@@ -65,11 +79,13 @@ export async function piecesPort(args: string[], root = process.cwd()): Promise<
   }
 
   let entry: string;
+
   try {
     entry = createRequire(packagePath).resolve(dependency);
   } catch {
     throw new Error(`[frogbot] Upstream source is not installed: ${dependency}`);
   }
+
   const source = await findPackageRoot(entry, dependency);
   const rootPackage = await readPackage(resolve(root, 'package.json'));
   const version = rootPackage.version ?? '0.0.0';
@@ -117,28 +133,50 @@ export async function piecesPort(args: string[], root = process.cwd()): Promise<
   };
 
   await rename(piece, legacy);
-  await mkdir(join(piece, 'src'), { recursive: true });
-  await mkdir(test, { recursive: true });
-  await Promise.all([
-    writeFile(join(piece, 'package.json'), `${JSON.stringify(packageJson, null, 2)}\n`),
-    writeFile(join(piece, 'tsconfig.json'), `${JSON.stringify(tsconfig, null, 2)}\n`),
-    writeFile(
+
+  let testMoved = false;
+
+  try {
+    if (hasTest) {
+      await rename(test, legacyTest);
+
+      testMoved = true;
+    }
+
+    await mkdir(join(piece, 'src'), { recursive: true });
+    await mkdir(test, { recursive: true });
+
+    await writeFile(join(piece, 'package.json'), `${JSON.stringify(packageJson, null, 2)}\n`);
+    await writeFile(join(piece, 'tsconfig.json'), `${JSON.stringify(tsconfig, null, 2)}\n`);
+    await writeFile(
       join(piece, 'src', 'index.ts'),
       `export function ${create}() {\n  throw new Error('Piece port is not implemented');\n}\n`,
-    ),
-    writeFile(
+    );
+    await writeFile(
       join(piece, 'README.md'),
       `# \`@frogbotai/piece-${slug}\`\n\nPort ${slug} capabilities from the preserved upstream implementation.\n\n## Usage\n\n\`\`\`ts\nimport { ${create} } from '@frogbotai/piece-${slug}';\n\nexport const ${slug.replaceAll('-', '')} = ${create}();\n\`\`\`\n\n## Actions\n\n| Upstream action slug | Previous wrapper export | Native action | Notes |\n| --- | --- | --- | --- |\n\n## Triggers\n\n| Upstream trigger slug | Native trigger | Type | Notes |\n| --- | --- | --- | --- |\n`,
-    ),
-    writeFile(
+    );
+    await writeFile(
       join(test, 'index.spec.ts'),
       `import { describe, it } from 'vitest';\n\ndescribe('${slug}', () => {\n  it.todo('ports the upstream behavior');\n});\n`,
-    ),
-  ]);
+    );
+  } catch (error) {
+    await rm(piece, { recursive: true, force: true });
+
+    if (!hasTest || testMoved) await rm(test, { recursive: true, force: true });
+
+    await rename(legacy, piece);
+
+    if (testMoved) await rename(legacyTest, test);
+
+    throw error;
+  }
 
   console.log(`[frogbot] Source: ${source}`);
   console.log(`[frogbot] Prompt: ${prompt}`);
   console.log(`[frogbot] Test: pnpm vitest run --project unit test/unit/piece-${slug}`);
   console.log(`[frogbot] Prepared piece-${slug}; not verified.`);
   console.log(`[frogbot] Legacy: ${relative(root, legacy)}`);
+
+  if (hasTest) console.log(`[frogbot] Legacy test: ${relative(root, legacyTest)}`);
 }

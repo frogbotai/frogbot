@@ -1,7 +1,7 @@
 {
   "name": "@frogbotai/piece-pdf",
   "version": "0.22.0",
-  "description": "PDF tools for FrogBot.",
+  "description": "pdf tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
   "type": "module",
@@ -18,13 +18,15 @@
     "dist"
   ],
   "sideEffects": false,
+  "dependencies": {
+    "pdf-lib": "1.17.1",
+    "unpdf": "1.4.0",
+    "zod": "^4.3.6"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@activepieces/piece-pdf": "0.5.5"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"

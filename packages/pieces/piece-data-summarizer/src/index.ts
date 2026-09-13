@@ -1,31 +1,13 @@
-import * as module from '@activepieces/piece-data-summarizer';
-import { createActivepiecesPiece, type PieceFactoryConfig } from 'frogbot/pieces';
+import { definePiece } from 'frogbot/pieces';
 
-export const dataSummarizerActions = [
-  'calculateAverage',
-  'calculateSum',
-  'countUniques',
-  'getMinMax',
-] as const;
-export const dataSummarizerScopes = [] as const;
+import { calculateAverage } from './actions/calculateAverage.js';
+import { calculateSum } from './actions/calculateSum.js';
+import { countUniqueValues } from './actions/countUniqueValues.js';
+import { findMinMax } from './actions/findMinMax.js';
 
-export function createDataSummarizer(config?: PieceFactoryConfig) {
-  const piece = createActivepiecesPiece({
-    module: module,
-    service: 'data_summarizer',
-    credentialType: 'none',
-    defaultActions: dataSummarizerActions,
-    scopes: dataSummarizerScopes,
-    config,
-  });
-  return Object.assign(piece, {
-    /** Calculate Average: Calculates the average of a list of values. */
-    calculateAverage: piece.tool('calculateAverage'),
-    /** Calculate Sum: Calculates the sum of a list of values. */
-    calculateSum: piece.tool('calculateSum'),
-    /** Count Uniques: Counts the number of unique values for multiple fields */
-    countUniques: piece.tool('countUniques'),
-    /** Find Min and Max: Get the smallest and greatest values from a list of numeric values. */
-    getMinMax: piece.tool('getMinMax'),
-  });
-}
+export const createDataSummarizer = definePiece({
+  slug: 'data-summarizer',
+  label: 'Data Summarizer',
+  admin: { description: 'Summarize numeric and unique values', group: 'Core' },
+  actions: [calculateAverage, calculateSum, countUniqueValues, findMinMax],
+});

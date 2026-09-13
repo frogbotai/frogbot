@@ -1,7 +1,7 @@
 {
   "name": "@frogbotai/piece-data-summarizer",
   "version": "0.22.0",
-  "description": "Data summarization tools for FrogBot.",
+  "description": "data-summarizer tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
   "type": "module",
@@ -24,7 +24,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@activepieces/piece-data-summarizer": "0.0.11"
+    "zod": "^4.3.6"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"
