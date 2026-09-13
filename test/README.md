@@ -46,7 +46,7 @@ test/
 │   ├── local/
 │   └── r2/                     # todo — no local emulator
 ├── kv/                         # KV adapter suite (Redis)
-├── email/                      # email adapter suite (mocked)
+├── email/                      # piece-backed email suite (mocked fetch)
 ├── collections-rest/           # CRUD, pagination, filtering, 404s
 ├── auth/                       # login, tokens, access control
 ├── config/                     # buildConfig validation, edge cases
@@ -146,10 +146,10 @@ Test configs use a single `plugins: [s3Storage(...)]` array, same as a real app 
 
 ### FrogbotInstance Facade
 
-KV and email adapters are exposed through `FrogbotInstance.kv` and `FrogbotInstance.email`:
+KV and email are exposed through `FrogbotInstance.kv` and `FrogbotInstance.email`:
 
 - `kv` is wired directly from the Payload instance
-- `email.sendEmail` is a lazy proxy (supports runtime adapter swap)
+- `email.sendEmail` sends through the email-capable piece configured in `email`
 - Tests speak frogbot (`frogbot.kv.set(...)`) not Payload (`payload.kv.set(...)`)
 
 All adapter types (`KVAdapter`, `SendEmailOptions`, etc.) are re-exported from the `frogbot` package so users never import from `'payload'` directly.

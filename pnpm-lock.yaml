@@ -354,32 +354,6 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/email-nodemailer:
-    dependencies:
-      '@payloadcms/email-nodemailer':
-        specifier: 3.88.0
-        version: 3.88.0(payload@3.88.0(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))
-    devDependencies:
-      frogbot:
-        specifier: workspace:*
-        version: link:../frogbot
-      typescript:
-        specifier: 5.6.2
-        version: 5.6.2
-
-  packages/email-resend:
-    dependencies:
-      '@payloadcms/email-resend':
-        specifier: 3.88.0
-        version: 3.88.0(payload@3.88.0(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))
-    devDependencies:
-      frogbot:
-        specifier: workspace:*
-        version: link:../frogbot
-      typescript:
-        specifier: 5.6.2
-        version: 5.6.2
-
   packages/frogbot:
     dependencies:
       '@ai-sdk/otel':
@@ -1753,12 +1727,6 @@ importers:
       '@frogbotai/db-sqlite':
         specifier: workspace:*
         version: link:../packages/db-sqlite
-      '@frogbotai/email-nodemailer':
-        specifier: workspace:*
-        version: link:../packages/email-nodemailer
-      '@frogbotai/email-resend':
-        specifier: workspace:*
-        version: link:../packages/email-resend
       '@frogbotai/kv-redis':
         specifier: workspace:*
         version: link:../packages/kv-redis
@@ -5808,24 +5776,6 @@ packages:
       {
         integrity: sha512-qtPVSLjAFnQl1GwaQPhmnYTwCCWgTnRm4ps5yJxmN3RPdLF6S77gvqZMnC4HTeH7YADQJW3nFgQCVYExxWE6hA==,
       }
-    peerDependencies:
-      payload: 3.88.0
-
-  '@payloadcms/email-nodemailer@3.88.0':
-    resolution:
-      {
-        integrity: sha512-cW8SUYpdVXdZBpa539smI5P2lYdTB3944rfAipv/TVG9VND0u/DDwtRuqBqGf/0eh5OajqWC0X9igMXU67dhbg==,
-      }
-    engines: { node: ^18.20.2 || >=20.9.0 }
-    peerDependencies:
-      payload: 3.88.0
-
-  '@payloadcms/email-resend@3.88.0':
-    resolution:
-      {
-        integrity: sha512-0iuTVkzCY6vpHSHHlDegrAeHQLj7MrvfONGgwyXSy92vwTeQ57aWq2iR2xyHeenLGI3To4DJpKzU1ydVBPJK4Q==,
-      }
-    engines: { node: ^18.20.2 || >=20.9.0 }
     peerDependencies:
       payload: 3.88.0
 
@@ -11754,13 +11704,6 @@ packages:
       }
     engines: { node: '>=18' }
 
-  nodemailer@9.1.1:
-    resolution:
-      {
-        integrity: sha512-izw9mVKFix6YSnC9eLgV6g1opl9DUlRio9ZNcq+Wu9Ujn2UwF+8Nl0B8nz22kEC+CTZCvinkxwJ0DeFbb6NwcQ==,
-      }
-    engines: { node: '>=6.0.0' }
-
   normalize-path@3.0.0:
     resolution:
       {
@@ -17375,15 +17318,6 @@ snapshots:
       - sql.js
       - sqlite3
 
-  '@payloadcms/email-nodemailer@3.88.0(payload@3.88.0(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))':
-    dependencies:
-      nodemailer: 9.1.1
-      payload: 3.88.0(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
-
-  '@payloadcms/email-resend@3.88.0(payload@3.88.0(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))':
-    dependencies:
-      payload: 3.88.0(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
-
   '@payloadcms/graphql@3.88.0(graphql@16.14.2)(payload@3.88.0(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(typescript@5.6.2)':
     dependencies:
       graphql: 16.14.2
@@ -21655,8 +21589,6 @@ snapshots:
   node-gyp-build@4.8.4: {}
 
   node-releases@2.0.53: {}
-
-  nodemailer@9.1.1: {}
 
   normalize-path@3.0.0: {}
 

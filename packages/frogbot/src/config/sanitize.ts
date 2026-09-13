@@ -65,6 +65,7 @@ import {
   pieceInstanceDefinition,
   pieceInstanceTools,
 } from '../pieces/definePiece.js';
+import { pieceEmailAdapter } from '../pieces/email.js';
 import type {
   LegacyPiece,
   PieceAction,
@@ -949,6 +950,7 @@ function buildPayloadConfig(
     'agents',
     'ai',
     'connections',
+    'email',
     'onInit',
     'pieces',
     'plugins',
@@ -956,7 +958,7 @@ function buildPayloadConfig(
     'settings',
     'tools',
   ]);
-  if (isPieceInstance(config.email)) frogbotKeys.add('email');
+
   const collections = config.collections.map((collection) =>
     sanitizeCollection(
       collection.auth && !collection.admin?.icon
@@ -1025,10 +1027,12 @@ function buildPayloadConfig(
     out.endpoints = wrapEndpoints(userEndpoints, attachFrogbot);
   }
 
-  // Inject noop email adapter if none provided.
-  if (!config.email) {
-    out.email = noopEmailAdapter;
-  }
+  out.email =
+    config.email === undefined
+      ? noopEmailAdapter
+      : config.email instanceof Promise
+        ? config.email.then(pieceEmailAdapter)
+        : pieceEmailAdapter(config.email);
 
   out.typescript = {
     ...(config as { typescript?: Record<string, unknown> }).typescript,
@@ -1419,7 +1423,7 @@ export function sanitize(
     },
     _internal: {
       payloadConfig: payloadSanitizedPromise,
-      noEmail: !config.email || isPieceInstance(config.email),
+      noEmail: !config.email,
       triggers,
     },
   };

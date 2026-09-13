@@ -79,7 +79,7 @@ curl -s http://localhost:3000/api/agents/assistant \
 - An embeddable, fully MIT open-source [AI gateway](https://www.npmjs.com/package/@frogbotai/gateway) routing to OpenAI, Anthropic, Google, and 30+ more providers
 - Single-command type generation (`frogbot generate:types`) for end-to-end type safety
 - Dev mode with config file watching (`frogbot dev`), production mode with `frogbot start`
-- Adapter-based everything — [database](https://www.npmjs.com/package/@frogbotai/db-postgres), [file storage](https://www.npmjs.com/package/@frogbotai/storage-s3), [email](https://www.npmjs.com/package/@frogbotai/email-resend), and [KV](https://www.npmjs.com/package/@frogbotai/kv-redis) are all swappable
+- Swappable [database](https://www.npmjs.com/package/@frogbotai/db-postgres), [file storage](https://www.npmjs.com/package/@frogbotai/storage-s3), and [KV](https://www.npmjs.com/package/@frogbotai/kv-redis) adapters, with [piece-backed email](https://docs.frogbot.ai/email/overview) through [Resend](https://www.npmjs.com/package/@frogbotai/piece-resend)
 
 ## CLI
 

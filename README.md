@@ -121,7 +121,7 @@ See the [simple example](./examples/simple) for the full walkthrough.
 - An embeddable, fully MIT open-source AI gateway with a unified `provider/model` catalog across vendors
 - Single-command type generation (`frogbot generate:types`) for end-to-end type safety
 - Dev mode with config file watching (`frogbot dev`), production mode with `frogbot start`
-- Adapter-based everything — database, file storage, email, and KV are all swappable
+- Swappable database, file storage, and KV adapters, with [piece-backed email](https://docs.frogbot.ai/email/overview)
 
 ## Packages
 
@@ -159,13 +159,12 @@ This monorepo publishes the following packages:
 | [`@frogbotai/storage-vercel-blob`](./packages/storage-vercel-blob) | Vercel Blob          |
 | [`@frogbotai/storage-uploadthing`](./packages/storage-uploadthing) | UploadThing          |
 
-**Email & KV adapters**
+**Email pieces & KV adapters**
 
-| Package                                                      | Description    |
-| ------------------------------------------------------------ | -------------- |
-| [`@frogbotai/email-nodemailer`](./packages/email-nodemailer) | Nodemailer     |
-| [`@frogbotai/email-resend`](./packages/email-resend)         | Resend         |
-| [`@frogbotai/kv-redis`](./packages/kv-redis)                 | Redis KV store |
+| Package                                                     | Description        |
+| ----------------------------------------------------------- | ------------------ |
+| [`@frogbotai/piece-resend`](./packages/pieces/piece-resend) | Resend email piece |
+| [`@frogbotai/kv-redis`](./packages/kv-redis)                | Redis KV store     |
 
 ## Examples
 

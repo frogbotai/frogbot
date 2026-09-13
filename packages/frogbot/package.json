@@ -80,7 +80,8 @@
     "build": "tsc -p tsconfig.json && chmod +x bin.js",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit && pnpm typecheck:types",
-    "typecheck:types": "tsc --noEmit -p tsconfig.typetest.json && pnpm typecheck:jobs",
+    "typecheck:types": "tsc --noEmit -p tsconfig.typetest.json && pnpm typecheck:jobs && pnpm typecheck:email",
+    "typecheck:email": "tsc --noEmit -p ../../test/types/email/tsconfig.json",
     "typecheck:jobs": "pnpm -w test:unit test/unit/frogbot/jobs/typegen.spec.ts && tsc --noEmit -p ../../test/types/jobs/tsconfig.generated.json && tsc --noEmit -p ../../test/types/jobs/tsconfig.fallback.json"
   },
   "dependencies": {

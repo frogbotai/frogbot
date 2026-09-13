@@ -12,8 +12,6 @@ const FROGBOT_SERVER_PACKAGES = [
   '@frogbotai/db-postgres',
   '@frogbotai/db-sqlite',
   '@frogbotai/db-vercel-postgres',
-  '@frogbotai/email-nodemailer',
-  '@frogbotai/email-resend',
   '@frogbotai/kv-redis',
 ];
 
