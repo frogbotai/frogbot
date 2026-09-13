@@ -1,0 +1,131 @@
+# Contributing to FrogBot
+
+Shared engineering conventions for contributors and coding agents. Read this guide before editing, plus [UI conventions](packages/ui/CONTRIBUTING.md) when working in `packages/ui`.
+
+## Development workflow
+
+- Read the current code and applicable domain constraints below before proposing changes. Use the configured `pnpm` version and Node requirement from [package.json](package.json).
+- This guide covers coding and verification. Small, direct changes do not require a ticket or planning documents.
+
+## Git commits
+
+- Never stage or commit anything under `.idea/`. Ticket research, plans, and implementation summaries are local planning state. Reusable process instructions live in `.github/feature-process/` and belong in version control.
+- Preserve existing worktree and index changes. No per-stage commits or proposed commit messages; finish a verified ticket with one commit only when authorized. Merging into `main`, pushing, or opening a PR also requires explicit authorization.
+- Use Conventional Commits format: `type(scope): message`
+  - Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `perf`, `build`, `ci`, `style`
+  - Scope: the package or area (e.g. `gateway`, `frogbot`, `payload-plugin`)
+  - Examples: `refactor(gateway): move tool helpers into translators/`, `feat(gateway): add retry-after header support`
+- Do NOT use freeform prefixes like `gateway: ...` — always include the type
+- Do NOT add the opencode attribution footer to commit messages
+- Keep commit messages clean and focused on the actual changes
+- Only include the commit message content, no additional attribution or co-authored-by lines
+- In multi-feature programs, commit each completed and verified F feature separately; never combine multiple F features in one commit
+
+## Code style
+
+- **Crisp, clean code**: Favor simplicity over complexity
+- **Remove dead code**: Don't retain unused logic or buggy compatibility paths just in case
+- **Consistent naming**: Use clear, consistent patterns (e.g., `createTextDoc`/`updateTextDoc`)
+- **Object parameters**: Prefer object params over multiple individual params for better maintainability
+
+### Blank lines
+
+- Use one blank line between distinct logical phases, such as input preparation, validation, side effects, and result construction. Treat blank lines like paragraph breaks when the task or subject changes; keep tightly coupled statements together.
+- Separate top-level functions, classes, and type/interface declarations with one blank line; keep related imports and short constant declarations grouped.
+- Separate a guard clause from the work that follows it. Separate a final return from preceding work when it begins a distinct phase; keep a tiny calculation-and-return operation together.
+- In tests, separate setup, execution, and assertions with blank lines, not explanatory comments.
+- Do not put a blank line after every statement, between every object property, or immediately inside a block. Never use consecutive blank lines.
+- Scan edited code for dense walls of text and excessive fragmentation. Prettier preserves logical blank lines but does not invent missing ones.
+
+## Naming patterns
+
+- **Type naming**: Prefix with context (e.g., `ArtifactCreateProps`, `ArtifactDBUpdateProps`)
+- **Function naming**: Match types to functions (`dbCreate` → `ArtifactDBCreateProps`)
+- **Shorter names**: `createTextDoc` vs `saveTextDocumentToDatabase`
+- **Two-case simplification**: Handle exactly what's needed, no over-engineering
+- **Component wrappers**: Name a private component that continues past a provider or readiness guard `*Inner` (for example, `ChatInner`)
+
+## FrogBot Type Naming (`packages/frogbot`)
+
+- **Only use `Frogbot*` prefix when wrapping a Payload type that uses `Payload*` prefix** (e.g., `FrogbotConfig` wraps `PayloadConfig`, `FrogbotRequest` wraps `PayloadRequest`)
+- **New domain types should NOT get the `Frogbot` prefix** — the package context is sufficient (e.g., `CollectionConfig`, `Field`, `Endpoint`, `Plugin`)
+- **If there's a name collision** with a Payload type, import the Payload type with a `Payload*` alias rather than prefixing our type
+- Current valid prefixed types: `FrogbotConfig`, `FrogbotRequest`, `FrogbotComponent`, `FrogbotInstance`, `FrogbotTypes`, `UntypedFrogbotTypes`
+
+## Type Generation (`packages/frogbot`)
+
+- FrogBot is the **sole** type generator (`frogbot generate:types` → `frogbot-types.ts`). It already includes Payload's shapes via `configToJSONSchema` — there is no separate "Payload types" output.
+- Payload's own boot-time auto-generate (`typescript.autoGenerate`, spawns a child process, writes `payload-types.ts`) must always be force-disabled on the Payload config built in `config/sanitize.ts`. Never fix this by telling users to set `typescript: { autoGenerate: false }` in their `frogbot.config.ts`.
+- The user-facing `typescript.autoGenerate` in `frogbot.config.ts` controls **FrogBot's** generation only (`FrogbotSanitizedConfig.typescript.autoGenerate`), wired to a boot-time call in `Frogbot.init()`.
+- Known related bugs: Payload's auto-generate breaks under Turbopack (vercel/next.js#66723) and trips a tsx/Node `module.registerHooks` bug on Node ≥23.5 (payloadcms/payload#16949, fixed in Payload's own `bin.js`). `config/load.ts` applies the same `registerHooks` guard before calling `tsImport`.
+
+## UI Parity with Firmware (CRITICAL — do not deviate)
+
+- **Firmware (`~/code/firmware`) is the previous iteration of FrogBot.** The goal is to port Firmware's existing, already-designed UI into FrogBot as FrogBot features — NOT to design new UI from scratch.
+- **When building any FrogBot admin/UI surface, find the corresponding Firmware implementation first** (`apps/web`, `apps/desktop`, `packages/app`, `packages/ui`, admin panel customizations) and follow it exactly. Not everything ports over, but where a Firmware design exists, it is the spec.
+- **Concrete example (issue #35):** the api-keys plugin UI must be a single button injected into the Payload collection list view that opens a modal (create → one-time key reveal in the same modal) — exactly how Firmware did it (`apps/web/src/collections/ApiKeys/components/CreateApiKeyButton.tsx`). Inline always-visible panels above the list table are wrong.
+- **Direction of travel:** FrogBot's default Payload admin panel is progressively moving toward the Firmware desktop app / aggressively-masked web admin look, with FrogBot providing the components. Don't go fully there in one step, but new UI work must trend toward that design, never away from it.
+
+### UI color tokens
+
+- Use `--theme-base-*` for neutral component colors that should invert between light and dark themes.
+- Use `--color-base-*` only for fixed palette colors that must not invert, such as dark scrims or fixed-contrast text on brand/status surfaces.
+- Use `--theme-elevation-*` only in admin-only styles where the admin runtime supplies those tokens; reusable `packages/ui` styles must use `--theme-base-*`.
+
+### Payload UI import identity
+
+- In one client component graph, never mix runtime imports from `@payloadcms/ui` with `@payloadcms/ui/elements/*` or `@payloadcms/ui/icons/*`. The root entry is bundled and creates different React context identities from public subpaths, causing hooks such as `useConfig()` to return `undefined` at runtime.
+- Prefer root-only runtime imports and canonical root components. Utility subpaths and type-only imports are safe. If a required component is not exported from the root, redesign around a canonical root component rather than mixing entries.
+- Typechecking cannot detect this failure. Smoke-test the affected admin interaction in the simple example after rebuilding packages.
+
+## Constraints
+
+- **CRITICAL — documentation branding:** Never refer to Payload or Payload CMS in user-facing documentation, templates, examples, READMEs, scaffolded comments, or other user-visible copy. FrogBot is the product users interact with: describe behavior, APIs, admin features, adapters, collections, migrations, sessions, and configuration as **FrogBot** behavior. Rewrite underlying-framework references as a FrogBot self-reference or neutral wording. Before finishing documentation work, run the case-sensitive whole-word check: `rg -n -w -F 'Payload' -g '*.mdx' .` and remove every match unless the user explicitly requires a literal upstream package name or attribution.
+- **Don't add comments unless explicitly requested.** Zero comments is the default, even for "explaining why this weird workaround exists." No comment blocks, no citations, no rationale — write it in the chat response instead, not the code. This has been a repeat mistake — check every edit before writing it.
+- Don't assume libraries are available - check first
+- Don't over-engineer solutions
+- Don't keep buggy legacy code "just in case"
+
+## Verification
+
+- Put new tests, fixtures, test helpers, and test-only apps under the repository's root `test/` folder. Do not place unit tests beside production code or inside package `src/` folders. Follow the existing test layout and runner configuration; moving existing tests is separate work.
+- Tests and fixtures are normal implementation work. Every ticket includes a dedicated verification stage once its behavior is coherent: assert intended behavior, challenge it with plausible failure cases, and check adjacent regressions.
+- Use unit tests for logic, integration tests for real boundaries, and relevant E2E tests for changed user/API/CLI journeys. Inspect configured test collection and existing fixtures; do not mock the internal boundary being proven or use implementation-call assertions as a substitute for observable outcomes.
+- Transitional stages need only checks meaningful to their current state. Record deliberately incomplete wiring and the named stage that will validate it. Formatting, delegated lint, and focused tests may suffice until integration is coherent; unexplained failures are not an exemption.
+- For bugs, demonstrate the actual pre-fix mechanism when feasible and record unavailable proof. Write assertions against the approved behavior, not the buggy implementation. Tests that previously expected broken behavior need correction.
+- Discover commands and environments from [package.json](package.json), [vitest.config.ts](vitest.config.ts), and the [browser configuration](test/browser/playwright.config.ts). `pnpm test:unit`, `pnpm test:int`, `pnpm test:e2e`, and `pnpm test:browser` select different suites; E2E and browser tests are not interchangeable. Gateway projects have their own collection settings. Rebuild consumed packages before production-style verification.
+- For code changes, run relevant tests followed by `pnpm prettier:write && pnpm lint:fix`. Agents must delegate lint and required type-checking to the `lint` subagent, including `pnpm lint:fix`. Do not run repository-wide suites after every transitional stage.
+- For Markdown-only changes, check affected-file formatting, links/anchors, examples, and content/instruction consistency; do not run application tests, code lint, or typecheck. Documentation containing executable code changes may need targeted example validation.
+- Review automatic fixes and preserve unrelated work. Rerun affected tests if fixes change behavior. Report commands actually run, results, skips, and unavailable services/credentials; required blocked checks leave the ticket unverified.
+
+## File Organization
+
+- **Internal structure is for contributors, exports are for consumers** — define types/code wherever makes sense for devs working inside the package. Control public API surface separately via the exports layer. Don't conflate "where to define" with "what to export".
+
+### FrogBot Core Project Structure
+
+`packages/frogbot/src` follows Payload core's file and folder structure where FrogBot implements an equivalent concept.
+
+1. Check Payload core for an equivalent domain; if one exists, use that name and nesting.
+2. Co-locate types with the domain that owns them; never add domain types to a horizontal catch-all.
+3. Keep a FrogBot-specific top-level domain only when Payload has no equivalent.
+4. Do not create a Payload domain FrogBot does not implement.
+5. Keep the public boundary in `src/index.ts` and `src/exports/` regardless of internal layout.
+
+Representative mappings include collection configuration in `collections/config/`, file handling in `uploads/`, import-map generation in `bin/generateImportMap/`, field types in `fields/config/`, and operation types split across `auth/`, `collections/`, and `versions/`. FrogBot-specific domains such as `agents/`, `ai/`, `chat/`, `connections/`, `pieces/`, `skills/`, and `tools/` remain top-level and own their types.
+
+## Reference Repos
+
+Use applicable local implementations, types, tests, and fixtures rather than memory or web copies of available code. The [Step 0 routing table](.github/feature-process/step0_research.md#local-source-routing) also covers gateway/client comparisons and unavailable sources; references below are local checkout defaults, not dependencies every contributor must clone.
+
+- **Payload source:** `~/code/payload` — ALWAYS check this repo for Payload internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what Payload supports.
+
+- **AI SDK by Vercel source:** `~/code/ai` — ALWAYS check this repo for AI SDK by Vercel internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what AI SDK by Vercel supports.
+
+- **`opencode` source:** `~/code/opencode` — ALWAYS check this repo for `opencode` internals, types, test patterns, and API surface before assuming something doesn't exist or guessing behavior. This is the actual source of truth for what `opencode` supports.
+
+- **`opencode` v2 beta source:** `~/code/opencode-v2` — the 2.0 beta line (git worktree on `v2-beta`, tracks `origin/beta`). Check for 2.0 architecture direction (Effect runtime, `core`/`protocol`/`server`/`llm`/`sdk-next` package split). NOT shipped behavior — for what `opencode` does today, use `~/code/opencode`.
+
+- **Strapi source:** `~/code/strapi` — use for ideas and comparative patterns in headless CMS architecture, extensibility, administration, and developer experience. It is not a source of truth for FrogBot behavior.
+
+- **Directus source:** `~/code/directus` — use for ideas and comparative patterns in data-platform architecture, administration, integrations, and developer experience. It is not a source of truth for FrogBot behavior.
