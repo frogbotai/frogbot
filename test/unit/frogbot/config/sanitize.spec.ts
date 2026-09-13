@@ -58,6 +58,24 @@ function emailWarnings(warn: ReturnType<typeof vi.fn>) {
 }
 
 describe('frogbot sanitize', () => {
+  it('keeps the subscription ledger available without mounted triggers', async () => {
+    const config = sanitize(makeConfig());
+    const payloadConfig = await config._internal.payloadConfig;
+    expect(
+      payloadConfig.collections?.find(({ slug }) => slug === 'trigger-subscriptions'),
+    ).toMatchObject({ admin: { hidden: true } });
+    expect(Object.keys(config._internal.triggers)).toEqual([]);
+    expect(payloadConfig.endpoints).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: '/webhooks/:instance' })]),
+    );
+  });
+
+  it('reserves the subscription ledger slug without mounted triggers', () => {
+    expect(() =>
+      sanitize(makeConfig({ collections: [{ slug: 'trigger-subscriptions', fields: [] }] })),
+    ).toThrow("Collection slug 'trigger-subscriptions' is reserved");
+  });
+
   it('makes board collections orderable with per-view fields and a hook', async () => {
     const result = sanitize(
       makeConfig({
@@ -254,6 +272,7 @@ describe('frogbot sanitize', () => {
     expect(result.collections).toEqual([
       { slug: 'users', auth: true },
       { slug: 'projects', auth: false },
+      { slug: 'trigger-subscriptions', auth: false },
       { slug: 'files', auth: false },
     ]);
   });
@@ -958,7 +977,7 @@ describe('frogbot sanitize', () => {
     });
     const result = sanitize(config);
     const slugs = result.collections.map((c) => c.slug);
-    expect(slugs).toEqual(['alpha', 'beta', 'gamma', 'files']);
+    expect(slugs).toEqual(['alpha', 'beta', 'gamma', 'trigger-subscriptions', 'files']);
   });
 
   describe('ai.providers', () => {
@@ -1303,11 +1322,15 @@ describe('frogbot sanitize', () => {
       ]);
     });
 
-    it('preserves piece trigger references without creating a runtime host', async () => {
+    it('installs the trigger host from agent mounts without root piece registration', async () => {
       const createExample = definePiece({
         slug: 'trigger-example',
         label: 'Trigger example',
         actions: [],
+        webhook: {
+          verify: async () => true,
+          parse: () => ({ event: 'created' }),
+        },
         triggers: [
           {
             slug: 'created',
@@ -1330,9 +1353,22 @@ describe('frogbot sanitize', () => {
         makeConfig({ ai, agents: [{ ...agent, triggers: [trigger] }] } as never),
       );
       expect(result.agents?.[0].triggers).toEqual([trigger]);
-      await expect(result._internal.payloadConfig).resolves.not.toMatchObject({
-        jobs: { tasks: [expect.objectContaining({ slug: 'frogbot-run-agent-schedule' })] },
+      expect(result._internal.triggers[example.slug].instance).toBe(example);
+      expect(result.pieces.instances).toContain(example);
+      await expect(result._internal.payloadConfig).resolves.toMatchObject({
+        jobs: {
+          tasks: expect.arrayContaining([
+            expect.objectContaining({ slug: 'frogbot-run-agent-trigger' }),
+          ]),
+          autoRun: expect.arrayContaining([expect.objectContaining({ allQueues: true })]),
+        },
+        endpoints: expect.arrayContaining([
+          expect.objectContaining({ path: '/webhooks/:instance' }),
+        ]),
       });
+      const removed = sanitize(makeConfig({ ai, agents: [{ ...agent, tools: [example] }] }));
+      expect(Object.keys(removed._internal.triggers)).toEqual([]);
+      expect(removed.pieces.instances).toContain(example);
     });
 
     it('lets agent tools override root tools', () => {
@@ -2067,11 +2103,19 @@ describe('frogbot sanitize', () => {
         'chats',
         'messages',
         'usage-logs',
+        'trigger-subscriptions',
         'files',
       ]);
       const payloadConfig = await result._internal.payloadConfig;
       const payloadSlugs = (payloadConfig as any).collections.map((c: any) => c.slug);
-      expect(payloadSlugs).toEqual(['users', 'chats', 'messages', 'usage-logs', 'files']);
+      expect(payloadSlugs).toEqual([
+        'users',
+        'chats',
+        'messages',
+        'usage-logs',
+        'trigger-subscriptions',
+        'files',
+      ]);
     });
 
     it('injected chat collections get the bootstrap beforeOperation hook', async () => {

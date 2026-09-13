@@ -74,7 +74,7 @@ See [Chat persistence](/chat/overview) for request behavior and durability guara
 
 ## Collection config options
 
-The following options are available on any `CollectionConfig`. FrogBot adds `chat`, `message`, `connections`, and `file` to the built-in set; every other option below is part of the FrogBot configuration API.
+The following options are available on any `CollectionConfig`. FrogBot adds `chat`, `message`, and `file` to the built-in set; every other option below is part of the FrogBot configuration API. Configure [connections](/configuration/connections) in the root config.
 
 It's best practice to write Collections in separate files and import them into the root config.
 
@@ -110,7 +110,7 @@ The following options are available:
 | `file`               | **FrogBot** — adopts this collection as the files store. At most one collection may be marked. [More details](/configuration/files).                                                                                                                    |
 | `admin`              | The configuration options for the Admin Panel. [More details](#admin-options).                                                                                                                                                                             |
 | `access`             | Provide Access Control functions to define exactly who should be able to do what with Documents in this Collection. [More details](/access-control/collections).                                                                                         |
-| `auth`               | Specify options if you would like this Collection to feature authentication. Set to `true` for defaults or pass an auth config object. FrogBot extends auth with `providers`, `allowedDomains`, and `allowSignup`. [More details](/authentication/overview).                                                                                         |
+| `auth`               | Set to `true` for default authentication or pass an auth config object. Use `signIn` to add [OAuth login methods](/authentication/sign-in). [More details](/authentication/overview). |
 | `custom`             | Extension point for adding custom data (e.g. for plugins)                                                                                                                                                                                                  |
 | `disableDuplicate`   | When true, do not show the "Duplicate" button while editing documents within this Collection and prevent `duplicate` from all APIs.                                                                                                                        |
 | `dbName`             | Custom table or Collection name depending on the Database Adapter. Auto-generated from slug if not defined.                                                                                                                                                |

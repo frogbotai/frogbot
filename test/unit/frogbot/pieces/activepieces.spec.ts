@@ -179,7 +179,7 @@ describe('Activepieces adapter', () => {
     ).rejects.toThrow('files collection');
   });
 
-  it('resolves connections by service key', async () => {
+  it('rejects legacy connection-key lookups explicitly', async () => {
     const resolve = vi.fn().mockResolvedValue('token');
     await expect(
       executeActivepiecesAction({
@@ -194,7 +194,7 @@ describe('Activepieces adapter', () => {
         propsValue: {},
         ctx: { req: { user: { id: 'owner' } }, frogbot: { connections: { resolve } } } as never,
       }),
-    ).resolves.toBe('token');
-    expect(resolve).toHaveBeenCalledWith({ service: 'linear', owner: { id: 'owner' } });
+    ).rejects.toThrow('connections');
+    expect(resolve).not.toHaveBeenCalled();
   });
 });

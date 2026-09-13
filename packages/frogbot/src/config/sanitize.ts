@@ -37,6 +37,10 @@ import { createPolicyFields, mergePolicyFields } from '../ai/policyFields.js';
 import { isProviderName } from '../ai/providerNames.js';
 import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../ai/types.js';
 import { resolveUsageCollection } from '../ai/usage/collection.js';
+import { coordinateAuthEndpoints } from '../auth/endpoints.js';
+import { attachSessionPayload, unwrapSessionPayload } from '../auth/operation.js';
+import { buildSignInEndpoints } from '../auth/signIn/endpoints.js';
+import { validateSignIn, validateSignInFields } from '../auth/signIn/validate.js';
 import { buildChatEndpoints } from '../chat/endpoints.js';
 import { buildManifestEndpoint } from '../chat/manifest.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
@@ -44,12 +48,7 @@ import { resolveUserSlug } from '../chat/resolveUserSlug.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import { COLLECTION_MARKERS } from '../collections/config/types.js';
 import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
-import {
-  buildSecretEndpoints,
-  builtInDeveloperSources,
-  builtInSecretSource,
-} from '../connections/secret.js';
-import { resolveCredentialSources } from '../connections/sources.js';
+import { buildSecretEndpoints } from '../connections/secret.js';
 import type { Endpoint } from '../endpoints/types.js';
 import type { Frogbot } from '../frogbot.js';
 import { initFrogbotFromPayload } from '../frogbot.js';
@@ -61,6 +60,7 @@ import {
   isPieceAction,
   isPieceInstance,
   pieceActionTool,
+  pieceInstanceDefinition,
   pieceInstanceTools,
 } from '../pieces/definePiece.js';
 import type {
@@ -72,6 +72,13 @@ import type {
 import { buildSkillTools } from '../skills/tools.js';
 import type { SkillConfig } from '../skills/types.js';
 import type { AnyTool } from '../tools/types.js';
+import {
+  defaultTriggerSubscriptionsCollection,
+  TRIGGER_SUBSCRIPTIONS_SLUG,
+} from '../triggers/collection.js';
+import { buildTriggerEndpoints } from '../triggers/endpoints.js';
+import { buildIngressRegistry } from '../triggers/registry.js';
+import { AGENT_TRIGGER_TASK_SLUG, resolveTriggerTasks } from '../triggers/task.js';
 import type { FrogbotRequest } from '../types/request.js';
 import { resolveFilesCollection } from '../uploads/resolveCollections.js';
 import {
@@ -147,6 +154,7 @@ function sanitizeCollection(
   c: CollectionConfig,
   attachFrogbot: AttachFrogbot,
 ): PayloadCollectionConfig {
+  const signIn = validateSignIn(c);
   let collectionViews: CollectionView[] = [];
   const admin = compileCollectionViews({
     collection: c,
@@ -194,10 +202,26 @@ function sanitizeCollection(
 
   // Capture auth state into `custom.frogbot`.
   const auth = c.auth !== undefined && c.auth !== false;
+  if (typeof c.auth === 'object') {
+    const { signIn: _signIn, ...collectionAuth } = c.auth;
+    out.auth = collectionAuth;
+  }
   const existingCustom = (c.custom ?? {}) as Record<string, unknown>;
   out.custom = {
     ...existingCustom,
-    frogbot: { auth, collectionViews },
+    frogbot: {
+      auth,
+      collectionViews,
+      ...(signIn.length
+        ? {
+            signIn: signIn.map((method) => ({
+              slug: method.slug,
+              piece: method.piece,
+              label: pieceInstanceDefinition(method).label,
+            })),
+          }
+        : {}),
+    },
   };
 
   // Inject `req.frogbot` bootstrap as the first `beforeOperation`.
@@ -219,8 +243,16 @@ function sanitizeCollection(
   };
 
   // Wrap per-collection custom endpoints.
-  if (c.endpoints !== undefined) {
-    out.endpoints = wrapEndpoints(c.endpoints, attachFrogbot);
+  if (c.endpoints !== undefined || signIn.length) {
+    out.endpoints = wrapEndpoints(
+      signIn.length
+        ? [
+            ...buildSignInEndpoints({ collectionSlug: c.slug, methods: signIn }),
+            ...(c.endpoints || []),
+          ]
+        : c.endpoints,
+      attachFrogbot,
+    );
   }
 
   return out as unknown as PayloadCollectionConfig;
@@ -768,21 +800,24 @@ function sanitizeAgents(
   });
 }
 
-function sanitizePieces(pieces: LegacyPiece[] | undefined): SanitizedPiecesConfig {
+function sanitizePieces(
+  pieces: (LegacyPiece | PieceInstance)[] | undefined,
+): SanitizedPiecesConfig {
   if (pieces === undefined) {
-    return { enabled: false, pieces: [], services: {}, tools: {} };
+    return { enabled: false, pieces: [], services: {}, tools: {}, instances: [] };
   }
   if (!Array.isArray(pieces)) {
     throw new Error('[frogbot] `pieces` must be an array.');
   }
   if (pieces.length === 0) {
-    return { enabled: false, pieces: [], services: {}, tools: {} };
+    return { enabled: false, pieces: [], services: {}, tools: {}, instances: [] };
   }
 
   const services = new Set<string>();
   const serviceIndex: Record<string, LegacyPiece> = {};
   const toolIndex: Record<string, AnyTool> = {};
-  for (const piece of pieces) {
+  const instances = pieces.filter(isPieceInstance);
+  for (const piece of pieces.filter((piece): piece is LegacyPiece => !isPieceInstance(piece))) {
     if (!isRecord(piece) || typeof piece.service !== 'string' || !piece.service.trim()) {
       throw new Error('[frogbot] Every piece must have a `service`.');
     }
@@ -814,7 +849,13 @@ function sanitizePieces(pieces: LegacyPiece[] | undefined): SanitizedPiecesConfi
     }
   }
 
-  return { enabled: true, pieces, services: serviceIndex, tools: toolIndex };
+  return {
+    enabled: true,
+    pieces: pieces.filter((piece): piece is LegacyPiece => !isPieceInstance(piece)),
+    services: serviceIndex,
+    tools: toolIndex,
+    instances,
+  };
 }
 
 function validateInternalPathReservations(
@@ -825,6 +866,7 @@ function validateInternalPathReservations(
     ['connections', 'connections'],
     ['frogbot', 'manifest'],
     ['jobs', 'jobs'],
+    [TRIGGER_SUBSCRIPTIONS_SLUG, 'trigger subscriptions'],
     ['v1', 'AI gateway'],
     ['webhooks', 'webhook'],
   ] as const) {
@@ -905,7 +947,6 @@ function buildPayloadConfig(
     'agents',
     'ai',
     'connections',
-    'credentialSources',
     'onInit',
     'pieces',
     'plugins',
@@ -945,6 +986,26 @@ function buildPayloadConfig(
     },
   };
 
+  if (collections.some((collection) => collection.custom?.frogbot?.signIn?.length)) {
+    const adapter = config.db as PayloadConfig['db'];
+    const db: PayloadConfig['db'] = {
+      ...adapter,
+      init(args) {
+        const database = adapter.init(args);
+        if (
+          database.name === 'sqlite' &&
+          (!('transactionOptions' in database) || !database.transactionOptions)
+        ) {
+          throw new Error(
+            '[frogbot] SQLite signIn requires transactions. Remove transactionOptions: false or set transactionOptions: {} in sqliteAdapter().',
+          );
+        }
+        return database;
+      },
+    };
+    out.db = db;
+  }
+
   const userEndpoints = config.endpoints as Endpoint[] | false | undefined;
   const agentEndpoints = config.agents?.length ? buildAgentEndpoints() : [];
   const allEndpoints = [
@@ -983,6 +1044,10 @@ function buildPayloadConfig(
     }
   ).admin;
   const settings = sanitizeSettings(config.settings);
+  const hasAdminSignIn = config.collections.some(
+    ({ slug, auth }) =>
+      typeof auth === 'object' && auth.signIn?.length && slug === resolveUserSlug(config),
+  );
   const toolComponents = Object.fromEntries(
     (config.agents ?? []).flatMap((agent) => {
       const components = Object.fromEntries(
@@ -997,6 +1062,14 @@ function buildPayloadConfig(
     ...admin,
     components: {
       ...admin?.components,
+      ...(hasAdminSignIn
+        ? {
+            afterLogin: [
+              ...((admin?.components?.afterLogin as unknown[] | undefined) ?? []),
+              '@frogbotai/next/rsc#SignInButtons',
+            ],
+          }
+        : {}),
       ...(admin?.components?.chat || Object.keys(toolComponents).length > 0
         ? {
             chat: {
@@ -1090,6 +1163,7 @@ export function sanitize(
     throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections instead.');
   }
   for (const collection of config.collections) {
+    validateSignIn(collection);
     const icon = collection.admin?.icon;
     if (typeof icon === 'string' && !icon.includes('#') && !iconNames.includes(icon as never)) {
       throw new Error(`[frogbot] Unknown admin icon '${icon}'. Valid: ${iconNames.join(', ')}`);
@@ -1099,6 +1173,7 @@ export function sanitize(
   const settings = sanitizeSettings(config.settings);
   const sanitizedConfigRef: { current?: FrogbotSanitizedConfig } = {};
   const attachFrogbot: AttachFrogbot = async (req) => {
+    req.payload = unwrapSessionPayload(req.payload);
     const sanitizedConfig = sanitizedConfigRef.current;
     if (!sanitizedConfig) {
       throw new Error('[frogbot] Payload initialized before config sanitization completed.');
@@ -1110,6 +1185,7 @@ export function sanitize(
     );
     seedFrogbotCache(frogbot, sanitizedConfig);
     (req as PayloadRequest & { frogbot: Frogbot }).frogbot = frogbot;
+    attachSessionPayload(req);
     return req as unknown as FrogbotRequest;
   };
 
@@ -1183,6 +1259,17 @@ export function sanitize(
     config.agents !== undefined
       ? sanitizeAgents(config.agents, sanitizedAI, pieces, mode, rootTools)
       : undefined;
+  const triggers = buildIngressRegistry({ agents });
+  pieces.instances = [
+    ...new Set([
+      ...pieces.instances,
+      ...Object.values(triggers).map(({ instance }) => instance),
+      ...(config.agents ?? []).flatMap((agent) => [
+        ...(agent.channels ?? []),
+        ...(agent.tools ?? []).filter(isPieceInstance),
+      ]),
+    ]),
+  ];
   const hasScheduleTriggers = agents?.some((agent) =>
     agent.triggers?.some((trigger) => 'type' in trigger && trigger.type === 'schedule'),
   );
@@ -1194,17 +1281,21 @@ export function sanitize(
       `[frogbot] Job task slug '${AGENT_SCHEDULE_TASK_SLUG}' is reserved for agent schedule triggers.`,
     );
   }
+  if (
+    Object.keys(triggers).length &&
+    config.jobs?.tasks?.some((task) => task.slug === AGENT_TRIGGER_TASK_SLUG)
+  ) {
+    throw new Error(
+      `[frogbot] Job task slug '${AGENT_TRIGGER_TASK_SLUG}' is reserved for agent triggers.`,
+    );
+  }
   const kv = config.kv ?? databaseKVAdapter();
   const jobs = resolveKVCleanupTask({
     kv,
-    jobs: resolveScheduleTasks({ agents, jobs: config.jobs }),
+    jobs: Object.keys(triggers).length
+      ? resolveTriggerTasks(resolveScheduleTasks({ agents, jobs: config.jobs }))
+      : resolveScheduleTasks({ agents, jobs: config.jobs }),
   });
-  const secretSource = builtInSecretSource(pieces.pieces);
-  const credentialSources = [
-    ...(secretSource.services.length ? [secretSource] : []),
-    ...builtInDeveloperSources(pieces.pieces),
-    ...(config.credentialSources ?? []),
-  ];
 
   // Resolve chat persistence — adopt marked collections or inject defaults.
   const chatResult = resolveChatCollections({ ...config, agents });
@@ -1212,19 +1303,41 @@ export function sanitize(
     { ...config, agents, collections: chatResult.collections },
     chatResult.chat.enabled ? chatResult.chat.chatsSlug : undefined,
   );
-  const connectionsResult = resolveConnectionsCollections(
-    { ...config, agents, credentialSources, collections: usageCollections },
-    pieces,
-  );
+  const connectionsResult = resolveConnectionsCollections({
+    ...config,
+    agents,
+    collections: usageCollections,
+  });
   const { collections, files } = resolveFilesCollection({
-    collections: connectionsResult.collections,
+    collections: [...connectionsResult.collections, defaultTriggerSubscriptionsCollection()],
   });
   const connections = connectionsResult.connections;
-  connections.assignments = resolveCredentialSources({
-    sources: connections.sources,
-    assignments: connections.assignments,
-    pieces: pieces.pieces,
-  });
+  if (connections.enabled) {
+    if (settings.some(({ path }) => path === 'connections' || path.startsWith('connections/'))) {
+      throw new Error("[frogbot] Settings path 'connections' is reserved for linked accounts.");
+    }
+    settings.push({
+      path: 'connections',
+      label: 'Linked accounts',
+      Component: '@frogbotai/next/views#ConnectionsView',
+    });
+  }
+  const connectionCollection = collections.find(({ slug }) => slug === connections.slug);
+  if (connectionCollection) {
+    connectionCollection.endpoints = [
+      ...(connectionCollection.endpoints || []),
+      ...buildSecretEndpoints({
+        connections,
+        userSlug: resolveUserSlug(config),
+      }),
+    ];
+  }
+  pieces.instances = [
+    ...new Set([
+      ...pieces.instances,
+      ...Object.values(connections.entries).map(({ piece }) => piece),
+    ]),
+  ];
   const chat = chatResult.chat;
   const payloadCollections = chat.enabled
     ? collections.map((collection) =>
@@ -1240,7 +1353,7 @@ export function sanitize(
 
   // Build the Payload config and pass it through Payload's buildConfig.
   const payloadConfig = buildPayloadConfig(
-    { ...config, agents, collections: payloadCollections, jobs, kv },
+    { ...config, agents, collections: payloadCollections, jobs, kv, settings },
     async (payload) => {
       const sanitizedConfig = sanitizedConfigRef.current;
       if (!sanitizedConfig) {
@@ -1254,12 +1367,18 @@ export function sanitize(
       seedFrogbotCache(frogbot, sanitizedConfig);
     },
     [
-      ...buildSecretEndpoints({ connections, pieces: pieces.pieces }),
       ...(chat.enabled ? buildChatEndpoints() : []),
+      ...(Object.keys(triggers).length ? buildTriggerEndpoints() : []),
     ],
     attachFrogbot,
   );
-  const payloadSanitizedPromise = payloadBuildConfig(payloadConfig).then(rewriteComponentPaths);
+  const payloadSanitizedPromise = payloadBuildConfig(payloadConfig).then((built) => {
+    for (const collection of built.collections) {
+      if (collection.custom?.frogbot?.signIn?.length) validateSignInFields(collection);
+      coordinateAuthEndpoints({ collection, attachFrogbot });
+    }
+    return rewriteComponentPaths(built);
+  });
 
   const sanitizedConfig: FrogbotSanitizedConfig = {
     admin: {
@@ -1286,6 +1405,7 @@ export function sanitize(
     _internal: {
       payloadConfig: payloadSanitizedPromise,
       noEmail: !config.email || isPieceInstance(config.email),
+      triggers,
     },
   };
   sanitizedConfigRef.current = sanitizedConfig;

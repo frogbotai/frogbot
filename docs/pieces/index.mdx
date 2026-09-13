@@ -1,107 +1,97 @@
 ---
 title: "Available pieces"
 sidebarTitle: "Available pieces"
-description: "Install and connect the integration pieces available for FrogBot agents."
-keywords: ["pieces", "integrations", "API keys", "Basic Auth", "connections"]
+description: "Choose pieces for integration actions, linked accounts, and sign-in."
+keywords: ["pieces", "integrations", "connections", "OAuth", "Google"]
 ---
 
-FrogBot provides 39 piece packages. Install a wrapper, register it in `pieces`, and select its tools on an agent as described in [Pieces](/configuration/pieces).
+Install the package for your integration and create an instance with its factory. Use factory `auth` for developer credentials and [connection entries](/configuration/connections) to let users link their own accounts.
 
-## Connect an API-key piece
+## Credentials and identity
 
-Install the package and submit the provider credential to the built-in secret connection endpoint.
+| Piece | Package | Factory | Credential options |
+| --- | --- | --- | --- |
+| Google | `@frogbotai/piece-google` | `createGoogle` | Identity-only OAuth for [sign-in](/authentication/sign-in); no actions. |
+| Google Sheets | `@frogbotai/piece-google-sheets` | `createGoogleSheets` | OAuth app or `{ accessToken, refreshToken? }`. |
+| Google Drive | `@frogbotai/piece-google-drive` | `createGoogleDrive` | OAuth app or `{ accessToken, refreshToken? }`. |
+| Google Calendar | `@frogbotai/piece-google-calendar` | `createGoogleCalendar` | OAuth app or `{ accessToken, refreshToken? }`. |
+| Gmail | `@frogbotai/piece-gmail` | `createGmail` | OAuth app or token credentials matching its auth schema. |
+| Linear | `@frogbotai/piece-linear` | `createLinear` | `{ apiKey }`. |
+| Resend | `@frogbotai/piece-resend` | `createResend` | `{ apiKey }`. |
+
+### Link Linear
 
 ```bash
 pnpm add @frogbotai/piece-linear
-
-curl --request POST http://localhost:3000/api/connections/secret \
-  --header "Authorization: Bearer $TOKEN" \
-  --header "Content-Type: application/json" \
-  --data '{
-    "service": "linear",
-    "credentials": { "value": "lin_api_..." },
-    "accountLabel": "Production"
-  }'
 ```
-
-Use the service value and provider credential shown below.
-
-| Piece | Package | Service | Credential |
-| --- | --- | --- | --- |
-| Resend | `@frogbotai/piece-resend` | `resend` | API key |
-| Linear | `@frogbotai/piece-linear` | `linear` | Personal API key |
-| PostHog | `@frogbotai/piece-posthog` | `posthog` | Personal API key |
-| monday.com | `@frogbotai/piece-monday` | `monday` | Personal API token |
-| Telegram Bot | `@frogbotai/piece-telegram-bot` | `telegram_bot` | Bot token from BotFather |
-| PagerDuty | `@frogbotai/piece-pagerduty` | `pagerduty` | API token |
-| Airtable | `@frogbotai/piece-airtable` | `airtable` | Personal access token |
-| Discord | `@frogbotai/piece-discord` | `discord` | Bot token |
-| Attio | `@frogbotai/piece-attio` | `attio` | Access token |
-| Stripe | `@frogbotai/piece-stripe` | `stripe` | Secret API key |
-| Front | `@frogbotai/piece-front` | `front` | API token |
-| Brave Search | `@frogbotai/piece-brave-search` | `brave` | API key |
-| Exa | `@frogbotai/piece-exa` | `exa` | API key |
-
-## Connect a Basic Auth piece
-
-Basic Auth connections use `username` and `password` instead of `value`.
-
-```bash
-curl --request POST http://localhost:3000/api/connections/secret \
-  --header "Authorization: Bearer $TOKEN" \
-  --header "Content-Type: application/json" \
-  --data '{
-    "service": "twilio",
-    "credentials": {
-      "username": "AC...",
-      "password": "your-auth-token"
-    },
-    "accountLabel": "Production"
-  }'
-```
-
-| Piece | Package | Service | Username | Password |
-| --- | --- | --- | --- | --- |
-| Twilio | `@frogbotai/piece-twilio` | `twilio` | Account SID | Auth token |
-| Trello | `@frogbotai/piece-trello` | `trello` | API key | Token, not the API secret |
-
-## Connect an OAuth piece
-
-Install `@frogbotai/plugin-oauth` with the wrapper package. Register the provider factory with the scopes below. The callback URL is `https://<host>/api/<auth-collection>/oauth/<service>/callback`; the default auth collection is `users`.
-
-Google and Microsoft factories must set `service` to the piece service shown in the table. This creates a separate provider registration and connection for each integration.
-
-| Piece | Package | Service | Provider | Scopes |
-| --- | --- | --- | --- | --- |
-| Google Sheets | `@frogbotai/piece-google-sheets` | `google-sheets` | `googleProvider` | `https://www.googleapis.com/auth/spreadsheets`, `https://www.googleapis.com/auth/drive.readonly`, `https://www.googleapis.com/auth/drive` |
-| Google Calendar | `@frogbotai/piece-google-calendar` | `google-calendar` | `googleProvider` | `https://www.googleapis.com/auth/calendar.events`, `https://www.googleapis.com/auth/calendar.readonly` |
-| Google Drive | `@frogbotai/piece-google-drive` | `google-drive` | `googleProvider` | `https://www.googleapis.com/auth/drive` |
-| Gmail | `@frogbotai/piece-gmail` | `gmail` | `googleProvider` | `https://www.googleapis.com/auth/gmail.send`, `https://www.googleapis.com/auth/gmail.readonly`, `https://www.googleapis.com/auth/gmail.compose`, `email` |
-| Zoom | `@frogbotai/piece-zoom` | `zoom` | `zoomProvider` | Configure the meeting and registrant scopes required by the enabled Zoom actions in the Zoom app |
-| Microsoft Teams | `@frogbotai/piece-microsoft-teams` | `microsoft-teams` | `microsoftProvider` | `openid`, `email`, `profile`, `offline_access`, `User.Read`, `Channel.Create`, `Channel.ReadBasic.All`, `ChannelMessage.Send`, `Team.ReadBasic.All`, `Chat.ReadWrite`, `ChannelMessage.Read.All`, `TeamMember.Read.All`, `User.ReadBasic.All` |
-| Xero | `@frogbotai/piece-xero` | `xero` | `xeroProvider` | `openid`, `profile`, `email`, `offline_access`, `accounting.contacts`, `accounting.transactions`, `accounting.reports.read`, `accounting.journals.read`, `accounting.budgets.read`, `accounting.attachments`, `accounting.settings`, `projects` |
-| GitHub | `@frogbotai/piece-github` | `github` | `githubProvider` | `admin:repo_hook`, `admin:org`, `repo`, `gist` |
-| Notion | `@frogbotai/piece-notion` | `notion` | `notionProvider` | Configure capabilities on the Notion integration; Notion does not accept a scope query parameter |
-| Dropbox | `@frogbotai/piece-dropbox` | `dropbox` | `dropboxProvider` | `files.metadata.write`, `files.metadata.read`, `files.content.write`, `files.content.read` |
-| Slack | `@frogbotai/piece-slack` | `slack` | `slackProvider` | `channels:read`, `channels:manage`, `channels:history`, `chat:write`, `groups:read`, `groups:write`, `groups:history`, `im:read`, `im:write`, `im:history`, `users:read`, `users:read.email`, `files:read`, `files:write`, `reactions:read`, `reactions:write` |
 
 ```ts
-googleProvider({
-  clientId: process.env.GOOGLE_CLIENT_ID!,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-  service: 'google-sheets',
-  scopes: [
-    'https://www.googleapis.com/auth/spreadsheets',
-    'https://www.googleapis.com/auth/drive.readonly',
-    'https://www.googleapis.com/auth/drive'
-  ]
-})
+import { createLinear } from '@frogbotai/piece-linear'
+import type { ConnectionEntry } from 'frogbot'
+
+export const linear = createLinear()
+export const connections: ConnectionEntry[] = [{ piece: linear, secret: true }]
 ```
 
-Gmail restricted scopes can require Google verification and a security assessment for production access. None of these integrations can be considered live-accepted until its provider console, redirect URL, credentials, consent flow, and at least one real action have been verified in the target deployment.
+Pass `connections` to your root config, then open **Settings → Linked accounts**. For a custom client, submit the raw schema input:
 
-## Pieces without connections
+```bash
+curl --request POST http://localhost:3000/api/connections/linear \
+  --header "Authorization: Bearer $TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{"apiKey":"lin_api_..."}'
+```
 
-The no-auth packages are `piece-text-helper`, `piece-math-helper`, `piece-date-helper`, `piece-crypto`, `piece-csv`, `piece-xml`, `piece-qrcode`, `piece-data-summarizer`, `piece-http`, `piece-graphql`, `piece-file-helper`, `piece-image-helper`, and `piece-pdf`, all under the `@frogbotai` scope.
+### Share Google app credentials
 
-Triggers are not exposed as tools. The current release also has no real `custom`-auth piece, so the custom credential path remains without a provider-backed consumer until the deferred CustomAuth batch.
+```ts
+import { createGmail } from '@frogbotai/piece-gmail'
+import { createGoogle } from '@frogbotai/piece-google'
+import type { ConnectionEntry } from 'frogbot'
+
+export const google = createGoogle({
+  oauth: {
+    clientId: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!
+  }
+})
+export const gmail = createGmail({ oauth: google.oauth })
+export const connections: ConnectionEntry[] = [{ piece: gmail, oauth: true }]
+```
+
+Google's identity recipe requests OpenID, email, and profile access. Gmail extends it with mailbox scopes. Put `google` in a collection's `auth.signIn` for login and pass `connections` to the root config for Gmail linking. Sheets, Drive, and Calendar share `google.oauth` the same way, with a separate entry and callback for each product. See the complete [product connection example](/configuration/connections#configure-linking) and [redirect setup](/configuration/connections#configure-oauth-redirects).
+
+## Native Google actions
+
+Sheets, Drive, and Calendar provide 52 native actions in total. Install only their FrogBot packages; they do not require an Activepieces runtime. Select action properties directly in an agent's `tools` array, such as `[googleSheets.findRows, googleDrive.getFile, googleCalendar.listEvents]`.
+
+| Piece | Actions | Examples | Exported action-name list |
+| --- | --- | --- | --- |
+| Sheets | 27 | `appendRow`, `insertRow`, `updateRow`, `findRows`, `getRows`, `createWorksheet`, `readRange`, `exportWorksheet` | `googleSheetsActions` |
+| Drive | 16 | `createFolder`, `uploadFile`, `downloadFile`, `getFile`, `listFiles`, `searchFiles`, `createPermission`, `trashFile` | `googleDriveActions` |
+| Calendar | 9 | `createEvent`, `createQuickEvent`, `updateEvent`, `listEvents`, `getEvent`, `findFreeBusyPeriods`, `addAttendees` | `googleCalendarActions` |
+
+Import each action-name list from its product package for the complete inventory. All three also expose `customApiCall`.
+
+**Breaking change:** the native factories replace the previous wrapper exports and action aliases. Update imports, tool selections, and call inputs to the native names and schemas; this is more than a casing change. Native actions are callable properties rather than wrapper `.tools()` selections. Tool slugs use the instance slug and native action name, such as `google-sheets_appendRow`.
+
+- Sheets `appendRow` appends to the table; `insertRow` inserts after `afterRow` (default `1`, just below the header). Row writes use `spreadsheetId`, numeric `sheetId`, and `values` as an ordered array or column-letter object; `updateRow` also requires a one-based `row`.
+- Drive `getFile` returns metadata. `downloadFile` saves a FrogBot file and returns its reference, not extracted text. `uploadFile` accepts `file: { fileId, name? }` referring to an accessible FrogBot file.
+- Calendar `createEvent` uses `calendarId`, `title`, and `startDateTime`, with optional `endDateTime` (default duration: 30 minutes). Date-times must include a timezone. `findFreeBusyPeriods` takes `calendarIds`, `startDate`, and `endDate` and returns busy intervals and per-calendar errors.
+
+## More packages
+
+Each package defines its own actions and credential requirements.
+
+| Category | Packages under `@frogbotai/` |
+| --- | --- |
+| Communication | `piece-slack`, `piece-discord`, `piece-telegram-bot`, `piece-microsoft-teams`, `piece-twilio`, `piece-front`, `piece-zoom` |
+| Productivity | `piece-notion`, `piece-airtable`, `piece-monday`, `piece-trello`, `piece-dropbox` |
+| Business and development | `piece-attio`, `piece-stripe`, `piece-xero`, `piece-github`, `piece-pagerduty`, `piece-posthog` |
+| Search | `piece-brave-search`, `piece-exa` |
+
+## Pieces without provider credentials
+
+The utility packages are `piece-text-helper`, `piece-math-helper`, `piece-date-helper`, `piece-crypto`, `piece-csv`, `piece-xml`, `piece-qrcode`, `piece-data-summarizer`, `piece-http`, `piece-graphql`, `piece-file-helper`, `piece-image-helper`, and `piece-pdf`, all under `@frogbotai/`.
+
+See [Pieces](/configuration/pieces) for selecting agent tools and [Connections](/configuration/connections) for credential resolution, replacement, and refresh behavior.

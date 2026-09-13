@@ -23,6 +23,17 @@ export const linear = createLinear({ auth: { apiKey: process.env.LINEAR_API_KEY!
 
 ## Triggers
 
+Set the factory's optional `webhookSecret` to enable webhook triggers. Actions continue to work without it; trigger subscription creation requires it.
+
+```ts
+export const linear = createLinear({
+  auth: { apiKey: process.env.LINEAR_API_KEY! },
+  webhookSecret: process.env.LINEAR_WEBHOOK_SECRET!,
+});
+```
+
+FrogBot passes this secret to Linear when creating each webhook. Incoming requests must have a valid `Linear-Signature` HMAC-SHA256 signature over the raw body and a signed body `webhookTimestamp` within ±60 seconds of server time. Missing or invalid signatures, secrets, or timestamps are rejected.
+
 | Upstream trigger slug | Native trigger   | Type      | Notes                                                 |
 | --------------------- | ---------------- | --------- | ----------------------------------------------------- |
 | `new_comment`         | `commentCreated` | `webhook` | Optional team and author filters.                     |

@@ -196,16 +196,7 @@ export async function executeActivepiecesAction({
         return url;
       },
     },
-    connections: {
-      get: async (key: string) => {
-        if (!ctx?.req.user) return null;
-        try {
-          return await ctx.frogbot.connections.resolve({ service: key, owner: ctx.req.user });
-        } catch {
-          return null;
-        }
-      },
-    },
+    connections: unsupported('connections'),
     server: unsupported('server'),
     flows: unsupported('flows'),
     step: unsupported('step'),

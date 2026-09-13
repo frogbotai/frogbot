@@ -153,15 +153,16 @@ export async function createRawMessage({
     '',
     Buffer.from(input.body).toString('base64'),
   ];
-  for (const file of files)
-    {lines.push(
+  for (const file of files) {
+    lines.push(
       `--${boundary}`,
       `Content-Type: ${file.type}; name="${file.name}"`,
       `Content-Disposition: attachment; filename="${file.name}"`,
       'Content-Transfer-Encoding: base64',
       '',
       file.data.toString('base64'),
-    );}
+    );
+  }
   lines.push(`--${boundary}--`);
   return base64url(lines.join('\r\n'));
 }

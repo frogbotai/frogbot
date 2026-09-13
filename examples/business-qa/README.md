@@ -1,20 +1,20 @@
 # FrogBot Example: Business QA
 
-A comprehensive release-readiness assistant built as the second tier beside the minimal [`examples/simple`](../simple) onboarding example. It demonstrates authenticated agents, explicit piece action selection, uploads, an application collection, adopted connection storage, inbound API keys, and outbound OAuth and secret credentials without requiring external infrastructure for FrogBot itself.
+A comprehensive release-readiness assistant built as the second tier beside the minimal [`examples/simple`](../simple) onboarding example. It demonstrates authenticated agents, explicit piece action selection, uploads, an application collection, native connections, inbound API keys, and outbound OAuth and secret credentials without requiring external infrastructure for FrogBot itself.
 
 ## What it includes
 
 - SQLite, normal email/password users, the Next.js admin panel, and generated types
-- `releases`, authenticated `media` uploads, and an extended `connections` collection
+- `releases`, authenticated `media` uploads, and the core `connections` collection
 - A read-oriented `qa-analyst` and a write-oriented `release-manager`
-- Google Sheets, Drive, Calendar, Linear, Resend, date helper, data summarizer, and PDF pieces
-- One Google OAuth consent with scopes derived from all registered Google pieces
+- Native Google Sheets, Drive, and Calendar pieces (52 available actions), plus Linear, Resend, date helper, data summarizer, and PDF pieces
+- Google sign-in and separate Sheets, Drive, and Calendar connections sharing one OAuth app
 - Named inbound API keys and owner-scoped outbound credentials
 - JSON, SSE, and persisted authenticated chat continuation
 
 ## Prerequisites
 
-- Node.js 20 or newer and pnpm
+- Node.js 22 or newer and pnpm
 - An OpenAI API key to invoke either agent
 - Optional, real provider credentials for the integrations you want to test
 
@@ -86,30 +86,38 @@ Use it as `Authorization: Bearer $FROGBOT_API_KEY` or `X-API-Key: $FROGBOT_API_K
 
 This section requires real Google OAuth credentials. Create a Web application OAuth client, enable the Sheets, Drive, and Calendar APIs, and set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`.
 
-Register this callback URL:
+`src/pieces.ts` creates `google` for identity and shares `google.oauth` with `createGoogleSheets`, `createGoogleDrive`, and `createGoogleCalendar`. `src/frogbot.config.ts` enables a separate `{ piece, oauth: true }` connection for each product; `src/collections/users.ts` uses `google` only in `auth.signIn`. Google sign-in and these linking entries are enabled only when both OAuth environment variables are set. Product actions remain mounted without them, but cannot run without credentials.
+
+Register these callback URLs:
 
 ```text
-http://localhost:3000/api/users/oauth/google/callback
+http://localhost:3000/api/users/sign-in/google/callback
+http://localhost:3000/api/connections/google-sheets/callback
+http://localhost:3000/api/connections/google-drive/callback
+http://localhost:3000/api/connections/google-calendar/callback
 ```
 
-While logged into the admin panel in the same browser, open the authorization URL:
+The login page offers **Continue with Google**. Sign-in identifies your user by email without creating a connection or storing provider tokens.
+
+After logging in, open **Account > Settings > Linked accounts > New Connection** and connect Google Sheets, Google Drive, and Google Calendar separately. Each product requests its own scopes and uses its own connection. Their authorization URLs are:
 
 ```text
-http://localhost:3000/api/users/oauth/google/authorize?returnUrl=/
+http://localhost:3000/api/connections/google-sheets/authorize
+http://localhost:3000/api/connections/google-drive/authorize
+http://localhost:3000/api/connections/google-calendar/authorize
 ```
 
-The plugin derives one provider from the shared credentials object and unions the scopes declared by Sheets, Drive, and Calendar.
+The native Google packages need no Activepieces runtime setup. The example enables OAuth linking only for Google products, with no Google token fallback or static-token form. A shared app or Google login does not share product credentials; there is no grouped `google` connection or source/secret policy.
 
 ## Connect Linear and Resend
 
-Linear requires a user-owned API key. Resend uses the deployment's `RESEND_API_KEY` and does not require a user connection:
+Linear accepts a user-owned API key or the deployment's optional `LINEAR_API_KEY` fallback. Resend uses the deployment's `RESEND_API_KEY` and does not require a user connection:
 
 ```bash
-curl -s http://localhost:3000/api/connections/secret \
+curl -s http://localhost:3000/api/connections/linear \
   -H "Authorization: Bearer $FROGBOT_TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{"service":"linear","credentials":{"value":"lin_api_replace_me"},"accountLabel":"QA workspace"}' | jq
-
+  -d '{"apiKey":"lin_api_replace_me"}' | jq
 ```
 
 Credentials are encrypted with a key derived from `FROGBOT_SECRET`. The admin and list APIs never return plaintext credentials.
@@ -123,7 +131,17 @@ curl -s http://localhost:3000/api/agents/qa-analyst/authorizations \
 
 ## Call the agents
 
-The analyst has only read and analysis actions. JSON responses include a `chatId` for authenticated calls:
+The example selects a narrow subset of the 27 Sheets, 16 Drive, and 9 Calendar actions:
+
+| Product  | `qa-analyst`                                    | `release-manager`            |
+| -------- | ----------------------------------------------- | ---------------------------- |
+| Sheets   | `findRows`, `getRows`                           | `appendRow`, `updateRow`     |
+| Drive    | `downloadFile`, `getFile`, `listFiles`          | `createFolder`, `uploadFile` |
+| Calendar | `listEvents`, `findFreeBusyPeriods`, `getEvent` | `createEvent`, `updateEvent` |
+
+**Breaking change:** Google tool mounts now use native factory instances and action names directly. Update previous wrapper imports, aliases, and call inputs to the schemas in the product packages. In particular, `appendRow` appends data; `insertRow` inserts after a specified row and is not selected here. Sheets row writes use `spreadsheetId`, numeric `sheetId`, and `values`; `updateRow` also takes a one-based `row`. Drive uploads take `file: { fileId, name? }` for an accessible FrogBot file. Calendar event creation takes `calendarId`, `title`, and a timezone-qualified `startDateTime`.
+
+The analyst has only read, download, and analysis actions. Drive downloads save files in FrogBot and return file references; they do not extract text. The analyst can extract PDF text and reports other unreadable content as an evidence gap. JSON responses include a `chatId` for authenticated calls:
 
 ```bash
 curl -s http://localhost:3000/api/agents/qa-analyst \
@@ -171,7 +189,8 @@ Chats are owner-scoped. SSE responses expose the persisted chat ID in the `X-Fro
 - Create a user and confirm anonymous agent calls return forbidden.
 - Create and use a named API key, revoke it, and confirm it no longer authenticates.
 - Create the sample release and upload an artifact.
-- Connect Google once and confirm the connection covers all three services.
+- Sign in with Google and confirm it creates no linked account.
+- Confirm authorization preflight lists Sheets, Drive, and Calendar before linking. Connect each separately and confirm its requirement clears.
 - Add a Linear secret and confirm plaintext values are never readable.
 - Confirm the authorization preflight excludes deployment-provided Resend credentials.
 - Ask `qa-analyst` to use only read-oriented actions.
@@ -181,14 +200,15 @@ Chats are owner-scoped. SSE responses expose the persisted chat ID in the `X-Fro
 
 ## Scripts
 
-| Command                   | Purpose                                 |
-| ------------------------- | --------------------------------------- |
-| `pnpm dev`                | Start local development                 |
-| `pnpm build`              | Build the Next.js application           |
-| `pnpm start`              | Serve the production build              |
-| `pnpm generate:types`     | Regenerate `src/frogbot-types.ts`       |
-| `pnpm generate:importmap` | Regenerate the tracked admin import map |
-| `pnpm typecheck`          | Type-check the example                  |
+| Command                   | Purpose                                                                      |
+| ------------------------- | ---------------------------------------------------------------------------- |
+| `pnpm dev`                | Start local development                                                      |
+| `pnpm build`              | Build the Next.js application                                                |
+| `pnpm start`              | Serve the production build                                                   |
+| `pnpm generate:types`     | Regenerate `src/frogbot-types.ts`                                            |
+| `pnpm generate:importmap` | Regenerate the tracked admin import map                                      |
+| `pnpm test:wiring`        | Verify native mounts, login, and authorization routes with dummy credentials |
+| `pnpm typecheck`          | Type-check the example                                                       |
 
 ## Security and production
 

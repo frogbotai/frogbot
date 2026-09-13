@@ -1,86 +1,152 @@
 import { describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
 import { buildSecretEndpoints } from '../../../../packages/frogbot/src/connections/secret.js';
-import type { Piece } from '../../../../packages/frogbot/src/pieces/types.js';
+import { KVLockContentionError } from '../../../../packages/frogbot/src/kv/errors.js';
+import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 
-const pieces: Piece[] = [
-  { service: 'resend', credentialType: 'secret_text', actions: [], tools: () => [] },
-  { service: 'twilio', credentialType: 'basic_auth', actions: [], tools: () => [] },
-  {
-    service: 'vertex',
-    credentialType: 'custom',
-    credentialFields: { serviceAccountJson: {}, region: { secret: false } },
+function setup(auth = z.object({ token: z.string().min(1) })) {
+  const piece = definePiece({
+    slug: 'example',
+    label: 'Example',
+    auth,
+    client: () => ({}),
     actions: [],
-    tools: () => [],
-  },
-];
-
-function setup() {
-  const encryption = createCredentialEncryption({ secret: 'secret' });
-  const create = vi.fn(async ({ data }) => ({ id: 'new', ...data }));
-  const update = vi.fn(async ({ id, data }) => ({ id, ...data }));
-  const find = vi.fn(async () => ({ docs: [] }));
-  const endpoints = buildSecretEndpoints({
-    connections: { enabled: true, slug: 'connections', encryption, sources: [], assignments: {} },
-    pieces,
-  });
-  const request = (body: unknown, user: unknown = { id: 'owner' }) =>
+  })({ slug: 'alias' });
+  const upsert = vi
+    .fn()
+    .mockResolvedValue({ id: 'row', piece: 'example', method: 'secret', status: 'active' });
+  const remove = vi.fn().mockResolvedValue(true);
+  const connections = {
+    enabled: true,
+    slug: 'connections',
+    encryption: createCredentialEncryption({ secret: 'test' }),
+    entries: { example: { piece, secret: true, oauth: false } },
+  };
+  const endpoints = buildSecretEndpoints({ connections, userSlug: 'users' });
+  const request = ({
+    body = { token: 'secret-value' },
+    user = { id: 'owner', collection: 'users' },
+    routeParams = { piece: 'example' } as Record<string, unknown>,
+  } = {}) =>
     ({
       user,
+      routeParams,
       json: async () => body,
-      frogbot: { create, update, find },
+      frogbot: { connections: { store: Promise.resolve({ upsert }), delete: remove } },
     }) as never;
-  return { encryption, create, update, find, endpoints, request };
+  return { upsert, remove, request, endpoints, connections };
 }
 
-describe('secret connection endpoints', () => {
-  it.each([
-    ['resend', { value: 'key' }, { value: 'key' }],
-    ['twilio', { username: 'user', password: 'pass' }, { username: 'user', password: 'pass' }],
-  ])('stores %s credentials as one encrypted document', async (service, credentials, expected) => {
-    const { endpoints, request, create, encryption } = setup();
-    const response = await endpoints[0]!.handler(request({ service, credentials }));
-    expect(response.status).toBe(201);
-    const encrypted = create.mock.calls[0]![0].data.encryptedCredentials;
-    expect(JSON.parse(await encryption.decrypt(encrypted))).toEqual(expected);
-  });
-
-  it('stores custom secrets byte-identically and instance values as metadata', async () => {
-    const { endpoints, request, create, encryption } = setup();
-    const serviceAccountJson = '{"private_key":"line1\\nline2"}';
-    await endpoints[0]!.handler(
-      request({ service: 'vertex', credentials: { serviceAccountJson, region: 'us-east1' } }),
-    );
-    const data = create.mock.calls[0]![0].data;
-    expect(JSON.parse(await encryption.decrypt(data.encryptedCredentials))).toEqual({
-      serviceAccountJson,
+describe('static connection endpoints', () => {
+  it('accepts raw schema input and returns metadata without secrets', async () => {
+    const { endpoints, request, upsert } = setup();
+    const response = await endpoints[0]!.handler(request());
+    expect(response.status).toBe(200);
+    expect(upsert).toHaveBeenCalledWith({
+      owner: { id: 'owner', collection: 'users' },
+      piece: 'example',
+      method: 'secret',
+      credential: { token: 'secret-value' },
     });
-    expect(data.metadata).toEqual({ region: 'us-east1' });
+    expect(await response.json()).toEqual({
+      id: 'row',
+      piece: 'example',
+      method: 'secret',
+      status: 'active',
+    });
   });
 
-  it('rejects unknown custom fields and unauthenticated submissions', async () => {
-    const { endpoints, request } = setup();
-    const invalid = await endpoints[0]!.handler(
-      request({
-        service: 'vertex',
-        credentials: { serviceAccountJson: '{}', region: 'x', extra: true },
+  it.each([{}, { credential: { token: 'secret-value' } }, { token: 42 }, null, []])(
+    'rejects malformed raw input %j',
+    async (body) => {
+      const { endpoints, request, upsert } = setup();
+      const response = await endpoints[0]!.handler(request({ body: body as never }));
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: 'Invalid credentials' });
+      expect(upsert).not.toHaveBeenCalled();
+    },
+  );
+
+  it('redacts thrown schema errors', async () => {
+    const { endpoints, request } = setup(
+      z.object({
+        token: z.string().refine(() => {
+          throw new Error('secret-value');
+        }),
       }),
     );
-    expect(invalid.status).toBe(400);
-    expect(await invalid.json()).toEqual({ error: 'Unknown credential fields: extra.' });
-    expect((await endpoints[0]!.handler(request({}, null))).status).toBe(401);
+    const response = await endpoints[0]!.handler(request());
+    expect(response.status).toBe(400);
+    expect(await response.text()).not.toContain('secret-value');
   });
 
-  it('replaces and revokes only owner-scoped records', async () => {
-    const { endpoints, request, find, update } = setup();
-    find.mockResolvedValue({ docs: [{ id: 'existing' }] });
+  it('rejects malformed JSON', async () => {
+    const { endpoints, request } = setup();
+    const req = {
+      ...(request() as object),
+      json: async () => {
+        throw new Error('secret-value');
+      },
+    };
+    expect((await endpoints[0]!.handler(req as never)).status).toBe(400);
+  });
+
+  it.each([null, { id: 'owner', collection: 'customers' }])(
+    'protects both endpoints from %j',
+    async (user) => {
+      const { endpoints, request, upsert, remove } = setup();
+      for (const endpoint of endpoints) {
+        expect((await endpoint.handler(request({ user: user as never }))).status).toBe(
+          user ? 403 : 401,
+        );
+      }
+      expect(upsert).not.toHaveBeenCalled();
+      expect(remove).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['alias', 'unknown', '__proto__'])(
+    'rejects a noncanonical or unknown piece %s',
+    async (piece) => {
+      const { endpoints, request, upsert } = setup();
+      expect((await endpoints[0]!.handler(request({ routeParams: { piece } }))).status).toBe(404);
+      expect(upsert).not.toHaveBeenCalled();
+    },
+  );
+
+  it('rejects a disabled secret method and omits routes when connections are disabled', async () => {
+    const { endpoints, request, connections } = setup();
+    connections.entries.example.secret = false;
+    expect((await endpoints[0]!.handler(request())).status).toBe(404);
     expect(
-      (await endpoints[1]!.handler(request({ service: 'resend', credentials: { value: 'new' } })))
-        .status,
-    ).toBe(200);
-    expect((await endpoints[2]!.handler(request({ service: 'resend' }))).status).toBe(200);
-    expect(find.mock.calls[0]![0].where.and[0]).toEqual({ owner: { equals: 'owner' } });
-    expect(update.mock.calls[1]![0].data).toEqual({ status: 'revoked', encryptedCredentials: '' });
+      buildSecretEndpoints({ connections: { ...connections, enabled: false }, userSlug: 'users' }),
+    ).toEqual([]);
+  });
+
+  it('deletes by ID through the owner-scoped API', async () => {
+    const { endpoints, request, remove } = setup();
+    const req = request({ routeParams: { id: 'row' } });
+    expect((await endpoints[1]!.handler(req)).status).toBe(204);
+    expect(remove).toHaveBeenCalledWith({ req, id: 'row' });
+    remove.mockResolvedValue(false);
+    expect((await endpoints[1]!.handler(req)).status).toBe(404);
+  });
+
+  it('redacts persistence errors', async () => {
+    const { endpoints, request, upsert } = setup();
+    upsert.mockRejectedValue(new Error('secret-value'));
+    const response = await endpoints[0]!.handler(request());
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: 'Connection operation failed' });
+  });
+
+  it('reports lock contention without leaking the lock key', async () => {
+    const { endpoints, request, upsert } = setup();
+    upsert.mockRejectedValue(new KVLockContentionError('private-owner-key'));
+    const response = await endpoints[0]!.handler(request());
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'Connection is busy' });
   });
 });

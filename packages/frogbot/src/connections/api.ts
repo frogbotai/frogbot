@@ -1,330 +1,249 @@
-import type { TypeWithID } from 'payload';
-import type { z } from 'zod';
+import { createHmac, randomBytes } from 'node:crypto';
 
+import { getPayloadConfig } from '../config/getPayloadConfig.js';
 import type { Frogbot } from '../frogbot.js';
-import type { CredentialType, OAuthTokens } from '../pieces/types.js';
-import { adaptCredential } from './adapters.js';
+import { pieceInstanceRuntime } from '../pieces/definePiece.js';
+import type { PieceInstance, PieceJSON } from '../pieces/types.js';
+import type { FrogbotRequest } from '../types/request.js';
+import { refreshOAuthConnection } from './oauth/refresh.js';
+import { oauthAuth, parseOAuthTokens } from './oauth/tokens.js';
+import { type ConnectionOwner, ConnectionStore } from './store.js';
 import type { SanitizedConnectionsConfig } from './types.js';
 
-export type ConnectionRecord = {
-  id: number | string;
-  services: string[];
-  source: 'oauth' | 'secret';
-  sourceKey: string;
-  credentialType: Exclude<CredentialType, 'none'>;
-  encryptedCredentials?: string;
-  status: 'active' | 'error' | 'revoked';
-  accountId?: string;
-  accountLabel?: string;
-  scopes?: string[];
-  expiresAt?: string;
-  metadata?: Record<string, unknown>;
-};
-
-export type ConnectionInfo = Omit<ConnectionRecord, 'encryptedCredentials'>;
 export type AuthorizationRequirement = {
-  source: string;
-  services: string[];
-  type: 'oauth' | 'secret';
+  piece: string;
+  oauth: boolean;
+  secret: boolean;
   scopes: string[];
   authorizeUrl?: string;
 };
-export type AppConnectionValue =
-  | string
-  | { username: string; password: string }
-  | ({ type: 'OAUTH2' } & Record<string, unknown>)
-  | Record<string, unknown>;
+
+export type ConnectionResolveArgs = {
+  piece: PieceInstance;
+  req: FrogbotRequest;
+  scopes?: readonly string[];
+};
 
 export class ConnectionError extends Error {
   constructor(
     message: string,
     public readonly code: 'missing' | 'revoked' | 'expired' | 'error' | 'scopes',
     public readonly missingScopes?: string[],
+    public readonly piece?: string,
   ) {
     super(message);
     this.name = 'ConnectionError';
   }
 }
 
+function canonicalJSON(value: PieceJSON): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJSON).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJSON(value[key]!)}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
 export class Connections {
-  private readonly nativeCredentialKeys = new Map<string, { encrypted: string; key: object }>();
+  private storePromise?: Promise<ConnectionStore>;
+  private readonly identitySecret = randomBytes(32);
+  private readonly credentialKeys = new Map<
+    string,
+    { rowID: string; fingerprint: string; key: object }
+  >();
 
   constructor(
     private readonly frogbot: Frogbot,
     private readonly config: SanitizedConnectionsConfig,
   ) {}
 
-  async resolve({
-    service,
-    owner,
-  }: {
-    service: string;
-    owner?: TypeWithID;
-  }): Promise<AppConnectionValue> {
-    const source = this.config.sources.find(
-      (candidate) => candidate.key === this.config.assignments[service],
-    );
-    const doc = owner ? await this.findConnection(service, owner) : undefined;
-    if (!doc && source?.resolve) return source.resolve({ service, owner });
-    if (!doc) throw new ConnectionError(`No connection found for '${service}'.`, 'missing');
-    const missingScopes = (source?.scopes ?? []).filter((scope) => !doc.scopes?.includes(scope));
-    if (missingScopes.length) {
-      throw new ConnectionError(
-        `Connection for '${service}' is missing required scopes: ${missingScopes.join(', ')}.`,
-        'scopes',
-        missingScopes,
-      );
-    }
-    if (doc.status === 'revoked') {
-      this.nativeCredentialKeys.delete(String(doc.id));
-      throw new ConnectionError(`Connection for '${service}' is revoked.`, 'revoked');
-    }
-    if (doc.expiresAt && new Date(doc.expiresAt).getTime() <= Date.now()) {
-      const sourceKey = doc.sourceKey;
-      const source = this.config.sources.find((candidate) => candidate.key === sourceKey);
-      if (!source?.refresh) {
-        throw new ConnectionError(`Connection for '${service}' is expired.`, 'expired');
-      }
-      try {
-        await source.refresh({ connection: doc, frogbot: this.frogbot, owner: owner! });
-      } catch {
-        throw new ConnectionError(`Connection for '${service}' could not be refreshed.`, 'error');
-      }
-      const refreshed = await this.findConnection(service, owner!);
-      if (!refreshed || refreshed.status === 'error') {
-        throw new ConnectionError(`Connection for '${service}' could not be refreshed.`, 'error');
-      }
-      return this.resolveCredentials({ doc: refreshed, service });
-    }
-    if (doc.status === 'error') {
-      this.nativeCredentialKeys.delete(String(doc.id));
-      throw new ConnectionError(`Connection for '${service}' is in an error state.`, 'error');
-    }
-    return this.resolveCredentials({ doc, service });
+  get store(): Promise<ConnectionStore> {
+    return (this.storePromise ??= getPayloadConfig(this.frogbot.config).then(
+      ({ admin }) =>
+        new ConnectionStore({ frogbot: this.frogbot, config: this.config, userSlug: admin.user }),
+    ));
   }
 
-  async resolvePieceCredential<TAuth>({
+  private async owner(req: FrogbotRequest): Promise<ConnectionOwner | undefined> {
+    const { admin } = await getPayloadConfig(this.frogbot.config);
+    const user = req.user;
+    if (
+      user?.collection === admin.user &&
+      ((typeof user.id === 'string' && user.id.trim().length > 0) ||
+        (typeof user.id === 'number' && Number.isSafeInteger(user.id)))
+    ) {
+      return { id: user.id, collection: user.collection };
+    }
+    return undefined;
+  }
+
+  async resolve(args: ConnectionResolveArgs): Promise<unknown> {
+    return (await this.resolvePieceCredential(args)).auth;
+  }
+
+  async resolvePieceCredential({
     piece,
-    owner,
-    auth,
-    oauthToAuth,
-    authSchema,
-    factoryKey,
-    legacySecretToAuth,
-  }: {
-    piece: string;
-    owner?: TypeWithID | null;
-    auth?: TAuth;
-    oauthToAuth?: (args: { tokens: OAuthTokens }) => TAuth;
-    authSchema?: z.ZodType<TAuth>;
-    factoryKey?: object;
-    legacySecretToAuth?: (value: string) => TAuth;
-  }): Promise<{ auth: TAuth; key: object }> {
-    let doc = owner ? await this.findConnection(piece, owner) : undefined;
-    if (!doc) {
-      if (auth !== undefined) return { auth, key: factoryKey ?? (auth as object) };
-      throw new ConnectionError(`No connection found for '${piece}'.`, 'missing');
+    req,
+    scopes,
+  }: ConnectionResolveArgs): Promise<{ auth: unknown; key: object }> {
+    const runtime = pieceInstanceRuntime(piece);
+    const slug = piece.piece;
+    if (!runtime.definition.auth) return { auth: undefined, key: piece };
+    const owner = await this.owner(req);
+    const id = owner ? JSON.stringify([owner.collection, String(owner.id), slug]) : undefined;
+    const fail = (code: ConnectionError['code'], message: string): never => {
+      if (id) this.credentialKeys.delete(id);
+      throw new ConnectionError(`Connection for '${slug}' ${message}.`, code, undefined, slug);
+    };
+    const entry = Object.hasOwn(this.config.entries, slug) ? this.config.entries[slug] : undefined;
+    let row;
+    try {
+      row = owner && entry ? await (await this.store).get({ owner, piece: slug }) : undefined;
+    } catch {
+      return fail('error', 'could not be read');
+    }
+    if (!row) {
+      if (id) this.credentialKeys.delete(id);
+      if (runtime.auth !== undefined) return { auth: runtime.auth, key: piece };
+      return fail('missing', 'is not linked');
     }
     if (
-      doc.status === 'active' &&
-      doc.expiresAt &&
-      new Date(doc.expiresAt).getTime() <= Date.now()
+      row.status === 'active' &&
+      row.method === 'oauth' &&
+      entry?.oauth &&
+      row.expiresAt &&
+      Date.parse(row.expiresAt) <= Date.now()
     ) {
-      const sourceKey = doc.sourceKey;
-      const source = this.config.sources.find((candidate) => candidate.key === sourceKey);
-      if (!source?.refresh) {
-        throw new ConnectionError(`Connection for '${piece}' is expired.`, 'expired');
-      }
       try {
-        await source.refresh({ connection: doc, frogbot: this.frogbot, owner: owner! });
+        row = await refreshOAuthConnection({
+          store: await this.store,
+          owner: owner!,
+          piece: entry.piece,
+          req,
+        });
       } catch {
-        throw new ConnectionError(`Connection for '${piece}' could not be refreshed.`, 'error');
+        return fail('error', 'could not be refreshed');
       }
-      doc = await this.findConnection(piece, owner!);
-      if (!doc) {
-        throw new ConnectionError(`No connection found for '${piece}'.`, 'missing');
-      }
+      if (!row) return fail('missing', 'is not linked');
     }
-    if (doc.status === 'revoked') {
-      throw new ConnectionError(`Connection for '${piece}' is revoked.`, 'revoked');
+    if (row.status === 'revoked') return fail('revoked', 'is revoked');
+    if (row.status !== 'active') return fail('error', 'is in an error state');
+    if (row.expiresAt) {
+      const expiresAt = Date.parse(row.expiresAt);
+      if (!Number.isFinite(expiresAt)) return fail('error', 'has an invalid expiry');
+      if (expiresAt <= Date.now()) return fail('expired', 'is expired');
     }
-    if (doc.status === 'error') {
-      throw new ConnectionError(`Connection for '${piece}' is in an error state.`, 'error');
+    if ((row.method !== 'secret' && row.method !== 'oauth') || !entry?.[row.method]) {
+      return fail('error', 'uses an unavailable method');
     }
-    if (doc.expiresAt && new Date(doc.expiresAt).getTime() <= Date.now()) {
-      throw new ConnectionError(`Connection for '${piece}' is expired.`, 'expired');
+    const requiredScopes =
+      scopes ??
+      (row.method === 'oauth'
+        ? (piece.oauth?.scopes ?? runtime.definition.oauth?.scopes ?? [])
+        : []);
+    const missingScopes = [...new Set(requiredScopes)].filter(
+      (scope) => !row.scopes.includes(scope),
+    );
+    if (missingScopes.length) {
+      throw new ConnectionError(
+        `Connection for '${slug}' is missing required scopes.`,
+        'scopes',
+        missingScopes,
+        slug,
+      );
     }
-    if (!doc.encryptedCredentials) {
-      throw new ConnectionError(`No connection found for '${piece}'.`, 'missing');
-    }
-    let credentials: Record<string, unknown>;
+    let auth: unknown;
     try {
-      credentials = JSON.parse(
-        await this.config.encryption.decrypt(doc.encryptedCredentials),
-      ) as Record<string, unknown>;
+      auth =
+        row.method === 'oauth'
+          ? oauthAuth({ piece, tokens: parseOAuthTokens(row.credential) })
+          : runtime.definition.auth.parse(row.credential);
     } catch {
-      throw new ConnectionError(`Connection for '${piece}' has malformed credentials.`, 'error');
+      return fail('error', 'has invalid credentials');
     }
-    let converted: TAuth;
-    try {
-      if (doc.source === 'oauth') {
-        if (!oauthToAuth) {
-          throw new ConnectionError(
-            `Connection for '${piece}' cannot be converted to auth.`,
-            'error',
-          );
-        }
-        converted = oauthToAuth({ tokens: credentials as OAuthTokens });
-      } else if (doc.credentialType === 'secret_text' && legacySecretToAuth) {
-        if (typeof credentials.value !== 'string') {
-          throw new ConnectionError(
-            `Connection for '${piece}' has malformed credentials.`,
-            'error',
-          );
-        }
-        converted = legacySecretToAuth(credentials.value);
-      } else {
-        converted = credentials as TAuth;
-      }
-    } catch (error) {
-      if (error instanceof ConnectionError) throw error;
-      throw new ConnectionError(`Connection for '${piece}' cannot be converted to auth.`, 'error');
+    const fingerprint = createHmac('sha256', this.identitySecret)
+      .update(row.method)
+      .update(canonicalJSON(row.credential))
+      .digest('hex');
+    let identity = this.credentialKeys.get(id!);
+    if (!identity || identity.rowID !== String(row.id) || identity.fingerprint !== fingerprint) {
+      identity = { rowID: String(row.id), fingerprint, key: {} };
     }
-    if (!authSchema) {
-      throw new ConnectionError(`Connection for '${piece}' cannot be validated.`, 'error');
+    this.credentialKeys.delete(id!);
+    this.credentialKeys.set(id!, identity);
+    if (this.credentialKeys.size > 512) {
+      this.credentialKeys.delete(this.credentialKeys.keys().next().value!);
     }
-    let parsed: ReturnType<typeof authSchema.safeParse>;
-    try {
-      parsed = authSchema.safeParse(converted);
-    } catch {
-      throw new ConnectionError(`Connection for '${piece}' has malformed credentials.`, 'error');
-    }
-    if (!parsed.success) {
-      throw new ConnectionError(`Connection for '${piece}' has malformed credentials.`, 'error');
-    }
-    const identity = this.nativeCredentialKeys.get(String(doc.id));
-    if (identity?.encrypted === doc.encryptedCredentials) {
-      this.nativeCredentialKeys.delete(String(doc.id));
-      this.nativeCredentialKeys.set(String(doc.id), identity);
-      return { auth: parsed.data, key: identity.key };
-    }
-    const key = {};
-    this.nativeCredentialKeys.set(String(doc.id), { encrypted: doc.encryptedCredentials, key });
-    if (this.nativeCredentialKeys.size > 512) {
-      const oldest = this.nativeCredentialKeys.keys().next().value;
-      if (oldest !== undefined) this.nativeCredentialKeys.delete(oldest);
-    }
-    return { auth: parsed.data, key };
+    return { auth, key: identity.key };
   }
 
-  private async resolveCredentials({
-    doc,
-    service,
-  }: {
-    doc: ConnectionRecord;
-    service: string;
-  }): Promise<AppConnectionValue> {
-    if (!doc.encryptedCredentials) {
-      throw new ConnectionError(`No connection found for '${service}'.`, 'missing');
-    }
-    const credentials = JSON.parse(
-      await this.config.encryption.decrypt(doc.encryptedCredentials),
-    ) as Record<string, unknown>;
-    return adaptCredential(
-      doc.credentialType,
-      doc.credentialType === 'custom' ? { ...credentials, ...(doc.metadata ?? {}) } : credentials,
+  async list({ req }: { req: FrogbotRequest }) {
+    const owner = await this.owner(req);
+    if (!owner) throw new Error('Connections require an owner from the admin user collection.');
+    const rows = await (await this.store).list({ owner });
+    const prefix = `${JSON.stringify([owner.collection, String(owner.id)]).slice(0, -1)},`;
+    const current = new Map(
+      rows.map((row) => [
+        JSON.stringify([owner.collection, String(owner.id), row.piece]),
+        String(row.id),
+      ]),
     );
+    for (const [id, identity] of this.credentialKeys) {
+      if (id.startsWith(prefix) && current.get(id) !== identity.rowID) {
+        this.credentialKeys.delete(id);
+      }
+    }
+    return rows;
   }
 
-  async list({ owner }: { owner: TypeWithID }): Promise<ConnectionInfo[]> {
-    if (!this.config.enabled || !this.config.slug) return [];
-    const result = await this.frogbot.find({
-      collection: this.config.slug as never,
-      where: { owner: { equals: owner.id } },
-      overrideAccess: true,
-    });
-    return (result.docs as unknown as ConnectionRecord[]).map(
-      ({ encryptedCredentials: _encryptedCredentials, ...doc }) => doc,
-    );
+  async delete({ req, id }: { req: FrogbotRequest; id: number | string }): Promise<boolean> {
+    const owner = await this.owner(req);
+    if (!owner) throw new Error('Connections require an owner from the admin user collection.');
+    const store = await this.store;
+    const row = (await this.list({ req })).find((row) => String(row.id) === String(id));
+    if (!row) return false;
+    const deleted = await store.delete({ owner, piece: row.piece, id });
+    if (deleted) {
+      this.credentialKeys.delete(JSON.stringify([owner.collection, String(owner.id), row.piece]));
+    }
+    return deleted;
   }
 
   async authorizations({
-    services,
-    owner,
+    pieces,
+    req,
   }: {
-    services: readonly string[];
-    owner: TypeWithID;
+    pieces: readonly PieceInstance[];
+    req: FrogbotRequest;
   }): Promise<AuthorizationRequirement[]> {
-    const grouped = new Map<string, AuthorizationRequirement>();
-    for (const service of new Set(services)) {
-      const sourceKey = this.config.assignments[service];
-      const source = this.config.sources.find((candidate) => candidate.key === sourceKey);
-      if (!source || source.policy === 'developer') continue;
+    const requirements = new Map<string, AuthorizationRequirement>();
+    const { routes } = await getPayloadConfig(this.frogbot.config);
+    for (const piece of new Set(pieces)) {
+      const entry = Object.hasOwn(this.config.entries, piece.piece)
+        ? this.config.entries[piece.piece]
+        : undefined;
+      if (!entry) continue;
       try {
-        await this.resolve({ service, owner });
-        continue;
-      } catch {
-        const existing = grouped.get(sourceKey);
-        if (existing) {
-          existing.services.push(service);
-          continue;
-        }
-        const oauth = source.credentialTypes.includes('oauth2');
-        grouped.set(sourceKey, {
-          source: sourceKey,
-          services: [service],
-          type: oauth ? 'oauth' : 'secret',
-          scopes: [...(source.scopes ?? [])],
-          ...(oauth
-            ? { authorizeUrl: `/api/users/oauth/${encodeURIComponent(sourceKey)}/authorize` }
+        await this.resolve({ piece, req });
+      } catch (error) {
+        if (!(error instanceof ConnectionError)) throw error;
+        const recipe = pieceInstanceRuntime(entry.piece).definition.oauth;
+        requirements.set(piece.piece, {
+          piece: piece.piece,
+          oauth: entry.oauth,
+          secret: entry.secret,
+          scopes: entry.oauth ? [...(entry.piece.oauth?.scopes ?? recipe?.scopes ?? [])] : [],
+          ...(entry.oauth
+            ? {
+                authorizeUrl: `${routes.api}/connections/${encodeURIComponent(piece.piece)}/authorize`,
+              }
             : {}),
         });
       }
     }
-    return [...grouped.values()];
-  }
-
-  async revoke({
-    service,
-    owner,
-  }: {
-    service: string;
-    owner: TypeWithID;
-  }): Promise<ConnectionInfo> {
-    const doc = await this.findConnection(service, owner);
-    if (!doc) throw new ConnectionError(`No connection found for '${service}'.`, 'missing');
-    const source = this.config.sources.find((candidate) => candidate.key === doc.sourceKey);
-    await source?.revoke?.({ connection: doc, frogbot: this.frogbot, owner });
-    const updated = (await this.frogbot.update({
-      collection: this.config.slug as never,
-      id: doc.id,
-      data: { status: 'revoked', encryptedCredentials: '' },
-      overrideAccess: true,
-    })) as unknown as ConnectionRecord;
-    const { encryptedCredentials: _encryptedCredentials, ...info } = updated;
-    return info;
-  }
-
-  private async findConnection(
-    service: string,
-    owner: TypeWithID,
-  ): Promise<ConnectionRecord | undefined> {
-    if (!this.config.enabled || !this.config.slug) return undefined;
-    const sourceKey = this.config.assignments[service];
-    const result = await this.frogbot.find({
-      collection: this.config.slug as never,
-      where: {
-        and: [
-          { owner: { equals: owner.id } },
-          ...(sourceKey
-            ? [{ sourceKey: { equals: sourceKey } }]
-            : [{ services: { contains: service } }]),
-        ],
-      },
-      limit: 1,
-      overrideAccess: true,
-      showHiddenFields: true,
-    });
-    return result.docs[0] as unknown as ConnectionRecord | undefined;
+    return [...requirements.values()];
   }
 }

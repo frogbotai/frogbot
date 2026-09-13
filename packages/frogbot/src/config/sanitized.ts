@@ -11,6 +11,7 @@ import type { SanitizedChatConfig } from '../chat/types.js';
 import type { SanitizedConnectionsConfig } from '../connections/types.js';
 import type { Frogbot } from '../frogbot.js';
 import type { SanitizedPiecesConfig } from '../pieces/types.js';
+import type { IngressRegistry } from '../triggers/types.js';
 import type { SanitizedFilesConfig } from '../uploads/types.js';
 
 export type SanitizedCollectionMeta = {
@@ -44,5 +45,6 @@ export type FrogbotSanitizedConfig = {
   _internal: {
     payloadConfig: Promise<import('payload').SanitizedConfig>; // eslint-disable-line @typescript-eslint/consistent-type-imports
     noEmail: boolean;
+    triggers: IngressRegistry;
   };
 };
