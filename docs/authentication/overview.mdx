@@ -18,7 +18,7 @@ Here are some common use cases of Authentication in your own applications:
 
 When Authentication is enabled on a [Collection](/configuration/collections), FrogBot injects all necessary functionality to support the entire user flow. This includes all [auth-related operations](/authentication/operations) like account creation, logging in and out, and resetting passwords, all [auth-related emails](/authentication/email) like email verification and password reset, as well as any necessary UI to manage users from the Admin Panel.
 
-To enable Authentication on a Collection, use the `auth` property in the [Collection Config](/configuration/collections#config-options):
+To enable Authentication on a Collection, use the `auth` property in the [Collection Config](/configuration/collections#config-options). Add `auth.signIn` for [OAuth sign-in](/authentication/sign-in).
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -83,6 +83,7 @@ The following options are available:
 | **`maxLoginAttempts`**         | Only allow a user to attempt logging in X amount of times. Automatically locks out a user from authenticating if this limit is passed. Set to `0` to disable.                                                               |
 | **`removeTokenFromResponses`** | Set to true if you want to remove the token from the returned authentication API responses such as login or refresh.                                                                                                        |
 | **`strategies`**               | Advanced - an array of custom authentication strategies to extend this collection's authentication with. [More details](/authentication/custom-strategies).                                                                 |
+| **`signIn`**                   | OAuth piece instances that provide interactive login for this collection. [More details](/authentication/sign-in). |
 | **`tokenExpiration`**          | How long (in seconds) to keep the user logged in. JWTs and HTTP-only cookies will both expire at the same time.                                                                                                             |
 | **`useAPIKey`**                | FrogBot Authentication provides for API keys to be set on each user within an Authentication-enabled Collection. [More details](/authentication/api-keys).                                                                  |
 | **`useSessions`**              | True by default. Set to `false` to use stateless JWTs for authentication instead of sessions.                                                                                                                               |

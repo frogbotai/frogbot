@@ -1,13 +1,12 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
-import { oauthPlugin } from '@frogbotai/plugin-oauth';
 import { rolesPlugin } from '@frogbotai/plugin-roles';
 import type { FrogbotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
 
 import { qaAnalyst, releaseManager } from './agents';
-import { Connections, Media, Releases, Users } from './collections';
-import { pieces } from './pieces';
+import { Media, Releases, Users } from './collections';
+import { googleConnections, linear, pieces } from './pieces';
 
 const config: FrogbotConfig = {
   secret: process.env.FROGBOT_SECRET ?? 'dev-secret-change-me',
@@ -16,8 +15,9 @@ const config: FrogbotConfig = {
       url: process.env.DATABASE_URL ?? 'file:./frogbot.db',
     },
   }),
-  collections: [Users, Media, Releases, Connections],
+  collections: [Users, Media, Releases],
   pieces,
+  connections: [...googleConnections, { piece: linear, secret: true }],
   ai: {
     providers: { openai: true },
   },
@@ -25,7 +25,6 @@ const config: FrogbotConfig = {
   plugins: [
     rolesPlugin(),
     apiKeysPlugin({ collection: { admin: { group: 'Security' } } }),
-    oauthPlugin(),
   ],
 };
 

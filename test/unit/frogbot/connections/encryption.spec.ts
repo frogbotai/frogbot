@@ -7,8 +7,8 @@ import {
   CredentialCryptoError,
 } from '../../../../packages/frogbot/src/connections/encryption.js';
 
-function legacyEncrypt(value: string, secret: string): string {
-  const key = createHash('sha256').update('frogbot:plugin-oauth:').update(secret).digest();
+function encryptWithLabel(value: string, secret: string, label: string): string {
+  const key = createHash('sha256').update(label).update(secret).digest();
   const iv = Buffer.alloc(12, 1);
   const cipher = createCipheriv('aes-256-gcm', key, iv);
   const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
@@ -25,7 +25,9 @@ describe('credential encryption', () => {
     const encryption = createCredentialEncryption({ secret: 'secret' });
     const encrypted = await encryption.encrypt('value');
     expect(await encryption.decrypt(encrypted)).toBe('value');
-    expect(encrypted).not.toBe(legacyEncrypt('value', 'secret'));
+    expect(
+      await encryption.decrypt(encryptWithLabel('value', 'secret', 'frogbot:connections:')),
+    ).toBe('value');
   });
 
   it('rejects tampering', async () => {
@@ -34,12 +36,31 @@ describe('credential encryption', () => {
     expect(() => encryption.decrypt(`${encrypted}x`)).toThrow(CredentialCryptoError);
   });
 
-  it('decrypts legacy ciphertext and re-encrypts with the core label', async () => {
+  it('rejects truncated authentication tags and extra envelope segments', async () => {
     const encryption = createCredentialEncryption({ secret: 'secret' });
-    const legacy = legacyEncrypt('value', 'secret');
-    expect(await encryption.decrypt(legacy)).toBe('value');
-    const rewritten = await encryption.encrypt(await encryption.decrypt(legacy));
-    expect(rewritten).not.toBe(legacy);
-    expect(await encryption.decrypt(rewritten)).toBe('value');
+    const encrypted = await encryption.encrypt('value');
+    const [version, iv, tag, value] = encrypted.split('.');
+    const truncatedTag = Buffer.from(tag, 'base64url').subarray(0, 4).toString('base64url');
+    expect(() => encryption.decrypt([version, iv, truncatedTag, value].join('.'))).toThrow(
+      CredentialCryptoError,
+    );
+    expect(() => encryption.decrypt(`${encrypted}.ignored`)).toThrow(CredentialCryptoError);
+  });
+
+  it('uses fresh nonces and rejects the wrong key', async () => {
+    const encryption = createCredentialEncryption({ secret: 'secret' });
+    const first = await encryption.encrypt('value');
+    expect(await encryption.encrypt('value')).not.toBe(first);
+    expect(() => createCredentialEncryption({ secret: 'wrong' }).decrypt(first)).toThrow(
+      CredentialCryptoError,
+    );
+    expect(await encryption.decrypt(await encryption.encrypt(''))).toBe('');
+  });
+
+  it('rejects ciphertext from another encryption domain', () => {
+    const encryption = createCredentialEncryption({ secret: 'secret' });
+    expect(() => encryption.decrypt(encryptWithLabel('value', 'secret', 'other-domain:'))).toThrow(
+      CredentialCryptoError,
+    );
   });
 });

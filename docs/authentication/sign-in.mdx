@@ -1,0 +1,114 @@
+---
+title: "OAuth sign-in"
+sidebarTitle: "Sign-in"
+description: "Add collection-scoped OAuth login with identity pieces."
+keywords: ["authentication", "sign-in", "OAuth", "Google", "sessions"]
+---
+
+Add OAuth pieces to a collection's `auth.signIn` array to let users sign in through a provider. FrogBot matches or creates the local user by email and issues that collection's session.
+
+## Enable Google sign-in
+
+Install the identity-only Google piece:
+
+```bash
+pnpm add @frogbotai/piece-google
+```
+
+```ts
+import { createGoogle } from '@frogbotai/piece-google'
+import type { CollectionConfig } from 'frogbot'
+
+export const google = createGoogle({
+  oauth: {
+    clientId: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!
+  }
+})
+
+export const Users: CollectionConfig = {
+  slug: 'users',
+  auth: { signIn: [google] },
+  fields: []
+}
+```
+
+Save this as `collections/Users.ts` and add `Users` to your root `collections`. The Google piece requests `openid`, `https://www.googleapis.com/auth/userinfo.email`, and `https://www.googleapis.com/auth/userinfo.profile`. It has no product actions or product scopes. Its account lookup uses Google's userinfo endpoint and only supplies `account.email` for a provider-verified email.
+
+The admin login page automatically renders methods from the collection selected by `admin.user`. With multiple auth collections, set `admin.user` explicitly. You can reuse the same Google instance in another collection's `auth.signIn`; each collection has its own routes and local users.
+
+## Register the callback
+
+For the example above, register this redirect URI in your Google OAuth app:
+
+```text
+https://app.example.com/api/users/sign-in/google/callback
+```
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/:collection/sign-in/:piece` | Start sign-in without requiring an existing session. |
+| `GET` | `/api/:collection/sign-in/:piece/callback` | Verify the OAuth response, resolve the user, and issue a session cookie. |
+
+For sign-in, `:piece` is the configured instance's `slug`, which defaults to the piece slug. Unknown methods return `404`. Callback origins use `serverURL` when configured, otherwise the request origin. Replace `/api` with your configured `routes.api` in requests and registered redirect URIs.
+
+A custom login page can link to the start endpoint:
+
+```html
+<a href="/api/users/sign-in/google?returnTo=/dashboard">Continue with Google</a>
+```
+
+`returnTo` must resolve to the same origin as the callback. Without it, the admin user collection returns to `routes.admin`; other collections return to `/`. OAuth state expires after ten minutes, is bound to the initiating browser and exact login route, and can be used only once. PKCE is used when the piece recipe sets `pkce: true`.
+
+## Identity and local verification
+
+Every login matches by email within the target collection. Provider account IDs and connection rows are not login identifiers. FrogBot trims and lowercases the provider email, validates its format, and requires an unambiguous local match.
+
+For piece authors, `oauth.account({ tokens, client, req })` returns `{ id, label, email? }`. **Only return `email` when the provider has verified that identity.** Omit it or reject the lookup when verification cannot be established. Core validates the email's format; the recipe is responsible for proving provider verification. A missing email cannot sign a user in.
+
+| Local user state | Behavior |
+| --- | --- |
+| Existing user, `auth.verify` disabled | Sign in after the normal login checks. |
+| Existing user, `auth.verify` enabled | Require `_verified === true`. OAuth does not verify an existing unverified account. |
+| No matching user | Create a user with the normalized email and a random password. When `auth.verify` is enabled, set `_verified: true`; suppress the verification email. |
+
+User creation runs collection validation and hooks. Give required custom fields defaults or populate them in a hook. If creation fails, sign-in fails. Trashed users are excluded from identity lookup; duplicate or incompatible email identities are rejected.
+
+Session issuance respects account lockout, collection session and cookie settings, and runs `beforeLogin` and `afterLogin`. The callback redirects with the session cookie rather than returning provider tokens.
+
+For collections with sign-in methods, FrogBot coordinates OAuth and password login, logout, refresh, and password reset through the end of each operation. Operations serialize per collection to prevent concurrent requests from restoring revoked sessions. Use FrogBot's public API and normal auth endpoints; direct database operations bypass this coordination.
+
+Persisted sessions require transactional storage. SQLite, PostgreSQL, and MongoDB replica sets are supported; session mutations fail rather than falling back to unsafe transactionless writes. Keep login hooks short. For long SQLite transactions, use an independent KV backend so the transaction cannot block renewal of the authentication lock.
+
+The SQLite adapter enables transactions automatically when you configure sign-in methods. Explicitly disabling transactions with sign-in configured produces an initialization error.
+
+## Collection requirements
+
+- Each sign-in method needs factory OAuth app credentials and a recipe with an `account` function. Method slugs must be URL-safe and unique within the collection.
+- Keep a unique, stored, non-localized email field. Sign-in requires email identity even if you also support usernames.
+- To disable password login, use `disableLocalStrategy: { enableFields: true }` so identity and session fields remain available.
+- `auth.strategies` authenticates later requests. `auth.signIn` configures interactive login methods.
+
+## Share an app with Gmail connections
+
+Gmail extends Google's OAuth recipe with mailbox scopes. Reuse the same app credentials while keeping login and Gmail authorization separate:
+
+```ts
+import { createGmail } from '@frogbotai/piece-gmail'
+import type { ConnectionEntry } from 'frogbot'
+import { google } from './collections/Users'
+
+export const gmail = createGmail({ oauth: google.oauth })
+export const connections: ConnectionEntry[] = [{ piece: gmail, oauth: true }]
+```
+
+Pass `connections` to your root config. Register both callback URIs in the shared Google app:
+
+| Flow | Callback | Stored result |
+| --- | --- | --- |
+| Google sign-in | `/api/users/sign-in/google/callback` | Local user and FrogBot session. |
+| Gmail linking | `/api/connections/gmail/callback` | Owner-scoped, encrypted Gmail credential. |
+
+Core auth and connections share private OAuth helpers, but their state intents and public callbacks are separate. **Login never stores provider tokens or creates connections; linking never logs a user in.** Users link Gmail separately in [Settings → Linked accounts](/configuration/connections#link-an-account-in-settings).
+
+For Sheets, Drive, and Calendar, use `createGoogleSheets`, `createGoogleDrive`, and `createGoogleCalendar` with the same `oauth: google.oauth` pattern. Each needs its own `connections` entry and product callback. The identity-only `google` instance does not grant product access. See [Google product connection setup](/configuration/connections#configure-linking).

@@ -1,0 +1,268 @@
+.frogbot-connections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.frogbot-connections__toolbar,
+.frogbot-connections__identity,
+.frogbot-connections__row-actions,
+.frogbot-connections__field-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.frogbot-connections__toolbar > .fb-search-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.frogbot-connections__rows,
+.frogbot-connections__picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.frogbot-connections__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--theme-base-300);
+  border-radius: 12px;
+  background: var(--theme-base-200);
+}
+
+.frogbot-connections__identity {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.frogbot-connections__icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-base-600);
+}
+
+.frogbot-connections__row strong,
+.frogbot-connections__piece strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--theme-base-900);
+}
+
+.frogbot-connections__muted {
+  display: block;
+  margin: 0;
+  color: var(--theme-base-600);
+  font-size: 12px;
+}
+
+.frogbot-connections__status {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--color-red-500) 10%, transparent);
+  color: var(--color-red-500);
+}
+
+.frogbot-connections__status--active {
+  background: color-mix(in srgb, var(--color-brand-500) 10%, transparent);
+  color: var(--theme-brand-600);
+}
+
+.frogbot-connections__status--expired {
+  background: color-mix(in srgb, var(--color-orange-350) 10%, transparent);
+  color: var(--theme-base-800);
+}
+
+.frogbot-connections__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--theme-base-600);
+}
+
+.frogbot-connections__empty p {
+  margin: 0;
+}
+
+.frogbot-connections__empty--bordered {
+  border: 1px dashed var(--theme-base-400);
+  border-radius: 12px;
+}
+
+.frogbot-connections__dialog {
+  width: min(500px, calc(100vw - 32px));
+  max-width: 500px;
+  max-height: 70dvh;
+  overflow-y: auto;
+  gap: 16px;
+}
+
+.frogbot-connections__dialog--selected {
+  width: min(650px, calc(100vw - 32px));
+  max-width: 650px;
+}
+
+.frogbot-connections__picker {
+  max-height: 400px;
+  overflow-y: auto;
+  gap: 4px;
+}
+
+.frogbot-connections__piece {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 150ms,
+    transform 150ms;
+}
+
+.frogbot-connections__piece:hover {
+  background: var(--theme-base-200);
+  transform: translateX(2px);
+}
+
+.frogbot-connections__form,
+.frogbot-connections__form-fields,
+.frogbot-connections__nested,
+.frogbot-connections__field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.frogbot-connections__form-fields {
+  border: 0;
+  padding: 0;
+  margin: 4px 0;
+}
+
+.frogbot-connections__back {
+  align-self: flex-start;
+}
+
+.frogbot-connections__methods {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.frogbot-connections__method {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  flex: 1;
+  border: 1px solid var(--theme-base-300);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.frogbot-connections__method:has([data-state="checked"]) {
+  background: var(--theme-base-200);
+  border-color: var(--theme-base-500);
+}
+
+.frogbot-connections__field-heading {
+  justify-content: space-between;
+}
+
+.frogbot-connections__presence {
+  width: 140px;
+}
+
+.frogbot-connections__nested {
+  padding-left: 12px;
+  border-left: 1px solid var(--theme-base-300);
+}
+
+.frogbot-connections__nested > .fb-button {
+  align-self: flex-start;
+}
+
+.frogbot-connections__array-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.frogbot-connections__array-item > .frogbot-connections__field {
+  flex: 1;
+}
+
+.frogbot-connections__error {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+  color: var(--color-red-500);
+}
+
+.frogbot-connections__disconnect {
+  color: var(--color-red-500);
+}
+
+.frogbot-connections__spinner {
+  animation: frogbot-connections-spin 1s linear infinite;
+}
+
+@keyframes frogbot-connections-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .frogbot-connections__row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .frogbot-connections__row-actions {
+    align-self: flex-end;
+  }
+  .frogbot-connections__methods {
+    flex-direction: column;
+  }
+  .frogbot-connections__toolbar {
+    flex-wrap: wrap;
+  }
+  .frogbot-connections__toolbar > .fb-search-input {
+    flex-basis: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frogbot-connections__spinner {
+    animation: none;
+  }
+  .frogbot-connections__piece {
+    transition: none;
+  }
+}

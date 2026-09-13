@@ -143,7 +143,7 @@ describe('definePiece', () => {
 
   it('derives detached action methods and instance metadata', async () => {
     const example = createExample({ auth: { token: 'factory' }, prefix: 'value' });
-    const { req } = request();
+    const { req, resolvePieceCredential } = request();
     const run = example.run;
     await expect(run({ input: { value: 'input' }, req })).resolves.toMatchObject({
       input: { value: 'input' },
@@ -151,6 +151,7 @@ describe('definePiece', () => {
       options: { prefix: 'value' },
     });
     expect(example.slug).toBe('example');
+    expect(resolvePieceCredential).toHaveBeenCalledWith({ piece: example, req });
     expect(example.piece).toBe('example');
     expect(pieceActionTool(example.run)?.slug).toBe('example_run');
     expect(pieceInstanceTools(example)?.map(({ slug }) => slug)).toEqual([

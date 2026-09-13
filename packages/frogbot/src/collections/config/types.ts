@@ -74,8 +74,6 @@ export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {
    *  its base message fields in; the slug stays yours. At most one. */
   message?: boolean;
 
-  connections?: boolean;
-
   /** Marks this collection as the files collection. FrogBot merges its base
    *  upload configuration in; the slug stays yours. At most one. */
   file?: boolean;
@@ -86,7 +84,7 @@ export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {
 };
 
 /** Collection markers. Sanitization strips these before Payload. */
-export const COLLECTION_MARKERS = ['chat', 'message', 'connections', 'file', 'usageLog'] as const;
+export const COLLECTION_MARKERS = ['chat', 'message', 'file', 'usageLog'] as const;
 export type CollectionMarker = (typeof COLLECTION_MARKERS)[number];
 
 /**
@@ -308,6 +306,7 @@ export type FindByIDArgs<TSlug extends CollectionSlug> = CommonArgs & {
 export type CreateArgs<TSlug extends CollectionSlug> = CommonArgs & {
   collection: TSlug;
   data: Partial<TypedCollection<TSlug>>;
+  disableVerificationEmail?: boolean;
   draft?: boolean;
   file?: {
     data: Buffer;

@@ -1,84 +1,176 @@
 ---
 title: "Connections"
 sidebarTitle: "Connections"
-description: "Store and resolve outbound credentials for FrogBot pieces."
-keywords: ["connections", "credentials", "secrets", "encryption", "pieces"]
+description: "Let users link accounts and credentials for FrogBot pieces."
+keywords: ["connections", "credentials", "OAuth", "encryption", "pieces"]
 ---
 
-Connections store credentials that pieces use to call external services. FrogBot injects the `connections` collection when a registered piece requires credentials or a credential source is configured.
+Connections let each user supply credentials for a piece. Configure the allowed linking methods in the root `connections` array; users manage their accounts in **Settings → Linked accounts**.
 
-## Connect with a secret
+## Configure linking
 
-The built-in secret source supports `secret_text`, `basic_auth`, and `custom` credentials. Requests must be authenticated. FrogBot always assigns the connection to the authenticated user.
+The piece factory accepts your credentials and OAuth app. A connection entry controls what users can link:
 
-```bash
-curl --request POST http://localhost:3000/api/connections/secret \
-  --header "Authorization: Bearer $TOKEN" \
-  --header "Content-Type: application/json" \
-  --data '{
-    "service": "resend",
-    "credentials": { "value": "re_..." },
-    "accountLabel": "Production"
-  }'
-```
-
-Use `PUT /api/connections/secret` with the same body to replace an existing credential. Use `DELETE /api/connections/secret` with `{ "service": "resend" }` to revoke it.
-
-Credential bodies match the piece's credential type:
-
-| Type | `credentials` shape |
+| Setting | Purpose |
 | --- | --- |
-| `secret_text` | `{ "value": "..." }` |
-| `basic_auth` | `{ "username": "...", "password": "..." }` |
-| `custom` | The fields declared by the piece |
-| `oauth2` | Supplied by an OAuth credential source |
-
-## Adopt the collection
-
-Mark one collection with `connections: true` to use another slug or add application fields.
+| Factory `auth` | Your developer credential, used when the caller has no connection for this piece. |
+| Factory `oauth` | Your OAuth app's `clientId`, `clientSecret`, and optional `scopes`. Available as `instance.oauth` for reuse. |
+| Entry `secret: true` | Allow users to enter a credential matching the piece's static `auth` schema. |
+| Entry `oauth: true` | Allow users to authorize through the piece's OAuth recipe and your app. |
 
 ```ts
-import type { CollectionConfig } from 'frogbot'
+import { createGmail } from '@frogbotai/piece-gmail'
+import { createGoogle } from '@frogbotai/piece-google'
+import { createGoogleCalendar } from '@frogbotai/piece-google-calendar'
+import { createGoogleDrive } from '@frogbotai/piece-google-drive'
+import { createGoogleSheets } from '@frogbotai/piece-google-sheets'
+import { createLinear } from '@frogbotai/piece-linear'
+import type { CollectionConfig, ConnectionEntry } from 'frogbot'
 
-export const Accounts: CollectionConfig = {
-  slug: 'service-accounts',
-  connections: true,
-  fields: [
-    { name: 'tenant', type: 'relationship', relationTo: 'tenants' }
-  ]
+export const google = createGoogle({
+  oauth: {
+    clientId: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!
+  }
+})
+
+export const googleSheets = createGoogleSheets({ oauth: google.oauth })
+export const googleDrive = createGoogleDrive({ oauth: google.oauth })
+export const googleCalendar = createGoogleCalendar({ oauth: google.oauth })
+export const gmail = createGmail({ oauth: google.oauth })
+export const linear = createLinear({
+  auth: { apiKey: process.env.LINEAR_API_KEY! }
+})
+
+export const connections: ConnectionEntry[] = [
+  { piece: googleSheets, oauth: true },
+  { piece: googleDrive, oauth: true },
+  { piece: googleCalendar, oauth: true },
+  { piece: gmail, oauth: true },
+  { piece: linear, secret: true }
+]
+
+export const Users: CollectionConfig = {
+  slug: 'users',
+  auth: { signIn: [google] },
+  fields: []
 }
 ```
 
-You can add fields and define `metadata` as JSON. The following fields are reserved: `owner`, `service`, `source`, `credentialType`, `sourceKey`, `encryptedCredentials`, `scopes`, `status`, `accountId`, `accountLabel`, and `expiresAt`.
+Pass `connections` and `collections: [Users]` to your root config. Reuse these instances wherever you call their actions or assign them as agent tools. `google` supplies login identity; each product instance supplies its own actions and connection. Sharing `google.oauth` shares app credentials, not tokens or product access.
 
-## Resolve connections
+Sheets, Drive, and Calendar are native packages: install their `@frogbotai/piece-*` packages without an Activepieces runtime or provider plugin. Each supports factory `auth: { accessToken, refreshToken? }` and optional user-entered tokens through `secret: true`. The example enables only OAuth for these products. Configure each entry's methods explicitly; there is no shared `google` connection group or source/secret policy.
 
-Use the server API when application code needs a piece-compatible credential value.
+Every entry needs at least one enabled method. OAuth requires both a piece recipe and factory app credentials. Static linking requires a user-enterable schema. Enable both methods only when the piece supports both. Duplicate entries for the same piece are rejected, including instances with different custom slugs.
 
-```ts
-const credential = await frogbot.connections.resolve({
-  service: 'resend',
-  owner: req.user
-})
+### Credential combinations
 
-const connections = await frogbot.connections.list({ owner: req.user })
+These seven combinations apply to credential-requiring pieces. OAuth combinations require factory `oauth`; static combinations require a supported form schema.
 
-await frogbot.connections.revoke({
-  service: 'resend',
-  owner: req.user
-})
+| Factory `auth` | Entry `secret` | Entry `oauth` | Behavior |
+| --- | --- | --- | --- |
+| Yes | — | — | Developer credential; omit the connection entry. |
+| No | `true` | — | User-entered credential required. |
+| No | — | `true` | User OAuth connection required. |
+| Yes | `true` | — | User-entered credential, otherwise developer credential. |
+| Yes | — | `true` | User OAuth credential, otherwise developer credential. |
+| No | `true` | `true` | User chooses static credentials or OAuth; a connection is required. |
+| Yes | `true` | `true` | User chooses either method, otherwise developer credential. |
+
+“Otherwise” means **no connection row exists**. An existing row must resolve successfully. Invalid credentials, revoked or error states, missing scopes, and expiry that cannot be refreshed throw `ConnectionError` and block fallback.
+
+## Link an account in Settings
+
+1. Sign in to the admin panel and open **Settings → Linked accounts**.
+2. Select **New Connection**, then choose an integration.
+3. Authorize with OAuth or enter the requested credential fields. When both methods are enabled, choose **OAuth** or **Static credentials**.
+4. View the linked account and its status in the list. Use the row menu's **Disconnect** action to remove it.
+
+The page is available at `/admin/settings/connections` with the default admin route. FrogBot adds it automatically when `connections` is non-empty. Linking another account or switching methods replaces the existing connection for that owner and piece.
+
+## Connection endpoints
+
+The paths below use the default `routes.api: '/api'`. If you configure another API prefix, use it in requests and provider redirect URIs. Callback origins use `serverURL` when configured, otherwise the request origin.
+
+| Method | Path | Result |
+| --- | --- | --- |
+| `GET` | `/api/connections` | List the caller's connection metadata using the collection API. |
+| `POST` | `/api/connections/:piece` | Create or replace a static credential. |
+| `GET` | `/api/connections/:piece/authorize` | Start OAuth linking for the signed-in user. |
+| `GET` | `/api/connections/:piece/callback` | Exchange the authorization code, store the connection, and redirect. |
+| `DELETE` | `/api/connections/:id` | Delete the caller's connection; returns `204`, or `404` when not found. |
+
+`:piece` is the piece's built-in slug, such as `gmail` or `linear`, rather than a custom instance slug. Owners belong to the auth collection selected by `admin.user`. Static writes, deletion, and OAuth authorization require authentication from that collection: anonymous requests receive `401`, and users from another auth collection receive `403`.
+
+### Submit a static credential
+
+Send the raw JSON input expected by the piece's `auth` schema. Linear accepts an object with `apiKey`:
+
+```bash
+curl --request POST http://localhost:3000/api/connections/linear \
+  --header "Authorization: Bearer $TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{"apiKey":"lin_api_..."}'
 ```
 
-`list` returns service, source, status, account, scope, expiration, and metadata fields. It never returns plaintext or encrypted credentials. Missing, revoked, expired, and source-refresh failures throw `ConnectionError` with distinct `code` values.
+FrogBot validates the body against the schema, encrypts the original input, and returns metadata without the credential. Schema transformations run when the credential is resolved. Invalid JSON or schema input returns `400`; a piece without static linking enabled returns `404`. The authenticated user determines ownership.
 
-## Encryption and rotation
+Static forms support primitive values, nested objects, and arrays with supported item schemas. The piece's input schema defines the body shape; credentials do not use a common envelope.
 
-The default adapter encrypts one JSON document per connection with AES-256-GCM. It derives its key from the root `secret` and authenticates the ciphertext against modification. Changing `secret` prevents the default adapter from reading existing connections.
+### Configure OAuth redirects
 
-Provide `connections.encryption` when credentials must use KMS or support key rotation. Its `encrypt` and `decrypt` methods may be synchronous or asynchronous. During rotation, keep `decrypt` able to read the previous key until all credentials have been replaced.
+For the example above, enable the Google Sheets, Drive, Calendar, and Gmail APIs and register these redirect URIs in the shared Google OAuth app:
 
-## Access boundaries
+```text
+https://app.example.com/api/users/sign-in/google/callback
+https://app.example.com/api/connections/google-sheets/callback
+https://app.example.com/api/connections/google-drive/callback
+https://app.example.com/api/connections/google-calendar/callback
+https://app.example.com/api/connections/gmail/callback
+```
 
-Collection reads are restricted to the connection owner. Creates, updates, and deletes are disabled through ordinary collection operations; connection endpoints and `frogbot.connections` perform the required owner-scoped operations internally. The encrypted credential field is hidden and denies field-level reads.
+Start product linking at `/api/connections/:piece/authorize`, replacing `:piece` with `google-sheets`, `google-drive`, `google-calendar`, or `gmail`. Start login at `/api/users/sign-in/google`. Login creates a FrogBot session without storing provider tokens or creating a connection; linking requires a signed-in user and stores only that product's credential. The default linking return destination is the configured admin route plus `/settings/connections`. An optional `returnTo` selects a same-origin destination.
 
-`@frogbotai/plugin-api-keys` serves a different boundary. It authenticates inbound callers to FrogBot and stores non-recoverable token hashes. Use connections for recoverable outbound credentials that pieces send to external services.
+OAuth state is encrypted, browser-bound, single-use, and expires after ten minutes. It binds the piece, OAuth app, collection, callback, and link intent to the original owner. PKCE is used when the piece recipe enables it. The callback validates that intent before storing credentials.
+
+The piece supplies default scopes. Factory `oauth.scopes` overrides them. Sharing an OAuth app between pieces reuses app credentials; each piece still has its own consent flow, callback, and connection.
+
+The Google product recipes add these scopes to the identity scopes:
+
+| Product | Default product scopes under `https://www.googleapis.com/auth/` |
+| --- | --- |
+| Sheets | `spreadsheets`, `drive.readonly`, `drive` |
+| Drive | `drive` |
+| Calendar | `calendar.events`, `calendar.readonly` |
+
+Leave `scopes` unset on the shared app to retain each product's defaults. An explicit shared override applies to every instance that receives it; selecting fewer agent actions does not narrow OAuth scopes.
+
+## Resolve credentials on the server
+
+Piece actions and `piece.client({ req })` resolve credentials automatically. Pass `req` to use the caller's linked account. For direct resolution and account management:
+
+```ts
+const auth = await frogbot.connections.resolve({ piece: gmail, req })
+const accounts = await frogbot.connections.list({ req })
+
+const gmailAccount = accounts.find(({ piece }) => piece === 'gmail')
+if (gmailAccount) {
+  await frogbot.connections.delete({ req, id: gmailAccount.id })
+}
+```
+
+`resolve` accepts optional `scopes` to require specific grants. It returns the piece's parsed auth value, converting stored OAuth tokens through the recipe's `toAuth` when provided. `list` returns IDs, owner, piece, method, account, scopes, expiry, status, and timestamps, without plaintext or encrypted credentials.
+
+Expired OAuth connections refresh lazily during resolution, using the recipe's `refresh` function or a refresh-token grant at its `tokenUrl`. Concurrent refreshes are serialized per owner and piece. A failed refresh marks the connection `error` and throws; it never silently switches to factory `auth`. Reconnect to replace the failing credential. Disconnecting removes the row, allowing factory fallback again if configured; it does not revoke access at the provider.
+
+`ConnectionError.code` is `missing`, `revoked`, `expired`, `error`, or `scopes`. Scope errors include `missingScopes`. `frogbot.connections.authorizations({ pieces, req })` returns linking requirements keyed by piece, including enabled methods and an OAuth `authorizeUrl` when available.
+
+## Storage and access
+
+FrogBot creates its reserved `connections` collection only when the root list is non-empty. A unique `(owner, piece)` constraint permits one row per user and piece. Rows contain `method`, encrypted `credential`, account metadata, scopes, expiry, and status.
+
+Static input and OAuth token sets are encrypted as JSON with AES-256-GCM using a key derived from the root `secret`. Keep that secret stable: changing it makes existing credentials unreadable. Factory `auth` stays in your configuration and is never copied into connection storage.
+
+Collection reads are owner-scoped. Ordinary collection creates, updates, and deletes are disabled; use the connection endpoints. The credential field is hidden and denies field-level reads.
+
+Connections authorize outbound calls to providers. [OAuth sign-in](/authentication/sign-in) establishes a FrogBot session, while [API keys](/plugins/api-keys) authenticate inbound requests to FrogBot.

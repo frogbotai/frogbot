@@ -18,11 +18,11 @@ export const releaseManager: AgentConfig = {
   instructions:
     'Coordinate an approved release. Make only the narrowly requested updates, report every external change, and ask before sending email.',
   tools: [
-    googleSheets.insertRow,
+    googleSheets.appendRow,
     googleSheets.updateRow,
-    googleDrive.createNewGdriveFolder,
-    googleDrive.uploadGdriveFile,
-    googleCalendar.createGoogleCalendarEvent,
+    googleDrive.createFolder,
+    googleDrive.uploadFile,
+    googleCalendar.createEvent,
     googleCalendar.updateEvent,
     linear.createIssue,
     linear.updateIssue,

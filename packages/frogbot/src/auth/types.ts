@@ -1,13 +1,11 @@
-// FrogBot's per-collection auth configuration.
-// v0 exposes only Payload's plain options. FrogBot extensions
-// (`providers`, `allowedDomains`, `allowSignup`) land in a later stage.
-
 import type { IncomingAuthType, TypeWithID } from 'payload';
 
+import type { SignInMethod } from '../pieces/types.js';
 import type { CollectionSlug, TypedCollection } from '../types/generated.js';
 import type { FrogbotRequest } from '../types/request.js';
 
 export interface AuthConfig {
+  signIn?: SignInMethod[];
   depth?: number;
   tokenExpiration?: number;
   verify?:

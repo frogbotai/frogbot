@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
+vi.mock(
+  '@frogbotai/piece-google',
+  () => import('../../../packages/pieces/piece-google/src/index.js'),
+);
 
 import {
   pieceFactoryDefinition,
@@ -114,7 +118,12 @@ describe('gmail', () => {
     expect(definition.oauth).toMatchObject({
       authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
       tokenUrl: 'https://oauth2.googleapis.com/token',
-      scopes: [...gmailScopes],
+      scopes: [
+        'openid',
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile',
+        ...gmailScopes,
+      ],
       params: { access_type: 'offline', prompt: 'consent' },
     });
     expect(
@@ -204,12 +213,26 @@ describe('gmail', () => {
     ).toBe(true);
   });
 
-  it('resolves OAuth account identity through the SDK transport', async () => {
+  it('resolves verified identity through the shared Google userinfo recipe', async () => {
     const { client } = await fixture();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json({
+          sub: 'google-user',
+          email: 'user@example.com',
+          email_verified: true,
+        }),
+      ),
+    );
     await expect(
-      pieceFactoryDefinition(createGmail).oauth?.account?.({ tokens: {}, client, req } as never),
+      pieceFactoryDefinition(createGmail).oauth?.account?.({
+        tokens: { access_token: 'access' },
+        client,
+        req,
+      } as never),
     ).resolves.toEqual({
-      id: 'user@example.com',
+      id: 'google-user',
       label: 'user@example.com',
       email: 'user@example.com',
     });

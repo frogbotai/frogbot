@@ -88,15 +88,6 @@ importers:
       '@activepieces/piece-date-helper':
         specifier: 0.1.28
         version: 0.1.28(bufferutil@4.1.0)
-      '@activepieces/piece-google-calendar':
-        specifier: 0.9.5
-        version: 0.9.5
-      '@activepieces/piece-google-drive':
-        specifier: 0.7.10
-        version: 0.7.10
-      '@activepieces/piece-google-sheets':
-        specifier: 0.16.3
-        version: 0.16.3
       '@activepieces/piece-linear':
         specifier: 0.4.4
         version: 0.4.4
@@ -118,6 +109,9 @@ importers:
       '@frogbotai/piece-date-helper':
         specifier: workspace:*
         version: link:../../packages/pieces/piece-date-helper
+      '@frogbotai/piece-google':
+        specifier: workspace:*
+        version: link:../../packages/pieces/piece-google
       '@frogbotai/piece-google-calendar':
         specifier: workspace:*
         version: link:../../packages/pieces/piece-google-calendar
@@ -139,9 +133,6 @@ importers:
       '@frogbotai/plugin-api-keys':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-api-keys
-      '@frogbotai/plugin-oauth':
-        specifier: workspace:*
-        version: link:../../packages/plugins/plugin-oauth
       '@frogbotai/plugin-roles':
         specifier: workspace:*
         version: link:../../packages/plugins/plugin-roles
@@ -864,6 +855,9 @@ importers:
 
   packages/pieces/piece-gmail:
     dependencies:
+      '@frogbotai/piece-google':
+        specifier: workspace:*
+        version: link:../piece-google
       googleapis:
         specifier: ^180.0.0
         version: 180.0.0
@@ -878,11 +872,30 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/pieces/piece-google:
+    dependencies:
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../../frogbot
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/pieces/piece-google-calendar:
     dependencies:
-      '@activepieces/piece-google-calendar':
-        specifier: 0.9.5
-        version: 0.9.5
+      '@frogbotai/piece-google':
+        specifier: workspace:*
+        version: link:../piece-google
+      googleapis:
+        specifier: ^180.0.0
+        version: 180.0.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -893,9 +906,15 @@ importers:
 
   packages/pieces/piece-google-drive:
     dependencies:
-      '@activepieces/piece-google-drive':
-        specifier: 0.7.10
-        version: 0.7.10
+      '@frogbotai/piece-google':
+        specifier: workspace:*
+        version: link:../piece-google
+      googleapis:
+        specifier: ^180.0.0
+        version: 180.0.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -906,9 +925,18 @@ importers:
 
   packages/pieces/piece-google-sheets:
     dependencies:
-      '@activepieces/piece-google-sheets':
-        specifier: 0.16.3
-        version: 0.16.3
+      '@frogbotai/piece-google':
+        specifier: workspace:*
+        version: link:../piece-google
+      csv-parse:
+        specifier: ^5.6.0
+        version: 5.6.0
+      googleapis:
+        specifier: ^180.0.0
+        version: 180.0.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -1310,36 +1338,6 @@ importers:
       payload:
         specifier: 3.88.0
         version: 3.88.0(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
-      typescript:
-        specifier: 5.6.2
-        version: 5.6.2
-
-  packages/plugins/plugin-oauth:
-    devDependencies:
-      '@frogbotai/ui':
-        specifier: workspace:*
-        version: link:../../ui
-      '@payloadcms/ui':
-        specifier: 3.88.0
-        version: 3.88.0(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.88.0(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)
-      '@types/react':
-        specifier: 19.2.14
-        version: 19.2.14
-      copyfiles:
-        specifier: ^2.4.1
-        version: 2.4.1
-      frogbot:
-        specifier: workspace:*
-        version: link:../../frogbot
-      payload:
-        specifier: 3.88.0
-        version: 3.88.0(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
-      react:
-        specifier: 19.2.6
-        version: 19.2.6
-      react-dom:
-        specifier: 19.2.6
-        version: 19.2.6(react@19.2.6)
       typescript:
         specifier: 5.6.2
         version: 5.6.2
@@ -1776,9 +1774,6 @@ importers:
       '@frogbotai/plugin-nested-docs':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-nested-docs
-      '@frogbotai/plugin-oauth':
-        specifier: workspace:*
-        version: link:../packages/plugins/plugin-oauth
       '@frogbotai/plugin-redirects':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-redirects
@@ -1972,24 +1967,6 @@ packages:
     resolution:
       {
         integrity: sha512-527hiVL9Yn21IMpzcCcNpTs7dOsmlH0juDsGixsx/w77imQ6lDaINGwIOSGTQt+x/81FA7oWF4Q4abZ3BGO3Pg==,
-      }
-
-  '@activepieces/piece-google-calendar@0.9.5':
-    resolution:
-      {
-        integrity: sha512-WBYlqZtSU0KltAKklP3YxyenbcqfnV0ulpX7nSkbLLWMEoOwAR7Vg8FxxouhEFlNBy6PQrsnkCZlTPFSwyzq/g==,
-      }
-
-  '@activepieces/piece-google-drive@0.7.10':
-    resolution:
-      {
-        integrity: sha512-U1uVy37YJ0qz7LdQgNRViGEgbPolNr7NOhwLU2r0esSaKjOTTntxbPO6gsNaC1Q2u9iZBiQHaXPuWrXkL7dZNw==,
-      }
-
-  '@activepieces/piece-google-sheets@0.16.3':
-    resolution:
-      {
-        integrity: sha512-nSOQmwMN/koDcfRBY3LRTQ/VIu69T+ODjjPb0NEBf3BNTwqp2Zx8sdTrKOU8BIO38uBXZqbGTvtzqaJ1SHx7zw==,
       }
 
   '@activepieces/piece-graphql@0.0.13':
@@ -8682,12 +8659,6 @@ packages:
         integrity: sha512-t6wbgtoCXvAzst7QgXxJYqPt0usEfbgQdftEPbLL/cvv6HPE5VgvqCuAIDR0NgU52ds6rFwqrgakNLrHEjCbrQ==,
       }
 
-  cliui@7.0.4:
-    resolution:
-      {
-        integrity: sha512-OcRE68cOsVMXp1Yvonl/fzkQOyjLSu/8bhPDfQt0e0/Eb283TKP20Fs2MqoPsr9SwA595rRCA+QMzYc9nBP+JQ==,
-      }
-
   clsx@2.1.1:
     resolution:
       {
@@ -8832,19 +8803,6 @@ packages:
         integrity: sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w==,
       }
     engines: { node: '>= 0.6' }
-
-  copyfiles@2.4.1:
-    resolution:
-      {
-        integrity: sha512-fereAvAvxDrQDOXybk3Qu3dPbOoKoysFMWtkY3mv5BsL8//OSZVL5DCLYqgRfY5cWirgRzlC+WSrxp6Bo3eNZg==,
-      }
-    hasBin: true
-
-  core-util-is@1.0.3:
-    resolution:
-      {
-        integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==,
-      }
 
   cors@2.8.6:
     resolution:
@@ -10021,13 +9979,6 @@ packages:
       }
     engines: { node: '>=10.13.0' }
 
-  glob@7.2.3:
-    resolution:
-      {
-        integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==,
-      }
-    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
-
   glob@9.3.5:
     resolution:
       {
@@ -10399,13 +10350,6 @@ packages:
       }
     engines: { node: '>=0.8.19' }
 
-  inflight@1.0.6:
-    resolution:
-      {
-        integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==,
-      }
-    deprecated: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
-
   inherits@2.0.4:
     resolution:
       {
@@ -10607,18 +10551,6 @@ packages:
         integrity: sha512-eXK1UInq2bPmjyX6e3VHIzMLobc4J94i4AWn+Hpq3OU5KkrRC96OAcR3PRJ/pGu6m8TRnBHP9dkXQVsT/COVIA==,
       }
     engines: { node: '>=0.10.0' }
-
-  isarray@0.0.1:
-    resolution:
-      {
-        integrity: sha512-D2S+3GLxWH+uhrNEcoh/fnmYeP8E8/zHl644d/jdA0g2uyXvy3sb0qxotE+ne0LtccHknQzWwZEzhak7oJ0COQ==,
-      }
-
-  isarray@1.0.0:
-    resolution:
-      {
-        integrity: sha512-VLghIWNM6ELQzo7zwmcg0NmTVyWKYjvIeM83yjp0wRDTmUnrM678fQbcKBo6n2CJEF0szoG//ytg+TKla89ALQ==,
-      }
 
   isexe@2.0.0:
     resolution:
@@ -11583,14 +11515,6 @@ packages:
       }
     engines: { node: '>=16 || 14 >=14.17' }
 
-  mkdirp@1.0.4:
-    resolution:
-      {
-        integrity: sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==,
-      }
-    engines: { node: '>=10' }
-    hasBin: true
-
   module-details-from-path@1.0.4:
     resolution:
       {
@@ -11826,12 +11750,6 @@ packages:
       }
     engines: { node: '>=6.0.0' }
 
-  noms@0.0.0:
-    resolution:
-      {
-        integrity: sha512-lNDU9VJaOPxUmXcLb+HQFeUgQQPtMI24Gt6hgfuMHRJgMRHMF/qZ4HJD3GDru4sSw9IQl2jPjAYnQrdIeLbwow==,
-      }
-
   normalize-path@3.0.0:
     resolution:
       {
@@ -12058,13 +11976,6 @@ packages:
         integrity: sha512-enSlaiat05iasnzmgNxRj8reFdj3puY2QpNgP1aPIaVfT6nn9ICuPoFlKHk8EN22HcwewshO+mN2DGbkCEOtqQ==,
       }
     engines: { node: '>=14.0.0' }
-
-  path-is-absolute@1.0.1:
-    resolution:
-      {
-        integrity: sha512-AVbw3UJ2e9bq64vSaS9Am0fje1Pa8pbGqTTsmXfaIiMpnr5DlDhfJOuLj9Sf95ZPVDAUerDfEk88MPmPe7UCQg==,
-      }
-    engines: { node: '>=0.10.0' }
 
   path-key@3.1.1:
     resolution:
@@ -12400,12 +12311,6 @@ packages:
       }
     engines: { node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0 }
 
-  process-nextick-args@2.0.1:
-    resolution:
-      {
-        integrity: sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==,
-      }
-
   process-warning@5.0.0:
     resolution:
       {
@@ -12690,18 +12595,6 @@ packages:
       }
     engines: { node: '>=0.10.0' }
 
-  readable-stream@1.0.34:
-    resolution:
-      {
-        integrity: sha512-ok1qVCJuRkNmvebYikljxJA/UEsKwLl2nI1OmaqAu4/UE+h0wKCHok4XkL/gvi39OacXvw59RJUOFUkDib2rHg==,
-      }
-
-  readable-stream@2.3.8:
-    resolution:
-      {
-        integrity: sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA==,
-      }
-
   readable-stream@3.6.2:
     resolution:
       {
@@ -12900,12 +12793,6 @@ packages:
     resolution:
       {
         integrity: sha512-guoltQEx+9aMf2gDZ0s62EcV8lsXR+0w8915TC3ITdn2YueuNjdAYh/levpU9nFaoChh9RUS5ZdQMrKfVEN9tw==,
-      }
-
-  safe-buffer@5.1.2:
-    resolution:
-      {
-        integrity: sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g==,
       }
 
   safe-buffer@5.2.1:
@@ -13306,18 +13193,6 @@ packages:
       }
     engines: { node: '>=8' }
 
-  string_decoder@0.10.31:
-    resolution:
-      {
-        integrity: sha512-ev2QzSzWPYmy9GuqfIVildA4OdcGLeFZQrq5ys6RtiuF+RQQiZWr8TZNyAcuVXyQRYfEO+MsoB/1BuQVhOJuoQ==,
-      }
-
-  string_decoder@1.1.1:
-    resolution:
-      {
-        integrity: sha512-n/ShnvDi6FHbbVfviro+WojiFzv+s8MPMHBczVePfUpDJLwoLT0ht1l4YwBCbi8pJAveEEdnkHyPyTP/mzRfwg==,
-      }
-
   string_decoder@1.3.0:
     resolution:
       {
@@ -13506,12 +13381,6 @@ packages:
         integrity: sha512-nt6AMGKW1p/70DF/hGBdJB57B8Tspmbp5gfJ8ilhLnt7kkr2ye7hzD6NVG8GGErk2HWF34igrL2CXmNIkzKqKw==,
       }
     engines: { node: '>=18' }
-
-  through2@2.0.5:
-    resolution:
-      {
-        integrity: sha512-/mrRod8xqpA+IHSLyGCQ2s8SPHiCDEeQJSep1jqLYeEUClOFG2Qsh+4FU6G9VeqpZnGW/Su8LQGc4YKni5rYSQ==,
-      }
 
   timm@1.7.1:
     resolution:
@@ -13834,13 +13703,6 @@ packages:
       {
         integrity: sha512-aqrHaVBWW1JVKBHmGo33T5TxeL0qWzfvjWokObHA9bYmN7eNDkwOxmLjhioHl9878qDFMAaT51XNroRyuz7WxA==,
       }
-
-  untildify@4.0.0:
-    resolution:
-      {
-        integrity: sha512-KK8xQ1mkzZeg9inewmFVDNkg3l5LUhoq9kN6iWYB/CC9YMG8HA+c1Q8HwDe6dEX7kErrEVNVBO3fWsVq5iDgtw==,
-      }
-    engines: { node: '>=8' }
 
   update-browserslist-db@1.2.3:
     resolution:
@@ -14240,13 +14102,6 @@ packages:
       }
     engines: { node: '>=8' }
 
-  wrap-ansi@7.0.0:
-    resolution:
-      {
-        integrity: sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==,
-      }
-    engines: { node: '>=10' }
-
   wrappy@1.0.2:
     resolution:
       {
@@ -14364,13 +14219,6 @@ packages:
         integrity: sha512-JKhqTOwSrqNA1NY5lSztJ1GrBiUodLMmIZuLiDaMRJ+itFd+ABVE8XBjOvIWL+rSqNDC74LCSFmlb/U4UZ4hJQ==,
       }
 
-  y18n@5.0.8:
-    resolution:
-      {
-        integrity: sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==,
-      }
-    engines: { node: '>=10' }
-
   yallist@3.1.1:
     resolution:
       {
@@ -14397,26 +14245,12 @@ packages:
       }
     engines: { node: '>=6' }
 
-  yargs-parser@20.2.9:
-    resolution:
-      {
-        integrity: sha512-y11nGElTIV+CT3Zv9t7VKl+Q3hTQoT9a1Qzezhhl6Rp21gJ/IVTW7Z3y9EWXhuUBC2Shnf+DX0antecpAwSP8w==,
-      }
-    engines: { node: '>=10' }
-
   yargs@15.4.1:
     resolution:
       {
         integrity: sha512-aePbxDmcYW++PaqBsJ+HYUFwCdv4LVvdnhBy78E57PIor8/OVvhMrADFFEDh8DHDFRv/O9i3lPhsENjO7QX0+A==,
       }
     engines: { node: '>=8' }
-
-  yargs@16.2.2:
-    resolution:
-      {
-        integrity: sha512-Nt9ZJjXTv5R8MHbqby/wXQ6Gi0Bb3TcYZkR1bzuL4yB2OxWPkXknz513gEF0GoA6tn00UpbPvERW8rzCuWCA6w==,
-      }
-    engines: { node: '>=10' }
 
   yocto-queue@0.1.0:
     resolution:
@@ -14532,14 +14366,6 @@ snapshots:
   '@activepieces/piece-front@0.1.5': {}
 
   '@activepieces/piece-github@0.8.5': {}
-
-  '@activepieces/piece-google-calendar@0.9.5': {}
-
-  '@activepieces/piece-google-drive@0.7.10': {}
-
-  '@activepieces/piece-google-sheets@0.16.3':
-    dependencies:
-      lodash: 4.18.1
 
   '@activepieces/piece-graphql@0.0.13': {}
 
@@ -19748,12 +19574,6 @@ snapshots:
       strip-ansi: 6.0.1
       wrap-ansi: 6.2.0
 
-  cliui@7.0.4:
-    dependencies:
-      string-width: 4.2.3
-      strip-ansi: 6.0.1
-      wrap-ansi: 7.0.0
-
   clsx@2.1.1: {}
 
   cluster-key-slot@1.1.1: {}
@@ -19803,18 +19623,6 @@ snapshots:
   cookie-signature@1.2.2: {}
 
   cookie@0.7.2: {}
-
-  copyfiles@2.4.1:
-    dependencies:
-      glob: 7.2.3
-      minimatch: 3.1.5
-      mkdirp: 1.0.4
-      noms: 0.0.0
-      through2: 2.0.5
-      untildify: 4.0.0
-      yargs: 16.2.2
-
-  core-util-is@1.0.3: {}
 
   cors@2.8.6:
     dependencies:
@@ -20560,15 +20368,6 @@ snapshots:
     dependencies:
       is-glob: 4.0.3
 
-  glob@7.2.3:
-    dependencies:
-      fs.realpath: 1.0.0
-      inflight: 1.0.6
-      inherits: 2.0.4
-      minimatch: 3.1.5
-      once: 1.4.0
-      path-is-absolute: 1.0.1
-
   glob@9.3.5:
     dependencies:
       fs.realpath: 1.0.0
@@ -20827,11 +20626,6 @@ snapshots:
 
   imurmurhash@0.1.4: {}
 
-  inflight@1.0.6:
-    dependencies:
-      once: 1.4.0
-      wrappy: 1.0.2
-
   inherits@2.0.4: {}
 
   ini@1.3.8: {}
@@ -20914,10 +20708,6 @@ snapshots:
   is-unsafe@2.0.0: {}
 
   is-windows@1.0.2: {}
-
-  isarray@0.0.1: {}
-
-  isarray@1.0.0: {}
 
   isexe@2.0.0: {}
 
@@ -21641,8 +21431,6 @@ snapshots:
 
   minipass@7.1.3: {}
 
-  mkdirp@1.0.4: {}
-
   module-details-from-path@1.0.4: {}
 
   monaco-editor@0.55.1:
@@ -21835,11 +21623,6 @@ snapshots:
 
   nodemailer@9.1.1: {}
 
-  noms@0.0.0:
-    dependencies:
-      inherits: 2.0.4
-      readable-stream: 1.0.34
-
   normalize-path@3.0.0: {}
 
   npm-run-path@4.0.1:
@@ -21950,8 +21733,6 @@ snapshots:
   path-exists@4.0.0: {}
 
   path-expression-matcher@1.6.2: {}
-
-  path-is-absolute@1.0.1: {}
 
   path-key@3.1.1: {}
 
@@ -22171,8 +21952,6 @@ snapshots:
       ansi-regex: 5.0.1
       ansi-styles: 5.2.0
       react-is: 17.0.2
-
-  process-nextick-args@2.0.1: {}
 
   process-warning@5.0.0: {}
 
@@ -22417,23 +22196,6 @@ snapshots:
 
   react@19.2.7: {}
 
-  readable-stream@1.0.34:
-    dependencies:
-      core-util-is: 1.0.3
-      inherits: 2.0.4
-      isarray: 0.0.1
-      string_decoder: 0.10.31
-
-  readable-stream@2.3.8:
-    dependencies:
-      core-util-is: 1.0.3
-      inherits: 2.0.4
-      isarray: 1.0.0
-      process-nextick-args: 2.0.1
-      safe-buffer: 5.1.2
-      string_decoder: 1.1.1
-      util-deprecate: 1.0.2
-
   readable-stream@3.6.2:
     dependencies:
       inherits: 2.0.4
@@ -22608,8 +22370,6 @@ snapshots:
   rrweb-cssom@0.7.1: {}
 
   rrweb-cssom@0.8.0: {}
-
-  safe-buffer@5.1.2: {}
 
   safe-buffer@5.2.1: {}
 
@@ -22892,12 +22652,6 @@ snapshots:
       is-fullwidth-code-point: 3.0.0
       strip-ansi: 6.0.1
 
-  string_decoder@0.10.31: {}
-
-  string_decoder@1.1.1:
-    dependencies:
-      safe-buffer: 5.1.2
-
   string_decoder@1.3.0:
     dependencies:
       safe-buffer: 5.2.1
@@ -23006,11 +22760,6 @@ snapshots:
       real-require: 0.2.0
 
   throttleit@2.1.0: {}
-
-  through2@2.0.5:
-    dependencies:
-      readable-stream: 2.3.8
-      xtend: 4.0.2
 
   timm@1.7.1: {}
 
@@ -23185,8 +22934,6 @@ snapshots:
       chokidar: 3.6.0
       webpack-sources: 3.5.1
       webpack-virtual-modules: 0.5.0
-
-  untildify@4.0.0: {}
 
   update-browserslist-db@1.2.3(browserslist@4.28.7):
     dependencies:
@@ -23426,12 +23173,6 @@ snapshots:
       string-width: 4.2.3
       strip-ansi: 6.0.1
 
-  wrap-ansi@7.0.0:
-    dependencies:
-      ansi-styles: 4.3.0
-      string-width: 4.2.3
-      strip-ansi: 6.0.1
-
   wrappy@1.0.2: {}
 
   ws@8.21.1(bufferutil@4.1.0):
@@ -23490,8 +23231,6 @@ snapshots:
 
   y18n@4.0.3: {}
 
-  y18n@5.0.8: {}
-
   yallist@3.1.1: {}
 
   yallist@4.0.0: {}
@@ -23502,8 +23241,6 @@ snapshots:
     dependencies:
       camelcase: 5.3.1
       decamelize: 1.2.0
-
-  yargs-parser@20.2.9: {}
 
   yargs@15.4.1:
     dependencies:
@@ -23518,16 +23255,6 @@ snapshots:
       which-module: 2.0.1
       y18n: 4.0.3
       yargs-parser: 18.1.3
-
-  yargs@16.2.2:
-    dependencies:
-      cliui: 7.0.4
-      escalade: 3.2.0
-      get-caller-file: 2.0.5
-      require-directory: 2.1.1
-      string-width: 4.2.3
-      y18n: 5.0.8
-      yargs-parser: 20.2.9
 
   yocto-queue@0.1.0: {}
 

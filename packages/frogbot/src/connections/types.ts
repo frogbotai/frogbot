@@ -1,42 +1,40 @@
-import type { TypeWithID } from 'payload';
+import type { z } from 'zod';
 
-import type { ConnectionRecord } from '../connections/api.js';
-import type { AppConnectionValue } from '../connections/api.js';
 import type { CredentialEncryption } from '../connections/encryption.js';
-import type { Frogbot } from '../frogbot.js';
-import type { CredentialType, PiecePolicy } from '../pieces/types.js';
+import type { pieceCapabilities, PieceInstance } from '../pieces/types.js';
 
-export type CredentialSource = {
-  key: string;
-  services: readonly string[];
-  credentialTypes: readonly Exclude<CredentialType, 'none'>[];
-  policy?: PiecePolicy['type'];
-  scopes?: readonly string[];
-  resolve?(context: {
-    service: string;
-    owner?: TypeWithID;
-  }): Promise<AppConnectionValue> | AppConnectionValue;
-  refresh?(context: {
-    connection: ConnectionRecord;
-    frogbot: Frogbot;
-    owner: TypeWithID;
-  }): Promise<void>;
-  revoke?(context: {
-    connection: ConnectionRecord;
-    frogbot: Frogbot;
-    owner: TypeWithID;
-  }): Promise<void>;
+type OAuthConnectionPiece = PieceInstance & {
+  readonly [pieceCapabilities]: { factoryOAuth: true; oauth: object };
 };
 
-export type ConnectionsConfig = {
-  encryption?: CredentialEncryption;
-  assignments?: Record<string, string>;
+type SecretConnectionPiece = PieceInstance & {
+  readonly [pieceCapabilities]: { staticAuth: true };
+};
+
+type ConnectionPiece =
+  OAuthConnectionPiece | SecretConnectionPiece | (OAuthConnectionPiece & SecretConnectionPiece);
+
+export type ConnectionEntry<TPiece extends PieceInstance = ConnectionPiece> =
+  | (TPiece extends OAuthConnectionPiece ? { piece: TPiece; oauth: true; secret?: never } : never)
+  | (TPiece extends SecretConnectionPiece ? { piece: TPiece; oauth?: never; secret: true } : never)
+  | (TPiece extends OAuthConnectionPiece & SecretConnectionPiece
+      ? { piece: TPiece; oauth: true; secret: true }
+      : never);
+
+export type ConnectionsConfig = ConnectionEntry[];
+
+export type ConnectionSchema = z.core.JSONSchema.JSONSchema;
+
+export type SanitizedConnectionEntry = {
+  piece: PieceInstance;
+  oauth: boolean;
+  secret: boolean;
+  secretSchema?: ConnectionSchema;
 };
 
 export type SanitizedConnectionsConfig = {
   enabled: boolean;
   slug?: string;
   encryption: CredentialEncryption;
-  sources: readonly CredentialSource[];
-  assignments: Readonly<Record<string, string>>;
+  entries: Readonly<Record<string, SanitizedConnectionEntry>>;
 };

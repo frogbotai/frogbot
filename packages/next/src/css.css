@@ -2,7 +2,9 @@
 @import "@frogbotai/ui/styles.css";
 @import "./elements/Nav/index.css";
 @import "./elements/Nav/sections.css";
+@import "./elements/SignInButtons/index.css";
 @import "./views/SettingsView.css";
+@import "./views/Connections/index.css";
 
 :root {
   --payload-font-body: var(--font-body);

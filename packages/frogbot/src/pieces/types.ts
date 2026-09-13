@@ -13,12 +13,11 @@ export type PieceAuth = Record<string, unknown> & { allowUserOverride?: boolean 
 export type PiecePolicy =
   | { type: 'none' }
   | { type: 'developer'; credential: unknown }
-  | { type: 'oauth'; clientId: string; clientSecret: string; source: PieceAuth }
+  | { type: 'oauth'; clientId: string; clientSecret: string }
   | { type: 'user' };
 
 export type PieceFactoryConfig = {
   auth?: PieceAuth;
-  separateConsent?: boolean;
 };
 
 export type PieceToolsOptions = {
@@ -34,7 +33,6 @@ export type LegacyPiece = {
   tools: (options?: PieceToolsOptions) => AnyTool[];
   credentialFields?: Readonly<Record<string, { secret?: boolean }>>;
   scopes?: readonly string[];
-  separateConsent?: boolean;
 };
 
 export type OAuthTokens = Record<string, PieceJSON> & {
@@ -339,34 +337,7 @@ export type PieceFactory<T extends PieceDefinition> = <const TConfig extends Fac
   ...args: object extends FactoryOptions<T> ? [config?: TConfig] : [config: TConfig]
 ) => DefinedPiece<T, TConfig>;
 
-type PieceInstanceCapabilities<TPiece extends PieceInstance> = TPiece[typeof pieceCapabilities];
-type OAuthConnectionEntry<TPiece extends PieceInstance> =
-  PieceInstanceCapabilities<TPiece> extends {
-    factoryOAuth: true;
-    oauth: infer TOAuth;
-  }
-    ? [TOAuth] extends [never]
-      ? never
-      : { piece: TPiece; oauth: true; secret?: never }
-    : never;
-type SecretConnectionEntry<TPiece extends PieceInstance> =
-  PieceInstanceCapabilities<TPiece> extends {
-    staticAuth: true;
-  }
-    ? { piece: TPiece; oauth?: never; secret: true }
-    : never;
-type OAuthSecretConnectionEntry<TPiece extends PieceInstance> =
-  PieceInstanceCapabilities<TPiece> extends {
-    factoryOAuth: true;
-    oauth: infer TOAuth;
-    staticAuth: true;
-  }
-    ? [TOAuth] extends [never]
-      ? never
-      : { piece: TPiece; oauth: true; secret: true }
-    : never;
-export type ConnectionEntry<TPiece extends PieceInstance> =
-  OAuthConnectionEntry<TPiece> | OAuthSecretConnectionEntry<TPiece> | SecretConnectionEntry<TPiece>;
+export type { ConnectionEntry } from '../connections/types.js';
 export type EmailPieceInstance = PieceInstance & {
   readonly [pieceCapabilities]: PieceCapabilities & { email: object };
 };

@@ -15,6 +15,7 @@ const actionMetadata = Symbol('pieceAction');
 const instanceMetadata = Symbol('pieceInstance');
 const definitions = new WeakMap<object, PieceDefinition>();
 const triggerInstances = new WeakMap<object, PieceInstance>();
+const toolInstances = new WeakMap<object, PieceInstance>();
 const reserved = new Set([
   'admin',
   'auth',
@@ -29,13 +30,17 @@ const reserved = new Set([
   'webhook',
 ]);
 const methodSlug = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
-const legacySecretAuth = Symbol.for('frogbot.legacySecretAuth');
 
 type ActionMetadata = {
   definition: PieceActionDefinition;
   tool: AnyTool;
 };
-type InstanceMetadata = { actions: AnyTool[]; definition: PieceDefinition; options: unknown };
+type InstanceMetadata = {
+  actions: AnyTool[];
+  definition: PieceDefinition;
+  options: unknown;
+  auth: unknown;
+};
 
 export function isPieceAction(value: unknown): value is PieceAction {
   return typeof value === 'function' && actionMetadata in value;
@@ -78,16 +83,26 @@ export function pieceTriggerInstance(reference: unknown): PieceInstance | undefi
   return triggerInstances.get(reference);
 }
 
+export function pieceToolInstance(tool: AnyTool): PieceInstance | undefined {
+  return toolInstances.get(tool.execute);
+}
+
 export function pieceInstanceRuntime(instance: PieceInstance): {
   client: PieceInstance['client'];
   definition: PieceDefinition;
   options: unknown;
+  auth: unknown;
 } {
   if (!isPieceInstance(instance)) {
     throw new Error('[frogbot] Expected a piece instance returned by definePiece.');
   }
   const metadata: InstanceMetadata = Reflect.get(instance, instanceMetadata);
-  return { client: instance.client, definition: metadata.definition, options: metadata.options };
+  return {
+    client: instance.client,
+    definition: metadata.definition,
+    options: metadata.options,
+    auth: metadata.auth,
+  };
 }
 
 export function definePiece<const T extends PieceDefinition>(definition: T): PieceFactory<T> {
@@ -214,9 +229,6 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
       definition.auth && configuredAuth !== undefined
         ? definition.auth.parse(configuredAuth)
         : undefined;
-    const legacySecretToAuth = definition.auth
-      ? (Reflect.get(definition.auth, legacySecretAuth) as ((value: string) => unknown) | undefined)
-      : undefined;
     const options = definition.options ? definition.options.parse(rawOptions) : {};
     const clients = new WeakMap<object, WeakMap<object, Promise<unknown>>>();
     const factoryKey = {};
@@ -226,14 +238,8 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
       const resolvedReq = await request(req);
       const credential = definition.auth
         ? await resolvedReq.frogbot.connections.resolvePieceCredential({
-            piece: definition.slug,
-            owner: resolvedReq.user,
-            auth,
-            authSchema: definition.auth,
-            factoryKey,
-            legacySecretToAuth,
-            oauthToAuth:
-              definition.oauth?.toAuth ?? (({ tokens }) => ({ accessToken: tokens.access_token })),
+            piece: instance as PieceInstance,
+            req: resolvedReq,
           })
         : { auth: undefined, key: factoryKey };
       if (!definition.client) return undefined;
@@ -290,9 +296,10 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
       Object.defineProperty(invoke, actionMetadata, { value: { definition: action, tool } });
       Object.defineProperty(instance, action.slug, { value: invoke, enumerable: true });
       tools.push(tool);
+      toolInstances.set(tool.execute, instance as PieceInstance);
     }
     Object.defineProperty(instance, instanceMetadata, {
-      value: { actions: tools, definition, options },
+      value: { actions: tools, definition, options, auth },
     });
     Object.defineProperty(instance, pieceCapabilities, {
       value: {

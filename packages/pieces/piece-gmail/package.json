@@ -29,6 +29,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@frogbotai/piece-google": "workspace:*",
     "googleapis": "^180.0.0",
     "zod": "^4.3.6"
   },
