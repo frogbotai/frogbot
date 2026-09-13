@@ -24,6 +24,14 @@ vi.mock('payload', async (importOriginal) => ({
 
 const { sanitize } = await import('../../../../packages/frogbot/src/config/sanitize.js');
 
+const createEmail = definePiece({
+  slug: 'mailer',
+  label: 'Mailer',
+  options: z.object({ from: z.string() }),
+  actions: [],
+  email: { async send() {} },
+});
+
 function makeConfig(overrides?: Partial<FrogbotConfig>): FrogbotConfig {
   return {
     secret: 'test-secret',
@@ -379,6 +387,67 @@ describe('frogbot sanitize', () => {
     }
   });
 
+  it.each([false, true])(
+    'bridges an email piece before initialization (promised: %s)',
+    async (promised) => {
+      const piece = createEmail({ from: 'sender@example.com' });
+      const resolvePiece = vi.fn(() => piece);
+      const email = promised ? Promise.resolve().then(resolvePiece) : piece;
+      const result = sanitize(makeConfig({ email }));
+      const payloadConfig = await result._internal.payloadConfig;
+      const adapter = await payloadConfig.email;
+      const payload = makePayload(payloadConfig);
+
+      expect(result._internal.noEmail).toBe(false);
+      expect(adapter).toBeTypeOf('function');
+      expect(adapter!({ payload: payload as never })).toMatchObject({
+        name: 'mailer',
+        defaultFromAddress: 'sender@example.com',
+        defaultFromName: 'mailer',
+      });
+      expect(await payloadConfig.email).toBe(adapter);
+      expect(resolvePiece).toHaveBeenCalledTimes(promised ? 1 : 0);
+    },
+  );
+
+  it.each([null, false, '', () => ({})])('rejects an invalid email config: %s', (email) => {
+    expect(() =>
+      sanitize(makeConfig({ email: email as unknown as FrogbotConfig['email'] })),
+    ).toThrow('email must be a piece that implements email');
+  });
+
+  it.each([
+    { email: () => ({}), error: 'email must be a piece that implements email' },
+    {
+      email: definePiece({ slug: 'quickbooks', label: 'QuickBooks', actions: [] })(),
+      error: "Piece 'quickbooks' does not implement email",
+    },
+    {
+      email: definePiece({
+        slug: 'no-sender',
+        label: 'No sender',
+        actions: [],
+        email: { async send() {} },
+      })(),
+      error: "Piece 'no-sender' is used as email but has no from",
+    },
+  ])('applies the same validation to promised values: $error', async ({ email, error }) => {
+    const result = sanitize(
+      makeConfig({ email: Promise.resolve(email) as FrogbotConfig['email'] }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+
+    await expect(payloadConfig.email).rejects.toThrow(error);
+  });
+
+  it('propagates a rejected email promise', async () => {
+    const error = new Error('email configuration failed');
+    const result = sanitize(makeConfig({ email: Promise.reject(error) }));
+    const payloadConfig = await result._internal.payloadConfig;
+
+    await expect(payloadConfig.email).rejects.toBe(error);
+  });
+
   it('installs the FrogBot noop email adapter when email is omitted', async () => {
     const result = sanitize(makeConfig());
     const payloadConfig = await result._internal.payloadConfig;
@@ -540,16 +609,20 @@ describe('frogbot sanitize', () => {
     expect(emailWarnings(payload.logger.warn)).toHaveLength(1);
   });
 
-  it('does not warn during Payload initialization when email is configured', async () => {
-    resetFrogbotCache();
-    const result = sanitize(makeConfig({ email: (() => ({})) as FrogbotConfig['email'] }));
-    const payloadConfig = await result._internal.payloadConfig;
-    const payload = makePayload(payloadConfig);
+  it.each([false, true])(
+    'does not warn during Payload initialization when email is configured (promised: %s)',
+    async (promised) => {
+      resetFrogbotCache();
+      const piece = createEmail({ from: 'sender@example.com' });
+      const result = sanitize(makeConfig({ email: promised ? Promise.resolve(piece) : piece }));
+      const payloadConfig = await result._internal.payloadConfig;
+      const payload = makePayload(payloadConfig);
 
-    await payloadConfig.onInit?.(payload as never);
+      await payloadConfig.onInit?.(payload as never);
 
-    expect(emailWarnings(payload.logger.warn)).toHaveLength(0);
-  });
+      expect(emailWarnings(payload.logger.warn)).toHaveLength(0);
+    },
+  );
 
   it('does not warn during production-build Payload initialization', async () => {
     resetFrogbotCache();

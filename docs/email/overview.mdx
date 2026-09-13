@@ -1,314 +1,114 @@
 ---
-title: Email Functionality
+title: Email
 sidebarTitle: Overview
-description: FrogBot uses an adapter pattern to enable email functionality. Set up email functions such as password resets, order confirmations and more.
-keywords: email, overview, config, configuration, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
+description: Configure a piece to send password resets, verification emails, and application messages through FrogBot.
+keywords: [email, Resend, pieces, configuration, attachments]
 ---
 
-## Introduction
+Pass an email-capable [piece](/configuration/pieces) to `buildConfig({ email })` to send [authentication emails](/authentication/email) and application messages. The `email` option accepts only `EmailPiece | Promise<EmailPiece>`.
 
-FrogBot has a few email adapters that can be imported to enable email functionality. The [@frogbotai/email-nodemailer](https://www.npmjs.com/package/@frogbotai/email-nodemailer) package will be the package most will want to install. This package provides an easy way to use [Nodemailer](https://nodemailer.com) for email and won't get in your way for those already familiar.
+## Configure Resend
 
-The email adapter should be passed into the `email` property of the FrogBot Config. This will allow FrogBot to send [auth-related emails](/authentication/email) for things like password resets, new user verification, and any other email sending needs you may have.
+Install the Resend piece in your FrogBot app:
 
-## Configuration
+```bash
+pnpm add @frogbotai/piece-resend
+```
 
-### Default Configuration
-
-When email is not needed or desired, FrogBot will log a warning on startup notifying that email is not configured. A warning message will also be logged on any attempt to send an email.
-
-### Email Adapter
-
-An email adapter will require at least the following fields:
-
-| Option                      | Description                                                                      |
-| --------------------------- | -------------------------------------------------------------------------------- |
-| **`defaultFromName`** \*    | The name part of the From field that will be seen on the delivered email         |
-| **`defaultFromAddress`** \* | The email address part of the From field that will be used when delivering email |
-
-### Official Email Adapters
-
-| Name       | Package                                                                                    | Description                                                                                                                                                                                     |
-| ---------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Nodemailer | [@frogbotai/email-nodemailer](https://www.npmjs.com/package/@frogbotai/email-nodemailer) | Use any [Nodemailer transport](https://nodemailer.com/transports), including SMTP, Resend, SendGrid, and more. This was provided by default in FrogBot 2.x. This is the easiest migration path. |
-| Resend     | [@frogbotai/email-resend](https://www.npmjs.com/package/@frogbotai/email-resend)         | Resend email via their REST API. This is preferred for serverless platforms such as Vercel because it is much more lightweight than the nodemailer adapter.                                     |
-
-## Nodemailer Configuration
-
-| Option                 | Description                                                                                                                                                                            |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`transport`**        | The Nodemailer transport object for when you want to do it yourself, not needed when transportOptions is set                                                                           |
-| **`transportOptions`** | An object that configures the transporter that FrogBot will create. For all the available options see the [Nodemailer documentation](https://nodemailer.com) or see the examples below |
-
-## Use SMTP
-
-Simple Mail Transfer Protocol (SMTP) options can be passed in using the `transportOptions` object on the `email` options. See the [Nodemailer SMTP documentation](https://nodemailer.com/smtp/) for more information, including details on when `secure` should and should not be set to `true`.
-
-**Example email options using SMTP:**
+Set `RESEND_API_KEY` in your environment, then configure credentials and the default sender on the piece factory:
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { nodemailerAdapter } from '@frogbotai/email-nodemailer'
+import { sqliteAdapter } from '@frogbotai/db-sqlite';
+import { createResend } from '@frogbotai/piece-resend';
+import { buildConfig } from 'frogbot';
+
+const resend = createResend({
+  auth: { apiKey: process.env.RESEND_API_KEY! },
+  from: { address: 'notifications@example.com', name: 'Acme' },
+});
 
 export default buildConfig({
-  email: nodemailerAdapter({
-    defaultFromAddress: 'info@frogbot.com',
-    defaultFromName: 'FrogBot',
-    // Nodemailer transportOptions
-    transportOptions: {
-      host: process.env.SMTP_HOST,
-      port: 587,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    },
-  }),
-})
+  secret: process.env.FROGBOT_SECRET!,
+  db: sqliteAdapter({ client: { url: 'file:./frogbot.db' } }),
+  collections: [],
+  email: resend,
+});
 ```
 
-**Example email options using nodemailer.createTransport:**
+| Factory option | Purpose                                                                            |
+| -------------- | ---------------------------------------------------------------------------------- |
+| `auth.apiKey`  | Resend API key used for application email.                                         |
+| `from.address` | Required default sender address when this piece is used for `email`.               |
+| `from.name`    | Sender display name. Defaults to the piece's slug, such as `resend`, when omitted. |
+
+FrogBot uses the factory credentials for application email, including password resets and verification messages. It creates a request without a signed-in user for each send, so user connections do not supply email credentials. Missing factory credentials raise a `ConnectionError` naming the piece when you send.
+
+### Promised configuration
+
+You can also pass a promise that resolves to the piece. With the `resend` instance above, use `email: Promise.resolve(resend)` in the config. FrogBot awaits the promise and validates the piece during initialization, before serving requests.
+
+## Send email
+
+After FrogBot initializes, call `frogbot.email.sendEmail(...)` wherever you have a FrogBot instance:
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { nodemailerAdapter } from '@frogbotai/email-nodemailer'
-import nodemailer from 'nodemailer'
-
-export default buildConfig({
-  email: nodemailerAdapter({
-    defaultFromAddress: 'info@frogbot.com',
-    defaultFromName: 'FrogBot',
-    // Any Nodemailer transport can be used
-    transport: nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: 587,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    }),
-  }),
-})
+await frogbot.email.sendEmail({
+  to: 'customer@example.com',
+  subject: 'Your order is confirmed',
+  text: 'Thanks for your order. We will email you when it ships.',
+});
 ```
 
-**Custom Transport:**
-
-You also have the ability to bring your own nodemailer transport. This is an example of using the SendGrid nodemailer transport.
+The default `from` is formatted as `"Acme" <notifications@example.com>` using the factory options. An explicit per-message `from` overrides that default:
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { nodemailerAdapter } from '@frogbotai/email-nodemailer'
-import nodemailerSendgrid from 'nodemailer-sendgrid'
-
-export default buildConfig({
-  email: nodemailerAdapter({
-    defaultFromAddress: 'info@frogbot.com',
-    defaultFromName: 'FrogBot',
-    transportOptions: nodemailerSendgrid({
-      apiKey: process.env.SENDGRID_API_KEY,
-    }),
-  }),
-})
+await frogbot.email.sendEmail({
+  from: { address: 'support@example.com', name: 'Acme Support' },
+  to: 'customer@example.com',
+  replyTo: 'support@example.com',
+  subject: 'Your support request',
+  html: '<p>We received your request and will reply shortly.</p>',
+});
 ```
 
-During development, if you pass nothing to `nodemailerAdapter`, it will use the [ethereal.email](https://ethereal.email) service.
+Resend email supports `from`, `to`, `cc`, `bcc`, `replyTo`, `subject`, `html`, `text`, and `attachments`. Recipients can be address strings, `{ address, name }` objects, or arrays of either. `replyTo` maps to Resend's `reply_to` field.
 
-This will log the ethereal.email details to console on startup.
+## Attach files
 
-```ts
-import { nodemailerAdapter } from '@frogbotai/email-nodemailer'
-
-export default buildConfig({
-  email: nodemailerAdapter(),
-})
-```
-
-## Resend Configuration
-
-The Resend adapter requires an API key to be passed in the options. This can be found in the Resend dashboard. This is the preferred package if you are deploying on Vercel because this is much more lightweight than the Nodemailer adapter.
-
-| Option | Description                         |
-| ------ | ----------------------------------- |
-| apiKey | The API key for the Resend service. |
+Provide each attachment's contents as a string or a Node.js `Buffer`. FrogBot converts the content to base64 for Resend. Strings use UTF-8 unless you supply an `encoding`; for an already-base64 string, set `encoding: 'base64'`.
 
 ```ts
-import { buildConfig } from 'frogbot'
-import { resendAdapter } from '@frogbotai/email-resend'
+import { Buffer } from 'node:buffer';
 
-export default buildConfig({
-  email: resendAdapter({
-    defaultFromAddress: 'dev@frogbot.com',
-    defaultFromName: 'FrogBot CMS',
-    apiKey: process.env.RESEND_API_KEY || '',
-  }),
-})
-```
-
-## Sending Mail
-
-With a working transport you can call it anywhere you have access to FrogBot by calling `frogbot.sendEmail(message)`. The `message` will contain the `to`, `subject` and `html` or `text` for the email being sent. Other options are also available and can be seen in the sendEmail args. Support for these will depend on the adapter being used.
-
-```ts
-// Example of sending an email
-const email = await frogbot.sendEmail({
-  to: 'test@example.com',
-  subject: 'This is a test email',
-  text: 'This is my message body',
-})
-```
-
-## Sending email with attachments
-
-**Nodemailer adapter (SMTP/SendGrid/etc.)**
-
-Works with `@frogbotai/email-nodemailer` and any Nodemailer transport.
-
-```ts
-await frogbot.sendEmail({
-  to: 'user@example.com',
+await frogbot.email.sendEmail({
+  to: 'customer@example.com',
   subject: 'Your report',
-  html: '<p>See attached.</p>',
+  text: 'Your report is attached.',
   attachments: [
-    // From a file path (local disk, mounted volume, etc.)
-    {
-      filename: 'invoice.pdf',
-      path: '/var/data/invoice.pdf',
-      contentType: 'application/pdf',
-    },
-    // From a Buffer you generated at runtime
     {
       filename: 'report.csv',
-      content: Buffer.from('col1,col2\nA,B\n'),
-      contentType: 'text/csv',
+      content: Buffer.from('item,quantity\nNotebook,2\n'),
     },
   ],
-})
+});
 ```
 
-Anything supported by Nodemailer's attachments—streams, Buffers, URLs, content IDs for inline images (cid), etc.—will work here.
+Streams, local attachment paths, and remote attachment URLs are unsupported. Read or download the file yourself, then pass its contents as a `Buffer`. An attachment without string or `Buffer` content throws `Piece 'resend' email attachments must be a string or Buffer` before a request is sent.
 
-### Resend adapter
+## Configuration errors
 
-Works with @frogbotai/email-resend.
+FrogBot rejects invalid email configuration during initialization. Direct pieces are validated while building the config; promised pieces are validated after they resolve.
 
-For attachments from remote URLs
+| Error                                             | Fix                                                                                 |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `email must be a piece that implements email`     | Pass an email-capable piece instance.                                               |
+| `Piece '<slug>' does not implement email`         | Choose a piece with an email capability. TypeScript also rejects pieces without it. |
+| `Piece '<slug>' is used as email but has no from` | Set a non-empty factory sender address, even if your messages override `from`.      |
 
-```ts
-await frogbot.sendEmail({
-  to: 'user@example.com',
-  subject: 'Your invoice',
-  html: '<p>Thanks! Invoice attached.</p>',
-  attachments: [
-    {
-      // Resend will fetch this URL
-      path: 'https://example.com/invoices/1234.pdf',
-      filename: 'invoice-1234.pdf',
-    },
-  ],
-})
-```
+## Delivery errors
 
-For a local file
+The Resend piece sends a direct `fetch` request to the Resend API. Non-success responses throw an error such as `Resend request failed (422): <message>`, using Resend's message when available and the HTTP status text otherwise. Network failures also reject the send. There are no automatic retries; handle rejected sends in your application.
 
-```ts
-import { readFile } from 'node:fs/promises'
-const pdf = await readFile('/var/data/invoice.pdf')
-await frogbot.sendEmail({
-  to: 'user@example.com',
-  subject: 'Your invoice',
-  html: '<p>Thanks! Invoice attached.</p>',
-  attachments: [
-    {
-      filename: 'invoice.pdf',
-      // Resend expects Base64 here
-      content: pdf.toString('base64'),
-    },
-  ],
-})
-```
+## Without email
 
-## Attaching files from FrogBot media collections
-
-If you store files in a FrogBot collection with `upload: true`, you can attach them to emails by fetching the document and using its file data.
-
-**Example: Attaching a file from a Media collection**
-
-```ts
-const mediaDoc = await frogbot.findByID({
-  collection: 'media',
-  id: 'your-file-id',
-})
-
-// For local storage adapter
-await frogbot.sendEmail({
-  to: 'user@example.com',
-  subject: 'Your document',
-  html: '<p>Attached is the document you requested.</p>',
-  attachments: [
-    {
-      filename: mediaDoc.filename,
-      path: mediaDoc.url, // Local file path when using local storage
-      contentType: mediaDoc.mimeType,
-    },
-  ],
-})
-
-// For cloud storage (S3, Azure, GCS, etc.)
-const response = await fetch(mediaDoc.url)
-const buffer = Buffer.from(await response.arrayBuffer())
-
-await frogbot.sendEmail({
-  to: 'user@example.com',
-  subject: 'Your document',
-  html: '<p>Attached is the document you requested.</p>',
-  attachments: [
-    {
-      filename: mediaDoc.filename,
-      content: buffer,
-      contentType: mediaDoc.mimeType,
-    },
-  ],
-})
-```
-
-### With Resend adapter:
-
-```ts
-const mediaDoc = await frogbot.findByID({
-  collection: 'media',
-  id: 'your-file-id',
-})
-
-// If using cloud storage, Resend can fetch from the URL directly
-await frogbot.sendEmail({
-  to: 'user@example.com',
-  subject: 'Your document',
-  html: '<p>Attached is the document you requested.</p>',
-  attachments: [
-    {
-      filename: mediaDoc.filename,
-      path: mediaDoc.url, // Resend will fetch from this URL
-    },
-  ],
-})
-
-// For local storage, read the file and convert to Base64
-import { readFile } from 'node:fs/promises'
-const fileBuffer = await readFile(mediaDoc.url)
-
-await frogbot.sendEmail({
-  to: 'user@example.com',
-  subject: 'Your document',
-  html: '<p>Attached is the document you requested.</p>',
-  attachments: [
-    {
-      filename: mediaDoc.filename,
-      content: fileBuffer.toString('base64'),
-    },
-  ],
-})
-```
-
-## Using multiple mail providers
-
-FrogBot supports the use of a single transporter of email, but there is nothing stopping you from having more. Consider a use case where sending bulk email is handled differently than transactional email and could be done using a [hook](/hooks/overview).
+If you omit `email`, FrogBot warns at startup and logs attempts to send email without delivering messages.

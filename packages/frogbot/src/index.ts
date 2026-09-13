@@ -168,6 +168,7 @@ export { databaseKVAdapter } from './kv/adapters/DatabaseKVAdapter.js';
 export { KVLeaseLostError, KVLockContentionError, KVUnsupportedError } from './kv/errors.js';
 export type { KV, KVAtomicAdapter, KVLock, KVLockCallback, KVSetOptions } from './kv/types.js';
 export { definePiece } from './pieces/definePiece.js';
+export type { EmailPiece } from './pieces/email.js';
 export type {
   ChannelPieceInstance,
   CredentialType,
