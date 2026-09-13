@@ -2,14 +2,21 @@ import { expectTypeOf } from 'vitest';
 import { z } from 'zod';
 
 import type { AgentConfig, AgentInstance, AgentPieceTrigger } from '../agents/types.js';
-import type { FrogbotConfig } from '../config/types.js';
+import type {
+  ConnectionEntry as DomainConnectionEntry,
+  ConnectionSchema,
+} from '../connections/types.js';
+import type { ConnectionEntry as PublicPieceConnectionEntry } from '../exports/pieces.js';
+import type { ConnectionEntry as PublicConnectionEntry, FrogbotConfig } from '../index.js';
+import type { TriggerEvent } from '../triggers/types.js';
 import type { FrogbotRequest } from '../types/request.js';
-import { definePiece } from './definePiece.js';
+import { definePiece, pieceTriggerInstance } from './definePiece.js';
 import type {
   ChatSdkAuthor,
   ConnectionEntry,
   OAuthTokens,
   PieceDefinition,
+  PieceInstance,
   SignInMethod,
 } from './types.js';
 
@@ -157,7 +164,7 @@ expectTypeOf<Parameters<typeof undefinedAuth.client>[0]['req']>().toEqualTypeOf<
 connected.getValue({ input: { id: 'id' }, req });
 expectTypeOf(connected.client({ req })).toEqualTypeOf<Promise<TokenClient>>();
 expectTypeOf<Parameters<typeof connected.client>[0]>().toEqualTypeOf<{ req: FrogbotRequest }>();
-expectTypeOf<'missing'>().not.toMatchTypeOf<keyof typeof connected>();
+expectTypeOf<'missing'>().not.toExtend<keyof typeof connected>();
 // @ts-expect-error req is required without factory auth
 connected.getValue({ input: { id: 'id' } });
 // @ts-expect-error unknown action
@@ -325,15 +332,21 @@ const createTrigger = definePiece({
         expectTypeOf(client).toEqualTypeOf<undefined>();
         expectTypeOf(options).toEqualTypeOf<TriggerTypes['options']>();
         expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
-        return [];
+        return [{ dedupeKey: 'created', data: { id: input.project } }];
       },
     },
   ],
 } satisfies PieceDefinition<TriggerTypes, undefined>);
 const trigger = createTrigger({});
+expectTypeOf(pieceTriggerInstance(trigger.triggers.created)).toEqualTypeOf<
+  PieceInstance | undefined
+>();
 expectTypeOf<keyof typeof trigger.triggers>().toEqualTypeOf<'created'>();
+expectTypeOf<ReturnType<typeof trigger.triggers.created.run>>().toEqualTypeOf<
+  Promise<TriggerEvent<TriggerTypes['triggers']['created']['output']>[]>
+>();
 expectTypeOf<AgentPieceTrigger<typeof trigger.triggers.created>['input']>().toEqualTypeOf<
-  TriggerTypes['triggers']['created']['input'] | undefined
+  TriggerTypes['triggers']['created']['input']
 >();
 const triggerAgent: AgentConfig = {
   slug: 'trigger-agent',
@@ -351,6 +364,87 @@ const triggerAgent: AgentConfig = {
   ],
 };
 expectTypeOf(triggerAgent.triggers).not.toBeNever();
+
+const inferredTriggerAgent: AgentConfig<typeof trigger.triggers.created> = {
+  slug: 'inferred-trigger-agent',
+  instructions: 'Trigger',
+  triggers: [
+    {
+      trigger: trigger.triggers.created,
+      input: { project: 'project' },
+      handler: ({ event, agent, req }) => {
+        expectTypeOf(event).toEqualTypeOf<z.output<typeof triggerOutput>>();
+        expectTypeOf(agent).toEqualTypeOf<AgentInstance>();
+        expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+      },
+    },
+    { type: 'schedule', slug: 'daily', schedule: { every: '1d' }, prompt: 'Run' },
+  ],
+};
+expectTypeOf(inferredTriggerAgent).toExtend<AgentConfig>();
+type CreatedBinding = AgentPieceTrigger<typeof trigger.triggers.created>;
+expectTypeOf<{
+  trigger: typeof trigger.triggers.created;
+  input: { project: number };
+  handler: CreatedBinding['handler'];
+}>().not.toExtend<CreatedBinding>();
+expectTypeOf<Omit<CreatedBinding, 'input'>>().not.toExtend<CreatedBinding>();
+
+const unparameterizedAgent: AgentConfig = {
+  slug: 'unparameterized',
+  instructions: '',
+  triggers: [
+    {
+      trigger: trigger.triggers.created,
+      input: { project: 'project' },
+      handler: ({ event, req }) => {
+        expectTypeOf(event).toBeUnknown();
+        expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+      },
+    },
+  ],
+};
+void unparameterizedAgent;
+
+const createParsedTrigger = definePiece({
+  slug: 'parsed-trigger',
+  label: 'Parsed trigger',
+  actions: [],
+  triggers: [
+    {
+      slug: 'parsed',
+      type: 'app',
+      event: 'parsed',
+      description: 'Parsed',
+      input: z.object({ count: z.string().default('1').transform(Number) }),
+      output: z.object({ count: z.number() }),
+      async run() {
+        return [{ dedupeKey: 'parsed', data: { count: 1 } }];
+      },
+    },
+  ],
+});
+const parsedTrigger = createParsedTrigger();
+type ParsedBinding = AgentPieceTrigger<typeof parsedTrigger.triggers.parsed>;
+expectTypeOf<ParsedBinding['input']>().toEqualTypeOf<{ count?: string } | undefined>();
+expectTypeOf<{
+  trigger: typeof parsedTrigger.triggers.parsed;
+  input: { count: number };
+  handler: ParsedBinding['handler'];
+}>().not.toExtend<ParsedBinding>();
+const parsedAgent: AgentConfig<typeof parsedTrigger.triggers.parsed> = {
+  slug: 'parsed',
+  instructions: '',
+  triggers: [
+    {
+      trigger: parsedTrigger.triggers.parsed,
+      handler: ({ event }) => {
+        expectTypeOf(event).toEqualTypeOf<{ count: number }>();
+      },
+    },
+  ],
+};
+expectTypeOf(parsedAgent).toExtend<AgentConfig>();
 
 const createSignIn = definePiece({
   slug: 'sign-in',
@@ -373,7 +467,7 @@ const createSignIn = definePiece({
 const signIn: SignInMethod = createSignIn({
   oauth: { clientId: 'id', clientSecret: 'secret' },
 });
-expectTypeOf(signIn).toMatchTypeOf<SignInMethod>();
+expectTypeOf(signIn).toExtend<SignInMethod>();
 // @ts-expect-error sign-in requires a factory OAuth app
 const missingAppSignIn: SignInMethod = createSignIn({});
 void missingAppSignIn;
@@ -425,6 +519,88 @@ const missingAppConnection: ConnectionEntry<typeof oauthWithoutApp> = {
   oauth: true,
 };
 void missingAppConnection;
+
+type PublicConnections = NonNullable<FrogbotConfig['connections']>;
+type PublicConnection = PublicConnections[number];
+expectTypeOf<PublicConnectionEntry>().toEqualTypeOf<DomainConnectionEntry>();
+expectTypeOf<PublicPieceConnectionEntry>().toEqualTypeOf<DomainConnectionEntry>();
+expectTypeOf<ConnectionEntry>().toEqualTypeOf<DomainConnectionEntry>();
+expectTypeOf<PublicConnection>().toEqualTypeOf<DomainConnectionEntry>();
+expectTypeOf<PublicConnectionEntry<typeof oauthConnectionPiece>>().toEqualTypeOf<
+  PublicPieceConnectionEntry<typeof oauthConnectionPiece>
+>();
+expectTypeOf<PublicConnectionEntry<typeof plainPiece>>().toBeNever();
+expectTypeOf<PublicConnectionEntry<typeof oauthWithoutApp>>().toEqualTypeOf<{
+  piece: typeof oauthWithoutApp;
+  oauth?: never;
+  secret: true;
+}>();
+expectTypeOf<
+  PublicConnectionEntry<typeof oauthConnectionPiece | typeof secretPiece>
+>().toEqualTypeOf<
+  PublicConnectionEntry<typeof oauthConnectionPiece> | PublicConnectionEntry<typeof secretPiece>
+>();
+const connectionsConfig = {
+  connections: [oauthConnection, bothConnection, secretConnection],
+} satisfies Pick<FrogbotConfig, 'connections'>;
+expectTypeOf(connectionsConfig.connections).toExtend<PublicConnections>();
+expectTypeOf<typeof oauthConnection>().toExtend<PublicConnection>();
+expectTypeOf<typeof bothConnection>().toExtend<PublicConnection>();
+expectTypeOf<typeof secretConnection>().toExtend<PublicConnection>();
+expectTypeOf<{ piece: typeof oauthConnectionPiece }>().not.toExtend<PublicConnection>();
+expectTypeOf<{
+  piece: typeof oauthConnectionPiece;
+  oauth: false;
+  secret: false;
+}>().not.toExtend<PublicConnection>();
+expectTypeOf<{
+  piece: typeof oauthConnectionPiece;
+  oauth: boolean;
+}>().not.toExtend<PublicConnection>();
+expectTypeOf<{
+  piece: typeof plainPiece;
+  secret: true;
+}>().not.toExtend<PublicConnection>();
+expectTypeOf<{
+  piece: typeof secretPiece;
+  oauth: true;
+}>().not.toExtend<PublicConnection>();
+expectTypeOf<{
+  piece: typeof oauthWithoutApp;
+  oauth: true;
+  secret: true;
+}>().not.toExtend<PublicConnection>();
+expectTypeOf<{ piece: PieceInstance; secret: true }>().not.toExtend<PublicConnection>();
+expectTypeOf<PublicConnection['piece']>().not.toBeAny();
+expectTypeOf<PublicConnection['piece']['client']>().returns.toEqualTypeOf<Promise<unknown>>();
+const createOAuthOnly = definePiece({
+  slug: 'oauth-only',
+  label: 'OAuth only',
+  oauth: {
+    authorizationUrl: 'https://example.com/authorize',
+    tokenUrl: 'https://example.com/token',
+    scopes: [],
+  },
+  actions: [],
+} satisfies PieceDefinition<PlainTypes, undefined>);
+const oauthOnlyPiece = createOAuthOnly({
+  oauth: { clientId: 'id', clientSecret: 'secret' },
+});
+expectTypeOf(oauthOnlyPiece).toExtend<PieceInstance>();
+expectTypeOf<{
+  piece: typeof oauthOnlyPiece;
+  oauth: true;
+}>().toExtend<PublicConnection>();
+expectTypeOf<{
+  piece: typeof oauthOnlyPiece;
+  oauth: true;
+  secret: true;
+}>().not.toExtend<PublicConnection>();
+expectTypeOf<ConnectionSchema>().toEqualTypeOf<z.core.JSONSchema.JSONSchema>();
+expectTypeOf(z.toJSONSchema(tokenAuth, { io: 'input' })).toExtend<ConnectionSchema>();
+expectTypeOf<ConnectionSchema['properties']>().toEqualTypeOf<
+  Record<string, boolean | ConnectionSchema> | undefined
+>();
 
 const invalidEmailDefinition = {
   slug: 'invalid-email',

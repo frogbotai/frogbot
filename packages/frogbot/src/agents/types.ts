@@ -49,16 +49,27 @@ export type AgentScheduleTrigger = {
   schedule: AgentSchedule;
 } & ({ prompt: string; handler?: never } | { prompt?: never; handler: AgentScheduleHandler });
 
-export type AgentPieceTrigger<TTrigger extends PieceTriggerReference = PieceTriggerReference> = {
-  trigger: TTrigger;
-  input?: TTrigger extends { input: infer TInput extends z.ZodType } ? z.output<TInput> : never;
-  handler(args: {
-    event: TTrigger extends { output: infer TOutput extends z.ZodType }
-      ? z.output<TOutput>
-      : PieceResult;
-    agent: AgentInstance;
-  }): Promise<void> | void;
-};
+type AgentPieceTriggerInput<TInput extends z.ZodType> =
+  Record<string, never> extends z.input<TInput>
+    ? { input?: z.input<TInput> }
+    : undefined extends z.input<TInput>
+      ? { input?: z.input<TInput> }
+      : { input: z.input<TInput> };
+
+export type AgentPieceTrigger<TTrigger extends PieceTriggerReference = PieceTriggerReference> =
+  TTrigger extends PieceTriggerReference
+    ? {
+        type?: never;
+        trigger: TTrigger;
+        handler(args: {
+          event: TTrigger extends { output: infer TOutput extends z.ZodType }
+            ? z.output<TOutput>
+            : PieceResult;
+          agent: AgentInstance;
+          req: FrogbotRequest;
+        }): Promise<void> | void;
+      } & AgentPieceTriggerInput<TTrigger['input']>
+    : never;
 
 export type AgentProfile = {
   name?: string;
@@ -66,7 +77,7 @@ export type AgentProfile = {
   description?: string;
 };
 
-export type AgentConfig = {
+export type AgentConfig<TTrigger extends PieceTriggerReference = PieceTriggerReference> = {
   slug: string;
   model?: AgentModelId;
   allowModels?: readonly AgentModelId[];
@@ -78,7 +89,7 @@ export type AgentConfig = {
   inheritTools?: false;
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];
   access?: AgentAccess;
-  triggers?: readonly (AgentPieceTrigger | AgentScheduleTrigger)[];
+  triggers?: readonly (AgentPieceTrigger<TTrigger> | AgentScheduleTrigger)[];
 };
 
 export type SanitizedAgentConfig = Omit<AgentConfig, 'model' | 'tools'> & {

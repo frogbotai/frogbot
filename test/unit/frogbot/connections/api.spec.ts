@@ -1,429 +1,327 @@
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { ConnectionError, Connections } from '../../../../packages/frogbot/src/connections/api.js';
+import { Connections } from '../../../../packages/frogbot/src/connections/api.js';
 import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
+import type { ConnectionRow } from '../../../../packages/frogbot/src/connections/store.js';
+import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import type { PieceDefinition } from '../../../../packages/frogbot/src/pieces/types.js';
+import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
-async function setup(
-  doc: Record<string, unknown> | undefined,
-  sources: ConstructorParameters<typeof Connections>[1]['sources'] = [],
-) {
-  const encryption = createCredentialEncryption({ secret: 'secret' });
-  const encryptedCredentials = await encryption.encrypt(JSON.stringify(doc?.credentials ?? {}));
-  const stored = doc
+const definition = {
+  slug: 'example',
+  label: 'Example',
+  auth: z.object({ token: z.string().min(1) }),
+  client: ({ auth }) => ({ auth }),
+  oauth: {
+    authorizationUrl: 'https://example.com/authorize',
+    tokenUrl: 'https://example.com/token',
+    scopes: ['read'],
+    toAuth: ({ tokens }) => ({ token: tokens.access_token }),
+  },
+  actions: [],
+} satisfies PieceDefinition;
+
+async function setup({
+  row,
+  auth,
+  oauth = true,
+  secret = true,
+  pieceDefinition = definition,
+}: {
+  row?: Partial<ConnectionRow> & { value?: unknown };
+  auth?: { token: string };
+  oauth?: boolean;
+  secret?: boolean;
+  pieceDefinition?: PieceDefinition;
+} = {}) {
+  const factory = definePiece(pieceDefinition);
+  const piece = factory({ slug: 'alias', ...(auth ? { auth } : {}) });
+  const encryption = createCredentialEncryption({ secret: 'test' });
+  const stored = row
     ? {
-        id: 'id',
-        services: ['service'],
-        source: 'secret',
-        sourceKey: 'secret',
+        id: 'connection',
+        owner: 'owner',
+        piece: 'example',
+        method: 'secret',
         status: 'active',
-        ...doc,
-        encryptedCredentials,
+        scopes: [],
+        createdAt: '',
+        updatedAt: '',
+        credential: await encryption.encrypt(JSON.stringify(row.value ?? { token: 'user' })),
+        ...row,
       }
     : undefined;
   const find = vi.fn(async () => ({ docs: stored ? [stored] : [] }));
-  const update = vi.fn(async ({ data }) => Object.assign(stored ?? {}, data));
-  const api = new Connections({ find, update } as never, {
+  const frogbot = {
+    find,
+    config: {
+      _internal: {
+        payloadConfig: Promise.resolve({
+          admin: { user: 'users' },
+          routes: { api: '/custom-api' },
+        }),
+      },
+    },
+  };
+  const api = new Connections(frogbot as never, {
     enabled: true,
     slug: 'connections',
     encryption,
-    sources,
-    assignments: Object.fromEntries(
-      ['service', ...sources.flatMap((source) => source.services)].map((service) => [
-        service,
-        'secret',
-      ]),
-    ),
+    entries: { example: { piece, oauth, secret } },
   });
-  return { api, find, update, encryption, stored };
+  const req = { user: { id: 'owner', collection: 'users' }, frogbot } as unknown as FrogbotRequest;
+  Object.assign(frogbot, { connections: api });
+  return { api, req, piece, factory, stored, encryption, find };
 }
 
 describe('connections API', () => {
-  it.each([
-    ['secret_text', { value: 'key' }, { type: 'SECRET_TEXT', secret_text: 'key' }],
-    ['basic_auth', { username: 'user', password: 'pass' }, { username: 'user', password: 'pass' }],
-    [
-      'oauth2',
-      { access_token: 'token', scope: 'read' },
-      { type: 'OAUTH2', access_token: 'token', scope: 'read' },
-    ],
-    ['custom', { token: 'token' }, { token: 'token', subdomain: 'acme' }],
-  ])('maps %s credentials', async (credentialType, credentials, expected) => {
-    const { api } = await setup({ credentialType, credentials, metadata: { subdomain: 'acme' } });
-    expect(await api.resolve({ service: 'service', owner: { id: 'owner' } })).toEqual(expected);
-  });
-
-  it('lists safe metadata and revokes without returning ciphertext', async () => {
-    const { api } = await setup({ credentialType: 'secret_text', credentials: { value: 'key' } });
-    expect(await api.list({ owner: { id: 'owner' } })).not.toHaveProperty('0.encryptedCredentials');
-    expect(await api.revoke({ service: 'service', owner: { id: 'owner' } })).not.toHaveProperty(
-      'encryptedCredentials',
+  it('resolves a canonical user row before factory auth', async () => {
+    const { api, req, piece, find } = await setup({ auth: { token: 'factory' }, row: {} });
+    await expect(api.resolve({ piece, req })).resolves.toEqual({ token: 'user' });
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { and: [{ owner: { equals: 'owner' } }, { piece: { equals: 'example' } }] },
+      }),
     );
   });
 
-  it('falls back to a direct credential source without an owner', async () => {
-    const { api } = await setup(undefined, [
-      {
-        key: 'secret',
-        services: ['service'],
-        credentialTypes: ['secret_text'],
-        policy: 'developer',
-        resolve: () => 'configured',
-      },
-    ]);
-    expect(await api.resolve({ service: 'service' })).toBe('configured');
-  });
-
-  it('resolves native credentials from the user before factory auth', async () => {
-    const user = await setup({ credentials: { apiKey: 'user' }, credentialType: 'custom' });
-    await expect(
-      user.api.resolvePieceCredential({
-        piece: 'service',
-        owner: { id: 'owner' },
-        auth: { apiKey: 'factory' },
-        authSchema: z.object({ apiKey: z.string() }),
-      }),
-    ).resolves.toEqual({ auth: { apiKey: 'user' }, key: expect.any(Object) });
-    const factory = await setup(undefined);
-    await expect(
-      factory.api.resolvePieceCredential({ piece: 'service', auth: { apiKey: 'factory' } }),
-    ).resolves.toEqual({ auth: { apiKey: 'factory' }, key: expect.any(Object) });
-    await expect(
-      factory.api.resolvePieceCredential({
-        piece: 'service',
-        owner: { id: 'owner' },
-        auth: { apiKey: 'factory' },
-      }),
-    ).resolves.toEqual({ auth: { apiKey: 'factory' }, key: expect.any(Object) });
-  });
-
-  it('converts and validates native OAuth and legacy secret credentials', async () => {
-    const oauth = await setup({
-      source: 'oauth',
-      credentialType: 'oauth2',
-      credentials: { access_token: 'user' },
-    });
-    await expect(
-      oauth.api.resolvePieceCredential({
-        piece: 'service',
-        owner: { id: 'owner' },
-        oauthToAuth: ({ tokens }) => ({ accessToken: tokens.access_token }),
-        authSchema: z.object({ accessToken: z.string() }),
-      }),
-    ).resolves.toEqual({ auth: { accessToken: 'user' }, key: expect.any(Object) });
-    const legacy = await setup({ credentials: { value: 'legacy' }, credentialType: 'secret_text' });
-    await expect(
-      legacy.api.resolvePieceCredential({
-        piece: 'resend',
-        owner: { id: 'owner' },
-        authSchema: z.object({ apiKey: z.string() }),
-        legacySecretToAuth: (value) => ({ apiKey: value }),
-      }),
-    ).resolves.toEqual({ auth: { apiKey: 'legacy' }, key: expect.any(Object) });
-    const malformed = await setup({
-      source: 'oauth',
-      credentialType: 'oauth2',
-      credentials: {},
-    });
-    await expect(
-      malformed.api.resolvePieceCredential({
-        piece: 'service',
-        owner: { id: 'owner' },
-        oauthToAuth: ({ tokens }) => ({ accessToken: tokens.access_token }),
-        authSchema: z.object({ accessToken: z.string() }),
-      }),
-    ).rejects.toMatchObject({ code: 'error' });
-  });
-
-  it('normalizes malformed native credential failures without factory fallback', async () => {
-    const find = vi.fn().mockResolvedValue({
-      docs: [
-        {
-          id: 'id',
-          services: ['service'],
-          source: 'oauth',
-          sourceKey: 'oauth',
-          credentialType: 'oauth2',
-          encryptedCredentials: 'invalid',
-          status: 'active',
-        },
-      ],
-    });
-    const malformedJSON = new Connections(
-      { find } as never,
-      {
-        enabled: true,
-        slug: 'connections',
-        encryption: { encrypt: vi.fn(), decrypt: vi.fn().mockResolvedValue('{') },
-        sources: [],
-        assignments: {},
-      } as never,
-    );
-    await expect(
-      malformedJSON.resolvePieceCredential({
-        piece: 'service',
-        owner: { id: 'owner' },
-        auth: { accessToken: 'factory' },
-        authSchema: z.object({ accessToken: z.string() }),
-        oauthToAuth: () => ({ accessToken: 'user' }),
-      }),
-    ).rejects.toMatchObject({ code: 'error' });
-
-    const conversion = await setup({
-      source: 'oauth',
-      credentialType: 'oauth2',
-      credentials: { access_token: 'user' },
-    });
-    await expect(
-      conversion.api.resolvePieceCredential({
-        piece: 'service',
-        owner: { id: 'owner' },
-        auth: { accessToken: 'factory' },
-        authSchema: z.object({ accessToken: z.string() }),
-        oauthToAuth: () => {
-          throw new Error('conversion failed');
-        },
-      }),
-    ).rejects.toMatchObject({ code: 'error' });
-  });
-
-  it('refreshes native credentials once and resolves the reread user auth', async () => {
-    const refresh = vi.fn(async ({ connection, frogbot }) => {
-      const encryptedCredentials = await createCredentialEncryption({ secret: 'secret' }).encrypt(
-        JSON.stringify({ access_token: 'next' }),
-      );
-      await frogbot.update({
-        collection: 'connections',
-        id: connection.id,
-        data: { encryptedCredentials, expiresAt: '2100-01-01T00:00:00.000Z' },
-        overrideAccess: true,
-      });
-    });
-    const { api, find } = await setup(
-      {
-        source: 'oauth',
-        credentialType: 'oauth2',
-        credentials: { access_token: 'old' },
-        expiresAt: '2000-01-01T00:00:00.000Z',
-      },
-      [{ key: 'secret', services: ['service'], credentialTypes: ['oauth2'], refresh }],
-    );
-    const factoryKey = {};
-    const result = await api.resolvePieceCredential({
-      piece: 'service',
-      owner: { id: 'owner' },
-      auth: { accessToken: 'factory' },
-      factoryKey,
-      oauthToAuth: ({ tokens }) => ({ accessToken: tokens.access_token }),
-      authSchema: z.object({ accessToken: z.string() }),
-    });
-    expect(result.auth).toEqual({ accessToken: 'next' });
-    expect(result.key).not.toBe(factoryKey);
-    expect(refresh).toHaveBeenCalledOnce();
-    expect(find).toHaveBeenCalledTimes(2);
-  });
-
-  it.each<[string, Record<string, unknown> | undefined, string]>([
-    ['missing row', undefined, 'missing'],
-    ['still expired', { expiresAt: '2000-01-01T00:00:00.000Z' }, 'expired'],
-    ['revoked', { status: 'revoked' }, 'revoked'],
-    ['error state', { status: 'error' }, 'error'],
-    ['missing credentials', { encryptedCredentials: '' }, 'missing'],
-    ['invalid ciphertext', { encryptedCredentials: 'invalid' }, 'error'],
-    ['invalid auth', { credentials: { access_token: 42 } }, 'error'],
-  ])('rejects %s after native refresh without factory fallback', async (_name, data, code) => {
-    const refresh = vi
-      .fn()
-      .mockResolvedValueOnce(undefined)
-      .mockRejectedValue(new Error('unexpected second refresh'));
-    const { api, find, encryption, stored } = await setup(
-      {
-        source: 'oauth',
-        credentialType: 'oauth2',
-        credentials: { access_token: 'old' },
-        expiresAt: '2000-01-01T00:00:00.000Z',
-      },
-      [{ key: 'secret', services: ['service'], credentialTypes: ['oauth2'], refresh }],
-    );
-    const refreshed = data
-      ? {
-          ...stored!,
-          expiresAt: '2100-01-01T00:00:00.000Z',
-          ...data,
-          ...(data.credentials
-            ? { encryptedCredentials: await encryption.encrypt(JSON.stringify(data.credentials)) }
-            : {}),
-        }
-      : undefined;
-    find.mockResolvedValueOnce({ docs: [stored!] }).mockResolvedValue({
-      docs: refreshed ? [refreshed] : [],
-    });
-    await expect(
-      api.resolvePieceCredential({
-        piece: 'service',
-        owner: { id: 'owner' },
-        auth: { accessToken: 'factory' },
-        factoryKey: {},
-        oauthToAuth: ({ tokens }) => ({ accessToken: tokens.access_token }),
-        authSchema: z.object({ accessToken: z.string() }),
-      }),
-    ).rejects.toMatchObject({ name: 'ConnectionError', code });
-    expect(refresh).toHaveBeenCalledOnce();
-    expect(find).toHaveBeenCalledTimes(2);
-  });
-
-  it.each([
-    ['revoked', 'revoked'],
-    ['error', 'error'],
-    ['active', 'error'],
-  ])(
-    'rejects an expired %s native row when refresh fails or is disallowed',
-    async (status, code) => {
-      const refresh = vi.fn().mockRejectedValue(new Error('refresh failed'));
-      const { api, find } = await setup(
-        {
-          source: 'oauth',
-          credentialType: 'oauth2',
-          credentials: { access_token: 'old' },
-          expiresAt: '2000-01-01T00:00:00.000Z',
-          status,
-        },
-        [{ key: 'secret', services: ['service'], credentialTypes: ['oauth2'], refresh }],
-      );
-      await expect(
-        api.resolvePieceCredential({
-          piece: 'service',
-          owner: { id: 'owner' },
-          auth: { accessToken: 'factory' },
-          oauthToAuth: ({ tokens }) => ({ accessToken: tokens.access_token }),
-          authSchema: z.object({ accessToken: z.string() }),
-        }),
-      ).rejects.toMatchObject({ name: 'ConnectionError', code });
-      expect(refresh).toHaveBeenCalledTimes(status === 'active' ? 1 : 0);
-      expect(find).toHaveBeenCalledOnce();
+  it.each([undefined, null, { id: 'owner', collection: 'customers' }, { id: 'owner' }])(
+    'never aliases an absent or ineligible owner to an admin owner: %j',
+    async (user) => {
+      const { api, req, piece, find } = await setup({ auth: { token: 'factory' }, row: {} });
+      req.user = user as never;
+      await expect(api.resolve({ piece, req })).resolves.toEqual({ token: 'factory' });
+      expect(find).not.toHaveBeenCalled();
     },
   );
 
-  it('reports missing required scopes', async () => {
-    const { api } = await setup(
-      { credentialType: 'oauth2', credentials: { access_token: 'token' }, scopes: ['read'] },
-      [
-        {
-          key: 'secret',
-          services: ['service'],
-          credentialTypes: ['oauth2'],
-          scopes: ['read', 'write'],
-        },
-      ],
-    );
-    await expect(api.resolve({ service: 'service', owner: { id: 'owner' } })).rejects.toMatchObject(
-      { code: 'scopes', missingScopes: ['write'] },
-    );
+  it('falls back only when no row exists and errors without factory auth', async () => {
+    const { api, req, piece, factory } = await setup({ auth: { token: 'factory' } });
+    await expect(api.resolve({ piece, req })).resolves.toEqual({ token: 'factory' });
+    await expect(api.resolve({ piece: factory(), req })).rejects.toMatchObject({
+      name: 'ConnectionError',
+      code: 'missing',
+      piece: 'example',
+    });
   });
 
-  it('groups missing authorizations by source and excludes developer credentials', async () => {
-    const { api } = await setup(undefined, [
-      {
-        key: 'secret',
-        services: ['service', 'other'],
-        credentialTypes: ['oauth2'],
+  it.each([
+    [{ status: 'revoked' }, 'revoked'],
+    [{ status: 'error' }, 'error'],
+    [{ expiresAt: '2000-01-01T00:00:00Z' }, 'expired'],
+    [{ expiresAt: 'invalid' }, 'error'],
+    [{ value: { token: 123 } }, 'error'],
+    [{ value: 'secret-value' }, 'error'],
+    [{ credential: 'broken-ciphertext' }, 'error'],
+    [{ method: 'legacy' }, 'error'],
+  ])('never falls back for an unusable existing row %j', async (row, code) => {
+    const { api, req, piece } = await setup({ auth: { token: 'factory' }, row: row as never });
+    await expect(api.resolve({ piece, req })).rejects.toMatchObject({
+      name: 'ConnectionError',
+      code,
+    });
+  });
+
+  it('rejects disabled stored methods', async () => {
+    const { api, req, piece } = await setup({ secret: false, row: {}, auth: { token: 'factory' } });
+    await expect(api.resolve({ piece, req })).rejects.toMatchObject({ code: 'error' });
+  });
+
+  it('converts OAuth tokens through the recipe and checks required scopes', async () => {
+    const { api, req, piece } = await setup({
+      row: {
+        method: 'oauth',
+        value: { access_token: 'oauth-token' },
         scopes: ['read'],
       },
-    ]);
+    });
+    await expect(api.resolve({ piece, req })).resolves.toEqual({ token: 'oauth-token' });
     await expect(
-      api.authorizations({ services: ['service', 'other'], owner: { id: 'owner' } }),
-    ).resolves.toEqual([
-      {
-        source: 'secret',
-        services: ['service', 'other'],
-        type: 'oauth',
-        scopes: ['read'],
-        authorizeUrl: '/api/users/oauth/secret/authorize',
-      },
-    ]);
-    const developer = await setup(undefined, [
-      {
-        key: 'secret',
-        services: ['service'],
-        credentialTypes: ['secret_text'],
-        policy: 'developer',
-        resolve: () => 'key',
-      },
-    ]);
-    await expect(
-      developer.api.authorizations({ services: ['service'], owner: { id: 'owner' } }),
-    ).resolves.toEqual([]);
+      api.resolve({ piece, req, scopes: ['read', 'write', 'write'] }),
+    ).rejects.toMatchObject({
+      code: 'scopes',
+      missingScopes: ['write'],
+      piece: 'example',
+    });
   });
 
-  it('distinguishes missing, revoked, and expired connections', async () => {
-    const missing = await setup(undefined);
-    await expect(
-      missing.api.resolve({ service: 'service', owner: { id: 'owner' } }),
-    ).rejects.toMatchObject({ code: 'missing' });
-    const revoked = await setup({
-      credentialType: 'secret_text',
-      credentials: { value: 'key' },
-      status: 'revoked',
+  it('uses the default OAuth mapping when toAuth is absent', async () => {
+    const { api, req, piece } = await setup({
+      pieceDefinition: {
+        ...definition,
+        auth: z.object({ accessToken: z.string() }),
+        oauth: { ...definition.oauth, toAuth: undefined },
+      },
+      row: { method: 'oauth', value: { access_token: 'oauth-token' }, scopes: ['read'] },
     });
-    await expect(
-      revoked.api.resolve({ service: 'service', owner: { id: 'owner' } }),
-    ).rejects.toMatchObject({ code: 'revoked' });
-    const expired = await setup({
-      credentialType: 'secret_text',
-      credentials: { value: 'key' },
-      expiresAt: '2000-01-01T00:00:00.000Z',
-    });
-    await expect(
-      expired.api.resolve({ service: 'service', owner: { id: 'owner' } }),
-    ).rejects.toMatchObject({ code: 'expired' });
-    expect(ConnectionError).toBeDefined();
+    await expect(api.resolve({ piece, req })).resolves.toEqual({ accessToken: 'oauth-token' });
   });
 
-  it('refreshes expired source credentials and distinguishes refresh failure', async () => {
-    const refresh = vi.fn(async ({ connection, frogbot }) => {
-      const encryptedCredentials = await createCredentialEncryption({ secret: 'secret' }).encrypt(
-        JSON.stringify({ value: 'next' }),
-      );
-      await frogbot.update({
-        collection: 'connections' as never,
-        id: connection.id,
-        data: { encryptedCredentials, expiresAt: '2100-01-01T00:00:00.000Z' },
-        overrideAccess: true,
-      });
-    });
-    const refreshed = await setup(
+  it('redacts conversion and schema exceptions', async () => {
+    for (const pieceDefinition of [
       {
-        credentialType: 'secret_text',
-        credentials: { value: 'old' },
-        expiresAt: '2000-01-01T00:00:00.000Z',
-      },
-      [{ key: 'secret', services: ['service'], credentialTypes: ['secret_text'], refresh }],
-    );
-    expect(await refreshed.api.resolve({ service: 'service', owner: { id: 'owner' } })).toEqual({
-      type: 'SECRET_TEXT',
-      secret_text: 'next',
-    });
-    expect(refresh).toHaveBeenCalledOnce();
-
-    const failed = await setup(
-      {
-        credentialType: 'secret_text',
-        credentials: { value: 'old' },
-        expiresAt: '2000-01-01T00:00:00.000Z',
-      },
-      [
-        {
-          key: 'secret',
-          services: ['service'],
-          credentialTypes: ['secret_text'],
-          refresh: () => {
-            throw new Error('failed');
+        ...definition,
+        oauth: {
+          ...definition.oauth,
+          toAuth: () => {
+            throw new Error('secret-value');
           },
         },
-      ],
+      },
+      {
+        ...definition,
+        auth: z.object({
+          token: z.string().refine(() => {
+            throw new Error('secret-value');
+          }),
+        }),
+      },
+    ]) {
+      const { api, req, piece } = await setup({
+        pieceDefinition,
+        row: { method: 'oauth', value: { access_token: 'secret-value' }, scopes: ['read'] },
+      });
+      const error = await api.resolve({ piece, req }).catch((error: unknown) => error);
+      expect(error).toMatchObject({ name: 'ConnectionError', code: 'error' });
+      expect(String(error)).not.toContain('secret-value');
+    }
+  });
+
+  it('keeps credential identity across reads, re-encryption, and metadata updates', async () => {
+    const { api, req, piece, stored, encryption } = await setup({
+      row: { value: { token: 'one', extra: 'same' } },
+    });
+    const first = await api.resolvePieceCredential({ piece, req });
+    stored!.credential = await encryption.encrypt(JSON.stringify({ extra: 'same', token: 'one' }));
+    stored!.updatedAt = '2030-01-01T00:00:00Z';
+    stored!.scopes = ['read'];
+    const second = await api.resolvePieceCredential({ piece, req });
+    expect(second.key).toBe(first.key);
+    stored!.credential = await encryption.encrypt(JSON.stringify({ token: 'two' }));
+    const third = await api.resolvePieceCredential({ piece, req });
+    expect(third.key).not.toBe(first.key);
+    expect(third.auth).toEqual({ token: 'two' });
+  });
+
+  it('reuses native clients until credentials change', async () => {
+    const client = vi.fn(({ auth }) => ({ auth }));
+    const { req, piece, stored, encryption } = await setup({
+      row: {},
+      pieceDefinition: { ...definition, client },
+    });
+    const first = await piece.client({ req });
+    expect(await piece.client({ req: { ...req } })).toBe(first);
+    stored!.credential = await encryption.encrypt(JSON.stringify({ token: 'next' }));
+    expect(await piece.client({ req })).not.toBe(first);
+    expect(client).toHaveBeenCalledTimes(2);
+  });
+
+  it('bounds resident credential identities to 512 and evicts the least recently used client', async () => {
+    const { api, req, piece, stored } = await setup({ row: {} });
+    const resolve = async (id: string) => {
+      stored!.owner = id;
+      return piece.client({ req: { ...req, user: { id, collection: 'users' } } });
+    };
+    const first = await resolve('owner-0');
+    const second = await resolve('owner-1');
+    for (let i = 2; i < 512; i++) await resolve(`owner-${i}`);
+    expect(api).toHaveProperty('credentialKeys.size', 512);
+    expect(await resolve('owner-0')).toBe(first);
+    await resolve('owner-512');
+    expect(api).toHaveProperty('credentialKeys.size', 512);
+    expect(await resolve('owner-0')).toBe(first);
+    expect(await resolve('owner-1')).not.toBe(second);
+    expect(api).toHaveProperty('credentialKeys.size', 512);
+  });
+
+  it('drops a disappeared owner/piece identity before factory fallback', async () => {
+    const { api, req, piece, find } = await setup({ row: {}, auth: { token: 'factory' } });
+    const first = await piece.client({ req });
+    find.mockResolvedValueOnce({ docs: [] });
+    expect(await piece.client({ req })).toEqual({ auth: { token: 'factory' } });
+    expect(api).toHaveProperty('credentialKeys.size', 0);
+    expect(await piece.client({ req })).not.toBe(first);
+  });
+
+  it('replaces an owner/piece identity when the stored row changes', async () => {
+    const { api, req, piece, stored } = await setup({ row: {} });
+    const first = await piece.client({ req });
+    stored!.id = 'replacement';
+    expect(await piece.client({ req })).not.toBe(first);
+    expect(api).toHaveProperty('credentialKeys.size', 1);
+    stored!.id = 'connection';
+    expect(await piece.client({ req })).not.toBe(first);
+    expect(api).toHaveProperty('credentialKeys.size', 1);
+  });
+
+  it('prunes disappeared rows on listing without dropping other owners', async () => {
+    const { api, req, piece, find } = await setup({ row: {} });
+    const first = await piece.client({ req });
+    const otherReq = { ...req, user: { id: 'other-owner', collection: 'users' } };
+    const other = await piece.client({ req: otherReq });
+    find.mockResolvedValueOnce({ docs: [] });
+    expect(await api.list({ req })).toEqual([]);
+    expect(api).toHaveProperty('credentialKeys.size', 1);
+    expect(await piece.client({ req: otherReq })).toBe(other);
+    expect(await piece.client({ req })).not.toBe(first);
+  });
+
+  it('releases the credential identity after deleting its connection', async () => {
+    const { api, req, piece } = await setup({ row: {} });
+    const first = await piece.client({ req });
+    vi.spyOn(await api.store, 'delete').mockResolvedValue(true);
+    expect(await api.delete({ req, id: 'connection' })).toBe(true);
+    expect(api).toHaveProperty('credentialKeys.size', 0);
+    expect(await piece.client({ req })).not.toBe(first);
+  });
+
+  it('keeps factory client identity per instance and supports absent users', async () => {
+    const { req, piece, factory } = await setup({ auth: { token: 'factory' } });
+    req.user = undefined as never;
+    const first = await piece.client({ req });
+    expect(await piece.client({ req })).toBe(first);
+    expect(await factory({ auth: { token: 'factory' } }).client({ req })).not.toBe(first);
+  });
+
+  it('reports canonical pieces and both linking methods with the configured API path', async () => {
+    const { api, req, piece } = await setup();
+    expect(await api.authorizations({ pieces: [piece, piece], req })).toEqual([
+      {
+        piece: 'example',
+        oauth: true,
+        secret: true,
+        scopes: ['read'],
+        authorizeUrl: '/custom-api/connections/example/authorize',
+      },
+    ]);
+    const factory = await setup({ auth: { token: 'factory' } });
+    expect(await factory.api.authorizations({ pieces: [factory.piece], req: factory.req })).toEqual(
+      [],
     );
-    await expect(
-      failed.api.resolve({ service: 'service', owner: { id: 'owner' } }),
-    ).rejects.toMatchObject({ code: 'error' });
+  });
+
+  it('offers relinking for failed rows even with factory auth', async () => {
+    const { api, req, piece } = await setup({
+      auth: { token: 'factory' },
+      oauth: false,
+      row: { status: 'error' },
+    });
+    expect(await api.authorizations({ pieces: [piece], req })).toEqual([
+      {
+        piece: 'example',
+        oauth: false,
+        secret: true,
+        scopes: [],
+      },
+    ]);
+  });
+
+  it('denies metadata and deletion to non-admin auth collection owners', async () => {
+    const { api, req, find } = await setup({ row: {} });
+    req.user = { id: 'owner', collection: 'customers' } as never;
+    await expect(api.list({ req })).rejects.toThrow('admin user collection');
+    await expect(api.delete({ req, id: 'connection' })).rejects.toThrow('admin user collection');
+    expect(find).not.toHaveBeenCalled();
   });
 });

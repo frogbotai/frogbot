@@ -1,7 +1,4 @@
-import type { Access } from '../collections/config/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
-
-const owner: Access = ({ req }) => (req.user ? { owner: { equals: req.user.id } } : false);
 
 export function defaultConnectionsCollection({
   slug,
@@ -15,46 +12,58 @@ export function defaultConnectionsCollection({
     admin: {
       icon: 'link-square',
       group: 'Connections',
-      useAsTitle: 'accountLabel',
+      useAsTitle: 'piece',
       views: [
         {
           type: 'list',
-          defaultFields: ['services', 'accountLabel', 'status', 'updatedAt'],
+          defaultFields: ['piece', 'method', 'account', 'status', 'updatedAt'],
         },
       ],
     },
     access: {
       create: () => false,
-      read: owner,
+      read: ({ req }) =>
+        req.user?.collection === userSlug ? { owner: { equals: req.user.id } } : false,
       update: () => false,
       delete: () => false,
     },
+    indexes: [{ fields: ['owner', 'piece'], unique: true }],
     fields: [
       { name: 'owner', type: 'relationship', relationTo: userSlug, index: true, required: true },
-      { name: 'services', type: 'text', hasMany: true, index: true, required: true },
+      { name: 'piece', type: 'text', index: true, required: true },
       {
-        name: 'source',
+        name: 'method',
         type: 'select',
         options: ['oauth', 'secret'],
         required: true,
       },
       {
-        name: 'credentialType',
-        type: 'select',
-        options: ['oauth2', 'secret_text', 'basic_auth', 'custom', 'service_account'],
-        required: true,
-      },
-      { name: 'sourceKey', type: 'text', required: true },
-      {
-        name: 'encryptedCredentials',
+        name: 'credential',
         type: 'text',
         hidden: true,
         access: { read: () => false },
         required: true,
-        validate: (value: unknown, { data }: { data?: { status?: unknown } }) =>
-          value || data?.status === 'revoked' ? true : 'This field is required.',
       },
-      { name: 'scopes', type: 'text', hasMany: true },
+      {
+        name: 'account',
+        type: 'json',
+        validate: (value: unknown) => {
+          if (value == null) return true;
+          if (typeof value !== 'object' || Array.isArray(value)) return 'Invalid account.';
+          const account = value as Record<string, unknown>;
+          return (
+            (typeof account.id === 'string' &&
+              !!account.id &&
+              typeof account.label === 'string' &&
+              !!account.label &&
+              (account.email === undefined || typeof account.email === 'string') &&
+              Object.keys(account).every((key) => ['id', 'label', 'email'].includes(key))) ||
+            'Invalid account.'
+          );
+        },
+      },
+      { name: 'scopes', type: 'text', hasMany: true, defaultValue: [] },
+      { name: 'expiresAt', type: 'date', index: true },
       {
         name: 'status',
         type: 'select',
@@ -62,10 +71,6 @@ export function defaultConnectionsCollection({
         defaultValue: 'active',
         required: true,
       },
-      { name: 'accountId', type: 'text', index: true },
-      { name: 'accountLabel', type: 'text' },
-      { name: 'expiresAt', type: 'date', index: true },
-      { name: 'metadata', type: 'json' },
     ],
   };
 }

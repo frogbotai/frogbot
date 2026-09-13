@@ -6,10 +6,12 @@ import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { createResend } from '@frogbotai/piece-resend';
 import type { AgentModelId, FrogbotInstance } from 'frogbot';
 import { buildConfig } from 'frogbot';
+import type { PieceJSON } from 'frogbot/pieces';
 import { Frogbot } from 'frogbot/test';
 import { Hono } from 'hono';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ConnectionRow } from '../../packages/frogbot/src/connections/store.js';
 import { startPieceProviders, startPieceServer } from './nativePieceServers.js';
 
 type PieceUser = { id: string | number; token: string; connectionId?: string | number };
@@ -73,32 +75,28 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
     data = {},
   }: {
     user: PieceUser;
-    credentials: unknown;
-    data?: Record<string, unknown>;
+    credentials: PieceJSON;
+    data?: Partial<Pick<ConnectionRow, 'status' | 'expiresAt' | 'credential'>>;
   }) {
-    const encryptedCredentials = await frogbot.config.connections.encryption.encrypt(
-      JSON.stringify(credentials),
-    );
-    const values = {
-      owner: user.id,
-      services: ['resend'],
-      source: 'secret',
-      sourceKey: 'native-resend',
-      credentialType: 'custom',
-      encryptedCredentials,
-      status: 'active',
-      expiresAt: null,
-      ...data,
-    };
-    const doc = user.connectionId
-      ? await frogbot.update({
-          collection: 'linked-accounts' as never,
-          id: user.connectionId,
-          data: values,
-        })
-      : await frogbot.create({ collection: 'linked-accounts' as never, data: values as never });
+    const store = await frogbot.connections.store;
+    const doc = await store.upsert({
+      owner: { id: user.id, collection: 'users' },
+      piece: 'resend',
+      method: 'secret',
+      credential: credentials,
+      status: data.status,
+      expiresAt: data.expiresAt,
+    });
     user.connectionId = doc.id;
-    return encryptedCredentials;
+    if (data.credential !== undefined) {
+      await frogbot.update({
+        collection: 'connections' as never,
+        id: doc.id,
+        data: { credential: data.credential },
+        overrideAccess: true,
+      });
+    }
+    return doc;
   }
 
   async function direct({
@@ -198,10 +196,8 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
       telemetry: false,
       db: sqliteAdapter({ client: { url: `file:${join(dataDir, 'piece.db')}` } }),
       typescript: { autoGenerate: false },
-      collections: [
-        { slug: 'users', auth: true, fields: [] },
-        { slug: 'linked-accounts', connections: true, fields: [] },
-      ],
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+      connections: [{ piece: mail, secret: true }],
       ai: {
         providers: {
           local: {
@@ -356,20 +352,42 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
     });
     expect(foreignMessages.status).toBe(200);
     expect((await foreignMessages.json()).docs).toEqual([]);
-    const connections = await request({ path: '/linked-accounts', user: alice });
+    const connections = await request({ path: '/connections', user: alice });
     const body = await connections.json();
     expect(connections.status).toBe(200);
     expect(body.docs).toHaveLength(1);
-    expect(body.docs[0]).toMatchObject({ id: alice.connectionId, owner: { id: alice.id } });
-    expect(body.docs[0]).not.toHaveProperty('encryptedCredentials');
+    expect(body.docs[0]).toMatchObject({
+      id: alice.connectionId,
+      owner: { id: alice.id },
+      piece: 'resend',
+      method: 'secret',
+    });
+    expect(body.docs[0]).not.toHaveProperty('credential');
     expect(JSON.stringify(body)).not.toContain('alice-key');
     expect(JSON.stringify(body)).not.toContain('bob-key');
   });
 
   it('replaces a warmed client after credential rotation without changing another user', async () => {
+    const aliceReq = await frogbot.createRequest({ user: { id: alice.id, collection: 'users' } });
+    const bobReq = await frogbot.createRequest({ user: { id: bob.id, collection: 'users' } });
+    const aliceClient = await mail.client({ req: aliceReq });
+    const bobClient = await mail.client({ req: bobReq });
+    expect(aliceClient).not.toBe(bobClient);
     await sendBoth({ user: alice, input: emailInput('warm') });
-    const encrypted = await saveConnection({ user: alice, credentials: { apiKey: 'rotated-key' } });
-    expect(encrypted).not.toContain('rotated-key');
+    await saveConnection({ user: alice, credentials: { apiKey: 'alice-key' } });
+    expect(await mail.client({ req: aliceReq })).toBe(aliceClient);
+    const saved = await saveConnection({ user: alice, credentials: { apiKey: 'rotated-key' } });
+    const raw = await frogbot.findByID({
+      collection: 'connections' as never,
+      id: saved.id,
+      showHiddenFields: true,
+      overrideAccess: true,
+      depth: 0,
+    });
+    expect(raw.credential).toMatch(/^v1\./);
+    expect(raw.credential).not.toContain('rotated-key');
+    expect(await mail.client({ req: aliceReq })).not.toBe(aliceClient);
+    expect(await mail.client({ req: bobReq })).toBe(bobClient);
     await sendBoth({ user: alice, input: emailInput('rotated') });
     await sendBoth({ user: bob, input: emailInput('unchanged-bob') });
     expect(providers.requests.resend.map(({ authorization }) => authorization)).toEqual([
@@ -400,7 +418,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
       state: 'output-error',
       errorText: 'An error occurred.',
     });
-    expect(generated.body.text).toContain("No connection found for 'resend'.");
+    expect(generated.body.text).toContain("Connection for 'resend' is not linked.");
     expect(providers.requests.resend).toHaveLength(2);
   });
 
@@ -451,13 +469,13 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
 
   it.each(
     [
-      { label: 'revoked', code: 'revoked', data: { status: 'revoked', encryptedCredentials: '' } },
-      { label: 'error state', code: 'error', data: { status: 'error' } },
+      { label: 'revoked', code: 'revoked', data: { status: 'revoked' as const } },
+      { label: 'error state', code: 'error', data: { status: 'error' as const } },
       { label: 'expired', code: 'expired', data: { expiresAt: '2000-01-01T00:00:00.000Z' } },
       {
         label: 'corrupt ciphertext',
         code: 'error',
-        data: { encryptedCredentials: 'not-encrypted' },
+        data: { credential: 'not-encrypted' },
       },
       {
         label: 'invalid auth shape',

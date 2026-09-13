@@ -2,7 +2,7 @@ import { isDeepStrictEqual } from 'node:util';
 
 import type { z } from 'zod';
 
-import { pieceFactoryDefinition } from './definePiece.js';
+import { pieceFactoryDefinition, pieceInstanceRuntime } from './definePiece.js';
 import type {
   PieceActionDefinition,
   PieceDefinition,
@@ -85,11 +85,11 @@ export async function pieceConformance<T extends PieceDefinition>(
     fail(`factory options are invalid: ${error instanceof Error ? error.message : String(error)}`);
   }
 
-  const configuredAuth = factoryOptions.auth;
+  const configuredAuth = pieceInstanceRuntime(instance).auth;
   const req = {
     frogbot: {
       connections: {
-        resolvePieceCredential: async () => ({ auth: configuredAuth, key: {} }),
+        resolvePieceCredential: async () => ({ auth: configuredAuth, key: instance }),
       },
     },
     user: null,

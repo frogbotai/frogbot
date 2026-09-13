@@ -29,7 +29,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@activepieces/piece-google-sheets": "0.16.3"
+    "@frogbotai/piece-google": "workspace:*",
+    "csv-parse": "^5.6.0",
+    "googleapis": "^180.0.0",
+    "zod": "^4.3.6"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"

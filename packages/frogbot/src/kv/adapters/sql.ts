@@ -159,6 +159,7 @@ export function createSQLKV({
 
   async function ownership({ lock, expiresAt }: { lock: KVLock; expiresAt?: SQL | null }) {
     if (sqlite) {
+      if (Object.keys(adapter.sessions).length) return false;
       const query =
         expiresAt === undefined
           ? primary().delete(table)

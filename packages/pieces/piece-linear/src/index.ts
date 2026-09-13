@@ -7,7 +7,7 @@ import { rawGraphqlQuery } from './actions/rawGraphqlQuery.js';
 import { updateIssue } from './actions/updateIssue.js';
 import { updateProject } from './actions/updateProject.js';
 import { createLinearClient } from './client.js';
-import { linearAuth } from './config.js';
+import { linearAuth, linearOptions } from './config.js';
 import { commentCreated } from './triggers/commentCreated.js';
 import { issueCreated } from './triggers/issueCreated.js';
 import { issueRemoved } from './triggers/issueRemoved.js';
@@ -15,6 +15,7 @@ import { issueUpdated } from './triggers/issueUpdated.js';
 import { projectCreated } from './triggers/projectCreated.js';
 import { projectRemoved } from './triggers/projectRemoved.js';
 import { projectUpdated } from './triggers/projectUpdated.js';
+import { linearWebhook } from './webhook.js';
 
 export const linearActions = [
   'createIssue',
@@ -43,7 +44,9 @@ export const createLinear = definePiece({
     group: 'Productivity',
   },
   auth: linearAuth,
+  options: linearOptions,
   client: createLinearClient,
+  webhook: linearWebhook,
   actions: [createIssue, updateIssue, createProject, updateProject, createComment, rawGraphqlQuery],
   triggers: [
     commentCreated,

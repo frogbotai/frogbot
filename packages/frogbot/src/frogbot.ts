@@ -5,8 +5,8 @@
 // and standalone servers.
 
 import type { Gateway } from '@frogbotai/gateway';
-import type { Payload } from 'payload';
-import { createLocalReq, getPayload, handleEndpoints } from 'payload';
+import type { Payload, PayloadRequest } from 'payload';
+import { createLocalReq, getPayload, handleEndpoints, resetPasswordOperation } from 'payload';
 
 import { createAgentInstance } from './agents/instance.js';
 import type { AgentRegistry } from './agents/types.js';
@@ -32,6 +32,7 @@ import type {
   StreamTextOpts,
   TranscribeOpts,
 } from './ai/types.js';
+import { coordinatesSessions, withAuthOperation } from './auth/operation.js';
 import type {
   AuthArgs,
   AuthResult,
@@ -76,6 +77,7 @@ import { createFrogbotLocalAPI } from './localAPI.js';
 import { encodeTrainingData } from './training/encodeTrainingData.js';
 import { readTrainingData } from './training/readTrainingData.js';
 import type { ReadTrainingDataOptions } from './training/types.js';
+import { TriggerSubscriptions } from './triggers/subscriptions.js';
 import { writeGeneratedTypes } from './typegen/index.js';
 import type { CollectionSlug, TypedCollection } from './types/generated.js';
 import type { FrogbotRequest } from './types/request.js';
@@ -138,6 +140,7 @@ export class Frogbot {
   /** Registered agents keyed by slug. */
   agents: AgentRegistry = {};
   connections!: Connections;
+  triggers!: TriggerSubscriptions;
 
   get db() {
     return this.payload.db;
@@ -218,6 +221,11 @@ export class Frogbot {
 
     // Run onInit callbacks.
     if (!options.disableOnInit) {
+      void this.triggers.reconcile().catch((error: unknown) => {
+        this.logger.warn(
+          `[frogbot] Trigger reconciliation failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
       if (options.onInit) {
         await options.onInit(this);
       }
@@ -232,6 +240,7 @@ export class Frogbot {
   async [refreshFrogbotConfig](config: FrogbotSanitizedConfig): Promise<void> {
     this.config = config;
     this.connections = new Connections(this, config.connections);
+    this.triggers ??= new TriggerSubscriptions(this);
     this.gateway = config.ai ? createAIGateway(config.ai, this.logger) : undefined;
     this.agents = {};
     if (config.agents?.length && config.ai) {
@@ -270,6 +279,10 @@ export class Frogbot {
     type LocalRequest = NonNullable<Parameters<typeof createLocalReq>[0]['req']>;
     const localReq = await createLocalReq({ req: (req ?? {}) as LocalRequest }, this.payload);
     return Object.assign(localReq, { frogbot: this });
+  }
+
+  async queue(args: { task: string; queue: string; input: unknown }): Promise<void> {
+    await this.payload.jobs.queue(args as never);
   }
 
   // ── CRUD ────────────────────────────────────────────────────────────────
@@ -353,7 +366,16 @@ export class Frogbot {
   }
 
   async login<T extends CollectionSlug>(args: LoginArgs<T>): Promise<LoginResult<T>> {
-    return this.local.login(args);
+    if (!coordinatesSessions(this.payload.collections[args.collection]?.config)) {
+      return this.local.login(args);
+    }
+    const req = await this.createRequest(args.req);
+    return withAuthOperation({
+      req,
+      collectionSlug: args.collection,
+      operation: 'login',
+      fn: () => this.local.login({ ...args, req }),
+    });
   }
 
   async forgotPassword<T extends CollectionSlug>(args: ForgotPasswordArgs<T>): Promise<string> {
@@ -363,7 +385,27 @@ export class Frogbot {
   async resetPassword<T extends CollectionSlug>(
     args: ResetPasswordArgs<T>,
   ): Promise<ResetPasswordResult> {
-    return this.local.resetPassword(args);
+    if (!coordinatesSessions(this.payload.collections[args.collection]?.config)) {
+      return this.local.resetPassword(args);
+    }
+    const req = await this.createRequest(args.req);
+    return withAuthOperation({
+      req,
+      collectionSlug: args.collection,
+      operation: 'resetPassword',
+      fn: async () => {
+        const payloadReq = req as unknown as PayloadRequest;
+        const collection = this.payload.collections[args.collection]!;
+        const result = await resetPasswordOperation({
+          collection,
+          data: args.data,
+          overrideAccess: args.overrideAccess,
+          req: await createLocalReq({ context: args.context, req: payloadReq }, payloadReq.payload),
+        });
+        if (collection.config.auth.removeTokenFromResponses) delete result.token;
+        return result;
+      },
+    });
   }
 
   async verifyEmail<T extends CollectionSlug>(args: VerifyEmailArgs<T>): Promise<boolean> {

@@ -7,6 +7,7 @@ import { generateMessage } from '../chat/generateMessage.js';
 import { createMessageUsage, persistAssistantMessage } from '../chat/messagePersistence.js';
 import type { ManifestResponse } from '../chat/types.js';
 import type { DocID } from '../collections/config/types.js';
+import { pieceToolInstance } from '../pieces/definePiece.js';
 import type { FrogbotRequest } from '../types/request.js';
 import type { AgentInstance, AgentManifest } from './types.js';
 
@@ -90,12 +91,13 @@ export async function getAgentAuthorizations({
 }) {
   return (
     req.frogbot.connections?.authorizations({
-      owner: req.user!,
-      services: [
+      req,
+      pieces: [
         ...new Set(
-          (agent.config.tools ?? []).flatMap((tool) =>
-            tool.pieceService ? [tool.pieceService] : [],
-          ),
+          (agent.config.tools ?? []).flatMap((tool) => {
+            const piece = pieceToolInstance(tool);
+            return piece ? [piece] : [];
+          }),
         ),
       ],
     }) ?? []
