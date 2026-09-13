@@ -7,6 +7,7 @@ Port from the Activepieces 0.32.0 source into a native `definePiece` package. Us
 - Put implementation in `packages/pieces/piece-<slug>/` and tests in `test/unit/piece-<slug>/`.
 - Follow an existing built package's `package.json`, `tsconfig.json`, exports, and scripts.
 - Add every imported runtime library, including the vendor SDK and `zod`, to `dependencies`.
+- Add declaration packages needed to type-check the package to `devDependencies`; do not rely on another workspace package installing them.
 - Export a `create<Service>` factory created by `definePiece`.
 - Keep definitions declarative: object schemas and inline arrays of actions and triggers.
 - A package may run `frogbot generate:piece-types` and ship its generated types. Pass them as `PieceDefinition<GeneratedTypes, Client>`; applications do not generate types for installed pieces.
@@ -50,6 +51,7 @@ Create an action or trigger directory when the piece has more than one of that k
 - Internal modules import each other directly. Do not import internal code through `index.ts`.
 - Add a capability module only when the piece implements that capability. Do not create empty placeholders.
 - Run `frogbot generate:piece-types` after schema changes and ship the resulting `piece-types.ts` file.
+- Do not register placeholder actions. If an action cannot be implemented without a new product or dependency decision, stop and report the blocker rather than shipping an action that always fails.
 
 ## Callback arguments
 
@@ -270,6 +272,8 @@ Apply `required`, defaults, bounds, and labels from the source. Optional propert
 
 Credential methods are capabilities declared by `auth`, `oauth`, and factory configuration. Never infer them from field names or token-shaped values.
 
+For file-backed actions, preserve the caller's request and access context on local API reads and writes. Forward cookies or authorization only to same-origin FrogBot file URLs, reject unsafe URL schemes and embedded credentials, reject redirects, and propagate cancellation.
+
 ## Trigger mapping
 
 | Upstream strategy | Native trigger                                                                                                                                 |
@@ -296,6 +300,8 @@ Examples: `linear_linear_create_issue` becomes `createIssue`; `gmail_get_mail` b
 ## Testing
 
 - Exercise native action methods against a controlled transport or fixture. Do not mock `run`.
+- Use FrogBot's real `definePiece` implementation in tests. Do not replace it with a per-piece harness that skips input parsing, output parsing, or instance wiring.
+- Give every action a meaningful output schema and assert the parsed result through the native action method.
 - Verify auth and options reach the client correctly, request mapping is exact, responses satisfy `output`, and vendor failures remain useful failures.
 - Test every dynamic options callback and each trigger callback directly. OAuth and unhosted trigger behavior may be declaration/type tests until their hosts exist.
 - Adapt useful upstream behavior tests from the selected source revision when available. Missing published tests are not a blocker, and wholesale migration is unnecessary.

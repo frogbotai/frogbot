@@ -19,10 +19,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@activepieces/piece-data-summarizer": "0.0.11",
-    "@activepieces/piece-date-helper": "0.1.28",
     "@activepieces/piece-linear": "0.4.4",
-    "@activepieces/piece-pdf": "0.5.5",
     "@activepieces/piece-resend": "0.4.3",
     "@frogbotai/db-sqlite": "workspace:*",
     "@frogbotai/next": "workspace:*",

@@ -85,18 +85,9 @@ importers:
 
   examples/business-qa:
     dependencies:
-      '@activepieces/piece-data-summarizer':
-        specifier: 0.0.11
-        version: 0.0.11(bufferutil@4.1.0)
-      '@activepieces/piece-date-helper':
-        specifier: 0.1.28
-        version: 0.1.28(bufferutil@4.1.0)
       '@activepieces/piece-linear':
         specifier: 0.4.4
         version: 0.4.4
-      '@activepieces/piece-pdf':
-        specifier: 0.5.5
-        version: 0.5.5(bufferutil@4.1.0)
       '@activepieces/piece-resend':
         specifier: 0.4.3
         version: 0.4.3
@@ -702,9 +693,12 @@ importers:
 
   packages/pieces/piece-crypto:
     dependencies:
-      '@activepieces/piece-crypto':
-        specifier: 0.0.22
-        version: 0.0.22(bufferutil@4.1.0)
+      openpgp:
+        specifier: 6.2.0
+        version: 6.2.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -715,9 +709,18 @@ importers:
 
   packages/pieces/piece-csv:
     dependencies:
-      '@activepieces/piece-csv':
-        specifier: 0.4.15
-        version: 0.4.15(bufferutil@4.1.0)
+      csv-parse:
+        specifier: ^5.6.0
+        version: 5.6.0
+      csv-stringify:
+        specifier: ^6.5.2
+        version: 6.5.2
+      xlsx:
+        specifier: ^0.18.5
+        version: 0.18.5
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -728,9 +731,9 @@ importers:
 
   packages/pieces/piece-data-summarizer:
     dependencies:
-      '@activepieces/piece-data-summarizer':
-        specifier: 0.0.11
-        version: 0.0.11(bufferutil@4.1.0)
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -741,9 +744,12 @@ importers:
 
   packages/pieces/piece-date-helper:
     dependencies:
-      '@activepieces/piece-date-helper':
-        specifier: 0.1.28
-        version: 0.1.28(bufferutil@4.1.0)
+      dayjs:
+        specifier: ^1.11.9
+        version: 1.11.9
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -793,10 +799,19 @@ importers:
 
   packages/pieces/piece-file-helper:
     dependencies:
-      '@activepieces/piece-file-helper':
-        specifier: 0.1.24
-        version: 0.1.24(bufferutil@4.1.0)
+      '@zip.js/zip.js':
+        specifier: 2.8.15
+        version: 2.8.15
+      mime-types:
+        specifier: 2.1.35
+        version: 2.1.35
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
+      '@types/mime-types':
+        specifier: 2.1.1
+        version: 2.1.1
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
@@ -924,9 +939,9 @@ importers:
 
   packages/pieces/piece-graphql:
     dependencies:
-      '@activepieces/piece-graphql':
-        specifier: 0.0.13
-        version: 0.0.13
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -950,10 +965,31 @@ importers:
 
   packages/pieces/piece-image-helper:
     dependencies:
-      '@activepieces/piece-image-helper':
-        specifier: 0.1.15
-        version: 0.1.15
+      exifreader:
+        specifier: 4.39.0
+        version: 4.39.0
+      heic-convert:
+        specifier: 2.1.0
+        version: 2.1.0
+      jimp:
+        specifier: 0.22.12
+        version: 0.22.12
+      mime-types:
+        specifier: 2.1.35
+        version: 2.1.35
+      sharp:
+        specifier: 0.35.2
+        version: 0.35.2
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
+      '@types/heic-convert':
+        specifier: 2.1.1
+        version: 2.1.1
+      '@types/mime-types':
+        specifier: 2.1.1
+        version: 2.1.1
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
@@ -979,9 +1015,9 @@ importers:
 
   packages/pieces/piece-math-helper:
     dependencies:
-      '@activepieces/piece-math-helper':
-        specifier: 0.0.24
-        version: 0.0.24
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -1044,9 +1080,15 @@ importers:
 
   packages/pieces/piece-pdf:
     dependencies:
-      '@activepieces/piece-pdf':
-        specifier: 0.5.5
-        version: 0.5.5(bufferutil@4.1.0)
+      pdf-lib:
+        specifier: 1.17.1
+        version: 1.17.1
+      unpdf:
+        specifier: 1.4.0
+        version: 1.4.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       frogbot:
         specifier: workspace:*
@@ -1070,10 +1112,16 @@ importers:
 
   packages/pieces/piece-qrcode:
     dependencies:
-      '@activepieces/piece-qrcode':
-        specifier: 0.0.13
-        version: 0.0.13(bufferutil@4.1.0)
+      qrcode:
+        specifier: 1.5.4
+        version: 1.5.4
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
+      '@types/qrcode':
+        specifier: 1.5.5
+        version: 1.5.5
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
@@ -1135,10 +1183,34 @@ importers:
 
   packages/pieces/piece-text-helper:
     dependencies:
-      '@activepieces/piece-text-helper':
-        specifier: 0.4.15
-        version: 0.4.15(bufferutil@4.1.0)
+      jsdom:
+        specifier: ^24.0.0
+        version: 24.1.3(bufferutil@4.1.0)
+      showdown:
+        specifier: 2.1.0
+        version: 2.1.0
+      slugify:
+        specifier: 1.6.6
+        version: 1.6.6
+      string-strip-html:
+        specifier: 8.5.0
+        version: 8.5.0
+      turndown:
+        specifier: 7.2.0
+        version: 7.2.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
+      '@types/jsdom':
+        specifier: ^21.1.6
+        version: 21.1.7
+      '@types/showdown':
+        specifier: 2.0.6
+        version: 2.0.6
+      '@types/turndown':
+        specifier: ^5.0.6
+        version: 5.0.6
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
@@ -1187,10 +1259,19 @@ importers:
 
   packages/pieces/piece-xml:
     dependencies:
-      '@activepieces/piece-xml':
-        specifier: 0.1.15
-        version: 0.1.15(bufferutil@4.1.0)
+      fast-xml-parser:
+        specifier: 5.7.0
+        version: 5.7.0
+      json2xml:
+        specifier: 0.1.3
+        version: 0.1.3
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
+      '@types/json2xml':
+        specifier: 0.1.4
+        version: 0.1.4
       frogbot:
         specifier: workspace:*
         version: link:../../frogbot
@@ -1880,30 +1961,6 @@ packages:
         integrity: sha512-AsoMdWcQTCZ1PI0klXxBiBhYoxe4Zxc2PDRrmZ8tyVm/8+2oG6x2VFI+/z3a566MOPF8ejrRO8quJQTXZJ4zoQ==,
       }
 
-  '@activepieces/piece-crypto@0.0.22':
-    resolution:
-      {
-        integrity: sha512-4qYZCA6xoadXTZPbZMA6uNC61ecaqOx8rDbih8Gw5ZgHz1VjIdQ84JCn+unKUGOB8KWut6PBz3Z7aUZWTKMRZQ==,
-      }
-
-  '@activepieces/piece-csv@0.4.15':
-    resolution:
-      {
-        integrity: sha512-SFdQICKpPfeul6HrUSp4qDcdaezwMcXLUP7wG7NA4Qbcy508Y5+Peq7eOQ7mzkQUqa9BuJIf1/7rntsrITJnHQ==,
-      }
-
-  '@activepieces/piece-data-summarizer@0.0.11':
-    resolution:
-      {
-        integrity: sha512-tImBdp9gUHoI+/wJzhlDhcmBMYpLBP5L0pSoYc2knGiUan+jNEXcp//6xH019En5az0JAT1K/I6tdvkO+3O/ig==,
-      }
-
-  '@activepieces/piece-date-helper@0.1.28':
-    resolution:
-      {
-        integrity: sha512-aC2MAEsyW5/MgVO7frwy2ZoWoVgVgSTJuntGCBlL0nQeczeKx92MHbg7X+sh+QjGdSHKJiRMvq2+rkb6TwaoXg==,
-      }
-
   '@activepieces/piece-discord@0.5.4':
     resolution:
       {
@@ -1922,12 +1979,6 @@ packages:
         integrity: sha512-OJfzhiRP37o05kR2eFypB2HMVklGdTeSsv1M60Sl3Xu6nOULuJBjU9s6Wfm1aAQHBjnzMG2i5JYP4cVHNtQeeg==,
       }
 
-  '@activepieces/piece-file-helper@0.1.24':
-    resolution:
-      {
-        integrity: sha512-I6x/7xQ6jluwrmXnWB+NvF5QNIcSYOyheHyX2uDLzYu9V+QbZj/LIC8XgLdcAqhjNjYv+WLwQftAiIbobWi95A==,
-      }
-
   '@activepieces/piece-front@0.1.5':
     resolution:
       {
@@ -1940,28 +1991,10 @@ packages:
         integrity: sha512-527hiVL9Yn21IMpzcCcNpTs7dOsmlH0juDsGixsx/w77imQ6lDaINGwIOSGTQt+x/81FA7oWF4Q4abZ3BGO3Pg==,
       }
 
-  '@activepieces/piece-graphql@0.0.13':
-    resolution:
-      {
-        integrity: sha512-DEOAXrSoh/gqRw+cc+q2xJTVYiqSpPyPYeFT/wTAKR2BAC+oQiz3z/Z8d5AEH1ElXCy5oawl8KFAABFWc1KhYg==,
-      }
-
-  '@activepieces/piece-image-helper@0.1.15':
-    resolution:
-      {
-        integrity: sha512-cwcCyVfetyWNVqS7BttkPV2hrzKdX7EkvVXbe4VZjZgRuU5VRL0tdpgLnBQU82ckGxMgY7hEu0vVffUQYg2h5g==,
-      }
-
   '@activepieces/piece-linear@0.4.4':
     resolution:
       {
         integrity: sha512-P2LH6xT9zzKlgMPBJ3hWBnmJETzAlhPPTAwV6eVg4D2c5AOUe301kmEHbPSaNV0hbbuFgwmoxqoRs4SlX0g7UQ==,
-      }
-
-  '@activepieces/piece-math-helper@0.0.24':
-    resolution:
-      {
-        integrity: sha512-JvvtYQA8OlMeWIWOLAwPNvBmfT14VWZYpZ0NGA01SFuUIAG32r3w2oGPME5O6ZLDoVB2L/5KQ9aUbRCPdGdCfQ==,
       }
 
   '@activepieces/piece-microsoft-teams@0.6.0':
@@ -1988,22 +2021,10 @@ packages:
         integrity: sha512-jNdeuH+9i284vzkohFawdaJSSicjtjbew5X1H6p4Yx+1qci2TxAO8KyMLyQ37LVqPw1rBbKS2tmZDjMieSRkJg==,
       }
 
-  '@activepieces/piece-pdf@0.5.5':
-    resolution:
-      {
-        integrity: sha512-Gc7Km01jmjcgxVJqHTUeKhCpWmnvFEt1or/x7Vhfqcz9nmbmXObIV7OP/c41/LOwcx79u3AI4WBaZHH0zLuI4A==,
-      }
-
   '@activepieces/piece-posthog@0.4.4':
     resolution:
       {
         integrity: sha512-6la8XXsjEU2Z0eSIW6s4sTf9onKebrdi1VYg1+ked1GTLfCcI1XB/CG51zZCANzdhgAiGQ4sSA2TjNGWysSu6A==,
-      }
-
-  '@activepieces/piece-qrcode@0.0.13':
-    resolution:
-      {
-        integrity: sha512-zu85zmTFZ3+kfKiwAB4SdO78i4ZwqGNO20L5ZyETQZsrHm7KkduXUWy7UwtN60Ovhmo+hpuS6U8RqSXng+C9YQ==,
       }
 
   '@activepieces/piece-resend@0.4.3':
@@ -2054,12 +2075,6 @@ packages:
         integrity: sha512-JTD288lgChTlVbFdvZEK8BlQcygPzvK7VOO1fifCHSG00ExDCytfy/DLuy+eMS0Pft6ndT9hxaFHLAdnbGzszQ==,
       }
 
-  '@activepieces/piece-xml@0.1.15':
-    resolution:
-      {
-        integrity: sha512-/d7sw9YfV2rzFv4oknM6eWcEfsB6hOlcP5U7ra4VdnSjTb8TI2gxhschEaGQB2vKi6YAxg7KFDYPInrWDFOJiQ==,
-      }
-
   '@activepieces/piece-zoom@0.7.0':
     resolution:
       {
@@ -2078,12 +2093,6 @@ packages:
         integrity: sha512-5X0A+o0DJGkSeLSFpmCBP9Pbt0+CMUljW8jV6D3Nou3ClDZRcTvMkXcTtB9sRktBu0lsUZybrjbGusBmDG+0fw==,
       }
 
-  '@activepieces/pieces-common@0.12.4':
-    resolution:
-      {
-        integrity: sha512-ZLtqODGsifDPHOE64tHA855AY7CcnfTuSTp31izRzWGxQi73x19r06JTvwv5JQ08uZtpTv2J82sQFWEEOfQkkg==,
-      }
-
   '@activepieces/pieces-framework@0.25.4':
     resolution:
       {
@@ -2094,12 +2103,6 @@ packages:
     resolution:
       {
         integrity: sha512-Ot5cZuKel+I+ZfO8/QjRCCvUiICQHjr0QiyTW7TtsiSMDvjhydEPq75btTvE/WQ+BartUvLmZhtsWRmjPboUIg==,
-      }
-
-  '@activepieces/pieces-framework@0.30.0':
-    resolution:
-      {
-        integrity: sha512-XebtyIqamIv53xebc9wxl25mbjOH3eo1rZR88yolWLBeg1ix5COKAU304lAPwkMnYdR7WA6qITr57V8HyR8p/w==,
       }
 
   '@activepieces/shared@0.37.0':
@@ -2118,18 +2121,6 @@ packages:
     resolution:
       {
         integrity: sha512-yt0UYCVfKzynQScnowA06ycVr8g3fxD+DA9uXIlwcFHrgnsxQ28MAv/fY8mSECCNWMx2uqkTZ5RpZ0dN9tKOmg==,
-      }
-
-  '@activepieces/shared@0.86.0':
-    resolution:
-      {
-        integrity: sha512-NvD2pY+7lWAjfRh4eLbvRf+XLOmSs/788AP9qqHEjNfxgA6e4GjsWQ5+1NaD9xWcePIffutyqVZVuw3ADjzaZw==,
-      }
-
-  '@activepieces/shared@0.92.0':
-    resolution:
-      {
-        integrity: sha512-/ROaSzt/Qe5n6Zs2jU7kMJiq6YsX54cjuRACzo7Oh6/yGgWLZW+gORc0monq95kE5fou1lY3QPNK5aZnKX5P1Q==,
       }
 
   '@ai-sdk/alibaba@2.0.14':
@@ -2300,15 +2291,6 @@ packages:
         integrity: sha512-YXTA4B0KOu1iN+yAmS7CnnqrZ1NgH+AIzSeZlnME7KNsG0UCZ8+pQ9Td1M1DhcxEAX3L10E8XceZ/28NdYIdwg==,
       }
     engines: { node: '>=22' }
-    peerDependencies:
-      zod: ^4.3.6
-
-  '@ai-sdk/gateway@2.0.0':
-    resolution:
-      {
-        integrity: sha512-Gj0PuawK7NkZuyYgO/h5kDK/l6hFOjhLdTq3/Lli1FTl47iGmwhH1IZQpAL3Z09BeFYWakcwUmn02ovIm2wy9g==,
-      }
-    engines: { node: '>=18' }
     peerDependencies:
       zod: ^4.3.6
 
@@ -2517,24 +2499,6 @@ packages:
     peerDependencies:
       zod: ^4.3.6
 
-  '@ai-sdk/provider-utils@3.0.12':
-    resolution:
-      {
-        integrity: sha512-ZtbdvYxdMoria+2SlNarEk6Hlgyf+zzcznlD55EAl+7VZvJaSg2sqPvwArY7L6TfDEDJsnCq0fdhBSkYo0Xqdg==,
-      }
-    engines: { node: '>=18' }
-    peerDependencies:
-      zod: ^4.3.6
-
-  '@ai-sdk/provider-utils@4.0.0':
-    resolution:
-      {
-        integrity: sha512-HyCyOls9I3a3e38+gtvOJOEjuw9KRcvbBnCL5GBuSmJvS9Jh9v3fz7pRC6ha1EUo/ZH1zwvLWYXBMtic8MTguA==,
-      }
-    engines: { node: '>=18' }
-    peerDependencies:
-      zod: ^4.3.6
-
   '@ai-sdk/provider-utils@4.0.40':
     resolution:
       {
@@ -2579,20 +2543,6 @@ packages:
     engines: { node: '>=22' }
     peerDependencies:
       zod: ^4.3.6
-
-  '@ai-sdk/provider@2.0.0':
-    resolution:
-      {
-        integrity: sha512-6o7Y2SeO9vFKB8lArHXehNuusnpddKPk7xqL7T2/b+OvXMRIXUO1rR4wcv1hAFUAT9avGZshty3Wlua/XA7TvA==,
-      }
-    engines: { node: '>=18' }
-
-  '@ai-sdk/provider@3.0.0':
-    resolution:
-      {
-        integrity: sha512-m9ka3ptkPQbaHHZHqDXDF9C9B5/Mav0KTdky1k2HZ3/nrW2t1AgObxIVPyGDWQNS9FXT/FS6PIoSjpcP/No8rQ==,
-      }
-    engines: { node: '>=18' }
 
   '@ai-sdk/provider@3.0.14':
     resolution:
@@ -5280,12 +5230,6 @@ packages:
         integrity: sha512-9uGyhaQavEUMC8AIddIjau4NsnsXhou+j5sBAGojCM1oxmQpVKTWR/9JxABD6UAv12vpIms55fPZKFQEhG6uBg==,
       }
 
-  '@nodable/entities@3.0.0':
-    resolution:
-      {
-        integrity: sha512-8L9xFeTYKhm49xfIypoe2W5wV1m/3Z58kT+7kR9A8OyFxcPduI4VmxaUMQyKYrRjUoLLSXv6EKKID5Tvj9cUVw==,
-      }
-
   '@opentelemetry/api-logs@0.203.0':
     resolution:
       {
@@ -5299,13 +5243,6 @@ packages:
         integrity: sha512-uIX52NnTM0iBh84MShlpouI7UKqkZ7MrUszTmaypHBu4r7NofznSnQRfJ+uUeDtQDj6w8eFGg5KBLDAwAPz1+A==,
       }
     engines: { node: '>=14' }
-
-  '@opentelemetry/api@1.9.0':
-    resolution:
-      {
-        integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==,
-      }
-    engines: { node: '>=8.0.0' }
 
   '@opentelemetry/api@1.9.1':
     resolution:
@@ -7498,10 +7435,28 @@ packages:
         integrity: sha512-rp/ezSWaD1m44dPKICGhiskI13nVr7qTloFwDa/IYkhhf5nzwP+zIQcIJh3WIFSBOy/H1PzB40jPjMDksN4F+g==,
       }
 
+  '@types/heic-convert@2.1.1':
+    resolution:
+      {
+        integrity: sha512-+s14762Nf62z9zziIs7ItvAkSUCS3ls4Z5XPT9BlVve3Q3S4DAnf6qekffMTvEWycSUF+kulkGaSN65fK6eKvg==,
+      }
+
+  '@types/jsdom@21.1.7':
+    resolution:
+      {
+        integrity: sha512-yOriVnggzrnQ3a9OKOCxaVuSug3w3/SbOj5i7VwXWZEyUNl3bLF9V3MfxGbZKuwqJOQyRfqXyROBB1CoZLFWzA==,
+      }
+
   '@types/json-schema@7.0.15':
     resolution:
       {
         integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==,
+      }
+
+  '@types/json2xml@0.1.4':
+    resolution:
+      {
+        integrity: sha512-lhctXnjA/NkPZDeqQyXKy0thfMk4HTrVO1G2X7tUU7E7kPzynUC8uzCr/bPeU9hqCtvw2yij0LW0qqC2N1jHoQ==,
       }
 
   '@types/linkify-it@5.0.0':
@@ -7532,6 +7487,12 @@ packages:
     resolution:
       {
         integrity: sha512-RGdgjQUZba5p6QEFAVx2OGb8rQDL/cPRG7GiedRzMcJ1tYnUANBncjbSB1NRGwbvjcPeikRABz2nshyPk1bhWg==,
+      }
+
+  '@types/mime-types@2.1.1':
+    resolution:
+      {
+        integrity: sha512-vXOTGVSLR2jMw440moWTC7H19iUyLtP3Z1YTj7cSsubOICinjMxFeb/V57v9QdyyPGbbWolUFSSmSiRSn94tFw==,
       }
 
   '@types/ms@2.1.0':
@@ -7588,6 +7549,12 @@ packages:
         integrity: sha512-1Kc4oAGzAl7uqUStZCDvaLFqZrW9qWSjXOmBfdgyBP5La7Us6Mg4GBvRlSoaZMhQF/zSj1C8CtKMBkoiT8eL8w==,
       }
 
+  '@types/qrcode@1.5.5':
+    resolution:
+      {
+        integrity: sha512-CdfBi/e3Qk+3Z/fXYShipBT13OJ2fDO2Q2w5CIP5anLTLIndQG9z6P1cnm+8zCWSpm5dnxMFd/uREtb0EXuQzg==,
+      }
+
   '@types/react-dom@19.2.3':
     resolution:
       {
@@ -7622,6 +7589,12 @@ packages:
         integrity: sha512-UE7oxhQLLd9gub6JKIAhDq06T0F6FnztwMNRvYgjeQSBeMc1ZG/tA47EwfduvkuQS8apbkM/lpLpWsaCeYsXVg==,
       }
 
+  '@types/showdown@2.0.6':
+    resolution:
+      {
+        integrity: sha512-pTvD/0CIeqe4x23+YJWlX2gArHa8G0J0Oh6GKaVXV7TAeickpkkZiNOgFcFcmLQ5lB/K0qBJL1FtRYltBfbGCQ==,
+      }
+
   '@types/tedious@4.0.14':
     resolution:
       {
@@ -7644,6 +7617,12 @@ packages:
     resolution:
       {
         integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==,
+      }
+
+  '@types/turndown@5.0.6':
+    resolution:
+      {
+        integrity: sha512-ru00MoyeeouE5BX4gRL+6m/BsDfbRayOskWqUvh7CLGW+UXxHQItqALa38kKnOiZPqJrtzJUgAC2+F0rL1S4Pg==,
       }
 
   '@types/unist@2.0.11':
@@ -7816,13 +7795,6 @@ packages:
         integrity: sha512-kQF8LGie/Hbdq9/psJxLE7owRTcqMQMhgybU04gCeR7cbQAr5t8OrjefDNColJv1QSSucFt4pLwRiARVmlOnug==,
       }
     engines: { node: '>= 18' }
-
-  '@vercel/oidc@3.0.3':
-    resolution:
-      {
-        integrity: sha512-yNEQvPcVrK9sIe637+I0jD6leluPxzwJKx/Haw6F4H77CdDsszUn5V3o96LPziXkSNE2B83+Z3mjqGKBK/R6Gg==,
-      }
-    engines: { node: '>= 20' }
 
   '@vercel/oidc@3.2.0':
     resolution:
@@ -8097,15 +8069,6 @@ packages:
       }
     engines: { node: '>= 14' }
 
-  ai@6.0.0:
-    resolution:
-      {
-        integrity: sha512-ZxPmmOW3stVPNtg4nq6THDQ6aD9Epo/vA/YcTe4q1SD5Q6ZXWg1+aTwjV1mDWWTY2azs3/mw05a3rF5DEiHoEA==,
-      }
-    engines: { node: '>=18' }
-    peerDependencies:
-      zod: ^4.3.6
-
   ai@6.0.235:
     resolution:
       {
@@ -8285,12 +8248,6 @@ packages:
     resolution:
       {
         integrity: sha512-cz4ur7Vb0xS4/KUN0tPWe44eqxrIu31me+fbang3ijiNscE129POzipJJA6zniq2C/Z6sJCjMimjS8Lc/GAs8Q==,
-      }
-
-  axios@1.15.2:
-    resolution:
-      {
-        integrity: sha512-wLrXxPtcrPTsNlJmKjkPnNPK2Ihe0hn0wGSaTEiHRPxwjvJwT3hKmXF4dpqxmPO9SoNb2FsYXj/xEo0gHN+D5A==,
       }
 
   babel-plugin-macros@3.1.0:
@@ -9527,12 +9484,6 @@ packages:
       }
     engines: { node: '>=12.0.0' }
 
-  expr-eval@2.0.2:
-    resolution:
-      {
-        integrity: sha512-4EMSHGOPSwAfBiibw3ndnP0AvjDWLsMvGOvWEZ2F96IGk0bIVdjQisOHxReSkE13mHcfbuCiXw+G4y0zv6N8Eg==,
-      }
-
   express-rate-limit@8.6.2:
     resolution:
       {
@@ -9603,13 +9554,6 @@ packages:
       {
         integrity: sha512-F74cZEdCvuw9P41GAC3rod4X04jjWGM1JPEv/GWSqFTWLsdyMSBMBMlm9Hk3GLBgLBbdBNY8yee0pQh2RBVESQ==,
       }
-
-  fast-xml-parser@5.10.1:
-    resolution:
-      {
-        integrity: sha512-IEMIf7298kXuZSRFoGfMYrl7is8LpavODgbNz1cwIudv7KwVFnuU+UsMporfq6PD6aXSlawZlARiA3UywCTfMw==,
-      }
-    hasBin: true
 
   fast-xml-parser@5.7.0:
     resolution:
@@ -10357,13 +10301,6 @@ packages:
       }
     engines: { node: '>= 10' }
 
-  ipaddr.js@2.3.0:
-    resolution:
-      {
-        integrity: sha512-Zv/pA+ciVFbCSBBjGfaKUya/CcGmUHzTydLMaTwrUUEM2DIEO3iZvueGxmacvmN50fGpGVKeTXpb2LcYQxeVdg==,
-      }
-    engines: { node: '>= 10' }
-
   is-alphabetical@2.0.1:
     resolution:
       {
@@ -10499,12 +10436,6 @@ packages:
         integrity: sha512-hFoiJiTl63nn+kstHGBtewWSKnQLpyb155KHheA1l39uvtO9nWIop1p3udqPcUd/xbF1VLMO4n7OI6p7RbngDg==,
       }
     engines: { node: '>=8' }
-
-  is-unsafe@2.0.0:
-    resolution:
-      {
-        integrity: sha512-2LdV822R+wmI86unXA93WCFpL6g+av8ynWk0nrHyJqGop5VoocYsSLFgN8jrfalT6iGeLNM4KXuVSsULP53kEA==,
-      }
 
   is-windows@1.0.2:
     resolution:
@@ -10746,7 +10677,6 @@ packages:
       {
         integrity: sha512-T9eIRCs6b0J1SHKYIvD8+KCJMcWZ900iZyxdnSCdqxN12Z1ijzT+jY5nrk72Jw4B0HGzms2NgpryArlJqvc3Lw==,
       }
-    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lightningcss-android-arm64@1.32.0:
@@ -12346,13 +12276,6 @@ packages:
         integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==,
       }
 
-  proxy-from-env@2.1.0:
-    resolution:
-      {
-        integrity: sha512-cJ+oHTW1VAEa8cJslgmUZrc+sjRKgAKl3Zyse6+PV38hZe/V6Z14TbCuXcan9F9ghlz4QrFr2c92TNF82UkYHA==,
-      }
-    engines: { node: '>=10' }
-
   psl@1.15.0:
     resolution:
       {
@@ -12769,12 +12692,6 @@ packages:
     resolution:
       {
         integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==,
-      }
-
-  safe-flat@2.1.0:
-    resolution:
-      {
-        integrity: sha512-qr5iVWMYuN21dkijya23k6apc2BV1hiCG75vjToKDTzWlbR4SLbLbCnowPJ2pngnwGT2nMEeZKOglBE4pksj6g==,
       }
 
   safe-stable-stringify@2.5.0:
@@ -14256,103 +14173,17 @@ snapshots:
 
   '@activepieces/piece-brave-search@0.0.5': {}
 
-  '@activepieces/piece-crypto@0.0.22(bufferutil@4.1.0)':
-    dependencies:
-      '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
-      '@activepieces/pieces-framework': 0.30.0(bufferutil@4.1.0)
-      '@activepieces/shared': 0.92.0(bufferutil@4.1.0)
-      buffer: 6.0.3
-      openpgp: 6.2.0
-      tslib: 2.6.2
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - supports-color
-      - utf-8-validate
-
-  '@activepieces/piece-csv@0.4.15(bufferutil@4.1.0)':
-    dependencies:
-      '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
-      '@activepieces/pieces-framework': 0.30.0(bufferutil@4.1.0)
-      '@activepieces/shared': 0.92.0(bufferutil@4.1.0)
-      csv-parse: 5.6.0
-      csv-stringify: 6.5.2
-      safe-flat: 2.1.0
-      tslib: 2.6.2
-      xlsx: 0.18.5
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - supports-color
-      - utf-8-validate
-
-  '@activepieces/piece-data-summarizer@0.0.11(bufferutil@4.1.0)':
-    dependencies:
-      '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
-      '@activepieces/pieces-framework': 0.30.0(bufferutil@4.1.0)
-      '@activepieces/shared': 0.92.0(bufferutil@4.1.0)
-      tslib: 2.6.2
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - supports-color
-      - utf-8-validate
-
-  '@activepieces/piece-date-helper@0.1.28(bufferutil@4.1.0)':
-    dependencies:
-      '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
-      '@activepieces/pieces-framework': 0.30.0(bufferutil@4.1.0)
-      '@activepieces/shared': 0.92.0(bufferutil@4.1.0)
-      dayjs: 1.11.9
-      tslib: 2.6.2
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - supports-color
-      - utf-8-validate
-
   '@activepieces/piece-discord@0.5.4': {}
 
   '@activepieces/piece-dropbox@0.7.4': {}
 
   '@activepieces/piece-exa@0.1.7': {}
 
-  '@activepieces/piece-file-helper@0.1.24(bufferutil@4.1.0)':
-    dependencies:
-      '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
-      '@activepieces/pieces-framework': 0.30.0(bufferutil@4.1.0)
-      '@activepieces/shared': 0.92.0(bufferutil@4.1.0)
-      '@zip.js/zip.js': 2.8.15
-      mime-types: 2.1.35
-      tslib: 2.6.2
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - supports-color
-      - utf-8-validate
-
   '@activepieces/piece-front@0.1.5': {}
 
   '@activepieces/piece-github@0.8.5': {}
 
-  '@activepieces/piece-graphql@0.0.13': {}
-
-  '@activepieces/piece-image-helper@0.1.15':
-    dependencies:
-      exifreader: 4.39.0
-      heic-convert: 2.1.0
-      jimp: 0.22.12
-      mime-types: 2.1.35
-      sharp: 0.35.2
-    transitivePeerDependencies:
-      - debug
-      - encoding
-
   '@activepieces/piece-linear@0.4.4': {}
-
-  '@activepieces/piece-math-helper@0.0.24': {}
 
   '@activepieces/piece-microsoft-teams@0.6.0':
     dependencies:
@@ -14363,24 +14194,6 @@ snapshots:
   '@activepieces/piece-notion@0.6.6': {}
 
   '@activepieces/piece-pagerduty@0.1.3': {}
-
-  '@activepieces/piece-pdf@0.5.5(bufferutil@4.1.0)':
-    dependencies:
-      '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
-      '@activepieces/pieces-framework': 0.30.0(bufferutil@4.1.0)
-      '@activepieces/shared': 0.92.0(bufferutil@4.1.0)
-      jimp: 0.22.12
-      nanoid: 3.3.8
-      pdf-lib: 1.17.1
-      tslib: 2.6.2
-      unpdf: 1.4.0
-    transitivePeerDependencies:
-      - '@napi-rs/canvas'
-      - bufferutil
-      - debug
-      - encoding
-      - supports-color
-      - utf-8-validate
 
   '@activepieces/piece-posthog@0.4.4(bufferutil@4.1.0)':
     dependencies:
@@ -14399,19 +14212,6 @@ snapshots:
       socket.io-client: 4.8.1(bufferutil@4.1.0)
       tslib: 2.6.2
       zod: 4.4.3
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - supports-color
-      - utf-8-validate
-
-  '@activepieces/piece-qrcode@0.0.13(bufferutil@4.1.0)':
-    dependencies:
-      '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
-      '@activepieces/pieces-framework': 0.30.0(bufferutil@4.1.0)
-      '@activepieces/shared': 0.92.0(bufferutil@4.1.0)
-      qrcode: 1.5.4
-      tslib: 2.6.2
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -14450,20 +14250,6 @@ snapshots:
   '@activepieces/piece-twilio@0.4.7': {}
 
   '@activepieces/piece-xero@0.6.8': {}
-
-  '@activepieces/piece-xml@0.1.15(bufferutil@4.1.0)':
-    dependencies:
-      '@activepieces/pieces-common': 0.12.4(bufferutil@4.1.0)
-      '@activepieces/pieces-framework': 0.30.0(bufferutil@4.1.0)
-      '@activepieces/shared': 0.92.0(bufferutil@4.1.0)
-      fast-xml-parser: 5.7.0
-      json2xml: 0.1.3
-      tslib: 2.6.2
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - supports-color
-      - utf-8-validate
 
   '@activepieces/piece-zoom@0.7.0': {}
 
@@ -14505,24 +14291,6 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@activepieces/pieces-common@0.12.4(bufferutil@4.1.0)':
-    dependencies:
-      '@activepieces/pieces-framework': 0.30.0(bufferutil@4.1.0)
-      '@activepieces/shared': 0.92.0(bufferutil@4.1.0)
-      axios: 1.15.2
-      axios-retry: 4.4.1(axios@1.15.2)
-      form-data: 4.0.4
-      http-proxy-agent: 7.0.2
-      https-proxy-agent: 7.0.6
-      mime-types: 2.1.35
-      tslib: 2.6.2
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - supports-color
-      - utf-8-validate
-
   '@activepieces/pieces-framework@0.25.4(bufferutil@4.1.0)(zod@4.4.3)':
     dependencies:
       '@activepieces/shared': 0.37.0(bufferutil@4.1.0)
@@ -14543,18 +14311,6 @@ snapshots:
     dependencies:
       '@activepieces/shared': 0.42.0(bufferutil@4.1.0)
       ai: 6.0.235(zod@4.4.3)
-      semver: 7.6.0
-      tslib: 2.6.2
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
-
-  '@activepieces/pieces-framework@0.30.0(bufferutil@4.1.0)':
-    dependencies:
-      '@activepieces/shared': 0.86.0(bufferutil@4.1.0)
-      ai: 6.0.0(zod@4.4.3)
       semver: 7.6.0
       tslib: 2.6.2
       zod: 4.4.3
@@ -14593,38 +14349,6 @@ snapshots:
     dependencies:
       dayjs: 1.11.9
       deepmerge-ts: 7.1.0
-      nanoid: 3.3.8
-      semver: 7.6.0
-      socket.io-client: 4.8.1(bufferutil@4.1.0)
-      tslib: 2.6.2
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
-
-  '@activepieces/shared@0.86.0(bufferutil@4.1.0)':
-    dependencies:
-      dayjs: 1.11.9
-      deepmerge-ts: 7.1.0
-      expr-eval: 2.0.2
-      ipaddr.js: 2.3.0
-      nanoid: 3.3.8
-      semver: 7.6.0
-      socket.io-client: 4.8.1(bufferutil@4.1.0)
-      tslib: 2.6.2
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
-
-  '@activepieces/shared@0.92.0(bufferutil@4.1.0)':
-    dependencies:
-      dayjs: 1.11.9
-      deepmerge-ts: 7.1.0
-      expr-eval: 2.0.2
-      ipaddr.js: 2.3.0
       nanoid: 3.3.8
       semver: 7.6.0
       socket.io-client: 4.8.1(bufferutil@4.1.0)
@@ -14762,13 +14486,6 @@ snapshots:
       '@ai-sdk/openai-compatible': 3.0.12(zod@4.4.3)
       '@ai-sdk/provider': 4.0.3
       '@ai-sdk/provider-utils': 5.0.11(zod@4.4.3)
-      zod: 4.4.3
-
-  '@ai-sdk/gateway@2.0.0(zod@4.4.3)':
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.12(zod@4.4.3)
-      '@vercel/oidc': 3.0.3
       zod: 4.4.3
 
   '@ai-sdk/gateway@3.0.157(zod@4.4.3)':
@@ -14923,20 +14640,6 @@ snapshots:
       '@ai-sdk/provider-utils': 5.0.11(zod@4.4.3)
       zod: 4.4.3
 
-  '@ai-sdk/provider-utils@3.0.12(zod@4.4.3)':
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.1.0
-      eventsource-parser: 3.1.0
-      zod: 4.4.3
-
-  '@ai-sdk/provider-utils@4.0.0(zod@4.4.3)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.0
-      '@standard-schema/spec': 1.1.0
-      eventsource-parser: 3.1.0
-      zod: 4.4.3
-
   '@ai-sdk/provider-utils@4.0.40(zod@4.4.3)':
     dependencies:
       '@ai-sdk/provider': 3.0.14
@@ -14977,14 +14680,6 @@ snapshots:
       eventsource-parser: 3.1.0
       undici: 7.29.0
       zod: 4.4.3
-
-  '@ai-sdk/provider@2.0.0':
-    dependencies:
-      json-schema: 0.4.0
-
-  '@ai-sdk/provider@3.0.0':
-    dependencies:
-      json-schema: 0.4.0
 
   '@ai-sdk/provider@3.0.14':
     dependencies:
@@ -15351,7 +15046,7 @@ snapshots:
 
   '@azure/core-xml@1.6.0':
     dependencies:
-      fast-xml-parser: 5.10.1
+      fast-xml-parser: 5.7.0
       tslib: 2.8.1
 
   '@azure/logger@1.4.0':
@@ -16102,7 +15797,7 @@ snapshots:
       abort-controller: 3.0.0
       async-retry: 1.3.3
       duplexify: 4.1.3
-      fast-xml-parser: 5.10.1
+      fast-xml-parser: 5.7.0
       gaxios: 6.7.1
       google-auth-library: 9.15.1
       html-entities: 2.6.0
@@ -16729,8 +16424,6 @@ snapshots:
 
   '@nodable/entities@2.2.0': {}
 
-  '@nodable/entities@3.0.0': {}
-
   '@opentelemetry/api-logs@0.203.0':
     dependencies:
       '@opentelemetry/api': 1.9.1
@@ -16738,8 +16431,6 @@ snapshots:
   '@opentelemetry/api-logs@0.57.2':
     dependencies:
       '@opentelemetry/api': 1.9.1
-
-  '@opentelemetry/api@1.9.0': {}
 
   '@opentelemetry/api@1.9.1': {}
 
@@ -18820,7 +18511,17 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
 
+  '@types/heic-convert@2.1.1': {}
+
+  '@types/jsdom@21.1.7':
+    dependencies:
+      '@types/node': 22.20.1
+      '@types/tough-cookie': 4.0.5
+      parse5: 7.3.0
+
   '@types/json-schema@7.0.15': {}
+
+  '@types/json2xml@0.1.4': {}
 
   '@types/linkify-it@5.0.0': {}
 
@@ -18836,6 +18537,8 @@ snapshots:
       '@types/unist': 3.0.3
 
   '@types/mdurl@2.0.0': {}
+
+  '@types/mime-types@2.1.1': {}
 
   '@types/ms@2.1.0': {}
 
@@ -18873,6 +18576,10 @@ snapshots:
       pg-protocol: 1.15.0
       pg-types: 2.2.0
 
+  '@types/qrcode@1.5.5':
+    dependencies:
+      '@types/node': 22.20.1
+
   '@types/react-dom@19.2.3(@types/react@19.2.14)':
     dependencies:
       '@types/react': 19.2.14
@@ -18894,6 +18601,8 @@ snapshots:
 
   '@types/shimmer@1.2.0': {}
 
+  '@types/showdown@2.0.6': {}
+
   '@types/tedious@4.0.14':
     dependencies:
       '@types/node': 22.20.1
@@ -18904,6 +18613,8 @@ snapshots:
 
   '@types/trusted-types@2.0.7':
     optional: true
+
+  '@types/turndown@5.0.6': {}
 
   '@types/unist@2.0.11': {}
 
@@ -19053,8 +18764,6 @@ snapshots:
   '@vercel/cli-exec@1.0.0':
     dependencies:
       execa: 5.1.1
-
-  '@vercel/oidc@3.0.3': {}
 
   '@vercel/oidc@3.2.0': {}
 
@@ -19241,14 +18950,6 @@ snapshots:
 
   agent-base@7.1.4: {}
 
-  ai@6.0.0(zod@4.4.3):
-    dependencies:
-      '@ai-sdk/gateway': 2.0.0(zod@4.4.3)
-      '@ai-sdk/provider': 3.0.0
-      '@ai-sdk/provider-utils': 4.0.0(zod@4.4.3)
-      '@opentelemetry/api': 1.9.0
-      zod: 4.4.3
-
   ai@6.0.235(zod@4.4.3):
     dependencies:
       '@ai-sdk/gateway': 3.0.157(zod@4.4.3)
@@ -19344,24 +19045,11 @@ snapshots:
       axios: 1.13.5
       is-retry-allowed: 2.2.0
 
-  axios-retry@4.4.1(axios@1.15.2):
-    dependencies:
-      axios: 1.15.2
-      is-retry-allowed: 2.2.0
-
   axios@1.13.5:
     dependencies:
       follow-redirects: 1.16.0
       form-data: 4.0.6
       proxy-from-env: 1.1.0
-    transitivePeerDependencies:
-      - debug
-
-  axios@1.15.2:
-    dependencies:
-      follow-redirects: 1.16.0
-      form-data: 4.0.6
-      proxy-from-env: 2.1.0
     transitivePeerDependencies:
       - debug
 
@@ -20024,8 +19712,6 @@ snapshots:
 
   expect-type@1.4.0: {}
 
-  expr-eval@2.0.2: {}
-
   express-rate-limit@8.6.2(express@5.2.1):
     dependencies:
       debug: 4.4.3
@@ -20088,15 +19774,6 @@ snapshots:
   fast-xml-builder@1.3.0:
     dependencies:
       path-expression-matcher: 1.6.2
-      xml-naming: 0.3.0
-
-  fast-xml-parser@5.10.1:
-    dependencies:
-      '@nodable/entities': 3.0.0
-      fast-xml-builder: 1.3.0
-      is-unsafe: 2.0.0
-      path-expression-matcher: 1.6.2
-      strnum: 2.4.1
       xml-naming: 0.3.0
 
   fast-xml-parser@5.7.0:
@@ -20615,8 +20292,6 @@ snapshots:
 
   ipaddr.js@2.2.0: {}
 
-  ipaddr.js@2.3.0: {}
-
   is-alphabetical@2.0.1: {}
 
   is-alphanumerical@2.0.1:
@@ -20669,8 +20344,6 @@ snapshots:
   is-retry-allowed@2.2.0: {}
 
   is-stream@2.0.1: {}
-
-  is-unsafe@2.0.0: {}
 
   is-windows@1.0.2: {}
 
@@ -21968,8 +21641,6 @@ snapshots:
 
   proxy-from-env@1.1.0: {}
 
-  proxy-from-env@2.1.0: {}
-
   psl@1.15.0:
     dependencies:
       punycode: 2.3.1
@@ -22345,8 +22016,6 @@ snapshots:
   rrweb-cssom@0.8.0: {}
 
   safe-buffer@5.2.1: {}
-
-  safe-flat@2.1.0: {}
 
   safe-stable-stringify@2.5.0: {}
 

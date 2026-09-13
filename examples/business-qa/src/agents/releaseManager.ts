@@ -31,7 +31,7 @@ export const releaseManager: AgentConfig = {
     dateHelper.getCurrentDate,
     dateHelper.formatDate,
     dateHelper.addSubtractDate,
-    pdf.textToPdf,
+    pdf.createPdfFromText,
   ],
   access: authenticated,
 };
