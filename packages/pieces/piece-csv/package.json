@@ -1,17 +1,17 @@
 {
   "name": "@frogbotai/piece-csv",
   "version": "0.22.0",
-  "description": "CSV tools for FrogBot.",
+  "description": "csv tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./src/index.ts",
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -24,7 +24,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@activepieces/piece-csv": "0.4.15"
+    "csv-parse": "^5.6.0",
+    "csv-stringify": "^6.5.2",
+    "xlsx": "^0.18.5",
+    "zod": "^4.3.6"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"
