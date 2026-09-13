@@ -15,4 +15,10 @@ export {
   resetJobLease,
 } from '../jobs/lease.js';
 export { sweepJobLeases } from '../jobs/sweep.js';
-export type { JobQueueArgs, Jobs, JobsConfig } from '../jobs/types.js';
+export type {
+  JobQueueArgs,
+  Jobs,
+  JobsConfig,
+  WorkflowConfig,
+  WorkflowHandler,
+} from '../jobs/types.js';

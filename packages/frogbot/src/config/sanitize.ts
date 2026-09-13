@@ -55,7 +55,9 @@ import { initFrogbotFromPayload } from '../frogbot.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
 import { ensureFrogbotInstance } from '../instanceRegistry.js';
 import { resolveJobsConfig } from '../jobs/config.js';
+import { buildResumeEndpoints } from '../jobs/endpoints/resume.js';
 import { withJobsRuntime } from '../jobs/runtime.js';
+import { defaultWaitpointsCollection, WAITPOINTS_SLUG } from '../jobs/waitpoints/collection.js';
 import { databaseKVAdapter } from '../kv/adapters/DatabaseKVAdapter.js';
 import { resolveKVCleanupTask } from '../kv/resolveCleanupTask.js';
 import {
@@ -1013,6 +1015,7 @@ function buildPayloadConfig(
   const userEndpoints = config.endpoints as Endpoint[] | false | undefined;
   const agentEndpoints = config.agents?.length ? buildAgentEndpoints() : [];
   const allEndpoints = [
+    ...buildResumeEndpoints(),
     ...(Array.isArray(userEndpoints) ? userEndpoints : []),
     buildManifestEndpoint(),
     ...agentEndpoints,
@@ -1300,15 +1303,20 @@ export function sanitize(
   }
 
   const kv = config.kv ?? databaseKVAdapter();
-  const jobs = resolveJobsConfig({
+  const resolvedJobs = resolveJobsConfig(config.jobs);
+  const jobs = {
+    ...resolvedJobs,
     ...resolveKVCleanupTask({
       kv,
       jobs: Object.keys(triggers).length
-        ? resolveTriggerTasks(resolveScheduleTasks({ agents, jobs: config.jobs }))
-        : resolveScheduleTasks({ agents, jobs: config.jobs }),
+        ? resolveTriggerTasks(resolveScheduleTasks({ agents, jobs: resolvedJobs }))
+        : resolveScheduleTasks({ agents, jobs: resolvedJobs }),
     }),
-    leaseDuration: config.jobs?.leaseDuration,
-  });
+  };
+
+  if (config.collections.some(({ slug }) => slug === WAITPOINTS_SLUG)) {
+    throw new Error(`FrogBot collection '${WAITPOINTS_SLUG}' is reserved for durable waits.`);
+  }
 
   // Resolve chat persistence — adopt marked collections or inject defaults.
   const chatResult = resolveChatCollections({ ...config, agents });
@@ -1322,7 +1330,11 @@ export function sanitize(
     collections: usageCollections,
   });
   const { collections, files } = resolveFilesCollection({
-    collections: [...connectionsResult.collections, defaultTriggerSubscriptionsCollection()],
+    collections: [
+      ...connectionsResult.collections,
+      defaultTriggerSubscriptionsCollection(),
+      defaultWaitpointsCollection(),
+    ],
   });
   const connections = connectionsResult.connections;
   if (connections.enabled) {

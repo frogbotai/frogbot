@@ -27,7 +27,7 @@ type NativeSignatureParity = {
 };
 
 expectTypeOf<SignatureParity>().toEqualTypeOf<NativeSignatureParity>();
-expectTypeOf<keyof Jobs>().toEqualTypeOf<keyof NativeJobs>();
+expectTypeOf<Exclude<keyof Jobs, 'resume'>>().toEqualTypeOf<keyof NativeJobs>();
 
 expectTypeOf<
   Omit<Parameters<Jobs['queue']>[0], 'input' | 'task' | 'workflow' | 'req' | 'jobId'>

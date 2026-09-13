@@ -192,7 +192,13 @@ async function createDatabase() {
   return { descriptor, cleanups, name };
 }
 
-export async function bootJobsFixture() {
+export async function bootJobsFixture({
+  jobs = {},
+  config: overrides = {},
+}: {
+  jobs?: FrogbotConfig['jobs'];
+  config?: Pick<FrogbotConfig, 'agents' | 'ai' | 'routes'>;
+} = {}) {
   process.env.PAYLOAD_DROP_DATABASE = 'false';
 
   const database = await createDatabase();
@@ -273,6 +279,8 @@ export async function bootJobsFixture() {
   try {
     const config = await buildConfig({
       secret: 'frogbot-jobs-acceptance-secret',
+      serverURL: 'https://jobs.example.com',
+      ...overrides,
       db: {
         ...database.descriptor,
         init(args) {
@@ -373,6 +381,7 @@ export async function bootJobsFixture() {
           },
           fields: [...defaultJobsCollection.fields, { name: 'priority', type: 'number' }],
         }),
+        ...jobs,
       },
     });
 
@@ -404,6 +413,7 @@ export async function bootJobsFixture() {
       frogbot,
       worker,
       payload,
+      workerPayload,
       gates,
       actions,
       hookEvents,

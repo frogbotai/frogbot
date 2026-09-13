@@ -78,6 +78,18 @@ Workers execute batches; the scheduler only enqueues scheduled jobs. Both use `-
 
 The worker CLI's `--limit 0` never runs jobs. Without `--handle-schedules`, it performs no scheduling either. This differs from local API `run({ limit: 0 })`, which is unlimited.
 
+## Workers for durable waits
+
+[Workflow waits](/configuration/jobs#durable-workflow-waits) persist in the shared database and release the current worker. Resume queues a continuation in the workflow's original queue. Keep workers covering that queue, and keep a scheduler **and** worker covering `default`: the minute `frogbot-sweep-jobs` task proactively expires waits and recovers accepted responses whose continuations still need dispatch. The all-queue container setup above covers both.
+
+Failed dispatches remain retryable, including a failed `concurrency.supersedes` replacement after pending work was deleted. Recovery depends on the scheduled sweep running. A crash between enqueue and recording dispatch can also duplicate a continuation if its job record disappears before recovery. See [Dispatch and recovery limits](/configuration/jobs#dispatch-and-recovery-limits).
+
+Set `serverURL` to the public web origin in the shared application configuration. Workers use it to generate approval links; recipients need the web service to open confirmation and submit a response. Keep wait names, task IDs, and branching compatible across the app versions serving a suspended workflow.
+
+Delays become eligible at `until`; expiry continuations return `{ expired: true }` after the sweep runs. Neither is an in-process timer or a promise to execute at an exact instant. Worker ticks, active batches, and backlog affect wake-up time. A scheduler-only process cannot execute the sweep or a continuation.
+
+Waiting source jobs are complete and are ignored by lease recovery. The internal waitpoint retains the workflow input, original queue, and replay history needed to continue even if completed source jobs are deleted. Resumed or expired waitpoints marked `dispatched` are retained; the sweep skips them rather than deleting or redispatching them. Deploy the waitpoint schema through your normal [database migrations](/database/migrations) before starting SQL-backed workers.
+
 ## SQLite and D1
 
 SQLite-family claims use a single `UPDATE … WHERE id IN (SELECT … LIMIT …) RETURNING id` statement. They require **SQLite 3.35.0 or newer**, which introduced [`RETURNING`](https://www.sqlite.org/lang_returning.html). SQLite serializes writers; it does not use Postgres's `SKIP LOCKED`. Returned row order is not guaranteed by SQL; FrogBot reads the claimed records back using the requested sort.
