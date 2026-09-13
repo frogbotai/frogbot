@@ -4,6 +4,7 @@ import { exportTrainingData } from './exportTrainingData.js';
 import { generateImportMap } from './generateImportMap.js';
 import { generatePieceTypesCommand } from './generatePieceTypes.js';
 import { generateTypes } from './generateTypes.js';
+import { jobsRun } from './jobsRun.js';
 import { loadEnv } from './loadEnv.js';
 import { migrate } from './migrate.js';
 import { piecesPort } from './piecesPort.js';
@@ -11,6 +12,7 @@ import { start } from './start.js';
 
 export async function bin() {
   loadEnv();
+
   const command = process.argv[2]?.toLowerCase();
   const args = process.argv.slice(3);
 
@@ -30,6 +32,8 @@ export async function bin() {
     await exportTrainingData(args);
   } else if (command === 'export:captures') {
     await exportCaptures(args);
+  } else if (command === 'jobs:run') {
+    await jobsRun(args);
   } else if (
     command === 'migrate' ||
     command === 'migrate:create' ||
@@ -42,8 +46,9 @@ export async function bin() {
     await migrate([command, ...args]);
   } else {
     console.error(
-      '[frogbot] usage: frogbot <start|dev|generate:types|generate:piece-types|generate:importmap|pieces:port|export:training-data|export:captures|migrate|migrate:create|migrate:status|migrate:down|migrate:refresh|migrate:reset|migrate:fresh>',
+      '[frogbot] usage: frogbot <start|dev|generate:types|generate:piece-types|generate:importmap|pieces:port|export:training-data|export:captures|jobs:run|migrate|migrate:create|migrate:status|migrate:down|migrate:refresh|migrate:reset|migrate:fresh>',
     );
+
     process.exit(2);
   }
 }

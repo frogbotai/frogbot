@@ -1,0 +1,87 @@
+---
+title: 'Job workers'
+description: 'Run independent FrogBot workers and schedulers with graceful shutdown and crash recovery.'
+keywords: ['workers', 'jobs:run', 'scheduler', 'Docker', 'D1']
+---
+
+`frogbot jobs:run` loads your app configuration and initializes FrogBot, including application `onInit`, without starting Next.js. It stays running and polls on a cron schedule. Configure your [tasks, workflows, and leases](/configuration/jobs) before starting workers.
+
+## Start a worker
+
+```sh
+pnpm exec frogbot jobs:run --cron "*/5 * * * * *" --limit 6 --all-queues --handle-schedules
+```
+
+This process schedules jobs and claims up to six jobs across all queues every five seconds. The first tick occurs at the next cron match in the process's local timezone. Overlapping ticks are skipped until the current scheduling and batch execution finish.
+
+| Flag                  | Default     | Behavior                                                             |
+| --------------------- | ----------- | -------------------------------------------------------------------- |
+| `--cron <expression>` | `* * * * *` | Tick every minute; accepts an optional seconds field.                |
+| `--limit <number>`    | `10`        | Maximum batch size; a nonnegative safe integer. `0` skips execution. |
+| `--queue <name>`      | `default`   | Select one queue for both scheduling and execution.                  |
+| `--all-queues`        | Off         | Select every queue; mutually exclusive with explicit `--queue`.      |
+| `--handle-schedules`  | Off         | Enqueue scheduled jobs before running a batch.                       |
+| `--help`, `-h`        | Off         | Print usage without loading the app.                                 |
+
+Value flags accept `--flag value` and `--flag=value`. Invalid, unknown, duplicate, or conflicting arguments exit `2` before boot. Boot, thrown tick, and shutdown failures exit `1`; normal task retries remain governed by jobs configuration.
+
+During normal execution, `SIGINT` and `SIGTERM` stop new ticks, drain the active batch and pending heartbeat, close the database, and exit `0`. Set your container's shutdown grace period to accommodate the longest active batch.
+
+An exceptional completion or database-write failure can reject a batch before sibling work finishes; the worker can then exit `1` without draining those siblings. Forced termination and interrupted work rely on [lease recovery](/configuration/jobs#leases-and-crash-recovery), which is at least once and can occasionally duplicate work.
+
+## Disable web autorun
+
+Pass this `jobs` object to `buildConfig` when dedicated workers own execution:
+
+```ts
+const jobs = {
+  autoRun: [],
+  shouldAutoRun: () => false,
+};
+```
+
+`shouldAutoRun` prevents web autorun from executing jobs, but scheduling happens before that check: an existing autorun entry can handle schedules once before stopping. `autoRun: []` removes user-defined entries; scheduled agent triggers currently append their own entry during configuration, so the empty array alone does not guarantee that web replicas never schedule jobs. Keep the execution guard even with an empty array. The worker CLI disables built-in autorun before initialization and uses its own tick loop.
+
+## Separate workers and scheduler
+
+Use a shared database, the same application configuration and secrets, and compatible app versions across all replicas. Your image must include the FrogBot CLI, app config and its imports, dependencies, and a package manager. The template's minimal [Next.js standalone image](/deployment/overview#docker) contains only the traced web server; build a full application image for these commands.
+
+The following Compose fragment assumes `acme/frogbot-app` contains that full application, including its built Next.js app, and `DATABASE_URL` points to a shared Postgres or MongoDB database:
+
+```yaml
+x-app: &app
+  image: acme/frogbot-app
+  environment:
+    NODE_ENV: production
+    DATABASE_URL: ${DATABASE_URL}
+    FROGBOT_SECRET: ${FROGBOT_SECRET}
+  restart: unless-stopped
+
+services:
+  web:
+    <<: *app
+    command: [pnpm, exec, frogbot, start]
+    deploy:
+      replicas: 2
+  worker:
+    <<: *app
+    command: [pnpm, exec, frogbot, 'jobs:run', --cron, '*/5 * * * * *', --limit, '6', --all-queues]
+    stop_grace_period: 10m
+    deploy:
+      replicas: 4
+  scheduler:
+    <<: *app
+    command: [pnpm, exec, frogbot, 'jobs:run', --handle-schedules, --limit, '0', --all-queues]
+```
+
+Workers execute batches; the scheduler only enqueues scheduled jobs. Both use `--all-queues` so the minute recovery sweep in `default` is scheduled **and** executed, alongside custom and agent queues. Recovery requires both to remain running: lease expiry alone does not release a job. If you restrict application workers to named queues, retain a scheduler and worker that cover `default`.
+
+The worker CLI's `--limit 0` never runs jobs. Without `--handle-schedules`, it performs no scheduling either. This differs from local API `run({ limit: 0 })`, which is unlimited.
+
+## SQLite and D1
+
+SQLite-family claims use a single `UPDATE … WHERE id IN (SELECT … LIMIT …) RETURNING id` statement. They require **SQLite 3.35.0 or newer**, which introduced [`RETURNING`](https://www.sqlite.org/lang_returning.html). SQLite serializes writers; it does not use Postgres's `SKIP LOCKED`. Returned row order is not guaranteed by SQL; FrogBot reads the claimed records back using the requested sort.
+
+D1 uses [SQLite's query engine](https://developers.cloudflare.com/d1/sql-api/sql-statements/). FrogBot's D1 adapter uses the Drizzle D1 driver: the returning claim reads positional rows through the binding's [`raw()` method](https://developers.cloudflare.com/d1/worker-api/prepared-statements/#raw); lease updates without returned rows use `run()`.
+
+Use a current Wrangler release for [local D1 development](https://developers.cloudflare.com/d1/best-practices/local-development/). Cloudflare's guide requires Wrangler 3+ and uses Miniflare/workerd; `getD1Database()` provides a D1 binding for programmatic tests. These SQL and driver requirements do not establish verification against a remote D1 deployment.

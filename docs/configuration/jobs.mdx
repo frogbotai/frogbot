@@ -1,0 +1,95 @@
+---
+title: 'Jobs'
+description: 'Queue tasks and workflows, reject duplicate enqueues, and recover interrupted jobs.'
+keywords: ['jobs', 'queues', 'jobId', 'leases', 'workflows']
+---
+
+FrogBot stores queued jobs in your database. Register tasks in `jobs.tasks` and workflows in `jobs.workflows`, then use `frogbot.jobs` to enqueue and run them. For dedicated processes, see [Job workers](/deployment/jobs).
+
+## Queue a job
+
+With a `sync-user` task registered that accepts `userId`, enqueue it from a hook or endpoint:
+
+```ts
+const job = await req.frogbot.jobs.queue({
+  task: 'sync-user',
+  input: { userId: '42' },
+  queue: 'sync',
+  jobId: 'sync-user-42',
+  req,
+});
+```
+
+Use `workflow` instead of `task` for a registered workflow. Pass `waitUntil: new Date(...)` to delay eligibility. An explicit `queue` takes precedence over the workflow's configured queue; otherwise jobs use `default`.
+
+### Reserve a `jobId`
+
+`jobId` is an optional, independently unique string. The database rejects a duplicate enqueue, including concurrent attempts, while a record with that value exists. Uniqueness spans all tasks, workflows, and queues.
+
+- The returned `job.id` remains the generated primary key. Use it for `runByID` and `cancelByID`.
+- Omitting `jobId` preserves ordinary enqueue behavior; multiple jobs can omit it.
+- Completion or cancellation does not itself free the reservation while the record remains. Deleting the record allows reuse, including automatic deletion when `jobs.deleteJobOnComplete` is enabled.
+
+This is duplicate rejection, not a lookup that returns the existing job. It does not prevent a recovered job from repeating an external side effect.
+
+## Run and manage jobs
+
+Access the API through `req.frogbot.jobs` or your initialized `frogbot.jobs` instance.
+
+| Method                                                             | Purpose                                                        |
+| ------------------------------------------------------------------ | -------------------------------------------------------------- |
+| `queue({ task, input, ... })` or `queue({ workflow, input, ... })` | Create a job and return its record.                            |
+| `run({ queue, limit, ... })`                                       | Claim and await one batch; defaults to 10 jobs from `default`. |
+| `runByID({ id, ... })`                                             | Run one eligible job by its generated record ID.               |
+| `handleSchedules({ allQueues, queue, req })`                       | Enqueue scheduled jobs without executing them.                 |
+| `cancel({ where, queue, ... })`                                    | Cancel matching incomplete jobs.                               |
+| `cancelByID({ id, ... })`                                          | Cancel one job by its generated record ID.                     |
+
+For example, a maintenance loop can schedule and run across every queue:
+
+```ts
+await frogbot.jobs.handleSchedules({ allQueues: true, req });
+
+await frogbot.jobs.run({ allQueues: true, limit: 10, req });
+```
+
+`run` also accepts `where`, `processingOrder`, `sequential`, and `silent`. Jobs run in parallel unless `sequential: true`. Queue, run, and cancel operations bypass access checks by default; pass `overrideAccess: false` and `req` to enforce the corresponding `jobs.access` rule.
+
+An exceptional completion or database-write failure can reject a batch before already-started sibling work finishes. The batch promise does not guarantee that siblings have drained after such a failure.
+
+<Note>
+  Local API `run({ limit: 0 })` means unlimited. Only the worker CLI treats
+  `--limit 0` as “run no jobs.”
+</Note>
+
+## Task callbacks and retries
+
+Task definitions support `onSuccess` and `onFail`. Both callbacks are awaited: `onSuccess` runs after a successful handler, before its success checkpoint is saved; `onFail` runs when a task attempt fails, including attempts that will retry. It is not a final-failure-only callback.
+
+Configured retries and checkpoint restoration remain supported. By default, a previously completed task restores its saved output without rerunning its handler or `onSuccess`; retry settings can disable restoration. Work without a durable checkpoint can run again, including callback side effects.
+
+Job execution uses atomic claims and direct job-record updates. It does not run jobs collection hooks; `jobs.runHooks` and job-execution `jobs.depth` are unsupported and are not exposed in FrogBot configuration. Ordinary application collection hooks, including those invoked by collection operations inside a task, remain supported.
+
+## Leases and crash recovery
+
+FrogBot atomically claims jobs through its database adapters and renews their leases while the run promise is pending. Renewal covers the local `run` and `runByID` APIs, REST job execution, web autorun, and the worker CLI. Task and workflow handlers need no heartbeat code. An exceptional early batch rejection ends renewal even if sibling work is still running.
+
+| Setting              | Value                                                                |
+| -------------------- | -------------------------------------------------------------------- |
+| `jobs.leaseDuration` | Milliseconds; default `300000` (five minutes).                       |
+| Renewal cadence      | Derived as `leaseDuration / 5`; one minute by default.               |
+| Recovery sweep       | `frogbot-sweep-jobs`, scheduled every minute in the `default` queue. |
+
+Set `jobs.leaseDuration` in `frogbot.config.ts` to tune recovery. It must be an integer from `5` to `2147483647`. Choose a duration with headroom for event-loop pauses and database delays; it is not a maximum job runtime.
+
+The sweep releases expired, still-processing, incomplete jobs so workers can claim them again. Renewal and release check a private owner token, so an old worker cannot renew or reset a successor's lease. Completed jobs are left alone.
+
+**Keep a scheduler and worker running that cover the `default` queue**, or use `allQueues: true` for both scheduling and execution. They can share one process. Workers that only process a custom queue do not run recovery maintenance; lease expiry alone does not release a job. Recovery timing includes lease expiry, the next sweep's scheduling and execution, and a subsequent worker tick; queue backlog can extend it.
+
+Recovery is **at least once**. A crash, database outage, or event-loop stall can lose the lease after an external action has already happened. Ownership checks protect lease mutations, not external effects or stale completion writes. Make external operations idempotent, for example with the destination service's idempotency key.
+
+## Database requirements
+
+Use the FrogBot adapters: `@frogbotai/db-postgres`, `@frogbotai/db-vercel-postgres`, `@frogbotai/db-sqlite`, `@frogbotai/db-d1-sqlite`, or `@frogbotai/db-mongodb`. They provide atomic claims and conditional lease updates without Redis.
+
+The jobs collection includes unique `jobId`, indexed `leaseUntil`, and private `leaseOwner` fields. Apply the generated [database migrations](/database/migrations) before starting SQL-backed workers. See [SQLite and D1 requirements](/deployment/jobs#sqlite-and-d1) for `RETURNING` support and local development.

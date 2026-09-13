@@ -1,4 +1,5 @@
 import type { CatalogModelId } from '../ai/generated.js';
+import type { UntypedJobs } from '../jobs/types.js';
 
 // FrogBot's generated-types contract.
 //
@@ -20,6 +21,7 @@ export interface UntypedFrogbotTypes {
   collections: {
     [slug: string]: Record<string, unknown> & TypeWithID;
   };
+  jobs: UntypedJobs;
   models: CatalogModelId;
   roles: string;
 }

@@ -15,6 +15,7 @@ import type { ConnectionsConfig } from '../connections/types.js';
 import type { DatabaseAdapter } from '../database/types.js';
 import type { Endpoint } from '../endpoints/types.js';
 import type { Frogbot } from '../frogbot.js';
+import type { JobsConfig } from '../jobs/types.js';
 import type { EmailPieceInstance, Piece } from '../pieces/types.js';
 import type { Plugin } from '../plugin.js';
 import type { AnyTool } from '../tools/types.js';
@@ -47,6 +48,7 @@ type FrogbotOverridden =
   | 'endpoints'
   | 'globals'
   | 'hooks'
+  | 'jobs'
   | 'onInit'
   | 'plugins'
   | 'secret';
@@ -58,6 +60,7 @@ export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   secret: string;
   /** Database adapter from a third-party package. */
   db: DatabaseAdapter;
+  jobs?: JobsConfig;
   /** Collections authored with FrogBot's `CollectionConfig`. */
   collections: CollectionConfig[];
   email?: EmailPieceInstance | PayloadConfig['email'];

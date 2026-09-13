@@ -162,6 +162,7 @@ export type {
 } from './collections/config/types.js';
 export type { AfterErrorHook, FrogbotConfig, OnInit, RootHooks } from './config/types.js';
 export type { DatabaseAdapter } from './database/types.js';
+export type { JobQueueArgs, Jobs, JobsConfig } from './jobs/types.js';
 export type { DatabaseKVAdapterOptions } from './kv/adapters/DatabaseKVAdapter.js';
 export { databaseKVAdapter } from './kv/adapters/DatabaseKVAdapter.js';
 export { KVLeaseLostError, KVLockContentionError, KVUnsupportedError } from './kv/errors.js';
