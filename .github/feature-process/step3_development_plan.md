@@ -4,20 +4,20 @@ Proceed after `Approved Step 2`, unless the owner has [skipped planning steps](F
 
 ## Objective
 
-Turn the approved approach into cohesive implementation stages with explicit dependencies, intermediate states, handoff boundaries, and a dedicated ticket-level testing stage.
+Break the approved approach into stages of related work. State what each stage needs, what it leaves unfinished, who can work on it, and how the finished feature will be tested.
 
 ## Structure
 
-Read `research.md`, then link approved Steps 1–2 and applicable program contracts. Record the ticket branch/worktree, canonical artifact folder, current approvals, and any implementation hold.
+Read `research.md`, then link approved Steps 1–2 and requirements shared across tickets. Record the ticket branch/worktree, ticket-document folder, current approvals, and any instruction not to begin implementation.
 
 For each numbered stage include:
 
-- **Goal:** the observable result and acceptance criteria it satisfies.
-- **Dependencies:** prerequisite stages and contracts that must already exist.
-- **Expected changes:** relevant files/domains, public signatures when needed, and canonical components/contracts to reuse.
-- **Intermediate checks:** checks that meaningfully apply now and validation deferred until named dependent stages complete. Record expected incomplete wiring; do not require broad suites to pass against deliberately transitional work. For a bug, plan proof of the actual pre-fix mechanism before changing it when feasible.
+- **Goal:** the result we can check and which requirements it satisfies.
+- **Dependencies:** stages that must finish first and interfaces that must already exist.
+- **Expected changes:** relevant files or areas, public API signatures when needed, and existing shared components or interfaces to reuse.
+- **Intermediate checks:** what can be tested now and what must wait for a named later stage. State what will not be connected yet; do not require full suites to pass against intentionally unfinished work. For a bug, plan to reproduce the original failure before changing the code when feasible.
 - **Work boundary:** related work that can share a subagent session, where a fresh session should start, and files that must not be edited concurrently.
-- **Risks:** unresolved dependencies or environmental requirements. Product/architecture blockers belong in the earlier gate, not an implementation TODO.
+- **Risks:** dependencies or test setup still needed. Settle unresolved product or design decisions in the earlier step, rather than leaving them as implementation TODOs.
 
 ## Guardrails
 
@@ -30,19 +30,17 @@ For each numbered stage include:
 
 ## Required ticket-level testing stage
 
-Place this stage after the ticket's behavior is coherent, before completion or Git handoff. Assign a fresh verification agent the approved requirements, research, relevant source, and whole ticket diff; it should challenge the implementation independently of the worker's reasoning.
+Place this stage after the feature's parts work together, before calling the ticket complete. Assign a fresh agent the approved requirements, research, relevant source, and whole ticket diff. It should check the work independently, not rely on the implementer's claim that it is correct.
 
-| Pass        | Required plan                                                                                                                                                                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Acceptance  | Map each requirement to observable assertions. Use unit tests for logic, integration tests for real boundaries, and relevant E2E tests for changed user/API/CLI journeys.                                           |
-| Adversarial | Identify plausible ways the feature can fail, with justified cases such as missing permissions, invalid inputs, cold starts, duplicate requests, retries, partial failures, persistence/read-back, and concurrency. |
-| Regression  | Exercise adjacent affected behavior. For bugs, include the original failure and any tests that previously asserted the broken behavior.                                                                             |
+- **Required behavior (acceptance):** Show how each requirement will be checked. Choose unit, integration, and end-to-end tests that prove the relevant behavior.
+- **Failure cases (adversarial):** Test realistic ways the feature could fail, chosen for their likelihood or consequences. Examples include missing permissions, invalid input, duplicate requests, retries, partial writes, and simultaneous requests. Explain why the selected cases matter; this is not a checklist every feature must satisfy.
+- **Related behavior (regression):** Check existing behavior the change could break. For bug fixes, include the original failure and correct tests that previously expected the bug.
 
-Name test files/commands, environment and fixture needs, expected outcomes, and justified non-applicable layers. Browser flows apply to UI work; E2E is not limited to browsers. Prefer deterministic fixtures at external boundaries; do not mock the internal behavior being proven. No arbitrary test-count quota or busywork tests for unchanged behavior.
+Name test files and commands, required test data and services, expected results, and any types of testing that do not apply. Browser tests apply to UI work; end-to-end tests can also exercise APIs and CLIs. Follow the [contributor testing rules](../../CONTRIBUTING.md#verification) for repeatable tests and real application checks. Do not invent a test-count target or add tests for unrelated, unchanged behavior.
 
 Follow the [root test-placement rule](../../CONTRIBUTING.md#verification): new tests, fixtures, helpers, and test-only apps belong under root `test/`, not beside production code. Use the existing test layout and runner configuration.
 
-For Markdown-only tickets, this stage verifies formatting, links, examples, and instruction/content consistency rather than application behavior. Verification failures return to implementation and re-verification; they cannot be dismissed by weakening assertions or silently reducing approved scope.
+For Markdown-only tickets, check formatting, links, examples, and whether the instructions agree with each other, rather than running application tests. Plan to handle findings using [When tests find a problem](../../CONTRIBUTING.md#when-tests-find-a-problem): fix broken promises, make agreed limitations clear, and ask before expanding the feature.
 
 ## Next
 

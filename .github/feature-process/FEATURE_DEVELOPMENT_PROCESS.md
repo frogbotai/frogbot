@@ -1,6 +1,6 @@
 # Feature development process
 
-Feature work starts with intake and delegated research, then four steps: agree on the outcome, agree on the approach, approve the plan, and implement and verify it. Read this overview and the current step only; load later execution instructions when authorized. Do not reprint these instructions.
+Feature work starts by understanding the request and assigning research, then follows four steps: agree on the outcome, agree on the approach, approve the plan, and implement and test it. Read this overview and the current step only; read later steps when authorized. Do not reprint these instructions.
 
 ## When to use this process
 
@@ -10,14 +10,15 @@ Feature work starts with intake and delegated research, then four steps: agree o
 - A clear instruction to resume implementation of the same work lifts its earlier planning-only hold. A plan approval or unrelated request does not. If the scope is unclear, clarify it.
 - These exceptions apply to every step below. They do not grant permission to stage, commit, merge, push, open a PR, or change branch/worktree setup. Existing Git permissions remain unchanged.
 
-## Instructions and artifacts
+## Instructions and ticket documents
 
-- This directory contains the canonical shared process instructions. [CONTRIBUTING.md](../../CONTRIBUTING.md) owns coding, architecture, verification, and contribution conventions; `CLAUDE.md` routes agents to the relevant instructions.
-- Deliverables stay in a dedicated local `.idea/{feature_name}/` folder, or an existing `.idea/tickets/{ticket_folder}/` or program subfolder. Never stage or commit anything under `.idea/`.
-- Keep one current requirements source. Link existing program contracts and owner rulings instead of redesigning them in each ticket.
-- If referenced local artifacts are missing in a fresh checkout, request them or establish new ones with the owner. Do not invent prior approvals or decisions.
-- `research.md` is the first ticket artifact every fresh worker reads. It supplies verified evidence and focused navigation, not a replacement for approved requirements. Step 0 delegates to the existing global `research` agent without overriding its model.
-- Use one ticket branch, preferably in its own worktree, with a canonical artifact folder recorded at intake. Fresh subagent sessions share that workspace; they do not create new branches or divergent copies of ignored plans.
+- This directory contains the shared process instructions. [CONTRIBUTING.md](../../CONTRIBUTING.md) defines coding, architecture, testing, and contribution rules; [CLAUDE.md](../../CLAUDE.md) tells agents which guides to read.
+- Keep ticket documents in a dedicated local `.idea/{feature_name}/` folder, or an existing `.idea/tickets/{ticket_folder}/` or program subfolder. Never stage or commit anything under `.idea/`.
+- Keep one current set of requirements. Link requirements and owner decisions shared across tickets instead of rewriting them in each ticket. Here, a **contract** means agreed behavior or an interface that other code relies on.
+- If referenced ticket documents are missing in a fresh checkout, request them or establish new ones with the owner. Do not invent prior approvals or decisions. Direct work follows the exception above.
+- In planned work, `research.md` is the first ticket document a fresh worker reads. It supplies checked facts and links to relevant code, not a replacement for approved requirements. Step 0 delegates to the existing global `research` agent without overriding its model.
+- A worker's final message is normally its handoff to the coordinator. Keep decisions, results, and remaining work in the existing ticket documents; do not copy every return into a new file. See [Step 4](step4_implementation.md#assignment-and-handoff-format) for the limited cases that need a separate file.
+- Use one ticket branch, preferably in its own worktree, and record the ticket-document folder at intake. Workers share that workspace; they do not create new branches or separate copies of ignored plans.
 
 ## Step guide
 
@@ -42,18 +43,18 @@ Historical tickets may use a different filename order. Identify their approved c
 
 ## Working rules
 
-- Steps 1 and 2 are mandatory alignment gates, even when only one implementation direction is viable.
-- Research factual uncertainties before asking the owner to choose. Owner questions concern outcomes, scope, or material trade-offs, with enough context to answer in one pass.
-- Reuse canonical components and API contracts. Verify that they exist and are wired into the relevant path.
+- Unless the owner skips planning, complete Steps 1 and 2 even when only one approach is workable.
+- Check facts before asking the owner to choose. Ask about outcomes, scope, or choices with meaningful costs, and give enough context to answer without a follow-up explanation.
+- Reuse existing shared components and API definitions. Check that they exist and are used in the relevant code path.
 - Keep documents concise, but do not sacrifice decision context to a one-page limit. Link detailed evidence rather than repeating it.
-- Use cohesive stages with explicit intermediate states. Every ticket includes a dedicated verification stage once its behavior is coherent: acceptance, adversarial cases, and regression checks. Do not run broad suites through deliberately incomplete wiring or treat intermediate progress as ticket acceptance.
+- Group related work into stages and state what remains incomplete after each one. Once the feature works as a whole, test the agreed behavior, realistic failure cases, and related behavior that could break. Follow [CONTRIBUTING.md](../../CONTRIBUTING.md#when-tests-find-a-problem) when tests reveal a problem; not every new finding is a requirement to expand the feature. Do not run full suites against intentionally unfinished work or call partial progress complete.
 - If the feature exceeds roughly a day or eight stages, propose a split before implementation. Do not compress code to satisfy a line-count target.
-- Assess schema changes against the approved contract; do not introduce compatibility scaffolding merely to avoid a necessary change.
-- If new evidence changes approved behavior or architecture, stop affected work and return to the relevant approval gate.
-- Reconcile accepted rulings into current requirements, examples, and success criteria. Clearly mark historical decisions as superseded; do not leave conflicting instructions active.
+- Make schema changes when the approved behavior needs them; do not add extra compatibility code merely to avoid a necessary change.
+- If new evidence means changing the approved behavior or design, pause the affected work and ask for approval of that change.
+- Update requirements, examples, and success criteria when the owner makes a decision. Mark replaced decisions as no longer current; do not leave conflicting instructions active.
 
 ## Completion and commits
 
-After each implementation stage, record changes, meaningful checks, and any validation deferred to the ticket-level testing stage. Continue through the approved plan; do not create per-stage commits or proposed commit messages.
+After each implementation stage, update the existing summary with changes, checks run, and checks that must wait for later stages. Continue through the approved plan; do not create per-stage commits or proposed commit messages.
 
-Keep implementation changes unstaged and uncommitted until Git actions are requested, preserving any pre-existing index state. Hand off the entire ticket diff, including new untracked files. When explicitly authorized, finish with one squashed ticket commit and merge into `main`; do not create artificial intermediate commits just to squash them. Keep each completed and verified F feature separate in multi-feature programs. The owner's later manual uncommit/review workflow is not permission for the agent to reset history. Local planning artifacts remain excluded even when approved.
+Keep implementation changes unstaged and uncommitted until the owner requests Git actions; preserve anything already staged. Review the entire ticket diff, including new untracked files. When committing is authorized, make one final ticket commit; do not create intermediate commits just to squash them. Merge into `main` only with separate authorization. Keep each completed and verified F feature separate in multi-feature programs. The owner's later manual uncommit/review workflow is not permission for the agent to reset history. Local planning documents remain excluded even when approved.

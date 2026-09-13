@@ -1,12 +1,12 @@
 # Step 0: Intake and research
 
-Ground the ticket before [Step 1](step1_feature_description.md) becomes approval-ready. Follow the [canonical overview](FEATURE_DEVELOPMENT_PROCESS.md) for approval gates. Step 0 establishes facts, evidence, and navigation; it adds no owner approval phrase and does not approve a design.
+Check the facts before asking the owner to approve [Step 1](step1_feature_description.md). Follow the [overview](FEATURE_DEVELOPMENT_PROCESS.md) for approvals. Step 0 records what we know and where to find the relevant code; it needs no separate owner approval and does not approve a design.
 
 ## Intake and scope
 
-1. Read the request and relevant sections of `.idea/issue_triage.md`, existing tickets, program contracts, and owner rulings. Inspect overlaps, dependencies, priority calibration, and prior scope decisions; reading the entire historical ledger is not mandatory.
+1. Read the request and relevant sections of `.idea/issue_triage.md`, existing tickets, shared requirements, and owner decisions. Check for overlapping work, dependencies, priorities, and earlier scope decisions; do not read the entire history unless needed.
 2. Reuse the existing ticket and artifact folder when the scope matches. For new tickets, continue above the highest existing local `.idea/tickets/ticketNN_*` number, checking recorded reservations too. GitHub issue IDs are a separate mapping, never the ticket-number source.
-3. Record the exact ask, affected users/surfaces, repository ownership, priority/type, dependencies, and exclusions already authorized. Verify root-cause claims against source before publishing triage conclusions; issue text alone is not evidence.
+3. Record the exact request, affected users and features, repositories involved, priority/type, dependencies, and agreed exclusions. Check claimed causes against source code before publishing conclusions; an issue description alone is not proof.
 4. For a batch, append a dated `Issue Triage — Batch N` section with issue-to-ticket mapping, overlap notes, and a **Suggested Order** table: order, ticket, issues, priority, type. Explain dependencies and shared-file sequencing. Preserve previous entries and tables.
 5. Research may recommend rejecting or narrowing scope, but cannot settle that decision. Surface “research recommends rejecting X” in the batch summary and obtain an owner ruling before dependent step planning. Historical deferrals are not current authorization: check whether prerequisites have shipped. Do not add acceptance criteria, close an issue as deferred, or split away blocked external surfaces without owner agreement. Filing or closing issues and posting or editing public issue/PR comments require explicit authorization, not merely research or step approval. New issues may describe authorized future work; closure must reflect completed scope or an explicit owner disposition without falsely claiming implementation.
 
@@ -14,19 +14,19 @@ Ground the ticket before [Step 1](step1_feature_description.md) becomes approval
 
 - Select one ticket branch, preferably in its own worktree. Record the current repository root, branch, base revision, relevant existing changes, and existing artifact/contract paths before setup. Reuse an appropriate existing workspace; do not create a branch per subagent.
 - Create or switch branches/worktrees only when authorized. Planning-only work must not mutate source or Git state; read-only assignments must not write artifacts either. Record proposed setup when permission is absent. Planning artifact edits require their own allowed scope, and plan approval never lifts an implementation hold.
-- Keep one canonical local artifact folder. Ignored `.idea/` artifacts are not shared across worktrees: pass its **absolute path** to every worker, separately from the code worktree path. Record missing access/context as a blocker; do not fabricate approvals or silently create divergent copies.
+- Keep ticket documents in one local folder. Ignored `.idea/` files are not shared across worktrees: pass the folder's **absolute path** to every worker, separately from the code worktree path. Report missing access or required context; do not invent approvals or create separate copies.
 - Keep `.idea/` artifacts out of staging and commits. Implementation and handoffs follow [Step 4](step4_implementation.md). Use one ticket-level final commit only when authorized, with no per-stage commits or proposed messages. Merge into `main` only when explicitly authorized; manual uncommit operations remain with the owner.
 
 ## Delegate evidence gathering
 
-Use the existing global `research` agent at `~/.config/opencode/agent/research.md`. Read its current instructions and retain its configured cheaper model unchanged; do not recreate the agent, edit global configuration, or override its model in dispatch. Availability is harness-specific. If the agent is unavailable, report that and request an authorized equivalent; never silently substitute a more expensive worker.
+Use the existing global `research` agent at `~/.config/opencode/agent/research.md`. Read its current instructions and keep its configured model; do not recreate the agent, edit global configuration, or override its model in the assignment. Available agents depend on the tool running the session. If this agent is unavailable, report that and ask which replacement to use; do not silently substitute a more expensive worker.
 
-Give each assignment one `research.md` output using the [required outline](#research-document-outline) below. Parallelize independent tickets only with separate artifact ownership. Include:
+Give each ticket one `research.md` using the [outline](#research-document-outline) below. Update that document for follow-up research rather than adding a report for each worker. Only run research on independent tickets in parallel when their documents are separate. Include:
 
 - The exact question/scope, issue and relevant ledger links, current contract/rulings, and active holds.
-- Absolute code workspace and canonical artifact folder, source revision/known changes, allowed edits, and the single output path.
+- Absolute code workspace and ticket-document folder, source revision/known changes, allowed edits, and the single output path.
 - Applicable repositories and questions they answer; concrete implementation, types, tests, fixtures, and runtime entry points to inspect.
-- Actual findings/reproduction inputs, existing proof tests if any, and required assumption audit, verification map, and return blockers.
+- Known findings, steps or inputs that reproduce the problem, and existing tests if any. Ask the worker to check assumptions, identify useful tests, and report anything that prevents a conclusion.
 
 Name the ticket's actual domain, entry points, and test harness. Existing proof tests are inputs when present, not a prerequisite or evidence that a tagged `it.fails` test exists. The global agent provides research discipline; this step defines FrogBot's workflow and research output. If the installed agent's instructions conflict, report the conflict rather than silently overriding them or mechanically searching irrelevant repositories.
 
@@ -44,7 +44,7 @@ Use these sections in each ticket's `research.md`. Keep them short, link existin
 
 ## Local-source routing
 
-Read relevant implementation **and types and tests**, not just search hits or summaries. For each consulted repository, record its absolute root, revision/package version, relevant dirty state, and full repository-relative `path:line` ranges actually read. Use `repo/path:line` citations tied to that baseline; refresh stale references. Record routing rationale compactly, including relevant unavailable sources and why other candidate sources do not apply.
+Read relevant implementation **and types and tests**, not just search hits or summaries. For each repository used, record its absolute root, revision/package version, relevant uncommitted changes, and repository-relative `path:line` ranges actually read. Keep citations tied to the version checked and update stale references. Briefly explain which sources apply and which relevant sources are unavailable; do not investigate unrelated repositories to fill a checklist.
 
 Reference roots below are normally under `~/code/`; confirm and record the actual paths available in the current environment.
 
@@ -64,21 +64,21 @@ Absence claims require successful multi-term searches, plausible filename search
 
 ## Evidence quality and review
 
-- Separate the user-visible contract from its owning invariant and source of truth. Trace the full relevant production path from entry point through enforcement to consumers: applicable cold/warm, HTTP/local, built-in/custom, generated/fallback, omitted/empty, and failure paths.
-- Prove actual production wiring. Name relevant call sites and their count, or identify missing wiring; a parameter, guard, or hook used only in tests is not enforcement. Restoring wiring is a behavior change that needs planned verification.
-- Mark each assumption **VERIFIED**, **DISPROVEN**, or **INFERRED**, with evidence and consequence. A load-bearing unresolved inference makes status `UNVERIFIED` and blocks dependent planning. A disproven central premise is `REJECTION-CANDIDATE`; `FIX-NOT-RECOMMENDED` is advice, not owner-approved rejection.
-- Explain rejected symptom-level patches and the paths they leave broken. Restore the owning invariant rather than duplicate registries, lists, or consumer checks. Recommendations cannot silently reduce the central ask.
-- For bugs, include current behavior, reproducible steps, and a **Why tests missed it** audit citing the nearest specs and hidden/mock boundaries. Identify tests that codify broken behavior and plan their correction. Feed suite-level lessons into `.idea/test_hardening_todo.md` through the coordinator when edits there are authorized.
-- The coordinator or an independent `explore` reviewer critically checks every load-bearing claim against source, actual wiring, exact intake scope, and current contracts. Record reviewer, baseline, findings, resolution, and verdict. Worker self-review alone cannot make Step 1 approval-ready.
+- Identify what users expect and where the code ensures that behavior. Trace the relevant path from request to result. Check variations that matter to the feature, such as first startup versus reuse, HTTP versus local calls, default versus custom behavior, generated versus fallback types, missing versus empty inputs, and failures.
+- Check that the application actually calls the code being discussed. Name the relevant callers and their count, or identify missing connections; a check used only in tests does not protect real users. Plan tests for any restored connection.
+- Mark assumptions **VERIFIED** (checked), **DISPROVEN** (contradicted by evidence), or **INFERRED** (plausible but not checked), with evidence and consequences. If the proposed solution depends on an unchecked assumption, mark research `UNVERIFIED` and pause dependent planning. If the evidence suggests rejecting the request, explain why and ask the owner; research alone cannot reject it.
+- If a proposed fix only hides a symptom, explain which problem remains. Prefer fixing the code responsible for the behavior rather than adding the same check in several places. Recommendations cannot silently reduce the request or expand the solution; follow the [test-finding rules](../../CONTRIBUTING.md#when-tests-find-a-problem).
+- For bugs, include current behavior, reproducible steps, and **Why tests missed it**, citing the nearest tests and anything they mock or do not exercise. Identify tests that expect broken behavior and plan their correction. Record broader testing lessons in `.idea/test_hardening_todo.md` through the coordinator only when edits there are authorized.
+- The coordinator or an independent `explore` reviewer checks the claims the proposal depends on against source, actual application calls, the request, and current requirements. Record who reviewed which version, findings, corrections, and whether the evidence is sufficient. Worker self-review alone is not enough to request Step 1 approval.
 
 A preliminary Step 1 intake brief is allowed if clearly marked **unresearched — not approval-ready**. No substantive later planning proceeds while research or owner blockers remain. Step 0 factual review adds no `Approved Step 0` gate; recommendations and material scope choices still use Step 1's owner-decision format and existing approval protocol.
 
 ## Verification planning and handoff
 
-Map acceptance criteria and adversarial cases to the owning boundary and relevant production integration/E2E paths. Read current package scripts, test-runner configuration, collected tests, fixtures, and CI wiring to identify actual commands, working directories, setup, and environment requirements; do not copy stale README commands or assume a harness is missing. Label tests **planned**, and distinguish checks actually run with results from not-run/blocked checks.
+For each agreed requirement and realistic failure case, identify which code is responsible and how to test it through the application. Read current package scripts, test-runner configuration, tests, fixtures, and CI setup to find commands, working directories, and environment requirements; do not copy stale README commands or assume test support is missing. Label proposed tests **planned**, and separate their expected results from checks actually run.
 
-Plan a dedicated ticket-level testing stage after coherent implementation: applicable unit, integration, and relevant E2E acceptance plus adversarial coverage. Transitional stages need focused checks, not repeated full suites or an automatic regression-tests-first stage. Bug proof should expose the real pre-fix mechanism without mocking the failing boundary. Docs-only work checks formatting, links, and content. Follow [contribution verification policy](../../CONTRIBUTING.md#verification) and [Step 4](step4_implementation.md) for execution and reporting.
+Plan a testing stage once the feature's parts work together: check the agreed behavior, realistic failure cases, and related behavior that could break. Earlier stages need focused checks, not repeated full suites or an automatic tests-first stage. Bug tests should reproduce the actual failure without replacing the failing component with a mock. Markdown-only work checks formatting, links, examples, and content. Follow [CONTRIBUTING.md](../../CONTRIBUTING.md#verification) and [Step 4](step4_implementation.md) for execution and reporting.
 
-Make `research.md` the fresh worker's **first ticket-artifact read**: concise orientation, evidence/navigation, current holds, blockers, and links to approved contracts and the authorized step. It is not a replacement design document. Recommended direction stays explicitly unapproved until the corresponding owner decision/step approval is recorded.
+Make `research.md` the fresh worker's **first ticket-document read**: a short introduction, evidence, relevant code links, current holds, blockers, and links to approved requirements and the current step. It does not replace those requirements. Recommendations stay unapproved until the owner makes the relevant decision or approves the step.
 
-Update research when source, versions, evidence, wiring, or rulings change; add a dated revision note and identify affected conclusions. Correct the artifact itself rather than leaving discoveries only in chat or later steps. Reopen affected research/approval gates if a change invalidates the direction. Give the next worker a focused read order and changed-evidence list so they verify their boundary without rescanning every repository.
+Update research when changed code, versions, or owner decisions affect its conclusions; add a dated note explaining what changed. Correct the document rather than leaving conflicting advice in chat or later steps. If a change invalidates the approved approach, ask for revised approval. Tell the next worker which evidence changed and what to read, so they can check their part without rescanning every repository.
