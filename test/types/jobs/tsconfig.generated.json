@@ -1,0 +1,7 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["generated.test-d.ts", "requests.test-d.ts", "native.test-d.ts"]
+}

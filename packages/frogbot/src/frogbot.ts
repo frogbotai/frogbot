@@ -70,6 +70,7 @@ import {
   refreshFrogbotConfig,
   registerFrogbotInstance,
 } from './instanceRegistry.js';
+import type { Jobs } from './jobs/types.js';
 import { createKV } from './kv/index.js';
 import type { KV } from './kv/types.js';
 import type { FrogbotLocalAPI } from './localAPI.js';
@@ -150,6 +151,10 @@ export class Frogbot {
   }
   get email() {
     return this.payload.email;
+  }
+
+  get jobs() {
+    return this.payload.jobs as Jobs;
   }
 
   // ── Lifecycle ───────────────────────────────────────────────────────────

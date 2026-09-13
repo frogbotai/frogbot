@@ -5,6 +5,7 @@ import {
   sqliteAdapter as createSQLiteAdapter,
   type SQLiteAdapterArgs,
 } from '@payloadcms/db-sqlite';
+import { installSQLJobOperations } from 'frogbot/jobs';
 
 export { sql } from '@payloadcms/db-sqlite';
 export type { MigrateDownArgs, MigrateUpArgs, SQLiteAdapter, SQLiteAdapterArgs };
@@ -18,11 +19,16 @@ export function sqliteAdapter(args: SQLiteAdapterArgs) {
       const signIn = initArgs.payload.config?.collections.some(
         (collection) => collection.custom?.frogbot?.signIn?.length,
       );
+
       const database =
         signIn && args.transactionOptions === undefined
           ? createSQLiteAdapter({ ...args, transactionOptions: {} }).init(initArgs)
           : adapter.init(initArgs);
+
       database.packageName = '@frogbotai/db-sqlite';
+
+      installSQLJobOperations({ adapter: database, dialect: 'sqlite' });
+
       return database;
     },
   };

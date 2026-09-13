@@ -1833,6 +1833,7 @@ describe('frogbot sanitize', () => {
         'frogbot-reset-ai-budgets',
         'frogbot-run-agent-schedule',
         'frogbot-cleanup-kv',
+        'frogbot-sweep-jobs',
       ]);
       expect(payloadConfig.jobs.autoRun).toEqual([
         { queue: 'user' },

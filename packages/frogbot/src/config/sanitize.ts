@@ -54,6 +54,8 @@ import type { Frogbot } from '../frogbot.js';
 import { initFrogbotFromPayload } from '../frogbot.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
 import { ensureFrogbotInstance } from '../instanceRegistry.js';
+import { resolveJobsConfig } from '../jobs/config.js';
+import { withJobsRuntime } from '../jobs/runtime.js';
 import { databaseKVAdapter } from '../kv/adapters/DatabaseKVAdapter.js';
 import { resolveKVCleanupTask } from '../kv/resolveCleanupTask.js';
 import {
@@ -1294,11 +1296,14 @@ export function sanitize(
   }
 
   const kv = config.kv ?? databaseKVAdapter();
-  const jobs = resolveKVCleanupTask({
-    kv,
-    jobs: Object.keys(triggers).length
-      ? resolveTriggerTasks(resolveScheduleTasks({ agents, jobs: config.jobs }))
-      : resolveScheduleTasks({ agents, jobs: config.jobs }),
+  const jobs = resolveJobsConfig({
+    ...resolveKVCleanupTask({
+      kv,
+      jobs: Object.keys(triggers).length
+        ? resolveTriggerTasks(resolveScheduleTasks({ agents, jobs: config.jobs }))
+        : resolveScheduleTasks({ agents, jobs: config.jobs }),
+    }),
+    leaseDuration: config.jobs?.leaseDuration,
   });
 
   // Resolve chat persistence — adopt marked collections or inject defaults.
@@ -1378,6 +1383,10 @@ export function sanitize(
     ],
     attachFrogbot,
   );
+  payloadConfig.db = withJobsRuntime({
+    adapter: payloadConfig.db,
+    leaseDuration: jobs.leaseDuration,
+  });
   const payloadSanitizedPromise = payloadBuildConfig(payloadConfig).then((built) => {
     for (const collection of built.collections) {
       if (collection.custom?.frogbot?.signIn?.length) validateSignInFields(collection);
