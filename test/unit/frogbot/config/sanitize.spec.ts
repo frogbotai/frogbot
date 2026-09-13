@@ -281,6 +281,7 @@ describe('frogbot sanitize', () => {
       { slug: 'users', auth: true },
       { slug: 'projects', auth: false },
       { slug: 'trigger-subscriptions', auth: false },
+      { slug: 'frogbot-waitpoints', auth: false },
       { slug: 'files', auth: false },
     ]);
   });
@@ -539,8 +540,9 @@ describe('frogbot sanitize', () => {
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
     const endpoints = (payloadConfig as any).endpoints as any[];
-    expect(endpoints).toHaveLength(2);
-    expect(endpoints[0].handler).not.toBe(handler);
+
+    expect(endpoints).toHaveLength(5);
+    expect(endpoints.find(({ path }) => path === '/health').handler).not.toBe(handler);
   });
 
   it('binds endpoint requests to the Frogbot instance for their Payload instance', async () => {
@@ -553,9 +555,10 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
     const endpoint = (
       payloadConfig as unknown as {
-        endpoints: { handler: (req: unknown) => Promise<Response> }[];
+        endpoints: { path: string; handler: (req: unknown) => Promise<Response> }[];
       }
-    ).endpoints[0];
+    ).endpoints.find(({ path }) => path === '/health')!;
+
     const payload = {};
     const frogbot = { agents: {} };
     registerFrogbotInstance(payload, frogbot as any);
@@ -648,10 +651,11 @@ describe('frogbot sanitize', () => {
       makeConfig({ endpoints: [{ path: '/health', method: 'get', handler }] }),
     );
     const payloadConfig = await result._internal.payloadConfig;
-    const endpoint = (payloadConfig as any).endpoints[0];
+    const endpoint = (payloadConfig.endpoints || []).find(({ path }) => path === '/health')!;
+
     const payload = makePayload(payloadConfig);
 
-    const response = await endpoint.handler({ payload });
+    const response = await endpoint.handler({ payload } as never);
 
     await expect(response.json()).resolves.toEqual({ attached: true });
     expect(getFrogbotInstance(payload)).toBeDefined();
@@ -685,11 +689,12 @@ describe('frogbot sanitize', () => {
       }),
     );
     const payloadConfig = await result._internal.payloadConfig;
-    const endpoint = (payloadConfig as any).endpoints[0];
+    const endpoint = (payloadConfig.endpoints || []).find(({ path }) => path === '/health')!;
+
     const payload = makePayload(payloadConfig);
 
-    const first = endpoint.handler({ payload });
-    const second = endpoint.handler({ payload });
+    const first = endpoint.handler({ payload } as never);
+    const second = endpoint.handler({ payload } as never);
     await vi.waitFor(() => expect(onInit).toHaveBeenCalledOnce());
     release();
     await Promise.all([first, second]);
@@ -710,10 +715,11 @@ describe('frogbot sanitize', () => {
       }),
     );
     const payloadConfig = await result._internal.payloadConfig;
-    const endpoint = (payloadConfig as any).endpoints[0];
+    const endpoint = (payloadConfig.endpoints || []).find(({ path }) => path === '/health')!;
+
     const payload = makePayload(payloadConfig);
 
-    await expect(endpoint.handler({ payload })).rejects.toBe(error);
+    await expect(endpoint.handler({ payload } as never)).rejects.toBe(error);
     expect(handler).not.toHaveBeenCalled();
   });
 
@@ -1050,7 +1056,14 @@ describe('frogbot sanitize', () => {
     });
     const result = sanitize(config);
     const slugs = result.collections.map((c) => c.slug);
-    expect(slugs).toEqual(['alpha', 'beta', 'gamma', 'trigger-subscriptions', 'files']);
+    expect(slugs).toEqual([
+      'alpha',
+      'beta',
+      'gamma',
+      'trigger-subscriptions',
+      'frogbot-waitpoints',
+      'files',
+    ]);
   });
 
   describe('ai.providers', () => {
@@ -1553,6 +1566,9 @@ describe('frogbot sanitize', () => {
       expect(result.agents?.[0].access).toBeTypeOf('function');
       expect((payloadConfig as any).agents).toBeUndefined();
       expect((payloadConfig as any).endpoints.map((endpoint: any) => endpoint.path)).toEqual([
+        '/jobs/:token/resume',
+        '/jobs/:token/resume',
+        '/jobs/:token/resume',
         '/frogbot',
         '/agents/:slug',
         '/agents/:slug/authorizations',
@@ -1578,7 +1594,7 @@ describe('frogbot sanitize', () => {
       expect(result.chat.enabled).toBe(false);
       expect(
         (payloadConfig as { endpoints?: { path: string }[] }).endpoints?.map(({ path }) => path),
-      ).toEqual(['/frogbot']);
+      ).toEqual(['/jobs/:token/resume', '/jobs/:token/resume', '/jobs/:token/resume', '/frogbot']);
     });
 
     it.each([
@@ -1599,7 +1615,12 @@ describe('frogbot sanitize', () => {
           Array.isArray(payloadEndpoints)
             ? payloadEndpoints.map(({ path }) => path)
             : payloadEndpoints,
-        ).toEqual(expected);
+        ).toEqual([
+          '/jobs/:token/resume',
+          '/jobs/:token/resume',
+          '/jobs/:token/resume',
+          ...expected,
+        ]);
       },
     );
 
@@ -1904,9 +1925,9 @@ describe('frogbot sanitize', () => {
       expect(payloadConfig.jobs.tasks.map(({ slug }) => slug)).toEqual([
         'user-task',
         'frogbot-reset-ai-budgets',
+        'frogbot-sweep-jobs',
         'frogbot-run-agent-schedule',
         'frogbot-cleanup-kv',
-        'frogbot-sweep-jobs',
       ]);
       expect(payloadConfig.jobs.autoRun).toEqual([
         { queue: 'user' },
@@ -2178,6 +2199,7 @@ describe('frogbot sanitize', () => {
         'messages',
         'usage-logs',
         'trigger-subscriptions',
+        'frogbot-waitpoints',
         'files',
       ]);
       const payloadConfig = await result._internal.payloadConfig;
@@ -2188,6 +2210,7 @@ describe('frogbot sanitize', () => {
         'messages',
         'usage-logs',
         'trigger-subscriptions',
+        'frogbot-waitpoints',
         'files',
       ]);
     });

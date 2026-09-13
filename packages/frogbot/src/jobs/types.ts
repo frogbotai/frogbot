@@ -4,12 +4,19 @@ import type {
   Payload,
   PayloadRequest,
   TypedJobs as PayloadTypedJobs,
+  WorkflowConfig as PayloadWorkflowConfig,
+  WorkflowHandler as PayloadWorkflowHandler,
 } from 'payload';
 
 import type { FrogbotTypes } from '../types/generated.js';
 import type { FrogbotRequest } from '../types/request.js';
+import type { WaitFor, WaitpointOptions } from './waitpoints/types.js';
 
-export type JobsConfig = Omit<PayloadJobsConfig, 'runHooks' | 'depth'> & { leaseDuration?: number };
+export type JobsConfig = Omit<PayloadJobsConfig, 'runHooks' | 'depth' | 'workflows'> & {
+  leaseDuration?: number;
+  waitpoints?: Partial<WaitpointOptions>;
+  workflows?: WorkflowConfig<any>[];
+};
 
 export type UntypedJobs = {
   tasks: Record<string, { input?: JsonObject; output?: JsonObject }>;
@@ -21,6 +28,24 @@ type TypedJobs = FrogbotTypes['jobs'];
 type JobTaskSlug = Extract<keyof TypedJobs['tasks'], string>;
 
 type JobWorkflowSlug = Extract<keyof TypedJobs['workflows'], string>;
+
+type WorkflowInput<T extends false | JobWorkflowSlug | object> = T extends JobWorkflowSlug
+  ? TypedJobs['workflows'][T]['input']
+  : T;
+
+export type WorkflowHandler<T extends false | JobWorkflowSlug | object = false> = (
+  args: Parameters<PayloadWorkflowHandler<WorkflowInput<T>>>[0] & { waitFor: WaitFor },
+) => ReturnType<PayloadWorkflowHandler<WorkflowInput<T>>>;
+
+export type WorkflowConfig<T extends false | JobWorkflowSlug | object = false> = Omit<
+  PayloadWorkflowConfig<WorkflowInput<T>>,
+  'handler' | 'slug'
+> & {
+  handler:
+    | WorkflowHandler<T>
+    | Exclude<PayloadWorkflowConfig<string>['handler'], PayloadWorkflowHandler<string>>;
+  slug: T extends JobWorkflowSlug ? T : string;
+};
 
 type JobSlug = JobTaskSlug | JobWorkflowSlug;
 
@@ -87,11 +112,17 @@ export type Jobs = {
   ) => ReturnType<Payload['jobs'][K]>;
 } & {
   queue: <T extends JobSlug>(args: JobQueueArgs<T>) => Promise<JobQueueResult<T>>;
+  resume: (args: {
+    token: string;
+    data: unknown;
+    req?: FrogbotRequest | PayloadRequest;
+  }) => Promise<{ jobId?: number | string }>;
 };
 
 declare const _nativeQueue: Payload['jobs']['queue'];
 
 export type JobsRuntime = Omit<Payload['jobs'], 'queue'> & {
+  resume: Jobs['resume'];
   queue: <T extends keyof PayloadTypedJobs['tasks'] | keyof PayloadTypedJobs['workflows']>(
     args: Parameters<typeof _nativeQueue<T>>[0] & { jobId?: string },
   ) => ReturnType<typeof _nativeQueue<T>>;
