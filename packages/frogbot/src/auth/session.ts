@@ -46,6 +46,7 @@ export async function issueSession({
       ? payloadReq.transactionID
       : undefined,
   };
+
   let sid: string | undefined;
   let writeAttempted = false;
   let subjectId = userId;
@@ -96,6 +97,7 @@ export async function issueSession({
     fn: async ({ signal, cleanups }) => {
       cleanups.add(revoke);
       signal.throwIfAborted();
+
       const authoritative = await payload.db.findOne<TypedUser>({
         collection: collectionSlug,
         req: dbReq,
@@ -132,6 +134,7 @@ export async function issueSession({
       sessionPayload.db = Object.create(payload.db) as typeof payload.db;
       sessionPayload.db.updateOne = ({ data }) =>
         writeSessions({ sessions: data.sessions, signal });
+
       try {
         await addSessionToUser({
           collectionConfig,
@@ -144,6 +147,7 @@ export async function issueSession({
           sid = sessionUser.sessions?.find((session) => !previousSids.has(session.id))?.id;
         }
       }
+
       signal.throwIfAborted();
 
       if (auth.maxLoginAttempts > 0) {
@@ -209,6 +213,7 @@ export async function issueSession({
       ]) {
         delete user[field];
       }
+
       payloadReq.user = user;
       return { user, token, exp };
     },

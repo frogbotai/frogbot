@@ -190,11 +190,13 @@ export async function generateAgentRequest({
   model?: AgentInstance['config']['model'];
 }) {
   const resolvedModel = resolveModel(model ?? agent.config.model, req.frogbot.config.ai!);
+
   const result = await agent.aiAgent.generate({
     messages: await convertToModelMessages(uiMessages, { tools: agent.aiAgent.tools }),
     options: { req, overrideAccess: true, chatId, model },
     abortSignal: req.signal ?? undefined,
   });
+
   if (chatId !== undefined) {
     const message = await generateMessage({
       result,
@@ -211,5 +213,6 @@ export async function generateAgentRequest({
       mainModel: resolvedModel,
     });
   }
+
   return result;
 }

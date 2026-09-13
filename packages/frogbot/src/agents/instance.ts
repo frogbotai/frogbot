@@ -86,7 +86,9 @@ export function createAgentInstance(
         status: 403,
       });
     }
+
     const runId = options.runId ?? generateId();
+
     return {
       req,
       runId,
@@ -246,6 +248,7 @@ export function createAgentInstance(
         status: 403,
       });
     }
+
     const incoming = await toPersistentMessages(runOpts, tools);
     const context = await resolveChatContext({
       req,
@@ -336,5 +339,6 @@ async function toPersistentMessages(
       status: 400,
     });
   }
+
   return validateUIMessages({ messages, tools: tools as never });
 }

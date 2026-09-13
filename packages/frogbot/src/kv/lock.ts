@@ -14,6 +14,7 @@ export async function runKVLock<T>({
   fn: KVLockCallback<T>;
 }): Promise<T> {
   validateKVTTL(ttl);
+
   const controller = new AbortController();
   const errors: unknown[] = [];
   let stopped = false;
@@ -25,6 +26,7 @@ export async function runKVLock<T>({
   let renewal: Promise<void> | undefined;
   let release: Promise<void> | undefined;
   let loseLease!: () => void;
+
   const lostLease = new Promise<void>((resolve) => {
     loseLease = resolve;
   });
@@ -106,6 +108,7 @@ export async function runKVLock<T>({
   let value: T | undefined;
   try {
     watchDeadline();
+
     const acquisition = (async () => {
       try {
         lock = (await kv.acquireLock(key, ttl)) ?? undefined;
@@ -127,6 +130,7 @@ export async function runKVLock<T>({
 
     if ((await Promise.race([acquisition, lostLease])) && checkDeadline()) {
       schedule();
+
       const callback = (async () => {
         try {
           if (checkDeadline()) value = await fn({ signal: controller.signal });
@@ -136,15 +140,19 @@ export async function runKVLock<T>({
           checkDeadline();
         }
       })();
+
       await Promise.race([callback, lostLease]);
     }
   } finally {
     stopped = true;
     clearTimeout(renewalTimer);
+
     checkDeadline();
     if (renewal) await Promise.race([renewal, lostLease]);
+
     checkDeadline();
     if (lock) await Promise.race([releaseLock(lock), lostLease]);
+
     checkDeadline();
     clearTimeout(watchdog);
     settled = true;
@@ -156,5 +164,6 @@ export async function runKVLock<T>({
   if (errors.length === 1) {
     throw errors[0];
   }
+
   return value as T;
 }

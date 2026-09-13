@@ -39,6 +39,7 @@ export function ArtifactProvider({
   registry?: readonly ArtifactRegistryItem[];
 }) {
   const [artifact, setArtifact] = useState<Artifact>();
+
   const loadArtifact = useCallback(
     async (id: string) => {
       const loaded = await persistence?.load(id);
@@ -47,12 +48,14 @@ export function ArtifactProvider({
     },
     [persistence],
   );
+
   async function saveArtifact() {
     if (!artifact || !persistence) return undefined;
     const saved = await persistence.save(artifact);
     setArtifact(saved);
     return saved;
   }
+
   return (
     <ArtifactContext value={{ artifact, loadArtifact, registry, saveArtifact, setArtifact }}>
       {children}

@@ -113,6 +113,7 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
   ) {
     throw new Error(`[frogbot] Piece slug '${definition.slug}' is not URL-safe.`);
   }
+
   const actionSlugs = new Set<string>();
   for (const action of definition.actions) {
     if (!methodSlug.test(action.slug)) {
@@ -132,6 +133,7 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
     }
     actionSlugs.add(action.slug);
   }
+
   const triggerSlugs = new Set<string>();
   for (const trigger of definition.triggers ?? []) {
     if (!methodSlug.test(trigger.slug)) {
@@ -161,6 +163,7 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
       );
     }
   }
+
   if (definition.auth && !definition.client) {
     throw new Error(`[frogbot] Piece '${definition.slug}' declares auth but no client.`);
   }
@@ -199,6 +202,7 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
     if (config.oauth && !definition.oauth) {
       throw new Error(`[frogbot] Piece '${definition.slug}' does not declare OAuth.`);
     }
+
     const { slug = definition.slug, auth: configuredAuth, oauth, ...rawOptions } = config;
     if (
       typeof slug !== 'string' ||
@@ -208,6 +212,7 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
     ) {
       throw new Error(`[frogbot] Piece instance slug '${String(slug)}' is not URL-safe.`);
     }
+
     if (
       oauth &&
       (typeof oauth !== 'object' ||
@@ -242,6 +247,7 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
             req: resolvedReq,
           })
         : { auth: undefined, key: factoryKey };
+
       if (!definition.client) return undefined;
       const runtime = resolvedReq.frogbot as object;
       let runtimeClients = clients.get(runtime);
@@ -249,6 +255,7 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
         runtimeClients = new WeakMap();
         clients.set(runtime, runtimeClients);
       }
+
       let pending = runtimeClients.get(credential.key);
       if (!pending) {
         pending = Promise.resolve(
@@ -259,6 +266,7 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
         runtimeClients.set(credential.key, pending);
         void pending.catch(() => runtimeClients?.delete(credential.key));
       }
+
       return pending;
     };
 
@@ -274,6 +282,7 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
       triggers,
       client,
     };
+
     const tools: AnyTool[] = [];
     for (const action of definition.actions) {
       const invoke = async ({ input, req }: { input: unknown; req?: FrogbotRequest }) => {
@@ -293,11 +302,13 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
         inputSchema: action.input,
         execute: (input, context) => invoke({ input, req: context.req }),
       };
+
       Object.defineProperty(invoke, actionMetadata, { value: { definition: action, tool } });
       Object.defineProperty(instance, action.slug, { value: invoke, enumerable: true });
       tools.push(tool);
       toolInstances.set(tool.execute, instance as PieceInstance);
     }
+
     Object.defineProperty(instance, instanceMetadata, {
       value: { actions: tools, definition, options, auth },
     });
@@ -312,11 +323,14 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
         staticAuth: Boolean(definition.auth),
       },
     });
+
     for (const reference of Object.values(triggers)) {
       triggerInstances.set(reference, instance as PieceInstance);
     }
+
     return instance;
   };
+
   definitions.set(factory, definition);
   return factory as unknown as PieceFactory<T>;
 }

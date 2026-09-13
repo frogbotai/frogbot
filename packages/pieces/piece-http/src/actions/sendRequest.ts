@@ -52,6 +52,7 @@ export const sendRequest = {
         url.searchParams.append(key, String(entry));
       }
     }
+
     const requestHeaders = new Headers(input.headers);
     if (input.authType === 'BASIC') {
       const auth = z.object({ username: z.string(), password: z.string() }).parse(input.authFields);
@@ -60,10 +61,12 @@ export const sendRequest = {
       const auth = z.object({ token: z.string() }).parse(input.authFields);
       requestHeaders.set('authorization', `Bearer ${auth.token}`);
     }
+
     const body = createBody(input.bodyType, input.body);
     if (input.bodyType === 'json' && !requestHeaders.has('content-type')) {
       requestHeaders.set('content-type', 'application/json');
     }
+
     const response = await sendHttpRequest({
       url,
       init: {
@@ -74,6 +77,7 @@ export const sendRequest = {
         signal: input.timeout ? AbortSignal.timeout(input.timeout * 1000) : undefined,
       },
     });
+
     const responseHeaders = Object.fromEntries(response.headers.entries());
     const responseBody = input.responseIsBinary
       ? Buffer.from(await response.arrayBuffer()).toString('base64')
@@ -85,9 +89,11 @@ export const sendRequest = {
             return text;
           }
         });
+
     if (!response.ok) {
       throw new Error(`HTTP request failed with ${response.status} ${response.statusText}`.trim());
     }
+
     return { status: response.status, headers: responseHeaders, body: responseBody };
   },
 };

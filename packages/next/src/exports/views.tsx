@@ -63,6 +63,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
   const frogbot = getCachedFrogbot();
   const chatsSlug = frogbot?.config.chat.enabled ? frogbot.config.chat.chatsSlug : undefined;
   const messagesSlug = frogbot?.config.chat.enabled ? frogbot.config.chat.messagesSlug : undefined;
+
   const adminComponents = payload.config?.admin?.components;
   const chatComponents = (
     adminComponents as typeof adminComponents & {
@@ -75,6 +76,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
       };
     }
   )?.chat;
+
   const resolveChatComponent = <TProps extends object>(
     component: NonNullable<typeof chatComponents>['Chat'],
   ) =>
@@ -85,6 +87,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
           schemaPath: '',
         })
       : undefined;
+
   const ChatComponent = resolveChatComponent<ChatProps>(chatComponents?.Chat);
   const GreetingComponent = resolveChatComponent<GreetingProps>(chatComponents?.Greeting);
   const UserMessageActions = resolveChatComponent<MessageActionsSlotProps>(
@@ -102,6 +105,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
       })) as ToolRenderer[],
     ]),
   );
+
   const clientProps = (component: NonNullable<typeof chatComponents>['Chat']) =>
     component && typeof component === 'object' ? component.clientProps : undefined;
   const graphicsLogo = adminComponents?.graphics?.Logo;
@@ -110,6 +114,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
   const greetingProps = clientProps(chatComponents?.Greeting);
   const userMessageActionsProps = clientProps(chatComponents?.UserMessageActions);
   const assistantMessageActionsProps = clientProps(chatComponents?.AssistantMessageActions);
+
   const componentProps = {
     ...(ChatComponent ? { ChatComponent } : {}),
     ...(GreetingComponent ? { GreetingComponent } : {}),
@@ -143,6 +148,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
     adminRoute: payload.config.routes.admin,
     path: `/collections/${chatsSlug}`,
   });
+
   if (routeID === 'create') {
     const agent = frogbot?.config.agents?.[0]?.slug;
     return agent ? (

@@ -83,11 +83,12 @@ try {
   await cp(join(example, 'package.json'), join(app, 'package.json'));
   await cp(join(example, 'tsconfig.json'), join(app, 'tsconfig.json'));
   await symlink(join(example, 'node_modules'), join(app, 'node_modules'));
-  if (!businessQA)
-    {await cp(
+  if (!businessQA) {
+    await cp(
       join(import.meta.dirname, 'fixtures/connections-ui.config.ts'),
       join(app, 'src/frogbot.config.ts'),
-    );}
+    );
+  }
   await writeFile(
     join(app, 'next.config.mjs'),
     `import { withFrogbot } from '@frogbotai/next/config';
@@ -137,8 +138,8 @@ export default withFrogbot({ eslint: { ignoreDuringBuilds: true }, typescript: {
   browser = await chromium.launch({ channel: 'chrome', headless: true });
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   page.on('pageerror', (error) => errors.push(error.message));
-  if (businessQA)
-    {await page.route('**/api/users/sign-in/google?*', async (route) => {
+  if (businessQA) {
+    await page.route('**/api/users/sign-in/google?*', async (route) => {
       const response = await route.fetch({ maxRedirects: 0 });
       assert.equal(response.status(), 302);
       const url = new URL(response.headers().location);
@@ -150,7 +151,8 @@ export default withFrogbot({ eslint: { ignoreDuringBuilds: true }, typescript: {
           location: `${env.SMOKE_PROVIDER_URL}/authorize${url.search}`,
         },
       });
-    });}
+    });
+  }
   await page.goto(`${baseURL}/login`);
   const google = page.getByRole('link', { name: 'Continue with Google' });
   await google.waitFor({ state: 'visible' });

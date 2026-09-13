@@ -8,6 +8,7 @@ export function computeChanges(
 ): AuditChanges {
   const changes: AuditChanges = {};
   const keys = new Set([...Object.keys(previousDoc ?? {}), ...Object.keys(doc)]);
+
   for (const key of keys) {
     if (ignored.has(key)) continue;
     const oldValue = previousDoc?.[key];
@@ -19,5 +20,6 @@ export function computeChanges(
       };
     }
   }
+
   return changes;
 }

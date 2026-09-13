@@ -38,11 +38,13 @@ export function useAttachments({ filesSlug, sdk }: { filesSlug?: string; sdk?: F
 
   const upload = async (item: UploadItem) => {
     if (!sdk || !filesSlug) return;
+
     setItems((current) =>
       current.map((entry) =>
         entry.key === item.key ? { ...entry, error: undefined, uploading: true } : entry,
       ),
     );
+
     try {
       const uploaded = await sdk.upload(filesSlug, item.file);
       setItems((current) =>
@@ -82,6 +84,7 @@ export function useAttachments({ filesSlug, sdk }: { filesSlug?: string; sdk?: F
       preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
       uploading: true,
     }));
+
     setItems((current) => [...current, ...added]);
     for (const item of added) void upload(item);
   };
@@ -92,6 +95,7 @@ export function useAttachments({ filesSlug, sdk }: { filesSlug?: string; sdk?: F
       if (item?.preview) URL.revokeObjectURL(item.preview);
       return current.filter((entry) => entry.key !== key);
     });
+
   const clear = () =>
     setItems((current) => {
       for (const item of current) if (item.preview) URL.revokeObjectURL(item.preview);

@@ -44,19 +44,23 @@ export function ApiKeysManager() {
 
   async function createKey() {
     if (loading || !name.trim()) return;
+
     setLoading(true);
     setError(undefined);
+
     const response = await fetch(`${config.routes.api}/${collectionSlug}/mint`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ name }),
     });
     const result = (await response.json()) as { error?: string; token?: string };
+
     setLoading(false);
     if (!response.ok || !result.token) {
       setError(result.error ?? 'Unable to create API key');
       return;
     }
+
     setToken(result.token);
   }
 

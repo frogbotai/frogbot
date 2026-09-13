@@ -227,10 +227,12 @@ export const formatRows = {
     const { input } = args;
     const format: sheets_v4.Schema$CellFormat = {};
     const fields: string[] = [];
+
     if (input.backgroundColor) {
       format.backgroundColor = rgb(input.backgroundColor);
       fields.push('userEnteredFormat.backgroundColor');
     }
+
     const text: sheets_v4.Schema$TextFormat = {};
     for (const key of ['bold', 'italic', 'strikethrough'] as const) {
       if (input[key] != null) {
@@ -238,10 +240,12 @@ export const formatRows = {
         fields.push(`userEnteredFormat.textFormat.${key}`);
       }
     }
+
     if (input.textColor) {
       text.foregroundColor = rgb(input.textColor);
       fields.push('userEnteredFormat.textFormat.foregroundColor');
     }
+
     if (Object.keys(text).length) format.textFormat = text;
     return batch(args, [
       {
@@ -413,9 +417,11 @@ export const createColumn = {
               })
             )[0] ?? []
           ).length;
+
     const column = columnLabel(index);
     const count = sheet.gridProperties?.columnCount;
     if (count != null && index > count) throw new Error('Column index exceeds worksheet width.');
+
     await batch(args, [
       count === index
         ? { appendDimension: { sheetId: args.input.sheetId, dimension: 'COLUMNS', length: 1 } }
@@ -439,6 +445,7 @@ export const createColumn = {
       },
       requestOptions(args.req),
     );
+
     return { column, index: index + 1, updates: data };
   },
 };

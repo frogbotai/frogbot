@@ -303,6 +303,7 @@ export async function withSessionOperation<T>({
       cleanups.delete(task);
     }
   };
+
   const run = async ({ signal }: { signal: AbortSignal }) => {
     const operation = {
       active: true,
@@ -317,6 +318,7 @@ export async function withSessionOperation<T>({
     };
     const previousMarker = req.context?.[contextKey];
     req.context = { ...req.context, [contextKey]: operation.marker };
+
     return operations.run(operation, async () => {
       try {
         signal.throwIfAborted();
@@ -343,6 +345,7 @@ export async function withSessionOperation<T>({
   const runLocked = async (args: { signal: AbortSignal }) => {
     const payload = unwrapSessionPayload((req as unknown as PayloadRequest).payload);
     if (payload.db.name !== 'sqlite') return run(args);
+
     let pending = sqliteOperations.get(payload);
     if (!pending) sqliteOperations.set(payload, (pending = new Map()));
     const waiting = pending.get(collectionSlug);
@@ -351,6 +354,7 @@ export async function withSessionOperation<T>({
       release = resolve;
     });
     pending.set(collectionSlug, current);
+
     try {
       await waiting;
       return await run(args);
@@ -364,6 +368,7 @@ export async function withSessionOperation<T>({
     return await (inherited ? run(inherited) : withSessionLock({ ...lock, fn: runLocked }));
   } catch (error) {
     req.user = previousUser;
+
     if (!inherited && cleanups.size) {
       try {
         await withSessionLock({ ...lock, fn: ({ signal }) => cleanup(signal) });
@@ -371,6 +376,7 @@ export async function withSessionOperation<T>({
         throw new AggregateError([error, cleanupError], 'Session operation cleanup failed.');
       }
     }
+
     throw error;
   } finally {
     if (inherited) {
@@ -411,6 +417,7 @@ export async function withAuthOperation<T>({
       const previousPayload = payloadReq.payload;
       operation.kind = kind;
       attachSessionPayload(payloadReq);
+
       if (operation.transaction) {
         try {
           return await fn();
@@ -418,6 +425,7 @@ export async function withAuthOperation<T>({
           payloadReq.payload = previousPayload;
         }
       }
+
       const previousTransaction = payloadReq.transactionID;
       delete payloadReq.transactionID;
       operation.transaction = true;
@@ -437,13 +445,16 @@ export async function withAuthOperation<T>({
           }
         }
         signal.throwIfAborted();
+
         const shouldCommit = kind !== 'login' && (await initTransaction(payloadReq));
         if (kind !== 'login' && collection.auth.useSessions) {
           await requireSessionTransaction(payloadReq);
         }
+
         const result = await fn();
         signal.throwIfAborted();
         if (shouldCommit) await commitTransaction(payloadReq);
+
         return result;
       } catch (error) {
         try {
@@ -451,6 +462,7 @@ export async function withAuthOperation<T>({
         } catch (cleanupError) {
           throw new AggregateError([error, cleanupError], 'Auth operation rollback failed.');
         }
+
         throw error;
       } finally {
         operation.transaction = false;

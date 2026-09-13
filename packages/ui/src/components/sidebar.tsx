@@ -14,12 +14,15 @@ interface SidebarValue {
   setOpenMobile: (open: boolean) => void;
   toggleSidebar: () => void;
 }
+
 const SidebarContext = createContext<SidebarValue | null>(null);
+
 export function useSidebar() {
   const value = useContext(SidebarContext);
   if (!value) throw new Error('useSidebar must be used within SidebarProvider');
   return value;
 }
+
 export function SidebarProvider({
   children,
   className,
@@ -52,6 +55,7 @@ export function SidebarProvider({
     </SidebarContext.Provider>
   );
 }
+
 export function Sidebar({
   children,
   className,
@@ -79,9 +83,11 @@ export function Sidebar({
     </aside>
   );
 }
+
 export function SidebarInset({ className, ...props }: ComponentProps<'main'>) {
   return <main className={`fb-sidebar__inset${className ? ` ${className}` : ''}`} {...props} />;
 }
+
 export function SidebarTrigger({ className, ...props }: ComponentProps<'button'>) {
   const { toggleSidebar } = useSidebar();
   return (

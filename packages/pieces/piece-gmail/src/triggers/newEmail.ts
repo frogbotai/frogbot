@@ -13,6 +13,7 @@ const inputSchema = z.object({
   maxResults: z.number().int().min(1).max(500).default(100),
   includeSpamTrash: z.boolean().default(false),
 });
+
 export const newEmail = {
   slug: 'newEmail',
   description: 'Emit newly received emails matching optional filters.',

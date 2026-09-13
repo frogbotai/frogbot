@@ -9,8 +9,10 @@ export const logUsage: AfterOperationHook = (args) => {
   if (context.trackUsage === false) return;
   const req = context.req;
   if (!req) return;
+
   const usage = args.usage;
   const costUSD = usage ? calculateModelCostUSD(args.model, usage) : 0;
+
   void req.frogbot
     .create({
       collection: req.frogbot.config?.ai?.usage?.slug ?? USAGE_LOGS_SLUG,

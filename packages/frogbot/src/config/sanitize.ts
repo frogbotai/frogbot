@@ -1169,6 +1169,7 @@ export function sanitize(
       throw new Error(`[frogbot] Unknown admin icon '${icon}'. Valid: ${iconNames.join(', ')}`);
     }
   }
+
   validateInternalPathReservations(config);
   const settings = sanitizeSettings(config.settings);
   const sanitizedConfigRef: { current?: FrogbotSanitizedConfig } = {};
@@ -1250,6 +1251,7 @@ export function sanitize(
       },
     };
   }
+
   const pieces = sanitizePieces(config.pieces);
   if (config.tools !== undefined && !Array.isArray(config.tools)) {
     throw new Error('[frogbot] Root tools must be an array when configured.');
@@ -1270,6 +1272,7 @@ export function sanitize(
       ]),
     ]),
   ];
+
   const hasScheduleTriggers = agents?.some((agent) =>
     agent.triggers?.some((trigger) => 'type' in trigger && trigger.type === 'schedule'),
   );
@@ -1289,6 +1292,7 @@ export function sanitize(
       `[frogbot] Job task slug '${AGENT_TRIGGER_TASK_SLUG}' is reserved for agent triggers.`,
     );
   }
+
   const kv = config.kv ?? databaseKVAdapter();
   const jobs = resolveKVCleanupTask({
     kv,
@@ -1322,6 +1326,7 @@ export function sanitize(
       Component: '@frogbotai/next/views#ConnectionsView',
     });
   }
+
   const connectionCollection = collections.find(({ slug }) => slug === connections.slug);
   if (connectionCollection) {
     connectionCollection.endpoints = [
@@ -1332,6 +1337,7 @@ export function sanitize(
       }),
     ];
   }
+
   pieces.instances = [
     ...new Set([
       ...pieces.instances,
@@ -1409,5 +1415,6 @@ export function sanitize(
     },
   };
   sanitizedConfigRef.current = sanitizedConfig;
+
   return sanitizedConfig;
 }

@@ -105,10 +105,12 @@ export function buildSignInEndpoints({
         const headers = new Headers({ 'cache-control': 'no-store' });
         const method = methodFor(req);
         if (!method) return failure(404, headers);
+
         try {
           const { callbackUrl } = await routeURLs({ req, collectionSlug, method });
           const params = new URL(req.url!).searchParams;
           if (params.getAll('state').length !== 1) throw new OAuthError('state');
+
           const { intent, clearCookie } = await consumeOAuthState({
             kv: req.frogbot.kv,
             encryption: req.frogbot.config.connections.encryption,
@@ -120,9 +122,11 @@ export function buildSignInEndpoints({
             req,
           });
           headers.set('set-cookie', clearCookie);
+
           if (params.has('error') || params.getAll('code').length !== 1) {
             throw new OAuthError('tokens');
           }
+
           const tokens = await exchangeOAuthCode({
             piece: method,
             code: params.get('code')!,
@@ -130,20 +134,24 @@ export function buildSignInEndpoints({
             verifier: intent.verifier,
             signal: req.signal,
           });
+
           const account = await lookupOAuthAccount({
             piece: method,
             tokens,
             req,
             signal: req.signal,
           });
+
           const userId = await resolveSignInIdentity({
             req,
             collectionSlug,
             email: account?.email,
           });
+
           const { token } = await issueSession({ req, collectionSlug, userId });
           const config = await req.frogbot.config._internal.payloadConfig;
           const collection = config.collections.find(({ slug }) => slug === collectionSlug)!;
+
           headers.append(
             'set-cookie',
             generatePayloadCookie({
@@ -152,6 +160,7 @@ export function buildSignInEndpoints({
               token,
             }),
           );
+
           headers.set('location', intent.returnTo);
           return new Response(null, { status: 302, headers });
         } catch (error) {

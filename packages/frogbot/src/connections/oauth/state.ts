@@ -97,6 +97,7 @@ export async function createOAuthState({
   const recipe = definition.oauth;
   const app = piece.oauth;
   if (!recipe || !app) throw new OAuthError('configuration');
+
   const callback = callbackURL(callbackUrl).href;
   const state = randomValue();
   const browser = randomValue();
@@ -120,6 +121,7 @@ export async function createOAuthState({
     issuedAt,
     expiresAt: issuedAt + lifetime,
   });
+
   if (flow === 'link' && (!data.owner || data.owner.collection !== collection)) {
     throw new OAuthError('state');
   }
@@ -135,10 +137,12 @@ export async function createOAuthState({
     'response_type',
     'scope',
   ]);
+
   for (const key of reserved) url.searchParams.delete(key);
   for (const [key, value] of Object.entries(recipe.params ?? {})) {
     if (!reserved.has(key)) url.searchParams.set(key, value);
   }
+
   url.searchParams.set('client_id', app.clientId);
   url.searchParams.set('redirect_uri', callback);
   url.searchParams.set('response_type', 'code');
@@ -151,10 +155,12 @@ export async function createOAuthState({
     );
     url.searchParams.set('code_challenge_method', 'S256');
   }
+
   const encrypted = await encryption.encrypt(JSON.stringify(data));
   if (!(await kv.setIfAbsent(`oauth:state:${state}`, encrypted, { ttl: lifetime }))) {
     throw new OAuthError('state');
   }
+
   return {
     state,
     authorizationUrl: url.href,
@@ -182,6 +188,7 @@ export async function consumeOAuthState({
     if (typeof encrypted !== 'string') throw new OAuthError('state');
     const intent = stateSchema.parse(JSON.parse(await encryption.decrypt(encrypted)));
     const now = Date.now();
+
     if (
       intent.state !== state ||
       intent.flow !== flow ||
@@ -201,6 +208,7 @@ export async function consumeOAuthState({
     ) {
       throw new OAuthError('state');
     }
+
     if (
       flow === 'link' &&
       req.user &&
@@ -209,19 +217,23 @@ export async function consumeOAuthState({
     ) {
       throw new OAuthError('state');
     }
+
     const name = cookieName(state, intent.callbackUrl);
     const values = (req.headers.get('cookie') ?? '')
       .split(';')
       .map((part) => part.trim())
       .filter((part) => part.startsWith(`${name}=`));
     if (values.length !== 1) throw new OAuthError('state');
+
     const browser = randomSchema.parse(values[0]!.slice(name.length + 1));
     if (!timingSafeEqual(Buffer.from(intent.browser, 'hex'), Buffer.from(digest(browser), 'hex'))) {
       throw new OAuthError('state');
     }
+
     if (!(await kv.setIfAbsent(`oauth:consumed:${state}`, true, { ttl: lifetime }))) {
       throw new OAuthError('state');
     }
+
     if (intent.expiresAt <= Date.now()) throw new OAuthError('state');
     return { intent, clearCookie: cookie(state, intent.callbackUrl, '', 0) };
   } catch {

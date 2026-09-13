@@ -52,6 +52,7 @@ export function toGatewayHooks(hooks: SanitizedAIHooks): Hooks {
 
 export function toHookUsage(usage: unknown): HookUsage | undefined {
   if (!usage || typeof usage !== 'object') return undefined;
+
   const value = usage as {
     inputTokens?: number;
     outputTokens?: number;
@@ -70,6 +71,7 @@ export function toHookUsage(usage: unknown): HookUsage | undefined {
   if (value.inputTokens == null && value.outputTokens == null && value.totalTokens == null) {
     return undefined;
   }
+
   const inputTokens = value.inputTokens ?? 0;
   const outputTokens = value.outputTokens ?? 0;
   return {

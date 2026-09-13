@@ -9,6 +9,7 @@ const inputSchema = z.object({
   query: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   body: z.unknown().optional(),
 });
+
 export const customApiCall = {
   slug: 'customApiCall',
   description: 'Make an authenticated Gmail API call.',
