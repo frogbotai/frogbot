@@ -4,15 +4,15 @@ Start after [Step 0](step0_research.md)'s independent research review, unless re
 
 ## Objective
 
-Align on the problem and user-visible outcome before choosing implementation mechanisms. Surface the decisions the owner must make before Step 2.
+Agree on the problem and what users should be able to do before choosing how to build it. Identify the decisions the owner must make before Step 2.
 
 ## Structure
 
 - **Problem:** who is affected, what happens today, and why it matters.
-- **Grounding:** link reviewed research, its source baseline, applicable program contracts, and existing owner rulings.
+- **Evidence:** link reviewed research, the code version it checked, requirements shared across tickets, and existing owner decisions.
 - **User stories:** “As [role], I want [goal] so that [benefit].”
-- **Requirements and exclusions:** concrete observable behavior, public developer experience, and scope boundaries.
-- **Existing surfaces:** relevant UI/API entry points and canonical components/contracts; link evidence and identify intended reuse. Compare implementation mechanisms in Step 2.
+- **Requirements and exclusions:** what users and developers should see or be able to do, and what this feature will not cover.
+- **Existing features:** relevant UI screens, API endpoints, and shared components or interfaces; link evidence and identify what to reuse. Compare implementation approaches in Step 2.
 - **User flow:** numbered steps, including important failure outcomes.
 - **Success criteria:** observable outcomes that can be verified.
 - **Owner decisions:** open questions in the format below, or “None — no owner decisions remain.” Link existing rulings rather than asking again.
@@ -46,7 +46,7 @@ Illustrative wording, not a project ruling:
 - **Context:** A company connects separate sales and support numbers. The same customer messages both. We need to decide whether support sees the sales conversation or starts with separate history; this affects privacy and continuity.
 - **A — Separate histories:** Each business number has its own conversation. This avoids unexpected cross-team context, but the customer may repeat information.
 - **B — Shared history:** Both numbers use one customer conversation. This preserves continuity, but context crosses the sales/support boundary and requires an explicit access policy.
-- **Recommendation:** A, for a predictable isolation boundary; accept repeated context between numbers.
+- **Recommendation:** A, so sales and support do not see each other's conversations by default; accept that customers may repeat information.
 - **Decision impact:** Blocks Step 2's conversation-identity design. No existing owner ruling is assumed by this example.
 - **Owner answer:** Pending; reply “D1: A”, “D1: B”, or describe the desired boundary.
 
@@ -54,7 +54,7 @@ Illustrative wording, not a project ruling:
 
 - Keep the brief skimmable, not artificially limited to one page. Each decision must explain the actual trade-off, not merely name a topic.
 - Avoid internal code, database schemas, or speculative UI designs. Public API examples are appropriate only when needed to clarify developer-facing behavior.
-- Mark unresolved research explicitly. A preliminary intake brief is not an approval-ready Step 1 if a load-bearing fact is unverified.
+- Mark unresolved research explicitly. Do not ask for Step 1 approval while a fact the proposal depends on remains unchecked.
 - Before approval, resolve every blocking decision. Record the owner's answer and its source/date, then update affected requirements, examples, exclusions, and success criteria. Never label a recommendation “approved.”
 - Defer a non-blocking question only to a named later step/ticket with the owner's agreement; do not move a scope decision to Step 2 to bypass this gate.
 

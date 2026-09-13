@@ -69,7 +69,7 @@ const joined = getJoinedJobQuery({ query, dialect, selections, groups });
 - **Type naming**: Prefix with context (e.g., `ArtifactCreateProps`, `ArtifactDBUpdateProps`)
 - **Function naming**: Match types to functions (`dbCreate` → `ArtifactDBCreateProps`)
 - **Shorter names**: `createTextDoc` vs `saveTextDocumentToDatabase`
-- **Two-case simplification**: Handle exactly what's needed, no over-engineering
+- **Keep it simple**: Handle the cases the feature needs; do not add unused options or abstractions
 - **Component wrappers**: Name a private component that continues past a provider or readiness guard `*Inner` (for example, `ChatInner`)
 
 ## FrogBot Type Naming (`packages/frogbot`)
@@ -116,14 +116,27 @@ const joined = getJoinedJobQuery({ query, dialect, selections, groups });
 ## Verification
 
 - Put new tests, fixtures, test helpers, and test-only apps under the repository's root `test/` folder. Do not place unit tests beside production code or inside package `src/` folders. Follow the existing test layout and runner configuration; moving existing tests is separate work.
-- Tests and fixtures are normal implementation work. Every ticket includes a dedicated verification stage once its behavior is coherent: assert intended behavior, challenge it with plausible failure cases, and check adjacent regressions.
-- Use unit tests for logic, integration tests for real boundaries, and relevant E2E tests for changed user/API/CLI journeys. Inspect configured test collection and existing fixtures; do not mock the internal boundary being proven or use implementation-call assertions as a substitute for observable outcomes.
-- Transitional stages need only checks meaningful to their current state. Record deliberately incomplete wiring and the named stage that will validate it. Formatting, delegated lint, and focused tests may suffice until integration is coherent; unexplained failures are not an exemption.
-- For bugs, demonstrate the actual pre-fix mechanism when feasible and record unavailable proof. Write assertions against the approved behavior, not the buggy implementation. Tests that previously expected broken behavior need correction.
-- Discover commands and environments from [package.json](package.json), [vitest.config.ts](vitest.config.ts), and the [browser configuration](test/browser/playwright.config.ts). `pnpm test:unit`, `pnpm test:int`, `pnpm test:e2e`, and `pnpm test:browser` select different suites; E2E and browser tests are not interchangeable. Gateway projects have their own collection settings. Rebuild consumed packages before production-style verification.
-- For code changes, run relevant tests followed by `pnpm prettier:write && pnpm lint:fix`. Agents must delegate lint and required type-checking to the `lint` subagent, including `pnpm lint:fix`. Do not run repository-wide suites after every transitional stage.
+- Tests and fixtures are part of implementation; they do not need a separate request. Once the feature's parts work together, check that it meets the agreed requirements, handles realistic failures, and has not broken related behavior. Planned tickets include a testing stage for this work; small direct edits need only the relevant checks.
+- Use unit tests for individual logic, integration tests for parts working together, and end-to-end (E2E) tests for affected user, API, or CLI flows. Inspect the test runner and existing fixtures. Test the result, not just whether an internal function was called. Do not replace the component whose behavior you are testing with a mock: for example, a database-claim test must exercise the real claim operation.
+- While a feature is incomplete, run checks that can give meaningful results. Record what is not connected yet and which later stage will test it. Do not run full suites against intentionally unfinished work, but investigate unexpected failures.
+- For bug fixes, show that the test fails for the original bug when feasible; say when you could not check that. Write assertions for the correct behavior, and correct existing tests that expected the bug.
+- Make tests repeatable. Use controlled test data and services where appropriate. Wait for a specific event or condition with a timeout, rather than pausing for an arbitrary duration and hoping the operation finished. When testing time itself, use a controllable clock where the test setup supports it. State when a test requires a paid or live service.
+- Find commands and environment requirements in [package.json](package.json), [vitest.config.ts](vitest.config.ts), and the [browser configuration](test/browser/playwright.config.ts). `pnpm test:unit`, `pnpm test:int`, `pnpm test:e2e`, and `pnpm test:browser` select different suites; E2E and browser tests are not interchangeable. Gateway projects have their own test-selection settings. Rebuild packages before tests that load their built output.
+- For code changes, run relevant tests followed by `pnpm prettier:write && pnpm lint:fix`. Agents must delegate lint and required type-checking to the `lint` subagent, including `pnpm lint:fix`. Do not repeat repository-wide checks after every stage.
 - For Markdown-only changes, check affected-file formatting, links/anchors, examples, and content/instruction consistency; do not run application tests, code lint, or typecheck. Documentation containing executable code changes may need targeted example validation.
 - Review automatic fixes and preserve unrelated work. Rerun affected tests if fixes change behavior. Report commands actually run, results, skips, and unavailable services/credentials; required blocked checks leave the ticket unverified.
+
+### When tests find a problem
+
+A failing test shows behavior we need to understand; it does not, by itself, decide what the feature must promise. Compare the finding with the agreed requirements and existing supported behavior:
+
+- **Fix now:** the implementation breaks a requirement or existing supported behavior. Fix it and rerun the affected checks. A rare failure still matters if it breaks something we promised.
+- **Document:** the behavior is an agreed limitation, not a broken promise. Explain what users need to know and how to handle it.
+- **Defer:** addressing it would add behavior or guarantees outside the agreed work. Report the finding and ask the owner before adding it to the feature or accepting a new limitation.
+
+Raise security or data-loss findings promptly, even if the requirements did not mention them. Do not dismiss them as out of scope. If a fix needs a dependency patch, a different core library, or a substantial design change, pause that work and ask the owner first. Explain what can happen to a user, how it can happen, what is known about its likelihood, and the simpler alternatives. A newly discovered problem is not permission to redesign the feature.
+
+Do not weaken tests or mark failures as expected just to get a passing suite. If the owner changes a requirement or accepts a limitation, update the requirements and tests to match that decision, and keep the limitation visible in the final summary. Record findings in the existing summary; a separate report for every test failure is not required.
 
 ## File Organization
 

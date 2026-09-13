@@ -1,23 +1,23 @@
 # Step 4: Implementation
 
-Proceed after `Approved Step 3` or a clear [request to implement now](FEATURE_DEVELOPMENT_PROCESS.md#when-to-use-this-process), with no unresolved implementation hold. For planned tickets, follow the approved stages and keep `step4_implementation_summary.md` in the local planning folder. Direct work uses the coding, testing, and review rules below without requiring missing planning artifacts or a stage log for a small edit.
+Proceed after `Approved Step 3` or a clear [request to implement now](FEATURE_DEVELOPMENT_PROCESS.md#when-to-use-this-process), unless an instruction not to implement is still in effect. For planned tickets, follow the approved stages and keep `step4_implementation_summary.md` in the local planning folder. Direct work follows the coding, testing, and review rules below; do not create missing planning documents or a stage log for a small edit.
 
 ## Before implementation
 
-- Read [CONTRIBUTING.md](../../CONTRIBUTING.md), then the ticket's `research.md`, approved plan, relevant contracts, and current owner rulings when present. For direct work, use the owner's request and existing context; do not invent documents or approvals. Confirm the working directory and any ticket workspace setup; create or switch workspaces only when authorized. Record existing worktree and index changes and preserve them.
-- All implementation sessions use the same ticket workspace. Pass absolute code/artifact paths; ignored plans are not automatically shared between worktrees. Recheck relevant research claims against changed code, not the entire repository by default.
-- The coordinator owns sequencing, shared contracts, the implementation summary, and integration review. Delegate bounded work, not responsibility for the entire ticket.
-- Confirm canonical components and API contracts before adding new markup or payloads.
+- Read [CONTRIBUTING.md](../../CONTRIBUTING.md), then the ticket's `research.md`, approved requirements and plan, and current owner decisions when present. For direct work, use the owner's request and existing context; do not invent documents or approvals. Confirm the working directory; create or switch workspaces only when authorized. Record existing staged and unstaged changes and preserve them.
+- All workers use the same ticket workspace. Pass absolute paths to code and ticket documents; ignored plans are not automatically shared between worktrees. Recheck research claims affected by changed code, not the entire repository by default.
+- The coordinator decides the work order, keeps shared interfaces consistent, updates the implementation summary, and reviews the combined changes. Give workers specific assignments; do not delegate responsibility for the entire ticket.
+- Check existing shared components and API definitions before adding new UI markup or request/response formats.
 
 ## Subagent scope and reuse
 
-- Scope each implementation session to one cohesive stage or a small cluster in the same domain. Reuse the session for closely related follow-ups, such as a helper, its callers, its tests, and a targeted fix.
+- Give each worker one stage or a small group of related tasks. Reuse the session for closely related follow-ups, such as a helper, its callers, its tests, and a targeted fix.
 - Allow at most **four follow-up assignments (resumes)** after the initial assignment in a session. Start fresh sooner when the domain changes, the work is complete, exploration has made the history large, or repeated failures need a different perspective. This counts coordinator assignments, not the worker's tool calls.
 - Do not carry the same session through unrelated backend, admin UI, migration, and documentation stages just because they share a ticket. Reusing the same agent type is fine; reusing its accumulated conversation is the limit.
-- Pass a fresh worker a compact handoff, not the full transcript. Preserve accepted contracts and evidence in files so the new worker need not rediscover them.
+- Give a new worker the relevant requirements, current state, and evidence in its assignment, with links to existing ticket documents. Do not pass the full conversation or require a separate handoff file.
 - Avoid the opposite extreme: do small local edits directly or group related work instead of spawning an agent per file. Fresh sessions have startup and rereading costs; the reuse limit is a project convention, not a guaranteed cost saving.
-- Follow stage dependencies. Parallelize only work that is independent and has non-overlapping file ownership; serialize shared-file changes.
-- Lint/typecheck always goes to the `lint` subagent. Intermediate workers run only meaningful checks, not repeated full-repository suites against incomplete wiring.
+- Follow stage dependencies. Run independent assignments in parallel only when workers will not edit the same files. Take turns on shared files.
+- Lint/typecheck always goes to the `lint` subagent. Workers run checks relevant to their current changes, not repeated full-repository suites against unfinished work.
 
 ### Assignment and handoff format
 
@@ -25,40 +25,44 @@ Include this information in each new implementation assignment, using focused li
 
 ```markdown
 - Task: Ticket/stage and one concrete outcome.
-- Workspace: Absolute ticket worktree and canonical artifact folder; reuse both.
-- Grounding: research.md and a focused reading order; identify changed evidence to recheck.
-- Authority: Approved plan/contract paths, relevant rulings, and active holds.
-- Scope: Files/domain owned, exclusions, and whether edits are permitted.
+- Workspace: Absolute code and ticket-document paths; reuse both.
+- Read: research.md and the relevant parts of existing documents; identify evidence to recheck.
+- Approval: Owner request or approved requirements/plan, relevant decisions, and any work on hold.
+- Scope: Files or area assigned, exclusions, and whether edits are permitted.
 - Current state: Relevant completed changes, interfaces to preserve, and known failures.
 - Verify: Targeted commands, expected outcomes, and any unavailable dependencies.
-- Return: Changed files, checks actually run/results, blockers, and next handoff facts.
+- Return: A final message with changed files, checks run and results, blockers, and what the next worker needs to know.
 - Constraints: Follow CONTRIBUTING.md and applicable package conventions; no unrelated edits or Git actions.
 ```
 
-Track each session's scope and resume count in the coordinator's working notes or the implementation summary. At handoff, check the diff against the approved contract; do not mark a stage complete solely because the worker says it is done.
+This is assignment guidance, not a requirement to create another document. For direct work, leave out planning files that do not exist.
+
+The worker's final message is the default handoff. The coordinator checks its diff and results, then updates the existing implementation summary with lasting decisions, checks, remaining work, and the session's scope and resume count. Do not copy the whole return into the summary or create a file for each worker.
+
+Create a separate handoff file only when a later worker needs substantial detail that would make the summary hard to use—for example, steps to reproduce an unresolved failure or a changed interface several workers must use. First check whether it belongs in an existing ticket document. If a separate file is needed, link it from the summary and update it rather than making successive “final” or “handoff” copies. A new session alone is not a reason to create a file.
 
 ## Code readability
 
-Apply the [blank-line rules](../../CONTRIBUTING.md#blank-lines), including in tests. Both worker and coordinator scan edited code for dense walls of text and excessive fragmentation before accepting a handoff. Do not use comments as a substitute for whitespace or compress code to meet a stage-size estimate.
+Both worker and coordinator must review edited code, including tests, against the [blank-line rules and example](../../CONTRIBUTING.md#blank-lines). A passing formatter does not mean the code is easy to read. Do not use comments as a substitute for whitespace or compress code to meet a stage-size estimate.
 
 ## Stage loop
 
 1. Implement the current stage without changing approved requirements.
-2. Run checks that meaningfully apply to the current state. Transitional stages may have only formatting, delegated lint, or focused tests; record which validation awaits named dependent stages. Do not force full suites through knowingly incomplete wiring. Unexpected failures are not excused as transitional without evidence.
-3. Review the diff for correctness, shared-contract consistency, readability, and unrelated changes. Rebuild consumed packages before integration smoke tests when required.
-4. Update the implementation summary immediately with actual checks and deferred verification. Continue to the next unblocked approved stage without staging, committing, or proposing stage commit messages.
-5. On a session boundary, save the compact handoff and dispatch a fresh worker. If new evidence changes scope or architecture, pause affected work and return to the relevant planning gate.
+2. Run checks that apply to the current state. Some stages may need only formatting, delegated lint, or focused tests; record which checks await named later stages. Do not force full suites through knowingly unfinished work. Investigate unexpected failures rather than assuming unfinished work explains them.
+3. Review the diff for correctness, consistent use of shared interfaces, readability, and unrelated changes. Rebuild packages before tests that load their built output.
+4. Update the existing implementation summary with checks run and checks still needed. Continue to the next unblocked approved stage without staging, committing, or proposing stage commit messages.
+5. When starting a new worker, include the necessary current facts in its assignment. If new evidence would change scope or design, pause the affected work and ask for approval of that change.
 
 ## Dedicated testing stage
 
-Once the ticket's behavior is coherent, execute the testing stage from Step 3. If the owner skipped planning, verify against their request and current contracts instead. Automated tests and fixtures are expected work; they do not require a separate request. Follow the [root test-placement rule](../../CONTRIBUTING.md#verification).
+Once the feature's parts work together, run the testing stage from Step 3. If the owner skipped planning, test against their request and existing supported behavior instead. Automated tests and fixtures are expected work; they do not require a separate request. Follow [CONTRIBUTING.md](../../CONTRIBUTING.md#verification) for test placement, repeatable tests, and final checks.
 
-1. Use a fresh verification agent with permission to add or improve tests in the assigned scope. Supply approved requirements, `research.md`, the whole ticket diff including untracked files, actual harness/fixture paths, and relevant contributor rules. Do not give the implementer sole responsibility for declaring its own solution correct.
-2. Assert intended behavior through unit, integration, and relevant E2E tests. Exercise real application wiring and observable outcomes, including persisted read-back when relevant; isolated helpers and mocked internal calls are not proof that a journey works.
-3. Challenge assumptions with relevant error, boundary, lifecycle, access, retry, and concurrency cases. Use deterministic external fixtures where appropriate; avoid fixed sleeps and unreported reliance on paid/live services. Rebuild consumed packages before testing production-style flows.
-4. Cover adjacent regressions. For bugs, show that the regression test exposes the actual pre-fix failure when feasible, not an unrelated setup failure; record when that proof is unavailable. Never destroy the working tree to reconstruct a baseline.
-5. Return findings with reproductions and failing assertions to implementation. Fix, rerun affected checks, and repeat until acceptance and adversarial checks pass. Do not weaken assertions, mark failures expected, or skip discovered bugs merely to make the suite green.
-6. Record commands, baseline, results, skipped/unavailable checks, and residual risks. Required but blocked tests leave verification incomplete. Then perform the final [verification checks](../../CONTRIBUTING.md#verification); Markdown-only tickets use the documented exception.
+1. Use a fresh agent to check the feature independently, with permission to add or improve tests in the assigned scope. Supply the requirements, existing research, the whole ticket diff including untracked files, paths to the actual test setup and fixtures, and relevant contributor rules. Do not rely only on the implementer's own assessment. Small direct edits can use coordinator review and focused checks instead of a separate testing worker.
+2. Test the agreed behavior first. Exercise real application calls and check their results—for example, save a record and read it back. Testing a helper alone does not prove the complete user flow works.
+3. Test realistic ways the feature could fail. Choose cases based on how likely they are or how serious the consequences would be, not to maximize the number of failures found. Rare failures can matter; explain which requirement or user risk each case checks.
+4. Check related behavior the change might break. For bug fixes, confirm that the test exposes the original failure when feasible, not an unrelated setup error; record when you cannot check this. Never discard working changes to recreate the old code.
+5. Use [When tests find a problem](../../CONTRIBUTING.md#when-tests-find-a-problem) to decide what to fix, document, or bring to the owner. Return in-scope failures with reproduction steps, fix them, and rerun the affected checks. A newly discovered failure must not silently become a requirement for a dependency patch or redesign.
+6. Record commands, code version tested, results, skipped or unavailable checks, and known limitations in the existing summary. Required but blocked tests leave verification incomplete. Finish the contributor checks; Markdown-only tickets use the documented exception.
 
 ## Implementation summary
 
@@ -68,21 +72,21 @@ Once the ticket's behavior is coherent, execute the testing stage from Step 3. I
 - Status: Implemented, awaiting ticket verification / verified / blocked / in progress.
 - Changes: Files and behavior implemented; do not call uncommitted work released.
 - Verification: Commands/manual steps actually run, results, and skips/blockers.
-- Review: Contract and readability findings, and their resolution.
-- Handoff: Current interfaces, remaining work, and relevant worker session/resume count.
+- Review: Requirements and readability findings, and their resolution.
+- Remaining work: Needed fixes or checks, decisions to preserve, and relevant worker session/resume count.
 ```
 
 ## Completion criteria
 
 - All approved stages and acceptance criteria are implemented and verified; unresolved blockers are reported as incomplete work.
 - User-facing features are reachable through the normal UI/CLI path, not only a direct URL or isolated test helper. Confirm roles and applicable migration/runtime dependencies.
-- Documentation reflects the implemented contract.
-- The dedicated acceptance/adversarial/regression stage and applicable final contributor checks pass. Review automatic fixes and rerun affected tests when behavior changes; distinguish required blockers from justified non-applicable checks.
+- Documentation describes the implemented behavior and agreed limitations.
+- Required tests and final contributor checks pass. Review automatic fixes and rerun affected tests when behavior changes. Distinguish unresolved failures from limitations the owner accepted and checks that do not apply.
 - The coordinator reviews the integrated diff, including spacing and cross-stage behavior, and finalizes the summary.
 - Hand off the whole ticket: changes, verification evidence, known risks, and tracked diff plus new untracked files. Plain `git diff` does not show untracked files; never stage them merely to make them visible.
 
 ## Git finish
 
-Do not make per-stage commits or prepare per-stage commit messages. Keep work unstaged and uncommitted until explicitly requested, without unstaging pre-existing changes. When authorized, create one final squashed ticket commit and merge into `main`; a single uncommitted ticket needs one commit, not an artificial squash sequence. Each completed F feature remains separate in multi-feature programs.
+Do not make per-stage commits or prepare per-stage commit messages. Keep work unstaged and uncommitted until explicitly requested, without unstaging pre-existing changes. When committing is authorized, create one final ticket commit, not an artificial sequence of commits to squash. Merge into `main` only with separate authorization. Each completed F feature remains separate in multi-feature programs.
 
 Before authorized Git actions, inspect status, staged/unstaged changes, and recent commits. Include only intended code, tests, and shared docs; never `.idea/` artifacts. Commit, merge, push, and PR permissions are separate from plan approval. If the owner later manually uncommits on `main` for whole-diff review, address their feedback in the workspace they identify; do not reset history or uncommit on their behalf.
