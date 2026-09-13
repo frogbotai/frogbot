@@ -186,6 +186,7 @@ export const appendRows = {
       (await readValues({ ...args, spreadsheetId: input.spreadsheetId, range: headerRange }))[0] ??
       []
     ).map(String);
+
     let rows: ReturnType<typeof cells>[];
     if (input.data.format === 'columns') rows = input.data.rows.map((row) => cells(row));
     else if (input.data.format === 'csv') {
@@ -220,6 +221,7 @@ export const appendRows = {
       }
       rows = records.map((record) => cells(headers.map((header) => record[header] ?? '')));
     }
+
     if (input.overwrite) {
       const start = input.headerRow + 1;
       const updates = rows.length
@@ -259,6 +261,7 @@ export const appendRows = {
           : [];
       return { insertedRows: rows.length, updates, clearedRanges };
     }
+
     if (input.duplicateColumn) {
       const index = columnIndex(input.duplicateColumn);
       const existing = await readValues({
@@ -285,6 +288,7 @@ export const appendRows = {
         return value == null || !keys.has(String(value).trim().toLowerCase());
       });
     }
+
     if (!rows.length) return { insertedRows: 0, updates: {} };
     const { data } = await client.sheets.spreadsheets.values.append(
       {
@@ -295,6 +299,7 @@ export const appendRows = {
       },
       requestOptions(req),
     );
+
     return { insertedRows: rows.length, updates: data.updates ?? {} };
   },
 };

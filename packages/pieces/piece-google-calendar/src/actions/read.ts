@@ -9,6 +9,7 @@ const getInput = eventReference.extend({
   maxAttendees: z.number().int().positive().optional(),
   timeZone: z.string().trim().min(1).optional(),
 });
+
 export const getEvent = {
   slug: 'getEvent',
   description:
@@ -45,6 +46,7 @@ const listInput = z
     message: 'End date must be after start date.',
     path: ['endDate'],
   });
+
 export const listEvents = {
   slug: 'listEvents',
   description:
@@ -98,6 +100,7 @@ const freeBusyInput = z
     path: ['endDate'],
   });
 const freeBusyError = z.object({ domain: z.string().nullish(), reason: z.string().nullish() });
+
 export const findFreeBusyPeriods = {
   slug: 'findFreeBusyPeriods',
   description:

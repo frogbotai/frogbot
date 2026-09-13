@@ -77,6 +77,7 @@ export function enforcePolicy({
   target: string;
 }): AIUserPolicy | undefined {
   if (!req?.user) return;
+
   const policy = resolvePolicy(req.user);
   if (!isTargetAllowed(policy, target)) throw new ModelNotAllowedError(target);
   if (
@@ -85,6 +86,7 @@ export function enforcePolicy({
   ) {
     throw new BudgetExceededError();
   }
+
   return policy;
 }
 

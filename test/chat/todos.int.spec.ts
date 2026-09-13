@@ -38,6 +38,7 @@ describe('chat persistence: todos', () => {
     id: string,
   ) {
     const { write_todos, read_todos } = await import(toolsPath);
+
     const first = await resolveChatContext({
       req,
       agentSlug,
@@ -45,12 +46,15 @@ describe('chat persistence: todos', () => {
       tools: {},
     });
     const todos = [{ content: 'Complete the plan', status: 'in_progress' as const }];
+
     const ctx = {
       req,
       frogbot: booted.frogbot,
       agent: { slug: agentSlug, runId: id, chatId: first.chatId },
     };
+
     await write_todos.execute({ todos }, ctx);
+
     const continuation = await resolveChatContext({
       req,
       agentSlug,
@@ -58,15 +62,19 @@ describe('chat persistence: todos', () => {
       incoming: [userMessage('Continue', `${id}-2`)],
       tools: {},
     });
+
     expect(continuation.chatId).toBe(first.chatId);
     await expect(read_todos.execute({}, ctx)).resolves.toEqual(todos);
+
     const chat = (await booted.frogbot.findByID({
       collection: chatsSlug,
       id: first.chatId!,
       depth: 0,
       overrideAccess: true,
     })) as { todos: unknown };
+
     expect(chat.todos).toEqual(todos);
+
     return first.chatId;
   }
 

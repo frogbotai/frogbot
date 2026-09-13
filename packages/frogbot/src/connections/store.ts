@@ -143,12 +143,14 @@ export class ConnectionStore {
     this.assertKey({ owner, piece });
     const key = { owner: { ...owner }, piece };
     const lockKey = `connections:${JSON.stringify([this.config.slug, owner.collection, String(owner.id), piece])}`;
+
     return this.frogbot.kv.lock(lockKey, 30_000, async ({ signal }) => {
       let open = true;
       const check = () => {
         signal.throwIfAborted();
         if (!open) throw new Error('Connection lock is closed.');
       };
+
       try {
         return await fn({
           signal,
@@ -160,18 +162,21 @@ export class ConnectionStore {
           },
           upsert: async (data) => {
             check();
+
             if (
               !['oauth', 'secret'].includes(data.method) ||
               !this.config.entries[piece]![data.method]
             ) {
               throw new Error(`Connection method '${data.method}' is not enabled for '${piece}'.`);
             }
+
             const serialized = JSON.stringify(data.credential);
             if (serialized === undefined) throw new Error('Connection credential must be JSON.');
             const credential = await this.config.encryption.encrypt(serialized);
             check();
             const row = await this.findRow(key);
             check();
+
             const write = {
               owner: key.owner.id,
               piece,
@@ -188,10 +193,12 @@ export class ConnectionStore {
               depth: 0,
               overrideAccess: true,
             };
+
             const saved = row
               ? await this.frogbot.update({ ...options, id: row.id })
               : await this.frogbot.create(options);
             check();
+
             return metadata(saved as unknown as ConnectionRow);
           },
           delete: async ({ id } = {}) => {
@@ -199,12 +206,14 @@ export class ConnectionStore {
             const row = await this.findRow(key);
             check();
             if (!row || (id !== undefined && String(id) !== String(row.id))) return false;
+
             await this.frogbot.delete({
               collection: this.config.slug as never,
               id: row.id,
               overrideAccess: true,
             });
             check();
+
             return true;
           },
         });

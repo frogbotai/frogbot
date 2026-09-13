@@ -8,6 +8,7 @@ const inputSchema = z.object({
   messageId: z.string(),
   format: z.enum(['minimal', 'full', 'raw', 'metadata']).default('full'),
 });
+
 export const getEmail = {
   slug: 'getEmail',
   description: 'Get an email by ID.',

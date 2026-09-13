@@ -92,12 +92,14 @@ export class Connections {
     const runtime = pieceInstanceRuntime(piece);
     const slug = piece.piece;
     if (!runtime.definition.auth) return { auth: undefined, key: piece };
+
     const owner = await this.owner(req);
     const id = owner ? JSON.stringify([owner.collection, String(owner.id), slug]) : undefined;
     const fail = (code: ConnectionError['code'], message: string): never => {
       if (id) this.credentialKeys.delete(id);
       throw new ConnectionError(`Connection for '${slug}' ${message}.`, code, undefined, slug);
     };
+
     const entry = Object.hasOwn(this.config.entries, slug) ? this.config.entries[slug] : undefined;
     let row;
     try {
@@ -105,11 +107,13 @@ export class Connections {
     } catch {
       return fail('error', 'could not be read');
     }
+
     if (!row) {
       if (id) this.credentialKeys.delete(id);
       if (runtime.auth !== undefined) return { auth: runtime.auth, key: piece };
       return fail('missing', 'is not linked');
     }
+
     if (
       row.status === 'active' &&
       row.method === 'oauth' &&
@@ -129,6 +133,7 @@ export class Connections {
       }
       if (!row) return fail('missing', 'is not linked');
     }
+
     if (row.status === 'revoked') return fail('revoked', 'is revoked');
     if (row.status !== 'active') return fail('error', 'is in an error state');
     if (row.expiresAt) {
@@ -136,6 +141,7 @@ export class Connections {
       if (!Number.isFinite(expiresAt)) return fail('error', 'has an invalid expiry');
       if (expiresAt <= Date.now()) return fail('expired', 'is expired');
     }
+
     if ((row.method !== 'secret' && row.method !== 'oauth') || !entry?.[row.method]) {
       return fail('error', 'uses an unavailable method');
     }
@@ -147,6 +153,7 @@ export class Connections {
     const missingScopes = [...new Set(requiredScopes)].filter(
       (scope) => !row.scopes.includes(scope),
     );
+
     if (missingScopes.length) {
       throw new ConnectionError(
         `Connection for '${slug}' is missing required scopes.`,
@@ -155,6 +162,7 @@ export class Connections {
         slug,
       );
     }
+
     let auth: unknown;
     try {
       auth =
@@ -164,6 +172,7 @@ export class Connections {
     } catch {
       return fail('error', 'has invalid credentials');
     }
+
     const fingerprint = createHmac('sha256', this.identitySecret)
       .update(row.method)
       .update(canonicalJSON(row.credential))
@@ -172,11 +181,13 @@ export class Connections {
     if (!identity || identity.rowID !== String(row.id) || identity.fingerprint !== fingerprint) {
       identity = { rowID: String(row.id), fingerprint, key: {} };
     }
+
     this.credentialKeys.delete(id!);
     this.credentialKeys.set(id!, identity);
     if (this.credentialKeys.size > 512) {
       this.credentialKeys.delete(this.credentialKeys.keys().next().value!);
     }
+
     return { auth, key: identity.key };
   }
 

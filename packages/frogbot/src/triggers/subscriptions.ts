@@ -186,11 +186,13 @@ export class TriggerSubscriptions {
     signal.throwIfAborted();
     const instance = subscriber.piece;
     if (prior) this.assertResolved(prior);
+
     const { runtime, trigger } = this.lifecycle(instance, subscriber.trigger.trigger.slug);
     const parsedInput = parseSubscriptionInput({ schema: trigger.input, input });
     const inputHash = hash(input);
     const url = (id: Subscription['id']) =>
       `${baseURL}/${encodeURIComponent(instance.slug)}/${encodeURIComponent(String(id))}`;
+
     if (
       prior?.status === 'active' &&
       !prior.cleanupPending &&
@@ -200,6 +202,7 @@ export class TriggerSubscriptions {
     ) {
       return prior;
     }
+
     if (prior) await this.cleanup({ subscription: prior, signal });
     let subscription = await this.write({
       id: prior?.id,
@@ -217,23 +220,27 @@ export class TriggerSubscriptions {
       },
       signal,
     });
+
     const webhookUrl = url(subscription.id);
     const req = await this.frogbot.createRequest();
     signal.throwIfAborted();
     const client = await runtime.client({ req });
     signal.throwIfAborted();
+
     const context = {
       input: parsedInput as never,
       client: client as never,
       options: runtime.options as never,
       req,
     };
+
     const attempt = randomUUID();
     subscription = await this.write({
       id: subscription.id,
       data: { webhookUrl, enableAttempt: attempt, enablePending: true },
       signal,
     });
+
     let state: unknown;
     try {
       state = await trigger.onEnable({ ...context, webhookUrl });
@@ -244,6 +251,7 @@ export class TriggerSubscriptions {
       });
       throw error;
     }
+
     try {
       return await this.write({
         id: subscription.id,
@@ -315,12 +323,14 @@ export class TriggerSubscriptions {
         );
       }
     }
+
     const data = {
       status: 'error' as const,
       enablePending: false,
       state: recovery.state ?? null,
       cleanupPending: true,
     };
+
     if (!recovery.compensated && recovery.disable) {
       let persisted = false;
       try {
@@ -330,6 +340,7 @@ export class TriggerSubscriptions {
         signal.throwIfAborted();
         this.warn({ action: 'persist recovery state for', trigger: String(recovery.id), error });
       }
+
       signal.throwIfAborted();
       try {
         await recovery.disable();
@@ -341,11 +352,13 @@ export class TriggerSubscriptions {
         throw error;
       }
     }
+
     await this.write({
       id: recovery.id,
       data: { status: 'error', state: null, cleanupPending: false, enablePending: false },
       signal,
     });
+
     this.recoveries.delete(recovery.attempt);
   }
 

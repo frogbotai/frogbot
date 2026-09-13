@@ -13,6 +13,7 @@ const inputSchema = z.object({
   maxResults: z.number().int().min(1).max(500).default(20),
   includeSpamTrash: z.boolean().default(false),
 });
+
 export const searchEmails = {
   slug: 'searchEmails',
   description: 'Search emails using Gmail search syntax and common filters.',

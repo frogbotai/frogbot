@@ -108,6 +108,7 @@ export function buildConnectionOAuthEndpoints({
         const headers = new Headers({ 'cache-control': 'no-store' });
         const entry = entryFor(req);
         if (!entry) return failure(404, headers, 'Connection not found');
+
         try {
           const { callbackUrl } = await routeURLs({
             req,
@@ -116,6 +117,7 @@ export function buildConnectionOAuthEndpoints({
           });
           const params = new URL(req.url!).searchParams;
           if (params.getAll('state').length !== 1) throw new OAuthError('state');
+
           const { intent, clearCookie } = await consumeOAuthState({
             kv: req.frogbot.kv,
             encryption: connections.encryption,
@@ -127,9 +129,11 @@ export function buildConnectionOAuthEndpoints({
             req,
           });
           headers.set('set-cookie', clearCookie);
+
           if (params.has('error') || params.getAll('code').length !== 1) {
             throw new OAuthError('tokens');
           }
+
           const owner = intent.owner!;
           const user = await req.frogbot.findByID({
             collection: owner.collection,
@@ -139,6 +143,7 @@ export function buildConnectionOAuthEndpoints({
             disableErrors: true,
           });
           if (!user) throw new OAuthError('state');
+
           const tokens = await exchangeOAuthCode({
             piece: entry.piece,
             code: params.get('code')!,
@@ -146,16 +151,19 @@ export function buildConnectionOAuthEndpoints({
             verifier: intent.verifier,
             signal: req.signal,
           });
+
           const metadata = oauthTokenMetadata({
             tokens,
             scopes: entry.piece.oauth?.scopes ?? pieceInstanceDefinition(entry.piece).oauth!.scopes,
           });
+
           const account = await lookupOAuthAccount({
             piece: entry.piece,
             tokens,
             req,
             signal: req.signal,
           });
+
           await (
             await req.frogbot.connections.store
           ).upsert({
@@ -166,6 +174,7 @@ export function buildConnectionOAuthEndpoints({
             account,
             ...metadata,
           });
+
           headers.set('location', intent.returnTo);
           return new Response(null, { status: 302, headers });
         } catch (error) {

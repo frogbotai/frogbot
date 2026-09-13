@@ -57,6 +57,7 @@ export async function streamTextOperation(
     model: modelId,
     context: { req: req as FrogbotRequest | undefined },
   });
+
   const userEnd = onEnd ?? onFinish;
   const aiTools = toAISDKTools(tools);
   const toolReq = tools?.length ? await frogbot.createRequest(req) : undefined;

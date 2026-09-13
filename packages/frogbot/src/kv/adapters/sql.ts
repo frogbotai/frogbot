@@ -47,6 +47,7 @@ export function createSQLKV({
   const adapter = input as DrizzleAdapter;
   const sqlite = adapter.name === 'sqlite';
   const maxExpiration = sqlite ? 253402300799999 : 8640000000000000;
+
   if (sqlite && ['@payloadcms/db-sqlite', '@frogbotai/db-sqlite'].includes(adapter.packageName)) {
     const { clientConfig } = adapter as DrizzleAdapter & {
       clientConfig?: { syncUrl?: string; url?: string };
@@ -68,6 +69,7 @@ export function createSQLKV({
   if (!mappedTable?.key || !mappedTable.data || !mappedTable.expiresAt) {
     unsupported(`SQL KV collection "${collectionSlug}" requires key, data, and expiresAt columns`);
   }
+
   const table = mappedTable;
   const columns = getTableColumns(table);
   const primary = () => (adapter.primaryDrizzle ?? adapter.drizzle) as SQLiteDB;
@@ -95,10 +97,12 @@ export function createSQLKV({
     if (!Number.isSafeInteger(remaining) || ttl > remaining) {
       throw new RangeError('KV ttl exceeds the SQL expiration range');
     }
+
     if (sqlite) {
       const value = sql`strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ${`${ttl / 1000} seconds`})`;
       return sql`case when ${value} is not null then ${value} else json_extract('null', ${overflowMarker}) end`;
     }
+
     return sql`(select cast(case when extract(epoch from deadline) * 1000 <= ${maxExpiration}
       then deadline::text else ${overflowMarker} end as timestamptz)
       from (select date_trunc('milliseconds', clock_timestamp()) + ${`${ttl} milliseconds`}::interval as deadline) as kv_expiration)`;
@@ -118,6 +122,7 @@ export function createSQLKV({
     const expiresAt = await expiration(options?.ttl);
     const serialized = JSON.stringify(value);
     if (serialized === undefined) throw new TypeError('KV value must be JSON serializable');
+
     const data = sqlite ? sql`${serialized}` : sql`${serialized}::jsonb`;
     const timestamps = columns.updatedAt ? { updatedAt: now } : {};
     const insert = (db: SQLiteDB, deadline: SQL | null) => {
@@ -136,10 +141,12 @@ export function createSQLKV({
         })
         .returning({ key: table.key });
     };
+
     if (sqlite || expiresAt === null) {
       const rows = await mutation(insert(primary(), expiresAt));
       return rows.length > 0;
     }
+
     const db = primary() as unknown as PostgresDB;
     return mutation(
       db.transaction(async (transaction) => {
@@ -169,6 +176,7 @@ export function createSQLKV({
       const rows = await mutation(query.where(owned(lock)).returning());
       return rows.length > 0;
     }
+
     const change =
       expiresAt === undefined
         ? sql`delete from ${table}`
@@ -190,6 +198,7 @@ export function createSQLKV({
       returning ${table.key}
     `),
     );
+
     return result.rows.length > 0;
   }
 

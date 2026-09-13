@@ -61,6 +61,7 @@ function ConnectionForm({
   const submit = async () => {
     if (submitting.current) return;
     setError('');
+
     if (method === 'oauth') {
       submitting.current = true;
       setBusy(true);
@@ -70,10 +71,12 @@ function ConnectionForm({
       );
       return;
     }
+
     if (!piece.secretSchema) {
       setError('Static credentials are not available for this integration.');
       return;
     }
+
     let body: string;
     try {
       body = JSON.stringify(connectionInput({ field: piece.secretSchema, value }));
@@ -81,9 +84,11 @@ function ConnectionForm({
       setError(error instanceof Error ? error.message : 'Check your credential values.');
       return;
     }
+
     submitting.current = true;
     setBusy(true);
     onBusyChange(true);
+
     try {
       const response = await fetch(`${apiPath}/${encodeURIComponent(piece.slug)}`, {
         method: 'POST',
@@ -101,6 +106,7 @@ function ConnectionForm({
         );
         return;
       }
+
       setValue(undefined);
       onCreated();
     } catch {

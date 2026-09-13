@@ -26,8 +26,10 @@ export async function dispatchTriggerEvents({
         )
         .digest('hex');
       const key = `trigger:dedupe:${identity}`;
+
       await frogbot.kv.lock(`${key}:lock`, 60_000, async ({ signal }) => {
         if (await frogbot.kv.has(key)) return;
+
         signal.throwIfAborted();
         await frogbot.queue({
           task: AGENT_TRIGGER_TASK_SLUG,
@@ -39,6 +41,7 @@ export async function dispatchTriggerEvents({
             event,
           },
         });
+
         signal.throwIfAborted();
         await frogbot.kv.setIfAbsent(key, true, { ttl: 86_400_000 });
       });

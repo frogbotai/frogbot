@@ -170,6 +170,7 @@ function unsupported(reason: string): KVUnsupportedError {
 export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): KVDatabaseAdapter {
   let ready: Promise<MongoKVModel> | undefined;
   let atomicReady: Promise<MongoKVModel> | undefined;
+
   const getModel = (): Promise<MongoKVModel> => {
     ready ??= (async () => {
       const model = (adapter as unknown as { collections?: Record<string, MongoKVModel> })
@@ -194,24 +195,28 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
       ) {
         throw unsupported('Mongo KV requires a replica set with transaction support');
       }
+
       const id = model.schema.path('_id');
       if (id?.instance !== 'ObjectId' || id.options.auto !== true) {
         throw unsupported(
           'Mongo KV requires automatically generated ObjectId IDs; custom IDs are unsupported',
         );
       }
+
       const timestamps = model.schema.options.timestamps;
       if (timestamps && typeof timestamps === 'object' && timestamps.currentTime !== undefined) {
         throw unsupported(
           'Mongo KV timestamps must use backend time; custom currentTime is unsupported',
         );
       }
+
       for (const field of ['createdAt', 'updatedAt'] as const) {
         const name = timestampField(timestamps, field);
         if (name && ['_id', 'key', 'data', 'expiresAt'].includes(name.split('.')[0])) {
           throw unsupported('Mongo KV timestamp fields must not overlap KV fields');
         }
       }
+
       const indexes = await model.collection.listIndexes({ readPreference: 'primary' }).toArray();
       if (
         !indexes.some(
@@ -242,6 +247,7 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
     const model = await getAtomicModel();
     const session = await model.db.startSession();
     const options: MongoOptions = { ...readOptions, session };
+
     try {
       for (let attempt = 0; ; attempt++) {
         let inserting = false;
@@ -321,6 +327,7 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
               } else if (operation === 'claim' && previous) {
                 filter = { key, $expr: expired };
               }
+
               let changed: boolean;
               if (operation === 'release') {
                 changed = (await model.collection.deleteOne(filter, options)).deletedCount === 1;
@@ -339,6 +346,7 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
                 );
                 changed = result.matchedCount === 1;
               }
+
               if (!changed) await session.abortTransaction();
               return changed;
             },
@@ -362,6 +370,7 @@ export function createMongoKV({ adapter, collectionSlug }: MongoKVCreateArgs): K
       ) {
         throw new RangeError('KV ttl exceeds the supported expiration range', { cause: error });
       }
+
       throw error;
     } finally {
       await session.endSession();

@@ -206,16 +206,19 @@ export async function lookupOAuthAccount({
   const auth = oauthAuth({ piece, tokens: validatedTokens });
   if (!definition.oauth?.account) return;
   if (!definition.auth) throw new OAuthError('configuration');
+
   try {
     return await timed(
       async (signal) => {
         const client = await definition.client({ auth, options: options as object });
         signal.throwIfAborted();
+
         const account = await definition.oauth!.account!({
           tokens: validatedTokens,
           client,
           req: callbackRequest({ req, signal }),
         });
+
         return z
           .object({
             id: z.string().min(1),
@@ -245,6 +248,7 @@ export async function refreshOAuthTokens({
 }): Promise<OAuthTokens> {
   const recipe = pieceInstanceRuntime(piece).definition.oauth;
   if (!recipe) throw new OAuthError('configuration');
+
   let next: OAuthTokens;
   if (recipe.refresh) {
     next = parseOAuthTokens(
@@ -265,10 +269,12 @@ export async function refreshOAuthTokens({
       },
     });
   }
+
   const merged = {
     ...tokens,
     ...Object.fromEntries(Object.entries(next).filter(([, value]) => value !== undefined)),
   };
   if (next.expires_in === undefined) delete merged.expires_in;
+
   return parseOAuthTokens(merged);
 }

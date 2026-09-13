@@ -12,6 +12,7 @@ function providerName(model: string): string | undefined {
 
 export function getConfiguredModelIds(ai: AIConfig | SanitizedAIConfig | undefined): string[] {
   if (!ai) return [];
+
   const modelIds = new Set<string>();
   for (const [provider, entry] of Object.entries(ai.providers)) {
     if (!entry) continue;
@@ -73,5 +74,6 @@ export function resolveSmallModel(ai: AIConfig | SanitizedAIConfig, mainModel: s
     )[0]?.model.id;
   };
   const small = candidates.filter((candidate) => candidate.small);
+
   return pick(small.length > 0 ? small : candidates) ?? mainModel;
 }

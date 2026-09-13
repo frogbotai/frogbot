@@ -118,6 +118,7 @@ export const customApiCall = {
     ) {
       throw new Error('Custom API paths must remain inside the Google Sheets v4 spreadsheets API.');
     }
+
     const headers = new Headers(input.headers);
     for (const name of headers.keys()) {
       if (
@@ -126,6 +127,7 @@ export const customApiCall = {
         throw new Error(`Custom header '${name}' is reserved.`);
       }
     }
+
     let data: string | number | boolean | object | undefined;
     if (input.body?.type === 'form') {
       const form = new FormData();
@@ -143,6 +145,7 @@ export const customApiCall = {
         headers.set('content-type', 'application/json');
       }
     }
+
     const response = await client.auth.request({
       ...requestOptions(req),
       url: url.toString(),
@@ -155,10 +158,12 @@ export const customApiCall = {
       validateStatus: (status) =>
         input.failOnError ? status >= 200 && status < 300 : status < 300 || status >= 400,
     });
+
     const result = {
       status: response.status,
       headers: Object.fromEntries(response.headers.entries()),
     };
+
     if (input.binary) {
       return {
         ...result,
@@ -170,6 +175,7 @@ export const customApiCall = {
         }),
       };
     }
+
     return {
       ...result,
       body: response.data == null || response.data === '' ? null : z.json().parse(response.data),
