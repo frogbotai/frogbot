@@ -1,5 +1,7 @@
 # UI Component Conventions
 
+Read the [root contribution guide](../../CONTRIBUTING.md) first for shared coding, blank-line, Firmware parity, color-token, and verification rules. This file adds package-specific conventions.
+
 ## Organization
 
 - Keep reusable components flat in `src/components` and name files by intent.
