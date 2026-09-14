@@ -1,4 +1,10 @@
-import { definePiece, type PieceOAuthRecipe, type PieceWebhook } from 'frogbot/pieces';
+import { createSlackAdapter } from '@chat-adapter/slack';
+import {
+  definePiece,
+  type PieceChannel,
+  type PieceOAuthRecipe,
+  type PieceWebhook,
+} from 'frogbot/pieces';
 import type { z } from 'zod';
 
 import { slackActions } from './actions.js';
@@ -78,6 +84,42 @@ export const createSlack = definePiece({
     account: slackAccount,
   },
   webhook: slackWebhook,
+  channel: {
+    adapter({ auth, options }) {
+      if (!options.signingSecret) {
+        throw new Error('Slack channels require a signingSecret option for webhook verification.');
+      }
+
+      return createSlackAdapter({
+        botToken: auth.botToken,
+        signingSecret: options.signingSecret,
+      });
+    },
+    async identity({ author, client, req }) {
+      const response = await client.request('users.info', { user: author.userId });
+      const user = response.user;
+      const profile =
+        user && typeof user === 'object' && 'profile' in user ? user.profile : undefined;
+      const email =
+        profile && typeof profile === 'object' && 'email' in profile ? profile.email : undefined;
+
+      if (typeof email !== 'string' || !email.trim()) return null;
+
+      const config = await req.frogbot.config;
+      const payloadConfig = await config._internal.payloadConfig;
+      const result = await req.frogbot.find({
+        collection: payloadConfig.admin.user as never,
+        where: { email: { equals: email.trim().toLowerCase() } },
+        limit: 1,
+        overrideAccess: true,
+        req,
+      });
+
+      const match = result.docs[0];
+
+      return match ? { ...match, collection: payloadConfig.admin.user } : null;
+    },
+  } satisfies PieceChannel<z.output<typeof slackAuth>, z.output<typeof slackOptions>, SlackClient>,
   actions: slackActions,
   triggers: slackTriggers,
 });

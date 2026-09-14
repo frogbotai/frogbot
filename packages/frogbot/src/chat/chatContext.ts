@@ -3,6 +3,8 @@ import { commitTransaction, initTransaction, killTransaction, NotFound } from 'p
 
 import type { DocID } from '../collections/config/types.js';
 import type { FrogbotRequest } from '../types/request.js';
+import type { ChannelChatAccess } from './channelAccess.js';
+import { hasChannelChatAccess } from './channelAccess.js';
 import { messagesToUIMessages } from './messagesToUIMessages.js';
 import { validateChatMessages } from './validateMessages.js';
 
@@ -17,6 +19,7 @@ export type ResolveChatContextProps = {
   chatId?: DocID;
   incoming: UIMessage[];
   tools: unknown;
+  channelAccess?: ChannelChatAccess;
 };
 
 type TransactionReq = Parameters<typeof initTransaction>[0];
@@ -27,6 +30,7 @@ export async function resolveChatContext({
   chatId,
   incoming,
   tools,
+  channelAccess,
 }: ResolveChatContextProps): Promise<ChatContext> {
   const chat = req.frogbot.config.chat;
   if (!chat.enabled) return { uiMessages: incoming };
@@ -50,6 +54,7 @@ export async function resolveChatContext({
       agentSlug,
       chatId,
       chatsSlug: chat.chatsSlug,
+      channelAccess,
     });
 
     for (const message of newMessages) {
@@ -133,6 +138,7 @@ type ResolveChatIdProps = {
   agentSlug: string;
   chatId?: DocID;
   chatsSlug: string;
+  channelAccess?: ChannelChatAccess;
 };
 
 async function resolveChatId({
@@ -140,6 +146,7 @@ async function resolveChatId({
   agentSlug,
   chatId,
   chatsSlug,
+  channelAccess,
 }: ResolveChatIdProps): Promise<DocID> {
   const overrideAccess = true;
   if (chatId !== undefined) {
@@ -149,9 +156,20 @@ async function resolveChatId({
       depth: 0,
       req,
       overrideAccess,
-    })) as { id: DocID; user?: { id: DocID } | DocID | null };
+    })) as {
+      id: DocID;
+      user?: { id: DocID } | DocID | null;
+      agent?: string | null;
+      channelKey?: string | null;
+    };
+
     const ownerId = typeof chat.user === 'object' && chat.user !== null ? chat.user.id : chat.user;
-    if ((ownerId ?? null) !== (req.user?.id ?? null)) throw new NotFound(req.t);
+    const allowed = channelAccess
+      ? hasChannelChatAccess({ access: channelAccess, req, agentSlug, chat })
+      : (ownerId ?? null) === (req.user?.id ?? null);
+
+    if (!allowed) throw new NotFound(req.t);
+
     return chat.id;
   }
 

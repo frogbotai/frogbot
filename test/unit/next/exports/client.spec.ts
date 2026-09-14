@@ -15,4 +15,10 @@ describe('@frogbotai/next client export', () => {
   it('forwards the Payload client exports', () => {
     expect(source).toContain("export * from '@payloadcms/next/client'");
   });
+
+  it('exports the channel list cell', () => {
+    expect(source).toContain(
+      "export { ChannelCell, type ChannelCellProps } from '../elements/ChannelCell/index.client.js'",
+    );
+  });
 });

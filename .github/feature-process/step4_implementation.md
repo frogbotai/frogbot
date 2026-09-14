@@ -8,6 +8,7 @@ Proceed after `Approved Step 3` or a clear [request to implement now](FEATURE_DE
 - All workers use the same ticket workspace. Pass absolute paths to code and ticket documents; ignored plans are not automatically shared between worktrees. Recheck research claims affected by changed code, not the entire repository by default.
 - The coordinator decides the work order, keeps shared interfaces consistent, updates the implementation summary, and reviews the combined changes. Give workers specific assignments; do not delegate responsibility for the entire ticket.
 - Check existing shared components and API definitions before adding new UI markup or request/response formats.
+- **Dependency patches are out of scope.** Follow the [contributor rule](../../CONTRIBUTING.md#when-tests-find-a-problem): report the limitation, continue the agreed application work, and do not expand the architecture to work around the restriction.
 
 ## Subagent scope and reuse
 
@@ -61,7 +62,7 @@ Once the feature's parts work together, run the testing stage from Step 3. If th
 2. Test the agreed behavior first. Exercise real application calls and check their results—for example, save a record and read it back. Testing a helper alone does not prove the complete user flow works.
 3. Test realistic ways the feature could fail. Choose cases based on how likely they are or how serious the consequences would be, not to maximize the number of failures found. Rare failures can matter; explain which requirement or user risk each case checks.
 4. Check related behavior the change might break. For bug fixes, confirm that the test exposes the original failure when feasible, not an unrelated setup error; record when you cannot check this. Never discard working changes to recreate the old code.
-5. Use [When tests find a problem](../../CONTRIBUTING.md#when-tests-find-a-problem) to decide what to fix, document, or bring to the owner. Return in-scope failures with reproduction steps, fix them, and rerun the affected checks. A newly discovered failure must not silently become a requirement for a dependency patch or redesign.
+5. Use [When tests find a problem](../../CONTRIBUTING.md#when-tests-find-a-problem) to decide what to fix, document, or bring to the owner. Return in-scope failures with reproduction steps, fix them, and rerun the affected checks. Dependency-level fixes remain subject to the no-patches rule above; a newly discovered failure does not authorize a redesign.
 6. Record commands, code version tested, results, skipped or unavailable checks, and known limitations in the existing summary. Required but blocked tests leave verification incomplete. Finish the contributor checks; Markdown-only tickets use the documented exception.
 
 ## Implementation summary

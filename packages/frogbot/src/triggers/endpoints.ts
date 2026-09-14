@@ -1,5 +1,6 @@
 import { addDataAndFileToRequest, type PayloadRequest } from 'payload';
 
+import { getChannelHost } from '../channels/host.js';
 import type { Endpoint } from '../endpoints/types.js';
 import { pieceInstanceRuntime } from '../pieces/definePiece.js';
 import type { FrogbotRequest } from '../types/request.js';
@@ -17,12 +18,28 @@ async function handler(req: FrogbotRequest): Promise<Response> {
   const instanceSlug = req.routeParams?.instance as string | undefined;
   const subscription = req.routeParams?.subscription as string | undefined;
   const entry = instanceSlug ? req.frogbot.config._internal.triggers[instanceSlug] : undefined;
+
   if (!entry) return new Response(null, { status: 404 });
+
   const runtime = pieceInstanceRuntime(entry.instance);
   const { definition } = runtime;
   const webhookReq = Object.assign(requestClone(req), { user: null });
+  const channelRequest = entry.channelAgentSlug && !subscription ? requestClone(req) : undefined;
+  const channelHost = channelRequest ? getChannelHost(req.frogbot) : undefined;
+
+  if (channelRequest && !channelHost) {
+    return new Response('Channel host unavailable', { status: 503 });
+  }
 
   if (req.method === 'GET') {
+    const channelResponse = channelRequest
+      ? await channelHost!.webhook(instanceSlug!, channelRequest as unknown as Request)
+      : undefined;
+
+    if (channelResponse) return channelResponse;
+
+    if (channelRequest) return new Response('Channel binding unavailable', { status: 503 });
+
     if (!definition.webhook) return new Response(null, { status: 404 });
 
     return (
@@ -33,7 +50,9 @@ async function handler(req: FrogbotRequest): Promise<Response> {
     );
   }
 
-  if (!subscription && !definition.webhook) return new Response(null, { status: 404 });
+  if (!subscription && !definition.webhook && !channelRequest) {
+    return new Response(null, { status: 404 });
+  }
 
   if (definition.webhook) {
     const verifyReq = requestClone(req);
@@ -42,6 +61,47 @@ async function handler(req: FrogbotRequest): Promise<Response> {
       return new Response(null, { status: 401 });
     }
   }
+
+  const channelResponse = channelRequest
+    ? await channelHost!.webhook(instanceSlug!, channelRequest as unknown as Request)
+    : undefined;
+
+  if (channelRequest && !channelResponse) {
+    return new Response('Channel binding unavailable', { status: 503 });
+  }
+
+  if (channelResponse && !channelResponse.ok) return channelResponse;
+
+  const triggerResponse = await dispatchWebhookTriggers({
+    req,
+    instanceSlug: instanceSlug!,
+    subscription,
+    entry,
+    runtime,
+    webhookReq,
+  });
+
+  return triggerResponse.ok ? (channelResponse ?? triggerResponse) : triggerResponse;
+}
+
+async function dispatchWebhookTriggers({
+  req,
+  instanceSlug,
+  subscription,
+  entry,
+  runtime,
+  webhookReq,
+}: {
+  req: FrogbotRequest;
+  instanceSlug: string;
+  subscription?: string;
+  entry: NonNullable<FrogbotRequest['frogbot']['config']['_internal']['triggers'][string]>;
+  runtime: ReturnType<typeof pieceInstanceRuntime>;
+  webhookReq: FrogbotRequest;
+}): Promise<Response> {
+  const { definition } = runtime;
+
+  if (!subscription && !definition.webhook) return Response.json({ ok: true });
 
   let row: Subscription | undefined;
 
@@ -66,6 +126,7 @@ async function handler(req: FrogbotRequest): Promise<Response> {
       })
     : null;
   if (handshake) return handshake;
+
   let subscribers: TriggerSubscriber[];
   if (row) {
     if (row.status !== 'active' || row.enablePending || row.cleanupPending) {
@@ -88,12 +149,15 @@ async function handler(req: FrogbotRequest): Promise<Response> {
         candidate.trigger.trigger.type === 'app' && candidate.trigger.trigger.event === event,
     );
   }
-  await Promise.all(
+
+  const results = await Promise.allSettled(
     subscribers.map(async (candidate) => {
       const trigger = definition.triggers?.find(
         (candidateTrigger) => candidateTrigger.slug === candidate.trigger.trigger.slug,
       );
+
       if (!trigger || (trigger.type !== 'webhook' && trigger.type !== 'app')) return;
+
       const triggerReq = requestClone(webhookReq);
       const input = row
         ? parseSubscriptionInput({ schema: trigger.input, input: row.input })
@@ -118,6 +182,13 @@ async function handler(req: FrogbotRequest): Promise<Response> {
       await dispatchTriggerEvents({ events, frogbot: req.frogbot, subscribers: [candidate] });
     }),
   );
+
+  const errors = results.flatMap((result) => (result.status === 'rejected' ? [result.reason] : []));
+
+  if (errors.length) {
+    throw new AggregateError(errors, '[frogbot] App trigger ingress failed.');
+  }
+
   return Response.json({ ok: true });
 }
 

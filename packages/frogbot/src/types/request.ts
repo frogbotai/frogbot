@@ -4,9 +4,16 @@
 // the FrogBot brand consistent in every hook, access function, and
 // custom endpoint.
 
+import type { ChannelContext } from '../channels/types.js';
 import type { Frogbot } from '../frogbot.js';
 import type { TypeWithID } from './generated.js';
 import type { PayloadRequest } from './payload.js';
+
+declare module 'payload' {
+  interface RequestContext {
+    channel?: ChannelContext;
+  }
+}
 
 export interface FrogbotRequest<TUser = Record<string, unknown> & TypeWithID> extends Omit<
   PayloadRequest,

@@ -1,3 +1,4 @@
+import type { Adapter, Author } from 'chat';
 import { expectTypeOf } from 'vitest';
 import { z } from 'zod';
 
@@ -12,7 +13,6 @@ import type { TriggerEvent } from '../triggers/types.js';
 import type { FrogbotRequest } from '../types/request.js';
 import { definePiece, pieceTriggerInstance } from './definePiece.js';
 import type {
-  ChatSdkAuthor,
   ConnectionEntry,
   OAuthTokens,
   PieceDefinition,
@@ -295,10 +295,10 @@ const createChannel = definePiece({
     adapter: ({ auth, options }) => {
       expectTypeOf(auth).toEqualTypeOf<ChannelTypes['auth']>();
       expectTypeOf(options).toEqualTypeOf<ChannelTypes['options']>();
-      return {};
+      return {} as Adapter;
     },
     async identity({ author, client, req }) {
-      expectTypeOf(author).toEqualTypeOf<ChatSdkAuthor>();
+      expectTypeOf(author).toEqualTypeOf<Author>();
       expectTypeOf(client).toEqualTypeOf<TokenClient>();
       expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
       return null;

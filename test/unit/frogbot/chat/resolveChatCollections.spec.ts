@@ -71,6 +71,9 @@ describe('resolveChatCollections', () => {
       'title',
       'user',
       'agent',
+      'channel',
+      'externalId',
+      'channelKey',
       'lastMessageAt',
       'todos',
     ]);

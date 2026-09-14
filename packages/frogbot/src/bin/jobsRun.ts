@@ -107,7 +107,9 @@ export async function jobsRun(args: string[]): Promise<void> {
         await runtime.init({ config: payloadConfig, cron: false, disableOnInit: true });
 
         if (!stopping) {
-          frogbot = await initFrogbotFromPayload(runtime, config);
+          frogbot = await initFrogbotFromPayload(runtime, config, {
+            startChannelGateway: false,
+          });
 
           seedFrogbotCache(frogbot, config);
         }

@@ -9,6 +9,7 @@ import type {
 } from 'ai';
 import type { z } from 'zod';
 
+import type { ChannelChatAccess } from '../chat/channelAccess.js';
 import type { DocID } from '../collections/config/types.js';
 import type { Frogbot } from '../frogbot.js';
 import type {
@@ -121,9 +122,15 @@ type AgentRunOpts = (
 export type AgentGenerateOpts = AgentRunOpts & { chatId?: DocID };
 
 export type AgentStreamOpts = AgentRunOpts;
+export type AgentStreamMessageOpts = AgentRunOpts & {
+  chatId: DocID;
+  channelAccess?: ChannelChatAccess;
+};
 
 export type AgentGenerateResult = GenerateTextResult<ToolSet, Record<string, unknown>, never>;
 export type AgentStreamResult = StreamTextResult<ToolSet, Record<string, unknown>, never>;
+
+export type AgentStreamMessageResult = AgentStreamResult & { persistence: Promise<void> };
 
 export type AgentCallOptions = {
   req?: FrogbotRequest;
@@ -139,6 +146,7 @@ export type AgentInstance = {
   aiAgent: Agent<AgentCallOptions, ToolSet, Record<string, unknown>, never>;
   generate: (opts: AgentGenerateOpts) => Promise<AgentGenerateResult>;
   stream: (opts: AgentStreamOpts) => Promise<AgentStreamResult>;
+  streamMessage: (opts: AgentStreamMessageOpts) => Promise<AgentStreamMessageResult>;
 };
 
 export type AgentRegistry = Record<AgentSlug, AgentInstance>;

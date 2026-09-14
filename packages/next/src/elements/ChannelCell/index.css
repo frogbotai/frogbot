@@ -1,0 +1,13 @@
+.channel-cell {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--theme-base-250);
+  border-radius: 999px;
+  background: var(--theme-base-100);
+  color: var(--theme-base-700);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+}

@@ -74,7 +74,7 @@ export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
     marker: 'chat',
     feature: 'chat persistence',
     defaultCollection: defaultChatsCollection({ slug: chatsSlug, userSlug }),
-    reservedFields: ['user'],
+    reservedFields: ['user', 'channel', 'externalId', 'channelKey'],
   });
   const collections = resolveMarkedCollection({
     collectionLabel: 'chat message',

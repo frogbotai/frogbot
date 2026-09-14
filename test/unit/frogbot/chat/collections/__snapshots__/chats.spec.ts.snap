@@ -18,6 +18,7 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
           "title",
           "user",
           "agent",
+          "channel",
           "lastMessageAt",
         ],
         "type": "list",
@@ -44,6 +45,29 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
       "index": true,
       "name": "agent",
       "type": "text",
+    },
+    {
+      "admin": {
+        "components": {
+          "Cell": "@frogbotai/next/client#ChannelCell",
+        },
+      },
+      "index": true,
+      "name": "channel",
+      "type": "text",
+    },
+    {
+      "index": true,
+      "name": "externalId",
+      "type": "text",
+    },
+    {
+      "admin": {
+        "hidden": true,
+      },
+      "name": "channelKey",
+      "type": "text",
+      "unique": true,
     },
     {
       "index": true,

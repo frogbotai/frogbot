@@ -1,3 +1,4 @@
+import type { Adapter, Author } from 'chat';
 import type { SendEmailOptions, TypeWithID } from 'payload';
 import type { z } from 'zod';
 
@@ -172,12 +173,10 @@ export type PieceEmail<TOptions, TClient> = {
   }): Promise<PieceResult>;
 };
 
-export type ChatSdkAdapter = object;
-export type ChatSdkAuthor = { userId: string; username?: string };
 export type PieceChannel<TAuth, TOptions, TClient> = {
-  adapter(args: { auth: TAuth; options: TOptions }): ChatSdkAdapter;
+  adapter(args: { auth: TAuth; options: TOptions }): Adapter;
   identity(args: {
-    author: ChatSdkAuthor;
+    author: Author;
     client: TClient;
     req: FrogbotRequest;
   }): Promise<TypeWithID | null>;

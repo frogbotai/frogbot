@@ -12,5 +12,5 @@ export type TriggerSubscriber = {
 
 export type IngressRegistry = Record<
   string,
-  { instance: PieceInstance; subscribers: TriggerSubscriber[] }
+  { instance: PieceInstance; subscribers: TriggerSubscriber[]; channelAgentSlug?: string }
 >;

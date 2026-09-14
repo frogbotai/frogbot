@@ -45,6 +45,7 @@ import type {
   VerifyEmailArgs,
 } from './auth/types.js';
 import { generateImportMap } from './bin/generateImportMap/index.js';
+import { initializeChannelHost, shutdownChannelHost } from './channels/host.js';
 import type { Collection } from './collections/config/types.js';
 import type {
   BulkResult,
@@ -108,6 +109,7 @@ export type InitOptions = {
   config: Promise<FrogbotSanitizedConfig> | FrogbotSanitizedConfig;
   disableDBConnect?: boolean;
   disableOnInit?: boolean;
+  startChannelGateway?: boolean;
   onInit?: (frogbot: Frogbot) => Promise<void> | void;
 };
 
@@ -120,7 +122,7 @@ const initFromPayload = Symbol();
 export function initFrogbotFromPayload(
   payload: Payload,
   config: FrogbotSanitizedConfig,
-  options: Pick<InitOptions, 'disableOnInit' | 'onInit'> = {},
+  options: Pick<InitOptions, 'disableOnInit' | 'onInit' | 'startChannelGateway'> = {},
 ): Promise<Frogbot> {
   return new Frogbot()[initFromPayload](payload, config, options);
 }
@@ -177,7 +179,7 @@ export class Frogbot {
   async [initFromPayload](
     payload: Payload,
     config: FrogbotSanitizedConfig,
-    options: Pick<InitOptions, 'disableOnInit' | 'onInit'> = {},
+    options: Pick<InitOptions, 'disableOnInit' | 'onInit' | 'startChannelGateway'> = {},
   ): Promise<Frogbot> {
     this.config = config;
     this.payload = payload;
@@ -194,6 +196,8 @@ export class Frogbot {
       );
     }
     await this[refreshFrogbotConfig](config);
+
+    await initializeChannelHost(this, options.startChannelGateway !== false);
 
     if (this.config.ai) {
       await this.registerAITelemetry(this.config.ai);
@@ -267,6 +271,7 @@ export class Frogbot {
   }
 
   async destroy(): Promise<void> {
+    await shutdownChannelHost(this);
     await this.payload.destroy();
   }
 
