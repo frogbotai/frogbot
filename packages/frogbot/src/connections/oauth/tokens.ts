@@ -114,19 +114,34 @@ async function requestTokens({
   const recipe = pieceInstanceRuntime(piece).definition.oauth;
   const app = piece.oauth;
   if (!recipe || !app) throw new OAuthError('configuration');
+
+  const headers = new Headers({
+    'content-type': 'application/x-www-form-urlencoded',
+    accept: 'application/json',
+  });
+  const body = new URLSearchParams(params);
+
+  if (recipe.tokenEndpointAuthMethod === 'client_secret_basic') {
+    const clientId = new URLSearchParams({ value: app.clientId }).toString().slice('value='.length);
+    const clientSecret = new URLSearchParams({ value: app.clientSecret })
+      .toString()
+      .slice('value='.length);
+
+    headers.set(
+      'authorization',
+      `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+    );
+  } else {
+    body.set('client_id', app.clientId);
+    body.set('client_secret', app.clientSecret);
+  }
+
   try {
     return await timed(async (signal) => {
       const response = await fetch(recipe.tokenUrl, {
         method: 'POST',
-        headers: {
-          'content-type': 'application/x-www-form-urlencoded',
-          accept: 'application/json',
-        },
-        body: new URLSearchParams({
-          ...params,
-          client_id: app.clientId,
-          client_secret: app.clientSecret,
-        }),
+        headers,
+        body,
         redirect: 'error',
         signal,
       });

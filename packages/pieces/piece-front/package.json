@@ -1,30 +1,30 @@
 {
   "name": "@frogbotai/piece-front",
   "version": "0.22.0",
-  "description": "Front tools for FrogBot.",
+  "description": "front tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./src/index.ts",
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "sideEffects": false,
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@activepieces/piece-front": "0.1.5"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"

@@ -55,10 +55,13 @@ export function memoryKV() {
   return { kv: createKV({ adapter: adapter as never }), adapter, values, expirations };
 }
 
-export function setup(pieceDefinition: PieceDefinition = definition) {
+export function setup(
+  pieceDefinition: PieceDefinition = definition,
+  oauth = { clientId: 'client', clientSecret: 'secret' },
+) {
   const piece = definePiece(pieceDefinition)({
     slug: 'configured',
-    oauth: { clientId: 'client', clientSecret: 'secret' },
+    oauth,
     auth: { token: 'developer' },
   });
   const encryption = createCredentialEncryption({ secret: 'state-secret' });

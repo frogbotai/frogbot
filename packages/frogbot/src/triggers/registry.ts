@@ -40,7 +40,7 @@ export function buildIngressRegistry({
         );
       }
       const { definition } = pieceInstanceRuntime(instance);
-      if (!definition.webhook) {
+      if (trigger.trigger.type === 'app' && !definition.webhook) {
         throw new Error(
           `[frogbot] Trigger '${trigger.trigger.slug}' in agent '${agent.slug}' requires a webhook-enabled piece.`,
         );

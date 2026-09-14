@@ -1,18 +1,21 @@
-import * as module from '@activepieces/piece-brave-search';
-import { createActivepiecesPiece, type PieceFactoryConfig } from 'frogbot/pieces';
+import { definePiece } from 'frogbot/pieces';
 
-export const braveSearchActions = ['web_search'] as const;
+import { customApiCall } from './actions/customApiCall.js';
+import { searchWeb } from './actions/searchWeb.js';
+import { createBraveSearchClient } from './client.js';
+import { braveSearchAuth } from './config.js';
 
-export function createBraveSearch(config?: PieceFactoryConfig) {
-  const piece = createActivepiecesPiece({
-    module,
-    service: 'brave',
-    credentialType: 'secret_text',
-    defaultActions: braveSearchActions,
-    config,
-  });
-  return Object.assign(piece, {
-    webSearch: piece.tool('web_search'),
-    customApiCall: piece.tool('custom_api_call'),
-  });
-}
+export const braveSearchActions = ['searchWeb', 'customApiCall'] as const;
+export const braveSearchScopes = [] as const;
+
+export const createBraveSearch = definePiece({
+  slug: 'brave-search',
+  label: 'Brave Search',
+  admin: {
+    description: 'Search the web with Brave Search',
+    group: 'Search',
+  },
+  auth: braveSearchAuth,
+  client: createBraveSearchClient,
+  actions: [searchWeb, customApiCall],
+});

@@ -13,7 +13,6 @@ export type ToolCtx = {
 export type Tool<TSchema extends z.ZodType = z.ZodType, TResult = unknown> = {
   component?: FrogbotComponent;
   slug: string;
-  pieceService?: string;
   description: string;
   inputSchema: TSchema;
   execute: (input: z.infer<TSchema>, ctx: ToolCtx) => TResult | Promise<TResult>;

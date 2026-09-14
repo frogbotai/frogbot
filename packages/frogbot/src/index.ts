@@ -177,9 +177,7 @@ export { definePiece } from './pieces/definePiece.js';
 export type { EmailPiece } from './pieces/email.js';
 export type {
   ChannelPieceInstance,
-  CredentialType,
   EmailPieceInstance,
-  LegacyPiece,
   OAuthApp,
   OAuthTokens,
   Piece,
@@ -202,7 +200,6 @@ export type {
   PiecePollingTrigger,
   PieceResult,
   PieceRunArgs,
-  PieceToolsOptions,
   PieceTriggerDefinition,
   PieceTriggerReference,
   PieceTypes,

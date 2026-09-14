@@ -57,9 +57,41 @@ describe('OAuth token and account transport', () => {
     expect(request).toMatchObject({
       method: 'POST',
       redirect: 'error',
-      headers: { accept: 'application/json' },
     });
+    expect(new Headers(request.headers).get('accept')).toBe('application/json');
+    expect(new Headers(request.headers).has('authorization')).toBe(false);
     expect(request.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('exchanges the code with HTTP Basic app credentials outside the request body', async () => {
+    const { piece } = setup(
+      {
+        ...definition,
+        oauth: { ...definition.oauth, tokenEndpointAuthMethod: 'client_secret_basic' },
+      },
+      { clientId: 'client:id %é', clientSecret: 'secret:% snow☃' },
+    );
+    const fetch = vi.fn(async () => Response.json({ access_token: 'fresh' }));
+    vi.stubGlobal('fetch', fetch);
+
+    await exchangeOAuthCode({
+      piece,
+      code: 'code',
+      callbackUrl: 'https://app.test/callback',
+      verifier: 'v'.repeat(43),
+    });
+
+    const [, request] = fetch.mock.calls[0]! as unknown as [string, RequestInit];
+
+    expect(new Headers(request.headers).get('authorization')).toBe(
+      `Basic ${Buffer.from('client%3Aid+%25%C3%A9:secret%3A%25+snow%E2%98%83').toString('base64')}`,
+    );
+    expect(Object.fromEntries(request.body as URLSearchParams)).toEqual({
+      grant_type: 'authorization_code',
+      code: 'code',
+      redirect_uri: 'https://app.test/callback',
+      code_verifier: 'v'.repeat(43),
+    });
   });
 
   it.each([undefined, 'short', 'a'.repeat(129), '!'.repeat(43)])(
@@ -351,5 +383,32 @@ describe('OAuth token and account transport', () => {
       expiresAt: null,
     });
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('refreshes with HTTP Basic app credentials outside the request body', async () => {
+    const fixture = setup(
+      {
+        ...definition,
+        oauth: { ...definition.oauth, tokenEndpointAuthMethod: 'client_secret_basic' },
+      },
+      { clientId: 'client:id %é', clientSecret: 'secret:% snow☃' },
+    );
+    const fetch = vi.fn(async () => Response.json({ access_token: 'fresh' }));
+    vi.stubGlobal('fetch', fetch);
+
+    await refreshOAuthTokens({
+      ...fixture,
+      tokens: { access_token: 'old', refresh_token: 'refresh' },
+    });
+
+    const [, request] = fetch.mock.calls[0]! as unknown as [string, RequestInit];
+
+    expect(new Headers(request.headers).get('authorization')).toBe(
+      `Basic ${Buffer.from('client%3Aid+%25%C3%A9:secret%3A%25+snow%E2%98%83').toString('base64')}`,
+    );
+    expect(Object.fromEntries(request.body as URLSearchParams)).toEqual({
+      grant_type: 'refresh_token',
+      refresh_token: 'refresh',
+    });
   });
 });

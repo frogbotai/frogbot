@@ -1,24 +1,22 @@
-import * as module from '@activepieces/piece-posthog';
-import { createActivepiecesPiece, type PieceFactoryConfig } from 'frogbot/pieces';
+import { definePiece } from 'frogbot/pieces';
 
-export const posthogActions = ['create_event', 'create_project'] as const;
+import { createEvent } from './actions/createEvent.js';
+import { createProject } from './actions/createProject.js';
+import { customApiCall } from './actions/customApiCall.js';
+import { createPosthogClient } from './client.js';
+import { posthogAuth } from './config.js';
+
+export const posthogActions = ['createEvent', 'createProject', 'customApiCall'] as const;
 export const posthogScopes = [] as const;
 
-export function createPosthog(config?: PieceFactoryConfig) {
-  const piece = createActivepiecesPiece({
-    module: module,
-    service: 'posthog',
-    credentialType: 'secret_text',
-    defaultActions: posthogActions,
-    scopes: posthogScopes,
-    config,
-  });
-  return Object.assign(piece, {
-    /** Create Event: Create an event inside a project */
-    createEvent: piece.tool('create_event'),
-    /** Create Project: Create a posthog project */
-    createProject: piece.tool('create_project'),
-    /** Custom API Call: Make a custom API call to a specific endpoint */
-    customApiCall: piece.tool('custom_api_call'),
-  });
-}
+export const createPosthog = definePiece({
+  slug: 'posthog',
+  label: 'PostHog',
+  admin: {
+    description: 'Capture product analytics events and manage PostHog projects',
+    group: 'Business Intelligence',
+  },
+  auth: posthogAuth,
+  client: ({ auth }: { auth: unknown }) => createPosthogClient(posthogAuth.parse(auth)),
+  actions: [createEvent, createProject, customApiCall],
+});

@@ -42,7 +42,7 @@ function makeAgent({
       instructions: 'Help',
       access,
       allowModels,
-      tools: [{ slug: 'google-sheets_find', pieceService: 'google-sheets' } as never],
+      tools: [],
     },
     aiAgent: { tools: {}, generate } as unknown as AgentInstance['aiAgent'],
     generate: generate as AgentInstance['generate'],
@@ -140,7 +140,7 @@ describe('agent service', () => {
     })({ slug: 'work-sheets' });
     agent.config.tools = [
       ...pieceInstanceTools(piece)!.map((tool) => ({ ...tool })),
-      ...agent.config.tools!,
+      ...agent.config.tools,
     ];
     const req = makeRequest({ agents: { support: agent }, authorizations });
 

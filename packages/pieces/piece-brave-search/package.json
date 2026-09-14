@@ -1,14 +1,9 @@
 {
   "name": "@frogbotai/piece-brave-search",
   "version": "0.22.0",
-  "description": "Brave Search tools for FrogBot.",
+  "description": "brave-search tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/frogbotai/frogbot.git",
-    "directory": "packages/pieces/piece-brave-search"
-  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -29,7 +24,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@activepieces/piece-brave-search": "0.0.5"
+    "zod": "^4.3.6"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"

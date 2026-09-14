@@ -1512,20 +1512,6 @@ describe('frogbot sanitize', () => {
       expect(result.agents?.[1].tools?.map(({ slug }) => slug)).toEqual(['shared']);
     });
 
-    it('rejects an unregistered root piece tool', () => {
-      expect(() =>
-        sanitize(
-          makeConfig({
-            ai,
-            agents: [agent],
-            tools: [makeTool('search', { pieceService: 'search' })],
-          } as never),
-        ),
-      ).toThrow(
-        "[frogbot] Root uses tool 'search' but no 'search' piece is registered in `pieces`.",
-      );
-    });
-
     it.each([undefined, []])('adds root tools when agent tools are %s', (tools) => {
       const result = sanitize(
         makeConfig({

@@ -19,8 +19,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@activepieces/piece-linear": "0.4.4",
-    "@activepieces/piece-resend": "0.4.3",
     "@frogbotai/db-sqlite": "workspace:*",
     "@frogbotai/next": "workspace:*",
     "@frogbotai/piece-data-summarizer": "workspace:*",

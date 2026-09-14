@@ -68,12 +68,7 @@ import {
   pieceInstanceTools,
 } from '../pieces/definePiece.js';
 import { pieceEmailAdapter } from '../pieces/email.js';
-import type {
-  LegacyPiece,
-  PieceAction,
-  PieceInstance,
-  SanitizedPiecesConfig,
-} from '../pieces/types.js';
+import type { PieceAction, PieceInstance, SanitizedPiecesConfig } from '../pieces/types.js';
 import { buildSkillTools } from '../skills/tools.js';
 import type { SkillConfig } from '../skills/types.js';
 import type { AnyTool } from '../tools/types.js';
@@ -438,7 +433,6 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
 
 function sanitizeToolList(
   tools: readonly (AnyTool | PieceAction | PieceInstance)[],
-  pieces: SanitizedPiecesConfig,
   contextLabel: string,
 ): AnyTool[] {
   const context = `${contextLabel[0].toLowerCase()}${contextLabel.slice(1)}`;
@@ -458,24 +452,9 @@ function sanitizeToolList(
     expanded.push(configuredTool);
   }
   return expanded.map((configuredTool) => {
-    let tool = configuredTool;
+    const tool = configuredTool;
     if (!isRecord(tool) || typeof tool.slug !== 'string' || !tool.slug.trim()) {
       throw new Error(`[frogbot] A tool in ${context} is missing a \`slug\`.`);
-    }
-    if (typeof tool.pieceService === 'string') {
-      const registered = pieces.services[tool.pieceService];
-      if (!registered) {
-        throw new Error(
-          `[frogbot] ${contextLabel} uses tool '${tool.slug}' but no '${tool.pieceService}' piece is registered in \`pieces\`.`,
-        );
-      }
-      const resolved = pieces.tools[tool.slug];
-      if (!resolved) {
-        throw new Error(
-          `[frogbot] Piece '${tool.pieceService}' has no registered tool '${tool.slug}'.`,
-        );
-      }
-      tool = resolved;
     }
     if (toolSlugs.has(tool.slug)) {
       throw new Error(`[frogbot] Duplicate tool slug '${tool.slug}' in ${context}.`);
@@ -582,7 +561,6 @@ function sanitizeSkills(agentSlug: string, skills: readonly SkillConfig[]): void
 function sanitizeAgents(
   agents: AgentConfig[],
   ai: SanitizedAIBase | undefined,
-  pieces: SanitizedPiecesConfig,
   mode: ValidationMode,
   rootTools: AnyTool[],
 ): SanitizedAgentConfig[] | undefined {
@@ -680,7 +658,7 @@ function sanitizeAgents(
       if (!Array.isArray(agent.tools)) {
         throw new Error(`[frogbot] Agent '${agent.slug}' tools must be an array when configured.`);
       }
-      agentTools = sanitizeToolList(agent.tools, pieces, `Agent '${agent.slug}'`);
+      agentTools = sanitizeToolList(agent.tools, `Agent '${agent.slug}'`);
     }
     if (agent.inheritTools !== false && rootTools.length > 0) {
       const agentToolSlugs = new Set(agentTools?.map(({ slug }) => slug));
@@ -805,61 +783,23 @@ function sanitizeAgents(
   });
 }
 
-function sanitizePieces(
-  pieces: (LegacyPiece | PieceInstance)[] | undefined,
-): SanitizedPiecesConfig {
+function sanitizePieces(pieces: PieceInstance[] | undefined): SanitizedPiecesConfig {
   if (pieces === undefined) {
-    return { enabled: false, pieces: [], services: {}, tools: {}, instances: [] };
+    return { instances: [] };
   }
   if (!Array.isArray(pieces)) {
     throw new Error('[frogbot] `pieces` must be an array.');
   }
   if (pieces.length === 0) {
-    return { enabled: false, pieces: [], services: {}, tools: {}, instances: [] };
+    return { instances: [] };
   }
 
-  const services = new Set<string>();
-  const serviceIndex: Record<string, LegacyPiece> = {};
-  const toolIndex: Record<string, AnyTool> = {};
-  const instances = pieces.filter(isPieceInstance);
-  for (const piece of pieces.filter((piece): piece is LegacyPiece => !isPieceInstance(piece))) {
-    if (!isRecord(piece) || typeof piece.service !== 'string' || !piece.service.trim()) {
-      throw new Error('[frogbot] Every piece must have a `service`.');
-    }
-    if (services.has(piece.service)) {
-      throw new Error(`[frogbot] Duplicate piece service: '${piece.service}'.`);
-    }
-    services.add(piece.service);
-    serviceIndex[piece.service] = piece;
-
-    if (
-      !Array.isArray(piece.actions) ||
-      piece.actions.some((action) => typeof action !== 'string' || !action.trim())
-    ) {
-      throw new Error(`[frogbot] Piece '${piece.service}' actions must be non-empty strings.`);
-    }
-    const actions = new Set(piece.actions);
-    if (actions.size !== piece.actions.length) {
-      throw new Error(`[frogbot] Piece '${piece.service}' declares duplicate actions.`);
-    }
-    for (const tool of piece.tools()) {
-      const prefix = `${piece.service}_`;
-      const action = tool.slug.startsWith(prefix) ? tool.slug.slice(prefix.length) : '';
-      if (!actions.has(action)) {
-        throw new Error(
-          `[frogbot] Piece '${piece.service}' exposes unknown action '${action || tool.slug}'.`,
-        );
-      }
-      toolIndex[tool.slug] = tool;
-    }
+  if (pieces.some((piece) => !isPieceInstance(piece))) {
+    throw new Error('[frogbot] Every piece must be a native piece instance.');
   }
 
   return {
-    enabled: true,
-    pieces: pieces.filter((piece): piece is LegacyPiece => !isPieceInstance(piece)),
-    services: serviceIndex,
-    tools: toolIndex,
-    instances,
+    instances: pieces,
   };
 }
 
@@ -1265,10 +1205,10 @@ export function sanitize(
   if (config.tools !== undefined && !Array.isArray(config.tools)) {
     throw new Error('[frogbot] Root tools must be an array when configured.');
   }
-  const rootTools = sanitizeToolList(config.tools ?? [], pieces, 'Root');
+  const rootTools = sanitizeToolList(config.tools ?? [], 'Root');
   const agents =
     config.agents !== undefined
-      ? sanitizeAgents(config.agents, sanitizedAI, pieces, mode, rootTools)
+      ? sanitizeAgents(config.agents, sanitizedAI, mode, rootTools)
       : undefined;
   const triggers = buildIngressRegistry({ agents });
   pieces.instances = [

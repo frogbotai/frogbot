@@ -1,35 +1,30 @@
 {
   "name": "@frogbotai/piece-github",
   "version": "0.22.0",
-  "description": "GitHub tools for FrogBot.",
+  "description": "github tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/frogbotai/frogbot.git",
-    "directory": "packages/pieces/piece-github"
-  },
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./src/index.ts",
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "sideEffects": false,
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@activepieces/piece-github": "0.8.5"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"

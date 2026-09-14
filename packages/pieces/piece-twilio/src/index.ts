@@ -1,35 +1,56 @@
-import * as module from '@activepieces/piece-twilio';
-import { createActivepiecesPiece, type PieceFactoryConfig } from 'frogbot/pieces';
+import { definePiece } from 'frogbot/pieces';
+
+import {
+  customApiCall,
+  downloadRecording,
+  getMessage,
+  lookupPhoneNumber,
+  makeCall,
+  sendSms,
+} from './actions.js';
+import { createTwilioClient } from './client.js';
+import { twilioAuth, twilioOptions } from './config.js';
+import {
+  callCompleted,
+  incomingSms,
+  phoneNumberAdded,
+  recordingCompleted,
+  transcriptionCompleted,
+} from './triggers.js';
 
 export const twilioActions = [
-  'send_sms',
-  'phone_number_lookup',
-  'make_call',
-  'get_message',
+  'sendSms',
+  'lookupPhoneNumber',
+  'makeCall',
+  'getMessage',
+  'downloadRecording',
+  'customApiCall',
+] as const;
+export const twilioTriggers = [
+  'incomingSms',
+  'phoneNumberAdded',
+  'recordingCompleted',
+  'transcriptionCompleted',
+  'callCompleted',
 ] as const;
 export const twilioScopes = [] as const;
 
-export function createTwilio(config?: PieceFactoryConfig) {
-  const piece = createActivepiecesPiece({
-    module: module,
-    service: 'twilio',
-    credentialType: 'basic_auth',
-    defaultActions: twilioActions,
-    scopes: twilioScopes,
-    config,
-  });
-  return Object.assign(piece, {
-    /** Send SMS: Send a new SMS message */
-    sendSms: piece.tool('send_sms'),
-    /** Phone Number Lookup: Lookup information about a phone number. */
-    phoneNumberLookup: piece.tool('phone_number_lookup'),
-    /** Call Phone: Call a number and say a message. */
-    makeCall: piece.tool('make_call'),
-    /** Get Message: Retrieves the details of a specific message. */
-    getMessage: piece.tool('get_message'),
-    /** Download Recording Media: Download the media file for a specific recording. */
-    downloadRecordingMedia: piece.tool('download_recording_media'),
-    /** Custom API Call: Make a custom API call to a specific endpoint */
-    customApiCall: piece.tool('custom_api_call'),
-  });
-}
+export const createTwilio = definePiece({
+  slug: 'twilio',
+  label: 'Twilio',
+  admin: {
+    description: 'Send messages, place calls, retrieve media, and monitor Twilio resources',
+    group: 'Communication',
+  },
+  auth: twilioAuth,
+  options: twilioOptions,
+  client: createTwilioClient,
+  actions: [sendSms, lookupPhoneNumber, makeCall, getMessage, downloadRecording, customApiCall],
+  triggers: [
+    incomingSms,
+    phoneNumberAdded,
+    recordingCompleted,
+    transcriptionCompleted,
+    callCompleted,
+  ],
+});

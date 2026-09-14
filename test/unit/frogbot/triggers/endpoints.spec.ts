@@ -33,6 +33,7 @@ const subscriptionRow = {
   trigger: 'subscribed',
   status: 'active',
   input: { value: { channel: 'runtime' } },
+  state: { enabled: 'runtime' },
 };
 
 function request(body: Record<string, unknown>, subscription?: string) {
@@ -123,7 +124,11 @@ describe('trigger endpoints', () => {
     const req = Object.assign(request({ id: 'two', message: 'hello' }, '42'), { frogbot });
     await subscribedPost.handler(req as never);
     expect(echoCalls).toEqual([
-      expect.objectContaining({ type: 'webhook', input: { channel: 'runtime' } }),
+      expect.objectContaining({
+        type: 'webhook',
+        input: { channel: 'runtime' },
+        state: { enabled: 'runtime' },
+      }),
     ]);
     expect(frogbot.queue).toHaveBeenCalledTimes(1);
     expect(frogbot.queue).toHaveBeenCalledWith(
@@ -138,6 +143,92 @@ describe('trigger endpoints', () => {
     );
     expect(webhookSubscriber.input).toEqual({ channel: 'alerts' });
   });
+
+  it('dispatches subscribed triggers without a piece webhook and passes persisted state', async () => {
+    const run = vi.fn(async ({ req, state }) => {
+      const data = req.data as { id: string; token: string };
+
+      return data.token === state.token ? [{ dedupeKey: data.id, data }] : [];
+    });
+    const instance = definePiece({
+      slug: 'stateful',
+      label: 'Stateful',
+      actions: [],
+      triggers: [
+        {
+          slug: 'received',
+          type: 'webhook',
+          description: 'Receive authenticated events',
+          input: z.object({}),
+          output: z.object({ id: z.string(), token: z.string() }),
+          async onEnable() {
+            return { token: 'persisted-secret' };
+          },
+          async onDisable() {},
+          run,
+        },
+      ],
+    })();
+    const subscriber = {
+      agentSlug: 'ops',
+      piece: instance,
+      trigger: { trigger: instance.triggers.received, handler: vi.fn() },
+      input: {},
+    };
+    const state = { token: 'persisted-secret' };
+    const frogbot = {
+      config: { _internal: { triggers: { stateful: { instance, subscribers: [subscriber] } } } },
+      find: vi.fn().mockResolvedValue({
+        docs: [
+          {
+            ...subscriptionRow,
+            instance: 'stateful',
+            trigger: 'received',
+            input: { value: {} },
+            state,
+          },
+        ],
+      }),
+      kv: kv(),
+      queue: vi.fn(),
+    };
+    const req = Object.assign(request({ id: 'stateful', token: 'persisted-secret' }, '42'), {
+      frogbot,
+      routeParams: { instance: 'stateful', subscription: '42' },
+    });
+
+    await expect(subscribedPost.handler(req as never)).resolves.toMatchObject({ status: 200 });
+
+    expect(run).toHaveBeenCalledWith(expect.objectContaining({ state }));
+    expect(frogbot.queue).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    { method: 'POST', endpoint: post },
+    { method: 'GET', endpoint: buildTriggerEndpoints().find(({ method }) => method === 'get')! },
+  ])(
+    'returns 404 for $method app ingress without a piece webhook',
+    async ({ method, endpoint }) => {
+      const instance = definePiece({
+        slug: 'unsafe',
+        label: 'Unsafe',
+        actions: [],
+      })();
+      const frogbot = {
+        config: { _internal: { triggers: { unsafe: { instance, subscribers: [] } } } },
+        queue: vi.fn(),
+      };
+      const req = Object.assign(new Request('http://localhost/api/webhooks/unsafe', { method }), {
+        frogbot,
+        context: {},
+        routeParams: { instance: 'unsafe' },
+      });
+
+      await expect(endpoint.handler(req as never)).resolves.toMatchObject({ status: 404 });
+
+      expect(frogbot.queue).not.toHaveBeenCalled();
+    },
+  );
 
   it.each([
     { docs: [] },
