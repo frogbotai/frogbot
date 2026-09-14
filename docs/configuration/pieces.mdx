@@ -11,7 +11,7 @@ For fetch-based search, see [Web search via pieces](/configuration/web-search).
 
 ## Install a piece
 
-Install the package for the integration you need. The native Google product packages include their runtime dependencies.
+Install the package for the integration you need. Every shipped piece is native and includes its runtime dependencies.
 
 ```bash
 pnpm add @frogbotai/piece-google-sheets
@@ -42,9 +42,9 @@ export const pieceConfig = {
 
 Merge `pieceConfig` into your root config alongside your database, collections, secret, and AI provider configuration. This example uses a developer access token. For user-owned credentials, reuse the factory instances from the [OAuth connection example](/configuration/connections#configure-linking).
 
-Native pieces expose actions directly. Pass only the actions your agent needs in `tools`; each action can also be called on the server with `{ input, req }` to use the caller's credentials.
+Pieces expose actions directly. Pass only the actions your agent needs in `tools`, or pass the piece to expose all of its actions. Each action can also be called on the server with `{ input, req }` to use the caller's credentials.
 
-Tool slugs combine the instance slug and action name, such as `google-sheets_getRows`, so tools from different pieces do not collide. The Google ports use new native action names and schemas; update old wrapper aliases and `.tools()` selections. See [Native Google actions](/pieces/index#native-google-actions) for the action inventory and key input changes.
+Tool slugs combine the instance slug and action name, such as `google-sheets_getRows`, so tools from different pieces do not collide. See [Google actions](/pieces/index#google-actions) for the action inventory and key input details.
 
 ## Keep tool sets focused
 
@@ -60,7 +60,7 @@ Pieces that create files buffer the complete result in memory and write it to th
 
 ## Credentials and linked accounts
 
-For native pieces such as Google Sheets, Drive, Calendar, Gmail, Linear, and Resend, pass developer credentials as factory `auth`. To let users link accounts, configure root `connections` entries with `oauth: true`, `secret: true`, or both supported methods. Factory `oauth` holds your app credentials; it does not enable linking by itself. See [Connections](/configuration/connections).
+Pass developer credentials as factory `auth`. To let users link accounts, configure root `connections` entries with `oauth: true`, `secret: true`, or both supported methods. Factory `oauth` holds your app credentials; it does not enable linking by itself. See [Connections](/configuration/connections).
 
 Use the identity-only `createGoogle` factory for [Google sign-in](/authentication/sign-in). Pass `google.oauth` to `createGoogleSheets`, `createGoogleDrive`, `createGoogleCalendar`, or `createGmail` to share the app credentials. Each product has its own scopes, connection entry, and callback. A Google login or identity connection does not authorize product actions.
 

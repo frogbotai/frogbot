@@ -10,7 +10,7 @@ export const braveSearchAgent: AgentConfig = {
   model: 'e2e',
   instructions:
     'Always call Brave Search. Answer with one result title and URL from the tool output.',
-  tools: braveSearch.tools(),
+  tools: [braveSearch],
 };
 
 export const exaSearchAgent: AgentConfig = {
@@ -18,5 +18,5 @@ export const exaSearchAgent: AgentConfig = {
   model: 'e2e',
   instructions:
     'Always call Exa Search. Answer with one result title and URL from the tool output.',
-  tools: exa.tools(),
+  tools: [exa],
 };

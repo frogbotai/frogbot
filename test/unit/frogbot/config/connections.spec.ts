@@ -137,18 +137,7 @@ describe('connection config boot', () => {
     const result = sanitize(
       config({
         connections,
-        pieces: [
-          {
-            service: 'legacy',
-            credentialType: 'oauth2',
-            policy: { type: 'user' },
-            actions: [],
-            tool: () => {
-              throw new Error('Unused');
-            },
-            tools: () => [],
-          },
-        ],
+        pieces: [createPiece({ auth, slug: 'unused' })],
       }),
     );
     const payload = await result._internal.payloadConfig;

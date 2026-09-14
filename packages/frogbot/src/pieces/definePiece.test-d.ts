@@ -34,6 +34,7 @@ const triggerOutput = z.object({ id: z.string() });
 
 type TokenClient = z.output<typeof tokenAuth>;
 type OAuthClient = z.output<typeof oauthAuth>;
+type TriggerState = { webhookId: string };
 type PlainTypes = {
   auth: undefined;
   options: Record<string, never>;
@@ -83,7 +84,11 @@ type TriggerTypes = {
   options: Record<string, never>;
   actions: Record<string, never>;
   triggers: {
-    created: { input: z.output<typeof triggerInput>; output: z.output<typeof triggerOutput> };
+    created: {
+      input: z.output<typeof triggerInput>;
+      output: z.output<typeof triggerOutput>;
+      state: TriggerState;
+    };
   };
 };
 
@@ -322,16 +327,22 @@ const createTrigger = definePiece({
   triggers: [
     {
       slug: 'created',
-      type: 'app',
-      event: 'created',
+      type: 'webhook',
       description: 'Created',
       input: triggerInput,
       output: triggerOutput,
-      async run({ input, client, options, req }) {
+      async onEnable() {
+        return { webhookId: 'webhook' };
+      },
+      async onDisable({ state }) {
+        expectTypeOf(state).toEqualTypeOf<TriggerState>();
+      },
+      async run({ input, client, options, req, state }) {
         expectTypeOf(input).toEqualTypeOf<TriggerTypes['triggers']['created']['input']>();
         expectTypeOf(client).toEqualTypeOf<undefined>();
         expectTypeOf(options).toEqualTypeOf<TriggerTypes['options']>();
         expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+        expectTypeOf(state).toEqualTypeOf<TriggerState>();
         return [{ dedupeKey: 'created', data: { id: input.project } }];
       },
     },

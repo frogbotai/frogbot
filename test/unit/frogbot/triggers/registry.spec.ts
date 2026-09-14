@@ -136,6 +136,33 @@ describe('trigger ingress registry', () => {
     );
   });
 
+  it('registers subscribed webhook triggers without piece webhook support', () => {
+    const instance = definePiece({
+      slug: 'subscribed',
+      label: 'Subscribed',
+      actions: [],
+      triggers: [
+        {
+          slug: 'received',
+          type: 'webhook',
+          description: 'Received',
+          input: z.object({}),
+          async onEnable() {
+            return { secret: 'persisted' };
+          },
+          async onDisable() {},
+          async run() {
+            return [];
+          },
+        },
+      ],
+    })();
+
+    const registry = buildIngressRegistry({ agents: [agent(instance.triggers.received)] });
+
+    expect(registry.subscribed.subscribers).toHaveLength(1);
+  });
+
   it('rejects polling mounts until polling dispatch is supported', () => {
     const instance = definePiece({
       slug: 'polling',

@@ -4,11 +4,6 @@
   "description": "Exa tools for FrogBot.",
   "license": "MIT",
   "author": "Colby Gilbert",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/frogbotai/frogbot.git",
-    "directory": "packages/pieces/piece-exa"
-  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -29,7 +24,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@activepieces/piece-exa": "0.1.7"
+    "zod": "^4.3.6"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"

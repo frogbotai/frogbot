@@ -20,9 +20,11 @@ async function handler(req: FrogbotRequest): Promise<Response> {
   if (!entry) return new Response(null, { status: 404 });
   const runtime = pieceInstanceRuntime(entry.instance);
   const { definition } = runtime;
-  if (!definition.webhook) return new Response(null, { status: 404 });
   const webhookReq = Object.assign(requestClone(req), { user: null });
+
   if (req.method === 'GET') {
+    if (!definition.webhook) return new Response(null, { status: 404 });
+
     return (
       (await definition.webhook.handshake?.({
         req: requestClone(webhookReq),
@@ -30,11 +32,19 @@ async function handler(req: FrogbotRequest): Promise<Response> {
       })) ?? new Response(null, { status: 404 })
     );
   }
-  const verifyReq = requestClone(req);
-  if (!(await definition.webhook.verify({ req: verifyReq, options: runtime.options as never }))) {
-    return new Response(null, { status: 401 });
+
+  if (!subscription && !definition.webhook) return new Response(null, { status: 404 });
+
+  if (definition.webhook) {
+    const verifyReq = requestClone(req);
+
+    if (!(await definition.webhook.verify({ req: verifyReq, options: runtime.options as never }))) {
+      return new Response(null, { status: 401 });
+    }
   }
+
   let row: Subscription | undefined;
+
   if (subscription) {
     const result = await req.frogbot.find({
       collection: TRIGGER_SUBSCRIPTIONS_SLUG,
@@ -49,7 +59,7 @@ async function handler(req: FrogbotRequest): Promise<Response> {
   const parsedReq = requestClone(webhookReq);
   await addDataAndFileToRequest(parsedReq as unknown as PayloadRequest);
   webhookReq.data = parsedReq.data;
-  const handshake = definition.webhook.handshake
+  const handshake = definition.webhook?.handshake
     ? await definition.webhook.handshake({
         req: requestClone(webhookReq),
         options: runtime.options as never,
@@ -70,6 +80,8 @@ async function handler(req: FrogbotRequest): Promise<Response> {
     );
     if (!subscribers.length) return new Response(null, { status: 404 });
   } else {
+    if (!definition.webhook) return new Response(null, { status: 404 });
+
     const event = definition.webhook.parse?.({ req: requestClone(webhookReq) }).event;
     subscribers = entry.subscribers.filter(
       (candidate) =>
@@ -86,12 +98,23 @@ async function handler(req: FrogbotRequest): Promise<Response> {
       const input = row
         ? parseSubscriptionInput({ schema: trigger.input, input: row.input })
         : candidate.input;
-      const events = await trigger.run({
+      const context = {
         input: input as never,
         client: (await runtime.client({ req: triggerReq })) as never,
         options: runtime.options as never,
         req: triggerReq,
-      });
+      };
+
+      let events;
+
+      if (trigger.type === 'webhook') {
+        if (!row) return;
+
+        events = await trigger.run({ ...context, state: row.state });
+      } else {
+        events = await trigger.run(context);
+      }
+
       await dispatchTriggerEvents({ events, frogbot: req.frogbot, subscribers: [candidate] });
     }),
   );

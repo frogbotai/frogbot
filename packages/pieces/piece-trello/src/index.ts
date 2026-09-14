@@ -1,43 +1,61 @@
-import * as module from '@activepieces/piece-trello';
-import { createActivepiecesPiece, type PieceFactoryConfig } from 'frogbot/pieces';
+import { definePiece } from 'frogbot/pieces';
+
+import {
+  addCardAttachment,
+  createCard,
+  customApiCall,
+  deleteCard,
+  deleteCardAttachment,
+  getCard,
+  getCardAttachment,
+  listCardAttachments,
+  updateCard,
+} from './actions.js';
+import { createTrelloClient } from './client.js';
+import { trelloAuth } from './config.js';
+import { cardCreated, cardDeadline, cardMovedToList } from './triggers.js';
 
 export const trelloActions = [
-  'create_card',
-  'get_card',
-  'update_card',
-  'delete_card',
-  'get_card_attachments',
-  'add_card_attachment',
+  'createCard',
+  'getCard',
+  'updateCard',
+  'deleteCard',
+  'listCardAttachments',
+  'addCardAttachment',
+  'getCardAttachment',
+  'deleteCardAttachment',
+  'customApiCall',
 ] as const;
+export const trelloTriggers = ['cardCreated', 'cardMovedToList', 'cardDeadline'] as const;
 export const trelloScopes = [] as const;
 
-export function createTrello(config?: PieceFactoryConfig) {
-  const piece = createActivepiecesPiece({
-    module: module,
-    service: 'trello',
-    credentialType: 'basic_auth',
-    defaultActions: trelloActions,
-    scopes: trelloScopes,
-    config,
-  });
-  return Object.assign(piece, {
-    /** Create Card: Create a new card in Trello */
-    createCard: piece.tool('create_card'),
-    /** Get Card: Gets a card by ID. */
-    getCard: piece.tool('get_card'),
-    /** Update Card: Updates an existing card. */
-    updateCard: piece.tool('update_card'),
-    /** Delete Card: Deletes an existing card. */
-    deleteCard: piece.tool('delete_card'),
-    /** Get All Card Attachments: Gets all attachments on a card. */
-    getCardAttachments: piece.tool('get_card_attachments'),
-    /** Add Card Attachment: Adds an attachment to a card. */
-    addCardAttachment: piece.tool('add_card_attachment'),
-    /** Get Card Attachment: Gets a specific attachment on a card. */
-    getCardAttachment: piece.tool('get_card_attachment'),
-    /** Delete Card Attachment: Deletes an attachment from a card. */
-    deleteCardAttachment: piece.tool('delete_card_attachment'),
-    /** Custom API Call: Make a custom API call to a specific endpoint */
-    customApiCall: piece.tool('custom_api_call'),
-  });
-}
+export const createTrello = definePiece({
+  slug: 'trello',
+  label: 'Trello',
+  admin: {
+    description: 'Manage Trello cards, attachments, and card events',
+    group: 'Productivity',
+  },
+  auth: trelloAuth,
+  client: createTrelloClient,
+  webhook: {
+    async verify() {
+      return true;
+    },
+    async handshake({ req }) {
+      return req.method === 'HEAD' ? new Response(null, { status: 200 }) : null;
+    },
+  },
+  actions: [
+    createCard,
+    getCard,
+    updateCard,
+    deleteCard,
+    listCardAttachments,
+    addCardAttachment,
+    getCardAttachment,
+    deleteCardAttachment,
+    customApiCall,
+  ],
+  triggers: [cardCreated, cardMovedToList, cardDeadline],
+});

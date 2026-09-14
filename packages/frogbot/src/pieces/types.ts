@@ -1,39 +1,8 @@
 import type { SendEmailOptions, TypeWithID } from 'payload';
 import type { z } from 'zod';
 
-import type { AnyTool } from '../tools/types.js';
 import type { TriggerEvent } from '../triggers/types.js';
 import type { FrogbotRequest } from '../types/request.js';
-
-export type CredentialType =
-  'none' | 'oauth2' | 'secret_text' | 'basic_auth' | 'custom' | 'service_account';
-
-export type PieceAuth = Record<string, unknown> & { allowUserOverride?: boolean };
-
-export type PiecePolicy =
-  | { type: 'none' }
-  | { type: 'developer'; credential: unknown }
-  | { type: 'oauth'; clientId: string; clientSecret: string }
-  | { type: 'user' };
-
-export type PieceFactoryConfig = {
-  auth?: PieceAuth;
-};
-
-export type PieceToolsOptions = {
-  actions?: readonly string[];
-};
-
-export type LegacyPiece = {
-  service: string;
-  credentialType: CredentialType;
-  policy: PiecePolicy;
-  actions: readonly string[];
-  tool: (action: string) => AnyTool;
-  tools: (options?: PieceToolsOptions) => AnyTool[];
-  credentialFields?: Readonly<Record<string, { secret?: boolean }>>;
-  scopes?: readonly string[];
-};
 
 export type OAuthTokens = Record<string, PieceJSON> & {
   access_token?: string;
@@ -118,7 +87,7 @@ export type PieceWebhookTrigger<
     ): Promise<TState>;
   };
   run(
-    args: PieceRunArgs<z.output<TInput>, TOptions, TClient>,
+    args: PieceRunArgs<z.output<TInput>, TOptions, TClient> & { state: TState },
   ): Promise<TriggerEvent<TOutput extends z.ZodType ? z.output<TOutput> : PieceJSON>[]>;
 };
 
@@ -155,10 +124,11 @@ export type PieceTriggerDefinition<
   TOutput extends z.ZodType | undefined = z.ZodType | undefined,
   TOptions = Record<string, never>,
   TClient = never,
+  TState extends PieceResult = unknown,
 > =
   | PieceAppTrigger<TInput, TOutput, TOptions, TClient>
   | PiecePollingTrigger<TInput, TOutput, TOptions, TClient>
-  | PieceWebhookTrigger<TInput, TOutput, TOptions, TClient>;
+  | PieceWebhookTrigger<TInput, TOutput, TOptions, TClient, TState>;
 
 export type PieceTriggerReference = Readonly<
   | (PieceTriggerBase<z.ZodType, z.ZodType | undefined> & {
@@ -178,6 +148,7 @@ export type PieceOAuthRecipe<
 > = {
   authorizationUrl: string;
   tokenUrl: string;
+  tokenEndpointAuthMethod?: 'client_secret_basic' | 'client_secret_post';
   scopes: string[];
   pkce?: boolean;
   params?: Record<string, string>;
@@ -252,7 +223,8 @@ export type PieceDefinition<TTypes extends PieceTypes = PieceTypes, TClient = un
       z.ZodType<TTypes['triggers'][TSlug]['input']>,
       z.ZodType<TTypes['triggers'][TSlug]['output']>,
       TTypes['options'],
-      TClient
+      TClient,
+      TTypes['triggers'][TSlug] extends { state: infer TState } ? TState : unknown
     > & { slug: TSlug };
   }[keyof TTypes['triggers'] & string][];
   webhook?: PieceWebhook<TTypes['options']>;
@@ -348,21 +320,9 @@ export type SignInMethod = PieceInstance & {
   readonly [pieceCapabilities]: PieceCapabilities & { factoryOAuth: true; signIn: true };
 };
 export type SecondFactor = never;
-export type Piece = LegacyPiece | PieceInstance;
-export type PieceConfig = LegacyPiece;
+export type Piece = PieceInstance;
+export type PieceConfig = PieceInstance;
 
-export type SanitizedPiecesConfig =
-  | {
-      enabled: false;
-      pieces: readonly [];
-      services: Readonly<Record<string, LegacyPiece>>;
-      tools: Readonly<Record<string, AnyTool>>;
-      instances: readonly PieceInstance[];
-    }
-  | {
-      enabled: true;
-      pieces: readonly LegacyPiece[];
-      services: Readonly<Record<string, LegacyPiece>>;
-      tools: Readonly<Record<string, AnyTool>>;
-      instances: readonly PieceInstance[];
-    };
+export type SanitizedPiecesConfig = {
+  instances: PieceInstance[];
+};

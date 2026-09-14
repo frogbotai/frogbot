@@ -95,6 +95,12 @@ There is no `req`; clients are memoized per credential.
 
 Return an array of emitted events.
 
+Webhook trigger runs also receive the state returned by `trigger.onEnable`:
+
+| Argument | Type         | Why it earns its keep                               |
+| -------- | ------------ | --------------------------------------------------- |
+| `state`  | enable state | Identifies the persisted subscription registration. |
+
 ### `trigger.run` for `polling`
 
 | Argument  | Type             | Why it earns its keep                    |

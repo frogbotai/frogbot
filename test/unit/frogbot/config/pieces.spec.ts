@@ -1,66 +1,36 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
+import { z } from 'zod';
 
 import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
-import type { Piece } from '../../../../packages/frogbot/src/pieces/types.js';
+import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import type { Piece, PieceInstance } from '../../../../packages/frogbot/src/pieces/types.js';
 
 const db = {} as never;
 
-function piece(service: string, toolAction = 'run'): Piece {
-  return {
-    service,
-    credentialType: 'none',
-    policy: { type: 'none' },
-    actions: ['run'],
-    tool: () => ({
-      slug: `${service}_${toolAction}`,
+const createExample = definePiece({
+  slug: 'example',
+  label: 'Example',
+  actions: [
+    {
+      slug: 'run',
       description: 'Run',
-      inputSchema: {} as never,
-      execute: () => null,
-    }),
-    tools: () => [
-      {
-        slug: `${service}_${toolAction}`,
-        description: 'Run',
-        inputSchema: {} as never,
-        execute: () => null,
-      },
-    ],
-  };
-}
+      input: z.object({}),
+      async run() {},
+    },
+  ],
+});
 
 describe('piece config', () => {
-  it('accepts a hand-written piece', () => {
-    const example = piece('example');
+  it('accepts a native piece instance', () => {
+    const example = createExample();
     const result = sanitize({ secret: 'secret', db, collections: [], pieces: [example] });
+
     expect(result.pieces).toMatchObject({
-      enabled: true,
-      pieces: [example],
-      services: { example },
+      instances: [example],
     });
   });
 
-  it('rejects duplicate services', () => {
-    expect(() =>
-      sanitize({
-        secret: 'secret',
-        db,
-        collections: [],
-        pieces: [piece('example'), piece('example')],
-      }),
-    ).toThrow("Duplicate piece service: 'example'");
-  });
-
-  it('rejects unknown exposed actions', () => {
-    expect(() =>
-      sanitize({ secret: 'secret', db, collections: [], pieces: [piece('example', 'missing')] }),
-    ).toThrow("Piece 'example' exposes unknown action 'missing'");
-  });
-
-  it('requires a service ID at the type boundary', () => {
-    expectTypeOf<{
-      credentialType: 'none';
-      actions: [];
-      tools: () => [];
-    }>().not.toMatchTypeOf<Piece>();
+  it('exposes only native instances at the type boundary', () => {
+    expectTypeOf<Piece>().toEqualTypeOf<PieceInstance>();
   });
 });

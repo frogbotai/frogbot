@@ -1,62 +1,108 @@
-import * as module from '@activepieces/piece-dropbox';
-import { createActivepiecesPiece, type PieceFactoryConfig } from 'frogbot/pieces';
+import { definePiece, type PieceOAuthRecipe } from 'frogbot/pieces';
+import { z } from 'zod';
+
+import { customApiCall } from './actions/customApiCall.js';
+import {
+  copyFile,
+  copyFolder,
+  createFolder,
+  createTextFile,
+  deleteFile,
+  deleteFolder,
+  downloadFile,
+  getTemporaryLink,
+  moveFile,
+  moveFolder,
+  uploadFile,
+} from './actions/files.js';
+import { listFolder, searchFiles } from './actions/list.js';
+import {
+  createDropboxClient,
+  type DropboxAuth,
+  dropboxAuth,
+  type DropboxClient,
+} from './client.js';
+import { newFolder } from './triggers/newFolder.js';
+
+export type { DropboxAuth, DropboxClient } from './client.js';
+export { dropboxAuth } from './client.js';
 
 export const dropboxActions = [
-  'search_dropbox',
-  'create_new_dropbox_text_file',
-  'upload_dropbox_file',
+  'searchFiles',
+  'createTextFile',
+  'uploadFile',
   'downloadFile',
-  'get_dropbox_file_link',
-  'delete_dropbox_file',
-  'move_dropbox_file',
-  'copy_dropbox_file',
-  'create_new_dropbox_folder',
-  'list_dropbox_folder',
-] as const;
+  'getTemporaryLink',
+  'deleteFile',
+  'moveFile',
+  'copyFile',
+  'createFolder',
+  'deleteFolder',
+  'moveFolder',
+  'copyFolder',
+  'listFolder',
+  'customApiCall',
+];
 export const dropboxScopes = [
   'files.metadata.write',
   'files.metadata.read',
   'files.content.write',
   'files.content.read',
-] as const;
+];
 
-export function createDropbox(config?: PieceFactoryConfig) {
-  const piece = createActivepiecesPiece({
-    module: module,
-    service: 'dropbox',
-    credentialType: 'oauth2',
-    defaultActions: dropboxActions,
-    scopes: dropboxScopes,
-    config,
-  });
-  return Object.assign(piece, {
-    /** Search: Search for files and folders */
-    searchDropbox: piece.tool('search_dropbox'),
-    /** Create New Text File: Create a new text file from text input */
-    createNewDropboxTextFile: piece.tool('create_new_dropbox_text_file'),
-    /** Upload file: Upload a file */
-    uploadDropboxFile: piece.tool('upload_dropbox_file'),
-    /** Download File: Download a File from Dropbox */
-    downloadFile: piece.tool('downloadFile'),
-    /** Get temporary file link: Get a temporary file link */
-    getDropboxFileLink: piece.tool('get_dropbox_file_link'),
-    /** Delete file: Delete a file */
-    deleteDropboxFile: piece.tool('delete_dropbox_file'),
-    /** Move file: Move a file */
-    moveDropboxFile: piece.tool('move_dropbox_file'),
-    /** Copy file: Copy a file */
-    copyDropboxFile: piece.tool('copy_dropbox_file'),
-    /** Create New Folder: Create a new empty folder */
-    createNewDropboxFolder: piece.tool('create_new_dropbox_folder'),
-    /** Delete folder: Delete a folder */
-    deleteDropboxFolder: piece.tool('delete_dropbox_folder'),
-    /** Move folder: Move a folder */
-    moveDropboxFolder: piece.tool('move_dropbox_folder'),
-    /** Copy folder: Copy a folder */
-    copyDropboxFolder: piece.tool('copy_dropbox_folder'),
-    /** List a folder: List the contents of a folder */
-    listDropboxFolder: piece.tool('list_dropbox_folder'),
-    /** Custom API Call: Make a custom API call to a specific endpoint */
-    customApiCall: piece.tool('custom_api_call'),
-  });
-}
+const accountSchema = z.object({
+  account_id: z.string().min(1),
+  name: z.object({ display_name: z.string().min(1) }),
+  email: z.string().email(),
+});
+
+export const dropboxOAuth = {
+  authorizationUrl: 'https://www.dropbox.com/oauth2/authorize',
+  tokenUrl: 'https://api.dropboxapi.com/oauth2/token',
+  scopes: dropboxScopes,
+  pkce: true,
+  params: { token_access_type: 'offline' },
+  toAuth: ({ tokens }) => ({
+    accessToken: tokens.access_token ?? '',
+    refreshToken: tokens.refresh_token,
+  }),
+  async account({ client, req }) {
+    const account = await client.rpc(
+      'users/get_current_account',
+      null,
+      accountSchema,
+      req.signal ?? undefined,
+    );
+
+    return { id: account.account_id, label: account.name.display_name, email: account.email };
+  },
+} satisfies PieceOAuthRecipe<DropboxAuth, DropboxClient>;
+
+export const createDropbox = definePiece({
+  slug: 'dropbox',
+  label: 'Dropbox',
+  admin: {
+    description: 'Store, find, organize, and download Dropbox files and folders',
+    group: 'Content and Files',
+  },
+  auth: dropboxAuth,
+  client: createDropboxClient,
+  oauth: dropboxOAuth,
+  actions: [
+    searchFiles,
+    createTextFile,
+    uploadFile,
+    downloadFile,
+    getTemporaryLink,
+    deleteFile,
+    moveFile,
+    copyFile,
+    createFolder,
+    deleteFolder,
+    moveFolder,
+    copyFolder,
+    listFolder,
+    customApiCall,
+  ],
+  triggers: [newFolder],
+});

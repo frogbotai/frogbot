@@ -34,7 +34,7 @@ type AgentConfig = {
   instructions: string
   profile?: AgentProfile
   skills?: readonly SkillConfig[]
-  tools?: readonly AnyTool[]
+  tools?: readonly (AnyTool | PieceAction | PieceInstance)[]
   inheritTools?: false
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[]
   access?: AgentAccess
@@ -101,7 +101,7 @@ Accessible profiles appear in both `GET /api/agents` and the [chat manifest](/ch
 
 Agents accept FrogBot `Tool` objects, not raw AI SDK tools. FrogBot converts them internally and supplies request, runtime, slug, and run ID context to every execution.
 
-To add current web results, use the [web search pieces](/configuration/web-search). To connect tools discovered from an external server, use the [MCP server tools recipe](/configuration/mcp).
+To add integration actions, pass individual piece actions or a whole registered piece. To add current web results, use the [web search pieces](/configuration/web-search). To connect tools discovered from an external server, use the [MCP server tools recipe](/configuration/mcp).
 
 ```ts
 import type { Tool } from 'frogbot'
@@ -252,7 +252,7 @@ export const reportingAgent: AgentConfig = {
 }
 ```
 
-Root tools with `pieceService` use the same validation as agent tools. The matching piece must be registered in the root `pieces` array.
+Piece actions and whole piece instances can be supplied directly in root and agent tool lists.
 
 ---
 

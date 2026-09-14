@@ -61,9 +61,9 @@ export function defineEchoPiece(define: typeof definePiece) {
         async onDisable({ input, state, options, client }) {
           echoCalls.push({ type: 'disable', input, state, options, client });
         },
-        async run({ req, input, options, client }) {
+        async run({ req, input, options, client, state }) {
           const data = req.data as { id: string; message: string };
-          echoCalls.push({ type: 'webhook', input, data, options, client });
+          echoCalls.push({ type: 'webhook', input, data, options, client, state });
           return [{ dedupeKey: data.id, data: { message: `${options.prefix}${data.message}` } }];
         },
       },

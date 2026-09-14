@@ -11,21 +11,21 @@ Use the Brave Search or Exa piece with a developer-provided key when an agent ne
 
 | Provider | Default action | Best fit |
 | --- | --- | --- |
-| Brave Search | `web_search` | General web search against an independent index |
-| Exa | `perform_search` | Semantic search and opt-in content or similarity actions |
+| Brave Search | `searchWeb` | General web search against an independent index |
+| Exa | `search` | Semantic search, page content, similarity, and grounded answers |
 
-Brave exposes its custom API action as an opt-in tool. Exa exposes `get_contents`, `find_similar_links`, and `generate_answer` as opt-in tools, but excludes `custom_api_call` because that upstream action does not support FrogBot's credential shape. Exa's `get_contents` returns text rather than HTML, and `generate_answer` returns only the answer field.
+Brave Search provides `searchWeb` and `customApiCall`. Exa provides `search`, `getContents`, `findSimilarPages`, and `generateAnswer`.
 
 ## Install the packages
 
-Install both the FrogBot wrapper and its Activepieces runtime dependency.
+Install the FrogBot piece you need. Each package includes its runtime dependencies.
 
 ```bash
-pnpm add @frogbotai/piece-brave-search @activepieces/piece-brave-search
+pnpm add @frogbotai/piece-brave-search
 ```
 
 ```bash
-pnpm add @frogbotai/piece-exa @activepieces/piece-exa
+pnpm add @frogbotai/piece-exa
 ```
 
 ## Use a developer key
@@ -47,7 +47,7 @@ export default buildConfig({
       slug: 'researcher',
       model: 'fast',
       instructions: 'Search before answering questions about current events.',
-      tools: braveSearch.tools()
+      tools: [braveSearch.searchWeb]
     }
   ]
 })
@@ -57,47 +57,10 @@ For Exa, replace the import and factory with `createExa`, and read `EXA_API_KEY`
 
 ## Select opt-in Exa actions
 
-`tools()` returns only `perform_search`. Add another Exa action explicitly when the agent needs it.
+Select only the Exa actions the agent needs.
 
 ```ts
-tools: [exa.performSearch, exa.getContents, exa.findSimilarLinks]
+tools: [exa.search, exa.getContents, exa.findSimilarPages]
 ```
 
-## Configure Next.js
-
-List both installed packages as server externals. The consuming app must declare both packages as direct dependencies.
-
-```ts
-import { withFrogbot } from '@frogbotai/next'
-import type { NextConfig } from 'next'
-
-const nextConfig: NextConfig = {
-  serverExternalPackages: [
-    '@activepieces/piece-brave-search',
-    '@frogbotai/piece-brave-search'
-  ]
-}
-
-export default withFrogbot(nextConfig)
-```
-
-Use the equivalent `@activepieces/piece-exa` and `@frogbotai/piece-exa` entries for Exa.
-
-## Wrap another vendor
-
-Use a namespace import, provide `defaultActions`, and match the credential type expected by the upstream piece.
-
-```ts
-import * as module from '@activepieces/piece-tavily'
-import { createActivepiecesPiece } from 'frogbot/pieces'
-
-export const tavily = createActivepiecesPiece({
-  module,
-  service: 'tavily',
-  credentialType: 'secret_text',
-  defaultActions: ['search'],
-  config: { auth: { apiKey: process.env.TAVILY_API_KEY! } }
-})
-```
-
-Verify the upstream action's credential handling before deploying an unblessed wrapper.
+Pass the whole piece, such as `tools: [exa]`, only when the agent should receive all four actions.

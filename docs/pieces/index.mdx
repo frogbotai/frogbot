@@ -61,9 +61,9 @@ export const connections: ConnectionEntry[] = [{ piece: gmail, oauth: true }]
 
 Google's identity recipe requests OpenID, email, and profile access. Gmail extends it with mailbox scopes. Put `google` in a collection's `auth.signIn` for login and pass `connections` to the root config for Gmail linking. Sheets, Drive, and Calendar share `google.oauth` the same way, with a separate entry and callback for each product. See the complete [product connection example](/configuration/connections#configure-linking) and [redirect setup](/configuration/connections#configure-oauth-redirects).
 
-## Native Google actions
+## Google actions
 
-Sheets, Drive, and Calendar provide 52 native actions in total. Install only their FrogBot packages; they do not require an Activepieces runtime. Select action properties directly in an agent's `tools` array, such as `[googleSheets.findRows, googleDrive.getFile, googleCalendar.listEvents]`.
+Sheets, Drive, and Calendar provide 52 actions in total. Select action properties directly in an agent's `tools` array, such as `[googleSheets.findRows, googleDrive.getFile, googleCalendar.listEvents]`.
 
 | Piece | Actions | Examples | Exported action-name list |
 | --- | --- | --- | --- |
@@ -73,7 +73,7 @@ Sheets, Drive, and Calendar provide 52 native actions in total. Install only the
 
 Import each action-name list from its product package for the complete inventory. All three also expose `customApiCall`.
 
-**Breaking change:** the native factories replace the previous wrapper exports and action aliases. Update imports, tool selections, and call inputs to the native names and schemas; this is more than a casing change. Native actions are callable properties rather than wrapper `.tools()` selections. Tool slugs use the instance slug and native action name, such as `google-sheets_appendRow`.
+Actions are callable properties on each piece instance. Tool slugs use the instance slug and action name, such as `google-sheets_appendRow`.
 
 - Sheets `appendRow` appends to the table; `insertRow` inserts after `afterRow` (default `1`, just below the header). Row writes use `spreadsheetId`, numeric `sheetId`, and `values` as an ordered array or column-letter object; `updateRow` also requires a one-based `row`.
 - Drive `getFile` returns metadata. `downloadFile` saves a FrogBot file and returns its reference, not extracted text. `uploadFile` accepts `file: { fileId, name? }` referring to an accessible FrogBot file.
@@ -81,7 +81,7 @@ Import each action-name list from its product package for the complete inventory
 
 ## More packages
 
-Each package defines its own actions and credential requirements.
+Each shipped package is a native FrogBot piece and defines its own actions, triggers, and credential requirements.
 
 | Category | Packages under `@frogbotai/` |
 | --- | --- |
