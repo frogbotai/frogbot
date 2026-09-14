@@ -26,6 +26,10 @@ export function buildIngressRegistry({
   for (const agent of agents ?? []) {
     for (const instance of agent.channels ?? []) {
       register({ instance, agentSlug: agent.slug });
+
+      const entry = registry[instance.slug] ?? { instance, subscribers: [] };
+      entry.channelAgentSlug = agent.slug;
+      registry[instance.slug] = entry;
     }
     for (const configured of agent.triggers ?? []) {
       if (!('trigger' in configured)) continue;

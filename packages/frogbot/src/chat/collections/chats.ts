@@ -32,7 +32,7 @@ export function defaultChatsCollection({
       views: [
         {
           type: 'list',
-          defaultFields: ['title', 'user', 'agent', 'lastMessageAt'],
+          defaultFields: ['title', 'user', 'agent', 'channel', 'lastMessageAt'],
         },
       ],
     },
@@ -55,6 +55,14 @@ export function defaultChatsCollection({
         },
       },
       { name: 'agent', type: 'text', index: true },
+      {
+        name: 'channel',
+        type: 'text',
+        index: true,
+        admin: { components: { Cell: '@frogbotai/next/client#ChannelCell' } },
+      },
+      { name: 'externalId', type: 'text', index: true },
+      { name: 'channelKey', type: 'text', unique: true, admin: { hidden: true } },
       { name: 'lastMessageAt', type: 'date', index: true },
       {
         name: 'todos',

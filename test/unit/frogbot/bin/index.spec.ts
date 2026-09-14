@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   calls: [] as string[],
+  channelsRun: vi.fn(async () => mocks.calls.push(`channelsRun:${process.env.FROGBOT_TEST_KEY}`)),
   dev: vi.fn(() => mocks.calls.push(`dev:${process.env.FROGBOT_TEST_KEY}`)),
   exportTrainingData: vi.fn(async () =>
     mocks.calls.push(`exportTrainingData:${process.env.FROGBOT_TEST_KEY}`),
@@ -30,6 +31,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../packages/frogbot/src/bin/dev.js', () => ({ dev: mocks.dev }));
+vi.mock('../../../../packages/frogbot/src/bin/channelsRun.js', () => ({
+  channelsRun: mocks.channelsRun,
+}));
 vi.mock('../../../../packages/frogbot/src/bin/exportTrainingData.js', () => ({
   exportTrainingData: mocks.exportTrainingData,
 }));
@@ -84,6 +88,7 @@ describe('frogbot bin', () => {
     ['export:training-data', 'exportTrainingData'],
     ['export:captures', 'exportCaptures'],
     ['jobs:run', 'jobsRun'],
+    ['channels:run', 'channelsRun'],
   ])('loads env before dispatching `%s`', async (command, handler) => {
     process.argv = ['node', 'frogbot', command];
 
@@ -113,7 +118,7 @@ describe('frogbot bin', () => {
 
     expect(mocks.calls).toEqual(['loadEnv']);
     expect(error).toHaveBeenCalledWith(
-      '[frogbot] usage: frogbot <start|dev|generate:types|generate:piece-types|generate:importmap|pieces:port|export:training-data|export:captures|jobs:run|migrate|migrate:create|migrate:status|migrate:down|migrate:refresh|migrate:reset|migrate:fresh>',
+      '[frogbot] usage: frogbot <start|dev|generate:types|generate:piece-types|generate:importmap|pieces:port|export:training-data|export:captures|jobs:run|channels:run|migrate|migrate:create|migrate:status|migrate:down|migrate:refresh|migrate:reset|migrate:fresh>',
     );
   });
 

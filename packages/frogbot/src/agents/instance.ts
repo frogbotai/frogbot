@@ -1,6 +1,12 @@
 import type { Gateway } from '@frogbotai/gateway';
-import type { AgentCallParameters, AgentStreamParameters, UIMessage } from 'ai';
-import { convertToModelMessages, generateId, ToolLoopAgent, validateUIMessages } from 'ai';
+import type { AgentCallParameters, AgentStreamParameters, TextStreamPart, UIMessage } from 'ai';
+import {
+  consumeStream,
+  convertToModelMessages,
+  generateId,
+  ToolLoopAgent,
+  validateUIMessages,
+} from 'ai';
 
 import { toHookUsage } from '../ai/hooks.js';
 import { logUsage } from '../ai/logUsage.js';
@@ -8,7 +14,7 @@ import { resolveModel } from '../ai/resolve.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
 import { resolveChatContext } from '../chat/chatContext.js';
 import { generateMessage } from '../chat/generateMessage.js';
-import { persistAssistantMessage } from '../chat/messagePersistence.js';
+import { createMessageUsage, persistAssistantMessage } from '../chat/messagePersistence.js';
 import type { Frogbot } from '../frogbot.js';
 import type { ToolCtx } from '../tools/types.js';
 import type { FrogbotRequest } from '../types/request.js';
@@ -18,6 +24,8 @@ import type {
   AgentGenerateOpts,
   AgentGenerateResult,
   AgentInstance,
+  AgentStreamMessageOpts,
+  AgentStreamMessageResult,
   AgentStreamOpts,
   AgentStreamResult,
   SanitizedAgentConfig,
@@ -197,9 +205,14 @@ export function createAgentInstance(
       void finishOperation({
         finishReason: 'abort',
         error: abortSignal?.reason,
+      }).catch((error: unknown) => {
+        frogbot.logger.error({ error }, '[frogbot] Failed to finalize aborted agent stream.');
       });
     };
+    const transforms = call.experimental_transform;
+
     await op.start();
+
     if (abortSignal?.aborted) {
       finishAbort();
     } else {
@@ -209,6 +222,21 @@ export function createAgentInstance(
     try {
       return await baseAgent.stream({
         ...preparedCall,
+        experimental_transform: [
+          ...(Array.isArray(transforms) ? transforms : transforms ? [transforms] : []),
+          () =>
+            new TransformStream<TextStreamPart<typeof tools>, TextStreamPart<typeof tools>>({
+              async transform(part, controller) {
+                if (part.type === 'error') {
+                  abortSignal?.removeEventListener('abort', finishAbort);
+
+                  await finishOperation({ error: part.error });
+                }
+
+                controller.enqueue(part);
+              },
+            }),
+        ],
         onEnd: async (event) => {
           abortSignal?.removeEventListener('abort', finishAbort);
           await finishSteps(event.steps ?? [], {
@@ -289,12 +317,81 @@ export function createAgentInstance(
   const stream = async (opts: AgentStreamOpts): Promise<AgentStreamResult> =>
     aiAgent.stream(await buildCall(opts));
 
+  const streamMessage = async (opts: AgentStreamMessageOpts): Promise<AgentStreamMessageResult> => {
+    const { chatId, channelAccess, ...runOpts } = opts;
+    const req = await frogbot.createRequest(runOpts.req);
+
+    if (runOpts.overrideAccess === false && !(await access({ req, agent: instance }))) {
+      throw Object.assign(new Error(`Access denied for agent '${agentConfig.slug}'`), {
+        status: 403,
+      });
+    }
+
+    runOpts.abortSignal?.throwIfAborted();
+
+    const incoming = await toPersistentMessages(runOpts, tools);
+    const context = await resolveChatContext({
+      req,
+      agentSlug: agentConfig.slug,
+      chatId,
+      incoming,
+      tools,
+      channelAccess,
+    });
+
+    const mainModel = resolveModel(agentConfig.model, config);
+    const result = await aiAgent.stream(
+      await buildCall({
+        messages: context.uiMessages,
+        req,
+        overrideAccess: true,
+        abortSignal: runOpts.abortSignal,
+        chatId: context.chatId,
+      }),
+    );
+
+    const persistence = consumeStream({
+      stream: result.toUIMessageStream({
+        originalMessages: context.uiMessages,
+        generateMessageId: generateId,
+        sendSources: true,
+        messageMetadata: ({ part }) =>
+          part.type === 'finish'
+            ? { usage: createMessageUsage(part.totalUsage, mainModel) }
+            : undefined,
+        onError: (error) => {
+          throw error;
+        },
+        onEnd: async ({ responseMessage, isContinuation }) => {
+          if (context.chatId === undefined || responseMessage.parts.length === 0) return;
+
+          await persistAssistantMessage({
+            req,
+            chatId: context.chatId,
+            message: responseMessage,
+            isContinuation,
+            history: context.uiMessages,
+            mainModel,
+          });
+        },
+      }),
+      onError: (error) => {
+        throw error;
+      },
+    });
+
+    void persistence.catch(() => {});
+
+    return Object.assign(result, { persistence });
+  };
+
   instance = {
     slug: agentConfig.slug,
     config: agentConfig,
     aiAgent,
     generate,
     stream,
+    streamMessage,
   };
   return instance;
 }

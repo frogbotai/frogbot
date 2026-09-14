@@ -134,7 +134,9 @@ A failing test shows behavior we need to understand; it does not, by itself, dec
 - **Document:** the behavior is an agreed limitation, not a broken promise. Explain what users need to know and how to handle it.
 - **Defer:** addressing it would add behavior or guarantees outside the agreed work. Report the finding and ask the owner before adding it to the feature or accepting a new limitation.
 
-Raise security or data-loss findings promptly, even if the requirements did not mention them. Do not dismiss them as out of scope. If a fix needs a dependency patch, a different core library, or a substantial design change, pause that work and ask the owner first. Explain what can happen to a user, how it can happen, what is known about its likelihood, and the simpler alternatives. A newly discovered problem is not permission to redesign the feature.
+Dependency patches are out of scope. Do not modify third-party dependencies through patch files, package-manager patch settings, or equivalent workarounds. Report the limitation and continue with the agreed application work; do not expand the architecture to avoid this rule.
+
+Raise security or data-loss findings promptly, even if their fixes are out of scope. If a fix needs a different core library or a substantial design change, pause that work and ask the owner first. Explain what can happen to a user, how it can happen, what is known about its likelihood, and the simpler alternatives. A newly discovered problem is not permission to redesign the feature.
 
 Do not weaken tests or mark failures as expected just to get a passing suite. If the owner changes a requirement or accepts a limitation, update the requirements and tests to match that decision, and keep the limitation visible in the final summary. Record findings in the existing summary; a separate report for every test failure is not required.
 

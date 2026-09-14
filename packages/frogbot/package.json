@@ -90,6 +90,7 @@
     "@payloadcms/drizzle": "3.88.0",
     "@payloadcms/translations": "3.88.0",
     "ai": "^7.0.4",
+    "chat": "^4.40.0",
     "croner": "10.0.1",
     "drizzle-orm": "0.45.2",
     "json-schema-to-typescript": "^15.0.3",

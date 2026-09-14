@@ -1,3 +1,4 @@
+export { ChannelCell, type ChannelCellProps } from '../elements/ChannelCell/index.client.js';
 export {
   AccountMenu,
   type AccountMenuIcon,

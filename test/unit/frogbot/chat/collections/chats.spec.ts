@@ -22,9 +22,26 @@ describe('defaultChatsCollection', () => {
     expect(user).toMatchObject({ type: 'relationship', relationTo: 'members', index: true });
   });
 
-  it('defines title, user, agent, lastMessageAt, and todos fields', () => {
+  it('defines chat and external conversation fields', () => {
     const names = collection.fields.map((f) => ('name' in f ? f.name : undefined));
-    expect(names).toEqual(['title', 'user', 'agent', 'lastMessageAt', 'todos']);
+    expect(names).toEqual([
+      'title',
+      'user',
+      'agent',
+      'channel',
+      'externalId',
+      'channelKey',
+      'lastMessageAt',
+      'todos',
+    ]);
+    expect(collection.fields.find((f) => 'name' in f && f.name === 'channelKey')).toMatchObject({
+      type: 'text',
+      unique: true,
+      admin: { hidden: true },
+    });
+    expect(collection.fields.find((f) => 'name' in f && f.name === 'channel')).toMatchObject({
+      admin: { components: { Cell: '@frogbotai/next/client#ChannelCell' } },
+    });
     expect(collection.fields.find((f) => 'name' in f && f.name === 'todos')).toMatchObject({
       type: 'json',
     });

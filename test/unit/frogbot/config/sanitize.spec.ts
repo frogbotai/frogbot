@@ -1286,6 +1286,19 @@ describe('frogbot sanitize', () => {
       execute: vi.fn(),
       ...overrides,
     });
+    const createChannel = definePiece({
+      slug: 'channel',
+      label: 'Channel',
+      auth: z.object({ token: z.string() }),
+      client: ({ auth }) => auth,
+      actions: [],
+      channel: {
+        adapter: () => ({}) as never,
+        async identity() {
+          return null;
+        },
+      },
+    });
 
     it('preserves an agent model when configured', () => {
       const result = sanitize(makeConfig({ ai, agents: [agent] } as never));
@@ -1357,6 +1370,40 @@ describe('frogbot sanitize', () => {
     it('accepts an omitted agent profile', () => {
       const result = sanitize(makeConfig({ ai, agents: [agent] } as never));
       expect((result.agents?.[0] as typeof agent & { profile?: unknown }).profile).toBeUndefined();
+    });
+
+    it('rejects a channel without the channel capability', () => {
+      const plain = definePiece({ slug: 'plain', label: 'Plain', actions: [] })();
+
+      expect(() =>
+        sanitize(
+          makeConfig({ ai, agents: [{ ...agent, channels: [plain] }] } as unknown as FrogbotConfig),
+        ),
+      ).toThrow("Every channel in agent 'support' must be a channel-capable piece instance");
+    });
+
+    it('rejects a channel without factory auth', () => {
+      const channel = createChannel({} as never);
+
+      expect(() =>
+        sanitize(makeConfig({ ai, agents: [{ ...agent, channels: [channel] }] } as never)),
+      ).toThrow("Channel 'channel' in agent 'support' requires factory auth");
+    });
+
+    it('rejects one channel instance mounted by two agents', () => {
+      const channel = createChannel({ auth: { token: 'secret' } });
+
+      expect(() =>
+        sanitize(
+          makeConfig({
+            ai,
+            agents: [
+              { ...agent, channels: [channel] },
+              { ...agent, slug: 'sales', channels: [channel] },
+            ],
+          } as never),
+        ),
+      ).toThrow("Channel 'channel' is mounted by agents 'support' and 'sales'");
     });
 
     it('rejects a non-object agent profile', () => {

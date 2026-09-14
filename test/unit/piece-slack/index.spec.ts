@@ -1,4 +1,5 @@
 import { createHmac } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -76,6 +77,131 @@ describe('Slack native piece', () => {
         req: {} as FrogbotRequest,
       }),
     ).resolves.toEqual({ id: 'T1', label: 'Frogs' });
+  });
+
+  it('creates the Slack channel adapter from bot credentials', () => {
+    const definition = pieceInstanceRuntime(
+      createSlack({
+        auth: { botToken: 'xoxb-test' },
+        signingSecret,
+      }),
+    ).definition;
+    const adapter = definition.channel?.adapter({
+      auth: { botToken: 'xoxb-test' },
+      options: { signingSecret },
+    });
+
+    expect(adapter?.name).toBe('slack');
+  });
+
+  it('requires the signing secret used by shared ingress even when an environment fallback exists', () => {
+    vi.stubEnv('SLACK_SIGNING_SECRET', 'environment-secret');
+
+    try {
+      const definition = pieceInstanceRuntime(createSlack()).definition;
+
+      expect(() =>
+        definition.channel?.adapter({ auth: { botToken: 'xoxb-test' }, options: {} }),
+      ).toThrow('signingSecret');
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('ships a channel manifest templated by the piece instance slug', async () => {
+    const manifest = await readFile(
+      new URL('../../../packages/pieces/piece-slack/slack-manifest.yaml', import.meta.url),
+      'utf8',
+    );
+
+    expect(manifest).toContain(
+      "request_url: '{{FROGBOT_URL}}/api/webhooks/{{SLACK_INSTANCE_SLUG}}'",
+    );
+    expect(manifest).toContain('- users:read\n');
+    expect(manifest).toContain('- users:read.email\n');
+  });
+
+  it('matches Slack authors to FrogBot users by profile email', async () => {
+    const user = { id: 'user-1', email: 'frog@example.com' };
+    const find = vi.fn().mockResolvedValue({ docs: [user] });
+    const definition = pieceInstanceRuntime(createSlack()).definition;
+
+    const identity = await definition.channel?.identity({
+      author: { userId: 'U1' } as never,
+      client: {
+        request: vi.fn().mockResolvedValue({
+          ok: true,
+          user: { profile: { email: ' Frog@Example.com ' } },
+        }),
+      } as never,
+      req: {
+        frogbot: {
+          config: {
+            _internal: { payloadConfig: Promise.resolve({ admin: { user: 'members' } }) },
+          },
+          find,
+        },
+      } as unknown as FrogbotRequest,
+    });
+
+    expect(identity).toEqual({ ...user, collection: 'members' });
+    expect(find).toHaveBeenCalledWith({
+      collection: 'members',
+      where: { email: { equals: 'frog@example.com' } },
+      limit: 1,
+      overrideAccess: true,
+      req: expect.any(Object),
+    });
+  });
+
+  it('keeps Slack authors anonymous when Slack has no email or FrogBot has no match', async () => {
+    const definition = pieceInstanceRuntime(createSlack()).definition;
+    const find = vi.fn().mockResolvedValue({ docs: [] });
+    const req = {
+      frogbot: {
+        config: {
+          _internal: { payloadConfig: Promise.resolve({ admin: { user: 'users' } }) },
+        },
+        find,
+      },
+    } as unknown as FrogbotRequest;
+
+    await expect(
+      definition.channel?.identity({
+        author: { userId: 'U1' } as never,
+        client: {
+          request: vi.fn().mockResolvedValue({ ok: true, user: { profile: {} } }),
+        } as never,
+        req,
+      }),
+    ).resolves.toBeNull();
+    expect(find).not.toHaveBeenCalled();
+
+    await expect(
+      definition.channel?.identity({
+        author: { userId: 'U1' } as never,
+        client: {
+          request: vi.fn().mockResolvedValue({
+            ok: true,
+            user: { profile: { email: 'unknown@example.com' } },
+          }),
+        } as never,
+        req,
+      }),
+    ).resolves.toBeNull();
+  });
+
+  it('propagates Slack identity lookup failures instead of granting anonymous access', async () => {
+    const error = new Error('Slack API request failed: missing_scope');
+    const definition = pieceInstanceRuntime(createSlack()).definition;
+
+    await expect(
+      definition.channel?.identity({
+        author: { userId: 'U1' } as never,
+        client: { request: vi.fn().mockRejectedValue(error) } as never,
+        req: {} as FrogbotRequest,
+      }),
+    ).rejects.toBe(error);
   });
 
   it('uses the stored token and validates Slack responses', async () => {

@@ -15,10 +15,12 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "slack-manifest.yaml"
   ],
   "sideEffects": false,
   "dependencies": {
+    "@chat-adapter/slack": "^4.40.0",
     "zod": "^4.3.6"
   },
   "scripts": {

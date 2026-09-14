@@ -18,6 +18,29 @@ export const slack = createSlack({
 
 Static credentials use `{ botToken, userToken?, teamId? }`. OAuth uses Slack OAuth v2 and stores the bot token, workspace ID, and optional authed-user token returned by Slack.
 
+To attach the app to an agent, use the static bot token and add the piece instance to `channels`:
+
+```ts
+import { createSlack } from '@frogbotai/piece-slack';
+import { buildConfig } from 'frogbot';
+
+export const slack = createSlack({
+  auth: { botToken: process.env.SLACK_BOT_TOKEN! },
+  signingSecret: process.env.SLACK_SIGNING_SECRET!,
+});
+
+export default buildConfig({
+  agents: [
+    {
+      slug: 'support',
+      channels: [slack],
+      access: ({ req }) => !!req.user || req.context.channel?.piece === 'slack',
+    },
+  ],
+  pieces: [slack],
+});
+```
+
 ## Actions
 
 | Upstream action slug              | Previous wrapper export        | Native action            | Notes                                                                                |
@@ -74,16 +97,18 @@ Trigger filters use manual Slack IDs: channel IDs such as `C0123`, user IDs such
 
 ## Slack App Setup
 
-1. Create a Slack app and add the OAuth redirect URL shown by FrogBot.
-2. Add the bot scopes required by the actions and event subscriptions you use. Add corresponding user scopes for actions marked as requiring a user token.
-3. Set the FrogBot app-trigger URL as both the Event Subscriptions request URL and Interactivity request URL.
-4. Subscribe to the bot events listed above. Slack sends a URL challenge when the event URL is configured; FrogBot answers it automatically.
-5. Pass the app's signing secret to `createSlack({ signingSecret })`. Unsigned, stale, altered, or wrong-workspace deliveries are rejected; valid Slack retries remain acceptable for downstream deduplication.
-6. Install or reinstall the app after changing scopes or subscriptions, and invite the bot to private channels it must access.
+1. Copy `slack-manifest.yaml`, replace `{{FROGBOT_URL}}` with the public origin and `{{SLACK_INSTANCE_SLUG}}` with the piece instance slug, then create the Slack app from the manifest.
+2. Install the app and set `SLACK_BOT_TOKEN` to its Bot User OAuth Token and `SLACK_SIGNING_SECRET` to the app's signing secret.
+3. Add the piece instance to one agent's `channels`. The Events URL is `{{FROGBOT_URL}}/api/webhooks/{{SLACK_INSTANCE_SLUG}}`; FrogBot verifies requests and answers Slack's URL challenge through the channel adapter.
+4. Reinstall the app after changing scopes or subscriptions, and invite the bot to private channels it must access.
+
+The manifest grants `users:read` and `users:read.email`. For each message, FrogBot calls `users.info` with the bot token and matches the returned profile email to the configured FrogBot user collection. No match or no email produces an anonymous channel participant; the agent's `access` function decides whether that participant may run the agent.
+
+The existing OAuth setup remains available for actions and app-event triggers. Add corresponding user scopes for actions marked as requiring a user token.
 
 ## Limitations
 
+- The Chat SDK may suppress redelivery after a failed channel-job enqueue, leaving the message unprocessed. Channel ingress is not durable and does not guarantee exactly-once delivery.
 - The four approval/action actions are deliberately omitted because durable waits belong to FrogBot workflows.
 - Slack app webhooks are configured once on the Slack app; individual trigger instances only filter routed deliveries.
-- The piece does not expose a FrogBot channel adapter in this port.
 - Message search, profile/status changes, message deletion, and user-group membership updates need an OAuth user token and the applicable user scopes.

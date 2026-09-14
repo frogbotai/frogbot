@@ -41,6 +41,9 @@ import { coordinateAuthEndpoints } from '../auth/endpoints.js';
 import { attachSessionPayload, unwrapSessionPayload } from '../auth/operation.js';
 import { buildSignInEndpoints } from '../auth/signIn/endpoints.js';
 import { validateSignIn, validateSignInFields } from '../auth/signIn/validate.js';
+import { buildChannelGatewayEndpoints } from '../channels/endpoints.js';
+import { CHANNEL_TASK_SLUG } from '../channels/host.js';
+import { resolveChannelTask } from '../channels/task.js';
 import { buildChatEndpoints } from '../chat/endpoints.js';
 import { buildManifestEndpoint } from '../chat/manifest.js';
 import { resolveChatCollections } from '../chat/resolveChatCollections.js';
@@ -65,10 +68,16 @@ import {
   isPieceInstance,
   pieceActionTool,
   pieceInstanceDefinition,
+  pieceInstanceRuntime,
   pieceInstanceTools,
 } from '../pieces/definePiece.js';
 import { pieceEmailAdapter } from '../pieces/email.js';
-import type { PieceAction, PieceInstance, SanitizedPiecesConfig } from '../pieces/types.js';
+import {
+  type PieceAction,
+  pieceCapabilities,
+  type PieceInstance,
+  type SanitizedPiecesConfig,
+} from '../pieces/types.js';
 import { buildSkillTools } from '../skills/tools.js';
 import type { SkillConfig } from '../skills/types.js';
 import type { AnyTool } from '../tools/types.js';
@@ -580,6 +589,7 @@ function sanitizeAgents(
       .map(([provider]) => provider),
   );
   const slugs = new Set<string>();
+  const channelOwners = new Map<PieceInstance, string>();
 
   return agents.map<SanitizedAgentConfig>((agent) => {
     if (!isRecord(agent) || typeof agent.slug !== 'string' || !agent.slug.trim()) {
@@ -622,6 +632,39 @@ function sanitizeAgents(
     if (agent.access !== undefined && typeof agent.access !== 'function') {
       throw new Error(`[frogbot] Agent '${agent.slug}' access must be a function.`);
     }
+
+    if (agent.channels !== undefined) {
+      if (!Array.isArray(agent.channels)) {
+        throw new Error(
+          `[frogbot] Agent '${agent.slug}' channels must be an array when configured.`,
+        );
+      }
+
+      for (const instance of agent.channels) {
+        if (!isPieceInstance(instance) || !instance[pieceCapabilities].channel) {
+          throw new Error(
+            `[frogbot] Every channel in agent '${agent.slug}' must be a channel-capable piece instance.`,
+          );
+        }
+
+        if (pieceInstanceRuntime(instance).auth === undefined) {
+          throw new Error(
+            `[frogbot] Channel '${instance.slug}' in agent '${agent.slug}' requires factory auth.`,
+          );
+        }
+
+        const owner = channelOwners.get(instance);
+
+        if (owner) {
+          throw new Error(
+            `[frogbot] Channel '${instance.slug}' is mounted by agents '${owner}' and '${agent.slug}'. Create a separate instance for each agent.`,
+          );
+        }
+
+        channelOwners.set(instance, agent.slug);
+      }
+    }
+
     if (
       agent.stopWhen !== undefined &&
       typeof agent.stopWhen !== 'function' &&
@@ -1241,16 +1284,25 @@ export function sanitize(
       `[frogbot] Job task slug '${AGENT_TRIGGER_TASK_SLUG}' is reserved for agent triggers.`,
     );
   }
+  if (
+    agents?.some((agent) => agent.channels?.length) &&
+    config.jobs?.tasks?.some((task) => task.slug === CHANNEL_TASK_SLUG)
+  ) {
+    throw new Error(`[frogbot] Job task slug '${CHANNEL_TASK_SLUG}' is reserved for channels.`);
+  }
 
   const kv = config.kv ?? databaseKVAdapter();
   const resolvedJobs = resolveJobsConfig(config.jobs);
+  const channelJobs = agents?.some((agent) => agent.channels?.length)
+    ? resolveChannelTask(resolvedJobs)
+    : resolvedJobs;
   const jobs = {
     ...resolvedJobs,
     ...resolveKVCleanupTask({
       kv,
       jobs: Object.keys(triggers).length
-        ? resolveTriggerTasks(resolveScheduleTasks({ agents, jobs: resolvedJobs }))
-        : resolveScheduleTasks({ agents, jobs: resolvedJobs }),
+        ? resolveTriggerTasks(resolveScheduleTasks({ agents, jobs: channelJobs }))
+        : resolveScheduleTasks({ agents, jobs: channelJobs }),
     }),
   };
 
@@ -1336,6 +1388,7 @@ export function sanitize(
     [
       ...(chat.enabled ? buildChatEndpoints() : []),
       ...(Object.keys(triggers).length ? buildTriggerEndpoints() : []),
+      ...(agents?.some((agent) => agent.channels?.length) ? buildChannelGatewayEndpoints() : []),
     ],
     attachFrogbot,
   );
