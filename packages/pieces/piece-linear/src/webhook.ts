@@ -23,4 +23,16 @@ export const linearWebhook: PieceWebhook<LinearOptions> = {
       return false;
     }
   },
+  parse({ req }) {
+    const delivery = req.data;
+    const event =
+      typeof delivery === 'object' &&
+      delivery !== null &&
+      'type' in delivery &&
+      typeof delivery.type === 'string'
+        ? delivery.type
+        : 'unknown';
+
+    return { event };
+  },
 };

@@ -24,6 +24,14 @@ export function createMicrosoftTeamsClient({ auth }: { auth: unknown }) {
 
   const baseUrl = environment.graphUrl;
 
+  function accessToken() {
+    if (!credential.accessToken) {
+      throw new Error('Microsoft Graph actions require a user Graph OAuth connection.');
+    }
+
+    return credential.accessToken;
+  }
+
   function url(path: string, query?: RequestOptions['query']) {
     const target = new URL(path, `${baseUrl}/v1.0/`);
 
@@ -42,7 +50,7 @@ export function createMicrosoftTeamsClient({ auth }: { auth: unknown }) {
     const response = await fetch(url(path, options.query), {
       method: options.method ?? 'GET',
       headers: {
-        authorization: `Bearer ${credential.accessToken}`,
+        authorization: `Bearer ${accessToken()}`,
         ...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
         ...options.headers,
       },

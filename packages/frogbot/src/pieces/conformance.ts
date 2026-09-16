@@ -1,7 +1,10 @@
 import { isDeepStrictEqual } from 'node:util';
 
+import type { MessageHandler, StateAdapter } from 'chat';
 import type { z } from 'zod';
 
+import { ChannelChat } from '../channels/chat.js';
+import type { FrogbotRequest } from '../types/request.js';
 import { pieceFactoryDefinition, pieceInstanceRuntime } from './definePiece.js';
 import type {
   PieceActionDefinition,
@@ -33,12 +36,51 @@ type ConformanceTrigger = {
   type: PieceTriggerDefinition['type'];
 };
 
+type ConformanceChannelRequest = {
+  url?: string;
+  method?: string;
+  headers?: HeadersInit;
+  body?: BodyInit;
+  data?: FrogbotRequest['data'];
+};
+
+type ConformanceChannel = {
+  adapter: { name: string };
+  identity: {
+    author: Parameters<NonNullable<PieceDefinition['channel']>['identity']>[0]['author'];
+    req: FrogbotRequest;
+    expect: unknown;
+  };
+  webhook?: {
+    state: StateAdapter;
+    requests: Array<{
+      request: ConformanceChannelRequest;
+      verified: boolean;
+      event?: string;
+      handshake?: { status: number; body: string } | null;
+      delivery: {
+        status: number;
+        body?: string;
+        messages: ConformanceChannelMessage[];
+      };
+    }>;
+  };
+};
+
+type ConformanceChannelMessage = {
+  id: string;
+  threadId: string;
+  text: string;
+  authorId: string;
+};
+
 export type PieceConformanceFixtures = {
   factoryOptions?: Record<string, unknown>;
   actions: ConformanceAction[];
   options?: ConformanceOptions[];
   triggers?: ConformanceTrigger[];
   oauth?: boolean;
+  channel?: ConformanceChannel;
 };
 
 function fail(message: string): never {
@@ -60,6 +102,18 @@ function assertUnique(slugs: string[], subject: string): void {
 function matchesError(error: unknown, expected: ConformanceError): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return typeof expected === 'string' ? message.includes(expected) : expected.test(message);
+}
+
+function channelRequest(fixture: ConformanceChannelRequest): FrogbotRequest & Request {
+  const req = new Request(fixture.url ?? 'https://example.com/api/webhooks/conformance', {
+    method: fixture.method ?? 'POST',
+    headers: fixture.headers,
+    body: fixture.body,
+  }) as FrogbotRequest & Request;
+
+  req.data = fixture.data;
+
+  return req;
 }
 
 export async function pieceConformance<T extends PieceDefinition>(
@@ -180,5 +234,158 @@ export async function pieceConformance<T extends PieceDefinition>(
   const declaresOAuth = Boolean(definition.oauth);
   if ((fixtures.oauth ?? false) !== declaresOAuth) {
     fail(`OAuth declaration expected ${fixtures.oauth ?? false}, received ${declaresOAuth}.`);
+  }
+
+  if (!fixtures.channel) return;
+
+  if (!definition.channel) fail('channel fixtures require a channel declaration.');
+
+  let adapter;
+
+  try {
+    adapter = definition.channel.adapter({ auth: configuredAuth, options: parsedOptions });
+  } catch (error) {
+    fail(`channel adapter failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  assertEqual(
+    adapter.name,
+    fixtures.channel.adapter.name,
+    'channel adapter has an unexpected name.',
+  );
+
+  const identity = await definition.channel.identity({
+    author: fixtures.channel.identity.author,
+    client,
+    req: fixtures.channel.identity.req,
+  });
+
+  assertEqual(
+    identity,
+    fixtures.channel.identity.expect,
+    'channel identity returned an unexpected result.',
+  );
+
+  if (!fixtures.channel.webhook) return;
+
+  if (!definition.webhook) fail('channel webhook fixtures require a webhook declaration.');
+
+  for (const fixture of fixtures.channel.webhook.requests) {
+    if (!Array.isArray(fixture.delivery?.messages)) {
+      fail(
+        'channel webhook delivery requires expected messages, including an empty array for no dispatch.',
+      );
+    }
+  }
+
+  const chat = new ChannelChat({
+    adapters: { [adapter.name]: adapter },
+    state: fixtures.channel.webhook.state,
+    userName: 'frogbot',
+    logger: 'silent',
+  });
+
+  const messages: ConformanceChannelMessage[] = [];
+  const receive: MessageHandler = async (thread, message) => {
+    messages.push({
+      id: message.id,
+      threadId: thread.id,
+      text: message.text,
+      authorId: message.author.userId,
+    });
+  };
+
+  chat.onNewMention(receive);
+  chat.onNewMessage(/[\s\S]*/, receive);
+  chat.onSubscribedMessage(receive);
+
+  try {
+    await chat.initialize();
+
+    for (const fixture of fixtures.channel.webhook.requests) {
+      if (definition.webhook.verify) {
+        const verified = await definition.webhook.verify({
+          req: channelRequest(fixture.request),
+          options: parsedOptions,
+        });
+
+        assertEqual(
+          verified,
+          fixture.verified,
+          'channel webhook verification returned an unexpected result.',
+        );
+      }
+
+      if ('handshake' in fixture) {
+        if (!definition.webhook.handshake) {
+          fail('channel webhook fixture requires handshake behavior.');
+        }
+
+        const response = await definition.webhook.handshake({
+          req: channelRequest(fixture.request),
+          options: parsedOptions,
+        });
+        const actual = response ? { status: response.status, body: await response.text() } : null;
+
+        assertEqual(
+          actual,
+          fixture.handshake,
+          'channel webhook handshake returned an unexpected response.',
+        );
+      }
+
+      if (fixture.event !== undefined) {
+        if (!definition.webhook.parse) fail('channel webhook fixture requires parse behavior.');
+
+        const parsed = definition.webhook.parse({ req: channelRequest(fixture.request) });
+
+        assertEqual(parsed.event, fixture.event, 'channel webhook parsed an unexpected event.');
+      }
+
+      messages.length = 0;
+
+      const tasks: Promise<unknown>[] = [];
+      let response: Response;
+
+      try {
+        response = await chat.webhooks[adapter.name]!(channelRequest(fixture.request), {
+          waitUntil: (task) => tasks.push(task),
+        });
+      } finally {
+        while (tasks.length > 0) {
+          await Promise.all(tasks.splice(0));
+        }
+      }
+
+      assertEqual(
+        response.status,
+        fixture.delivery.status,
+        `channel webhook returned status ${response.status}, expected ${fixture.delivery.status}.`,
+      );
+
+      if (!definition.webhook.verify) {
+        assertEqual(
+          ![401, 403].includes(response.status),
+          fixture.verified,
+          'channel adapter verification returned an unexpected result.',
+        );
+      }
+
+      if (fixture.delivery.body !== undefined) {
+        assertEqual(
+          await response.text(),
+          fixture.delivery.body,
+          'channel webhook returned an unexpected body.',
+        );
+      }
+
+      assertEqual(
+        messages,
+        fixture.delivery.messages,
+        'channel webhook dispatched unexpected messages.',
+      );
+    }
+  } finally {
+    await chat.shutdown();
   }
 }

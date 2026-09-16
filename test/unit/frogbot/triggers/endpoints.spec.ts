@@ -487,6 +487,44 @@ describe('trigger endpoints', () => {
     expect(frogbot.queue).not.toHaveBeenCalled();
   });
 
+  it('rejects app-trigger ingress without a verifier when no channel adapter is mounted', async () => {
+    const unverified = definePiece({
+      slug: 'unverified',
+      label: 'Unverified',
+      actions: [],
+      webhook: { parse: () => ({ event: 'received' }) },
+      triggers: [
+        {
+          slug: 'received',
+          type: 'app',
+          event: 'received',
+          description: 'Receive',
+          input: z.object({}),
+          output: z.object({}),
+          async run() {
+            return [];
+          },
+        },
+      ],
+    })();
+    const frogbot = {
+      config: {
+        _internal: {
+          triggers: {
+            unverified: { instance: unverified, subscribers: [] },
+          },
+        },
+      },
+      queue: vi.fn(),
+    };
+    const req = Object.assign(request({ event: 'received' }), {
+      frogbot,
+      routeParams: { instance: 'unverified' },
+    });
+
+    await expect(post.handler(req as never)).resolves.toMatchObject({ status: 401 });
+  });
+
   it('routes GET directly to the handshake with its query and request context', async () => {
     const verify = vi.fn().mockResolvedValue(false);
     const handshake = vi.fn(async ({ req }) => Response.json({ challenge: req.query.challenge }));

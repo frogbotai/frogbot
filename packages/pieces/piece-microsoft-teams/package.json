@@ -19,6 +19,7 @@
   ],
   "sideEffects": false,
   "dependencies": {
+    "@chat-adapter/teams": "4.40.0",
     "zod": "^4.3.6"
   },
   "scripts": {

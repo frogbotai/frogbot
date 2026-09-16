@@ -99,6 +99,44 @@ export const sendMessage = {
   DiscordClient
 >;
 
+const requestApprovalInput = z.object({
+  channelId,
+  message: z.string().min(1),
+  reviewUrl: z.url(),
+  buttonLabel: z.string().min(1).default('Review request'),
+});
+
+export const requestApproval = {
+  slug: 'requestApproval',
+  description: 'Send a message with a link to a workflow-provided approval page.',
+  input: requestApprovalInput,
+  output: discordObject,
+  idempotent: false,
+  options: { channelId: channelOptions },
+  async run({ client, input }: Run<z.output<typeof requestApprovalInput>>) {
+    const response = await client.request({
+      method: 'POST',
+      path: `/channels/${encodeURIComponent(input.channelId)}/messages`,
+      body: {
+        content: input.message,
+        components: [
+          {
+            type: 1,
+            components: [{ type: 2, style: 5, label: input.buttonLabel, url: input.reviewUrl }],
+          },
+        ],
+      },
+    });
+
+    return discordObject.parse(response.body);
+  },
+} satisfies PieceActionDefinition<
+  typeof requestApprovalInput,
+  typeof discordObject,
+  object,
+  DiscordClient
+>;
+
 const webhookInput = z.object({
   webhookUrl: z.url().refine(
     (value) => {

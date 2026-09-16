@@ -189,6 +189,8 @@ There is no `req`; the adapter is built once at boot.
 | `client` | client           | Looks up the author's account details.            |
 | `req`    | `FrogbotRequest` | Finds the local user and carries channel context. |
 
+Return the matched user with its `collection`, or `null` when the platform identity has no local match. Propagate vendor lookup failures rather than treating them as anonymous access.
+
 ### `oauth.toAuth`
 
 | Argument | Type          | Why it earns its keep                              |
@@ -313,6 +315,59 @@ Examples: `linear_linear_create_issue` becomes `createIssue`; `gmail_get_mail` b
 - Adapt useful upstream behavior tests from the selected source revision when available. Missing published tests are not a blocker, and wholesale migration is unnecessary.
 - Never recreate discarded engine APIs to reuse an upstream test.
 - Before removing `.legacy`, confirm every registered upstream action and trigger is covered by the README mapping, deliberate drops name the owning native primitive, and the native package tree has no `@activepieces` reference or dependency.
+
+### Channel conformance fixtures
+
+Pass `channel` to `pieceConformance` for every channel piece; it remains optional for pieces without channels. Supply a fresh Chat `StateAdapter` and controlled vendor transport before calling the helper. The helper initializes the real adapter through `ChannelChat`, delivers each request, waits for background delivery tasks, and shuts down afterward.
+
+Assert the adapter name, one representative identity result, and valid and invalid deliveries for every HTTP transport the piece accepts. Every delivery requires an exact response status and `messages` array containing the dispatched message IDs, thread IDs, text, and author IDs. Use `messages: []` for rejected requests, handshakes, and events that should not dispatch a message. Include piece handshake and parsed event expectations only when that transport defines them; use `delivery.body` for adapter-owned handshake responses.
+
+```ts
+await pieceConformance(createExample, {
+  factoryOptions: { auth: { token: 'token' }, signingSecret: 'secret' },
+  actions: [],
+  channel: {
+    adapter: { name: 'example' },
+    identity: {
+      author: { userId: 'platform-user' },
+      req,
+      expect: { id: 'user', collection: 'users' },
+    },
+    webhook: {
+      state,
+      requests: [
+        {
+          request: { headers, body: rawBody, data: delivery },
+          verified: true,
+          event: 'message.created',
+          delivery: {
+            status: 200,
+            messages: [
+              {
+                id: 'message-1',
+                threadId: 'example:channel-1:thread-1',
+                text: 'Hello FrogBot',
+                authorId: 'platform-user',
+              },
+            ],
+          },
+        },
+        {
+          request: { headers: invalidHeaders, body: rawBody, data: delivery },
+          verified: false,
+          delivery: { status: 401, messages: [] },
+        },
+      ],
+    },
+  },
+});
+```
+
+Keep fixtures and transport/state helpers under root `test/`. Use the exact recorded raw body for signature checks and set the separately parsed value in `request.data`. Supply realistic adapter fields, including GitHub's `comment.user` and Linear's `agentSession.creator.url`; event-name parsing alone does not prove delivery. Control initialization lookups such as Telegram bot identity and Linear viewer identity without replacing adapter initialization, verification, or message handling.
+
+When `piece.webhook.verify` exists, `verified` checks its result as well as the adapter response. Teams and Discord can omit that callback: their official adapters own authentication, and denial fixtures must assert the adapter's 401/403 response and zero messages. Include signed Discord interactions and authenticated forwarded Gateway messages. Gateway listener lifecycle, full identity/access enforcement, and conversation persistence belong in host integration tests. Record any missing valid-JWT or live-service coverage explicitly.
+
+Each channel piece README must add a setup section containing the required app or bot registration, credentials and scopes, subscribed events, and its instance webhook URL: `/api/webhooks/<piece-instance-slug>`. Add `/<subscription-id>` only for vendor webhooks registered by a `webhook` trigger.
 
 ## README template
 

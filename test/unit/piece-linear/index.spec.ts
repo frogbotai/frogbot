@@ -1,214 +1,200 @@
+import { createHmac } from 'node:crypto';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
-import {
-  pieceActionDefinition,
-  pieceFactoryDefinition,
-  pieceInstanceTools,
-} from '../../../packages/frogbot/src/pieces/definePiece.js';
+import { pieceConformance } from '../../../packages/frogbot/src/pieces/conformance.js';
+import { pieceFactoryDefinition } from '../../../packages/frogbot/src/pieces/definePiece.js';
+import type { FrogbotRequest } from '../../../packages/frogbot/src/types/request.js';
 import {
   createLinear,
   linearActions,
   linearTriggers,
 } from '../../../packages/pieces/piece-linear/src/index.js';
+import { conformanceChannelState } from '../frogbot/pieces/channelState.js';
 
-const req = (auth = { apiKey: 'lin_api_test' }) =>
-  ({
-    frogbot: {
-      connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key: auth }) },
-    },
-    user: null,
-  }) as never;
-const graphQL = (data: unknown) =>
-  new Response(JSON.stringify({ data }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+const auth = { accessToken: 'linear-access-token' };
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe('linear', () => {
-  it('exposes the semantic action and trigger slugs', () => {
-    const linear = createLinear({ auth: { apiKey: 'lin_api_test' } });
-    expect(pieceInstanceTools(linear)?.map(({ slug }) => slug)).toEqual(
-      linearActions.map((slug) => `linear_${slug}`),
-    );
-    expect(Object.keys(linear.triggers)).toEqual(linearTriggers);
-  });
-
-  it.each([
-    [
-      'createIssue',
-      { teamId: 'team', title: 'Issue', description: 'Body', labelIds: ['label'] },
-      'IssueCreate',
-      { input: { teamId: 'team', title: 'Issue', description: 'Body', labelIds: ['label'] } },
-    ],
-    [
-      'updateIssue',
-      { teamId: 'team', issueId: 'issue', title: 'Updated' },
-      'IssueUpdate',
-      { id: 'issue', input: { title: 'Updated' } },
-    ],
-    [
-      'createProject',
-      { teamId: 'team', name: 'Project' },
-      'ProjectCreate',
-      { input: { teamIds: ['team'], name: 'Project' } },
-    ],
-    [
-      'updateProject',
-      { teamId: 'team', projectId: 'project', name: 'Updated' },
-      'ProjectUpdate',
-      { id: 'project', input: { teamIds: ['team'], name: 'Updated' } },
-    ],
-    [
-      'createComment',
-      { teamId: 'team', issueId: 'issue', body: 'Comment' },
-      'CommentCreate',
-      { input: { issueId: 'issue', body: 'Comment' } },
-    ],
-  ] as const)('maps %s to the SDK request', async (slug, input, operation, variables) => {
-    const fetch = vi.fn().mockImplementation(async () =>
-      graphQL({
-        [`${operation[0]?.toLowerCase()}${operation.slice(1)}`]: {
-          success: true,
-          lastSyncId: 1,
-          issue: { id: 'id' },
-          project: { id: 'id' },
-          comment: { id: 'id' },
+  it('passes channel conformance with a recorded Agent Session delivery', async () => {
+    const delivery = {
+      action: 'created',
+      type: 'AgentSessionEvent',
+      webhookTimestamp: Date.now(),
+      organizationId: 'organization-id',
+      createdAt: '2026-09-14T12:00:00Z',
+      promptContext: 'Help with this issue',
+      agentSession: {
+        id: 'session-id',
+        issueId: 'issue-id',
+        appUserId: 'app-user-id',
+        creator: {
+          id: 'user-id',
+          name: 'Frog',
+          email: 'frog@example.com',
+          url: 'https://linear.app/frogbot/profiles/frog',
         },
-        issue: { id: 'id' },
-        project: { id: 'id' },
-        comment: { id: 'id' },
-      }),
-    );
-    vi.stubGlobal('fetch', fetch);
-    const linear = createLinear({ auth: { apiKey: 'lin_api_test' } });
-    await linear[slug]({ input, req: req() });
-    const body = JSON.parse(fetch.mock.calls[0]?.[1]?.body as string);
-    expect(body.query).toContain(operation);
-    expect(body.variables).toEqual(variables);
-    expect(fetch.mock.calls[0]?.[1]?.headers).toMatchObject({ Authorization: 'lin_api_test' });
-  });
-
-  it('passes raw GraphQL query and variables unchanged', async () => {
-    const fetch = vi.fn().mockResolvedValue(graphQL({ viewer: { id: 'user' } }));
-    vi.stubGlobal('fetch', fetch);
-    await createLinear({ auth: { apiKey: 'lin_api_test' } }).rawGraphqlQuery({
-      input: { query: 'query Viewer { viewer { id } }', variables: { first: 1 } },
-      req: req(),
-    });
-    expect(JSON.parse(fetch.mock.calls[0]?.[1]?.body as string)).toEqual({
-      query: 'query Viewer { viewer { id } }',
-      variables: { first: 1 },
-    });
-  });
-
-  it('loads paginated and dependent options through the SDK transport', async () => {
-    const fetch = vi
-      .fn()
-      .mockResolvedValueOnce(
-        graphQL({
-          teams: {
-            nodes: [{ id: 't1', name: 'One' }],
-            pageInfo: { hasNextPage: true, endCursor: 'next' },
-          },
-        }),
-      )
-      .mockResolvedValueOnce(
-        graphQL({
-          teams: { nodes: [{ id: 't2', name: 'Two' }], pageInfo: { hasNextPage: false } },
-        }),
-      )
-      .mockResolvedValueOnce(
-        graphQL({
-          workflowStates: { nodes: [{ id: 's1', name: 'Todo' }], pageInfo: { hasNextPage: false } },
-        }),
-      );
-    vi.stubGlobal('fetch', fetch);
-    const linear = createLinear({ auth: { apiKey: 'lin_api_test' } });
-    const client = await linear.client({ req: req() });
-    const definition = pieceActionDefinition(linear.createIssue)!;
-    expect(
-      await definition.options?.teamId?.({ input: {}, client, options: {}, req: req() }),
-    ).toEqual([
-      { label: 'One', value: 't1' },
-      { label: 'Two', value: 't2' },
-    ]);
-    expect(
-      await definition.options?.stateId?.({
-        input: { teamId: 't1' },
-        client,
-        options: {},
-        req: req(),
-      }),
-    ).toEqual([{ label: 'Todo', value: 's1' }]);
-  });
-
-  it.each(linearTriggers)('registers, filters, and removes %s', async (slug) => {
-    const definition = pieceFactoryDefinition(createLinear).triggers?.find(
-      (trigger) => trigger.slug === slug,
-    );
-    if (!definition) throw new Error(`Missing trigger '${slug}'.`);
-    const client = {
-      createWebhook: vi
-        .fn()
-        .mockResolvedValue({ success: true, webhook: Promise.resolve({ id: 'hook' }) }),
-      deleteWebhook: vi.fn().mockResolvedValue({ success: true }),
+      },
     };
-    const input = definition.input.parse(slug.startsWith('issue') ? { teamId: 'team' } : {});
-    if (definition.type !== 'webhook') throw new Error(`Trigger '${slug}' is not a webhook.`);
-    const state = await definition.onEnable({
-      client,
-      input,
-      webhookUrl: 'https://example.com/hook',
-      options: { webhookSecret: 'linear-webhook-secret' },
-      req: req(),
-    } as never);
-    const resourceType = slug.startsWith('issue')
-      ? 'Issue'
-      : slug.startsWith('project')
-        ? 'Project'
-        : 'Comment';
-    expect(client.createWebhook).toHaveBeenCalledWith(
-      expect.objectContaining({
-        url: 'https://example.com/hook',
-        secret: 'linear-webhook-secret',
-        resourceTypes: [resourceType],
-        ...(slug.startsWith('issue') ? { teamId: 'team' } : { allPublicTeams: true }),
+    const body = JSON.stringify(delivery);
+    const webhookSecret = 'linear-webhook-secret';
+    const signature = createHmac('sha256', webhookSecret).update(body).digest('hex');
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url, init) => {
+        const { query } = JSON.parse(init.body);
+
+        if (query.includes('LinearAdapterViewerOrganization')) {
+          return Response.json({
+            data: {
+              viewer: {
+                id: 'app-user-id',
+                displayName: 'FrogBot',
+                organization: { id: 'organization-id' },
+              },
+            },
+          });
+        }
+
+        if (query.includes('user')) {
+          return Response.json({
+            data: { user: { id: 'user-id', name: 'Frog', email: 'frog@example.com' } },
+          });
+        }
+
+        throw new Error(`Unexpected Linear query: ${query}`);
       }),
     );
-    const action = slug.endsWith('Created')
-      ? 'create'
-      : slug.endsWith('Updated')
-        ? 'update'
-        : 'remove';
-    const delivery = { action, type: resourceType, data: {}, updatedFrom: { statusId: 'status' } };
-    const first = await definition.run({
-      client,
-      input,
-      options: {},
-      req: { data: delivery },
-    } as never);
-    const second = await definition.run({
-      client,
-      input,
-      options: {},
-      req: { data: delivery },
-    } as never);
-    expect(first).toEqual([{ dedupeKey: expect.stringMatching(/^[a-f0-9]{64}$/), data: delivery }]);
-    expect(second).toEqual(first);
-    for (const rejected of [
-      { ...delivery, type: resourceType === 'Issue' ? 'Project' : 'Issue' },
-      { ...delivery, type: undefined },
-      { ...delivery, action: 'unknown' },
-    ]) {
-      await expect(
-        definition.run({ client, input, options: {}, req: { data: rejected } } as never),
-      ).resolves.toEqual([]);
-    }
-    await definition.onDisable({ client, input, state, options: {}, req: req() } as never);
-    expect(client.deleteWebhook).toHaveBeenCalledWith('hook');
+
+    await expect(
+      pieceConformance(createLinear, {
+        factoryOptions: { auth, webhookSecret },
+        actions: linearActions.map((slug) => ({ slug, input: {}, expect: { error: /./ } })),
+        triggers: linearTriggers.map((slug) => ({ slug, type: 'webhook' as const })),
+        oauth: true,
+        channel: {
+          adapter: { name: 'linear' },
+          identity: {
+            author: { userId: 'user-id', userName: 'frog' },
+            req: {
+              frogbot: {
+                config: {
+                  _internal: { payloadConfig: Promise.resolve({ admin: { user: 'users' } }) },
+                },
+                find: vi.fn().mockResolvedValue({ docs: [] }),
+              },
+            } as unknown as FrogbotRequest,
+            expect: null,
+          },
+          webhook: {
+            state: conformanceChannelState(),
+            requests: [
+              {
+                request: {
+                  headers: { 'linear-signature': signature },
+                  body,
+                  data: delivery,
+                },
+                verified: true,
+                event: 'AgentSessionEvent',
+                delivery: {
+                  status: 200,
+                  messages: [
+                    {
+                      id: 'agent-session-session-id',
+                      threadId: 'linear:issue-id:s:session-id',
+                      text: 'Help with this issue',
+                      authorId: 'user-id',
+                    },
+                  ],
+                },
+              },
+              {
+                request: {
+                  headers: { 'linear-signature': '0'.repeat(64) },
+                  body,
+                  data: delivery,
+                },
+                verified: false,
+                delivery: { status: 400, messages: [] },
+              },
+            ],
+          },
+        },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('defaults to Agent Sessions and permits the comments fallback', () => {
+    const definition = pieceFactoryDefinition(createLinear);
+    const primary = definition.channel?.adapter({
+      auth,
+      options: { webhookSecret: 'secret', channelMode: 'agent-sessions' },
+    });
+    const fallback = definition.channel?.adapter({
+      auth: { apiKey: 'linear-api-key' },
+      options: { webhookSecret: 'secret', channelMode: 'comments' },
+    });
+
+    expect(primary?.encodeThreadId({ issueId: 'issue', agentSessionId: 'session' })).toBe(
+      'linear:issue:s:session',
+    );
+    expect(fallback?.encodeThreadId({ issueId: 'issue', commentId: 'comment' })).toBe(
+      'linear:issue:c:comment',
+    );
+    expect(() => definition.channel?.adapter({ auth, options: {} as never })).toThrow(
+      'webhookSecret',
+    );
+  });
+
+  it('maps stored OAuth tokens and declares app-actor authorization', () => {
+    const oauth = pieceFactoryDefinition(createLinear).oauth;
+
+    expect(oauth).toMatchObject({
+      authorizationUrl: 'https://linear.app/oauth/authorize',
+      tokenUrl: 'https://api.linear.app/oauth/token',
+      params: { actor: 'app' },
+    });
+    expect(oauth?.toAuth?.({ tokens: { access_token: 'stored-token' } })).toEqual({
+      accessToken: 'stored-token',
+    });
+    expect(() => oauth?.toAuth?.({ tokens: {} })).toThrow(
+      'Linear OAuth did not return an access token',
+    );
+  });
+
+  it('matches Linear authors to FrogBot users by email', async () => {
+    const find = vi.fn().mockResolvedValue({ docs: [{ id: 'user-1' }] });
+    const client = { user: vi.fn().mockResolvedValue({ email: ' Frog@Example.com ' }) };
+    const req = {
+      frogbot: {
+        config: {
+          _internal: { payloadConfig: Promise.resolve({ admin: { user: 'members' } }) },
+        },
+        find,
+      },
+    } as unknown as FrogbotRequest;
+
+    const identity = await pieceFactoryDefinition(createLinear).channel?.identity({
+      author: { userId: 'linear-user', userName: 'frog' } as never,
+      client: client as never,
+      req,
+    });
+
+    expect(identity).toEqual({ id: 'user-1', collection: 'members' });
+    expect(find).toHaveBeenCalledWith({
+      collection: 'members',
+      where: { email: { equals: 'frog@example.com' } },
+      limit: 1,
+      overrideAccess: true,
+      req,
+    });
   });
 });

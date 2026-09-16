@@ -1,8 +1,11 @@
+import { readFileSync } from 'node:fs';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
+import { pieceConformance } from '../../../packages/frogbot/src/pieces/conformance.js';
 import {
   pieceFactoryDefinition,
   pieceInstanceTools,
@@ -14,12 +17,25 @@ import {
   microsoftTeamsScopes,
   microsoftTeamsTriggers,
 } from '../../../packages/pieces/piece-microsoft-teams/src/index.js';
+import { microsoftTeamsWebhookEvent } from '../../../packages/pieces/piece-microsoft-teams/src/webhook.js';
+import { conformanceChannelState } from '../frogbot/pieces/channelState.js';
 
 const auth = {
   accessToken: 'stored-access-token',
   cloud: 'login.microsoftonline.com',
   tenantId: 'common',
 };
+const botAuth = {
+  ...auth,
+  appId: 'bot-app-id',
+  appPassword: 'bot-app-password',
+};
+const messageActivity = JSON.parse(
+  readFileSync(new URL('./fixtures/message.json', import.meta.url), 'utf8'),
+);
+const adaptiveCardAction = JSON.parse(
+  readFileSync(new URL('./fixtures/adaptive-card-action.json', import.meta.url), 'utf8'),
+);
 const calls: { url: string; init?: RequestInit }[] = [];
 let transport: (url: string, init?: RequestInit) => Promise<Response>;
 
@@ -194,8 +210,115 @@ describe('native Microsoft Teams OAuth', () => {
   });
 });
 
+describe('native Microsoft Teams channel', () => {
+  it('creates the official adapter from Azure Bot credentials and rejects missing credentials', () => {
+    const definition = pieceFactoryDefinition(createMicrosoftTeams);
+    const adapter = definition.channel?.adapter({
+      auth: botAuth,
+      options: {
+        botAppType: 'MultiTenant',
+        botUsername: 'frogbot',
+      },
+    });
+
+    expect(adapter?.name).toBe('teams');
+    expect(() =>
+      definition.channel?.adapter({
+        auth,
+        options: { botAppType: 'MultiTenant', botUsername: 'frogbot' },
+      }),
+    ).toThrow('require Azure Bot');
+  });
+
+  it('passes shared conformance with adapter-owned Bot Framework authentication denial', async () => {
+    const definition = pieceFactoryDefinition(createMicrosoftTeams);
+    const body = JSON.stringify(messageActivity);
+
+    const result = await pieceConformance(createMicrosoftTeams, {
+      factoryOptions: { auth: botAuth, botUsername: 'frogbot' },
+      actions: microsoftTeamsActions.map((slug) => ({ slug, input: {}, expect: { error: /./ } })),
+      triggers: definition.triggers?.map(({ slug, type }) => ({ slug, type })),
+      oauth: true,
+      channel: {
+        adapter: { name: 'teams' },
+        identity: {
+          author: { userId: '29:user' },
+          req: {} as never,
+          expect: null,
+        },
+        webhook: {
+          state: conformanceChannelState(),
+          requests: [undefined, 'Bearer invalid.jwt.token'].map((authorization) => ({
+            request: {
+              url: 'https://frogbot.test/api/webhooks/teams',
+              headers: {
+                'content-type': 'application/json',
+                ...(authorization ? { authorization } : {}),
+              },
+              body,
+              data: messageActivity,
+            },
+            verified: false,
+            event: 'messageReceived',
+            delivery: { status: 401, messages: [] },
+          })),
+        },
+      },
+    });
+
+    expect(result).toBeUndefined();
+  });
+
+  it('matches adapter-resolved AAD email identity to the FrogBot user collection', async () => {
+    const definition = pieceFactoryDefinition(createMicrosoftTeams);
+    const find = vi.fn().mockResolvedValue({ docs: [{ id: 'user', email: 'ada@example.com' }] });
+    const request = {
+      frogbot: {
+        config: Promise.resolve({
+          _internal: { payloadConfig: Promise.resolve({ admin: { user: 'users' } }) },
+        }),
+        find,
+      },
+    };
+
+    const identity = await definition.channel?.identity({
+      author: { userId: '29:user', email: 'ADA@example.com' },
+      client: {} as never,
+      req: request as never,
+    });
+
+    expect(identity).toEqual({ id: 'user', email: 'ada@example.com', collection: 'users' });
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { email: { equals: 'ada@example.com' } } }),
+    );
+  });
+
+  it('maps recorded message and Adaptive Card activities to native events', () => {
+    expect(microsoftTeamsWebhookEvent(messageActivity)).toBe('messageReceived');
+    expect(microsoftTeamsWebhookEvent(adaptiveCardAction)).toBe('cardActionReceived');
+  });
+
+  it('emits Activity triggers only with a stable nonempty Activity ID', async () => {
+    const piece = createMicrosoftTeams({ auth: botAuth });
+    const client = await piece.client({ req: req(botAuth) });
+    const run = (data: unknown) =>
+      piece.triggers.messageReceived.run({
+        client,
+        input: {},
+        options: { botAppType: 'MultiTenant', botUsername: 'bot' },
+        req: { ...req(botAuth), data } as never,
+      });
+
+    await expect(run(messageActivity)).resolves.toEqual([
+      { data: messageActivity, dedupeKey: 'activity-message-1' },
+    ]);
+    await expect(run({ ...messageActivity, id: '   ' })).resolves.toEqual([]);
+    await expect(run({ ...messageActivity, id: undefined })).resolves.toEqual([]);
+  });
+});
+
 describe('native Microsoft Teams actions', () => {
-  it('declares fourteen actions, four triggers, and meaningful schemas', () => {
+  it('declares fourteen actions, polling and Activity triggers, and meaningful schemas', () => {
     const piece = createMicrosoftTeams({ auth });
     const definition = pieceFactoryDefinition(createMicrosoftTeams);
 

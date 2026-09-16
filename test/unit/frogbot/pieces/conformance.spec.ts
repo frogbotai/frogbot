@@ -3,6 +3,8 @@ import { z } from 'zod';
 
 import { pieceConformance } from '../../../../packages/frogbot/src/pieces/conformance.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import { channelFixture } from '../channels/helpers.js';
+import { conformanceChannelState } from './channelState.js';
 
 const createValid = () =>
   definePiece({
@@ -55,6 +57,88 @@ const validFixtures = () => ({
     },
   ],
   triggers: [{ slug: 'itemCreated', type: 'app' as const }],
+});
+
+const channelReq = { frogbot: {} } as never;
+
+const createChannel = ({ adapterOwned = false } = {}) =>
+  definePiece({
+    slug: 'channel',
+    label: 'Channel',
+    auth: z.object({ token: z.string() }),
+    options: z.object({ secret: z.string() }),
+    client: ({ auth }) => auth,
+    channel: {
+      adapter: () => {
+        const { adapter } = channelFixture();
+        const deliver = adapter.handleWebhook;
+
+        return {
+          ...adapter,
+          handleWebhook: async (...args: Parameters<typeof deliver>) =>
+            args[0].headers.get('x-secret') === 'secret'
+              ? deliver(...args)
+              : new Response(null, { status: 401 }),
+        } as never;
+      },
+      identity: async ({ author }) =>
+        author.userId === 'known' ? ({ id: 'user', collection: 'users' } as never) : null,
+    },
+    webhook: {
+      verify: adapterOwned
+        ? undefined
+        : async ({ req, options }) => req.headers.get('x-secret') === options.secret,
+      handshake: async ({ req }) =>
+        typeof req.data === 'object' && req.data && 'challenge' in req.data
+          ? new Response(String(req.data.challenge), { status: 202 })
+          : null,
+      parse: ({ req }) => ({
+        event:
+          typeof req.data === 'object' && req.data && 'event' in req.data
+            ? String(req.data.event)
+            : '',
+      }),
+    },
+    actions: [],
+  });
+
+const channelFixtures = () => ({
+  factoryOptions: { auth: { token: 'token' }, secret: 'secret' },
+  actions: [],
+  channel: {
+    adapter: { name: 'slack' },
+    identity: {
+      author: { userId: 'known' } as never,
+      req: channelReq,
+      expect: { id: 'user', collection: 'users' },
+    },
+    webhook: {
+      state: conformanceChannelState(),
+      requests: [
+        {
+          request: {
+            headers: { 'x-secret': 'secret' },
+            body: JSON.stringify({ id: 'message', threadId: 'channel:thread', text: 'Hello' }),
+            data: { challenge: 'ready', event: 'message.created' },
+          },
+          verified: true,
+          event: 'message.created',
+          handshake: { status: 202, body: 'ready' },
+          delivery: {
+            status: 202,
+            messages: [
+              { id: 'message', threadId: 'channel:thread', text: 'Hello', authorId: 'user-1' },
+            ],
+          },
+        },
+        {
+          request: { headers: { 'x-secret': 'wrong' }, data: { event: 'message.created' } },
+          verified: false,
+          delivery: { status: 401, messages: [] },
+        },
+      ],
+    },
+  },
 });
 
 describe('pieceConformance', () => {
@@ -182,5 +266,102 @@ describe('pieceConformance', () => {
       actions: [{ slug: 'run', input: {}, expect: { result: 'ok' } }],
     });
     expect(run).toHaveBeenCalledOnce();
+  });
+
+  it('checks channel adapter, identity, and recorded webhook deliveries', async () => {
+    await expect(pieceConformance(createChannel(), channelFixtures())).resolves.toBeUndefined();
+  });
+
+  it('accepts adapter-owned verification and observes initialized message dispatch', async () => {
+    await expect(
+      pieceConformance(createChannel({ adapterOwned: true }), channelFixtures()),
+    ).resolves.toBeUndefined();
+  });
+
+  it.each(['id', 'threadId', 'text', 'authorId'] as const)(
+    'rejects an unexpected delivered %s',
+    async (field) => {
+      const fixtures = channelFixtures();
+      fixtures.channel.webhook.requests[0]!.delivery.messages[0]![field] = 'wrong';
+
+      await expect(pieceConformance(createChannel(), fixtures)).rejects.toThrow(
+        'channel webhook dispatched unexpected messages',
+      );
+    },
+  );
+
+  it('rejects an unexpected webhook status', async () => {
+    const fixtures = channelFixtures();
+    fixtures.channel.webhook.requests[0]!.delivery.status = 200;
+
+    await expect(pieceConformance(createChannel(), fixtures)).rejects.toThrow(
+      'channel webhook returned status 202, expected 200',
+    );
+  });
+
+  it('rejects unexpected dispatch and disconnects state after a failure', async () => {
+    const fixtures = channelFixtures();
+    const disconnect = vi.spyOn(fixtures.channel.webhook.state, 'disconnect');
+    fixtures.channel.webhook.requests[0]!.delivery.messages = [];
+
+    await expect(pieceConformance(createChannel(), fixtures)).rejects.toThrow(
+      'channel webhook dispatched unexpected messages',
+    );
+
+    expect(disconnect).toHaveBeenCalledOnce();
+  });
+
+  it('requires adapter-owned authentication expectations to match denial', async () => {
+    const fixtures = channelFixtures();
+    fixtures.channel.webhook.requests[1]!.verified = true;
+
+    await expect(pieceConformance(createChannel({ adapterOwned: true }), fixtures)).rejects.toThrow(
+      'channel adapter verification returned an unexpected result',
+    );
+  });
+
+  it('requires explicit message expectations for webhook delivery', async () => {
+    const fixtures = channelFixtures();
+    fixtures.channel.webhook.requests[0]!.delivery.messages = undefined as never;
+
+    await expect(pieceConformance(createChannel(), fixtures)).rejects.toThrow(
+      'channel webhook delivery requires expected messages',
+    );
+  });
+
+  it('reports missing channel declarations and behavior clearly', async () => {
+    const createWithoutChannel = definePiece({
+      slug: 'without-channel',
+      label: 'Without channel',
+      auth: z.object({ token: z.string() }),
+      options: z.object({ secret: z.string() }),
+      client: ({ auth }) => auth,
+      actions: [],
+    });
+
+    await expect(pieceConformance(createWithoutChannel, channelFixtures())).rejects.toThrow(
+      'channel fixtures require a channel declaration',
+    );
+
+    const adapter = channelFixtures();
+    adapter.channel.adapter.name = 'other';
+
+    await expect(pieceConformance(createChannel(), adapter)).rejects.toThrow(
+      'channel adapter has an unexpected name',
+    );
+
+    const identity = channelFixtures();
+    identity.channel.identity.expect = null as never;
+
+    await expect(pieceConformance(createChannel(), identity)).rejects.toThrow(
+      'channel identity returned an unexpected result',
+    );
+
+    const verification = channelFixtures();
+    verification.channel.webhook.requests[0]!.verified = false;
+
+    await expect(pieceConformance(createChannel(), verification)).rejects.toThrow(
+      'channel webhook verification returned an unexpected result',
+    );
   });
 });

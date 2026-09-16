@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
+import { createAppAuth } from '@octokit/auth-app';
 import { z } from 'zod';
 
 import { githubAuth } from './config.js';
@@ -68,7 +69,23 @@ function apiUrl(path: string) {
 export type GithubClient = ReturnType<typeof createGithubClient>;
 
 export function createGithubClient({ auth }: { auth: unknown }) {
-  const { accessToken } = githubAuth.parse(auth);
+  const credential = githubAuth.parse(auth);
+  const appAuth =
+    'appId' in credential
+      ? createAppAuth({
+          appId: credential.appId,
+          privateKey: credential.privateKey,
+          installationId: credential.installationId,
+        })
+      : undefined;
+
+  async function accessToken() {
+    if ('accessToken' in credential) return credential.accessToken;
+
+    const installation = await appAuth!({ type: 'installation' });
+
+    return installation.token;
+  }
 
   async function request<TSchema extends z.ZodType>(
     path: string,
@@ -90,7 +107,7 @@ export function createGithubClient({ auth }: { auth: unknown }) {
     }
 
     headers.set('accept', headers.get('accept') ?? 'application/vnd.github+json');
-    headers.set('authorization', `Bearer ${accessToken}`);
+    headers.set('authorization', `Bearer ${await accessToken()}`);
     headers.set('x-github-api-version', '2022-11-28');
 
     if (options.body !== undefined) headers.set('content-type', 'application/json');

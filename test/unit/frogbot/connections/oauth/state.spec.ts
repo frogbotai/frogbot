@@ -60,6 +60,17 @@ describe('OAuth browser state', () => {
     await expect(consumeOAuthState(flow.args)).rejects.toMatchObject({ code: 'state' });
   });
 
+  it('keeps space-separated scopes for recipes without a provider separator', async () => {
+    const fixture = setup({
+      ...definition,
+      oauth: { ...definition.oauth, scopes: ['read', 'write'] },
+    });
+
+    const flow = await begin(fixture);
+
+    expect(new URL(flow.authorizationUrl).searchParams.get('scope')).toBe('read write');
+  });
+
   it('fails closed when acknowledgement of an atomic claim is lost', async () => {
     const flow = await begin();
     const claim = flow.adapter.setIfAbsent.getMockImplementation()!;

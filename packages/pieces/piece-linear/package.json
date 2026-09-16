@@ -29,6 +29,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@chat-adapter/linear": "4.40.0",
     "@linear/sdk": "^92.0.0",
     "zod": "^4.3.6"
   },

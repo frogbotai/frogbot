@@ -1,6 +1,6 @@
 # `@frogbotai/piece-microsoft-teams`
 
-Native Microsoft Graph actions and polling triggers for channels, chats, messages, and meetings.
+Native Microsoft Graph actions, polling triggers, and Azure Bot channel support for Teams.
 
 ## Usage
 
@@ -13,14 +13,32 @@ const createMicrosoftTeams = defineMicrosoftTeams({
 });
 
 export const microsoftTeams = createMicrosoftTeams({
+  auth: {
+    appId: process.env.TEAMS_BOT_APP_ID!,
+    appPassword: process.env.TEAMS_BOT_APP_PASSWORD!,
+  },
   oauth: {
-    clientId: process.env.MICROSOFT_CLIENT_ID!,
-    clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
+    clientId: process.env.MICROSOFT_GRAPH_CLIENT_ID!,
+    clientSecret: process.env.MICROSOFT_GRAPH_CLIENT_SECRET!,
   },
 });
 ```
 
 `defineMicrosoftTeams()` defaults to the commercial Microsoft cloud and the `common` tenant. Select the cloud and tenant when defining the factory so the OAuth authorization URL, token URL, stored credential, account lookup, and all Graph requests use one environment. `createMicrosoftTeams` is the pre-defined commercial `common` factory.
+
+Azure Bot credentials and user Graph OAuth are independent. The factory `auth` config runs the channel adapter. A user's OAuth connection supplies the delegated Graph access token for actions; bot credentials never authorize Graph actions.
+
+## Teams channel setup
+
+1. Create an Azure Bot and its Microsoft Entra application. Record the application ID and client secret as `appId` and `appPassword`.
+2. Enable the Microsoft Teams channel on the Azure Bot.
+3. Set the bot messaging endpoint to `/api/webhooks/<piece-instance-slug>` on the public FrogBot URL. The instance is bound to one agent at boot and must have a globally unique slug.
+4. Create or upload a Teams app manifest whose bot ID is the same Azure Bot application ID. Add personal, team, and group chat scopes as needed, then install the app.
+5. Use `botAppType: 'SingleTenant'` with `botTenantId` for a single-tenant registration. Multi-tenant is the default.
+
+Bot Framework Activities are authenticated by the official Teams adapter. FrogBot does not parse or accept an Activity before that adapter validates its bearer JWT. Live incoming authors may include an email resolved through the conversation-members API; FrogBot matches that normalized email to a local user. A missing email produces an anonymous channel participant and leaves access to the agent's channel access rule.
+
+The separate Graph OAuth app registration uses the scopes below for user actions. It may be the same Entra application only when its bot credential, redirect URI, delegated permissions, and operational ownership are intentionally managed together; the two credentials remain separate in FrogBot configuration.
 
 ## Actions
 
@@ -45,11 +63,18 @@ export const microsoftTeams = createMicrosoftTeams({
 
 ## Triggers
 
-| Upstream trigger slug | Native trigger          | Type      | Notes                                   |
-| --------------------- | ----------------------- | --------- | --------------------------------------- |
-| `new-channel-message` | `channelMessageCreated` | `polling` | Uses the Graph delta link as its cursor |
-| `new-channel`         | `channelCreated`        | `polling` | Uses creation time as its cursor        |
-| `new-chat`            | `chatCreated`           | `polling` | Uses creation time as its cursor        |
-| `new-chat-message`    | `chatMessageCreated`    | `polling` | Uses the Graph delta link as its cursor |
+| Upstream trigger slug  | Native trigger            | Type      | Notes                                           |
+| ---------------------- | ------------------------- | --------- | ----------------------------------------------- |
+| `new-channel-message`  | `channelMessageCreated`   | `polling` | Uses the Graph delta link as its cursor         |
+| `new-channel`          | `channelCreated`          | `polling` | Uses creation time as its cursor                |
+| `new-chat`             | `chatCreated`             | `polling` | Uses creation time as its cursor                |
+| `new-chat-message`     | `chatMessageCreated`      | `polling` | Uses the Graph delta link as its cursor         |
+| Bot Framework message  | `messageReceived`         | `app`     | Secure shared bot ingress                       |
+| Bot Framework reaction | `messageReactionReceived` | `app`     | Added and removed reactions                     |
+| Adaptive Card action   | `cardActionReceived`      | `app`     | `Action.Submit` and adaptive-card invokes       |
+| Conversation update    | `conversationUpdated`     | `app`     | Membership and bot-install conversation updates |
+| Installation update    | `installationUpdated`     | `app`     | Teams app installation changes                  |
+| Dialog open            | `dialogOpened`            | `app`     | Task module open invokes                        |
+| Dialog submit          | `dialogSubmitted`         | `app`     | Task module submissions                         |
 
 Polling runs every five minutes. Microsoft Graph does not offer delegated webhooks for this preserved piece contract, so events can arrive after the corresponding Teams activity; delta cursors prevent replay after a successful poll.

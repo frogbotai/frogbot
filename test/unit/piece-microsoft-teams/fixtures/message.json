@@ -1,0 +1,32 @@
+{
+  "type": "message",
+  "id": "activity-message-1",
+  "timestamp": "2026-09-14T12:00:00Z",
+  "serviceUrl": "https://smba.trafficmanager.net/amer/",
+  "channelId": "msteams",
+  "from": {
+    "id": "29:user",
+    "aadObjectId": "aad-user",
+    "name": "Ada Lovelace"
+  },
+  "conversation": {
+    "id": "19:conversation@thread.v2",
+    "conversationType": "channel",
+    "tenantId": "tenant"
+  },
+  "recipient": {
+    "id": "28:bot-app-id",
+    "name": "FrogBot"
+  },
+  "text": "<at>FrogBot</at> hello",
+  "entities": [
+    {
+      "type": "mention",
+      "text": "<at>FrogBot</at>",
+      "mentioned": {
+        "id": "28:bot-app-id",
+        "name": "FrogBot"
+      }
+    }
+  ]
+}

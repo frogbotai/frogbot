@@ -151,6 +151,7 @@ export type PieceOAuthRecipe<
   tokenUrl: string;
   tokenEndpointAuthMethod?: 'client_secret_basic' | 'client_secret_post';
   scopes: string[];
+  scopeSeparator?: ' ' | ',';
   pkce?: boolean;
   params?: Record<string, string>;
   toAuth?: (args: { tokens: OAuthTokens }) => TAuth;
@@ -159,7 +160,7 @@ export type PieceOAuthRecipe<
 };
 
 export type PieceWebhook<TOptions> = {
-  verify(args: { req: FrogbotRequest; options: TOptions }): Promise<boolean>;
+  verify?(args: { req: FrogbotRequest; options: TOptions }): Promise<boolean>;
   handshake?(args: { req: FrogbotRequest; options: TOptions }): Promise<Response | null>;
   parse?(args: { req: FrogbotRequest }): { event: string };
 };
