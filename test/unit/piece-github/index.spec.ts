@@ -4,15 +4,23 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
+import { pieceConformance } from '../../../packages/frogbot/src/pieces/conformance.js';
 import { pieceFactoryDefinition } from '../../../packages/frogbot/src/pieces/definePiece.js';
+import type { FrogbotRequest } from '../../../packages/frogbot/src/types/request.js';
 import { createGithubClient } from '../../../packages/pieces/piece-github/src/client.js';
 import {
   createGithub,
   githubActions,
   githubTriggers,
 } from '../../../packages/pieces/piece-github/src/index.js';
+import { conformanceChannelState } from '../frogbot/pieces/channelState.js';
 
 const auth = { accessToken: 'github-token' };
+const appAuth = {
+  appId: '12345',
+  privateKey: 'private-key',
+  installationId: 67890,
+};
 
 function json(value: unknown, status = 200) {
   return new Response(JSON.stringify(value), {
@@ -24,6 +32,101 @@ function json(value: unknown, status = 200) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('github', () => {
+  it('passes native channel conformance with recorded GitHub deliveries', async () => {
+    const body = JSON.stringify({
+      action: 'created',
+      comment: {
+        id: 1,
+        body: '@frogbot help',
+        user: { id: 42, login: 'octocat', type: 'User' },
+        created_at: '2026-09-14T12:00:00Z',
+        updated_at: '2026-09-14T12:00:00Z',
+        html_url: 'https://github.com/frogbotai/frogbot/issues/12#issuecomment-1',
+      },
+      issue: { number: 12 },
+      repository: { name: 'frogbot', owner: { login: 'frogbotai' } },
+      sender: { id: 42, login: 'octocat' },
+    });
+    const webhookSecret = 'github-webhook-secret';
+    const signature = `sha256=${createHmac('sha256', webhookSecret).update(body).digest('hex')}`;
+
+    await expect(
+      pieceConformance(createGithub, {
+        factoryOptions: {
+          auth: appAuth,
+          webhookSecret,
+          botUsername: 'frogbot[bot]',
+          botUserId: 99,
+        },
+        actions: githubActions.map((slug) => ({ slug, input: {}, expect: { error: /./ } })),
+        triggers: githubTriggers.map((slug) => ({ slug, type: 'webhook' as const })),
+        oauth: true,
+        channel: {
+          adapter: { name: 'github' },
+          identity: {
+            author: { userId: '42' },
+            req: {} as FrogbotRequest,
+            expect: null,
+          },
+          webhook: {
+            state: conformanceChannelState(),
+            requests: [
+              {
+                request: {
+                  headers: {
+                    'content-type': 'application/json',
+                    'x-github-event': 'issue_comment',
+                    'x-hub-signature-256': signature,
+                  },
+                  body,
+                  data: JSON.parse(body),
+                },
+                verified: true,
+                event: 'issue_comment',
+                delivery: {
+                  status: 200,
+                  messages: [
+                    {
+                      id: '1',
+                      threadId: 'github:frogbotai/frogbot:issue:12',
+                      text: '@frogbot help',
+                      authorId: '42',
+                    },
+                  ],
+                },
+              },
+              {
+                request: {
+                  headers: {
+                    'content-type': 'application/json',
+                    'x-github-event': 'issue_comment',
+                    'x-hub-signature-256': `sha256=${'0'.repeat(64)}`,
+                  },
+                  body,
+                  data: JSON.parse(body),
+                },
+                verified: false,
+                delivery: { status: 401, messages: [] },
+              },
+              {
+                request: {
+                  headers: {
+                    'content-type': 'application/json',
+                    'x-github-event': 'issue_comment',
+                    'x-hub-signature-256': `sha256=${createHmac('sha256', webhookSecret).update('{').digest('hex')}`,
+                  },
+                  body: '{',
+                },
+                verified: true,
+                delivery: { status: 400, messages: [] },
+              },
+            ],
+          },
+        },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
   it('exposes every action and trigger and maps stored OAuth tokens', () => {
     const github = createGithub({ auth });
     const definition = pieceFactoryDefinition(createGithub);
@@ -69,6 +172,72 @@ describe('github', () => {
     expect(new Headers(fetch.mock.calls[1][1].headers).get('authorization')).toBe(
       'Bearer stored-token',
     );
+  });
+
+  it('requires App credentials and a webhook secret for channels', () => {
+    const definition = pieceFactoryDefinition(createGithub);
+
+    expect(() =>
+      definition.channel?.adapter({ auth, options: { webhookSecret: 'secret' } }),
+    ).toThrow('GitHub App credentials');
+    expect(() => definition.channel?.adapter({ auth: appAuth, options: {} })).toThrow(
+      'webhookSecret',
+    );
+  });
+
+  it('delegates issue, pull request, and review thread mapping to the GitHub adapter', () => {
+    const adapter = pieceFactoryDefinition(createGithub).channel?.adapter({
+      auth: appAuth,
+      options: { webhookSecret: 'secret' },
+    }) as {
+      encodeThreadId(value: {
+        owner: string;
+        repo: string;
+        prNumber: number;
+        type?: 'issue' | 'pr';
+        reviewCommentId?: number;
+      }): string;
+    };
+
+    expect(
+      adapter.encodeThreadId({ owner: 'org', repo: 'repo', prNumber: 12, type: 'issue' }),
+    ).toBe('github:org/repo:issue:12');
+    expect(adapter.encodeThreadId({ owner: 'org', repo: 'repo', prNumber: 12, type: 'pr' })).toBe(
+      'github:org/repo:12',
+    );
+    expect(
+      adapter.encodeThreadId({ owner: 'org', repo: 'repo', prNumber: 12, reviewCommentId: 99 }),
+    ).toBe('github:org/repo:12:rc:99');
+  });
+
+  it('matches GitHub authors to FrogBot users by public profile email', async () => {
+    const fetch = vi.fn().mockResolvedValue(json({ email: ' Frog@Example.com ' }));
+    const find = vi.fn().mockResolvedValue({ docs: [{ id: 'user-1' }] });
+
+    vi.stubGlobal('fetch', fetch);
+
+    const identity = await pieceFactoryDefinition(createGithub).channel?.identity({
+      author: { userId: '42', userName: 'octocat' } as never,
+      client: createGithubClient({ auth }),
+      req: {
+        frogbot: {
+          config: {
+            _internal: { payloadConfig: Promise.resolve({ admin: { user: 'members' } }) },
+          },
+          find,
+        },
+      } as unknown as FrogbotRequest,
+    });
+
+    expect(identity).toEqual({ id: 'user-1', collection: 'members' });
+    expect(new URL(String(fetch.mock.calls[0][0])).pathname).toBe('/users/octocat');
+    expect(find).toHaveBeenCalledWith({
+      collection: 'members',
+      where: { email: { equals: 'frog@example.com' } },
+      limit: 1,
+      overrideAccess: true,
+      req: expect.any(Object),
+    });
   });
 
   it('maps action inputs and validates action responses', async () => {

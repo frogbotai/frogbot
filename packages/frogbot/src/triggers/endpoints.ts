@@ -7,6 +7,7 @@ import type { FrogbotRequest } from '../types/request.js';
 import { TRIGGER_SUBSCRIPTIONS_SLUG } from './collection.js';
 import { dispatchTriggerEvents } from './dispatch.js';
 import { parseSubscriptionInput } from './input.js';
+import { requiresAdapterVerification } from './registry.js';
 import type { Subscription } from './subscriptions.js';
 import type { TriggerSubscriber } from './types.js';
 
@@ -24,7 +25,11 @@ async function handler(req: FrogbotRequest): Promise<Response> {
   const runtime = pieceInstanceRuntime(entry.instance);
   const { definition } = runtime;
   const webhookReq = Object.assign(requestClone(req), { user: null });
-  const channelRequest = entry.channelAgentSlug && !subscription ? requestClone(req) : undefined;
+  const channelRequest =
+    !subscription && (entry.channelAgentSlug || requiresAdapterVerification(entry))
+      ? requestClone(req)
+      : undefined;
+
   const channelHost = channelRequest ? getChannelHost(req.frogbot) : undefined;
 
   if (channelRequest && !channelHost) {
@@ -54,12 +59,14 @@ async function handler(req: FrogbotRequest): Promise<Response> {
     return new Response(null, { status: 404 });
   }
 
-  if (definition.webhook) {
+  if (definition.webhook?.verify) {
     const verifyReq = requestClone(req);
 
     if (!(await definition.webhook.verify({ req: verifyReq, options: runtime.options as never }))) {
       return new Response(null, { status: 401 });
     }
+  } else if (definition.webhook && !channelRequest) {
+    return new Response(null, { status: 401 });
   }
 
   const channelResponse = channelRequest

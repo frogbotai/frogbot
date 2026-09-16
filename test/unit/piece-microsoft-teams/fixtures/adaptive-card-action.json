@@ -1,0 +1,29 @@
+{
+  "type": "invoke",
+  "name": "adaptiveCard/action",
+  "id": "activity-card-1",
+  "serviceUrl": "https://smba.trafficmanager.net/amer/",
+  "channelId": "msteams",
+  "from": {
+    "id": "29:user",
+    "aadObjectId": "aad-user",
+    "name": "Ada Lovelace"
+  },
+  "conversation": {
+    "id": "a:personal-conversation",
+    "conversationType": "personal",
+    "tenantId": "tenant"
+  },
+  "recipient": {
+    "id": "28:bot-app-id",
+    "name": "FrogBot"
+  },
+  "value": {
+    "action": {
+      "data": {
+        "actionId": "approve",
+        "value": "yes"
+      }
+    }
+  }
+}

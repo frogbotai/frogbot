@@ -142,7 +142,7 @@ export function channelFixture({
   const chats = new Map<string, { id: string }>();
   const frogbot = {
     agents: { support: { slug: 'support', config: { channels: [piece], access }, streamMessage } },
-    config: { chat: { enabled: true, chatsSlug: 'chats' } },
+    config: { chat: { enabled: true, chatsSlug: 'chats' }, _internal: { triggers: {} } },
     connections: {
       resolvePieceCredential: vi.fn(async () => ({ auth: { token: 'secret' }, key: {} })),
     },

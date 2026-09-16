@@ -230,7 +230,7 @@ describe('Linear webhook lifecycle', () => {
       { agentSlug: 'ops', piece: linear, trigger: mounted, input: { teamId: 'team' } },
     ]);
     const runtime = pieceInstanceRuntime(entry.instance);
-    expect(runtime.options).toEqual({ webhookSecret });
+    expect(runtime.options).toEqual({ webhookSecret, channelMode: 'agent-sessions' });
     await expect(
       runtime.definition.webhook!.verify({
         req: request({ body: payload(Date.now()) }),

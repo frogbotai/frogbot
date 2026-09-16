@@ -147,7 +147,7 @@ export async function createOAuthState({
   url.searchParams.set('redirect_uri', callback);
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('state', state);
-  url.searchParams.set('scope', (app.scopes ?? recipe.scopes).join(' '));
+  url.searchParams.set('scope', (app.scopes ?? recipe.scopes).join(recipe.scopeSeparator ?? ' '));
   if (verifier) {
     url.searchParams.set(
       'code_challenge',

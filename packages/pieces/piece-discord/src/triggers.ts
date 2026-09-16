@@ -1,77 +1,82 @@
-import { type PiecePollingTrigger, type PieceRunArgs } from 'frogbot/pieces';
+import { type PieceAppTrigger, type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { type DiscordClient, discordObject } from './client.js';
-type PollInput = { limit: number } & Record<string, unknown>;
-type PollArgs<T extends PollInput> = PieceRunArgs<T, object, DiscordClient> & { cursor?: number };
 
-function pollingTrigger<TSchema extends z.ZodType<PollInput>>({
-  slug,
-  description,
-  input,
-  path,
-  timestamp,
-}: {
-  slug: string;
-  description: string;
-  input: TSchema;
-  path: (input: z.output<TSchema>) => string;
-  timestamp: (item: Record<string, unknown>) => number;
-}) {
+const triggerInput = z.object({});
+const triggerOutput = discordObject;
+
+function nonempty(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+function deliveryKey(slug: string, delivery: Record<string, unknown>): string | undefined {
+  const interactionId = nonempty(delivery.id);
+
+  if (interactionId) return `${slug}:${interactionId}`;
+
+  if (!delivery.data || typeof delivery.data !== 'object') return undefined;
+
+  const data = delivery.data as Record<string, unknown>;
+
+  if (slug === 'messageCreated') {
+    const messageId = nonempty(data.id);
+
+    return messageId ? `${slug}:${messageId}` : undefined;
+  }
+
+  if (slug !== 'reactionAdded' && slug !== 'reactionRemoved') return undefined;
+
+  const messageId = nonempty(data.message_id);
+  const userId = nonempty(data.user_id);
+  const emoji =
+    data.emoji && typeof data.emoji === 'object'
+      ? (data.emoji as Record<string, unknown>)
+      : undefined;
+  const emojiId = nonempty(emoji?.id);
+  const emojiName = nonempty(emoji?.name);
+  const emojiKey = emojiId ?? emojiName;
+
+  return messageId && userId && emojiKey ? `${slug}:${messageId}:${userId}:${emojiKey}` : undefined;
+}
+
+function appTrigger(slug: string, description: string) {
   return {
     slug,
     description,
-    type: 'polling',
-    schedule: '*/1 * * * *',
-    input,
-    output: discordObject,
+    type: 'app',
+    event: slug,
+    input: triggerInput,
+    output: triggerOutput,
     sample: {},
-    async run({ client, input: value, cursor }: PollArgs<z.output<TSchema>>) {
-      const response = await client.request({ path: path(value) });
-      const items = z.array(discordObject).parse(response.body);
-      const ordered = items
-        .map((item) => ({ item, timestamp: timestamp(item) }))
-        .filter(({ timestamp: value }) => Number.isFinite(value))
-        .sort((left, right) => left.timestamp - right.timestamp);
-      const nextCursor = ordered.reduce(
-        (latest, item) => Math.max(latest, item.timestamp),
-        cursor ?? Number.NEGATIVE_INFINITY,
-      );
+    async run({ req }: PieceRunArgs<object, object, DiscordClient>) {
+      const delivery = discordObject.parse(req.data);
+      const dedupeKey = deliveryKey(slug, delivery);
 
-      return {
-        events:
-          cursor === undefined
-            ? []
-            : ordered.filter((item) => item.timestamp > cursor).map(({ item }) => item),
-        cursor: Number.isFinite(nextCursor) ? nextCursor : (cursor ?? Date.now()),
-      };
+      if (!dedupeKey) return [];
+
+      return [{ data: delivery, dedupeKey }];
     },
-  } satisfies PiecePollingTrigger<TSchema, typeof discordObject, object, DiscordClient, number>;
+  } satisfies PieceAppTrigger<typeof triggerInput, typeof triggerOutput, object, DiscordClient>;
 }
 
-const newMessageInput = z.object({
-  limit: z.number().int().min(1).max(100).default(50),
-  channelId: z.string().min(1).meta({ label: 'Channel ID' }),
-});
-
-export const messageCreated = pollingTrigger({
-  slug: 'messageCreated',
-  description: 'Poll for messages newly created in a channel.',
-  input: newMessageInput,
-  path: ({ channelId, limit }) =>
-    `/channels/${encodeURIComponent(channelId)}/messages?limit=${limit}`,
-  timestamp: (message) => Date.parse(String(message.timestamp)),
-});
-
-const newMemberInput = z.object({
-  limit: z.number().int().min(1).max(1000).default(50),
-  guildId: z.string().min(1).meta({ label: 'Guild ID' }),
-});
-
-export const memberJoined = pollingTrigger({
-  slug: 'memberJoined',
-  description: 'Poll for members newly joined to a guild.',
-  input: newMemberInput,
-  path: ({ guildId, limit }) => `/guilds/${encodeURIComponent(guildId)}/members?limit=${limit}`,
-  timestamp: (member) => Date.parse(String(member.joined_at)),
-});
+export const commandReceived = appTrigger(
+  'commandReceived',
+  'Run when the bot receives a slash command interaction.',
+);
+export const componentReceived = appTrigger(
+  'componentReceived',
+  'Run when a user interacts with a Discord message component.',
+);
+export const messageCreated = appTrigger(
+  'messageCreated',
+  'Run when the Gateway receives a newly created message.',
+);
+export const reactionAdded = appTrigger(
+  'reactionAdded',
+  'Run when the Gateway receives a reaction addition.',
+);
+export const reactionRemoved = appTrigger(
+  'reactionRemoved',
+  'Run when the Gateway receives a reaction removal.',
+);

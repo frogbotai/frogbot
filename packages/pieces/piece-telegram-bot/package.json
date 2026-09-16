@@ -18,6 +18,10 @@
     "dist"
   ],
   "sideEffects": false,
+  "dependencies": {
+    "@chat-adapter/telegram": "^4.40.0",
+    "zod": "^4.3.6"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist",
@@ -25,9 +29,6 @@
   },
   "peerDependencies": {
     "frogbot": "workspace:*"
-  },
-  "dependencies": {
-    "zod": "^4.3.6"
   },
   "devDependencies": {
     "frogbot": "workspace:*",

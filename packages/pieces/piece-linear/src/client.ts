@@ -5,5 +5,11 @@ import { linearAuth } from './config.js';
 export type Linear = LinearClient;
 
 export function createLinearClient({ auth }: { auth: unknown }) {
-  return new LinearClient({ apiKey: linearAuth.parse(auth).apiKey });
+  const credential = linearAuth.parse(auth);
+
+  return new LinearClient(
+    'apiKey' in credential
+      ? { apiKey: credential.apiKey }
+      : { accessToken: credential.accessToken },
+  );
 }

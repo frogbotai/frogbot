@@ -8,12 +8,44 @@ Manage GitHub issues, branches, comments, gists, custom API calls, and repositor
 import { createGithub } from '@frogbotai/piece-github';
 
 export const github = createGithub({
-  oauth: {
-    clientId: process.env.GITHUB_CLIENT_ID!,
-    clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+  auth: {
+    appId: process.env.GITHUB_APP_ID!,
+    privateKey: process.env.GITHUB_PRIVATE_KEY!,
+    installationId: Number(process.env.GITHUB_INSTALLATION_ID!),
   },
+  webhookSecret: process.env.GITHUB_WEBHOOK_SECRET!,
+  botUsername: process.env.GITHUB_BOT_USERNAME!,
 });
 ```
+
+Use the GitHub App credential for channel messages, repository webhook triggers, and actions that
+should run as the bot. To let signed-in users run actions with their own identity, configure this
+same piece as an OAuth or secret connection; FrogBot resolves that user credential before the
+factory App credential for their calls.
+
+Enable the credential form with `connections: [{ piece: github, secret: true }]`. Enter
+`accessToken` for a personal access token, or all three App fields (`appId`, `privateKey`, and
+`installationId`); omit the unused credential fields. OAuth linking requires factory
+`oauth: { clientId, clientSecret }` and `connections: [{ piece: github, oauth: true }]`. Both linking
+methods can be enabled on the same connection entry. Channels always use the factory App credential.
+
+## GitHub App setup
+
+1. Create a GitHub App and install it on the repository or organization FrogBot will use.
+2. Set the webhook URL to `/api/webhooks/<piece-instance-slug>` and choose
+   `application/json` as the content type.
+3. Generate a private key and record the App ID, installation ID, webhook secret, bot username,
+   and numeric bot user ID.
+4. Grant read and write access to issues, pull requests, discussions, repository contents, and
+   administration used by your enabled actions and webhook triggers. Grant metadata read access.
+5. Subscribe to Issue comments and Pull request review comments for channel conversations. Add the
+   repository events listed below only if they should also reach the channel webhook. Native
+   triggers create and remove their own event-specific repository webhook.
+
+FrogBot uses GitHub's issue, pull request, and review-comment thread identifiers directly through
+the GitHub chat adapter. Issue and pull request conversations remain separate, and replies to one
+review-comment thread continue in that thread. GitHub does not support direct messages, ephemeral
+messages, typing indicators, or token-by-token streaming.
 
 ## Actions
 

@@ -13,7 +13,8 @@ import type { AgentInstance } from '../agents/types.js';
 import { createChannelChatAccess } from '../chat/channelAccess.js';
 import type { Frogbot } from '../frogbot.js';
 import { pieceInstanceRuntime } from '../pieces/definePiece.js';
-import type { ChannelPieceInstance } from '../pieces/types.js';
+import type { PieceInstance } from '../pieces/types.js';
+import { requiresAdapterVerification } from '../triggers/registry.js';
 import { ChannelChat } from './chat.js';
 import { channelConversationKey, resolveChannelChat } from './conversation.js';
 import { runChannelLock } from './lock.js';
@@ -48,10 +49,11 @@ export type ChannelTaskInput = {
 
 type ChannelBinding = {
   adapter: Adapter;
-  agent: AgentInstance;
   chat: ChannelChat;
-  instance: ChannelPieceInstance;
-};
+  instance: PieceInstance;
+} & ({ kind: 'conversation'; agent: AgentInstance } | { kind: 'ingress' });
+
+type ChannelConversationBinding = Extract<ChannelBinding, { kind: 'conversation' }>;
 
 const hosts = new WeakMap<Frogbot, ChannelHost>();
 
@@ -67,32 +69,14 @@ export class ChannelHost {
     try {
       for (const agent of Object.values(this.frogbot.agents)) {
         for (const instance of agent.config.channels ?? []) {
-          const runtime = pieceInstanceRuntime(instance);
-          const adapter = runtime.definition.channel!.adapter({
-            auth: runtime.auth as never,
-            options: runtime.options as never,
-          });
-          const chat = new ChannelChat({
-            userName: agent.slug,
-            adapters: { [adapter.name]: adapter },
-            state: createChannelStateAdapter({
-              kv: this.frogbot.kv,
-              namespace: `${agent.slug}:${instance.slug}`,
-            }),
-            concurrency: 'concurrent',
-          });
-          const binding = { adapter, agent, chat, instance };
-          const enqueue = (thread: Thread, message: ChatMessage) =>
-            this.enqueue(binding, thread, message);
-
-          this.bindings.set(instance.slug, binding);
-
-          chat.onNewMention(enqueue);
-          chat.onDirectMessage((thread, message) => enqueue(thread, message));
-          chat.onSubscribedMessage(enqueue);
-
-          await chat.initialize();
+          await this.initializeBinding({ instance, agent });
         }
+      }
+
+      for (const entry of Object.values(this.frogbot.config._internal.triggers)) {
+        if (this.bindings.has(entry.instance.slug) || !requiresAdapterVerification(entry)) continue;
+
+        await this.initializeBinding({ instance: entry.instance });
       }
     } catch (error) {
       await Promise.allSettled([...this.bindings.values()].map(({ chat }) => chat.shutdown()));
@@ -104,6 +88,60 @@ export class ChannelHost {
     if (startGateway && this.hasGatewayAdapters()) {
       this.gatewayLoop = this.runGatewayLoop(this.gatewayController.signal);
     }
+  }
+
+  private async initializeBinding({
+    instance,
+    agent,
+  }: {
+    instance: PieceInstance;
+    agent?: AgentInstance;
+  }): Promise<void> {
+    const runtime = pieceInstanceRuntime(instance);
+
+    if (runtime.definition.auth && runtime.auth === undefined) {
+      throw new Error(`[frogbot] Channel adapter '${instance.slug}' requires factory credentials.`);
+    }
+
+    const adapter = runtime.definition.channel!.adapter({
+      auth: runtime.auth as never,
+      options: runtime.options as never,
+    });
+
+    const chat = new ChannelChat({
+      userName: agent?.slug ?? instance.slug,
+      adapters: { [adapter.name]: adapter },
+      state: createChannelStateAdapter({
+        kv: this.frogbot.kv,
+        namespace: `${agent?.slug ?? 'ingress'}:${instance.slug}`,
+      }),
+      concurrency: 'concurrent',
+    });
+
+    const binding: ChannelBinding = agent
+      ? { kind: 'conversation', adapter, agent, chat, instance }
+      : { kind: 'ingress', adapter, chat, instance };
+
+    this.bindings.set(instance.slug, binding);
+
+    if (binding.kind === 'conversation') {
+      const enqueue = (thread: Thread, message: ChatMessage) =>
+        this.enqueue(binding, thread, message);
+
+      chat.onNewMention(enqueue);
+      chat.onDirectMessage((thread, message) => enqueue(thread, message));
+      chat.onSubscribedMessage(enqueue);
+
+      if (adapter.name === 'telegram') {
+        chat.onSlashCommand(async (event) => {
+          const message = adapter.parseMessage(event.raw);
+
+          await chat.processMessage(adapter, message.threadId, message);
+        });
+      }
+    }
+
+    await chat.initialize();
   }
 
   async shutdown(): Promise<void> {
@@ -261,7 +299,7 @@ export class ChannelHost {
   async run(input: ChannelTaskInput, signal?: AbortSignal): Promise<void> {
     const binding = this.bindings.get(input.instanceSlug);
 
-    if (!binding || binding.agent.slug !== input.agentSlug) {
+    if (!binding || binding.kind !== 'conversation' || binding.agent.slug !== input.agentSlug) {
       throw new Error(
         `[frogbot] Channel binding '${input.agentSlug}:${input.instanceSlug}' is unavailable.`,
       );
@@ -289,7 +327,7 @@ export class ChannelHost {
   }
 
   private async enqueue(
-    binding: ChannelBinding,
+    binding: ChannelConversationBinding,
     thread: Thread,
     message: ChatMessage,
   ): Promise<void> {
@@ -306,7 +344,7 @@ export class ChannelHost {
   }
 
   private async respond(
-    binding: ChannelBinding,
+    binding: ChannelConversationBinding,
     thread: Thread,
     message: ChatMessage,
   ): Promise<void> {

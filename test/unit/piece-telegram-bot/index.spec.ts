@@ -2,15 +2,18 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
+import { pieceConformance } from '../../../packages/frogbot/src/pieces/conformance.js';
 import {
   pieceFactoryDefinition,
   pieceInstanceTools,
 } from '../../../packages/frogbot/src/pieces/definePiece.js';
+import type { FrogbotRequest } from '../../../packages/frogbot/src/types/request.js';
 import {
   createTelegramBot,
   telegramBotActions,
   telegramBotTriggers,
 } from '../../../packages/pieces/piece-telegram-bot/src/index.js';
+import { conformanceChannelState } from '../frogbot/pieces/channelState.js';
 
 const auth = { botToken: 'telegram_test_key' };
 const req = () =>
@@ -29,6 +32,90 @@ const response = (result: unknown = { message_id: 42 }) =>
 afterEach(() => vi.unstubAllGlobals());
 
 describe('telegram-bot', () => {
+  it('passes channel conformance with recorded Telegram updates', async () => {
+    const body = JSON.stringify({
+      update_id: 123,
+      message: {
+        message_id: 21,
+        date: 1_789_000_000,
+        text: 'Hello FrogBot',
+        from: { id: 42, is_bot: false, first_name: 'Frog' },
+        chat: { id: -100123, type: 'supergroup', title: 'FrogBot', is_forum: true },
+        message_thread_id: 7,
+      },
+    });
+    const webhookSecret = 'telegram-webhook-secret';
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url) => {
+        if (String(url).endsWith('/getMe')) {
+          return response({ id: 99, is_bot: true, first_name: 'FrogBot', username: 'frogbot' });
+        }
+
+        throw new Error(`Unexpected Telegram request: ${url}`);
+      }),
+    );
+
+    await expect(
+      pieceConformance(createTelegramBot, {
+        factoryOptions: { auth, webhookSecret, botUsername: 'frogbot', allowedUserIds: ['42'] },
+        actions: telegramBotActions.map((slug) => ({ slug, input: {}, expect: { error: /./ } })),
+        triggers: telegramBotTriggers.map((slug) => ({ slug, type: 'app' as const })),
+        channel: {
+          adapter: { name: 'telegram' },
+          identity: {
+            author: { userId: '42', userName: 'frog' },
+            req: {} as FrogbotRequest,
+            expect: null,
+          },
+          webhook: {
+            state: conformanceChannelState(),
+            requests: [
+              {
+                request: {
+                  headers: { 'x-telegram-bot-api-secret-token': webhookSecret },
+                  body,
+                  data: JSON.parse(body),
+                },
+                verified: true,
+                event: 'update',
+                delivery: {
+                  status: 200,
+                  messages: [
+                    {
+                      id: '-100123:21',
+                      threadId: 'telegram:-100123:7',
+                      text: 'Hello FrogBot',
+                      authorId: '42',
+                    },
+                  ],
+                },
+              },
+              {
+                request: {
+                  headers: { 'x-telegram-bot-api-secret-token': 'wrong-secret' },
+                  body,
+                  data: JSON.parse(body),
+                },
+                verified: false,
+                delivery: { status: 401, messages: [] },
+              },
+              {
+                request: {
+                  headers: { 'x-telegram-bot-api-secret-token': webhookSecret },
+                  body: '{',
+                },
+                verified: true,
+                delivery: { status: 400, messages: [] },
+              },
+            ],
+          },
+        },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
   it('exposes every semantic action and trigger', () => {
     const telegram = createTelegramBot({ auth });
 
@@ -174,31 +261,13 @@ describe('telegram-bot', () => {
     );
   });
 
-  it('registers, emits, filters, and removes the webhook', async () => {
+  it('emits and filters shared webhook updates', async () => {
     const definition = pieceFactoryDefinition(createTelegramBot).triggers?.[0];
 
-    if (!definition || definition.type !== 'webhook') throw new Error('Missing Telegram webhook.');
+    if (!definition || definition.type !== 'app') throw new Error('Missing Telegram app trigger.');
 
-    const client = {
-      call: vi.fn().mockResolvedValue({ ok: true }),
-      webhookSecret: 'secret',
-      verifyWebhookSecret: vi.fn((value) => value === 'secret'),
-    };
+    const client = { call: vi.fn().mockResolvedValue({ ok: true }) };
     const input = definition.input.parse({ updateTypes: ['callback_query'] });
-    const state = await definition.onEnable({
-      client,
-      input,
-      webhookUrl: 'https://example.com/hooks/telegram',
-      options: {},
-      req: req(),
-    } as never);
-
-    expect(state).toEqual({ webhookUrl: 'https://example.com/hooks/telegram' });
-    expect(client.call).toHaveBeenCalledWith('setWebhook', {
-      url: 'https://example.com/hooks/telegram',
-      allowed_updates: ['callback_query'],
-      secret_token: 'secret',
-    });
 
     const update = { update_id: 123, callback_query: { id: 'callback' } };
 
@@ -208,34 +277,47 @@ describe('telegram-bot', () => {
     };
 
     await expect(
-      definition.run({ client, input, options: {}, req: webhookReq } as never),
+      definition.run({
+        client,
+        input,
+        options: { webhookSecret: 'secret' },
+        req: webhookReq,
+      } as never),
     ).resolves.toEqual([{ dedupeKey: '123', data: update }]);
     await expect(
       definition.run({
         client,
         input,
-        options: {},
+        options: { webhookSecret: 'secret' },
         req: {
           data: { update_id: 124, message: {} },
           headers: webhookReq.headers,
         },
       } as never),
     ).resolves.toEqual([]);
-    await expect(
-      definition.run({
-        client,
-        input,
-        options: {},
-        req: {
-          data: update,
-          headers: new Headers(),
-        },
-      } as never),
-    ).resolves.toEqual([]);
+  });
 
-    await definition.onDisable({ client, input, state, options: {}, req: req() } as never);
+  it('keeps direct messages, groups, and forum topics in distinct adapter threads', () => {
+    const adapter = pieceFactoryDefinition(createTelegramBot).channel?.adapter({
+      auth,
+      options: { webhookSecret: 'secret' },
+    });
 
-    expect(client.call).toHaveBeenLastCalledWith('deleteWebhook');
+    if (!adapter) throw new Error('Missing Telegram channel adapter.');
+
+    expect(adapter.encodeThreadId({ chatId: '42' })).toBe('telegram:42');
+    expect(adapter.encodeThreadId({ chatId: '-100123' })).toBe('telegram:-100123');
+    expect(adapter.encodeThreadId({ chatId: '-100123', messageThreadId: 7 })).toBe(
+      'telegram:-100123:7',
+    );
+    expect(adapter.isDM('telegram:42')).toBe(true);
+    expect(adapter.isDM('telegram:-100123')).toBe(false);
+  });
+
+  it('requires explicit webhook verification for channels', () => {
+    const definition = pieceFactoryDefinition(createTelegramBot);
+
+    expect(() => definition.channel?.adapter({ auth, options: {} })).toThrow('webhookSecret');
   });
 
   it('keeps Telegram API failures useful', async () => {

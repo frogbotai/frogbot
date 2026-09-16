@@ -86,7 +86,7 @@ import {
   TRIGGER_SUBSCRIPTIONS_SLUG,
 } from '../triggers/collection.js';
 import { buildTriggerEndpoints } from '../triggers/endpoints.js';
-import { buildIngressRegistry } from '../triggers/registry.js';
+import { buildIngressRegistry, requiresAdapterVerification } from '../triggers/registry.js';
 import { AGENT_TRIGGER_TASK_SLUG, resolveTriggerTasks } from '../triggers/task.js';
 import type { FrogbotRequest } from '../types/request.js';
 import { resolveFilesCollection } from '../uploads/resolveCollections.js';
@@ -1254,6 +1254,10 @@ export function sanitize(
       ? sanitizeAgents(config.agents, sanitizedAI, mode, rootTools)
       : undefined;
   const triggers = buildIngressRegistry({ agents });
+  const hasChannelAdapters = Object.values(triggers).some(
+    (entry) => entry.channelAgentSlug || requiresAdapterVerification(entry),
+  );
+
   pieces.instances = [
     ...new Set([
       ...pieces.instances,
@@ -1388,7 +1392,7 @@ export function sanitize(
     [
       ...(chat.enabled ? buildChatEndpoints() : []),
       ...(Object.keys(triggers).length ? buildTriggerEndpoints() : []),
-      ...(agents?.some((agent) => agent.channels?.length) ? buildChannelGatewayEndpoints() : []),
+      ...(hasChannelAdapters ? buildChannelGatewayEndpoints() : []),
     ],
     attachFrogbot,
   );

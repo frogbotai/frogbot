@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
 export const microsoftTeamsAuth = z.object({
-  accessToken: z.string().min(1).meta({ label: 'Access token', secret: true }),
+  accessToken: z.string().min(1).optional().meta({ label: 'Graph access token', secret: true }),
+  appId: z.string().min(1).optional().meta({ label: 'Azure Bot App ID' }),
+  appPassword: z.string().min(1).optional().meta({ label: 'Azure Bot App password', secret: true }),
   cloud: z
     .enum(['login.microsoftonline.com', 'login.microsoftonline.us'])
     .default('login.microsoftonline.com')
@@ -11,6 +13,13 @@ export const microsoftTeamsAuth = z.object({
 export const microsoftTeamsEnvironment = z.object({
   cloud: z.enum(['commercial', 'usGovernment']).default('commercial'),
   tenantId: z.string().trim().min(1).default('common'),
+});
+
+export const microsoftTeamsOptions = z.object({
+  botAppType: z.enum(['MultiTenant', 'SingleTenant']).default('MultiTenant'),
+  botTenantId: z.string().trim().min(1).optional(),
+  botApiUrl: z.url().optional(),
+  botUsername: z.string().trim().min(1).default('bot'),
 });
 
 export const microsoftTeamsClouds = {

@@ -1,4 +1,4 @@
-import type { PiecePollingTrigger, PieceRunArgs } from 'frogbot/pieces';
+import type { PieceAppTrigger, PiecePollingTrigger, PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { MicrosoftTeamsClient } from './client.js';
@@ -195,9 +195,66 @@ export const chatMessageCreated: PiecePollingTrigger<
   },
 };
 
+const activity = z.record(z.string(), z.unknown());
+
+function activityTrigger(slug: string, description: string): PieceAppTrigger {
+  return {
+    slug,
+    description,
+    type: 'app',
+    event: slug,
+    input: z.object({}),
+    output: activity,
+    async run({ req }) {
+      const parsed = activity.parse(req.data);
+      const dedupeKey = typeof parsed.id === 'string' ? parsed.id.trim() : '';
+
+      if (!dedupeKey) return [];
+
+      return [{ data: parsed, dedupeKey }];
+    },
+  };
+}
+
+export const messageReceived = activityTrigger(
+  'messageReceived',
+  'Emit a Bot Framework message activity received by the bot.',
+);
+export const messageReactionReceived = activityTrigger(
+  'messageReactionReceived',
+  'Emit a Bot Framework message reaction activity received by the bot.',
+);
+export const cardActionReceived = activityTrigger(
+  'cardActionReceived',
+  'Emit an Adaptive Card action received by the bot.',
+);
+export const conversationUpdated = activityTrigger(
+  'conversationUpdated',
+  'Emit a Bot Framework conversation update received by the bot.',
+);
+export const installationUpdated = activityTrigger(
+  'installationUpdated',
+  'Emit a Teams app installation update received by the bot.',
+);
+export const dialogOpened = activityTrigger(
+  'dialogOpened',
+  'Emit a Teams dialog open activity received by the bot.',
+);
+export const dialogSubmitted = activityTrigger(
+  'dialogSubmitted',
+  'Emit a Teams dialog submission received by the bot.',
+);
+
 export const microsoftTeamsTriggerDefinitions = [
   channelMessageCreated,
   channelCreated,
   chatCreated,
   chatMessageCreated,
+  messageReceived,
+  messageReactionReceived,
+  cardActionReceived,
+  conversationUpdated,
+  installationUpdated,
+  dialogOpened,
+  dialogSubmitted,
 ];

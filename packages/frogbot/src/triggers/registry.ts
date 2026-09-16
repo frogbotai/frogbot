@@ -3,6 +3,17 @@ import { pieceInstanceRuntime, pieceTriggerInstance } from '../pieces/definePiec
 import type { PieceInstance } from '../pieces/types.js';
 import type { IngressRegistry } from './types.js';
 
+export function requiresAdapterVerification(entry: IngressRegistry[string]): boolean {
+  const { definition } = pieceInstanceRuntime(entry.instance);
+
+  return Boolean(
+    definition.channel &&
+    definition.webhook &&
+    !definition.webhook.verify &&
+    entry.subscribers.some(({ trigger }) => trigger.trigger.type === 'app'),
+  );
+}
+
 export function buildIngressRegistry({
   agents,
 }: {

@@ -1,5 +1,3 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
-
 import { z } from 'zod';
 
 import { telegramBotAuth } from './config.js';
@@ -38,9 +36,6 @@ function queryString(query: Record<string, unknown> | undefined) {
 export function createTelegramBotClient({ auth: value }: { auth: unknown }) {
   const auth = telegramBotAuth.parse(value);
   const baseUrl = `https://api.telegram.org/bot${auth.botToken}`;
-  const webhookSecret = createHmac('sha256', auth.botToken)
-    .update('frogbot-telegram-webhook')
-    .digest('hex');
 
   return {
     fileUrl(path: string) {
@@ -62,12 +57,6 @@ export function createTelegramBotClient({ auth: value }: { auth: unknown }) {
       }
 
       return result;
-    },
-    webhookSecret,
-    verifyWebhookSecret(value: string | null) {
-      if (!value || value.length !== webhookSecret.length) return false;
-
-      return timingSafeEqual(Buffer.from(value), Buffer.from(webhookSecret));
     },
     async request(endpoint: string, request: TelegramRequest): Promise<unknown> {
       const path = endpoint.replace(/^\/+/, '');

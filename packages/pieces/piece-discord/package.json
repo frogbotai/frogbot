@@ -27,6 +27,7 @@
     "frogbot": "workspace:*"
   },
   "dependencies": {
+    "@chat-adapter/discord": "4.40.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
