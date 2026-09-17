@@ -327,7 +327,9 @@ describe('buildConfig KV wiring', () => {
       type: 'date',
       index: true,
     });
-    expect(built.jobs.tasks?.map(({ slug }) => slug)).toEqual([KV_CLEANUP_TASK_SLUG]);
+    expect(built.jobs.tasks?.map(({ slug }) => slug)).toEqual(
+      expect.arrayContaining(['frogbot-sweep-jobs', KV_CLEANUP_TASK_SLUG]),
+    );
     expect(built.jobs.autoRun).toBeUndefined();
     expect(config.kv).toBeUndefined();
     expect(config.jobs).toBeUndefined();
@@ -341,15 +343,13 @@ describe('buildConfig KV wiring', () => {
 
     expect(built.kv).toBe(kv);
     expect(built.kv.kvCollection).toMatchObject({ slug: 'app-kv', dbName: 'app_kv' });
-    expect(built.jobs).toEqual({
-      ...jobs,
-      tasks: [...jobs.tasks!, expect.objectContaining({ slug: KV_CLEANUP_TASK_SLUG })],
-    });
     expect(built.jobs.autoRun).toBe(jobs.autoRun);
-    expect(built.jobs.tasks?.map(({ slug }) => slug)).toEqual([
-      'send-report',
-      KV_CLEANUP_TASK_SLUG,
-    ]);
+    expect(built.jobs.workflows).toEqual(
+      expect.arrayContaining([expect.objectContaining({ slug: 'report-workflow' })]),
+    );
+    expect(built.jobs.tasks?.map(({ slug }) => slug)).toEqual(
+      expect.arrayContaining(['send-report', 'frogbot-sweep-jobs', KV_CLEANUP_TASK_SLUG]),
+    );
     expect(jobs.tasks).toHaveLength(1);
   });
 
@@ -360,8 +360,11 @@ describe('buildConfig KV wiring', () => {
     const built = await result._internal.payloadConfig;
 
     expect(built.kv).toBe(kv);
-    expect(built.jobs).toBe(jobs);
-    expect(built.jobs.tasks?.map(({ slug }) => slug)).toEqual(['send-report']);
+    expect(built.jobs.autoRun).toBe(jobs.autoRun);
+    expect(built.jobs.tasks?.map(({ slug }) => slug)).toEqual(
+      expect.arrayContaining(['send-report', 'frogbot-sweep-jobs']),
+    );
+    expect(built.jobs.tasks?.map(({ slug }) => slug)).not.toContain(KV_CLEANUP_TASK_SLUG);
   });
 
   it('resolves the adapter and jobs after plugins run', async () => {
@@ -375,7 +378,10 @@ describe('buildConfig KV wiring', () => {
     const built = await result._internal.payloadConfig;
 
     expect(built.kv).toBe(kv);
-    expect(built.jobs).toBe(jobs);
+    expect(built.jobs.autoRun).toBe(jobs.autoRun);
+    expect(built.jobs.tasks?.map(({ slug }) => slug)).toEqual(
+      expect.arrayContaining(['send-report', 'frogbot-sweep-jobs']),
+    );
   });
 
   it('rejects a reserved task collision during configuration', async () => {

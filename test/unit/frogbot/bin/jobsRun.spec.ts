@@ -121,7 +121,11 @@ describe('jobs:run lifecycle', () => {
     config = {
       collections: [],
       connections: [],
-      _internal: { payloadConfig: Promise.resolve(payloadConfig) },
+      _internal: {
+        payloadConfig: Promise.resolve(payloadConfig),
+        noEmail: true,
+        triggers: {},
+      },
       onInit,
     } as unknown as FrogbotSanitizedConfig;
 

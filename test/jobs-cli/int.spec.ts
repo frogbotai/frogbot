@@ -38,7 +38,10 @@ describe('normal jobs:run executable with a real SQLite app', () => {
 
     await worker.message('handler-started', 3);
     await expect
-      .poll(() => worker.jobs().filter((job) => job.completed_at).length, { timeout: 10_000 })
+      .poll(() => worker.jobs().filter((job) => job.completed_at).length, {
+        timeout: 10_000,
+        interval: 250,
+      })
       .toBe(3);
 
     expect(worker.child.kill('SIGTERM')).toBe(true);
