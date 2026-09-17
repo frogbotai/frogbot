@@ -118,6 +118,17 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       slug: 'other',
       oauth: { clientId: 'other-client', clientSecret: 'other-secret' },
     });
+    const createTestEmail = definePiece({
+      slug: 'test-email',
+      label: 'Test email',
+      options: z.object({
+        from: z.object({ address: z.string(), name: z.string().optional() }),
+      }),
+      actions: [],
+      email: {
+        send: ({ message }) => sendEmail(message),
+      },
+    });
     const config = await buildConfig({
       secret: 'sign-in-test-secret',
       serverURL: baseURL,
@@ -130,11 +141,11 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       }),
       admin: { user: 'users', importMap: { autoGenerate: false } },
       typescript: { autoGenerate: false },
-      email: () => ({
-        name: 'test',
-        defaultFromAddress: 'test@example.com',
-        defaultFromName: 'Test',
-        sendEmail,
+      email: createTestEmail({
+        from: {
+          address: 'test@example.com',
+          name: 'Test',
+        },
       }),
       collections: [
         ...['users', 'customers'].map((slug) => ({

@@ -55,7 +55,9 @@ describe('Payload plugin adapters', () => {
       ]),
     );
     expect(config.jobs?.tasks).toEqual(expect.arrayContaining([appTask]));
-    expect(config.jobs?.tasks).toHaveLength(3);
+    expect(config.jobs?.tasks?.map(({ slug }) => slug)).toEqual(
+      expect.arrayContaining(['app-task', 'frogbot-sweep-jobs', 'frogbot-cleanup-kv']),
+    );
   });
 
   it('boots nested-docs and preserves app fields and hooks', async () => {

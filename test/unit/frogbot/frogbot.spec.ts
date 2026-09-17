@@ -90,6 +90,7 @@ function makeConfig(): FrogbotSanitizedConfig {
     _internal: {
       payloadConfig: Promise.resolve({} as any),
       noEmail: true,
+      triggers: {},
     },
   };
 }

@@ -345,7 +345,11 @@ describe('frogbot buildConfig', () => {
     it('injects default collections for empty input', async () => {
       const config = makeConfig({ collections: [] });
       const result = await buildConfig(config);
-      expect(result.collections.map((c) => c.slug)).toEqual(['trigger-subscriptions', 'files']);
+      expect(result.collections.map((c) => c.slug)).toEqual([
+        'trigger-subscriptions',
+        'frogbot-waitpoints',
+        'files',
+      ]);
       const payloadConfig = await result._internal.payloadConfig;
       const users = payloadConfig.collections.find((collection) => collection.slug === 'users');
       expect(users?.admin?.useAsTitle).toBe('name');
