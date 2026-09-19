@@ -206,6 +206,7 @@ export async function issueSession({
         'password',
         'resetPasswordToken',
         'resetPasswordExpiration',
+        'resetPasswordRequestedAt',
         '_verificationToken',
         'sessions',
         'loginAttempts',

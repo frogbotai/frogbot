@@ -30,7 +30,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@payloadcms/kv-redis": "3.88.0"
+    "@payloadcms/kv-redis": "3.90.1"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"

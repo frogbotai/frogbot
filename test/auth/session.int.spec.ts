@@ -750,13 +750,18 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       const refreshedToken =
         result && 'refreshedToken' in result ? result.refreshedToken : undefined;
       const expected = [claims(issued.token).sid];
-      if (operation !== 'logout') expected.push(priorSession.id);
+
+      if (operation !== 'logout' && !operation.endsWith('reset')) expected.push(priorSession.id);
+
       if (token) expected.push(claims(token).sid);
+
       expect((await readUser())?.sessions?.map(({ id }) => id).sort()).toEqual(expected.sort());
       await expectAuthenticated(issued.token);
       if (token) await expectAuthenticated(token);
       if (refreshedToken) await expectAuthenticated(refreshedToken);
-      if (operation === 'logout') await expectAuthenticated(priorToken, null);
+      if (operation === 'logout' || operation.endsWith('reset')) {
+        await expectAuthenticated(priorToken, null);
+      }
     },
   );
 
@@ -862,8 +867,13 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       );
       expect(response.status).toBe(500);
       expect(response.headers.get('set-cookie')).toBeNull();
-      expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual([priorSession.id]);
-      await expectAuthenticated(priorToken);
+
+      const revoked = operation === 'reset-password';
+
+      expect((await readUser())?.sessions?.map(({ id }) => id)).toEqual(
+        revoked ? [] : [priorSession.id],
+      );
+      await expectAuthenticated(priorToken, revoked ? null : userId);
     },
   );
 
@@ -1100,11 +1110,13 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       }
       const result = await pending;
       const issued = await issuing;
+
       expect((await readUser())?.sessions?.map(({ id }) => id).sort()).toEqual(
-        [priorSession.id, claims(result.token!).sid, claims(issued.token).sid].sort(),
+        [claims(result.token!).sid, claims(issued.token).sid].sort(),
       );
       await expectAuthenticated(result.token!);
       await expectAuthenticated(issued.token);
+      await expectAuthenticated(priorToken, null);
       await expect(
         frogbot.login({
           collection: 'members',
