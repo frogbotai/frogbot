@@ -32,18 +32,18 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@payloadcms/plugin-mcp": "3.88.0"
+    "@payloadcms/plugin-mcp": "3.90.1"
   },
   "peerDependencies": {
     "@frogbotai/plugin-api-keys": "workspace:*",
     "frogbot": "workspace:*",
-    "payload": "3.88.0"
+    "payload": "3.90.1"
   },
   "devDependencies": {
     "@frogbotai/plugin-api-keys": "workspace:*",
     "@frogbotai/plugin-roles": "workspace:*",
     "frogbot": "workspace:*",
-    "payload": "3.88.0",
+    "payload": "3.90.1",
     "typescript": "5.6.2"
   },
   "publishConfig": {

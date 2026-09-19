@@ -30,7 +30,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@payloadcms/db-mongodb": "3.88.0"
+    "@payloadcms/db-mongodb": "3.90.1"
   },
   "peerDependencies": {
     "frogbot": "workspace:*"
