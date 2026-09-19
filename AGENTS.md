@@ -1,0 +1,1 @@
+Read [CLAUDE.md](CLAUDE.md), then [CONTRIBUTING.md](CONTRIBUTING.md).

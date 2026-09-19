@@ -7,6 +7,48 @@ Shared engineering conventions for contributors and coding agents. Read this gui
 - Read the current code and applicable domain constraints below before proposing changes. Use the configured `pnpm` version and Node requirement from [package.json](package.json).
 - This guide covers coding and verification. Small, direct changes do not require a ticket or planning documents.
 
+## Repository map
+
+FrogBot is a pnpm monorepo that wraps Payload 3 with an AI-native layer (agents, tools, chat, pieces, connections, jobs, a gateway) and ships it under FrogBot names.
+
+| Path                                                                           | Contents                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `packages/frogbot`                                                             | Core package: `buildConfig`, `Frogbot` class, `getFrogbot`, CLI (`bin/`), typegen, and every domain (`agents/`, `ai/`, `chat/`, `collections/`, `connections/`, `jobs/`, `kv/`, `pieces/`, `tools/`, `triggers/`, ...). Public boundary is `src/index.ts` plus `src/exports/*` (subpaths `frogbot/agents`, `frogbot/tools`, `frogbot/jobs`, `frogbot/kv`, `frogbot/pieces`, `frogbot/connections`, `frogbot/env`). |
+| `packages/next`, `packages/ui`                                                 | Next.js integration (`withFrogbot`, admin routes, import map) and the reusable UI/chat component library. See [UI conventions](packages/ui/CONTRIBUTING.md).                                                                                                                                                                                                                                                       |
+| `packages/db-*`, `packages/storage-*`, `packages/email-*`, `packages/kv-redis` | Thin adapter wrappers over the Payload adapters, published as `@frogbotai/*`.                                                                                                                                                                                                                                                                                                                                      |
+| `packages/plugins/plugin-*`                                                    | First-party plugins (api-keys, roles, oauth, mcp, audit-log, stripe, ...).                                                                                                                                                                                                                                                                                                                                         |
+| `packages/pieces/piece-*`                                                      | Integration pieces (actions, triggers, OAuth recipes) ported natively; `PORTING.md` is the porting kit.                                                                                                                                                                                                                                                                                                            |
+| `packages/gateway`, `packages/sdk`                                             | Embeddable AI gateway and the client SDK.                                                                                                                                                                                                                                                                                                                                                                          |
+| `packages/create-frogbot-app`                                                  | Scaffolder; packs `templates/` into its `dist/` at build time.                                                                                                                                                                                                                                                                                                                                                     |
+| `templates/`                                                                   | Starters the CLI installs (`blank`). `examples/` are reference apps, not installable.                                                                                                                                                                                                                                                                                                                              |
+| `docs/`                                                                        | Mintlify site (`docs.json`). User-facing; never mentions Payload.                                                                                                                                                                                                                                                                                                                                                  |
+| `test/`                                                                        | All tests and fixtures, one folder per area (`test/<area>/int.spec.ts`), `test/unit/`, `test/e2e/`, `test/browser/`, shared harness in `test/__helpers/`. See [test/README.md](test/README.md).                                                                                                                                                                                                                    |
+| `scripts/`                                                                     | Repo tooling: `bump.mjs`, `check-branding.mjs`, `check-docs-fences.mjs`, `generate-ai-types.mjs`, `sync-catalog.mjs`.                                                                                                                                                                                                                                                                                              |
+| `.github/feature-process/`                                                     | Shared planning process. `.idea/` holds local ticket documents and is never committed.                                                                                                                                                                                                                                                                                                                             |
+
+Architecture facts worth knowing before reading code:
+
+- `packages/frogbot/src/config/sanitize.ts` turns a `FrogbotConfig` into a Payload config; FrogBot-only keys (`agents`, `ai`, `connections`, `pieces`, `tools`, ...) are consumed there and never reach Payload. `rewriteComponentPaths.ts` renames `@payloadcms/*` component specifiers to `@frogbotai/*` in the generated import map.
+- `FrogbotRequest` replaces `req.payload` with `req.frogbot`; user code never sees `payload`.
+- FrogBot is the sole type generator (`frogbot generate:types` -> `frogbot-types.ts`); Payload's auto-generate is force-disabled. See [Type Generation](#type-generation-packagesfrogbot).
+- Internal source layout mirrors Payload core where a concept matches. See [FrogBot Core Project Structure](#frogbot-core-project-structure).
+
+## Commands
+
+Run everything from the repo root with `pnpm`. Scripts live in [package.json](package.json).
+
+| Task                                          | Command                                                                                                                         |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Install, build all packages                   | `pnpm install`, `pnpm build`                                                                                                    |
+| Run an example against local packages         | `pnpm --filter <example-name> dev` (examples use `frogbot dev`)                                                                 |
+| Unit / UI / integration / e2e / browser tests | `pnpm test:unit`, `pnpm test:ui`, `pnpm test:int`, `pnpm test:e2e`, `pnpm test:browser`                                         |
+| Integration tests on a specific database      | `pnpm test:int:sqlite`, `pnpm test:int:pg`, `pnpm test:int:mongo` (Mongo and Postgres need `pnpm docker:start <profile> up -d`) |
+| Format and lint                               | `pnpm prettier:write && pnpm lint:fix` (agents: via the `lint` subagent)                                                        |
+| Typecheck                                     | `pnpm typecheck` (builds packages first)                                                                                        |
+| Branding and docs gates                       | `pnpm check:branding`, `pnpm check:docs-fences`, `pnpm check:ui-architecture`                                                   |
+| Regenerate AI model catalog types             | `pnpm generate:ai-types`, `pnpm sync:catalog`                                                                                   |
+| Release                                       | `pnpm bump`, `pnpm release` (owner only)                                                                                        |
+
 ## Git commits
 
 - Never stage or commit anything under `.idea/`. Ticket research, plans, and implementation summaries are local planning state. Reusable process instructions live in `.github/feature-process/` and belong in version control.
@@ -125,6 +167,14 @@ const joined = getJoinedJobQuery({ query, dialect, selections, groups });
 - For code changes, run relevant tests followed by `pnpm prettier:write && pnpm lint:fix`. Agents must delegate lint and required type-checking to the `lint` subagent, including `pnpm lint:fix`. Do not repeat repository-wide checks after every stage.
 - For Markdown-only changes, check affected-file formatting, links/anchors, examples, and content/instruction consistency; do not run application tests, code lint, or typecheck. Documentation containing executable code changes may need targeted example validation.
 - Review automatic fixes and preserve unrelated work. Rerun affected tests if fixes change behavior. Report commands actually run, results, skips, and unavailable services/credentials; required blocked checks leave the ticket unverified.
+
+### Writing tests
+
+- Integration suites boot a real instance with `bootFrogbot` from `test/__helpers/shared`, shut it down in `afterAll`, and reset state with `clearAndSeed` in `beforeEach`; do not leave records behind for the next test. Track anything created outside the seed and delete it in `afterEach`.
+- Name tests as present-tense statements of observable behavior, e.g. `'POST /api/users/login rejects invalid credentials'`; this repo does not use a `should` prefix.
+- One behavior per test. No `if`/`else` or `try`/`finally` inside a test body; use hooks for cleanup.
+- Keep collection slugs and other shared identifiers in the suite's `config.ts` or a shared constants file and reuse them in fixtures and assertions.
+- Adding a collection to a suite means adding it to that suite's `config.ts`; regenerate the suite's types with `test/generateTypes.ts <suite>` (requires a built `packages/frogbot`) when the shape matters to the test.
 
 ### When tests find a problem
 
