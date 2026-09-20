@@ -131,6 +131,96 @@ describe('frogbot importMap generator', () => {
     expect(output).not.toContain("import('payload')");
   });
 
+  it('rewrites lexical components supplied by editor import-map callbacks', async () => {
+    const dir = await makeDir('frogbot-importmap-lexical-');
+    const payloadConfig = await makePayloadConfig({
+      includeNavIcons: false,
+      includeSettings: false,
+    });
+    const users = payloadConfig.collections.find(({ slug }) => slug === 'users');
+
+    users?.fields.push({
+      name: 'content',
+      type: 'richText',
+      editor: {
+        generateImportMap({ addToImportMap }: { addToImportMap: (value: unknown) => void }) {
+          addToImportMap([
+            '@payloadcms/richtext-lexical/rsc#Field',
+            { path: '@payloadcms/richtext-lexical/client#Feature' },
+            '@payloadcms/richtext-lexical-other/client#Other',
+          ]);
+        },
+      },
+    } as never);
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+
+    const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
+
+    expect(output).toContain("from '@frogbotai/richtext-lexical/rsc'");
+    expect(output).toContain("from '@frogbotai/richtext-lexical/client'");
+    expect(output).toContain("from '@payloadcms/richtext-lexical-other/client'");
+    expect(output).not.toContain("from '@payloadcms/richtext-lexical/rsc'");
+  });
+
+  it('imports rich text components from object block references and dashboard fields', async () => {
+    const dir = await makeDir('frogbot-importmap-nested-lexical-');
+    const payloadConfig = await makePayloadConfig({
+      includeNavIcons: false,
+      includeSettings: false,
+    });
+    const makeEditor = (component: string) => ({
+      generateImportMap({ addToImportMap }: { addToImportMap: (value: string) => void }) {
+        addToImportMap(component);
+      },
+    });
+    const block = {
+      fields: [
+        {
+          name: 'copy',
+          type: 'richText',
+          editor: makeEditor('@payloadcms/richtext-lexical/rsc#BlockField'),
+        },
+      ],
+      slug: 'copy',
+    };
+    const users = payloadConfig.collections.find(({ slug }) => slug === 'users');
+    users?.fields.push({
+      name: 'layout',
+      type: 'blocks',
+      blockReferences: [block],
+      blocks: [],
+    } as never);
+    payloadConfig.admin.dashboard = {
+      widgets: [
+        {
+          Component: './widgets/Content#Content',
+          fields: [
+            {
+              name: 'intro',
+              type: 'richText',
+              editor: makeEditor('@payloadcms/richtext-lexical/rsc#WidgetField'),
+            },
+          ],
+          slug: 'content',
+        },
+      ],
+    } as never;
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+
+    const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
+
+    expect(output).toContain('BlockField');
+    expect(output).toContain('WidgetField');
+    expect(output).toContain("from '@frogbotai/richtext-lexical/rsc'");
+    expect(output).not.toContain("from '@payloadcms/richtext-lexical/rsc'");
+  });
+
   it('maps the default chat collection edit view', async () => {
     const dir = await makeDir('frogbot-importmap-chat-views-');
     const config = sanitize({

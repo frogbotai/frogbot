@@ -21,6 +21,7 @@
   "dependencies": {
     "@frogbotai/db-sqlite": "workspace:*",
     "@frogbotai/next": "workspace:*",
+    "@frogbotai/richtext-lexical": "workspace:*",
     "@frogbotai/ui": "workspace:*",
     "cross-env": "^7.0.3",
     "drizzle-kit": "^0.31.7",

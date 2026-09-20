@@ -1,0 +1,316 @@
+---
+title: Converting HTML
+sidebarTitle: Converting HTML
+description: Convert Lexical rich text to and from HTML.
+keywords: lexical, rich text, html, converters, files
+---
+
+## Rich Text to HTML
+
+There are two main approaches:
+
+1. Generate HTML on demand where it is consumed. This avoids duplicate storage and is recommended.
+2. Add an HTML field whose read hook converts a sibling Rich Text field. This adds API work and may duplicate content.
+
+Use the synchronous converter when records and files are already populated:
+
+```tsx
+import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
+import { convertLexicalToHTML } from '@frogbotai/richtext-lexical/html'
+
+export function ArticleBody({ data }: { data: SerializedEditorState }) {
+  const html = convertLexicalToHTML({ data })
+
+  return <div dangerouslySetInnerHTML={{ __html: html }} />
+}
+```
+
+Only render trusted content with `dangerouslySetInnerHTML`. Sanitize untrusted HTML according to your application's security requirements.
+
+### Dynamic population
+
+The async converter can populate relationships and files while converting. In a server component, create a FrogBot instance and pass the asynchronous population function:
+
+```tsx
+import config from '@frogbot-config'
+import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
+import { convertLexicalToHTMLAsync } from '@frogbotai/richtext-lexical/html-async'
+import { getFrogbotPopulateFn } from '@frogbotai/richtext-lexical'
+import { getFrogbot } from 'frogbot'
+
+export async function ArticleBody({ data }: { data: SerializedEditorState }) {
+  const frogbot = await getFrogbot({ config })
+  const populate = await getFrogbotPopulateFn({
+    currentDepth: 0,
+    depth: 1,
+    frogbot,
+  })
+  const html = await convertLexicalToHTMLAsync({ data, populate })
+
+  return <div dangerouslySetInnerHTML={{ __html: html }} />
+}
+```
+
+Pass an existing FrogBot request instead of `frogbot` when conversion must preserve its user, locale, access, and transaction context.
+
+```ts
+const populate = await getFrogbotPopulateFn({
+  currentDepth: 0,
+  depth: 2,
+  req,
+})
+```
+
+Client code can use `getRestPopulateFn` from `@frogbotai/richtext-lexical/client`. It makes a request for each node that needs population, so server-side population is preferable for larger documents.
+
+```tsx
+'use client'
+
+import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
+import { getRestPopulateFn } from '@frogbotai/richtext-lexical/client'
+import { convertLexicalToHTMLAsync } from '@frogbotai/richtext-lexical/html-async'
+import { useEffect, useState } from 'react'
+
+export function ArticleBody({ data }: { data: SerializedEditorState }) {
+  const [html, setHTML] = useState<string | null>(null)
+
+  useEffect(() => {
+    void convertLexicalToHTMLAsync({
+      data,
+      populate: getRestPopulateFn({ apiURL: '/api' }),
+    }).then(setHTML)
+  }, [data])
+
+  return html ? <div dangerouslySetInnerHTML={{ __html: html }} /> : null
+}
+```
+
+## HTML field
+
+`lexicalHTMLField` creates a code field whose `afterRead` hook converts a sibling Rich Text field to HTML.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+import {
+  lexicalEditor,
+  lexicalHTMLField,
+} from '@frogbotai/richtext-lexical'
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  fields: [
+    {
+      name: 'content',
+      type: 'richText',
+      editor: lexicalEditor({}),
+    },
+    lexicalHTMLField({
+      htmlFieldName: 'contentHTML',
+      lexicalFieldName: 'content',
+    }),
+  ],
+}
+```
+
+The helper generates HTML when the record is read. By default, it removes the generated field before database writes, avoiding duplicate stored content. Set `storeInDB: true` to retain a caller-supplied value, but conversion still occurs on read rather than automatically during writes.
+
+### Custom HTML field converters
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+import {
+  BlocksFeature,
+  type DefaultNodeTypes,
+  lexicalEditor,
+  lexicalHTMLField,
+  type SerializedBlockNode,
+} from '@frogbotai/richtext-lexical'
+import type { HTMLConvertersFunctionAsync } from '@frogbotai/richtext-lexical/html-async'
+
+type ArticleCallout = {
+  blockName?: string
+  blockType: 'callout'
+  text: string
+}
+
+const converters: HTMLConvertersFunctionAsync<
+  DefaultNodeTypes | SerializedBlockNode<ArticleCallout>
+> = ({ defaultConverters }) => ({
+  ...defaultConverters,
+  blocks: {
+    callout: async ({ node, providedCSSString }) =>
+      `<aside style="${providedCSSString}">${node.fields.text}</aside>`,
+  },
+})
+
+export const Articles: CollectionConfig = {
+  slug: 'articles',
+  fields: [
+    {
+      name: 'content',
+      type: 'richText',
+      editor: lexicalEditor({
+        features: ({ defaultFeatures }) => [
+          ...defaultFeatures,
+          BlocksFeature({
+            blocks: [
+              {
+                slug: 'callout',
+                fields: [{ name: 'text', type: 'text', required: true }],
+              },
+            ],
+          }),
+        ],
+      }),
+    },
+    lexicalHTMLField({
+      converters,
+      htmlFieldName: 'contentHTML',
+      lexicalFieldName: 'content',
+    }),
+  ],
+}
+```
+
+## Blocks to HTML
+
+Supply block converters by slug when converting on demand:
+
+```ts
+import type {
+  DefaultNodeTypes,
+  SerializedBlockNode,
+  SerializedInlineBlockNode,
+} from '@frogbotai/richtext-lexical'
+import type { HTMLConvertersFunction } from '@frogbotai/richtext-lexical/html'
+
+type BadgeBlock = {
+  blockName?: string
+  blockType: 'badge'
+  label: string
+}
+
+type CalloutBlock = {
+  blockName?: string
+  blockType: 'callout'
+  text: string
+}
+
+type NodeTypes =
+  | DefaultNodeTypes
+  | SerializedBlockNode<CalloutBlock>
+  | SerializedInlineBlockNode<BadgeBlock>
+
+const converters: HTMLConvertersFunction<NodeTypes> = ({ defaultConverters }) => ({
+  ...defaultConverters,
+  blocks: {
+    callout: ({ node, providedCSSString }) => {
+      const fields = node.fields
+
+      return `<aside style="${providedCSSString}">${'text' in fields ? fields.text : ''}</aside>`
+    },
+  },
+  inlineBlocks: {
+    badge: ({ node, providedStyleTag }) => {
+      const fields = node.fields
+
+      return `<span${providedStyleTag}>${'label' in fields ? fields.label : ''}</span>`
+    },
+  },
+})
+
+export { converters }
+```
+
+Pass this converter function as `converters` when using an HTML conversion API whose node-type parameter matches `NodeTypes`.
+
+## HTML to Rich Text
+
+`convertHTMLToLexical` needs a DOM implementation and the editor config that defines allowed nodes:
+
+```ts
+import config from '@frogbot-config'
+import {
+  convertHTMLToLexical,
+  editorConfigFactory,
+} from '@frogbotai/richtext-lexical'
+import { JSDOM } from 'jsdom'
+
+const data = convertHTMLToLexical({
+  editorConfig: await editorConfigFactory.default({ config }),
+  html: '<h2>Introduction</h2><p>Article text.</p>',
+  JSDOM,
+})
+```
+
+Install `jsdom` and its types in projects that run this conversion on the server.
+
+<Banner type="warning">
+  Image tags are not uploaded automatically. FrogBot cannot choose an upload
+  collection or satisfy that collection's required fields without your input.
+  Images without the required Lexical data attributes are omitted.
+</Banner>
+
+## Converting HTML with images
+
+Image tags are not uploaded automatically. Upload each file first, then add its record ID and collection slug to the source HTML:
+
+```ts
+import config from '@frogbot-config'
+import {
+  convertHTMLToLexical,
+  editorConfigFactory,
+} from '@frogbotai/richtext-lexical'
+import { getFrogbot } from 'frogbot'
+import { JSDOM } from 'jsdom'
+
+const frogbot = await getFrogbot({ config })
+const uploadedFile = await frogbot.create({
+  collection: 'files',
+  data: { alt: 'Mountain at sunrise' },
+  filePath: '/imports/mountain.jpg',
+})
+
+const html = `
+  <p>Travel notes</p>
+  <img
+    src="${uploadedFile.url}"
+    data-lexical-upload-id="${uploadedFile.id}"
+    data-lexical-upload-relation-to="files"
+    alt="Mountain at sunrise"
+  />
+`
+
+const data = convertHTMLToLexical({
+  editorConfig: await editorConfigFactory.default({ config }),
+  html,
+  JSDOM,
+})
+```
+
+The required attributes are `data-lexical-upload-id` and `data-lexical-upload-relation-to`. For external images, download and upload each image, update its DOM element with these attributes, then convert the updated HTML.
+
+For bulk migration, parse the source with `JSDOM`, iterate over its `img` elements, upload each image with `frogbot.create`, and set both attributes before converting `document.body.innerHTML`. Handle download or upload failures explicitly so a partial migration is visible rather than silently losing images.
+
+If you already have file IDs, `buildEditorState` can construct a state directly:
+
+```ts
+import { buildEditorState } from '@frogbotai/richtext-lexical'
+
+const data = buildEditorState({
+  text: 'Travel notes',
+  nodes: [
+    {
+      type: 'upload',
+      fields: {},
+      format: '',
+      id: crypto.randomUUID(),
+      relationTo: 'files',
+      value: 'file-record-id',
+      version: 3,
+    },
+  ],
+})
+```
+
+Verify that each referenced file ID exists and that `relationTo` matches the upload collection slug. Server-side conversion can only reference saved files, not uploads that are still pending in the admin panel.

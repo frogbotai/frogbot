@@ -1,0 +1,172 @@
+---
+title: Converting JSX
+sidebarTitle: Converting JSX
+description: Render Lexical rich text as React JSX.
+keywords: lexical, rich text, jsx, react, converters
+---
+
+## Rich Text to JSX
+
+Import `RichText` from the React subpath and pass it a serialized editor state:
+
+```tsx
+import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
+import { RichText } from '@frogbotai/richtext-lexical/react'
+
+export function ArticleBody({ data }: { data: SerializedEditorState }) {
+  return <RichText data={data} />
+}
+```
+
+The component includes converters for standard nodes. Fetch enough relationship depth to populate links and file nodes before rendering them.
+
+<Banner type="default">
+  The JSX converter requires fully populated values for nodes such as files.
+  Increase the query depth when those values are still record IDs.
+</Banner>
+
+## Internal links
+
+FrogBot cannot infer your application's route for a linked record. Add `LinkJSXConverter` with an `internalDocToHref` function:
+
+```tsx
+import type {
+  DefaultNodeTypes,
+  SerializedLinkNode,
+} from '@frogbotai/richtext-lexical'
+import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
+import {
+  type JSXConvertersFunction,
+  LinkJSXConverter,
+  RichText,
+} from '@frogbotai/richtext-lexical/react'
+
+const internalDocToHref = ({ linkNode }: { linkNode: SerializedLinkNode }) => {
+  const { relationTo, value } = linkNode.fields.doc!
+
+  if (typeof value !== 'object') {
+    throw new Error('Expected a populated internal link')
+  }
+
+  if (relationTo === 'pages') {
+    return `/${value.slug}`
+  }
+
+  return `/${relationTo}/${value.slug}`
+}
+
+const converters: JSXConvertersFunction<DefaultNodeTypes> = ({
+  defaultConverters,
+}) => ({
+  ...defaultConverters,
+  ...LinkJSXConverter({ internalDocToHref }),
+})
+
+export function ArticleBody({ data }: { data: SerializedEditorState }) {
+  return <RichText<DefaultNodeTypes> converters={converters} data={data} />
+}
+```
+
+## Lexical blocks
+
+Custom blocks need converters keyed by block slug:
+
+```tsx
+'use client'
+
+import type {
+  DefaultNodeTypes,
+  SerializedBlockNode,
+  SerializedInlineBlockNode,
+} from '@frogbotai/richtext-lexical'
+import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
+import {
+  type JSXConvertersFunction,
+  RichText,
+} from '@frogbotai/richtext-lexical/react'
+
+type BadgeBlock = {
+  blockName?: string
+  blockType: 'badge'
+  label: string
+}
+
+type NumberBlock = {
+  blockName?: string
+  blockType: 'number'
+  number: number
+}
+
+type TextBlock = {
+  blockName?: string
+  blockType: 'text'
+  text: string
+}
+
+type NodeTypes =
+  | DefaultNodeTypes
+  | SerializedBlockNode<NumberBlock | TextBlock>
+  | SerializedInlineBlockNode<BadgeBlock>
+
+const converters: JSXConvertersFunction<NodeTypes> = ({
+  defaultConverters,
+}) => ({
+  ...defaultConverters,
+  blocks: {
+    number: ({ node }) => <div>{node.fields.number}</div>,
+    text: ({ node }) => <div>{node.fields.text}</div>,
+  },
+  inlineBlocks: {
+    badge: ({ node }) => <span>{node.fields.label}</span>,
+  },
+})
+
+export function ArticleBody({ data }: { data: SerializedEditorState }) {
+  return <RichText converters={converters} data={data} />
+}
+```
+
+## Override a converter
+
+Return a converter under the standard node key to replace its default rendering. This example renders file images with `next/image`:
+
+```tsx
+'use client'
+
+import type {
+  DefaultNodeTypes,
+  SerializedUploadNode,
+} from '@frogbotai/richtext-lexical'
+import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
+import {
+  type JSXConvertersFunction,
+  RichText,
+} from '@frogbotai/richtext-lexical/react'
+import Image from 'next/image'
+
+const converters: JSXConvertersFunction<DefaultNodeTypes> = ({
+  defaultConverters,
+}) => ({
+  ...defaultConverters,
+  upload: ({ node }: { node: SerializedUploadNode }) => {
+    const file = node.value
+
+    if (node.relationTo !== 'files' || !file || typeof file !== 'object' || !file.url) {
+      return null
+    }
+
+    return (
+      <Image
+        alt={file.alt ?? ''}
+        height={file.height ?? 0}
+        src={file.url}
+        width={file.width ?? 0}
+      />
+    )
+  },
+})
+
+export function ArticleBody({ data }: { data: SerializedEditorState }) {
+  return <RichText converters={converters} data={data} />
+}
+```

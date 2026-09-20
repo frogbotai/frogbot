@@ -3,6 +3,7 @@ import process from 'node:process';
 
 import type { PayloadComponent, SanitizedConfig } from 'payload';
 
+import { rewritePayloadComponent } from '../../config/rewriteComponentPaths.js';
 import { iterateConfig } from './iterateConfig.js';
 import { addPayloadComponentToImportMap } from './utilities/addPayloadComponentToImportMap.js';
 import { getImportMapToBaseDirPath } from './utilities/getImportMapToBaseDirPath.js';
@@ -63,8 +64,10 @@ export async function generateImportMap(
       throw new Error('[frogbot] addToImportMap > component must be an object or a string');
     }
 
-    if (Array.isArray(payloadComponent)) {
-      for (const component of payloadComponent) {
+    const rewrittenComponent = rewritePayloadComponent(payloadComponent);
+
+    if (Array.isArray(rewrittenComponent)) {
+      for (const component of rewrittenComponent) {
         addPayloadComponentToImportMap({
           importMap,
           importMapToBaseDirPath,
@@ -77,7 +80,7 @@ export async function generateImportMap(
         importMap,
         importMapToBaseDirPath,
         imports,
-        payloadComponent,
+        payloadComponent: rewrittenComponent,
       });
     }
   };

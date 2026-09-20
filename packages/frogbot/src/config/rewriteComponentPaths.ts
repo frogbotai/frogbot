@@ -12,6 +12,14 @@ type SettingsComponents = {
 };
 
 function rewritePath(path: string): string {
+  if (
+    path === '@payloadcms/richtext-lexical' ||
+    path.startsWith('@payloadcms/richtext-lexical#') ||
+    path.startsWith('@payloadcms/richtext-lexical/')
+  ) {
+    return path.replace('@payloadcms/richtext-lexical', '@frogbotai/richtext-lexical');
+  }
+
   if (path.startsWith('@payloadcms/next/rsc#') || path.startsWith('@payloadcms/next/client#')) {
     return path.replace('@payloadcms/next/', '@frogbotai/next/');
   }
@@ -21,14 +29,24 @@ function rewritePath(path: string): string {
   return path;
 }
 
-function rewriteComponent<T extends PayloadComponent>(component: T): T {
-  if (typeof component === 'string') {
-    return rewritePath(component) as T;
+export function rewritePayloadComponent<T>(component: T): T {
+  if (typeof component === 'string') return rewritePath(component) as T;
+
+  if (Array.isArray(component)) return component.map(rewritePayloadComponent) as T;
+
+  if (component && typeof component === 'object' && 'path' in component) {
+    const value = component as { path?: unknown };
+
+    if (typeof value.path === 'string') {
+      return { ...component, path: rewritePath(value.path) };
+    }
   }
-  if (component && typeof component === 'object' && typeof component.path === 'string') {
-    return { ...component, path: rewritePath(component.path) };
-  }
+
   return component;
+}
+
+function rewriteComponent<T extends PayloadComponent>(component: T): T {
+  return rewritePayloadComponent(component);
 }
 
 function rewriteComponents(value: unknown): unknown {
@@ -45,28 +63,94 @@ function rewriteComponents(value: unknown): unknown {
   );
 }
 
-function rewriteFields(fields: unknown[]): void {
-  for (const field of fields) {
-    if (!field || typeof field !== 'object') continue;
-    const value = field as Record<string, unknown>;
-    const admin = value.admin as { components?: unknown } | undefined;
-    if (admin?.components) admin.components = rewriteComponents(admin.components);
-    if (Array.isArray(value.fields)) rewriteFields(value.fields);
-    if (Array.isArray(value.tabs)) {
-      for (const tab of value.tabs) {
-        if (tab && typeof tab === 'object' && Array.isArray((tab as { fields?: unknown }).fields)) {
-          rewriteFields((tab as { fields: unknown[] }).fields);
+function rewriteRichTextEditor(editor: Record<string, unknown>, visited: WeakSet<object>): void {
+  if (visited.has(editor)) return;
+
+  visited.add(editor);
+
+  for (const key of ['CellComponent', 'DiffComponent', 'FieldComponent'] as const) {
+    if (editor[key]) editor[key] = rewritePayloadComponent(editor[key]);
+  }
+
+  const fieldComponent = editor.FieldComponent;
+
+  if (fieldComponent && typeof fieldComponent === 'object') {
+    const serverProps = (fieldComponent as { serverProps?: Record<string, unknown> }).serverProps;
+
+    if (serverProps?.views) serverProps.views = rewriteComponents(serverProps.views);
+  }
+
+  const featureMap = (editor.editorConfig as { resolvedFeatureMap?: unknown } | undefined)
+    ?.resolvedFeatureMap;
+
+  if (!(featureMap instanceof Map)) return;
+
+  for (const feature of featureMap.values()) {
+    if (!feature || typeof feature !== 'object') continue;
+
+    const resolved = feature as Record<string, unknown>;
+
+    if (resolved.ClientFeature) {
+      resolved.ClientFeature = rewritePayloadComponent(resolved.ClientFeature);
+    }
+
+    if (resolved.componentImports && typeof resolved.componentImports !== 'function') {
+      if (Array.isArray(resolved.componentImports)) {
+        resolved.componentImports = rewritePayloadComponent(resolved.componentImports);
+      } else if (typeof resolved.componentImports === 'object') {
+        for (const [key, component] of Object.entries(resolved.componentImports)) {
+          (resolved.componentImports as Record<string, unknown>)[key] =
+            rewritePayloadComponent(component);
         }
       }
     }
-    if (Array.isArray(value.blocks)) {
-      for (const block of value.blocks) {
+
+    if (!Array.isArray(resolved.nodes)) continue;
+
+    for (const node of resolved.nodes) {
+      if (!node || typeof node.getSubFields !== 'function') continue;
+
+      const subFields = node.getSubFields({});
+
+      if (Array.isArray(subFields)) rewriteFields(subFields, visited);
+    }
+  }
+}
+
+function rewriteFields(fields: unknown[], visited: WeakSet<object>): void {
+  for (const field of fields) {
+    if (!field || typeof field !== 'object') continue;
+    const value = field as Record<string, unknown>;
+
+    if (visited.has(value)) continue;
+
+    visited.add(value);
+
+    const admin = value.admin as { components?: unknown } | undefined;
+    if (admin?.components) admin.components = rewriteComponents(admin.components);
+
+    if (value.type === 'richText' && value.editor && typeof value.editor === 'object') {
+      rewriteRichTextEditor(value.editor as Record<string, unknown>, visited);
+    }
+
+    if (Array.isArray(value.fields)) rewriteFields(value.fields, visited);
+    if (Array.isArray(value.tabs)) {
+      for (const tab of value.tabs) {
+        if (tab && typeof tab === 'object' && Array.isArray((tab as { fields?: unknown }).fields)) {
+          rewriteFields((tab as { fields: unknown[] }).fields, visited);
+        }
+      }
+    }
+    const blocks = Array.isArray(value.blockReferences) ? value.blockReferences : value.blocks;
+
+    if (Array.isArray(blocks)) {
+      for (const block of blocks) {
         if (
           block &&
           typeof block === 'object' &&
           Array.isArray((block as { fields?: unknown }).fields)
         ) {
-          rewriteFields((block as { fields: unknown[] }).fields);
+          rewriteFields((block as { fields: unknown[] }).fields, visited);
         }
       }
     }
@@ -74,6 +158,7 @@ function rewriteFields(fields: unknown[]): void {
 }
 
 export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig {
+  const visited = new WeakSet<object>();
   const admin = config.admin;
   const bottomRailComponents = admin?.components as BottomRailComponents | undefined;
 
@@ -95,6 +180,10 @@ export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig 
       ...widget,
       Component: rewriteComponent(widget.Component),
     }));
+
+    for (const widget of admin.dashboard.widgets) {
+      if (Array.isArray(widget.fields)) rewriteFields(widget.fields, visited);
+    }
   }
 
   if (admin?.dependencies) {
@@ -129,15 +218,26 @@ export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig 
           collection.admin.components,
         ) as typeof collection.admin.components;
       }
-      if (collection.fields) rewriteFields(collection.fields);
+      if (collection.fields) rewriteFields(collection.fields, visited);
     }
+  }
+
+  const blocks = (config as SanitizedConfig & { blocks?: { fields?: unknown[] }[] }).blocks;
+
+  for (const block of blocks ?? []) {
+    if (Array.isArray(block.fields)) rewriteFields(block.fields, visited);
   }
 
   if (config.globals) {
     for (const global of config.globals) {
       const globalAdmin = global.admin as typeof global.admin & { icon?: PayloadComponent };
       if (globalAdmin?.icon) globalAdmin.icon = rewriteComponent(globalAdmin.icon);
-      if (global.fields) rewriteFields(global.fields);
+      if (global.admin?.components) {
+        global.admin.components = rewriteComponents(
+          global.admin.components,
+        ) as typeof global.admin.components;
+      }
+      if (global.fields) rewriteFields(global.fields, visited);
     }
   }
 

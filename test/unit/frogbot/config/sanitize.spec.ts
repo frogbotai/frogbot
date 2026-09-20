@@ -1,3 +1,4 @@
+import { buildConfig as payloadBuildConfig, MissingEditorProp } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -66,6 +67,39 @@ function emailWarnings(warn: ReturnType<typeof vi.fn>) {
 }
 
 describe('frogbot sanitize', () => {
+  it('rejects rich text fields without an editor before the upstream build', () => {
+    expect(() =>
+      sanitize(
+        makeConfig({
+          collections: [
+            {
+              slug: 'posts',
+              fields: [{ name: 'content', type: 'richText' }],
+            },
+          ],
+        }),
+      ),
+    ).toThrow(
+      "[frogbot] Rich text field 'content' in collection 'posts' requires a Lexical editor",
+    );
+  });
+
+  it('translates upstream nested rich text editor errors', async () => {
+    vi.mocked(payloadBuildConfig).mockRejectedValueOnce(
+      new MissingEditorProp({ name: 'caption', type: 'richText' } as never),
+    );
+
+    const config = sanitize(
+      makeConfig({
+        editor: (() => {}) as never,
+      }),
+    );
+
+    await expect(config._internal.payloadConfig).rejects.toThrow(
+      '[frogbot] A nested rich text field requires an explicit Lexical editor',
+    );
+  });
+
   it('keeps the subscription ledger available without mounted triggers', async () => {
     const config = sanitize(makeConfig());
     const payloadConfig = await config._internal.payloadConfig;

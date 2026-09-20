@@ -51,3 +51,4 @@ pnpm-publish-summary.json
 # Browser tests
 test/browser/test-results
 templates/blank/frogbot.browser.db*
+test/e2e/fixtures/rich-text/rich-text.browser.db*

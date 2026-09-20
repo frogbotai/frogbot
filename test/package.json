@@ -16,6 +16,7 @@
     "@frogbotai/db-postgres": "workspace:*",
     "@frogbotai/db-sqlite": "workspace:*",
     "@frogbotai/kv-redis": "workspace:*",
+    "@frogbotai/richtext-lexical": "workspace:*",
     "@frogbotai/piece-resend": "workspace:*",
     "@frogbotai/plugin-api-keys": "workspace:*",
     "@frogbotai/plugin-audit-log": "workspace:*",

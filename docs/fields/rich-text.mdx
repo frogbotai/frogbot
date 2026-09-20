@@ -1,0 +1,133 @@
+---
+title: Rich Text Field
+sidebarTitle: Rich Text
+description: Add structured, formatted content to a collection with the Lexical rich text editor.
+keywords: rich text, lexical, fields, editor, collections, configuration
+---
+
+The Rich Text field gives editors a formatting interface while storing content as structured JSON. You can render that data as JSX, HTML, Markdown, or plain text.
+
+FrogBot builds the editor on Lexical, an open-source editor whose concepts and node model can be reused outside FrogBot.
+
+<Banner type="default">
+  Every Rich Text field requires an editor. Configure one at the root for
+  top-level fields, or set `editor` directly on the field.
+</Banner>
+
+Install the editor package and configure an editor at the root of your FrogBot config:
+
+```bash
+pnpm add @frogbotai/db-sqlite @frogbotai/richtext-lexical
+```
+
+```ts
+import { sqliteAdapter } from '@frogbotai/db-sqlite'
+import { lexicalEditor } from '@frogbotai/richtext-lexical'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: sqliteAdapter({
+    client: {
+      url: process.env.DATABASE_URL ?? 'file:./frogbot.db',
+    },
+  }),
+  collections: [
+    {
+      slug: 'pages',
+      fields: [
+        {
+          name: 'content',
+          type: 'richText',
+        },
+      ],
+    },
+  ],
+  editor: lexicalEditor({}),
+})
+```
+
+Every Rich Text field needs an editor. A root editor applies to top-level fields unless a field supplies its own `editor`. Nested Rich Text fields need an explicit field editor.
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Property name used in stored records and APIs. |
+| **`label`** | Field label shown in the admin panel. |
+| **`editor`** | Lexical editor configuration for this field. |
+| **`validate`** | Custom validation function. |
+| **`saveToJWT`** | Includes a top-level auth field in the user token. |
+| **`hooks`** | [Field hooks](/hooks/fields) for reading and changing the value. |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides the field from APIs and the admin panel while retaining stored data. |
+| **`defaultValue`** | Initial field value. |
+| **`localized`** | Stores a value for each configured locale. |
+| **`required`** | Requires a value. |
+| **`admin`** | Admin-panel appearance and behavior. |
+| **`custom`** | Custom metadata available to extensions. |
+| **`typescriptSchema`** | JSON Schema override used during type generation. |
+| **`virtual`** | Set to `true` to omit the field from database storage. |
+
+\*_An asterisk denotes a required option._
+
+## Field editor
+
+Override the root editor for one field when it needs different features or admin settings:
+
+```ts
+import { FixedToolbarFeature, lexicalEditor } from '@frogbotai/richtext-lexical'
+import type { CollectionConfig } from 'frogbot'
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  fields: [
+    {
+      name: 'content',
+      type: 'richText',
+      editor: lexicalEditor({
+        features: ({ defaultFeatures }) => [
+          ...defaultFeatures,
+          FixedToolbarFeature(),
+        ],
+      }),
+    },
+  ],
+}
+```
+
+See the [Rich Text editor overview](/rich-text/overview) for feature configuration and rendering.
+
+## Admin options
+
+The field's `admin` option inherits the standard field admin settings. Editor-specific options belong inside `lexicalEditor`:
+
+```ts
+import { lexicalEditor } from '@frogbotai/richtext-lexical'
+
+const contentField = {
+  name: 'content',
+  type: 'richText',
+  editor: lexicalEditor({
+    admin: {
+      hideAddBlockButton: true,
+      hideDraggableBlockElement: true,
+      hideGutter: true,
+      hideInsertParagraphAtEnd: true,
+      placeholder: 'Write the page content...',
+    },
+  }),
+}
+```
+
+## Data shape
+
+Rich Text values are serialized editor states. Import the data type from the package's Lexical subpath:
+
+```ts
+import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
+
+export type PageContent = SerializedEditorState
+```
+
+FrogBot type generation includes the serialized `root.children` shape for configured Rich Text fields.

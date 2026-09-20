@@ -1,0 +1,208 @@
+---
+title: Rich Text Editor
+sidebarTitle: Overview
+description: Configure and extend FrogBot's Lexical rich text editor.
+keywords: lexical, rich text, editor, features, typescript
+---
+
+FrogBot's Rich Text editor is based on Lexical. It provides formatting, links, files, relationships, lists, and extension points through composable features.
+
+<Banner type="success">
+  Lexical is FrogBot's supported rich text editor. The package provides healthy
+  defaults while letting you customize toolbars, slash-menu entries, nodes, and
+  nested fields.
+</Banner>
+
+## Configure the root editor
+
+```bash
+pnpm add @frogbotai/db-sqlite @frogbotai/richtext-lexical
+```
+
+```ts
+import { sqliteAdapter } from '@frogbotai/db-sqlite'
+import { lexicalEditor } from '@frogbotai/richtext-lexical'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: sqliteAdapter({
+    client: {
+      url: process.env.DATABASE_URL ?? 'file:./frogbot.db',
+    },
+  }),
+  collections: [],
+  editor: lexicalEditor({}),
+})
+```
+
+The root editor supplies the default configuration for top-level [Rich Text fields](/fields/rich-text). Override `editor` on an individual field when it needs a different feature set.
+
+```ts
+import { lexicalEditor } from '@frogbotai/richtext-lexical'
+import type { CollectionConfig } from 'frogbot'
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  fields: [
+    {
+      name: 'content',
+      type: 'richText',
+      editor: lexicalEditor({}),
+    },
+  ],
+}
+```
+
+## Extend the editor with features
+
+Features add nodes, converters, toolbar controls, and other editor behavior. `features` accepts an array or a function. The function receives the recommended defaults and the features configured on the root editor.
+
+```ts
+import {
+  BlocksFeature,
+  LinkFeature,
+  UploadFeature,
+  lexicalEditor,
+} from '@frogbotai/richtext-lexical'
+
+const editor = lexicalEditor({
+  features: ({ defaultFeatures }) => [
+    ...defaultFeatures,
+    LinkFeature({
+      fields: ({ defaultFields }) => [
+        ...defaultFields,
+        {
+          name: 'rel',
+          type: 'select',
+          hasMany: true,
+          options: ['noopener', 'noreferrer', 'nofollow'],
+        },
+      ],
+    }),
+    UploadFeature({
+      collections: {
+        files: {
+          fields: [{ name: 'caption', type: 'text' }],
+        },
+      },
+    }),
+    BlocksFeature({
+      blocks: [
+        {
+          slug: 'callToAction',
+          fields: [{ name: 'label', type: 'text', required: true }],
+        },
+      ],
+    }),
+  ],
+})
+```
+
+| Value | Description |
+| --- | --- |
+| `defaultFeatures` | Recommended feature set. Omit it to start with an empty editor. |
+| `rootFeatures` | Features enabled by the root editor. Empty while configuring the root editor. |
+
+See [Official features](/rich-text/official-features) for the complete built-in set.
+
+If you omit `defaultFeatures`, the editor starts with no features. This is useful when you want a deliberately small editor rather than the recommended feature set.
+
+## TypeScript
+
+Each serialized node type starts with `Serialized`, such as `SerializedUploadNode`. Use `TypedEditorState` when you want an exact union of allowed nodes:
+
+```ts
+import type {
+  SerializedHeadingNode,
+  SerializedParagraphNode,
+  SerializedTextNode,
+  TypedEditorState,
+} from '@frogbotai/richtext-lexical'
+
+type ArticleState = TypedEditorState<
+  SerializedHeadingNode | SerializedParagraphNode | SerializedTextNode
+>
+
+const article: ArticleState = {
+  root: {
+    children: [
+      {
+        children: [
+          {
+            detail: 0,
+            format: 0,
+            mode: 'normal',
+            style: '',
+            text: 'Every property is fully typed.',
+            type: 'text',
+            version: 1,
+          },
+        ],
+        direction: 'ltr',
+        format: '',
+        indent: 0,
+        textFormat: 0,
+        type: 'paragraph',
+        version: 1,
+      },
+    ],
+    direction: 'ltr',
+    format: '',
+    indent: 0,
+    type: 'root',
+    version: 1,
+  },
+}
+```
+
+`DefaultTypedEditorState` includes all nodes from the default feature set and accepts additional node types as its generic argument.
+
+```ts
+import type {
+  DefaultTypedEditorState,
+  SerializedBlockNode,
+} from '@frogbotai/richtext-lexical'
+
+type ContentState = DefaultTypedEditorState<SerializedBlockNode>
+```
+
+Import `SerializedEditorState` from `@frogbotai/richtext-lexical/lexical` when code accepts any serialized editor state.
+
+Use types exported by `@frogbotai/richtext-lexical` rather than importing equivalent types from Lexical's internal packages. FrogBot controls and tests the public wrapper types.
+
+## Admin customization
+
+The editor's `admin` property supports these options:
+
+| Property | Description |
+| --- | --- |
+| `placeholder` | Placeholder shown when the editor is empty. |
+| `hideGutter` | Hides the editor gutter. |
+| `hideInsertParagraphAtEnd` | Hides the add-paragraph control after the last node. |
+| `hideDraggableBlockElement` | Hides the drag control shown beside nodes. |
+| `hideAddBlockButton` | Hides the add-node control shown beside nodes. |
+
+```ts
+import { lexicalEditor } from '@frogbotai/richtext-lexical'
+
+lexicalEditor({
+  admin: {
+    hideGutter: true,
+    placeholder: 'Write your content...',
+  },
+})
+```
+
+## Detect an empty state
+
+After an editor has been changed, deleting all visible content may leave an empty paragraph in its JSON value. Use `hasText` when you need to distinguish content from an empty editor state:
+
+```ts
+import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
+import { hasText } from '@frogbotai/richtext-lexical/shared'
+
+export function containsText(content: SerializedEditorState) {
+  return hasText(content)
+}
+```
