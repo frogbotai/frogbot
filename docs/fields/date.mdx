@@ -1,0 +1,261 @@
+---
+title: Date Field
+sidebarTitle: Date
+description: Store dates and configure date, time, month, and timezone inputs.
+keywords: date, time, timezone, fields, collections, configuration
+---
+
+The Date field stores an ISO date string and provides a configurable date and time picker in the admin panel.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const PublishedAt: Field = {
+  name: 'publishedAt',
+  type: 'date',
+  admin: {
+    date: {
+      displayFormat: 'd MMM yyyy, h:mm a',
+      pickerAppearance: 'dayAndTime',
+    },
+  },
+}
+```
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Stored property name. See [field names](/fields/overview#field-names). |
+| **`label`** | Admin-panel label. |
+| **`index`** | Creates a database index. |
+| **`validate`** | Custom [validation](/fields/overview#validation). |
+| **`saveToJWT`** | Includes a top-level auth field in the user token. |
+| **`hooks`** | [Field hooks](/hooks/fields). |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides the field while retaining stored data. |
+| **`defaultValue`** | Initial [field value](/fields/overview#default-values). |
+| **`localized`** | Stores one value per locale. |
+| **`required`** | Requires a value. |
+| **`timezone`** | Enables timezone selection. See [Timezones](#timezones). |
+| **`admin`** | Admin-panel settings. |
+| **`custom`** | Extension metadata. |
+| **`typescriptSchema`** | Type-generation JSON Schema override. |
+| **`virtual`** | Omits database storage or links a relationship path. |
+
+\*_An asterisk denotes a required option._
+
+## Admin options
+
+Date fields support the standard [field admin options](/fields/overview#admin-options), plus `placeholder` and a `date` object.
+
+| Option | Description |
+| --- | --- |
+| `date.displayFormat` | Unicode date format used in admin cells. |
+| `date.pickerAppearance` | `dayAndTime`, `dayOnly`, `timeOnly`, or `monthOnly`. Defaults to `dayOnly`. |
+| `date.monthsToShow` | Number of displayed months, up to `2`. |
+| `date.minDate` | Earliest allowed date. |
+| `date.maxDate` | Latest allowed date. |
+| `date.minTime` | Earliest allowed time. |
+| `date.maxTime` | Latest allowed time. |
+| `date.timeIntervals` | Picker interval in minutes. Defaults to `30`. |
+| `date.timeFormat` | Time format. Defaults to `h:mm aa`. |
+| `date.overrides` | Additional supported date-picker properties. |
+
+Picker appearance and display format affect only the admin UI. The complete value is stored as an ISO date string.
+
+### Display format and picker appearance
+
+`displayFormat` accepts a Unicode date format and controls the value shown in admin cells. `pickerAppearance` controls whether the picker displays a day and time, day, time, or month. If only `pickerAppearance` is set, the admin panel uses a matching display format.
+
+## Example
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Events: CollectionConfig = {
+  slug: 'events',
+  fields: [
+    {
+      name: 'dateOnly',
+      type: 'date',
+      admin: {
+        date: {
+          displayFormat: 'd MMM yyyy',
+          pickerAppearance: 'dayOnly',
+        },
+      },
+    },
+    {
+      name: 'timeOnly',
+      type: 'date',
+      admin: {
+        date: {
+          displayFormat: 'h:mm:ss a',
+          pickerAppearance: 'timeOnly',
+        },
+      },
+    },
+    {
+      name: 'monthOnly',
+      type: 'date',
+      admin: {
+        date: {
+          displayFormat: 'MMMM yyyy',
+          pickerAppearance: 'monthOnly',
+        },
+      },
+    },
+  ],
+}
+```
+
+## Custom components
+
+### Field
+
+#### Server component
+
+```tsx
+import { DateTimeField } from '@frogbotai/ui'
+import type { DateFieldServerComponent } from 'frogbot'
+
+export const CustomDateServer: DateFieldServerComponent = (props) => (
+  <DateTimeField
+    field={props.clientField}
+    path={props.path}
+    permissions={props.permissions}
+    schemaPath={props.schemaPath}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { DateTimeField } from '@frogbotai/ui'
+import type { DateFieldClientComponent } from 'frogbot'
+
+export const CustomDateClient: DateFieldClientComponent = (props) => <DateTimeField {...props} />
+```
+
+### Label
+
+#### Server component
+
+```tsx
+import { FieldLabel } from '@frogbotai/ui'
+import type { DateFieldLabelServerComponent } from 'frogbot'
+
+export const CustomDateLabelServer: DateFieldLabelServerComponent = ({ clientField, path }) => (
+  <FieldLabel
+    label={clientField.label || clientField.name}
+    path={path}
+    required={clientField.required}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { FieldLabel } from '@frogbotai/ui'
+import type { DateFieldLabelClientComponent } from 'frogbot'
+
+export const CustomDateLabelClient: DateFieldLabelClientComponent = ({ field, path }) => (
+  <FieldLabel label={field.label || field.name} path={path} required={field.required} />
+)
+```
+
+## Timezones
+
+Set `timezone: true` to show the root admin configuration's supported timezones. The selected timezone is stored in an additional column named `<fieldName>_tz`.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const EventTime: Field = {
+  name: 'eventTime',
+  type: 'date',
+  timezone: {
+    defaultTimezone: 'America/New_York',
+    required: true,
+    supportedTimezones: [
+      { label: 'New York', value: 'America/New_York' },
+      { label: 'India', value: '+05:30' },
+      { label: 'UTC', value: 'UTC' },
+    ],
+  },
+}
+```
+
+The timezone object supports these options:
+
+| Option | Description |
+| --- | --- |
+| **`defaultTimezone`** | Initial timezone value. |
+| **`supportedTimezones`** | Allowed label/value timezone options. |
+| **`required`** | Requires a timezone even when the date itself is optional. |
+| **`override`** | Modifies the generated Select field. See [Timezone override](#timezone-override). |
+
+<Banner type="info">
+  Dates are stored in UTC. Convert them to the selected timezone when rendering
+  them in your application. Dates without a specific time are normalized to
+  noon in the selected timezone.
+</Banner>
+
+### Timezone override
+
+Use `override` to modify the generated Select field. The callback receives `baseField`, which includes its generated name, options, default value, required state, label, and hidden admin setting.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const PublishedAt: Field = {
+  name: 'publishedAt',
+  type: 'date',
+  timezone: {
+    override: ({ baseField }) => ({
+      ...baseField,
+      admin: { ...baseField.admin, disableListColumn: true },
+    }),
+  },
+}
+```
+
+<Banner type="info">
+  Change available timezone options through `supportedTimezones` so FrogBot can
+  validate the configured values.
+</Banner>
+
+### Custom UTC offsets
+
+Fixed offsets use `+HH:mm` or `-HH:mm`:
+
+```ts
+import type { Field } from 'frogbot'
+
+export const ScheduledAt: Field = {
+  name: 'scheduledAt',
+  type: 'date',
+  timezone: {
+    supportedTimezones: [
+      { label: 'New York', value: 'America/New_York' },
+      { label: 'India', value: '+05:30' },
+      { label: 'Pacific', value: '-08:00' },
+      { label: 'UTC', value: '+00:00' },
+    ],
+  },
+}
+```
+
+<Banner type="info">
+  Fixed offsets do not adjust for daylight saving time. Use an IANA timezone
+  such as `America/New_York` when daylight saving behavior matters.
+</Banner>
+
+If an application separately mounts a compatible GraphQL executor, timezone values are transformed into enum-safe names: `+05:30` becomes `_TZOFFSET_PLUS_05_30`, `-08:00` becomes `_TZOFFSET_MINUS_08_00`, and `America/New_York` becomes `America_New_York`. The original value remains stored and is returned by the REST API. FrogBot does not currently ship a GraphQL execution route.

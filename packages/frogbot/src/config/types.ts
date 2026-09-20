@@ -14,6 +14,7 @@ import type { CollectionConfig } from '../collections/config/types.js';
 import type { ConnectionsConfig } from '../connections/types.js';
 import type { DatabaseAdapter } from '../database/types.js';
 import type { Endpoint } from '../endpoints/types.js';
+import type { Block } from '../fields/config/types.js';
 import type { Frogbot } from '../frogbot.js';
 import type { JobsConfig } from '../jobs/types.js';
 import type { EmailPiece } from '../pieces/email.js';
@@ -69,6 +70,7 @@ export type RolesPrewiring = {
  *  Payload pass-through so FrogBot can declare its own shape for them. */
 type FrogbotOverridden =
   | 'admin'
+  | 'blocks'
   | 'collections'
   | 'db'
   | 'email'
@@ -83,6 +85,7 @@ type FrogbotOverridden =
 export type OnInit = (frogbot: Frogbot) => Promise<void> | void;
 
 export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
+  blocks?: Block[];
   /** Server-side secret used for tokens, cookies, and signing. */
   secret: string;
   /** Database adapter from a third-party package. */

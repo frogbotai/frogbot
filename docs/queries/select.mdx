@@ -147,7 +147,7 @@ const getPosts = async () => {
 The `defaultPopulate` property allows you specify which fields to select when populating the collection from another document.
 This is especially useful for links where only the `slug` is needed instead of the entire document.
 
-With this feature, you can dramatically reduce the amount of JSON populated from Relationship or Upload fields.
+With this feature, you can dramatically reduce the amount of JSON populated from [Relationship](/fields/relationship) or [Upload](/fields/upload) fields.
 
 For example, in your content model, you might have a `Link` field which links out to a different page. When you go to retrieve these links, you really only need the `slug` of the page.
 
@@ -175,7 +175,7 @@ export const Pages: CollectionConfig<'pages'> = {
 ```
 
 <Warning>
-  When using `defaultPopulate` on a collection with Uploads
+  When using `defaultPopulate` on a collection with [Uploads](/fields/upload)
   enabled and you want to select the `url` field, it is important to specify
   `filename: true` as well, otherwise FrogBot will not be able to construct the
   correct file URL, instead returning `url: null`.

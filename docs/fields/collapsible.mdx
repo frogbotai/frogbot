@@ -1,0 +1,74 @@
+---
+title: Collapsible Field
+sidebarTitle: Collapsible
+description: Place fields in an expandable admin-panel section.
+keywords: collapsible, fields, layout, presentational, admin, configuration
+---
+
+The Collapsible field is a presentational container. It places fields in an expandable section without changing their stored paths.
+
+To add one, set `type` to `collapsible`, provide a header label, and place its nested fields in `fields`:
+
+```ts
+import type { CollapsibleField } from 'frogbot'
+
+export const advancedFields: CollapsibleField = {
+  type: 'collapsible',
+  label: ({ data }) => data.title || 'Advanced settings',
+  admin: {
+    initCollapsed: true,
+  },
+  fields: [
+    {
+      name: 'title',
+      type: 'text',
+    },
+    {
+      name: 'internalNotes',
+      type: 'textarea',
+    },
+  ],
+}
+```
+
+The record contains `title` and `internalNotes` at the current level. The label can be text, localized text, a component path, or a function that receives the current data and path.
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`label`** * | Header shown for the collapsible section. |
+| **`fields`** * | Fields displayed inside the section. |
+| **`admin`** | Admin-panel appearance and behavior. |
+| **`custom`** | Custom metadata available to extensions. |
+
+\*_An asterisk denotes a required option._
+
+## Admin options
+
+Collapsible fields inherit applicable [field admin options](/fields/overview#admin-options). Set `admin.initCollapsed` to `true` to close the section initially.
+
+## Custom components
+
+```tsx
+import { CollapsibleField } from '@frogbotai/ui'
+import type { CollapsibleFieldServerComponent } from 'frogbot'
+
+export const CustomCollapsibleField: CollapsibleFieldServerComponent = ({
+  clientField,
+  path,
+  permissions,
+  schemaPath,
+}) => {
+  return (
+    <CollapsibleField
+      field={clientField}
+      path={path}
+      permissions={permissions}
+      schemaPath={schemaPath}
+    />
+  )
+}
+```
+
+Use `CollapsibleFieldClientComponent` for a client replacement. A custom `label` component changes only the section header.

@@ -85,7 +85,32 @@
               {
                 "group": "Fields",
                 "expanded": false,
-                "pages": ["fields/rich-text"]
+                "pages": [
+                  "fields/overview",
+                  "fields/text",
+                  "fields/textarea",
+                  "fields/number",
+                  "fields/email",
+                  "fields/checkbox",
+                  "fields/date",
+                  "fields/select",
+                  "fields/radio",
+                  "fields/relationship",
+                  "fields/upload",
+                  "fields/rich-text",
+                  "fields/array",
+                  "fields/blocks",
+                  "fields/group",
+                  "fields/tabs",
+                  "fields/row",
+                  "fields/collapsible",
+                  "fields/join",
+                  "fields/json",
+                  "fields/code",
+                  "fields/point",
+                  "fields/ui",
+                  "fields/default-fields"
+                ]
               }
             ]
           },

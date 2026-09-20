@@ -1,0 +1,134 @@
+---
+title: Email Field
+sidebarTitle: Email
+description: Store strings that must be valid email addresses.
+keywords: email, fields, collections, validation, configuration
+---
+
+The Email field stores a string and applies built-in email-address validation.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const ContactEmail: Field = {
+  name: 'contactEmail',
+  type: 'email',
+  label: 'Contact email',
+  required: true,
+}
+```
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Stored property name. See [field names](/fields/overview#field-names). |
+| **`label`** | Admin-panel label. |
+| **`unique`** | Creates a unique database index. |
+| **`index`** | Creates a database index. |
+| **`validate`** | Custom [validation](/fields/overview#validation). |
+| **`saveToJWT`** | Includes a top-level auth field in the user token. |
+| **`hooks`** | [Field hooks](/hooks/fields). |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides the field while retaining stored data. |
+| **`defaultValue`** | Initial [field value](/fields/overview#default-values). |
+| **`localized`** | Stores one value per locale. |
+| **`required`** | Requires a value. |
+| **`admin`** | Admin-panel settings. |
+| **`custom`** | Extension metadata. |
+| **`typescriptSchema`** | Type-generation JSON Schema override. |
+| **`virtual`** | Omits database storage or links a relationship path. |
+
+\*_An asterisk denotes a required option._
+
+## Admin options
+
+Email fields support the standard [field admin options](/fields/overview#admin-options), plus these options:
+
+| Option | Description |
+| --- | --- |
+| **`placeholder`** | Placeholder text shown in the input. |
+| **`autoComplete`** | Value used for browser autocomplete. |
+
+## Example
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Contacts: CollectionConfig = {
+  slug: 'contacts',
+  fields: [
+    {
+      name: 'contact',
+      type: 'email',
+      label: 'Contact email address',
+      required: true,
+      admin: {
+        autoComplete: 'email',
+        placeholder: 'name@example.com',
+      },
+    },
+  ],
+}
+```
+
+## Custom components
+
+### Field
+
+#### Server component
+
+```tsx
+import { EmailField } from '@frogbotai/ui'
+import type { EmailFieldServerComponent } from 'frogbot'
+
+export const CustomEmailServer: EmailFieldServerComponent = (props) => (
+  <EmailField
+    field={props.clientField}
+    path={props.path}
+    permissions={props.permissions}
+    schemaPath={props.schemaPath}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { EmailField } from '@frogbotai/ui'
+import type { EmailFieldClientComponent } from 'frogbot'
+
+export const CustomEmailClient: EmailFieldClientComponent = (props) => <EmailField {...props} />
+```
+
+### Label
+
+#### Server component
+
+```tsx
+import { FieldLabel } from '@frogbotai/ui'
+import type { EmailFieldLabelServerComponent } from 'frogbot'
+
+export const CustomEmailLabelServer: EmailFieldLabelServerComponent = ({ clientField, path }) => (
+  <FieldLabel
+    label={clientField.label || clientField.name}
+    path={path}
+    required={clientField.required}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { FieldLabel } from '@frogbotai/ui'
+import type { EmailFieldLabelClientComponent } from 'frogbot'
+
+export const CustomEmailLabelClient: EmailFieldLabelClientComponent = ({ field, path }) => (
+  <FieldLabel label={field.label || field.name} path={path} required={field.required} />
+)
+```

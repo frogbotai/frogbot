@@ -1,0 +1,133 @@
+---
+title: Tabs Field
+sidebarTitle: Tabs
+description: Organize fields into named or presentational admin tabs.
+keywords: tabs, fields, named, presentational, admin, configuration
+---
+
+The Tabs field organizes fields into a tabbed editing interface. Unnamed tabs affect only the layout. Named tabs also nest their values under an object.
+
+```ts
+import type { TabsField } from 'frogbot'
+
+export const pageTabs: TabsField = {
+  type: 'tabs',
+  tabs: [
+    {
+      label: 'Content',
+      fields: [
+        {
+          name: 'title',
+          type: 'text',
+          required: true,
+        },
+      ],
+    },
+    {
+      name: 'seo',
+      label: 'SEO',
+      interfaceName: 'SEO',
+      fields: [
+        {
+          name: 'description',
+          type: 'textarea',
+          hooks: {
+            beforeChange: [({ req, value }) => {
+              req.frogbot.logger.debug('Updating SEO description')
+
+              return value
+            }],
+          },
+        },
+      ],
+    },
+  ],
+}
+```
+
+Here, `title` remains at the current level while `description` is stored as `seo.description`.
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`tabs`** * | Tabs rendered by this field. |
+| **`admin`** | Admin-panel appearance and behavior. |
+| **`custom`** | Custom metadata available to extensions. |
+
+Each tab accepts:
+
+| Option | Description |
+| --- | --- |
+| **`fields`** * | Fields displayed within the tab. |
+| **`name`** | Property name for a named tab. Omit it for a presentational tab. |
+| **`label`** | Tab label. Required when `name` is omitted and otherwise defaults from `name`. |
+| **`description`** | Description displayed above the tab's fields. |
+| **`interfaceName`** | Reusable generated interface name for a named tab. |
+| **`virtual`** | Set to `true` to omit a named tab from storage, or use a relationship path. |
+| **`admin`** | Tab options, including `condition` and `description`. |
+| **`id`** | Stable tab identifier. Unnamed conditional tabs need an identifier; FrogBot generates one when omitted. |
+
+\*_An asterisk denotes a required option._
+
+## Conditional tabs
+
+Use `admin.condition` to show a tab from the current document data:
+
+When the condition returns `false`, FrogBot hides the tab and all of its fields. If the active tab becomes hidden, the admin panel switches to the next visible tab.
+
+```ts
+import type { TabsField } from 'frogbot'
+
+export const advancedTabs: TabsField = {
+  type: 'tabs',
+  tabs: [
+    {
+      label: 'Settings',
+      fields: [
+        {
+          name: 'showAdvanced',
+          type: 'checkbox',
+        },
+      ],
+    },
+    {
+      label: 'Advanced',
+      admin: {
+        condition: (data) => Boolean(data.showAdvanced),
+      },
+      fields: [
+        {
+          name: 'internalName',
+          type: 'text',
+        },
+      ],
+    },
+  ],
+}
+```
+
+## Custom components
+
+```tsx
+import { TabsField } from '@frogbotai/ui'
+import type { TabsFieldServerComponent } from 'frogbot'
+
+export const CustomTabsField: TabsFieldServerComponent = ({
+  clientField,
+  path,
+  permissions,
+  schemaPath,
+}) => {
+  return (
+    <TabsField
+      field={clientField}
+      path={path}
+      permissions={permissions}
+      schemaPath={schemaPath}
+    />
+  )
+}
+```
+
+Use `TabsFieldClientComponent` for a client wrapper. Tab labels and descriptions are configured on each tab rather than through field label component slots.

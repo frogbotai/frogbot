@@ -1,0 +1,192 @@
+---
+title: Point Field
+sidebarTitle: Point
+description: Store longitude and latitude coordinates and run supported geospatial queries.
+keywords: point, coordinates, geospatial, near, within, intersects, fields
+---
+
+<Banner type="danger">
+  **SQLite and D1 are unsupported.** Do not use Point fields with
+  `@frogbotai/db-sqlite` or `@frogbotai/db-d1-sqlite`. JSON storage does not
+  provide the spatial indexes or operators required by this field.
+</Banner>
+
+The Point field stores a coordinate pair in `[longitude, latitude]` order and creates the spatial index needed for location queries on supported database adapters.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Places: CollectionConfig = {
+  slug: 'places',
+  fields: [
+    {
+      name: 'location',
+      type: 'point',
+      required: true,
+    },
+  ],
+}
+```
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Property name used in stored records and APIs. |
+| **`label`** | Field label shown in the admin panel. |
+| **`unique`** | Creates a database-level unique index. |
+| **`index`** | Spatial index configuration. Set to `false` to disable it. |
+| **`validate`** | Custom [validation function](/fields/overview#validation). |
+| **`saveToJWT`** | Includes a top-level auth field in the user token. |
+| **`hooks`** | [Field hooks](/hooks/fields). |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides the field from APIs and the admin panel while retaining stored data. |
+| **`defaultValue`** | [Initial field value](/fields/overview#default-values). |
+| **`localized`** | Stores a value for each configured locale. |
+| **`required`** | Requires a value. |
+| **`admin`** | [Admin field options](/fields/overview#admin-options). |
+| **`custom`** | Custom metadata available to extensions. |
+| **`typescriptSchema`** | JSON Schema override used during type generation. |
+| **`virtual`** | Set to `true` to omit the field from database storage. |
+
+\*_An asterisk denotes a required option._
+
+## Querying with near
+
+`near` finds records by distance from a coordinate and sorts nearest first. Its value contains `[longitude, latitude, maximumDistance, minimumDistance]`; distances are in meters.
+
+```ts
+const nearby = await frogbot.find({
+  collection: 'places',
+  where: {
+    location: {
+      near: [-73.9857, 40.7484, 5000, 0],
+    },
+  },
+})
+```
+
+## Querying within
+
+`within` finds points inside a GeoJSON area. A polygon's first and final coordinates must match.
+
+```ts
+const polygon: [number, number][] = [
+  [-74.02, 40.7],
+  [-74.02, 40.8],
+  [-73.93, 40.8],
+  [-73.93, 40.7],
+  [-74.02, 40.7],
+]
+
+const places = await frogbot.find({
+  collection: 'places',
+  where: {
+    location: {
+      within: {
+        type: 'Polygon',
+        coordinates: [polygon],
+      },
+    },
+  },
+})
+```
+
+## Querying intersects
+
+`intersects` finds points that intersect a GeoJSON geometry.
+
+```ts
+const places = await frogbot.find({
+  collection: 'places',
+  where: {
+    location: {
+      intersects: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [-74.02, 40.7],
+            [-74.02, 40.8],
+            [-73.93, 40.8],
+            [-73.93, 40.7],
+            [-74.02, 40.7],
+          ],
+        ],
+      },
+    },
+  },
+})
+```
+
+## Custom components
+
+Override the field or its label through `admin.components`. Custom components can wrap FrogBot's default coordinate controls.
+
+### Field
+
+#### Server component
+
+```tsx
+import { PointField } from '@frogbotai/ui'
+import type { PointFieldServerComponent } from 'frogbot'
+
+export const CustomPointFieldServer: PointFieldServerComponent = ({
+  clientField,
+  path,
+  permissions,
+  schemaPath,
+}) => (
+  <PointField
+    field={clientField}
+    path={path}
+    permissions={permissions}
+    schemaPath={schemaPath}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { PointField } from '@frogbotai/ui'
+import type { PointFieldClientComponent } from 'frogbot'
+
+export const CustomPointFieldClient: PointFieldClientComponent = (props) => (
+  <PointField {...props} />
+)
+```
+
+### Label
+
+#### Server component
+
+```tsx
+import { FieldLabel } from '@frogbotai/ui'
+import type { PointFieldLabelServerComponent } from 'frogbot'
+
+export const CustomPointLabelServer: PointFieldLabelServerComponent = ({
+  clientField,
+  path,
+}) => (
+  <FieldLabel
+    label={clientField.label || clientField.name}
+    path={path}
+    required={clientField.required}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { FieldLabel } from '@frogbotai/ui'
+import type { PointFieldLabelClientComponent } from 'frogbot'
+
+export const CustomPointLabelClient: PointFieldLabelClientComponent = ({ field, path }) => (
+  <FieldLabel label={field.label || field.name} path={path} required={field.required} />
+)
+```

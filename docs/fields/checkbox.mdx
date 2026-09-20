@@ -1,0 +1,119 @@
+---
+title: Checkbox Field
+sidebarTitle: Checkbox
+description: Store boolean values with an admin-panel checkbox.
+keywords: checkbox, boolean, fields, collections, configuration
+---
+
+The Checkbox field stores a boolean value.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Featured: Field = {
+  name: 'featured',
+  type: 'checkbox',
+  defaultValue: false,
+}
+```
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Stored property name. See [field names](/fields/overview#field-names). |
+| **`label`** | Admin-panel label. |
+| **`validate`** | Custom [validation](/fields/overview#validation). |
+| **`index`** | Creates a database index. |
+| **`saveToJWT`** | Includes a top-level auth field in the user token. |
+| **`hooks`** | [Field hooks](/hooks/fields). |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides the field while retaining stored data. |
+| **`defaultValue`** | Initial value; a required checkbox defaults to `false`. |
+| **`localized`** | Stores one value per locale. |
+| **`required`** | Requires a boolean value. |
+| **`admin`** | Standard [field admin options](/fields/overview#admin-options). |
+| **`custom`** | Extension metadata. |
+| **`typescriptSchema`** | Type-generation JSON Schema override. |
+| **`virtual`** | Omits database storage or links a relationship path. |
+
+\*_An asterisk denotes a required option._
+
+## Example
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Features: CollectionConfig = {
+  slug: 'features',
+  fields: [
+    {
+      name: 'enableCoolStuff',
+      type: 'checkbox',
+      label: 'Enable cool stuff',
+      defaultValue: false,
+    },
+  ],
+}
+```
+
+## Custom components
+
+### Field
+
+#### Server component
+
+```tsx
+import { CheckboxField } from '@frogbotai/ui'
+import type { CheckboxFieldServerComponent } from 'frogbot'
+
+export const CustomCheckboxServer: CheckboxFieldServerComponent = (props) => (
+  <CheckboxField
+    field={props.clientField}
+    path={props.path}
+    permissions={props.permissions}
+    schemaPath={props.schemaPath}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { CheckboxField } from '@frogbotai/ui'
+import type { CheckboxFieldClientComponent } from 'frogbot'
+
+export const CustomCheckboxClient: CheckboxFieldClientComponent = (props) => <CheckboxField {...props} />
+```
+
+### Label
+
+#### Server component
+
+```tsx
+import { FieldLabel } from '@frogbotai/ui'
+import type { CheckboxFieldLabelServerComponent } from 'frogbot'
+
+export const CustomCheckboxLabelServer: CheckboxFieldLabelServerComponent = ({ clientField, path }) => (
+  <FieldLabel
+    label={clientField.label || clientField.name}
+    path={path}
+    required={clientField.required}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { FieldLabel } from '@frogbotai/ui'
+import type { CheckboxFieldLabelClientComponent } from 'frogbot'
+
+export const CustomCheckboxLabelClient: CheckboxFieldLabelClientComponent = ({ field, path }) => (
+  <FieldLabel label={field.label || field.name} path={path} required={field.required} />
+)
+```

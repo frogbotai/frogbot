@@ -1,0 +1,220 @@
+---
+title: Text Field
+sidebarTitle: Text
+description: Store strings and configure text inputs, validation, and slug generation.
+keywords: text, slug, fields, collections, configuration
+---
+
+The Text field stores a string and provides a text input in the admin panel.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const PageTitle: Field = {
+  name: 'pageTitle',
+  type: 'text',
+  required: true,
+}
+```
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Property name used in stored records and APIs. See [field names](/fields/overview#field-names). |
+| **`label`** | Label shown in the admin panel. |
+| **`unique`** | Creates a unique database index for the field path. |
+| **`minLength`** | Minimum character length enforced by default validation. |
+| **`maxLength`** | Maximum character length enforced by default validation. |
+| **`hasMany`** | Stores an ordered array of strings. |
+| **`minRows`** | Minimum entries when `hasMany` is `true`. |
+| **`maxRows`** | Maximum entries when `hasMany` is `true`. |
+| **`validate`** | Custom [validation](/fields/overview#validation). |
+| **`index`** | Creates a database index for faster queries. |
+| **`saveToJWT`** | Includes a top-level auth field in the user token. |
+| **`hooks`** | [Field hooks](/hooks/fields). |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides the field from APIs and the admin panel while retaining stored data. |
+| **`defaultValue`** | Initial [field value](/fields/overview#default-values). |
+| **`localized`** | Stores one value for each configured locale. |
+| **`required`** | Requires a value. |
+| **`admin`** | Admin-panel appearance and behavior. |
+| **`custom`** | Custom metadata available to extensions. |
+| **`typescriptSchema`** | JSON Schema override used during type generation. |
+| **`virtual`** | Set to `true` to omit database storage, or to a relationship path. |
+
+\*_An asterisk denotes a required option._
+
+## Admin options
+
+Text fields support the standard [field admin options](/fields/overview#admin-options), plus these options:
+
+| Option | Description |
+| --- | --- |
+| **`placeholder`** | Placeholder text shown in the input. |
+| **`autoComplete`** | Value used for browser autocomplete. |
+| **`rtl`** | Set to `true` to force right-to-left text direction. |
+
+## Example
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  fields: [
+    {
+      name: 'pageTitle',
+      type: 'text',
+      minLength: 3,
+      required: true,
+      admin: {
+        placeholder: 'About us',
+      },
+    },
+  ],
+}
+```
+
+## Custom components
+
+### Field
+
+#### Server component
+
+```tsx
+import { TextField } from '@frogbotai/ui'
+import type { TextFieldServerComponent } from 'frogbot'
+
+export const CustomTextFieldServer: TextFieldServerComponent = (props) => (
+  <TextField
+    field={props.clientField}
+    path={props.path}
+    permissions={props.permissions}
+    schemaPath={props.schemaPath}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { TextField } from '@frogbotai/ui'
+import type { TextFieldClientComponent } from 'frogbot'
+
+export const CustomTextFieldClient: TextFieldClientComponent = (props) => (
+  <TextField {...props} />
+)
+```
+
+### Label
+
+#### Server component
+
+```tsx
+import { FieldLabel } from '@frogbotai/ui'
+import type { TextFieldLabelServerComponent } from 'frogbot'
+
+export const CustomTextLabelServer: TextFieldLabelServerComponent = ({ clientField, path }) => (
+  <FieldLabel
+    label={clientField.label || clientField.name}
+    path={path}
+    required={clientField.required}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { FieldLabel } from '@frogbotai/ui'
+import type { TextFieldLabelClientComponent } from 'frogbot'
+
+export const CustomTextLabelClient: TextFieldLabelClientComponent = ({ field, path }) => (
+  <FieldLabel label={field.label || field.name} path={path} required={field.required} />
+)
+```
+
+## Slug field
+
+<Banner type="warning">
+  The Slug field is experimental and may change or be removed in a future release.
+</Banner>
+
+`slugField` creates a row containing a generated Text field and a lock checkbox. Editors can unlock the slug to regenerate it on save or regenerate it on demand in the admin panel.
+
+```ts
+import { slugField } from 'frogbot'
+import type { CollectionConfig } from 'frogbot'
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    slugField(),
+  ],
+}
+```
+
+The source named by `useAsSlug` must be a top-level field in the same collection. Nested placement of the returned row does not make slug generation sibling-relative.
+
+| Option | Description |
+| --- | --- |
+| `name` | Slug field name. Defaults to `slug`. |
+| `checkboxName` | Lock checkbox name. Defaults to `generateSlug`. |
+| `disableUnique` | Disables the slug field's unique index. |
+| `useAsSlug` | Top-level source field. Defaults to `title`. |
+| `localized` | Localizes the slug and checkbox fields. Defaults to `false`. |
+| `position` | Row position in the admin form. |
+| `required` | Requires the slug. Defaults to `true`. |
+| `overrides` | Receives and returns the generated `RowField`. |
+| `slugify` | Replaces the default slug-generation function. |
+
+### Slug overrides
+
+The override runs once and may change either generated field or add recursively typed fields:
+
+```ts
+import { slugField } from 'frogbot'
+
+export const pageSlug = slugField({
+  overrides: (row) => ({
+    ...row,
+    fields: row.fields.map((field) =>
+      'name' in field && field.name === 'slug'
+        ? { ...field, label: 'URL slug' }
+        : field,
+    ),
+  }),
+})
+```
+
+### Custom slugify function
+
+The function receives the complete document data, the top-level source value, and the framework-issued `FrogbotRequest`. It may return a string or `undefined`, synchronously or asynchronously. Rejections stop the save.
+
+```ts
+import { slugField } from 'frogbot'
+
+export const pageSlug = slugField({
+  useAsSlug: 'title',
+  slugify: async ({ req, valueToSlugify }) => {
+    await req.frogbot.count({ collection: 'pages' })
+
+    return typeof valueToSlugify === 'string'
+      ? valueToSlugify
+          .normalize('NFKD')
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '')
+      : undefined
+  },
+})
+```
+
+`disableUnique` only removes the default unique index. Add an appropriate collection index if uniqueness must instead be scoped by another field.

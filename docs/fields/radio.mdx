@@ -1,0 +1,149 @@
+---
+title: Radio Group Field
+sidebarTitle: Radio Group
+description: Choose one value from a predefined radio-button group.
+keywords: radio, options, enum, fields, collections, configuration
+---
+
+The Radio field stores one value from a predefined list and presents the choices as a radio-button group.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Theme: Field = {
+  name: 'theme',
+  type: 'radio',
+  defaultValue: 'light',
+  options: [
+    { label: 'Light', value: 'light' },
+    { label: 'Dark', value: 'dark' },
+  ],
+}
+```
+
+Options may be strings or `{ label, value }` objects.
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Stored property name. See [field names](/fields/overview#field-names). |
+| **`options`** * | Allowed string values or label/value objects. |
+| **`label`** | Admin-panel label. |
+| **`validate`** | Custom [validation](/fields/overview#validation). |
+| **`index`** | Creates a database index. |
+| **`saveToJWT`** | Includes a top-level auth field in the user token. |
+| **`hooks`** | [Field hooks](/hooks/fields). |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides the field while retaining stored data. |
+| **`defaultValue`** | Initial value; it must be one of the configured options. |
+| **`localized`** | Stores one value per locale. |
+| **`required`** | Requires a value. |
+| **`admin`** | Admin-panel settings. |
+| **`custom`** | Extension metadata. |
+| **`enumName`** | Custom SQL enum name; otherwise generated from the field name. |
+| **`interfaceName`** | Generates a reusable top-level TypeScript interface. |
+| **`typescriptSchema`** | Type-generation JSON Schema override. |
+| **`virtual`** | Omits database storage or links a relationship path. |
+
+\*_An asterisk denotes a required option._
+
+<Banner type="warning">
+  Option values should avoid hyphens and special characters when the field's
+  metadata will be used to build a GraphQL schema. Underscores are safe. FrogBot
+  does not currently ship a GraphQL execution route; this constraint applies
+  only when an application separately mounts a compatible executor.
+</Banner>
+
+## Admin options
+
+Radio fields support the standard [field admin options](/fields/overview#admin-options), plus this option:
+
+| Option | Description |
+| --- | --- |
+| **`layout`** | Displays choices horizontally or vertically. Defaults to `horizontal`. |
+
+## Example
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Themes: CollectionConfig = {
+  slug: 'themes',
+  fields: [
+    {
+      name: 'color',
+      type: 'radio',
+      options: [
+        { label: 'Mint', value: 'mint' },
+        { label: 'Dark gray', value: 'dark_gray' },
+      ],
+      defaultValue: 'mint',
+      admin: {
+        layout: 'horizontal',
+      },
+    },
+  ],
+}
+```
+
+## Custom components
+
+### Field
+
+#### Server component
+
+```tsx
+import { RadioGroupField } from '@frogbotai/ui'
+import type { RadioFieldServerComponent } from 'frogbot'
+
+export const CustomRadioServer: RadioFieldServerComponent = (props) => (
+  <RadioGroupField
+    field={props.clientField}
+    path={props.path}
+    permissions={props.permissions}
+    schemaPath={props.schemaPath}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { RadioGroupField } from '@frogbotai/ui'
+import type { RadioFieldClientComponent } from 'frogbot'
+
+export const CustomRadioClient: RadioFieldClientComponent = (props) => <RadioGroupField {...props} />
+```
+
+### Label
+
+#### Server component
+
+```tsx
+import { FieldLabel } from '@frogbotai/ui'
+import type { RadioFieldLabelServerComponent } from 'frogbot'
+
+export const CustomRadioLabelServer: RadioFieldLabelServerComponent = ({ clientField, path }) => (
+  <FieldLabel
+    label={clientField.label || clientField.name}
+    path={path}
+    required={clientField.required}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { FieldLabel } from '@frogbotai/ui'
+import type { RadioFieldLabelClientComponent } from 'frogbot'
+
+export const CustomRadioLabelClient: RadioFieldLabelClientComponent = ({ field, path }) => (
+  <FieldLabel label={field.label || field.name} path={path} required={field.required} />
+)
+```

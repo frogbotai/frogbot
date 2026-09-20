@@ -250,7 +250,7 @@ export interface Hero_9C7E4012 {
 
 The suffix is derived from the block's fields, so the **same schema always produces the same name** across regenerations — it only changes when the block's fields change. If you import a hashed interface and later change that block, you'll get a type error that points you at the change instead of silently receiving the wrong shape.
 
-To choose the name yourself and avoid the hash, set an explicit `interfaceName` on the block. Explicit names are always used verbatim. This is the recommended fix when two blocks intentionally share a slug, or when you want a stable, human-readable name to import.
+To choose the name yourself and avoid the hash, set an explicit [`interfaceName`](/fields/blocks) on the block. Explicit names are always used verbatim. This is the recommended fix when two blocks intentionally share a slug, or when you want a stable, human-readable name to import.
 
 ## Using your types
 

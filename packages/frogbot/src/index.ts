@@ -36,6 +36,7 @@ export type {
   ConnectionsConfig,
   SanitizedConnectionsConfig,
 } from './connections/types.js';
+export { slugField } from './fields/baseFields/slug/index.js';
 export type { Frogbot as FrogbotInstance } from './frogbot.js';
 export { getCachedFrogbot, getFrogbot } from './getFrogbot.js';
 export type { GatewayHandler } from './server/gateway.js';
@@ -375,10 +376,40 @@ export type {
   RefreshHook,
 } from './collections/config/types.js';
 export type { Endpoint, Handler } from './endpoints/types.js';
+export type { SlugField } from './fields/baseFields/slug/index.js';
 export type {
+  ArrayField,
+  Block,
+  BlocksField,
+  CheckboxField,
+  CodeField,
+  CollapsibleField,
+  DateField,
+  EmailField,
   Field,
   FieldHook,
   FieldHookArgs,
+  GroupField,
+  JoinField,
+  JSONField,
+  NamedGroupField,
+  NamedTab,
+  NumberField,
+  PointField,
+  RadioField,
+  RelationshipField,
+  RichTextField,
+  RowField,
+  SelectField,
+  Tab,
+  TabAsField,
+  TabsField,
+  TextareaField,
+  TextField,
+  UIField,
+  UnnamedGroupField,
+  UnnamedTab,
+  UploadField,
   Validate,
   ValidateOptions,
 } from './fields/config/types.js';

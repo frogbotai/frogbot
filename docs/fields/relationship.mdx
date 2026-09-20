@@ -1,0 +1,440 @@
+---
+title: Relationship Field
+sidebarTitle: Relationship
+description: Relate records from one or more collections with Relationship fields.
+keywords: relationship, fields, collections, polymorphic, filters, depth, virtual
+---
+
+The Relationship field connects records across collections. Use it for associations such as a product on an order, the user who placed an order, or categories assigned to a post.
+
+Set `type` to `relationship` and provide the target collection slug in `relationTo`:
+
+```ts
+import type { Field } from 'frogbot'
+
+export const ProductField: Field = {
+  name: 'product',
+  type: 'relationship',
+  relationTo: 'products',
+}
+```
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Property name used in stored records and APIs. See [Field names](/fields/overview#field-names). |
+| **`relationTo`** * | One collection slug or an array of collection slugs that records can reference. |
+| **`filterOptions`** | Query or callback that limits selectable records and validates submitted values. See [Filtering relationship options](#filtering-relationship-options). |
+| **`hasMany`** | Set to `true` to store multiple relationships. |
+| **`minRows`** | Minimum number of values when `hasMany` is enabled and a value is present. |
+| **`maxRows`** | Maximum number of values when `hasMany` is enabled and a value is present. |
+| **`maxDepth`** | Maximum population depth for this field, regardless of the remaining request depth. See [Depth](/queries/depth#max-depth). |
+| **`label`** | Field label shown in the admin panel. |
+| **`unique`** | Requires a unique value for this field across the collection and creates a database-level unique index for its path. See [Unique fields](/database/indexes#unique-fields). |
+| **`validate`** | Custom validation function. See [Validation](/fields/overview#validation). |
+| **`index`** | Creates a [database index](/database/indexes) to improve queries against this field. |
+| **`saveToJWT`** | Includes a top-level auth field in the user token. |
+| **`hooks`** | [Field hooks](/hooks/fields) for reading and changing the value. |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides the field from APIs and the admin panel while retaining stored data. |
+| **`defaultValue`** | Initial field value. See [Default values](/fields/overview#default-values). |
+| **`localized`** | Stores a value for each configured locale. Requires [localization](/configuration/localization). |
+| **`required`** | Requires a value. |
+| **`admin`** | Admin-panel appearance and behavior. See [Admin options](#admin-options). |
+| **`custom`** | Custom metadata available to extensions. |
+| **`typescriptSchema`** | JSON Schema override used during type generation. |
+| **`virtual`** | Set to `true` to omit this field from database storage, or provide a path that links it to another relationship. See [Linking virtual fields with relationships](#linking-virtual-fields-with-relationships). |
+| **`graphQL`** | GraphQL schema metadata. FrogBot does not currently ship a GraphQL request handler. |
+
+\*_An asterisk denotes a required option._
+
+<Banner type="success">
+  Use the [depth parameter](/queries/depth) to populate related records in API
+  responses.
+</Banner>
+
+## Admin options
+
+The `admin` option inherits the standard [field admin options](/fields/overview#admin-options) and adds settings specific to relationships:
+
+| Option | Description |
+| --- | --- |
+| **`isSortable`** | Enables drag-and-drop ordering when `hasMany` is `true`. |
+| **`allowCreate`** | Set to `false` to prevent creating related records from this field. |
+| **`allowEdit`** | Set to `false` to prevent editing related records from this field. |
+| **`sortOptions`** | Default sorting for records in the relationship selector. See [Sort options](#sort-options). |
+| **`placeholder`** | Custom placeholder text or callback. |
+| **`appearance`** | Set to `select` or `drawer`. Defaults to `select`. |
+
+### Sort options
+
+Provide a field name to sort every target collection the same way. Prefix it with `-` for descending order:
+
+```ts
+const field: Field = {
+  name: 'category',
+  type: 'relationship',
+  relationTo: 'categories',
+  admin: {
+    sortOptions: '-name',
+  },
+}
+```
+
+For a polymorphic field, provide a value for each collection:
+
+```ts
+const field: Field = {
+  name: 'relatedContent',
+  type: 'relationship',
+  relationTo: ['pages', 'posts', 'categories'],
+  admin: {
+    sortOptions: {
+      pages: 'title',
+      posts: '-publishedAt',
+      categories: 'name',
+    },
+  },
+}
+```
+
+Without `sortOptions`, the selector uses its default ordering.
+
+## Filtering relationship options
+
+Use `filterOptions` to limit records in the selector and validate submitted relationships. It accepts a [query constraint](/queries/overview), `true`, `false`, or a callback returning one of those values.
+
+The callback receives:
+
+| Property | Description |
+| --- | --- |
+| `blockData` | Data for the nearest parent block. It is `undefined` outside a block and in a list-view filter. |
+| `data` | Full data for the record being edited. It is an empty object in a list-view filter. |
+| `id` | Current record ID, or `undefined` during creation and in a list-view filter. |
+| `relationTo` | Collection slug currently being filtered. |
+| `req` | FrogBot request, including `frogbot`, `user`, `locale`, and request context. |
+| `siblingData` | Data from fields under the same parent. It is an empty object in a list-view filter. |
+| `user` | Current authenticated user. |
+
+The callback can return a different constraint for each target collection:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Orders: CollectionConfig = {
+  slug: 'orders',
+  fields: [
+    {
+      name: 'quantity',
+      type: 'number',
+      required: true,
+    },
+    {
+      name: 'purchase',
+      type: 'relationship',
+      relationTo: ['products', 'services'],
+      filterOptions: ({ relationTo, siblingData }) => {
+        if (relationTo === 'products') {
+          return {
+            stock: { greater_than: siblingData.quantity },
+          }
+        }
+
+        return {
+          isAvailable: { equals: true },
+        }
+      },
+    },
+  ],
+}
+```
+
+<Banner type="warning">
+  When combining `filterOptions` with custom validation, make the validation
+  enforce every constraint your application requires. The selector filter alone
+  is not a replacement for custom validation logic.
+</Banner>
+
+## Bidirectional relationships
+
+A Relationship field stores the connection on the record containing it. The related record does not automatically receive a reverse list.
+
+Add a [Join field](/fields/join) to the related collection when editors or API consumers need to traverse the relationship in both directions.
+
+## Stored data
+
+The stored shape depends on whether the field accepts one or many records and one or many collection types.
+
+### Has one
+
+A relationship to one collection stores the related record ID:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Orders: CollectionConfig = {
+  slug: 'orders',
+  fields: [
+    {
+      name: 'owner',
+      type: 'relationship',
+      relationTo: 'users',
+    },
+  ],
+}
+```
+
+```json
+{
+  "owner": "6031ac9e1289176380734024"
+}
+```
+
+Query it through the field name:
+
+```text
+?where[owner][equals]=6031ac9e1289176380734024
+```
+
+### Has one, polymorphic
+
+An array in `relationTo` allows one record from any listed collection:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Orders: CollectionConfig = {
+  slug: 'orders',
+  fields: [
+    {
+      name: 'owner',
+      type: 'relationship',
+      relationTo: ['users', 'organizations'],
+    },
+  ],
+}
+```
+
+The value records both the collection and ID:
+
+```json
+{
+  "owner": {
+    "relationTo": "organizations",
+    "value": "6031ac9e1289176380734024"
+  }
+}
+```
+
+Query the ID through `value`, or query the target collection through `relationTo`:
+
+```text
+?where[owner.value][equals]=6031ac9e1289176380734024
+```
+
+```text
+?where[owner.relationTo][equals]=organizations
+```
+
+### Has many
+
+Set `hasMany` to store an array of IDs from one collection:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Projects: CollectionConfig = {
+  slug: 'projects',
+  fields: [
+    {
+      name: 'owners',
+      type: 'relationship',
+      relationTo: 'users',
+      hasMany: true,
+    },
+  ],
+}
+```
+
+```json
+{
+  "owners": ["6031ac9e1289176380734024", "602c3c327b811235943ee12b"]
+}
+```
+
+Querying an ID uses the same field path:
+
+```text
+?where[owners][equals]=6031ac9e1289176380734024
+```
+
+### Has many, polymorphic
+
+Combine an array in `relationTo` with `hasMany`:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Projects: CollectionConfig = {
+  slug: 'projects',
+  fields: [
+    {
+      name: 'owners',
+      type: 'relationship',
+      relationTo: ['users', 'organizations'],
+      hasMany: true,
+      required: true,
+    },
+  ],
+}
+```
+
+```json
+{
+  "owners": [
+    {
+      "relationTo": "users",
+      "value": "6031ac9e1289176380734024"
+    },
+    {
+      "relationTo": "organizations",
+      "value": "602c3c327b811235943ee12b"
+    }
+  ]
+}
+```
+
+Querying the related ID uses the same `.value` path as a polymorphic has-one field:
+
+```text
+?where[owners.value][equals]=6031ac9e1289176380734024
+```
+
+### Querying and filtering polymorphic relationships
+
+Polymorphic values always identify both the target collection in `relationTo` and the related record in `value`. Their storage differs from non-polymorphic relationships, so list-view filtering is limited to the related ID.
+
+Filter by related record ID:
+
+```text
+?where[owners.value][equals]=6031ac9e1289176380734024
+```
+
+Or filter by target collection slug:
+
+```text
+?where[owners.relationTo][equals]=organizations
+```
+
+<Banner type="warning">
+  You cannot query arbitrary fields inside records reached through a polymorphic
+  relationship. A field may not exist in every target collection.
+</Banner>
+
+## Linking virtual fields with relationships
+
+A virtual field can expose data from a populated relationship without storing another database value. Set `virtual` to the relationship path that leads to the value.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Orders: CollectionConfig = {
+  slug: 'orders',
+  fields: [
+    {
+      name: 'customer',
+      type: 'relationship',
+      relationTo: 'customers',
+      required: true,
+    },
+    {
+      name: 'customerName',
+      type: 'text',
+      virtual: 'customer.name',
+    },
+  ],
+}
+```
+
+The path starts at a relationship field on the same record. FrogBot resolves the linked value when the relationship is populated. The virtual field remains absent from database storage, so use the underlying relationship path when writing data.
+
+## Custom components
+
+Override the field or its label through `admin.components`. Custom components can wrap FrogBot's default relationship controls.
+
+### Field
+
+#### Server component
+
+```tsx
+import { RelationshipField } from '@frogbotai/ui'
+import type { RelationshipFieldServerComponent } from 'frogbot'
+
+export const CustomRelationshipFieldServer: RelationshipFieldServerComponent = ({
+  clientField,
+  path,
+  permissions,
+  schemaPath,
+}) => (
+  <RelationshipField
+    field={clientField}
+    path={path}
+    permissions={permissions}
+    schemaPath={schemaPath}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { RelationshipField } from '@frogbotai/ui'
+import type { RelationshipFieldClientComponent } from 'frogbot'
+
+export const CustomRelationshipFieldClient: RelationshipFieldClientComponent = (
+  props,
+) => <RelationshipField {...props} />
+```
+
+### Label
+
+#### Server component
+
+```tsx
+import { FieldLabel } from '@frogbotai/ui'
+import type { RelationshipFieldLabelServerComponent } from 'frogbot'
+
+export const CustomRelationshipLabelServer: RelationshipFieldLabelServerComponent = ({
+  clientField,
+  path,
+}) => (
+  <FieldLabel
+    label={clientField.label || clientField.name}
+    path={path}
+    required={clientField.required}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { FieldLabel } from '@frogbotai/ui'
+import type { RelationshipFieldLabelClientComponent } from 'frogbot'
+
+export const CustomRelationshipLabelClient: RelationshipFieldLabelClientComponent = ({
+  field,
+  path,
+}) => (
+  <FieldLabel
+    label={field.label || field.name}
+    path={path}
+    required={field.required}
+  />
+)
+```
