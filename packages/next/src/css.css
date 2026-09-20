@@ -89,8 +89,7 @@
 body:has(.frogbot-nav-shell) .template-default__nav-toggler-wrapper,
 body:has(.frogbot-nav-shell) .template-default__nav-toggler-container,
 body:has(.frogbot-nav-shell) .app-header__account,
-body:has(.frogbot-nav-shell) .app-header__mobile-nav-toggler,
-body:has(.frogbot-nav-shell) .app-header__step-nav-wrapper {
+body:has(.frogbot-nav-shell) .app-header__mobile-nav-toggler {
   display: none;
 }
 

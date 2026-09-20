@@ -159,6 +159,55 @@ function wrapEndpoints(
   }));
 }
 
+type PayloadCollectionAccess = NonNullable<PayloadCollectionConfig['access']>;
+
+function wrapCollectionAccessFunction<
+  TAccess extends NonNullable<PayloadCollectionAccess[keyof PayloadCollectionAccess]>,
+>(
+  access: TAccess,
+  attachFrogbot: AttachFrogbot,
+): TAccess {
+  const wrapped = async (args: Parameters<TAccess>[0]) => {
+    const accessArgs = args as { req?: PayloadRequest };
+
+    if (!accessArgs.req?.payload) return access(args as never);
+
+    await attachFrogbot(accessArgs.req);
+
+    return access(args as never);
+  };
+
+  return wrapped as TAccess;
+}
+
+function assignWrappedCollectionAccess<TOperation extends keyof PayloadCollectionAccess>(
+  accessConfig: PayloadCollectionAccess,
+  operation: TOperation,
+  access: NonNullable<PayloadCollectionAccess[TOperation]>,
+  attachFrogbot: AttachFrogbot,
+): void {
+  accessConfig[operation] = wrapCollectionAccessFunction(access, attachFrogbot);
+}
+
+function wrapCollectionAccess(
+  collection: PayloadCollectionConfig,
+  attachFrogbot: AttachFrogbot,
+): void {
+  const accessConfig = collection.access;
+
+  if (!accessConfig) return;
+
+  const operations = Object.keys(accessConfig) as (keyof PayloadCollectionAccess)[];
+
+  for (const operation of operations) {
+    const access = accessConfig[operation];
+
+    if (typeof access !== 'function') continue;
+
+    assignWrappedCollectionAccess(accessConfig, operation, access, attachFrogbot);
+  }
+}
+
 function sanitizeCollection(
   c: CollectionConfig,
   attachFrogbot: AttachFrogbot,
@@ -1036,6 +1085,26 @@ function buildPayloadConfig(
     }
   ).admin;
   const settings = sanitizeSettings(config.settings);
+  const dashboard = admin?.dashboard as
+    | {
+        defaultLayout?:
+          | ((args: { req: FrogbotRequest }) => unknown)
+          | unknown[];
+        widgets: unknown[];
+      }
+    | undefined;
+  const defaultLayout = dashboard?.defaultLayout;
+  const adaptedDashboard = dashboard
+    ? {
+        ...dashboard,
+        ...(typeof defaultLayout === 'function'
+          ? {
+              defaultLayout: async ({ req }: { req: PayloadRequest }) =>
+                defaultLayout({ req: await attachFrogbot(req) }),
+            }
+          : {}),
+      }
+    : undefined;
   const hasAdminSignIn = config.collections.some(
     ({ slug, auth }) =>
       typeof auth === 'object' && auth.signIn?.length && slug === resolveUserSlug(config),
@@ -1052,6 +1121,7 @@ function buildPayloadConfig(
   );
   out.admin = {
     ...admin,
+    ...(adaptedDashboard ? { dashboard: adaptedDashboard } : {}),
     components: {
       ...admin?.components,
       ...(hasAdminSignIn
@@ -1082,9 +1152,13 @@ function buildPayloadConfig(
       },
       views: {
         ...(admin?.components?.views as Record<string, unknown> | undefined),
-        dashboard:
-          (admin?.components?.views as Record<string, unknown> | undefined)?.dashboard ??
-          ({ Component: '@frogbotai/next/views#ChatView', path: '/' } as const),
+        ...((admin?.components?.views as Record<string, unknown> | undefined)?.dashboard
+          ? {}
+          : dashboard
+            ? {}
+            : {
+                dashboard: { Component: '@frogbotai/next/views#ChatView', path: '/' } as const,
+              }),
         settings:
           (admin?.components?.views as Record<string, unknown> | undefined)?.settings ??
           ({
@@ -1178,6 +1252,11 @@ export function sanitize(
     );
     seedFrogbotCache(frogbot, sanitizedConfig);
     (req as PayloadRequest & { frogbot: Frogbot }).frogbot = frogbot;
+    Object.defineProperty(req, Symbol.for('@frogbotai/request-runtime'), {
+      configurable: true,
+      enumerable: true,
+      value: req.payload,
+    });
     attachSessionPayload(req);
     return req as unknown as FrogbotRequest;
   };
@@ -1403,6 +1482,7 @@ export function sanitize(
   const payloadSanitizedPromise = payloadBuildConfig(payloadConfig).then((built) => {
     for (const collection of built.collections) {
       if (collection.custom?.frogbot?.signIn?.length) validateSignInFields(collection);
+      wrapCollectionAccess(collection, attachFrogbot);
       coordinateAuthEndpoints({ collection, attachFrogbot });
     }
     return rewriteComponentPaths(built);

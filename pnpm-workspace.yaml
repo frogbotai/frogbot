@@ -5,5 +5,6 @@ packages:
   - 'test'
   - 'templates/blank'
   - 'test/e2e/fixtures/tool-agent'
+  - 'test/browser/fixtures/custom-field'
   - 'examples/business-qa'
   - 'examples/tailwind'

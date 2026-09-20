@@ -12,6 +12,13 @@ type SettingsComponents = {
 };
 
 function rewritePath(path: string): string {
+  if (
+    path === '@payloadcms/ui' ||
+    path.startsWith('@payloadcms/ui#') ||
+    path.startsWith('@payloadcms/ui/')
+  ) {
+    return path.replace('@payloadcms/ui', '@frogbotai/ui');
+  }
   if (path.startsWith('@payloadcms/next/rsc#') || path.startsWith('@payloadcms/next/client#')) {
     return path.replace('@payloadcms/next/', '@frogbotai/next/');
   }

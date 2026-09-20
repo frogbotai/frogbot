@@ -53,6 +53,11 @@
       "types": "./dist/exports/rsc.d.ts",
       "import": "./dist/exports/rsc.js",
       "default": "./dist/exports/rsc.js"
+    },
+    "./templates": {
+      "types": "./dist/exports/templates.d.ts",
+      "import": "./dist/exports/templates.js",
+      "default": "./dist/exports/templates.js"
     }
   },
   "files": [
@@ -61,6 +66,55 @@
   "sideEffects": [
     "*.css"
   ],
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./config": {
+        "types": "./dist/exports/config.d.ts",
+        "import": "./dist/exports/config.js",
+        "default": "./dist/exports/config.js"
+      },
+      "./css": {
+        "types": "./dist/exports/css.d.ts",
+        "import": "./dist/css.css",
+        "default": "./dist/css.css"
+      },
+      "./layouts": {
+        "types": "./dist/exports/layouts.d.ts",
+        "import": "./dist/exports/layouts.js",
+        "default": "./dist/exports/layouts.js"
+      },
+      "./views": {
+        "types": "./dist/exports/views.d.ts",
+        "import": "./dist/exports/views.js",
+        "default": "./dist/exports/views.js"
+      },
+      "./routes": {
+        "types": "./dist/exports/routes.d.ts",
+        "import": "./dist/exports/routes.js",
+        "default": "./dist/exports/routes.js"
+      },
+      "./client": {
+        "types": "./dist/exports/client.d.ts",
+        "import": "./dist/exports/client.js",
+        "default": "./dist/exports/client.js"
+      },
+      "./rsc": {
+        "types": "./dist/exports/rsc.d.ts",
+        "import": "./dist/exports/rsc.js",
+        "default": "./dist/exports/rsc.js"
+      },
+      "./templates": {
+        "types": "./dist/exports/templates.d.ts",
+        "import": "./dist/exports/templates.js",
+        "default": "./dist/exports/templates.js"
+      }
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json && rsync -a --include='*/' --include='*.css' --exclude='*' src/ dist/ && mkdir -p dist/assets && cp src/assets/* dist/assets/",
     "clean": "rm -rf dist",

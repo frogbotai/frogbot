@@ -160,6 +160,7 @@ export { TextWithIcon, type TextWithIconProps } from './components/text-with-ico
 export { Textarea, type TextareaProps } from './components/textarea.js';
 export { Toggle, type ToggleProps } from './components/toggle.js';
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './components/tooltip.js';
+export * from './exports/client/index.js';
 export { useControlledState } from './hooks/use-controlled-state.js';
 export { useHotkey } from './hooks/use-hotkey.js';
 export { useIsMobile } from './hooks/use-mobile.js';

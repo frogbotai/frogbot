@@ -356,7 +356,7 @@ See [Collection calendar](/configuration/collection-calendar) for modes, date fi
 
 ### Custom Components
 
-Collections can set their own [Custom Components](/custom-components/overview) which only apply to Collection-specific UI within the [Admin Panel](/admin/overview). This includes elements such as the Save Button, or entire layouts such as the Edit View.
+Collections can set [Custom Components](/custom-components/overview) for their List and Edit Views.
 
 To override Collection Components, use the `admin.components` property in your Collection Config:
 
@@ -375,38 +375,19 @@ export const MyCollection: CollectionConfig = {
 
 The following options are available:
 
-| Option            | Description                                                                                                                                                                        |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Description`     | A component to render below the Collection label in the List View. An alternative to the `admin.description` property. [More details](/custom-components/list-view#description). |
-| `edit`            | Override specific components within the Edit View. [More details](#edit-view-options).                                                                                             |
+| Option | Description |
+| --- | --- |
+| `afterList` | Components after the complete List View. [More details](/custom-components/list-view#afterlist). |
+| `afterListTable` | Components after the list table. [More details](/custom-components/list-view#afterlisttable). |
+| `beforeList` | Components before the complete List View. [More details](/custom-components/list-view#beforelist). |
+| `beforeListTable` | Components before the list table. [More details](/custom-components/list-view#beforelisttable). |
+| `Description` | Replaces the collection description. [More details](/custom-components/list-view#description). |
+| `edit` | Edit View component slots. [More details](/custom-components/edit-view). |
+| `views` | Replaces the List View. [More details](/custom-components/list-view#custom-list-view). |
 
 #### Edit View Options
 
-Custom components within the Edit View are configured under `admin.components.edit`:
-
-```ts
-import type { CollectionConfig } from 'frogbot'
-
-export const MyCollection: CollectionConfig = {
-  // ...
-  admin: {
-    components: {
-      edit: {
-        Status: '/path/to/CustomStatus',
-        SaveButton: '/path/to/CustomSaveButton',
-        PublishButton: '/path/to/CustomPublishButton',
-        views: {
-          root: {
-            Component: '/path/to/CustomEditView',
-          },
-        },
-      },
-    },
-  },
-}
-```
-
-The following components can be customized within `admin.components.edit`:
+Configure these slots under `admin.components.edit`. See [Edit View](/custom-components/edit-view) for working component examples.
 
 | Option                   | Description                                                                                                                                                                                             |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -423,35 +404,7 @@ The following components can be customized within `admin.components.edit`:
 
 ##### Document Views
 
-Use `admin.components.edit.views` to replace a built-in document view or add a custom view. The built-in keys are `default`, `api`, `livePreview`, `version`, and `versions`. Any other key defines a custom view and can add a route, a tab, or both.
-
-```ts
-import type { CollectionConfig } from 'frogbot'
-
-export const Posts: CollectionConfig = {
-  slug: 'posts',
-  admin: {
-    components: {
-      edit: {
-        views: {
-          default: {
-            actions: ['/components/EditActions#EditActions'],
-          },
-          audit: {
-            Component: '/components/AuditView#AuditView',
-            path: '/audit',
-            tab: {
-              label: 'Audit log',
-              Pill: '/components/AuditCount#AuditCount',
-            },
-          },
-        },
-      },
-    },
-  },
-  fields: [],
-}
-```
+Use `admin.components.edit.views` to replace a built-in document view or add a custom route or tab. See [Document Views](/custom-components/document-views) for configuration and examples.
 
 | Key | Route | Behavior |
 | --- | --- | --- |
@@ -650,7 +603,7 @@ The `formatDocURL` function receives the following arguments:
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `doc`            | The document data for the current row                                                                                                  |
 | `defaultURL`     | The default URL that FrogBot would normally generate for this document. You can return this as-is, modify it, or replace it entirely.  |
-| `req`            | The full [PayloadRequest](/types/frogbot-request) object, providing access to user context, frogbot instance, and other request data |
+| `req`            | The full [FrogbotRequest](/types/frogbot-request) object, providing access to user context, frogbot instance, and other request data |
 | `collectionSlug` | The slug of the current collection                                                                                                     |
 | `viewType`       | The current view context (`'list'`, `'trash'`, etc.) where the link is being generated                                                 |
 
