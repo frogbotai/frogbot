@@ -20,6 +20,14 @@ function rewritePath(path: string): string {
     return path.replace('@payloadcms/richtext-lexical', '@frogbotai/richtext-lexical');
   }
 
+  if (
+    path === '@payloadcms/ui' ||
+    path.startsWith('@payloadcms/ui#') ||
+    path.startsWith('@payloadcms/ui/')
+  ) {
+    return path.replace('@payloadcms/ui', '@frogbotai/ui');
+  }
+
   if (path.startsWith('@payloadcms/next/rsc#') || path.startsWith('@payloadcms/next/client#')) {
     return path.replace('@payloadcms/next/', '@frogbotai/next/');
   }

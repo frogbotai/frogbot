@@ -1,0 +1,307 @@
+---
+title: Swap in your own React components
+label: Overview
+order: 10
+desc: Customize the Admin Panel with your own React components.
+keywords: admin, components, custom, react, server components, client components
+---
+
+FrogBot lets you replace or extend parts of the [Admin Panel](/admin/admin-navigation) with your own React components. Custom Components are React Server Components by default, so they can use the [Local API](/local-api/overview) without a separate HTTP request.
+
+<Note>
+  Client Components are supported. Add the `'use client'` directive to the file.
+  FrogBot removes non-serializable default props before rendering it.
+</Note>
+
+FrogBot supports Custom Components in these scopes:
+
+- [Root Components](/custom-components/root-components)
+- [Collection Components](/configuration/collections#custom-components)
+- [Field Components](/configuration/collections#fields)
+
+## Defining Custom Components
+
+Custom Components are registered in your FrogBot config using [Component Paths](#component-paths). FrogBot uses the path to replace a built-in component or render your component in an available slot.
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  admin: {
+    components: {
+      actions: ['/components/StatusAction#StatusAction'],
+    },
+  },
+})
+```
+
+### Component Paths
+
+Components are referenced by path instead of being imported into the config. Paths are relative to the project base directory, or to `admin.importMap.baseDir` when you configure one.
+
+Append `#ExportName` for a named export. Omit it for a default export. You can also use an object with `path` and `exportName`.
+
+```ts
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { buildConfig } from 'frogbot'
+
+const dirname = path.dirname(fileURLToPath(import.meta.url))
+
+export default buildConfig({
+  admin: {
+    importMap: {
+      baseDir: path.resolve(dirname, 'src'),
+    },
+    components: {
+      actions: [
+        '/components/StatusAction#StatusAction',
+        '/components/DefaultAction',
+        {
+          path: '/components/ReviewAction',
+          exportName: 'ReviewAction',
+        },
+      ],
+    },
+  },
+})
+```
+
+### Component Config
+
+An object component reference can pass custom props alongside its path:
+
+```ts
+export default buildConfig({
+  admin: {
+    components: {
+      actions: [
+        {
+          path: '/components/StatusAction',
+          exportName: 'StatusAction',
+          clientProps: {
+            label: 'Review status',
+          },
+          serverProps: {
+            collection: 'posts',
+          },
+        },
+      ],
+    },
+  },
+})
+```
+
+| Property | Description |
+| --- | --- |
+| `clientProps` | Serializable props passed to a Client Component. |
+| `exportName` | Named export to load from `path`. |
+| `path` | Path to the component file. |
+| `serverProps` | Props passed to a Server Component. |
+
+### Import Map
+
+FrogBot generates an import map that resolves every configured Component Path. It regenerates the map when the application starts and during development updates. You can regenerate it manually with:
+
+```bash
+pnpm frogbot generate:importmap
+```
+
+<Warning>
+  Do not edit the generated import map. Change the component path in your config
+  and regenerate it instead.
+</Warning>
+
+Plugin authors can add an import that is not referenced by a standard component slot through `admin.dependencies`:
+
+```ts
+export default buildConfig({
+  admin: {
+    dependencies: {
+      reviewBadge: {
+        path: '/components/ReviewBadge#ReviewBadge',
+        type: 'component',
+        clientProps: {
+          label: 'Needs review',
+        },
+      },
+    },
+  },
+})
+```
+
+## Building Custom Components
+
+### Server Components
+
+Server Components can use the FrogBot instance attached to the request. Component-specific types describe the props and the request location:
+
+```tsx
+import type { TextFieldServerComponent } from 'frogbot'
+
+export const RelatedPostCount: TextFieldServerComponent = async ({ req }) => {
+  const result = await req.frogbot.count({
+    collection: 'posts',
+  })
+
+  return <p>{result.totalDocs} posts</p>
+}
+```
+
+The exact props depend on the component slot. Use the exported type for the field, view, or slot you are implementing.
+
+### Custom Props
+
+Client props must be serializable. Server props may contain server-only values when the receiving component remains a Server Component.
+
+```tsx
+import Link from 'next/link'
+
+export function StatusAction({ label }: { label: string }) {
+  return <Link href="/collections/posts">{label}</Link>
+}
+```
+
+### Client Components
+
+Add `'use client'` when a component needs state, effects, event handlers, or FrogBot's client hooks:
+
+```tsx
+'use client'
+
+import { useState } from 'react'
+
+import { Button } from '@frogbotai/ui'
+
+export function Counter() {
+  const [count, setCount] = useState(0)
+
+  return <Button onClick={() => setCount(count + 1)}>Clicked {count} times</Button>
+}
+```
+
+<Warning>
+  Props crossing from a Server Component to a Client Component must be
+  serializable.
+</Warning>
+
+### Accessing Config
+
+Server Components can read the sanitized config from `req.frogbot.config`. Client Components receive a serializable client config through `useConfig`:
+
+```tsx
+'use client'
+
+import { useConfig } from '@frogbotai/ui'
+
+export function ServerLink() {
+  const {
+    config: { serverURL },
+  } = useConfig()
+
+  return <a href={serverURL}>Home</a>
+}
+```
+
+Field components receive their field config as `field` on the server and `clientField` on the client:
+
+```tsx
+import type { TextFieldServerComponent } from 'frogbot'
+
+export const FieldName: TextFieldServerComponent = ({ field }) => {
+  return <p>Field name: {field.name}</p>
+}
+```
+
+```tsx
+'use client'
+
+import type { TextFieldClientComponent } from 'frogbot'
+
+export const ClientFieldName: TextFieldClientComponent = ({ clientField }) => {
+  return <p>Field name: {clientField.name}</p>
+}
+```
+
+### Rendering Component Paths
+
+Use `RenderCustomComponent` when your own component accepts another configured Component Path:
+
+```tsx
+import { RenderCustomComponent } from '@frogbotai/ui'
+import type { FrogbotComponent } from 'frogbot'
+
+export function ComponentSlot({ Component }: { Component?: FrogbotComponent }) {
+  return <RenderCustomComponent CustomComponent={Component} />
+}
+```
+
+### Translations and Locale
+
+Client Components can read the current language and locale with `useTranslation` and `useLocale`:
+
+```tsx
+'use client'
+
+import { useLocale, useTranslation } from '@frogbotai/ui'
+
+export function LocaleStatus() {
+  const locale = useLocale()
+  const { i18n } = useTranslation()
+
+  return <p>{i18n.language} / {locale.code}</p>
+}
+```
+
+See [Internationalization](/configuration/i18n) and [Localization](/configuration/localization) for configuration details.
+
+### Using Hooks
+
+FrogBot's curated `@frogbotai/ui` entry exposes hooks that share the Admin Panel's contexts. Import them from the package root:
+
+```tsx
+'use client'
+
+import { useDocumentInfo, useFormFields } from '@frogbotai/ui'
+
+export function DocumentStatus() {
+  const { collectionSlug } = useDocumentInfo()
+  const title = useFormFields(([fields]) => fields.title?.value)
+
+  return <p>{collectionSlug}: {String(title ?? 'Untitled')}</p>
+}
+```
+
+Use `useFormFields` with a selector instead of subscribing to the entire form when you only need specific values.
+
+### Adding Styles
+
+Import a CSS file from your component:
+
+```tsx
+import './StatusAction.css'
+
+export function StatusAction() {
+  return <div className="status-action">Ready for review</div>
+}
+```
+
+Use `--theme-base-*` for neutral colors that should invert with the active theme. Use `--color-base-*` only for fixed palette colors that must not invert.
+
+```css
+.status-action {
+  background: var(--theme-base-100);
+  border: 1px solid var(--theme-base-300);
+  color: var(--theme-base-800);
+  padding: 0.75rem 1rem;
+}
+```
+
+## Performance
+
+Keep the server/client boundary narrow. Prefer Server Components, pass only the serializable values a Client Component needs, and avoid broad form subscriptions that cause unrelated updates to re-render your component.
+
+Import Admin Panel hooks and curated UI components from the root `@frogbotai/ui` entry. Do not use deep element or icon imports.
+
+If a hook returns an undefined context, confirm that the component is rendered inside the Admin Panel and that your application resolves one version of each FrogBot package. See [Troubleshooting](/troubleshooting/troubleshooting#dependency-mismatches).

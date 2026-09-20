@@ -18,6 +18,8 @@ const subpaths = [
   './chat',
   './chat/tools',
   './chat/artifacts',
+  './shared',
+  './rsc',
 ];
 
 const run = (command, args, cwd = repoRoot) => {
@@ -133,7 +135,13 @@ createRoot(document.getElementById('root')!).render(
   run('pnpm', ['install', '--ignore-scripts'], appRoot);
 
   for (const subpath of [
-    ...subpaths.filter((subpath) => !subpath.includes('*')),
+    './icons',
+    './icons/registry',
+    './theme',
+    './chat',
+    './chat/tools',
+    './chat/artifacts',
+    './shared',
     './icons/check',
   ]) {
     const specifier = subpath === '.' ? '@frogbotai/ui' : `@frogbotai/ui/${subpath.slice(2)}`;

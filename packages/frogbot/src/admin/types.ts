@@ -11,6 +11,7 @@ import type { CustomComponent } from 'payload';
 import type { Access } from '../collections/config/types.js';
 import type { RootLivePreviewConfig } from '../config/types.js';
 import type { PayloadConfig } from '../types/payload.js';
+import type { DashboardConfig } from './views/types.js';
 
 type DeepClone<T> = T extends object ? { [K in keyof T]: DeepClone<T[K]> } : T;
 
@@ -78,6 +79,7 @@ export interface RootAdminComponents {
 }
 
 export interface RootAdminConfig {
+  dashboard?: DashboardConfig;
   importMap?: {
     /** Regenerate the admin import map on boot. */
     autoGenerate?: boolean;

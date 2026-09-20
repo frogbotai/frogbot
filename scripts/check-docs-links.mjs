@@ -13,6 +13,7 @@ const generalRoots = new Set([
   'chat',
   'configuration',
   'connections',
+  'custom-components',
   'database',
   'deployment',
   'email',

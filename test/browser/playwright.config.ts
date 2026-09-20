@@ -7,6 +7,7 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(dirname, '..', '..');
 const richTextFixture = path.join(repoRoot, 'test', 'e2e', 'fixtures', 'rich-text');
 const blankPort = 3111;
+const customFieldPort = 3112;
 const richTextPort = 3113;
 const livePreviewPort = 3114;
 const selectedProject =
@@ -61,6 +62,22 @@ const livePreviewServer = {
   },
 };
 
+const customFieldServer = {
+  command: 'pnpm --filter frogbot-browser-custom-field dev',
+  cwd: repoRoot,
+  url: `http://localhost:${customFieldPort}`,
+  reuseExistingServer: !process.env.CI,
+  timeout: 180_000,
+  stdout: 'ignore' as const,
+  stderr: 'pipe' as const,
+  env: {
+    PORT: String(customFieldPort),
+    DATABASE_URL: 'file:./frogbot.custom-field.browser.db',
+    FROGBOT_SECRET: 'browser-test-secret',
+    NEXT_TELEMETRY_DISABLED: '1',
+  },
+};
+
 export default defineConfig({
   testDir: dirname,
   testMatch: '*.browser.spec.ts',
@@ -104,13 +121,24 @@ export default defineConfig({
         channel: 'chromium',
       },
     },
+    {
+      name: 'custom-field',
+      testMatch: 'customField.browser.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://localhost:${customFieldPort}`,
+        channel: 'chromium',
+      },
+    },
   ],
   webServer:
     selectedProject === 'rich-text'
       ? [richTextServer]
       : selectedProject === 'live-preview'
         ? [livePreviewServer]
-        : selectedProject === 'blank'
-          ? [blankServer]
-          : [blankServer, richTextServer, livePreviewServer],
+        : selectedProject === 'custom-field'
+          ? [customFieldServer]
+          : selectedProject === 'blank'
+            ? [blankServer]
+            : [blankServer, customFieldServer, richTextServer, livePreviewServer],
 });

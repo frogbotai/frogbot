@@ -46,6 +46,12 @@ describe('hooks-access', () => {
     clearHookLog();
   });
 
+  it('attaches req.frogbot before REST collection access runs', async () => {
+    const response = await booted.restClient.get(`/api/${reqAccessSlug}`);
+
+    expect(response.status).toBe(200);
+  });
+
   // ═══════════════════════════════════════════════════════════════════════════
   // Hook lifecycle ordering
   // ═══════════════════════════════════════════════════════════════════════════

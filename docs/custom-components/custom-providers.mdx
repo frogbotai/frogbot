@@ -1,0 +1,47 @@
+---
+title: Swap in your own React Context providers
+label: Custom Providers
+order: 30
+desc: Add React Context providers around the FrogBot Admin Panel.
+keywords: admin, components, providers, context, react
+---
+
+Custom Providers wrap the [Admin Panel](/admin/admin-navigation) with your own React Context. Register them through `admin.components.providers` in your FrogBot config:
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  admin: {
+    components: {
+      providers: ['/components/ReviewProvider#ReviewProvider'],
+    },
+  },
+})
+```
+
+Then create the provider as a Client Component:
+
+```tsx
+'use client'
+
+import { createContext, use } from 'react'
+import type { ReactNode } from 'react'
+
+const ReviewContext = createContext({ enabled: true })
+
+export function ReviewProvider({ children }: { children: ReactNode }) {
+  return <ReviewContext value={{ enabled: true }}>{children}</ReviewContext>
+}
+
+export function useReview() {
+  return use(ReviewContext)
+}
+```
+
+See [Building Custom Components](/custom-components/overview#building-custom-components) for component path and client boundary details.
+
+<Warning>
+  React Context is available to Client Components. Keep server-only work in a
+  Server Component and pass serializable values into the provider.
+</Warning>
