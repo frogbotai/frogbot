@@ -25,7 +25,7 @@ Before delivering, ask: would someone who has mastered this craft see it and kno
 
 - Preserve existing worktree and index changes. Never stage or commit `.idea/`; it contains private ticket artifacts, not shared process instructions.
 - Implementation approval does not authorize staging, committing, merging, pushing, or opening PRs. No per-stage commits. Use one ticket branch/worktree for related workers and one final ticket commit only when authorized; never combine multiple F features into one commit.
-- Delegate all lint and type-checking to the `lint` subagent. Use the root contribution guide's Markdown-only verification exception where applicable.
+- Delegate all lint and type-checking to the `lint` subagent. During implementation, request only affected workspace typechecks; request the full root typecheck once, during final verification, when required. Use the root contribution guide's Markdown-only verification exception where applicable.
 - Use TodoWrite for complex work. Keep work within the approved step; record blockers and honor explicit planning-only/implementation holds.
 - After Step 3 approval or an explicit request to implement a feature now, follow Step 4's delegation, testing, and review rules. Give each worker a focused assignment, not every unrelated stage of a ticket. Use its final message as the handoff and keep lasting decisions in the existing implementation summary; separate handoff files are the exception.
 - Finish the agreed work without treating every possible improvement as a new requirement. Follow the contributor guide's [test-finding rules](CONTRIBUTING.md#when-tests-find-a-problem) before expanding the work or patching a dependency.
