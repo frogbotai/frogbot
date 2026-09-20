@@ -112,7 +112,7 @@ describe('scaffold', () => {
     scaffold({ ...pnpmOptions, packageManager: 'pnpm', templateDir });
 
     expect(fs.readFileSync(path.join(pnpmOptions.dest, 'pnpm-workspace.yaml'), 'utf8')).toBe(
-      "allowBuilds:\n  sharp: true\n  esbuild: true\nminimumReleaseAgeExclude:\n  - frogbot\n  - '@frogbotai/*'\n",
+      "packages:\n  - '.'\nallowBuilds:\n  sharp: true\n  esbuild: true\nminimumReleaseAgeExclude:\n  - frogbot\n  - '@frogbotai/*'\n",
     );
     const pkg = JSON.parse(
       fs.readFileSync(path.join(pnpmOptions.dest, 'package.json'), 'utf8'),
