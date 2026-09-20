@@ -23,6 +23,9 @@
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@clack/prompts": "^1.0.0"
+  },
   "devDependencies": {
     "@types/node": "^22.10.2",
     "eslint": "^9.16.0",

@@ -1,22 +1,11 @@
 ---
 title: Building Your Own Plugin
 sidebarTitle: Build Your Own
-description: Starting to build your own plugin? Find everything you need and learn best practices with the FrogBot plugin template.
-keywords: plugins, template, config, configuration, extensions, custom, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
+description: Learn how to build, test, and publish a FrogBot plugin.
+keywords: plugins, config, configuration, extensions, custom, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
 ---
 
-Building your own [FrogBot Plugin](/plugins/overview) is easy, and if you're already familiar with FrogBot then you'll have everything you need to get started. You can either start from scratch or use the [Plugin Template](#plugin-template) to get up and running quickly.
-
-<Tip>
-  To use the template, run `npx create-frogbot-app@latest --template plugin`
-  directly in your terminal.
-</Tip>
-
-Our plugin template includes everything you need to build a full life-cycle plugin:
-
-- Example files and functions for extending the FrogBot Config
-- A local dev environment to develop the plugin
-- Test suite with integrated GitHub workflow
+Building your own [FrogBot Plugin](/plugins/overview) is straightforward if you're already familiar with FrogBot configuration. Plugins are functions that receive the incoming config and return the config your app should use.
 
 By abstracting your code into a plugin, you'll be able to reuse your feature across multiple projects and make it available for other developers to use.
 
@@ -53,108 +42,26 @@ The initialization process goes in the following order:
 4. Sanitization cleans and validates data
 5. Final config gets initialized
 
-## Plugin Template
+## Set up a development app
 
-In the [FrogBot Plugin Template](https://github.com/frogbot/frogbot/tree/main/templates/plugin), you will see a common file structure that is used across plugins:
-
-1. `/` root folder - general configuration
-2. `/src` folder - everything related to the plugin
-3. `/dev` folder - sanitized test project for development
-
-### The root folder
-
-In the root folder, you will see various files related to the configuration of the plugin. We set up our environment in a similar manner in FrogBot core and across other projects. The only two files you need to modify are:
-
-- **README**.md - This contains instructions on how to use the template. When you are ready, update this to contain instructions on how to use your Plugin.
-- **package**.json - Contains necessary scripts and dependencies. Overwrite the metadata in this file to describe your Plugin.
-
-### The dev folder
-
-The purpose of the **dev** folder is to provide a sanitized local FrogBot project so you can run and test your plugin while you are actively developing it.
-
-Do **not** store any of the plugin functionality in this folder - it is purely an environment to _assist_ you with developing the plugin.
-
-If you're starting from scratch, you can easily setup a dev environment like this:
+Create a regular FrogBot app to exercise your plugin during development:
 
 ```bash
-mkdir dev
-cd dev
-npx create-frogbot-app@latest
+npx create-frogbot-app@latest plugin-dev
+cd plugin-dev
 ```
 
-If you're using the plugin template, the dev folder is built out for you and the `samplePlugin` has already been installed in `dev/frogbot.config.ts`.
+Install your plugin package in that app, then add it to `src/frogbot.config.ts`:
 
 ```ts
-  plugins: [
-    // when you rename the plugin or add options, make sure to update it here
-    samplePlugin({
-      enabled: false,
-    })
-  ]
+plugins: [samplePlugin({ enabled: true })]
 ```
 
-You can add to the `dev/frogbot.config.ts` and build out the dev project as needed to test your plugin.
-
-When you're ready to start development, navigate into this folder with `cd dev`
-
-And then start the project with `pnpm dev` and pull up `http://localhost:3000` in your browser.
+Start the app with your package manager's dev command and open `http://localhost:3000`.
 
 ## Testing
 
-Another benefit of the dev folder is that you have the perfect environment established for testing.
-
-A good test suite is essential to ensure quality and stability in your plugin. FrogBot typically uses [Jest](https://jestjs.io/); a popular testing framework, widely used for testing JavaScript and particularly for applications built with React.
-
-Jest organizes tests into test suites and cases. We recommend creating tests based on the expected behavior of your plugin from start to finish. Read more about tests in the [Jest documentation.](https://jestjs.io/)
-
-The plugin template provides a stubbed out test suite at `dev/plugin.spec.ts` which is ready to go - just add in your own test conditions and you're all set!
-
-```ts
-let frogbot: FrogBot
-
-describe('Plugin tests', () => {
-  // Example test to check for seeded data
-  it('seeds data accordingly', async () => {
-    const newCollectionQuery = await frogbot.find({
-      collection: 'newCollection',
-      sort: 'createdAt',
-    })
-
-    newCollection = newCollectionQuery.docs
-
-    expect(newCollectionQuery.totalDocs).toEqual(1)
-  })
-})
-```
-
-## Seeding data
-
-For development and testing, you will likely need some data to work with. You can streamline this process by seeding and dropping your database - instead of manually entering data.
-
-In the plugin template, you can navigate to `dev/src/server.ts` and see an example seed function.
-
-```ts
-if (process.env.PAYLOAD_SEED === 'true') {
-    await seed(frogbot)
-}
-```
-
-A sample seed function has been created for you at `dev/src/seed`, update this file with additional data as needed.
-
-```ts
-export const seed = async (frogbot: FrogBot): Promise<void> => {
-  frogbot.logger.info('Seeding data...')
-
-  await frogbot.create({
-    collection: 'new-collection',
-    data: {
-      title: 'Seeded title',
-    },
-  })
-
-  // Add additional seed data here
-}
-```
+A good test suite verifies the behavior your plugin adds and confirms that existing configuration is preserved. Use the test framework supported by your package, run the plugin inside a test FrogBot app, and cover both enabled and disabled options when your plugin provides them.
 
 ## Building a Plugin
 

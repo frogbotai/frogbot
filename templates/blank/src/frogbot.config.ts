@@ -17,17 +17,13 @@ const config: FrogbotConfig = {
   collections: [Users],
   tools: [...todoTools],
   ai: {
-    defaultModel: 'bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0',
+    defaultModel: 'zen/big-pickle',
     providers: {
-      // zen: {
-      //   type: 'openai-compatible',
-      //   baseUrl: 'https://opencode.ai/zen/v1',
-      //   apiKey: 'public',
-      //   models: [{ id: 'big-pickle', mode: 'chat' }],
-      // },
-      bedrock: {
-        region: 'us-east-1',
-        models: ['us.anthropic.claude-haiku-4-5-20251001-v1:0'],
+      zen: {
+        type: 'openai-compatible',
+        baseUrl: 'https://opencode.ai/zen/v1',
+        apiKey: 'public',
+        models: [{ id: 'big-pickle', mode: 'chat' }],
       },
     },
   },
