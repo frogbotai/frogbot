@@ -1,0 +1,142 @@
+---
+title: Server-side Live Preview
+sidebarTitle: Server-side
+description: Implement Live Preview in a server-side front-end application.
+keywords: live preview, frontend, react, next.js, server components, RefreshRouteOnSave
+---
+
+<Note>
+  Server-side Live Preview is for frameworks that support [Server Components](https://react.dev/reference/rsc/server-components). For client-side frameworks, use [client-side Live Preview](/live-preview/client).
+</Note>
+
+Server-side Live Preview makes a round trip to the server whenever a document is saved as a draft, autosaved, or published. The Admin Panel sends a `window.postMessage` event that your frontend uses to refresh the route. In Next.js, `router.refresh()` hydrates the page with fresh data from the [Local API](/local-api/overview).
+
+<Warning>
+  Enable [Autosave](/versions/autosave) with server-side Live Preview for a more responsive editing experience.
+</Warning>
+
+## React
+
+For server-side React applications such as the [Next.js App Router](https://nextjs.org/docs/app), use `RefreshRouteOnSave` from `@frogbotai/live-preview-react`.
+
+```bash
+npm install @frogbotai/live-preview-react
+```
+
+Render a client wrapper from your page:
+
+```tsx
+import config from '@/frogbot.config'
+import { getFrogbot } from 'frogbot'
+
+import { LivePreviewRefresh } from './LivePreviewRefresh'
+
+export default async function Page() {
+  const frogbot = await getFrogbot({ config })
+
+  const page = await frogbot.findByID({
+    collection: 'pages',
+    id: '123',
+    draft: true,
+    trash: true,
+  })
+
+  return (
+    <>
+      <LivePreviewRefresh />
+      <h1>{page.title}</h1>
+    </>
+  )
+}
+```
+
+```tsx
+'use client'
+
+import { RefreshRouteOnSave } from '@frogbotai/live-preview-react'
+import { useRouter } from 'next/navigation'
+
+export function LivePreviewRefresh() {
+  const router = useRouter()
+
+  return (
+    <RefreshRouteOnSave
+      refresh={() => router.refresh()}
+      serverURL={process.env.NEXT_PUBLIC_FROGBOT_URL as string}
+    />
+  )
+}
+```
+
+## Building your own router refresh component
+
+Use `@frogbotai/live-preview` to integrate another framework or routing system.
+
+```bash
+npm install @frogbotai/live-preview
+```
+
+| Path                  | Description                                                                                                                |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **`ready`**           | Tells the Admin Panel that the frontend is ready to receive messages.                                                       |
+| **`isDocumentEvent`** | Checks whether a message came from the Admin Panel and represents a save, autosave, publish, or other document event.       |
+
+```tsx
+'use client'
+
+import { isDocumentEvent, ready } from '@frogbotai/live-preview'
+import { useEffect, useRef } from 'react'
+
+export function LivePreviewRefresh({
+  refresh,
+  serverURL,
+}: {
+  refresh: () => void
+  serverURL: string
+}) {
+  const hasSentReadyMessage = useRef(false)
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (isDocumentEvent(event, serverURL)) refresh()
+    }
+
+    window.addEventListener('message', onMessage)
+
+    if (!hasSentReadyMessage.current) {
+      hasSentReadyMessage.current = true
+      ready({ serverURL })
+    }
+
+    return () => window.removeEventListener('message', onMessage)
+  }, [refresh, serverURL])
+
+  return null
+}
+```
+
+## Troubleshooting
+
+### Updates are slower than client-side Live Preview
+
+Server-side Live Preview refreshes only after a document is saved, while client-side Live Preview reacts to form state. Enable [Autosave](/versions/autosave) and reduce `versions.drafts.autosave.interval` when appropriate:
+
+```ts
+export const Pages = {
+  versions: {
+    drafts: {
+      autosave: {
+        interval: 375,
+      },
+    },
+  },
+}
+```
+
+### Iframe refuses to connect
+
+If your frontend's [Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) prevents the Admin Panel from embedding it, allow the Admin Panel domain with `frame-ancestors`:
+
+```plaintext
+frame-ancestors: "self" localhost:* https://your-site.com;
+```

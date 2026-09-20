@@ -597,6 +597,48 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/live-preview:
+    dependencies:
+      '@payloadcms/live-preview':
+        specifier: 3.90.1
+        version: 3.90.1
+    devDependencies:
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/live-preview-react:
+    dependencies:
+      '@payloadcms/live-preview-react':
+        specifier: 3.90.1
+        version: 3.90.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      react:
+        specifier: 19.2.6
+        version: 19.2.6
+      react-dom:
+        specifier: 19.2.6
+        version: 19.2.6(react@19.2.6)
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
+  packages/live-preview-vue:
+    dependencies:
+      '@payloadcms/live-preview-vue':
+        specifier: 3.90.1
+        version: 3.90.1(vue@3.5.43(typescript@5.6.2))
+    devDependencies:
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+      vue:
+        specifier: ^3.0.0
+        version: 3.5.43(typescript@5.6.2)
+
   packages/next:
     dependencies:
       '@frogbotai/ui':
@@ -1905,6 +1947,46 @@ importers:
         specifier: ^4.3.6
         version: 4.4.3
 
+  test/browser/fixtures/live-preview:
+    dependencies:
+      '@frogbotai/db-sqlite':
+        specifier: workspace:*
+        version: link:../../../../packages/db-sqlite
+      '@frogbotai/live-preview-react':
+        specifier: workspace:*
+        version: link:../../../../packages/live-preview-react
+      '@frogbotai/next':
+        specifier: workspace:*
+        version: link:../../../../packages/next
+      frogbot:
+        specifier: workspace:*
+        version: link:../../../../packages/frogbot
+      graphql:
+        specifier: ^16.8.1
+        version: 16.14.2
+      next:
+        specifier: 15.4.11
+        version: 15.4.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4)
+      react:
+        specifier: 19.2.6
+        version: 19.2.6
+      react-dom:
+        specifier: 19.2.6
+        version: 19.2.6(react@19.2.6)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   test/e2e/fixtures/tool-agent:
     dependencies:
       '@frogbotai/db-sqlite':
@@ -2827,6 +2909,14 @@ packages:
     engines: { node: '>=6.0.0' }
     hasBin: true
 
+  '@babel/parser@7.29.9':
+    resolution:
+      {
+        integrity: sha512-CjXrNHTnvqBVqHgdBysY3vk2T8tpJHb5/RMeHJBTyVa9xgugCB0CJTx/3oO8RV2QRQP391RWpB7D6hLjm8V9uA==,
+      }
+    engines: { node: '>=6.0.0' }
+    hasBin: true
+
   '@babel/runtime@7.29.7':
     resolution:
       {
@@ -2852,6 +2942,13 @@ packages:
     resolution:
       {
         integrity: sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA==,
+      }
+    engines: { node: '>=6.9.0' }
+
+  '@babel/types@7.29.8':
+    resolution:
+      {
+        integrity: sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==,
       }
     engines: { node: '>=6.9.0' }
 
@@ -5837,6 +5934,29 @@ packages:
     peerDependencies:
       payload: 3.90.1
 
+  '@payloadcms/live-preview-react@3.90.1':
+    resolution:
+      {
+        integrity: sha512-8MiiIRoUw4kcQmwxf7WYa8+q8XfyVl8wWHhyXdmj8gqv8rgsS3UWulqmSQv4skVGpSlfp8dcpUQs0ryjN8Z1kw==,
+      }
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.1 || ^19.1.2 || ^19.2.1
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.1 || ^19.1.2 || ^19.2.1
+
+  '@payloadcms/live-preview-vue@3.90.1':
+    resolution:
+      {
+        integrity: sha512-8jg0PF44TxuT3JZcA/EMI76i6EcXX/RkJhA0zLizzSkcE8SLViJ1ziJuDYLYBoUfD6v624V48kdILQUp3OfEvQ==,
+      }
+    peerDependencies:
+      vue: ^3.0.0
+
+  '@payloadcms/live-preview@3.90.1':
+    resolution:
+      {
+        integrity: sha512-UPHDLAojJzlQi9C00mVoxmo2s7RWNy2l0TsQdOOU7nXaMIvyJaqJ4Msij7u0MCXUC5GXeybNsZwTlWq0R0mcBA==,
+      }
+
   '@payloadcms/next@3.90.1':
     resolution:
       {
@@ -8051,6 +8171,60 @@ packages:
       }
     engines: { node: '>=v14.0.0', npm: '>=7.0.0' }
 
+  '@vue/compiler-core@3.5.43':
+    resolution:
+      {
+        integrity: sha512-zdiLhnbe1QQqgDT8xZMpNmyqZ3qlI+/Q/FHQco57Kwl/b05HhCzN6eVGN9QU9rbga4CrS0H5SYY8VGHZCt/1Hg==,
+      }
+
+  '@vue/compiler-dom@3.5.43':
+    resolution:
+      {
+        integrity: sha512-PEZoAk3NQmsn/ejMzSOCyTYqwGqczrWm70PuhBKjjv1+TCoQAaO/zOqNwjV+honlNstT5ILxtc+8r8UUfj+iEQ==,
+      }
+
+  '@vue/compiler-sfc@3.5.43':
+    resolution:
+      {
+        integrity: sha512-FCbrG3XNCRl+js3huuKx4IVHBLTvMkJhVepjbxSPu1gn4yWLaYtGNQdjJGZaMytXB6qb76qQDDmDSLy/vkmleQ==,
+      }
+
+  '@vue/compiler-ssr@3.5.43':
+    resolution:
+      {
+        integrity: sha512-GF62orf7KiJX9RqrHNGrYBudsQGD0OhJ5nDs90O8UiDuS40+YMYomiXu6w6EuvtXuRDc3MSNis3EaaSKAVSWpg==,
+      }
+
+  '@vue/reactivity@3.5.43':
+    resolution:
+      {
+        integrity: sha512-G/c9GyOZNI2jVaaS6OX1EF1SSFSv7H0ERqNTl4+DTFMlZmB5eVAB53aLQNam/7NL2NPtaDD7RdVrzf8uJzMuOA==,
+      }
+
+  '@vue/runtime-core@3.5.43':
+    resolution:
+      {
+        integrity: sha512-hU6U6VnVhBGQDpvlnnDlIB8ZGJBiOcgk2lh/0InltHiz3D8oSkluvuvY+do1G2H3+udeKFsmaBlgVYP7gXQzEw==,
+      }
+
+  '@vue/runtime-dom@3.5.43':
+    resolution:
+      {
+        integrity: sha512-Bb2Jc0YjjJdMt1SJmb9b2L/IWd3I8lIT9x9eS/xvvP9CiVgna0ffua74xKRmt4/uSJ+0r4iN8ex1jrqkhQGWQw==,
+      }
+
+  '@vue/server-renderer@3.5.43':
+    resolution:
+      {
+        integrity: sha512-l2Ygjv9NehV94PSBxNWsAHC0j/eIIKbn92mBuWXAPGLnn6HfJ6MH5ubsd+Nk0YoZ5FRuxWI1P2VSoh+dbPQhCQ==,
+      }
+
+  '@vue/shared@3.5.43':
+    resolution:
+      {
+        integrity: sha512-uksS7YGMR5NZyr4JNq0Rp+QyLns0ueaz20KwzIPW9R0LH1Vnt4E+XUM29PNseEbf1www2gOuhuDi5AKOIXag9Q==,
+      }
+
   '@webassemblyjs/ast@1.14.1':
     resolution:
       {
@@ -9375,6 +9549,13 @@ packages:
     resolution:
       {
         integrity: sha512-aN97NXWF6AWBTahfVOIrB/NShkzi5H7F9r1s9mD3cDj4Ko5f2qhhVoYMibXF7GlLveb/D2ioWay8lxI97Ven3g==,
+      }
+    engines: { node: '>=0.12' }
+
+  entities@7.0.1:
+    resolution:
+      {
+        integrity: sha512-TWrgLOFUQTH994YUyl1yT4uyavY5nNB5muff+RtWaqNVCAK408b5ZnnbNAUEWLTCpum9w6arT70i1XdQ4UeOPA==,
       }
     engines: { node: '>=0.12' }
 
@@ -11805,6 +11986,14 @@ packages:
     engines: { node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1 }
     hasBin: true
 
+  nanoid@3.3.19:
+    resolution:
+      {
+        integrity: sha512-Y2tUNy4ouw6tq5oDSKeQYGOyhkUBhNOcGV/02KC+6kd9eDGqdZd++mjMiIDilrBYvjEnCYvVtsuHCuP+okSfug==,
+      }
+    engines: { node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1 }
+    hasBin: true
+
   natural-compare@1.4.0:
     resolution:
       {
@@ -12431,6 +12620,13 @@ packages:
     resolution:
       {
         integrity: sha512-Mz8SaolMd8nB+G13WkORcxQKHZ/NE4xXevtkJHVuG+guo9/wYKlIMTKAqGdEmYOXR2ijPjTYNHssizdaVSUNdQ==,
+      }
+    engines: { node: ^10 || ^12 || >=14 }
+
+  postcss@8.5.28:
+    resolution:
+      {
+        integrity: sha512-RRuzqDtt5Y9h3quz5hWhK+TPnsmVs6WwSU6LkJMeY4HstUEDuYTG8UJSdawMRzmzAtV+KEoG8N3Qg2qLy5vM/A==,
       }
     engines: { node: ^10 || ^12 || >=14 }
 
@@ -14161,6 +14357,17 @@ packages:
       jsdom:
         optional: true
 
+  vue@3.5.43:
+    resolution:
+      {
+        integrity: sha512-o5qZoksdnjIKvW1srZ3ab7pcDNYAerBjRe54D0LBLfRdCYFrSgBHVXokMas35czQc0//lmx4/tuY4ZNQ+Rf2Ng==,
+      }
+    peerDependencies:
+      typescript: '*'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   w3c-xmlserializer@5.0.0:
     resolution:
       {
@@ -15280,6 +15487,10 @@ snapshots:
     dependencies:
       '@babel/types': 7.29.7
 
+  '@babel/parser@7.29.9':
+    dependencies:
+      '@babel/types': 7.29.8
+
   '@babel/runtime@7.29.7': {}
 
   '@babel/template@7.29.7':
@@ -15301,6 +15512,11 @@ snapshots:
       - supports-color
 
   '@babel/types@7.29.7':
+    dependencies:
+      '@babel/helper-string-parser': 7.29.7
+      '@babel/helper-validator-identifier': 7.29.7
+
+  '@babel/types@7.29.8':
     dependencies:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
@@ -17438,6 +17654,19 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@payloadcms/live-preview-react@3.90.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
+    dependencies:
+      '@payloadcms/live-preview': 3.90.1
+      react: 19.2.6
+      react-dom: 19.2.6(react@19.2.6)
+
+  '@payloadcms/live-preview-vue@3.90.1(vue@3.5.43(typescript@5.6.2))':
+    dependencies:
+      '@payloadcms/live-preview': 3.90.1
+      vue: 3.5.43(typescript@5.6.2)
+
+  '@payloadcms/live-preview@3.90.1': {}
+
   '@payloadcms/next@3.90.1(@types/react@19.2.14)(graphql@16.14.2)(monaco-editor@0.55.1)(next@15.4.11(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.6.2)':
     dependencies:
       '@dnd-kit/core': 6.3.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -19305,6 +19534,60 @@ snapshots:
 
   '@vladfrangu/async_event_emitter@2.4.7': {}
 
+  '@vue/compiler-core@3.5.43':
+    dependencies:
+      '@babel/parser': 7.29.9
+      '@vue/shared': 3.5.43
+      entities: 7.0.1
+      estree-walker: 2.0.2
+      source-map-js: 1.2.1
+
+  '@vue/compiler-dom@3.5.43':
+    dependencies:
+      '@vue/compiler-core': 3.5.43
+      '@vue/shared': 3.5.43
+
+  '@vue/compiler-sfc@3.5.43':
+    dependencies:
+      '@babel/parser': 7.29.9
+      '@vue/compiler-core': 3.5.43
+      '@vue/compiler-dom': 3.5.43
+      '@vue/compiler-ssr': 3.5.43
+      '@vue/shared': 3.5.43
+      estree-walker: 2.0.2
+      magic-string: 0.30.21
+      postcss: 8.5.28
+      source-map-js: 1.2.1
+
+  '@vue/compiler-ssr@3.5.43':
+    dependencies:
+      '@vue/compiler-dom': 3.5.43
+      '@vue/shared': 3.5.43
+
+  '@vue/reactivity@3.5.43':
+    dependencies:
+      '@vue/shared': 3.5.43
+
+  '@vue/runtime-core@3.5.43':
+    dependencies:
+      '@vue/reactivity': 3.5.43
+      '@vue/shared': 3.5.43
+
+  '@vue/runtime-dom@3.5.43':
+    dependencies:
+      '@vue/reactivity': 3.5.43
+      '@vue/runtime-core': 3.5.43
+      '@vue/shared': 3.5.43
+      csstype: 3.2.3
+
+  '@vue/server-renderer@3.5.43':
+    dependencies:
+      '@vue/compiler-ssr': 3.5.43
+      '@vue/runtime-dom': 3.5.43
+      '@vue/shared': 3.5.43
+
+  '@vue/shared@3.5.43': {}
+
   '@webassemblyjs/ast@1.14.1':
     dependencies:
       '@webassemblyjs/helper-numbers': 1.13.2
@@ -19953,6 +20236,8 @@ snapshots:
   entities@4.5.0: {}
 
   entities@6.0.1: {}
+
+  entities@7.0.1: {}
 
   error-ex@1.3.4:
     dependencies:
@@ -21673,6 +21958,8 @@ snapshots:
 
   nanoid@3.3.16: {}
 
+  nanoid@3.3.19: {}
+
   natural-compare@1.4.0: {}
 
   negotiator@1.0.0: {}
@@ -22117,6 +22404,12 @@ snapshots:
   postcss@8.5.19:
     dependencies:
       nanoid: 3.3.16
+      picocolors: 1.1.1
+      source-map-js: 1.2.1
+
+  postcss@8.5.28:
+    dependencies:
+      nanoid: 3.3.19
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
@@ -23258,6 +23551,16 @@ snapshots:
       jsdom: 24.1.3(bufferutil@4.1.0)
     transitivePeerDependencies:
       - msw
+
+  vue@3.5.43(typescript@5.6.2):
+    dependencies:
+      '@vue/compiler-dom': 3.5.43
+      '@vue/compiler-sfc': 3.5.43
+      '@vue/runtime-dom': 3.5.43
+      '@vue/server-renderer': 3.5.43
+      '@vue/shared': 3.5.43
+    optionalDependencies:
+      typescript: 5.6.2
 
   w3c-xmlserializer@5.0.0:
     dependencies:
