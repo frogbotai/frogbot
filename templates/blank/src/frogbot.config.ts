@@ -1,4 +1,5 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
+import { lexicalEditor } from '@frogbotai/richtext-lexical';
 import type { FrogbotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
 import { general } from 'frogbot/agents';
@@ -12,6 +13,7 @@ const config: FrogbotConfig = {
   db: sqliteAdapter({
     client: { url: process.env.DATABASE_URL || '' },
   }),
+  editor: lexicalEditor(),
   collections: [Users],
   tools: [...todoTools],
   ai: {

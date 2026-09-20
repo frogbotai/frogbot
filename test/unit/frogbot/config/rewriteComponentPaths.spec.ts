@@ -206,4 +206,109 @@ describe('rewriteComponentPaths', () => {
     expect(() => rewriteComponentPaths(config)).not.toThrow();
     expect(custom.component).toBe('@payloadcms/next/rsc#FolderField');
   });
+
+  it('rewrites lexical adapters, features, views, and nested node fields idempotently', () => {
+    const nestedEditor = {
+      CellComponent: '@payloadcms/richtext-lexical/rsc#NestedCell',
+      editorConfig: { resolvedFeatureMap: new Map() },
+    };
+    const feature = {
+      ClientFeature: '@payloadcms/richtext-lexical/client#Feature',
+      componentImports: { toolbar: '@payloadcms/richtext-lexical/client#Toolbar' },
+      nodes: [
+        { getSubFields: () => [{ name: 'caption', type: 'richText', editor: nestedEditor }] },
+      ],
+    };
+    const editor = {
+      CellComponent: '@payloadcms/richtext-lexical/rsc#Cell',
+      DiffComponent: '@payloadcms/richtext-lexical/rsc#Diff',
+      FieldComponent: {
+        path: '@payloadcms/richtext-lexical/rsc#Field',
+        serverProps: { views: ['@payloadcms/richtext-lexical/client#View'] },
+      },
+      editorConfig: { resolvedFeatureMap: new Map([['feature', feature]]) },
+    };
+    const config = {
+      collections: [{ fields: [{ name: 'content', type: 'richText', editor }] }],
+    } as unknown as SanitizedConfig;
+
+    rewriteComponentPaths(config);
+    rewriteComponentPaths(config);
+
+    expect(editor.CellComponent).toBe('@frogbotai/richtext-lexical/rsc#Cell');
+    expect(editor.FieldComponent.serverProps.views).toEqual([
+      '@frogbotai/richtext-lexical/client#View',
+    ]);
+    expect(feature.ClientFeature).toBe('@frogbotai/richtext-lexical/client#Feature');
+    expect(feature.componentImports.toolbar).toBe('@frogbotai/richtext-lexical/client#Toolbar');
+    expect(nestedEditor.CellComponent).toBe('@frogbotai/richtext-lexical/rsc#NestedCell');
+  });
+
+  it('matches only the lexical package boundary', () => {
+    const config = makeConfig({
+      components: {
+        beforeLogin: [
+          '@payloadcms/richtext-lexical#Root',
+          '@payloadcms/richtext-lexical/client#Client',
+          '@payloadcms/richtext-lexical-other/client#Other',
+        ],
+      },
+    });
+
+    rewriteComponentPaths(config);
+
+    expect(config.admin.components?.beforeLogin).toEqual([
+      '@frogbotai/richtext-lexical#Root',
+      '@frogbotai/richtext-lexical/client#Client',
+      '@payloadcms/richtext-lexical-other/client#Other',
+    ]);
+  });
+
+  it('rewrites rich text in object block references and dashboard widget fields', () => {
+    const blockEditor = { CellComponent: '@payloadcms/richtext-lexical/rsc#BlockCell' };
+    const widgetEditor = { FieldComponent: '@payloadcms/richtext-lexical/rsc#WidgetField' };
+    const block = {
+      fields: [{ name: 'copy', type: 'richText', editor: blockEditor }],
+      slug: 'copy',
+    };
+    const config = {
+      admin: {
+        dashboard: {
+          widgets: [
+            {
+              Component: './widgets/Content#Content',
+              fields: [{ name: 'intro', type: 'richText', editor: widgetEditor }],
+              slug: 'content',
+            },
+          ],
+        },
+      },
+      collections: [
+        {
+          fields: [{ name: 'layout', type: 'blocks', blockReferences: [block] }],
+          slug: 'posts',
+        },
+      ],
+    } as unknown as SanitizedConfig;
+
+    rewriteComponentPaths(config);
+
+    expect(blockEditor.CellComponent).toBe('@frogbotai/richtext-lexical/rsc#BlockCell');
+    expect(widgetEditor.FieldComponent).toBe('@frogbotai/richtext-lexical/rsc#WidgetField');
+  });
+
+  it('preserves shared field identity and handles field-container cycles', () => {
+    const editor = { CellComponent: '@payloadcms/richtext-lexical/rsc#Cell' };
+    const shared = { name: 'copy', type: 'richText', editor };
+    const group = { fields: [shared], name: 'group', type: 'group' };
+    group.fields.push(group as never);
+    const config = {
+      admin: { dashboard: { widgets: [{ Component: './Widget#Widget', fields: [shared] }] } },
+      collections: [{ fields: [group], slug: 'posts' }],
+    } as unknown as SanitizedConfig;
+
+    expect(() => rewriteComponentPaths(config)).not.toThrow();
+    expect(group.fields[0]).toBe(shared);
+    expect(editor.CellComponent).toBe('@frogbotai/richtext-lexical/rsc#Cell');
+  });
 });

@@ -1,0 +1,57 @@
+---
+title: Converting Plain Text
+sidebarTitle: Converting Plain Text
+description: Convert Lexical rich text into plain text.
+keywords: lexical, rich text, plain text, converters
+---
+
+## Rich Text to plain text
+
+```ts
+import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
+import { convertLexicalToPlaintext } from '@frogbotai/richtext-lexical/plaintext'
+
+export function toPlainText(data: SerializedEditorState) {
+  return convertLexicalToPlaintext({ data })
+}
+```
+
+## Custom converters
+
+Add converters for custom blocks or override standard node handling:
+
+```ts
+import type {
+  DefaultNodeTypes,
+  SerializedBlockNode,
+} from '@frogbotai/richtext-lexical'
+import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
+import {
+  convertLexicalToPlaintext,
+  type PlaintextConverters,
+} from '@frogbotai/richtext-lexical/plaintext'
+
+type TextBlock = {
+  blockName?: string
+  blockType: 'text'
+  text?: string
+}
+
+const converters: PlaintextConverters = {
+  blocks: {
+    text: ({ node }) => ('text' in node.fields ? node.fields.text ?? '' : ''),
+  },
+  link: ({ node }) => node.fields.url ?? '',
+}
+
+export function toPlainText(data: SerializedEditorState) {
+  return convertLexicalToPlaintext({ converters, data })
+}
+```
+
+Plain-text conversion has no default converter map. When a node has no converter, the converter applies these rules:
+
+- A `text` property becomes plain text.
+- `children` are converted recursively.
+- Nodes with neither property are ignored.
+- Paragraph, text, and tab nodes add their corresponding newline or tab characters.

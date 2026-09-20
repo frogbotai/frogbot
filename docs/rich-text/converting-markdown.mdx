@@ -1,0 +1,265 @@
+---
+title: Converting Markdown
+sidebarTitle: Converting Markdown
+description: Convert Lexical rich text to Markdown and MDX, and convert it back.
+keywords: lexical, rich text, markdown, mdx, converters
+---
+
+Markdown converters are synchronous. They receive a sanitized editor config, which you can retrieve through `editorConfigFactory`.
+
+## Rich Text to Markdown
+
+```ts
+import config from '@frogbot-config'
+import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
+import {
+  convertLexicalToMarkdown,
+  editorConfigFactory,
+} from '@frogbotai/richtext-lexical'
+
+export async function toMarkdown(data: SerializedEditorState) {
+  const editorConfig = await editorConfigFactory.default({ config })
+
+  return convertLexicalToMarkdown({ data, editorConfig })
+}
+```
+
+Use the configuration from the actual field when it has custom features:
+
+```ts
+import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
+import {
+  convertLexicalToMarkdown,
+  editorConfigFactory,
+  lexicalEditor,
+} from '@frogbotai/richtext-lexical'
+import type { CollectionConfig } from 'frogbot'
+
+type SanitizedRichTextField = Parameters<
+  typeof editorConfigFactory.fromField
+>[0]['field']
+
+function isNamedSanitizedRichTextField(
+  field: unknown,
+  name: string,
+): field is SanitizedRichTextField {
+  return (
+    typeof field === 'object' &&
+    field !== null &&
+    'name' in field &&
+    field.name === name &&
+    'type' in field &&
+    field.type === 'richText' &&
+    'editor' in field
+  )
+}
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  fields: [
+    {
+      name: 'content',
+      type: 'richText',
+      editor: lexicalEditor({}),
+    },
+    {
+      name: 'markdown',
+      type: 'textarea',
+      admin: { hidden: true },
+      hooks: {
+        afterRead: [
+          (args) => {
+            const data = args.siblingData.content as SerializedEditorState | undefined
+            const siblingFields =
+              'siblingFields' in args && Array.isArray(args.siblingFields)
+                ? args.siblingFields
+                : []
+            const field = siblingFields.find(
+              (candidate) => isNamedSanitizedRichTextField(candidate, 'content'),
+            )
+
+            if (!data || !field) {
+              return ''
+            }
+
+            return convertLexicalToMarkdown({
+              data,
+              editorConfig: editorConfigFactory.fromField({ field }),
+            })
+          },
+        ],
+        beforeChange: [
+          ({ siblingData }) => {
+            delete siblingData.markdown
+
+            return null
+          },
+        ],
+      },
+    },
+  ],
+}
+```
+
+## Markdown to Rich Text
+
+```ts
+import config from '@frogbot-config'
+import {
+  convertMarkdownToLexical,
+  editorConfigFactory,
+} from '@frogbotai/richtext-lexical'
+
+const editorConfig = await editorConfigFactory.default({ config })
+const data = convertMarkdownToLexical({
+  editorConfig,
+  markdown: '# Hello world\n\nThis is **rich text**.',
+})
+```
+
+The editor config must include every feature whose nodes or transformers appear in the content. A default config does not include your custom blocks.
+
+## Converting files
+
+Standard Markdown image syntax does not identify a file record. `UploadFeature` recognizes this placeholder format:
+
+```md
+![files:6507f7b9a4d3c2e1f0ab1234]()
+```
+
+The first part is the upload collection slug and the second is the record ID. Markdown-to-Lexical conversion creates an upload node from the placeholder. Lexical-to-Markdown conversion emits the same placeholder when the file record is not populated; populated records can produce standard image syntax with a URL and alt text.
+
+For existing Markdown images:
+
+1. Upload the images to your files collection.
+2. Replace each image URL with `![files:<record-id>]()`, using your actual collection slug.
+3. Convert the resulting Markdown.
+
+When converting back to Markdown, an unpopulated file node uses the placeholder format. A populated file can instead become normal image syntax containing its URL and alt text.
+
+## Converting MDX
+
+Markdown converters live on features. MDX converters for custom blocks live on each block's `jsx` property.
+
+### Defining a custom block
+
+This Banner block converts nested Rich Text to an MDX child and restores that child when importing MDX:
+
+```ts
+import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
+import {
+  BlocksFeature,
+  type BlocksFeatureProps,
+  convertLexicalToMarkdown,
+  editorConfigFactory,
+  lexicalEditor,
+} from '@frogbotai/richtext-lexical'
+import type { CollectionConfig } from 'frogbot'
+
+type Block = Exclude<NonNullable<BlocksFeatureProps['blocks']>[number], string>
+
+type SanitizedRichTextField = Parameters<
+  typeof editorConfigFactory.fromField
+>[0]['field']
+
+function isNamedSanitizedRichTextField(
+  field: unknown,
+  name: string,
+): field is SanitizedRichTextField {
+  return (
+    typeof field === 'object' &&
+    field !== null &&
+    'name' in field &&
+    field.name === name &&
+    'type' in field &&
+    field.type === 'richText' &&
+    'editor' in field
+  )
+}
+
+const BannerBlock: Block = {
+  slug: 'banner',
+  fields: [
+    {
+      name: 'tone',
+      type: 'select',
+      defaultValue: 'info',
+      options: ['info', 'warning', 'error'],
+    },
+    {
+      name: 'content',
+      type: 'richText',
+      editor: lexicalEditor({}),
+    },
+  ],
+  jsx: {
+    export: ({ fields, lexicalToMarkdown }) => ({
+      children: lexicalToMarkdown({ editorState: fields.content }),
+      props: fields.tone ? { tone: fields.tone } : {},
+    }),
+    import: ({ children, markdownToLexical, props }) => ({
+      content: markdownToLexical({ markdown: children }),
+      tone: props?.tone,
+    }),
+  },
+}
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  fields: [
+    {
+      name: 'content',
+      type: 'richText',
+      editor: lexicalEditor({
+        features: ({ defaultFeatures }) => [
+          ...defaultFeatures,
+          BlocksFeature({ blocks: [BannerBlock] }),
+        ],
+      }),
+    },
+    {
+      name: 'markdown',
+      type: 'textarea',
+      hooks: {
+        afterRead: [
+          (args) => {
+            const data = args.siblingData.content as SerializedEditorState | undefined
+            const siblingFields =
+              'siblingFields' in args && Array.isArray(args.siblingFields)
+                ? args.siblingFields
+                : []
+            const field = siblingFields.find(
+              (candidate) => isNamedSanitizedRichTextField(candidate, 'content'),
+            )
+
+            if (!data || !field) {
+              return ''
+            }
+
+            return convertLexicalToMarkdown({
+              data,
+              editorConfig: editorConfigFactory.fromField({ field }),
+            })
+          },
+        ],
+        beforeChange: [
+          ({ siblingData }) => {
+            delete siblingData.markdown
+
+            return null
+          },
+        ],
+      },
+    },
+  ],
+}
+```
+
+The `export` callback returns `children` for content between the MDX tags and `props` for attributes on the opening tag. The `import` callback receives those values and returns the block's field data.
+
+| Export value | Description |
+| --- | --- |
+| `children` | Markdown placed between the opening and closing MDX tags. |
+| `props` | Attributes written on the opening MDX tag. |
+
+The import callback receives those parsed `children` and `props`; its return value is the block field data.

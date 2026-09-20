@@ -71,6 +71,8 @@ export interface Config {
     chats: Chat;
     messages: Message;
     'usage-logs': UsageLog;
+    'trigger-subscriptions': TriggerSubscription;
+    'frogbot-waitpoints': FrogbotWaitpoint;
     files: File;
   };
   collectionsJoins: {};
@@ -79,6 +81,8 @@ export interface Config {
     chats: ChatsSelect;
     messages: MessagesSelect;
     'usage-logs': UsageLogsSelect;
+    'trigger-subscriptions': TriggerSubscriptionsSelect;
+    'frogbot-waitpoints': FrogbotWaitpointsSelect;
     files: FilesSelect;
   };
   db: {
@@ -95,6 +99,8 @@ export interface Config {
   jobs: {
     tasks: {
       'frogbot-reset-ai-budgets': TaskFrogbotResetAiBudgets;
+      'frogbot-sweep-jobs': TaskFrogbotSweepJobs;
+      'frogbot-cleanup-kv': TaskFrogbotCleanupKv;
       inline: {
         input: unknown;
         output: unknown;
@@ -139,6 +145,7 @@ export interface User {
   resetPasswordExpiration?: string | null;
   salt?: string | null;
   hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
   sessions?:
@@ -160,6 +167,9 @@ export interface Chat {
   title?: string | null;
   user?: (number | null) | User;
   agent?: string | null;
+  channel?: string | null;
+  externalId?: string | null;
+  channelKey?: string | null;
   lastMessageAt?: string | null;
   todos?: import('frogbot/tools').TodoItem[];
   updatedAt: string;
@@ -232,6 +242,82 @@ export interface UsageLog {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trigger-subscriptions".
+ */
+export interface TriggerSubscription {
+  id: number;
+  agent: string;
+  piece: string;
+  instance: string;
+  trigger: string;
+  inputHash: string;
+  input:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  state?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  webhookUrl?: string | null;
+  status: 'active' | 'error';
+  cleanupPending?: boolean | null;
+  enablePending?: boolean | null;
+  enableAttempt?: string | null;
+  expiresAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-waitpoints".
+ */
+export interface FrogbotWaitpoint {
+  id: number;
+  jobId: string;
+  name: string;
+  token: string;
+  kind: 'delay' | 'resumable';
+  ready: boolean;
+  status: 'pending' | 'resumed' | 'expired';
+  expiresAt?: string | null;
+  until?: string | null;
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  snapshot:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  dispatched: boolean;
+  dispatchOwner?: string | null;
+  dispatchLeaseUntil?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "files".
  */
 export interface File {
@@ -267,6 +353,7 @@ export interface UsersSelect {
   resetPasswordExpiration?: boolean;
   salt?: boolean;
   hash?: boolean;
+  resetPasswordRequestedAt?: boolean;
   loginAttempts?: boolean;
   lockUntil?: boolean;
   sessions?:
@@ -285,6 +372,9 @@ export interface ChatsSelect {
   title?: boolean;
   user?: boolean;
   agent?: boolean;
+  channel?: boolean;
+  externalId?: boolean;
+  channelKey?: boolean;
   lastMessageAt?: boolean;
   todos?: boolean;
   updatedAt?: boolean;
@@ -341,6 +431,48 @@ export interface UsageLogsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trigger-subscriptions_select".
+ */
+export interface TriggerSubscriptionsSelect {
+  agent?: boolean;
+  piece?: boolean;
+  instance?: boolean;
+  trigger?: boolean;
+  inputHash?: boolean;
+  input?: boolean;
+  state?: boolean;
+  webhookUrl?: boolean;
+  status?: boolean;
+  cleanupPending?: boolean;
+  enablePending?: boolean;
+  enableAttempt?: boolean;
+  expiresAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-waitpoints_select".
+ */
+export interface FrogbotWaitpointsSelect {
+  jobId?: boolean;
+  name?: boolean;
+  token?: boolean;
+  kind?: boolean;
+  ready?: boolean;
+  status?: boolean;
+  expiresAt?: boolean;
+  until?: boolean;
+  data?: boolean;
+  snapshot?: boolean;
+  dispatched?: boolean;
+  dispatchOwner?: boolean;
+  dispatchLeaseUntil?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "files_select".
  */
 export interface FilesSelect {
@@ -373,6 +505,22 @@ export interface CollectionsWidget {
  * via the `definition` "TaskFrogbot-reset-ai-budgets".
  */
 export interface TaskFrogbotResetAiBudgets {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-sweep-jobs".
+ */
+export interface TaskFrogbotSweepJobs {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-cleanup-kv".
+ */
+export interface TaskFrogbotCleanupKv {
   input?: unknown;
   output?: unknown;
 }

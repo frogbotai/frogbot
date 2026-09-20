@@ -1,0 +1,25 @@
+{
+  "name": "frogbot-e2e-rich-text",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "frogbot dev"
+  },
+  "dependencies": {
+    "@frogbotai/db-sqlite": "workspace:*",
+    "@frogbotai/next": "workspace:*",
+    "@frogbotai/richtext-lexical": "workspace:*",
+    "frogbot": "workspace:*",
+    "graphql": "^16.8.1",
+    "next": "15.4.11",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "typescript": "5.6.2"
+  }
+}

@@ -1,0 +1,200 @@
+---
+title: Lexical Converters
+sidebarTitle: Converters
+description: Convert Lexical rich text to JSX, HTML, Markdown, or plain text.
+keywords: lexical, rich text, converters, jsx, html, markdown, plaintext
+---
+
+Rich Text fields store structured JSON. Use the converter that matches where the content will be consumed:
+
+- [JSX](/rich-text/converting-jsx)
+- [HTML](/rich-text/converting-html)
+- [Markdown and MDX](/rich-text/converting-markdown)
+- [Plain text](/rich-text/converting-plaintext)
+
+## Retrieving the editor config
+
+Some conversions need the sanitized editor configuration because enabled features define the available nodes and transformers. `editorConfigFactory` provides five ways to retrieve one.
+
+```ts
+import config from '@frogbot-config'
+
+import {
+  editorConfigFactory,
+  lexicalEditor,
+} from '@frogbotai/richtext-lexical'
+
+type SanitizedRichTextField = Parameters<
+  typeof editorConfigFactory.fromField
+>[0]['field']
+
+const field = {
+  type: 'richText',
+  editor: lexicalEditor({}),
+} as const
+```
+
+### Default editor config
+
+Build the package's default feature set against your FrogBot config:
+
+```ts
+import config from '@frogbot-config'
+import { editorConfigFactory } from '@frogbotai/richtext-lexical'
+
+const editorConfig = await editorConfigFactory.default({ config })
+```
+
+### Config from a sanitized field
+
+`fromField` is synchronous and accepts a Rich Text field whose editor has already been sanitized:
+
+```ts
+import { editorConfigFactory } from '@frogbotai/richtext-lexical'
+
+type SanitizedRichTextField = Parameters<
+  typeof editorConfigFactory.fromField
+>[0]['field']
+
+export function configFromField(field: SanitizedRichTextField) {
+  return editorConfigFactory.fromField({ field })
+}
+```
+
+### Config from features
+
+Build a configuration from a feature list without instantiating a reusable editor provider:
+
+```ts
+import config from '@frogbot-config'
+import {
+  editorConfigFactory,
+  FixedToolbarFeature,
+} from '@frogbotai/richtext-lexical'
+
+const editorConfig = await editorConfigFactory.fromFeatures({
+  config,
+  features: ({ defaultFeatures }) => [
+    ...defaultFeatures,
+    FixedToolbarFeature(),
+  ],
+})
+```
+
+This method also accepts `isRoot`, `lexical`, and `parentIsLocalized` options.
+
+### Config from an editor provider
+
+Use `fromEditor` when you already have a reusable editor provider:
+
+```ts
+import config from '@frogbot-config'
+import {
+  FixedToolbarFeature,
+  editorConfigFactory,
+  lexicalEditor,
+} from '@frogbotai/richtext-lexical'
+
+const editor = lexicalEditor({
+  features: ({ defaultFeatures }) => [
+    ...defaultFeatures,
+    FixedToolbarFeature(),
+  ],
+})
+
+const editorConfig = await editorConfigFactory.fromEditor({
+  config,
+  editor,
+})
+```
+
+Prefer `fromFeatures` when you only need the feature list. `fromEditor` also accepts `isRoot`, `lexical`, and `parentIsLocalized`.
+
+### Config from an unsanitized field
+
+Use `fromUnsanitizedField` while you have a field with an editor provider rather than a sanitized adapter:
+
+```ts
+import config from '@frogbot-config'
+import {
+  editorConfigFactory,
+  lexicalEditor,
+} from '@frogbotai/richtext-lexical'
+
+const field = {
+  type: 'richText',
+  editor: lexicalEditor({}),
+} as const
+
+const editorConfig = await editorConfigFactory.fromUnsanitizedField({
+  config,
+  field,
+})
+```
+
+This method also accepts `isRoot` and `parentIsLocalized`.
+
+### Read a sibling field config in a hook
+
+```ts
+import {
+  editorConfigFactory,
+  lexicalEditor,
+} from '@frogbotai/richtext-lexical'
+import type { CollectionConfig } from 'frogbot'
+
+type SanitizedRichTextField = Parameters<
+  typeof editorConfigFactory.fromField
+>[0]['field']
+
+function isNamedSanitizedRichTextField(
+  field: unknown,
+  name: string,
+): field is SanitizedRichTextField {
+  return (
+    typeof field === 'object' &&
+    field !== null &&
+    'name' in field &&
+    field.name === name &&
+    'type' in field &&
+    field.type === 'richText' &&
+    'editor' in field
+  )
+}
+
+export const Articles: CollectionConfig = {
+  slug: 'articles',
+  fields: [
+    {
+      name: 'summary',
+      type: 'text',
+      hooks: {
+        afterRead: [
+          (args) => {
+            const siblingFields =
+              'siblingFields' in args && Array.isArray(args.siblingFields)
+                ? args.siblingFields
+                : []
+            const field = siblingFields.find(
+              (candidate) => isNamedSanitizedRichTextField(candidate, 'content'),
+            )
+
+            if (!field) {
+              return args.value
+            }
+
+            const editorConfig = editorConfigFactory.fromField({ field })
+
+            return args.value
+          },
+        ],
+      },
+    },
+    {
+      name: 'content',
+      type: 'richText',
+      editor: lexicalEditor({}),
+    },
+  ],
+}
+```

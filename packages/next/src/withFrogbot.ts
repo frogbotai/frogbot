@@ -1,3 +1,6 @@
+import { createRequire } from 'node:module';
+import { relative } from 'node:path';
+
 import { withPayload } from '@payloadcms/next/withPayload';
 import type { NextConfig } from 'next';
 
@@ -19,6 +22,16 @@ const ALWAYS_SERVER_PACKAGES = ['@frogbotai/gateway'];
 
 const NATIVE_EXTERNALS = ['@basetenlabs/performance-client'];
 
+const require = createRequire(import.meta.url);
+const payloadNextRequire = createRequire(require.resolve('@payloadcms/next/withPayload'));
+const PAYLOAD_UI_ROOT = payloadNextRequire.resolve('@payloadcms/ui');
+
+function getTurbopackPayloadUIRoot(): string {
+  const projectRelativePath = relative(process.cwd(), PAYLOAD_UI_ROOT).replaceAll('\\', '/');
+
+  return projectRelativePath.startsWith('.') ? projectRelativePath : `./${projectRelativePath}`;
+}
+
 export function withFrogbot(
   nextConfig: NextConfig = {},
   options: WithFrogbotOptions = {},
@@ -34,6 +47,13 @@ export function withFrogbot(
           : []),
       ]),
     ],
+    turbopack: {
+      ...nextConfig.turbopack,
+      resolveAlias: {
+        ...nextConfig.turbopack?.resolveAlias,
+        '@payloadcms/ui': getTurbopackPayloadUIRoot(),
+      },
+    },
     webpack: (webpackConfig, webpackOptions) => {
       const incoming =
         typeof nextConfig.webpack === 'function'
@@ -45,6 +65,10 @@ export function withFrogbot(
         externals: [...(incoming?.externals || []), ...NATIVE_EXTERNALS],
         resolve: {
           ...incoming?.resolve,
+          alias: {
+            ...incoming?.resolve?.alias,
+            '@payloadcms/ui$': PAYLOAD_UI_ROOT,
+          },
           extensionAlias: {
             ...incoming?.resolve?.extensionAlias,
             '.cjs': ['.cts', '.cjs'],

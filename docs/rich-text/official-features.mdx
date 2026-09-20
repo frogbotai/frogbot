@@ -1,0 +1,193 @@
+---
+title: Official Features
+sidebarTitle: Official Features
+description: Reference for the features included with FrogBot's Lexical editor.
+keywords: lexical, rich text, editor, features, toolbar, blocks
+---
+
+Features add editing controls, node types, and conversion behavior. Import them from `@frogbotai/richtext-lexical` and pass them to `lexicalEditor`.
+
+Every feature is configurable. You can use the recommended defaults, remove features you do not need, or add your own feature providers.
+
+## Features overview
+
+| Feature | Default | Description |
+| --- | --- | --- |
+| `BoldFeature` | Yes | Bold text formatting. |
+| `ItalicFeature` | Yes | Italic text formatting. |
+| `UnderlineFeature` | Yes | Underlined text formatting. |
+| `StrikethroughFeature` | Yes | Strikethrough text formatting. |
+| `SubscriptFeature` | Yes | Subscript formatting. |
+| `SuperscriptFeature` | Yes | Superscript formatting. |
+| `InlineCodeFeature` | Yes | Inline code formatting. |
+| `ParagraphFeature` | Yes | Paragraph creation and conversion controls. |
+| `HeadingFeature` | Yes | Configurable H1-H6 heading nodes. |
+| `AlignFeature` | Yes | Left, center, right, and justified alignment. |
+| `IndentFeature` | Yes | Block indentation and tab behavior. |
+| `UnorderedListFeature` | Yes | Bulleted lists. |
+| `OrderedListFeature` | Yes | Numbered lists. |
+| `ChecklistFeature` | Yes | Interactive checklists. |
+| `LinkFeature` | Yes | External and internal links. |
+| `RelationshipFeature` | Yes | Block-level record relationships. |
+| `BlockquoteFeature` | Yes | Block quotes. |
+| `UploadFeature` | Yes | File nodes for upload-enabled collections. |
+| `HorizontalRuleFeature` | Yes | Horizontal separators. |
+| `InlineToolbarFeature` | Yes | Floating toolbar for selected text. |
+| `FixedToolbarFeature` | No | Persistent toolbar above the editor. |
+| `BlocksFeature` | No | Block and inline-block nodes with custom fields. |
+| `TreeViewFeature` | No | Editor-state and DOM debugging panel. |
+| `EXPERIMENTAL_TableFeature` | No | Table editing. Its API may change without a major release. |
+| `TextStateFeature` | No | Key-value text attributes mapped to inline styles. |
+
+## Configure headings
+
+Bold, italic, underline, strikethrough, subscript, superscript, and inline code features add their corresponding formatting controls. Bold, italic, underline, and inline code also support their conventional keyboard shortcuts. Paragraph, heading, list, quote, and horizontal-rule features add slash-menu and toolbar entries, as applicable.
+
+```ts
+import { HeadingFeature, lexicalEditor } from '@frogbotai/richtext-lexical'
+
+const editor = lexicalEditor({
+  features: ({ defaultFeatures }) => [
+    ...defaultFeatures,
+    HeadingFeature({
+      enabledHeadingSizes: ['h2', 'h3', 'h4'],
+    }),
+  ],
+})
+```
+
+## Configure indentation
+
+Use `disableTabNode` to reserve Tab for block-level indentation. `disabledNodes` prevents selected node types from being indented.
+
+```ts
+import { IndentFeature } from '@frogbotai/richtext-lexical'
+
+IndentFeature({
+  disableTabNode: true,
+  disabledNodes: ['heading'],
+})
+```
+
+## Configure links
+
+Restrict internal links by collection, set their maximum population depth, and add fields to the link drawer:
+
+```ts
+import { LinkFeature } from '@frogbotai/richtext-lexical'
+
+LinkFeature({
+  enabledCollections: ['pages', 'posts'],
+  fields: ({ defaultFields }) => [
+    ...defaultFields,
+    {
+      name: 'rel',
+      type: 'select',
+      options: ['noopener', 'noreferrer', 'nofollow'],
+    },
+  ],
+  maxDepth: 2,
+})
+```
+
+Set either `enabledCollections` or `disabledCollections`, not both. `disableAutoLinks: 'creationOnly'` prevents automatic creation while retaining updates to existing auto-links; `true` disables both.
+
+## Configure relationships
+
+```ts
+import { RelationshipFeature } from '@frogbotai/richtext-lexical'
+
+RelationshipFeature({
+  disabledCollections: ['users'],
+  maxDepth: 2,
+})
+```
+
+## Configure files
+
+The upload feature supports FrogBot's default `files` collection and adopted upload collections. Fields configured for a collection are stored on that file node.
+
+```ts
+import { UploadFeature } from '@frogbotai/richtext-lexical'
+
+UploadFeature({
+  collections: {
+    files: {
+      fields: [
+        { name: 'caption', type: 'text' },
+        { name: 'alt', type: 'text' },
+      ],
+    },
+  },
+  enabledCollections: ['files'],
+  maxDepth: 1,
+})
+```
+
+Set either `enabledCollections` or `disabledCollections`, not both. `maxDepth` limits population of the referenced file itself; it does not limit fields stored directly on the file node.
+
+## Configure toolbars
+
+`InlineToolbarFeature` appears for selected text. `FixedToolbarFeature` stays visible and can follow whichever nested editor is focused.
+
+```ts
+import { FixedToolbarFeature } from '@frogbotai/richtext-lexical'
+
+FixedToolbarFeature({
+  applyToFocusedEditor: true,
+  disableIfParentHasFixedToolbar: true,
+})
+```
+
+## Configure blocks
+
+`BlocksFeature` accepts block-level and inline block definitions. Each definition keeps its fields and optional JSX import/export behavior.
+
+```ts
+import { BlocksFeature } from '@frogbotai/richtext-lexical'
+
+BlocksFeature({
+  blocks: [
+    {
+      slug: 'callout',
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        { name: 'body', type: 'textarea' },
+      ],
+    },
+  ],
+  inlineBlocks: [
+    {
+      slug: 'badge',
+      fields: [{ name: 'label', type: 'text', required: true }],
+    },
+  ],
+})
+```
+
+See [Converting JSX](/rich-text/converting-jsx#lexical-blocks), [Converting HTML](/rich-text/converting-html#blocks-to-html), and [Converting Markdown](/rich-text/converting-markdown#defining-a-custom-block) to render blocks.
+
+`TreeViewFeature` adds an editor-state, DOM, and time-travel debugging panel. `EXPERIMENTAL_TableFeature` adds table editing, but may receive breaking changes within a stable release.
+
+## Configure text state
+
+`TextStateFeature` stores configured values under the serialized text node's `$` property. Keep the state map in a shared module so the editor and frontend converter use the same styles.
+
+```ts
+import { TextStateFeature, defaultColors } from '@frogbotai/richtext-lexical'
+
+TextStateFeature({
+  state: {
+    color: {
+      ...defaultColors.text,
+      ...defaultColors.background,
+      accent: {
+        label: 'Accent',
+        css: { color: 'var(--color-accent)' },
+      },
+    },
+  },
+})
+```
+
+Lexical serializes text state under the text node's `$` key. Frontend rendering must map those stored state values back to the same CSS configuration. Keep the state object in an import-safe shared module and use it from both `TextStateFeature` and your custom JSX `text` converter.

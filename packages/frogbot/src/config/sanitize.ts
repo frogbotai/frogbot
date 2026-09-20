@@ -18,7 +18,7 @@ import type {
   PayloadHandler,
   PayloadRequest,
 } from 'payload';
-import { buildConfig as payloadBuildConfig } from 'payload';
+import { buildConfig as payloadBuildConfig, MissingEditorProp } from 'payload';
 
 import { iconNames } from '../admin/icons.js';
 import type { SettingsEntry } from '../admin/types.js';
@@ -53,6 +53,7 @@ import { COLLECTION_MARKERS } from '../collections/config/types.js';
 import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
 import { buildSecretEndpoints } from '../connections/secret.js';
 import type { Endpoint } from '../endpoints/types.js';
+import { assertRichTextEditor } from '../fields/config/assertRichTextEditor.js';
 import type { Frogbot } from '../frogbot.js';
 import { initFrogbotFromPayload } from '../frogbot.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
@@ -1151,6 +1152,8 @@ export function sanitize(
   config: FrogbotConfig,
   { mode = getValidationMode() }: { mode?: ValidationMode } = {},
 ): FrogbotSanitizedConfig {
+  assertRichTextEditor(config);
+
   if ((config as unknown as Record<string, unknown>).globals !== undefined) {
     throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections instead.');
   }
@@ -1400,13 +1403,25 @@ export function sanitize(
     adapter: payloadConfig.db,
     leaseDuration: jobs.leaseDuration,
   });
-  const payloadSanitizedPromise = payloadBuildConfig(payloadConfig).then((built) => {
-    for (const collection of built.collections) {
-      if (collection.custom?.frogbot?.signIn?.length) validateSignInFields(collection);
-      coordinateAuthEndpoints({ collection, attachFrogbot });
-    }
-    return rewriteComponentPaths(built);
-  });
+  const payloadSanitizedPromise = payloadBuildConfig(payloadConfig)
+    .then((built) => {
+      for (const collection of built.collections) {
+        if (collection.custom?.frogbot?.signIn?.length) validateSignInFields(collection);
+        coordinateAuthEndpoints({ collection, attachFrogbot });
+      }
+
+      return rewriteComponentPaths(built);
+    })
+    .catch((error: unknown) => {
+      if (error instanceof MissingEditorProp) {
+        throw new Error(
+          '[frogbot] A nested rich text field requires an explicit Lexical editor to avoid recursive defaults. Configure editor: lexicalEditor({}) on the nested field using @frogbotai/richtext-lexical.',
+          { cause: error },
+        );
+      }
+
+      throw error;
+    });
 
   const sanitizedConfig: FrogbotSanitizedConfig = {
     admin: {
