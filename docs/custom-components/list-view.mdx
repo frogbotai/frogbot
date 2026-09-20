@@ -1,0 +1,147 @@
+---
+title: List View
+label: List View
+order: 70
+---
+
+The List View displays, filters, sorts, and paginates the documents in a [Collection](/configuration/collections). You can replace the view or add components around its table.
+
+## Custom List View
+
+Set `admin.components.views.list` on a collection to replace the complete view:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  admin: {
+    components: {
+      views: {
+        list: {
+          Component: '/components/PostsList#PostsList',
+        },
+      },
+    },
+  },
+  fields: [],
+}
+```
+
+Server and Client Components receive different props:
+
+```tsx
+import type { ListViewServerProps } from 'frogbot'
+
+export function PostsList({ data }: ListViewServerProps) {
+  return <p>{data.totalDocs} posts</p>
+}
+```
+
+```tsx
+'use client'
+
+import type { ListViewClientProps } from 'frogbot'
+import { DefaultListView } from '@frogbotai/ui'
+
+export function PostsList(props: ListViewClientProps) {
+  return (
+    <section>
+      <h1>Posts</h1>
+      <DefaultListView {...props} />
+    </section>
+  )
+}
+```
+
+`ListViewServerProps` includes the rendered client slots, collection config, paginated data, preferences, permissions, locale, authenticated user, and `frogbot`. `ListViewClientProps` includes the collection slug, column state, permission flags, query controls, rendered filters, table, and surrounding slots.
+
+FrogBot also supports multiple collection views through `admin.views`, including the [board](/admin/collection-board) and [calendar](/admin/collection-calendar) views.
+
+## Custom Components
+
+Collection list slots are configured directly under `admin.components`:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  admin: {
+    components: {
+      beforeList: ['/components/ListNotice#ListNotice'],
+      beforeListTable: ['/components/ListSummary#ListSummary'],
+      afterListTable: ['/components/ListFooter#ListFooter'],
+      afterList: ['/components/ListHelp#ListHelp'],
+      Description: '/components/PostsDescription#PostsDescription',
+    },
+  },
+  fields: [],
+}
+```
+
+Each slot has Server and Client Component props. Import the matching type from `frogbot`, such as `BeforeListServerProps`, `BeforeListClientProps`, `BeforeListTableServerProps`, `BeforeListTableClientProps`, `AfterListServerProps`, `AfterListClientProps`, `AfterListTableServerProps`, or `AfterListTableClientProps`.
+
+### beforeList
+
+`beforeList` renders before the document list and its controls.
+
+```tsx
+import type { BeforeListServerProps } from 'frogbot'
+
+export function ListNotice({ data }: BeforeListServerProps) {
+  return <p>Showing {data.totalDocs} documents.</p>
+}
+```
+
+### beforeListTable
+
+`beforeListTable` renders immediately before the table.
+
+```tsx
+'use client'
+
+import type { BeforeListTableClientProps } from 'frogbot'
+
+export function ListSummary({ collectionSlug }: BeforeListTableClientProps) {
+  return <p>Results for {collectionSlug}</p>
+}
+```
+
+### afterListTable
+
+`afterListTable` renders immediately after the table.
+
+```tsx
+import type { AfterListTableServerProps } from 'frogbot'
+
+export function ListFooter({ limit }: AfterListTableServerProps) {
+  return <p>Up to {limit} documents per page.</p>
+}
+```
+
+### afterList
+
+`afterList` renders after the complete list view.
+
+```tsx
+'use client'
+
+import type { AfterListClientProps } from 'frogbot'
+
+export function ListHelp({ hasCreatePermission }: AfterListClientProps) {
+  return hasCreatePermission ? <a href="/admin/collections/posts/create">Create a post</a> : null
+}
+```
+
+### Description
+
+`Description` replaces the description below the collection label. It is shared by the List and [Edit Views](./edit-view).
+
+```tsx
+import type { ViewDescriptionServerProps } from 'frogbot'
+
+export function PostsDescription(_props: ViewDescriptionServerProps) {
+  return <p>Editorial posts shown on the website.</p>
+}
+```

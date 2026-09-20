@@ -1,0 +1,185 @@
+---
+title: Dashboard Widgets
+label: Dashboard
+order: 45
+desc: Configure typed widgets and layouts for the FrogBot Admin Panel dashboard.
+keywords: dashboard, widgets, custom components, admin, react
+---
+
+<Warning>
+  The modular dashboard is experimental and its API may change in a future
+  release.
+</Warning>
+
+Configuring `admin.dashboard` activates the modular dashboard. Without `admin.dashboard` or a custom dashboard view, FrogBot keeps Chat as the Admin Panel landing page. An explicit `admin.components.views.dashboard` always takes precedence over the widget configuration.
+
+## Defining Widgets
+
+Register widgets through `admin.dashboard.widgets`. Each widget has a unique slug and a Component Path. Optional fields appear in the widget edit drawer.
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  admin: {
+    dashboard: {
+      widgets: [
+        {
+          slug: 'sales-summary',
+          Component: '/components/SalesSummary#SalesSummary',
+          fields: [
+            { name: 'title', type: 'text' },
+            {
+              name: 'timeframe',
+              type: 'select',
+              options: ['daily', 'weekly', 'monthly', 'yearly'],
+            },
+            { name: 'showTrend', type: 'checkbox' },
+          ],
+          minWidth: 'small',
+          maxWidth: 'medium',
+        },
+      ],
+    },
+  },
+})
+```
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `slug` | `string` | Unique widget identifier. |
+| `Component` | `FrogbotComponent` | Component Path, including optional `#ExportName`. |
+| `fields` | `Field[]` | Form fields shown in the edit drawer. |
+| `minWidth` | `WidgetWidth` | Smallest allowed width. Defaults to `x-small`. |
+| `maxWidth` | `WidgetWidth` | Largest allowed width. Defaults to `full`. |
+
+`WidgetWidth` is `'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full'`.
+
+## Creating a Widget Component
+
+Widgets are Server Components. Their request exposes the FrogBot instance at `req.frogbot`:
+
+```tsx
+import type { WidgetServerProps } from 'frogbot'
+
+export async function UserStats({ req }: WidgetServerProps) {
+  const result = await req.frogbot.count({
+    collection: 'users',
+  })
+
+  return (
+    <section className="user-stats">
+      <h2>Total users</h2>
+      <strong>{result.totalDocs}</strong>
+    </section>
+  )
+}
+```
+
+Use FrogBot theme tokens in the widget stylesheet:
+
+```css
+.user-stats {
+  background: var(--theme-base-50);
+  border: 1px solid var(--theme-base-200);
+  color: var(--theme-base-900);
+  padding: 1rem;
+}
+```
+
+## Default Layout
+
+`defaultLayout` accepts an array or a synchronous or asynchronous callback. The callback receives a `FrogbotRequest`, so it can select a layout using the current user or application data.
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  admin: {
+    dashboard: {
+      defaultLayout: async ({ req }) => {
+        const result = await req.frogbot.count({
+          collection: 'orders',
+        })
+
+        return [
+          {
+            widgetSlug: 'sales-summary',
+            data: {
+              orderCount: result.totalDocs,
+              timeframe: 'monthly',
+              title: 'Revenue overview',
+            },
+            width: 'medium',
+          },
+          {
+            widgetSlug: 'user-stats',
+            width: 'medium',
+          },
+        ]
+      },
+      widgets: [
+        {
+          slug: 'sales-summary',
+          Component: '/components/SalesSummary#SalesSummary',
+          fields: [
+            { name: 'title', type: 'text' },
+            { name: 'timeframe', type: 'text' },
+            { name: 'orderCount', type: 'number' },
+          ],
+          minWidth: 'small',
+          maxWidth: 'large',
+        },
+        {
+          slug: 'user-stats',
+          Component: '/components/UserStats#UserStats',
+        },
+      ],
+    },
+  },
+})
+```
+
+Each layout item is a `WidgetInstance`:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `widgetSlug` | `string` | Slug of the registered widget. |
+| `data` | `object` | Initial values passed as `widgetData`. |
+| `width` | `WidgetWidth` | Initial width, constrained by the widget definition. |
+
+## Generated Widget Types
+
+Run `frogbot generate:types` after registering widget fields. The generated `frogbot-types.ts` includes an interface for each widget, including its data and allowed widths.
+
+```tsx
+import type { WidgetServerProps } from 'frogbot'
+
+import type { SalesSummaryWidget } from '../frogbot-types'
+
+export function SalesSummary({
+  widgetData,
+}: WidgetServerProps<SalesSummaryWidget>) {
+  const title = widgetData?.title ?? 'Sales summary'
+  const timeframe = widgetData?.timeframe ?? 'monthly'
+
+  return (
+    <section>
+      <h2>{title}</h2>
+      <p>Timeframe: {timeframe}</p>
+    </section>
+  )
+}
+```
+
+Generated types constrain `widgetSlug`, `data`, and `width` in `defaultLayout` to the corresponding widget definition.
+
+## Built-in Widget
+
+The modular dashboard includes a `collections` widget. When you do not provide `defaultLayout`, the dashboard starts with this widget. Its component path is `@frogbotai/next/rsc#CollectionCards` when you need to reference it explicitly.
+
+## User Customization
+
+From the dashboard editor, users can add widgets, edit widget field values, resize, reorder, and remove widgets. Saving stores the layout in the user's preferences. Canceling discards unsaved edits.
+
+A saved preference takes precedence over `defaultLayout`. Resetting the layout clears that preference and reapplies the current default layout.

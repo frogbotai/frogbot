@@ -242,6 +242,77 @@ describe('frogbot importMap generator', () => {
     expect(output).not.toContain('ChatListView');
   });
 
+  it('maps dashboard widgets and their field components', async () => {
+    const dir = await makeDir('frogbot-importmap-dashboard-');
+    const config = sanitize({
+      secret: 'test-secret',
+      db: { defaultIDType: 'number' } as never,
+      admin: {
+        dashboard: {
+          widgets: [
+            {
+              Component: './components/SummaryWidget#SummaryWidget',
+              fields: [
+                {
+                  admin: { components: { Field: './components/MetricField#MetricField' } },
+                  name: 'metric',
+                  type: 'text',
+                },
+              ],
+              slug: 'summary',
+            },
+          ],
+        },
+      },
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+    });
+    const payloadConfig = await config._internal.payloadConfig;
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+    const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
+
+    expect(output).toContain("from './components/SummaryWidget'");
+    expect(output).toContain("from './components/MetricField'");
+  });
+
+  it('maps user-local and FrogBot UI field components without Payload references', async () => {
+    const dir = await makeDir('frogbot-importmap-custom-fields-');
+    const config = sanitize({
+      secret: 'test-secret',
+      db: { defaultIDType: 'number' } as never,
+      collections: [
+        { slug: 'users', auth: true, fields: [] },
+        {
+          slug: 'posts',
+          fields: [
+            {
+              name: 'color',
+              type: 'text',
+              admin: { components: { Field: '/components/ColorField#ColorField' } },
+            },
+            {
+              name: 'summary',
+              type: 'text',
+              admin: { components: { Field: '@frogbotai/ui#TextField' } },
+            },
+          ],
+        },
+      ],
+    });
+    const payloadConfig = await config._internal.payloadConfig;
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+    const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
+
+    expect(output).toMatch(/from '\.\/?\/components\/ColorField'/);
+    expect(output).toContain("from '@frogbotai/ui'");
+    expect(output).not.toContain('@payloadcms');
+  });
+
   it('maps collection view, custom, Description, and edit view components', async () => {
     const dir = await makeDir('frogbot-importmap-collection-views-');
     const config = sanitize({

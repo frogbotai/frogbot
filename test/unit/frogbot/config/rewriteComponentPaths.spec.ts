@@ -198,6 +198,40 @@ describe('rewriteComponentPaths', () => {
     });
   });
 
+  it('rewrites exact @payloadcms/ui package boundaries in field components', () => {
+    const config = {
+      collections: [
+        {
+          fields: [
+            {
+              name: 'color',
+              type: 'text',
+              admin: {
+                components: {
+                  Field: '@payloadcms/ui#TextField',
+                  Description: '@payloadcms/ui/shared#formatAdminURL',
+                  Diff: '@payloadcms/ui/rsc#FieldDiffContainer',
+                  Error: '/components/ColorField#ColorField',
+                  Label: '@payloadcms/ui-foo#Label',
+                },
+              },
+            },
+          ],
+        },
+      ],
+    } as unknown as SanitizedConfig;
+
+    rewriteComponentPaths(config);
+
+    expect(config.collections[0]?.fields[0]?.admin?.components).toEqual({
+      Field: '@frogbotai/ui#TextField',
+      Description: '@frogbotai/ui/shared#formatAdminURL',
+      Diff: '@frogbotai/ui/rsc#FieldDiffContainer',
+      Error: '/components/ColorField#ColorField',
+      Label: '@payloadcms/ui-foo#Label',
+    });
+  });
+
   it('does not traverse arbitrary circular custom data', () => {
     const custom: Record<string, unknown> = { component: '@payloadcms/next/rsc#FolderField' };
     custom.self = custom;

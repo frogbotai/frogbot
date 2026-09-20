@@ -1,0 +1,87 @@
+---
+title: Document Views
+label: Document Views
+order: 50
+---
+
+Document Views are the routes used to work with one collection document. They share the document layout and can provide tab navigation.
+
+Configure them under `admin.components.edit.views`. The complete collection slot table is in [Collection Custom Components](/configuration/collections#custom-components).
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  admin: {
+    components: {
+      edit: {
+        views: {
+          audit: {
+            Component: '/components/AuditView#AuditView',
+            path: '/audit',
+            tab: {
+              label: 'Audit log',
+            },
+          },
+        },
+      },
+    },
+  },
+  fields: [],
+}
+```
+
+## Document Root
+
+The `root` view replaces the complete document area, including controls, tabs, and nested views. It must be the only entry in `views`. Use `default` instead when you only need to replace the editor.
+
+```ts
+views: {
+  root: {
+    Component: '/components/DocumentWorkspace#DocumentWorkspace',
+  },
+}
+```
+
+## Edit View
+
+The `default` view is the main document editor. See [Edit View](./edit-view) for its component slots.
+
+## Document Tabs
+
+A custom view can define a tab with a `label`, `href`, `order`, or custom `Component`:
+
+```ts
+audit: {
+  Component: '/components/AuditView#AuditView',
+  path: '/audit',
+  tab: {
+    Component: '/components/AuditTab#AuditTab',
+  },
+}
+```
+
+### Tab Components
+
+Use `DocumentTabServerProps` or `DocumentTabClientProps` from `frogbot` to type a custom tab. Use `next/link` for navigation.
+
+```tsx
+import type { DocumentTabServerProps } from 'frogbot'
+import Link from 'next/link'
+
+export function AuditTab({ path }: DocumentTabServerProps) {
+  return <Link href={`${path}/audit`}>Audit log</Link>
+}
+```
+
+```tsx
+'use client'
+
+import type { DocumentTabClientProps } from 'frogbot'
+import Link from 'next/link'
+
+export function AuditTab({ path }: DocumentTabClientProps) {
+  return <Link href={`${path}/audit`}>Audit log</Link>
+}
+```

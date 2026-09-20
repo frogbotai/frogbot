@@ -74,7 +74,10 @@ const HookOrder: CollectionConfig = {
 
 const ReqAccess: CollectionConfig = {
   slug: reqAccessSlug,
-  access: openAccess,
+  access: {
+    ...openAccess,
+    read: ({ req }) => Object.keys(req.frogbot.collections).length > 0,
+  },
   hooks: {
     beforeChange: [
       async ({ req, data }) => {

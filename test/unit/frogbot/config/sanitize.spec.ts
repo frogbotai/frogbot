@@ -664,6 +664,68 @@ describe('frogbot sanitize', () => {
     expect(hooks[1]).toBe(existingHook);
   });
 
+  it('attaches req.frogbot before a collection access function runs', async () => {
+    const accessResult = { tenant: { equals: 'acme' } };
+    const read = vi.fn(({ req }) => {
+      expect(req.frogbot).toBeDefined();
+
+      return accessResult;
+    });
+    const result = sanitize(
+      makeConfig({
+        collections: [{ slug: 'users', auth: true, access: { read }, fields: [] }],
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
+    const payload = makePayload(payloadConfig);
+    const req = { payload };
+
+    const actual = await users.access.read({ req } as never);
+
+    expect(actual).toBe(accessResult);
+    expect(read).toHaveBeenCalledWith(expect.objectContaining({ req }));
+  });
+
+  it('attaches req.frogbot before Payload default collection access runs', async () => {
+    const defaultRead = vi.fn(({ req }) => Boolean(req.frogbot));
+
+    vi.mocked(payloadBuildConfig).mockImplementationOnce(async (config) => {
+      config.collections[0]!.access = {
+        ...config.collections[0]!.access,
+        read: defaultRead,
+      };
+
+      return config as never;
+    });
+
+    const result = sanitize(makeConfig());
+    const payloadConfig = await result._internal.payloadConfig;
+    const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
+    const payload = makePayload(payloadConfig);
+
+    await expect(users.access.read({ req: { payload } } as never)).resolves.toBe(true);
+    expect(defaultRead).toHaveBeenCalledOnce();
+  });
+
+  it('leaves collection access calls without a Payload request unchanged', async () => {
+    const error = new Error('access failed');
+    const read = vi.fn(() => {
+      throw error;
+    });
+    const result = sanitize(
+      makeConfig({
+        collections: [{ slug: 'users', auth: true, access: { read }, fields: [] }],
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
+    const args = { req: {} };
+
+    await expect(users.access.read(args as never)).rejects.toBe(error);
+    expect(read).toHaveBeenCalledWith(args);
+  });
+
   it('wraps per-collection custom endpoint handlers in the payload config', async () => {
     const handler = () => new Response('ok');
     const config = makeConfig({
@@ -995,6 +1057,97 @@ describe('frogbot sanitize', () => {
     expect(chats?.admin.components.views.list).toEqual({
       Component: '@frogbotai/next/views#DefaultListView',
     });
+  });
+
+  it('selects a custom dashboard view over an explicit modular dashboard', async () => {
+    const dashboardView = { Component: './Dashboard#Dashboard', path: '/' as const };
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          dashboard: {
+            widgets: [{ Component: './Widget#Widget', slug: 'summary' }],
+          },
+          components: { views: { dashboard: dashboardView } },
+        },
+      } as never),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.components.views.dashboard).toEqual(dashboardView);
+    expect(payloadConfig.admin.dashboard.widgets).toHaveLength(1);
+  });
+
+  it('selects the modular dashboard over the default Chat view', async () => {
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          dashboard: {
+            widgets: [{ Component: './Widget#Widget', slug: 'summary' }],
+          },
+        },
+      } as never),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.components.views.dashboard).toBeUndefined();
+    expect(payloadConfig.admin.dashboard.widgets).toHaveLength(1);
+  });
+
+  it('returns a default dashboard layout with the same req.frogbot request', async () => {
+    const defaultLayout = vi.fn(({ req }) => [
+      {
+        data: { collectionCount: Object.keys(req.frogbot.collections).length },
+        widgetSlug: 'summary',
+        width: 'small',
+      },
+    ]);
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          dashboard: {
+            defaultLayout,
+            widgets: [{ Component: './Widget#Widget', slug: 'summary' }],
+          },
+        },
+      } as never),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const req = { payload: makePayload(payloadConfig), context: {} } as never;
+
+    const layout = await payloadConfig.admin.dashboard.defaultLayout({ req });
+
+    expect(layout).toEqual([
+      {
+        data: { collectionCount: expect.any(Number) },
+        widgetSlug: 'summary',
+        width: 'small',
+      },
+    ]);
+    expect(defaultLayout).toHaveBeenCalledWith({ req });
+  });
+
+  it('preserves errors from the default dashboard layout', async () => {
+    const error = new Error('layout failed');
+    const defaultLayout = vi.fn(({ req }) => {
+      expect(req.frogbot).toBeDefined();
+
+      throw error;
+    });
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          dashboard: {
+            defaultLayout,
+            widgets: [{ Component: './Widget#Widget', slug: 'summary' }],
+          },
+        },
+      } as never),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const req = { payload: makePayload(payloadConfig), context: {} } as never;
+
+    await expect(payloadConfig.admin.dashboard.defaultLayout({ req })).rejects.toBe(error);
+    expect(defaultLayout).toHaveBeenCalledWith({ req });
   });
 
   it('defaults chat views on a marked custom collection', async () => {

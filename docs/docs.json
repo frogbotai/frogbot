@@ -143,6 +143,7 @@
               { "group": "Troubleshooting", "expanded": false, "pages": ["troubleshooting/troubleshooting"]},
               { "group": "Rich Text", "expanded": false, "pages": ["rich-text/overview", "rich-text/official-features", "rich-text/converters", "rich-text/converting-jsx", "rich-text/converting-html", "rich-text/converting-markdown", "rich-text/converting-plaintext"]},
               { "group": "Live Preview", "expanded": false, "pages": ["live-preview/overview", "live-preview/frontend", "live-preview/server", "live-preview/client"]},
+              { "group": "Custom Components", "expanded": false, "pages": ["custom-components/overview", "custom-components/root-components", "custom-components/custom-providers", "custom-components/custom-views", "custom-components/dashboard", "custom-components/document-views", "custom-components/edit-view", "custom-components/list-view"]},
               { "group": "AI", "expanded": false, "pages": ["ai/overview"]},
               { "group": "Agents", "expanded": false, "pages": ["agents/overview"]},
               { "group": "Chat", "expanded": false, "pages": ["chat/overview", "chat/manifest", "chat/training-data", "chat/ui-installation", "chat/ui-provider", "chat/ui-chat", "chat/ui-theming", "chat/ui-registries", "chat/ui-custom-shell"]},

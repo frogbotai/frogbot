@@ -7,6 +7,7 @@ Read the [root contribution guide](../../CONTRIBUTING.md) first for shared codin
 - Keep reusable components flat in `src/components` and name files by intent.
 - Components must not import chat, admin, or other domain code.
 - Internal file placement and public exports are separate decisions. Add consumer APIs to `src/index.ts` explicitly.
+- `src/exports/{client,shared,rsc}/index.ts` are the only files that may import `@payloadcms/ui`; the classification test governs their contents.
 
 ## Components
 
