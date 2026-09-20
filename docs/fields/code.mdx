@@ -1,0 +1,145 @@
+---
+title: Code Field
+sidebarTitle: Code
+description: Store text in a code editor with language-aware syntax highlighting.
+keywords: code, monaco, editor, fields, collections, configuration
+---
+
+The Code field stores a string while presenting a syntax-highlighted editor in the admin panel. It does not execute the stored code. Use a [JSON field](/fields/json) when the stored value should be structured JSON rather than text.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Snippets: CollectionConfig = {
+  slug: 'snippets',
+  fields: [
+    {
+      name: 'source',
+      type: 'code',
+      required: true,
+      admin: {
+        language: 'typescript',
+      },
+    },
+  ],
+}
+```
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Property name used in stored records and APIs. |
+| **`label`** | Field label shown in the admin panel. |
+| **`unique`** | Creates a database-level unique index. |
+| **`index`** | Creates a database index. |
+| **`minLength`** | Minimum string length. |
+| **`maxLength`** | Maximum string length. |
+| **`validate`** | Custom [validation function](/fields/overview#validation). |
+| **`saveToJWT`** | Includes a top-level auth field in the user token. |
+| **`hooks`** | [Field hooks](/hooks/fields). |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides the field from APIs and the admin panel while retaining stored data. |
+| **`defaultValue`** | [Initial field value](/fields/overview#default-values). |
+| **`localized`** | Stores a value for each configured locale. |
+| **`required`** | Requires a value. |
+| **`admin`** | Admin-panel appearance and behavior. |
+| **`custom`** | Custom metadata available to extensions. |
+| **`typescriptSchema`** | JSON Schema override used during type generation. |
+| **`virtual`** | Set to `true` to omit the field from database storage. |
+
+\*_An asterisk denotes a required option._
+
+## Admin options
+
+| Option | Description |
+| --- | --- |
+| **`language`** | Monaco language identifier used for syntax highlighting. |
+| **`editorOptions`** | Monaco editor configuration. |
+
+```ts
+const queryField = {
+  name: 'query',
+  type: 'code',
+  admin: {
+    language: 'sql',
+    editorOptions: {
+      minimap: { enabled: false },
+      wordWrap: 'on',
+    },
+  },
+} as const
+```
+
+## Custom components
+
+Override the field or its label through `admin.components`. Custom components can wrap FrogBot's default code editor.
+
+### Field
+
+#### Server component
+
+```tsx
+import { CodeField } from '@frogbotai/ui'
+import type { CodeFieldServerComponent } from 'frogbot'
+
+export const CustomCodeFieldServer: CodeFieldServerComponent = ({
+  clientField,
+  path,
+  permissions,
+  schemaPath,
+}) => (
+  <CodeField
+    field={clientField}
+    path={path}
+    permissions={permissions}
+    schemaPath={schemaPath}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { CodeField } from '@frogbotai/ui'
+import type { CodeFieldClientComponent } from 'frogbot'
+
+export const CustomCodeFieldClient: CodeFieldClientComponent = (props) => (
+  <CodeField {...props} />
+)
+```
+
+### Label
+
+#### Server component
+
+```tsx
+import { FieldLabel } from '@frogbotai/ui'
+import type { CodeFieldLabelServerComponent } from 'frogbot'
+
+export const CustomCodeLabelServer: CodeFieldLabelServerComponent = ({
+  clientField,
+  path,
+}) => (
+  <FieldLabel
+    label={clientField.label || clientField.name}
+    path={path}
+    required={clientField.required}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { FieldLabel } from '@frogbotai/ui'
+import type { CodeFieldLabelClientComponent } from 'frogbot'
+
+export const CustomCodeLabelClient: CodeFieldLabelClientComponent = ({ field, path }) => (
+  <FieldLabel label={field.label || field.name} path={path} required={field.required} />
+)
+```

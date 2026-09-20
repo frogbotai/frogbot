@@ -1,0 +1,45 @@
+---
+title: UI Field
+sidebarTitle: UI
+description: Place a custom React component among collection fields without storing data.
+keywords: ui, custom component, react, admin panel, fields, collections
+---
+
+The UI field renders a custom React component among the fields in an edit view. It is presentational only: it does not create a database column or add a property to stored records.
+
+Use UI fields for contextual instructions, document actions, preview links, cache controls, or other interfaces that belong beside authored content.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Orders: CollectionConfig = {
+  slug: 'orders',
+  fields: [
+    {
+      name: 'refundAction',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: '/components/RefundAction',
+          Cell: '/components/RefundStatusCell',
+        },
+      },
+    },
+  ],
+}
+```
+
+Component paths are resolved through the generated import map. The Field component is required; the Cell component is optional.
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Unique field identifier. No value is stored under this name. |
+| **`label`** | Human-readable field label. |
+| **`admin.components.Field`** * | React component rendered in the edit view. |
+| **`admin.components.Cell`** | React component rendered in collection list cells. |
+| **`admin.disableListColumn`** | Removes the field from the list-view column selector when `true`. |
+| **`custom`** | Custom metadata available to extensions. |
+
+\*_An asterisk denotes a required option._

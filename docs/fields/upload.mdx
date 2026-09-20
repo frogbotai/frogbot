@@ -1,0 +1,190 @@
+---
+title: Upload Field
+sidebarTitle: Upload
+description: Select one or more records from FrogBot file collections with Upload fields.
+keywords: upload, files, media, fields, collections, polymorphic, filters
+---
+
+The Upload field selects a record from a file collection and displays its preview in the admin panel. Use it for featured images, downloadable documents, audio, video, or other assets.
+
+FrogBot provides a `files` collection by default, so the smallest configuration is:
+
+```ts
+import type { Field } from 'frogbot'
+
+export const FeaturedImageField: Field = {
+  name: 'featuredImage',
+  type: 'upload',
+  relationTo: 'files',
+}
+```
+
+<Banner type="warning">
+  Every slug in `relationTo` must identify a file collection. See [Files and
+  uploads](/upload/files).
+</Banner>
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Property name used in stored records and APIs. See [Field names](/fields/overview#field-names). |
+| **`relationTo`** * | One file collection slug or an array of file collection slugs. |
+| **`filterOptions`** | Query or callback that limits selectable files and validates submitted values. See [Filtering upload options](#filtering-upload-options). |
+| **`hasMany`** | Set to `true` to store multiple file relationships. |
+| **`minRows`** | Minimum number of values when `hasMany` is enabled and a value is present. |
+| **`maxRows`** | Maximum number of values when `hasMany` is enabled and a value is present. |
+| **`maxDepth`** | Maximum population depth for this field, regardless of the remaining request depth. See [Depth](/queries/depth#max-depth). |
+| **`label`** | Field label shown in the admin panel. |
+| **`unique`** | Requires a unique value for this field across the collection and creates a database-level unique index for its path. See [Unique fields](/database/indexes#unique-fields). |
+| **`validate`** | Custom validation function. See [Validation](/fields/overview#validation). |
+| **`index`** | Creates a [database index](/database/indexes) to improve queries against this field. |
+| **`saveToJWT`** | Includes a top-level auth field in the user token. |
+| **`hooks`** | [Field hooks](/hooks/fields) for reading and changing the value. |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides the field from APIs and the admin panel while retaining stored data. |
+| **`defaultValue`** | Initial field value. See [Default values](/fields/overview#default-values). |
+| **`displayPreview`** | Overrides the file collection's setting for whether this field displays a preview. See [File collection options](/upload/overview#collection-upload-options). |
+| **`localized`** | Stores a value for each configured locale. Requires [localization](/configuration/localization). |
+| **`required`** | Requires a value. |
+| **`admin`** | Admin-panel appearance and behavior. See [Admin options](/fields/overview#admin-options). |
+| **`custom`** | Custom metadata available to extensions. |
+| **`typescriptSchema`** | JSON Schema override used during type generation. |
+| **`virtual`** | Set to `true` to omit this field from database storage, or provide a path that [links it to a relationship](/fields/relationship#linking-virtual-fields-with-relationships). |
+| **`graphQL`** | GraphQL schema metadata. FrogBot does not currently ship a GraphQL request handler. |
+
+\*_An asterisk denotes a required option._
+
+## Custom file collection
+
+To use a slug other than `files`, mark one collection with `file: true`. FrogBot enables its required upload behavior while preserving your fields and settings:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Media: CollectionConfig = {
+  slug: 'media',
+  file: true,
+  fields: [
+    {
+      name: 'alt',
+      type: 'text',
+    },
+  ],
+}
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  fields: [
+    {
+      name: 'backgroundImage',
+      type: 'upload',
+      relationTo: 'media',
+      required: true,
+    },
+  ],
+}
+```
+
+Mark exactly one custom collection with `file: true`. FrogBot merges its required upload configuration into that collection and does not inject `files`. If no collection adopts the role, FrogBot injects the `files` collection.
+
+Do not use `upload: true` to select the FrogBot file collection. If the marked collection also sets `upload: false`, configuration fails.
+
+## Filtering upload options
+
+Use `filterOptions` to limit files in the selector and validate submitted relationships. It accepts a [query constraint](/queries/overview), `true`, `false`, or a callback returning one of those values.
+
+The callback receives:
+
+| Property | Description |
+| --- | --- |
+| `relationTo` | File collection slug currently being filtered. |
+| `data` | Full data for the record being edited. |
+| `siblingData` | Data from fields under the same parent. |
+| `id` | Current record ID, or `undefined` during creation. |
+| `user` | Current authenticated user. |
+| `req` | FrogBot request, including `frogbot`, `user`, `locale`, and request context. |
+
+For example, limit the default file collection to images:
+
+```ts
+import type { Field } from 'frogbot'
+
+export const ImageField: Field = {
+  name: 'image',
+  type: 'upload',
+  relationTo: 'files',
+  filterOptions: {
+    mimeType: { contains: 'image' },
+  },
+}
+```
+
+<Banner type="warning">
+  When combining `filterOptions` with custom validation, make the validation
+  enforce every constraint your application requires. The selector filter alone
+  is not a replacement for custom validation logic.
+</Banner>
+
+## Bidirectional relationships
+
+An Upload field stores the connection on the record containing it. The file record does not automatically list every record that uses it.
+
+Add a [Join field](/fields/join) to the file collection when editors or API consumers need to traverse the relationship in both directions.
+
+## Polymorphic uploads
+
+The underlying field shape accepts an array in `relationTo`, but every target must be an active file collection. FrogBot has exactly one file collection, so polymorphic Upload fields are not supported. Use separate Upload fields when records need distinct asset roles.
+
+Use `hasMany` to select multiple records from the active file collection:
+
+```ts
+import type { Field } from 'frogbot'
+
+export const MediaField: Field = {
+  name: 'media',
+  type: 'upload',
+  relationTo: 'files',
+  hasMany: true,
+}
+```
+
+For a custom file collection, replace `files` with the slug of the collection marked `file: true`.
+
+## Custom components
+
+Override the field through `admin.components`. A custom component can wrap FrogBot's default upload control:
+
+### Server component
+
+```tsx
+import { UploadField } from '@frogbotai/ui'
+import type { UploadFieldServerComponent } from 'frogbot'
+
+export const CustomUploadFieldServer: UploadFieldServerComponent = ({
+  clientField,
+  path,
+  permissions,
+  schemaPath,
+}) => (
+  <UploadField
+    field={clientField}
+    path={path}
+    permissions={permissions}
+    schemaPath={schemaPath}
+  />
+)
+```
+
+### Client component
+
+```tsx
+'use client'
+
+import { UploadField } from '@frogbotai/ui'
+import type { UploadFieldClientComponent } from 'frogbot'
+
+export const CustomUploadFieldClient: UploadFieldClientComponent = (props) => (
+  <UploadField {...props} />
+)
+```

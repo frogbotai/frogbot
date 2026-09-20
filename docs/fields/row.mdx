@@ -1,0 +1,75 @@
+---
+title: Row Field
+sidebarTitle: Row
+description: Arrange fields horizontally in the admin panel without changing stored data.
+keywords: row, fields, layout, presentational, admin, configuration
+---
+
+The Row field is presentational. It arranges fields horizontally in the admin panel without adding a property to stored records or generated types.
+
+To add one, set `type` to `row` and place the fields to arrange in its `fields` array:
+
+```ts
+import type { RowField } from 'frogbot'
+
+export const nameRow: RowField = {
+  type: 'row',
+  fields: [
+    {
+      name: 'firstName',
+      type: 'text',
+      required: true,
+      admin: {
+        width: '50%',
+      },
+    },
+    {
+      name: 'lastName',
+      type: 'text',
+      required: true,
+      admin: {
+        width: '50%',
+      },
+    },
+  ],
+}
+```
+
+The record contains `firstName` and `lastName` at the current level. Rows can contain any recursively supported field, including groups, arrays, tabs, and other layout fields.
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`fields`** * | Fields arranged within the row. |
+| **`admin`** | Standard [admin options](/fields/overview#admin-options), excluding options that do not apply to a layout-only field. |
+| **`custom`** | Custom metadata available to extensions. |
+
+\*_An asterisk denotes a required option._
+
+Set `admin.width` on the nested fields to control their relative widths. On narrow screens, the admin panel can stack them to remain usable.
+
+## Custom components
+
+```tsx
+import { RowField } from '@frogbotai/ui'
+import type { RowFieldServerComponent } from 'frogbot'
+
+export const CustomRowField: RowFieldServerComponent = ({
+  clientField,
+  path,
+  permissions,
+  schemaPath,
+}) => {
+  return (
+    <RowField
+      field={clientField}
+      path={path}
+      permissions={permissions}
+      schemaPath={schemaPath}
+    />
+  )
+}
+```
+
+Use `RowFieldClientComponent` when the replacement must run in the browser.

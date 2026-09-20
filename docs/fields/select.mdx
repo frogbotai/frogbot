@@ -1,0 +1,183 @@
+---
+title: Select Field
+sidebarTitle: Select
+description: Choose one or many values from a predefined list.
+keywords: select, options, enum, fields, collections, configuration
+---
+
+The Select field stores one predefined option, or an ordered array of options when `hasMany` is enabled.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Status: Field = {
+  name: 'status',
+  type: 'select',
+  options: [
+    { label: 'Draft', value: 'draft' },
+    { label: 'Published', value: 'published' },
+  ],
+}
+```
+
+Options may be strings or `{ label, value }` objects.
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Stored property name. See [field names](/fields/overview#field-names). |
+| **`options`** * | Allowed string values or label/value objects. |
+| **`hasMany`** | Stores an ordered array of selections. |
+| **`label`** | Admin-panel label. |
+| **`unique`** | Creates a unique database index. |
+| **`validate`** | Custom [validation](/fields/overview#validation). |
+| **`index`** | Creates a database index. |
+| **`saveToJWT`** | Includes a top-level auth field in the user token. |
+| **`hooks`** | [Field hooks](/hooks/fields). |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides the field while retaining stored data. |
+| **`defaultValue`** | Initial value; it must be one of the configured options. |
+| **`localized`** | Stores one value per locale. |
+| **`required`** | Requires a value. |
+| **`admin`** | Admin-panel settings. |
+| **`custom`** | Extension metadata. |
+| **`enumName`** | Custom SQL enum name; otherwise generated from the field name. |
+| **`dbName`** | Custom SQL table name when `hasMany` is `true`. |
+| **`interfaceName`** | Generates a reusable top-level TypeScript interface. |
+| **`filterOptions`** | Filters the options shown and accepted for the current record. |
+| **`typescriptSchema`** | Type-generation JSON Schema override. |
+| **`virtual`** | Omits database storage or links a relationship path. |
+
+\*_An asterisk denotes a required option._
+
+<Banner type="warning">
+  Option values should avoid hyphens and special characters when the field's
+  metadata will be used to build a GraphQL schema. Underscores are safe. FrogBot
+  does not currently ship a GraphQL execution route; this constraint applies
+  only when an application separately mounts a compatible executor.
+</Banner>
+
+### Filter options
+
+`filterOptions` controls both which options appear in the admin panel and which values can be saved.
+
+Common uses include restricting options by user role and changing available options based on another field.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Visibility: Field = {
+  name: 'visibility',
+  type: 'select',
+  options: ['public', 'members', 'internal'],
+  filterOptions: ({ data, options }) =>
+    data.allowInternal
+      ? options
+      : options.filter((option) =>
+          (typeof option === 'string' ? option : option.value) !== 'internal',
+        ),
+}
+```
+
+<Banner type="warning">
+  Unlike relationship and upload `filterOptions`, this function returns an array
+  of options rather than a query constraint.
+</Banner>
+
+## Admin options
+
+Select fields support the standard [field admin options](/fields/overview#admin-options), plus these options:
+
+| Option | Description |
+| --- | --- |
+| **`isClearable`** | Allows the current selection to be cleared. |
+| **`isSortable`** | Enables drag-and-drop ordering when `hasMany` is `true`. |
+| **`placeholder`** | Replaces the default placeholder with text or a function. |
+
+## Example
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Cars: CollectionConfig = {
+  slug: 'cars',
+  fields: [
+    {
+      name: 'selectedFeatures',
+      type: 'select',
+      hasMany: true,
+      admin: {
+        isClearable: true,
+        isSortable: true,
+      },
+      options: [
+        { label: 'Metallic paint', value: 'metallic_paint' },
+        { label: 'Alloy wheels', value: 'alloy_wheels' },
+        { label: 'Carbon fiber dashboard', value: 'carbon_fiber_dashboard' },
+      ],
+    },
+  ],
+}
+```
+
+## Custom components
+
+### Field
+
+#### Server component
+
+```tsx
+import { SelectField } from '@frogbotai/ui'
+import type { SelectFieldServerComponent } from 'frogbot'
+
+export const CustomSelectServer: SelectFieldServerComponent = (props) => (
+  <SelectField
+    field={props.clientField}
+    path={props.path}
+    permissions={props.permissions}
+    schemaPath={props.schemaPath}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { SelectField } from '@frogbotai/ui'
+import type { SelectFieldClientComponent } from 'frogbot'
+
+export const CustomSelectClient: SelectFieldClientComponent = (props) => <SelectField {...props} />
+```
+
+### Label
+
+#### Server component
+
+```tsx
+import { FieldLabel } from '@frogbotai/ui'
+import type { SelectFieldLabelServerComponent } from 'frogbot'
+
+export const CustomSelectLabelServer: SelectFieldLabelServerComponent = ({ clientField, path }) => (
+  <FieldLabel
+    label={clientField.label || clientField.name}
+    path={path}
+    required={clientField.required}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { FieldLabel } from '@frogbotai/ui'
+import type { SelectFieldLabelClientComponent } from 'frogbot'
+
+export const CustomSelectLabelClient: SelectFieldLabelClientComponent = ({ field, path }) => (
+  <FieldLabel label={field.label || field.name} path={path} required={field.required} />
+)
+```

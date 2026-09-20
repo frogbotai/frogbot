@@ -1,0 +1,208 @@
+---
+title: Array Field
+sidebarTitle: Array
+description: Store repeatable rows of recursively configured fields.
+keywords: array, fields, repeatable, rows, collections, configuration
+---
+
+The Array field stores an ordered array of objects. Every row uses the same set of fields, and those fields can include other containers.
+
+Arrays suit both simple and complex repeating content, including:
+
+- Image sliders with an [upload field](/fields/upload) and caption
+- Navigation items with a [relationship field](/fields/relationship) and an "open in new tab" checkbox
+- Event timeslots with start and end dates, a label, and a related page
+
+To create an Array field, set `type` to `array` and provide its row fields:
+
+```ts
+import type { ArrayField } from 'frogbot'
+
+export const linksField: ArrayField = {
+  name: 'links',
+  type: 'array',
+  labels: {
+    singular: 'Link',
+    plural: 'Links',
+  },
+  fields: [
+    {
+      name: 'label',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'url',
+      type: 'text',
+      required: true,
+      hooks: {
+        beforeValidate: [({ req, value }) => {
+          req.frogbot.logger.debug('Validating an array row URL')
+
+          return value
+        }],
+      },
+    },
+  ],
+}
+```
+
+Generated records contain an array under the field name. Each row receives an `id` automatically.
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Property name used in stored records and APIs. |
+| **`fields`** * | Fields included in every row. |
+| **`label`** | Heading shown in the admin panel. |
+| **`labels`** | Singular and plural row labels. |
+| **`minRows`** | Minimum number of rows when a value is present. |
+| **`maxRows`** | Maximum number of rows when a value is present. |
+| **`validate`** | Custom [validation](/fields/overview#validation). |
+| **`hooks`** | [Field hooks](/hooks/fields). |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides the field from APIs and the admin panel while retaining stored data. |
+| **`defaultValue`** | Initial array of row values. |
+| **`localized`** | Stores a separate array for each configured locale. Nested fields do not also need `localized`. |
+| **`required`** | Requires a value. |
+| **`saveToJWT`** | Includes a top-level auth field in the user token. |
+| **`interfaceName`** | Name of the reusable generated TypeScript interface. |
+| **`dbName`** | Table name used by SQL database adapters. |
+| **`admin`** | Admin-panel appearance and behavior. |
+| **`custom`** | Custom metadata available to extensions. |
+| **`typescriptSchema`** | JSON Schema override used during type generation. |
+| **`virtual`** | Set to `true` to omit storage, or use a relationship path. |
+
+\*_An asterisk denotes a required option._
+
+<Banner type="warning">
+  Setting `unique: true` on a field inside an Array creates a collection-wide
+  database unique index, not uniqueness within one document. Use [custom
+  validation](/fields/overview#validation) on the Array field to reject
+  duplicate values among its rows.
+</Banner>
+
+## Admin options
+
+Array fields inherit the standard [field admin options](/fields/overview#admin-options) and add:
+
+| Option | Description |
+| --- | --- |
+| **`initCollapsed`** | Initially collapses each row. |
+| **`isSortable`** | Set to `false` to prevent row reordering. |
+| **`components.RowLabel`** | Component used to label each row. |
+
+## Example
+
+This slider requires between two and ten rows and gives every row a title, image, and caption:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  fields: [
+    {
+      name: 'slider',
+      type: 'array',
+      label: 'Image slider',
+      minRows: 2,
+      maxRows: 10,
+      interfaceName: 'CardSlider',
+      labels: {
+        singular: 'Slide',
+        plural: 'Slides',
+      },
+      fields: [
+        {
+          name: 'title',
+          type: 'text',
+        },
+        {
+          name: 'image',
+          type: 'upload',
+          relationTo: 'files',
+          required: true,
+        },
+        {
+          name: 'caption',
+          type: 'text',
+        },
+      ],
+    },
+  ],
+}
+```
+
+## Custom components
+
+Use the public field component and FrogBot component type for a custom field wrapper:
+
+```tsx
+import { ArrayField } from '@frogbotai/ui'
+import type { ArrayFieldServerComponent } from 'frogbot'
+
+export const CustomArrayField: ArrayFieldServerComponent = ({
+  clientField,
+  path,
+  permissions,
+  schemaPath,
+}) => {
+  return (
+    <ArrayField
+      field={clientField}
+      path={path}
+      permissions={permissions}
+      schemaPath={schemaPath}
+    />
+  )
+}
+```
+
+A client row label can read the current row without receiving custom props:
+
+```tsx
+'use client'
+
+import { useRowLabel } from '@frogbotai/ui'
+
+export function LinkRowLabel() {
+  const { data, rowNumber } = useRowLabel<{ label?: string }>()
+
+  return <span>{data.label || `Link ${rowNumber + 1}`}</span>
+}
+```
+
+Configure it with `admin.components.RowLabel: '/components/LinkRowLabel#LinkRowLabel'`.
+
+Use `ArrayFieldClientComponent` for a client field wrapper. Use `ArrayFieldLabelServerComponent` or `ArrayFieldLabelClientComponent` to replace only the field label while retaining the default field UI.
+
+```tsx
+'use client'
+
+import { ArrayField } from '@frogbotai/ui'
+import type { ArrayFieldClientComponent } from 'frogbot'
+
+export const CustomArrayFieldClient: ArrayFieldClientComponent = (props) => {
+  return <ArrayField {...props} />
+}
+```
+
+```tsx
+import { FieldLabel } from '@frogbotai/ui'
+import type { ArrayFieldLabelServerComponent } from 'frogbot'
+
+export const CustomArrayLabel: ArrayFieldLabelServerComponent = ({
+  clientField,
+  path,
+}) => {
+  return (
+    <FieldLabel
+      label={clientField?.label || clientField?.name}
+      path={path}
+      required={clientField?.required}
+    />
+  )
+}
+```

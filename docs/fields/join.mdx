@@ -1,0 +1,153 @@
+---
+title: Join Field
+sidebarTitle: Join
+description: Surface records that refer to the current record without storing a second relationship.
+keywords: join, relationship, virtual field, fields, collections, REST
+---
+
+The Join field exposes a relationship or upload field in the opposite direction. It is virtual: FrogBot queries the related collection instead of storing a second list of IDs on the current record.
+
+Use a Join field to show a product's orders, a category's posts, or every record that uses an uploaded file.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Categories: CollectionConfig = {
+  slug: 'categories',
+  fields: [
+    {
+      name: 'relatedPosts',
+      type: 'join',
+      collection: 'posts',
+      on: 'category',
+    },
+  ],
+}
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  fields: [
+    {
+      name: 'category',
+      type: 'relationship',
+      relationTo: 'categories',
+    },
+  ],
+}
+```
+
+Here, `relatedPosts` finds records whose `category` field refers to the current category. `on` also accepts a nested path such as `details.category`.
+
+<Banner type="info">
+  Join fields are populated when query depth is at least `1`. Set `joins: false`
+  when a query does not need reverse relationships.
+</Banner>
+
+## Schema design
+
+Store a relationship in one place whenever possible. A post can store its category while the category uses a Join field to retrieve its posts. This avoids synchronizing duplicate relationship arrays and remains practical when one category has many posts.
+
+For relationships with their own data, create a junction collection. For example, a `category-posts` collection can contain `category`, `post`, `featured`, and `position` fields. Join fields on both related collections can then surface those records.
+
+On PostgreSQL and SQLite, polymorphic or many-valued relationships normally use an automatically managed `_rels` table. A dedicated junction collection gives you direct control over that table's fields and indexes. It can be hidden from admin navigation while Join fields provide the editing interface on either side.
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Property name used in API results. |
+| **`collection`** * | Related collection slug, or an array of slugs. |
+| **`on`** * | Relationship or upload field that points to the current collection. |
+| **`where`** | Base filter merged with a query's Join filter. |
+| **`defaultLimit`** | Number of related records returned by default. Use `0` for all records. |
+| **`defaultSort`** | Default sort for related records. |
+| **`maxDepth`** | Maximum population depth below this field. |
+| **`orderable`** | Enables drag-and-drop ordering of joined records. |
+| **`label`** | Field label shown in the admin panel. |
+| **`hooks`** | [Field hooks](/hooks/fields). |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`admin`** | Join-specific admin settings. |
+| **`custom`** | Custom metadata available to extensions. |
+| **`typescriptSchema`** | JSON Schema override used during type generation. |
+| **`graphQL`** | GraphQL schema metadata. This does not mount a GraphQL endpoint. |
+
+\*_An asterisk denotes a required option._
+
+### Admin options
+
+| Option | Description |
+| --- | --- |
+| **`defaultColumns`** | Fields shown in the related-record table. |
+| **`allowCreate`** | Set to `false` to prevent creating related records from this field. |
+| **`components.Label`** | Custom label component. |
+| **`disableRowTypes`** | Hides collection labels in polymorphic rows when `true`. |
+
+## Returned data
+
+A populated Join field returns `docs`, `hasNextPage`, and, when `count: true` is requested, `totalDocs`:
+
+```json
+{
+  "relatedPosts": {
+    "docs": [{ "id": "post-1", "title": "First post" }],
+    "hasNextPage": false,
+    "totalDocs": 1
+  }
+}
+```
+
+For a polymorphic Join, each item contains `relationTo` and `value`.
+
+```json
+{
+  "relatedContent": {
+    "docs": [
+      {
+        "relationTo": "posts",
+        "value": { "id": "post-1", "title": "First post" }
+      }
+    ],
+    "hasNextPage": false,
+    "totalDocs": 1
+  }
+}
+```
+
+## Query options
+
+Join queries accept `limit`, `where`, `sort`, and `count`. Configure them by field name in the Local API:
+
+```ts
+const result = await frogbot.find({
+  collection: 'categories',
+  joins: {
+    relatedPosts: {
+      count: true,
+      limit: 5,
+      sort: '-createdAt',
+      where: {
+        published: { equals: true },
+      },
+    },
+  },
+})
+```
+
+<Banner type="warning">
+  Filtering polymorphic joins is limited for relationship fields nested inside
+  arrays and blocks.
+</Banner>
+
+## REST API
+
+The REST API accepts the same options through a `joins` query parameter:
+
+```text
+/api/categories/category-1?joins[relatedPosts][limit]=5&joins[relatedPosts][sort]=-createdAt&joins[relatedPosts][count]=true
+```
+
+Repeat the nested parameters to configure additional Join fields or filters.
+
+## GraphQL
+
+Join fields retain GraphQL schema metadata for applications that provide and verify their own GraphQL execution integration. FrogBot does not currently ship or mount a public GraphQL endpoint, so this page does not claim an executable GraphQL query path. Use the Local or REST API examples above in a standard FrogBot application.

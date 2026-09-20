@@ -1,9 +1,9 @@
-import type { CollectionBeforeChangeHook, PayloadComponent, TextField } from 'payload';
+import type { CollectionBeforeChangeHook, PayloadComponent } from 'payload';
 import { generateKeyBetween } from 'payload/shared';
 
 import type { CollectionView, CollectionViewMetadata } from '../admin/views/types.js';
 import type { CollectionConfig } from '../collections/config/types.js';
-import type { Field } from '../fields/config/types.js';
+import type { Field, TextField } from '../fields/config/types.js';
 
 const DEFAULT_VIEW: CollectionView = { type: 'list' };
 const GROUP_BY_FIELD_TYPES: Field['type'][] = [

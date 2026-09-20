@@ -1,0 +1,443 @@
+---
+title: Blocks Field
+sidebarTitle: Blocks
+description: Build ordered, flexible content from reusable block schemas.
+keywords: blocks, fields, layout builder, lexical, collections, configuration
+---
+
+The Blocks field stores an ordered array in which each item can use a different schema. It is useful for page builders, forms, and other content that mixes reusable structures.
+
+Unlike an Array field, where every row has the same shape, a Blocks field lets editors mix configured block types in any order. Common uses include:
+
+- Page builders with quote, call-to-action, slider, and gallery blocks
+- Form builders with text, select, and checkbox blocks
+- Event agendas with break, presentation, and breakout-session blocks
+
+```ts
+import type { Block, BlocksField } from 'frogbot'
+
+const QuoteBlock: Block = {
+  slug: 'quote',
+  interfaceName: 'QuoteBlock',
+  fields: [
+    {
+      name: 'quote',
+      type: 'textarea',
+      required: true,
+    },
+    {
+      name: 'attribution',
+      type: 'text',
+    },
+  ],
+}
+
+export const layoutField: BlocksField = {
+  name: 'layout',
+  type: 'blocks',
+  blocks: [QuoteBlock],
+  minRows: 1,
+  maxRows: 20,
+}
+```
+
+Each stored item includes `blockType`, whose value is the block's `slug`, and an optional editor-controlled `blockName`.
+
+## Field config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Property name used in stored records and APIs. |
+| **`blocks`** * | Block objects available directly to this field. Use an empty array when only references are used. |
+| **`blockReferences`** | Root block objects or slugs registered in the root config. |
+| **`label`** | Heading shown in the admin panel. |
+| **`labels`** | Singular and plural labels for block rows. |
+| **`minRows`** | Minimum number of blocks when a value is present. |
+| **`maxRows`** | Maximum number of blocks when a value is present. |
+| **`filterOptions`** | Selects the block slugs available for the current document. |
+| **`validate`** | Custom [validation](/fields/overview#validation). |
+| **`hooks`** | [Field hooks](/hooks/fields). |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides the field from APIs and the admin panel while retaining stored data. |
+| **`defaultValue`** | Initial array of block values. |
+| **`localized`** | Stores a separate block array for each configured locale. |
+| **`required`** | Requires a value. |
+| **`saveToJWT`** | Includes a top-level auth field in the user token. |
+| **`unique`** | Creates a collection-wide database unique index for the field path. |
+| **`admin`** | Admin-panel appearance and behavior. |
+| **`custom`** | Custom metadata available to extensions. |
+| **`typescriptSchema`** | JSON Schema override used during type generation. |
+| **`virtual`** | Set to `true` to omit storage, or use a relationship path. |
+
+\*_An asterisk denotes a required option._
+
+<Banner type="warning">
+  Setting `unique: true` on a field inside a block creates a collection-wide
+  database unique index, not uniqueness within one document. Use [custom
+  validation](/fields/overview#validation) on the Blocks field to reject
+  duplicate values among its blocks.
+</Banner>
+
+## Field admin options
+
+Blocks fields inherit the standard [field admin options](/fields/overview#admin-options) and add:
+
+| Option | Description |
+| --- | --- |
+| **`initCollapsed`** | Initially collapses each block row. |
+| **`isSortable`** | Set to `false` to prevent block reordering. |
+
+## Copying and pasting blocks
+
+The admin panel can copy and paste individual block rows or the complete contents of a Blocks field. These actions are available from each row's action menu and the field-level action menu.
+
+### Row-level and field-level actions
+
+- **Copy Row** copies one block and lets you paste it at a chosen position in a compatible Blocks field.
+- **Copy Fields** copies every block in the field.
+- **Duplicate** immediately inserts a copy below the original block in the same field and document.
+- **Paste Fields** replaces the target field's entire contents with the clipboard contents.
+
+Copy and paste can move blocks between compatible fields and documents in browser tabs on the same origin. Clipboard data is kept in browser storage and is not shared between different FrogBot origins. FrogBot checks that the target field includes the copied block type and regenerates block and nested Array row IDs when pasting.
+
+<Banner type="warning">
+  **Paste Fields replaces every existing block**, even when the clipboard holds
+  only one row. To add one copied block without replacing the field, add an
+  empty row and use **Paste Row** from that row's action menu.
+</Banner>
+
+## Block items
+
+Blocks are separate, reusable configuration objects. Define block objects outside collection definitions when multiple fields or collections use the same schema.
+
+<Banner type="success">
+  Keep reusable blocks in separate files. One block object can then be shared
+  by Blocks fields and Rich Text editors without duplicating its schema.
+</Banner>
+
+## Block config options
+
+| Option | Description |
+| --- | --- |
+| **`slug`** * | Identifier stored as `blockType`. |
+| **`fields`** * | Recursively configured fields stored in this block. |
+| **`labels`** | Labels shared by every instance of this block type. |
+| **`interfaceName`** | Name of the reusable generated TypeScript interface. |
+| **`dbName`** | Table name used by SQL database adapters. |
+| **`admin`** | Block display, grouping, images, and component settings. |
+| **`custom`** | Custom metadata available to extensions. |
+| **`graphQL.singularName`** | Schema name used only when the application provides a GraphQL execution path. Prefer `interfaceName`. |
+| **`jsx`** | Converts this block to JSX when used by a compatible rich-text converter. |
+
+\*_An asterisk denotes a required option._
+
+### Block admin options
+
+Blocks are configuration objects rather than fields, so their admin options are independent of the standard field admin options:
+
+| Option | Description |
+| --- | --- |
+| **`components.Block`** | Replaces the complete block UI, including its header. |
+| **`components.Label`** | Replaces the shared label and each row's displayed name. |
+| **`disableBlockName`** | Hides the editable `blockName` control. |
+| **`group`** | Groups this block under a heading in the block-selection drawer. |
+| **`custom`** | Custom admin metadata available to extensions. |
+| **`images`** | Icon and thumbnail images for editor and selection interfaces. |
+
+### Block images
+
+`admin.images.icon` appears in Rich Text menus and toolbars at 20 by 20 pixels. Square SVG or transparent PNG assets work best. If no icon is configured, the thumbnail is used as a fallback.
+
+`admin.images.thumbnail` appears in the block-selection drawer at a 3:2 aspect ratio. Other ratios are cropped with `object-fit: cover`, so keep important content centered. Each image accepts either a URL string or an object containing `url` and optional `alt` text.
+
+```ts
+import type { Block } from 'frogbot'
+
+export const QuoteBlock: Block = {
+  slug: 'quote',
+  admin: {
+    images: {
+      icon: {
+        url: '/block-images/quote-icon.svg',
+        alt: 'Quote',
+      },
+      thumbnail: {
+        url: '/block-images/quote-thumbnail.webp',
+        alt: 'A quotation with an attribution',
+      },
+    },
+  },
+  fields: [
+    {
+      name: 'quote',
+      type: 'textarea',
+      required: true,
+    },
+  ],
+}
+```
+
+URL strings are useful when separate alternative text is unnecessary:
+
+```ts
+import type { Block } from 'frogbot'
+
+export const DividerBlock: Block = {
+  slug: 'divider',
+  admin: {
+    images: {
+      icon: '/block-images/divider-icon.svg',
+    },
+  },
+  fields: [],
+}
+```
+
+Both images can also use URL strings:
+
+```ts
+import type { Block } from 'frogbot'
+
+export const CallToActionBlock: Block = {
+  slug: 'callToAction',
+  admin: {
+    images: {
+      icon: '/block-images/call-to-action-icon.svg',
+      thumbnail: '/block-images/call-to-action-thumbnail.webp',
+    },
+  },
+  fields: [
+    {
+      name: 'buttonText',
+      type: 'text',
+    },
+  ],
+}
+```
+
+When `images` is omitted, the admin panel supplies default graphics.
+
+### Block type, name, and label
+
+Each block row stores `blockType` and may store `blockName`. The block config's `labels` apply to every block of that type, while `blockName` belongs to one row.
+
+| Property | Scope | Source | Admin behavior |
+| --- | --- | --- | --- |
+| **`blockType`** | One row | Block `slug` | Resolves the schema and is not the editable header. |
+| **`blockName`** | One row | Editor input | Optional row name; hide it with `admin.disableBlockName`. |
+| **Block label** | Block type | `labels` or the `slug` fallback | Shared by every row of that type. |
+
+`admin.components.Label` replaces both the configured block label and the editable row-name presentation.
+
+## Root block registration
+
+Register a reusable block once in the root config, then reference it by slug. Object references are also accepted.
+
+```ts
+import { buildConfig } from 'frogbot'
+import type { Block } from 'frogbot'
+
+const TextBlock: Block = {
+  slug: 'text',
+  fields: [
+    {
+      name: 'text',
+      type: 'textarea',
+    },
+  ],
+}
+
+export default buildConfig({
+  blocks: [TextBlock],
+  collections: [
+    {
+      slug: 'pages',
+      fields: [
+        {
+          name: 'layout',
+          type: 'blocks',
+          blocks: [],
+          blockReferences: ['text'],
+        },
+      ],
+    },
+  ],
+})
+```
+
+Referenced block configuration is shared and cannot be extended at the field. Its access control runs without collection-specific sibling data.
+
+The root registration prevents the same block schema from being sent and processed repeatedly when many fields reuse it. Keep `blocks: []` on a Blocks field that uses only `blockReferences`.
+
+<Banner type="warning">
+  Referenced blocks are isolated from the collection configuration. Their
+  schema cannot be extended at the reference site, and their access control is
+  evaluated without collection-specific data.
+</Banner>
+
+## TypeScript
+
+Use the public `Block` type for separately authored block objects and `BlocksField` for complete field objects:
+
+```ts
+import type { Block, BlocksField } from 'frogbot'
+
+export const HeroBlock: Block = {
+  slug: 'hero',
+  interfaceName: 'HeroBlock',
+  fields: [
+    {
+      name: 'heading',
+      type: 'text',
+      required: true,
+    },
+  ],
+}
+
+export const heroLayout: BlocksField = {
+  name: 'layout',
+  type: 'blocks',
+  blocks: [HeroBlock],
+}
+```
+
+`interfaceName` gives the block a reusable top-level interface when you run `frogbot generate:types`.
+
+## Conditional blocks
+
+`filterOptions` can return `true` for all configured blocks or an array of allowed slugs. It is reevaluated when form state changes, and saving fails if an existing block is no longer allowed.
+
+```ts
+import type { BlocksField } from 'frogbot'
+
+export const conditionalLayout: BlocksField = {
+  name: 'layout',
+  type: 'blocks',
+  blocks: [
+    { slug: 'hero', fields: [{ name: 'heading', type: 'text' }] },
+    { slug: 'quote', fields: [{ name: 'quote', type: 'textarea' }] },
+  ],
+  filterOptions: ({ siblingData }) => {
+    return siblingData.mode === 'simple' ? ['hero'] : true
+  },
+}
+```
+
+## Lexical blocks
+
+The same FrogBot `Block` objects can be embedded in a Lexical Rich Text field with `BlocksFeature`:
+
+```ts
+import { BlocksFeature, lexicalEditor } from '@frogbotai/richtext-lexical'
+import type { Block, RichTextField } from 'frogbot'
+
+const CalloutBlock: Block = {
+  slug: 'callout',
+  fields: [
+    {
+      name: 'message',
+      type: 'textarea',
+      required: true,
+    },
+  ],
+}
+
+export const contentField: RichTextField = {
+  name: 'content',
+  type: 'richText',
+  editor: lexicalEditor({
+    features: ({ defaultFeatures }) => [
+      ...defaultFeatures,
+      BlocksFeature({ blocks: [CalloutBlock] }),
+    ],
+  }),
+}
+```
+
+Nested Rich Text fields need their own `editor`. See the [Rich Text field](/fields/rich-text) for editor configuration.
+
+### Custom Lexical rendering
+
+A block's `admin.components.Block` replaces its preview inside the Lexical editor, and `admin.components.Label` replaces its label. Server previews use `LexicalBlockServerProps`; client previews use `LexicalBlockClientProps`.
+
+The `Block` type also preserves `jsx` conversion metadata for compatible Rich Text rendering pipelines. Configure it on the reusable block rather than creating a second schema for rendering.
+
+Client previews can reuse the editor's public controls instead of rebuilding edit and remove behavior:
+
+```tsx
+'use client'
+
+import {
+  BlockCollapsible,
+  BlockEditButton,
+  BlockRemoveButton,
+  InlineBlockContainer,
+  InlineBlockEditButton,
+  InlineBlockLabel,
+  InlineBlockRemoveButton,
+} from '@frogbotai/richtext-lexical/client'
+```
+
+Use the regular block controls for block previews and the inline controls for inline block previews. `BlockCollapsible` and `InlineBlockContainer` provide the corresponding default containers.
+
+## Custom components
+
+Replace the Blocks field while retaining the default UI:
+
+```tsx
+import { BlocksField } from '@frogbotai/ui'
+import type { BlocksFieldServerComponent } from 'frogbot'
+
+export const CustomBlocksField: BlocksFieldServerComponent = ({
+  clientField,
+  path,
+  permissions,
+  schemaPath,
+}) => {
+  return (
+    <BlocksField
+      field={clientField}
+      path={path}
+      permissions={permissions}
+      schemaPath={schemaPath}
+    />
+  )
+}
+```
+
+Client field replacements receive props compatible with the default field component:
+
+```tsx
+'use client'
+
+import { BlocksField } from '@frogbotai/ui'
+import type { BlocksFieldClientComponent } from 'frogbot'
+
+export const CustomBlocksFieldClient: BlocksFieldClientComponent = (props) => {
+  return <BlocksField {...props} />
+}
+```
+
+Replace only the field label when the default Blocks interface should remain unchanged:
+
+```tsx
+import { FieldLabel } from '@frogbotai/ui'
+import type { BlocksFieldLabelServerComponent } from 'frogbot'
+
+export const CustomBlocksLabel: BlocksFieldLabelServerComponent = ({
+  clientField,
+  path,
+}) => {
+  return (
+    <FieldLabel
+      label={clientField?.label || clientField?.name}
+      path={path}
+      required={clientField?.required}
+    />
+  )
+}
+```
+
+Use `BlocksFieldLabelClientComponent` for a client label and `BlockRowLabelServerComponent` or `BlockRowLabelClientComponent` for block rows.
+
+Lexical block previews use `LexicalBlockServerProps` or `LexicalBlockClientProps` from `@frogbotai/richtext-lexical`. Configure their component paths on the block's `admin.components.Block` slot.

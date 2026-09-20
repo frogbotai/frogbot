@@ -1,0 +1,978 @@
+---
+title: Fields Overview
+sidebarTitle: Overview
+description: Configure FrogBot fields, validation, defaults, access, hooks, and custom admin components.
+keywords: fields, configuration, validation, access control, hooks, custom components, typescript
+---
+
+Fields define the shape of Documents stored in a [Collection](/configuration/collections). FrogBot uses the same definitions to build database schemas, API responses, generated TypeScript types, and the editing interface in the admin panel.
+
+Most fields store data. Layout fields organize the editing interface without adding values to a Document, while virtual fields expose values that are not persisted.
+
+<Info>
+  FrogBot also contributes fields to collections with framework roles. See [role-marked collections](#role-marked-collections) and [Default Fields](/fields/default-fields).
+</Info>
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  fields: [
+    {
+      name: 'title',
+      type: 'text',
+      required: true,
+    },
+  ],
+}
+```
+
+## Field types
+
+Choose the field type that matches the value and editing experience you need.
+
+### Data fields
+
+Data fields have a `name` and ordinarily store their value in the database.
+
+- [Array](/fields/array) for repeating rows of nested fields
+- [Blocks](/fields/blocks) for block-based content
+- [Checkbox](/fields/checkbox) for boolean values
+- [Code](/fields/code) for source code stored as a string
+- [Date](/fields/date) for date and time values
+- [Email](/fields/email) for validated email addresses
+- [Group](/fields/group) for fields nested in a keyed object
+- [JSON](/fields/json) for structured JSON values
+- [Number](/fields/number) for numeric values
+- [Point](/fields/point) for geographic coordinates
+- [Radio](/fields/radio) for one value from a visible set of choices
+- [Relationship](/fields/relationship) for references to other collections
+- [Rich Text](/fields/rich-text) for structured rich content
+- [Select](/fields/select) for one or more values from a choice list
+- [Tabs](/fields/tabs) for named groups displayed as tabs
+- [Text](/fields/text) for single-line strings
+- [Textarea](/fields/textarea) for multi-line strings
+- [Upload](/fields/upload) for references to file collections
+
+### Layout fields
+
+Layout fields organize the admin form and do not store their own value.
+
+- [Collapsible](/fields/collapsible) groups fields in an expandable section.
+- [Row](/fields/row) arranges fields horizontally.
+- Unnamed [Groups](/fields/group) and unnamed [Tabs](/fields/tabs) arrange nested fields without adding another key to the Document.
+- [UI](/fields/ui) renders a custom interface without storing data.
+
+### Virtual fields
+
+[Join fields](/fields/join) are virtual by design. Other data fields can use `virtual: true` and an `afterRead` hook to return a computed value without persisting it.
+
+<Tip>
+  If no built-in field type fits your application, combine [validation](#validation) with a [custom field component](#custom-components) to create the required editing experience while keeping an appropriate underlying data type.
+</Tip>
+
+## Virtual field configuration
+
+Any data field can be made virtual by setting its `virtual` property. Virtual values appear in API responses and can be displayed in the admin panel, but FrogBot does not persist them in the database. They are useful for computed values, relationship summaries, and formatted versions of stored data.
+
+The `virtual` property accepts either `true` or a string relationship path.
+
+### Boolean virtual fields
+
+Setting `virtual: true` marks the field as virtual but does not populate it. Use an `afterRead` field hook to calculate its value.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const FullName: Field = {
+  name: 'fullName',
+  type: 'text',
+  virtual: true,
+  hooks: {
+    afterRead: [({ siblingData }) => `${siblingData.firstName} ${siblingData.lastName}`],
+  },
+}
+```
+
+### String path virtual fields
+
+A string `virtual` value creates a virtual relationship field. FrogBot follows the path from a relationship in the current Document and returns the value at the destination.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const AuthorName: Field = {
+  name: 'authorName',
+  type: 'text',
+  virtual: 'author.name',
+}
+```
+
+### Virtual path syntax
+
+Virtual paths use dot notation to traverse relationships and nested data:
+
+- `author.name` returns the `name` field from the `author` relationship.
+- `author.profile.bio` returns `bio` from the related author's nested `profile` object.
+- `categories.title` returns the `title` values from a `hasMany` relationship.
+- `request.additionalStakeholders.email` traverses multiple relationship levels.
+
+The first path segment must name a relationship field in the same collection. Paths resolve while FrogBot reads the Document. When a path traverses a `hasMany` relationship, the virtual field returns an array of values.
+
+### Common use cases
+
+#### Displaying relationship names
+
+Add a virtual field when an API response should expose a useful property next to a relationship ID:
+
+```ts
+import type { Field } from 'frogbot'
+
+export const AuthorFields: Field[] = [
+  {
+    name: 'author',
+    type: 'relationship',
+    relationTo: 'users',
+  },
+  {
+    name: 'authorName',
+    type: 'text',
+    virtual: 'author.name',
+  },
+]
+```
+
+#### Multiple relationship values
+
+Virtual paths through `hasMany` relationships return arrays:
+
+```ts
+import type { Field } from 'frogbot'
+
+export const CategoryFields: Field[] = [
+  {
+    name: 'categories',
+    type: 'relationship',
+    relationTo: 'categories',
+    hasMany: true,
+  },
+  {
+    name: 'categoryTitles',
+    type: 'text',
+    virtual: 'categories.title',
+  },
+]
+```
+
+#### Computed values
+
+Use a hook when the result is calculated rather than read from a relationship:
+
+```ts
+import type { Field } from 'frogbot'
+
+export const WordCount: Field = {
+  name: 'wordCount',
+  type: 'number',
+  virtual: true,
+  hooks: {
+    afterRead: [({ siblingData }) => {
+      const content = siblingData.content || ''
+
+      return content.split(/\s+/).filter(Boolean).length
+    }],
+  },
+}
+```
+
+### Virtual fields in API responses
+
+Virtual fields appear alongside stored fields in API responses:
+
+```json
+{
+  "id": "123",
+  "title": "My Post",
+  "author": "64f1234567890abcdef12345",
+  "authorName": "John Doe",
+  "categories": ["64f9876543210fedcba67890", "64f5432109876543210abcdef"],
+  "categoryTitles": ["Tech", "News"],
+  "wordCount": 450
+}
+```
+
+<Warning>
+  A string virtual path cannot resolve unless its source relationship exists in the same collection. For example, `virtual: 'author.name'` requires an `author` relationship field.
+</Warning>
+
+## Field options
+
+Every field requires a `type`. Data fields also require a `name`. Each field type adds options for its value, storage, validation, and editing interface.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Subtitle: Field = {
+  name: 'subtitle',
+  type: 'text',
+  maxLength: 120,
+}
+```
+
+See the page for each [field type](#field-types) for its complete options.
+
+<Warning>
+  A field is an object with at least a `type`. The selected type determines the other accepted options, API value shape, and default admin component.
+</Warning>
+
+### Field names
+
+Field names become keys in API response objects and generated TypeScript types. Names must be unique among sibling fields. Use JavaScript-style identifiers that begin with a letter or underscore and contain only letters, numbers, and underscores.
+
+<Warning>
+  Avoid names beginning with a digit, such as `1field`, or containing hyphens, such as `field-name`. Although these are valid string values, they can conflict with dot-notation paths, database columns, and schema identifiers.
+</Warning>
+
+FrogBot reserves internal names. A reserved field is removed while the configuration is sanitized. The following names cannot be used:
+
+- `__v`
+- `salt`
+- `hash`
+- `file`
+- `status` when drafts and the Postgres adapter are enabled
+
+Enabled FrogBot features can reserve additional names for the fields they manage. See [Default Fields](/fields/default-fields) for those conditional fields.
+
+### Field-level hooks
+
+Field hooks run at specific points while FrogBot creates, updates, or reads a Document.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const NormalizedTitle: Field = {
+  name: 'title',
+  type: 'text',
+  hooks: {
+    beforeValidate: [({ value }) => value?.trim()],
+  },
+}
+```
+
+Hook arguments include a `FrogbotRequest`. Server hooks access the current framework instance through `req.frogbot`, not through a separate global or per-field instance.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const CollectionCount: Field = {
+  name: 'collectionCount',
+  type: 'number',
+  virtual: true,
+  hooks: {
+    afterRead: [({ req }) => Object.keys(req.frogbot.collections).length],
+  },
+}
+```
+
+See [Field Hooks](/hooks/fields) for hook order and all arguments.
+
+### Field-level access control
+
+Field access functions control whether a field can be created, updated, or read. They return a boolean and receive the current `req`, Document data, and sibling data.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const InternalNotes: Field = {
+  name: 'internalNotes',
+  type: 'textarea',
+  access: {
+    read: ({ req }) => Boolean(req.user),
+    update: ({ req }) => Boolean(req.user),
+  },
+}
+```
+
+See [Field Access Control](/access-control/fields) for the operation-specific rules.
+
+### Default values
+
+Use `defaultValue` to populate a missing value during create or update operations. It can be a static value or a function based on the current locale or authenticated user.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Greeting: Field = {
+  name: 'greeting',
+  type: 'text',
+  defaultValue: 'Hello, World!',
+}
+```
+
+A default-value function receives:
+
+| Property | Description |
+| --- | --- |
+| `user` | The authenticated user, when one is present. |
+| `locale` | The currently selected locale. |
+| `req` | The current framework request. Server code accesses the instance through `req.frogbot`. |
+
+```ts
+import type { Field } from 'frogbot'
+
+const attribution = {
+  en: 'Written by',
+  es: 'Escrito por',
+}
+
+export const Attribution: Field = {
+  name: 'attribution',
+  type: 'text',
+  defaultValue: ({ locale, user }) => {
+    const language = locale === 'es' ? 'es' : 'en'
+    const author = user?.name ?? 'Unknown'
+
+    return `${attribution[language]} ${author}`
+  },
+}
+```
+
+Static defaults may also be reflected in the database schema by the configured database adapter. Defaults do not replace validation or access control.
+
+<Tip>
+  A default-value function can use `req.frogbot` to call the Local API on the server. Keep the function deterministic enough for every create or update path that can omit the field.
+</Tip>
+
+### Validation
+
+FrogBot automatically validates field types and constraints such as `required`, `min`, `max`, and length limits. Set `validate` to replace a field's default validator with application-specific logic.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const ProductCode: Field = {
+  name: 'productCode',
+  type: 'text',
+  validate: (value) => {
+    if (!value) return 'A product code is required'
+    if (!/^[A-Z]{3}-\d{4}$/.test(value)) return 'Use the format ABC-1234'
+
+    return true
+  },
+}
+```
+
+A validator returns `true` when the value is valid or an error-message string when it is invalid. It may also return a promise. The context includes:
+
+| Argument | Description |
+| --- | --- |
+| `value` | The field value being validated. |
+| `ctx` | Document, request, operation, and field-path context. |
+
+#### Validation context
+
+Use the context to compare sibling values, inspect the operation, identify the current Document, or read the authenticated user from `req.user`.
+
+| Property | Description |
+| --- | --- |
+| `data` | The complete Document data for the operation. |
+| `siblingData` | Data under the same parent as the field. |
+| `operation` | The current `create` or `update` operation. |
+| `path` | The runtime path, including array indexes. |
+| `id` | The current Document ID, or `undefined` during create. |
+| `req` | The current `FrogbotRequest`; on the server, the authenticated user is `req.user` and the instance is `req.frogbot`. |
+| `event` | `onChange` or `submit`, allowing expensive checks to run only on submission. |
+
+```ts
+import type { Field } from 'frogbot'
+
+export const MemberOnlyValue: Field = {
+  name: 'memberOnlyValue',
+  type: 'text',
+  validate: (value, { req }) => Boolean(req.user) || 'You must be signed in to save this field',
+}
+```
+
+#### Localized error messages
+
+Validation can use the request translation function to return a localized built-in message:
+
+```ts
+import type { Field } from 'frogbot'
+
+export const RequiredTitle: Field = {
+  name: 'title',
+  type: 'text',
+  validate: (value, { req: { t } }) => Boolean(value) || t('validation:required'),
+}
+```
+
+You can also return application-specific translated strings configured through [internationalization](/configuration/i18n).
+
+#### Replacing default field validation
+
+When a field defines `validate`, FrogBot uses that function instead of the field type's default validator. FrogBot does not expose the built-in validators through a supported public helper import. Include every type, required, length, range, or format rule that the replacement must retain.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Rating: Field = {
+  name: 'rating',
+  type: 'number',
+  validate: (value) => {
+    if (typeof value !== 'number') return 'A numeric rating is required'
+    if (value < 1 || value > 5) return 'The rating must be between 1 and 5'
+
+    return true
+  },
+}
+```
+
+#### Validation performance
+
+The admin panel runs validation whenever a field changes. Keep synchronous and `onChange` checks lightweight. For expensive work such as a remote lookup, use `event` to defer it until form submission.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const AccountCode: Field = {
+  name: 'accountCode',
+  type: 'text',
+  validate: async (value, { event, req }) => {
+    if (!req.user) return 'You must be signed in'
+    if (event === 'onChange') return true
+
+    const response = await fetch(`https://example.com/accounts/${value}`)
+
+    return response.ok || 'The account code was not found'
+  },
+}
+```
+
+Validation also runs in the browser for admin form feedback. Browser validation receives form context, but it is not a server-instance API: do not use `req.frogbot` for client-side database work. Enforce authoritative rules on the server and use hooks or access control when the check requires framework operations.
+
+<Tip>
+  Validation messages are returned by API operations as well as displayed in the admin panel. Write them so they explain how to correct the value.
+</Tip>
+
+## Role-marked collections
+
+FrogBot can merge managed fields into a collection marked with `chat: true`, `message: true`, `file: true`, or `usageLog: true`. A collection can have only one of these role markers, and only one collection can fill each role.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Conversations: CollectionConfig = {
+  slug: 'conversations',
+  chat: true,
+  fields: [{ name: 'channel', type: 'text' }],
+}
+```
+
+FrogBot preserves compatible authored fields, appends missing role fields, and combines hooks. Incompatible definitions and reserved role fields fail configuration instead of being silently replaced. See [Collection Configs](/configuration/collections#role-markers) for each role's contribution.
+
+## Admin options
+
+Use a field's `admin` property to control its presentation without changing API behavior.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Summary: Field = {
+  name: 'summary',
+  type: 'textarea',
+  admin: {
+    description: 'Shown below the title on listing pages.',
+    position: 'main',
+    width: '100%',
+  },
+}
+```
+
+Common options include:
+
+| Option | Description |
+| --- | --- |
+| `condition` | Shows or hides the field from current form data. |
+| `components` | Replaces the field or one of its component slots. |
+| `description` | Adds editor guidance as text or a translated description function. |
+| `position` | Places supported fields in the main form or sidebar. |
+| `width` | Sets a CSS width, especially within a row. |
+| `style` | Adds inline CSS properties to the field root. |
+| `className` | Adds a CSS class to the field root. |
+| `readOnly` | Prevents editing in the admin panel but does not restrict API writes. |
+| `disabled` | Omits the field from the admin panel. |
+| `hidden` | Hides the input while retaining its submitted value. |
+| `disableBulkEdit` | Excludes the field from bulk editing. |
+| `disableGroupBy` | Excludes the field from list grouping. |
+| `disableListColumn` | Excludes the field from selectable list columns. |
+| `disableListFilter` | Excludes the field from list filters. |
+
+### Field descriptions
+
+Descriptions give editors instructions or context near a field. Their exact placement depends on the field type. A description can be a string, a server-side function that returns a string, or a custom React component.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Articles: CollectionConfig = {
+  slug: 'articles',
+  fields: [
+    {
+      name: 'summary',
+      type: 'textarea',
+      admin: {
+        description: 'Keep the summary under 160 characters.',
+      },
+    },
+  ],
+}
+```
+
+<Warning>
+  To replace the description with a custom component, set `admin.components.Description` instead. See [Description components](#description).
+</Warning>
+
+#### Description functions
+
+Description functions run on the server and are useful for simple localized text. They receive `t`, the translation function used by the admin panel.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Articles: CollectionConfig = {
+  slug: 'articles',
+  fields: [
+    {
+      name: 'title',
+      type: 'text',
+      admin: {
+        description: ({ t }) => t('general:title'),
+      },
+    },
+  ],
+}
+```
+
+| Argument | Description |
+| --- | --- |
+| `t` | Translates a configured key for the current admin locale. |
+
+<Info>
+  A description function is not reactive to live form changes. Use a client Description component when the content must subscribe to form state.
+</Info>
+
+### Conditional logic
+
+An `admin.condition` function receives the full form data, sibling data, and context about the field's location and current user. Return `true` to display the field.
+
+| Argument | Description |
+| --- | --- |
+| `data` | All data in the Document currently being edited. |
+| `siblingData` | Data belonging to fields under the same parent. |
+| `ctx` | The field location, operation, nearest block, and authenticated user. |
+
+The context object contains:
+
+| Property | Description |
+| --- | --- |
+| `blockData` | Data for the nearest parent block, or `undefined` outside a block. |
+| `operation` | The operation the field is currently participating in. |
+| `path` | The full runtime field path, including array indexes. |
+| `user` | The authenticated user, when present. |
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Profiles: CollectionConfig = {
+  slug: 'profiles',
+  fields: [
+    {
+      name: 'showGreeting',
+      type: 'checkbox',
+      defaultValue: false,
+    },
+    {
+      name: 'greeting',
+      type: 'text',
+      admin: {
+        condition: (data, siblingData, { blockData, path, user }) => {
+          return data.showGreeting === true
+        },
+      },
+    },
+  ],
+}
+```
+
+Conditions affect only the editing interface. Use field access control to protect data returned from or written through APIs.
+
+## Custom components
+
+Fields are represented in several places in the admin panel: the form field in an Edit view, a table cell and filter in a List view, and a diff when comparing versions. Set `admin.components` to replace any of these surfaces or one of the smaller field slots. Component paths are resolved through FrogBot's import map.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Color: Field = {
+  name: 'color',
+  type: 'text',
+  admin: {
+    components: {
+      Field: '/components/ColorField#ColorField',
+      Cell: '/components/ColorCell#ColorCell',
+    },
+  },
+}
+```
+
+The following component options are available:
+
+| Component | Description |
+| --- | --- |
+| `Field` | The form control rendered in the Edit view. [Details](#field). |
+| `Cell` | The value rendered in a List view table. [Details](#cell). |
+| `Filter` | The control rendered in the List view's filter menu. [Details](#filter). |
+| `Label` | Replaces the field label. [Details](#label). |
+| `Description` | Replaces the field description. [Details](#description). |
+| `Error` | Replaces the field validation error. [Details](#error). |
+| `Diff` | Replaces the field's Version Diff rendering. [Details](#diff). |
+| `beforeInput` | Adds components immediately before the input. [Details](#afterinput-and-beforeinput). |
+| `afterInput` | Adds components immediately after the input. [Details](#afterinput-and-beforeinput). |
+
+### Field
+
+The Field component is the form control editors interact with in an Edit view. Replace it with `admin.components.Field`:
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Color: Field = {
+  name: 'color',
+  type: 'text',
+  admin: {
+    components: {
+      Field: '/components/ColorField#ColorField',
+    },
+  },
+}
+```
+
+<Warning>
+  You do not have to replace the entire Field component. Use `Label`, `Description`, `Error`, `beforeInput`, or `afterInput` to customize one part while preserving the default form control.
+</Warning>
+
+#### Default props
+
+Client and server field components share these concepts. Exact props vary by field family, so use that family's exported prop or component type.
+
+| Property | Description |
+| --- | --- |
+| `docPreferences` | Saved preferences for the current Document. |
+| `field` | The serializable client field in a client component and the authored field configuration in a server component. |
+| `locale` | The field's current locale. |
+| `readOnly` | Whether the form control is read-only. |
+| `user` | The authenticated user, when present. |
+| `validate` | The field validation function. |
+| `path` | The dynamic runtime path, such as `settings.items.0.title`. |
+| `schemaPath` | The static configuration path, such as `posts.settings.items.title`. |
+| `indexPath` | The hyphenated position within the nearest named ancestor, such as `0-0`. |
+
+Server field components additionally receive:
+
+| Property | Description |
+| --- | --- |
+| `clientField` | The serializable client field configuration. |
+| `field` | The authored field configuration. |
+| `data` | The current Document data. |
+| `i18n` | The admin internationalization object. |
+| `permissions` | Field permissions for the authenticated user. |
+| `req` | The framework-issued `FrogbotRequest`, including `req.frogbot`. |
+| `siblingData` | Data belonging to sibling fields. |
+| `user` | The authenticated user, when present. |
+| `value` | The field value at render time. |
+
+FrogBot's server prop types expose `req.frogbot` and do not expose a separate top-level framework instance.
+
+#### Sending and receiving form values
+
+Client components manage form state with hooks and field primitives from `@frogbotai/ui`. Import the corresponding component type from `frogbot`.
+
+```tsx
+'use client'
+
+import type { TextFieldClientComponent } from 'frogbot'
+import { FieldLabel, useField } from '@frogbotai/ui'
+
+export const ColorField: TextFieldClientComponent = ({ field, path }) => {
+  const { setValue, value } = useField<string>({ path })
+
+  return (
+    <label>
+      <FieldLabel label={field.label} path={path} required={field.required} />
+      <input type="color" value={value ?? '#000000'} onChange={(event) => setValue(event.target.value)} />
+    </label>
+  )
+}
+```
+
+Client field components receive serializable field and form props. They do not receive a server request or FrogBot instance.
+
+#### Server field components
+
+Server component types follow the same field-specific naming convention. For example, `TextFieldServerComponent` and `TextFieldServerProps` are exported from `frogbot`. Their framework-issued `req` is a `FrogbotRequest`, and `req.frogbot` is attached before the component renders, including form-state rebuilds.
+
+```tsx
+import type { TextFieldServerComponent } from 'frogbot'
+
+export const CollectionSummary: TextFieldServerComponent = ({ req }) => {
+  const count = Object.keys(req.frogbot.collections).length
+
+  return <p>{count} collections are available.</p>
+}
+```
+
+Do not construct this request yourself or use a fallback instance lookup. Components that genuinely have no request prop can import the app config and call `getFrogbot({ config })` when they need server access.
+
+#### Field component types
+
+Each field family exports its supported client and server types from `frogbot`, including `*FieldClientComponent`, `*FieldClientProps`, `*FieldServerComponent`, and `*FieldServerProps`. Supported field families also provide `*FieldLabel*`, `*FieldDescription*`, `*FieldError*`, and `*FieldDiff*` component types. UI fields do not have label, description, or error families; Blocks fields additionally provide `BlockRowLabelServerComponent` and `BlockRowLabelClientComponent`.
+
+```tsx
+import type {
+  TextFieldClientComponent,
+  TextFieldClientProps,
+  TextFieldServerComponent,
+  TextFieldServerProps,
+} from 'frogbot'
+```
+
+See the individual field-type pages for the exact types supported by each family.
+
+### Cell
+
+The Cell component renders a field's value in a List view table. Replace it with `admin.components.Cell`:
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Price: Field = {
+  name: 'price',
+  type: 'number',
+  admin: {
+    components: {
+      Cell: '/components/PriceCell#PriceCell',
+    },
+  },
+}
+```
+
+Cells use the generic `DefaultCellComponentProps` or `DefaultServerCellComponentProps` types from `frogbot`. Cell components do not receive field-component form props or a request.
+
+```tsx
+'use client'
+
+import type { DefaultCellComponentProps } from 'frogbot'
+
+export function PriceCell({ cellData, rowData }: DefaultCellComponentProps) {
+  const price = Number(cellData)
+  const currency = typeof rowData.currency === 'string' ? rowData.currency : 'USD'
+
+  return new Intl.NumberFormat('en-US', { currency, style: 'currency' }).format(price)
+}
+```
+
+<Warning>
+  Use `DefaultCellComponentProps` for a client component with `'use client'`, and `DefaultServerCellComponentProps` for a server component. They preserve different default generic types.
+</Warning>
+
+Cell props include:
+
+| Property | Description |
+| --- | --- |
+| `cellData` | The value for this field and row. |
+| `collectionSlug` | The collection being listed. |
+| `field` | The field configuration. |
+| `rowData` | All data for the current row. |
+| `className` | An optional CSS class. |
+| `columnIndex` | The optional column index. |
+| `customCellProps` | Additional configured props. |
+| `link` | Whether the cell should be rendered as a link. |
+| `linkURL` | The optional link destination. |
+| `onClick` | An optional click handler. |
+| `viewType` | The current view type. |
+
+<Info>
+  Cell components are optimized for table rendering. They do not receive Field component props such as `docPreferences`, `validate`, or `path`, and they do not receive a request.
+</Info>
+
+### Filter
+
+The Filter component is the input shown in the List view's **Filter By** menu. It represents this field when an editor builds a query.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Status: Field = {
+  name: 'status',
+  type: 'text',
+  admin: {
+    components: {
+      Filter: '/components/StatusFilter#StatusFilter',
+    },
+  },
+}
+```
+
+Filter props include:
+
+| Property | Description |
+| --- | --- |
+| `disabled` | Whether the filter control is disabled. |
+| `onChange` | Updates the filter value. |
+| `operator` | The comparison operator being applied. |
+| `value` | The current filter value. |
+
+Filter components are client-side controls. Use the field family's exported client type for its complete prop contract.
+
+### Label
+
+The Label component is used wherever the admin panel labels a field, most commonly in Edit views.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Title: Field = {
+  name: 'title',
+  type: 'text',
+  admin: {
+    components: {
+      Label: '/components/TitleLabel#TitleLabel',
+    },
+  },
+}
+```
+
+Label component types follow the field-family convention:
+
+```tsx
+import type {
+  TextFieldLabelClientComponent,
+  TextFieldLabelServerComponent,
+} from 'frogbot'
+```
+
+### Description
+
+Use a Description component instead of the [`admin.description`](#field-descriptions) property when the description needs rich markup, live form values, or interaction.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Title: Field = {
+  name: 'title',
+  type: 'text',
+  admin: {
+    components: {
+      Description: '/components/TitleDescription#TitleDescription',
+    },
+  },
+}
+```
+
+Description component types follow the same convention:
+
+```tsx
+import type {
+  TextFieldDescriptionClientComponent,
+  TextFieldDescriptionServerComponent,
+} from 'frogbot'
+```
+
+### Error
+
+The Error component renders when field validation fails, usually beneath the input.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Title: Field = {
+  name: 'title',
+  type: 'text',
+  admin: {
+    components: {
+      Error: '/components/TitleError#TitleError',
+    },
+  },
+}
+```
+
+Error component types follow the same convention:
+
+```tsx
+import type {
+  TextFieldErrorClientComponent,
+  TextFieldErrorServerComponent,
+} from 'frogbot'
+```
+
+### Diff
+
+The Diff component renders a field in the Version Diff view and is visible only when versioning is enabled.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Title: Field = {
+  name: 'title',
+  type: 'text',
+  admin: {
+    components: {
+      Diff: '/components/TitleDiff#TitleDiff',
+    },
+  },
+}
+```
+
+Diff component types follow the same convention:
+
+```tsx
+import type {
+  TextFieldDiffClientComponent,
+  TextFieldDiffServerComponent,
+} from 'frogbot'
+```
+
+### afterInput and beforeInput
+
+Use `beforeInput` and `afterInput` to add components around the input without replacing the complete Field component. Each option accepts an array, so multiple components can occupy either slot.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Title: Field = {
+  name: 'title',
+  type: 'text',
+  admin: {
+    components: {
+      beforeInput: ['/components/TitlePrefix#TitlePrefix'],
+      afterInput: ['/components/TitleCounter#TitleCounter'],
+    },
+  },
+}
+```
+
+These slot components receive the field family's default component props. Choose the corresponding client or server type based on whether the component uses `'use client'`.
+
+Use only the curated admin hooks and field primitives exported by `@frogbotai/ui`. General-purpose admin internals and element subpaths are not part of this contract. Component paths, server and client boundaries, and import-map generation follow the conventions above.
+
+## TypeScript
+
+Import `Field`, individual field configuration types, and custom component types from `frogbot`. Container field types are recursive, so nested fields retain FrogBot hook, access, and validation request types.
+
+```ts
+import type { Field, TextField, TextFieldClientComponent } from 'frogbot'
+```
+
+Run `frogbot generate:types` to generate your application's `frogbot-types.ts` declarations from the configured collections and fields. See [TypeScript](/typescript/overview) for generated type setup.

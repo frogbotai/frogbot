@@ -39,7 +39,7 @@ function concatHooks(
 }
 
 function hasSubFields(field: Field): field is Field & { fields: Field[] } {
-  return 'fields' in field && Array.isArray((field as { fields?: unknown }).fields);
+  return 'fields' in field && Array.isArray(field.fields);
 }
 
 function fieldName(field: Field): string | undefined {

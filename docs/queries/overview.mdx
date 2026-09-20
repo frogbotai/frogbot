@@ -52,9 +52,9 @@ The following operators are available for use in queries:
 | `not_in`             | The value must NOT be within the provided comma-delimited list of values.                                                                                                        |
 | `all`                | The value must contain all values provided in the comma-delimited list. Note: currently this operator is supported only with the MongoDB adapter.                                |
 | `exists`             | Only return documents where the value either exists (`true`) or does not exist (`false`).                                                                                        |
-| `near`               | For distance related to a Point Field, comma separated as `<longitude>, <latitude>, <maxDistance in meters (nullable)>, <minDistance in meters (nullable)>`. |
-| `within`             | For Point Fields, filters documents based on whether points are inside the given area defined in GeoJSON.                                             |
-| `intersects`         | For Point Fields, filters documents based on whether points intersect with the given area defined in GeoJSON.                                         |
+| `near`               | For distance related to a [Point Field](/fields/point), comma separated as `<longitude>, <latitude>, <maxDistance in meters (nullable)>, <minDistance in meters (nullable)>`. |
+| `within`             | For Point Fields, filters documents based on whether points are inside the given area defined in GeoJSON. [Example](/fields/point#querying-within).     |
+| `intersects`         | For Point Fields, filters documents based on whether points intersect with the given area defined in GeoJSON. [Example](/fields/point#querying-intersects). |
 
 <Tip>
   If you know your users will be querying on certain fields a lot, add `index:

@@ -1,0 +1,136 @@
+---
+title: Textarea Field
+sidebarTitle: Textarea
+description: Store longer plain-text content with a multiline admin input.
+keywords: textarea, text, fields, collections, configuration
+---
+
+The Textarea field stores a string like the [Text field](/fields/text), but provides a multiline input suited to longer content.
+
+```ts
+import type { Field } from 'frogbot'
+
+export const Summary: Field = {
+  name: 'summary',
+  type: 'textarea',
+  required: true,
+}
+```
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`name`** * | Stored property name. See [field names](/fields/overview#field-names). |
+| **`label`** | Admin-panel label. |
+| **`unique`** | Creates a unique database index. |
+| **`minLength`** | Minimum character length enforced by default validation. |
+| **`maxLength`** | Maximum character length enforced by default validation. |
+| **`validate`** | Custom [validation](/fields/overview#validation). |
+| **`index`** | Creates a database index. |
+| **`saveToJWT`** | Includes a top-level auth field in the user token. |
+| **`hooks`** | [Field hooks](/hooks/fields). |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides the field while retaining stored data. |
+| **`defaultValue`** | Initial [field value](/fields/overview#default-values). |
+| **`localized`** | Stores one value per locale. |
+| **`required`** | Requires a value. |
+| **`admin`** | Admin-panel settings. |
+| **`custom`** | Extension metadata. |
+| **`typescriptSchema`** | Type-generation JSON Schema override. |
+| **`virtual`** | Omits database storage or links a relationship path. |
+
+\*_An asterisk denotes a required option._
+
+## Admin options
+
+Textarea fields support the standard [field admin options](/fields/overview#admin-options), plus these options:
+
+| Option | Description |
+| --- | --- |
+| **`placeholder`** | Placeholder text shown in the textarea. |
+| **`autoComplete`** | Value used for browser autocomplete. |
+| **`rows`** | Number of visible text rows. Defaults to `2`. |
+| **`rtl`** | Set to `true` to force right-to-left text direction. |
+
+## Example
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Articles: CollectionConfig = {
+  slug: 'articles',
+  fields: [
+    {
+      name: 'metaDescription',
+      type: 'textarea',
+      required: true,
+      admin: {
+        placeholder: 'Summarize this article',
+        rows: 4,
+      },
+    },
+  ],
+}
+```
+
+## Custom components
+
+### Field
+
+#### Server component
+
+```tsx
+import { TextareaField } from '@frogbotai/ui'
+import type { TextareaFieldServerComponent } from 'frogbot'
+
+export const CustomTextareaServer: TextareaFieldServerComponent = (props) => (
+  <TextareaField
+    field={props.clientField}
+    path={props.path}
+    permissions={props.permissions}
+    schemaPath={props.schemaPath}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { TextareaField } from '@frogbotai/ui'
+import type { TextareaFieldClientComponent } from 'frogbot'
+
+export const CustomTextareaClient: TextareaFieldClientComponent = (props) => <TextareaField {...props} />
+```
+
+### Label
+
+#### Server component
+
+```tsx
+import { FieldLabel } from '@frogbotai/ui'
+import type { TextareaFieldLabelServerComponent } from 'frogbot'
+
+export const CustomTextareaLabelServer: TextareaFieldLabelServerComponent = ({ clientField, path }) => (
+  <FieldLabel
+    label={clientField.label || clientField.name}
+    path={path}
+    required={clientField.required}
+  />
+)
+```
+
+#### Client component
+
+```tsx
+'use client'
+
+import { FieldLabel } from '@frogbotai/ui'
+import type { TextareaFieldLabelClientComponent } from 'frogbot'
+
+export const CustomTextareaLabelClient: TextareaFieldLabelClientComponent = ({ field, path }) => (
+  <FieldLabel label={field.label || field.name} path={path} required={field.required} />
+)
+```

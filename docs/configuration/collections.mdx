@@ -5,7 +5,7 @@ description: FrogBot's collection model — role markers, scaffolded defaults, i
 keywords: collections, config, configuration, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
 ---
 
-A Collection is a group of records, called Documents, that all share a common schema. Each Document in a Collection is stored in the [Database](/database/overview) based on the fields that you define, and automatically generates a [Local API](/local-api/overview), [REST API](/rest-api/overview), and [GraphQL API](/graphql/overview) used to manage your Documents. Collections can also enable [Authentication](/authentication/overview), [Uploads](/upload/overview), and more.
+A Collection is a group of records, called Documents, that all share a common schema. Each Document in a Collection is stored in the [Database](/database/overview) based on the [fields](/fields/overview) that you define, and automatically generates a [Local API](/local-api/overview), [REST API](/rest-api/overview), and [GraphQL API](/graphql/overview) used to manage your Documents. Collections can also enable [Authentication](/authentication/overview), [Uploads](/upload/overview), and more.
 
 To define a Collection Config, use the `collections` property in your [FrogBot Config](/configuration/overview):
 
@@ -115,7 +115,7 @@ The following options are available:
 | `disableDuplicate`   | When true, do not show the "Duplicate" button while editing documents within this Collection and prevent `duplicate` from all APIs.                                                                                                                        |
 | `dbName`             | Custom table or Collection name depending on the Database Adapter. Auto-generated from slug if not defined.                                                                                                                                                |
 | `endpoints`          | Add custom routes to the REST API. Set to `false` to disable routes. [More details](/rest-api/overview#custom-endpoints).                                                                                                                                |
-| `fields` \*          | Array of field types that determine the structure and functionality of the data stored within this Collection.                                                                                                                                            |
+| `fields` \*          | Array of field types that determine the structure and functionality of the data stored within this Collection. [More details](/fields/overview).                                                                                                          |
 | `graphQL`            | Manage GraphQL-related properties for this collection. [More](#graphql)                                                                                                                                                                                    |
 | `hooks`              | Entry point for Hooks. [More details](/hooks/overview#collection-hooks).                                                                                                                                                                                 |
 | `hierarchy`          | Enable hierarchical tree structure with automatic parent-child relationships and path generation.                                                                                                                                                         |
@@ -139,7 +139,7 @@ _\* An asterisk denotes that a property is required._
 
 ### Fields
 
-Fields define the schema of the Documents within a Collection.
+[Fields](/fields/overview) define the schema of the Documents within a Collection.
 
 ### Access Control
 
@@ -153,7 +153,7 @@ Fields define the schema of the Documents within a Collection.
 
 When `orderable` is enabled, FrogBot uses [fractional indexing](https://observablehq.com/@dgreensp/implementing-fractional-indexing) to efficiently manage document order. When enabled on collections, this allows you to manually drag and drop documents in the Admin Panel to reorder them, as well as programmatically set the order of documents via the Local API, REST API, or GraphQL API.
 
-Orderable can also be added to join fields.
+Orderable can also be added to [join fields](/fields/join).
 
 #### Fractional indexing
 

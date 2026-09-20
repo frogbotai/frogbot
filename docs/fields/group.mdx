@@ -1,0 +1,109 @@
+---
+title: Group Field
+sidebarTitle: Group
+description: Nest related fields under an object or group them visually.
+keywords: group, fields, nested, presentational, collections, configuration
+---
+
+The Group field places related fields together in the admin panel. A named group also nests their values under an object; an unnamed group changes only the layout.
+
+## Named groups
+
+```ts
+import type { GroupField } from 'frogbot'
+
+export const seoField: GroupField = {
+  name: 'seo',
+  type: 'group',
+  interfaceName: 'SEO',
+  fields: [
+    {
+      name: 'title',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'description',
+      type: 'textarea',
+    },
+  ],
+}
+```
+
+This produces `seo.title` and `seo.description` in stored records and generated types.
+
+## Presentational groups
+
+Omit `name` to keep nested field values at their existing level:
+
+```ts
+import type { GroupField } from 'frogbot'
+
+export const contactFields: GroupField = {
+  type: 'group',
+  label: 'Contact',
+  fields: [
+    {
+      name: 'email',
+      type: 'email',
+    },
+    {
+      name: 'phone',
+      type: 'text',
+    },
+  ],
+}
+```
+
+The record has `email` and `phone` at the current level, not inside a `contact` object.
+
+## Config options
+
+| Option | Description |
+| --- | --- |
+| **`fields`** * | Fields displayed inside the group. |
+| **`name`** | Property name for a named group. Omit it for a presentational group. |
+| **`label`** | Group heading in the admin panel. |
+| **`validate`** | Custom [validation](/fields/overview#validation) for a named group. |
+| **`hooks`** | [Field hooks](/hooks/fields). |
+| **`access`** | [Field access control](/access-control/fields). |
+| **`hidden`** | Hides a named group from APIs and the admin panel while retaining stored data. |
+| **`defaultValue`** | Initial object value. |
+| **`localized`** | Stores a separate group value for each configured locale. |
+| **`saveToJWT`** | Includes a top-level named auth field in the user token. |
+| **`interfaceName`** | Name of the reusable generated TypeScript interface. Requires `name`. |
+| **`admin`** | Admin-panel appearance and behavior. |
+| **`custom`** | Custom metadata available to extensions. |
+| **`typescriptSchema`** | JSON Schema override used during type generation. |
+| **`virtual`** | Set to `true` to omit a named group from database storage. |
+
+\*_An asterisk denotes a required option._
+
+## Admin options
+
+Groups inherit the standard [field admin options](/fields/overview#admin-options). Set `admin.hideGutter` to `true` to remove the group's vertical gutter and padding.
+
+## Custom components
+
+```tsx
+import { GroupField } from '@frogbotai/ui'
+import type { GroupFieldServerComponent } from 'frogbot'
+
+export const CustomGroupField: GroupFieldServerComponent = ({
+  clientField,
+  path,
+  permissions,
+  schemaPath,
+}) => {
+  return (
+    <GroupField
+      field={clientField}
+      path={path}
+      permissions={permissions}
+      schemaPath={schemaPath}
+    />
+  )
+}
+```
+
+Use `GroupFieldClientComponent` for a client component and `GroupFieldLabelServerComponent` or `GroupFieldLabelClientComponent` to replace only the label.
