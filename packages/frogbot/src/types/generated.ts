@@ -24,6 +24,9 @@ export interface UntypedFrogbotTypes {
   jobs: UntypedJobs;
   models: CatalogModelId;
   roles: string;
+  widgets: {
+    [slug: string]: unknown;
+  };
 }
 
 /**

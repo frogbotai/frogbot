@@ -1,0 +1,159 @@
+---
+title: Edit View
+label: Edit View
+order: 60
+---
+
+The Edit View contains the form and controls used to edit one collection document. You can replace the complete view through `admin.components.edit.views.default`, or customize individual slots under `admin.components.edit`.
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  admin: {
+    components: {
+      edit: {
+        beforeDocumentControls: ['/components/ReviewState#ReviewState'],
+        editMenuItems: ['/components/EditActions#EditActions'],
+        SaveButton: '/components/Save#Save',
+      },
+    },
+  },
+  fields: [],
+}
+```
+
+See [Document Views](./document-views) when replacing the editor or adding document routes and tabs.
+
+### beforeDocumentControls
+
+`beforeDocumentControls` renders before the document action buttons.
+
+```tsx
+import type { BeforeDocumentControlsServerProps } from 'frogbot'
+
+export function ReviewState(_props: BeforeDocumentControlsServerProps) {
+  return <span>Editorial review enabled</span>
+}
+```
+
+### editMenuItems
+
+`editMenuItems` adds actions to the document controls menu. Client components can use FrogBot's dropdown primitives.
+
+```tsx
+'use client'
+
+import type { EditMenuItemsClientProps } from 'frogbot'
+import { DropdownMenuItem, useDocumentInfo } from '@frogbotai/ui'
+
+export function EditActions(_props: EditMenuItemsClientProps) {
+  const { id } = useDocumentInfo()
+
+  return <DropdownMenuItem asChild><a href={`/review/${id}`}>Open review</a></DropdownMenuItem>
+}
+```
+
+### SaveButton
+
+`SaveButton` is used when drafts are disabled. Call `submit()` without an override to save the form.
+
+```tsx
+'use client'
+
+import type { SaveButtonClientProps } from 'frogbot'
+import { Button, useForm } from '@frogbotai/ui'
+
+export function Save(_props: SaveButtonClientProps) {
+  const { submit } = useForm()
+
+  return <Button onClick={() => void submit()}>Save</Button>
+}
+```
+
+### SaveDraftButton
+
+`SaveDraftButton` is available when drafts are enabled and autosave is disabled. Submit with the draft status.
+
+```tsx
+'use client'
+
+import type { SaveDraftButtonClientProps } from 'frogbot'
+import { Button, useForm } from '@frogbotai/ui'
+
+export function SaveDraft(_props: SaveDraftButtonClientProps) {
+  const { submit } = useForm()
+
+  return <Button onClick={() => void submit({ overrides: { _status: 'draft' } })}>Save draft</Button>
+}
+```
+
+### PublishButton
+
+`PublishButton` is available when drafts are enabled. Submit with the published status.
+
+```tsx
+'use client'
+
+import type { PublishButtonClientProps } from 'frogbot'
+import { Button, useForm } from '@frogbotai/ui'
+
+export function Publish(_props: PublishButtonClientProps) {
+  const { submit } = useForm()
+
+  return <Button onClick={() => void submit({ overrides: { _status: 'published' } })}>Publish</Button>
+}
+```
+
+### UnpublishButton
+
+`UnpublishButton` returns a published document to draft status.
+
+```tsx
+'use client'
+
+import type { UnpublishButtonClientProps } from 'frogbot'
+import { Button, useForm } from '@frogbotai/ui'
+
+export function Unpublish(_props: UnpublishButtonClientProps) {
+  const { submit } = useForm()
+
+  return <Button onClick={() => void submit({ overrides: { _status: 'draft' } })}>Unpublish</Button>
+}
+```
+
+### PreviewButton
+
+`PreviewButton` can use the current document's configured preview URL.
+
+```tsx
+'use client'
+
+import type { PreviewButtonClientProps } from 'frogbot'
+import { Button, useDocumentInfo } from '@frogbotai/ui'
+
+export function Preview(_props: PreviewButtonClientProps) {
+  const { collectionSlug, id } = useDocumentInfo()
+
+  const openPreview = () => {
+    const search = new URLSearchParams({ collection: collectionSlug ?? '', id: String(id ?? '') })
+
+    window.open(`/preview?${search}`, '_blank', 'noopener,noreferrer')
+  }
+
+  return <Button onClick={openPreview}>Preview</Button>
+}
+```
+
+### Description
+
+`Description` replaces the collection description in the Edit and [List Views](./list-view). Type it with `ViewDescriptionServerProps` or `ViewDescriptionClientProps` from `frogbot`.
+
+### Status
+
+`Status` replaces the draft or published status display when drafts are enabled.
+
+### Upload
+
+`Upload` replaces the upload area for an upload-enabled collection. A custom implementation must integrate with FrogBot's form and upload state; a standalone file input will not submit an upload correctly.

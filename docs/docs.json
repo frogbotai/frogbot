@@ -149,6 +149,7 @@
               { "group": "Email", "expanded": false, "pages": ["email/overview"]},
               { "group": "Trash", "expanded": false, "pages": ["trash/overview"]},
               { "group": "Troubleshooting", "expanded": false, "pages": ["troubleshooting/troubleshooting"]},
+              { "group": "Custom Components", "expanded": false, "pages": ["custom-components/overview", "custom-components/root-components", "custom-components/custom-providers", "custom-components/custom-views", "custom-components/dashboard", "custom-components/document-views", "custom-components/edit-view", "custom-components/list-view"]},
               { "group": "Typescript", "expanded": false, "pages": ["typescript/overview", "typescript/generating-types", "typescript/ts-plugin"]}
            ]
           },

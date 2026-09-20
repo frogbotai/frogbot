@@ -1,0 +1,177 @@
+---
+title: Customizing Views
+label: Customizing Views
+order: 40
+desc: Replace Admin Panel views or register new routes.
+keywords: admin, components, views, routes, react
+---
+
+Views are pages in the [Admin Panel](/admin/overview), including the Dashboard, [List View](/custom-components/list-view), and [Edit View](/custom-components/edit-view). A Custom View can replace a built-in view or add a new route.
+
+FrogBot supports:
+
+- [Root Views](#root-views)
+- [Collection Views](#collection-views)
+- [Document Views](/custom-components/document-views)
+
+## Configuration
+
+### Replacing Views
+
+Use `admin.components.views` to replace a root view:
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  admin: {
+    components: {
+      views: {
+        dashboard: {
+          Component: '/components/Dashboard#Dashboard',
+        },
+      },
+    },
+  },
+})
+```
+
+<Note>
+  You can replace the complete dashboard view or configure the modular
+  [Dashboard](/custom-components/dashboard) with widgets.
+</Note>
+
+### Adding New Views
+
+Use any unique key and provide at least `Component` and `path`:
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  admin: {
+    components: {
+      views: {
+        reports: {
+          Component: '/components/ReportsView#ReportsView',
+          path: '/reports',
+          exact: true,
+        },
+      },
+    },
+  },
+})
+```
+
+| Property | Description |
+| --- | --- |
+| `Component` | Component Path rendered for the route. |
+| `path` | Route beginning with `/`. |
+| `exact` | Match only the exact pathname. |
+| `strict` | Require trailing slashes to match. |
+| `sensitive` | Match path casing. |
+| `meta` | Override Admin Panel page metadata. |
+
+Routes cascade. Without `exact`, a route also matches paths that begin with its path. Register a more specific nested route before its parent route.
+
+## Building Custom Views
+
+Root views receive `AdminViewServerProps`. The FrogBot request is nested at `initPageResult.req`.
+
+The following complete view keeps the standard navigation and page layout, requires an authenticated user with Admin Panel access, and uses the framework-issued request expected by `DefaultTemplate`:
+
+```tsx
+import { notFound, redirect } from 'next/navigation'
+
+import { DefaultTemplate } from '@frogbotai/next/templates'
+import type { AdminViewServerProps } from 'frogbot'
+
+export function ReportsView({
+  initPageResult,
+  params,
+  searchParams,
+  user,
+}: AdminViewServerProps) {
+  const { permissions, req, visibleEntities } = initPageResult
+
+  if (!req.user) {
+    redirect('/login')
+  }
+
+  if (!permissions.canAccessAdmin) {
+    notFound()
+  }
+
+  return (
+    <DefaultTemplate
+      req={req}
+      i18n={req.i18n}
+      locale={initPageResult.locale}
+      params={params}
+      permissions={permissions}
+      searchParams={searchParams}
+      user={user}
+      visibleEntities={visibleEntities}
+    >
+      <main style={{ margin: '0 auto', maxWidth: 1200, padding: '2rem' }}>
+        <h1>Reports</h1>
+        <p>Signed in as {req.user.email}</p>
+      </main>
+    </DefaultTemplate>
+  )
+}
+```
+
+Use `initPageResult.req.user` and `initPageResult.permissions` for authorization. The top-level `user` prop is filtered for display and should not decide access.
+
+## Root Views
+
+Root views are scoped directly under the Admin Panel mount. `account` and `dashboard` replace built-in views; any other key can register a new route.
+
+```ts
+export default buildConfig({
+  admin: {
+    components: {
+      views: {
+        account: {
+          Component: '/components/AccountView#AccountView',
+        },
+        reports: {
+          Component: '/components/ReportsView#ReportsView',
+          path: '/reports',
+          exact: true,
+        },
+      },
+    },
+  },
+})
+```
+
+## Collection Views
+
+Collection views are scoped to a collection's list and document routes. Configure them on the collection:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  fields: [{ name: 'title', type: 'text' }],
+  admin: {
+    components: {
+      views: {
+        edit: {
+          default: {
+            Component: '/components/PostEditView#PostEditView',
+          },
+        },
+        list: {
+          Component: '/components/PostListView#PostListView',
+        },
+      },
+    },
+  },
+}
+```
+
+The `edit` key contains [Document Views](/custom-components/document-views). See [List View](/custom-components/list-view) for list-specific props.

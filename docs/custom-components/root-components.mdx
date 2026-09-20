@@ -1,0 +1,143 @@
+---
+title: Root Components
+label: Root Components
+order: 20
+---
+
+Root Components customize the Admin Panel across every route. Configure them through the root `admin.components` object.
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  admin: {
+    components: {
+      actions: ['/components/HelpAction#HelpAction'],
+      graphics: {
+        Icon: '/components/BrandIcon#BrandIcon',
+        Logo: '/components/BrandLogo#BrandLogo',
+      },
+    },
+  },
+  collections: [],
+})
+```
+
+## Config Options
+
+| Path | Description |
+| --- | --- |
+| `actions` | Components at the top right of the Admin Panel. |
+| `beforeLogin`, `afterLogin` | Components around the login fields. |
+| `beforeNavLinks`, `afterNavLinks` | Components around sidebar links and sections. |
+| `beforeBottomRail`, `afterBottomRail` | Components around Account and Settings in the sidebar rail. |
+| `beforeSidebarClose` | Components to the left of the sidebar collapse button. |
+| `chat.Chat` | Replaces the chat surface. |
+| `chat.Greeting` | Replaces the empty-chat greeting. |
+| `chat.AssistantMessageActions` | Replaces assistant message actions. |
+| `chat.UserMessageActions` | Replaces user message actions. |
+| `graphics.Icon`, `graphics.Logo` | Replace Admin Panel branding. |
+| `Nav` | Replaces the complete sidebar navigation. |
+| `navItems` | Replaces links above collections. |
+| `navSections` | Replaces the default collection and recents sections. |
+| `providers` | Wraps the Admin Panel with custom React context providers. |
+| `views` | Replaces, modifies, or adds top-level routes. |
+
+See [Custom Providers](./custom-providers), [Custom Views](./custom-views), and [Dashboard](./dashboard) for those larger extension points.
+
+## Components
+
+### actions
+
+Actions add controls to the Admin Panel header.
+
+```tsx
+import { Button } from '@frogbotai/ui'
+
+export function HelpAction() {
+  return <Button asChild><a href="/help">Help</a></Button>
+}
+```
+
+### beforeLogin and afterLogin
+
+Use `beforeLogin` and `afterLogin` to place content around the login fields:
+
+```ts
+components: {
+  beforeLogin: ['/components/LoginNotice#LoginNotice'],
+  afterLogin: ['/components/LoginHelp#LoginHelp'],
+}
+```
+
+### Sidebar slots
+
+Use the sidebar slots without replacing its built-in behavior:
+
+```ts
+components: {
+  beforeSidebarClose: ['/components/WorkspaceName#WorkspaceName'],
+  beforeNavLinks: ['/components/NavHeader#NavHeader'],
+  afterNavLinks: ['/components/NavFooter#NavFooter'],
+  beforeBottomRail: ['/components/SupportLink#SupportLink'],
+  afterBottomRail: ['/components/Version#Version'],
+}
+```
+
+### Nav
+
+`Nav` replaces the complete sidebar. Use `navItems` or `navSections` when you only need to change its contents.
+
+```tsx
+import Link from 'next/link'
+
+export function CustomNav() {
+  return <nav><Link href="/admin">Home</Link></nav>
+}
+```
+
+```ts
+components: {
+  navItems: [
+    { label: 'Operations', path: '/admin/operations' },
+  ],
+  navSections: ['/components/ProjectSection#ProjectSection'],
+}
+```
+
+Setting `navItems` replaces the default New Chat link. Setting `navSections` replaces the default Collections and Recents sections.
+
+### Chat
+
+Chat slots customize the conversation, greeting, and message actions:
+
+```ts
+components: {
+  chat: {
+    Chat: '/components/ProjectChat#ProjectChat',
+    Greeting: '/components/ProjectGreeting#ProjectGreeting',
+    AssistantMessageActions: '/components/AssistantActions#AssistantActions',
+    UserMessageActions: '/components/UserActions#UserActions',
+  },
+}
+```
+
+### graphics.Icon
+
+`graphics.Icon` is the compact mark used in navigation.
+
+```tsx
+export function BrandIcon() {
+  return <img src="/brand/icon.svg" alt="Acme" />
+}
+```
+
+### graphics.Logo
+
+`graphics.Logo` is the full mark used on the login page.
+
+```tsx
+export function BrandLogo() {
+  return <img src="/brand/logo.svg" alt="Acme" />
+}
+```

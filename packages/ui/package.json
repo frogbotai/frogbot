@@ -54,6 +54,16 @@
       "import": "./src/exports/chat-artifacts.ts",
       "default": "./src/exports/chat-artifacts.ts"
     },
+    "./shared": {
+      "types": "./src/exports/shared/index.ts",
+      "import": "./src/exports/shared/index.ts",
+      "default": "./src/exports/shared/index.ts"
+    },
+    "./rsc": {
+      "types": "./src/exports/rsc/index.ts",
+      "import": "./src/exports/rsc/index.ts",
+      "default": "./src/exports/rsc/index.ts"
+    },
     "./styles.css": "./src/styles.css",
     "./utilities.css": "./src/utilities.css"
   },
@@ -135,6 +145,16 @@
         "import": "./dist/exports/chat-artifacts.js",
         "default": "./dist/exports/chat-artifacts.js"
       },
+      "./shared": {
+        "types": "./dist/exports/shared/index.d.ts",
+        "import": "./dist/exports/shared/index.js",
+        "default": "./dist/exports/shared/index.js"
+      },
+      "./rsc": {
+        "types": "./dist/exports/rsc/index.d.ts",
+        "import": "./dist/exports/rsc/index.js",
+        "default": "./dist/exports/rsc/index.js"
+      },
       "./styles.css": "./src/styles.css",
       "./utilities.css": "./src/utilities.css"
     }
@@ -144,6 +164,7 @@
     "@date-fns/tz": "^1.2.0",
     "@dnd-kit/core": "^6.3.1",
     "@frogbotai/sdk": "workspace:*",
+    "@payloadcms/ui": "3.90.1",
     "@radix-ui/react-accordion": "^1.2.20",
     "@radix-ui/react-avatar": "^1.2.6",
     "@radix-ui/react-checkbox": "^1.3.11",

@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "noEmit": true,
+    "paths": {
+      "@frogbotai/next/templates": ["../../../packages/next/src/exports/templates.ts"]
+    }
+  },
+  "include": ["*.ts"]
+}
