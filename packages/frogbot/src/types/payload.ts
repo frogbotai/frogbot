@@ -7,6 +7,7 @@
 // Type-only — no runtime imports.
 
 export type {
+  Locale,
   Payload,
   CollectionConfig as PayloadCollectionConfig,
   Config as PayloadConfig,
@@ -14,6 +15,7 @@ export type {
   Field as PayloadField,
   PayloadHandler,
   PayloadRequest,
+  SanitizedCollectionConfig,
   SanitizedConfig,
   Sort,
   Where,

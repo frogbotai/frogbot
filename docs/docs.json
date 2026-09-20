@@ -155,6 +155,7 @@
               { "group": "Email", "expanded": false, "pages": ["email/overview"]},
               { "group": "Trash", "expanded": false, "pages": ["trash/overview"]},
               { "group": "Troubleshooting", "expanded": false, "pages": ["troubleshooting/troubleshooting"]},
+              { "group": "Live Preview", "expanded": false, "pages": ["live-preview/overview", "live-preview/frontend", "live-preview/server", "live-preview/client"]},
               { "group": "Typescript", "expanded": false, "pages": ["typescript/overview", "typescript/generating-types", "typescript/ts-plugin"]}
            ]
           },

@@ -14,6 +14,7 @@ import type { IconName } from '../../admin/icons.js';
 import type { FrogbotComponent } from '../../admin/types.js';
 import type { CollectionView } from '../../admin/views/types.js';
 import type { AuthConfig } from '../../auth/types.js';
+import type { LivePreviewConfig } from '../../config/types.js';
 import type { Endpoint } from '../../endpoints/types.js';
 import type { Field } from '../../fields/config/types.js';
 import type { CollectionSlug, TypedCollection } from '../../types/generated.js';
@@ -41,11 +42,13 @@ export type CollectionAdminConfig = Omit<
   | 'defaultSort'
   | 'group'
   | 'listSearchableFields'
+  | 'livePreview'
   | 'pagination'
 > & {
   components?: CollectionAdminComponents;
   group?: PayloadAdmin['group'] | null;
   icon?: FrogbotComponent | IconName;
+  livePreview?: LivePreviewConfig;
   views?: CollectionView[];
 };
 

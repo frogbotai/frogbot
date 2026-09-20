@@ -159,6 +159,14 @@ This monorepo publishes the following packages:
 | [`@frogbotai/storage-vercel-blob`](./packages/storage-vercel-blob) | Vercel Blob          |
 | [`@frogbotai/storage-uploadthing`](./packages/storage-uploadthing) | UploadThing          |
 
+**Live preview**
+
+| Package                                                          | Description             |
+| ---------------------------------------------------------------- | ----------------------- |
+| [`@frogbotai/live-preview`](./packages/live-preview)             | JavaScript live preview |
+| [`@frogbotai/live-preview-react`](./packages/live-preview-react) | React live preview SDK  |
+| [`@frogbotai/live-preview-vue`](./packages/live-preview-vue)     | Vue live preview SDK    |
+
 **Email pieces & KV adapters**
 
 | Package                                                     | Description        |

@@ -8,6 +8,7 @@ const repoRoot = path.resolve(dirname, '..', '..');
 const richTextFixture = path.join(repoRoot, 'test', 'e2e', 'fixtures', 'rich-text');
 const blankPort = 3111;
 const richTextPort = 3113;
+const livePreviewPort = 3114;
 const selectedProject =
   process.argv.find((argument) => argument.startsWith('--project='))?.split('=')[1] ??
   process.argv[process.argv.indexOf('--project') + 1];
@@ -44,6 +45,22 @@ const richTextServer = {
   },
 };
 
+const livePreviewServer = {
+  command: 'pnpm --filter frogbot-browser-live-preview dev',
+  cwd: repoRoot,
+  url: `http://localhost:${livePreviewPort}`,
+  reuseExistingServer: !process.env.CI,
+  timeout: 180_000,
+  stdout: 'ignore' as const,
+  stderr: 'pipe' as const,
+  env: {
+    PORT: String(livePreviewPort),
+    DATABASE_URL: 'file:./frogbot.browser.db',
+    FROGBOT_SECRET: 'browser-test-secret',
+    NEXT_TELEMETRY_DISABLED: '1',
+  },
+};
+
 export default defineConfig({
   testDir: dirname,
   testMatch: '*.browser.spec.ts',
@@ -61,8 +78,8 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'chromium',
-      testIgnore: 'richText.browser.spec.ts',
+      name: 'blank',
+      testMatch: 'navShell.browser.spec.ts',
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${blankPort}`,
@@ -78,11 +95,22 @@ export default defineConfig({
         channel: 'chromium',
       },
     },
+    {
+      name: 'live-preview',
+      testMatch: 'livePreview.browser.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://localhost:${livePreviewPort}`,
+        channel: 'chromium',
+      },
+    },
   ],
   webServer:
     selectedProject === 'rich-text'
       ? [richTextServer]
-      : selectedProject === 'chromium'
-        ? [blankServer]
-        : [blankServer, richTextServer],
+      : selectedProject === 'live-preview'
+        ? [livePreviewServer]
+        : selectedProject === 'blank'
+          ? [blankServer]
+          : [blankServer, richTextServer, livePreviewServer],
 });
