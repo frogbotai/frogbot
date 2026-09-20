@@ -3,10 +3,12 @@ import { fileURLToPath } from 'node:url';
 
 import {
   BlocksFeature,
+  convertLexicalToHTML,
   convertLexicalToMarkdown,
   convertMarkdownToLexical,
   editorConfigFactory,
   HeadingFeature,
+  ParagraphFeature,
 } from '@frogbotai/richtext-lexical';
 import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -14,6 +16,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
+import { DividerFeature } from '../e2e/fixtures/rich-text/src/__docs-samples__/ticket135/custom-features/divider/feature.server.js';
 import config, { CalloutBlock, InlineCodeBlock } from './config.js';
 import { articlesSlug } from './shared.js';
 
@@ -156,5 +159,32 @@ describe('rich text integration [sqlite]', () => {
     expect(markdown).toContain('<Callout tone="warning">');
     expect(markdown).toContain('Nested **copy** with <InlineCode>pnpm test</InlineCode>.');
     expect(markdown).toContain('</Callout>');
+  });
+
+  it('rejects the documented divider without its paragraph dependency', async () => {
+    await expect(
+      editorConfigFactory.fromFeatures({
+        config,
+        features: () => [DividerFeature()],
+      }),
+    ).rejects.toThrow('DividerFeature requires the paragraph feature');
+  });
+
+  it('loads the documented divider after its paragraph dependency', async () => {
+    const editorConfig = await editorConfigFactory.fromFeatures({
+      config,
+      features: () => [DividerFeature(), ParagraphFeature()],
+    });
+    const state = convertMarkdownToLexical({ editorConfig, markdown: 'Before\n\n+++\n\nAfter' });
+    const markdown = convertLexicalToMarkdown({ data: state, editorConfig });
+    const html = await convertLexicalToHTML({
+      converters: editorConfig.features.converters.html,
+      data: state,
+    });
+
+    expect(editorConfig.features.enabledFeatures).toEqual(['paragraph', 'divider']);
+    expect(state.root.children.some((node) => node.type === 'divider')).toBe(true);
+    expect(markdown).toContain('+++');
+    expect(html).toContain('<hr>');
   });
 });

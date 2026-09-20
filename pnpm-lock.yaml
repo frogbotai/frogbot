@@ -2071,6 +2071,9 @@ importers:
       '@frogbotai/richtext-lexical':
         specifier: workspace:*
         version: link:../../../../packages/richtext-lexical
+      '@frogbotai/ui':
+        specifier: workspace:*
+        version: link:../../../../packages/ui
       frogbot:
         specifier: workspace:*
         version: link:../../../../packages/frogbot

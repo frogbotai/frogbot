@@ -1,0 +1,147 @@
+---
+title: Rendering on demand (Experimental)
+sidebarTitle: Rendering on demand
+description: Render a FrogBot rich text editor from a client component.
+keywords: lexical, rich text, editor, render, form, controlled
+---
+
+`RenderLexical` lets a Client Component request and render a rich text field while preserving nested field schemas for blocks, links, files, tables, and drawers. It uses the Admin Panel's server functions, so render it within the Admin Panel rather than as a standalone editor on a public page.
+
+<Warning>
+  `RenderLexical` and its server rendering function are experimental and may
+  change in minor releases.
+</Warning>
+
+## Use an existing form
+
+When the component is rendered inside a FrogBot form, omit `value` and `setValue`. The editor then writes to the form path identified by `field.name`, or by `path` when you explicitly override it. Saving the surrounding form persists that value normally.
+
+This component renders an editor at the `previewContent` form path while using the configured `content` rich text field as its schema. Because `field.name` already matches the JSON field's form path, no `path` override is needed:
+
+```tsx
+'use client'
+
+import type { DefaultNodeTypes } from '@frogbotai/richtext-lexical'
+import { buildEditorState, RenderLexical } from '@frogbotai/richtext-lexical/client'
+import type { JSONFieldClientComponent } from 'frogbot'
+
+export const PreviewContentField: JSONFieldClientComponent = () => {
+  return (
+    <RenderLexical
+      field={{ name: 'previewContent' }}
+      initialValue={buildEditorState<DefaultNodeTypes>({
+        text: 'Start writing.',
+      })}
+      schemaPath="collection.posts.content"
+    />
+  )
+}
+```
+
+Configure both the schema field and the form-backed JSON field on the collection. Component paths are resolved from your configured import-map base directory; see [Component paths](/custom-components/overview#component-paths).
+
+```ts
+import { lexicalEditor } from '@frogbotai/richtext-lexical'
+import type { CollectionConfig } from 'frogbot'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  fields: [
+    {
+      name: 'content',
+      type: 'richText',
+      editor: lexicalEditor({}),
+    },
+    {
+      name: 'previewContent',
+      type: 'json',
+      admin: {
+        components: {
+          Field: '/components/PreviewContentField#PreviewContentField',
+        },
+      },
+    },
+  ],
+}
+```
+
+`schemaPath` and `path` serve different purposes:
+
+| Property | Purpose |
+| --- | --- |
+| `schemaPath` | Locates an existing configured rich text field so the server can load its features and nested schemas. |
+| `path` | Overrides the value path in the current form. Omit it when `field.name` is already the correct path. |
+| `field.name` | Supplies the rendered rich text field's name and default value path. It does not select the schema. |
+
+The schema path format is `collection.<collectionSlug>.<fieldPath>`. A top-level field uses `collection.posts.content`; a field nested in a group uses a path such as `collection.posts.layout.content`.
+
+## Control the value yourself
+
+Pass `value` and `setValue` when the surrounding component owns the editor state. This mode does not register the value with a FrogBot form and does not save it to the database. Persist it explicitly through an API operation if it should outlive the component.
+
+```tsx
+'use client'
+
+import type { DefaultNodeTypes } from '@frogbotai/richtext-lexical'
+import { buildEditorState, RenderLexical } from '@frogbotai/richtext-lexical/client'
+import { useState } from 'react'
+import type { ComponentProps } from 'react'
+
+const createInitialValue = () =>
+  buildEditorState<DefaultNodeTypes>({ text: 'Start writing.' })
+
+export function ControlledEditor() {
+  const [value, setValue] = useState<
+    ComponentProps<typeof RenderLexical>['value']
+  >(createInitialValue)
+
+  const isEditorValue = (
+    v: unknown,
+  ): v is ComponentProps<typeof RenderLexical>['value'] =>
+    v === undefined || (typeof v === 'object' && v !== null)
+
+  const updateValue: NonNullable<
+    ComponentProps<typeof RenderLexical>['setValue']
+  > = (nextValue) => {
+    if (isEditorValue(nextValue)) {
+      setValue(nextValue)
+    }
+  }
+
+  return (
+    <div>
+      <RenderLexical
+        field={{ name: 'draftContent', label: 'Draft content' }}
+        schemaPath="collection.posts.content"
+        setValue={updateValue}
+        value={value}
+      />
+
+      <button onClick={() => setValue(createInitialValue())} type="button">
+        Reset editor
+      </button>
+    </div>
+  )
+}
+```
+
+Resetting changes only the controlled React state. It does not update a record unless your component separately sends the new value to FrogBot.
+
+## Use a dedicated schema anchor
+
+If the reusable editor needs a schema that is difficult to address inside arrays or blocks, define a hidden top-level rich text field as its schema anchor:
+
+```ts
+import { lexicalEditor } from '@frogbotai/richtext-lexical'
+
+{
+  name: 'onDemandEditorSchema',
+  type: 'richText',
+  editor: lexicalEditor({}),
+  admin: {
+    hidden: true,
+  },
+}
+```
+
+Use `schemaPath="collection.posts.onDemandEditorSchema"`. The anchor determines editor features and nested schemas; it does not determine where a form-backed or controlled value is stored.
