@@ -331,6 +331,35 @@ describe('rewriteComponentPaths', () => {
     expect(widgetEditor.FieldComponent).toBe('@frogbotai/richtext-lexical/rsc#WidgetField');
   });
 
+  it('rewrites block components and JSX converters', () => {
+    const block = {
+      admin: {
+        components: { Block: '@payloadcms/richtext-lexical/client#Block' },
+        jsx: '@payloadcms/richtext-lexical/client#Converter',
+      },
+      fields: [
+        {
+          admin: { components: { Field: '@payloadcms/richtext-lexical/client#Field' } },
+          name: 'code',
+          type: 'code',
+        },
+      ],
+      slug: 'code',
+    };
+    const config = {
+      blocks: [block],
+      collections: [{ fields: [{ blocks: [block], name: 'layout', type: 'blocks' }] }],
+    } as unknown as SanitizedConfig;
+
+    rewriteComponentPaths(config);
+
+    expect(block.admin.components.Block).toBe('@frogbotai/richtext-lexical/client#Block');
+    expect(block.admin.jsx).toBe('@frogbotai/richtext-lexical/client#Converter');
+    expect(block.fields[0]?.admin.components.Field).toBe(
+      '@frogbotai/richtext-lexical/client#Field',
+    );
+  });
+
   it('preserves shared field identity and handles field-container cycles', () => {
     const editor = { CellComponent: '@payloadcms/richtext-lexical/rsc#Cell' };
     const shared = { name: 'copy', type: 'richText', editor };
