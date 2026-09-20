@@ -16,6 +16,14 @@ const Projects: CollectionConfig = {
   fields: [
     { name: 'title', type: 'text', required: true },
     { name: 'description', type: 'textarea' },
+    {
+      name: 'details',
+      type: 'group',
+      fields: [
+        { name: 'owner', type: 'text' },
+        { name: 'budget', type: 'number' },
+      ],
+    },
   ],
 };
 

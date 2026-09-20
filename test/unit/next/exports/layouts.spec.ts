@@ -49,4 +49,20 @@ describe('@frogbotai/next layouts', () => {
     expect(forwarded.name).toBe('form-state');
     await expect(forwarded.config).resolves.toBe(payloadConfig);
   });
+
+  it('RootLayout preserves a rejected payload config promise', async () => {
+    const error = new Error('config failed');
+    const config = {
+      _internal: { payloadConfig: Promise.reject(error) },
+    } as unknown as FrogbotSanitizedConfig;
+
+    const element = RootLayout({
+      config,
+      importMap: {},
+      serverFunction: vi.fn(),
+      children: null,
+    });
+
+    await expect(element.props.config).rejects.toBe(error);
+  });
 });

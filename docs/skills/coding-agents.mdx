@@ -1,0 +1,136 @@
+---
+title: "Coding agents"
+description: "Install the FrogBot development skill for your coding agent, with local references or a hosted entry."
+keywords: [FrogBot, agent skills, Claude Code, Codex, Cursor, opencode, GitHub Copilot, Gemini CLI]
+---
+
+The FrogBot skill gives your coding agent framework instructions, examples, and task-specific references for building FrogBot applications.
+
+## Install from GitHub
+
+From your project directory, run:
+
+```bash
+npx skills add frogbotai/frogbot
+```
+
+Select the `frogbot` skill and the agents you use. Choose project scope to share the installation with your project. The recommended symlink installation keeps a canonical copy in `.agents/skills/frogbot` and links agent-specific directories, such as `.claude/skills/frogbot`, to it. Agents that read `.agents/skills` use that copy directly. Use `--copy` if you need independent copies instead of symlinks.
+
+GitHub installation includes all 24 Markdown files: `SKILL.md` and 23 files in `reference/`. Prefer this route when you want the references available locally.
+
+## Install as a Claude Code plugin
+
+In a Claude Code session, first add the marketplace:
+
+```text
+/plugin marketplace add frogbotai/frogbot
+```
+
+Then install the plugin:
+
+```text
+/plugin install frogbot@frogbot
+```
+
+The plugin includes the same complete 24-file skill directory. Claude Code discovers it within the plugin; follow any reload instructions shown by the client.
+
+## Include the skill in a new app
+
+The [app installer](/getting-started/installation) asks which coding agents you use. Select any of the six supported agents, or leave the selection empty. To choose agents without prompts:
+
+```bash
+npx create-frogbot-app my-agent-platform --yes --agents claude,codex,cursor,opencode,copilot,gemini
+```
+
+Pass only the comma-separated targets you need. `--yes` by itself selects no coding agents; `--no-agents` explicitly skips skill installation. Choosing `--ai none` affects the app's AI configuration, but selected coding agents still receive the complete skill.
+
+### Project paths and pointers
+
+The app installer copies the bundled skill to these project-relative directories and writes the corresponding instruction files:
+
+| Coding agent | `--agents` target | Skill directory | Instruction file |
+| --- | --- | --- | --- |
+| Claude Code | `claude` | `.claude/skills/frogbot/` | `CLAUDE.md` |
+| Codex | `codex` | `.agents/skills/frogbot/` | `AGENTS.md` |
+| Cursor | `cursor` | `.agents/skills/frogbot/` | `AGENTS.md` |
+| opencode | `opencode` | `.agents/skills/frogbot/` | `AGENTS.md` |
+| GitHub Copilot | `copilot` | `.agents/skills/frogbot/` | `.github/copilot-instructions.md` |
+| Gemini CLI | `gemini` | `.agents/skills/frogbot/` | `GEMINI.md` |
+
+Each instruction file points to `SKILL.md` and its `reference/` directory. Agents using `.agents/skills/frogbot/` share one copy; Codex, Cursor, and opencode also share one `AGENTS.md`. Selecting Claude Code as well creates a separate complete copy under `.claude/skills/frogbot/`.
+
+These target names belong to `create-frogbot-app`. The skills CLI uses `--agent` with its own identifiers, including `claude-code`, `github-copilot`, and `gemini-cli`.
+
+If a build of the app installer has no bundled skill, it prints the GitHub installation command and skips the instruction files that would point to missing content.
+
+## What the skill covers
+
+Start with `SKILL.md`; its task routing table directs your agent to the relevant reference.
+
+| Area | Topics |
+| --- | --- |
+| Data and APIs | Collections, fields, field type guards, queries, endpoints, and database, storage, and email adapters |
+| Application behavior | Hooks, access control, authentication, admin customization, preview, localization, and plugin development |
+| AI applications | Agents, tools, providers, chat UI, pieces, and connections |
+| Services and integrations | Jobs, KV, MCP, gateway configuration, roles, API keys, and typed environment variables |
+
+The entry also covers generated types, request and transaction context, access-control defaults, and hook-loop prevention.
+
+## Use the hosted entry
+
+For an HTTP-based installation, use the documentation site as the source:
+
+```bash
+npx skills add https://docs.frogbot.ai
+```
+
+Select `frogbot` from discovery. Hosted installation provides **only `SKILL.md`**. It does not download the 23 reference files. When a local reference is unavailable, the agent can fetch its explicit raw GitHub fallback from the entry's final reference index. For example:
+
+```text
+https://raw.githubusercontent.com/frogbotai/frogbot/main/skills/frogbot/reference/COLLECTIONS.md
+```
+
+Prefer local references when present. Raw fallbacks follow `main` and may describe APIs newer than your installed FrogBot package. GitHub and plugin installs from the default branch are also unpinned content; version metadata is an update signal, not a commit pin or a guarantee of compatibility with your app. Check your installed package's exports and types when applying examples.
+
+### opencode configuration
+
+Merge this setting into your project's `opencode.json` to discover the hosted entry:
+
+```json
+{
+  "skills": {
+    "urls": ["https://docs.frogbot.ai/.well-known/skills"]
+  }
+}
+```
+
+This uses the legacy discovery index. opencode requests `index.json` from that base, then each advertised file, including the exact uppercase `frogbot/SKILL.md` path.
+
+opencode can reuse a cached entry when the discovery index omits a version. Changing the version inside `SKILL.md` does not force a refresh. To fetch a fresh entry, remove the cached `skills/frogbot` directory from opencode's cache and start a new session. For a local installation, update the skill through the installer you used.
+
+### Discovery endpoints
+
+For agent-skills v0.2 discovery, read the index and follow the `frogbot` entry's advertised `url`. Its `digest` supplies SHA-256 content integrity information:
+
+```text
+https://docs.frogbot.ai/.well-known/agent-skills/index.json
+```
+
+For legacy discovery, the index lists `files: ["SKILL.md"]`. The file URL below is the case-sensitive request used by opencode:
+
+```text
+https://docs.frogbot.ai/.well-known/skills/index.json
+https://docs.frogbot.ai/.well-known/skills/frogbot/SKILL.md
+```
+
+Both formats describe the hosted entry only. Use GitHub or the Claude Code plugin for the complete local reference directory.
+
+## Documentation index
+
+Give your agent this URL to find documentation pages and their descriptions:
+
+```text
+https://docs.frogbot.ai/llms.txt
+```
+
+The index helps the agent choose relevant pages to read; it does not install the skill or its references.

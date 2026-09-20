@@ -19,6 +19,11 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./internal": {
+      "types": "./dist/exports/internal.d.ts",
+      "import": "./dist/exports/internal.js",
+      "default": "./dist/exports/internal.js"
+    },
     "./jobs": {
       "types": "./dist/exports/jobs.d.ts",
       "import": "./dist/exports/jobs.js",
@@ -80,12 +85,14 @@
     "build": "tsc -p tsconfig.json && chmod +x bin.js",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit && pnpm typecheck:types",
-    "typecheck:types": "tsc --noEmit -p tsconfig.typetest.json && pnpm typecheck:jobs && pnpm typecheck:email && pnpm typecheck:fields && pnpm typecheck:live-preview && pnpm typecheck:admin",
+    "typecheck:types": "tsc --noEmit -p tsconfig.typetest.json && pnpm typecheck:jobs && pnpm typecheck:email && pnpm typecheck:fields && pnpm typecheck:collections && pnpm typecheck:live-preview && pnpm typecheck:admin && pnpm typecheck:skill",
     "typecheck:admin": "tsc --noEmit -p ../../test/types/admin/tsconfig.json",
     "typecheck:email": "tsc --noEmit -p ../../test/types/email/tsconfig.json",
+    "typecheck:collections": "tsc --noEmit -p ../../test/types/collections/tsconfig.json",
     "typecheck:fields": "tsc --noEmit -p ../../test/types/fields/tsconfig.json",
     "typecheck:jobs": "pnpm -w test:unit test/unit/frogbot/jobs/typegen.spec.ts && tsc --noEmit -p ../../test/types/jobs/tsconfig.generated.json && tsc --noEmit -p ../../test/types/jobs/tsconfig.fallback.json",
-    "typecheck:live-preview": "tsc --noEmit -p ../../test/types/live-preview/tsconfig.json"
+    "typecheck:live-preview": "tsc --noEmit -p ../../test/types/live-preview/tsconfig.json",
+    "typecheck:skill": "tsc --noEmit -p ../../test/types/skill/tsconfig.json"
   },
   "dependencies": {
     "@frogbotai/gateway": "workspace:*",
@@ -130,6 +137,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./internal": {
+        "types": "./dist/exports/internal.d.ts",
+        "import": "./dist/exports/internal.js",
+        "default": "./dist/exports/internal.js"
       },
       "./jobs": {
         "types": "./dist/exports/jobs.d.ts",

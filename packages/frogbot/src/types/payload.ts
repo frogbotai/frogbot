@@ -17,6 +17,7 @@ export type {
   PayloadRequest,
   SanitizedCollectionConfig,
   SanitizedConfig,
+  SelectType,
   Sort,
   Where,
 } from 'payload';
