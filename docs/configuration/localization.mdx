@@ -165,7 +165,7 @@ All field types with a `name` property support the `localized` property—even t
 
 ## Status Localization
 
-When [Localization](/configuration/localization) is enabled and a collection or global has **drafts enabled** and contains at least one localized field, FrogBot automatically localizes the `_status` field. This means publication status is tracked independently per locale, so you can publish in English while keeping Spanish as a draft.
+When [Localization](/configuration/localization) is enabled and a collection has **drafts enabled** and contains at least one localized field, FrogBot automatically localizes the `_status` field. This means publication status is tracked independently per locale, so you can publish in English while keeping Spanish as a draft.
 
 When the status field is localized, it is stored as an object keyed by locale:
 
@@ -177,7 +177,7 @@ status: {
 }
 ```
 
-If localization is not configured, or the collection/global has no localized fields, the `status` field remains a single string (`'draft'` or `'published'`) representing document status across all locales.
+If localization is not configured, or the collection has no localized fields, the `status` field remains a single string (`'draft'` or `'published'`) representing document status across all locales.
 
 ### Publishing and unpublishing per locale
 
@@ -221,7 +221,7 @@ Passing `locale: 'all'` together with `_status: 'published'` also publishes ever
   document, and `publishAllLocales` / `unpublishAllLocales` have no effect.
 </Note>
 
-The same parameters are available on `frogbot.updateGlobal()` for globals, as well as on the REST and Local APIs.
+The same parameters are available through the REST and Local APIs.
 
 ## Retrieving Localized Docs
 

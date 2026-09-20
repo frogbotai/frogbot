@@ -9,7 +9,7 @@ Enabling [Authentication](/authentication/overview) on a [Collection](/configura
 
 ## Access
 
-The Access operation returns what a logged in user can and can't do with the collections and globals that are registered via your config. This data can be immensely helpful if your app needs to show and hide certain features based on [Access Control](/access-control/overview), just as the [Admin Panel](/admin/overview) does.
+The Access operation returns what a logged-in user can and can't do with the collections registered in your config. This data can help your app show and hide features based on [Access Control](/access-control/overview), just as the Admin Panel does.
 
 **REST API endpoint**:
 
@@ -66,7 +66,7 @@ query {
 }
 ```
 
-Document access can also be queried on a collection/global basis. Access on a global can be queried like `http://localhost:3000/api/global-slug/access`, Collection document access can be queried like `http://localhost:3000/api/collection-slug/access/:id`.
+Document access can also be queried for a collection at `http://localhost:3000/api/collection-slug/access/:id`.
 
 ## Me
 
@@ -308,7 +308,7 @@ const result = await frogbot.verifyEmail({
 
 ## Unlock
 
-If a user locks themselves out and you wish to deliberately unlock them, you can utilize the Unlock operation. The [Admin Panel](/admin/overview) features an Unlock control automatically for all collections that feature max login attempts, but you can programmatically unlock users as well by using the Unlock operation.
+If a user locks themselves out and you wish to deliberately unlock them, you can use the Unlock operation. The Admin Panel features an Unlock control automatically for all collections that have maximum login attempts, but you can also unlock users programmatically.
 
 To restrict who is allowed to unlock users, you can utilize the [`unlock`](/access-control/collections#unlock) access control function.
 
@@ -345,7 +345,7 @@ FrogBot comes with built-in forgot password functionality. Submitting an email a
 
 The link to reset the user's password contains a token which is what allows the user to securely reset their password.
 
-By default, the Forgot Password operations send users to the [Admin Panel](/admin/overview) to reset their password, but you can customize the generated email to send users to the frontend of your app instead by [overriding the email HTML](/authentication/email#forgot-password).
+By default, the Forgot Password operations send users to the Admin Panel to reset their password, but you can customize the generated email to send users to the frontend of your app instead by [overriding the email HTML](/authentication/email#forgot-password).
 
 **Example REST API Forgot Password**:
 

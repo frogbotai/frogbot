@@ -122,9 +122,9 @@ When `NODE_ENV=test`, required checks are skipped so tests do not need every app
 
 ## Client-side Environments
 
-For security and safety reasons, the [Admin Panel](/admin/overview) does **not** include Environment Variables in its _client-side_ bundle by default. But, Next.js provides a mechanism to expose Environment Variables to the client-side bundle when needed.
+For security and safety reasons, the Admin Panel does **not** include Environment Variables in its client-side bundle by default. Next.js provides a mechanism to expose Environment Variables to the client-side bundle when needed.
 
-If you are building a [Custom Component](/custom-components/overview) and need to access Environment Variables from the client-side, you can do so by prefixing them with `NEXT_PUBLIC_`.
+If you are building a custom component and need to access Environment Variables from the client side, prefix them with `NEXT_PUBLIC_`.
 
 <Warning>
   **Important:** Be careful about what variables you provide to your client-side

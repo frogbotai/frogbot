@@ -1,7 +1,7 @@
 ---
 title: TypeScript Plugin (Experimental)
 sidebarTitle: TypeScript Plugin
-description: IDE support for PayloadComponent import paths – inline validation, autocomplete, and go-to-definition.
+description: IDE support for FrogbotComponent import paths - inline validation, autocomplete, and go-to-definition.
 keywords: headless cms, typescript, documentation, ide, plugin, autocomplete, validation, import paths
 ---
 
@@ -11,7 +11,7 @@ keywords: headless cms, typescript, documentation, ide, plugin, autocomplete, va
   issues](https://github.com/frogbot/frogbot/issues) you encounter.
 </Warning>
 
-FrogBot ships an optional TypeScript Language Service Plugin (`@frogbotai/typescript-plugin`) that enhances your IDE experience when working with [Custom Components](/custom-components/overview). It understands FrogBot's `PayloadComponent` import path conventions and provides:
+FrogBot ships an optional TypeScript Language Service Plugin (`@frogbotai/typescript-plugin`) that enhances your IDE experience when working with custom components. It understands FrogBot's `FrogbotComponent` import path conventions and provides:
 
 - **Path validation** — red squigglies when a component path doesn't resolve to a real file
 - **Export validation** — errors when the named export doesn't exist in the target module, with "Did you mean?" suggestions
@@ -120,6 +120,6 @@ The `baseDir` path is relative to the `tsconfig.json` location.
 
 ## How It Works
 
-The plugin detects `PayloadComponent` positions by checking the contextual type of string literals in your config. Any string typed as `PayloadComponent`, `CustomComponent`, or any type that resolves to the same `false | RawPayloadComponent | string` union shape is automatically validated.
+The plugin detects `FrogbotComponent` positions by checking the contextual type of string literals in your config. Any string typed as `FrogbotComponent`, `CustomComponent`, or any type that resolves to the same component-path union shape is automatically validated.
 
-This means the plugin works everywhere FrogBot expects a component path — collection field components, global components, admin panel components, dashboard widgets, and custom views — without needing to hardcode specific config positions.
+This means the plugin works everywhere FrogBot expects a component path, including collection field components, admin panel components, dashboard widgets, and custom views, without needing to hardcode specific config positions.

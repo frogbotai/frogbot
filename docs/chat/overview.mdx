@@ -9,7 +9,7 @@ When you configure an agent, FrogBot stores authenticated HTTP conversations in 
 
 Anonymous agent calls remain stateless, even when a custom agent access rule allows them.
 
-Agent calls use `/api/agents/<slug>`. To call the embedded AI gateway directly, see the [authenticated HTTP endpoints](/configuration/ai#call-over-http).
+Agent calls use `/api/agents/<slug>`. To call the embedded AI gateway directly, see the [authenticated HTTP endpoints](/ai/overview#call-over-http).
 
 ## Use the default collections
 
@@ -34,7 +34,7 @@ These defaults also apply when your own collection uses `chat: true`. FrogBot us
 
 ## Automatic chat titles
 
-FrogBot names a new chat after its first assistant reply. It uses the configured [utility model](/configuration/ai#choose-a-utility-model) and records the call through normal usage reporting.
+FrogBot names a new chat after its first assistant reply. It uses the configured [utility model](/ai/overview#choose-a-utility-model) and records the call through normal usage reporting.
 
 Naming runs in the background and never delays or fails the assistant response. While naming runs, and if generation fails, FrogBot uses the first user message. Long titles fade at the edge of the chat list instead of showing an ellipsis. A hard process exit can interrupt this best-effort background work and leave the chat untitled.
 

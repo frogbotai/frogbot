@@ -45,9 +45,11 @@ Run everything from the repo root with `pnpm`. Scripts live in [package.json](pa
 | Integration tests on a specific database      | `pnpm test:int:sqlite`, `pnpm test:int:pg`, `pnpm test:int:mongo` (Mongo and Postgres need `pnpm docker:start <profile> up -d`) |
 | Format and lint                               | `pnpm prettier:write && pnpm lint:fix` (agents: via the `lint` subagent)                                                        |
 | Typecheck                                     | `pnpm typecheck` (builds packages first)                                                                                        |
-| Branding and docs gates                       | `pnpm check:branding`, `pnpm check:docs-fences`, `pnpm check:ui-architecture`                                                   |
+| Branding and docs gates                       | `pnpm check:branding`, `pnpm check:docs-fences`, `pnpm check:docs-links`, `pnpm check:ui-architecture`                          |
 | Regenerate AI model catalog types             | `pnpm generate:ai-types`, `pnpm sync:catalog`                                                                                   |
 | Release                                       | `pnpm bump`, `pnpm release` (owner only)                                                                                        |
+
+`pnpm check:docs-links` validates General navigation, internal links, and local assets. It excludes content owned by other documentation tabs.
 
 ## Git commits
 

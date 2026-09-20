@@ -22,18 +22,17 @@ There are four main types of Hooks in FrogBot:
 
 - [Root Hooks](#root-hooks)
 - [Collection Hooks](/hooks/collections)
-- [Global Hooks](/hooks/globals)
 - [Field Hooks](/hooks/fields)
 
 <Warning>
   FrogBot also ships a set of _React_ hooks that you can use in your frontend
   application. Although they share a common name, these are very different things
-  and should not be confused. [More details](/admin/react-hooks).
+  and should not be confused.
 </Warning>
 
 ## Root Hooks
 
-Root Hooks are not associated with any specific Collection, Global, or Field. They are useful for globally-oriented side effects, such as when an error occurs at the application level.
+Root Hooks are not associated with any specific Collection or Field. They are useful for application-wide side effects, such as when an error occurs at the application level.
 
 To add Root Hooks, use the `hooks` property in your [FrogBot Config](/configuration/overview):
 
@@ -80,7 +79,7 @@ The following arguments are provided to the `afterError` Hook:
 | **`error`**         | The error that occurred.                                                                                                                                                                        |
 | **`context`**       | Custom context passed between Hooks. [More details](/hooks/context).                                                                                                                            |
 | **`graphqlResult`** | The GraphQL result object, available if the hook is executed within a GraphQL context.                                                                                                          |
-| **`req`**           | The `PayloadRequest` object that extends [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request). Contains currently authenticated `user` and the Local API instance `frogbot`. |
+| **`req`**           | The `FrogbotRequest` object that extends [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request). Contains currently authenticated `user` and the Local API instance `frogbot`. |
 | **`collection`**    | The [Collection](/configuration/collections) in which this Hook is running against. This will be `undefined` if the hook is executed from a non-collection endpoint or GraphQL.                 |
 | **`result`**        | The formatted error result object, available if the hook is executed from a REST context.                                                                                                       |
 
@@ -145,11 +144,6 @@ const beforeChangeHook: CollectionBeforeChangeHook = async ({ data }) => {
 Hooks are a powerful way to customize the behavior of your APIs, but some hooks are run very often and can add significant overhead to your requests if not optimized.
 
 When building hooks, combine together as many of these strategies as possible to ensure your hooks are as performant as they can be.
-
-<Tip>
-  For more performance tips, see the [Performance
-  documentation](/performance/overview).
-</Tip>
 
 ### Writing efficient hooks
 

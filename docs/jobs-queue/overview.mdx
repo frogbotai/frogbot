@@ -4,7 +4,7 @@ description: 'Queue tasks and workflows, wait for approvals or deadlines, and re
 keywords: ['jobs', 'queues', 'jobId', 'leases', 'workflows', 'waitFor', 'approvals']
 ---
 
-FrogBot stores queued jobs in your database. Register tasks in `jobs.tasks` and workflows in `jobs.workflows`, then use `frogbot.jobs` to enqueue and run them. For dedicated processes, see [Job workers](/deployment/jobs).
+FrogBot stores queued jobs in your database. Register tasks in `jobs.tasks` and workflows in `jobs.workflows`, then use `frogbot.jobs` to enqueue and run them. For dedicated processes, see [Job workers](/jobs-queue/workers).
 
 ## Queue a job
 
@@ -147,7 +147,7 @@ FrogBot atomically consumes each token once. Ordinary concurrent resume attempts
 
 Enqueue and saving the wait's `dispatched` marker are separate writes. In a rare crash between them, a continuation can finish and be deleted before recovery sees it; recovery can then enqueue and execute it again. Unique `jobId` does not guarantee exactly-once dispatch across that window.
 
-Continuation enqueue preserves `concurrency.supersedes` replacement behavior. A replacement can delete pending work before its insertion fails, delaying the continuation until recovery. Failed dispatches remain retryable by the scheduled sweep, even if local resume rejected or HTTP returned `500` after token consumption. Resubmitting a consumed token returns a conflict; keep the [scheduler and recovery worker](/deployment/jobs#workers-for-durable-waits) running to retry dispatch.
+Continuation enqueue preserves `concurrency.supersedes` replacement behavior. A replacement can delete pending work before its insertion fails, delaying the continuation until recovery. Failed dispatches remain retryable by the scheduled sweep, even if local resume rejected or HTTP returned `500` after token consumption. Resubmitting a consumed token returns a conflict; keep the [scheduler and recovery worker](/jobs-queue/workers#workers-for-durable-waits) running to retry dispatch.
 
 ### Replay and side effects
 
@@ -188,7 +188,7 @@ const jobs = {
 
 All durations are positive safe-integer milliseconds. The default must not exceed the maximum; per-wait `expiresIn` must not exceed it either and must produce a valid date. The deadline starts when the wait is first created, including time spent in `onWait`.
 
-Expiry actively wakes a ready wait with `{ expired: true }`, even if nobody attempts to resume it. The scheduled `frogbot-sweep-jobs` task expires waits and arranges continuations. A racing response and expiry have one winner. Keep scheduling and execution running for `default`, plus workers for the workflow's original queue; see [Workers for durable waits](/deployment/jobs#workers-for-durable-waits). A stopped worker does not extend token validity, but it delays expiry handling and continuation execution.
+Expiry actively wakes a ready wait with `{ expired: true }`, even if nobody attempts to resume it. The scheduled `frogbot-sweep-jobs` task expires waits and arranges continuations. A racing response and expiry have one winner. Keep scheduling and execution running for `default`, plus workers for the workflow's original queue; see [Workers for durable waits](/jobs-queue/workers#workers-for-durable-waits). A stopped worker does not extend token validity, but it delays expiry handling and continuation execution.
 
 ## Leases and crash recovery
 
@@ -212,4 +212,4 @@ Recovery is **at least once**. A crash, database outage, or event-loop stall can
 
 Use the FrogBot adapters: `@frogbotai/db-postgres`, `@frogbotai/db-vercel-postgres`, `@frogbotai/db-sqlite`, `@frogbotai/db-d1-sqlite`, or `@frogbotai/db-mongodb`. They provide atomic claims and conditional lease updates without Redis.
 
-The jobs collection includes unique `jobId`, indexed `leaseUntil`, and private `leaseOwner` fields. Apply the generated [database migrations](/database/migrations) before starting SQL-backed workers. See [SQLite and D1 requirements](/deployment/jobs#sqlite-and-d1) for `RETURNING` support and local development.
+The jobs collection includes unique `jobId`, indexed `leaseUntil`, and private `leaseOwner` fields. Apply the generated [database migrations](/database/migrations) before starting SQL-backed workers. See [SQLite and D1 requirements](/jobs-queue/workers#sqlite-and-d1) for `RETURNING` support and local development.

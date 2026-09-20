@@ -27,7 +27,7 @@ You can gain access to the currently running `frogbot` object via two ways:
 
 #### Accessing from args or `req`
 
-In most places within FrogBot itself, you can access `frogbot` directly from the arguments of [Hooks](/hooks/overview), [Access Control](/access-control/overview), [Validation](/fields/overview#validation) functions, and similar. This is the simplest way to access FrogBot in most cases. Most config functions take the `req` (Request) object, which has FrogBot bound to it (`req.frogbot`).
+In most places within FrogBot itself, you can access `frogbot` directly from the arguments of [Hooks](/hooks/overview), [Access Control](/access-control/overview), validation functions, and similar. This is the simplest way to access FrogBot in most cases. Most config functions take the `req` (Request) object, which has FrogBot bound to it (`req.frogbot`).
 
 Example:
 
@@ -46,13 +46,13 @@ const afterChangeHook: CollectionAfterChangeHook = async ({
 If you want to import FrogBot in places where you don't have the option to access it from function arguments or `req`, you can import it and initialize it.
 
 ```ts
-import { getPayload } from 'frogbot'
+import { getFrogbot } from 'frogbot'
 import config from '@frogbot-config'
 
-const frogbot = await getPayload({ config })
+const frogbot = await getFrogbot({ config })
 ```
 
-If you're working in Next.js' development mode, FrogBot will work with Hot Module Replacement (HMR), and as you make changes to your FrogBot Config, your usage of FrogBot will always be in sync with your changes. In production, `getPayload` simply disables all HMR functionality so you don't need to write your code any differently. We handle optimization for you in production mode.
+If you're working in Next.js' development mode, FrogBot will work with Hot Module Replacement (HMR), and as you make changes to your FrogBot Config, your usage of FrogBot will always be in sync with your changes. In production, `getFrogbot` simply disables all HMR functionality so you don't need to write your code any differently. We handle optimization for you in production mode.
 
 If you are accessing FrogBot via function arguments or `req.frogbot`, HMR is automatically supported if you are using it within Next.js.
 
@@ -72,7 +72,7 @@ You can specify more options within the Local API vs. REST or GraphQL due to the
 | `populate`           | Specify [populate](/queries/select#populate) to control which fields to include to the result from populated documents.                                                                                                                                                                                                                                               |
 | `fallbackLocale`     | Specify a [fallback locale](/configuration/localization) to use for any returned documents. This can be a single locale or array of locales.                                                                                                                                                                                                                          |
 | `overrideAccess`     | Skip access control. By default, this property is set to true within all Local API operations.                                                                                                                                                                                                                                                                        |
-| `overrideLock`       | By default, document locks are ignored (`true`). Set to `false` to enforce locks and prevent operations when a document is locked by another user. [More details](/admin/locked-documents).                                                                                                                                                                           |
+| `overrideLock`       | By default, document locks are ignored (`true`). Set to `false` to enforce locks and prevent operations when a document is locked by another user.                                                                                                                                                                                                                     |
 | `user`               | If you set `overrideAccess` to `false`, you can pass a user to use against the access control checks.                                                                                                                                                                                                                                                                 |
 | `showHiddenFields`   | Opt-in to receiving hidden fields. By default, they are hidden from returned documents in accordance to your config.                                                                                                                                                                                                                                                  |
 | `pagination`         | Set to false to return all documents and avoid querying for document counts.                                                                                                                                                                                                                                                                                          |
@@ -436,52 +436,6 @@ const result = await frogbot.unlock({
 const result = await frogbot.verifyEmail({
   collection: 'users', // required
   token: 'afh3o2jf2p3f...', // the token saved on the user as `_verificationToken`
-})
-```
-
-## Globals
-
-The following Global operations are available through the Local API:
-
-### Find#global-find
-
-```ts
-// Result will be the Header Global.
-const result = await frogbot.findGlobal({
-  slug: 'header', // required
-  depth: 2,
-  locale: 'en',
-  fallbackLocale: false,
-  user: dummyUser,
-  overrideAccess: false,
-  showHiddenFields: true,
-})
-```
-
-### Update#global-update
-
-```ts
-// Result will be the updated Header Global.
-const result = await frogbot.updateGlobal({
-  slug: 'header', // required
-  data: {
-    // required
-    nav: [
-      {
-        url: 'https://google.com',
-      },
-      {
-        url: 'https://frogbot.com',
-      },
-    ],
-  },
-  depth: 2,
-  locale: 'en',
-  fallbackLocale: false,
-  user: dummyUser,
-  overrideAccess: false,
-  overrideLock: false, // By default, document locks are ignored. Set to false to enforce locks.
-  showHiddenFields: true,
 })
 ```
 

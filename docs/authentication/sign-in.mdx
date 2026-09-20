@@ -109,6 +109,6 @@ Pass `connections` to your root config. Register both callback URIs in the share
 | Google sign-in | `/api/users/sign-in/google/callback` | Local user and FrogBot session. |
 | Gmail linking | `/api/connections/gmail/callback` | Owner-scoped, encrypted Gmail credential. |
 
-Core auth and connections share private OAuth helpers, but their state intents and public callbacks are separate. **Login never stores provider tokens or creates connections; linking never logs a user in.** Users link Gmail separately in [Settings → Linked accounts](/configuration/connections#link-an-account-in-settings).
+Core auth and connections share private OAuth helpers, but their state intents and public callbacks are separate. **Login never stores provider tokens or creates connections; linking never logs a user in.** Users link Gmail separately in [Settings → Linked accounts](/connections/overview#link-an-account-in-settings).
 
-For Sheets, Drive, and Calendar, use `createGoogleSheets`, `createGoogleDrive`, and `createGoogleCalendar` with the same `oauth: google.oauth` pattern. Each needs its own `connections` entry and product callback. The identity-only `google` instance does not grant product access. See [Google product connection setup](/configuration/connections#configure-linking).
+For Sheets, Drive, and Calendar, use `createGoogleSheets`, `createGoogleDrive`, and `createGoogleCalendar` with the same `oauth: google.oauth` pattern. Each needs its own `connections` entry and product callback. The identity-only `google` instance does not grant product access. See [Google product connection setup](/connections/overview#configure-linking).

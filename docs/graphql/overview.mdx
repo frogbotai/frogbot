@@ -9,7 +9,7 @@ In addition to its REST and Local APIs, FrogBot ships with a fully featured and 
 
 By default, the GraphQL API is exposed via `/api/graphql`, but you can customize this URL via specifying your `routes` within the main FrogBot Config.
 
-The labels you provide for your Collections and Globals are used to name the GraphQL types that are created to correspond to your config. Special characters and spaces are removed.
+The labels you provide for your Collections are used to name the GraphQL types that are created to correspond to your config. Special characters and spaces are removed.
 
 ## GraphQL Clients
 
@@ -72,36 +72,9 @@ export const PublicUser: CollectionConfig = {
 | `logoutPublicUser`         | `logout` auth operation         |
 | `refreshTokenPublicUser`   | `refresh` auth operation        |
 
-## Globals
-
-Globals are also fully supported. For example:
-
-```ts
-import type { GlobalConfig } from 'frogbot';
-
-const Header: GlobalConfig = {
-  slug: 'header',
-  fields: [
-    ...
-  ],
-}
-```
-
-**FrogBot will open the following query:**
-
-| Query Name | Operation |
-| ---------- | --------- |
-| `Header`   | `findOne` |
-
-**And the following mutation:**
-
-| Query Name     | Operation |
-| -------------- | --------- |
-| `updateHeader` | `update`  |
-
 ## Preferences
 
-User [preferences](/admin/preferences) for the [Admin Panel](/admin/overview) are also available to GraphQL the same way as other collection schemas are generated. To query preferences you must supply an authorization token in the header and only the preferences of that user will be accessible.
+User preferences for the Admin Panel are also available to GraphQL the same way as other collection schemas are generated. To query preferences, supply an authorization token in the header; only that user's preferences are accessible.
 
 **FrogBot will open the following query:**
 
@@ -165,7 +138,7 @@ const NoProductionIntrospection: GraphQL.ValidationRule = (context) => ({
 
 ## Query complexity limits
 
-FrogBot comes with a built-in query complexity limiter to prevent bad people from trying to slow down your server by running massive queries. To learn more, [click here](/production/preventing-abuse#limiting-graphql-complexity).
+FrogBot comes with a built-in query complexity limiter to prevent abusive queries from slowing down your server.
 
 ## Field complexity
 

@@ -5,7 +5,7 @@ description: FrogBot provides highly secure user Authentication out of the box, 
 keywords: authentication, config, configuration, overview, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
 ---
 
-Authentication is a critical part of any application. FrogBot provides a secure, portable way to manage user accounts out of the box. FrogBot Authentication is designed to be used in both the [Admin Panel](/admin/overview), as well as your own external applications, completely eliminating the need for paid, third-party platforms and services.
+Authentication is a critical part of any application. FrogBot provides a secure, portable way to manage user accounts out of the box. FrogBot Authentication is designed for both the Admin Panel and your own external applications, eliminating the need for paid third-party platforms and services.
 
 FrogBot does not require you to define a users collection. If no auth collection exists, FrogBot supplies its default `users` collection. If exactly one auth collection exists, FrogBot uses it as the owner relationship for chat chats regardless of its slug. With multiple auth collections, set `admin.user` to choose one.
 
@@ -38,8 +38,7 @@ Any [Collection](/configuration/collections) can opt-in to supporting Authentica
 
 <Warning>
   **Note:** By default, FrogBot provides an auth-enabled `User` Collection which
-  is used to access the Admin Panel. [More
-  details](/admin/overview#the-admin-user-collection).
+  is used to access the Admin Panel.
 </Warning>
 
 To enable Authentication on a Collection, use the `auth` property in the [Collection Config](/configuration/collections):
@@ -66,8 +65,7 @@ export const Admins: CollectionConfig = {
 
 <Warning>
   **Note:** Auth-enabled Collections will be automatically injected with the
-  `hash`, `salt`, and `email` fields. [More
-  details](/fields/overview#field-names).
+  `hash`, `salt`, and `email` fields.
 </Warning>
 
 The following options are available:
@@ -130,7 +128,7 @@ If set to `true`, an email address is required when creating a new user. If set 
 
 For testing and demo purposes you may want to skip forcing the user to login in order to access your application. Typically, all users should be required to login, however, you can speed up local development time by enabling auto-login.
 
-To enable auto-login, set the `autoLogin` property in the [FrogBot Config](/admin/overview#admin-options):
+To enable auto-login, set the `autoLogin` property in the FrogBot Config:
 
 ```ts
 import { buildConfig } from 'frogbot'
@@ -169,7 +167,7 @@ The following options are available:
 
 Turning this property on will allow users to stay logged in indefinitely while their browser is open and on the admin panel, by automatically refreshing their authentication token before it expires.
 
-To enable auto-refresh for user tokens, set `autoRefresh: true` in the [FrogBot Config](/admin/overview#admin-options) to:
+To enable auto-refresh for user tokens, set `autoRefresh: true` in the FrogBot Config:
 
 ```ts
 import { buildConfig } from 'frogbot'

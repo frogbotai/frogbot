@@ -5,9 +5,9 @@ description: Hooks can be added to any fields, and optionally modify the return 
 keywords: hooks, fields, config, configuration, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
 ---
 
-Field Hooks are [Hooks](/hooks/overview) that run on Documents on a per-field basis. They allow you to execute your own logic during specific events of the Document lifecycle. Field Hooks offer incredible potential for isolating your logic from the rest of your [Collection Hooks](/hooks/collections) and [Global Hooks](/hooks/globals).
+Field Hooks are [Hooks](/hooks/overview) that run on Documents on a per-field basis. They allow you to execute your own logic during specific events of the Document lifecycle. Field Hooks offer incredible potential for isolating your logic from the rest of your [Collection Hooks](/hooks/collections).
 
-To add Hooks to a Field, use the `hooks` property in your [Field Config](/fields/overview):
+To add Hooks to a Field, use the `hooks` property in your Field Config:
 
 ```ts
 import type { Field } from 'frogbot'
@@ -28,10 +28,10 @@ All Field Hooks accept an array of synchronous or asynchronous functions. These 
   Due to GraphQL's typed nature, changing the type of data that you return from
   a field will produce errors in the [GraphQL API](/graphql/overview). If you
   need to change the shape or type of data, consider [Collection
-  Hooks](/hooks/collections) or [Global Hooks](/hooks/globals) instead.
+  Hooks](/hooks/collections) instead.
 </Warning>
 
-To add hooks to a Field, use the `hooks` property in your [Field Config](/fields/overview):
+To add hooks to a Field, use the `hooks` property in your Field Config:
 
 ```ts
 import type { Field } from 'frogbot';
@@ -53,25 +53,24 @@ The following arguments are provided to all Field Hooks:
 
 | Option                      | Description                                                                                                                                                                                    |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`collection`**            | The [Collection](/configuration/collections) in which this Hook is running against. If the field belongs to a Global, this will be `null`.                                                     |
+| **`collection`**            | The [Collection](/configuration/collections) in which this Hook is running.                                                                                                                  |
 | **`context`**               | Custom context passed between Hooks. [More details](/hooks/context).                                                                                                                           |
 | **`data`**                  | In the `afterRead` hook this is the full Document. In the `create` and `update` operations, this is the incoming data passed through the operation.                                            |
-| **`field`**                 | The [Field](/fields/overview) which the Hook is running against.                                                                                                                               |
+| **`field`**                 | The Field which the Hook is running against.                                                                                                                                                   |
 | **`findMany`**              | Boolean to denote if this hook is running against finding one, or finding many within the `afterRead` hook.                                                                                    |
-| **`global`**                | The [Global](/configuration/globals) in which this Hook is running against. If the field belongs to a Collection, this will be `null`.                                                         |
 | **`operation`**             | The name of the operation that this hook is running within. Useful within `beforeValidate`, `beforeChange`, and `afterChange` hooks to differentiate between `create` and `update` operations. |
 | **`originalDoc`**           | In the `update` operation, this is the Document before changes were applied. In the `afterChange` hook, this is the resulting Document.                                                        |
 | **`overrideAccess`**        | A boolean to denote if the current operation is overriding [Access Control](/access-control/overview).                                                                                         |
-| **`path`**                  | The path to the [Field](/fields/overview) in the schema.                                                                                                                                       |
+| **`path`**                  | The path to the Field in the schema.                                                                                                                                                           |
 | **`previousDoc`**           | In the `afterChange` Hook, this is the Document before changes were applied.                                                                                                                   |
 | **`previousSiblingDoc`**    | The sibling data of the Document before changes being applied, only in `beforeChange` and `afterChange` hook.                                                                                  |
 | **`previousValue`**         | The previous value of the field, before changes, only in `beforeChange` and `afterChange` hooks.                                                                                               |
 | **`req`**                   | The [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) object. This is mocked for [Local API](/local-api/overview) operations.                                            |
-| **`schemaPath`**            | The path of the [Field](/fields/overview) in the schema.                                                                                                                                       |
+| **`schemaPath`**            | The path of the Field in the schema.                                                                                                                                                           |
 | **`siblingData`**           | The data of sibling fields adjacent to the field that the Hook is running against.                                                                                                             |
 | **`siblingDocWithLocales`** | The sibling data of the Document with all [Locales](/configuration/localization).                                                                                                              |
 | **`siblingFields`**         | The sibling fields of the field which the hook is running against.                                                                                                                             |
-| **`value`**                 | The value of the [Field](/fields/overview).                                                                                                                                                    |
+| **`value`**                 | The value of the Field.                                                                                                                                                                       |
 
 <Tip>
   It's a good idea to conditionally scope your logic based on which operation is

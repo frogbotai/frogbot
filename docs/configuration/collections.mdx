@@ -5,7 +5,7 @@ description: FrogBot's collection model — role markers, scaffolded defaults, i
 keywords: collections, config, configuration, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
 ---
 
-A Collection is a group of records, called Documents, that all share a common schema. Each Document in a Collection is stored in the [Database](/database/overview) based on the [Fields](/fields/overview) that you define, and automatically generates a [Local API](/local-api/overview), [REST API](/rest-api/overview), and [GraphQL API](/graphql/overview) used to manage your Documents. Collections can also enable [Authentication](/authentication/overview), [Uploads](/upload/overview), and more.
+A Collection is a group of records, called Documents, that all share a common schema. Each Document in a Collection is stored in the [Database](/database/overview) based on the fields that you define, and automatically generates a [Local API](/local-api/overview), [REST API](/rest-api/overview), and [GraphQL API](/graphql/overview) used to manage your Documents. Collections can also enable [Authentication](/authentication/overview), [Uploads](/upload/overview), and more.
 
 To define a Collection Config, use the `collections` property in your [FrogBot Config](/configuration/overview):
 
@@ -19,7 +19,7 @@ export default buildConfig({
 ```
 
 <Tip>
-  If your Collection is only ever meant to contain a single Document, consider using a [Global](/configuration/globals) instead.
+  FrogBot does not support Globals. Model singleton content as a Collection and enforce the single-document constraint in your application.
 </Tip>
 
 ## FrogBot collection model
@@ -74,7 +74,7 @@ See [Chat persistence](/chat/overview) for request behavior and durability guara
 
 ## Collection config options
 
-The following options are available on any `CollectionConfig`. FrogBot adds `chat`, `message`, and `file` to the built-in set; every other option below is part of the FrogBot configuration API. Configure [connections](/configuration/connections) in the root config.
+The following options are available on any `CollectionConfig`. FrogBot adds `chat`, `message`, and `file` to the built-in set; every other option below is part of the FrogBot configuration API. Configure [connections](/connections/overview) in the root config.
 
 It's best practice to write Collections in separate files and import them into the root config.
 
@@ -107,7 +107,7 @@ The following options are available:
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `chat`             | **FrogBot** — adopts this collection as the chat store. At most one collection may be marked. [More details](#role-markers).                                                                                                                           |
 | `message`            | **FrogBot** — adopts this collection as the message store. At most one collection may be marked. [More details](#role-markers).                                                                                                                         |
-| `file`               | **FrogBot** — adopts this collection as the files store. At most one collection may be marked. [More details](/configuration/files).                                                                                                                    |
+| `file`               | **FrogBot** — adopts this collection as the files store. At most one collection may be marked. [More details](/upload/files).                                                                                                                    |
 | `admin`              | The configuration options for the Admin Panel. [More details](#admin-options).                                                                                                                                                                             |
 | `access`             | Provide Access Control functions to define exactly who should be able to do what with Documents in this Collection. [More details](/access-control/collections).                                                                                         |
 | `auth`               | Set to `true` for default authentication or pass an auth config object. Use `signIn` to add [OAuth login methods](/authentication/sign-in). [More details](/authentication/overview). |
@@ -115,14 +115,14 @@ The following options are available:
 | `disableDuplicate`   | When true, do not show the "Duplicate" button while editing documents within this Collection and prevent `duplicate` from all APIs.                                                                                                                        |
 | `dbName`             | Custom table or Collection name depending on the Database Adapter. Auto-generated from slug if not defined.                                                                                                                                                |
 | `endpoints`          | Add custom routes to the REST API. Set to `false` to disable routes. [More details](/rest-api/overview#custom-endpoints).                                                                                                                                |
-| `fields` \*          | Array of field types that will determine the structure and functionality of the data stored within this Collection. [More details](/fields/overview).                                                                                                    |
+| `fields` \*          | Array of field types that determine the structure and functionality of the data stored within this Collection.                                                                                                                                            |
 | `graphQL`            | Manage GraphQL-related properties for this collection. [More](#graphql)                                                                                                                                                                                    |
 | `hooks`              | Entry point for Hooks. [More details](/hooks/overview#collection-hooks).                                                                                                                                                                                 |
-| `hierarchy`          | Enable hierarchical tree structure with automatic parent-child relationships and path generation. [More details](/hierarchy/overview).                                                                                                                   |
+| `hierarchy`          | Enable hierarchical tree structure with automatic parent-child relationships and path generation.                                                                                                                                                         |
 | `orderable`          | If true, enables custom ordering for the collection, and documents can be reordered via drag and drop. Uses [orderable](#orderable) for efficient reordering.                                                                                              |
 | `labels`             | Singular and plural labels for use in identifying this Collection throughout FrogBot. Auto-generated from slug if not defined.                                                                                                                             |
-| `enableQueryPresets` | Enable query presets for this Collection. [More details](/query-presets/overview).                                                                                                                                                                       |
-| `lockDocuments`      | Enables or disables document locking. By default, document locking is enabled. Set to an object to configure, or set to `false` to disable locking. [More details](/admin/locked-documents).                                                             |
+| `enableQueryPresets` | Enable query presets for this Collection.                                                                                                                                                                                                                   |
+| `lockDocuments`      | Enables or disables document locking. By default, document locking is enabled. Set to an object to configure, or set to `false` to disable locking.                                                                                                         |
 | `slug` \*            | Unique, URL-friendly string that will act as an identifier for this Collection.                                                                                                                                                                            |
 | `timestamps`         | Set to false to disable documents' automatically generated `createdAt` and `updatedAt` timestamps.                                                                                                                                                         |
 | `trash`              | A boolean to enable soft deletes for this collection. Defaults to `false`. [More details](/trash/overview).                                                                                                                                              |
@@ -139,7 +139,7 @@ _\* An asterisk denotes that a property is required._
 
 ### Fields
 
-Fields define the schema of the Documents within a Collection. To learn more, go to the [Fields](/fields/overview) documentation.
+Fields define the schema of the Documents within a Collection.
 
 ### Access Control
 
@@ -153,7 +153,7 @@ Fields define the schema of the Documents within a Collection. To learn more, go
 
 When `orderable` is enabled, FrogBot uses [fractional indexing](https://observablehq.com/@dgreensp/implementing-fractional-indexing) to efficiently manage document order. When enabled on collections, this allows you to manually drag and drop documents in the Admin Panel to reorder them, as well as programmatically set the order of documents via the Local API, REST API, or GraphQL API.
 
-Orderable can also be added to [joins fields](/fields/join).
+Orderable can also be added to join fields.
 
 #### Fractional indexing
 
@@ -179,7 +179,7 @@ These utilities are useful when you need fine-grained control over document orde
 
 ## Admin Options
 
-The behavior of Collections within the [Admin Panel](/admin/overview) can be fully customized to fit the needs of your application. This includes grouping or hiding their navigation links, adding [Custom Components](/custom-components/overview), selecting which fields to display in the List View, and more.
+The behavior of Collections within the Admin Panel can be customized to fit the needs of your application. This includes grouping or hiding their navigation links, adding custom components, selecting which fields to display in the List View, and more.
 
 To configure Admin Options for Collections, use the `admin` property in your Collection Config:
 
@@ -205,13 +205,13 @@ The following options are available:
 | `description`                | Text to display below the Collection label in the List View to give editors more information. Alternatively, you can use the `admin.components.Description` to render a React component. [More details](#custom-components). |
 | `views`                      | Ordered list of collection views, including list, board, calendar, and custom layouts. [More details](#collection-views).                                                                                                  |
 | `disableCopyToLocale`        | Disables the "Copy to Locale" button while editing documents within this Collection. Only applicable when localization is enabled.                                                                                           |
-| `enableRichTextLink`         | The [Rich Text](/fields/rich-text) field features a `Link` element which allows for users to automatically reference related documents within their rich text. Set to `true` by default.                                   |
-| `enableRichTextRelationship` | The [Rich Text](/fields/rich-text) field features a `Relationship` element which allows for users to automatically reference related documents within their rich text. Set to `true` by default.                           |
-| `folders`                    | A boolean to enable folders for a given collection. Defaults to `false`. [More details](/folders/overview).                                                                                                                |
+| `enableRichTextLink`         | The Rich Text field features a `Link` element which allows users to automatically reference related documents within rich text. Set to `true` by default.                                                                  |
+| `enableRichTextRelationship` | The Rich Text field features a `Relationship` element which allows users to automatically reference related documents within rich text. Set to `true` by default.                                                          |
+| `folders`                    | A boolean to enable folders for a given collection. Defaults to `false`.                                                                                                                                                 |
 | `formatDocURL`               | Function to customize document links in the List View. Return `null` to disable linking, or a string for custom URLs. [More details](#format-document-urls).                                                                 |
-| `meta`                       | Page metadata overrides to apply to this Collection within the Admin Panel. [More details](/admin/metadata).                                                                                                               |
-| `preview`                    | Function to generate preview URLs within the Admin Panel that can point to your app. [More details](/admin/preview).                                                                                                       |
-| `livePreview`                | Enable real-time editing for instant visual feedback of your front-end application. [More details](/live-preview/overview).                                                                                                |
+| `meta`                       | Page metadata overrides to apply to this Collection within the Admin Panel.                                                                                                                                              |
+| `preview`                    | Function to generate preview URLs within the Admin Panel that can point to your app.                                                                                                                                      |
+| `livePreview`                | Enable real-time editing for instant visual feedback of your front-end application.                                                                                                                                       |
 | `components`                 | Swap in your own React components to be used within this Collection. [More details](#custom-components).                                                                                                                     |
 | `pagination`                 | Set pagination-specific options for this Collection in the List View. [More details](#pagination).                                                                                                                           |
 
@@ -321,7 +321,7 @@ These shell slots are shared by list, board, calendar, and custom views. Each va
 | `ColumnHeader` | `FrogbotComponent` | No; built-in header | Replaces each column header. |
 | `Card` | `FrogbotComponent` | No; built-in card | Replaces each board card and receives the document as its `row` prop. |
 
-See [Collection board](/configuration/collection-board) for grouping, loading, and drag behavior.
+See [Collection board](/admin/collection-board) for grouping, loading, and drag behavior.
 
 #### CalendarView
 
@@ -343,7 +343,7 @@ See [Collection board](/configuration/collection-board) for grouping, loading, a
 | `afterCalendar` | `FrogbotComponent[]` | No; `[]` | Renders after the calendar. |
 | `Event` | `FrogbotComponent` | No; built-in event | Replaces each event body and receives the document as its `row` prop. |
 
-See [Collection calendar](/configuration/collection-calendar) for modes, date fields, loading, and editing behavior.
+See [Collection calendar](/admin/collection-calendar) for modes, date fields, loading, and editing behavior.
 
 #### CustomView
 
@@ -356,7 +356,7 @@ See [Collection calendar](/configuration/collection-calendar) for modes, date fi
 
 ### Custom Components
 
-Collections can set their own [Custom Components](/custom-components/overview) which only apply to Collection-specific UI within the [Admin Panel](/admin/overview). This includes elements such as the Save Button, or entire layouts such as the Edit View.
+Collections can set their own custom components which only apply to Collection-specific UI within the Admin Panel. This includes elements such as the Save Button, or entire layouts such as the Edit View.
 
 To override Collection Components, use the `admin.components` property in your Collection Config:
 
@@ -377,7 +377,7 @@ The following options are available:
 
 | Option            | Description                                                                                                                                                                        |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Description`     | A component to render below the Collection label in the List View. An alternative to the `admin.description` property. [More details](/custom-components/list-view#description). |
+| `Description`     | A component to render below the Collection label in the List View. An alternative to the `admin.description` property. |
 | `edit`            | Override specific components within the Edit View. [More details](#edit-view-options).                                                                                             |
 
 #### Edit View Options
@@ -410,15 +410,15 @@ The following components can be customized within `admin.components.edit`:
 
 | Option                   | Description                                                                                                                                                                                             |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `beforeDocumentControls` | Inject custom components before the Save / Publish buttons. [More details](/custom-components/edit-view#beforedocumentcontrols).                                                                      |
-| `editMenuItems`          | Inject custom components within the 3-dot menu dropdown located in the document controls bar. [More details](/custom-components/edit-view#editmenuitems).                                             |
-| `SaveButton`             | Replace the default Save Button within the Edit View. [Drafts](/versions/drafts) must be disabled. [More details](/custom-components/edit-view#savebutton).                                         |
-| `SaveDraftButton`        | Replace the default Save Draft Button within the Edit View. [Drafts](/versions/drafts) must be enabled and autosave must be disabled. [More details](/custom-components/edit-view#savedraftbutton). |
-| `Status`                 | Replace the default Status component within the Edit View. [Drafts](/versions/drafts) must be enabled. [More details](/custom-components/edit-view#status).                                         |
-| `PublishButton`          | Replace the default Publish Button within the Edit View. [Drafts](/versions/drafts) must be enabled. [More details](/custom-components/edit-view#publishbutton).                                    |
-| `UnpublishButton`        | Replace the default Unpublish Button within the Edit View. [Drafts](/versions/drafts) must be enabled. [More details](/custom-components/edit-view#unpublishbutton).                                |
-| `PreviewButton`          | Replace the default Preview Button within the Edit View. [Preview](/admin/preview) must be enabled. [More details](/custom-components/edit-view#previewbutton).                                     |
-| `Upload`                 | Replace the default Upload component within the Edit View. [Upload](/upload/overview) must be enabled. [More details](/custom-components/edit-view#upload).                                         |
+| `beforeDocumentControls` | Inject custom components before the Save / Publish buttons.                                                                      |
+| `editMenuItems`          | Inject custom components within the 3-dot menu dropdown located in the document controls bar.                                    |
+| `SaveButton`             | Replace the default Save Button within the Edit View. [Drafts](/versions/drafts) must be disabled.                                |
+| `SaveDraftButton`        | Replace the default Save Draft Button within the Edit View. [Drafts](/versions/drafts) must be enabled and autosave disabled.     |
+| `Status`                 | Replace the default Status component within the Edit View. [Drafts](/versions/drafts) must be enabled.                            |
+| `PublishButton`          | Replace the default Publish Button within the Edit View. [Drafts](/versions/drafts) must be enabled.                              |
+| `UnpublishButton`        | Replace the default Unpublish Button within the Edit View. [Drafts](/versions/drafts) must be enabled.                            |
+| `PreviewButton`          | Replace the default Preview Button within the Edit View. Preview must be enabled.                                                 |
+| `Upload`                 | Replace the default Upload component within the Edit View. [Upload](/upload/overview) must be enabled.                            |
 | `views`                  | Override built-in document views, add custom routes or tabs, or replace the complete document area. [More details](#document-views).                                                         |
 
 ##### Document Views
@@ -506,11 +506,6 @@ Document view configs do not support `exact`; custom `path` values use document-
 For example, use `admin.components.edit.Status`, not `admin.components.Status`.
 
 </Warning>
-
-<Tip>
-  **Note:** For details on how to build Custom Components, see [Building Custom
-  Components](/custom-components/overview#building-custom-components).
-</Tip>
 
 ### Pagination
 
@@ -650,7 +645,7 @@ The `formatDocURL` function receives the following arguments:
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `doc`            | The document data for the current row                                                                                                  |
 | `defaultURL`     | The default URL that FrogBot would normally generate for this document. You can return this as-is, modify it, or replace it entirely.  |
-| `req`            | The full [PayloadRequest](/types/frogbot-request) object, providing access to user context, frogbot instance, and other request data |
+| `req`            | The full `FrogbotRequest` object, providing access to user context, frogbot instance, and other request data |
 | `collectionSlug` | The slug of the current collection                                                                                                     |
 | `viewType`       | The current view context (`'list'`, `'trash'`, etc.) where the link is being generated                                                 |
 

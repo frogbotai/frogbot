@@ -1,22 +1,19 @@
 ---
 title: Autosave
 sidebarTitle: Autosave
-description: Using FrogBot's Draft functionality, you can configure your collections and globals to autosave changes as drafts, and publish only you're ready.
+description: Using FrogBot's Draft functionality, you can configure collections to autosave changes as drafts and publish only when you're ready.
 keywords: version history, revisions, audit log, draft, publish, autosave, Content Management System, cms, headless, javascript, node, react, nextjs
 ---
 
-Extending on FrogBot's [Draft](/versions/drafts) functionality, you can configure your collections and globals to autosave changes as drafts, and publish only you're ready. The Admin UI will automatically adapt to autosaving progress at an interval that you define, and will store all autosaved changes as a new Draft version. Never lose your work - and publish changes to the live document only when you're ready.
+Extending FrogBot's [Draft](/versions/drafts) functionality, you can configure collections to autosave changes as drafts and publish only when you're ready. The Admin UI automatically saves progress at an interval that you define and stores each autosave as a new Draft version. Publish changes to the live document only when you're ready.
 
 <Warning>
   Autosave relies on Versions and Drafts being enabled in order to function.
 </Warning>
 
-![Autosave Enabled](/images/docs/autosave-v3.jpg)
-_If Autosave is enabled, drafts will be created automatically as the document is modified and the Admin UI adds an indicator describing when the document was last saved to the top right of the sidebar._
-
 ## Options
 
-Collections and Globals both support the same options for configuring autosave. You can either set `versions.drafts.autosave` to `true`, or pass an object to configure autosave properties.
+Collections support two ways to configure autosave. Set `versions.drafts.autosave` to `true`, or pass an object to configure autosave properties.
 
 | Drafts Autosave Options | Description                                                                                                                                                           |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
