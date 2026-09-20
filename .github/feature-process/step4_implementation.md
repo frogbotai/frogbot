@@ -18,7 +18,7 @@ Proceed after `Approved Step 3` or a clear [request to implement now](FEATURE_DE
 - Give a new worker the relevant requirements, current state, and evidence in its assignment, with links to existing ticket documents. Do not pass the full conversation or require a separate handoff file.
 - Avoid the opposite extreme: do small local edits directly or group related work instead of spawning an agent per file. Fresh sessions have startup and rereading costs; the reuse limit is a project convention, not a guaranteed cost saving.
 - Follow stage dependencies. Run independent assignments in parallel only when workers will not edit the same files. Take turns on shared files.
-- Lint/typecheck always goes to the `lint` subagent. Workers run checks relevant to their current changes, not repeated full-repository suites against unfinished work.
+- Lint/typecheck always goes to the `lint` subagent. During implementation, request `pnpm --filter <workspace-name> typecheck` for affected workspaces only. Reserve the root `pnpm typecheck` for final verification, run it at most once, and omit it when repository-wide coverage is not required.
 
 ### Assignment and handoff format
 
