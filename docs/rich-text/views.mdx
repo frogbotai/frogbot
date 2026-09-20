@@ -1,0 +1,322 @@
+---
+title: Views (Experimental)
+sidebarTitle: Views
+description: Customize rich text rendering in the Admin Panel and JSX converters.
+keywords: lexical, rich text, views, rendering, admin, jsx converters
+---
+
+<Warning>
+  This feature is experimental and may change or be removed in future releases.
+</Warning>
+
+Views define named rendering modes for a rich text field. Editors can switch views in the Admin Panel without changing the saved editor state, and a view's node map can also render that state through a JSX converter.
+
+## Views and JSX converters
+
+[JSX converters](/rich-text/converting-jsx) are the simplest choice when content only needs custom frontend rendering. Views are useful when you want an Admin Panel preview, multiple rendering modes for one field, or one node map shared by the editor and frontend.
+
+When both `converters` and `nodeMap` are passed to `RichText`, the node map wins for each overlapping node type. Block and inline-block maps are merged by slug, with the node map winning for an overlapping slug.
+
+## Define views
+
+The following view map uses real node narrowing and declares every custom block represented by its node union:
+
+```tsx
+'use client'
+
+import type {
+  DefaultNodeTypes,
+  LexicalEditorViewMap,
+  SerializedBlockNode,
+  SerializedInlineBlockNode,
+} from '@frogbotai/richtext-lexical'
+import { $isHeadingNode } from '@frogbotai/richtext-lexical/lexical/rich-text'
+
+type BannerBlock = {
+  blockName?: string
+  blockType: 'banner'
+  message: string
+}
+
+type BadgeBlock = {
+  blockName?: string
+  blockType: 'badge'
+  label: string
+}
+
+export type PostNodeTypes =
+  | DefaultNodeTypes
+  | SerializedBlockNode<BannerBlock>
+  | SerializedInlineBlockNode<BadgeBlock>
+
+function getEditorField(node: unknown, name: string): string {
+  if (typeof node !== 'object' || node === null || !('__fields' in node)) {
+    return ''
+  }
+
+  const fields = node.__fields
+
+  if (typeof fields !== 'object' || fields === null) {
+    return ''
+  }
+
+  return String(Reflect.get(fields, name) ?? '')
+}
+
+export const postViews: LexicalEditorViewMap<PostNodeTypes> = {
+  default: {
+    nodes: {},
+  },
+  preview: {
+    admin: {
+      hideGutter: true,
+    },
+    filterFeatures: (features) => {
+      const { toolbarFixed, toolbarInline, ...previewFeatures } = features
+
+      return previewFeatures
+    },
+    lexical: (defaultConfig) => ({
+      ...defaultConfig,
+      theme: {
+        ...defaultConfig.theme,
+        link: 'post-preview-link',
+        paragraph: 'post-preview-paragraph',
+      },
+    }),
+    nodes: {
+      heading: {
+        createDOM: ({ node }) => {
+          if (!$isHeadingNode(node)) {
+            return document.createElement('div')
+          }
+
+          const heading = document.createElement(node.getTag())
+
+          heading.className = 'post-preview-heading'
+
+          return heading
+        },
+      },
+      blocks: {
+        banner: {
+          Component: ({ node, isEditor }) => {
+            const message = isEditor ? getEditorField(node, 'message') : node.fields.message
+
+            return <aside className="post-preview-banner">{message}</aside>
+          },
+        },
+      },
+      inlineBlocks: {
+        badge: {
+          Component: ({ node, isEditor }) => {
+            const label = isEditor ? getEditorField(node, 'label') : node.fields.label
+
+            return <span className="post-preview-badge">{label}</span>
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+Reference the named export from the rich text field. The path follows the same [component path rules](/custom-components/overview#component-paths) as other Admin Panel components.
+
+```ts
+import { BlocksFeature, lexicalEditor } from '@frogbotai/richtext-lexical'
+import type { CollectionConfig } from 'frogbot'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  fields: [
+    {
+      name: 'content',
+      type: 'richText',
+      editor: lexicalEditor({
+        features: ({ defaultFeatures }) => [
+          ...defaultFeatures,
+          BlocksFeature({
+            blocks: [
+              {
+                slug: 'banner',
+                fields: [{ name: 'message', type: 'text', required: true }],
+              },
+            ],
+            inlineBlocks: [
+              {
+                slug: 'badge',
+                fields: [{ name: 'label', type: 'text', required: true }],
+              },
+            ],
+          }),
+        ],
+        views: '/collections/Posts/views#postViews',
+      }),
+    },
+  ],
+}
+```
+
+When views are configured, the Admin Panel displays a selector beside the field label. Selecting another view changes rendering and editor configuration, not the underlying content.
+
+## View configuration
+
+Each view can configure `admin`, `filterFeatures`, `lexical`, and `nodes`.
+
+### Admin settings
+
+View-level admin settings use the same options as [rich text admin customization](/rich-text/overview#admin-customization):
+
+```tsx
+{
+  preview: {
+    admin: {
+      hideAddBlockButton: true,
+      hideDraggableBlockElement: true,
+      hideGutter: true,
+      hideInsertParagraphAtEnd: true,
+      placeholder: 'Preview content',
+    },
+  },
+}
+```
+
+### Feature filtering
+
+`filterFeatures` receives the active client feature map. Return a new map to remove or add features for that view. Removing toolbar features is useful for a read-focused preview, as shown in the complete map above.
+
+### Lexical configuration
+
+Pass a function to extend the default Lexical editor configuration:
+
+```tsx
+{
+  preview: {
+    lexical: (defaultConfig) => ({
+      ...defaultConfig,
+      theme: {
+        ...defaultConfig.theme,
+        paragraph: 'post-preview-paragraph',
+      },
+    }),
+  },
+}
+```
+
+Pass an object when the view should replace the configuration entirely:
+
+```tsx
+{
+  minimal: {
+    lexical: {
+      namespace: 'post-minimal-view',
+      theme: {
+        paragraph: 'post-minimal-paragraph',
+      },
+    },
+  },
+}
+```
+
+### Node overrides
+
+A node override can use these rendering approaches:
+
+| Property | Admin Panel | JSX converter | Purpose |
+| --- | --- | --- | --- |
+| `Component` | Yes | Yes | Render a React component. Use `isEditor` to narrow the node shape. |
+| `createDOM` | Yes | No | Create an element for a Lexical editor node. Narrow the node before calling node-specific methods. |
+| `html` | Yes | Yes | Return an HTML string. |
+
+For a decorator node that defines both `createDOM` and `html`, the editor uses `createDOM`; JSX conversion uses `html`.
+
+The node map follows the organization described in [Converting JSX](/rich-text/converting-jsx): built-in node types are top-level keys, while custom block slugs belong under `blocks` and `inlineBlocks`.
+
+## Customize block chrome
+
+For a configured block, `Block` replaces the block's content while retaining its surrounding form behavior. Narrow `props.isEditor` before calling `useBlockComponentContext`; that hook is available only in the editor variant.
+
+```tsx
+import type {
+  SerializedBlockNode,
+  ViewMapBlockComponentProps,
+} from '@frogbotai/richtext-lexical'
+
+type BannerBlock = {
+  blockName?: string
+  blockType: 'banner'
+  message: string
+}
+
+type BannerNode = SerializedBlockNode<BannerBlock>
+
+export function BannerViewBlock(props: ViewMapBlockComponentProps<BannerNode>) {
+  if (props.isEditor) {
+    const { BlockCollapsible, EditButton, RemoveButton } =
+      props.useBlockComponentContext()
+
+    return (
+      <BlockCollapsible>
+        <p>{props.formData.message}</p>
+        <EditButton />
+        <RemoveButton />
+      </BlockCollapsible>
+    )
+  }
+
+  return <aside className="post-banner">{props.formData.message}</aside>
+}
+```
+
+Assign it to `nodes.blocks.banner.Block`. `Label` replaces only the collapsible block label and is used only in the editor. The equivalent collection-level block customization is documented under [Block custom components](/fields/blocks#custom-components).
+
+<Warning>
+  A top-level import is included in every bundle that imports the view map. An
+  `isEditor` branch controls runtime behavior but does not remove an editor-only
+  top-level import. Keep shared view files free of imports from
+  `@frogbotai/richtext-lexical/client` and `@frogbotai/ui`; use the context hooks
+  supplied through narrowed component props instead.
+</Warning>
+
+## Read the active view
+
+Client components rendered within a rich text field can read the current view:
+
+```tsx
+'use client'
+
+import { useRichTextView } from '@frogbotai/richtext-lexical/client'
+
+export function ActiveView() {
+  const { currentView, views } = useRichTextView()
+
+  return (
+    <p>
+      {currentView} ({Object.keys(views ?? {}).length} views)
+      {views?.[currentView]?.admin?.hideGutter ? ', gutter hidden' : ''}
+    </p>
+  )
+}
+```
+
+## Reuse a view on the frontend
+
+Pass a view's node map to `RichText` to use the same rendering outside the editor. Type the content with the generated field type from `frogbot-types`.
+
+```tsx
+import { RichText } from '@frogbotai/richtext-lexical/react'
+import type { Post } from '@/frogbot-types'
+
+import { postViews } from './views'
+
+export function PostBody({ content }: { content: Post['content'] }) {
+  if (!content) {
+    return null
+  }
+
+  return <RichText data={content} nodeMap={postViews.preview.nodes} />
+}
+```
+
+The frontend imports the entire module containing `postViews`. Keep that module safe for the frontend bundle and move editor-only components into separate component paths when they require client editor or Admin Panel dependencies.

@@ -1,0 +1,766 @@
+---
+title: Custom Features
+sidebarTitle: Custom Features
+description: Build custom server and client features for FrogBot's Lexical editor.
+keywords: lexical, rich text, editor, custom features, nodes, plugins, toolbar, slash menu
+---
+
+Before building a custom feature, become familiar with the [Lexical concepts](https://lexical.dev/docs/concepts/editor-state), especially nodes, editor state, selections, and commands.
+
+A feature has a server entry point and, when it adds interactive editor behavior, a separate client entry point. By convention, place them in `feature.server.ts` and `feature.client.ts`. Applications import only the server feature. It registers the client feature through a [component path](/custom-components/overview#component-paths).
+
+<Warning>
+  Import Lexical APIs through `@frogbotai/richtext-lexical` and its
+  `/lexical/*` subpaths. Direct imports from Lexical packages can break when
+  FrogBot updates its supported Lexical version.
+</Warning>
+
+## Do you need a custom feature?
+
+Use [Blocks](/rich-text/blocks) when editors only need to insert a structured block or inline block. Blocks support fields, custom editor components, and converters without requiring a custom node or plugin.
+
+Build a custom feature when you need lower-level editor behavior, such as a new node type, command, toolbar control, listener, transform, or context provider.
+
+This guide builds a `DividerFeature` that inserts a decorated divider from a command, toolbar item, slash-menu item, or the `+++` Markdown shortcut.
+
+## Server feature
+
+The server feature is the public entry point:
+
+```ts
+import { createServerFeature } from '@frogbotai/richtext-lexical'
+
+export const DividerFeature = createServerFeature({
+  feature: {},
+  key: 'divider',
+})
+```
+
+Add the feature to a rich text editor:
+
+```ts
+import { lexicalEditor } from '@frogbotai/richtext-lexical'
+import type { CollectionConfig } from 'frogbot'
+
+import { DividerFeature } from './divider/feature.server'
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  fields: [
+    {
+      name: 'content',
+      type: 'richText',
+      editor: lexicalEditor({
+        features: ({ defaultFeatures }) => [
+          ...defaultFeatures,
+          DividerFeature(),
+        ],
+      }),
+    },
+  ],
+}
+```
+
+### Internationalization
+
+Feature translations are scoped to the feature key. This label is available as `lexical:divider:label`:
+
+```ts
+import { createServerFeature } from '@frogbotai/richtext-lexical'
+
+export const DividerFeature = createServerFeature({
+  feature: {
+    i18n: {
+      de: { label: 'Trennlinie' },
+      en: { label: 'Divider' },
+    },
+  },
+  key: 'divider',
+})
+```
+
+### Markdown transformers {#server-feature-markdown-transformers}
+
+Server Markdown transformers are used by the [Markdown converters](/rich-text/converting-markdown). The following transformer exports a divider as `+++` and imports a line containing three plus signs:
+
+```ts
+import type { ElementTransformer } from '@frogbotai/richtext-lexical/lexical/markdown'
+
+import { $createDividerNode, $isDividerNode, DividerNode } from './nodes/DividerNode'
+
+export const DividerMarkdownTransformer: ElementTransformer = {
+  dependencies: [DividerNode],
+  export: (node) => ($isDividerNode(node) ? '+++' : null),
+  regExp: /^\+\+\+\s*$/,
+  replace: (parentNode) => {
+    parentNode.replace($createDividerNode())
+  },
+  type: 'element',
+}
+```
+
+Register it on the server feature:
+
+```ts
+import { createServerFeature } from '@frogbotai/richtext-lexical'
+
+import { DividerMarkdownTransformer } from './markdownTransformer'
+
+export const DividerFeature = createServerFeature({
+  feature: {
+    markdownTransformers: [DividerMarkdownTransformer],
+  },
+  key: 'divider',
+})
+```
+
+### Nodes {#server-feature-nodes}
+
+Register nodes on the server for headless editing, conversion, hooks, validation, and nested fields. `createNode` preserves the node's serialized type across these options:
+
+```ts
+import { createNode, createServerFeature } from '@frogbotai/richtext-lexical'
+import type { Field } from 'frogbot'
+
+import { DividerMarkdownTransformer } from './markdownTransformer'
+import {
+  DividerNode,
+  type SerializedDividerNode,
+} from './nodes/DividerNode'
+
+type DividerFeatureInput = {
+  enableGraphQLPopulation?: boolean
+}
+
+const dividerFields: Field[] = [
+  {
+    name: 'title',
+    type: 'text',
+    required: true,
+  },
+]
+
+export const DividerFeature = createServerFeature<DividerFeatureInput>({
+  feature: ({ props }) => ({
+    ClientFeature: './divider/feature.client#DividerClientFeature',
+    i18n: {
+      de: { label: 'Trennlinie' },
+      en: { label: 'Divider' },
+    },
+    markdownTransformers: [DividerMarkdownTransformer],
+    nodes: [
+      createNode<DividerNode, SerializedDividerNode>({
+        converters: {
+          html: {
+            converter: () => '<hr>',
+            nodeTypes: [DividerNode.getType()],
+          },
+        },
+        getSubFields: () => dividerFields,
+        getSubFieldsData: ({ node }) => node.fields,
+        ...(props?.enableGraphQLPopulation
+          ? {
+              graphQLPopulationPromises: [
+                ({ node, populationPromises }) => {
+                  populationPromises.push(
+                    Promise.resolve().then(() => {
+                      node.fields.title = node.fields.title.trim()
+                    }),
+                  )
+                },
+              ],
+            }
+          : {}),
+        hooks: {
+          beforeValidate: [
+            ({ node }) => ({
+              ...node,
+              fields: {
+                ...node.fields,
+                title: node.fields.title.trim(),
+              },
+            }),
+          ],
+        },
+        node: DividerNode,
+        validations: [
+          ({ node }) =>
+            node.fields.title.length > 0 || 'Divider title must not be empty',
+        ],
+      }),
+    ],
+  }),
+  key: 'divider',
+})
+```
+
+The component path is resolved from the import-map base directory. Include the named export after `#`.
+
+| Node option | Purpose |
+| --- | --- |
+| `node` | Registers the node class or a [node replacement](https://lexical.dev/docs/concepts/node-replacement). |
+| `converters` | Defines serialization to supported formats. HTML converters belong here; Markdown transformers belong on the feature. |
+| `hooks` | Runs node-specific `beforeValidate`, `beforeChange`, `afterChange`, or `afterRead` hooks. Hook requests expose FrogBot as `req.frogbot`. |
+| `validations` | Validates serialized node data with the containing document. |
+| `getSubFields` | Returns fields embedded in the node so their hooks and population behavior can run. |
+| `getSubFieldsData` | Returns the serialized values corresponding to `getSubFields`. |
+| `graphQLPopulationPromises` | Supplies depth-aware population callbacks to a separately integrated GraphQL runtime. |
+
+FrogBot does not expose or mount a public GraphQL execution runtime by default. `graphQLPopulationPromises` is conditional integration metadata only: it has no effect unless your deployment provides and verifies a compatible public GraphQL runtime. It is not needed for FrogBot's public REST runtime.
+
+### Feature load order
+
+The `feature` property can be a function. It receives all configured feature providers and the features that have already resolved:
+
+```ts
+import { createServerFeature } from '@frogbotai/richtext-lexical'
+
+export const DividerFeature = createServerFeature({
+  feature: ({ featureProviderMap }) => {
+    const fixedToolbarEnabled = featureProviderMap.has('toolbarFixed')
+
+    return {
+      i18n: {
+        en: {
+          label: fixedToolbarEnabled ? 'Insert divider' : 'Divider',
+        },
+      },
+    }
+  },
+  key: 'divider',
+})
+```
+
+`featureProviderMap` contains every configured feature, including features that have not loaded. Use `resolvedFeatures` when you need the output of an earlier feature.
+
+| Dependency option | Behavior |
+| --- | --- |
+| `dependenciesSoft` | Attempts to load the named features first but does not require them. |
+| `dependencies` | Requires the named features to exist but does not require them to load first. |
+| `dependenciesPriority` | Requires the named features to exist and load first. |
+
+```ts
+import { createServerFeature } from '@frogbotai/richtext-lexical'
+
+export const DividerFeature = createServerFeature({
+  dependenciesPriority: ['paragraph'],
+  feature: ({ resolvedFeatures }) => {
+    if (!resolvedFeatures.has('paragraph')) {
+      throw new Error('DividerFeature requires the paragraph feature')
+    }
+
+    return {}
+  },
+  key: 'divider',
+})
+```
+
+## Client feature
+
+The client feature owns interactive behavior such as rendered nodes, plugins, toolbar controls, slash-menu items, and editor-side Markdown shortcuts. Keep it in a separate client module:
+
+```ts
+'use client'
+
+import { createClientFeature } from '@frogbotai/richtext-lexical/client'
+
+export const DividerClientFeature = createClientFeature({})
+```
+
+Do not import runtime values from the package root in a client module. Use `@frogbotai/richtext-lexical/client` and `/lexical/*` subpaths. Type-only root imports are safe.
+
+Register the client feature from `feature.server.ts`:
+
+```ts
+import { createServerFeature } from '@frogbotai/richtext-lexical'
+
+export const DividerFeature = createServerFeature({
+  feature: {
+    ClientFeature: './divider/feature.client#DividerClientFeature',
+  },
+  key: 'divider',
+})
+```
+
+### Nodes {#client-feature-nodes}
+
+A custom node used in the editor must be registered by both server and client features. The same node class can be imported by either side, so do not add a `'use client'` directive to the node module.
+
+`divider/nodes/DividerNode.tsx`:
+
+```tsx
+import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  SerializedLexicalNode,
+} from '@frogbotai/richtext-lexical/lexical'
+import {
+  $applyNodeReplacement,
+  DecoratorNode,
+} from '@frogbotai/richtext-lexical/lexical'
+import { lazy, type ReactElement } from 'react'
+
+export type SerializedDividerNode = SerializedLexicalNode & {
+  fields: {
+    title: string
+  }
+}
+
+const DividerComponent = lazy(() =>
+  import('../components/DividerComponent').then((module) => ({
+    default: module.DividerComponent,
+  })),
+)
+
+export class DividerNode extends DecoratorNode<ReactElement> {
+  static clone(node: DividerNode): DividerNode {
+    return new DividerNode(node.__title, node.__key)
+  }
+
+  static getType(): string {
+    return 'divider'
+  }
+
+  static importDOM(): DOMConversionMap {
+    return {
+      hr: () => ({ conversion: convertDividerElement, priority: 0 }),
+    }
+  }
+
+  static importJSON(serializedNode: SerializedDividerNode): DividerNode {
+    return $createDividerNode(serializedNode.fields.title)
+  }
+
+  __title: string
+
+  constructor(title = 'Divider', key?: NodeKey) {
+    super(key)
+
+    this.__title = title
+  }
+
+  createDOM(_config: EditorConfig): HTMLElement {
+    return document.createElement('div')
+  }
+
+  decorate(): ReactElement {
+    return <DividerComponent />
+  }
+
+  exportDOM(): DOMExportOutput {
+    return { element: document.createElement('hr') }
+  }
+
+  exportJSON(): SerializedDividerNode {
+    return {
+      fields: { title: this.__title },
+      type: 'divider',
+      version: 1,
+    }
+  }
+
+  getTextContent(): string {
+    return '\n'
+  }
+
+  isInline(): false {
+    return false
+  }
+
+  updateDOM(): false {
+    return false
+  }
+}
+
+function convertDividerElement(): DOMConversionOutput {
+  return { node: $createDividerNode() }
+}
+
+export function $createDividerNode(title?: string): DividerNode {
+  return $applyNodeReplacement(new DividerNode(title))
+}
+
+export function $isDividerNode(
+  node: LexicalNode | null | undefined,
+): node is DividerNode {
+  return node instanceof DividerNode
+}
+```
+
+`divider/components/DividerComponent.tsx`:
+
+```tsx
+'use client'
+
+export function DividerComponent() {
+  return <hr aria-label="Divider" />
+}
+```
+
+Register the node on the client:
+
+```ts
+'use client'
+
+import { createClientFeature } from '@frogbotai/richtext-lexical/client'
+
+import { DividerNode } from './nodes/DividerNode'
+
+export const DividerClientFeature = createClientFeature({
+  nodes: [DividerNode],
+})
+```
+
+### Plugins
+
+Plugins are React components mounted inside the editor's Lexical providers. They commonly register [commands](https://lexical.dev/docs/concepts/commands), listeners, or [node transforms](https://lexical.dev/docs/concepts/transforms).
+
+`divider/plugin.tsx` registers a command that inserts the custom node:
+
+```tsx
+'use client'
+
+import {
+  $getSelection,
+  $isRangeSelection,
+  COMMAND_PRIORITY_EDITOR,
+  createCommand,
+  type LexicalCommand,
+} from '@frogbotai/richtext-lexical/lexical'
+import { useLexicalComposerContext } from '@frogbotai/richtext-lexical/lexical/react/LexicalComposerContext'
+import { $insertNodeToNearestRoot } from '@frogbotai/richtext-lexical/lexical/utils'
+import { useEffect } from 'react'
+
+import { $createDividerNode } from './nodes/DividerNode'
+
+export const INSERT_DIVIDER_COMMAND: LexicalCommand<void> = createCommand(
+  'INSERT_DIVIDER_COMMAND',
+)
+
+export function DividerPlugin() {
+  const [editor] = useLexicalComposerContext()
+
+  useEffect(
+    () =>
+      editor.registerCommand(
+        INSERT_DIVIDER_COMMAND,
+        () => {
+          const selection = $getSelection()
+
+          if (!$isRangeSelection(selection)) {
+            return false
+          }
+
+          $insertNodeToNearestRoot($createDividerNode())
+
+          return true
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
+    [editor],
+  )
+
+  return null
+}
+```
+
+Plugins are registered as entries with a component and position:
+
+```ts
+'use client'
+
+import { createClientFeature } from '@frogbotai/richtext-lexical/client'
+
+import { DividerNode } from './nodes/DividerNode'
+import { DividerPlugin } from './plugin'
+
+export const DividerClientFeature = createClientFeature({
+  nodes: [DividerNode],
+  plugins: [{ Component: DividerPlugin, position: 'normal' }],
+})
+```
+
+### Toolbar groups
+
+Toolbar groups are either horizontal icon buttons or dropdowns containing labeled items. Groups with the same key are merged.
+
+```ts
+import type {
+  ToolbarGroup,
+  ToolbarGroupItem,
+} from '@frogbotai/richtext-lexical'
+
+export function dividerButtonGroup(
+  items: ToolbarGroupItem[],
+): ToolbarGroup {
+  return {
+    items,
+    key: 'dividerButtons',
+    order: 30,
+    type: 'buttons',
+  }
+}
+```
+
+| Group option | Purpose |
+| --- | --- |
+| `items` | Toolbar items in the group. |
+| `key` | Unique group identifier and merge key. |
+| `order` | Position relative to other groups. |
+| `type` | `buttons` for horizontal icons or `dropdown` for labeled menu items. |
+| `ChildComponent` | Optional component displayed on a dropdown trigger. |
+
+The package also exports standard groups from `/client`: `toolbarAddDropdownGroupWithItems`, `toolbarTextDropdownGroupWithItems`, `toolbarFormatGroupWithItems`, and `toolbarFeatureButtonsGroupWithItems`.
+
+### Toolbar items
+
+Use the same item in `toolbarFixed` and `toolbarInline` when it should appear in both toolbars:
+
+```tsx
+'use client'
+
+import {
+  createClientFeature,
+  toolbarAddDropdownGroupWithItems,
+} from '@frogbotai/richtext-lexical/client'
+import { $isNodeSelection } from '@frogbotai/richtext-lexical/lexical'
+
+import { DividerIcon } from './components/DividerIcon'
+import { $isDividerNode, DividerNode } from './nodes/DividerNode'
+import { DividerPlugin, INSERT_DIVIDER_COMMAND } from './plugin'
+
+const dividerGroups = [
+  toolbarAddDropdownGroupWithItems([
+    {
+      ChildComponent: DividerIcon,
+      isActive: ({ selection }) => {
+        if (!$isNodeSelection(selection)) {
+          return false
+        }
+
+        return selection.getNodes().some($isDividerNode)
+      },
+      key: 'divider',
+      label: ({ i18n }) => i18n.t('lexical:divider:label'),
+      onSelect: ({ editor }) => {
+        editor.dispatchCommand(INSERT_DIVIDER_COMMAND, undefined)
+      },
+    },
+  ]),
+]
+
+export const DividerClientFeature = createClientFeature({
+  nodes: [DividerNode],
+  plugins: [{ Component: DividerPlugin, position: 'normal' }],
+  toolbarFixed: { groups: dividerGroups },
+  toolbarInline: { groups: dividerGroups },
+})
+```
+
+`divider/components/DividerIcon.tsx`:
+
+```tsx
+'use client'
+
+export function DividerIcon() {
+  return <span aria-hidden="true">+</span>
+}
+```
+
+| Item option | Purpose |
+| --- | --- |
+| `ChildComponent` | Content inside the default toolbar button, usually an icon. |
+| `Component` | Replaces the default button; when present, `ChildComponent` and `onSelect` are ignored. |
+| `label` | Dropdown label, either text or a function for translated text. |
+| `key` | Unique item identifier. |
+| `onSelect` | Handles selection of the item. |
+| `isEnabled` | Controls whether the item is interactive. |
+| `isActive` | Controls whether the item is highlighted. |
+
+### Slash-menu groups
+
+Slash-menu groups with the same key are merged:
+
+```ts
+import type {
+  SlashMenuGroup,
+  SlashMenuItem,
+} from '@frogbotai/richtext-lexical'
+
+export function dividerSlashMenuGroup(
+  items: SlashMenuItem[],
+): SlashMenuGroup {
+  return {
+    items,
+    key: 'layout',
+    label: 'Layout',
+  }
+}
+```
+
+Groups define `items`, a merge `key`, and an optional text or translated `label`. Use the exported `slashMenuBasicGroupWithItems` helper to add entries to the standard Basic group.
+
+### Slash-menu items
+
+```tsx
+'use client'
+
+import {
+  createClientFeature,
+  slashMenuBasicGroupWithItems,
+} from '@frogbotai/richtext-lexical/client'
+
+import { DividerIcon } from './components/DividerIcon'
+import { DividerNode } from './nodes/DividerNode'
+import { DividerPlugin, INSERT_DIVIDER_COMMAND } from './plugin'
+
+export const DividerClientFeature = createClientFeature({
+  nodes: [DividerNode],
+  plugins: [{ Component: DividerPlugin, position: 'normal' }],
+  slashMenu: {
+    groups: [
+      slashMenuBasicGroupWithItems([
+        {
+          Icon: DividerIcon,
+          key: 'divider',
+          keywords: ['divider', 'line', 'separator'],
+          label: ({ i18n }) => i18n.t('lexical:divider:label'),
+          onSelect: ({ editor }) => {
+            editor.dispatchCommand(INSERT_DIVIDER_COMMAND, undefined)
+          },
+        },
+      ]),
+    ],
+  },
+})
+```
+
+| Item option | Purpose |
+| --- | --- |
+| `Icon` | Component rendered beside the item. |
+| `label` | Displayed text, either static or translated. |
+| `key` | Unique identifier that also participates in search. |
+| `keywords` | Additional terms matched after `/`. |
+| `onSelect` | Handles selection of the item. |
+
+### Markdown transformers {#client-feature-markdown-transformers}
+
+Client Markdown transformers create nodes as an editor types. Use the same transformer and node as the server feature so interactive shortcuts and explicit conversions agree:
+
+```ts
+'use client'
+
+import { createClientFeature } from '@frogbotai/richtext-lexical/client'
+
+import { DividerMarkdownTransformer } from './markdownTransformer'
+import { DividerNode } from './nodes/DividerNode'
+
+export const DividerClientFeature = createClientFeature({
+  markdownTransformers: [DividerMarkdownTransformer],
+  nodes: [DividerNode],
+})
+```
+
+Typing `+++` followed by a space inserts a `DividerNode`. The escaped expression `/^\+\+\+\s*$/` matches literal plus signs; unescaped plus signs are invalid repetition operators.
+
+### Providers
+
+Providers supply React context to the feature's nodes and plugins. Each provider receives the nested editor content as `children`:
+
+```tsx
+'use client'
+
+import { createClientFeature } from '@frogbotai/richtext-lexical/client'
+import { createContext, type ReactNode } from 'react'
+
+export const DividerStyleContext = createContext<'solid' | 'dashed'>('solid')
+
+function DividerStyleProvider({ children }: { children: ReactNode }) {
+  return (
+    <DividerStyleContext.Provider value="solid">
+      {children}
+    </DividerStyleContext.Provider>
+  )
+}
+
+export const DividerClientFeature = createClientFeature({
+  providers: [DividerStyleProvider],
+})
+```
+
+## Feature props
+
+The three server generics represent user input, sanitized server props, and serializable client props. The two client generics represent incoming client props and sanitized client props.
+
+Use a feature function to sanitize input and return the result as `sanitizedServerFeatureProps`:
+
+```ts
+import { createServerFeature } from '@frogbotai/richtext-lexical'
+
+type DividerFeatureInput = {
+  style?: 'solid' | 'dashed'
+}
+
+type DividerFeatureProps = {
+  style: 'solid' | 'dashed'
+}
+
+type DividerClientProps = DividerFeatureProps
+
+export const DividerFeature = createServerFeature<
+  DividerFeatureInput,
+  DividerFeatureProps,
+  DividerClientProps
+>({
+  feature: ({ props }) => {
+    const sanitizedProps: DividerFeatureProps = {
+      style: props?.style ?? 'solid',
+    }
+
+    return {
+      ClientFeature: './divider/feature.client#DividerClientFeature',
+      clientFeatureProps: sanitizedProps,
+      sanitizedServerFeatureProps: sanitizedProps,
+    }
+  },
+  key: 'divider',
+})
+```
+
+Client sanitization follows the same pattern:
+
+```ts
+'use client'
+
+import { createClientFeature } from '@frogbotai/richtext-lexical/client'
+
+type DividerClientInput = {
+  style?: 'solid' | 'dashed'
+}
+
+type DividerClientProps = {
+  style: 'solid' | 'dashed'
+}
+
+export const DividerClientFeature = createClientFeature<
+  DividerClientInput,
+  DividerClientProps
+>(({ props }) => {
+  const sanitizedProps = {
+    ...props,
+    style: props.style ?? 'solid',
+  }
+
+  return {
+    sanitizedClientFeatureProps: sanitizedProps,
+  }
+})
+```
+
+### Pass props from server to client
+
+Server props are not sent to the client automatically. Return the client subset through `clientFeatureProps`, as in the server example above. Values crossing this boundary must be serializable. Keep functions, class instances, maps, and server-only values in the server feature.

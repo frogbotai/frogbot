@@ -1,0 +1,435 @@
+---
+title: Blocks
+sidebarTitle: Blocks
+description: Add structured blocks and inline blocks to FrogBot's rich text editor.
+keywords: lexical, rich text, editor, blocks, inline blocks, custom blocks
+---
+
+The `BlocksFeature` embeds reusable [Block configurations](/fields/blocks) in rich text. Blocks support the same fields, hooks, validation, access control, and conditional logic as a Blocks field, but their data is stored inside the rich text JSON.
+
+## Basic setup
+
+Define blocks separately so their schemas can be shared with regular Blocks fields:
+
+```ts
+import { BlocksFeature, lexicalEditor } from '@frogbotai/richtext-lexical'
+import type { Block, RichTextField } from 'frogbot'
+
+export const BannerBlock: Block = {
+  slug: 'banner',
+  fields: [
+    {
+      name: 'title',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'style',
+      type: 'select',
+      defaultValue: 'info',
+      options: ['info', 'warning', 'error', 'success'],
+    },
+    {
+      name: 'content',
+      type: 'textarea',
+      required: true,
+    },
+  ],
+}
+
+export const CallToActionBlock: Block = {
+  slug: 'callToAction',
+  fields: [
+    {
+      name: 'heading',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'link',
+      type: 'text',
+    },
+  ],
+}
+
+export const contentField: RichTextField = {
+  name: 'content',
+  type: 'richText',
+  editor: lexicalEditor({
+    features: ({ defaultFeatures }) => [
+      ...defaultFeatures,
+      BlocksFeature({
+        blocks: [BannerBlock, CallToActionBlock],
+      }),
+    ],
+  }),
+}
+```
+
+See [Blocks fields](/fields/blocks) for every block configuration option.
+
+## Blocks and inline blocks
+
+Regular blocks are block-level elements. They occupy their own line and work well for call-to-action sections, galleries, code, and embedded content.
+
+Inline blocks flow within text. Use them for mentions, badges, variables, icons, and footnote references.
+
+```ts
+import { BlocksFeature } from '@frogbotai/richtext-lexical'
+import type { Block } from 'frogbot'
+
+const CalloutBlock: Block = {
+  slug: 'callout',
+  fields: [{ name: 'content', type: 'textarea' }],
+}
+
+const MentionBlock: Block = {
+  slug: 'mention',
+  fields: [
+    {
+      name: 'username',
+      type: 'text',
+      required: true,
+    },
+  ],
+}
+
+export const blocksFeature = BlocksFeature({
+  blocks: [CalloutBlock],
+  inlineBlocks: [MentionBlock],
+})
+```
+
+If a block contains another rich text field, configure that nested field with an explicit `editor`. This keeps its feature set deliberate and avoids recursively inheriting the root editor's block configuration.
+
+## Stored data
+
+Each block node contains a `fields` object with the block's field values. FrogBot generates `id`; `blockType` identifies the configured block; and editors can set the optional `blockName` label.
+
+```json
+{
+  "type": "block",
+  "version": 2,
+  "fields": {
+    "id": "65298b13db4ef8c744a7faaa",
+    "blockType": "banner",
+    "blockName": "Important notice",
+    "style": "warning",
+    "content": "This is the block content."
+  }
+}
+```
+
+Inline blocks use the same shape with `"type": "inlineBlock"`.
+
+## Custom block components
+
+Set `admin.components.Block` to replace a block's editor UI. Component paths resolve from the configured import-map base directory and can include a named export. See [Component paths](/custom-components/overview#component-paths).
+
+```ts
+import type { Block } from 'frogbot'
+
+export const BannerBlock: Block = {
+  slug: 'banner',
+  admin: {
+    components: {
+      Block: '/components/BannerBlock#BannerBlock',
+    },
+  },
+  fields: [
+    {
+      name: 'title',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'style',
+      type: 'select',
+      options: ['primary', 'secondary'],
+    },
+    {
+      name: 'content',
+      type: 'textarea',
+    },
+  ],
+}
+```
+
+### Client block components
+
+Client components can compose the standard editor controls. `BlockCollapsible` provides the field drawer and default controls; disable its remove button when rendering `BlockRemoveButton` yourself.
+
+```tsx
+'use client'
+
+import type { LexicalBlockClientProps } from '@frogbotai/richtext-lexical'
+import {
+  BlockCollapsible,
+  BlockEditButton,
+  BlockRemoveButton,
+} from '@frogbotai/richtext-lexical/client'
+import { useFormFields } from '@frogbotai/ui'
+
+export function BannerBlock(_props: LexicalBlockClientProps) {
+  const content = useFormFields(([fields]) => fields.content?.value)
+  const style = useFormFields(([fields]) => fields.style?.value)
+
+  return (
+    <BlockCollapsible removeButton={false}>
+      <div
+        style={{
+          background: 'var(--theme-base-100)',
+          border: '1px solid var(--theme-base-300)',
+          borderRadius: 8,
+          color: 'var(--theme-base-800)',
+          padding: 16,
+        }}
+      >
+        <strong>{String(style ?? 'info')} banner</strong>
+        <p>{String(content ?? 'No content')}</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <BlockEditButton />
+          <BlockRemoveButton />
+        </div>
+      </div>
+    </BlockCollapsible>
+  )
+}
+```
+
+You can omit `BlockCollapsible` and render a completely custom layout while retaining the edit and remove controls.
+
+### Server block components
+
+Server component props carry a `FrogbotRequest`. Use `req.frogbot` for server operations:
+
+```tsx
+import type { LexicalBlockServerProps } from '@frogbotai/richtext-lexical'
+
+export async function BannerBlock({ path, req }: LexicalBlockServerProps) {
+  const currentUser = req.user
+  const files = await req.frogbot.find({
+    collection: 'files',
+    limit: 1,
+    req,
+  })
+
+  return (
+    <section>
+      <strong>{currentUser?.email ?? 'Editor'}</strong>
+      <span>{files.totalDocs} files available</span>
+      <span>Editing {path}</span>
+    </section>
+  )
+}
+```
+
+The same client/server choice is available for regular blocks, inline blocks, and their labels.
+
+## Inline block components
+
+Inline block primitives provide the default container, label, edit button, and remove button:
+
+```tsx
+'use client'
+
+import type { LexicalInlineBlockClientProps } from '@frogbotai/richtext-lexical'
+import {
+  InlineBlockContainer,
+  InlineBlockEditButton,
+  InlineBlockLabel,
+  InlineBlockRemoveButton,
+} from '@frogbotai/richtext-lexical/client'
+
+export function MentionBlock(_props: LexicalInlineBlockClientProps) {
+  return (
+    <InlineBlockContainer>
+      <InlineBlockLabel />
+      <InlineBlockEditButton />
+      <InlineBlockRemoveButton />
+    </InlineBlockContainer>
+  )
+}
+```
+
+Compose only the controls you need when rendering a custom inline layout:
+
+```tsx
+'use client'
+
+import type { LexicalInlineBlockClientProps } from '@frogbotai/richtext-lexical'
+import {
+  InlineBlockEditButton,
+  InlineBlockRemoveButton,
+} from '@frogbotai/richtext-lexical/client'
+import { useFormFields } from '@frogbotai/ui'
+
+export function MentionBadge(_props: LexicalInlineBlockClientProps) {
+  const username = useFormFields(([fields]) => fields.username?.value)
+
+  return (
+    <span
+      style={{
+        alignItems: 'center',
+        background: 'var(--theme-base-150)',
+        borderRadius: 12,
+        color: 'var(--theme-base-800)',
+        display: 'inline-flex',
+        gap: 4,
+        padding: '2px 8px',
+      }}
+    >
+      @{String(username ?? 'username')}
+      <InlineBlockEditButton />
+      <InlineBlockRemoveButton />
+    </span>
+  )
+}
+```
+
+## Label components
+
+Set `admin.components.Label` to display block values in the block header.
+
+```tsx
+'use client'
+
+import type {
+  LexicalBlockLabelClientProps,
+  LexicalInlineBlockLabelClientProps,
+} from '@frogbotai/richtext-lexical'
+import { useFormFields } from '@frogbotai/ui'
+
+export function BannerLabel(_props: LexicalBlockLabelClientProps) {
+  const title = useFormFields(([fields]) => fields.title?.value)
+
+  return <span>Banner: {String(title ?? 'Untitled')}</span>
+}
+
+export function MentionLabel(_props: LexicalInlineBlockLabelClientProps) {
+  const username = useFormFields(([fields]) => fields.username?.value)
+
+  return <span>Mention: @{String(username ?? 'username')}</span>
+}
+```
+
+Configure these exports under `admin.components.Label`. See [custom block components](/fields/blocks#custom-components) for the complete block configuration shape.
+
+## Component prop types
+
+Import all component prop types from the package root:
+
+```ts
+import type {
+  LexicalBlockClientProps,
+  LexicalBlockLabelClientProps,
+  LexicalBlockLabelServerProps,
+  LexicalBlockServerProps,
+  LexicalInlineBlockClientProps,
+  LexicalInlineBlockLabelClientProps,
+  LexicalInlineBlockLabelServerProps,
+  LexicalInlineBlockServerProps,
+} from '@frogbotai/richtext-lexical'
+```
+
+| Type | Use |
+| --- | --- |
+| `LexicalBlockClientProps` | Client `admin.components.Block` for a regular block |
+| `LexicalBlockServerProps` | Server `admin.components.Block` for a regular block |
+| `LexicalBlockLabelClientProps` | Client `admin.components.Label` for a regular block |
+| `LexicalBlockLabelServerProps` | Server `admin.components.Label` for a regular block |
+| `LexicalInlineBlockClientProps` | Client `admin.components.Block` for an inline block |
+| `LexicalInlineBlockServerProps` | Server `admin.components.Block` for an inline block |
+| `LexicalInlineBlockLabelClientProps` | Client `admin.components.Label` for an inline block |
+| `LexicalInlineBlockLabelServerProps` | Server `admin.components.Label` for an inline block |
+
+## Rendering blocks
+
+Frontend converters map each block slug to its rendered output:
+
+- [JSX converters](/rich-text/converting-jsx#lexical-blocks) for React and Next.js
+- [HTML converters](/rich-text/converting-html#blocks-to-html) for HTML output
+- [Markdown converters](/rich-text/converting-markdown#defining-a-custom-block) for Markdown output
+
+## CodeBlock
+
+`CodeBlock` is a ready-made block with syntax highlighting, language selection, and optional TypeScript diagnostics. Import it from the package root:
+
+```ts
+import { BlocksFeature, CodeBlock } from '@frogbotai/richtext-lexical'
+
+export const codeFeature = BlocksFeature({
+  blocks: [
+    CodeBlock({
+      defaultLanguage: 'ts',
+      languages: {
+        plaintext: 'Plain text',
+        js: 'JavaScript',
+        ts: 'TypeScript',
+        tsx: 'TSX',
+        jsx: 'JSX',
+      },
+    }),
+  ],
+})
+```
+
+### CodeBlock options
+
+| Option | Description |
+| --- | --- |
+| `slug` | Overrides the block slug. Defaults to `Code`. |
+| `defaultLanguage` | Initial language. Defaults to the first key in `languages`. |
+| `languages` | Maps language keys to labels. |
+| `typescript` | Configures TypeScript definitions and diagnostics. |
+| `fieldOverrides` | Overrides or extends the default block configuration. |
+
+### TypeScript support
+
+`fetchTypes` downloads declaration files into the editor's virtual file system. Every imported declaration dependency must also be loaded. Pin versions so a later package release cannot change the editor environment unexpectedly.
+
+This example loads React's declarations plus its `csstype` dependency:
+
+```ts
+import { CodeBlock } from '@frogbotai/richtext-lexical'
+
+export const TypedCodeBlock = CodeBlock({
+  languages: {
+    ts: 'TypeScript',
+    tsx: 'TSX',
+  },
+  typescript: {
+    fetchTypes: [
+      {
+        url: 'https://unpkg.com/@types/react@19.1.11/index.d.ts',
+        filePath: 'file:///node_modules/@types/react/index.d.ts',
+      },
+      {
+        url: 'https://unpkg.com/@types/react@19.1.11/global.d.ts',
+        filePath: 'file:///node_modules/@types/react/global.d.ts',
+      },
+      {
+        url: 'https://unpkg.com/csstype@3.1.3/index.d.ts',
+        filePath: 'file:///node_modules/csstype/index.d.ts',
+      },
+    ],
+    paths: {
+      csstype: ['file:///node_modules/csstype/index.d.ts'],
+      react: ['file:///node_modules/@types/react/index.d.ts'],
+    },
+    typeRoots: ['node_modules/@types'],
+    target: 'ES2022',
+    enableSemanticValidation: true,
+  },
+})
+```
+
+FrogBot publishes normal package declarations at `dist/index.d.ts`; it does not publish a single bundled declaration file. To offer FrogBot APIs in the editor, pin and load that declaration plus every declaration it imports, or publish a self-contained declaration bundle from your application. Do not point `fetchTypes` at an unverified `index.bundled.d.ts` URL.
+
+| TypeScript option | Description |
+| --- | --- |
+| `fetchTypes` | Declaration URLs and their virtual `filePath` destinations. |
+| `paths` | Module mappings used to resolve imports. |
+| `typeRoots` | Virtual directories searched for type packages. Defaults to `node_modules/@types`. |
+| `target` | TypeScript compilation target. Defaults to `ESNext`. |
+| `enableSemanticValidation` | Enables type checking in addition to syntax validation. Defaults to `false`. |
