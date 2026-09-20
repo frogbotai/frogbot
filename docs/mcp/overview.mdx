@@ -5,7 +5,7 @@ description: "Connect an MCP server and adapt its tools for FrogBot agents."
 keywords: ["MCP", "agents", "tools", "credentials", "AI SDK"]
 ---
 
-FrogBot agents can use tools from a remote MCP server through a small config-time adapter. This connects FrogBot to an external MCP server. It is separate from [Browser MCP](/browser-mcp), where FrogBot exposes an MCP server to external agents.
+FrogBot agents can use tools from a remote MCP server through a small config-time adapter. This connects FrogBot to an external MCP server as a client.
 
 ## Install the MCP client
 
@@ -86,4 +86,4 @@ Explicit schemas are recommended because they type and validate known tools. To 
 - **Name collisions:** Duplicate slugs fail FrogBot startup. Namespace names yourself when combining servers, such as `${serverName}_${toolName}`.
 - **No native MCP config:** FrogBot does not currently provide a first-class MCP piece or config key. That surface is tracked separately.
 
-For supported integrations, [Pieces](/configuration/pieces) provide the first-class alternative with curated, namespaced tools. See [Agents](/configuration/agents#add-tools) for the FrogBot tool contract.
+For supported integrations, [Pieces](/pieces/overview) provide the first-class alternative with curated, namespaced tools. See [Agents](/agents/overview#add-tools) for the FrogBot tool contract.

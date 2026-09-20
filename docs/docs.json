@@ -28,7 +28,7 @@
         "tab": "General",
         "groups": [
           {
-            "group": "Basic",
+            "group": "Basics",
             "pages": [
               {
                 "group": "Getting started",
@@ -40,28 +40,14 @@
                 ]
               },
               {
-                "group": "Deployment",
-                "expanded": false,
-                "pages": ["deployment/overview", "deployment/jobs"]
-              },
-              {
                 "group": "Configuration",
                 "expanded": false,
                 "pages": [
                   "configuration/overview",
-                  "configuration/admin-navigation",
                   "configuration/collections",
-                  "configuration/collection-board",
-                  "configuration/collection-calendar",
                   "configuration/environment-vars",
-                  "configuration/ai",
-                  "configuration/agents",
-                  "configuration/jobs",
-                  "configuration/pieces",
-                  "configuration/web-search",
-                  "configuration/mcp",
-                  "configuration/connections",
-                  "configuration/files"
+                  "configuration/i18n",
+                  "configuration/localization"
                 ]
               },
               {
@@ -83,8 +69,7 @@
                 "pages": [
                   "access-control/overview",
                   "access-control/collections",
-                  "access-control/fields",
-                  "access-control/globals"
+                  "access-control/fields"
                 ]
               },
               {
@@ -94,7 +79,6 @@
                   "hooks/overview",
                   "hooks/collections",
                   "hooks/fields",
-                  "hooks/globals",
                   "hooks/context"
                 ]
               },
@@ -148,23 +132,36 @@
           {
             "group": "Features",
             "pages": [
+              { "group": "Admin", "expanded": false, "pages": ["admin/admin-navigation", "admin/collection-board", "admin/collection-calendar"]},
               { "group": "Authentication", "expanded": false, "pages": ["authentication/overview", "authentication/sign-in", "authentication/operations", "authentication/jwt", "authentication/cookies", "authentication/email", "authentication/api-keys", "authentication/token-data", "authentication/custom-strategies"]},
-              { "group": "Chat", "expanded": false, "pages": ["chat/overview", "chat/manifest", "chat/training-data", "chat/ui-installation", "chat/ui-provider", "chat/ui-chat", "chat/ui-theming", "chat/ui-registries", "chat/ui-custom-shell"]},
-              { "group": "Rich Text", "expanded": false, "pages": ["rich-text/overview", "rich-text/official-features", "rich-text/converters", "rich-text/converting-jsx", "rich-text/converting-html", "rich-text/converting-markdown", "rich-text/converting-plaintext"]},
+              { "group": "Upload", "expanded": false, "pages": ["upload/overview", "upload/storage-adapters", "upload/files"]},
+              { "group": "Jobs Queue", "expanded": false, "pages": ["jobs-queue/overview", "jobs-queue/workers"]},
               { "group": "Versions", "expanded": false, "pages": ["versions/overview", "versions/drafts", "versions/autosave"]},
               { "group": "Email", "expanded": false, "pages": ["email/overview"]},
               { "group": "Trash", "expanded": false, "pages": ["trash/overview"]},
+              { "group": "TypeScript", "expanded": false, "pages": ["typescript/overview", "typescript/generating-types", "typescript/ts-plugin"]},
               { "group": "Troubleshooting", "expanded": false, "pages": ["troubleshooting/troubleshooting"]},
+              { "group": "Rich Text", "expanded": false, "pages": ["rich-text/overview", "rich-text/official-features", "rich-text/converters", "rich-text/converting-jsx", "rich-text/converting-html", "rich-text/converting-markdown", "rich-text/converting-plaintext"]},
               { "group": "Live Preview", "expanded": false, "pages": ["live-preview/overview", "live-preview/frontend", "live-preview/server", "live-preview/client"]},
-              { "group": "Typescript", "expanded": false, "pages": ["typescript/overview", "typescript/generating-types", "typescript/ts-plugin"]}
-           ]
+              { "group": "AI", "expanded": false, "pages": ["ai/overview"]},
+              { "group": "Agents", "expanded": false, "pages": ["agents/overview"]},
+              { "group": "Chat", "expanded": false, "pages": ["chat/overview", "chat/manifest", "chat/training-data", "chat/ui-installation", "chat/ui-provider", "chat/ui-chat", "chat/ui-theming", "chat/ui-registries", "chat/ui-custom-shell"]},
+              { "group": "MCP", "expanded": false, "pages": ["mcp/overview"]},
+              { "group": "Connections", "expanded": false, "pages": ["connections/overview"]},
+              { "group": "Pieces", "expanded": false, "pages": ["pieces/overview", "pieces/index", "pieces/triggers", "pieces/web-search"]}
+            ]
           },
           {
             "group": "Ecosystem",
             "pages": [
-              { "group": "Pieces", "expanded": false, "pages": ["pieces/index"]},
-              { "group": "Plugins", "expanded": false, "pages": ["plugins/overview", "plugins/api-keys", "plugins/audit-log", "plugins/capture", "plugins/roles", "plugins/usage-reports", "plugins/mcp", "plugins/import-export", "plugins/nested-docs", "plugins/redirects", "plugins/search", "plugins/sentry", "plugins/stripe", "plugins/build-your-own"]},
+              { "group": "Plugins", "expanded": false, "pages": ["plugins/overview", "plugins/api-keys", "plugins/audit-log", "plugins/capture", "plugins/roles", "plugins/usage-reports", "plugins/mcp", "plugins/rag", "plugins/import-export", "plugins/nested-docs", "plugins/redirects", "plugins/search", "plugins/sentry", "plugins/stripe", "plugins/build-your-own"]},
               { "group": "Gateway", "expanded": false, "pages": ["gateway/overview", "gateway/providers", "gateway/configuration", "gateway/embedding", "gateway/hooks", "gateway/observability", "gateway/errors"]}
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              { "group": "Deployment", "expanded": false, "pages": ["deployment/overview"]}
             ]
           }
         ]
@@ -220,6 +217,22 @@
       }
     ]
   },
+  "redirects": [
+    { "source": "/configuration/admin-navigation", "destination": "/admin/admin-navigation" },
+    { "source": "/configuration/collection-board", "destination": "/admin/collection-board" },
+    { "source": "/configuration/collection-calendar", "destination": "/admin/collection-calendar" },
+    { "source": "/configuration/jobs", "destination": "/jobs-queue/overview" },
+    { "source": "/deployment/jobs", "destination": "/jobs-queue/workers" },
+    { "source": "/configuration/files", "destination": "/upload/files" },
+    { "source": "/configuration/ai", "destination": "/ai/overview" },
+    { "source": "/configuration/agents", "destination": "/agents/overview" },
+    { "source": "/configuration/mcp", "destination": "/mcp/overview" },
+    { "source": "/configuration/web-search", "destination": "/pieces/web-search" },
+    { "source": "/configuration/connections", "destination": "/connections/overview" },
+    { "source": "/configuration/pieces", "destination": "/pieces/overview" },
+    { "source": "/access-control/globals", "destination": "/access-control/collections" },
+    { "source": "/hooks/globals", "destination": "/hooks/collections" }
+  ],
   "background": {
     "color": {
       "dark": "#101828",

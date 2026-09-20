@@ -5,7 +5,7 @@ One `@frogbotai/gateway` instance — embedded in a ~65-line Hono server (`src/s
 - **Managed providers** — AWS Bedrock, Anthropic, OpenAI, and Fireworks, each enabled independently by whichever API keys you set
 - **Ollama** — real self-hosted inference running on your machine, standing in for any OpenAI-compatible endpoint (vLLM, TGI, SGLang, ...) you run on your own GPUs
 
-> This example runs `@frogbotai/gateway` standalone, with zero FrogBot dependencies. FrogBot's core framework embeds this exact package internally to power its own `ai` config block — see [Configure AI in FrogBot](https://docs.frogbot.ai/configuration/ai) if that's what you're looking for instead.
+> This example runs `@frogbotai/gateway` standalone, with zero FrogBot dependencies. FrogBot's core framework embeds this exact package internally to power its own `ai` config block — see [Configure AI in FrogBot](https://docs.frogbot.ai/ai/overview) if that's what you're looking for instead.
 
 ```
                           ┌──────────────────────┐──── bedrock/... ───▶ AWS Bedrock

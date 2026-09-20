@@ -5,7 +5,7 @@ description: Manage and customize internationalization support in your CMS edito
 keywords: internationalization, i18n, config, configuration, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
 ---
 
-The [Admin Panel](/admin/overview) is translated in over [30 languages and counting](https://github.com/frogbotcms/frogbot/tree/main/packages/translations). With I18n, editors can navigate the interface and read API error messages in their preferred language. This is similar to [Localization](/configuration/localization), but instead of managing translations for the data itself, you are managing translations for your application's interface.
+The Admin Panel is translated in over [30 languages and counting](https://github.com/frogbotcms/frogbot/tree/main/packages/translations). With I18n, editors can navigate the interface and read API error messages in their preferred language. This is similar to [Localization](/configuration/localization), but instead of managing translations for the data itself, you are managing translations for your application's interface.
 
 By default, FrogBot comes preinstalled with English, but you can easily load other languages into your own application. Languages are automatically detected based on the request. If no language is detected, or if the user's language is not yet supported by your application, English will be chosen.
 
@@ -114,7 +114,7 @@ export default buildConfig({
 
 ### Project Translations
 
-While FrogBot's built-in features come fully translated, you may also want to translate parts of your own project. This is possible in places like [Collections](/configuration/collections) and [Globals](/configuration/globals), such as on their labels and groups, field labels, descriptions or input placeholder text.
+While FrogBot's built-in features come fully translated, you may also want to translate parts of your own project. This is possible in [Collections](/configuration/collections), including labels and groups, field labels, descriptions, and input placeholder text.
 
 To do this, provide the translations wherever applicable, keyed to the language code:
 
@@ -160,7 +160,7 @@ export const Articles: CollectionConfig = {
 
 ## Changing Languages
 
-Users can change their preferred language in their account settings or by otherwise manipulating their [User Preferences](/admin/preferences).
+Users can change their preferred language in their account settings or by otherwise manipulating their User Preferences.
 
 ## Node.js#node
 
@@ -217,7 +217,7 @@ export default buildConfig({
 })
 ```
 
-Import the shared translation types to use in your [Custom Component](/custom-components/overview):
+Import the shared translation types to use in your custom component:
 
 ```ts
 // <rootDir>/components/MyComponent.tsx

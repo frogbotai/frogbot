@@ -1,8 +1,7 @@
 ---
 title: Uploads
-label: Overview
-order: 10
-desc: FrogBot supports uploads, storage and management of files directly on your server, combined with powerful file access control.
+sidebarTitle: Overview
+description: FrogBot supports uploads, storage and management of files directly on your server, combined with powerful file access control.
 keywords: uploads, images, media, overview, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
 ---
 
@@ -92,17 +91,17 @@ _An asterisk denotes that an option is required._
 
 | Option                         | Description                                                                                                                                                                                                                                                                                                                                                      |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`adminThumbnail`**           | Set the way that the [Admin Panel](../admin/overview) will display thumbnails for this Collection. [More](#admin-thumbnails)                                                                                                                                                                                                                                     |
+| **`adminThumbnail`**           | Set the way that the Admin Panel will display thumbnails for this Collection. [More](#admin-thumbnails)                                                                                                                                                                                                                                                         |
 | **`bulkUpload`**               | Allow users to upload in bulk from the list view, default is true                                                                                                                                                                                                                                                                                                |
 | **`cacheTags`**                | Set to `false` to disable the cache tag set in the UI for the admin thumbnail component. Useful for when CDNs don't allow certain cache queries.                                                                                                                                                                                                                 |
 | **`constructorOptions`**       | An object passed to the Sharp image library that accepts any Constructor options and applies them to the upload file. [More](https://sharp.pixelplumbing.com/api-constructor/)                                                                                                                                                                                   |
-| **`crop`**                     | Set to `false` to disable the cropping tool in the [Admin Panel](../admin/overview). Crop is enabled by default. [More](#crop-and-focal-point-selector)                                                                                                                                                                                                          |
+| **`crop`**                     | Set to `false` to disable the cropping tool in the Admin Panel. Crop is enabled by default. [More](#crop-and-focal-point-selector)                                                                                                                                                                                                                              |
 | **`disableLocalStorage`**      | Completely disable uploading files to disk locally. [More](#disabling-local-upload-storage)                                                                                                                                                                                                                                                                      |
-| **`displayPreview`**           | Enable displaying preview of the uploaded file in Upload fields related to this Collection. Can be locally overridden by `displayPreview` option in Upload field. [More](/docs/fields/upload#config-options).                                                                                                                                                    |
+| **`displayPreview`**           | Enable displaying preview of the uploaded file in Upload fields related to this Collection. Can be locally overridden by the `displayPreview` option in an Upload field.                                                                                                                                                                                      |
 | **`externalFileHeaderFilter`** | Accepts existing headers and returns the headers after filtering or modifying. If using this option, you should handle the removal of any sensitive cookies (like frogbot-prefixed cookies) to prevent leaking session information to external services. By default, FrogBot automatically filters out frogbot-prefixed cookies when this option is not defined. |
 | **`filesRequiredOnCreate`**    | Mandate file data on creation, default is true.                                                                                                                                                                                                                                                                                                                  |
 | **`filenameCompoundIndex`**    | Field slugs to use for a compound index instead of the default filename index.                                                                                                                                                                                                                                                                                   |
-| **`focalPoint`**               | Set to `false` to disable the focal point selection tool in the [Admin Panel](../admin/overview). The focal point selector is only available when `imageSizes` or `resizeOptions` are defined. [More](#crop-and-focal-point-selector)                                                                                                                            |
+| **`focalPoint`**               | Set to `false` to disable the focal point selection tool in the Admin Panel. The focal point selector is only available when `imageSizes` or `resizeOptions` are defined. [More](#crop-and-focal-point-selector)                                                                                                                                                  |
 | **`formatOptions`**            | An object with `format` and `options` that are used with the Sharp image library to format the upload file. [More](https://sharp.pixelplumbing.com/api-output#toformat)                                                                                                                                                                                          |
 | **`handlers`**                 | Array of Request handlers to execute when fetching a file, if a handler returns a Response it will be sent to the client. Otherwise FrogBot will retrieve and send back the file.                                                                                                                                                                                |
 | **`imageSizes`**               | If specified, image uploads will be automatically resized in accordance to these image sizes. [More](#image-sizes)                                                                                                                                                                                                                                               |
@@ -186,7 +185,7 @@ The filename from here will also be threaded to image sizes if they're enabled.
 
 If you specify an array of `imageSizes` to your `upload` config, FrogBot will automatically crop and resize your uploads to fit each of the sizes specified by your config.
 
-The [Admin Panel](../admin/overview) will also automatically display all available files, including width, height, and file size, for each of your uploaded files.
+The Admin Panel will also automatically display all available files, including width, height, and file size, for each of your uploaded files.
 
 Behind the scenes, FrogBot relies on [`sharp`](https://sharp.pixelplumbing.com/api-resize#resize) to perform its image resizing. You can specify additional options for `sharp` to use while resizing your images.
 
@@ -194,7 +193,7 @@ Note that for image resizing to work, `sharp` must be specified in your [FrogBot
 
 #### Admin List View Options
 
-Each image size also supports `admin` options to control whether it appears in the [Admin Panel](../admin/overview) list view.
+Each image size also supports `admin` options to control whether it appears in the Admin Panel list view.
 
 ```ts
 {
@@ -263,7 +262,7 @@ This function receives the original file name, the resize name, the extension, h
 
 This feature is only available for image file types.
 
-Setting `crop: false` and `focalPoint: false` in your Upload config will be disable the respective selector in the [Admin Panel](../admin/overview).
+Setting `crop: false` and `focalPoint: false` in your Upload config disables the respective selector in the Admin Panel.
 
 Image cropping occurs before any resizing, the resized images will therefore be generated from the cropped image (**not** the original image).
 
@@ -382,12 +381,12 @@ Here's a minimal example showing how to create a custom upload component:
 ```tsx
 import React from 'react'
 import type {
-  PayloadServerReactComponent,
+  FrogbotComponent,
   SanitizedCollectionConfig,
 } from 'frogbot'
 import { CustomUploadClient } from './CustomUpload.client'
 
-export const CustomUploadServer: PayloadServerReactComponent<
+export const CustomUploadServer: FrogbotComponent<
   SanitizedCollectionConfig['admin']['components']['edit']['Upload']
 > = (props) => {
   return (
@@ -522,7 +521,7 @@ export const Posts: CollectionConfig = {
 }
 ```
 
-For more details on customizing fields, see [Field Components](../fields/overview#custom-components).
+Fields can provide custom components for upload behavior.
 
 ### Component Export Syntax
 
@@ -542,7 +541,7 @@ Upload: {
 }
 ```
 
-For more details on component paths, see [Custom Components](../custom-components/overview#component-paths).
+Component paths identify the module and export to render.
 
 ## Restricted File Types
 
@@ -614,7 +613,7 @@ works. It's difficult and fairly nonsensical to support uploading files through 
 
 </Banner>
 
-To upload a file, use your collection's [`create`](/docs/rest-api/overview#collections) endpoint. Send it all the data that your Collection requires, as well as a `file` key containing the file that you'd like to upload.
+To upload a file, use your collection's [`create`](/rest-api/overview#collections) endpoint. Send it all the data that your Collection requires, as well as a `file` key containing the file that you'd like to upload.
 
 Send your request as a `multipart/form-data` request, using [`FormData`](https://developer.mozilla.org/en-US/docs/Web/API/FormData) if possible.
 
@@ -758,7 +757,7 @@ _An asterisk denotes that an option is required._
 
 ## Access Control
 
-All files that are uploaded to each Collection automatically support the `read` [Access Control](/docs/access-control/overview) function from the Collection itself. You can use this to control who should be allowed to see your uploads, and who should not.
+All files that are uploaded to each Collection automatically support the `read` [Access Control](/access-control/overview) function from the Collection itself. You can use this to control who should be allowed to see your uploads, and who should not.
 
 ## Modifying response headers
 

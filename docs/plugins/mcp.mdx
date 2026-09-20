@@ -1,11 +1,11 @@
 ---
 title: "MCP server"
 sidebarTitle: "MCP server"
-description: "Expose selected collections and globals to external MCP clients."
+description: "Expose selected collections to external MCP clients."
 keywords: ["MCP", "Model Context Protocol", "plugins", "API keys"]
 ---
 
-The MCP plugin exposes selected collections and globals as MCP tools for external clients such as Claude Desktop and Cursor. It delegates tool registration, schemas, and transport to FrogBot's MCP plugin while using FrogBot's hashed, revocable API keys for authentication.
+The MCP plugin exposes selected collections as MCP tools for external clients such as Claude Desktop and Cursor. It delegates tool registration, schemas, and transport to FrogBot's MCP plugin while using FrogBot's hashed, revocable API keys for authentication.
 
 ## Install
 
@@ -48,6 +48,6 @@ Revoked, malformed, and unknown keys are rejected immediately. The MCP endpoint 
 
 ## Scope
 
-The adapter forwards the collection, global, custom-tool, response-override, and handler options supported by `@payloadcms/plugin-mcp`. Experimental config, collection-definition, job, and auth-mutation tools cannot be enabled. SSE is not supported.
+The adapter supports collection, custom-tool, response-override, and handler options. Experimental config, collection-definition, job, and auth-mutation tools cannot be enabled. SSE is not supported.
 
 The adapter adds a `payload-mcp-api-keys` collection to preserve its plugin schema. This collection is dormant in FrogBot: keys stored there cannot authenticate `/api/mcp`.

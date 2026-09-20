@@ -180,12 +180,6 @@ export const samplePlugin =
       newCollection,
     ]
 
-    // If you wanted to add a new global:
-    config.globals = [
-      ...(config.globals || []),
-      newGlobal,
-    ]
-
     /**
     * If you wanted to add a new field to a collection:
     *
@@ -225,14 +219,9 @@ config.collections = [
 
 First, you need to spread the `config.collections` to ensure that we don't lose the existing collections. Then you can add any additional collections, just as you would in a regular FrogBot Config.
 
-This same logic is applied to other array and object like properties such as admin, globals and hooks:
+This same logic is applied to other array and object-like properties such as admin and hooks:
 
 ```ts
-config.globals = [
-  ...(config.globals || []),
-  // Add additional globals here
-]
-
 config.hooks = {
   ...(config.hooks || {}),
   // Add additional hooks here

@@ -5,7 +5,7 @@ description: "Choose pieces for integration actions, linked accounts, and sign-i
 keywords: ["pieces", "integrations", "connections", "OAuth", "Google"]
 ---
 
-Install the package for your integration and create an instance with its factory. Use factory `auth` for developer credentials and [connection entries](/configuration/connections) to let users link their own accounts.
+Install the package for your integration and create an instance with its factory. Use factory `auth` for developer credentials and [connection entries](/connections/overview) to let users link their own accounts.
 
 ## Credentials and identity
 
@@ -59,7 +59,7 @@ export const gmail = createGmail({ oauth: google.oauth })
 export const connections: ConnectionEntry[] = [{ piece: gmail, oauth: true }]
 ```
 
-Google's identity recipe requests OpenID, email, and profile access. Gmail extends it with mailbox scopes. Put `google` in a collection's `auth.signIn` for login and pass `connections` to the root config for Gmail linking. Sheets, Drive, and Calendar share `google.oauth` the same way, with a separate entry and callback for each product. See the complete [product connection example](/configuration/connections#configure-linking) and [redirect setup](/configuration/connections#configure-oauth-redirects).
+Google's identity recipe requests OpenID, email, and profile access. Gmail extends it with mailbox scopes. Put `google` in a collection's `auth.signIn` for login and pass `connections` to the root config for Gmail linking. Sheets, Drive, and Calendar share `google.oauth` the same way, with a separate entry and callback for each product. See the complete [product connection example](/connections/overview#configure-linking) and [redirect setup](/connections/overview#configure-oauth-redirects).
 
 ## Google actions
 
@@ -94,4 +94,4 @@ Each shipped package is a native FrogBot piece and defines its own actions, trig
 
 The utility packages are `piece-text-helper`, `piece-math-helper`, `piece-date-helper`, `piece-crypto`, `piece-csv`, `piece-xml`, `piece-qrcode`, `piece-data-summarizer`, `piece-http`, `piece-graphql`, `piece-file-helper`, `piece-image-helper`, and `piece-pdf`, all under `@frogbotai/`.
 
-See [Pieces](/configuration/pieces) for selecting agent tools and [Connections](/configuration/connections) for credential resolution, replacement, and refresh behavior.
+See [Pieces](/pieces/overview) for selecting agent tools and [Connections](/connections/overview) for credential resolution, replacement, and refresh behavior.

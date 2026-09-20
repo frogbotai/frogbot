@@ -101,7 +101,7 @@ Accessible profiles appear in both `GET /api/agents` and the [chat manifest](/ch
 
 Agents accept FrogBot `Tool` objects, not raw AI SDK tools. FrogBot converts them internally and supplies request, runtime, slug, and run ID context to every execution.
 
-To add integration actions, pass individual piece actions or a whole registered piece. To add current web results, use the [web search pieces](/configuration/web-search). To connect tools discovered from an external server, use the [MCP server tools recipe](/configuration/mcp).
+To add integration actions, pass individual piece actions or a whole registered piece. To add current web results, use the [web search pieces](/pieces/web-search). To connect tools discovered from an external server, use the [MCP server tools recipe](/mcp/overview).
 
 ```ts
 import type { Tool } from 'frogbot'
@@ -488,4 +488,4 @@ Access is checked before `beforeOperation`, so denied calls run no hooks. Stream
 
 Tool execution has no separate lifecycle hook in v0. Match `ToolCtx.agent.runId` with the hook argument's `agent.runId` to correlate tool work.
 
-See [AI hooks](/configuration/ai#observe-calls) for phase arguments, mutation rules, and failure isolation.
+See [AI hooks](/ai/overview#observe-calls) for phase arguments, mutation rules, and failure isolation.

@@ -5,7 +5,7 @@ description: With Collection-level Access Control you can define which users can
 keywords: collections, access control, permissions, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
 ---
 
-Collection Access Control is [Access Control](/access-control/overview) used to restrict access to Documents within a [Collection](/getting-started/concepts#collections), as well as what they can and cannot see within the [Admin Panel](/admin/overview) as it relates to that Collection.
+Collection Access Control is [Access Control](/access-control/overview) used to restrict access to Documents within a [Collection](/getting-started/concepts#collections), as well as what users can see in the Admin Panel for that Collection.
 
 To add Access Control to a Collection, use the `access` property in your [Collection Config](/configuration/collections):
 
@@ -60,7 +60,7 @@ If a Collection supports [`Authentication`](/authentication/overview), the follo
 
 | Function     | Allows/Denies Access                                                                     |
 | ------------ | ---------------------------------------------------------------------------------------- |
-| **`admin`**  | Used to restrict access to the [Admin Panel](/admin/overview). [More details](#admin). |
+| **`admin`**  | Used to restrict access to the Admin Panel. [More details](#admin). |
 | **`unlock`** | Used to restrict which users can access the `unlock` operation. [More details](#unlock). |
 
 If a Collection supports [Versions](/versions/overview), the following additional options are available:
@@ -267,7 +267,7 @@ The following arguments are provided to the `delete` function:
 
 ### Admin
 
-If the Collection is used to access the [Admin Panel](/admin/overview#the-admin-user-collection), the `Admin` Access Control function determines whether or not the currently logged in user can access the admin UI.
+If the Collection is used to access the Admin Panel, the `Admin` Access Control function determines whether the currently logged-in user can access the admin UI.
 
 To add Admin Access Control to a Collection, use the `admin` property in the [Collection Config](/configuration/collections):
 

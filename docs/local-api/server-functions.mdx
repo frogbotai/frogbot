@@ -36,7 +36,7 @@ In the following examples, we'll cover some common use cases, including:
 First, let's create our server function. Here are some key points for this process:
 
 - Begin by adding `'use server'` at the top of the file.
-- You can still use utilities such as `getPayload()`.
+- You can still use utilities such as `getFrogbot()`.
 - Once the function structure is in place, call the Local API operation `frogbot.create()` and pass in the relevant data.
 - It's good practice to wrap this in a `try...catch` block for error handling.
 - Finally, make sure to return the created document (don't just run the operation).
@@ -44,11 +44,11 @@ First, let's create our server function. Here are some key points for this proce
 ```ts
 'use server'
 
-import { getPayload } from 'frogbot'
+import { getFrogbot } from 'frogbot'
 import config from '@frogbot-config'
 
 export async function createPost(data) {
-  const frogbot = await getPayload({ config })
+  const frogbot = await getFrogbot({ config })
 
   try {
     const post = await frogbot.create({
@@ -103,11 +103,11 @@ Here's how the server function would look:
 ```ts
 'use server'
 
-import { getPayload } from 'frogbot'
+import { getFrogbot } from 'frogbot'
 import config from '@frogbot-config'
 
 export async function updatePost(id, data) {
-  const frogbot = await getPayload({ config })
+  const frogbot = await getFrogbot({ config })
 
   try {
     const post = await frogbot.update({
@@ -167,10 +167,10 @@ Here's the server function to authenticate a user:
 
 import { headers as getHeaders } from 'next/headers'
 import config from '@frogbot-config'
-import { getPayload } from 'frogbot'
+import { getFrogbot } from 'frogbot'
 
 export const authenticateUser = async () => {
-  const frogbot = await getPayload({ config })
+  const frogbot = await getFrogbot({ config })
   const headers = await getHeaders()
   const { user } = await frogbot.auth({ headers })
 
@@ -225,11 +225,11 @@ This example demonstrates how to write a server function that creates a document
 ```ts
 'use server'
 
-import { getPayload } from 'frogbot'
+import { getFrogbot } from 'frogbot'
 import config from '@frogbot-config'
 
 export async function createPostWithUpload(data, upload) {
-  const frogbot = await getPayload({ config })
+  const frogbot = await getFrogbot({ config })
 
   try {
     // Prepare the data with the file
@@ -488,7 +488,7 @@ Example of good error handling:
 ```ts
 export async function createPost(data) {
   try {
-    const frogbot = await getPayload({ config })
+    const frogbot = await getFrogbot({ config })
     return await frogbot.create({ collection: 'posts', data })
   } catch (error) {
     console.error('Error creating post:', error)
@@ -517,7 +517,7 @@ export async function deletePost(postId, user) {
     throw new UnauthorizedError()
   }
 
-  const frogbot = await getPayload({ config })
+  const frogbot = await getFrogbot({ config })
   return await frogbot.delete({ collection: 'posts', id: postId })
 }
 ```

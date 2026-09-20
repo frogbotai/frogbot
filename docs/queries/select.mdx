@@ -5,7 +5,7 @@ description: FrogBot select determines which fields are selected to the result.
 keywords: query, documents, pagination, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
 ---
 
-By default, FrogBot's APIs will return _all fields_ for a given collection or global. But, you may not need all of that data for all of your queries. Sometimes, you might want just a few fields from the response.
+By default, FrogBot's APIs return all fields for a collection. You may only need a few fields for a given query.
 
 With the Select API, you can define exactly which fields you'd like to retrieve. This can impact the performance of your queries by affecting the load on the database and the size of the response.
 
@@ -71,12 +71,12 @@ console.log(post) // { id: '1' }
   `afterRead` hooks may not receive the full `doc`. To ensure that some fields
   are always selected for your hooks / access control, regardless of the
   `select` query you can use the [entity-level `select`](#entity-level-select-config)
-  function on your Collection or Global config.
+  function on your Collection config.
 </Warning>
 
 ## Entity-level select config
 
-Both Collections and Globals accept a top-level `select` function that runs before every read and lets you transform the caller's `select` based on request context. It receives `{ operation, req, select }` and returns the final `select` to apply, replacing the caller's. Return `undefined` to leave the caller's `select` untouched.
+Collections accept a top-level `select` function that runs before every read and lets you transform the caller's `select` based on request context. It receives `{ operation, req, select }` and returns the final `select` to apply, replacing the caller's. Return `undefined` to leave the caller's `select` untouched.
 
 Common uses:
 
@@ -142,17 +142,12 @@ const getPosts = async () => {
 }
 ```
 
-<Note>
-  This is the same for [Globals](/configuration/globals) using the
-  `/api/globals` endpoint.
-</Note>
-
 ## defaultPopulate collection config property
 
 The `defaultPopulate` property allows you specify which fields to select when populating the collection from another document.
 This is especially useful for links where only the `slug` is needed instead of the entire document.
 
-With this feature, you can dramatically reduce the amount of JSON that is populated from [Relationship](/fields/relationship) or [Upload](/fields/upload) fields.
+With this feature, you can dramatically reduce the amount of JSON populated from Relationship or Upload fields.
 
 For example, in your content model, you might have a `Link` field which links out to a different page. When you go to retrieve these links, you really only need the `slug` of the page.
 
@@ -180,7 +175,7 @@ export const Pages: CollectionConfig<'pages'> = {
 ```
 
 <Warning>
-  When using `defaultPopulate` on a collection with [Uploads](/fields/upload)
+  When using `defaultPopulate` on a collection with Uploads
   enabled and you want to select the `url` field, it is important to specify
   `filename: true` as well, otherwise FrogBot will not be able to construct the
   correct file URL, instead returning `url: null`.

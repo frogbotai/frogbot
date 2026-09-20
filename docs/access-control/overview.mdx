@@ -5,7 +5,7 @@ description: FrogBot makes it simple to define and manage Access Control. By dec
 keywords: overview, access control, permissions, documentation, Content Management System, cms, headless, javascript, node, react, nextjs
 ---
 
-Access Control determines what a user can and cannot do with any given Document, as well as what they can and cannot see within the [Admin Panel](/admin/overview). By implementing Access Control, you can define granular restrictions based on the user, their roles (RBAC), Document data, or any other criteria your application requires.
+Access Control determines what a user can and cannot do with any given Document, as well as what they can and cannot see within the Admin Panel. By implementing Access Control, you can define granular restrictions based on the user, their roles (RBAC), Document data, or any other criteria your application requires.
 
 Access Control functions are scoped to the _operation_, meaning you can have different rules for `create`, `read`, `update`, `delete`, etc. Access Control functions are executed _before_ any changes are made and _before_ any operations are completed. This allows you to determine if the user has the necessary permissions before fulfilling the request.
 
@@ -21,12 +21,11 @@ There are many use cases for Access Control, including:
 There are three main types of Access Control in FrogBot:
 
 - [Collection Access Control](/access-control/collections)
-- [Global Access Control](/access-control/globals)
 - [Field Access Control](/access-control/fields)
 
 ## Default Access Control
 
-FrogBot provides default Access Control so that your data is secured behind [Authentication](/authentication/overview) without additional configuration. To do this, FrogBot sets a default function that checks that a user is present on the request _and_ that the user belongs to the collection used to access the [Admin Panel](/admin/overview#the-admin-user-collection) (`config.admin.user`). You can override this default behavior by defining your own Access Control functions as needed.
+FrogBot provides default Access Control so that your data is secured behind [Authentication](/authentication/overview) without additional configuration. To do this, FrogBot sets a default function that checks that a user is present on the request and that the user belongs to the collection used to access the Admin Panel (`config.admin.user`). You can override this default behavior by defining your own Access Control functions as needed.
 
 This means that adding a second [Authentication](/authentication/overview)-enabled collection does not automatically grant its users access to everything. Users from collections other than `config.admin.user` are denied by default unless you provide your own Access Control functions.
 
@@ -51,7 +50,7 @@ const defaultPayloadAccess = ({ req: { frogbot, user } }) => {
 
 The Admin Panel responds dynamically to your changes to Access Control. For example, if you restrict editing `ExampleCollection` to only users that feature an "admin" role, FrogBot will **hide** that Collection from the Admin Panel entirely. This is super powerful and allows you to control who can do what within your Admin Panel using the same functions that secure your APIs.
 
-To accomplish this, FrogBot exposes the [Access Operation](/authentication/operations#access). Upon login, FrogBot executes each Access Control function at the top level, across all Collections, Globals, and Fields, and returns a response that contains a reflection of what the currently authenticated user can do within your application.
+To accomplish this, FrogBot exposes the [Access Operation](/authentication/operations#access). Upon login, FrogBot executes each Access Control function across all Collections and Fields and returns a response that reflects what the authenticated user can do within your application.
 
 <Warning>
   When your access control functions are executed via the [Access

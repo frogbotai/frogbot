@@ -4,7 +4,7 @@ description: 'Run independent FrogBot workers and schedulers with graceful shutd
 keywords: ['workers', 'jobs:run', 'scheduler', 'Docker', 'D1']
 ---
 
-`frogbot jobs:run` loads your app configuration and initializes FrogBot, including application `onInit`, without starting Next.js. It stays running and polls on a cron schedule. Configure your [tasks, workflows, and leases](/configuration/jobs) before starting workers.
+`frogbot jobs:run` loads your app configuration and initializes FrogBot, including application `onInit`, without starting Next.js. It stays running and polls on a cron schedule. Configure your [tasks, workflows, and leases](/jobs-queue/overview) before starting workers.
 
 ## Start a worker
 
@@ -27,7 +27,7 @@ Value flags accept `--flag value` and `--flag=value`. Invalid, unknown, duplicat
 
 During normal execution, `SIGINT` and `SIGTERM` stop new ticks, drain the active batch and pending heartbeat, close the database, and exit `0`. Set your container's shutdown grace period to accommodate the longest active batch.
 
-An exceptional completion or database-write failure can reject a batch before sibling work finishes; the worker can then exit `1` without draining those siblings. Forced termination and interrupted work rely on [lease recovery](/configuration/jobs#leases-and-crash-recovery), which is at least once and can occasionally duplicate work.
+An exceptional completion or database-write failure can reject a batch before sibling work finishes; the worker can then exit `1` without draining those siblings. Forced termination and interrupted work rely on [lease recovery](/jobs-queue/overview#leases-and-crash-recovery), which is at least once and can occasionally duplicate work.
 
 ## Disable web autorun
 
@@ -80,9 +80,9 @@ The worker CLI's `--limit 0` never runs jobs. Without `--handle-schedules`, it p
 
 ## Workers for durable waits
 
-[Workflow waits](/configuration/jobs#durable-workflow-waits) persist in the shared database and release the current worker. Resume queues a continuation in the workflow's original queue. Keep workers covering that queue, and keep a scheduler **and** worker covering `default`: the minute `frogbot-sweep-jobs` task proactively expires waits and recovers accepted responses whose continuations still need dispatch. The all-queue container setup above covers both.
+[Workflow waits](/jobs-queue/overview#durable-workflow-waits) persist in the shared database and release the current worker. Resume queues a continuation in the workflow's original queue. Keep workers covering that queue, and keep a scheduler **and** worker covering `default`: the minute `frogbot-sweep-jobs` task proactively expires waits and recovers accepted responses whose continuations still need dispatch. The all-queue container setup above covers both.
 
-Failed dispatches remain retryable, including a failed `concurrency.supersedes` replacement after pending work was deleted. Recovery depends on the scheduled sweep running. A crash between enqueue and recording dispatch can also duplicate a continuation if its job record disappears before recovery. See [Dispatch and recovery limits](/configuration/jobs#dispatch-and-recovery-limits).
+Failed dispatches remain retryable, including a failed `concurrency.supersedes` replacement after pending work was deleted. Recovery depends on the scheduled sweep running. A crash between enqueue and recording dispatch can also duplicate a continuation if its job record disappears before recovery. See [Dispatch and recovery limits](/jobs-queue/overview#dispatch-and-recovery-limits).
 
 Set `serverURL` to the public web origin in the shared application configuration. Workers use it to generate approval links; recipients need the web service to open confirmation and submit a response. Keep wait names, task IDs, and branching compatible across the app versions serving a suspended workflow.
 
