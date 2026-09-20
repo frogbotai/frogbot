@@ -135,7 +135,7 @@ export interface User {
   id: number;
   name?: string | null;
   modelAccess?: ('all' | 'selected') | null;
-  models?: 'bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0'[] | null;
+  models?: 'zen/big-pickle'[] | null;
   monthlyBudget?: number | null;
   spendThisPeriodUSD?: number | null;
   updatedAt: string;
@@ -538,7 +538,7 @@ declare module 'frogbot' {
       general: unknown;
       assistant: unknown;
     };
-    models: 'bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0';
+    models: 'zen/big-pickle';
     roles: never;
   }
 }
