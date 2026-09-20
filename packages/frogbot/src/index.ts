@@ -160,7 +160,16 @@ export type {
   UpdateByIDArgs,
   UpdateManyArgs,
 } from './collections/config/types.js';
-export type { AfterErrorHook, FrogbotConfig, OnInit, RootHooks } from './config/types.js';
+export type {
+  AfterErrorHook,
+  FrogbotConfig,
+  LivePreviewConfig,
+  LivePreviewURLArgs,
+  LivePreviewURLType,
+  OnInit,
+  RootHooks,
+  RootLivePreviewConfig,
+} from './config/types.js';
 export type { DatabaseAdapter } from './database/types.js';
 export type {
   JobQueueArgs,

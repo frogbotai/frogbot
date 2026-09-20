@@ -1,0 +1,120 @@
+---
+title: Live Preview
+sidebarTitle: Overview
+description: Render your front-end application in the Admin Panel and see document changes as you type.
+keywords: live preview, preview, iframe, visual editing, design
+---
+
+Live Preview renders your front-end application directly within the Admin Panel. As you type, changes appear without saving a draft or publishing. It works with both [server-side](/live-preview/server) and [client-side](/live-preview/client) frontends.
+
+The preview window loads your application in an iframe. The Admin Panel sends document changes through [`window.postMessage`](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage), and the application re-renders with the data it receives.
+
+Configure Live Preview with `admin.livePreview` in your [FrogBot config](/configuration/overview):
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  admin: {
+    livePreview: {
+      url: 'http://localhost:3000',
+      collections: ['pages'],
+    },
+  },
+})
+```
+
+<Note>
+  You can instead define `admin.livePreview` on an individual [collection](/configuration/collections#admin-options). Collection settings override root settings.
+</Note>
+
+## Options
+
+Once configured, a Live Preview button appears at the top of enabled documents.
+
+| Path                | Description                                                                                   |
+| ------------------- | --------------------------------------------------------------------------------------------- |
+| **`url`**           | A string or function that returns the iframe `src`. [More details](#url).                      |
+| **`breakpoints`**   | Device sizes available in the preview toolbar. [More details](#breakpoints).                   |
+| **`openByDefault`** | Whether the preview window opens automatically. Defaults to `false`.                           |
+| **`collections`**   | Collection slugs enabled for Live Preview. Available on the root configuration.                |
+
+### URL
+
+The `url` property determines the iframe location. Use a function when it depends on the document, locale, or collection. This function may run often while the form changes, so avoid expensive work inside it.
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  admin: {
+    livePreview: {
+      url: ({ data, collectionConfig, locale }) =>
+        `${data.tenant.url}${
+          collectionConfig?.slug === 'posts'
+            ? `/posts/${data.slug}`
+            : `${data.slug !== 'home' ? `/${data.slug}` : ''}`
+        }${locale ? `?locale=${locale.code}` : ''}`,
+      collections: ['pages'],
+    },
+  },
+})
+```
+
+| Path                   | Description                                                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **`data`**             | The document data, including unsaved changes.                                                                |
+| **`locale`**           | The locale currently being edited, when localization is enabled.                                             |
+| **`collectionConfig`** | The collection configuration. [More details](/configuration/collections#admin-options).                      |
+| **`req`**              | The FrogBot request. The FrogBot instance is available at `req.frogbot`.                                     |
+
+The function can return an absolute or relative URL. Relative URLs use the protocol, domain, and port from the browser window.
+
+```ts
+url: ({ data, req }) => `${req.protocol}//${req.host}/${data.slug}`
+```
+
+Return `undefined` or `null` to disable Live Preview for a request or document:
+
+```ts
+url: ({ req }) => (req.user?.role === 'admin' ? '/hello-world' : null)
+```
+
+### Breakpoints
+
+Breakpoints provide device sizes in the preview toolbar. Selecting one resizes the iframe to its configured dimensions.
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  admin: {
+    livePreview: {
+      url: 'http://localhost:3000',
+      breakpoints: [
+        {
+          label: 'Mobile',
+          name: 'mobile',
+          width: 375,
+          height: 667,
+        },
+      ],
+    },
+  },
+})
+```
+
+| Path            | Description                       |
+| --------------- | --------------------------------- |
+| **`label`** \*  | The label shown in the toolbar.   |
+| **`name`** \*   | The breakpoint name.              |
+| **`width`** \*  | The iframe width.                 |
+| **`height`** \* | The iframe height.                |
+
+_\* Required._
+
+The Responsive option is always available and fills the available area. Editors can also enter custom dimensions or open the preview in a separate resizable window.
+
+<Warning>
+  A preview page that does not use a Live Preview hook or refresh component will load in the iframe but will not update as the document changes.
+</Warning>

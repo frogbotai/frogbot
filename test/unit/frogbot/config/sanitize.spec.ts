@@ -269,6 +269,124 @@ describe('frogbot sanitize', () => {
     );
   });
 
+  it('throws when admin.livePreview.globals is set', () => {
+    const config = makeConfig({
+      admin: { livePreview: { globals: ['site'] } },
+    } as unknown as Partial<FrogbotConfig>);
+
+    expect(() => sanitize(config)).toThrowError(
+      '[frogbot] `admin.livePreview.globals` is not a FrogBot concept. Use `collections` instead.',
+    );
+  });
+
+  it('carries root admin.livePreview into the payload config', async () => {
+    const livePreview = {
+      collections: ['pages'],
+      openByDefault: true,
+      url: '/pages',
+    };
+    const result = sanitize(makeConfig({ admin: { livePreview } }));
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.livePreview).toEqual(livePreview);
+  });
+
+  it('carries collection admin.livePreview into the payload collection', async () => {
+    const livePreview = { openByDefault: true, url: '/pages' };
+    const result = sanitize(
+      makeConfig({
+        collections: [{ slug: 'pages', fields: [], admin: { livePreview } }],
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const pages = payloadConfig.collections.find(({ slug }) => slug === 'pages');
+
+    expect(pages?.admin.livePreview).toEqual(livePreview);
+  });
+
+  it('attaches req.frogbot before calling a root livePreview url', async () => {
+    const url = vi.fn(({ req }) => (req.frogbot ? '/pages' : null));
+    const result = sanitize(makeConfig({ admin: { livePreview: { url } } }));
+    const payloadConfig = await result._internal.payloadConfig;
+    const payload = makePayload(payloadConfig);
+    const frogbot = { agents: {} };
+    registerFrogbotInstance(payload, frogbot as unknown as Frogbot);
+
+    const resolved = await (
+      payloadConfig.admin.livePreview?.url as (args: Record<string, unknown>) => Promise<unknown>
+    )({
+      data: {},
+      locale: { code: 'en', label: 'English' },
+      req: { payload },
+    });
+
+    expect(resolved).toBe('/pages');
+    expect(url).toHaveBeenCalledWith(
+      expect.objectContaining({ req: expect.objectContaining({ frogbot }) }),
+    );
+  });
+
+  it('attaches req.frogbot before calling a collection livePreview url', async () => {
+    const url = vi.fn(({ req }) => (req.frogbot ? '/pages' : null));
+    const result = sanitize(
+      makeConfig({
+        collections: [{ slug: 'pages', fields: [], admin: { livePreview: { url } } }],
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const payload = makePayload(payloadConfig);
+    const frogbot = { agents: {} };
+    registerFrogbotInstance(payload, frogbot as unknown as Frogbot);
+    const pages = payloadConfig.collections.find(({ slug }) => slug === 'pages');
+
+    const resolved = await (
+      pages?.admin.livePreview?.url as (args: Record<string, unknown>) => Promise<unknown>
+    )({
+      collectionConfig: pages,
+      data: {},
+      locale: { code: 'en', label: 'English' },
+      req: { payload },
+    });
+
+    expect(resolved).toBe('/pages');
+    expect(url).toHaveBeenCalledWith(
+      expect.objectContaining({ req: expect.objectContaining({ frogbot }) }),
+    );
+  });
+
+  it('leaves a string livePreview url untouched', async () => {
+    const result = sanitize(makeConfig({ admin: { livePreview: { url: '/pages' } } }));
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.livePreview?.url).toBe('/pages');
+  });
+
+  it('propagates a livePreview url rejection to the caller', async () => {
+    const error = new Error('preview failed');
+    const result = sanitize(
+      makeConfig({
+        admin: {
+          livePreview: {
+            url: () => Promise.reject(error),
+          },
+        },
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const payload = makePayload(payloadConfig);
+    registerFrogbotInstance(payload, { agents: {} } as unknown as Frogbot);
+
+    const pending = (
+      payloadConfig.admin.livePreview?.url as (args: Record<string, unknown>) => Promise<unknown>
+    )({
+      data: {},
+      locale: { code: 'en', label: 'English' },
+      req: { payload },
+    });
+
+    await expect(pending).rejects.toBe(error);
+  });
+
   it('returns a FrogbotSanitizedConfig with collections metadata', () => {
     const config = makeConfig({
       collections: [

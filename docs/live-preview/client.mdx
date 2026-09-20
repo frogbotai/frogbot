@@ -1,0 +1,189 @@
+---
+title: Client-side Live Preview
+sidebarTitle: Client-side
+description: Implement Live Preview in a client-side front-end application.
+keywords: live preview, frontend, react, next.js, vue, nuxt.js, useLivePreview
+---
+
+<Note>
+  If your frontend supports Server Components, use [server-side Live Preview](/live-preview/server).
+</Note>
+
+The Admin Panel sends a `window.postMessage` event whenever document form state changes. Your front-end application listens for these events and re-renders with the latest data.
+
+FrogBot provides `useLivePreview` integrations for React and Vue. Other frameworks can use the framework-independent package described in [Building your own hook](#building-your-own-hook).
+
+| Path               | Description                                                                    |
+| ------------------ | ------------------------------------------------------------------------------ |
+| **`serverURL`** \* | The URL of your FrogBot server.                                                |
+| **`initialData`**  | The initial document data. Live form data is merged into it.                   |
+| **`depth`**        | The relationship population depth. Defaults to `0`.                            |
+| **`apiRoute`**     | The configured API route. Defaults to `/api`.                                  |
+
+_\* Required._
+
+The hooks return `data`, containing the merged document, and `isLoading`, indicating whether an update is being populated.
+
+<Note>
+  Guard against required fields being removed while editing. Use conditional rendering, optional chaining, or defaults instead of assuming nested data always exists.
+</Note>
+
+<Note>
+  The hook's `depth` must exactly match the depth of the initial request. See [Depth](/queries/depth).
+</Note>
+
+## Frameworks
+
+### React
+
+```bash
+npm install @frogbotai/live-preview-react
+```
+
+```tsx
+'use client'
+
+import type { Page } from '@/frogbot-types'
+
+import { useLivePreview } from '@frogbotai/live-preview-react'
+
+export function PageClient({ page }: { page: Page }) {
+  const { data } = useLivePreview<Page>({
+    initialData: page,
+    serverURL: process.env.NEXT_PUBLIC_FROGBOT_URL as string,
+    depth: 2,
+  })
+
+  return <h1>{data.title}</h1>
+}
+```
+
+<Warning>
+  For React Server Components, use [server-side Live Preview](/live-preview/server) instead.
+</Warning>
+
+### Vue
+
+```bash
+npm install @frogbotai/live-preview-vue
+```
+
+```vue
+<script setup lang="ts">
+import type { Page } from '~/frogbot-types'
+
+import { useLivePreview } from '@frogbotai/live-preview-vue'
+
+const props = defineProps<{ initialData: Page }>()
+
+const { data } = useLivePreview<Page>({
+  initialData: props.initialData,
+  serverURL: 'http://localhost:3000',
+  depth: 2,
+})
+</script>
+
+<template>
+  <h1>{{ data.title }}</h1>
+</template>
+```
+
+## Building your own hook
+
+```bash
+npm install @frogbotai/live-preview
+```
+
+| Path                     | Description                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------ |
+| **`subscribe`**          | Listens for Admin Panel messages and returns merged document data to a callback.      |
+| **`unsubscribe`**        | Removes a subscription to Admin Panel messages.                                      |
+| **`ready`**              | Tells the Admin Panel that the frontend is ready to receive messages.                 |
+| **`isLivePreviewEvent`** | Checks whether a message contains Live Preview form state.                            |
+
+```tsx
+import { ready, subscribe, unsubscribe } from '@frogbotai/live-preview'
+import { useEffect, useRef, useState } from 'react'
+
+export function useLivePreview<T>({
+  depth = 0,
+  initialData,
+  serverURL,
+}: {
+  depth?: number
+  initialData: T
+  serverURL: string
+}) {
+  const [data, setData] = useState(initialData)
+  const [isLoading, setIsLoading] = useState(true)
+  const hasSentReadyMessage = useRef(false)
+
+  useEffect(() => {
+    const subscription = subscribe({
+      callback: (mergedData: T) => {
+        setData(mergedData)
+        setIsLoading(false)
+      },
+      depth,
+      initialData,
+      serverURL,
+    })
+
+    if (!hasSentReadyMessage.current) {
+      hasSentReadyMessage.current = true
+      ready({ serverURL })
+    }
+
+    return () => unsubscribe(subscription)
+  }, [depth, initialData, serverURL])
+
+  return { data, isLoading }
+}
+```
+
+## Troubleshooting
+
+### Relationships or uploads are not populated
+
+When the frontend and FrogBot server use different domains, ports, or subdomains, configure [CORS](/configuration/overview). If protected resources require cookies, also configure [CSRF](/authentication/cookies#csrf-prevention).
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  cors: ['http://localhost:3001'],
+  csrf: ['http://localhost:3001'],
+})
+```
+
+### Relationships or uploads disappear after editing
+
+Ensure the initial request and `useLivePreview` use the same [depth](/queries/depth):
+
+```tsx
+const { docs } = await frogbot.find({
+  collection: 'pages',
+  depth: 1,
+  where: {
+    slug: {
+      equals: 'home',
+    },
+  },
+})
+```
+
+```tsx
+const { data } = useLivePreview<Page>({
+  initialData: initialPage,
+  serverURL: FROGBOT_SERVER_URL,
+  depth: 1,
+})
+```
+
+### Iframe refuses to connect
+
+If your frontend's [Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) prevents the Admin Panel from embedding it, allow the Admin Panel domain with `frame-ancestors`:
+
+```plaintext
+frame-ancestors: "self" localhost:* https://your-site.com;
+```

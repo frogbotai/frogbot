@@ -5,7 +5,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(dirname, '..', '..');
-const port = 3111;
+const blankPort = 3111;
+const livePreviewPort = 3114;
 
 export default defineConfig({
   testDir: dirname,
@@ -18,25 +19,60 @@ export default defineConfig({
   timeout: 30_000,
   expect: { timeout: 5_000 },
   use: {
-    baseURL: `http://localhost:${port}`,
     trace: 'retain-on-failure',
     screenshot: 'off',
     video: 'off',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], channel: 'chromium' } }],
-  webServer: {
-    command: 'pnpm --filter blank dev',
-    cwd: repoRoot,
-    url: `http://localhost:${port}`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-    stdout: 'ignore',
-    stderr: 'pipe',
-    env: {
-      PORT: String(port),
-      DATABASE_URL: 'file:./frogbot.browser.db',
-      FROGBOT_SECRET: 'browser-test-secret',
-      NEXT_TELEMETRY_DISABLED: '1',
+  projects: [
+    {
+      name: 'blank',
+      testMatch: 'navShell.browser.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://localhost:${blankPort}`,
+        channel: 'chromium',
+      },
     },
-  },
+    {
+      name: 'live-preview',
+      testMatch: 'livePreview.browser.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://localhost:${livePreviewPort}`,
+        channel: 'chromium',
+      },
+    },
+  ],
+  webServer: [
+    {
+      command: 'pnpm --filter blank dev',
+      cwd: repoRoot,
+      url: `http://localhost:${blankPort}`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+      stdout: 'ignore',
+      stderr: 'pipe',
+      env: {
+        PORT: String(blankPort),
+        DATABASE_URL: 'file:./frogbot.browser.db',
+        FROGBOT_SECRET: 'browser-test-secret',
+        NEXT_TELEMETRY_DISABLED: '1',
+      },
+    },
+    {
+      command: 'pnpm --filter frogbot-browser-live-preview dev',
+      cwd: repoRoot,
+      url: `http://localhost:${livePreviewPort}`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+      stdout: 'ignore',
+      stderr: 'pipe',
+      env: {
+        PORT: String(livePreviewPort),
+        DATABASE_URL: 'file:./frogbot.browser.db',
+        FROGBOT_SECRET: 'browser-test-secret',
+        NEXT_TELEMETRY_DISABLED: '1',
+      },
+    },
+  ],
 });

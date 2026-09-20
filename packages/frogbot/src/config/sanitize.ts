@@ -14,6 +14,7 @@ import type {
   CollectionConfig as PayloadCollectionConfig,
   Config as PayloadConfig,
   Endpoint as PayloadEndpoint,
+  LivePreviewConfig as PayloadLivePreviewConfig,
   PayloadEmailAdapter,
   PayloadHandler,
   PayloadRequest,
@@ -99,7 +100,7 @@ import {
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
 import type { FrogbotSanitizedConfig, SanitizedCollectionMeta } from './sanitized.js';
 import { resolveSourceDir } from './sourceDir.js';
-import type { FrogbotConfig, OnInit } from './types.js';
+import type { FrogbotConfig, LivePreviewConfig, OnInit } from './types.js';
 import type { ValidationMode } from './validationContext.js';
 import { getValidationMode } from './validationContext.js';
 
@@ -148,6 +149,23 @@ function wrapRootHooks(
   };
 }
 
+function wrapLivePreview(
+  livePreview: LivePreviewConfig | undefined,
+  attachFrogbot: AttachFrogbot,
+): PayloadLivePreviewConfig | undefined {
+  if (!livePreview || typeof livePreview.url !== 'function') {
+    return livePreview as PayloadLivePreviewConfig | undefined;
+  }
+
+  const { url } = livePreview;
+
+  return {
+    ...livePreview,
+    url: async ({ collectionConfig, data, locale, req }) =>
+      url({ collectionConfig, data, locale, req: await attachFrogbot(req) }),
+  };
+}
+
 function wrapEndpoints(
   endpoints: Endpoint[] | false | undefined,
   attachFrogbot: AttachFrogbot,
@@ -170,8 +188,13 @@ function sanitizeCollection(
     onRuntimeViews: (views) => {
       collectionViews = views;
     },
-  });
-  const views = (admin as PayloadCollectionConfig['admin'])?.components?.views;
+  }) as PayloadCollectionConfig['admin'];
+
+  if (admin?.livePreview) {
+    admin.livePreview = wrapLivePreview(c.admin?.livePreview, attachFrogbot);
+  }
+
+  const views = admin?.components?.views;
   const orderFieldNames = getBoardOrderFieldNames(c);
   const existingHooks = (c.hooks ?? {}) as Record<string, unknown[]>;
   const out: Record<string, unknown> = {
@@ -1052,6 +1075,9 @@ function buildPayloadConfig(
   );
   out.admin = {
     ...admin,
+    ...(admin?.livePreview
+      ? { livePreview: wrapLivePreview(config.admin?.livePreview, attachFrogbot) }
+      : {}),
     components: {
       ...admin?.components,
       ...(hasAdminSignIn
@@ -1154,6 +1180,13 @@ export function sanitize(
   if ((config as unknown as Record<string, unknown>).globals !== undefined) {
     throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections instead.');
   }
+
+  if (config.admin?.livePreview && 'globals' in config.admin.livePreview) {
+    throw new Error(
+      '[frogbot] `admin.livePreview.globals` is not a FrogBot concept. Use `collections` instead.',
+    );
+  }
+
   for (const collection of config.collections) {
     validateSignIn(collection);
     const icon = collection.admin?.icon;

@@ -1,0 +1,57 @@
+{
+  "name": "@frogbotai/live-preview-react",
+  "version": "0.24.0",
+  "description": "React SDK for FrogBot live preview.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/live-preview-react"
+  },
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@payloadcms/live-preview-react": "3.90.1"
+  },
+  "peerDependencies": {
+    "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
+    "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "typescript": "5.6.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "import": "./dist/index.js",
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  }
+}
