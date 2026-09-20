@@ -18,7 +18,7 @@ import type { LivePreviewConfig } from '../../config/types.js';
 import type { Endpoint } from '../../endpoints/types.js';
 import type { Field } from '../../fields/config/types.js';
 import type { CollectionSlug, TypedCollection } from '../../types/generated.js';
-import type { PayloadCollectionConfig, Sort, Where } from '../../types/payload.js';
+import type { PayloadCollectionConfig, SelectType, Sort, Where } from '../../types/payload.js';
 import type { FrogbotRequest } from '../../types/request.js';
 
 type Overridden = 'auth' | 'hooks' | 'access' | 'endpoints' | 'fields' | 'admin';
@@ -285,6 +285,7 @@ type CommonArgs = {
   overrideAccess?: boolean;
   populate?: Record<string, unknown>;
   req?: FrogbotRequest;
+  select?: SelectType;
   showHiddenFields?: boolean;
   user?: unknown;
 };

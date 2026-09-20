@@ -31,6 +31,7 @@ const generalRoots = new Set([
   'queries',
   'rest-api',
   'rich-text',
+  'skills',
   'trash',
   'troubleshooting',
   'typescript',

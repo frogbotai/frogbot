@@ -24,7 +24,6 @@ export {
 export type { PersistedMessage } from './chat/messagesToUIMessages.js';
 export { messagesToUIMessages } from './chat/messagesToUIMessages.js';
 export { buildConfig } from './config/build.js';
-export { getPayloadConfig } from './config/getPayloadConfig.js';
 export type { FrogbotSanitizedConfig } from './config/sanitized.js';
 export type { AuthorizationRequirement, ConnectionResolveArgs } from './connections/api.js';
 export { ConnectionError, Connections } from './connections/api.js';
@@ -262,6 +261,7 @@ export type {
   SendEmailOptions,
   UploadConfig,
 } from 'payload';
+export type { SelectType, Sort, Where } from 'payload';
 
 // ---------------------------------------------------------------------------
 // Hook, access, endpoint, and field types (owned by frogbot)
@@ -395,6 +395,8 @@ export type {
   NamedGroupField,
   NamedTab,
   NumberField,
+  Option,
+  OptionObject,
   PointField,
   RadioField,
   RelationshipField,
@@ -412,4 +414,27 @@ export type {
   UploadField,
   Validate,
   ValidateOptions,
+  ValueWithRelation,
+} from './fields/config/types.js';
+export {
+  fieldAffectsData,
+  fieldHasMaxDepth,
+  fieldHasSubFields,
+  fieldIsArrayType,
+  fieldIsBlockType,
+  fieldIsGroupType,
+  fieldIsHiddenOrDisabled,
+  fieldIsID,
+  fieldIsLocalized,
+  fieldIsPresentationalOnly,
+  fieldIsSidebar,
+  fieldIsVirtual,
+  fieldShouldBeLocalized,
+  fieldSupportsMany,
+  groupHasName,
+  optionIsObject,
+  optionIsValue,
+  optionsAreObjects,
+  tabHasName,
+  valueIsValueWithRelation,
 } from './fields/config/types.js';

@@ -38,6 +38,48 @@ describe('collections-rest', () => {
   });
 
   describe('CRUD', () => {
+    it('Local API select includes nested fields and retains the document ID', async () => {
+      const created = await booted.frogbot.create({
+        collection: projectsSlug,
+        data: {
+          title: 'Selected Project',
+          description: 'Not selected',
+          details: { owner: 'FrogBot', budget: 100 },
+        },
+      });
+
+      const found = await booted.frogbot.findByID({
+        collection: projectsSlug,
+        id: created.id,
+        select: { title: true, details: { owner: true } },
+      });
+
+      expect(found).toMatchObject({
+        id: created.id,
+        title: 'Selected Project',
+        details: { owner: 'FrogBot' },
+      });
+      expect(found.description).toBeUndefined();
+      expect(found.details?.budget).toBeUndefined();
+    });
+
+    it('Local API select excludes fields without changing persisted data', async () => {
+      const created = await booted.frogbot.create({
+        collection: projectsSlug,
+        data: { title: 'Persistent Project', description: 'Keep me' },
+        select: { description: false },
+      });
+
+      expect(created.description).toBeUndefined();
+
+      const persisted = await booted.frogbot.findByID({
+        collection: projectsSlug,
+        id: created.id,
+      });
+
+      expect(persisted.description).toBe('Keep me');
+    });
+
     it('POST /api/projects creates a new document with 201', async () => {
       const res = await booted.restClient.post(`/api/${projectsSlug}`, {
         title: 'Test Project',

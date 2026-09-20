@@ -1,5 +1,5 @@
 import type { CollectionSlug } from '../types/generated.js';
-import type { Sort, Where } from '../types/payload.js';
+import type { SelectType, Sort, Where } from '../types/payload.js';
 import type { FrogbotRequest } from '../types/request.js';
 
 /** Identifier accepted by ID-keyed operations. Mongo collections key by
@@ -15,6 +15,7 @@ type CommonArgs = {
   overrideAccess?: boolean;
   populate?: Record<string, unknown>;
   req?: FrogbotRequest;
+  select?: SelectType;
   showHiddenFields?: boolean;
   user?: unknown;
 };
@@ -52,7 +53,8 @@ export type CountVersionsArgs<TSlug extends CollectionSlug> = CommonArgs & {
   where?: Where;
 };
 
-export type RestoreVersionArgs<TSlug extends CollectionSlug> = CommonArgs & {
+export type RestoreVersionArgs<TSlug extends CollectionSlug> = Omit<CommonArgs, 'select'> & {
   collection: TSlug;
   id: DocID;
+  select?: never;
 };

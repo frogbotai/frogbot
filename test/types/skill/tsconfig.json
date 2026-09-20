@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true
+  },
+  "include": ["skill-samples.test-d.ts", "samples/**/*.ts", "samples/**/*.tsx"]
+}

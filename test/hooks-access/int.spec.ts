@@ -447,8 +447,11 @@ describe('hooks-access', () => {
         collection: fieldAccessSlug,
         id: doc.id,
         overrideAccess: false,
+        select: { public: true, secret: true },
       });
+
       expect(found.secret).toBeUndefined();
+      expect(found.public).toBe('open');
     });
 
     it('public field is included in read response', async () => {

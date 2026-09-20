@@ -181,7 +181,8 @@
             "group": "Ecosystem",
             "pages": [
               { "group": "Plugins", "expanded": false, "pages": ["plugins/overview", "plugins/api-keys", "plugins/audit-log", "plugins/capture", "plugins/roles", "plugins/usage-reports", "plugins/mcp", "plugins/rag", "plugins/import-export", "plugins/nested-docs", "plugins/redirects", "plugins/search", "plugins/sentry", "plugins/stripe", "plugins/build-your-own"]},
-              { "group": "Gateway", "expanded": false, "pages": ["gateway/overview", "gateway/providers", "gateway/configuration", "gateway/embedding", "gateway/hooks", "gateway/observability", "gateway/errors"]}
+              { "group": "Gateway", "expanded": false, "pages": ["gateway/overview", "gateway/providers", "gateway/configuration", "gateway/embedding", "gateway/hooks", "gateway/observability", "gateway/errors"]},
+              { "group": "Agent Skills", "expanded": false, "pages": ["skills/coding-agents"]}
             ]
           },
           {

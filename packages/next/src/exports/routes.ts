@@ -6,7 +6,7 @@ import {
   REST_POST as PAYLOAD_REST_POST,
   REST_PUT as PAYLOAD_REST_PUT,
 } from '@payloadcms/next/routes';
-import { getPayloadConfig } from 'frogbot';
+import { getPayloadConfig } from 'frogbot/internal';
 
 import type { FrogbotConfigArg } from '../types.js';
 

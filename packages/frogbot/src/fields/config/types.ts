@@ -29,7 +29,30 @@ import type {
   UnnamedGroupField as PayloadUnnamedGroupField,
   UnnamedTab as PayloadUnnamedTab,
   UploadField as PayloadUploadField,
+  ValueWithRelation as PayloadValueWithRelation,
 } from 'payload';
+import {
+  fieldAffectsData as payloadFieldAffectsData,
+  fieldHasMaxDepth as payloadFieldHasMaxDepth,
+  fieldHasSubFields as payloadFieldHasSubFields,
+  fieldIsArrayType as payloadFieldIsArrayType,
+  fieldIsBlockType as payloadFieldIsBlockType,
+  fieldIsGroupType as payloadFieldIsGroupType,
+  fieldIsHiddenOrDisabled as payloadFieldIsHiddenOrDisabled,
+  fieldIsID as payloadFieldIsID,
+  fieldIsLocalized as payloadFieldIsLocalized,
+  fieldIsPresentationalOnly as payloadFieldIsPresentationalOnly,
+  fieldIsSidebar as payloadFieldIsSidebar,
+  fieldIsVirtual as payloadFieldIsVirtual,
+  fieldShouldBeLocalized as payloadFieldShouldBeLocalized,
+  fieldSupportsMany as payloadFieldSupportsMany,
+  groupHasName as payloadGroupHasName,
+  optionIsObject as payloadOptionIsObject,
+  optionIsValue as payloadOptionIsValue,
+  optionsAreObjects as payloadOptionsAreObjects,
+  tabHasName as payloadTabHasName,
+  valueIsValueWithRelation as payloadValueIsValueWithRelation,
+} from 'payload/shared';
 
 import type { FieldAccess } from '../../collections/config/types.js';
 import type { FrogbotRequest } from '../../types/request.js';
@@ -185,3 +208,117 @@ export type Field =
   | TextField
   | UIField
   | UploadField;
+
+export type OptionObject = {
+  label: Record<string, string> | string;
+  value: string;
+};
+
+export type Option = OptionObject | string;
+
+export type ValueWithRelation = PayloadValueWithRelation;
+
+type FieldWithSubFields = ArrayField | CollapsibleField | GroupField | RowField;
+type FieldWithMany = RelationshipField | SelectField | UploadField;
+type FieldWithMaxDepth = JoinField | RelationshipField | UploadField;
+type FieldAffectingData = Exclude<Field, UIField | UnnamedGroupField | TabsField> | NamedTab;
+
+const asPayloadField = (field: Field | Tab | TabAsField): any => field;
+
+export function fieldHasSubFields<T extends Field | TabAsField>(
+  field: T,
+): field is T & FieldWithSubFields {
+  return payloadFieldHasSubFields(asPayloadField(field));
+}
+
+export function fieldIsArrayType<T extends Field>(field: T): field is T & ArrayField {
+  return payloadFieldIsArrayType(asPayloadField(field));
+}
+
+export function fieldIsBlockType<T extends Field>(field: T): field is T & BlocksField {
+  return payloadFieldIsBlockType(asPayloadField(field));
+}
+
+export function fieldIsGroupType<T extends Field>(field: T): field is T & GroupField {
+  return payloadFieldIsGroupType(asPayloadField(field));
+}
+
+export function fieldSupportsMany<T extends Field>(field: T): field is T & FieldWithMany {
+  return payloadFieldSupportsMany(asPayloadField(field));
+}
+
+export function fieldHasMaxDepth<T extends Field>(
+  field: T,
+): field is T & FieldWithMaxDepth & { maxDepth: number } {
+  return payloadFieldHasMaxDepth(asPayloadField(field));
+}
+
+export function fieldIsPresentationalOnly<T extends Field | TabAsField>(
+  field: T,
+): field is T & UIField {
+  return payloadFieldIsPresentationalOnly(asPayloadField(field));
+}
+
+export function fieldIsSidebar<T extends Field | TabAsField>(
+  field: T,
+): field is T & { admin: { position: 'sidebar' } } {
+  return Boolean(field.admin && payloadFieldIsSidebar(asPayloadField(field)));
+}
+
+export function fieldIsID<T extends Field>(field: T): field is T & { name: 'id' } {
+  return payloadFieldIsID(asPayloadField(field));
+}
+
+export function fieldIsHiddenOrDisabled(field: Field | TabAsField): boolean {
+  const normalized = field.admin ? field : { ...field, admin: {} };
+
+  return Boolean(payloadFieldIsHiddenOrDisabled(asPayloadField(normalized)));
+}
+
+export function fieldAffectsData<T extends Field | TabAsField>(
+  field: T,
+): field is T & FieldAffectingData {
+  return payloadFieldAffectsData(asPayloadField(field));
+}
+
+export function tabHasName<T extends Tab>(tab: T): tab is T & NamedTab {
+  return payloadTabHasName(tab as never);
+}
+
+export function groupHasName<T extends GroupField>(group: T): group is T & NamedGroupField {
+  return payloadGroupHasName(group as never);
+}
+
+export function fieldIsLocalized(field: Field | Tab): boolean {
+  return Boolean(payloadFieldIsLocalized(field as never));
+}
+
+export function fieldShouldBeLocalized({
+  field,
+  parentIsLocalized,
+}: {
+  field: Field | Tab;
+  parentIsLocalized: boolean;
+}): boolean {
+  return payloadFieldShouldBeLocalized({ field: field as never, parentIsLocalized });
+}
+
+export function fieldIsVirtual(field: Field | Tab): boolean {
+  return Boolean(payloadFieldIsVirtual(field as never));
+}
+
+export function optionIsObject(option: Option): option is OptionObject {
+  return payloadOptionIsObject(option);
+}
+
+export function optionsAreObjects(options: Option[]): options is OptionObject[] {
+  return payloadOptionsAreObjects(options);
+}
+
+export function optionIsValue(option: Option): option is string {
+  return payloadOptionIsValue(option);
+}
+
+export function valueIsValueWithRelation(value: unknown): value is ValueWithRelation {
+  return payloadValueIsValueWithRelation(value);
+}
