@@ -80,9 +80,10 @@
     "build": "tsc -p tsconfig.json && chmod +x bin.js",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit && pnpm typecheck:types",
-    "typecheck:types": "tsc --noEmit -p tsconfig.typetest.json && pnpm typecheck:jobs && pnpm typecheck:email",
+    "typecheck:types": "tsc --noEmit -p tsconfig.typetest.json && pnpm typecheck:jobs && pnpm typecheck:email && pnpm typecheck:live-preview",
     "typecheck:email": "tsc --noEmit -p ../../test/types/email/tsconfig.json",
-    "typecheck:jobs": "pnpm -w test:unit test/unit/frogbot/jobs/typegen.spec.ts && tsc --noEmit -p ../../test/types/jobs/tsconfig.generated.json && tsc --noEmit -p ../../test/types/jobs/tsconfig.fallback.json"
+    "typecheck:jobs": "pnpm -w test:unit test/unit/frogbot/jobs/typegen.spec.ts && tsc --noEmit -p ../../test/types/jobs/tsconfig.generated.json && tsc --noEmit -p ../../test/types/jobs/tsconfig.fallback.json",
+    "typecheck:live-preview": "tsc --noEmit -p ../../test/types/live-preview/tsconfig.json"
   },
   "dependencies": {
     "@frogbotai/gateway": "workspace:*",

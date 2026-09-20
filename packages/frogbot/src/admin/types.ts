@@ -9,6 +9,7 @@ import type { Metadata } from 'next';
 import type { CustomComponent } from 'payload';
 
 import type { Access } from '../collections/config/types.js';
+import type { RootLivePreviewConfig } from '../config/types.js';
 import type { PayloadConfig } from '../types/payload.js';
 
 type DeepClone<T> = T extends object ? { [K in keyof T]: DeepClone<T[K]> } : T;
@@ -81,6 +82,7 @@ export interface RootAdminConfig {
     /** Regenerate the admin import map on boot. */
     autoGenerate?: boolean;
   };
+  livePreview?: RootLivePreviewConfig;
   /**
    * Collection slug that powers admin access. FrogBot may derive this from
    * a role-marked auth collection later; explicit slug stays as the override.

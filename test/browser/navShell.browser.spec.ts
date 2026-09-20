@@ -1,6 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
-const user = { email: 'browser@example.com', password: 'browser-test-password' };
+import { signIn } from './__helpers/signIn';
+
 const desktop = { width: 1440, height: 900 };
 const mobile = { width: 390, height: 844 };
 const expandedRem = 17;
@@ -28,19 +29,6 @@ const noHorizontalOverflow = async (page: Page) => {
   }));
   expect(scrollWidth).toBe(innerWidth);
 };
-
-async function signIn(page: Page) {
-  await page.goto('/');
-  await page.waitForURL(/\/(create-first-user|login)/);
-  await page.fill('input[name="email"]', user.email);
-  await page.fill('input[name="password"]', user.password);
-  if (page.url().includes('create-first-user')) {
-    await page.fill('input[name="confirm-password"]', user.password);
-  }
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !/\/(create-first-user|login)/.test(url.pathname));
-  await expect(shell(page)).toHaveAttribute('data-nav-hydrated', 'true');
-}
 
 async function expandSidebar(page: Page) {
   if ((await shell(page).getAttribute('data-nav-state')) === 'desktop-nav-closed') {

@@ -20,8 +20,34 @@ import type { EmailPiece } from '../pieces/email.js';
 import type { Piece } from '../pieces/types.js';
 import type { Plugin } from '../plugin.js';
 import type { AnyTool } from '../tools/types.js';
-import type { PayloadConfig } from '../types/payload.js';
+import type { Locale, PayloadConfig, SanitizedCollectionConfig } from '../types/payload.js';
 import type { FrogbotRequest } from '../types/request.js';
+
+export type LivePreviewURLType = null | string | undefined;
+
+export type LivePreviewURLArgs = {
+  collectionConfig?: SanitizedCollectionConfig;
+  data: Record<string, unknown>;
+  locale: Locale;
+  req: FrogbotRequest;
+};
+
+export type LivePreviewConfig = {
+  breakpoints?: {
+    height: number | string;
+    label: string;
+    name: string;
+    width: number | string;
+  }[];
+  openByDefault?: boolean;
+  url?:
+    | ((args: LivePreviewURLArgs) => LivePreviewURLType | Promise<LivePreviewURLType>)
+    | LivePreviewURLType;
+};
+
+export type RootLivePreviewConfig = LivePreviewConfig & {
+  collections?: string[];
+};
 
 type PayloadAfterErrorHook = NonNullable<NonNullable<PayloadConfig['hooks']>['afterError']>[number];
 
