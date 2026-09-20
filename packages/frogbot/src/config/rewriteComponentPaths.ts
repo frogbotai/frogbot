@@ -153,16 +153,24 @@ function rewriteFields(fields: unknown[], visited: WeakSet<object>): void {
 
     if (Array.isArray(blocks)) {
       for (const block of blocks) {
-        if (
-          block &&
-          typeof block === 'object' &&
-          Array.isArray((block as { fields?: unknown }).fields)
-        ) {
-          rewriteFields((block as { fields: unknown[] }).fields, visited);
-        }
+        if (block && typeof block === 'object') rewriteBlock(block, visited);
       }
     }
   }
+}
+
+function rewriteBlock(block: object, visited: WeakSet<object>): void {
+  if (visited.has(block)) return;
+
+  visited.add(block);
+
+  const value = block as Record<string, unknown>;
+  const admin = value.admin as { components?: unknown; jsx?: unknown } | undefined;
+
+  if (admin?.components) admin.components = rewriteComponents(admin.components);
+  if (admin?.jsx) admin.jsx = rewritePayloadComponent(admin.jsx);
+
+  if (Array.isArray(value.fields)) rewriteFields(value.fields, visited);
 }
 
 export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig {
@@ -230,10 +238,10 @@ export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig 
     }
   }
 
-  const blocks = (config as SanitizedConfig & { blocks?: { fields?: unknown[] }[] }).blocks;
+  const blocks = (config as SanitizedConfig & { blocks?: object[] }).blocks;
 
   for (const block of blocks ?? []) {
-    if (Array.isArray(block.fields)) rewriteFields(block.fields, visited);
+    rewriteBlock(block, visited);
   }
 
   if (config.globals) {
