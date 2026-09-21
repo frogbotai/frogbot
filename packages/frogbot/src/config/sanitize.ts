@@ -182,10 +182,7 @@ type PayloadCollectionAccess = NonNullable<PayloadCollectionConfig['access']>;
 
 function wrapCollectionAccessFunction<
   TAccess extends NonNullable<PayloadCollectionAccess[keyof PayloadCollectionAccess]>,
->(
-  access: TAccess,
-  attachFrogbot: AttachFrogbot,
-): TAccess {
+>(access: TAccess, attachFrogbot: AttachFrogbot): TAccess {
   const wrapped = async (args: Parameters<TAccess>[0]) => {
     const accessArgs = args as { req?: PayloadRequest };
 
@@ -1111,9 +1108,7 @@ function buildPayloadConfig(
   const settings = sanitizeSettings(config.settings);
   const dashboard = admin?.dashboard as
     | {
-        defaultLayout?:
-          | ((args: { req: FrogbotRequest }) => unknown)
-          | unknown[];
+        defaultLayout?: ((args: { req: FrogbotRequest }) => unknown) | unknown[];
         widgets: unknown[];
       }
     | undefined;

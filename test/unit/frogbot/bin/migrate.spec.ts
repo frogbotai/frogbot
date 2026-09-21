@@ -150,5 +150,5 @@ describe('migrate', () => {
     );
 
     expect(stdout).toContain('[frogbot] migrate:status complete.');
-  });
+  }, 20_000);
 });

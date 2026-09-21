@@ -377,13 +377,10 @@ The following options are available:
 
 | Option | Description |
 | --- | --- |
-| `afterList` | Components after the complete List View. [More details](/custom-components/list-view#afterlist). |
-| `afterListTable` | Components after the list table. [More details](/custom-components/list-view#afterlisttable). |
-| `beforeList` | Components before the complete List View. [More details](/custom-components/list-view#beforelist). |
-| `beforeListTable` | Components before the list table. [More details](/custom-components/list-view#beforelisttable). |
 | `Description` | Replaces the collection description. [More details](/custom-components/list-view#description). |
 | `edit` | Edit View component slots. [More details](/custom-components/edit-view). |
-| `views` | Replaces the List View. [More details](/custom-components/list-view#custom-list-view). |
+
+List slots belong to a `type: 'list'` entry in `admin.views`: use `components.beforeView`, `beforeTable`, `afterTable`, and `afterView`. To replace the collection list, use a `type: 'custom'` entry with `component`. See [List View](/custom-components/list-view).
 
 #### Edit View Options
 

@@ -12,7 +12,7 @@ import type { RequestContext, SanitizedCollectionConfig, TypeWithID } from 'payl
 
 import type { IconName } from '../../admin/icons.js';
 import type { FrogbotComponent } from '../../admin/types.js';
-import type { CollectionView } from '../../admin/views/types.js';
+import type { CollectionView, DocumentTabConfig } from '../../admin/views/types.js';
 import type { AuthConfig } from '../../auth/types.js';
 import type { LivePreviewConfig } from '../../config/types.js';
 import type { Endpoint } from '../../endpoints/types.js';
@@ -26,11 +26,25 @@ type PayloadAdmin = NonNullable<PayloadCollectionConfig['admin']>;
 type PayloadComponents = NonNullable<PayloadAdmin['components']>;
 type PayloadEditViews = NonNullable<NonNullable<PayloadComponents['views']>['edit']>;
 
+type CollectionDocumentView<TView> = TView extends object
+  ? { [K in keyof TView]: K extends 'tab' ? DocumentTabConfig : TView[K] }
+  : TView;
+
+type CollectionEditViews<TViews = PayloadEditViews> = TViews extends unknown
+  ? { [K in keyof TViews]: CollectionDocumentView<TViews[K]> }
+  : never;
+
 export type CollectionAdminComponents = Omit<
   PayloadComponents,
-  'afterList' | 'afterListTable' | 'beforeList' | 'beforeListTable' | 'listMenuItems' | 'views'
+  | 'afterList'
+  | 'afterListTable'
+  | 'beforeList'
+  | 'beforeListTable'
+  | 'edit'
+  | 'listMenuItems'
+  | 'views'
 > & {
-  edit?: NonNullable<PayloadComponents['edit']> & { views?: PayloadEditViews };
+  edit?: NonNullable<PayloadComponents['edit']> & { views?: CollectionEditViews };
 };
 
 export type CollectionAdminConfig = Omit<

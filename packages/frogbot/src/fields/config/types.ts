@@ -70,7 +70,7 @@ export interface FieldHookArgs<TData extends TypeWithID = any, TValue = any, TSi
   previousValue?: TValue;
   req: FrogbotRequest;
   siblingData: Partial<TSiblingData>;
-  siblingFields: (Field | TabAsField)[];
+  siblingFields?: (Field | TabAsField)[];
   value?: TValue;
 }
 
@@ -97,13 +97,17 @@ export type Validate<TValue = any, TData = any, TSiblingData = any> = (
 
 type DistributiveOmit<T, K extends keyof any> = T extends any ? Omit<T, K> : never;
 
+type FieldHookWithSiblingFields = (
+  args: FieldHookArgs & { siblingFields: (Field | TabAsField)[] },
+) => ReturnType<FieldHook>;
+
 type FieldHooks = {
   hooks?: {
     afterChange?: FieldHook[];
-    afterRead?: FieldHook[];
-    beforeChange?: FieldHook[];
-    beforeDuplicate?: FieldHook[];
-    beforeValidate?: FieldHook[];
+    afterRead?: FieldHookWithSiblingFields[];
+    beforeChange?: FieldHookWithSiblingFields[];
+    beforeDuplicate?: FieldHookWithSiblingFields[];
+    beforeValidate?: FieldHookWithSiblingFields[];
   };
 };
 
@@ -221,7 +225,8 @@ export type ValueWithRelation = PayloadValueWithRelation;
 type FieldWithSubFields = ArrayField | CollapsibleField | GroupField | RowField;
 type FieldWithMany = RelationshipField | SelectField | UploadField;
 type FieldWithMaxDepth = JoinField | RelationshipField | UploadField;
-type FieldAffectingData = Exclude<Field, UIField | UnnamedGroupField | TabsField> | NamedTab;
+type FieldAffectingData =
+  Exclude<Extract<Field, { name: string }>, UIField> | (TabAsField & { name: string });
 
 const asPayloadField = (field: Field | Tab | TabAsField): any => field;
 

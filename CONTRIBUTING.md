@@ -44,8 +44,8 @@ Run everything from the repo root with `pnpm`. Scripts live in [package.json](pa
 | Unit / UI / integration / e2e / browser tests | `pnpm test:unit`, `pnpm test:ui`, `pnpm test:int`, `pnpm test:e2e`, `pnpm test:browser`                                         |
 | Integration tests on a specific database      | `pnpm test:int:sqlite`, `pnpm test:int:pg`, `pnpm test:int:mongo` (Mongo and Postgres need `pnpm docker:start <profile> up -d`) |
 | Format and lint                               | `pnpm prettier:write && pnpm lint:fix` (agents: via the `lint` subagent)                                                        |
-| Typecheck an affected workspace               | `pnpm --filter <workspace-name> typecheck`                                                                                       |
-| Final repository typecheck                    | `pnpm typecheck` (builds and checks every workspace)                                                                             |
+| Typecheck an affected workspace               | `pnpm --filter <workspace-name> typecheck`                                                                                      |
+| Final repository typecheck                    | `pnpm typecheck` (builds and checks every workspace)                                                                            |
 | Branding and docs gates                       | `pnpm check:branding`, `pnpm check:docs-fences`, `pnpm check:docs-links`, `pnpm check:ui-architecture`                          |
 | Regenerate AI model catalog types             | `pnpm generate:ai-types`, `pnpm sync:catalog`                                                                                   |
 | Release                                       | `pnpm bump`, `pnpm release` (owner only)                                                                                        |

@@ -13,15 +13,19 @@ pnpm add @frogbotai/live-preview
 ```ts
 import { ready, subscribe, unsubscribe } from '@frogbotai/live-preview';
 
-const subscription = subscribe({
-  callback: (data) => {
-    document.title = String(data.title);
-  },
-  initialData: { title: 'Home' },
-  serverURL: 'http://localhost:3000',
-});
+export function mountPreview() {
+  const subscription = subscribe({
+    callback: (data) => {
+      document.title = String(data.title);
+    },
+    initialData: { title: 'Home' },
+    serverURL: 'http://localhost:3000',
+  });
 
-ready({ serverURL: 'http://localhost:3000' });
+  ready({ serverURL: 'http://localhost:3000' });
 
-unsubscribe(subscription);
+  return () => unsubscribe(subscription);
+}
 ```
+
+Call `mountPreview()` when the browser page mounts. Call its returned cleanup function only when the page unmounts.

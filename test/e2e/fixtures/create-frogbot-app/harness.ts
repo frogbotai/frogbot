@@ -24,6 +24,53 @@ interface PackageJson {
   version: string;
 }
 
+export function subprocessEnvironment(
+  cwd: string,
+  overrides: NodeJS.ProcessEnv = {},
+): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {};
+
+  for (const key of [
+    'PATH',
+    'Path',
+    'SystemRoot',
+    'SYSTEMROOT',
+    'COMSPEC',
+    'PATHEXT',
+    'HOME',
+    'USERPROFILE',
+    'TMPDIR',
+    'TMP',
+    'TEMP',
+    'LANG',
+    'LC_ALL',
+    'CI',
+    'npm_config_user_agent',
+  ]) {
+    if (process.env[key] !== undefined) env[key] = process.env[key];
+  }
+
+  return {
+    ...env,
+    DATABASE_URL: `file:${path.resolve(cwd, 'frogbot.db')}`,
+    FROGBOT_SECRET: 'create-frogbot-app-e2e-secret',
+    ...overrides,
+  };
+}
+
+export function copyCLIWithoutSkill(source: string, dest: string): string {
+  fs.mkdirSync(dest);
+
+  for (const file of ['bin.js', 'package.json', 'dist']) {
+    fs.cpSync(path.join(source, file), path.join(dest, file), { recursive: true });
+  }
+
+  fs.rmSync(path.join(dest, 'dist', 'skills'), { recursive: true, force: true });
+  fs.symlinkSync(path.join(source, 'node_modules'), path.join(dest, 'node_modules'), 'junction');
+
+  return path.join(dest, 'bin.js');
+}
+
 export function run(
   command: string,
   args: string[],
@@ -32,7 +79,7 @@ export function run(
   const result = spawnSync(command, args, {
     cwd: options.cwd,
     encoding: 'utf8',
-    env: { ...process.env, ...options.env },
+    env: subprocessEnvironment(options.cwd, options.env),
   });
 
   return {

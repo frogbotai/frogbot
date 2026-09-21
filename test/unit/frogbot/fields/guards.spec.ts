@@ -109,6 +109,9 @@ describe('field type guards', () => {
     expect(fieldAffectsData(namedTab as never)).toBe(true);
     expect(fieldAffectsData(unnamedGroup)).toBe(false);
     expect(fieldAffectsData(syntheticTab)).toBe(false);
+    expect(fieldAffectsData({ ...syntheticTab, name: 'content' })).toBe(true);
+    expect(fieldAffectsData(row)).toBe(false);
+    expect(fieldAffectsData(collapsible)).toBe(false);
   });
 
   it('metadata guards handle absent and adversarial metadata', () => {

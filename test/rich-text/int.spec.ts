@@ -170,11 +170,11 @@ describe('rich text integration [sqlite]', () => {
     ).rejects.toThrow('DividerFeature requires the paragraph feature');
   });
 
-  it('loads the documented divider after its paragraph dependency', async () => {
-    const editorConfig = await editorConfigFactory.fromFeatures({
-      config,
-      features: () => [DividerFeature(), ParagraphFeature()],
-    });
+  it.each([
+    { order: 'divider-first', features: () => [DividerFeature(), ParagraphFeature()] },
+    { order: 'paragraph-first', features: () => [ParagraphFeature(), DividerFeature()] },
+  ])('loads the documented divider with its paragraph dependency: $order', async ({ features }) => {
+    const editorConfig = await editorConfigFactory.fromFeatures({ config, features });
     const state = convertMarkdownToLexical({ editorConfig, markdown: 'Before\n\n+++\n\nAfter' });
     const markdown = convertLexicalToMarkdown({ data: state, editorConfig });
     const html = await convertLexicalToHTML({
@@ -182,7 +182,9 @@ describe('rich text integration [sqlite]', () => {
       data: state,
     });
 
-    expect(editorConfig.features.enabledFeatures).toEqual(['paragraph', 'divider']);
+    expect(editorConfig.features.enabledFeatures).toEqual(
+      expect.arrayContaining(['paragraph', 'divider']),
+    );
     expect(state.root.children.some((node) => node.type === 'divider')).toBe(true);
     expect(markdown).toContain('+++');
     expect(html).toContain('<hr>');

@@ -23,23 +23,41 @@ For server-side React applications such as the [Next.js App Router](https://next
 npm install @frogbotai/live-preview-react
 ```
 
-Render a client wrapper from your page:
+Render a client wrapper from your preview page. This example uses a draft-enabled `pages` collection with `title` and `slug` fields. Authenticate the visitor before reading drafts, and enforce the collection's read access with the authenticated request. The frontend route must be protected even when it is normally opened inside the Admin Panel iframe.
 
 ```tsx
 import config from '@/frogbot.config'
 import { getFrogbot } from 'frogbot'
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
 
 import { LivePreviewRefresh } from './LivePreviewRefresh'
 
-export default async function Page() {
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   const frogbot = await getFrogbot({ config })
+  const requestHeaders = await headers()
+  const { user } = await frogbot.auth({ headers: requestHeaders })
 
-  const page = await frogbot.findByID({
+  if (!user) {
+    notFound()
+  }
+
+  const req = await frogbot.createRequest({ headers: requestHeaders, user })
+  const result = await frogbot.find({
     collection: 'pages',
-    id: '123',
+    where: { slug: { equals: slug } },
     draft: true,
-    trash: true,
+    depth: 0,
+    limit: 1,
+    req,
+    overrideAccess: false,
   })
+  const page = result.docs[0]
+
+  if (!page) {
+    notFound()
+  }
 
   return (
     <>

@@ -10,7 +10,8 @@ export type CodeBlockArgs = Omit<UpstreamCodeBlockArgs, 'fieldOverrides'> & {
 };
 
 export const CodeBlock = (args?: CodeBlockArgs): CodeBlockConfig => {
-  const block = upstreamCodeBlock(args as UpstreamCodeBlockArgs) as unknown as CodeBlockConfig;
+  const { fieldOverrides, ...options } = args ?? {};
+  const block = upstreamCodeBlock(options) as unknown as CodeBlockConfig;
 
   block.admin = {
     ...block.admin,
@@ -38,5 +39,5 @@ export const CodeBlock = (args?: CodeBlockArgs): CodeBlockConfig => {
     };
   });
 
-  return block;
+  return { ...block, ...fieldOverrides };
 };

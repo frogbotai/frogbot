@@ -36,7 +36,7 @@ test('edits, saves, reloads, and renders rich text through the generated import 
   await page.goto('/admin/collections/posts/create');
   await page.fill('input[name="title"]', 'Browser rich text');
 
-  const editor = page.locator('[contenteditable="true"]').first();
+  const editor = page.locator('[data-field-path="content"] [contenteditable="true"]').first();
 
   await editor.click();
   await editor.press('ControlOrMeta+b');
@@ -157,7 +157,7 @@ test('creates and persists an external link through the link drawer', async ({ p
   await page.goto('/admin/collections/posts/create');
   await page.fill('input[name="title"]', 'Browser rich text link');
 
-  const editor = page.locator('[contenteditable="true"]').first();
+  const editor = page.locator('[data-field-path="content"] [contenteditable="true"]').first();
 
   await editor.click();
   await page.keyboard.insertText('Visit FrogBot docs');

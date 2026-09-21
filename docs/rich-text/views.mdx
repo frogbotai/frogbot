@@ -305,6 +305,8 @@ export function ActiveView() {
 Pass a view's node map to `RichText` to use the same rendering outside the editor. Type the content with the generated field type from `frogbot-types`.
 
 ```tsx
+'use client'
+
 import { RichText } from '@frogbotai/richtext-lexical/react'
 import type { Post } from '@/frogbot-types'
 
@@ -318,5 +320,7 @@ export function PostBody({ content }: { content: Post['content'] }) {
   return <RichText data={content} nodeMap={postViews.preview.nodes} />
 }
 ```
+
+`PostBody` is a Client Component because it reads properties of the client-exported `postViews` map. A Server Component can render `<PostBody content={content} />`, but cannot read `postViews.preview.nodes` itself.
 
 The frontend imports the entire module containing `postViews`. Keep that module safe for the frontend bundle and move editor-only components into separate component paths when they require client editor or Admin Panel dependencies.

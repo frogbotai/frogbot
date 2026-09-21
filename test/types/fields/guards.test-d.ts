@@ -71,6 +71,20 @@ if (fieldIsPresentationalOnly(fieldOrSyntheticTab)) {
 
 if (fieldAffectsData(fieldOrSyntheticTab)) {
   expectTypeOf(fieldOrSyntheticTab).not.toMatchTypeOf<{ type: 'ui' }>();
+  expectTypeOf(fieldOrSyntheticTab.name).toEqualTypeOf<string>();
+  expectTypeOf<Extract<typeof fieldOrSyntheticTab, { type: 'row' | 'collapsible' }>>().toBeNever();
+}
+
+if (fieldAffectsData(field)) {
+  expectTypeOf(field.name).toEqualTypeOf<string>();
+  expectTypeOf(field.extra).toEqualTypeOf<'preserved'>();
+}
+
+declare const syntheticTab: TabAsField;
+
+if (fieldAffectsData(syntheticTab)) {
+  expectTypeOf(syntheticTab.name).toEqualTypeOf<string>();
+  expectTypeOf(syntheticTab.type).toEqualTypeOf<'tab'>();
 }
 
 if (fieldIsSidebar(field)) {

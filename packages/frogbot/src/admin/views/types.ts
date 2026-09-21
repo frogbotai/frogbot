@@ -1,6 +1,7 @@
 import type * as Payload from 'payload';
-import type { ClientField, Field } from 'payload';
+import type { ClientField } from 'payload';
 
+import type { Field } from '../../fields/config/types.js';
 import type { FrogbotTypes } from '../../types/generated.js';
 import type { Sort, Where } from '../../types/payload.js';
 import type { FrogbotRequest } from '../../types/request.js';

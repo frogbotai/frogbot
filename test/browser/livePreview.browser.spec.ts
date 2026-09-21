@@ -1,11 +1,12 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { signIn } from './__helpers/signIn';
+import { signIn, user } from './__helpers/signIn';
 
 const viewport = { width: 1440, height: 900 };
 
 let id: number | string | undefined;
 let slug = '';
+let anonymousPage: Page | undefined;
 
 async function openPreview(page: Page) {
   const toggler = page.locator('#live-preview-toggler');
@@ -20,6 +21,20 @@ async function openPreview(page: Page) {
 test.describe('live preview', () => {
   test.use({ viewport });
 
+  test.beforeAll(async ({ request }) => {
+    const response = await request.get('/api/users/init');
+
+    expect(response.ok()).toBe(true);
+
+    const { initialized } = await response.json();
+
+    if (!initialized) {
+      const registration = await request.post('/api/users/first-register', { data: user });
+
+      expect(registration.ok()).toBe(true);
+    }
+  });
+
   test.beforeEach(async ({ page }) => {
     id = undefined;
     slug = '';
@@ -28,8 +43,8 @@ test.describe('live preview', () => {
 
     slug = `home-${Date.now()}`;
 
-    const response = await page.request.post('/api/pages', {
-      data: { title: 'Home', slug },
+    const response = await page.request.post('/api/pages?draft=true', {
+      data: { title: 'Home', slug, _status: 'draft' },
     });
 
     expect(response.ok()).toBe(true);
@@ -41,6 +56,9 @@ test.describe('live preview', () => {
   });
 
   test.afterEach(async ({ page }) => {
+    await anonymousPage?.close();
+    anonymousPage = undefined;
+
     if (id !== undefined) {
       const response = await page.request.delete(`/api/pages/${id}`);
 
@@ -74,5 +92,14 @@ test.describe('live preview', () => {
     await expect(title).toHaveText('Home', { timeout: 30_000 });
     await page.fill('#field-title', 'Home (Edited)');
     await expect(title).toHaveText('Home (Edited)', { timeout: 15_000 });
+  });
+
+  test('anonymous visitors cannot read the preview page directly', async ({ browser, baseURL }) => {
+    anonymousPage = await browser.newPage();
+
+    const response = await anonymousPage.goto(`${baseURL}/pages/${slug}`);
+
+    expect(response?.status()).toBe(404);
+    await expect(anonymousPage.locator('#page-title')).toHaveCount(0);
   });
 });

@@ -10,9 +10,33 @@ const blankPort = 3111;
 const customFieldPort = 3112;
 const richTextPort = 3113;
 const livePreviewPort = 3114;
-const selectedProject =
-  process.argv.find((argument) => argument.startsWith('--project='))?.split('=')[1] ??
-  process.argv[process.argv.indexOf('--project') + 1];
+const selectedProjects = new Set<string>();
+let collectingProjects = false;
+
+for (const argument of process.argv.slice(2)) {
+  if (argument === '--') break;
+
+  if (argument === '--project') {
+    collectingProjects = true;
+    continue;
+  }
+
+  if (argument.startsWith('--project=')) {
+    selectedProjects.add(argument.slice('--project='.length).toLocaleLowerCase());
+    collectingProjects = true;
+    continue;
+  }
+
+  if (argument.startsWith('-')) {
+    collectingProjects = false;
+    continue;
+  }
+
+  if (collectingProjects) selectedProjects.add(argument.toLocaleLowerCase());
+}
+
+const startAllServers =
+  selectedProjects.size === 0 || [...selectedProjects].some((project) => project.includes('*'));
 
 const blankServer = {
   command: 'pnpm --filter blank dev',
@@ -131,14 +155,12 @@ export default defineConfig({
       },
     },
   ],
-  webServer:
-    selectedProject === 'rich-text'
-      ? [richTextServer]
-      : selectedProject === 'live-preview'
-        ? [livePreviewServer]
-        : selectedProject === 'custom-field'
-          ? [customFieldServer]
-          : selectedProject === 'blank'
-            ? [blankServer]
-            : [blankServer, customFieldServer, richTextServer, livePreviewServer],
+  webServer: Object.entries({
+    blank: blankServer,
+    'custom-field': customFieldServer,
+    'rich-text': richTextServer,
+    'live-preview': livePreviewServer,
+  })
+    .filter(([name]) => startAllServers || selectedProjects.has(name))
+    .map(([, server]) => server),
 });

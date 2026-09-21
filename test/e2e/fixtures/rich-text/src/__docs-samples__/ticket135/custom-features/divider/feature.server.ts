@@ -28,8 +28,8 @@ export const DividerFeature = createServerFeature<
   DividerFeatureProps,
   DividerClientProps
 >({
-  feature: ({ props, resolvedFeatures }) => {
-    if (!resolvedFeatures.has('paragraph')) {
+  feature: ({ props, featureProviderMap }) => {
+    if (!featureProviderMap.has('paragraph')) {
       throw new Error('DividerFeature requires the paragraph feature');
     }
 

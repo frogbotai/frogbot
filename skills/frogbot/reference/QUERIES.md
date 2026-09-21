@@ -2,7 +2,7 @@
 
 Docs: https://docs.frogbot.ai/queries/overview, https://docs.frogbot.ai/queries/depth, https://docs.frogbot.ai/queries/pagination, https://docs.frogbot.ai/queries/select, and https://docs.frogbot.ai/queries/sort
 
-Use the Local API on a `Frogbot` instance for server-side operations. The REST and GraphQL APIs expose the same collections over HTTP.
+Use the Local API on a `Frogbot` instance for server-side operations, or the REST API over HTTP. A standard FrogBot application does not mount a GraphQL execution endpoint.
 
 ## Query Operators
 
@@ -155,6 +155,8 @@ const result = await response.json();
 ```
 
 ## GraphQL
+
+The following illustrates a query for an application that separately supplies and verifies a compatible GraphQL execution integration. It is not executable against a standard FrogBot installation.
 
 ```graphql
 query PublishedPosts {
