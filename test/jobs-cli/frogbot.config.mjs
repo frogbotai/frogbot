@@ -35,7 +35,12 @@ process.channel?.unref();
 
 const config = await buildConfig({
   secret: 'frogbot-jobs-cli-isolated-test-secret',
-  db: sqliteAdapter({ client: { url: `file:${databasePath}` }, push: true }),
+  db: sqliteAdapter({
+    client: { url: `file:${databasePath}` },
+    push: true,
+    busyTimeout: 5000,
+    wal: true,
+  }),
   typescript: { autoGenerate: false },
   collections: [
     {

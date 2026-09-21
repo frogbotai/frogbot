@@ -156,6 +156,7 @@ describe('slugField', () => {
       collection,
       data: enabled,
       operation: 'update',
+      originalDoc: { id: 'post-1', slug: 'old' },
       req,
       siblingData: enabledSiblingData,
     } as never);
@@ -190,6 +191,129 @@ describe('slugField', () => {
     ).rejects.toBe(error);
   });
 
+  it.each([false, true])(
+    'uses the stored generation checkbox for partial updates with autosave=%s',
+    async (autosave) => {
+      const hook = getHook();
+      const data = { slug: 'old', title: 'New Title' };
+
+      const slug = await hook({
+        collection: { slug: 'posts', versions: { drafts: { autosave } } },
+        data,
+        operation: 'update',
+        originalDoc: { id: 'post-1', generateSlug: true, slug: 'old' },
+        req: request(),
+        siblingData: data,
+        value: 'old',
+      } as never);
+
+      expect(slug).toBe('new-title');
+      expect(data.slug).toBe('new-title');
+    },
+  );
+
+  it.each([false, null])(
+    'preserves an explicit disabled checkbox value of %s',
+    async (disabled) => {
+      const slugify = vi.fn();
+      const hook = getHook(slugField({ slugify }));
+      const data = { generateSlug: disabled, slug: 'old', title: 'New Title' };
+
+      const slug = await hook({
+        collection: { slug: 'posts', versions: { drafts: { autosave: true } } },
+        data,
+        operation: 'update',
+        originalDoc: { id: 'post-1', generateSlug: true, slug: 'old' },
+        req: request(),
+        siblingData: data,
+        value: 'old',
+      } as never);
+
+      expect(slug).toBe('old');
+      expect(slugify).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    { autosave: false, input: { note: 'changed' } },
+    { autosave: false, input: { note: 'changed', slug: 'old-title' } },
+    { autosave: true, input: { note: 'changed' } },
+    { autosave: true, input: { note: 'changed', slug: 'old-title' } },
+  ])('uses the stored source for an unrelated update: %j', async ({ autosave, input }) => {
+    const hook = getHook();
+    const data = { ...input };
+
+    const slug = await hook({
+      collection: { slug: 'posts', versions: { drafts: { autosave } } },
+      data,
+      operation: 'update',
+      originalDoc: {
+        id: 'post-1',
+        generateSlug: true,
+        slug: 'old-title',
+        title: 'Old Title',
+      },
+      req: request(),
+      siblingData: data,
+      value: 'old-title',
+    } as never);
+
+    expect(slug).toBe('old-title');
+    expect(data).toMatchObject({ note: 'changed', slug: 'old-title' });
+  });
+
+  it.each(['', null])(
+    'honors an explicitly cleared source of %j during autosave',
+    async (title) => {
+      const hook = getHook();
+      const data = { title, slug: 'old-title' };
+
+      const slug = await hook({
+        collection: { slug: 'posts', versions: { drafts: { autosave: true } } },
+        data,
+        operation: 'update',
+        originalDoc: {
+          id: 'post-1',
+          generateSlug: true,
+          slug: 'old-title',
+          title: 'Old Title',
+        },
+        req: request(),
+        siblingData: data,
+        value: 'old-title',
+      } as never);
+
+      expect(slug).toBeNull();
+      expect(data.slug).toBeNull();
+    },
+  );
+
+  it.each([false, true])(
+    'preserves a manual slug with an omitted source and autosave=%s',
+    async (autosave) => {
+      const hook = getHook();
+      const data = { slug: 'manual' };
+
+      const slug = await hook({
+        collection: { slug: 'posts', versions: { drafts: { autosave } } },
+        data,
+        operation: 'update',
+        originalDoc: {
+          id: 'post-1',
+          generateSlug: true,
+          slug: 'old-title',
+          title: 'Old Title',
+        },
+        req: request(),
+        siblingData: data,
+        value: 'manual',
+      } as never);
+
+      expect(slug).toBe('manual');
+      expect(data).toMatchObject({ slug: 'manual', generateSlug: false });
+    },
+  );
+
   it('preserves update locking and autosave version thresholds', async () => {
     const countVersions = vi.fn().mockResolvedValue({ totalDocs: 2 });
     const req = request(countVersions);
@@ -215,6 +339,7 @@ describe('slugField', () => {
     expect(siblingData.generateSlug).toBe(true);
     expect(countVersions).toHaveBeenCalledExactlyOnceWith({
       collection: 'posts',
+      req,
       where: { parent: { equals: 'post-1' } },
     });
 
@@ -256,6 +381,7 @@ describe('slugField', () => {
     expect(siblingData.generateSlug).toBe(false);
     expect(countVersions).toHaveBeenCalledExactlyOnceWith({
       collection: 'posts',
+      req,
       where: { parent: { equals: 'post-1' } },
     });
   });

@@ -4,6 +4,13 @@ import path from 'node:path';
 
 import type { PackageManager } from '../types.js';
 
+const INSTALL_COMMANDS: Record<PackageManager, string> = {
+  bun: 'bun install',
+  npm: 'npm install',
+  pnpm: 'pnpm install',
+  yarn: 'yarn install',
+};
+
 export function detectPackageManager(
   userAgent = process.env.npm_config_user_agent,
 ): PackageManager {
@@ -22,5 +29,18 @@ export function writePnpmWorkspace(dest: string, packageManager: PackageManager)
 }
 
 export function installDependencies(dest: string, packageManager: PackageManager): boolean {
+  if (!Object.hasOwn(INSTALL_COMMANDS, packageManager)) {
+    throw new Error('Unknown package manager.');
+  }
+
+  if (process.platform === 'win32') {
+    return (
+      spawnSync('cmd.exe', ['/d', '/s', '/c', INSTALL_COMMANDS[packageManager]], {
+        cwd: dest,
+        stdio: 'inherit',
+      }).status === 0
+    );
+  }
+
   return spawnSync(packageManager, ['install'], { cwd: dest, stdio: 'inherit' }).status === 0;
 }

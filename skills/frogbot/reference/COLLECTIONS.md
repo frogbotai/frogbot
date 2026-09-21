@@ -2,7 +2,7 @@
 
 Docs: https://docs.frogbot.ai/configuration/collections and https://docs.frogbot.ai/live-preview/overview
 
-Collections define record schemas and generate Local, REST, and GraphQL APIs. Register them in `frogbot.config.ts`.
+Collections define record schemas and expose Local and REST APIs. Register them in `frogbot.config.ts`. GraphQL schema metadata does not mount an execution endpoint; GraphQL requires a separately supplied and verified integration.
 
 ## Basic collection
 

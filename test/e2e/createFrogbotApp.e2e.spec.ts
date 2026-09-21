@@ -8,9 +8,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
   applyLocalOverrides,
+  copyCLIWithoutSkill,
   packLocalClosure,
   run,
   serviceAvailable,
+  subprocessEnvironment,
   type LocalPackage,
 } from './fixtures/create-frogbot-app/harness';
 import { terminateProcess } from './process';
@@ -56,10 +58,7 @@ async function bootApp(directory: string, databaseUrl?: string): Promise<void> {
     {
       cwd: directory,
       detached: true,
-      env: {
-        ...process.env,
-        ...(databaseUrl ? { DATABASE_URL: databaseUrl } : {}),
-      },
+      env: subprocessEnvironment(directory, databaseUrl ? { DATABASE_URL: databaseUrl } : {}),
       stdio: ['ignore', 'ignore', 'pipe'],
     },
   );
@@ -338,6 +337,42 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     },
     120000,
   );
+});
+
+describe.skipIf(!RUN_E2E)('create-frogbot-app CLI', () => {
+  let root: string;
+
+  beforeAll(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'create-frogbot-app-cli-e2e-'));
+  });
+
+  afterAll(() => {
+    if (root) fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it.each(['frog.test-app', `frog.${'long-project-'.repeat(12)}`])(
+    'writes a safe MongoDB URL without changing project name %s',
+    (name) => {
+      const result = run(
+        process.execPath,
+        [cli, name, '--yes', '--no-git', '--no-install', '--db', 'mongodb', '--ai', 'none'],
+        { cwd: root },
+      );
+
+      expect(result.status, result.output).toBe(0);
+
+      const directory = path.join(root, name);
+      const env = fs.readFileSync(path.join(directory, '.env'), 'utf8');
+      const example = fs.readFileSync(path.join(directory, '.env.example'), 'utf8');
+      const databaseLine = env.split('\n').find((line) => line.startsWith('DATABASE_URL='))!;
+      const databaseName = new URL(databaseLine.slice('DATABASE_URL='.length)).pathname.slice(1);
+      const pkg = JSON.parse(fs.readFileSync(path.join(directory, 'package.json'), 'utf8'));
+
+      expect(databaseName).toMatch(/^[a-z0-9_-]{1,63}$/);
+      expect(example).toContain(databaseLine);
+      expect(pkg.name).toBe(name);
+    },
+  );
 
   it('completes after a controlled CLI dependency installation', () => {
     const fakeBin = path.join(root, 'successful-bin');
@@ -376,9 +411,13 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
 
   it('warns without writing pointers when the bundled skill is absent', () => {
     const appName = 'missing-skill';
+    const isolatedCLI = copyCLIWithoutSkill(path.dirname(cli), path.join(root, 'cli-no-skill'));
+
+    expect(fs.existsSync(path.join(path.dirname(isolatedCLI), 'dist', 'skills'))).toBe(false);
+
     const result = run(
       process.execPath,
-      [cli, appName, '--yes', '--no-git', '--no-install', '--agents', 'claude'],
+      [isolatedCLI, appName, '--yes', '--no-git', '--no-install', '--agents', 'claude'],
       { cwd: root },
     );
 
@@ -386,6 +425,9 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     expect(result.output).toContain('skill is not bundled');
     expect(fs.existsSync(path.join(root, appName, 'CLAUDE.md'))).toBe(false);
     expect(fs.existsSync(path.join(root, appName, '.claude'))).toBe(false);
+    expect(
+      fs.existsSync(path.join(path.dirname(cli), 'dist', 'skills', 'frogbot', 'SKILL.md')),
+    ).toBe(true);
   });
 
   it.each([

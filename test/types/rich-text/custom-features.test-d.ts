@@ -1,9 +1,15 @@
-import { createNode, createServerFeature } from '@frogbotai/richtext-lexical';
+import {
+  createNode,
+  createServerFeature,
+  type NodeWithHooks,
+  type ServerFeature,
+} from '@frogbotai/richtext-lexical';
 import {
   DecoratorNode,
   type DOMExportOutput,
   type EditorConfig,
   type NodeKey,
+  ParagraphNode,
   type SerializedLexicalNode,
 } from '@frogbotai/richtext-lexical/lexical';
 import type { Field, FrogbotRequest } from 'frogbot';
@@ -66,7 +72,7 @@ const dividerNode = createNode({
     html: {
       converter: ({ node, req }) => {
         expectTypeOf(node.fields.label).toBeString();
-        expectTypeOf(req).toEqualTypeOf<FrogbotRequest | null>();
+        expectTypeOf(req).toEqualTypeOf<FrogbotRequest | null | undefined>();
 
         return '<hr>';
       },
@@ -131,3 +137,42 @@ createServerFeature({
   feature: () => ({ nodes: [dividerNode] }),
   key: 'divider',
 });
+
+const paragraphNode = createNode({
+  hooks: {
+    afterRead: [
+      ({ node }) => {
+        expectTypeOf(node.children).toBeArray();
+
+        return node;
+      },
+    ],
+  },
+  node: ParagraphNode,
+});
+
+createServerFeature({
+  feature: { nodes: [dividerNode, paragraphNode] },
+  key: 'heterogeneous',
+});
+
+createServerFeature<{ enabled: boolean }>({
+  feature: async ({ props }) => ({
+    nodes: [dividerNode, paragraphNode],
+    sanitizedServerFeatureProps: props,
+  }),
+  key: 'asyncHeterogeneous',
+});
+
+type NodeRegistration = NonNullable<ServerFeature<undefined, undefined>['nodes']>[number];
+
+expectTypeOf<typeof dividerNode>().toMatchTypeOf<NodeRegistration>();
+expectTypeOf<typeof paragraphNode>().toMatchTypeOf<NodeRegistration>();
+expectTypeOf<Record<never, never>>().not.toMatchTypeOf<NodeRegistration>();
+expectTypeOf<typeof DividerNode>().not.toMatchTypeOf<NodeRegistration>();
+expectTypeOf<{ node: Record<never, never> }>().not.toMatchTypeOf<NodeRegistration>();
+expectTypeOf<{ node: () => undefined }>().not.toMatchTypeOf<NodeRegistration>();
+expectTypeOf<{
+  node: typeof DividerNode;
+  hooks: { afterRead: Array<() => number> };
+}>().not.toMatchTypeOf<NodeWithHooks<DividerNode>>();

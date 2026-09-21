@@ -1,5 +1,7 @@
 import type { PayloadComponent, SanitizedConfig } from 'payload';
 
+import { uiComponentExports } from './uiComponentExports.js';
+
 type BottomRailComponents = {
   afterBottomRail?: PayloadComponent[];
   beforeBottomRail?: PayloadComponent[];
@@ -11,7 +13,7 @@ type SettingsComponents = {
   icon?: PayloadComponent;
 };
 
-function rewritePath(path: string): string {
+function rewritePath(path: string, exportName?: string): string {
   if (
     path === '@payloadcms/richtext-lexical' ||
     path.startsWith('@payloadcms/richtext-lexical#') ||
@@ -20,10 +22,11 @@ function rewritePath(path: string): string {
     return path.replace('@payloadcms/richtext-lexical', '@frogbotai/richtext-lexical');
   }
 
+  const [specifier, inlineExport = 'default'] = path.split('#', 2);
+
   if (
-    path === '@payloadcms/ui' ||
-    path.startsWith('@payloadcms/ui#') ||
-    path.startsWith('@payloadcms/ui/')
+    Object.hasOwn(uiComponentExports, specifier) &&
+    uiComponentExports[specifier].has(exportName || inlineExport)
   ) {
     return path.replace('@payloadcms/ui', '@frogbotai/ui');
   }
@@ -43,10 +46,16 @@ export function rewritePayloadComponent<T>(component: T): T {
   if (Array.isArray(component)) return component.map(rewritePayloadComponent) as T;
 
   if (component && typeof component === 'object' && 'path' in component) {
-    const value = component as { path?: unknown };
+    const value = component as { exportName?: unknown; path?: unknown };
 
     if (typeof value.path === 'string') {
-      return { ...component, path: rewritePath(value.path) };
+      return {
+        ...component,
+        path: rewritePath(
+          value.path,
+          typeof value.exportName === 'string' ? value.exportName : undefined,
+        ),
+      };
     }
   }
 
@@ -206,7 +215,7 @@ export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig 
     admin.dependencies = Object.fromEntries(
       Object.entries(admin.dependencies).map(([key, dependency]) => [
         rewritePath(key),
-        { ...dependency, path: rewritePath(dependency.path) },
+        rewritePayloadComponent(dependency),
       ]),
     );
   }

@@ -333,29 +333,27 @@ export const Media: CollectionConfig = {
 
 ## Customizing the Upload UI
 
-You can completely customize the upload interface in the Admin Panel by swapping in your own React components. This allows you to modify how files are uploaded, add custom fields, integrate custom actions, or enhance the upload experience.
+Use the public `UploadField` component to customize a field that selects uploaded documents while retaining its form integration.
 
 ### Upload Component Configuration
 
-To customize the upload UI for an upload-enabled collection, use the `admin.components.edit.Upload` property in your [Collection Config](../configuration/collections):
+Set `admin.components.Field` on an Upload field in your [Collection Config](/configuration/collections):
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
 
-export const Media: CollectionConfig = {
-  slug: 'media',
-  upload: true,
-  admin: {
-    components: {
-      edit: {
-        Upload: '/components/CustomUpload#CustomUploadServer',
-      },
-    },
-  },
+export const Posts: CollectionConfig = {
+  slug: 'posts',
   fields: [
     {
-      name: 'alt',
-      type: 'text',
+      name: 'featuredImage',
+      type: 'upload',
+      relationTo: 'files',
+      admin: {
+        components: {
+          Field: '/components/CustomUploadField#CustomUploadField',
+        },
+      },
     },
   ],
 }
@@ -363,114 +361,23 @@ export const Media: CollectionConfig = {
 
 ### Building Custom Upload Components
 
-Custom upload components must integrate with FrogBot's form system to work correctly. The recommended approach is to use FrogBot's built-in `<Upload>` component from `@frogbotai/ui` and wrap it with additional functionality.
-
-<Banner type="warning">
-  You should not use a simple `<input type="file" />` element
-  alone. It will not connect to FrogBot's upload API or form state, resulting
-  in errors like "400 Bad Request - no file uploaded." Always use FrogBot's
-  `<Upload>` component or properly integrate with form hooks.
-</Banner>
+Wrap `UploadField` from `@frogbotai/ui` and forward the provided props, including permissions and read-only state. Render this component through the field slot so it receives the Admin Panel's form and upload providers.
 
 #### Basic Example
 
-Here's a minimal example showing how to create a custom upload component:
-
-**Server Component** (`/components/CustomUpload.tsx`):
-
-```tsx
-import React from 'react'
-import type {
-  FrogbotComponent,
-  SanitizedCollectionConfig,
-} from 'frogbot'
-import { CustomUploadClient } from './CustomUpload.client'
-
-export const CustomUploadServer: FrogbotComponent<
-  SanitizedCollectionConfig['admin']['components']['edit']['Upload']
-> = (props) => {
-  return (
-    <div>
-      <h2>Custom Upload Interface</h2>
-      <CustomUploadClient {...props} />
-    </div>
-  )
-}
-```
-
-**Client Component** (`/components/CustomUpload.client.tsx`):
+**Client Component** (`src/components/CustomUploadField.tsx`):
 
 ```tsx
 'use client'
-import React from 'react'
-import { Upload, useDocumentInfo } from '@frogbotai/ui'
 
-export const CustomUploadClient = () => {
-  const { collectionSlug, docConfig, initialState } = useDocumentInfo()
+import { UploadField } from '@frogbotai/ui'
+import type { UploadFieldClientComponent } from 'frogbot'
 
-  return (
-    <Upload
-      collectionSlug={collectionSlug}
-      initialState={initialState}
-      uploadConfig={'upload' in docConfig ? docConfig.upload : undefined}
-    />
-  )
-}
-```
-
-#### Advanced Example with Custom Actions
-
-You can add custom actions, drawers, and fields to enhance the upload experience:
-
-```tsx
-'use client'
-import React from 'react'
-import {
-  Drawer,
-  DrawerToggler,
-  TextField,
-  Upload,
-  useDocumentInfo,
-} from '@frogbotai/ui'
-
-const customDrawerSlug = 'custom-upload-drawer'
-
-const CustomDrawer = () => {
-  return (
-    <Drawer slug={customDrawerSlug}>
-      <h2>Custom Upload Options</h2>
-      <TextField
-        field={{
-          name: 'customField',
-          label: 'Custom Field',
-          type: 'text',
-        }}
-        path="customField"
-      />
-    </Drawer>
-  )
-}
-
-const CustomDrawerToggler = () => {
-  return (
-    <DrawerToggler slug={customDrawerSlug}>
-      <button type="button">Open Custom Options</button>
-    </DrawerToggler>
-  )
-}
-
-export const CustomUploadClient = () => {
-  const { collectionSlug, docConfig, initialState } = useDocumentInfo()
-
+export const CustomUploadField: UploadFieldClientComponent = (props) => {
   return (
     <div>
-      <CustomDrawer />
-      <Upload
-        collectionSlug={collectionSlug}
-        customActions={[<CustomDrawerToggler key="custom-drawer" />]}
-        initialState={initialState}
-        uploadConfig={'upload' in docConfig ? docConfig.upload : undefined}
-      />
+      <p>Select an image for the post.</p>
+      <UploadField {...props} />
     </div>
   )
 }
@@ -482,62 +389,30 @@ When building custom upload components, you have access to several useful hooks 
 
 | Hook / Component    | Description                                                           |
 | ------------------- | --------------------------------------------------------------------- |
-| `useDocumentInfo()` | Get collection slug, document config, and initial state               |
-| `useField()`        | Access and manipulate form field state                                |
-| `useBulkUpload()`   | Access bulk upload context                                            |
-| `<Upload>`          | Main upload component with file selection, drag-and-drop, and preview |
-| `<Drawer>`          | Modal drawer for additional UI                                        |
-| `<DrawerToggler>`   | Button to open/close drawers                                          |
-| `<TextField>`, etc. | Form field components                                                 |
+| `useField()` | Access and manipulate form field state. |
+| `useBulkUpload()` | Access the bulk upload context. |
+| `UploadField` | Form-connected upload relationship control. |
+| `UploadInput` | Lower-level upload relationship input requiring `value` and `onChange` wiring. |
 
 ### Custom Upload Fields vs. Custom Upload Collections
 
-It's important to understand the difference between these two customization approaches:
+The example above customizes an upload relationship field. Replacing an upload collection's file editor is a separate extension point:
 
 | Approach                            | Configuration                               | Use Case                                                                                                                |
 | ----------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | **Upload Collection Customization** | `admin.components.edit.Upload`              | Customize the UI when editing documents in an upload-enabled collection (e.g., the Media collection edit view)          |
 | **Upload Field Customization**      | `admin.components.Field` on an upload field | Customize the field that references uploads in other collections (e.g., a "Featured Image" field on a Posts collection) |
 
-**Example of Upload Field Customization:**
-
-```ts
-import type { CollectionConfig } from 'frogbot'
-
-export const Posts: CollectionConfig = {
-  slug: 'posts',
-  fields: [
-    {
-      name: 'featuredImage',
-      type: 'upload',
-      relationTo: 'media',
-      admin: {
-        components: {
-          Field: '/components/CustomUploadField',
-        },
-      },
-    },
-  ],
-}
-```
-
-Fields can provide custom components for upload behavior.
+`@frogbotai/ui` does not export the complete collection `Upload` editor. Keep the default collection editor unless you are implementing its file, form, and upload-state integration yourself. `UploadField` and `UploadInput` select related documents; they are not replacements for that collection slot.
 
 ### Component Export Syntax
 
 Custom components are referenced using file paths. Both default exports and named exports are supported:
 
 ```ts
-// Named export with hash syntax
-Upload: '/components/CustomUpload#CustomUploadServer'
-
-// Default export (no hash needed)
-Upload: '/components/CustomUpload'
-
-// Alternative: using exportName property
-Upload: {
-  path: '/components/CustomUpload',
-  exportName: 'CustomUploadServer',
+Field: {
+  path: '/components/CustomUploadField',
+  exportName: 'CustomUploadField',
 }
 ```
 

@@ -47,7 +47,7 @@ export type HTMLConverter<TNode extends SerializedLexicalNode = SerializedLexica
   converter: (
     args: Omit<Parameters<PayloadHTMLConverter<TNode>['converter']>[0], 'node' | 'req'> & {
       node: TNode;
-      req: FrogbotRequest | null;
+      req: FrogbotRequest | null | undefined;
     },
   ) => ReturnType<PayloadHTMLConverter<TNode>['converter']>;
 };
@@ -70,11 +70,15 @@ export type NodeWithHooks<
   validations?: NodeValidation<TSerializedNode>[];
 };
 
+type ServerNodeRegistration = Omit<NodeWithHooks<any, any>, 'node'> & {
+  node: LexicalNodeReplacement | (new (...args: never[]) => unknown);
+};
+
 export type ServerFeature<ServerProps, ClientFeatureProps> = Omit<
   PayloadServerFeature<ServerProps, ClientFeatureProps>,
   'nodes'
 > & {
-  nodes?: object[];
+  nodes?: ServerNodeRegistration[];
 };
 
 export type {

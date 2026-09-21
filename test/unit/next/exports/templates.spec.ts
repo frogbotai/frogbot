@@ -6,8 +6,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@payloadcms/next/templates', () => mocks);
 
-const { DefaultTemplate } =
-  await import('../../../../packages/next/src/exports/templates.js');
+const { DefaultTemplate } = await import('../../../../packages/next/src/exports/templates.js');
 
 describe('@frogbotai/next templates', () => {
   it('recovers the issued runtime after Next clones the request', () => {

@@ -56,9 +56,27 @@ export const generateSlug =
       return;
     }
 
-    if (!siblingData[checkboxName]) {
+    const isChecked =
+      siblingData[checkboxName] === undefined
+        ? originalDoc?.[checkboxName]
+        : siblingData[checkboxName];
+
+    if (!isChecked) {
       return value;
     }
+
+    const userOverride =
+      Boolean(data && Object.hasOwn(data, slugFieldName)) &&
+      data?.[slugFieldName] !== originalDoc?.[slugFieldName];
+
+    if (userOverride) {
+      siblingData[checkboxName] = false;
+
+      return data?.[slugFieldName];
+    }
+
+    const sourceValue = data?.[useAsSlug];
+    const valueToSlugify = sourceValue === undefined ? originalDoc?.[useAsSlug] : sourceValue;
 
     if (!hasAutosaveEnabled(collection!)) {
       if (data) {
@@ -66,7 +84,7 @@ export const generateSlug =
           customSlugify,
           data: data as TypeWithID,
           req,
-          valueToSlugify: data[useAsSlug],
+          valueToSlugify,
         });
       }
 
@@ -76,22 +94,19 @@ export const generateSlug =
     }
 
     const isPublishing = data?._status === 'published';
-    const userOverride =
-      Boolean(data && Object.hasOwn(data, slugFieldName)) &&
-      data?.[slugFieldName] !== originalDoc?.[slugFieldName];
 
-    if (!userOverride && data) {
-      data[slugFieldName] = data[useAsSlug]
+    if (data) {
+      data[slugFieldName] = valueToSlugify
         ? await resolveSlug({
             customSlugify,
             data: data as TypeWithID,
             req,
-            valueToSlugify: data[useAsSlug],
+            valueToSlugify,
           })
         : null;
     }
 
-    if (isPublishing || userOverride) {
+    if (isPublishing) {
       siblingData[checkboxName] = false;
 
       return data?.[slugFieldName];
@@ -105,6 +120,7 @@ export const generateSlug =
 
     const { totalDocs } = await req.frogbot.countVersions({
       collection: collection!.slug,
+      req,
       where,
     });
 

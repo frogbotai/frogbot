@@ -37,23 +37,15 @@ export default buildConfig({
 
 ### Component Paths
 
-Components are referenced by path instead of being imported into the config. Paths are relative to the project base directory, or to `admin.importMap.baseDir` when you configure one.
+Components are referenced by path instead of being imported into the config. FrogBot detects the source directory: `src` when present, otherwise the project root. For example, `/components/StatusAction` resolves to `src/components/StatusAction` in the blank template.
 
 Append `#ExportName` for a named export. Omit it for a default export. You can also use an object with `path` and `exportName`.
 
 ```ts
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
 import { buildConfig } from 'frogbot'
-
-const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default buildConfig({
   admin: {
-    importMap: {
-      baseDir: path.resolve(dirname, 'src'),
-    },
     components: {
       actions: [
         '/components/StatusAction#StatusAction',
@@ -113,23 +105,7 @@ pnpm frogbot generate:importmap
   and regenerate it instead.
 </Warning>
 
-Plugin authors can add an import that is not referenced by a standard component slot through `admin.dependencies`:
-
-```ts
-export default buildConfig({
-  admin: {
-    dependencies: {
-      reviewBadge: {
-        path: '/components/ReviewBadge#ReviewBadge',
-        type: 'component',
-        clientProps: {
-          label: 'Needs review',
-        },
-      },
-    },
-  },
-})
-```
+Plugin authors register public component paths in supported slots. Import helper components directly from the component module that renders them. The public `admin.importMap` option controls `autoGenerate`; `baseDir` and `admin.dependencies` are not supported authoring options.
 
 ## Building Custom Components
 
@@ -204,7 +180,7 @@ export function ServerLink() {
 }
 ```
 
-Field components receive their field config as `field` on the server and `clientField` on the client:
+Field components receive their field config as `field`: authored configuration on the server and serializable configuration on the client. Server field components also receive `clientField` for passing serializable configuration to a client component.
 
 ```tsx
 import type { TextFieldServerComponent } from 'frogbot'
@@ -219,21 +195,21 @@ export const FieldName: TextFieldServerComponent = ({ field }) => {
 
 import type { TextFieldClientComponent } from 'frogbot'
 
-export const ClientFieldName: TextFieldClientComponent = ({ clientField }) => {
-  return <p>Field name: {clientField.name}</p>
+export const ClientFieldName: TextFieldClientComponent = ({ field }) => {
+  return <p>Field name: {field.name}</p>
 }
 ```
 
-### Rendering Component Paths
+### Rendering Component Slots
 
-Use `RenderCustomComponent` when your own component accepts another configured Component Path:
+Use `RenderCustomComponent` to choose between an already-rendered React node and a fallback. It does not resolve component paths. An `undefined` node uses the fallback; `null` renders nothing.
 
 ```tsx
 import { RenderCustomComponent } from '@frogbotai/ui'
-import type { FrogbotComponent } from 'frogbot'
+import type { ReactNode } from 'react'
 
-export function ComponentSlot({ Component }: { Component?: FrogbotComponent }) {
-  return <RenderCustomComponent CustomComponent={Component} />
+export function ComponentSlot({ content }: { content?: ReactNode }) {
+  return <RenderCustomComponent CustomComponent={content} Fallback={<p>No content</p>} />
 }
 ```
 

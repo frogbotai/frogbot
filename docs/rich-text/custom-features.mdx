@@ -235,17 +235,26 @@ export const DividerFeature = createServerFeature({
 
 | Dependency option | Behavior |
 | --- | --- |
-| `dependenciesSoft` | Attempts to load the named features first but does not require them. |
+| `dependenciesSoft` | Declares optional load-order dependencies; see the current limitation below. |
 | `dependencies` | Requires the named features to exist but does not require them to load first. |
-| `dependenciesPriority` | Requires the named features to exist and load first. |
+| `dependenciesPriority` | Requires the named features to exist and load first, but currently fails for the paragraph dependency shown below. |
+
+<Warning>
+  The editor dependency installed with this release (3.90.1) reverses dependency
+  traversal order before checking priority dependencies. Declaring
+  `dependenciesPriority: ['paragraph']` fails even when the paragraph feature is
+  configured, regardless of its position in the feature array. Soft dependencies
+  do not provide a reliable load-first guarantee either.
+</Warning>
+
+When you only need a feature to be present, check `featureProviderMap`. This example works in either feature-array order and does not require the paragraph feature to have resolved:
 
 ```ts
 import { createServerFeature } from '@frogbotai/richtext-lexical'
 
 export const DividerFeature = createServerFeature({
-  dependenciesPriority: ['paragraph'],
-  feature: ({ resolvedFeatures }) => {
-    if (!resolvedFeatures.has('paragraph')) {
+  feature: ({ featureProviderMap }) => {
+    if (!featureProviderMap.has('paragraph')) {
       throw new Error('DividerFeature requires the paragraph feature')
     }
 

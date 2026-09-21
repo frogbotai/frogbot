@@ -116,6 +116,7 @@ export default buildConfig({
       roles: ['admin', 'member', 'owner'],
       defaultRole: 'member',
       rolesFieldAccess: {
+        create: allow('owner'),
         update: allow('owner'),
       },
     }),
@@ -145,7 +146,7 @@ export const MemberDocuments: CollectionConfig = {
 };
 ```
 
-Every role named by `allow` must be listed in `rolesPlugin`. Restrict updates to the generated roles field with `rolesFieldAccess`; otherwise role assignment policy is incomplete.
+Every role named by `allow` must be listed in `rolesPlugin`. Restrict both creation and updates of the generated roles field with `rolesFieldAccess`. A default role does not prevent callers from supplying privileged roles on create. Bootstrap the first owner through trusted server code with an explicit access override.
 
 The plugin also exports `hasRole`, `isLoggedIn`, `ownRows`, `rolesOf`, and `viaApiKey` predicates for composing clauses. Use only predicates that match the application's authentication path and ownership schema.
 
@@ -228,5 +229,5 @@ Pass `req` to preserve the transaction and cache. Avoid external network calls i
 - Test anonymous, each role, owner, non-owner, and API-key paths that the rule supports.
 - Test Local API calls with `overrideAccess: false`; a user argument alone does not enforce permissions.
 - Confirm denied collection rows are absent and denied field reads are omitted.
-- Confirm role updates cannot grant privilege outside `rolesFieldAccess`.
+- Confirm account creation and role updates cannot grant privilege outside `rolesFieldAccess`.
 - Keep ownership and organization fields indexed when they appear in common constraints.

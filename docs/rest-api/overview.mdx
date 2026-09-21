@@ -314,13 +314,13 @@ This can be more efficient for large JSON payloads, as you avoid converting data
 
 ## FrogBot REST API SDK
 
-The best, fully type-safe way to query FrogBot REST API is to use the SDK package, which can be installed with:
+Install the SDK package to send requests to the FrogBot REST API:
 
 ```bash
 pnpm add @frogbotai/sdk
 ```
 
-Its usage is very similar to [the Local API](/local-api/overview).
+Use `request(path, init)` for collection, authentication, version, and custom endpoints. It returns a Web `Response` and throws `FrogBotSDKError` for non-success responses. Parse JSON with `response.json()`; response data is not inferred from your collection types.
 
 <Warning>
   The SDK package is currently in beta and may be subject to change in minor
@@ -339,220 +339,95 @@ const sdk = createFrogbotSDK({
 
 ### Operations
 
+Encode query options in the path. These examples use an existing `posts` collection with a `title` field:
+
 ```ts
-// Find operation
-const posts = await sdk.find({
-  collection: 'posts',
-  draft: true,
-  limit: 10,
-  locale: 'en',
-  page: 1,
-  where: { _status: { equals: 'published' } },
-})
-
-// Find by ID operation
-const posts = await sdk.findByID({
-  id,
-  collection: 'posts',
-  draft: true,
-  locale: 'en',
-})
-
-// Auth login operation
-const result = await sdk.login({
-  collection: 'users',
-  data: {
-    email: 'dev@frogbot.com',
-    password: '12345',
-  },
-})
-
-// Create operation
-const result = await sdk.create({
-  collection: 'posts',
-  data: { text: 'text' },
-})
-
-// Create operation with a file
-// `file` can be either a Blob | File object or a string URL
-const result = await sdk.create({ collection: 'media', file, data: {} })
-
-// Count operation
-const result = await sdk.count({
-  collection: 'posts',
-  where: { id: { equals: post.id } },
-})
-
-// Update (by ID) operation
-const result = await sdk.update({
-  collection: 'posts',
-  id: post.id,
-  data: {
-    text: 'updated-text',
-  },
-})
-
-// Update (bulk) operation
-const result = await sdk.update({
-  collection: 'posts',
-  where: {
-    id: {
-      equals: post.id,
-    },
-  },
-  data: { text: 'updated-text-bulk' },
-})
-
-// Delete (by ID) operation
-const result = await sdk.delete({ id: post.id, collection: 'posts' })
-
-// Delete (bulk) operation
-const result = await sdk.delete({
-  where: { id: { equals: post.id } },
-  collection: 'posts',
-})
-
-// Auth Login operation
-const result = await sdk.login({
-  collection: 'users',
-  data: { email: 'dev@frogbot.com', password: '123456' },
-})
-
-// Auth Me operation
-const result = await sdk.me(
-  { collection: 'users' },
-  {
-    headers: {
-      Authorization: `JWT  ${user.token}`,
-    },
-  },
-)
-
-// Auth Refresh Token operation
-const result = await sdk.refreshToken(
-  { collection: 'users' },
-  { headers: { Authorization: `JWT ${user.token}` } },
-)
-
-// Auth Forgot Password operation
-const result = await sdk.forgotPassword({
-  collection: 'users',
-  data: { email: user.email },
-})
-
-// Auth Reset Password operation
-const result = await sdk.resetPassword({
-  collection: 'users',
-  data: { password: '1234567', token: resetPasswordToken },
-})
-
-// Find Versions operation
-const result = await sdk.findVersions({
-  collection: 'posts',
-  where: { parent: { equals: post.id } },
-})
-
-// Find Version by ID operation
-const result = await sdk.findVersionByID({
-  collection: 'posts',
-  id: version.id,
-})
-
-// Restore Version operation
-const result = await sdk.restoreVersion({
-  collection: 'posts',
-  id,
-})
-
+const query = new URLSearchParams({ limit: '10', page: '1', sort: '-createdAt' })
+const response = await sdk.request(`/posts?${query}`)
+const posts = await response.json()
 ```
 
-Every operation has optional 3rd parameter which is used to add additional data to the RequestInit object (like headers):
+Send JSON with the `json` option. The SDK serializes it and sets `Content-Type`:
 
 ```ts
-await sdk.me(
-  {
-    collection: 'users',
-  },
-  {
-    // RequestInit object
-    headers: {
-      Authorization: `JWT ${token}`,
-    },
-  },
-)
-```
-
-To query custom endpoints, you can use the `request` method, which is used internally for all other methods:
-
-```ts
-await sdk.request({
+const response = await sdk.request('/posts', {
   method: 'POST',
-  path: '/send-data',
-  json: {
-    id: 1,
-  },
+  json: { title: 'New post' },
+})
+const { doc: post } = await response.json()
+const postPath = `/posts/${encodeURIComponent(String(post.id))}`
+
+await sdk.request(postPath, {
+  method: 'PATCH',
+  json: { title: 'Updated post' },
+})
+
+await sdk.request(postPath, { method: 'DELETE' })
+```
+
+Use the paths in [Collections](#collections) for find-by-ID, count, and bulk operations. Version reads and restores use the [version endpoints](/versions/overview#version-operations) through the same `request` method.
+
+### Authentication and headers
+
+The SDK does not store login tokens. Authenticate through the login endpoint, then supply the returned token on subsequent requests:
+
+```ts
+const response = await sdk.request('/users/login', {
+  method: 'POST',
+  json: { email: 'dev@example.com', password: 'your-password' },
+})
+const { token } = await response.json()
+
+const authenticatedSDK = createFrogbotSDK({
+  baseURL: 'https://example.com/api',
+  headers: { Authorization: `JWT ${token}` },
+})
+
+const me = await authenticatedSDK.request('/users/me')
+const account = await me.json()
+```
+
+Use [authentication endpoints](/authentication/operations) for refresh, password resets, and logout. Request-specific headers in the second argument are merged with the configured headers.
+
+### Uploads
+
+For an upload collection that does not require additional data, pass a browser `File` to `upload`:
+
+```ts
+const file = new File(['Hello'], 'hello.txt', { type: 'text/plain' })
+const uploaded = await sdk.upload('files', file)
+```
+
+For metadata, send a multipart body through `request`. Let `fetch` set the multipart content type:
+
+```ts
+const body = new FormData()
+
+body.append('file', file)
+body.append('_payload', JSON.stringify({ alt: 'File description' }))
+
+const response = await sdk.request('/media', { method: 'POST', body })
+const uploaded = await response.json()
+```
+
+This second example requires an upload-enabled `media` collection with an `alt` field.
+
+### Custom endpoints and fetch
+
+```ts
+await sdk.request('/send-data', {
+  method: 'POST',
+  json: { id: 1 },
 })
 ```
 
-Custom `fetch` implementation and `baseInit` for shared `RequestInit` properties:
+Pass standard `RequestInit` options such as `credentials` per request, or supply a custom `fetch` to set shared defaults. This browser example uses session cookies:
 
 ```ts
 const sdk = createFrogbotSDK({
-  baseInit: { credentials: 'include' },
   baseURL: 'https://example.com/api',
-  fetch: async (url, init) => {
-    console.log('before req')
-    const response = await fetch(url, init)
-    console.log('after req')
-    return response
-  },
+  fetch: (url, init) => fetch(url, { credentials: 'include', ...init }),
 })
 ```
 
-Example of a custom `fetch` implementation for testing the REST API without needing to spin up a next development server:
-
-```ts
-import config from '@frogbot-config'
-import {
-  REST_DELETE,
-  REST_GET,
-  REST_PATCH,
-  REST_POST,
-  REST_PUT,
-} from '@frogbotai/next/routes'
-import { createFrogbotSDK } from '@frogbotai/sdk'
-
-const api = {
-  GET: REST_GET(config),
-  POST: REST_POST(config),
-  PATCH: REST_PATCH(config),
-  DELETE: REST_DELETE(config),
-  PUT: REST_PUT(config),
-}
-
-const awaitedConfig = await config
-
-export const sdk = createFrogbotSDK({
-  baseURL: ``,
-  fetch: (path: string, init: RequestInit) => {
-    const [slugs, search] = path.slice(1).split('?')
-    const url = `${awaitedConfig.serverURL || 'http://localhost:3000'}${awaitedConfig.routes.api}/${slugs}${search ? `?${search}` : ''}`
-
-    if (init.body instanceof FormData) {
-      const file = init.body.get('file') as Blob
-      if (file && init.headers instanceof Headers) {
-        init.headers.set('Content-Length', file.size.toString())
-      }
-    }
-    const request = new Request(url, init)
-
-    const params = {
-      params: Promise.resolve({
-        slug: slugs.split('/'),
-      }),
-    }
-
-    return api[init.method.toUpperCase()](request, params)
-  },
-})
-```
+Cross-origin cookie requests require the server's [CORS and cookie configuration](/authentication/cookies).

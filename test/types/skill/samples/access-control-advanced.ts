@@ -91,7 +91,7 @@ export const rolesConfig = buildConfig({
     rolesPlugin({
       roles: ['admin', 'member', 'owner'],
       defaultRole: 'member',
-      rolesFieldAccess: { update: allow('owner') },
+      rolesFieldAccess: { create: allow('owner'), update: allow('owner') },
     }),
   ],
 });
@@ -103,7 +103,7 @@ export const ownedRowsConfig = buildConfig({
     rolesPlugin({
       roles: ['admin', 'member', 'owner'],
       defaultRole: 'member',
-      rolesFieldAccess: { update: allow('owner') },
+      rolesFieldAccess: { create: allow('owner'), update: allow('owner') },
     }),
   ],
 });

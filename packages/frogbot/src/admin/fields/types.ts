@@ -4,10 +4,9 @@ import type { FrogbotRequest } from '../../types/request.js';
 
 type ServerProps<T> = Omit<T, 'payload' | 'req'> & { req: FrogbotRequest };
 
-type ServerComponent<T> =
-  T extends (props: infer TProps) => infer TResult
-    ? (props: ServerProps<TProps>) => TResult
-    : never;
+type ServerComponent<T> = T extends (props: infer TProps) => infer TResult
+  ? (props: ServerProps<TProps>) => TResult
+  : never;
 
 export type ArrayFieldServerProps = ServerProps<Payload.ArrayFieldServerProps>;
 export type ArrayFieldServerComponent = ServerComponent<Payload.ArrayFieldServerComponent>;

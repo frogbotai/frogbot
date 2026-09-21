@@ -158,15 +158,18 @@ export const Posts: CollectionConfig = {
   slug: 'posts',
   fields: [{ name: 'title', type: 'text' }],
   admin: {
+    views: [
+      {
+        type: 'custom',
+        component: '/components/PostListView#PostListView',
+      },
+    ],
     components: {
-      views: {
-        edit: {
+      edit: {
+        views: {
           default: {
             Component: '/components/PostEditView#PostEditView',
           },
-        },
-        list: {
-          Component: '/components/PostListView#PostListView',
         },
       },
     },
@@ -174,4 +177,4 @@ export const Posts: CollectionConfig = {
 }
 ```
 
-The `edit` key contains [Document Views](/custom-components/document-views). See [List View](/custom-components/list-view) for list-specific props.
+`admin.components.edit.views` contains [Document Views](/custom-components/document-views). Custom `admin.views` entries receive `AdminViewServerProps`; see [List View](/custom-components/list-view) for custom content and built-in list slots.

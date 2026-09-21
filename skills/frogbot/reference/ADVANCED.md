@@ -168,7 +168,7 @@ export default buildConfig({
 
 The `url` function receives `data`, `locale`, `collectionConfig`, and `req`; the FrogBot instance is at `req.frogbot`. A collection may instead define `admin.livePreview`, which overrides root settings for that collection.
 
-For a Next.js server-rendered preview, fetch drafts through the Local API and render a client refresh component:
+For a Next.js server-rendered preview, authenticate the visitor with `frogbot.auth({ headers })`, reject anonymous requests, and pass a framework-created request containing that user with `overrideAccess: false` when fetching drafts. See the [server-side preview example](https://docs.frogbot.ai/live-preview/server) for the page handler. Render a client refresh component:
 
 ```tsx
 'use client';
