@@ -1,6 +1,6 @@
 {
   "name": "@frogbotai/live-preview-vue",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "description": "Vue SDK for FrogBot live preview.",
   "license": "MIT",
   "author": "Colby Gilbert",
