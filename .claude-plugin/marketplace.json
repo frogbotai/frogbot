@@ -1,13 +1,15 @@
 {
   "name": "frogbot",
-  "owner": { "name": "FrogBot" },
+  "owner": {
+    "name": "FrogBot"
+  },
   "description": "FrogBot development skill for coding agents",
   "plugins": [
     {
       "name": "frogbot",
       "source": "./",
       "description": "FrogBot development skill for coding agents",
-      "version": "0.24.0"
+      "version": "0.25.0"
     }
   ]
 }
