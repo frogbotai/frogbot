@@ -346,7 +346,7 @@ describe('frogbot buildConfig', () => {
       const config = makeConfig({ collections: [] });
       const result = await buildConfig(config);
       expect(result.collections.map((c) => c.slug)).toEqual([
-        'trigger-subscriptions',
+        'frogbot-trigger-subscriptions',
         'frogbot-waitpoints',
         'files',
       ]);

@@ -1,6 +1,6 @@
 import type { CollectionConfig } from '../collections/config/types.js';
 
-export const TRIGGER_SUBSCRIPTIONS_SLUG = 'trigger-subscriptions';
+export const TRIGGER_SUBSCRIPTIONS_SLUG = 'frogbot-trigger-subscriptions';
 
 export function defaultTriggerSubscriptionsCollection(): CollectionConfig {
   return {

@@ -40,9 +40,9 @@ describe('resume endpoint registration', () => {
     ]);
     expect(waitpoints).toHaveLength(1);
     expect(waitpoints?.[0]).toMatchObject({ admin: { hidden: true } });
-    expect(payloadConfig.collections?.some(({ slug }) => slug === 'trigger-subscriptions')).toBe(
-      true,
-    );
+    expect(
+      payloadConfig.collections?.some(({ slug }) => slug === 'frogbot-trigger-subscriptions'),
+    ).toBe(true);
   });
 
   it('keeps resume routes ahead of broad custom routes and preserves unrelated endpoints', async () => {

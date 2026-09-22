@@ -70,7 +70,7 @@ export interface Config {
     'rich-text-users': RichTextUser;
     'rich-text-articles': RichTextArticle;
     'rich-text-html-articles': RichTextHtmlArticle;
-    'trigger-subscriptions': TriggerSubscription;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
     'frogbot-waitpoints': FrogbotWaitpoint;
     files: File;
   };
@@ -79,7 +79,7 @@ export interface Config {
     'rich-text-users': RichTextUsersSelect;
     'rich-text-articles': RichTextArticlesSelect;
     'rich-text-html-articles': RichTextHtmlArticlesSelect;
-    'trigger-subscriptions': TriggerSubscriptionsSelect;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
     'frogbot-waitpoints': FrogbotWaitpointsSelect;
     files: FilesSelect;
   };
@@ -240,9 +240,9 @@ export interface RichTextHtmlArticle {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "trigger-subscriptions".
+ * via the `definition` "frogbot-trigger-subscriptions".
  */
-export interface TriggerSubscription {
+export interface FrogbotTriggerSubscription {
   id: number;
   agent: string;
   piece: string;
@@ -391,9 +391,9 @@ export interface RichTextHtmlArticlesSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "trigger-subscriptions_select".
+ * via the `definition` "frogbot-trigger-subscriptions_select".
  */
-export interface TriggerSubscriptionsSelect {
+export interface FrogbotTriggerSubscriptionsSelect {
   agent?: boolean;
   piece?: boolean;
   instance?: boolean;

@@ -104,7 +104,7 @@ describe('frogbot sanitize', () => {
     const config = sanitize(makeConfig());
     const payloadConfig = await config._internal.payloadConfig;
     expect(
-      payloadConfig.collections?.find(({ slug }) => slug === 'trigger-subscriptions'),
+      payloadConfig.collections?.find(({ slug }) => slug === 'frogbot-trigger-subscriptions'),
     ).toMatchObject({ admin: { hidden: true } });
     expect(Object.keys(config._internal.triggers)).toEqual([]);
     expect(payloadConfig.endpoints).not.toEqual(
@@ -114,8 +114,10 @@ describe('frogbot sanitize', () => {
 
   it('reserves the subscription ledger slug without mounted triggers', () => {
     expect(() =>
-      sanitize(makeConfig({ collections: [{ slug: 'trigger-subscriptions', fields: [] }] })),
-    ).toThrow("Collection slug 'trigger-subscriptions' is reserved");
+      sanitize(
+        makeConfig({ collections: [{ slug: 'frogbot-trigger-subscriptions', fields: [] }] }),
+      ),
+    ).toThrow("Collection slug 'frogbot-trigger-subscriptions' is reserved");
   });
 
   it('makes board collections orderable with per-view fields and a hook', async () => {
@@ -432,7 +434,7 @@ describe('frogbot sanitize', () => {
     expect(result.collections).toEqual([
       { slug: 'users', auth: true },
       { slug: 'projects', auth: false },
-      { slug: 'trigger-subscriptions', auth: false },
+      { slug: 'frogbot-trigger-subscriptions', auth: false },
       { slug: 'frogbot-waitpoints', auth: false },
       { slug: 'files', auth: false },
     ]);
@@ -1365,7 +1367,7 @@ describe('frogbot sanitize', () => {
       'alpha',
       'beta',
       'gamma',
-      'trigger-subscriptions',
+      'frogbot-trigger-subscriptions',
       'frogbot-waitpoints',
       'files',
     ]);
@@ -2536,7 +2538,7 @@ describe('frogbot sanitize', () => {
         'chats',
         'messages',
         'usage-logs',
-        'trigger-subscriptions',
+        'frogbot-trigger-subscriptions',
         'frogbot-waitpoints',
         'files',
       ]);
@@ -2547,7 +2549,7 @@ describe('frogbot sanitize', () => {
         'chats',
         'messages',
         'usage-logs',
-        'trigger-subscriptions',
+        'frogbot-trigger-subscriptions',
         'frogbot-waitpoints',
         'files',
       ]);

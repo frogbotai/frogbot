@@ -75,7 +75,7 @@ export interface Config {
     chats: Chat;
     messages: Message;
     connections: Connection;
-    'trigger-subscriptions': TriggerSubscription;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
   };
   collectionsJoins: {};
   collectionsSelect: {
@@ -87,7 +87,7 @@ export interface Config {
     chats: ChatsSelect;
     messages: MessagesSelect;
     connections: ConnectionsSelect;
-    'trigger-subscriptions': TriggerSubscriptionsSelect;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
   };
   db: {
     defaultIDType: number;
@@ -362,9 +362,9 @@ export interface Connection {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "trigger-subscriptions".
+ * via the `definition` "frogbot-trigger-subscriptions".
  */
-export interface TriggerSubscription {
+export interface FrogbotTriggerSubscription {
   id: number;
   agent: string;
   piece: string;
@@ -558,9 +558,9 @@ export interface ConnectionsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "trigger-subscriptions_select".
+ * via the `definition` "frogbot-trigger-subscriptions_select".
  */
-export interface TriggerSubscriptionsSelect {
+export interface FrogbotTriggerSubscriptionsSelect {
   agent?: boolean;
   piece?: boolean;
   instance?: boolean;

@@ -69,7 +69,7 @@ export interface Config {
   collections: {
     'select-users': SelectUser;
     'select-posts': SelectPost;
-    'trigger-subscriptions': TriggerSubscription;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
     'frogbot-waitpoints': FrogbotWaitpoint;
     files: File;
   };
@@ -77,7 +77,7 @@ export interface Config {
   collectionsSelect: {
     'select-users': SelectUsersSelect;
     'select-posts': SelectPostsSelect;
-    'trigger-subscriptions': TriggerSubscriptionsSelect;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
     'frogbot-waitpoints': FrogbotWaitpointsSelect;
     files: FilesSelect;
   };
@@ -168,9 +168,9 @@ export interface SelectPost {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "trigger-subscriptions".
+ * via the `definition` "frogbot-trigger-subscriptions".
  */
-export interface TriggerSubscription {
+export interface FrogbotTriggerSubscription {
   id: number;
   agent: string;
   piece: string;
@@ -306,9 +306,9 @@ export interface SelectPostsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "trigger-subscriptions_select".
+ * via the `definition` "frogbot-trigger-subscriptions_select".
  */
-export interface TriggerSubscriptionsSelect {
+export interface FrogbotTriggerSubscriptionsSelect {
   agent?: boolean;
   piece?: boolean;
   instance?: boolean;
