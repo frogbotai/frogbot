@@ -72,7 +72,7 @@ export interface Config {
     'undefined-slug-field-posts': UndefinedSlugFieldPost;
     'draft-field-posts': DraftFieldPost;
     'nested-fields': NestedField;
-    'trigger-subscriptions': TriggerSubscription;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
     'frogbot-waitpoints': FrogbotWaitpoint;
     files: File;
     users: User;
@@ -84,7 +84,7 @@ export interface Config {
     'undefined-slug-field-posts': UndefinedSlugFieldPostsSelect;
     'draft-field-posts': DraftFieldPostsSelect;
     'nested-fields': NestedFieldsSelect;
-    'trigger-subscriptions': TriggerSubscriptionsSelect;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
     'frogbot-waitpoints': FrogbotWaitpointsSelect;
     files: FilesSelect;
     users: UsersSelect;
@@ -224,9 +224,9 @@ export interface NestedField {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "trigger-subscriptions".
+ * via the `definition` "frogbot-trigger-subscriptions".
  */
-export interface TriggerSubscription {
+export interface FrogbotTriggerSubscription {
   id: number;
   agent: string;
   piece: string;
@@ -429,9 +429,9 @@ export interface NestedFieldsSelect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "trigger-subscriptions_select".
+ * via the `definition` "frogbot-trigger-subscriptions_select".
  */
-export interface TriggerSubscriptionsSelect {
+export interface FrogbotTriggerSubscriptionsSelect {
   agent?: boolean;
   piece?: boolean;
   instance?: boolean;

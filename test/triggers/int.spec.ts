@@ -8,7 +8,7 @@ import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
 import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
-const subscriptionsSlug = 'trigger-subscriptions';
+const subscriptionsSlug = 'frogbot-trigger-subscriptions';
 const taskSlug = 'frogbot-run-agent-trigger';
 
 describe('triggers', () => {
