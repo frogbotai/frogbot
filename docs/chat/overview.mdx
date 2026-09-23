@@ -24,6 +24,35 @@ Chat and message collections use soft deletion and appear under **Chat** in the 
 
 Messages store the AI SDK `UIMessage.parts` array. Tool calls, tool results, reasoning, and custom data parts therefore remain available on later turns instead of being flattened into text.
 
+## Chat assets
+
+Files that belong to a conversation live in a separate upload collection, `frogbot-chat-assets`, not in your [files collection](/upload/files). Composer attachments and files an agent produces during a run, such as screenshots or generated documents, are stored there so a user's own file library only contains what they chose to keep.
+
+FrogBot injects the collection whenever chat persistence is enabled and hides it from the admin panel. Each asset records an `owner` and, once a message references it, the `chat` it belongs to. The manifest exposes the slug as `chat.assetsSlug`.
+
+| Operation | Who is allowed |
+| --- | --- |
+| Create | Any authenticated user |
+| Read | The owner, or anyone who can read the linked chat under that collection's `read` access rule |
+| Update, delete | No one through the API |
+
+Because read access follows the chat collection's own rule, sharing a chat also shares its attachments. The collection uses the same storage configuration as any other upload collection; target `frogbot-chat-assets` in a [storage adapter](/upload/storage-adapters) to keep assets in cloud storage.
+
+Tools can save files against the current chat with `saveChatAsset`:
+
+```ts
+import { saveChatAsset } from 'frogbot/tools'
+
+const asset = await saveChatAsset({
+  ctx,
+  filename: 'page.png',
+  mimeType: 'image/png',
+  data: screenshot,
+})
+```
+
+The helper requires chat persistence and a current chat on `ctx.agent.chatId`; it records the requesting user as the owner.
+
 ## Use the default chat views
 
 When an agent is configured, the admin dashboard and chat collection create route open an empty chat with the first configured agent. Sending the first message creates the chat and updates the URL to its document route without remounting the conversation.

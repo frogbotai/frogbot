@@ -7,6 +7,7 @@ import {
   generateAgentRequest,
   getAgentAuthorizations,
   getAgentManifest,
+  getAgentStreamOptions,
   listAgents,
 } from '../../../../packages/frogbot/src/agents/service.js';
 import type { AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
@@ -67,7 +68,12 @@ function makeRequest({
       connections: authorizations ? { authorizations } : undefined,
       config: {
         ai: { routers: {} },
-        chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
+        chat: {
+          enabled: true,
+          chatsSlug: 'chats',
+          messagesSlug: 'messages',
+          assetsSlug: 'frogbot-chat-assets',
+        },
       },
       create,
       findByID: vi.fn(() => Promise.resolve({ id: 'chat-1', title: null })),
@@ -151,6 +157,21 @@ describe('agent service', () => {
       req,
       pieces: [piece],
     });
+  });
+
+  it('passes the current chat into streaming tool runtime options', () => {
+    const agent = makeAgent();
+    const req = makeRequest({ agents: { support: agent } });
+
+    const result = getAgentStreamOptions({ req, agent, chatId: 'chat-1', uiMessages: [] });
+
+    expect(result.options).toEqual({
+      req,
+      overrideAccess: true,
+      chatId: 'chat-1',
+      model: undefined,
+    });
+    expect(result.headers).toEqual({ 'X-Frogbot-Chat-Id': 'chat-1' });
   });
 
   it('generates from UI messages and persists the assistant message', async () => {

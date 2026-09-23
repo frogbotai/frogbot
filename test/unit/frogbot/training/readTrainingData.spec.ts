@@ -16,7 +16,14 @@ function stubFrogbot(pages: { chats: Page[]; messages: Record<string, Page[]> })
   return {
     find,
     frogbot: {
-      config: { chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' } },
+      config: {
+        chat: {
+          enabled: true,
+          chatsSlug: 'chats',
+          messagesSlug: 'messages',
+          assetsSlug: 'frogbot-chat-assets',
+        },
+      },
       find,
     } as unknown as Frogbot,
   };

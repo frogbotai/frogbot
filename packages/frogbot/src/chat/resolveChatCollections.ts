@@ -10,12 +10,11 @@
 import { resolveMarkedCollection } from '../collections/config/resolveMarkedCollection.js';
 import type { CollectionConfig } from '../collections/config/types.js';
 import type { FrogbotConfig } from '../config/types.js';
+import { CHAT_ASSETS_SLUG, defaultChatAssetsCollection } from './collections/assets.js';
 import { defaultChatsCollection } from './collections/chats.js';
 import { defaultMessagesCollection } from './collections/messages.js';
 import { resolveUserSlug } from './resolveUserSlug.js';
 import type { SanitizedChatConfig } from './types.js';
-
-export const CHAT_ASSETS_SLUG = '_frogbot_chat_assets';
 
 export const DEFAULT_CHATS_SLUG = 'chats';
 export const DEFAULT_MESSAGES_SLUG = 'messages';
@@ -40,12 +39,6 @@ function findChatCollection(
 }
 
 export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
-  if (config.collections.some((c) => c.slug === CHAT_ASSETS_SLUG)) {
-    throw new Error(
-      `[frogbot] Collection slug '${CHAT_ASSETS_SLUG}' is reserved for FrogBot chat assets.`,
-    );
-  }
-
   const chatCollection = findChatCollection(config.collections, 'chat');
   const messageCollection = findChatCollection(config.collections, 'message');
   if (chatCollection && chatCollection === messageCollection) {
@@ -76,7 +69,7 @@ export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
     defaultCollection: defaultChatsCollection({ slug: chatsSlug, userSlug }),
     reservedFields: ['user', 'channel', 'externalId', 'channelKey'],
   });
-  const collections = resolveMarkedCollection({
+  const withMessages = resolveMarkedCollection({
     collectionLabel: 'chat message',
     collections: withChats,
     existing: messageCollection,
@@ -86,5 +79,10 @@ export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
     reservedFields: ['id', 'parts', 'chat'],
   });
 
-  return { collections, chat: { enabled: true, chatsSlug, messagesSlug } };
+  const collections = [...withMessages, defaultChatAssetsCollection({ chatsSlug, userSlug })];
+
+  return {
+    collections,
+    chat: { enabled: true, chatsSlug, messagesSlug, assetsSlug: CHAT_ASSETS_SLUG },
+  };
 }

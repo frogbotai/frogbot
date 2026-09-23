@@ -7,7 +7,12 @@ const mocks = vi.hoisted(() => ({
   getCachedFrogbot: vi.fn(() => ({
     config: {
       agents: [{ slug: 'general' }],
-      chat: { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns' },
+      chat: {
+        enabled: true,
+        chatsSlug: 'conversations',
+        messagesSlug: 'turns',
+        assetsSlug: 'frogbot-chat-assets',
+      },
     },
   })),
   RootPage: vi.fn(() => null),

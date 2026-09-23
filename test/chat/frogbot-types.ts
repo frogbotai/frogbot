@@ -70,6 +70,10 @@ export interface Config {
     users: User;
     chats: Chat;
     messages: Message;
+    'frogbot-chat-assets': FrogbotChatAsset;
+    'usage-logs': UsageLog;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
+    'frogbot-waitpoints': FrogbotWaitpoint;
     files: File;
   };
   collectionsJoins: {};
@@ -77,6 +81,10 @@ export interface Config {
     users: UsersSelect;
     chats: ChatsSelect;
     messages: MessagesSelect;
+    'frogbot-chat-assets': FrogbotChatAssetsSelect;
+    'usage-logs': UsageLogsSelect;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
+    'frogbot-waitpoints': FrogbotWaitpointsSelect;
     files: FilesSelect;
   };
   db: {
@@ -91,7 +99,15 @@ export interface Config {
   };
   user: User;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      'frogbot-reset-ai-budgets': TaskFrogbotResetAiBudgets;
+      'frogbot-sweep-jobs': TaskFrogbotSweepJobs;
+      'frogbot-cleanup-kv': TaskFrogbotCleanupKv;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -120,6 +136,10 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name?: string | null;
+  modelAccess?: ('all' | 'selected') | null;
+  models?: 'test/gpt-4.1-mini'[] | null;
+  monthlyBudget?: number | null;
+  spendThisPeriodUSD?: number | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -127,6 +147,7 @@ export interface User {
   resetPasswordExpiration?: string | null;
   salt?: string | null;
   hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
   sessions?:
@@ -145,10 +166,15 @@ export interface User {
  */
 export interface Chat {
   id: number;
+  sharedWith?: (number | User)[] | null;
   title?: string | null;
   user?: (number | null) | User;
   agent?: string | null;
+  channel?: string | null;
+  externalId?: string | null;
+  channelKey?: string | null;
   lastMessageAt?: string | null;
+  todos?: import('frogbot/tools').TodoItem[];
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
@@ -186,6 +212,135 @@ export interface Message {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-assets".
+ */
+export interface FrogbotChatAsset {
+  id: number;
+  owner?: (number | null) | User;
+  chat?: (number | null) | Chat;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs".
+ */
+export interface UsageLog {
+  id: number;
+  user?: (number | null) | User;
+  chat?: (number | null) | Chat;
+  requestId: string;
+  runId?: string | null;
+  model: string;
+  operation:
+    | 'chat.completions'
+    | 'messages'
+    | 'responses'
+    | 'embeddings'
+    | 'images'
+    | 'speech'
+    | 'transcriptions'
+    | 'videos'
+    | 'rerank';
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens?: number | null;
+  cacheWriteTokens?: number | null;
+  reasoningTokens?: number | null;
+  totalTokens: number;
+  costUSD: number;
+  finishReason?: string | null;
+  requestedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-trigger-subscriptions".
+ */
+export interface FrogbotTriggerSubscription {
+  id: number;
+  agent: string;
+  piece: string;
+  instance: string;
+  trigger: string;
+  inputHash: string;
+  input:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  state?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  webhookUrl?: string | null;
+  status: 'active' | 'error';
+  cleanupPending?: boolean | null;
+  enablePending?: boolean | null;
+  enableAttempt?: string | null;
+  expiresAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-waitpoints".
+ */
+export interface FrogbotWaitpoint {
+  id: number;
+  jobId: string;
+  name: string;
+  token: string;
+  kind: 'delay' | 'resumable';
+  ready: boolean;
+  status: 'pending' | 'resumed' | 'expired';
+  expiresAt?: string | null;
+  until?: string | null;
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  snapshot:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  dispatched: boolean;
+  dispatchOwner?: string | null;
+  dispatchLeaseUntil?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "files".
  */
 export interface File {
@@ -210,6 +365,10 @@ export interface File {
  */
 export interface UsersSelect {
   name?: boolean;
+  modelAccess?: boolean;
+  models?: boolean;
+  monthlyBudget?: boolean;
+  spendThisPeriodUSD?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   email?: boolean;
@@ -217,6 +376,7 @@ export interface UsersSelect {
   resetPasswordExpiration?: boolean;
   salt?: boolean;
   hash?: boolean;
+  resetPasswordRequestedAt?: boolean;
   loginAttempts?: boolean;
   lockUntil?: boolean;
   sessions?:
@@ -232,10 +392,15 @@ export interface UsersSelect {
  * via the `definition` "chats_select".
  */
 export interface ChatsSelect {
+  sharedWith?: boolean;
   title?: boolean;
   user?: boolean;
   agent?: boolean;
+  channel?: boolean;
+  externalId?: boolean;
+  channelKey?: boolean;
   lastMessageAt?: boolean;
+  todos?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
   deletedAt?: boolean;
@@ -264,6 +429,90 @@ export interface MessagesSelect {
   updatedAt?: boolean;
   createdAt?: boolean;
   deletedAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-assets_select".
+ */
+export interface FrogbotChatAssetsSelect {
+  owner?: boolean;
+  chat?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  focalX?: boolean;
+  focalY?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "usage-logs_select".
+ */
+export interface UsageLogsSelect {
+  user?: boolean;
+  chat?: boolean;
+  requestId?: boolean;
+  runId?: boolean;
+  model?: boolean;
+  operation?: boolean;
+  inputTokens?: boolean;
+  outputTokens?: boolean;
+  cachedInputTokens?: boolean;
+  cacheWriteTokens?: boolean;
+  reasoningTokens?: boolean;
+  totalTokens?: boolean;
+  costUSD?: boolean;
+  finishReason?: boolean;
+  requestedAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-trigger-subscriptions_select".
+ */
+export interface FrogbotTriggerSubscriptionsSelect {
+  agent?: boolean;
+  piece?: boolean;
+  instance?: boolean;
+  trigger?: boolean;
+  inputHash?: boolean;
+  input?: boolean;
+  state?: boolean;
+  webhookUrl?: boolean;
+  status?: boolean;
+  cleanupPending?: boolean;
+  enablePending?: boolean;
+  enableAttempt?: boolean;
+  expiresAt?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-waitpoints_select".
+ */
+export interface FrogbotWaitpointsSelect {
+  jobId?: boolean;
+  name?: boolean;
+  token?: boolean;
+  kind?: boolean;
+  ready?: boolean;
+  status?: boolean;
+  expiresAt?: boolean;
+  until?: boolean;
+  data?: boolean;
+  snapshot?: boolean;
+  dispatched?: boolean;
+  dispatchOwner?: boolean;
+  dispatchLeaseUntil?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -296,6 +545,30 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-reset-ai-budgets".
+ */
+export interface TaskFrogbotResetAiBudgets {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-sweep-jobs".
+ */
+export interface TaskFrogbotSweepJobs {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFrogbot-cleanup-kv".
+ */
+export interface TaskFrogbotCleanupKv {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "auth".
  */
 export interface Auth {
@@ -307,43 +580,7 @@ declare module 'frogbot' {
     agents: {
       support: unknown;
     };
-    models:
-      | 'openai/chatgpt-image-latest'
-      | 'openai/gpt-4.1'
-      | 'openai/gpt-4.1-mini'
-      | 'openai/gpt-4o'
-      | 'openai/gpt-4o-2024-08-06'
-      | 'openai/gpt-4o-2024-11-20'
-      | 'openai/gpt-4o-mini'
-      | 'openai/gpt-5'
-      | 'openai/gpt-5-mini'
-      | 'openai/gpt-5-nano'
-      | 'openai/gpt-5-pro'
-      | 'openai/gpt-5.1'
-      | 'openai/gpt-5.2'
-      | 'openai/gpt-5.2-chat-latest'
-      | 'openai/gpt-5.2-pro'
-      | 'openai/gpt-5.3-chat-latest'
-      | 'openai/gpt-5.3-codex'
-      | 'openai/gpt-5.3-codex-spark'
-      | 'openai/gpt-5.4'
-      | 'openai/gpt-5.4-mini'
-      | 'openai/gpt-5.4-nano'
-      | 'openai/gpt-5.4-pro'
-      | 'openai/gpt-5.5'
-      | 'openai/gpt-5.5-pro'
-      | 'openai/gpt-5.6'
-      | 'openai/gpt-5.6-luna'
-      | 'openai/gpt-5.6-sol'
-      | 'openai/gpt-5.6-terra'
-      | 'openai/gpt-image-1-mini'
-      | 'openai/gpt-image-1.5'
-      | 'openai/gpt-image-2'
-      | 'openai/gpt-realtime-2.1'
-      | 'openai/o3'
-      | 'openai/o3-pro'
-      | 'openai/text-embedding-3-large'
-      | 'openai/text-embedding-3-small'
-      | 'openai/text-embedding-ada-002';
+    models: 'test/gpt-4.1-mini';
+    roles: never;
   }
 }

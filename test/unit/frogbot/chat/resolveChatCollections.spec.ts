@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  CHAT_ASSETS_SLUG,
-  resolveChatCollections,
-} from '../../../../packages/frogbot/src/chat/resolveChatCollections.js';
+import { CHAT_ASSETS_SLUG } from '../../../../packages/frogbot/src/chat/collections/assets.js';
+import { resolveChatCollections } from '../../../../packages/frogbot/src/chat/resolveChatCollections.js';
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
 
@@ -35,25 +33,31 @@ describe('resolveChatCollections', () => {
 
   it('injects default chats and messages collections when agents are configured', () => {
     const result = resolveChatCollections(make([]));
-    expect(slugs(result.collections)).toEqual(['chats', 'messages']);
+    expect(slugs(result.collections)).toEqual(['chats', 'messages', CHAT_ASSETS_SLUG]);
     expect(result.chat).toEqual({
       enabled: true,
       chatsSlug: 'chats',
       messagesSlug: 'messages',
+      assetsSlug: CHAT_ASSETS_SLUG,
     });
   });
 
   it('keeps user collections and appends the injected chat collections', () => {
     const result = resolveChatCollections(make([{ slug: 'posts', fields: [] }]));
-    expect(slugs(result.collections)).toEqual(['posts', 'chats', 'messages']);
+    expect(slugs(result.collections)).toEqual(['posts', 'chats', 'messages', CHAT_ASSETS_SLUG]);
   });
 
   it('enables persistence when a marker is present without agents', () => {
     const result = resolveChatCollections(
       make([{ slug: 'convos', chat: true, fields: [] }], { agents: undefined }),
     );
-    expect(result.chat).toEqual({ enabled: true, chatsSlug: 'convos', messagesSlug: 'messages' });
-    expect(slugs(result.collections)).toEqual(['convos', 'messages']);
+    expect(result.chat).toEqual({
+      enabled: true,
+      chatsSlug: 'convos',
+      messagesSlug: 'messages',
+      assetsSlug: CHAT_ASSETS_SLUG,
+    });
+    expect(slugs(result.collections)).toEqual(['convos', 'messages', CHAT_ASSETS_SLUG]);
   });
 
   it('adopts a `chat: true` collection under its own slug and merges base fields', () => {
@@ -64,6 +68,7 @@ describe('resolveChatCollections', () => {
       enabled: true,
       chatsSlug: 'conversations',
       messagesSlug: 'messages',
+      assetsSlug: CHAT_ASSETS_SLUG,
     });
     const chats = result.collections.find((c) => c.slug === 'conversations');
     expect(chats?.fields.map((f) => ('name' in f ? f.name : undefined))).toEqual([
@@ -90,6 +95,7 @@ describe('resolveChatCollections', () => {
       enabled: true,
       chatsSlug: 'conversations',
       messagesSlug: 'turns',
+      assetsSlug: CHAT_ASSETS_SLUG,
     });
     const turns = result.collections.find((c) => c.slug === 'turns');
     const chat = turns?.fields.find((f) => 'name' in f && f.name === 'chat');
@@ -156,15 +162,5 @@ describe('resolveChatCollections', () => {
         ),
       ).toThrow(`[frogbot] Field '${name}' on collection 'turns' is reserved by chat persistence.`);
     }
-  });
-
-  it(`throws on the reserved '${CHAT_ASSETS_SLUG}' slug even without agents`, () => {
-    const collections = [{ slug: CHAT_ASSETS_SLUG, fields: [] }];
-    expect(() => resolveChatCollections(make(collections, { agents: undefined }))).toThrow(
-      `[frogbot] Collection slug '${CHAT_ASSETS_SLUG}' is reserved for FrogBot chat assets.`,
-    );
-    expect(() => resolveChatCollections(make(collections))).toThrow(
-      `[frogbot] Collection slug '${CHAT_ASSETS_SLUG}' is reserved for FrogBot chat assets.`,
-    );
   });
 });

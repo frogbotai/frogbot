@@ -160,6 +160,12 @@ import { PageContextButton } from '@frogbotai/ui/chat'
 
 The host remains responsible for reading tab content and creating `data-page-context` parts. The button only lists and toggles tab IDs.
 
+## Attachments
+
+Dropping or selecting files in the composer uploads each one to the chat assets collection advertised by the manifest as `chat.assetsSlug`, then sends a `file-reference` part carrying the stored id. The server links the asset to the chat on the first message that references it and inlines its content for the model. See [chat assets](/chat/overview#chat-assets) for storage and access rules.
+
+Pass `assetsSlug` to a standalone `Composer` to enable the attachment control; `<Chat>` supplies it from the manifest automatically.
+
 ## Message data parts
 
 Chat renders these AI SDK v7 data part types:
