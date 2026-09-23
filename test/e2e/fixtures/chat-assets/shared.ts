@@ -1,0 +1,14 @@
+export const usersSlug = 'users';
+export const chatsSlug = 'asset-chats';
+export const messagesSlug = 'messages';
+export const assetsSlug = 'frogbot-chat-assets';
+export const agentSlug = 'asset-agent';
+export const toolSlug = 'save_report';
+export const modelId = 'chat-assets-e2e';
+export const instructions = 'Read the attachments and save a report using save_report.';
+export const prompt = 'Read these attachments and save the report.';
+export const followUp = 'Read those attachments again.';
+export const note = 'Chat asset HTTP E2E: café, 蛙, and exact bytes.\n';
+export const report = 'Generated through the real agent tool context.\n';
+export const answer = 'The report is saved.';
+export const toolCallId = 'save-report-call';

@@ -40,7 +40,7 @@ export type ComposerProps = Omit<
   submitContent: ReactNode;
   stopContent: ReactNode;
   sdk?: FrogBotSDK;
-  filesSlug?: string;
+  assetsSlug?: string;
 };
 
 export function Composer({
@@ -48,7 +48,7 @@ export function Composer({
   defaultValue = '',
   disabled,
   endSlot,
-  filesSlug,
+  assetsSlug,
   onKeyDown,
   onPaste,
   onStop,
@@ -68,7 +68,7 @@ export function Composer({
   const [audioData, setAudioData] = useState<Float32Array | null>();
   const [pastes, setPastes] = useState<Extract<ComposerAttachment, { type: 'paste' }>[]>([]);
   const currentValue = value ?? internalValue;
-  const attachments = useAttachments({ filesSlug, sdk });
+  const attachments = useAttachments({ assetsSlug, sdk });
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -177,7 +177,7 @@ export function Composer({
             />
             <div className="fb-composer__controls">
               <div className="fb-composer__start">
-                {sdk && filesSlug && (
+                {sdk && assetsSlug && (
                   <AttachmentControl add={attachments.add} disabled={disabled || pending} />
                 )}
                 {startSlot}

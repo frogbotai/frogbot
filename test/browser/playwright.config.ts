@@ -10,6 +10,8 @@ const blankPort = 3111;
 const customFieldPort = 3112;
 const richTextPort = 3113;
 const livePreviewPort = 3114;
+const chatAssetsPort = 3125;
+const chatProviderPort = 3126;
 const selectedProjects = new Set<string>();
 let collectingProjects = false;
 
@@ -102,6 +104,33 @@ const customFieldServer = {
   },
 };
 
+const chatAssetsServers = [
+  {
+    command: 'node test/browser/fixtures/chat-assets/provider.mjs',
+    cwd: repoRoot,
+    url: `http://localhost:${chatProviderPort}/health`,
+    reuseExistingServer: false,
+    timeout: 30_000,
+    env: { PORT: String(chatProviderPort) },
+  },
+  {
+    command: 'node ../../../node_modules/next/dist/bin/next dev',
+    cwd: path.join(dirname, 'fixtures', 'chat-assets'),
+    url: `http://localhost:${chatAssetsPort}`,
+    reuseExistingServer: false,
+    timeout: 180_000,
+    stdout: 'ignore' as const,
+    stderr: 'pipe' as const,
+    env: {
+      PORT: String(chatAssetsPort),
+      DATABASE_URL: 'file:./frogbot.db',
+      FROGBOT_SECRET: 'browser-chat-assets-secret',
+      BROWSER_PROVIDER_URL: `http://localhost:${chatProviderPort}/v1`,
+      NEXT_TELEMETRY_DISABLED: '1',
+    },
+  },
+];
+
 export default defineConfig({
   testDir: dirname,
   testMatch: '*.browser.spec.ts',
@@ -118,6 +147,15 @@ export default defineConfig({
     video: 'off',
   },
   projects: [
+    {
+      name: 'chat-assets',
+      testMatch: 'chatAssets.browser.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://localhost:${chatAssetsPort}`,
+        channel: 'chromium',
+      },
+    },
     {
       name: 'blank',
       testMatch: 'navShell.browser.spec.ts',
@@ -160,7 +198,8 @@ export default defineConfig({
     'custom-field': customFieldServer,
     'rich-text': richTextServer,
     'live-preview': livePreviewServer,
+    'chat-assets': chatAssetsServers,
   })
     .filter(([name]) => startAllServers || selectedProjects.has(name))
-    .map(([, server]) => server),
+    .flatMap(([, server]) => server),
 });

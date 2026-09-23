@@ -2,7 +2,7 @@ import type { CollectionConfig } from 'frogbot';
 import { todoTools } from 'frogbot/tools';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
-import { agentSlug, usersSlug } from './shared.js';
+import { agentSlug, chatsSlug, usersSlug } from './shared.js';
 
 const Users: CollectionConfig = {
   slug: usersSlug,
@@ -11,8 +11,23 @@ const Users: CollectionConfig = {
   fields: [{ name: 'name', type: 'text' }],
 };
 
+const Chats: CollectionConfig = {
+  slug: chatsSlug,
+  chat: true,
+  access: {
+    read: ({ req }) => {
+      if (!req.user) return false;
+
+      return {
+        or: [{ user: { equals: req.user.id } }, { sharedWith: { contains: req.user.id } }],
+      };
+    },
+  },
+  fields: [{ name: 'sharedWith', type: 'relationship', relationTo: usersSlug, hasMany: true }],
+};
+
 export default await buildTestConfig({
-  collections: [Users],
+  collections: [Users, Chats],
   ai: {
     providers: {
       test: {

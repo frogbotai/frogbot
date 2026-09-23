@@ -1,0 +1,9 @@
+export const assetsSlug = 'frogbot-chat-assets';
+export const filesSlug = 'files';
+export const chatsSlug = 'chats';
+export const messagesSlug = 'messages';
+export const usersSlug = 'users';
+export const agentSlug = 'attachment-reader';
+export const providerURL = 'http://localhost:3126';
+export const imageBase64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aJ1sAAAAASUVORK5CYII=';

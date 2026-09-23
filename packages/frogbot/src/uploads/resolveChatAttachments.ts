@@ -8,9 +8,11 @@ import { AgentServiceError } from '../agents/service.js';
 import type { FrogbotRequest } from '../types/request.js';
 
 type FileDocument = {
+  id: string | number;
   filename?: string;
   mimeType?: string;
   url?: string;
+  chat?: string | number | { id: string | number } | null;
 };
 
 type FileReferencePart = {
@@ -23,31 +25,70 @@ type FileReferencePart = {
 export async function resolveChatAttachments({
   req,
   messages,
+  chatId,
 }: {
   req: FrogbotRequest;
   messages: UIMessage[];
+  chatId?: string | number;
 }): Promise<UIMessage[]> {
+  const hasAttachments = messages.some((message) => message.parts.some(isFileReference));
+
+  if (!hasAttachments) return messages;
+
+  const collection = assetsCollection(req);
+
   return Promise.all(
     messages.map(async (message) => ({
       ...message,
-      parts: await Promise.all(message.parts.map((part) => resolvePart({ req, part }))),
+      parts: await Promise.all(
+        message.parts.map((part) => resolvePart({ req, part, collection, chatId })),
+      ),
     })),
   );
+}
+
+function assetsCollection(req: FrogbotRequest): string {
+  const chat = req.frogbot.config.chat;
+
+  if (!chat.enabled) {
+    throw new AgentServiceError('Chat attachments require chat persistence', 400);
+  }
+
+  return chat.assetsSlug;
 }
 
 async function resolvePart({
   req,
   part,
+  collection,
+  chatId,
 }: {
   req: FrogbotRequest;
   part: unknown;
+  collection: string;
+  chatId?: string | number;
 }): Promise<UIMessage['parts'][number]> {
   if (!isFileReference(part)) return part as UIMessage['parts'][number];
-  const doc = await findFile({ req, id: part.id });
+
+  const doc = await findFile({ req, id: part.id, collection });
   const filename = doc.filename;
   const mediaType = doc.mimeType;
+
   if (!filename || !mediaType) throw new AgentServiceError(`File '${part.id}' is unavailable`, 404);
-  const data = await readFile({ req, doc, filename });
+
+  if (chatId !== undefined && !doc.chat) {
+    await req.frogbot.update({
+      collection,
+      id: doc.id,
+      data: { chat: chatId },
+      depth: 0,
+      req,
+      overrideAccess: true,
+    });
+  }
+
+  const data = await readFile({ req, doc, filename, collection });
+
   return {
     type: 'file' as const,
     filename,
@@ -70,13 +111,15 @@ function isFileReference(part: unknown): part is FileReferencePart {
 async function findFile({
   req,
   id,
+  collection,
 }: {
   req: FrogbotRequest;
   id: string | number;
+  collection: string;
 }): Promise<FileDocument> {
   try {
     return (await req.frogbot.findByID({
-      collection: req.frogbot.config.files.slug,
+      collection,
       id,
       depth: 0,
       req,
@@ -95,17 +138,20 @@ async function readFile({
   req,
   doc,
   filename,
+  collection: slug,
 }: {
   req: FrogbotRequest;
   doc: FileDocument;
   filename: string;
+  collection: string;
 }): Promise<Buffer> {
   const config = await req.frogbot.config._internal.payloadConfig;
-  const collection = config.collections.find(({ slug }) => slug === req.frogbot.config.files.slug);
+  const collection = config.collections.find((entry) => entry.slug === slug);
   const upload: UploadConfig =
     collection && typeof collection.upload === 'object' ? collection.upload : {};
+
   if (!upload.disableLocalStorage) {
-    const staticDir = path.resolve(upload.staticDir || collection?.slug || '');
+    const staticDir = path.resolve(upload.staticDir || slug);
     const filePath = path.resolve(staticDir, filename);
     if (filePath === staticDir || filePath.startsWith(`${staticDir}${path.sep}`)) {
       const file = await getFileByPath(filePath).catch(() => undefined);

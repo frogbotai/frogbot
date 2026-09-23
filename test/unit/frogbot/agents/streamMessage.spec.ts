@@ -70,7 +70,12 @@ function setup({
   const frogbot = {
     config: {
       ai: { routers: {} },
-      chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
+      chat: {
+        enabled: true,
+        chatsSlug: 'chats',
+        messagesSlug: 'messages',
+        assetsSlug: 'frogbot-chat-assets',
+      },
     },
     createRequest: vi.fn(async (req: FrogbotRequest) => req),
     findByID: vi.fn(async () => chat),

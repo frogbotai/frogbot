@@ -155,7 +155,12 @@ function makeDeps(config: SanitizedAIConfig, req: FrogbotRequest) {
   const frogbot = {
     config: {
       ai: { routers: {} },
-      chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
+      chat: {
+        enabled: true,
+        chatsSlug: 'chats',
+        messagesSlug: 'messages',
+        assetsSlug: 'frogbot-chat-assets',
+      },
     },
     create: vi.fn(() => Promise.resolve({ id: 'message-1' })),
     delete: vi.fn(() => Promise.resolve({})),

@@ -87,7 +87,11 @@ export function buildAgentEndpoints() {
             requestedChatId,
             uiMessages: toUIMessages(body),
           });
-          const providerMessages = await resolveChatAttachments({ req, messages: uiMessages });
+          const providerMessages = await resolveChatAttachments({
+            req,
+            messages: uiMessages,
+            chatId,
+          });
 
           if (acceptsEventStream(req.headers.get('accept'))) {
             return await createAgentUIStreamResponse(

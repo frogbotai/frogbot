@@ -2477,6 +2477,7 @@ describe('frogbot sanitize', () => {
         enabled: true,
         chatsSlug: 'chats',
         messagesSlug: 'messages',
+        assetsSlug: 'frogbot-chat-assets',
       });
     });
 
@@ -2494,6 +2495,7 @@ describe('frogbot sanitize', () => {
         enabled: true,
         chatsSlug: 'conversations',
         messagesSlug: 'turns',
+        assetsSlug: 'frogbot-chat-assets',
       });
     });
 
@@ -2537,6 +2539,7 @@ describe('frogbot sanitize', () => {
         'users',
         'chats',
         'messages',
+        'frogbot-chat-assets',
         'usage-logs',
         'frogbot-trigger-subscriptions',
         'frogbot-waitpoints',
@@ -2548,6 +2551,7 @@ describe('frogbot sanitize', () => {
         'users',
         'chats',
         'messages',
+        'frogbot-chat-assets',
         'usage-logs',
         'frogbot-trigger-subscriptions',
         'frogbot-waitpoints',

@@ -32,12 +32,12 @@ type UploadItem = {
   uploading: boolean;
 };
 
-export function useAttachments({ filesSlug, sdk }: { filesSlug?: string; sdk?: FrogBotSDK }) {
+export function useAttachments({ assetsSlug, sdk }: { assetsSlug?: string; sdk?: FrogBotSDK }) {
   const nextKey = useRef(0);
   const [items, setItems] = useState<UploadItem[]>([]);
 
   const upload = async (item: UploadItem) => {
-    if (!sdk || !filesSlug) return;
+    if (!sdk || !assetsSlug) return;
 
     setItems((current) =>
       current.map((entry) =>
@@ -46,7 +46,7 @@ export function useAttachments({ filesSlug, sdk }: { filesSlug?: string; sdk?: F
     );
 
     try {
-      const uploaded = await sdk.upload(filesSlug, item.file);
+      const uploaded = await sdk.upload(assetsSlug, item.file);
       setItems((current) =>
         current.map((entry) =>
           entry.key === item.key

@@ -14,8 +14,15 @@ vi.mock('payload', async (importOriginal) => ({
 
 function request({
   findByID = vi.fn(),
+  update = vi.fn(),
   upload = { staticDir: '/files' },
-}: { findByID?: ReturnType<typeof vi.fn>; upload?: Record<string, unknown> } = {}) {
+  chat = { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages', assetsSlug: 'assets' },
+}: {
+  findByID?: ReturnType<typeof vi.fn>;
+  update?: ReturnType<typeof vi.fn>;
+  upload?: Record<string, unknown>;
+  chat?: Record<string, unknown>;
+} = {}) {
   return Object.assign(
     new Request('http://localhost/api/agents/support', {
       headers: { authorization: 'Bearer token', cookie: 'session=one' },
@@ -23,7 +30,7 @@ function request({
     {
       frogbot: {
         config: {
-          files: { slug: 'assets' },
+          chat,
           _internal: {
             payloadConfig: Promise.resolve({
               collections: [{ slug: 'assets', upload }],
@@ -32,6 +39,7 @@ function request({
           },
         },
         findByID,
+        update,
       },
     },
   ) as unknown as FrogbotRequest;
@@ -97,6 +105,71 @@ describe('resolveChatAttachments', () => {
         { type: 'file', filename: 'server.txt', mediaType: 'text/plain', data: { type: 'url' } },
       ],
     });
+  });
+
+  it('links unclaimed assets to the current chat and leaves claimed ones alone', async () => {
+    const findByID = vi
+      .fn()
+      .mockResolvedValueOnce({
+        id: 'file-1',
+        filename: 'a.txt',
+        mimeType: 'text/plain',
+        chat: null,
+      })
+      .mockResolvedValueOnce({
+        id: 'file-2',
+        filename: 'b.txt',
+        mimeType: 'text/plain',
+        chat: 'c',
+      });
+    const update = vi.fn().mockResolvedValue({});
+    getFileByPath.mockResolvedValue({ data: Buffer.from('x') });
+    const req = request({ findByID, update });
+    const [message] = messages();
+    message!.parts.push({ type: 'file-reference', id: 'file-2' } as never);
+
+    await resolveChatAttachments({ req, messages: [message!], chatId: 'chat-9' });
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledWith({
+      collection: 'assets',
+      id: 'file-1',
+      data: { chat: 'chat-9' },
+      depth: 0,
+      req,
+      overrideAccess: true,
+    });
+  });
+
+  it('does not claim assets when no chat id is known yet', async () => {
+    const findByID = vi
+      .fn()
+      .mockResolvedValue({ id: 'file-1', filename: 'a.txt', mimeType: 'text/plain', chat: null });
+    const update = vi.fn();
+    getFileByPath.mockResolvedValue({ data: Buffer.from('x') });
+
+    await resolveChatAttachments({ req: request({ findByID, update }), messages: messages() });
+
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('passes messages through untouched when they carry no file references', async () => {
+    const findByID = vi.fn();
+    const plain: UIMessage[] = [{ id: 'p', role: 'user', parts: [{ type: 'text', text: 'hi' }] }];
+
+    const resolved = await resolveChatAttachments({
+      req: request({ findByID, chat: { enabled: false } }),
+      messages: plain,
+    });
+
+    expect(resolved).toBe(plain);
+    expect(findByID).not.toHaveBeenCalled();
+  });
+
+  it('rejects file references when chat persistence is disabled', async () => {
+    await expect(
+      resolveChatAttachments({ req: request({ chat: { enabled: false } }), messages: messages() }),
+    ).rejects.toMatchObject({ status: 400, message: 'Chat attachments require chat persistence' });
   });
 
   it.each([

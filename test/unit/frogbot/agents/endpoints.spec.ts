@@ -112,7 +112,12 @@ function makeRequest({
       connections: authorizations ? { authorizations } : undefined,
       config: {
         ai: { routers: {} },
-        chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
+        chat: {
+          enabled: true,
+          chatsSlug: 'chats',
+          messagesSlug: 'messages',
+          assetsSlug: 'frogbot-chat-assets',
+        },
       },
       create,
       delete: vi.fn(() => Promise.resolve({})),
@@ -293,6 +298,7 @@ describe('agent endpoints', () => {
           ],
         }),
       ],
+      chatId: 'chat-1',
     });
   });
 

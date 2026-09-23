@@ -170,7 +170,7 @@ export function getAgentStreamOptions({
               history: uiMessages,
               mainModel: resolvedModel,
             }),
-    options: { req, overrideAccess: true, model },
+    options: { req, overrideAccess: true, chatId, model },
     abortSignal: req.signal ?? undefined,
     headers: chatId !== undefined ? { 'X-Frogbot-Chat-Id': String(chatId) } : undefined,
   };

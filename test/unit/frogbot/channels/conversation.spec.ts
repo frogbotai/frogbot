@@ -27,7 +27,14 @@ function request({
   return {
     req: {
       frogbot: {
-        config: { chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' } },
+        config: {
+          chat: {
+            enabled: true,
+            chatsSlug: 'chats',
+            messagesSlug: 'messages',
+            assetsSlug: 'frogbot-chat-assets',
+          },
+        },
         create,
         find,
       },

@@ -13,6 +13,7 @@ import type { ReactNode } from 'react';
 
 import { DataPart, type DataPartValue } from './data-part.js';
 import { FilePart } from './file-part.js';
+import { FileReferencePart } from './file-reference-part.js';
 import { ReasoningPart } from './reasoning-part.js';
 import { SourcePart } from './source-part.js';
 import { TextPart } from './text-part.js';
@@ -35,6 +36,19 @@ export function MessagePart({ fallback, part, renderData, role }: MessagePartPro
   if (isToolUIPart(known)) return <ToolPart part={known} />;
   if (isDataUIPart(known)) return <DataPart part={known} render={renderData} />;
   if (isFileUIPart(known) || isReasoningFileUIPart(known)) return <FilePart part={known} />;
+
+  if (
+    part.type === 'file-reference' &&
+    (typeof part.id === 'string' || typeof part.id === 'number')
+  ) {
+    return (
+      <FileReferencePart
+        id={part.id}
+        filename={typeof part.filename === 'string' ? part.filename : undefined}
+      />
+    );
+  }
+
   if (known.type === 'source-url' || known.type === 'source-document') {
     return <SourcePart part={known} />;
   }

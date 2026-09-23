@@ -85,7 +85,7 @@ export function Chat(props: ChatProps) {
       adapter={provider.adapter}
       sdk={provider.sdk}
       agents={provider.manifest.agents}
-      filesSlug={provider.manifest.files.slug}
+      assetsSlug={provider.manifest.chat.assetsSlug}
       messagesSlug={provider.manifest.chat.messagesSlug}
       chatsSlug={provider.manifest.chat.chatsSlug}
     />
@@ -96,7 +96,7 @@ type ChatInnerProps = ChatProps & {
   adapter: NonNullable<ReturnType<typeof useChatProvider>>['adapter'];
   sdk: NonNullable<ReturnType<typeof useChatProvider>>['sdk'];
   agents: ChatManifest['agents'];
-  filesSlug: string;
+  assetsSlug: string;
   messagesSlug: string;
   chatsSlug: string;
   chatIdControlled: boolean;
@@ -113,7 +113,7 @@ function ChatInner({
   emptyContent,
   errorContent,
   fallbackTitle = 'Untitled',
-  filesSlug,
+  assetsSlug,
   greeting: GreetingComponent = Greeting,
   headerSlot,
   initialMessages,
@@ -463,7 +463,7 @@ function ChatInner({
         />
         <Composer
           sdk={sdk}
-          filesSlug={filesSlug}
+          assetsSlug={assetsSlug}
           pending={pending}
           onStop={stop}
           onSubmit={submit}

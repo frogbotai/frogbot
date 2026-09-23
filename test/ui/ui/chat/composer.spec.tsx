@@ -59,7 +59,7 @@ describe('Composer', () => {
       <Composer
         aria-label="Message"
         sdk={createFrogbotSDK({ baseURL: '/api', fetch })}
-        filesSlug="files"
+        assetsSlug="files"
         onSubmit={onSubmit}
         submitContent="Send"
         stopContent="Stop"
@@ -153,7 +153,7 @@ describe('Composer', () => {
       <Composer
         aria-label="Message"
         sdk={createFrogbotSDK({ baseURL: '/api', fetch })}
-        filesSlug="documents"
+        assetsSlug="documents"
         onSubmit={onSubmit}
         submitContent="Send"
         stopContent="Stop"
@@ -187,7 +187,7 @@ describe('Composer', () => {
     const { container } = render(
       <Composer
         sdk={createFrogbotSDK({ baseURL: '/api', fetch })}
-        filesSlug="files"
+        assetsSlug="files"
         onSubmit={vi.fn()}
         submitContent="Send"
         stopContent="Stop"
