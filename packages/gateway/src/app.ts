@@ -39,6 +39,7 @@ import { mergeHooks } from './providers/middleware.js';
 import type { ProviderModelAllowlists, ProviderRegistry } from './providers/registry.js';
 import { chatCompletionsRoute } from './routes/chatCompletions/handler.js';
 import { embeddingsRoute } from './routes/embeddings/handler.js';
+import { evaluateRoute } from './routes/evaluate/handler.js';
 import { imagesRoute } from './routes/images/handler.js';
 import { messagesRoute } from './routes/messages/handler.js';
 import { modelsRoute } from './routes/models/handler.js';
@@ -59,6 +60,7 @@ export type GatewayRoute = {
 export type GatewayRoutes = {
   '/chat/completions': GatewayRoute;
   '/embeddings': GatewayRoute;
+  '/evaluate': GatewayRoute;
   '/images/generations': GatewayRoute;
   '/messages': GatewayRoute;
   '/models': GatewayRoute;
@@ -161,6 +163,7 @@ export function createApp(ctx: AppContext) {
   const routeApps = {
     '/chat/completions': chatCompletionsRoute({ ...routeCtx, telemetry }),
     '/embeddings': embeddingsRoute(routeCtx),
+    '/evaluate': evaluateRoute(routeCtx),
     '/images/generations': imagesRoute(routeCtx),
     '/messages': messagesRoute({ ...routeCtx, telemetry }),
     '/models': modelsRoute({
@@ -194,7 +197,7 @@ export function createApp(ctx: AppContext) {
     providers: Object.keys(ctx.registry).filter(
       (k) => ctx.registry[k as keyof ProviderRegistry] != null,
     ),
-    modalities: ['chat', 'embeddings', 'images', 'audio', 'video', 'rerank'],
+    modalities: ['chat', 'embeddings', 'images', 'audio', 'video', 'rerank', 'evaluate'],
   };
   app.get('/health', (c) => c.json(healthResponse, 200));
   if (basePath) {

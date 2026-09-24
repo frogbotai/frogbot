@@ -1,5 +1,6 @@
 import type {
   EmbeddingModelV4,
+  Experimental_EvaluationModelV4,
   Experimental_VideoModelV4,
   ImageModelV4,
   LanguageModelV4,
@@ -185,7 +186,7 @@ function languageUsage(usage: {
   };
 }
 
-function directUsage(value: unknown): HookUsage | undefined {
+export function directUsage(value: unknown): HookUsage | undefined {
   if (!value || typeof value !== 'object') return undefined;
   const usage = value as {
     inputTokens?: number;
@@ -373,7 +374,7 @@ export function withImageModelHooks(model: ImageModelV4, options: ModelHookOptio
 }
 
 function withMethodHooks<T extends object>(args: {
-  method: 'doGenerate' | 'doRerank';
+  method: 'doGenerate' | 'doRerank' | 'doEvaluate';
   model: T;
   options: ModelHookOptions;
 }): T {
@@ -422,3 +423,8 @@ export const withRerankingModelHooks = (
   model: GatewayRerankingModel,
   options: ModelHookOptions,
 ): GatewayRerankingModel => withMethodHooks({ method: 'doRerank', model, options });
+
+export const withEvaluationModelHooks = (
+  model: Experimental_EvaluationModelV4,
+  options: ModelHookOptions,
+): Experimental_EvaluationModelV4 => withMethodHooks({ method: 'doEvaluate', model, options });

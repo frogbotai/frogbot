@@ -85,6 +85,7 @@ function makeConfig(hooks: SanitizedAIConfig['hooks']): SanitizedAIConfig {
       embed: () => true,
       transcribe: () => true,
       rerank: () => true,
+      evaluate: () => true,
     },
     telemetry: { enabled: false },
     _internal: { deploymentId: 'test' },

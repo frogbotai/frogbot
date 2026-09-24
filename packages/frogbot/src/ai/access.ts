@@ -36,6 +36,8 @@ export function methodToCategory(method: AIMethod): keyof AIAccessConfig {
       return 'transcribe';
     case 'rerank':
       return 'rerank';
+    case 'evaluate':
+      return 'evaluate';
   }
 }
 

@@ -25,7 +25,7 @@ const gw = createGateway({
 
 ## Built-in providers
 
-Alibaba, Anthropic, Anthropic (AWS), AssemblyAI, Azure, Baseten, Amazon Bedrock, Black Forest Labs, ByteDance, Cerebras, Cohere, Deepgram, DeepInfra, DeepSeek, ElevenLabs, fal, Fireworks, Gladia, Google, Google Vertex, Groq, Hugging Face, Hume, Kling AI, LMNT, Luma, Mistral, Moonshot AI, OpenAI, Perplexity, Prodia, Replicate, Together AI, Vercel, Voyage, xAI.
+Alibaba, Anthropic, Anthropic (AWS), AssemblyAI, Azure, Baseten, Amazon Bedrock, Black Forest Labs, ByteDance, Cerebras, Cohere, Deepgram, DeepInfra, DeepSeek, ElevenLabs, fal, Fireworks, Gladia, Google, Google Vertex, Groq, Hugging Face, Hume, Kling AI, LMNT, Luma, Mistral, Moonshot AI, OpenAI, Perplexity, Prodia, Replicate, Together AI, TypeSafe AI, Vercel, Voyage, xAI.
 
 Each ships its own credential shape (`apiKey`, `region`, `accessKeyId`, ...) and its `envVars` list, used for config fallback and CLI env auto-discovery. Bedrock also supports ambient AWS credentials. See [Configuration](/gateway/configuration#auto-discover-from-env) for the full env var reference.
 
@@ -39,6 +39,24 @@ Built-in providers route only models in the catalog. Config also accepts an opti
   and `meta.llama3-3-70b-instruct-v1:0` with
   `us.meta.llama3-3-70b-instruct-v1:0` in model allowlists and requests.
 </Warning>
+
+---
+
+## TypeSafe AI evaluation
+
+TypeSafe AI provides evaluation models for [`POST /v1/evaluate`](/gateway/overview#evaluate-over-http) and [local `frogbot.evaluate()`](/ai/overview#evaluate-state), not chat or embedding models. Set `TYPESAFE_AI_API_KEY` in the server environment and configure `providers: { 'typesafe-ai': {} }` in a standalone gateway, or `ai: { providers: { 'typesafe-ai': true } }` in FrogBot. To use a different server-side secret, set `apiKey` instead:
+
+```ts
+ai: {
+  providers: {
+    'typesafe-ai': { apiKey: process.env.MY_TYPESAFE_KEY }
+  }
+}
+```
+
+The key stays on the server; authenticate callers in your standalone host or through FrogBot's authenticated `/api/v1/evaluate` mount. FrogBot accepts `typesafe-ai/jev` and `typesafe-ai/jev-latest` and sends both to TypeSafe as `jev-latest`. Bare `jev` is not a documented TypeSafe upstream model ID. An optional built-in `models` allowlist uses unprefixed IDs, for example `models: ['jev-latest']`; the alias is canonicalized before checking it.
+
+As of September 23, 2026, TypeSafe lists Jev 1.13 at **$0.042 per million input tokens**, with no charge for output tokens. FrogBot's USD cost uses these catalog rates as an estimate, not a provider invoice. The upstream `jev-latest` alias and its pricing can change; check [TypeSafe's model list](https://docs.typesafe.ai/models.md) for current rates.
 
 ---
 

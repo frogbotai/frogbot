@@ -52,7 +52,8 @@ export type Operation =
   | 'audio.speech'
   | 'audio.transcriptions'
   | 'video.generations'
-  | 'rerank';
+  | 'rerank'
+  | 'evaluate';
 
 export type ModelCatalogEntry = {
   /** Canonical model ID (e.g. `openai/gpt-4o`). */

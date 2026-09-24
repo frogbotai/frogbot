@@ -21,6 +21,7 @@
 
 import {
   EmptyResponseBodyError,
+  Experimental_EvaluationUnsupportedQuestionTypeError,
   InvalidArgumentError,
   InvalidResponseDataError,
   LoadSettingError,
@@ -86,6 +87,7 @@ export function classifyAiSdkError(err: unknown): AiSdkErrorClassification | und
   // 422 — client fault: the request or the model's tool output was invalid.
   if (
     InvalidArgumentError.isInstance(err) ||
+    Experimental_EvaluationUnsupportedQuestionTypeError.isInstance(err) ||
     InvalidDataContentError.isInstance(err) ||
     InvalidMessageRoleError.isInstance(err) ||
     MessageConversionError.isInstance(err) ||

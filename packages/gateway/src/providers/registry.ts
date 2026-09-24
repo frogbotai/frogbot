@@ -12,6 +12,7 @@
 import type {
   EmbeddingModelV3,
   EmbeddingModelV4,
+  Experimental_EvaluationModelV4,
   Experimental_VideoModelV4,
   ImageModelV4,
   LanguageModelV3,
@@ -72,6 +73,7 @@ import { perplexityProvider } from './perplexity/index.js';
 import { prodiaProvider } from './prodia/index.js';
 import { replicateProvider } from './replicate/index.js';
 import { togetheraiProvider } from './togetherai/index.js';
+import { typeSafeAiProvider } from './typesafe-ai/index.js';
 import { vercelProvider } from './vercel/index.js';
 import { vertexProvider } from './vertex/index.js';
 import { voyageProvider } from './voyage/index.js';
@@ -114,6 +116,7 @@ export const providers = {
   prodia: prodiaProvider,
   replicate: replicateProvider,
   togetherai: togetheraiProvider,
+  'typesafe-ai': typeSafeAiProvider,
   vercel: vercelProvider,
   vertex: vertexProvider,
   voyage: voyageProvider,
@@ -152,6 +155,7 @@ export type AIProvider = {
   speechModel?: (modelId: string) => GatewaySpeechModel;
   transcriptionModel?: (modelId: string) => GatewayTranscriptionModel;
   rerankingModel?: (modelId: string) => GatewayRerankingModel;
+  evaluationModel?: (modelId: string) => Experimental_EvaluationModelV4;
 };
 
 /**
@@ -256,6 +260,7 @@ const canonicalIdResolvers = new Map<string, (modelId: string) => string>([
   ['bedrock', resolveBedrockModelId],
   ['anthropic-aws', resolveAnthropicAwsModelId],
   ['azure', resolveAzureModelId],
+  ['typesafe-ai', (modelId) => (modelId === 'jev' ? 'jev-latest' : modelId)],
 ]);
 
 export function canonicalizeModelId(modelId: string): string {
@@ -443,4 +448,20 @@ export function requireRerankingModel(args: {
     });
   }
   return args.provider.rerankingModel(args.modelName);
+}
+
+export function requireEvaluationModel(args: {
+  provider: AIProvider;
+  providerName: string;
+  modelName: string;
+}): Experimental_EvaluationModelV4 {
+  if (!args.provider.evaluationModel) {
+    throw new UnsupportedModalityError({
+      provider: args.providerName,
+      modality: 'evaluate',
+      param: 'model',
+    });
+  }
+
+  return args.provider.evaluationModel(args.modelName);
 }

@@ -16,6 +16,24 @@ function makeConfig(overrides: Partial<FrogbotConfig> = {}): FrogbotConfig {
 }
 
 describe('resolveUsageCollection', () => {
+  it('accepts evaluation in default and marked usage collections', () => {
+    const base = resolveUsageCollection(makeConfig()).collections.at(-1);
+    const marked = resolveUsageCollection(
+      makeConfig({ collections: [{ slug: 'ai-usage', usageLog: true, fields: [] }] }),
+    ).collections[0];
+
+    for (const collection of [base, marked]) {
+      const operation = collection?.fields.find(
+        (field) => 'name' in field && field.name === 'operation',
+      );
+
+      expect(operation).toMatchObject({
+        type: 'select',
+        options: expect.arrayContaining(['evaluate']),
+      });
+    }
+  });
+
   it('injects usage logs only when AI is configured', () => {
     expect(resolveUsageCollection(makeConfig()).collections.at(-1)?.slug).toBe(USAGE_LOGS_SLUG);
     expect(resolveUsageCollection(makeConfig({ ai: undefined })).collections).toEqual([]);

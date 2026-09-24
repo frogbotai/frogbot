@@ -13,6 +13,7 @@ import type { AgentRegistry } from './agents/types.js';
 import { createAIGateway } from './ai/index.js';
 import { embedOperation } from './ai/operations/embed.js';
 import { embedManyOperation } from './ai/operations/embedMany.js';
+import { evaluateOperation } from './ai/operations/evaluate.js';
 import { generateImageOperation } from './ai/operations/generateImage.js';
 import { generateSpeechOperation } from './ai/operations/generateSpeech.js';
 import { generateTextOperation } from './ai/operations/generateText.js';
@@ -23,6 +24,9 @@ import { transcribeOperation } from './ai/operations/transcribe.js';
 import type {
   EmbedManyOpts,
   EmbedOpts,
+  EvaluateOpts,
+  EvaluateResult,
+  EvaluationQuestion,
   GenerateImageOpts,
   GenerateSpeechOpts,
   GenerateTextOpts,
@@ -462,6 +466,10 @@ export class Frogbot {
   generateVideo = (opts: GenerateVideoOpts) => generateVideoOperation(this.aiDeps(), opts);
 
   rerank = (opts: RerankOpts) => rerankOperation(this.aiDeps(), opts);
+
+  evaluate = <const QUESTIONS extends Record<string, EvaluationQuestion>>(
+    opts: EvaluateOpts<QUESTIONS>,
+  ): Promise<EvaluateResult<QUESTIONS>> => evaluateOperation(this.aiDeps(), opts);
 
   // ── Training data ───────────────────────────────────────────────────────
 

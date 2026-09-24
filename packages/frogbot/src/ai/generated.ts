@@ -11,6 +11,7 @@ export type ProviderSlug =
   | 'openai'
   | 'perplexity'
   | 'togetherai'
+  | 'typesafe-ai'
   | 'voyage'
   | 'xai';
 
@@ -371,6 +372,8 @@ export type TogetherAIModelId =
   | 'togetherai/thinkingmachines/Inkling'
   | 'togetherai/zai-org/GLM-5.2';
 
+export type TypesafeAiModelId = 'typesafe-ai/jev' | 'typesafe-ai/jev-latest';
+
 export type VoyageModelId = 'voyage/voyage-3' | 'voyage/voyage-3-lite' | 'voyage/voyage-code-3';
 
 export type XAIModelId =
@@ -398,5 +401,6 @@ export type CatalogModelId =
   | OpenAIModelId
   | PerplexityModelId
   | TogetherAIModelId
+  | TypesafeAiModelId
   | VoyageModelId
   | XAIModelId;

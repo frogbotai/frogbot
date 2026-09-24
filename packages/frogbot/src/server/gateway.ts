@@ -25,6 +25,7 @@ function methodForPath(pathname: string): AIMethod | undefined {
   if (/\/embeddings$/.test(pathname)) return 'embed';
   if (/\/audio\/transcriptions$/.test(pathname)) return 'transcribe';
   if (/\/rerank$/.test(pathname)) return 'rerank';
+  if (/\/evaluate$/.test(pathname)) return 'evaluate';
 }
 
 async function readRequestedModel(request: Request): Promise<string | undefined> {

@@ -1675,6 +1675,16 @@
     "mode": "chat"
   },
   {
+    "id": "typesafe-ai/jev",
+    "provider": "typesafe-ai",
+    "mode": "evaluate"
+  },
+  {
+    "id": "typesafe-ai/jev-latest",
+    "provider": "typesafe-ai",
+    "mode": "evaluate"
+  },
+  {
     "id": "voyage/voyage-3",
     "provider": "voyage",
     "mode": "embedding"

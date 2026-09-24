@@ -25,11 +25,13 @@ const PROVIDERS = {
   xai: 'xai',
 };
 const SYNCED_PROVIDERS = new Set(Object.values(PROVIDERS));
-const OVERLAY_PROVIDERS = new Set(['replicate', 'voyage']);
+const OVERLAY_PROVIDERS = new Set(['replicate', 'typesafe-ai', 'voyage']);
 
 const MODALITIES = new Set(['text', 'image', 'audio', 'video', 'embedding']);
 
-function modeFor(modalities) {
+function modeFor(operations, modalities) {
+  if (operations.includes('evaluate')) return 'evaluate';
+  if (operations.includes('rerank')) return 'rerank';
   if (modalities.output.includes('embedding')) return 'embedding';
   if (modalities.output.includes('image')) return 'image_generation';
   if (modalities.output.includes('video')) return 'video_generation';
@@ -130,7 +132,7 @@ export function buildCatalogs({ overlays, source }) {
     .map((entry) => ({
       id: entry.id,
       provider: entry.id.slice(0, entry.id.indexOf('/')),
-      mode: modeFor(entry.modalities),
+      mode: modeFor(entry.operations, entry.modalities),
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
   return { catalog, gateway };

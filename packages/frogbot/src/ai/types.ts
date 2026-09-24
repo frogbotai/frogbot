@@ -3,7 +3,16 @@
 // Near-passthrough of AI SDK 7 — developers who know the AI SDK feel at home.
 // FrogBot adds: typed model resolution, access control, hooks, and routers.
 
-import type { ModelMessage, Output, StopCondition, ToolChoice, ToolSet } from 'ai';
+import type {
+  Experimental_EvaluationQuestion,
+  Experimental_EvaluationResult,
+  ModelMessage,
+  Output,
+  StopCondition,
+  ToolChoice,
+  ToolSet,
+} from 'ai';
+import type { experimental_evaluate } from 'ai';
 
 import type { CatalogModelId } from '../ai/generated.js';
 import type { ProviderName } from '../ai/providerNames.js';
@@ -82,6 +91,7 @@ export type ModelMode =
   | 'audio_speech'
   | 'audio_transcription'
   | 'rerank'
+  | 'evaluate'
   | 'video_generation';
 
 export type ModelModality = 'text' | 'image' | 'audio' | 'video' | 'file';
@@ -128,6 +138,7 @@ export type AIAccessConfig = {
   embed?: AIAccessFn;
   transcribe?: AIAccessFn;
   rerank?: AIAccessFn;
+  evaluate?: AIAccessFn;
 };
 
 export type AIMethod =
@@ -139,7 +150,8 @@ export type AIMethod =
   | 'generateSpeech'
   | 'transcribe'
   | 'generateVideo'
-  | 'rerank';
+  | 'rerank'
+  | 'evaluate';
 
 // ─── Telemetry Configuration ─────────────────────────────────────────────────
 
@@ -148,7 +160,13 @@ export type AIMethod =
  * from `@ai-sdk/otel` without taking a hard dependency.
  */
 export type AITelemetrySpanType =
-  'operation' | 'step' | 'languageModel' | 'tool' | 'embedding' | 'reranking';
+  | 'operation'
+  | 'step'
+  | 'languageModel'
+  | 'tool'
+  | 'embedding'
+  | 'reranking'
+  | 'experimental_evaluation';
 
 export type AIEnrichSpanArgs = {
   spanType: AITelemetrySpanType;
@@ -300,3 +318,16 @@ export type RerankOpts = BaseAIOpts & {
   topN?: number;
   abortSignal?: AbortSignal;
 };
+
+export type EvaluationQuestion = Experimental_EvaluationQuestion;
+
+export type EvaluateOpts<QUESTIONS extends Record<string, EvaluationQuestion>> = BaseAIOpts &
+  Omit<
+    Parameters<typeof experimental_evaluate<QUESTIONS>>[0],
+    'model' | 'questions' | '_internal'
+  > & {
+    questions: QUESTIONS;
+  };
+
+export type EvaluateResult<QUESTIONS extends Record<string, EvaluationQuestion>> =
+  Experimental_EvaluationResult<QUESTIONS>;

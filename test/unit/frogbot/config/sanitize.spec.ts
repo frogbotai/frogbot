@@ -1374,6 +1374,37 @@ describe('frogbot sanitize', () => {
   });
 
   describe('ai.providers', () => {
+    it('accepts TypeSafe AI environment credentials and defaults evaluation access to authenticated users', () => {
+      const result = sanitize(makeConfig({ ai: { providers: { 'typesafe-ai': true } } }));
+
+      expect(result.ai?.providers['typesafe-ai']).toBe(true);
+      expect(result.ai?.access.evaluate({ req: { user: { id: 'user-1' } } } as never)).toBe(true);
+      expect(result.ai?.access.evaluate({ req: { user: null } } as never)).toBe(false);
+    });
+
+    it('accepts TypeSafe AI explicit credentials and catalogued evaluation allowlists', () => {
+      const result = sanitize(
+        makeConfig({
+          ai: {
+            providers: { 'typesafe-ai': { apiKey: 'ts-test', models: ['jev', 'jev-latest'] } },
+            access: { evaluate: () => false },
+          },
+        }),
+      );
+
+      expect(result.ai?.providers['typesafe-ai']).toEqual({
+        apiKey: 'ts-test',
+        models: ['jev', 'jev-latest'],
+      });
+      expect(result.ai?.access.evaluate({ req: { user: { id: 'user-1' } } } as never)).toBe(false);
+    });
+
+    it('rejects TypeSafe AI object configuration without an explicit credential', () => {
+      expect(() =>
+        sanitize(makeConfig({ ai: { providers: { 'typesafe-ai': { apiKey: undefined } } } })),
+      ).toThrow("Provider 'typesafe-ai' requires a non-empty apiKey");
+    });
+
     it('throws when ai is configured with no providers', () => {
       const config = makeConfig({ ai: { providers: {} } });
       expect(() => sanitize(config)).toThrow(
