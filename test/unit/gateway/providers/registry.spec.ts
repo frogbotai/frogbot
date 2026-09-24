@@ -343,8 +343,8 @@ describe('buildProviderRegistry', () => {
 });
 
 describe('provider table', () => {
-  it('has 36 built-in providers', () => {
-    expect(PROVIDER_NAMES.length).toBe(36);
+  it('has 37 built-in providers', () => {
+    expect(PROVIDER_NAMES.length).toBe(37);
   });
 
   it('providers table keys match PROVIDER_NAMES', () => {

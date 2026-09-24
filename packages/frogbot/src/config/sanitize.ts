@@ -484,6 +484,7 @@ function sanitizeAI(ai: AIConfig): SanitizedAIBase {
     embed: ai.access?.embed ?? defaultAccessFn,
     transcribe: ai.access?.transcribe ?? defaultAccessFn,
     rerank: ai.access?.rerank ?? defaultAccessFn,
+    evaluate: ai.access?.evaluate ?? defaultAccessFn,
   };
 
   // Deployment identifier for telemetry spans.

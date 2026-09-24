@@ -65,6 +65,7 @@ export function defaultUsageCollection({
           'transcriptions',
           'videos',
           'rerank',
+          'evaluate',
         ],
       },
       { name: 'inputTokens', type: 'number', defaultValue: 0, required: true },

@@ -85,7 +85,8 @@
     "build": "tsc -p tsconfig.json && chmod +x bin.js",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit && pnpm typecheck:types",
-    "typecheck:types": "tsc --noEmit -p tsconfig.typetest.json && pnpm typecheck:jobs && pnpm typecheck:email && pnpm typecheck:fields && pnpm typecheck:collections && pnpm typecheck:live-preview && pnpm typecheck:admin && pnpm typecheck:skill",
+    "typecheck:types": "tsc --noEmit -p tsconfig.typetest.json && pnpm typecheck:jobs && pnpm typecheck:email && pnpm typecheck:fields && pnpm typecheck:collections && pnpm typecheck:live-preview && pnpm typecheck:admin && pnpm typecheck:skill && pnpm typecheck:ai",
+    "typecheck:ai": "tsc --noEmit -p ../../test/types/ai/tsconfig.json",
     "typecheck:admin": "tsc --noEmit -p ../../test/types/admin/tsconfig.json",
     "typecheck:email": "tsc --noEmit -p ../../test/types/email/tsconfig.json",
     "typecheck:collections": "tsc --noEmit -p ../../test/types/collections/tsconfig.json",
@@ -99,7 +100,7 @@
     "@next/env": "15.4.10",
     "@payloadcms/drizzle": "3.90.1",
     "@payloadcms/translations": "3.90.1",
-    "ai": "^7.0.4",
+    "ai": "7.0.112",
     "chat": "^4.40.0",
     "croner": "10.0.1",
     "drizzle-orm": "0.45.2",
@@ -111,7 +112,7 @@
     "zod": "^4.3.6"
   },
   "peerDependencies": {
-    "@ai-sdk/otel": "^1.0.31",
+    "@ai-sdk/otel": "^1.0.112",
     "next": "^15.4.10"
   },
   "peerDependenciesMeta": {
@@ -120,6 +121,7 @@
     }
   },
   "devDependencies": {
+    "@ai-sdk/otel": "1.0.112",
     "@types/node": "^22.10.2",
     "@types/to-snake-case": "1.0.0",
     "eslint": "^9.16.0",

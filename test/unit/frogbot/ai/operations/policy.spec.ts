@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { embedOperation } from '../../../../../packages/frogbot/src/ai/operations/embed.js';
 import { embedManyOperation } from '../../../../../packages/frogbot/src/ai/operations/embedMany.js';
+import { evaluateOperation } from '../../../../../packages/frogbot/src/ai/operations/evaluate.js';
 import { generateImageOperation } from '../../../../../packages/frogbot/src/ai/operations/generateImage.js';
 import { generateSpeechOperation } from '../../../../../packages/frogbot/src/ai/operations/generateSpeech.js';
 import { generateTextOperation } from '../../../../../packages/frogbot/src/ai/operations/generateText.js';
@@ -14,6 +15,7 @@ describe('AI operation policy', () => {
   const operations = [
     embedOperation,
     embedManyOperation,
+    evaluateOperation,
     generateImageOperation,
     generateSpeechOperation,
     generateTextOperation,

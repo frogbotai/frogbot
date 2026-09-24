@@ -39,7 +39,7 @@ const gw = createGateway({
 | Phase | Runs |
 | --- | --- |
 | `beforeOperation` | Once, before the AI SDK call. `request` is present for HTTP-originated calls, absent for in-process calls. |
-| `beforeUpstream` | Before each model's `doGenerate`/`doStream` call — once per round of a tool loop. |
+| `beforeUpstream` | Before each model call, including evaluation's `doEvaluate` — once per round of a tool loop. |
 | `afterUpstream` | After each successful model call. |
 | `afterError` | After a failed model call, with `failedPhase` naming where it happened. |
 | `afterOperation` | Once, when the operation succeeds, fails, or is aborted — with `usage` aggregated across every round. |
@@ -64,7 +64,7 @@ hooks: {
 }
 ```
 
-`messages` and `params` are present on the language routes (chat, messages, responses) and absent on modality routes (embeddings, images, speech, transcriptions, rerank, video) — those operations have no messages or language params. On chat and messages, message/part-level `providerOptions.unknown` remains available during the hook and is forwarded into the provider namespace afterward. `headers` and request-level `providerOptions` are honored on every route. `system` and `tools` are read-only.
+`messages` and `params` are present on the language routes (chat, messages, responses) and absent on modality routes (embeddings, images, speech, transcriptions, rerank, video, evaluate) — those operations have no messages or language params. On chat and messages, message/part-level `providerOptions.unknown` remains available during the hook and is forwarded into the provider namespace afterward. `headers` and request-level `providerOptions` are honored on every route. `system` and `tools` are read-only.
 
 ---
 
@@ -84,11 +84,17 @@ hooks: {
 
 `HookUsage` also reports `cachedInputTokens`, `cacheWriteTokens`, and `reasoningTokens` when the provider surfaces them.
 
+For `evaluate`, reported input/output tokens reach `afterUpstream` and `afterOperation`. When only one count is reported, hook usage uses zero for the missing count; when neither is reported, hook usage is absent. The [HTTP response](/gateway/overview#evaluate-over-http) omits unreported usage fields instead. Request-bound FrogBot usage records are written asynchronously, so completion of `evaluate()` does not guarantee that a record has been saved.
+
 ---
 
 ## Failure isolation
 
 `afterError` and `afterOperation` isolate hook failures — a throwing hook doesn't stop the remaining hooks in that phase from running. A throwing `beforeOperation` hook stops the call before the lifecycle starts, so `afterOperation` never runs for that failure.
+
+For HTTP evaluation, failures before model resolution also skip `afterError` and `afterOperation`; once resolved, a failed evaluation runs both phases.
+
+For an in-process evaluation, `afterUpstream` means `doEvaluate` returned. If the AI SDK subsequently rejects an invalid answer, `afterOperation.error` reports the failure even though `afterUpstream` already ran and reported any consumed tokens. The HTTP route wraps the full SDK call, so the same invalid answer runs `afterError` before `afterOperation` instead.
 
 ---
 

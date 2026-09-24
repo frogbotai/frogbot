@@ -51,6 +51,33 @@
       "meta.llama3-3-70b-instruct-v1:0"
     ]
   },
+  "typesafe-ai": {
+    "add": [
+      {
+        "id": "typesafe-ai/jev",
+        "mode": "evaluate",
+        "name": "Jev",
+        "modalities": { "input": ["text"], "output": [] },
+        "operations": ["evaluate"],
+        "capabilities": {},
+        "context": { "input": 64000, "output": 0 },
+        "cost": { "input": 0.042, "output": 0 },
+        "providers": ["typesafe-ai"]
+      },
+      {
+        "id": "typesafe-ai/jev-latest",
+        "mode": "evaluate",
+        "name": "Jev Latest",
+        "modalities": { "input": ["text"], "output": [] },
+        "operations": ["evaluate"],
+        "capabilities": {},
+        "context": { "input": 64000, "output": 0 },
+        "cost": { "input": 0.042, "output": 0 },
+        "providers": ["typesafe-ai"]
+      }
+    ],
+    "exclude": []
+  },
   "voyage": {
     "add": [
       {

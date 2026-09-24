@@ -91,6 +91,7 @@ const operationModality: Record<HookOperation, string> = {
   transcriptions: 'audio',
   videos: 'videos',
   rerank: 'rerank',
+  evaluate: 'evaluate',
 };
 
 export function createLoggingHooks(logger: GatewayLogger = createLogger()): Hooks {

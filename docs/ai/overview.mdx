@@ -58,7 +58,7 @@ export default buildConfig({
 })
 ```
 
-Built-in keys are `openai`, `anthropic`, `google`, `bedrock`, `groq`, `mistral`, `cohere`, `togetherai`, `fireworks`, `deepinfra`, `xai`, `perplexity`, `cerebras`, `voyage`, and `replicate`.
+Built-in keys are `openai`, `anthropic`, `google`, `bedrock`, `groq`, `mistral`, `cohere`, `togetherai`, `fireworks`, `deepinfra`, `xai`, `perplexity`, `cerebras`, `voyage`, `replicate`, and `typesafe-ai`. See [TypeSafe AI setup](/gateway/providers#typesafe-ai-evaluation) for its server-side credential and evaluation-only models.
 
 Model IDs use `<provider>/<model>`, where `<provider>` is the exact key you used under `ai.providers`, such as `bedrock/...` or `togetherai/...`. Replicate's `apiKey` maps to its `apiToken` option. Bedrock uses bearer tokens first, then explicit SigV4 keys, then the AWS default credential chain.
 
@@ -89,7 +89,7 @@ ai: {
 }
 ```
 
-Invoke that model as `internal/legal-summary-v2`. Built-in provider entries accept only their credential fields; they do not accept a `models` override in v0.
+Invoke that model as `internal/legal-summary-v2`. Built-in provider entries accept an optional `models` allowlist to restrict their catalog IDs; this is different from a custom provider's required model definitions.
 
 ---
 
@@ -162,6 +162,7 @@ generateSpeech(opts: GenerateSpeechOpts)
 transcribe(opts: TranscribeOpts)
 generateVideo(opts: GenerateVideoOpts)
 rerank(opts: RerankOpts)
+evaluate(opts: EvaluateOpts)
 ```
 
 Every options type includes this base.
@@ -266,6 +267,44 @@ Each method returns the result from its AI SDK v7 counterpart. `streamText` perf
 
 ---
 
+## Evaluate state
+
+Use `frogbot.evaluate()` to ask named boolean, choice, and score questions about shared state. Configure `ai.providers['typesafe-ai']` with a server-side key first; [TypeSafe AI setup](/gateway/providers#typesafe-ai-evaluation) covers the options. State, instructions, and criteria can contain structured JSON.
+
+```ts
+const result = await req.frogbot.evaluate({
+  model: 'typesafe-ai/jev',
+  state: { ticket: 'Customer was charged twice and requested a refund' },
+  questions: {
+    refunded: {
+      type: 'boolean',
+      instructions: 'Was a refund issued?'
+    },
+    team: {
+      type: 'choice',
+      instructions: 'Which team should handle the ticket?',
+      criteria: { billing: 'Billing team', support: 'Support team' }
+    },
+    severity: {
+      type: 'score',
+      instructions: 'How urgent is this ticket?',
+      criteria: ['Low', 'Medium', 'High']
+    }
+  },
+  req
+})
+
+const refundProbability = result.answers.refunded.probability
+const assignedTeam = result.answers.team.choice
+const severityScore = result.answers.severity.score
+```
+
+The result retains inferred answer types for each question, along with SDK usage, warnings, rounding, response, and provider metadata. A boolean probability is an estimate, not an automatic decision. TypeSafe rounds probabilities and scores to two decimal places; `result.rounding` records that precision. When provided, confidence for choice and score questions is separate from their answer probabilities at `result.providerMetadata?.typesafe?.confidence`. Evaluation uses the AI SDK's experimental API, which may change in patch releases.
+
+`typesafe-ai/jev` is FrogBot's shorthand for upstream `jev-latest`; `typesafe-ai/jev-latest` also works. Local router slugs can target either model, while HTTP requests use provider-prefixed IDs.
+
+---
+
 ## Request output
 
 AI SDK v7 handles structured data through `generateText` and an `Output` specification. Read the validated value from `result.output`; there is no `generateObject` method.
@@ -306,7 +345,8 @@ ai: {
     generate: ({ req }) => Boolean(req.user),
     embed: ({ req }) => Boolean(req.user),
     transcribe: ({ req }) => Boolean(req.user),
-    rerank: ({ req }) => Boolean(req.user)
+    rerank: ({ req }) => Boolean(req.user),
+    evaluate: ({ req }) => Boolean(req.user)
   }
 }
 ```
@@ -317,6 +357,7 @@ ai: {
 | `embed` | `embed`, `embedMany` |
 | `transcribe` | `transcribe` |
 | `rerank` | `rerank` |
+| `evaluate` | `evaluate` |
 
 An in-process call with `req` enforces access unless `overrideAccess: true` is set. A server-side call without `req` bypasses access by default, following the Local API convention.
 
@@ -441,8 +482,9 @@ Each accepted request gets one FrogBot lifecycle around the gateway handler. Fro
 | `POST` | `/api/v1/audio/transcriptions` |
 | `POST` | `/api/v1/videos/generations` |
 | `POST` | `/api/v1/rerank` |
+| `POST` | `/api/v1/evaluate` |
 
-Pass credentials accepted by your configured auth collection. HTTP bodies use provider-prefixed model IDs because router aliases are resolved by FrogBot's local operation layer, not by the gateway handler. After authentication, mounted operation routes enforce the matching `ai.access` category. A denied request receives `403`; discovery routes such as `/models` do not run an operation access callback.
+Pass credentials accepted by your configured auth collection. HTTP bodies use provider-prefixed model IDs because router aliases are resolved by FrogBot's local operation layer, not by the gateway handler. After authentication, mounted operation routes enforce the matching `ai.access` category and user model policy. A denied request receives `403`; discovery routes such as `/models` do not run an operation access callback. Keep the TypeSafe upstream key on the server; clients authenticate to FrogBot instead. See the [evaluation JSON contract](/gateway/overview#evaluate-over-http) for a request and response shape.
 
 ```bash
 curl http://localhost:3000/api/v1/chat/completions \

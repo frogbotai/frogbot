@@ -13,6 +13,7 @@ export const PROVIDER_NAMES = [
   'perplexity',
   'cerebras',
   'voyage',
+  'typesafe-ai',
   'replicate',
 ] as const;
 

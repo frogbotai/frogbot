@@ -30,7 +30,8 @@ export type HookOperation =
   | 'speech'
   | 'transcriptions'
   | 'videos'
-  | 'rerank';
+  | 'rerank'
+  | 'evaluate';
 
 export type HookPhase =
   | 'beforeOperation'

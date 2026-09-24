@@ -26,6 +26,7 @@ function makeAIConfig(providers: SanitizedAIConfig['providers']): SanitizedAICon
       embed: ({ req }) => !!req.user,
       transcribe: ({ req }) => !!req.user,
       rerank: ({ req }) => !!req.user,
+      evaluate: ({ req }) => !!req.user,
     },
     telemetry: { enabled: false },
     _internal: { deploymentId: 'test' },
@@ -59,6 +60,26 @@ describe('buildGatewayConfig', () => {
       makeAIConfig({ openai: { apiKey: 'sk-1', models: ['gpt-4o'] } }),
     );
     expect(config.providers.openai).toEqual({ apiKey: 'sk-1', models: ['gpt-4o'] });
+  });
+
+  it('configures TypeSafe AI with explicit credentials and an evaluation-model allowlist', () => {
+    const ai = makeAIConfig({ 'typesafe-ai': { apiKey: 'ts-test', models: ['jev'] } });
+    const config = buildGatewayConfig(ai);
+    const gateway = createAIGateway(ai);
+
+    expect(config.providers['typesafe-ai']).toEqual({ apiKey: 'ts-test', models: ['jev'] });
+    expect(gateway.evaluationModel('typesafe-ai/jev').modelId).toBe('jev-latest');
+    expect(() => gateway.evaluationModel('typesafe-ai/jev-preview')).toThrow();
+  });
+
+  it('configures TypeSafe AI from its environment when enabled', () => {
+    vi.stubEnv('TYPESAFE_AI_API_KEY', 'ts-env');
+
+    const config = buildGatewayConfig(makeAIConfig({ 'typesafe-ai': true }));
+    const gateway = createAIGateway(makeAIConfig({ 'typesafe-ai': true }));
+
+    expect(config.providers['typesafe-ai']).toEqual({});
+    expect(gateway.evaluationModel('typesafe-ai/jev').modelId).toBe('jev-latest');
   });
 
   it('preserves Bedrock model allowlists while renaming the provider', () => {

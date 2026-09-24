@@ -8543,6 +8543,42 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['togetherai'],
   }),
+  model('typesafe-ai/jev', {
+    name: 'Jev',
+    modalities: {
+      input: ['text'],
+      output: [],
+    },
+    operations: ['evaluate'],
+    capabilities: {},
+    context: {
+      input: 64000,
+      output: 0,
+    },
+    cost: {
+      input: 0.042,
+      output: 0,
+    },
+    providers: ['typesafe-ai'],
+  }),
+  model('typesafe-ai/jev-latest', {
+    name: 'Jev Latest',
+    modalities: {
+      input: ['text'],
+      output: [],
+    },
+    operations: ['evaluate'],
+    capabilities: {},
+    context: {
+      input: 64000,
+      output: 0,
+    },
+    cost: {
+      input: 0.042,
+      output: 0,
+    },
+    providers: ['typesafe-ai'],
+  }),
   model('voyage/voyage-3', {
     name: 'Voyage 3',
     modalities: {

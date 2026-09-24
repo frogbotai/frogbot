@@ -4,7 +4,11 @@
 // The handler can be mounted in any Hono/Bun/Deno/Workers/Next app, or used
 // directly by the CLI.
 
-import type { Experimental_VideoModelV4, ImageModelV4 } from '@ai-sdk/provider';
+import type {
+  Experimental_EvaluationModelV4,
+  Experimental_VideoModelV4,
+  ImageModelV4,
+} from '@ai-sdk/provider';
 
 import { createApp, type GatewayRoutes, getRoutes } from './app.js';
 import { finalizeConfig } from './config/parse.js';
@@ -13,6 +17,7 @@ import type { HookOperation, Hooks, HookUsage, OperationBase } from './hooks.js'
 import { runHooks } from './hooks.js';
 import {
   withEmbeddingModelHooks,
+  withEvaluationModelHooks,
   withImageModelHooks,
   withLanguageModelHooks,
   withRerankingModelHooks,
@@ -32,6 +37,7 @@ import {
   type GatewayTranscriptionModel,
   type ProviderRegistry,
   type ProvidersInput,
+  requireEvaluationModel,
   requireRerankingModel,
   requireSpeechModel,
   requireTranscriptionModel,
@@ -100,6 +106,7 @@ export type GatewayOperation = {
   speechModel: () => GatewaySpeechModel;
   transcribeModel: () => GatewayTranscriptionModel;
   rerankModel: () => GatewayRerankingModel;
+  evaluationModel: () => Experimental_EvaluationModelV4;
 };
 
 /**
@@ -135,6 +142,7 @@ export type Gateway = {
   speechModel: (id: string) => GatewaySpeechModel;
   transcribeModel: (id: string) => GatewayTranscriptionModel;
   rerankModel: (id: string) => GatewayRerankingModel;
+  evaluationModel: (id: string) => Experimental_EvaluationModelV4;
   /** Create an in-process operation with the full 5-phase hook lifecycle. */
   operation: (opts: GatewayOperationOptions) => GatewayOperation;
   /** The constructed provider registry (for advanced use). */
@@ -303,6 +311,33 @@ export function createGateway<const P extends ProvidersInput<P>>(
         base,
       });
     },
+    evaluationModel: (
+      id: string,
+      hooks?: Hooks,
+      base?: OperationBase,
+    ): Experimental_EvaluationModelV4 => {
+      const resolved = resolveProvider({
+        modelId: id,
+        operation: 'evaluate',
+        providers: registry,
+        models: catalog,
+        allowlists,
+      });
+
+      const model = requireEvaluationModel({
+        provider: resolved.instance,
+        providerName: resolved.providerName,
+        modelName: resolved.modelName,
+      });
+
+      return withEvaluationModelHooks(model, {
+        hooks: hooks ?? validated.hooks,
+        model: id,
+        operation: 'evaluate',
+        provider: resolved.providerName,
+        base,
+      });
+    },
   };
 
   const app = createApp({
@@ -330,6 +365,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
     speechModel: (id: string) => resolvers.speechModel(id),
     transcribeModel: (id: string) => resolvers.transcribeModel(id),
     rerankModel: (id: string) => resolvers.rerankModel(id),
+    evaluationModel: (id: string) => resolvers.evaluationModel(id),
     operation: (opts: GatewayOperationOptions): GatewayOperation => {
       const base: OperationBase = {
         operation: opts.operation,
@@ -409,6 +445,7 @@ export function createGateway<const P extends ProvidersInput<P>>(
         speechModel: () => resolvers.speechModel(opts.model, hooks, base),
         transcribeModel: () => resolvers.transcribeModel(opts.model, hooks, base),
         rerankModel: () => resolvers.rerankModel(opts.model, hooks, base),
+        evaluationModel: () => resolvers.evaluationModel(opts.model, hooks, base),
       };
     },
     registry,

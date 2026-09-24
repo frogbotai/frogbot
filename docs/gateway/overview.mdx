@@ -70,11 +70,50 @@ See [Embedding](/gateway/embedding) for framework-specific examples.
 | `POST /v1/audio/speech` | OpenAI Speech | — |
 | `POST /v1/audio/transcriptions` | OpenAI Transcriptions | — |
 | `POST /v1/rerank` | Reranking | — |
+| `POST /v1/evaluate` | TypeSafe AI evaluation (JSON) | — |
 | `POST /v1/videos/generations` | Video generation | — |
 | `GET /v1/models` | OpenAI Models (catalog discovery) | — |
 | `GET /health` | Liveness probe | — |
 
 Routes are also served at their bare paths (`/chat/completions`), so mounting the handler under any prefix keeps both the prefixed and bare paths working.
+
+---
+
+## Evaluate over HTTP
+
+With [TypeSafe AI configured](/gateway/providers#typesafe-ai-evaluation), send shared state and named questions as JSON to `POST /v1/evaluate` (also available at `POST /evaluate`). The standalone gateway also exposes `gw.routes['/evaluate'].handler` for selective mounting. A custom `basePath` replaces `/v1` while keeping the bare path.
+
+```bash
+curl http://localhost:3939/v1/evaluate \
+  --request POST \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "model": "typesafe-ai/jev",
+    "state": { "ticket": "Customer requested a refund" },
+    "questions": {
+      "refunded": { "type": "boolean", "instructions": "Was a refund issued?" }
+    }
+  }'
+```
+
+The request can also include `providerOptions`. The JSON response has this shape (the fields inside `usage` appear only when reported):
+
+```ts
+type EvaluationResponse = {
+  model: string
+  answers: Record<string,
+    | { type: 'boolean'; probability: number }
+    | { type: 'choice'; choice: string; probabilities?: Record<string, number> }
+    | { type: 'score'; score: number; probabilities?: Record<string, number> }
+  >
+  usage: { inputTokens?: number; outputTokens?: number }
+  providerMetadata?: Record<string, unknown>
+}
+```
+
+`model` is the provider-prefixed resolved ID if TypeSafe reports a different version, otherwise the requested ID. `usage` can be `{}` if the provider reports no counts. When available, `providerMetadata.typesafe.confidence` holds per-question confidence separately from answer probabilities. The response excludes raw upstream headers and body. Send provider-prefixed model IDs; `typesafe-ai/jev` resolves to TypeSafe's `jev-latest` upstream. This endpoint uses the AI SDK's experimental evaluation API.
+
+Secure standalone mounts with your own authentication, such as a `beforeOperation` hook; the gateway does not authenticate callers on its own. [FrogBot's `/api/v1/evaluate` mount](/ai/overview#call-over-http) authenticates callers and applies its evaluation access and model policy before forwarding requests. Keep the TypeSafe API key on the server, never in the request body or client code. The gateway does not forward a caller's `Authorization` header to TypeSafe.
 
 ---
 
