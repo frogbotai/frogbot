@@ -56,9 +56,11 @@ export { messageDocumentToUIMessage, uiMessageToDocument } from '../chat/message
 export { MicControl } from '../chat/mic-control.js';
 export type { ModelSelectorModel, ModelSelectorProps } from '../chat/model-selector.js';
 export { ModelSelector } from '../chat/model-selector.js';
+export type { ToolCallSettlement } from '../chat/mutations.js';
 export {
   branchChat,
   deleteChat,
+  dismissToolCall,
   renameChat,
   suggestChatTitle,
   updateChatAgent,
@@ -67,20 +69,23 @@ export type { PageContextButtonProps, PageContextTab } from '../chat/page-contex
 export { PageContextButton } from '../chat/page-context-button.js';
 export type { ChatManifest, ChatProviderValue } from '../chat/provider.js';
 export { ChatProvider, useChatProvider } from '../chat/provider.js';
+export { QuestionToolRender } from '../chat/question-tool-render.js';
 export { ReasoningPart } from '../chat/reasoning-part.js';
 export type { RenameChatDialogProps } from '../chat/rename-chat-dialog.js';
 export { RenameChatDialog } from '../chat/rename-chat-dialog.js';
 export { SourcePart } from '../chat/source-part.js';
 export { TextPart } from '../chat/text-part.js';
 export { TodoToolRender } from '../chat/todo-tool-render.js';
+export type { ToolActions } from '../chat/tool-actions.js';
+export { ToolActionsContext } from '../chat/tool-actions.js';
 export { ToolPart } from '../chat/tool-part.js';
 export type { ToolRenderer, ToolRendererProps } from '../chat/tool-registry.js';
 export type { ToolSelectorProps, ToolSelectorTool } from '../chat/tool-selector.js';
 export { ToolSelector } from '../chat/tool-selector.js';
 export type { FrogBotChatTransportOptions } from '../chat/transport.js';
 export { FrogBotChatTransport } from '../chat/transport.js';
-export type { UseChatOptions } from '../chat/use-chat.js';
-export { loadChat, useChatMessages } from '../chat/use-chat.js';
+export type { ChatMessages, LoadTurnStateOptions, UseChatOptions } from '../chat/use-chat.js';
+export { loadChat, loadChatMessages, loadTurnState, useChatMessages } from '../chat/use-chat.js';
 export type { ChatDocument, UseChatsOptions } from '../chat/use-chats.js';
 export { CHAT_MUTATION_EVENT, emitChatMutation, loadChats, useChats } from '../chat/use-chats.js';
 export type { TranscriptionStatus } from '../chat/use-transcription.js';

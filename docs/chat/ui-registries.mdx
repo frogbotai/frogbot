@@ -35,4 +35,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 Tool kinds without a registration use the generic tool renderer. Artifact kinds without a registration show their title, kind, and serialized content rather than throwing.
 
+## Answer client tools
+
+A renderer for a [client tool](/chat/questions#build-a-client-tool) receives two extra props while its call is waiting for an answer in the latest assistant message.
+
+| Prop | Purpose |
+| --- | --- |
+| `addToolOutput(output)` | Submit the answer; the chat resubmits once every call in the step has one |
+| `dismiss()` | Decline the call without calling the model again |
+
+Both props are absent while the reply is streaming and for calls that were already answered, so render the part read-only when they are missing. `QuestionToolRender` is the built-in renderer for the `question` tool. Custom chat surfaces that render `ToolPart` outside `Chat` can supply the same actions through `ToolActionsContext`.
+
 Add `initialize` and `onStreamPart` to an artifact registration when data parts progressively build an artifact. Add `artifactPersistence` to `ChatProvider` to provide application-specific `load` and `save` functions.

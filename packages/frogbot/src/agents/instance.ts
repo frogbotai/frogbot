@@ -1,12 +1,12 @@
 import type { Gateway } from '@frogbotai/gateway';
-import type { AgentCallParameters, AgentStreamParameters, TextStreamPart, UIMessage } from 'ai';
-import {
-  consumeStream,
-  convertToModelMessages,
-  generateId,
-  ToolLoopAgent,
-  validateUIMessages,
+import type {
+  AgentCallParameters,
+  AgentStreamParameters,
+  ModelMessage,
+  TextStreamPart,
+  UIMessage,
 } from 'ai';
+import { convertToModelMessages, generateId, ToolLoopAgent, validateUIMessages } from 'ai';
 
 import { toHookUsage } from '../ai/hooks.js';
 import { logUsage } from '../ai/logUsage.js';
@@ -14,9 +14,15 @@ import { resolveModel } from '../ai/resolve.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
 import { resolveChatContext } from '../chat/chatContext.js';
 import { generateMessage } from '../chat/generateMessage.js';
-import { createMessageUsage, persistAssistantMessage } from '../chat/messagePersistence.js';
+import { persistAssistantMessage } from '../chat/messagePersistence.js';
+import { actorFromRequest } from '../chat/turn/actor.js';
+import { repairInterruptedParts } from '../chat/turn/messages.js';
+import { promoteQueuedMessage, promoteSteerMessages } from '../chat/turn/queue.js';
+import { holdTurn, releaseTurn } from '../chat/turn/state.js';
+import { streamTurn } from '../chat/turn/streamTurn.js';
 import type { FrogBot } from '../frogbot.js';
 import type { ToolCtx } from '../tools/types.js';
+import { isClientTool } from '../tools/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { toAISDKTools, toAISDKToolsContext } from './tools.js';
 import type {
@@ -25,6 +31,7 @@ import type {
   AgentGenerateResult,
   AgentInstance,
   AgentStreamMessageOpts,
+  AgentStreamMessageQueuedResult,
   AgentStreamMessageResult,
   AgentStreamOpts,
   AgentStreamResult,
@@ -42,7 +49,12 @@ export function createAgentInstance(
   deps: AgentInstanceDeps,
 ): AgentInstance {
   const { gateway, config, frogbot } = deps;
-  const tools = toAISDKTools(agentConfig.tools);
+  const clientTools = (agentConfig.tools ?? []).filter(isClientTool);
+  const clientToolSlugs = new Set(clientTools.map(({ slug }) => slug));
+  const clientSteps = new WeakSet<ModelMessage[]>();
+  const tools = toAISDKTools(agentConfig.tools, {
+    skip: (messages) => clientSteps.has(messages),
+  });
   const access = agentConfig.access ?? (({ req }) => !!req.user);
   let instance: AgentInstance;
 
@@ -63,11 +75,45 @@ export function createAgentInstance(
         },
       };
 
+      const kinds = new Set(options.clientTools?.kinds ?? []);
+      const req = options.req!;
+      const chatId = options.chatId;
+
       return {
         ...call,
         model: gateway.chatModel(resolveModel(options.model ?? agentConfig.model, config)),
         runtimeContext: { agent: ctx.agent },
         toolsContext: toAISDKToolsContext(agentConfig.tools, ctx),
+        ...(clientTools.length === 0
+          ? {}
+          : {
+              activeTools: (agentConfig.tools ?? [])
+                .filter((tool) => !isClientTool(tool) || kinds.has(tool.client.kind))
+                .map(({ slug }) => slug),
+              toolApproval: ({ toolCall, messages }) => {
+                if (clientToolSlugs.has(toolCall.toolName)) clientSteps.add(messages);
+
+                return 'not-applicable';
+              },
+            }),
+        ...(chatId === undefined
+          ? {}
+          : {
+              prepareStep: async ({ messages }) => {
+                const steered = await promoteSteerMessages({
+                  req,
+                  chatId,
+                  before: options.replyCreatedAt,
+                  actor: actorFromRequest(req),
+                });
+
+                if (steered.length === 0) return undefined;
+
+                return {
+                  messages: [...messages, ...(await convertToModelMessages(steered, { tools }))],
+                };
+              },
+            }),
       };
     },
   });
@@ -271,6 +317,7 @@ export function createAgentInstance(
   const generate = async (opts: AgentGenerateOpts): Promise<AgentGenerateResult> => {
     const { chatId, ...runOpts } = opts;
     const req = await frogbot.createRequest(runOpts.req);
+
     if (runOpts.overrideAccess === false && !(await access({ req, agent: instance }))) {
       throw Object.assign(new Error(`Access denied for agent '${agentConfig.slug}'`), {
         status: 403,
@@ -278,47 +325,70 @@ export function createAgentInstance(
     }
 
     const incoming = await toPersistentMessages(runOpts, tools);
+
     const context = await resolveChatContext({
       req,
       agentSlug: agentConfig.slug,
       chatId,
       incoming,
       tools,
+      queue: false,
     });
-    const result = await aiAgent.generate(
-      await buildCall({
-        messages: context.uiMessages,
-        req,
-        overrideAccess: true,
-        chatId: context.chatId,
-        abortSignal: runOpts.abortSignal,
-      }),
-    );
-    const message = await generateMessage({
-      result,
-      originalMessages: context.uiMessages,
-      tools,
-      model: resolveModel(agentConfig.model, config),
-    });
-    if (context.chatId !== undefined) {
-      const mainModel = resolveModel(agentConfig.model, config);
+
+    if (context.status !== 'ready') {
+      throw new Error(`[frogbot] Chat '${context.chatId}' could not start a turn.`);
+    }
+
+    const { claim, uiMessages } = context;
+    const lease = holdTurn({ req, claim });
+    const mainModel = resolveModel(agentConfig.model, config);
+
+    try {
+      const result = await aiAgent.generate(
+        await buildCall({
+          messages: uiMessages,
+          req,
+          overrideAccess: true,
+          chatId: context.chatId,
+          abortSignal: AbortSignal.any([
+            lease.signal,
+            ...(runOpts.abortSignal ? [runOpts.abortSignal] : []),
+          ]),
+        }),
+      );
+
+      const message = await generateMessage({
+        result,
+        originalMessages: uiMessages,
+        tools,
+        model: mainModel,
+      });
+
       await persistAssistantMessage({
         req,
         chatId: context.chatId,
-        message,
-        isContinuation: false,
-        history: context.uiMessages,
+        message: { ...message, parts: repairInterruptedParts(message.parts) },
+        history: uiMessages,
         mainModel,
       });
+
+      return result;
+    } finally {
+      lease.stop();
+
+      if (await releaseTurn({ req, claim, state: 'idle' })) {
+        promoteQueuedMessage({ req, chatId: context.chatId });
+      }
     }
-    return result;
   };
 
   const stream = async (opts: AgentStreamOpts): Promise<AgentStreamResult> =>
     aiAgent.stream(await buildCall(opts));
 
-  const streamMessage = async (opts: AgentStreamMessageOpts): Promise<AgentStreamMessageResult> => {
-    const { chatId, channelAccess, ...runOpts } = opts;
+  const streamMessage = async (
+    opts: AgentStreamMessageOpts,
+  ): Promise<AgentStreamMessageResult | AgentStreamMessageQueuedResult> => {
+    const { chatId, channelAccess, clientTools, delivery, ...runOpts } = opts;
     const req = await frogbot.createRequest(runOpts.req);
 
     if (runOpts.overrideAccess === false && !(await access({ req, agent: instance }))) {
@@ -330,6 +400,7 @@ export function createAgentInstance(
     runOpts.abortSignal?.throwIfAborted();
 
     const incoming = await toPersistentMessages(runOpts, tools);
+
     const context = await resolveChatContext({
       req,
       agentSlug: agentConfig.slug,
@@ -337,52 +408,28 @@ export function createAgentInstance(
       incoming,
       tools,
       channelAccess,
+      delivery,
     });
 
-    const mainModel = resolveModel(agentConfig.model, config);
-    const result = await aiAgent.stream(
-      await buildCall({
-        messages: context.uiMessages,
-        req,
-        overrideAccess: true,
-        abortSignal: runOpts.abortSignal,
-        chatId: context.chatId,
-      }),
-    );
+    if (context.status === 'queued') return context;
 
-    const persistence = consumeStream({
-      stream: result.toUIMessageStream({
-        originalMessages: context.uiMessages,
-        generateMessageId: generateId,
-        sendSources: true,
-        messageMetadata: ({ part }) =>
-          part.type === 'finish'
-            ? { usage: createMessageUsage(part.totalUsage, mainModel) }
-            : undefined,
-        onError: (error) => {
-          throw error;
-        },
-        onEnd: async ({ responseMessage, isContinuation }) => {
-          if (context.chatId === undefined || responseMessage.parts.length === 0) return;
-
-          await persistAssistantMessage({
-            req,
-            chatId: context.chatId,
-            message: responseMessage,
-            isContinuation,
-            history: context.uiMessages,
-            mainModel,
-          });
-        },
-      }),
+    const turn = await streamTurn({
+      req,
+      agent: instance,
+      claim: context.claim,
+      uiMessages: context.uiMessages,
+      clientTools,
+      abortSignal: runOpts.abortSignal,
       onError: (error) => {
         throw error;
       },
     });
 
-    void persistence.catch(() => {});
-
-    return Object.assign(result, { persistence });
+    return Object.assign(turn.result, {
+      chatId: context.chatId,
+      uiMessageStream: turn.uiMessageStream,
+      persistence: turn.persistence,
+    });
   };
 
   instance = {

@@ -5,6 +5,7 @@ export type MessageDocument = {
   role: UIMessage['role'];
   parts: UIMessage['parts'];
   metadata?: unknown;
+  status?: 'active' | 'queued' | null;
   createdAt?: string;
 };
 

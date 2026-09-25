@@ -49,7 +49,7 @@ export async function suggestChatTitleForChat({
   }
   const messages = (await req.frogbot.find({
     collection: config.messagesSlug,
-    where: { chat: { equals: chatId } },
+    where: { and: [{ chat: { equals: chatId } }, { status: { not_equals: 'queued' } }] },
     sort: ['createdAt', 'id'],
     pagination: false,
     depth: 0,

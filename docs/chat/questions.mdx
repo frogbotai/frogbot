@@ -1,0 +1,192 @@
+---
+title: "Ask the user questions"
+sidebarTitle: "Questions"
+description: "Let an agent pause for a structured answer, then continue the same reply."
+keywords: ["question", "client tool", "addToolOutput", "pending", "settle", "human in the loop"]
+---
+
+The `question` tool lets an agent stop and ask the user to choose between options before it continues. The agent's reply pauses at the question, the answer is saved with the chat, and the model resumes in the same assistant message with the answer as the tool result.
+
+Questions work in the admin chat, in `@frogbotai/ui`, and over HTTP for headless clients. They are opt-in per agent.
+
+## Add the tool
+
+Import `question` from `frogbot/tools` and list it on the agent that may ask.
+
+```ts
+import { buildConfig } from 'frogbot'
+import { question } from 'frogbot/tools'
+
+export default buildConfig({
+  // required options omitted
+  agents: [
+    {
+      slug: 'planner',
+      model: 'fast',
+      instructions: 'Ask before choosing between materially different plans.',
+      tools: [question]
+    }
+  ]
+})
+```
+
+Adding it to the root `tools` list offers it to every agent. Questions and answers are stored with the chat, so a waiting question survives a reload or a restart.
+
+## Question and answer shape
+
+The model sends one or more questions in a single call.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `questions[].header` | `string` | Short label, at most 30 characters, unique within the call |
+| `questions[].question` | `string` | The full question |
+| `questions[].options` | `{ label, description? }[]` | At least one option; labels are unique within a question |
+| `questions[].multiple` | `boolean` | Allow more than one selection |
+| `questions[].custom` | `boolean` | Allow a typed answer; defaults to `true` |
+
+The answer has one entry per question, in the same order.
+
+```ts
+type QuestionOutput = {
+  answers: {
+    header: string
+    selected: string[]
+    custom?: string
+  }[]
+}
+```
+
+`selected` holds option labels exactly as they were offered. FrogBot rejects an answer that picks an option that was not offered, answers the wrong header, selects more than one option on a single-choice question, or includes `custom` when the question disallows it. Both types are exported as Zod schemas and TypeScript types: `QuestionInput` and `QuestionOutput` from `frogbot/tools`.
+
+## Answer in the chat UI
+
+The admin chat renders questions as a card. A single single-choice question submits on click. Several questions step through one at a time, and questions that allow it show a text field for a custom answer.
+
+In your own app, register the card with `ChatProvider`.
+
+```tsx
+import { ChatProvider, QuestionToolRender } from '@frogbotai/ui/chat'
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <ChatProvider adapter={{ fetch }} toolRenderers={[{ kind: 'question', render: QuestionToolRender }]}>
+      {children}
+    </ChatProvider>
+  )
+}
+```
+
+Answering uses the standard AI SDK client-tool flow: the card calls `addToolOutput`, and the chat resubmits once every call in the step has an output. FrogBot validates the answer against the stored call rather than trusting the browser's copy, and streams the continuation into the same assistant message.
+
+**Dismiss** declines the question. The model is not called again; the call is recorded as a tool error with the text `Dismissed by the user.`, and the chat is ready for the next message.
+
+## Answer over HTTP
+
+A JSON request that reaches a question returns `status: "awaiting-input"` and the pending calls instead of a final reply.
+
+```json
+{
+  "status": "awaiting-input",
+  "chatId": "CHAT_ID",
+  "pending": [
+    {
+      "toolCallId": "call_1",
+      "toolName": "question",
+      "input": { "questions": [{ "header": "Color", "question": "Which color?", "options": [{ "label": "Red" }, { "label": "Blue" }] }] },
+      "messageId": "MESSAGE_ID",
+      "chatId": "CHAT_ID",
+      "agentSlug": "planner",
+      "createdAt": "2026-09-24T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+List the calls that are still waiting at any time.
+
+```bash
+curl http://localhost:3000/api/agents/planner/chats/CHAT_ID/pending \
+  --header "Authorization: Bearer $FROGBOT_TOKEN"
+```
+
+The response includes the chat's turn `state` and a `pending` array. Settle a call with its output.
+
+```bash
+curl http://localhost:3000/api/agents/planner/chats/CHAT_ID/settle \
+  --request POST \
+  --header "Authorization: Bearer $FROGBOT_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{ "toolCallId": "call_1", "output": { "answers": [{ "header": "Color", "selected": ["Blue"] }] } }'
+```
+
+When that answer settles the last pending call in the step, FrogBot continues the turn and responds with the same JSON shape as the original request, plus the `settlement`. If other calls in the step are still waiting, the response has `status: "awaiting-input"` and the remaining `pending` calls. Send `{ "toolCallId": "call_1", "dismissed": true }` instead of `output` to dismiss.
+
+| Status | `code` | Meaning |
+| --- | --- | --- |
+| `400` | `invalid-output` | The output does not match the tool's schema or the offered options |
+| `403` | `forbidden` | The tool's `client.access` rejected this caller |
+| `404` | `call-not-found` | No pending call has that ID in this chat |
+| `409` | `already-settled` | Someone else answered first; `settlement.part` holds the stored answer |
+| `409` | `not-awaiting` | The chat is not waiting for input |
+| `409` | `write-conflict` | The message kept changing while FrogBot tried to save the answer; retry |
+
+A body without `toolCallId` and exactly one of `output` or `dismissed: true` returns `400` without a `code`. When the chat UI resubmits answers, the same codes apply, plus `pending-calls` while other calls in the step still need an answer and `turn-in-progress` when another request already continued the turn.
+
+The first valid answer wins. Answers from two tabs or two participants settle once and continue once.
+
+## Who can answer
+
+Anyone who can continue the chat can answer its questions. Over HTTP, that is the chat's owner; for a chat without an owner, it is any anonymous caller who knows the chat ID. FrogBot records who answered or dismissed each call, and when, in the message's `settlements` field.
+
+## Where questions are offered
+
+FrogBot only offers the tool to the model when the caller can answer it.
+
+| Entry point | Question tool |
+| --- | --- |
+| Admin chat, `@frogbotai/ui`, and HTTP requests | Offered |
+| `agent.generate()`, workflows, jobs, and channels | Withheld |
+
+If a model calls a withheld tool anyway, the call becomes a tool error and the turn keeps running, so nothing is left waiting.
+
+## Build a client tool
+
+`question` is a client tool: it declares an `outputSchema` and a `client` configuration instead of `execute`. Define your own the same way when the answer has to come from the user or the browser.
+
+```ts
+import type { ClientTool } from 'frogbot'
+import { z } from 'zod'
+
+const pickFileInput = z.object({ files: z.array(z.string()).min(1) })
+const pickFileOutput = z.object({ file: z.string() })
+
+type PickFileInput = z.output<typeof pickFileInput>
+type PickFileOutput = z.output<typeof pickFileOutput>
+
+export const pickFile: ClientTool<typeof pickFileInput, typeof pickFileOutput> = {
+  slug: 'pick_file',
+  description: 'Ask the user which of several files to use.',
+  component: '/components/PickFileCard#PickFileCard',
+  inputSchema: pickFileInput,
+  outputSchema: pickFileOutput,
+  client: {
+    kind: 'pick-file',
+    access: ({ req }) => Boolean(req.user),
+    validate: ({ input, output }) =>
+      (input as PickFileInput).files.includes((output as PickFileOutput).file) ||
+      'Pick one of the offered files.'
+  }
+}
+```
+
+| Option | Purpose |
+| --- | --- |
+| `client.kind` | Groups client tools by the kind of answer they need; interactive chat entry points offer every kind |
+| `client.access` | Optional extra check for who may settle a call; return `false` to reject |
+| `client.validate` | Optional check against the stored input; return `true` or an error message |
+
+Render the call with a [tool renderer](/chat/ui-registries#answer-client-tools). The renderer receives `addToolOutput` and `dismiss` while the call is waiting.
+
+When a step contains a client tool call, FrogBot does not run server tools emitted in the same step. They return a skipped result so the model can call them again after it has the answer.
+
+See [turns and queued messages](/chat/turns) for how a waiting chat handles new messages.

@@ -1,19 +1,66 @@
 import type { LanguageModelV4StreamPart } from '@ai-sdk/provider';
 import type { UIMessage } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { createAgentInstance } from '../../../../packages/frogbot/src/agents/instance.js';
-import type { AgentAccess } from '../../../../packages/frogbot/src/agents/types.js';
+import type {
+  AgentAccess,
+  AgentStreamMessageResult,
+} from '../../../../packages/frogbot/src/agents/types.js';
 import {
   channelConversationKey,
   resolveChannelChat,
 } from '../../../../packages/frogbot/src/channels/conversation.js';
 import { createChannelChatAccess } from '../../../../packages/frogbot/src/chat/channelAccess.js';
-import { MESSAGE_USAGE_CONTEXT_KEY } from '../../../../packages/frogbot/src/chat/collections/messages.js';
+import { question } from '../../../../packages/frogbot/src/tools/question.js';
 import type { AnyTool } from '../../../../packages/frogbot/src/tools/types.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
+
+type StoredMessage = UIMessage & { chat: string; version: number; status?: string };
+
+const turn = vi.hoisted(() => ({
+  messages: [] as Array<Record<string, unknown>>,
+  claimTurn: vi.fn(),
+  holdTurn: vi.fn(),
+  promoteQueuedMessage: vi.fn(),
+  releaseTurn: vi.fn(),
+}));
+
+vi.mock('../../../../packages/frogbot/src/chat/turn/state.js', () => ({
+  claimTurn: turn.claimTurn,
+  holdTurn: turn.holdTurn,
+  releaseTurn: turn.releaseTurn,
+}));
+
+vi.mock('../../../../packages/frogbot/src/chat/turn/queue.js', () => ({
+  promoteQueuedMessage: turn.promoteQueuedMessage,
+  promoteSteerMessages: async () => [],
+}));
+
+vi.mock('../../../../packages/frogbot/src/database/compareAndSet.js', () => ({
+  updateIfVersion: async ({
+    id,
+    version,
+    data,
+  }: {
+    id: string;
+    version: number;
+    data: Record<string, unknown>;
+  }) => {
+    const stored = turn.messages.find((message) => message.id === id);
+
+    if (!stored || stored.version !== version) return false;
+
+    Object.assign(stored, data, { version: version + 1 });
+
+    return true;
+  },
+}));
+
+const { createAgentInstance } = await import('../../../../packages/frogbot/src/agents/instance.js');
+
+const claim = { chatId: 'chat-1', attempt: 'attempt-1' };
 
 const usage = {
   inputTokens: { total: 2, noCache: 2, cacheRead: 0, cacheWrite: 0 },
@@ -56,7 +103,7 @@ function setup({
   tools?: AnyTool[];
 } = {}) {
   const model = new MockLanguageModelV4({ doStream });
-  const messages: Array<UIMessage & { chat: string }> = [];
+  const messages: StoredMessage[] = [];
   const chat = {
     id: 'chat-1',
     user: owner,
@@ -77,8 +124,12 @@ function setup({
         assetsSlug: 'frogbot-chat-assets',
       },
     },
-    createRequest: vi.fn(async (req: FrogBotRequest) => req),
-    findByID: vi.fn(async () => chat),
+    createRequest: vi.fn(async (req: Partial<FrogBotRequest>) =>
+      'frogbot' in req ? req : { ...req, payload: { db: {} }, frogbot },
+    ),
+    findByID: vi.fn(async ({ collection, id }: { collection: string; id: string }) =>
+      collection === 'messages' ? (messages.find((message) => message.id === id) ?? null) : chat,
+    ),
     find: vi.fn(
       async ({
         collection,
@@ -102,7 +153,7 @@ function setup({
     create: vi.fn(
       async ({ collection, data }: { collection: string; data: Record<string, unknown> }) => {
         if (collection === 'messages') {
-          messages.push(structuredClone(data) as UIMessage & { chat: string });
+          messages.push({ version: 0, ...structuredClone(data) } as StoredMessage);
         }
 
         return data;
@@ -132,10 +183,32 @@ function setup({
     } as never,
   );
 
+  turn.messages = messages;
+
   return { agent, chat, finish, frogbot, messages, model, req };
 }
 
+async function streamMessage(
+  agent: ReturnType<typeof setup>['agent'],
+  opts: Parameters<ReturnType<typeof setup>['agent']['streamMessage']>[0],
+): Promise<AgentStreamMessageResult> {
+  const result = await agent.streamMessage(opts);
+
+  if (!('persistence' in result)) throw new Error('Expected the turn to start.');
+
+  return result;
+}
+
 describe('agent persisted stream with the installed AI SDK', () => {
+  beforeEach(() => {
+    turn.claimTurn.mockReset().mockResolvedValue(claim);
+    turn.holdTurn
+      .mockReset()
+      .mockReturnValue({ signal: new AbortController().signal, stop: vi.fn() });
+    turn.promoteQueuedMessage.mockReset();
+    turn.releaseTurn.mockReset().mockResolvedValue(true);
+  });
+
   it('denies agent access before reading or persisting conversation data', async () => {
     const access = vi.fn(() => false);
     const { agent, frogbot, messages, model, req } = setup({ access });
@@ -155,7 +228,7 @@ describe('agent persisted stream with the installed AI SDK', () => {
   it('streams and persists a complete assistant turn', async () => {
     const { agent, chat, messages, req } = setup();
 
-    const result = await agent.streamMessage({ req, chatId: 'chat-1', prompt: 'Hello' });
+    const result = await streamMessage(agent, { req, chatId: 'chat-1', prompt: 'Hello' });
     const text: string[] = [];
 
     for await (const part of result.stream) {
@@ -188,7 +261,7 @@ describe('agent persisted stream with the installed AI SDK', () => {
       }),
     });
 
-    const result = await agent.streamMessage({
+    const result = await streamMessage(agent, {
       req,
       chatId: 'chat-1',
       prompt: 'Hello',
@@ -243,7 +316,7 @@ describe('agent persisted stream with the installed AI SDK', () => {
         channelKey: chat.channelKey,
       });
 
-      const result = await agent.streamMessage({
+      const result = await streamMessage(agent, {
         req,
         chatId: chat.id,
         prompt: 'Next participant',
@@ -306,7 +379,7 @@ describe('agent persisted stream with the installed AI SDK', () => {
         channelKey: channelConversationKey(identity),
       });
 
-      const result = await agent.streamMessage({
+      const result = await streamMessage(agent, {
         req,
         chatId,
         channelAccess,
@@ -367,7 +440,7 @@ describe('agent persisted stream with the installed AI SDK', () => {
       return create(args);
     });
 
-    const result = await agent.streamMessage({ req, chatId: 'chat-1', prompt: 'Hello' });
+    const result = await streamMessage(agent, { req, chatId: 'chat-1', prompt: 'Hello' });
 
     await result.consumeStream();
     await writing.promise;
@@ -402,7 +475,7 @@ describe('agent persisted stream with the installed AI SDK', () => {
       },
     });
 
-    const result = await agent.streamMessage({ req, chatId: 'chat-1', prompt: 'Hello' });
+    const result = await streamMessage(agent, { req, chatId: 'chat-1', prompt: 'Hello' });
 
     await expect(result.persistence).rejects.toBe(failure);
 
@@ -456,7 +529,7 @@ describe('agent persisted stream with the installed AI SDK', () => {
       }),
     });
 
-    const result = await agent.streamMessage({
+    const result = await streamMessage(agent, {
       req,
       chatId: 'chat-1',
       prompt: 'Find it',
@@ -482,9 +555,11 @@ describe('agent persisted stream with the installed AI SDK', () => {
     );
   });
 
-  it('persists every step, tool result, and total token usage', async () => {
+  it('checkpoints each step and persists every tool result and total token usage', async () => {
     let step = 0;
-    const { agent, frogbot, messages, req } = setup({
+    let checkpoint: StoredMessage[] = [];
+
+    const { agent, messages, req } = setup({
       tools: [
         {
           slug: 'lookup',
@@ -493,27 +568,37 @@ describe('agent persisted stream with the installed AI SDK', () => {
           execute: async () => ({ found: true }),
         },
       ],
-      doStream: async () => ({
-        stream: modelStream(
-          step++ === 0
-            ? [
-                ...response('Checking').slice(0, -1),
-                { type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: '{}' },
-                {
-                  type: 'finish',
-                  finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
-                  usage,
-                },
-              ]
-            : response('Found it'),
-        ),
-      }),
+      doStream: async () => {
+        if (step > 0) checkpoint = structuredClone(messages);
+
+        return {
+          stream: modelStream(
+            step++ === 0
+              ? [
+                  ...response('Checking').slice(0, -1),
+                  { type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: '{}' },
+                  {
+                    type: 'finish',
+                    finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
+                    usage,
+                  },
+                ]
+              : response('Found it'),
+          ),
+        };
+      },
     });
 
-    const result = await agent.streamMessage({ req, chatId: 'chat-1', prompt: 'Find it' });
+    const result = await streamMessage(agent, { req, chatId: 'chat-1', prompt: 'Find it' });
 
     await result.persistence;
 
+    expect(checkpoint[1]?.parts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'text', text: 'Checking' }),
+        expect.objectContaining({ type: 'tool-lookup', state: 'output-available' }),
+      ]),
+    );
     expect(messages).toHaveLength(2);
     expect(messages[1].parts).toEqual(
       expect.arrayContaining([
@@ -526,18 +611,85 @@ describe('agent persisted stream with the installed AI SDK', () => {
         }),
       ]),
     );
-    expect(frogbot.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        collection: 'messages',
-        data: expect.objectContaining({ role: 'assistant' }),
-        context: expect.objectContaining({
-          [MESSAGE_USAGE_CONTEXT_KEY]: expect.objectContaining({
-            inputTokens: 4,
-            outputTokens: 2,
-            totalTokens: 6,
-          }),
-        }),
+    expect(messages[1]).toMatchObject({
+      usage: { inputTokens: 4, outputTokens: 2, totalTokens: 6 },
+    });
+  });
+
+  it('queues the message without calling the model while another turn is running', async () => {
+    turn.claimTurn.mockResolvedValue(undefined);
+
+    const { agent, messages, model, req } = setup();
+
+    const result = await agent.streamMessage({
+      req,
+      chatId: 'chat-1',
+      prompt: 'Also this',
+      delivery: 'steer',
+    });
+
+    expect(result).toEqual({
+      status: 'queued',
+      chatId: 'chat-1',
+      messageId: messages[0]?.id,
+      delivery: 'steer',
+    });
+    expect(messages).toEqual([
+      expect.objectContaining({ role: 'user', status: 'queued', delivery: 'steer' }),
+    ]);
+    expect(model.doStreamCalls).toEqual([]);
+  });
+
+  it('releases the turn and promotes the next queued message once the reply is persisted', async () => {
+    const { agent, chat, req } = setup();
+
+    const result = await streamMessage(agent, { req, chatId: 'chat-1', prompt: 'Hello' });
+
+    await result.persistence;
+
+    expect(turn.releaseTurn).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ claim, state: 'idle' }),
+    );
+    expect(turn.promoteQueuedMessage).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ chatId: 'chat-1' }),
+    );
+    expect(chat.lastMessageAt).toEqual(expect.any(String));
+  });
+
+  it('leaves the turn awaiting input when a client tool call is pending', async () => {
+    const { agent, messages, req } = setup({
+      tools: [question],
+      doStream: async () => ({
+        stream: modelStream([
+          { type: 'stream-start', warnings: [] },
+          {
+            type: 'tool-call',
+            toolCallId: 'call-1',
+            toolName: 'question',
+            input: JSON.stringify({
+              questions: [{ header: 'Size', question: 'Which size?', options: [{ label: 'S' }] }],
+            }),
+          },
+          { type: 'finish', finishReason: { unified: 'tool-calls', raw: 'tool_calls' }, usage },
+        ]),
       }),
+    });
+
+    const result = await streamMessage(agent, {
+      req,
+      chatId: 'chat-1',
+      prompt: 'Order a shirt',
+      clientTools: { kinds: ['question'] },
+    });
+
+    await result.persistence;
+
+    expect(turn.releaseTurn).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ claim, state: 'awaiting' }),
+    );
+    expect(turn.promoteQueuedMessage).not.toHaveBeenCalled();
+    expect(messages[1]?.parts).toContainEqual(
+      expect.objectContaining({ type: 'tool-question', state: 'input-available' }),
     );
   });
 });

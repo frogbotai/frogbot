@@ -62,6 +62,69 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
         "create": [Function],
         "update": [Function],
       },
+      "defaultValue": "active",
+      "index": true,
+      "name": "status",
+      "options": [
+        "active",
+        "queued",
+      ],
+      "type": "select",
+    },
+    {
+      "access": {
+        "create": [Function],
+        "update": [Function],
+      },
+      "name": "delivery",
+      "options": [
+        "queue",
+        "steer",
+      ],
+      "type": "select",
+    },
+    {
+      "access": {
+        "create": [Function],
+        "update": [Function],
+      },
+      "name": "author",
+      "type": "json",
+      "typescriptSchema": [
+        [Function],
+      ],
+    },
+    {
+      "access": {
+        "create": [Function],
+        "update": [Function],
+      },
+      "admin": {
+        "hidden": true,
+      },
+      "name": "settlements",
+      "type": "json",
+      "typescriptSchema": [
+        [Function],
+      ],
+    },
+    {
+      "access": {
+        "create": [Function],
+        "update": [Function],
+      },
+      "admin": {
+        "hidden": true,
+      },
+      "defaultValue": 0,
+      "name": "version",
+      "type": "number",
+    },
+    {
+      "access": {
+        "create": [Function],
+        "update": [Function],
+      },
       "fields": [
         {
           "name": "inputTokens",

@@ -13,6 +13,7 @@ import type { FrogBotConfig } from '../config/types.js';
 import { CHAT_ASSETS_SLUG, defaultChatAssetsCollection } from './collections/assets.js';
 import { defaultChatsCollection } from './collections/chats.js';
 import { defaultMessagesCollection } from './collections/messages.js';
+import { defaultChatTurnsCollection } from './collections/turns.js';
 import { resolveUserSlug } from './resolveUserSlug.js';
 import type { SanitizedChatConfig } from './types.js';
 
@@ -67,7 +68,7 @@ export function resolveChatCollections(config: FrogBotConfig): ResolvedChat {
     marker: 'chat',
     feature: 'chat persistence',
     defaultCollection: defaultChatsCollection({ slug: chatsSlug, userSlug }),
-    reservedFields: ['user', 'channel', 'externalId', 'channelKey'],
+    reservedFields: ['user', 'channel', 'externalId', 'channelKey', 'channelThread'],
   });
   const withMessages = resolveMarkedCollection({
     collectionLabel: 'chat message',
@@ -76,10 +77,23 @@ export function resolveChatCollections(config: FrogBotConfig): ResolvedChat {
     marker: 'message',
     feature: 'chat persistence',
     defaultCollection: defaultMessagesCollection({ slug: messagesSlug, chatsSlug }),
-    reservedFields: ['id', 'parts', 'chat'],
+    reservedFields: [
+      'id',
+      'parts',
+      'chat',
+      'status',
+      'delivery',
+      'author',
+      'settlements',
+      'version',
+    ],
   });
 
-  const collections = [...withMessages, defaultChatAssetsCollection({ chatsSlug, userSlug })];
+  const collections = [
+    ...withMessages,
+    defaultChatAssetsCollection({ chatsSlug, userSlug }),
+    defaultChatTurnsCollection(),
+  ];
 
   return {
     collections,

@@ -3,8 +3,8 @@ import type { LanguageModelUsage, UIMessage } from 'ai';
 import { toHookUsage } from '../ai/hooks.js';
 import type { DocID } from '../collections/config/types.js';
 import type { FrogBotRequest } from '../types/request.js';
-import { MESSAGE_USAGE_CONTEXT_KEY } from './collections/messages.js';
 import { generateChatTitle } from './title.js';
+import { messagesConfig, persistTurnMessage } from './turn/messages.js';
 
 export type MessageUsage = {
   inputTokens?: number;
@@ -20,9 +20,9 @@ export type PersistAssistantMessageProps = {
   req: FrogBotRequest;
   chatId: DocID;
   message: UIMessage;
-  isContinuation: boolean;
   history?: UIMessage[];
   mainModel?: string;
+  createdAt?: string;
 };
 
 export function createMessageUsage(
@@ -47,68 +47,27 @@ export async function persistAssistantMessage({
   req,
   chatId,
   message,
-  isContinuation,
   history,
   mainModel,
+  createdAt,
 }: PersistAssistantMessageProps): Promise<void> {
-  const chat = req.frogbot.config.chat;
-  if (!chat.enabled) return;
-
-  const overrideAccess = true;
-
-  const { metadata, usage } = splitMetadata(message.metadata);
-  const data = {
-    chat: chatId,
-    role: 'assistant',
-    parts: message.parts,
-    ...(metadata === undefined ? {} : { metadata }),
-  };
-  const context = { [MESSAGE_USAGE_CONTEXT_KEY]: usage ?? null };
-
-  if (isContinuation) {
-    await req.frogbot.update({
-      collection: chat.messagesSlug,
-      id: message.id,
-      data,
-      context,
-      req,
-      overrideAccess,
-    });
-  } else {
-    await req.frogbot.create({
-      collection: chat.messagesSlug,
-      data: { id: message.id, ...data },
-      context,
-      req,
-      overrideAccess,
-    });
-  }
+  await persistTurnMessage({ req, chatId, message, createdAt });
 
   await req.frogbot.update({
-    collection: chat.chatsSlug,
+    collection: messagesConfig(req).chatsSlug,
     id: chatId,
     data: { lastMessageAt: new Date().toISOString() },
     req,
-    overrideAccess,
+    overrideAccess: true,
   });
 
   if (history && mainModel) {
     void generateChatTitle({
-      req,
+      req: await req.frogbot.createRequest({ user: req.user, context: req.context }),
       chatId,
       history,
       mainModel,
       assistantMessage: message,
     });
   }
-}
-
-function splitMetadata(metadata: unknown): { metadata?: unknown; usage?: MessageUsage } {
-  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return { metadata };
-
-  const { usage, ...rest } = metadata as Record<string, unknown> & { usage?: MessageUsage };
-  return {
-    ...(Object.keys(rest).length === 0 ? {} : { metadata: rest }),
-    ...(usage === undefined ? {} : { usage }),
-  };
 }

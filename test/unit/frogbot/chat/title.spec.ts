@@ -80,7 +80,7 @@ describe('chat titles', () => {
     expect(title?.endsWith('…')).toBe(true);
   });
 
-  it('suggests a title from an owned chat history', async () => {
+  it('suggests a title from an owned chat history without queued messages', async () => {
     const { req, find } = makeReq();
 
     await expect(suggestChatTitleForChat({ req, chatId: 'chat-1' })).resolves.toBe(
@@ -90,7 +90,7 @@ describe('chat titles', () => {
       expect.objectContaining({
         collection: 'messages',
         overrideAccess: false,
-        where: { chat: { equals: 'chat-1' } },
+        where: { and: [{ chat: { equals: 'chat-1' } }, { status: { not_equals: 'queued' } }] },
       }),
     );
   });

@@ -1936,16 +1936,24 @@ describe('frogbot sanitize', () => {
       expect(result.agents).toHaveLength(1);
       expect(result.agents?.[0].access).toBeTypeOf('function');
       expect((payloadConfig as any).agents).toBeUndefined();
-      expect((payloadConfig as any).endpoints.map((endpoint: any) => endpoint.path)).toEqual([
-        '/jobs/:token/resume',
-        '/jobs/:token/resume',
-        '/jobs/:token/resume',
-        '/frogbot',
-        '/agents/:slug',
-        '/agents/:slug/authorizations',
-        '/agents',
-        '/frogbot/chat/branch',
-        '/frogbot/chat/suggest-title',
+      expect(
+        (payloadConfig as any).endpoints.map(
+          (endpoint: any) => `${endpoint.method} ${endpoint.path}`,
+        ),
+      ).toEqual([
+        'get /jobs/:token/resume',
+        'head /jobs/:token/resume',
+        'post /jobs/:token/resume',
+        'get /frogbot',
+        'post /agents/:slug',
+        'get /agents/:slug/chats/:chatId/pending',
+        'post /agents/:slug/chats/:chatId/settle',
+        'patch /agents/:slug/chats/:chatId/messages/:messageId',
+        'delete /agents/:slug/chats/:chatId/messages/:messageId',
+        'get /agents/:slug/authorizations',
+        'get /agents',
+        'post /frogbot/chat/branch',
+        'post /frogbot/chat/suggest-title',
       ]);
     });
 
@@ -2571,6 +2579,7 @@ describe('frogbot sanitize', () => {
         'chats',
         'messages',
         'frogbot-chat-assets',
+        'frogbot-chat-turns',
         'usage-logs',
         'frogbot-trigger-subscriptions',
         'frogbot-waitpoints',
@@ -2583,6 +2592,7 @@ describe('frogbot sanitize', () => {
         'chats',
         'messages',
         'frogbot-chat-assets',
+        'frogbot-chat-turns',
         'usage-logs',
         'frogbot-trigger-subscriptions',
         'frogbot-waitpoints',

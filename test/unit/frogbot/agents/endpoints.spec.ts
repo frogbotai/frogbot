@@ -1,39 +1,35 @@
-import type * as AI from 'ai';
-import type { UIMessage } from 'ai';
+import type { UIMessage, UIMessageChunk } from 'ai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import type { AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
+import { TurnError } from '../../../../packages/frogbot/src/chat/turn/errors.js';
+import type * as StreamTurnModule from '../../../../packages/frogbot/src/chat/turn/streamTurn.js';
 import {
   definePiece,
   pieceInstanceTools,
 } from '../../../../packages/frogbot/src/pieces/definePiece.js';
+import { question } from '../../../../packages/frogbot/src/tools/question.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
-const { createAgentUIStreamResponse, resolveChatAttachments } = vi.hoisted(() => ({
-  createAgentUIStreamResponse: vi.fn(() => Promise.resolve(new Response('stream'))),
-  resolveChatAttachments: vi.fn(({ messages }) =>
-    Promise.resolve(
-      messages.map((message: UIMessage) => ({
-        ...message,
-        parts: message.parts.map((part) =>
-          part.type === 'file-reference'
-            ? {
-                type: 'file',
-                filename: 'server.txt',
-                mediaType: 'text/plain',
-                url: 'data:text/plain;base64,ZmlsZQ==',
-              }
-            : part,
-        ),
-      })),
-    ),
-  ),
-}));
+const { listPendingCalls, releaseTurn, resolveChatAttachments, resolveChatContext, streamTurn } =
+  vi.hoisted(() => ({
+    listPendingCalls: vi.fn(),
+    releaseTurn: vi.fn(),
+    resolveChatAttachments: vi.fn(),
+    resolveChatContext: vi.fn(),
+    streamTurn: vi.fn(),
+  }));
 
-vi.mock('ai', async (importOriginal) => ({
-  ...(await importOriginal<typeof AI>()),
-  createAgentUIStreamResponse,
+vi.mock('../../../../packages/frogbot/src/chat/chatContext.js', () => ({ resolveChatContext }));
+
+vi.mock('../../../../packages/frogbot/src/chat/turn/state.js', () => ({ releaseTurn }));
+
+vi.mock('../../../../packages/frogbot/src/chat/turn/settle.js', () => ({ listPendingCalls }));
+
+vi.mock('../../../../packages/frogbot/src/chat/turn/streamTurn.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof StreamTurnModule>()),
+  streamTurn,
 }));
 
 vi.mock('../../../../packages/frogbot/src/uploads/resolveChatAttachments.js', () => ({
@@ -43,23 +39,53 @@ vi.mock('../../../../packages/frogbot/src/uploads/resolveChatAttachments.js', ()
 const { buildAgentEndpoints } =
   await import('../../../../packages/frogbot/src/agents/endpoints.js');
 
-function makeAgent(
-  generate = vi.fn(() =>
-    Promise.resolve({
-      text: 'hello',
-      totalUsage: { inputTokens: 1, outputTokens: 2 },
-      finishReason: 'stop',
-      rawFinishReason: 'stop',
-      steps: [{ content: [{ type: 'text', text: 'hello' }] }],
-    }),
-  ),
-): AgentInstance {
+const claim = { chatId: 'chat-1', attempt: 'attempt-1' };
+
+const history: UIMessage[] = [{ id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }];
+
+const pendingCall = {
+  toolCallId: 'call-1',
+  toolName: 'question',
+  input: { questions: [] },
+  messageId: 'assistant-1',
+  chatId: 'chat-1',
+  agentSlug: 'support',
+  createdAt: '2026-09-24T00:00:00.000Z',
+};
+
+function makeAgent(): AgentInstance {
   return {
     slug: 'support',
     config: { slug: 'support', model: 'openai/test', instructions: 'Help' },
-    aiAgent: { tools: {}, generate } as unknown as AgentInstance['aiAgent'],
-    generate: generate as AgentInstance['generate'],
+    aiAgent: { tools: {} } as unknown as AgentInstance['aiAgent'],
+    generate: vi.fn() as AgentInstance['generate'],
     stream: vi.fn() as AgentInstance['stream'],
+  };
+}
+
+function makeTurn({ persistence = Promise.resolve() }: { persistence?: Promise<void> } = {}) {
+  const chunks: UIMessageChunk[] = [
+    { type: 'start', messageId: 'assistant-1' },
+    { type: 'text-start', id: 'text-1' },
+    { type: 'text-delta', id: 'text-1', delta: 'hello' },
+    { type: 'text-end', id: 'text-1' },
+    { type: 'finish' },
+  ];
+
+  return {
+    result: {
+      text: Promise.resolve('hello'),
+      totalUsage: Promise.resolve({ inputTokens: 1, outputTokens: 2 }),
+      finishReason: Promise.resolve('stop'),
+    },
+    uiMessageStream: new ReadableStream<UIMessageChunk>({
+      start(controller) {
+        chunks.forEach((chunk) => controller.enqueue(chunk));
+
+        controller.close();
+      },
+    }),
+    persistence,
   };
 }
 
@@ -67,18 +93,7 @@ function makeRequest({
   accept,
   agent = makeAgent(),
   body = { prompt: 'Hello' },
-  create = vi.fn(() => Promise.resolve({ id: 'chat-1' })),
   authorizations,
-  find = vi.fn((args: { limit?: number }) =>
-    Promise.resolve({
-      docs:
-        args.limit === 1
-          ? []
-          : [{ id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
-    }),
-  ),
-  findByID = vi.fn(() => Promise.resolve({ id: 'chat-1', user: user?.id ?? null })),
-  update = vi.fn(() => Promise.resolve({ id: 'chat-1' })),
   signal,
   slug = 'support',
   user = { id: 'user-1' },
@@ -87,46 +102,28 @@ function makeRequest({
   authorizations?: ReturnType<typeof vi.fn>;
   agent?: AgentInstance;
   body?: unknown;
-  create?: ReturnType<typeof vi.fn>;
-  find?: ReturnType<typeof vi.fn>;
-  findByID?: ReturnType<typeof vi.fn>;
-  update?: ReturnType<typeof vi.fn>;
   signal?: AbortSignal;
   slug?: string;
   user?: { id: string } | null;
 } = {}): FrogBotRequest {
   const headers = new Headers({ 'content-type': 'application/json' });
-  if (accept) {
-    headers.set('accept', accept);
-  }
+
+  if (accept) headers.set('accept', accept);
+
   const request = new Request('http://localhost/api/agents/support', {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
     signal,
   });
+
   return Object.assign(request, {
     routeParams: { slug },
     frogbot: {
       agents: { support: agent },
       connections: authorizations ? { authorizations } : undefined,
-      config: {
-        ai: { routers: {} },
-        chat: {
-          enabled: true,
-          chatsSlug: 'chats',
-          messagesSlug: 'messages',
-          assetsSlug: 'frogbot-chat-assets',
-        },
-      },
-      create,
-      delete: vi.fn(() => Promise.resolve({})),
-      find,
-      findByID,
       logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
-      update,
     },
-    payload: { db: {} },
     user,
   }) as unknown as FrogBotRequest;
 }
@@ -150,8 +147,17 @@ function authorizationsHandler() {
 
 describe('agent endpoints', () => {
   beforeEach(() => {
-    createAgentUIStreamResponse.mockClear();
-    resolveChatAttachments.mockClear();
+    listPendingCalls.mockReset().mockResolvedValue([]);
+    releaseTurn.mockReset().mockResolvedValue(true);
+    resolveChatAttachments
+      .mockReset()
+      .mockImplementation(({ messages }) => Promise.resolve(messages));
+
+    resolveChatContext
+      .mockReset()
+      .mockResolvedValue({ status: 'ready', chatId: 'chat-1', uiMessages: history, claim });
+
+    streamTurn.mockReset().mockImplementation(() => Promise.resolve(makeTurn()));
   });
 
   it('returns the agent manifest', async () => {
@@ -214,24 +220,125 @@ describe('agent endpoints', () => {
     expect(authorizations).not.toHaveBeenCalled();
   });
 
-  it('returns JSON unless text/event-stream is explicitly accepted', async () => {
+  it('resolves the chat context from the prompt, chat id, and delivery', async () => {
     const agent = makeAgent();
-    const response = await postHandler()(makeRequest({ agent, accept: 'text/plain' }));
+    const req = makeRequest({
+      agent,
+      body: { prompt: 'Hello', chatId: 'chat-1', delivery: 'steer' },
+    });
 
-    expect(response.headers.get('content-type')).toContain('application/json');
-    expect(agent.generate).toHaveBeenCalledOnce();
-    expect(createAgentUIStreamResponse).not.toHaveBeenCalled();
+    await postHandler()(req);
+
+    expect(resolveChatContext).toHaveBeenCalledWith({
+      req,
+      agentSlug: 'support',
+      chatId: 'chat-1',
+      incoming: [
+        { id: expect.any(String), role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
+      ],
+      tools: agent.aiAgent.tools,
+      delivery: 'steer',
+    });
   });
 
-  it('streams for an explicit text/event-stream media range', async () => {
-    const response = await postHandler()(
-      makeRequest({
-        accept: 'application/json, text/event-stream; q=1',
-      }),
+  it('returns a completed JSON result after the turn is persisted', async () => {
+    const persisted = Promise.withResolvers<void>();
+
+    streamTurn.mockResolvedValue(makeTurn({ persistence: persisted.promise }));
+
+    const pending = postHandler()(makeRequest({ accept: 'text/plain' }));
+
+    await vi.waitFor(() => expect(streamTurn).toHaveBeenCalledOnce());
+
+    expect(listPendingCalls).not.toHaveBeenCalled();
+
+    persisted.resolve();
+
+    const response = await pending;
+
+    expect(response.headers.get('content-type')).toContain('application/json');
+    expect(await response.json()).toEqual({
+      status: 'completed',
+      text: 'hello',
+      usage: { inputTokens: 1, outputTokens: 2 },
+      finishReason: 'stop',
+      authorizations: [],
+      chatId: 'chat-1',
+    });
+  });
+
+  it('reports pending client tool calls as awaiting input', async () => {
+    listPendingCalls.mockResolvedValue([pendingCall]);
+
+    const req = makeRequest();
+    const response = await postHandler()(req);
+
+    expect(listPendingCalls).toHaveBeenCalledWith({ req, chatId: 'chat-1' });
+    expect(await response.json()).toMatchObject({
+      status: 'awaiting-input',
+      chatId: 'chat-1',
+      pending: [pendingCall],
+    });
+  });
+
+  it('fails JSON requests on stream errors instead of encoding them as chunks', async () => {
+    const req = makeRequest();
+
+    await postHandler()(req);
+
+    const { onError } = streamTurn.mock.calls[0]![0] as { onError?: (error: unknown) => string };
+    const failure = new Error('model failed');
+
+    expect(() => onError?.(failure)).toThrow(failure);
+  });
+
+  it('rejects the JSON response when the turn fails to persist', async () => {
+    streamTurn.mockResolvedValue(
+      makeTurn({ persistence: Promise.reject(Object.assign(new Error('lost'), { status: 409 })) }),
     );
 
-    expect(await response.text()).toBe('stream');
-    expect(createAgentUIStreamResponse).toHaveBeenCalledOnce();
+    const response = await postHandler()(makeRequest());
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'lost' });
+  });
+
+  it('streams the turn for an explicit text/event-stream media range', async () => {
+    const response = await postHandler()(
+      makeRequest({ accept: 'application/json, text/event-stream; q=1' }),
+    );
+
+    expect(response.headers.get('content-type')).toBe('text/event-stream');
+    expect(response.headers.get('X-FrogBot-Chat-Id')).toBe('chat-1');
+    expect(await response.text()).toContain(
+      'data: {"type":"text-delta","id":"text-1","delta":"hello"}',
+    );
+    expect(streamTurn).toHaveBeenCalledWith(
+      expect.not.objectContaining({ onError: expect.anything() }),
+    );
+    expect(listPendingCalls).not.toHaveBeenCalled();
+  });
+
+  it('runs the claimed turn with every client tool kind and the request signal', async () => {
+    const controller = new AbortController();
+    const agent = makeAgent();
+    agent.config.tools = [question];
+    const req = makeRequest({ agent, signal: controller.signal });
+
+    await postHandler()(req);
+
+    expect(streamTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        req,
+        agent,
+        claim,
+        uiMessages: history,
+        providerMessages: history,
+        model: undefined,
+        clientTools: { kinds: ['question'] },
+        abortSignal: req.signal,
+      }),
+    );
   });
 
   it('rejects malformed UI messages with 400', async () => {
@@ -242,6 +349,7 @@ describe('agent endpoints', () => {
     );
 
     expect(response.status).toBe(400);
+    expect(resolveChatContext).not.toHaveBeenCalled();
   });
 
   it('rejects a model outside the agent allowlist', async () => {
@@ -253,9 +361,10 @@ describe('agent endpoints', () => {
     expect(await response.json()).toEqual({
       error: "Model 'x/test' is not allowed for agent 'support'",
     });
+    expect(resolveChatContext).not.toHaveBeenCalled();
   });
 
-  it('passes an allowed model to the agent', async () => {
+  it('passes an allowed model to the turn', async () => {
     const agent = makeAgent();
     agent.config.allowModels = ['openai/other'];
     const response = await postHandler()(
@@ -263,76 +372,164 @@ describe('agent endpoints', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(agent.generate).toHaveBeenCalledWith(
-      expect.objectContaining({ options: expect.objectContaining({ model: 'openai/other' }) }),
-    );
+    expect(streamTurn).toHaveBeenCalledWith(expect.objectContaining({ model: 'openai/other' }));
   });
 
-  it('accepts stable file references and resolves them before invocation', async () => {
-    const agent = makeAgent();
+  it('accepts stable file references and resolves them for the provider only', async () => {
     const parts = [
       { type: 'text', text: 'Read' },
       { type: 'file-reference', id: 'file-1', filename: 'client.txt', mediaType: 'text/plain' },
+    ] as UIMessage['parts'];
+    const uiMessages: UIMessage[] = [{ id: 'one', role: 'user', parts }];
+    const resolved: UIMessage[] = [
+      {
+        id: 'one',
+        role: 'user',
+        parts: [
+          { type: 'text', text: 'Read' },
+          { type: 'file', mediaType: 'text/plain', url: 'data:text/plain;base64,ZmlsZQ==' },
+        ],
+      },
     ];
-    const request = makeRequest({
-      agent,
-      accept: 'text/event-stream',
-      body: { messages: [{ id: 'one', role: 'user', parts }] },
-      find: vi.fn().mockResolvedValue({ docs: [{ id: 'one', role: 'user', parts }] }),
-    });
-    const response = await postHandler()(request);
 
-    expect(await response.text()).toBe('stream');
+    resolveChatContext.mockResolvedValue({ status: 'ready', chatId: 'chat-1', uiMessages, claim });
+    resolveChatAttachments.mockResolvedValue(resolved);
+
+    const request = makeRequest({
+      accept: 'text/event-stream',
+      body: { messages: uiMessages },
+    });
+
+    await postHandler()(request);
+
+    expect(resolveChatContext).toHaveBeenCalledWith(
+      expect.objectContaining({ incoming: [expect.objectContaining({ parts })] }),
+    );
     expect(resolveChatAttachments).toHaveBeenCalledWith({
       req: request,
-      messages: [
-        expect.objectContaining({
-          parts: [
-            { type: 'text', text: 'Read' },
-            {
-              type: 'file-reference',
-              id: 'file-1',
-              filename: 'client.txt',
-              mediaType: 'text/plain',
-            },
-          ],
-        }),
-      ],
+      messages: uiMessages,
       chatId: 'chat-1',
     });
+    expect(streamTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ uiMessages, providerMessages: resolved }),
+    );
+  });
+
+  it('releases the claimed turn when attachments cannot be resolved', async () => {
+    resolveChatAttachments.mockRejectedValue(
+      Object.assign(new Error('missing file'), { status: 404 }),
+    );
+
+    const req = makeRequest();
+    const response = await postHandler()(req);
+
+    expect(response.status).toBe(404);
+    expect(releaseTurn).toHaveBeenCalledWith({ req, claim, state: 'idle' });
+    expect(streamTurn).not.toHaveBeenCalled();
+  });
+
+  it('returns 202 with the queued message when the chat is busy', async () => {
+    resolveChatContext.mockResolvedValue({
+      status: 'queued',
+      chatId: 'chat-1',
+      messageId: 'u1',
+      delivery: 'queue',
+    });
+
+    const response = await postHandler()(makeRequest({ body: { prompt: 'Hi', chatId: 'chat-1' } }));
+
+    expect(response.status).toBe(202);
+    expect(response.headers.get('X-FrogBot-Chat-Id')).toBe('chat-1');
+    expect(await response.json()).toEqual({
+      status: 'queued',
+      chatId: 'chat-1',
+      messageId: 'u1',
+      delivery: 'queue',
+    });
+    expect(streamTurn).not.toHaveBeenCalled();
+  });
+
+  it('streams a transient queued chunk when the chat is busy', async () => {
+    resolveChatContext.mockResolvedValue({
+      status: 'queued',
+      chatId: 'chat-1',
+      messageId: 'u1',
+      delivery: 'steer',
+    });
+
+    const response = await postHandler()(
+      makeRequest({ accept: 'text/event-stream', body: { prompt: 'Hi', chatId: 'chat-1' } }),
+    );
+
+    expect(response.headers.get('X-FrogBot-Chat-Id')).toBe('chat-1');
+    expect(await response.text()).toContain(
+      'data: {"type":"data-queued","data":{"messageId":"u1","delivery":"steer"},"transient":true}',
+    );
+    expect(streamTurn).not.toHaveBeenCalled();
   });
 
   it('preserves safe status values from agent errors', async () => {
-    const generate = vi.fn(() =>
-      Promise.reject(Object.assign(new Error('denied'), { statusCode: 403 })),
-    );
-    const response = await postHandler()(makeRequest({ agent: makeAgent(generate) }));
+    streamTurn.mockRejectedValue(Object.assign(new Error('denied'), { statusCode: 403 }));
+
+    const response = await postHandler()(makeRequest());
 
     expect(response.status).toBe(403);
   });
 
-  it('checks agent access before writing chat data', async () => {
-    const create = vi.fn();
+  it('returns the turn error code with its status', async () => {
+    resolveChatContext.mockRejectedValue(
+      new TurnError('turn-in-progress', 'This chat already has a turn in progress.'),
+    );
+
+    const response = await postHandler()(makeRequest({ body: { prompt: 'Hi', chatId: 'chat-1' } }));
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: 'This chat already has a turn in progress.',
+      code: 'turn-in-progress',
+    });
+  });
+
+  it('propagates chat load failures as their status', async () => {
+    resolveChatContext.mockRejectedValue(Object.assign(new Error('not found'), { status: 404 }));
+
+    const response = await postHandler()(
+      makeRequest({ body: { prompt: 'Hello', chatId: 'gone' } }),
+    );
+
+    expect(response.status).toBe(404);
+    expect(streamTurn).not.toHaveBeenCalled();
+  });
+
+  it('checks agent access before resolving the chat', async () => {
     const agent = makeAgent();
     agent.config.access = () => false;
 
-    const response = await postHandler()(makeRequest({ agent, create }));
+    const response = await postHandler()(
+      makeRequest({ agent, user: null, body: { prompt: 'Hello', chatId: 'chat-7' } }),
+    );
 
     expect(response.status).toBe(403);
-    expect(create).not.toHaveBeenCalled();
-    expect(agent.generate).not.toHaveBeenCalled();
+    expect(resolveChatContext).not.toHaveBeenCalled();
+    expect(streamTurn).not.toHaveBeenCalled();
+  });
+
+  it('runs anonymous turns after agent access succeeds', async () => {
+    const agent = makeAgent();
+    agent.config.access = () => true;
+
+    const response = await postHandler()(makeRequest({ agent, user: null }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ chatId: 'chat-1', authorizations: [] });
   });
 
   it('returns a bodyless 499 when the inbound request is aborted', async () => {
     const controller = new AbortController();
     controller.abort();
-    const generate = vi.fn(() => Promise.reject(new DOMException('aborted', 'AbortError')));
-    const response = await postHandler()(
-      makeRequest({
-        agent: makeAgent(generate),
-        signal: controller.signal,
-      }),
-    );
+    streamTurn.mockRejectedValue(new DOMException('aborted', 'AbortError'));
+
+    const response = await postHandler()(makeRequest({ signal: controller.signal }));
 
     expect(response.status).toBe(499);
     expect(await response.text()).toBe('');
@@ -341,248 +538,5 @@ describe('agent endpoints', () => {
   it('returns 404 for unknown agent slugs', async () => {
     const response = await postHandler()(makeRequest({ slug: 'missing' }));
     expect(response.status).toBe(404);
-  });
-
-  it('creates a chat and echoes chatId in the JSON body', async () => {
-    const create = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
-    const request = makeRequest({ create });
-    const response = await postHandler()(request);
-
-    expect(create).toHaveBeenCalledWith({
-      collection: 'chats',
-      data: { user: 'user-1', agent: 'support' },
-      req: request,
-      overrideAccess: true,
-    });
-    expect(await response.json()).toMatchObject({ chatId: 'chat-9' });
-  });
-
-  it('sets X-FrogBot-Chat-Id on streamed responses', async () => {
-    const create = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
-    await postHandler()(makeRequest({ create, accept: 'text/event-stream' }));
-
-    expect(createAgentUIStreamResponse).toHaveBeenCalledWith(
-      expect.objectContaining({ headers: { 'X-FrogBot-Chat-Id': 'chat-9' } }),
-    );
-  });
-
-  it('persists the streamed assistant message with finish usage', async () => {
-    const create = vi
-      .fn()
-      .mockResolvedValueOnce({ id: 'chat-9' })
-      .mockResolvedValue({ id: 'assistant-1' });
-    const update = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
-    const request = makeRequest({ create, update, accept: 'text/event-stream' });
-    await postHandler()(request);
-
-    const options = createAgentUIStreamResponse.mock.calls[0][0] as {
-      consumeSseStream: unknown;
-      messageMetadata: (args: { part: unknown }) => unknown;
-      onFinish: (event: { responseMessage: UIMessage; isContinuation: boolean }) => Promise<void>;
-    };
-    const usage = options.messageMetadata({
-      part: {
-        type: 'finish',
-        finishReason: 'stop',
-        rawFinishReason: undefined,
-        totalUsage: { inputTokens: 2, outputTokens: 1, totalTokens: 3 },
-      },
-    });
-    await options.onFinish({
-      responseMessage: {
-        id: 'assistant-1',
-        role: 'assistant',
-        parts: [{ type: 'text', text: 'Hello' }],
-        metadata: usage,
-      },
-      isContinuation: false,
-    });
-
-    expect(options.consumeSseStream).toEqual(expect.any(Function));
-    expect(create).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        collection: 'messages',
-        data: expect.objectContaining({ id: 'assistant-1', role: 'assistant' }),
-        context: {
-          frogbotMessageUsage: expect.objectContaining({ totalTokens: 3, model: 'openai/test' }),
-        },
-      }),
-    );
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'chats', id: 'chat-9' }),
-    );
-  });
-
-  it('persists partial assistant parts when the stream ends without usage', async () => {
-    const create = vi
-      .fn()
-      .mockResolvedValueOnce({ id: 'chat-9' })
-      .mockResolvedValue({ id: 'assistant-1' });
-    const request = makeRequest({ create, accept: 'text/event-stream' });
-    await postHandler()(request);
-
-    const options = createAgentUIStreamResponse.mock.calls[0][0] as {
-      onFinish: (event: {
-        responseMessage: UIMessage;
-        isContinuation: boolean;
-        isAborted: boolean;
-      }) => Promise<void>;
-    };
-    await options.onFinish({
-      responseMessage: {
-        id: 'assistant-1',
-        role: 'assistant',
-        parts: [{ type: 'text', text: 'Part' }],
-      },
-      isContinuation: false,
-      isAborted: true,
-    });
-
-    expect(create).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        collection: 'messages',
-        data: expect.objectContaining({ parts: [{ type: 'text', text: 'Part' }] }),
-        context: { frogbotMessageUsage: null },
-      }),
-    );
-  });
-
-  it('loads an owned existing chat with overrideAccess true and echoes its id', async () => {
-    const create = vi.fn(() => Promise.resolve({ id: 'msg-1' }));
-    const findByID = vi.fn(() => Promise.resolve({ id: 'chat-7', user: 'user-1' }));
-    const request = makeRequest({
-      create,
-      findByID,
-      body: { prompt: 'Hello', chatId: 'chat-7' },
-    });
-    const response = await postHandler()(request);
-
-    expect(findByID).toHaveBeenCalledWith({
-      collection: 'chats',
-      id: 'chat-7',
-      depth: 0,
-      req: request,
-      overrideAccess: true,
-    });
-    expect(create).not.toHaveBeenCalledWith(expect.objectContaining({ collection: 'chats' }));
-    expect(await response.json()).toMatchObject({ chatId: 'chat-7' });
-  });
-
-  it('propagates chat load failures as their status', async () => {
-    const findByID = vi.fn(() =>
-      Promise.reject(Object.assign(new Error('not found'), { status: 404 })),
-    );
-    const response = await postHandler()(
-      makeRequest({ findByID, body: { prompt: 'Hello', chatId: 'gone' } }),
-    );
-
-    expect(response.status).toBe(404);
-  });
-
-  it('persists anonymous calls and returns a chatId', async () => {
-    const agent = makeAgent();
-    agent.config.access = () => true;
-    const create = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
-    const response = await postHandler()(makeRequest({ agent, create, user: null }));
-
-    expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        collection: 'chats',
-        data: { user: null, agent: 'support' },
-        overrideAccess: true,
-      }),
-    );
-    expect(await response.json()).toMatchObject({ chatId: 'chat-9' });
-  });
-
-  it('persists the user message and runs the agent on server history', async () => {
-    const agent = makeAgent();
-    const create = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
-    const find = vi.fn(() =>
-      Promise.resolve({
-        docs: [
-          { id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Earlier' }] },
-          { id: 'm2', role: 'assistant', parts: [{ type: 'text', text: 'Reply' }] },
-          { id: 'm3', role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
-        ],
-      }),
-    );
-    const request = makeRequest({ agent, create, find });
-    await postHandler()(request);
-
-    expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        collection: 'messages',
-        data: expect.objectContaining({
-          chat: 'chat-9',
-          role: 'user',
-          parts: [{ type: 'text', text: 'Hello' }],
-        }),
-        overrideAccess: true,
-      }),
-    );
-    expect(create.mock.invocationCallOrder[0]).toBeLessThan(
-      (agent.generate as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0],
-    );
-    expect(agent.generate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        messages: [
-          expect.objectContaining({ role: 'user' }),
-          expect.objectContaining({ role: 'assistant' }),
-          expect.objectContaining({ role: 'user' }),
-        ],
-        options: expect.objectContaining({ chatId: 'chat-9' }),
-      }),
-    );
-  });
-
-  it('continues anonymous chats after agent access succeeds', async () => {
-    const agent = makeAgent();
-    agent.config.access = () => true;
-    const findByID = vi.fn(() => Promise.resolve({ id: 'chat-7', user: null }));
-    const response = await postHandler()(
-      makeRequest({ agent, findByID, user: null, body: { prompt: 'Hello', chatId: 'chat-7' } }),
-    );
-
-    expect(response.status).toBe(200);
-    expect(findByID).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'chat-7', overrideAccess: true }),
-    );
-    expect(await response.json()).toMatchObject({ chatId: 'chat-7' });
-  });
-
-  it('rejects an anonymous caller continuing an authenticated chat', async () => {
-    const agent = makeAgent();
-    agent.config.access = () => true;
-    const create = vi.fn();
-    const find = vi.fn();
-    const findByID = vi.fn(() => Promise.resolve({ id: 'chat-7', user: 'user-1' }));
-    const response = await postHandler()(
-      makeRequest({
-        agent,
-        create,
-        find,
-        findByID,
-        user: null,
-        body: { prompt: 'Hello', chatId: 'chat-7' },
-      }),
-    );
-
-    expect(response.status).toBe(404);
-    expect(create).not.toHaveBeenCalled();
-    expect(find).not.toHaveBeenCalled();
-  });
-
-  it('checks the target agent access before continuing a chat', async () => {
-    const agent = makeAgent();
-    agent.config.access = () => false;
-    const findByID = vi.fn();
-    const response = await postHandler()(
-      makeRequest({ agent, findByID, user: null, body: { prompt: 'Hello', chatId: 'chat-7' } }),
-    );
-
-    expect(response.status).toBe(403);
-    expect(findByID).not.toHaveBeenCalled();
-    expect(agent.generate).not.toHaveBeenCalled();
   });
 });

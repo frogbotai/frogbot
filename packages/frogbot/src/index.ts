@@ -89,6 +89,9 @@ export type {
   AgentScheduleContext,
   AgentScheduleHandler,
   AgentScheduleTrigger,
+  AgentStreamMessageOpts,
+  AgentStreamMessageQueuedResult,
+  AgentStreamMessageResult,
   AgentStreamOpts,
   AgentStreamResult,
 } from './agents/types.js';
@@ -139,6 +142,16 @@ export type {
   UnlockArgs,
   VerifyEmailArgs,
 } from './auth/types.js';
+export type { ChannelThreadReference } from './channels/types.js';
+export type { TurnErrorCode } from './chat/turn/errors.js';
+export type {
+  ClientToolSettlement,
+  ClientToolsOption,
+  MessageDelivery,
+  PendingCall,
+  TurnActor,
+  TurnState,
+} from './chat/turn/types.js';
 export type { ManifestResponse } from './chat/types.js';
 export type {
   Collection,
@@ -260,7 +273,14 @@ export type {
   SearchResult,
 } from './search/types.js';
 export type { SkillConfig, SkillContent, SkillCtx, SkillResource } from './skills/types.js';
-export type { Tool, ToolCtx } from './tools/types.js';
+export type {
+  ClientTool,
+  ClientToolAccess,
+  ClientToolConfig,
+  ClientToolValidate,
+  Tool,
+  ToolCtx,
+} from './tools/types.js';
 export type { Subscription, SubscriptionEnableProps } from './triggers/subscriptions.js';
 export type { IngressRegistry, TriggerEvent, TriggerSubscriber } from './triggers/types.js';
 export type {

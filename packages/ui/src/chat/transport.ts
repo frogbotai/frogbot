@@ -1,10 +1,12 @@
 import type { FrogBotSDK } from '@frogbotai/sdk';
 import {
+  APICallError,
   DefaultChatTransport,
   type HttpChatTransportInitOptions,
   type PrepareSendMessagesRequest,
   type UIMessage,
 } from 'ai';
+import type { TurnErrorCode } from 'frogbot';
 
 import { emitChatMutation } from './use-chats.js';
 
@@ -82,5 +84,17 @@ export class FrogBotChatTransport<
 
   override reconnectToStream(): Promise<null> {
     return Promise.resolve(null);
+  }
+}
+
+export function turnErrorCode(error: unknown): TurnErrorCode | undefined {
+  if (!APICallError.isInstance(error) || !error.responseBody) return undefined;
+
+  try {
+    const { code } = JSON.parse(error.responseBody) as { code?: TurnErrorCode };
+
+    return code;
+  } catch {
+    return undefined;
   }
 }

@@ -10,6 +10,10 @@ function reqWithUser(id?: string) {
   return (id ? { user: { id } } : {}) as FrogBotRequest;
 }
 
+function field(name: string) {
+  return collection.fields.find((f) => 'name' in f && f.name === name);
+}
+
 describe('defaultMessagesCollection', () => {
   it('produces the base config shape', () => {
     expect(collection).toMatchSnapshot();
@@ -27,10 +31,62 @@ describe('defaultMessagesCollection', () => {
     });
   });
 
-  it('defines id, chat, role, parts, metadata, and usage fields', () => {
+  it('defines message, turn coordination, and usage fields', () => {
     const names = collection.fields.map((f) => ('name' in f ? f.name : undefined));
-    expect(names).toEqual(['id', 'chat', 'role', 'parts', 'metadata', 'usage']);
+
+    expect(names).toEqual([
+      'id',
+      'chat',
+      'role',
+      'parts',
+      'metadata',
+      'status',
+      'delivery',
+      'author',
+      'settlements',
+      'version',
+      'usage',
+    ]);
   });
+
+  it('defaults messages to an indexed active status and a zero version', () => {
+    expect(field('status')).toMatchObject({
+      type: 'select',
+      options: ['active', 'queued'],
+      defaultValue: 'active',
+      index: true,
+    });
+    expect(field('delivery')).toMatchObject({ type: 'select', options: ['queue', 'steer'] });
+    expect(field('version')).toMatchObject({
+      type: 'number',
+      defaultValue: 0,
+      admin: { hidden: true },
+    });
+  });
+
+  it('types author and settlements as turn coordinator shapes', () => {
+    const schema = (name: string) =>
+      (
+        field(name) as { typescriptSchema?: Array<(args: { jsonSchema: object }) => object> }
+      ).typescriptSchema?.[0]({ jsonSchema: {} });
+
+    expect(schema('author')).toEqual({ tsType: "import('frogbot').TurnActor" });
+    expect(schema('settlements')).toEqual({
+      tsType: "Record<string, import('frogbot').ClientToolSettlement>",
+    });
+    expect(field('settlements')).toMatchObject({ type: 'json', admin: { hidden: true } });
+  });
+
+  it.each(['status', 'delivery', 'author', 'settlements', 'version'])(
+    'blocks direct writes to the %s field',
+    async (name) => {
+      const access = (field(name) as { access?: { create?: FieldAccess; update?: FieldAccess } })
+        .access;
+
+      expect(await access?.create?.({ req: reqWithUser('u1') } as never)).toBe(false);
+      expect(await access?.update?.({ req: reqWithUser('u1') } as never)).toBe(false);
+    },
+  );
 
   it('types parts as UIMessage parts via typescriptSchema', () => {
     const parts = collection.fields.find((f) => 'name' in f && f.name === 'parts') as {

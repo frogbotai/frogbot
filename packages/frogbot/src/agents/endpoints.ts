@@ -1,24 +1,27 @@
 import type { UIMessage } from 'ai';
-import { createAgentUIStreamResponse, generateId } from 'ai';
+import { createUIMessageStream, createUIMessageStreamResponse, generateId } from 'ai';
 import { z } from 'zod';
 
+import type { ChatContext } from '../chat/chatContext.js';
+import { resolveChatContext } from '../chat/chatContext.js';
+import { buildTurnEndpoints } from '../chat/turn/endpoints.js';
+import { releaseTurn } from '../chat/turn/state.js';
+import { allClientTools, streamTurn } from '../chat/turn/streamTurn.js';
 import { validateChatMessages } from '../chat/validateMessages.js';
 import type { DocID } from '../collections/config/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { resolveChatAttachments } from '../uploads/resolveChatAttachments.js';
+import { agentResult, errorResponse } from './responses.js';
 import {
-  AgentServiceError,
   assertAgentAccess,
-  generateAgentRequest,
+  assertAllowedModel,
   getAgent,
   getAgentAuthorizations,
   getAgentManifest,
-  getAgentStreamOptions,
-  prepareAgentRequest,
 } from './service.js';
-import type { AgentInstance } from './types.js';
 
 const chatIdSchema = z.union([z.string(), z.number()]).optional();
+const deliverySchema = z.enum(['queue', 'steer']).optional();
 
 const bodySchema = z.union([
   z
@@ -27,6 +30,7 @@ const bodySchema = z.union([
       messages: z.never().optional(),
       chatId: chatIdSchema,
       model: z.string().min(1).optional(),
+      delivery: deliverySchema,
     })
     .strict(),
   z
@@ -35,6 +39,7 @@ const bodySchema = z.union([
       prompt: z.never().optional(),
       chatId: chatIdSchema,
       model: z.string().min(1).optional(),
+      delivery: deliverySchema,
     })
     .strict(),
 ]);
@@ -56,10 +61,19 @@ export function buildAgentEndpoints() {
           let body: AgentRequestBody;
           let requestedChatId: DocID | undefined;
           let requestedModel: string | undefined;
+          let delivery: 'queue' | 'steer' | undefined;
+
           try {
-            const { chatId, model, ...parsed } = bodySchema.parse(await req.json!());
+            const {
+              chatId,
+              model,
+              delivery: requestedDelivery,
+              ...parsed
+            } = bodySchema.parse(await req.json!());
+
             requestedChatId = chatId;
             requestedModel = model;
+            delivery = requestedDelivery;
             body =
               'messages' in parsed && parsed.messages
                 ? {
@@ -80,58 +94,66 @@ export function buildAgentEndpoints() {
             );
           }
 
-          const { chatId, uiMessages } = await prepareAgentRequest({
+          const model = assertAllowedModel({ agent, model: requestedModel });
+          const eventStream = acceptsEventStream(req.headers.get('accept'));
+
+          const context = await resolveChatContext({
             req,
-            agent,
-            requestedModel,
-            requestedChatId,
-            uiMessages: toUIMessages(body),
+            agentSlug: agent.slug,
+            chatId: requestedChatId,
+            incoming: toUIMessages(body),
+            tools: agent.aiAgent.tools,
+            delivery,
           });
+
+          if (context.status === 'queued') return queuedResponse({ context, eventStream });
+
           const providerMessages = await resolveChatAttachments({
             req,
-            messages: uiMessages,
-            chatId,
+            messages: context.uiMessages,
+            chatId: context.chatId,
+          }).catch(async (error: unknown) => {
+            await releaseTurn({ req, claim: context.claim, state: 'idle' });
+
+            throw error;
           });
 
-          if (acceptsEventStream(req.headers.get('accept'))) {
-            return await createAgentUIStreamResponse(
-              getAgentStreamOptions({
-                req,
-                agent,
-                chatId,
-                uiMessages: providerMessages,
-                model: requestedModel as AgentInstance['config']['model'] | undefined,
-              }),
-            );
-          }
-
-          const result = await generateAgentRequest({
+          const turn = await streamTurn({
             req,
             agent,
-            chatId,
-            uiMessages: providerMessages,
-            model: requestedModel as AgentInstance['config']['model'] | undefined,
+            claim: context.claim,
+            uiMessages: context.uiMessages,
+            providerMessages,
+            model,
+            clientTools: allClientTools(agent),
+            abortSignal: req.signal ?? undefined,
+            ...(eventStream
+              ? {}
+              : {
+                  onError: (error: unknown) => {
+                    throw error;
+                  },
+                }),
           });
 
-          return Response.json({
-            text: result.text,
-            usage: result.totalUsage,
-            finishReason: result.finishReason,
-            authorizations: req.user ? await getAgentAuthorizations({ req, agent }) : [],
-            ...(chatId !== undefined ? { chatId } : {}),
-          });
+          if (eventStream) {
+            return createUIMessageStreamResponse({
+              stream: turn.uiMessageStream,
+              headers: { 'X-FrogBot-Chat-Id': String(context.chatId) },
+            });
+          }
+
+          await turn.persistence;
+
+          return Response.json(await agentResult({ req, agent, chatId: context.chatId, turn }));
         } catch (error) {
           if (req.signal?.aborted) return new Response(null, { status: 499 });
           req.frogbot.logger.error({ err: error, agent: slug }, '[frogbot] Agent request failed');
-          return Response.json(
-            {
-              error: error instanceof Error ? error.message : 'Agent request failed',
-            },
-            { status: getErrorStatus(error) },
-          );
+          return errorResponse(error);
         }
       },
     },
+    ...buildTurnEndpoints(),
     {
       path: '/agents/:slug/authorizations',
       method: 'get' as const,
@@ -143,10 +165,7 @@ export function buildAgentEndpoints() {
           agent = getAgent({ req, slug });
           await assertAgentAccess({ req, agent });
         } catch (error) {
-          return Response.json(
-            { error: getErrorMessage(error) },
-            { status: getErrorStatus(error) },
-          );
+          return errorResponse(error);
         }
         return Response.json({ authorizations: await getAgentAuthorizations({ req, agent }) });
       },
@@ -173,21 +192,36 @@ function toUIMessages(body: AgentRequestBody): UIMessage[] {
   ];
 }
 
+function queuedResponse({
+  context,
+  eventStream,
+}: {
+  context: Extract<ChatContext, { status: 'queued' }>;
+  eventStream: boolean;
+}): Response {
+  const headers = { 'X-FrogBot-Chat-Id': String(context.chatId) };
+  const data = { messageId: context.messageId, delivery: context.delivery };
+
+  if (!eventStream) {
+    return Response.json(
+      { status: 'queued', chatId: context.chatId, ...data },
+      { status: 202, headers },
+    );
+  }
+
+  return createUIMessageStreamResponse({
+    stream: createUIMessageStream({
+      execute: ({ writer }) => {
+        writer.write({ type: 'data-queued', data, transient: true });
+      },
+    }),
+    headers,
+  });
+}
+
 function acceptsEventStream(accept: string | null): boolean {
   return (
     accept?.split(',').some((value) => value.trim().split(';', 1)[0] === 'text/event-stream') ??
     false
   );
-}
-
-function getErrorStatus(error: unknown): number {
-  if (error instanceof AgentServiceError) return error.status;
-  if (typeof error !== 'object' || error === null) return 500;
-  const status =
-    'status' in error ? error.status : 'statusCode' in error ? error.statusCode : undefined;
-  return typeof status === 'number' && status >= 400 && status <= 599 ? status : 500;
-}
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Agent request failed';
 }

@@ -1,3 +1,4 @@
+import type { UIMessage } from 'ai';
 import { generateId } from 'ai';
 import { commitTransaction, initTransaction, killTransaction, NotFound } from 'payload';
 
@@ -5,6 +6,7 @@ import type { DocID } from '../collections/config/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { MESSAGE_USAGE_CONTEXT_KEY } from './collections/messages.js';
 import { firstUserText } from './firstUserText.js';
+import { repairInterruptedParts } from './turn/messages.js';
 
 export type BranchChatProps = {
   req: FrogBotRequest;
@@ -91,7 +93,7 @@ export async function branchChat({
 
   const sourceMessages = (await req.frogbot.find({
     collection: config.messagesSlug,
-    where: { chat: { equals: source.id } },
+    where: { and: [{ chat: { equals: source.id } }, { status: { not_equals: 'queued' } }] },
     sort: ['createdAt', 'id'],
     pagination: false,
     depth: 0,
@@ -135,7 +137,7 @@ export async function branchChat({
           id: `${idPrefix}-${String(index).padStart(width, '0')}`,
           chat: chat.id,
           role: message.role,
-          parts: message.parts,
+          parts: repairInterruptedParts(message.parts as UIMessage['parts']),
           metadata: message.metadata,
         },
         context: { [MESSAGE_USAGE_CONTEXT_KEY]: message.usage ?? null },

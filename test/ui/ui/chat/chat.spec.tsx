@@ -21,6 +21,7 @@ const state = vi.hoisted(() => ({
   agents: [] as Array<{ slug: string; profile?: { name?: string; avatar?: string } }>,
   history: {
     messages: [] as import('ai').UIMessage[],
+    queued: [] as import('ai').UIMessage[],
     loadedChatId: undefined as string | undefined,
     loading: false,
   },
@@ -117,7 +118,7 @@ describe('Chat', () => {
     state.refresh.mockReset();
     state.adapter.executeClientTool.mockReset();
     state.adapter.fetch.mockReset();
-    state.history = { messages: [], loadedChatId: undefined, loading: false };
+    state.history = { messages: [], queued: [], loadedChatId: undefined, loading: false };
     state.agents = [];
   });
 
@@ -360,6 +361,7 @@ describe('Chat', () => {
     });
     state.history = {
       messages: [{ id: 'stale', role: 'user', parts: [{ type: 'text', text: 'Stale history' }] }],
+      queued: [],
       loadedChatId: 'created',
       loading: false,
     };

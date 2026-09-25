@@ -221,7 +221,7 @@ describe('frogbot generate:types', () => {
     });
 
     it('emits the resolved custom usage-log slug', async () => {
-      dir = await mkdtemp(join(process.cwd(), '.idea/tmp/frogbot-usage-types-'));
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-usage-types-'));
       const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
       const config = await buildConfig({
         secret: 'test-secret',
@@ -241,7 +241,7 @@ describe('frogbot generate:types', () => {
     });
 
     it('emits the API key relationship on usage logs', async () => {
-      dir = await mkdtemp(join(process.cwd(), '.idea/tmp/frogbot-api-key-usage-types-'));
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-api-key-usage-types-'));
       const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
       const config = await buildConfig({
         secret: 'test-secret',

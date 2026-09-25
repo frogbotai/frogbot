@@ -18,11 +18,13 @@ FrogBot injects both collections when agents are configured and no collection cl
 | Collection | Stored fields |
 | --- | --- |
 | `chats` | `title`, `user`, `agent`, `lastMessageAt` |
-| `messages` | Text `id`, `chat`, `role`, `parts`, `metadata`, `usage` |
+| `messages` | Text `id`, `chat`, `role`, `parts`, `metadata`, `usage`, `status`, `delivery`, `author`, `settlements`, `version` |
 
 Chat and message collections use soft deletion and appear under **Chat** in the admin panel. Access is owner-scoped through the chat's `user` relationship.
 
 Messages store the AI SDK `UIMessage.parts` array. Tool calls, tool results, reasoning, and custom data parts therefore remain available on later turns instead of being flattened into text.
+
+FrogBot manages the remaining message fields and they are read-only through the API. `status` is `queued` for a message waiting behind a running turn, `author` records who sent it, and `settlements` records who answered each [question](/chat/questions). A hidden `frogbot-chat-turns` collection tracks each chat's current [turn](/chat/turns).
 
 ## Chat assets
 
@@ -177,6 +179,7 @@ Your field definitions win when they are compatible with the base schema. FrogBo
 - `messages.id`
 - `messages.chat`
 - `messages.parts`
+- `messages.status`, `messages.delivery`, `messages.author`, `messages.settlements`, and `messages.version`
 
 Mark at most one collection for each role. If an unmarked collection already uses the default `chats` or `messages` slug, sanitization asks you to mark or rename it rather than adopting it implicitly.
 
@@ -223,10 +226,10 @@ const result = await frogbot.agents.support.generate({
 
 ## Understand durability
 
-FrogBot awaits the user-message write before inference begins. Streaming responses save finalized or partial assistant parts on completion, error, abort, or client disconnect. Usage is attached when the model emits it but never blocks the message save.
+FrogBot awaits the user-message write before inference begins. The assistant message is saved after every model step, and again with finalized or partial parts on completion, error, abort, or client disconnect. Usage is attached when the model emits it but never blocks the message save.
 
 <Warning>
   FrogBot's SQLite adapter disables transactions unless you configure `transactionOptions`. Without transactions, a failure between chat creation and the first message write can leave an empty chat. MongoDB and transaction-enabled adapters roll back the pair.
 </Warning>
 
-A hard process exit during inference can still leave a user message without an assistant reply. The chat remains valid and can be continued; incremental part persistence and resumable streams are planned separately.
+A hard process exit during inference loses the step in progress, and can leave a user message without an assistant reply when the first step had not finished. The chat remains valid and can be continued once its [turn lease](/chat/turns#crash-recovery) expires; resumable streams are planned separately.

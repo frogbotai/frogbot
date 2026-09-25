@@ -1,13 +1,11 @@
-import type { UIMessage } from 'ai';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import {
   assertAgentAccess,
-  generateAgentRequest,
+  assertAllowedModel,
   getAgentAuthorizations,
   getAgentManifest,
-  getAgentStreamOptions,
   listAgents,
 } from '../../../../packages/frogbot/src/agents/service.js';
 import type { AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
@@ -26,15 +24,6 @@ function makeAgent({
   access?: AgentInstance['config']['access'];
   allowModels?: AgentInstance['config']['allowModels'];
 } = {}): AgentInstance {
-  const generate = vi.fn(() =>
-    Promise.resolve({
-      text: 'hello',
-      totalUsage: { inputTokens: 1, outputTokens: 2, totalTokens: 3 },
-      finishReason: 'stop',
-      rawFinishReason: 'stop',
-      steps: [{ content: [{ type: 'text', text: 'hello' }] }],
-    }),
-  );
   return {
     slug,
     config: {
@@ -45,8 +34,8 @@ function makeAgent({
       allowModels,
       tools: [],
     },
-    aiAgent: { tools: {}, generate } as unknown as AgentInstance['aiAgent'],
-    generate: generate as AgentInstance['generate'],
+    aiAgent: { tools: {} } as unknown as AgentInstance['aiAgent'],
+    generate: vi.fn() as AgentInstance['generate'],
     stream: vi.fn() as AgentInstance['stream'],
   };
 }
@@ -54,32 +43,15 @@ function makeAgent({
 function makeRequest({
   agents,
   authorizations,
-  create = vi.fn(),
 }: {
   agents: Record<string, AgentInstance>;
   authorizations?: ReturnType<typeof vi.fn>;
-  create?: ReturnType<typeof vi.fn>;
 }): FrogBotRequest {
   return {
     user: { id: 'user-1' },
-    signal: undefined,
     frogbot: {
       agents,
       connections: authorizations ? { authorizations } : undefined,
-      config: {
-        ai: { routers: {} },
-        chat: {
-          enabled: true,
-          chatsSlug: 'chats',
-          messagesSlug: 'messages',
-          assetsSlug: 'frogbot-chat-assets',
-        },
-      },
-      create,
-      findByID: vi.fn(() => Promise.resolve({ id: 'chat-1', title: null })),
-      generateText: vi.fn(() => Promise.resolve({ text: 'Chat title' })),
-      logger: { error: vi.fn() },
-      update: vi.fn(() => Promise.resolve({ id: 'chat-1' })),
     },
   } as unknown as FrogBotRequest;
 }
@@ -159,43 +131,23 @@ describe('agent service', () => {
     });
   });
 
-  it('passes the current chat into streaming tool runtime options', () => {
-    const agent = makeAgent();
-    const req = makeRequest({ agents: { support: agent } });
-
-    const result = getAgentStreamOptions({ req, agent, chatId: 'chat-1', uiMessages: [] });
-
-    expect(result.options).toEqual({
-      req,
-      overrideAccess: true,
-      chatId: 'chat-1',
-      model: undefined,
-    });
-    expect(result.headers).toEqual({ 'X-FrogBot-Chat-Id': 'chat-1' });
+  it('returns no override when the caller does not request a model', () => {
+    expect(assertAllowedModel({ agent: makeAgent() })).toBeUndefined();
   });
 
-  it('generates from UI messages and persists the assistant message', async () => {
-    const create = vi.fn(() => Promise.resolve({ id: 'assistant-1' }));
-    const agent = makeAgent();
-    const req = makeRequest({ agents: { support: agent }, create });
-    const uiMessages: UIMessage[] = [
-      { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
-    ];
+  it.each(['openai/test', 'openai/other'])('returns the allowed model %s', (model) => {
+    const agent = makeAgent({ allowModels: ['openai/other'] });
 
-    const result = await generateAgentRequest({ req, agent, chatId: 'chat-1', uiMessages });
+    expect(assertAllowedModel({ agent, model })).toBe(model);
+  });
 
-    expect(result.text).toBe('hello');
-    expect(agent.aiAgent.generate).toHaveBeenCalledWith(
-      expect.objectContaining({ options: expect.objectContaining({ chatId: 'chat-1' }) }),
-    );
-    expect(create).toHaveBeenCalledWith(
+  it('rejects a model outside the agent allowlist with 403', () => {
+    const agent = makeAgent({ allowModels: ['openai/other'] });
+
+    expect(() => assertAllowedModel({ agent, model: 'x/test' })).toThrow(
       expect.objectContaining({
-        collection: 'messages',
-        data: expect.objectContaining({
-          chat: 'chat-1',
-          role: 'assistant',
-          parts: expect.arrayContaining([expect.objectContaining({ type: 'text', text: 'hello' })]),
-        }),
+        message: "Model 'x/test' is not allowed for agent 'support'",
+        status: 403,
       }),
     );
   });

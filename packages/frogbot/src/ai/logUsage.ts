@@ -14,28 +14,33 @@ export const logUsage: AfterOperationHook = (args) => {
   const costUSD = usage ? calculateModelCostUSD(args.model, usage) : 0;
 
   void req.frogbot
-    .create({
-      collection: req.frogbot.config?.ai?.usage?.slug ?? USAGE_LOGS_SLUG,
-      data: {
-        ...(context.usageFields ?? {}),
-        ...(req.user?.id !== undefined ? { user: req.user.id } : {}),
-        ...(context.agent?.chatId !== undefined ? { chat: context.agent.chatId } : {}),
-        requestId: args.requestId,
-        runId: context.agent?.runId,
-        model: args.model,
-        operation: args.operation,
-        inputTokens: usage?.inputTokens ?? 0,
-        outputTokens: usage?.outputTokens ?? 0,
-        cachedInputTokens: usage?.cachedInputTokens,
-        cacheWriteTokens: usage?.cacheWriteTokens,
-        reasoningTokens: usage?.reasoningTokens,
-        totalTokens: usage?.totalTokens ?? 0,
-        costUSD,
-        finishReason: args.finishReason,
-        requestedAt: new Date(args.startedAt).toISOString(),
-      },
-      overrideAccess: true,
-      req,
-    })
-    .catch((error: unknown) => req.frogbot.logger.error('[frogbot] Failed to log AI usage', error));
+    .createRequest({ user: req.user, context: req.context })
+    .then((usageReq) =>
+      usageReq.frogbot.create({
+        collection: req.frogbot.config?.ai?.usage?.slug ?? USAGE_LOGS_SLUG,
+        data: {
+          ...(context.usageFields ?? {}),
+          ...(req.user?.id !== undefined ? { user: req.user.id } : {}),
+          ...(context.agent?.chatId !== undefined ? { chat: context.agent.chatId } : {}),
+          requestId: args.requestId,
+          runId: context.agent?.runId,
+          model: args.model,
+          operation: args.operation,
+          inputTokens: usage?.inputTokens ?? 0,
+          outputTokens: usage?.outputTokens ?? 0,
+          cachedInputTokens: usage?.cachedInputTokens,
+          cacheWriteTokens: usage?.cacheWriteTokens,
+          reasoningTokens: usage?.reasoningTokens,
+          totalTokens: usage?.totalTokens ?? 0,
+          costUSD,
+          finishReason: args.finishReason,
+          requestedAt: new Date(args.startedAt).toISOString(),
+        },
+        overrideAccess: true,
+        req: usageReq,
+      }),
+    )
+    .catch((error: unknown) =>
+      req.frogbot.logger.error({ err: error }, '[frogbot] Failed to log AI usage'),
+    );
 };

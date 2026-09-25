@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { CHAT_ASSETS_SLUG } from '../../../../packages/frogbot/src/chat/collections/assets.js';
+import { CHAT_TURNS_SLUG } from '../../../../packages/frogbot/src/chat/collections/turns.js';
 import { resolveChatCollections } from '../../../../packages/frogbot/src/chat/resolveChatCollections.js';
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
@@ -31,9 +32,14 @@ describe('resolveChatCollections', () => {
     expect(result.collections).toBe(collections);
   });
 
-  it('injects default chats and messages collections when agents are configured', () => {
+  it('injects default chat, message, asset, and turn collections when agents are configured', () => {
     const result = resolveChatCollections(make([]));
-    expect(slugs(result.collections)).toEqual(['chats', 'messages', CHAT_ASSETS_SLUG]);
+    expect(slugs(result.collections)).toEqual([
+      'chats',
+      'messages',
+      CHAT_ASSETS_SLUG,
+      CHAT_TURNS_SLUG,
+    ]);
     expect(result.chat).toEqual({
       enabled: true,
       chatsSlug: 'chats',
@@ -44,7 +50,13 @@ describe('resolveChatCollections', () => {
 
   it('keeps user collections and appends the injected chat collections', () => {
     const result = resolveChatCollections(make([{ slug: 'posts', fields: [] }]));
-    expect(slugs(result.collections)).toEqual(['posts', 'chats', 'messages', CHAT_ASSETS_SLUG]);
+    expect(slugs(result.collections)).toEqual([
+      'posts',
+      'chats',
+      'messages',
+      CHAT_ASSETS_SLUG,
+      CHAT_TURNS_SLUG,
+    ]);
   });
 
   it('enables persistence when a marker is present without agents', () => {
@@ -57,7 +69,12 @@ describe('resolveChatCollections', () => {
       messagesSlug: 'messages',
       assetsSlug: CHAT_ASSETS_SLUG,
     });
-    expect(slugs(result.collections)).toEqual(['convos', 'messages', CHAT_ASSETS_SLUG]);
+    expect(slugs(result.collections)).toEqual([
+      'convos',
+      'messages',
+      CHAT_ASSETS_SLUG,
+      CHAT_TURNS_SLUG,
+    ]);
   });
 
   it('adopts a `chat: true` collection under its own slug and merges base fields', () => {
@@ -79,6 +96,7 @@ describe('resolveChatCollections', () => {
       'channel',
       'externalId',
       'channelKey',
+      'channelThread',
       'lastMessageAt',
       'todos',
     ]);
@@ -146,21 +164,27 @@ describe('resolveChatCollections', () => {
     );
   });
 
-  it('throws when a marked chat collection redefines `user`', () => {
-    expect(() =>
-      resolveChatCollections(
-        make([{ slug: 'convos', chat: true, fields: [{ name: 'user', type: 'text' }] }]),
-      ),
-    ).toThrow("[frogbot] Field 'user' on collection 'convos' is reserved by chat persistence.");
-  });
+  it.each(['user', 'channel', 'externalId', 'channelKey', 'channelThread'])(
+    'throws when a marked chat collection redefines `%s`',
+    (name) => {
+      expect(() =>
+        resolveChatCollections(
+          make([{ slug: 'convos', chat: true, fields: [{ name, type: 'text' }] }]),
+        ),
+      ).toThrow(
+        `[frogbot] Field '${name}' on collection 'convos' is reserved by chat persistence.`,
+      );
+    },
+  );
 
-  it('throws when a marked message collection redefines `id`, `parts`, or `chat`', () => {
-    for (const name of ['id', 'parts', 'chat']) {
+  it.each(['id', 'parts', 'chat', 'status', 'delivery', 'author', 'settlements', 'version'])(
+    'throws when a marked message collection redefines `%s`',
+    (name) => {
       expect(() =>
         resolveChatCollections(
           make([{ slug: 'turns', message: true, fields: [{ name, type: 'json' }] }]),
         ),
       ).toThrow(`[frogbot] Field '${name}' on collection 'turns' is reserved by chat persistence.`);
-    }
-  });
+    },
+  );
 });

@@ -1,14 +1,31 @@
 import type * as Gateway from '@frogbotai/gateway';
 import type * as AI from 'ai';
-import { describe, expect, it, vi } from 'vitest';
+import type { ModelMessage, UIMessage } from 'ai';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
+import { SKIPPED_FOR_CLIENT_INPUT } from '../../../../packages/frogbot/src/agents/tools.js';
 import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/ai/types.js';
+import type * as MessagePersistence from '../../../../packages/frogbot/src/chat/messagePersistence.js';
+import type * as State from '../../../../packages/frogbot/src/chat/turn/state.js';
+import { question } from '../../../../packages/frogbot/src/tools/question.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const agentState = vi.hoisted(() => ({
   prepared: undefined as Record<string, unknown> | undefined,
+  generateCall: undefined as Record<string, unknown> | undefined,
+  generateError: undefined as Error | undefined,
   streamCall: undefined as Record<string, unknown> | undefined,
+}));
+
+const turn = vi.hoisted(() => ({
+  holdTurn: vi.fn(),
+  persistAssistantMessage: vi.fn(),
+  promoteQueuedMessage: vi.fn(),
+  promoteSteerMessages: vi.fn(),
+  releaseTurn: vi.fn(),
+  resolveChatContext: vi.fn(),
+  stop: vi.fn(),
 }));
 
 vi.mock('ai', async (importOriginal) => {
@@ -32,6 +49,10 @@ vi.mock('ai', async (importOriginal) => {
 
       async generate(call: Record<string, unknown>) {
         agentState.prepared = await this.settings.prepareCall({ ...this.settings, ...call });
+        agentState.generateCall = call;
+
+        if (agentState.generateError) throw agentState.generateError;
+
         return {
           text: 'ok',
           finishReason: 'stop',
@@ -73,7 +94,40 @@ vi.mock('@frogbotai/gateway', async (importOriginal) => ({
   },
 }));
 
+vi.mock('../../../../packages/frogbot/src/chat/chatContext.js', () => ({
+  resolveChatContext: turn.resolveChatContext,
+}));
+
+vi.mock('../../../../packages/frogbot/src/chat/messagePersistence.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof MessagePersistence>()),
+  persistAssistantMessage: turn.persistAssistantMessage,
+}));
+
+vi.mock('../../../../packages/frogbot/src/chat/turn/state.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof State>()),
+  holdTurn: turn.holdTurn,
+  releaseTurn: turn.releaseTurn,
+}));
+
+vi.mock('../../../../packages/frogbot/src/chat/turn/queue.js', () => ({
+  promoteQueuedMessage: turn.promoteQueuedMessage,
+  promoteSteerMessages: turn.promoteSteerMessages,
+}));
+
 const { createAgentInstance } = await import('../../../../packages/frogbot/src/agents/instance.js');
+
+const claim = { chatId: 'chat-1', attempt: 'attempt-1' };
+
+const history: UIMessage[] = [
+  { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
+];
+
+const lookup = {
+  slug: 'lookup',
+  description: 'Look up data',
+  inputSchema: z.object({ query: z.string() }),
+  execute: vi.fn(() => ({ found: true })),
+};
 
 function makeConfig(hooks: SanitizedAIConfig['hooks']): SanitizedAIConfig {
   return {
@@ -189,6 +243,32 @@ function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
   } as never;
 }
 
+function makeReq(user: { id: string } | null = { id: 'user-1' }) {
+  return { user, context: {}, payload: { db: {} } } as unknown as FrogBotRequest;
+}
+
+beforeEach(() => {
+  agentState.prepared = undefined;
+  agentState.generateCall = undefined;
+  agentState.generateError = undefined;
+  agentState.streamCall = undefined;
+
+  lookup.execute.mockClear();
+
+  turn.stop.mockReset();
+  turn.holdTurn
+    .mockReset()
+    .mockReturnValue({ signal: new AbortController().signal, stop: turn.stop });
+  turn.persistAssistantMessage.mockReset().mockResolvedValue(undefined);
+  turn.promoteQueuedMessage.mockReset();
+  turn.promoteSteerMessages.mockReset().mockResolvedValue([]);
+  turn.releaseTurn.mockReset().mockResolvedValue(true);
+
+  turn.resolveChatContext
+    .mockReset()
+    .mockResolvedValue({ status: 'ready', chatId: 'chat-1', uiMessages: history, claim });
+});
+
 describe('agent hook lifecycle', () => {
   it('uses one stable run ID for hooks and agent runtime context', async () => {
     const beforeOperation = vi.fn();
@@ -292,90 +372,283 @@ describe('agent hook lifecycle', () => {
       expect.objectContaining({ finishReason: 'abort', error: expect.any(Error) }),
     );
   });
+});
 
-  it('persists authenticated local create and continue calls', async () => {
+describe('agent generate turns', () => {
+  it('resolves the chat without queueing and persists the generated reply', async () => {
     const config = makeConfig(emptyHooks());
-    const req = { user: { id: 'user-1' }, payload: { db: {} } } as unknown as FrogBotRequest;
+    const req = makeReq();
     const deps = makeDeps(config, req) as unknown as {
-      frogbot: {
-        create: ReturnType<typeof vi.fn>;
-        findByID: ReturnType<typeof vi.fn>;
-        update: ReturnType<typeof vi.fn>;
-      };
+      frogbot: { create: ReturnType<typeof vi.fn> };
     };
     const agent = createAgentInstance(
       { slug: 'support', model: 'openai/test', instructions: 'Help' },
       deps as never,
     );
 
-    await agent.generate({ prompt: 'Create', req });
-    expect(deps.frogbot.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        collection: 'chats',
-        data: { user: 'user-1', agent: 'support' },
-      }),
-    );
+    await agent.generate({ prompt: 'Hello', chatId: 'chat-1', req });
 
-    deps.frogbot.create.mockClear();
-    await agent.generate({ prompt: 'Hello', chatId: 'chat-1', req, overrideAccess: false });
-
-    expect(deps.frogbot.findByID).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'chats', id: 'chat-1', overrideAccess: true }),
-    );
-    const messageCreates = deps.frogbot.create.mock.calls.filter(
-      ([args]) => args.collection === 'messages',
-    );
-    expect(messageCreates).toHaveLength(2);
-    expect(messageCreates[0]?.[0]).toEqual(
-      expect.objectContaining({
-        collection: 'messages',
-        data: expect.objectContaining({ role: 'user', chat: 'chat-1' }),
+    expect(turn.resolveChatContext).toHaveBeenCalledWith({
+      req,
+      agentSlug: 'support',
+      chatId: 'chat-1',
+      incoming: [
+        { id: expect.any(String), role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
+      ],
+      tools: agent.aiAgent.tools,
+      queue: false,
+    });
+    expect(turn.persistAssistantMessage).toHaveBeenCalledWith({
+      req,
+      chatId: 'chat-1',
+      message: expect.objectContaining({
+        role: 'assistant',
+        parts: expect.arrayContaining([expect.objectContaining({ type: 'text', text: 'ok' })]),
       }),
-    );
-    expect(messageCreates[1]?.[0]).toEqual(
-      expect.objectContaining({
-        collection: 'messages',
-        data: expect.objectContaining({ role: 'assistant', chat: 'chat-1' }),
-      }),
-    );
+      history,
+      mainModel: 'openai/test',
+    });
     expect(deps.frogbot.create).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'usage-logs',
         data: expect.objectContaining({ runId: expect.any(String), chat: 'chat-1' }),
       }),
     );
-    expect(deps.frogbot.update).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'chats', id: 'chat-1' }),
-    );
   });
 
-  it('persists trusted local create and continue calls without a user', async () => {
-    const config = makeConfig(emptyHooks());
-    const req = { user: null, payload: { db: {} } } as unknown as FrogBotRequest;
-    const deps = makeDeps(config, req) as unknown as {
-      frogbot: {
-        create: ReturnType<typeof vi.fn>;
-        findByID: ReturnType<typeof vi.fn>;
-      };
-    };
-    deps.frogbot.create.mockResolvedValue({ id: 'chat-1' });
+  it('releases the turn and promotes the next queued message after persisting', async () => {
+    const req = makeReq();
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help', access: () => false },
-      deps as never,
+      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await agent.generate({ prompt: 'Hello', req });
+
+    expect(turn.holdTurn).toHaveBeenCalledWith({ req, claim });
+    expect(turn.releaseTurn).toHaveBeenCalledWith({ req, claim, state: 'idle' });
+    expect(turn.persistAssistantMessage.mock.invocationCallOrder[0]).toBeLessThan(
+      turn.releaseTurn.mock.invocationCallOrder[0],
+    );
+    expect(turn.stop).toHaveBeenCalledOnce();
+    expect(turn.promoteQueuedMessage).toHaveBeenCalledWith({ req, chatId: 'chat-1' });
+  });
+
+  it('does not promote queued messages when the turn lease was lost', async () => {
+    turn.releaseTurn.mockResolvedValue(false);
+
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await agent.generate({ prompt: 'Hello', req });
+
+    expect(turn.promoteQueuedMessage).not.toHaveBeenCalled();
+  });
+
+  it('releases the turn without persisting when the model call fails', async () => {
+    agentState.generateError = new Error('Model unavailable');
+
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await expect(agent.generate({ prompt: 'Hello', req })).rejects.toThrow('Model unavailable');
+    expect(turn.persistAssistantMessage).not.toHaveBeenCalled();
+    expect(turn.stop).toHaveBeenCalledOnce();
+    expect(turn.releaseTurn).toHaveBeenCalledWith({ req, claim, state: 'idle' });
+  });
+
+  it('aborts the model call when the turn lease is lost', async () => {
+    const lease = new AbortController();
+
+    turn.holdTurn.mockReturnValue({ signal: lease.signal, stop: turn.stop });
+
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await agent.generate({ prompt: 'Hello', req });
+
+    lease.abort(new Error('lease lost'));
+
+    expect((agentState.generateCall?.abortSignal as AbortSignal).aborted).toBe(true);
+  });
+
+  it('runs trusted local calls without a user or an agent access check', async () => {
+    const access = vi.fn(() => false);
+    const req = makeReq(null);
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help', access },
+      makeDeps(makeConfig(emptyHooks()), req),
     );
 
     await agent.generate({ prompt: 'Create', req });
-    await agent.generate({ prompt: 'Continue', chatId: 'chat-1', req });
 
-    expect(deps.frogbot.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        collection: 'chats',
-        data: { user: null, agent: 'support' },
-        overrideAccess: true,
-      }),
+    expect(access).not.toHaveBeenCalled();
+    expect(turn.persistAssistantMessage).toHaveBeenCalledOnce();
+  });
+
+  it('checks agent access before resolving the chat when overrideAccess is false', async () => {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help', access: () => false },
+      makeDeps(makeConfig(emptyHooks()), req),
     );
-    expect(deps.frogbot.findByID).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'chats', id: 'chat-1', overrideAccess: true }),
+
+    await expect(
+      agent.generate({ prompt: 'Hello', req, overrideAccess: false }),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(turn.resolveChatContext).not.toHaveBeenCalled();
+  });
+});
+
+describe('agent client tool gate', () => {
+  it('withholds client tools from callers that cannot render them', async () => {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help', tools: [lookup, question] },
+      makeDeps(makeConfig(emptyHooks()), req),
     );
+
+    await agent.generate({ prompt: 'Hello', req });
+
+    expect(agentState.prepared?.activeTools).toEqual(['lookup']);
+  });
+
+  it('activates client tools for the kinds the caller renders', async () => {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help', tools: [lookup, question] },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await agent.aiAgent.stream({
+      prompt: 'Hello',
+      options: { req, clientTools: { kinds: ['question'] } },
+    });
+
+    expect(agentState.prepared?.activeTools).toEqual(['lookup', 'question']);
+  });
+
+  it('leaves tool selection alone for agents without client tools', async () => {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help', tools: [lookup] },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await agent.generate({ prompt: 'Hello', req });
+
+    expect(agentState.prepared).not.toHaveProperty('activeTools');
+    expect(agentState.prepared).not.toHaveProperty('toolApproval');
+  });
+
+  it('skips server tools called in the same step as a client tool', async () => {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help', tools: [lookup, question] },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await agent.generate({ prompt: 'Hello', req });
+
+    const toolApproval = agentState.prepared?.toolApproval as (args: {
+      toolCall: { toolName: string };
+      messages: ModelMessage[];
+    }) => string;
+    const execute = agent.aiAgent.tools.lookup!.execute!;
+    const clientStep: ModelMessage[] = [];
+    const serverStep: ModelMessage[] = [];
+
+    expect(toolApproval({ toolCall: { toolName: 'question' }, messages: clientStep })).toBe(
+      'not-applicable',
+    );
+    expect(toolApproval({ toolCall: { toolName: 'lookup' }, messages: serverStep })).toBe(
+      'not-applicable',
+    );
+    expect(
+      await execute({ query: 'a' }, {
+        toolCallId: 'call-1',
+        messages: clientStep,
+        context: {},
+      } as never),
+    ).toEqual(SKIPPED_FOR_CLIENT_INPUT);
+    expect(
+      await execute({ query: 'b' }, {
+        toolCallId: 'call-2',
+        messages: serverStep,
+        context: {},
+      } as never),
+    ).toEqual({ found: true });
+    expect(lookup.execute).toHaveBeenCalledExactlyOnceWith({ query: 'b' }, {});
+  });
+});
+
+describe('agent steer messages', () => {
+  it('promotes steer messages from the same author at each step boundary', async () => {
+    const steer: UIMessage = {
+      id: 'steer-1',
+      role: 'user',
+      parts: [{ type: 'text', text: 'Faster' }],
+    };
+
+    turn.promoteSteerMessages.mockResolvedValue([steer]);
+
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await agent.generate({ prompt: 'Hello', req });
+
+    const prepareStep = agentState.prepared?.prepareStep as (args: {
+      messages: ModelMessage[];
+    }) => Promise<{ messages: ModelMessage[] } | undefined>;
+    const messages: ModelMessage[] = [{ role: 'user', content: 'Hello' }];
+
+    await expect(prepareStep({ messages })).resolves.toEqual({
+      messages: [...messages, { role: 'user', content: [{ type: 'text', text: 'Faster' }] }],
+    });
+    expect(turn.promoteSteerMessages).toHaveBeenCalledWith({
+      req,
+      chatId: 'chat-1',
+      actor: { user: { collection: '', id: 'user-1' } },
+    });
+  });
+
+  it('keeps the step unchanged when no steer message is waiting', async () => {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await agent.generate({ prompt: 'Hello', req });
+
+    const prepareStep = agentState.prepared?.prepareStep as (args: {
+      messages: ModelMessage[];
+    }) => Promise<unknown>;
+
+    await expect(prepareStep({ messages: [] })).resolves.toBeUndefined();
+  });
+
+  it('does not steer runs without a chat', async () => {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    await agent.aiAgent.stream({ prompt: 'Hello', options: { req } });
+
+    expect(agentState.prepared).not.toHaveProperty('prepareStep');
   });
 });

@@ -1,12 +1,4 @@
-import type { createAgentUIStreamResponse, UIMessage } from 'ai';
-import { consumeStream, convertToModelMessages, generateId } from 'ai';
-
-import { resolveModel } from '../ai/resolve.js';
-import { resolveChatContext } from '../chat/chatContext.js';
-import { generateMessage } from '../chat/generateMessage.js';
-import { createMessageUsage, persistAssistantMessage } from '../chat/messagePersistence.js';
 import type { ManifestResponse } from '../chat/types.js';
-import type { DocID } from '../collections/config/types.js';
 import { pieceToolInstance } from '../pieces/definePiece.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { AgentInstance, AgentManifest } from './types.js';
@@ -104,115 +96,18 @@ export async function getAgentAuthorizations({
   );
 }
 
-export async function prepareAgentRequest({
-  req,
+export function assertAllowedModel({
   agent,
-  requestedModel,
-  requestedChatId,
-  uiMessages,
+  model,
 }: {
-  req: FrogBotRequest;
   agent: AgentInstance;
-  requestedModel?: string;
-  requestedChatId?: DocID;
-  uiMessages: UIMessage[];
-}) {
+  model?: string;
+}): AgentInstance['config']['model'] | undefined {
   const models = new Set<string>([agent.config.model, ...(agent.config.allowModels ?? [])]);
-  if (requestedModel !== undefined && !models.has(requestedModel)) {
-    throw new AgentServiceError(
-      `Model '${requestedModel}' is not allowed for agent '${agent.slug}'`,
-      403,
-    );
-  }
-  return resolveChatContext({
-    req,
-    agentSlug: agent.slug,
-    chatId: requestedChatId,
-    incoming: uiMessages,
-    tools: agent.aiAgent.tools,
-  });
-}
 
-export function getAgentStreamOptions({
-  req,
-  agent,
-  chatId,
-  uiMessages,
-  model,
-}: {
-  req: FrogBotRequest;
-  agent: AgentInstance;
-  chatId?: DocID;
-  uiMessages: UIMessage[];
-  model?: AgentInstance['config']['model'];
-}): Parameters<typeof createAgentUIStreamResponse>[0] {
-  const resolvedModel = resolveModel(model ?? agent.config.model, req.frogbot.config.ai!);
-  return {
-    agent: agent.aiAgent,
-    uiMessages,
-    originalMessages: uiMessages as never,
-    generateMessageId: generateId,
-    consumeSseStream: consumeStream,
-    sendSources: true,
-    messageMetadata: ({ part }) =>
-      part.type === 'finish'
-        ? { usage: createMessageUsage(part.totalUsage, resolvedModel) }
-        : undefined,
-    onFinish:
-      chatId === undefined
-        ? undefined
-        : ({ responseMessage, isContinuation }) =>
-            persistAssistantMessage({
-              req,
-              chatId,
-              message: responseMessage,
-              isContinuation,
-              history: uiMessages,
-              mainModel: resolvedModel,
-            }),
-    options: { req, overrideAccess: true, chatId, model },
-    abortSignal: req.signal ?? undefined,
-    headers: chatId !== undefined ? { 'X-FrogBot-Chat-Id': String(chatId) } : undefined,
-  };
-}
-
-export async function generateAgentRequest({
-  req,
-  agent,
-  chatId,
-  uiMessages,
-  model,
-}: {
-  req: FrogBotRequest;
-  agent: AgentInstance;
-  chatId?: DocID;
-  uiMessages: UIMessage[];
-  model?: AgentInstance['config']['model'];
-}) {
-  const resolvedModel = resolveModel(model ?? agent.config.model, req.frogbot.config.ai!);
-
-  const result = await agent.aiAgent.generate({
-    messages: await convertToModelMessages(uiMessages, { tools: agent.aiAgent.tools }),
-    options: { req, overrideAccess: true, chatId, model },
-    abortSignal: req.signal ?? undefined,
-  });
-
-  if (chatId !== undefined) {
-    const message = await generateMessage({
-      result,
-      originalMessages: uiMessages,
-      tools: agent.aiAgent.tools,
-      model: resolvedModel,
-    });
-    await persistAssistantMessage({
-      req,
-      chatId,
-      message,
-      isContinuation: false,
-      history: uiMessages,
-      mainModel: resolvedModel,
-    });
+  if (model !== undefined && !models.has(model)) {
+    throw new AgentServiceError(`Model '${model}' is not allowed for agent '${agent.slug}'`, 403);
   }
 
-  return result;
+  return model as AgentInstance['config']['model'] | undefined;
 }

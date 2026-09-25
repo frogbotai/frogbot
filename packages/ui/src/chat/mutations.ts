@@ -1,7 +1,8 @@
-import type { FrogBotSDK } from '@frogbotai/sdk';
+import { type FrogBotSDK, FrogBotSDKError } from '@frogbotai/sdk';
 
 import type { MessageDocument } from './messages.js';
 import { chatRequest, type PayloadPage } from './rest.js';
+import type { ToolPartValue } from './tool-registry.js';
 import { type ChatDocument, emitChatMutation } from './use-chats.js';
 
 type ChatMutationOptions = {
@@ -103,4 +104,33 @@ export async function deleteChat({
     { method: 'DELETE' },
   );
   emitChatMutation();
+}
+
+export type ToolCallSettlement = {
+  status: 'settled' | 'already-settled';
+  allSettled: boolean;
+  part: ToolPartValue;
+};
+
+export async function dismissToolCall(
+  { sdk, agent, chatId }: Pick<ChatMutationOptions, 'sdk' | 'chatId'> & { agent: string },
+  toolCallId: string,
+): Promise<ToolCallSettlement> {
+  const path = `/agents/${encodeURIComponent(agent)}/chats/${encodeURIComponent(String(chatId))}/settle`;
+
+  const result = await chatRequest<{ settlement: ToolCallSettlement }>(sdk, path, {
+    method: 'POST',
+    body: JSON.stringify({ toolCallId, dismissed: true }),
+    headers: { 'Content-Type': 'application/json' },
+  }).catch(async (error: unknown) => {
+    if (!(error instanceof FrogBotSDKError) || error.status !== 409) throw error;
+
+    const body = (await error.response.json()) as { settlement?: ToolCallSettlement };
+
+    if (!body.settlement) throw error;
+
+    return { settlement: body.settlement };
+  });
+
+  return result.settlement;
 }
