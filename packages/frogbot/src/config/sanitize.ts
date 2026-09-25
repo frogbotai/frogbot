@@ -53,8 +53,10 @@ import type { CollectionConfig } from '../collections/config/types.js';
 import { COLLECTION_MARKERS } from '../collections/config/types.js';
 import { resolveConnectionsCollections } from '../connections/resolveCollections.js';
 import { buildSecretEndpoints } from '../connections/secret.js';
+import type { MapVectorField } from '../database/types.js';
 import type { Endpoint } from '../endpoints/types.js';
 import { assertRichTextEditor } from '../fields/config/assertRichTextEditor.js';
+import { sanitizeVectorFields } from '../fields/config/sanitizeVector.js';
 import type { Frogbot } from '../frogbot.js';
 import { initFrogbotFromPayload } from '../frogbot.js';
 import { seedFrogbotCache } from '../getFrogbot.js';
@@ -80,6 +82,11 @@ import {
   type PieceInstance,
   type SanitizedPiecesConfig,
 } from '../pieces/types.js';
+import { buildSearchEndpoints } from '../search/endpoints.js';
+import { buildSearchQueries } from '../search/graphQL.js';
+import { withSearchRuntime } from '../search/runtime.js';
+import { sanitizeSearchIndexes } from '../search/sanitize.js';
+import type { SearchCollection, SearchIndexDescriptors } from '../search/types.js';
 import { buildSkillTools } from '../skills/tools.js';
 import type { SkillConfig } from '../skills/types.js';
 import type { AnyTool } from '../tools/types.js';
@@ -227,6 +234,7 @@ function wrapCollectionAccess(
 function sanitizeCollection(
   c: CollectionConfig,
   attachFrogbot: AttachFrogbot,
+  { mapVectorField, search }: { mapVectorField?: MapVectorField; search?: SearchIndexDescriptors },
 ): PayloadCollectionConfig {
   const signIn = validateSignIn(c);
   let collectionViews: CollectionView[] = [];
@@ -246,10 +254,14 @@ function sanitizeCollection(
   const existingHooks = (c.hooks ?? {}) as Record<string, unknown[]>;
   const out: Record<string, unknown> = {
     ...(c as unknown as Record<string, unknown>),
+    fields: sanitizeVectorFields({
+      collection: c.slug,
+      fields: [...c.fields, ...orderFieldNames.map(buildBoardOrderField)],
+      mapVectorField,
+    }),
     ...(admin ? { admin } : {}),
     ...(orderFieldNames.length
       ? {
-          fields: [...c.fields, ...orderFieldNames.map(buildBoardOrderField)],
           orderable: true,
         }
       : {}),
@@ -279,6 +291,8 @@ function sanitizeCollection(
     delete out[marker];
   }
 
+  delete out.search;
+
   // Capture auth state into `custom.frogbot`.
   const auth = c.auth !== undefined && c.auth !== false;
   if (typeof c.auth === 'object') {
@@ -286,11 +300,21 @@ function sanitizeCollection(
     out.auth = collectionAuth;
   }
   const existingCustom = (c.custom ?? {}) as Record<string, unknown>;
+  const {
+    auth: _auth,
+    collectionViews: _collectionViews,
+    search: _search,
+    signIn: _customSignIn,
+    ...existingFrogbot
+  } = isRecord(existingCustom.frogbot) ? existingCustom.frogbot : {};
+
   out.custom = {
     ...existingCustom,
     frogbot: {
+      ...existingFrogbot,
       auth,
       collectionViews,
+      ...(search ? { search } : {}),
       ...(signIn.length
         ? {
             signIn: signIn.map((method) => ({
@@ -322,12 +346,17 @@ function sanitizeCollection(
   };
 
   // Wrap per-collection custom endpoints.
-  if (c.endpoints !== undefined || signIn.length) {
+  const searchEndpoints = search ? buildSearchEndpoints({ collection: c.slug }) : [];
+
+  if (c.endpoints !== undefined || signIn.length || searchEndpoints.length) {
     out.endpoints = wrapEndpoints(
-      signIn.length
+      signIn.length || searchEndpoints.length
         ? [
-            ...buildSignInEndpoints({ collectionSlug: c.slug, methods: signIn }),
+            ...(signIn.length
+              ? buildSignInEndpoints({ collectionSlug: c.slug, methods: signIn })
+              : []),
             ...(c.endpoints || []),
+            ...searchEndpoints,
           ]
         : c.endpoints,
       attachFrogbot,
@@ -1001,6 +1030,7 @@ function buildPayloadConfig(
   onInit: NonNullable<PayloadConfig['onInit']>,
   internalEndpoints: Endpoint[] = [],
   attachFrogbot: AttachFrogbot,
+  searchCollections: SearchCollection[] = [],
 ): PayloadConfig {
   const frogbotKeys = new Set([
     'agents',
@@ -1015,12 +1045,18 @@ function buildPayloadConfig(
     'tools',
   ]);
 
+  const mapVectorField = config.db.mapVectorField;
+
   const collections = config.collections.map((collection) =>
     sanitizeCollection(
       collection.auth && !collection.admin?.icon
         ? { ...collection, admin: { ...collection.admin, icon: 'people' } }
         : collection,
       attachFrogbot,
+      {
+        mapVectorField,
+        search: searchCollections.find(({ slug }) => slug === collection.slug)?.search,
+      },
     ),
   );
   if (!collections.some((collection) => Boolean(collection.auth))) {
@@ -1033,11 +1069,24 @@ function buildPayloadConfig(
           fields: [{ name: 'name', type: 'text' }],
         },
         attachFrogbot,
+        { mapVectorField },
       ),
     );
   }
   const out: Record<string, unknown> = {
     ...Object.fromEntries(Object.entries(config).filter(([key]) => !frogbotKeys.has(key))),
+    ...(config.blocks
+      ? {
+          blocks: config.blocks.map((block) => ({
+            ...block,
+            fields: sanitizeVectorFields({
+              block: block.slug,
+              fields: block.fields,
+              mapVectorField,
+            }),
+          })),
+        }
+      : {}),
     collections,
     hooks: wrapRootHooks(config.hooks, attachFrogbot),
     routes: {
@@ -1082,6 +1131,25 @@ function buildPayloadConfig(
     out.endpoints = false;
   } else if (userEndpoints !== undefined) {
     out.endpoints = wrapEndpoints(userEndpoints, attachFrogbot);
+  }
+
+  if (searchCollections.length) {
+    const queries = config.graphQL?.queries;
+
+    const searchQueries = buildSearchQueries({
+      attachFrogbot,
+      collections: searchCollections.map(({ slug }) => slug),
+    });
+
+    const graphQL: PayloadConfig['graphQL'] = {
+      ...config.graphQL,
+      queries: (graphQLModule, context) => ({
+        ...searchQueries(graphQLModule, context),
+        ...queries?.(graphQLModule, context),
+      }),
+    };
+
+    out.graphQL = graphQL;
   }
 
   out.email =
@@ -1480,10 +1548,21 @@ export function sanitize(
     : collections;
 
   // Build collection metadata for FrogBot's sanitized config.
-  const collectionsMeta: SanitizedCollectionMeta[] = collections.map((c) => ({
-    slug: c.slug,
-    auth: c.auth !== undefined && c.auth !== false,
-  }));
+  const localizeStatus = config.experimental?.localizeStatus === true;
+
+  const collectionsMeta: SanitizedCollectionMeta[] = collections.map((c) => {
+    const search = sanitizeSearchIndexes(c, { localizeStatus });
+
+    return {
+      slug: c.slug,
+      auth: c.auth !== undefined && c.auth !== false,
+      ...(search ? { search } : {}),
+    };
+  });
+
+  const searchCollections = collectionsMeta.flatMap(({ slug, search }) =>
+    search ? [{ slug, search }] : [],
+  );
 
   // Build the Payload config and pass it through Payload's buildConfig.
   const payloadConfig = buildPayloadConfig(
@@ -1506,10 +1585,15 @@ export function sanitize(
       ...(hasChannelAdapters ? buildChannelGatewayEndpoints() : []),
     ],
     attachFrogbot,
+    searchCollections,
   );
-  payloadConfig.db = withJobsRuntime({
-    adapter: payloadConfig.db,
-    leaseDuration: jobs.leaseDuration,
+  payloadConfig.db = withSearchRuntime({
+    adapter: withJobsRuntime({
+      adapter: payloadConfig.db,
+      leaseDuration: jobs.leaseDuration,
+    }),
+    collections: searchCollections,
+    search: config.db.search,
   });
   const payloadSanitizedPromise = payloadBuildConfig(payloadConfig)
     .then((built) => {

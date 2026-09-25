@@ -7,6 +7,7 @@ import { createGatewayHandler } from '../../../packages/frogbot/src/server/gatew
 vi.mock('payload', () => {
   let mockPayload = createMockPayload();
   return {
+    APIError: class APIError extends Error {},
     getPayload: vi.fn(() => mockPayload),
     createLocalReq: vi.fn(({ req }) => ({ ...req, payload: mockPayload })),
     handleEndpoints: vi.fn(() => new Response('ok')),

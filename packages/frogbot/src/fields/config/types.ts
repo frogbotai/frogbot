@@ -162,6 +162,14 @@ export type TextareaField = RetypedField<PayloadTextareaField>;
 export type TextField = RetypedField<PayloadTextField>;
 export type UIField = RetypedField<PayloadUIField>;
 export type UploadField = RetypedField<PayloadUploadField>;
+export type VectorField = Omit<
+  RetypedField<Omit<PayloadJSONField, 'jsonSchema' | 'type'>>,
+  'validate'
+> & {
+  dimensions: number;
+  type: 'vector';
+  validate?: Validate<number[]>;
+};
 
 export type RichTextField<
   TValue extends object = any,
@@ -211,7 +219,8 @@ export type Field =
   | TextareaField
   | TextField
   | UIField
-  | UploadField;
+  | UploadField
+  | VectorField;
 
 export type OptionObject = {
   label: Record<string, string> | string;

@@ -1,0 +1,87 @@
+---
+title: Vector field
+sidebarTitle: Vector
+description: Store supplied numerical vectors on ordinary collection records.
+keywords: [vector, embeddings, fields, collections, validation]
+---
+
+A vector field stores a fixed-length array of numbers. You can create, read, replace, and delete its value through ordinary collection operations without configuring a search index or an AI provider. FrogBot does not generate the vector for you.
+
+## Configure a vector field
+
+Install `@frogbotai/db-sqlite`, set `FROGBOT_SECRET`, and add this `frogbot.config.ts`:
+
+```ts
+import { sqliteAdapter } from '@frogbotai/db-sqlite';
+import { buildConfig } from 'frogbot';
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: sqliteAdapter({ client: { url: 'file:./frogbot.db' } }),
+  collections: [
+    {
+      slug: 'articles',
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        { name: 'embedding', type: 'vector', dimensions: 3 },
+      ],
+    },
+  ],
+});
+```
+
+This configuration has **no `search` index** and can initialize with the SQLite adapter. The three-dimensional value keeps the example short; choose dimensions that match the vectors your application supplies.
+
+## Write and read vectors
+
+In trusted server-side code, use the [Local API](/local-api/overview). This example explicitly bypasses collection access; for request-scoped operations, pass the request and use `overrideAccess: false` instead.
+
+```ts
+import { getFrogbot } from 'frogbot';
+
+import config from './frogbot.config';
+
+const frogbot = await getFrogbot({ config });
+
+const created = await frogbot.create({
+  collection: 'articles',
+  data: { title: 'Account recovery', embedding: [0.5, -1, 0] },
+  overrideAccess: true,
+});
+
+const updated = await frogbot.update({
+  collection: 'articles',
+  id: created.id,
+  data: { embedding: [1, 2, 3] },
+  overrideAccess: true,
+});
+
+const article = await frogbot.findByID({
+  collection: 'articles',
+  id: updated.id,
+  overrideAccess: true,
+});
+
+await frogbot.delete({
+  collection: 'articles',
+  id: article.id,
+  overrideAccess: true,
+});
+
+await frogbot.destroy();
+```
+
+`dimensions` must be a positive integer. A supplied value must be an array of exactly that many finite numbers; strings, `NaN`, and `Infinity` are rejected. Optional fields may be omitted or set to `null`; set `required: true` to require a value on normal writes. Generated collection types represent vector values as `number[]` with optional/null behavior according to the field configuration. The field uses the JSON editor in the admin panel; `admin.hidden` or `admin.readOnly` changes presentation, not API permissions.
+
+<Warning>
+  Set vectors in a [collection hook](/hooks/collections) or in the vector field's own
+  [hooks](/hooks/fields). FrogBot validates the vector after those hooks run. Hooks on other fields
+  run at the same time as the vector's validation, so a vector they set after an `await` can be
+  saved without validation, including in drafts.
+</Warning>
+
+Matching dimensions do not guarantee two embeddings use the same model or embedding space. Updating or deleting the record does not regenerate embeddings. See [Search](/search/overview) for the index and query API's current availability.
+
+## Storage
+
+Vectors are stored as JSON arrays by default. A database adapter can instead map each vector field, with its path and dimensions, to a native vector column through the adapter's `mapVectorField` option. None of the built-in adapters provides native vector storage yet, so every adapter uses the JSON default today.

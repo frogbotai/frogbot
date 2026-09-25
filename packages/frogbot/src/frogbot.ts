@@ -80,6 +80,8 @@ import { createKV } from './kv/index.js';
 import type { KV } from './kv/types.js';
 import type { FrogbotLocalAPI } from './localAPI.js';
 import { createFrogbotLocalAPI } from './localAPI.js';
+import { searchOperation } from './search/operation.js';
+import type { SearchOptions, SearchResult } from './search/types.js';
 import { encodeTrainingData } from './training/encodeTrainingData.js';
 import { readTrainingData } from './training/readTrainingData.js';
 import type { ReadTrainingDataOptions } from './training/types.js';
@@ -467,6 +469,9 @@ export class Frogbot {
 
   rerank = (opts: RerankOpts) => rerankOperation(this.aiDeps(), opts);
 
+  search = <T extends CollectionSlug>(options: SearchOptions<T>): Promise<SearchResult<T>> =>
+    searchOperation(this, this.payload, options);
+
   evaluate = <const QUESTIONS extends Record<string, EvaluationQuestion>>(
     opts: EvaluateOpts<QUESTIONS>,
   ): Promise<EvaluateResult<QUESTIONS>> => evaluateOperation(this.aiDeps(), opts);
@@ -533,9 +538,12 @@ export class Frogbot {
   private toCollection(c: { slug: string; custom?: unknown }): Collection {
     const custom = (c.custom as { frogbot?: FrogbotCustom } | undefined) ?? {};
     const fb = custom.frogbot ?? {};
+    const search = this.config.collections.find(({ slug }) => slug === c.slug)?.search;
+
     return {
       slug: c.slug,
       auth: fb.auth ?? false,
+      ...(search ? { search } : {}),
     };
   }
 }

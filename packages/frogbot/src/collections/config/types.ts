@@ -17,6 +17,7 @@ import type { AuthConfig } from '../../auth/types.js';
 import type { LivePreviewConfig } from '../../config/types.js';
 import type { Endpoint } from '../../endpoints/types.js';
 import type { Field } from '../../fields/config/types.js';
+import type { SearchIndexConfig, SearchIndexDescriptors } from '../../search/types.js';
 import type { CollectionSlug, TypedCollection } from '../../types/generated.js';
 import type { PayloadCollectionConfig, SelectType, Sort, Where } from '../../types/payload.js';
 import type { FrogbotRequest } from '../../types/request.js';
@@ -83,6 +84,8 @@ export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {
   /** Field definitions with frogbot's hook/access types. */
   fields: Field[];
 
+  search?: Record<string, SearchIndexConfig>;
+
   /** Marks this collection as the chat collection. FrogBot merges
    *  its base chat fields in; the slug stays yours. At most one. */
   chat?: boolean;
@@ -118,6 +121,7 @@ export type Collection = {
   slug: string;
   /** True if this collection was authored with auth enabled. */
   auth: boolean;
+  search?: SearchIndexDescriptors;
 };
 
 // Frogbot's access control types.
