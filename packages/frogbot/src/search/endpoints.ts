@@ -6,6 +6,7 @@ import type { SearchOptions } from './types.js';
 type SearchBody = Omit<SearchOptions, 'collection' | 'overrideAccess' | 'req'>;
 
 const bodyKeys = new Set<string>([
+  'candidates',
   'depth',
   'draft',
   'fallbackLocale',

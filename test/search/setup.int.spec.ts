@@ -21,7 +21,7 @@ function searchConfig() {
   } as FrogBotConfig);
 }
 
-describe('search setup', () => {
+describe.skipIf(process.env.FROGBOT_DATABASE === 'postgres')('search setup', () => {
   it('rejects an unimplemented search index at database initialization', async () => {
     await expect(new FrogBot().init({ config: searchConfig() })).rejects.toThrow(
       /titles.*search-articles.*lexical.*not-implemented/,

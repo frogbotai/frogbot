@@ -1,11 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { once } from 'node:events';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { connect } from 'node:net';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { join } from 'node:path';
 
 import { buildConfig, type FrogBotConfig } from 'frogbot';
 import { getJobLeaseContext } from 'frogbot/jobs';
@@ -13,6 +10,7 @@ import { FrogBot } from 'frogbot/test';
 import { BasePayload, type Payload, type PayloadRequest } from 'payload';
 
 import { initFrogBotFromPayload } from '../../packages/frogbot/dist/frogbot.js';
+import { createVercelPostgresProxy } from '../__helpers/shared/db/postgres.js';
 
 export const adapterName =
   process.env.FROGBOT_JOBS_ADAPTER ??
@@ -135,50 +133,7 @@ async function createDatabase() {
         ? await import('../../packages/db-vercel-postgres/src/index.js')
         : await import('../../packages/db-vercel-postgres/dist/index.js');
 
-      const adapterRequire = createRequire(
-        new URL('../../packages/db-vercel-postgres/package.json', import.meta.url),
-      );
-
-      const upstreamRequire = createRequire(
-        adapterRequire.resolve('@payloadcms/db-vercel-postgres'),
-      );
-
-      const vercelRequire = createRequire(upstreamRequire.resolve('@vercel/postgres'));
-      const neonModule = join(
-        dirname(vercelRequire.resolve('@neondatabase/serverless')),
-        'index.mjs',
-      );
-
-      const { neonConfig } = await import(pathToFileURL(neonModule).href);
-      const { WebSocket, WebSocketServer } = externalRequire()('ws');
-      const server = new WebSocketServer({ host: '127.0.0.1', port: 0 });
-
-      await once(server, 'listening');
-
-      server.on('connection', (socket: InstanceType<typeof WebSocket>) => {
-        const tcp = connect({ host: url.hostname, port: Number(url.port || 5432) });
-
-        socket.on('message', (data: Buffer) => tcp.write(data));
-        tcp.on('data', (data) => socket.send(data));
-        tcp.on('error', () => socket.close());
-        socket.on('error', () => tcp.destroy());
-        socket.on('close', () => tcp.destroy());
-        tcp.on('close', () => socket.close());
-      });
-
-      neonConfig.webSocketConstructor = WebSocket;
-      neonConfig.wsProxy = () => `127.0.0.1:${server.address().port}`;
-      neonConfig.useSecureWebSocket = false;
-      neonConfig.forceDisablePgSSL = true;
-      neonConfig.pipelineConnect = false;
-
-      cleanups.unshift(async () => {
-        for (const socket of server.clients) socket.terminate();
-
-        await new Promise<void>((resolve, reject) =>
-          server.close((error?: Error) => (error ? reject(error) : resolve())),
-        );
-      });
+      cleanups.unshift(await createVercelPostgresProxy(url));
 
       descriptor = vercelPostgresAdapter({
         forceUseVercelPostgres: true,

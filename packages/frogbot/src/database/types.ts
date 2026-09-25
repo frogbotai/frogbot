@@ -25,6 +25,7 @@ import type {
 
 import type {
   SearchCollection,
+  SearchHitComponents,
   SearchIndexDescriptor,
   SearchMode,
   SearchQuery,
@@ -62,6 +63,7 @@ export type SearchReadinessArgs = {
 export type SearchReadiness = (args: SearchReadinessArgs) => Promise<void> | void;
 
 export type AdapterSearchArgs = {
+  candidates?: number;
   collection: string;
   db: Payload['db'];
   draft: boolean;
@@ -76,6 +78,7 @@ export type AdapterSearchArgs = {
 };
 
 export type AdapterSearchRow = {
+  components?: SearchHitComponents;
   id: number | string;
   score: number;
 };

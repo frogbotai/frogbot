@@ -259,9 +259,12 @@ export {
 } from './search/errors.js';
 export type {
   SearchCollection,
+  SearchComponentRanking,
   SearchFieldPath,
   SearchFilterField,
   SearchHit,
+  SearchHitComponent,
+  SearchHitComponents,
   SearchIndexConfig,
   SearchIndexDescriptor,
   SearchIndexDescriptors,

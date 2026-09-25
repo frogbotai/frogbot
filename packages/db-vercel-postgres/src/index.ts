@@ -3,6 +3,7 @@ import {
   type VercelPostgresAdapterArgs,
 } from '@payloadcms/db-vercel-postgres';
 import { installSQLJobOperations } from 'frogbot/jobs';
+import { postgresSearchAdapter } from 'frogbot/search';
 
 export type {
   MigrateDownArgs,
@@ -23,5 +24,6 @@ export function vercelPostgresAdapter(args: VercelPostgresAdapterArgs) {
 
       return database;
     },
+    search: postgresSearchAdapter,
   };
 }

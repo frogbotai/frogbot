@@ -60,9 +60,77 @@ export default buildConfig({
   for a Docker Neon DB setup.
 </Banner>
 
-## Collection vector fields and search
+## Collection search
 
-You can declare a [vector field](/fields/vector) without a search index and use ordinary collection CRUD. **Native collection search is not implemented** in either the Postgres or Vercel Postgres adapter. Any collection `search` index, even lexical-only, currently fails setup with `not-implemented`; see the [search API preview](/search/overview). PostgreSQL full-text search and pgvector are planned integration targets, not shipped FrogBot search support. Future pgvector-based search would require the extension to be available on the connected database; an approximate index is a separate choice from vector storage.
+Both adapters implement [collection search](/search/overview) with PostgreSQL full-text search and [pgvector](https://github.com/pgvector/pgvector). Lexical, vector, and hybrid queries each run as a single SQL statement, and ranking happens inside the database after access, `where`, draft, and locale filters are applied.
+
+```ts
+import { postgresAdapter } from '@frogbotai/db-postgres'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: postgresAdapter({ pool: { connectionString: process.env.DATABASE_URL } }),
+  collections: [
+    {
+      slug: 'articles',
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        { name: 'body', type: 'textarea' },
+        { name: 'embedding', type: 'vector', dimensions: 1536 },
+      ],
+      search: {
+        content: {
+          lexical: { fields: ['title', 'body'], language: 'english' },
+          vector: { field: 'embedding' },
+        },
+      },
+    },
+  ],
+})
+```
+
+### Prerequisites
+
+Lexical-only indexes need nothing beyond PostgreSQL. An index with `vector` needs pgvector **0.8.0 or later**. Each time the adapter connects, including when you run `migrate`, it checks `pg_extension` and runs `CREATE EXTENSION IF NOT EXISTS vector` if pgvector is missing. `migrate:create` does not connect, so it generates the schema without this check. pgvector is not a trusted extension, so the connecting role must be a superuser, or you must create the extension ahead of time with a role that can. On a managed host, enable pgvector the way your host documents when the application role cannot create it.
+
+If the extension cannot be used, the adapter stops setup with `SearchCapabilityError`. The message names the first vector index, the reason, and the PostgreSQL SQLSTATE:
+
+| Reason                 | Cause                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------ |
+| `permission-denied`    | SQLSTATE `42501`: the role cannot create the extension.                                          |
+| `missing-prerequisite` | pgvector is not installed on the server (`0A000` or `58P01`), or the installed version is older than 0.8.0. |
+| `setup-failed`         | Any other error while creating the extension.                                                    |
+
+### Storage and indexes
+
+A vector field that an index selects with `vector.field` is stored as a native `vector(n)` column in the collection, locale, and version tables. Vector fields that no index selects stay JSON columns. Setup adds these indexes to the schema, so they appear in development push and in generated migrations:
+
+- An HNSW index for each vector field and metric: `vector_cosine_ops` for `cosine`, `vector_l2_ops` for `euclidean`, and `vector_ip_ops` for `dotProduct`. pgvector's HNSW index supports up to 2,000 dimensions. Larger vectors are stored and searched without an approximate index.
+- A GIN index on `to_tsvector(language, ...)` over an index's lexical fields. `lexical.language` is a PostgreSQL text search configuration name such as `english` or `french` and defaults to `simple`. When some lexical fields are localized and others are not, the fields live in different tables, so the query is still correct but has no GIN index.
+
+Collections with drafts get the same indexes on the version table, so `draft: true` queries rank the latest draft of each document.
+
+Changing a vector field's `dimensions` requires a migration that rewrites or clears existing vectors.
+
+### Ranking
+
+| Mode    | `ranking.method`                     | Score                                                                                    |
+| ------- | ------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Lexical | `postgres-fts`                       | `ts_rank_cd` over `websearch_to_tsquery`. Higher is better.                              |
+| Vector  | `pgvector-hnsw` or `pgvector-exact` | Cosine similarity, Euclidean distance (lower is better), or inner product.               |
+| Hybrid  | `rrf`                                | Weighted reciprocal rank fusion, `weight / (60 + rank)` summed over both components. Higher is better. |
+
+Query text supports web search syntax: quoted phrases, `or`, and `-` to exclude a term. It is always sent as a bound parameter.
+
+Vector and hybrid queries on an HNSW index report `approximate: true`. They run in a transaction with `SET LOCAL hnsw.iterative_scan = strict_order`, so pgvector keeps scanning the index until enough rows pass your access and `where` filters, in exact distance order. The same transaction sets `hnsw.ef_search` to the number of rows the query fetches, with pgvector's default of 40 as the minimum and its maximum of 1,000 as the cap. Both settings end with the transaction and never reach other pooled connections. Iterative scans still stop at pgvector's scan limits, so a very selective filter can return fewer than `limit` hits. When the request already runs in a transaction, search reads through it and sees its uncommitted writes.
+
+Hybrid search takes up to the [resolved candidate count](/search/overview#hybrid-candidates) from each component, joins them in the database, and returns the top `limit` by fused score. A record that matches only one component still ranks, with the other component reported as `null`.
+
+### Limits
+
+- Localized fields are ranked on the requested locale's stored value. Fallback-locale values are not ranked.
+- If a search runs before its columns or indexes exist, for example before you run migrations, it fails with `SearchReadinessError`.
 
 ## Options
 

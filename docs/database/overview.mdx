@@ -37,16 +37,16 @@ Self-hosted Docker installs are expected to start with MongoDB.
 
 ## Collection search status
 
-You can store supplied vectors on ordinary records using a [vector field](/fields/vector) without a search index. Native ranked search is separate. The [collection search API](/search/overview) has core types and validation, but none of the following adapters has implemented native lexical, vector, or hybrid search yet:
+You can store supplied vectors on ordinary records using a [vector field](/fields/vector) without a search index. Native ranked search is separate: the [collection search API](/search/overview) runs only on adapters that implement it.
 
 | Adapter | Collection search today |
 | --- | --- |
-| [Postgres and Vercel Postgres](/database/postgres) | Not implemented |
+| [Postgres and Vercel Postgres](/database/postgres#collection-search) | Lexical, vector, and hybrid |
 | [SQLite and LibSQL](/database/sqlite) | Not implemented |
 | [MongoDB](/database/mongodb) | Not implemented |
 | [Cloudflare D1](/database/sqlite#d1-database) | Not implemented |
 
-Any configured collection `search` index, including lexical-only, currently fails setup with a `not-implemented` error identifying the collection, index, and mode. With no search index configured, setup does not emit a search capability report. Native adapter support and database-specific setup instructions are planned separately; database engine features alone do not make `frogbot.search()` work.
+On an adapter without search, any configured collection `search` index, including lexical-only, fails setup with a `not-implemented` error identifying the collection, index, and mode. With no search index configured, setup does not emit a search capability report.
 
 ## Selecting a database
 

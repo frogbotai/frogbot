@@ -5,6 +5,7 @@ import type { CollectionSlug } from '../types/generated.js';
 import type { FrogBotRequest } from '../types/request.js';
 
 type SearchQueryArgs = {
+  candidates?: number | null;
   draft?: boolean | null;
   fallbackLocale?: TypedLocale | null;
   index: string;
@@ -45,12 +46,46 @@ export function buildSearchQueries({
       values: { hybrid: {}, lexical: {}, vector: {} },
     });
 
+    const rankingFields = {
+      approximate: { type: new GraphQLNonNull(GraphQLBoolean) },
+      higherIsBetter: { type: new GraphQLNonNull(GraphQLBoolean) },
+      method: { type: new GraphQLNonNull(GraphQLString) },
+    };
+
+    const componentRanking = new GraphQLObjectType({
+      name: 'SearchComponentRanking',
+      fields: rankingFields,
+    });
+
     const ranking = new GraphQLObjectType({
       name: 'SearchRanking',
       fields: {
-        approximate: { type: new GraphQLNonNull(GraphQLBoolean) },
-        higherIsBetter: { type: new GraphQLNonNull(GraphQLBoolean) },
-        method: { type: new GraphQLNonNull(GraphQLString) },
+        ...rankingFields,
+        components: {
+          type: new GraphQLObjectType({
+            name: 'SearchRankingComponents',
+            fields: {
+              lexical: { type: new GraphQLNonNull(componentRanking) },
+              vector: { type: new GraphQLNonNull(componentRanking) },
+            },
+          }),
+        },
+      },
+    });
+
+    const hitComponent = new GraphQLObjectType({
+      name: 'SearchHitComponent',
+      fields: {
+        rank: { type: new GraphQLNonNull(GraphQLInt) },
+        score: { type: new GraphQLNonNull(GraphQLFloat) },
+      },
+    });
+
+    const hitComponents = new GraphQLObjectType({
+      name: 'SearchHitComponents',
+      fields: {
+        lexical: { type: hitComponent },
+        vector: { type: hitComponent },
       },
     });
 
@@ -69,6 +104,7 @@ export function buildSearchQueries({
       const hit = new GraphQLObjectType({
         name: `${name}Hit`,
         fields: {
+          components: { type: hitComponents },
           doc: { type: new GraphQLNonNull(collection.graphQL.type) },
           score: { type: new GraphQLNonNull(GraphQLFloat) },
         },
@@ -86,6 +122,7 @@ export function buildSearchQueries({
       queries[name] = {
         type: new GraphQLNonNull(result),
         args: {
+          candidates: { type: GraphQLInt },
           draft: { type: GraphQLBoolean },
           index: { type: new GraphQLNonNull(GraphQLString) },
           limit: { type: GraphQLInt },

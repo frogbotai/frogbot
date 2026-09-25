@@ -29,6 +29,11 @@
       "import": "./dist/exports/jobs.js",
       "default": "./dist/exports/jobs.js"
     },
+    "./search": {
+      "types": "./dist/exports/search.d.ts",
+      "import": "./dist/exports/search.js",
+      "default": "./dist/exports/search.js"
+    },
     "./kv": {
       "types": "./dist/exports/kv.d.ts",
       "import": "./dist/exports/kv.js",
@@ -149,6 +154,11 @@
         "types": "./dist/exports/jobs.d.ts",
         "import": "./dist/exports/jobs.js",
         "default": "./dist/exports/jobs.js"
+      },
+      "./search": {
+        "types": "./dist/exports/search.d.ts",
+        "import": "./dist/exports/search.js",
+        "default": "./dist/exports/search.js"
       },
       "./kv": {
         "types": "./dist/exports/kv.d.ts",

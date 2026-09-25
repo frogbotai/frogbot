@@ -20,6 +20,7 @@ export type SearchIndexConfig = {
       lexical: number;
       vector: number;
     };
+    defaultCandidates?: number;
   };
   filters?: { exclude: string[]; fields?: never } | { fields: string[]; exclude?: never };
 };
@@ -47,6 +48,7 @@ export type SearchIndexDescriptor = {
   hybrid?: {
     fusion: 'rrf';
     weights: { lexical: number; vector: number };
+    defaultCandidates: number;
   };
   filterFields: Record<string, SearchFilterField>;
 };
@@ -65,10 +67,17 @@ export type SearchQuery = {
   vector?: number[];
 };
 
-export type SearchRanking = {
+export type SearchComponentRanking = {
   method: string;
   higherIsBetter: boolean;
   approximate: boolean;
+};
+
+export type SearchRanking = SearchComponentRanking & {
+  components?: {
+    lexical: SearchComponentRanking;
+    vector: SearchComponentRanking;
+  };
 };
 
 export type SearchOptions<T extends CollectionSlug = CollectionSlug> = {
@@ -77,6 +86,7 @@ export type SearchOptions<T extends CollectionSlug = CollectionSlug> = {
   query: SearchQuery;
   where?: Where;
   limit?: number;
+  candidates?: number;
   select?: SelectType;
   depth?: number;
   draft?: boolean;
@@ -86,9 +96,20 @@ export type SearchOptions<T extends CollectionSlug = CollectionSlug> = {
   req?: FrogBotRequest;
 };
 
+export type SearchHitComponent = {
+  rank: number;
+  score: number;
+};
+
+export type SearchHitComponents = {
+  lexical: SearchHitComponent | null;
+  vector: SearchHitComponent | null;
+};
+
 export type SearchHit<T extends CollectionSlug = CollectionSlug> = {
   doc: TypedCollection<T>;
   score: number;
+  components?: SearchHitComponents;
 };
 
 export type SearchResult<T extends CollectionSlug = CollectionSlug> = {

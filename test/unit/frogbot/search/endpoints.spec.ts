@@ -6,10 +6,13 @@ import { buildSearchEndpoints } from '../../../../packages/frogbot/src/search/en
 import { SearchValidationError } from '../../../../packages/frogbot/src/search/errors.js';
 import { searchOperation } from '../../../../packages/frogbot/src/search/operation.js';
 import type { SearchOptions } from '../../../../packages/frogbot/src/search/types.js';
-import { ranking, searchFixture } from './fixture.js';
+import { hybridRanking, ranking, searchFixture } from './fixture.js';
 
-function restFixture(body: () => Promise<unknown>) {
-  const fixture = searchFixture();
+function restFixture(
+  body: () => Promise<unknown>,
+  options: Parameters<typeof searchFixture>[0] = {},
+) {
+  const fixture = searchFixture(options);
 
   Object.assign(fixture.frogbot, {
     search: (options: SearchOptions) => searchOperation(fixture.frogbot, fixture.payload, options),
@@ -43,6 +46,25 @@ describe('collection search REST endpoint', () => {
     expect(search).toHaveBeenCalledWith(expect.objectContaining({ limit: 5, mode: 'lexical' }));
     expect(find).toHaveBeenCalledWith(
       expect.objectContaining({ overrideAccess: false, select: { title: true } }),
+    );
+  });
+
+  it('POST /api/articles/search forwards hybrid candidates to the adapter', async () => {
+    const { endpoint, req, search } = restFixture(
+      async () => ({
+        index: 'content',
+        query: { text: 'hello', vector: [1, 0, 0] },
+        limit: 5,
+        candidates: 250,
+      }),
+      { rows: [], rowRanking: hybridRanking },
+    );
+
+    const response = await endpoint.handler(req);
+
+    expect(await response.json()).toEqual({ mode: 'hybrid', ranking: hybridRanking, hits: [] });
+    expect(search).toHaveBeenCalledWith(
+      expect.objectContaining({ candidates: 250, limit: 5, mode: 'hybrid' }),
     );
   });
 
