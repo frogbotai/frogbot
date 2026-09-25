@@ -4,7 +4,7 @@ import { type PayloadRequest, ValidationError } from 'payload';
 import { z } from 'zod';
 
 import { OAuthError } from '../../connections/oauth/index.js';
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 import { withSessionOperation } from '../operation.js';
 
 type SignInIdentity = {
@@ -19,7 +19,7 @@ export async function resolveSignInIdentity({
   collectionSlug,
   email: accountEmail,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   collectionSlug: string;
   email: unknown;
 }): Promise<string | number> {

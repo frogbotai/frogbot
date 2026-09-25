@@ -1,4 +1,4 @@
-import { createFrogbotSDK } from '@frogbotai/sdk';
+import { createFrogBotSDK } from '@frogbotai/sdk';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,7 +17,7 @@ const state = vi.hoisted(() => ({
     buildMetadata: vi.fn(() => ({ source: 'ui' })),
     executeClientTool: vi.fn(),
   },
-  sdk: undefined as unknown as ReturnType<typeof createFrogbotSDK>,
+  sdk: undefined as unknown as ReturnType<typeof createFrogBotSDK>,
   agents: [] as Array<{ slug: string; profile?: { name?: string; avatar?: string } }>,
   history: {
     messages: [] as import('ai').UIMessage[],
@@ -106,7 +106,7 @@ async function sendTransportMessage() {
 
 describe('Chat', () => {
   beforeEach(() => {
-    state.sdk = createFrogbotSDK({ baseURL: '/api', fetch: state.adapter.fetch });
+    state.sdk = createFrogBotSDK({ baseURL: '/api', fetch: state.adapter.fetch });
     state.status = 'ready';
     state.error = undefined;
     state.messages = [];
@@ -246,7 +246,7 @@ describe('Chat', () => {
       });
     state.adapter.fetch.mockResolvedValue(
       new Response(new ReadableStream({ start: (controller) => controller.close() }), {
-        headers: { 'X-Frogbot-Chat-Id': 'chat-9' },
+        headers: { 'X-FrogBot-Chat-Id': 'chat-9' },
       }),
     );
 
@@ -272,7 +272,7 @@ describe('Chat', () => {
     render(<Chat agent="support" />);
     state.adapter.fetch.mockResolvedValue(
       new Response(new ReadableStream({ start: (controller) => controller.close() }), {
-        headers: { 'X-Frogbot-Chat-Id': 'chat-9' },
+        headers: { 'X-FrogBot-Chat-Id': 'chat-9' },
       }),
     );
     const transport = (state.options as import('ai').ChatInit<import('ai').UIMessage>).transport;
@@ -339,7 +339,7 @@ describe('Chat', () => {
     ];
     state.adapter.fetch.mockResolvedValue(
       new Response(new ReadableStream({ start: (controller) => controller.close() }), {
-        headers: { 'X-Frogbot-Chat-Id': 'created' },
+        headers: { 'X-FrogBot-Chat-Id': 'created' },
       }),
     );
     const { rerender } = render(<Chat agent="support" />);

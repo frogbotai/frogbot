@@ -1,9 +1,9 @@
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 import { auditLogPlugin } from '../../../packages/plugins/plugin-audit-log/src/index.js';
 
-function config(): FrogbotConfig {
+function config(): FrogBotConfig {
   return {
     secret: 'test',
     collections: [
@@ -11,14 +11,14 @@ function config(): FrogbotConfig {
       { slug: 'posts', fields: [], hooks: { afterChange: [vi.fn()] } },
       { slug: 'notes', fields: [] },
     ],
-  } as FrogbotConfig;
+  } as FrogBotConfig;
 }
 
 async function apply(options: Parameters<typeof auditLogPlugin>[0] = {}) {
-  return auditLogPlugin(options)(config()) as FrogbotConfig;
+  return auditLogPlugin(options)(config()) as FrogBotConfig;
 }
 
-function fieldNames(value: FrogbotConfig, slug = 'audit-logs') {
+function fieldNames(value: FrogBotConfig, slug = 'audit-logs') {
   return value.collections
     .find((collection) => collection.slug === slug)
     ?.fields.flatMap((field) => ('name' in field ? [field.name] : []));

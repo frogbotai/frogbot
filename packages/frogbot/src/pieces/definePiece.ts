@@ -1,6 +1,6 @@
-import { createDefaultRequest } from '../getFrogbot.js';
+import { createDefaultRequest } from '../getFrogBot.js';
 import type { AnyTool } from '../tools/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import {
   type OAuthApp,
   type PieceAction,
@@ -238,8 +238,8 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
     const clients = new WeakMap<object, WeakMap<object, Promise<unknown>>>();
     const factoryKey = {};
 
-    const request = (req?: FrogbotRequest) => (req ? Promise.resolve(req) : createDefaultRequest());
-    const client = async ({ req }: { req?: FrogbotRequest } = {}) => {
+    const request = (req?: FrogBotRequest) => (req ? Promise.resolve(req) : createDefaultRequest());
+    const client = async ({ req }: { req?: FrogBotRequest } = {}) => {
       const resolvedReq = await request(req);
       const credential = definition.auth
         ? await resolvedReq.frogbot.connections.resolvePieceCredential({
@@ -285,7 +285,7 @@ export function definePiece<const T extends PieceDefinition>(definition: T): Pie
 
     const tools: AnyTool[] = [];
     for (const action of definition.actions) {
-      const invoke = async ({ input, req }: { input: unknown; req?: FrogbotRequest }) => {
+      const invoke = async ({ input, req }: { input: unknown; req?: FrogBotRequest }) => {
         const resolvedReq = await request(req);
         const parsedInput = action.input.parse(input);
         const result = await action.run({

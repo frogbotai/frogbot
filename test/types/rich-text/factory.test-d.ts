@@ -5,10 +5,10 @@ import {
   type SanitizedServerEditorConfig,
 } from '@frogbotai/richtext-lexical';
 import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical';
-import type { Field, FrogbotSanitizedConfig } from 'frogbot';
+import type { Field, FrogBotSanitizedConfig } from 'frogbot';
 import { expectTypeOf } from 'vitest';
 
-declare const config: Promise<FrogbotSanitizedConfig>;
+declare const config: Promise<FrogBotSanitizedConfig>;
 
 const editorConfig = await editorConfigFactory.fromEditor({
   config,

@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot.js';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot.js';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const credentials = { email: 'audit@frogbot.local', password: 'audit-password' };
@@ -18,12 +18,12 @@ type AuditEntry = {
 };
 
 describe('audit log plugin integration', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
   let accountId: number | string;
   let authorization: Record<string, string>;
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname);
+    booted = await bootFrogBot(dirname);
     const account = await booted.restClient.post<{ doc: { id: number | string } }>(
       '/api/accounts',
       credentials,

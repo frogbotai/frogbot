@@ -2,7 +2,7 @@ import type { UIMessage } from 'ai';
 import { commitTransaction, initTransaction, killTransaction, NotFound } from 'payload';
 
 import type { DocID } from '../collections/config/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import type { ChannelChatAccess } from './channelAccess.js';
 import { hasChannelChatAccess } from './channelAccess.js';
 import { messagesToUIMessages } from './messagesToUIMessages.js';
@@ -14,7 +14,7 @@ export type ChatContext = {
 };
 
 export type ResolveChatContextProps = {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   agentSlug: string;
   chatId?: DocID;
   incoming: UIMessage[];
@@ -134,7 +134,7 @@ export async function resolveChatContext({
 }
 
 type ResolveChatIdProps = {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   agentSlug: string;
   chatId?: DocID;
   chatsSlug: string;

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { sanitize } from '../../packages/frogbot/src/config/sanitize.js';
-import type { FrogbotConfig } from '../../packages/frogbot/src/config/types.js';
-import { Frogbot } from '../../packages/frogbot/src/frogbot.js';
+import type { FrogBotConfig } from '../../packages/frogbot/src/config/types.js';
+import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 
 const { databaseAdapter } = await import('../databaseAdapter.js');
 
@@ -18,19 +18,19 @@ function searchConfig() {
         search: { titles: { lexical: { fields: ['title'] } } },
       },
     ],
-  } as FrogbotConfig);
+  } as FrogBotConfig);
 }
 
 describe('search setup', () => {
   it('rejects an unimplemented search index at database initialization', async () => {
-    await expect(new Frogbot().init({ config: searchConfig() })).rejects.toThrow(
+    await expect(new FrogBot().init({ config: searchConfig() })).rejects.toThrow(
       /titles.*search-articles.*lexical.*not-implemented/,
     );
   });
 
   it('rejects an unimplemented search index when initializing without a database connection', async () => {
     await expect(
-      new Frogbot().init({ config: searchConfig(), disableDBConnect: true }),
+      new FrogBot().init({ config: searchConfig(), disableDBConnect: true }),
     ).rejects.toThrow(/titles.*search-articles.*lexical.*not-implemented/);
   });
 });

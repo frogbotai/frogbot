@@ -1,12 +1,12 @@
-import type { Frogbot, FrogbotTypes, JobQueueArgs, Jobs } from 'frogbot';
+import type { FrogBot, FrogBotTypes, JobQueueArgs, Jobs } from 'frogbot';
 import { expectTypeOf } from 'vitest';
 
 import type { Config } from './.generated/frogbot-types.js';
 
 type QueueArgs = Parameters<Jobs['queue']>[0];
 
-expectTypeOf<FrogbotTypes['jobs']>().toEqualTypeOf<Config['jobs']>();
-expectTypeOf<Frogbot['jobs']>().toEqualTypeOf<Jobs>();
+expectTypeOf<FrogBotTypes['jobs']>().toEqualTypeOf<Config['jobs']>();
+expectTypeOf<FrogBot['jobs']>().toEqualTypeOf<Jobs>();
 
 expectTypeOf<{
   task: 'unknown-task';
@@ -72,7 +72,7 @@ expectTypeOf<{
   jobId: number;
 }>().not.toMatchTypeOf<QueueArgs>();
 
-export async function generatedJobs(frogbot: Frogbot) {
+export async function generatedJobs(frogbot: FrogBot) {
   const notification = await frogbot.jobs.queue({
     task: 'send-notification',
     input: { recipient: 'owner@example.com' },

@@ -1,11 +1,11 @@
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 import type { CollectionSlug } from '../types/generated.js';
 import type { ReadTrainingDataOptions, TrainingDataDocument, TrainingDataRecord } from './types.js';
 
 const DEFAULT_PAGE_SIZE = 100;
 
 export async function* readTrainingData(
-  frogbot: Frogbot,
+  frogbot: FrogBot,
   options: ReadTrainingDataOptions = {},
 ): AsyncGenerator<TrainingDataRecord> {
   if (!frogbot.config.chat.enabled) {

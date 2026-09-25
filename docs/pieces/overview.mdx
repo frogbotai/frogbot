@@ -21,7 +21,7 @@ pnpm add @frogbotai/piece-google-sheets
 
 ```ts
 import { createGoogleSheets } from '@frogbotai/piece-google-sheets'
-import type { FrogbotConfig } from 'frogbot'
+import type { FrogBotConfig } from 'frogbot'
 
 export const googleSheets = createGoogleSheets({
   auth: { accessToken: process.env.GOOGLE_SHEETS_ACCESS_TOKEN! }
@@ -37,7 +37,7 @@ export const pieceConfig = {
       tools: [googleSheets.findRows, googleSheets.getRows]
     }
   ]
-} satisfies Pick<FrogbotConfig, 'pieces' | 'agents'>
+} satisfies Pick<FrogBotConfig, 'pieces' | 'agents'>
 ```
 
 Merge `pieceConfig` into your root config alongside your database, collections, secret, and AI provider configuration. This example uses a developer access token. For user-owned credentials, reuse the factory instances from the [OAuth connection example](/connections/overview#configure-linking).

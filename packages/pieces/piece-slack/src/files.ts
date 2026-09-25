@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { z } from 'zod';
 
 export const slackFile = z.object({
@@ -6,7 +6,7 @@ export const slackFile = z.object({
   name: z.string().optional(),
 });
 
-export async function loadSlackFile(req: FrogbotRequest, value: z.output<typeof slackFile>) {
+export async function loadSlackFile(req: FrogBotRequest, value: z.output<typeof slackFile>) {
   const collection = req.frogbot.config.files?.slug;
 
   if (!collection) throw new Error('[frogbot] Slack file uploads require the files collection.');

@@ -10,9 +10,9 @@ import type {
   ConnectionRow,
   ConnectionStore,
 } from '../../packages/frogbot/src/connections/store.js';
-import { Frogbot } from '../../packages/frogbot/src/frogbot.js';
+import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 import { definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogbotRequest } from '../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../packages/frogbot/src/types/request.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
 
 const client = vi.fn(({ auth }) => ({ token: auth.token.value }));
@@ -45,7 +45,7 @@ const createPiece = definePiece({
 });
 
 describe(`connection resolution and static routes [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () => {
-  let frogbot: Frogbot;
+  let frogbot: FrogBot;
   let payload: Payload;
   let store: ConnectionStore;
   let owner: ConnectionOwner;
@@ -56,8 +56,8 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
     auth: { token: 'factory' },
     oauth: { clientId: 'id', clientSecret: 'secret' },
   });
-  const request = (user: ConnectionOwner | null = owner): FrogbotRequest =>
-    ({ frogbot, payload, user }) as unknown as FrogbotRequest;
+  const request = (user: ConnectionOwner | null = owner): FrogBotRequest =>
+    ({ frogbot, payload, user }) as unknown as FrogBotRequest;
   const link = (body: unknown, user = owner) =>
     endpoints[0]!.handler({
       ...request(user),
@@ -84,7 +84,7 @@ describe(`connection resolution and static routes [${process.env.FROGBOT_DATABAS
       ],
       connections: [{ piece, oauth: true, secret: true }],
     });
-    frogbot = await new Frogbot().init({ config, disableOnInit: true });
+    frogbot = await new FrogBot().init({ config, disableOnInit: true });
     store = await frogbot.connections.store;
     payload = await getPayload({ config: await getPayloadConfig(config) });
     const registered = payload.collections.connections.config.endpoints;

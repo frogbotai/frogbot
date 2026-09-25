@@ -1,15 +1,15 @@
-import type { Frogbot, FrogbotRequest } from 'frogbot';
+import type { FrogBot, FrogBotRequest } from 'frogbot';
 
 import type { RoleResolver, RoleSlug } from './types.js';
 
 const resolvedRoles = Symbol('frogbot.roles');
 const configuredResolver = Symbol('frogbot.roleResolver');
 
-type RequestWithRoles = FrogbotRequest & {
+type RequestWithRoles = FrogBotRequest & {
   [resolvedRoles]?: Map<RoleResolver, RoleSlug[]>;
 };
 
-type FrogbotWithResolver = object & {
+type FrogBotWithResolver = object & {
   [configuredResolver]?: RoleResolver;
 };
 
@@ -20,18 +20,18 @@ export const defaultRoleResolver: RoleResolver = (req) => {
     : [];
 };
 
-export function attachRoleResolver(frogbot: Frogbot, resolver: RoleResolver): void {
+export function attachRoleResolver(frogbot: FrogBot, resolver: RoleResolver): void {
   Object.defineProperty(frogbot, configuredResolver, { configurable: true, value: resolver });
 }
 
-export function resolverForRequest(req: FrogbotRequest): RoleResolver {
+export function resolverForRequest(req: FrogBotRequest): RoleResolver {
   return (
-    (req.frogbot as FrogbotWithResolver | undefined)?.[configuredResolver] ?? defaultRoleResolver
+    (req.frogbot as FrogBotWithResolver | undefined)?.[configuredResolver] ?? defaultRoleResolver
   );
 }
 
 export function resolveRequestRoles(
-  req: FrogbotRequest,
+  req: FrogBotRequest,
   resolver = resolverForRequest(req),
 ): RoleSlug[] {
   const request = req as RequestWithRoles;

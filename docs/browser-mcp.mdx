@@ -3,21 +3,21 @@ title: "Browser Agent MCP"
 description: "Control your browser from any AI coding agent via MCP"
 ---
 
-Use the Frogbot Browser MCP server to let AI agents browse the web through your Chrome browser. Agents get their own isolated tab group — you can watch what they do in real time.
+Use the FrogBot Browser MCP server to let AI agents browse the web through your Chrome browser. Agents get their own isolated tab group — you can watch what they do in real time.
 
 ---
 
 ## Prerequisites
 
-- A [Frogbot account](https://app.frogbot.ai/signup) with an API key
-- The [Frogbot Chrome extension](https://chromewebstore.google.com/detail/frogbot) installed and logged in
+- A [FrogBot account](https://app.frogbot.ai/signup) with an API key
+- The [FrogBot Chrome extension](https://chromewebstore.google.com/detail/frogbot) installed and logged in
 - Chrome open with the extension active
 
 ---
 
 ## Connect your agent
 
-Add the Frogbot Browser MCP server to your agent's configuration. The endpoint is:
+Add the FrogBot Browser MCP server to your agent's configuration. The endpoint is:
 
 ```text
 https://app.frogbot.ai/api/mcp/browser
@@ -68,7 +68,7 @@ https://app.frogbot.ai/api/mcp/browser
 
 </CodeGroup>
 
-Replace `YOUR_API_KEY` with your Frogbot API key from [Account > API Keys](https://app.frogbot.ai).
+Replace `YOUR_API_KEY` with your FrogBot API key from [Account > API Keys](https://app.frogbot.ai).
 
 ---
 
@@ -77,7 +77,7 @@ Replace `YOUR_API_KEY` with your Frogbot API key from [Account > API Keys](https
 When an agent calls a browser tool:
 
 1. The MCP server creates a **session** tied to the agent's connection
-2. The Frogbot extension opens a **"FrogBot Agent" tab group** in your Chrome window
+2. The FrogBot extension opens a **"FrogBot Agent" tab group** in your Chrome window
 3. All browser actions (navigation, clicks, typing) happen inside that tab group
 4. The tab group stays open so you can inspect results after the agent finishes
 
@@ -119,10 +119,10 @@ Each agent connection gets its own isolated tab group. Multiple agents can run s
 
 **"Browser extension not connected"**
 
-The Frogbot Chrome extension isn't connected. Make sure:
+The FrogBot Chrome extension isn't connected. Make sure:
 - Chrome is open
-- The Frogbot extension is installed
-- You're logged in to Frogbot in the extension
+- The FrogBot extension is installed
+- You're logged in to FrogBot in the extension
 
 **"Tool timed out"**
 

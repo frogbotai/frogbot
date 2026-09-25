@@ -1,6 +1,6 @@
 import { lexicalEditor } from '@frogbotai/richtext-lexical';
 import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical';
-import type { CollectionConfig, FrogbotConfig } from 'frogbot';
+import type { CollectionConfig, FrogBotConfig } from 'frogbot';
 import { expectTypeOf } from 'vitest';
 
 const content: SerializedEditorState = {
@@ -22,7 +22,7 @@ const Articles: CollectionConfig = {
 const config = {
   collections: [Articles],
   editor: lexicalEditor(),
-} satisfies Pick<FrogbotConfig, 'collections' | 'editor'>;
+} satisfies Pick<FrogBotConfig, 'collections' | 'editor'>;
 
 expectTypeOf(content.root.children).toBeArray();
 expectTypeOf(config.editor).toBeFunction();

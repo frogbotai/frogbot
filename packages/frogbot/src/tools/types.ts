@@ -1,17 +1,17 @@
 import type { z } from 'zod';
 
-import type { FrogbotComponent } from '../admin/types.js';
-import type { Frogbot } from '../frogbot.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotComponent } from '../admin/types.js';
+import type { FrogBot } from '../frogbot.js';
+import type { FrogBotRequest } from '../types/request.js';
 
 export type ToolCtx = {
-  req: FrogbotRequest;
-  frogbot: Frogbot;
+  req: FrogBotRequest;
+  frogbot: FrogBot;
   agent: { slug: string; runId: string; chatId?: number | string };
 };
 
 export type Tool<TSchema extends z.ZodType = z.ZodType, TResult = unknown> = {
-  component?: FrogbotComponent;
+  component?: FrogBotComponent;
   slug: string;
   description: string;
   inputSchema: TSchema;

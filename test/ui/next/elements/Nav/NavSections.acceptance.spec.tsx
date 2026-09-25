@@ -15,7 +15,7 @@ vi.mock('@frogbotai/next/client', () => ({
 }));
 
 vi.mock('frogbot', () => ({
-  getCachedFrogbot: () => ({
+  getCachedFrogBot: () => ({
     config: { chat: { enabled: true, chatsSlug: 'custom-chats' } },
   }),
 }));

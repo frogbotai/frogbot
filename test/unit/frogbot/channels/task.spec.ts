@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { resolveChannelTask } from '../../../../packages/frogbot/src/channels/task.js';
-import { registerFrogbotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
+import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
 
 describe('channel jobs', () => {
   it('fails instead of completing work without its runtime or host', async () => {
@@ -14,7 +14,7 @@ describe('channel jobs', () => {
       'initialized channel host',
     );
 
-    registerFrogbotInstance(payload, {} as never);
+    registerFrogBotInstance(payload, {} as never);
 
     await expect(task.handler({ input: {}, req: { payload } } as never)).rejects.toThrow(
       'initialized channel host',

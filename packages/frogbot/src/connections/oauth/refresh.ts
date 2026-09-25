@@ -2,7 +2,7 @@ import { setTimeout } from 'node:timers/promises';
 
 import { KVLockContentionError } from '../../kv/errors.js';
 import type { PieceInstance } from '../../pieces/types.js';
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 import type { ConnectionOwner, ConnectionStore, ConnectionStoredValue } from '../store.js';
 import { OAuthError } from './error.js';
 import { oauthAuth, oauthTokenMetadata, parseOAuthTokens, refreshOAuthTokens } from './tokens.js';
@@ -16,7 +16,7 @@ export async function refreshOAuthConnection({
   store: ConnectionStore;
   owner: ConnectionOwner;
   piece: PieceInstance;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 }): Promise<ConnectionStoredValue | undefined> {
   const deadline = Date.now() + 30_000;
   for (;;) {

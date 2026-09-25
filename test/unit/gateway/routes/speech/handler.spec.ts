@@ -25,7 +25,7 @@ describe('speechRoute', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         model: 'openai/tts-1',
-        input: 'Hello from Frogbot',
+        input: 'Hello from FrogBot',
         voice: 'alloy',
         response_format: 'wav',
       }),
@@ -36,7 +36,7 @@ describe('speechRoute', () => {
     expect(new Uint8Array(await res.arrayBuffer())).toEqual(audio);
     expect(doGenerate).toHaveBeenCalledWith(
       expect.objectContaining({
-        text: 'Hello from Frogbot',
+        text: 'Hello from FrogBot',
         voice: 'alloy',
         outputFormat: 'wav',
       }),

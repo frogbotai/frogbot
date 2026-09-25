@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { FrogbotRESTClient } from '../__helpers/shared/FrogbotRESTClient';
+import { FrogBotRESTClient } from '../__helpers/shared/FrogBotRESTClient';
 import { terminateProcess } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
@@ -45,7 +45,7 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
   const fixtureDir = join(repoRoot, 'test', 'e2e', 'fixtures', 'tool-agent');
   const tempRoot = join(repoRoot, '.idea', 'tmp');
   const port = 3989;
-  const client = new FrogbotRESTClient(`http://localhost:${port}`);
+  const client = new FrogBotRESTClient(`http://localhost:${port}`);
   let server: ChildProcess;
   let dataDir: string;
   let token: string;

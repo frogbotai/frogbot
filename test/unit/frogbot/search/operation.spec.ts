@@ -15,7 +15,7 @@ import {
   assertSearchCapability,
   withSearchRuntime,
 } from '../../../../packages/frogbot/src/search/runtime.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { index, searchFixture } from './fixture.js';
 
 const searchCollections = [{ slug: 'articles', search: { content: index } }];
@@ -107,7 +107,7 @@ describe('search operation boundaries', () => {
   });
 
   it('evaluates collection read access using the real request and combines visibility filters', async () => {
-    const read = vi.fn(({ req }: { req: FrogbotRequest }) => ({
+    const read = vi.fn(({ req }: { req: FrogBotRequest }) => ({
       tenant: { equals: req.user?.id },
     }));
     const { collection, req } = searchFixture({ read });
@@ -247,7 +247,8 @@ describe('search hydration', () => {
     expect(search).toHaveBeenCalledWith(
       expect.objectContaining({ mode: 'lexical', query: { text: 'hello' }, limit: 5 }),
     );
-    expect(find).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+    expect(find).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
         collection: 'articles',
         where: {
           and: [
@@ -261,7 +262,8 @@ describe('search hydration', () => {
         draft: false,
         overrideAccess: false,
         select: { title: true },
-      }));
+      }),
+    );
   });
 
   it('skips ranked rows the read no longer returns without exposing their scores', async () => {

@@ -73,7 +73,7 @@ There is no `req`; clients are memoized per credential.
 | `input`   | inferred input   | Validated action input.                                      |
 | `client`  | client           | Calls the vendor without exposing auth.                      |
 | `options` | inferred options | Factory defaults needed by the action.                       |
-| `req`     | `FrogbotRequest` | Acting user, local API, files, KV, context, and transaction. |
+| `req`     | `FrogBotRequest` | Acting user, local API, files, KV, context, and transaction. |
 
 ### `action.options[key]`
 
@@ -82,7 +82,7 @@ There is no `req`; clients are memoized per credential.
 | `input`   | partial inferred input | Supports dependent fields.           |
 | `client`  | client                 | Lists vendor choices.                |
 | `options` | inferred options       | Supplies factory defaults.           |
-| `req`     | `FrogbotRequest`       | Supplies user and local API context. |
+| `req`     | `FrogBotRequest`       | Supplies user and local API context. |
 
 ### `trigger.run` for `webhook` and `app`
 
@@ -91,7 +91,7 @@ There is no `req`; clients are memoized per credential.
 | `input`   | inferred input   | Filters the delivery for this subscription. |
 | `client`  | client           | Fetches missing event details.              |
 | `options` | inferred options | Supplies factory defaults.                  |
-| `req`     | `FrogbotRequest` | Carries the parsed delivery in `req.data`.  |
+| `req`     | `FrogBotRequest` | Carries the parsed delivery in `req.data`.  |
 
 Return an array of emitted events.
 
@@ -109,7 +109,7 @@ Webhook trigger runs also receive the state returned by `trigger.onEnable`:
 | `cursor`  | optional cursor  | Continues from the previous poll.        |
 | `client`  | client           | Performs the poll.                       |
 | `options` | inferred options | Supplies factory defaults.               |
-| `req`     | `FrogbotRequest` | Synthetic request with local API access. |
+| `req`     | `FrogBotRequest` | Synthetic request with local API access. |
 
 Return `{ events, cursor }`.
 
@@ -121,7 +121,7 @@ Return `{ events, cursor }`.
 | `webhookUrl` | `string`         | Per-subscription URL registered with the vendor. |
 | `client`     | client           | Registers the webhook.                           |
 | `options`    | inferred options | Supplies factory defaults.                       |
-| `req`        | `FrogbotRequest` | Synthetic request with local API access.         |
+| `req`        | `FrogBotRequest` | Synthetic request with local API access.         |
 
 Return all state needed by `onDisable`.
 
@@ -133,7 +133,7 @@ Return all state needed by `onDisable`.
 | `state`   | enable state     | Identifies the registered webhook.       |
 | `client`  | client           | Removes the webhook.                     |
 | `options` | inferred options | Supplies factory defaults.               |
-| `req`     | `FrogbotRequest` | Synthetic request with local API access. |
+| `req`     | `FrogBotRequest` | Synthetic request with local API access. |
 
 ### `trigger.renew.run`
 
@@ -143,14 +143,14 @@ Uses the `trigger.onEnable` arguments plus the previous `state`, and returns rep
 
 | Argument  | Type             | Why it earns its keep                                     |
 | --------- | ---------------- | --------------------------------------------------------- |
-| `req`     | `FrogbotRequest` | Provides raw body and headers for signature verification. |
+| `req`     | `FrogBotRequest` | Provides raw body and headers for signature verification. |
 | `options` | inferred options | Holds signing configuration outside user auth.            |
 
 ### `webhook.handshake`
 
 | Argument  | Type             | Why it earns its keep                |
 | --------- | ---------------- | ------------------------------------ |
-| `req`     | `FrogbotRequest` | Carries the challenge in `req.data`. |
+| `req`     | `FrogBotRequest` | Carries the challenge in `req.data`. |
 | `options` | inferred options | Supports signed challenges.          |
 
 Return a response for a handled challenge or `null`.
@@ -159,7 +159,7 @@ Return a response for a handled challenge or `null`.
 
 | Argument | Type             | Why it earns its keep                   |
 | -------- | ---------------- | --------------------------------------- |
-| `req`    | `FrogbotRequest` | Carries the vendor event in `req.data`. |
+| `req`    | `FrogBotRequest` | Carries the vendor event in `req.data`. |
 
 Return `{ event }` for app-trigger routing.
 
@@ -170,7 +170,7 @@ Return `{ event }` for app-trigger routing.
 | `message` | `SendEmailOptions` | Outgoing message.                               |
 | `client`  | client             | Sends the message.                              |
 | `options` | inferred options   | Supplies sender and reply defaults.             |
-| `req`     | `FrogbotRequest`   | Carries the caller or a synthetic core request. |
+| `req`     | `FrogBotRequest`   | Carries the caller or a synthetic core request. |
 
 ### `channel.adapter`
 
@@ -187,7 +187,7 @@ There is no `req`; the adapter is built once at boot.
 | -------- | ---------------- | ------------------------------------------------- |
 | `author` | `ChatSdkAuthor`  | Identifies the inbound platform author.           |
 | `client` | client           | Looks up the author's account details.            |
-| `req`    | `FrogbotRequest` | Finds the local user and carries channel context. |
+| `req`    | `FrogBotRequest` | Finds the local user and carries channel context. |
 
 Return the matched user with its `collection`, or `null` when the platform identity has no local match. Propagate vendor lookup failures rather than treating them as anonymous access.
 
@@ -203,14 +203,14 @@ Return the matched user with its `collection`, or `null` when the platform ident
 | -------- | ---------------- | ----------------------------------------------- |
 | `tokens` | `OAuthTokens`    | May contain account identity.                   |
 | `client` | client           | Fetches identity when tokens do not contain it. |
-| `req`    | `FrogbotRequest` | Identifies the linking user.                    |
+| `req`    | `FrogBotRequest` | Identifies the linking user.                    |
 
 ### `oauth.refresh`
 
 | Argument | Type             | Why it earns its keep                              |
 | -------- | ---------------- | -------------------------------------------------- |
 | `tokens` | `OAuthTokens`    | Supplies the current refresh token and token set.  |
-| `req`    | `FrogbotRequest` | Synthetic request with local configuration access. |
+| `req`    | `FrogBotRequest` | Synthetic request with local configuration access. |
 
 ## Contract mapping
 

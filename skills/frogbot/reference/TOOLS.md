@@ -40,7 +40,7 @@ export const getProjectStatus: Tool<typeof inputSchema, { status: string }> = {
 | Property  | Value                                                    |
 | --------- | -------------------------------------------------------- |
 | `frogbot` | The initialized FrogBot instance                         |
-| `req`     | The current `FrogbotRequest`                             |
+| `req`     | The current `FrogBotRequest`                             |
 | `agent`   | The current agent `slug`, `runId`, and optional `chatId` |
 
 Collection slugs and returned document fields are typed from the generated `frogbot-types.ts` file. Before type generation, document fields are `unknown`; the status guard keeps this example usable in that context too. The `projects` collection must define a text `status` field.
@@ -52,10 +52,10 @@ For agent-supplied IDs and queries, pass both `req` and `overrideAccess: false` 
 Root tools are inherited by agents by default:
 
 ```ts
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 
-const tools: FrogbotConfig['tools'] = [getProjectStatus];
-const agents: FrogbotConfig['agents'] = [assistant];
+const tools: FrogBotConfig['tools'] = [getProjectStatus];
+const agents: FrogBotConfig['agents'] = [assistant];
 ```
 
 Attach a tool only to one agent with `AgentConfig.tools`:
@@ -77,10 +77,10 @@ Set `inheritTools: false` when an agent must not receive root tools.
 The blank template registers the public todo tool set from `frogbot/tools`:
 
 ```ts
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 import { todoTools } from 'frogbot/tools';
 
-const tools: FrogbotConfig['tools'] = [...todoTools];
+const tools: FrogBotConfig['tools'] = [...todoTools];
 ```
 
 `todoTools` contains `write_todos` and `read_todos`. They require chat persistence and a current chat.

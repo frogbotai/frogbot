@@ -1,12 +1,12 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 
 export async function verifyGithubWebhook({
   req,
   options,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   options: { webhookSecret?: string };
 }) {
   if (req.routeParams?.subscription) return true;
@@ -38,6 +38,6 @@ export async function verifyGithubWebhook({
   );
 }
 
-export function parseGithubWebhook(req: FrogbotRequest) {
+export function parseGithubWebhook(req: FrogBotRequest) {
   return { event: req.headers.get('x-github-event') ?? '' };
 }

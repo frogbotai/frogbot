@@ -5,7 +5,7 @@ import type { UploadConfig } from 'payload';
 import { getFileByPath } from 'payload';
 
 import { AgentServiceError } from '../agents/service.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 
 type FileDocument = {
   id: string | number;
@@ -27,7 +27,7 @@ export async function resolveChatAttachments({
   messages,
   chatId,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   messages: UIMessage[];
   chatId?: string | number;
 }): Promise<UIMessage[]> {
@@ -47,7 +47,7 @@ export async function resolveChatAttachments({
   );
 }
 
-function assetsCollection(req: FrogbotRequest): string {
+function assetsCollection(req: FrogBotRequest): string {
   const chat = req.frogbot.config.chat;
 
   if (!chat.enabled) {
@@ -63,7 +63,7 @@ async function resolvePart({
   collection,
   chatId,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   part: unknown;
   collection: string;
   chatId?: string | number;
@@ -113,7 +113,7 @@ async function findFile({
   id,
   collection,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   id: string | number;
   collection: string;
 }): Promise<FileDocument> {
@@ -140,7 +140,7 @@ async function readFile({
   filename,
   collection: slug,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   doc: FileDocument;
   filename: string;
   collection: string;

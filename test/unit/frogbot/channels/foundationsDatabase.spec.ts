@@ -12,13 +12,13 @@ import { CHANNEL_TASK_SLUG } from '../../../../packages/frogbot/src/channels/hos
 import { createChannelStateAdapter } from '../../../../packages/frogbot/src/channels/state.js';
 import { resolveChannelTask } from '../../../../packages/frogbot/src/channels/task.js';
 import { buildConfig } from '../../../../packages/frogbot/src/config/build.js';
-import { type Frogbot, initFrogbotFromPayload } from '../../../../packages/frogbot/src/frogbot.js';
+import { type FrogBot, initFrogBotFromPayload } from '../../../../packages/frogbot/src/frogbot.js';
 import { createSlackAdapter } from '../../../../packages/pieces/piece-slack/node_modules/@chat-adapter/slack/dist/index.js';
 import { channelFixture } from './helpers.js';
 
 describe('channel foundations with SQLite', () => {
   let directory: string;
-  let frogbot: Frogbot;
+  let frogbot: FrogBot;
 
   beforeAll(async () => {
     directory = await mkdtemp(join(tmpdir(), 'frogbot-channel-foundations-'));
@@ -39,7 +39,7 @@ describe('channel foundations with SQLite', () => {
       disableOnInit: true,
     });
 
-    frogbot = await initFrogbotFromPayload(payload, config, { disableOnInit: true });
+    frogbot = await initFrogBotFromPayload(payload, config, { disableOnInit: true });
   }, 30_000);
 
   afterAll(async () => {

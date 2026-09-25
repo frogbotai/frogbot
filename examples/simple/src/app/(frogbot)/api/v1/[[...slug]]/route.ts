@@ -1,8 +1,8 @@
 import config from '@frogbot-config';
-import { createGatewayHandler, getFrogbot } from 'frogbot';
+import { createGatewayHandler, getFrogBot } from 'frogbot';
 
 const handler = async (request: Request): Promise<Response> => {
-  const frogbot = await getFrogbot({ config });
+  const frogbot = await getFrogBot({ config });
   return createGatewayHandler(frogbot)(request);
 };
 

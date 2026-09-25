@@ -112,11 +112,11 @@ import {
   RecentsSectionClient,
   type RecentsSectionClientProps
 } from '@frogbotai/next/client'
-import { getCachedFrogbot } from 'frogbot'
+import { getCachedFrogBot } from 'frogbot'
 import { formatAdminURL } from 'payload/shared'
 
 export async function WorkspaceRecents({ payload, req }: RecentsSectionProps) {
-  const chat = getCachedFrogbot()?.config.chat
+  const chat = getCachedFrogBot()?.config.chat
   const chatsSlug = chat?.enabled ? chat.chatsSlug : ''
   let recents: RecentsSectionClientProps['recents'] = []
   let collectionPath = ''
@@ -167,7 +167,7 @@ admin: {
 }
 ```
 
-Component paths in `navSections`, navigation icons, and admin component slots use `FrogbotComponent`. This type accepts either an import-map path string or a component definition and is exported from `frogbot` for reusable configuration types.
+Component paths in `navSections`, navigation icons, and admin component slots use `FrogBotComponent`. This type accepts either an import-map path string or a component definition and is exported from `frogbot` for reusable configuration types.
 
 Chat-wide component slots are grouped under `admin.components.chat`. Use `Chat` to replace the canonical conversation surface, or `UserMessageActions` and `AssistantMessageActions` to customize only role-specific controls. See [Chat persistence](/chat/overview#customize-admin-chat-components).
 

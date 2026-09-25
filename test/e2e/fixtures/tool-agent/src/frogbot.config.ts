@@ -1,5 +1,5 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
 
 import { toolDemo } from './agents/toolDemo';
@@ -8,7 +8,7 @@ import { Users } from './collections/users';
 
 const model = process.env.E2E_ZEN_MODEL ?? 'zen/big-pickle';
 
-const config: FrogbotConfig = {
+const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET ?? 'e2e-secret',
   db: sqliteAdapter({
     client: { url: process.env.DATABASE_URL ?? 'file:./frogbot.db' },

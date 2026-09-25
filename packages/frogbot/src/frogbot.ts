@@ -1,4 +1,4 @@
-// The Frogbot class — headless runtime singleton.
+// The FrogBot class — headless runtime singleton.
 //
 // Owns a private Payload instance. Exposes CRUD, auth, versions, and
 // utilities. Framework-agnostic: works in scripts, tests, serverless,
@@ -68,18 +68,18 @@ import type {
   UpdateManyArgs,
 } from './collections/config/types.js';
 import { resolveConfigDir } from './config/resolveConfigPath.js';
-import type { FrogbotSanitizedConfig } from './config/sanitized.js';
+import type { FrogBotSanitizedConfig } from './config/sanitized.js';
 import { Connections } from './connections/api.js';
 import {
-  ensureFrogbotInstance,
-  refreshFrogbotConfig,
-  registerFrogbotInstance,
+  ensureFrogBotInstance,
+  refreshFrogBotConfig,
+  registerFrogBotInstance,
 } from './instanceRegistry.js';
 import type { Jobs } from './jobs/types.js';
 import { createKV } from './kv/index.js';
 import type { KV } from './kv/types.js';
-import type { FrogbotLocalAPI } from './localAPI.js';
-import { createFrogbotLocalAPI } from './localAPI.js';
+import type { FrogBotLocalAPI } from './localAPI.js';
+import { createFrogBotLocalAPI } from './localAPI.js';
 import { searchOperation } from './search/operation.js';
 import type { SearchOptions, SearchResult } from './search/types.js';
 import { encodeTrainingData } from './training/encodeTrainingData.js';
@@ -88,7 +88,7 @@ import type { ReadTrainingDataOptions } from './training/types.js';
 import { TriggerSubscriptions } from './triggers/subscriptions.js';
 import { writeGeneratedTypes } from './typegen/index.js';
 import type { CollectionSlug, TypedCollection } from './types/generated.js';
-import type { FrogbotRequest } from './types/request.js';
+import type { FrogBotRequest } from './types/request.js';
 import type {
   CountVersionsArgs,
   FindVersionByIDArgs,
@@ -112,33 +112,33 @@ export interface Logger {
 }
 
 export type InitOptions = {
-  config: Promise<FrogbotSanitizedConfig> | FrogbotSanitizedConfig;
+  config: Promise<FrogBotSanitizedConfig> | FrogBotSanitizedConfig;
   disableDBConnect?: boolean;
   disableOnInit?: boolean;
   startChannelGateway?: boolean;
-  onInit?: (frogbot: Frogbot) => Promise<void> | void;
+  onInit?: (frogbot: FrogBot) => Promise<void> | void;
 };
 
-type FrogbotCustom = {
+type FrogBotCustom = {
   auth?: boolean;
 };
 
 const initFromPayload = Symbol();
 
-export function initFrogbotFromPayload(
+export function initFrogBotFromPayload(
   payload: Payload,
-  config: FrogbotSanitizedConfig,
+  config: FrogBotSanitizedConfig,
   options: Pick<InitOptions, 'disableOnInit' | 'onInit' | 'startChannelGateway'> = {},
-): Promise<Frogbot> {
-  return new Frogbot()[initFromPayload](payload, config, options);
+): Promise<FrogBot> {
+  return new FrogBot()[initFromPayload](payload, config, options);
 }
 
-export class Frogbot {
+export class FrogBot {
   private payload!: Payload;
-  private local!: FrogbotLocalAPI;
+  private local!: FrogBotLocalAPI;
   private keyValue!: KV;
 
-  config!: FrogbotSanitizedConfig;
+  config!: FrogBotSanitizedConfig;
   collections!: Record<string, Collection>;
   logger!: Logger;
   secret!: string;
@@ -167,7 +167,7 @@ export class Frogbot {
 
   // ── Lifecycle ───────────────────────────────────────────────────────────
 
-  async init(options: InitOptions): Promise<Frogbot> {
+  async init(options: InitOptions): Promise<FrogBot> {
     const config = await options.config;
     const payloadConfig = config._internal.payloadConfig;
     const payload = await getPayload({
@@ -175,7 +175,7 @@ export class Frogbot {
       disableDBConnect: options.disableDBConnect,
       disableOnInit: true,
     });
-    return ensureFrogbotInstance(
+    return ensureFrogBotInstance(
       payload,
       () => this[initFromPayload](payload, config, options),
       config,
@@ -184,14 +184,14 @@ export class Frogbot {
 
   async [initFromPayload](
     payload: Payload,
-    config: FrogbotSanitizedConfig,
+    config: FrogBotSanitizedConfig,
     options: Pick<InitOptions, 'disableOnInit' | 'onInit' | 'startChannelGateway'> = {},
-  ): Promise<Frogbot> {
+  ): Promise<FrogBot> {
     this.config = config;
     this.payload = payload;
     this.keyValue = createKV({ adapter: payload.kv });
-    this.local = createFrogbotLocalAPI(this.payload);
-    registerFrogbotInstance(this.payload, this, config);
+    this.local = createFrogBotLocalAPI(this.payload);
+    registerFrogBotInstance(this.payload, this, config);
 
     this.secret = this.payload.secret;
     this.logger = this.payload.logger;
@@ -201,7 +201,7 @@ export class Frogbot {
           'Pass an `email` adapter to enable delivery.',
       );
     }
-    await this[refreshFrogbotConfig](config);
+    await this[refreshFrogBotConfig](config);
 
     await initializeChannelHost(this, options.startChannelGateway !== false);
 
@@ -252,7 +252,7 @@ export class Frogbot {
     return this;
   }
 
-  async [refreshFrogbotConfig](config: FrogbotSanitizedConfig): Promise<void> {
+  async [refreshFrogBotConfig](config: FrogBotSanitizedConfig): Promise<void> {
     this.config = config;
     this.connections = new Connections(this, config.connections);
     this.triggers ??= new TriggerSubscriptions(this);
@@ -290,8 +290,8 @@ export class Frogbot {
     });
   }
 
-  async createRequest(req?: Partial<FrogbotRequest>): Promise<FrogbotRequest> {
-    if (req?.frogbot) return req as FrogbotRequest;
+  async createRequest(req?: Partial<FrogBotRequest>): Promise<FrogBotRequest> {
+    if (req?.frogbot) return req as FrogBotRequest;
     type LocalRequest = NonNullable<Parameters<typeof createLocalReq>[0]['req']>;
     const localReq = await createLocalReq({ req: (req ?? {}) as LocalRequest }, this.payload);
     return Object.assign(localReq, { frogbot: this });
@@ -536,7 +536,7 @@ export class Frogbot {
   }
 
   private toCollection(c: { slug: string; custom?: unknown }): Collection {
-    const custom = (c.custom as { frogbot?: FrogbotCustom } | undefined) ?? {};
+    const custom = (c.custom as { frogbot?: FrogBotCustom } | undefined) ?? {};
     const fb = custom.frogbot ?? {};
     const search = this.config.collections.find(({ slug }) => slug === c.slug)?.search;
 

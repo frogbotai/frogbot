@@ -149,7 +149,7 @@ if (valueIsValueWithRelation(value)) {
 Keep `visit` above in a local `visitFields.ts` module. This example reaches fields through both tab shapes and through inline and referenced blocks:
 
 ```ts
-import type { Block, FrogbotConfig } from 'frogbot';
+import type { Block, FrogBotConfig } from 'frogbot';
 
 import { visit } from './visitFields';
 
@@ -193,7 +193,7 @@ export const schema = {
       ],
     },
   ],
-} satisfies Pick<FrogbotConfig, 'blocks' | 'collections'>;
+} satisfies Pick<FrogBotConfig, 'blocks' | 'collections'>;
 
 export const fieldNames: string[] = [];
 

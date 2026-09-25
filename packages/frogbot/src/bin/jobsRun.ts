@@ -2,7 +2,7 @@ import { Cron } from 'croner';
 import type { Payload, PayloadRequest } from 'payload';
 
 import { loadConfig } from '../config/load.js';
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 import type { JobsRunOptions } from './jobsRunOptions.js';
 import { jobsRunUsage, parseJobsRunOptions } from './jobsRunOptions.js';
 
@@ -25,7 +25,7 @@ export async function jobsRun(args: string[]): Promise<void> {
   }
 
   let payload: Payload | undefined;
-  let frogbot: Frogbot;
+  let frogbot: FrogBot;
 
   let cron: Cron | undefined;
   let activeTick: Promise<void> | undefined;
@@ -95,8 +95,8 @@ export async function jobsRun(args: string[]): Promise<void> {
       payloadConfig.jobs = { ...payloadConfig.jobs, autoRun: [] };
       payloadConfig.logger = 'sync';
 
-      const [{ BasePayload }, { initFrogbotFromPayload }, { seedFrogbotCache }] = await Promise.all(
-        [import('payload'), import('../frogbot.js'), import('../getFrogbot.js')],
+      const [{ BasePayload }, { initFrogBotFromPayload }, { seedFrogBotCache }] = await Promise.all(
+        [import('payload'), import('../frogbot.js'), import('../getFrogBot.js')],
       );
 
       if (!stopping) {
@@ -107,11 +107,11 @@ export async function jobsRun(args: string[]): Promise<void> {
         await runtime.init({ config: payloadConfig, cron: false, disableOnInit: true });
 
         if (!stopping) {
-          frogbot = await initFrogbotFromPayload(runtime, config, {
+          frogbot = await initFrogBotFromPayload(runtime, config, {
             startChannelGateway: false,
           });
 
-          seedFrogbotCache(frogbot, config);
+          seedFrogBotCache(frogbot, config);
         }
       }
     }

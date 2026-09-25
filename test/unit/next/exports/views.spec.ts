@@ -1,10 +1,10 @@
-import type { FrogbotSanitizedConfig } from 'frogbot';
+import type { FrogBotSanitizedConfig } from 'frogbot';
 import { type ComponentProps, createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  getCachedFrogbot: vi.fn(() => ({
+  getCachedFrogBot: vi.fn(() => ({
     config: {
       agents: [{ slug: 'general' }],
       chat: {
@@ -91,10 +91,10 @@ vi.mock('next/navigation', () => ({
 vi.mock('../../../../packages/next/src/views/controls/ViewControls.client.js', () => ({
   ViewControls: mocks.ViewControls,
 }));
-vi.mock('../../../../packages/next/src/elements/Nav/index.js', () => ({ FrogbotNav: () => null }));
+vi.mock('../../../../packages/next/src/elements/Nav/index.js', () => ({ FrogBotNav: () => null }));
 vi.mock('frogbot', async (importOriginal) => ({
   ...(await importOriginal<typeof import('frogbot')>()),
-  getCachedFrogbot: mocks.getCachedFrogbot,
+  getCachedFrogBot: mocks.getCachedFrogBot,
   messagesToUIMessages: (messages: Array<Record<string, unknown>>) =>
     messages.map(({ id, role, parts, metadata }) => ({
       id: String(id),
@@ -119,7 +119,7 @@ function makeConfig(admin?: Record<string, unknown>) {
   const payloadConfig = { admin, collections: [] };
   const config = {
     _internal: { payloadConfig: Promise.resolve(payloadConfig) },
-  } as unknown as FrogbotSanitizedConfig;
+  } as unknown as FrogBotSanitizedConfig;
   return { config, payloadConfig };
 }
 

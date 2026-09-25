@@ -13,17 +13,17 @@ import { checkSessionLease } from '../../packages/frogbot/src/auth/operation.js'
 import { issueSession } from '../../packages/frogbot/src/auth/session.js';
 import { buildConfig } from '../../packages/frogbot/src/config/build.js';
 import { getPayloadConfig } from '../../packages/frogbot/src/config/getPayloadConfig.js';
-import { Frogbot } from '../../packages/frogbot/src/frogbot.js';
+import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 import * as locks from '../../packages/frogbot/src/kv/lock.js';
 import { definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogbotRequest } from '../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../packages/frogbot/src/types/request.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
 
 describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () => {
-  let frogbot: Frogbot;
+  let frogbot: FrogBot;
   let payload: Payload;
   let userId: string | number;
-  let req: FrogbotRequest;
+  let req: FrogBotRequest;
   let sequence = 0;
   let priorToken: string;
   let databaseDir: string;
@@ -172,7 +172,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
         { slug: 'customers', auth: { signIn: [identity] }, fields: [] },
       ],
     });
-    frogbot = await new Frogbot().init({ config, disableOnInit: true });
+    frogbot = await new FrogBot().init({ config, disableOnInit: true });
     payload = await getPayload({ config: await getPayloadConfig(config) });
     initialHooks = { ...payload.collections.members!.config.hooks };
   });
@@ -924,7 +924,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       async ({ req: hookReq }) => {
         if (hookReq.context.nested) return;
         hookReq.context.nested = true;
-        nested = await issue(hookReq as unknown as FrogbotRequest);
+        nested = await issue(hookReq as unknown as FrogBotRequest);
       },
     ];
     const result = await frogbot.login({
@@ -966,7 +966,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
       async ({ req: hookReq }) => {
         if (hookReq.context.nested) throw failure;
         hookReq.context.nested = true;
-        await expect(issue(hookReq as unknown as FrogbotRequest)).rejects.toBe(failure);
+        await expect(issue(hookReq as unknown as FrogBotRequest)).rejects.toBe(failure);
       },
     ];
     const result = await login();
@@ -985,7 +985,7 @@ describe(`session issuance [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () =>
     let detached!: ReturnType<typeof issue>;
     payload.collections.members!.config.hooks.afterLogin = [
       ({ req: hookReq }) => {
-        const copied = { ...hookReq, context: { ...hookReq.context } } as unknown as FrogbotRequest;
+        const copied = { ...hookReq, context: { ...hookReq.context } } as unknown as FrogBotRequest;
         detached = resumed.then(() => issue(copied));
       },
     ];

@@ -24,7 +24,7 @@ vi.mock('@payloadcms/ui', () => ({
 }));
 
 vi.mock('frogbot', () => ({
-  getCachedFrogbot: () => ({
+  getCachedFrogBot: () => ({
     config: { chat: { enabled: true, chatsSlug: 'conversations', messagesSlug: 'turns' } },
   }),
 }));

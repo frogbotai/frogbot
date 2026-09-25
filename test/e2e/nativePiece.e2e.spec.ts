@@ -4,10 +4,10 @@ import { join } from 'node:path';
 
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { createResend } from '@frogbotai/piece-resend';
-import type { AgentModelId, FrogbotInstance } from 'frogbot';
+import type { AgentModelId, FrogBotInstance } from 'frogbot';
 import { buildConfig } from 'frogbot';
 import type { PieceJSON } from 'frogbot/pieces';
-import { Frogbot } from 'frogbot/test';
+import { FrogBot } from 'frogbot/test';
 import { Hono } from 'hono';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -38,7 +38,7 @@ const emailInput = (subject: string) => ({
 });
 
 describe('native piece e2e — authenticated direct and agent execution', () => {
-  let frogbot: FrogbotInstance;
+  let frogbot: FrogBotInstance;
   let providers: Awaited<ReturnType<typeof startPieceProviders>>;
   let server: Awaited<ReturnType<typeof startPieceServer>>;
   let dataDir: string;
@@ -246,7 +246,7 @@ describe('native piece e2e — authenticated direct and agent execution', () => 
         },
       ],
     });
-    frogbot = await new Frogbot().init({ config });
+    frogbot = await new FrogBot().init({ config });
     const app = new Hono();
     app.all('/api/*', (context) => frogbot.handleRequest(context.req.raw.clone()));
     server = await startPieceServer(app);

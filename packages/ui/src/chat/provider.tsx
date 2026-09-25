@@ -1,6 +1,6 @@
 'use client';
 
-import { type AgentManifest, createFrogbotSDK, type FrogBotSDK } from '@frogbotai/sdk';
+import { type AgentManifest, createFrogBotSDK, type FrogBotSDK } from '@frogbotai/sdk';
 import type { ManifestResponse } from 'frogbot';
 import { createContext, type ReactNode, use, useEffect, useMemo, useState } from 'react';
 
@@ -38,7 +38,7 @@ export function ChatProvider({
 }) {
   const sdk = useMemo(
     () =>
-      createFrogbotSDK({
+      createFrogBotSDK({
         baseURL: adapter.apiBase ?? '/api',
         fetch: async (input, init) => {
           const headers = new Headers(

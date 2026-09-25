@@ -2,8 +2,8 @@ import type {
   Access,
   CollectionConfig,
   FieldAccess,
-  FrogbotInstance,
-  FrogbotRequest,
+  FrogBotInstance,
+  FrogBotRequest,
   NumberField,
 } from 'frogbot';
 
@@ -77,8 +77,8 @@ export async function enforceUserAccess({
   frogbot,
   user,
 }: {
-  frogbot: FrogbotInstance;
-  user: FrogbotRequest['user'];
+  frogbot: FrogBotInstance;
+  user: FrogBotRequest['user'];
 }) {
   const result = await frogbot.find({
     collection: 'posts',
@@ -89,7 +89,7 @@ export async function enforceUserAccess({
   return result;
 }
 
-export async function enforceRequestAccess(req: FrogbotRequest) {
+export async function enforceRequestAccess(req: FrogBotRequest) {
   const result = await req.frogbot.find({
     collection: 'posts',
     req,

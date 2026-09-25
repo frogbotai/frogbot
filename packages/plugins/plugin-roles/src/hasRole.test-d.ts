@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 
 import { allow, hasRole } from './index.js';
 
@@ -8,7 +8,7 @@ declare module 'frogbot' {
   }
 }
 
-declare const req: FrogbotRequest;
+declare const req: FrogBotRequest;
 
 hasRole(req, 'admin');
 allow('member');

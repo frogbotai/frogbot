@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
@@ -90,7 +90,7 @@ function request() {
       config: { pieces: { instances: [piece] } },
       connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key: piece }) },
     },
-  } as unknown as FrogbotRequest;
+  } as unknown as FrogBotRequest;
 
   return { piece, req };
 }

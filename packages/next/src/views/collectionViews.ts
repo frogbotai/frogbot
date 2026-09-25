@@ -1,4 +1,4 @@
-import type { CollectionView, FrogbotRequest } from 'frogbot';
+import type { CollectionView, FrogBotRequest } from 'frogbot';
 import type { AdminViewServerProps } from 'payload';
 
 export type RuntimeCollectionView = CollectionView & { slug: string };
@@ -18,7 +18,7 @@ export async function resolveCollectionViews(props: AdminViewServerProps) {
     runtime.map(
       async (view) =>
         !view.access ||
-        (await view.access({ req: props.initPageResult.req as unknown as FrogbotRequest })),
+        (await view.access({ req: props.initPageResult.req as unknown as FrogBotRequest })),
     ),
   );
   const metadata = (

@@ -1,5 +1,5 @@
 import config from '@frogbot-config';
-import { getFrogbot } from 'frogbot';
+import { getFrogBot } from 'frogbot';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 
@@ -12,7 +12,7 @@ type Args = {
 
 export default async function Page({ params }: Args) {
   const { slug } = await params;
-  const frogbot = await getFrogbot({ config });
+  const frogbot = await getFrogBot({ config });
   const requestHeaders = await headers();
   const { user } = await frogbot.auth({ headers: requestHeaders });
 

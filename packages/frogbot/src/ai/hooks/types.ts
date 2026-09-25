@@ -6,11 +6,11 @@ import type {
   BeforeUpstreamHookArgs,
 } from '@frogbotai/gateway/hooks';
 
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 
 export type AIHookContext = {
-  req?: FrogbotRequest;
-  user?: FrogbotRequest['user'];
+  req?: FrogBotRequest;
+  user?: FrogBotRequest['user'];
   agent?: {
     slug: string;
     runId: string;

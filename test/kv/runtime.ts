@@ -5,19 +5,19 @@ import { fileURLToPath } from 'node:url';
 import type { MongooseAdapter } from '@frogbotai/db-mongodb';
 import type { PostgresAdapter } from '@frogbotai/db-postgres';
 import { RedisKVAdapter } from '@frogbotai/kv-redis';
-import type { FrogbotConfig, FrogbotInstance } from 'frogbot';
-import { Frogbot, resetFrogbotCache } from 'frogbot/test';
+import type { FrogBotConfig, FrogBotInstance } from 'frogbot';
+import { FrogBot, resetFrogBotCache } from 'frogbot/test';
 import type { Payload } from 'payload';
 
 import { buildTestConfig } from '../__helpers/shared/buildTestConfig.js';
 
 export type KVRuntime = {
-  frogbot: FrogbotInstance;
+  frogbot: FrogBotInstance;
   payload: Payload;
   shutdown: () => Promise<void>;
 };
 
-export function createKVRuntimeHarness({ kv }: { kv?: () => FrogbotConfig['kv'] } = {}) {
+export function createKVRuntimeHarness({ kv }: { kv?: () => FrogBotConfig['kv'] } = {}) {
   const name = `kv_${randomUUID().replaceAll('-', '')}`;
   const sqlitePath = fileURLToPath(new URL(`./${name}.db`, import.meta.url));
   const database = process.env.FROGBOT_DATABASE || 'sqlite';
@@ -26,7 +26,7 @@ export function createKVRuntimeHarness({ kv }: { kv?: () => FrogbotConfig['kv'] 
 
   async function boot(): Promise<KVRuntime> {
     const push = !initialized;
-    let db: FrogbotConfig['db'];
+    let db: FrogBotConfig['db'];
     if (database === 'sqlite') {
       const { sqliteAdapter } = await import('@frogbotai/db-sqlite');
       db = sqliteAdapter({ client: { url: `file:${sqlitePath}` }, push });
@@ -60,11 +60,11 @@ export function createKVRuntimeHarness({ kv }: { kv?: () => FrogbotConfig['kv'] 
     const cache = (globalThis as { _payload?: Map<string, unknown> })._payload;
     const previous = cache?.get('default');
     cache?.delete('default');
-    resetFrogbotCache();
+    resetFrogBotCache();
     const drop = process.env.PAYLOAD_DROP_DATABASE;
     process.env.PAYLOAD_DROP_DATABASE = push ? 'true' : 'false';
     try {
-      const frogbot = await new Frogbot().init({ config });
+      const frogbot = await new FrogBot().init({ config });
       const payload = (frogbot as unknown as { payload: KVRuntime['payload'] }).payload;
       const runtime: KVRuntime = {
         frogbot,
@@ -90,7 +90,7 @@ export function createKVRuntimeHarness({ kv }: { kv?: () => FrogbotConfig['kv'] 
       else process.env.PAYLOAD_DROP_DATABASE = drop;
       cache?.delete('default');
       if (previous !== undefined) cache?.set('default', previous);
-      resetFrogbotCache();
+      resetFrogBotCache();
     }
   }
 

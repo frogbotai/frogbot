@@ -1,4 +1,4 @@
-import type { AgentConfig, FrogbotRequest } from 'frogbot';
+import type { AgentConfig, FrogBotRequest } from 'frogbot';
 import { z } from 'zod';
 
 import {
@@ -10,7 +10,7 @@ import {
   pdf,
 } from '../pieces';
 
-const authenticated = ({ req }: { req: FrogbotRequest }) => Boolean(req.user);
+const authenticated = ({ req }: { req: FrogBotRequest }) => Boolean(req.user);
 const releaseRisk = {
   slug: 'release_risk_score',
   description: 'Scores release risk from blocker count and launch timing.',

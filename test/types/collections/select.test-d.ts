@@ -8,8 +8,8 @@ import type {
   FindByIDArgs,
   FindVersionByIDArgs,
   FindVersionsArgs,
-  FrogbotInstance,
-  FrogbotTypes,
+  FrogBotInstance,
+  FrogBotTypes,
   PaginatedDocs,
   RestoreVersionArgs,
   SelectType,
@@ -24,9 +24,9 @@ import { postsSlug } from '../../select/shared.js';
 
 type Slug = typeof postsSlug;
 
-declare const frogbot: FrogbotInstance;
+declare const frogbot: FrogBotInstance;
 
-expectTypeOf<FrogbotTypes['collections']>().toEqualTypeOf<Config['collections']>();
+expectTypeOf<FrogBotTypes['collections']>().toEqualTypeOf<Config['collections']>();
 expectTypeOf<SelectPost['title']>().toEqualTypeOf<string>();
 expectTypeOf<SelectPost['owner']>().not.toBeAny();
 

@@ -1,10 +1,10 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 
 import type { MicrosoftTeamsClient } from './client.js';
 import { signal } from './client.js';
 import { channel, chat, member } from './schemas.js';
 
-type Args = { client: MicrosoftTeamsClient; input: Record<string, unknown>; req: FrogbotRequest };
+type Args = { client: MicrosoftTeamsClient; input: Record<string, unknown>; req: FrogBotRequest };
 
 export async function teams({ client, req }: Args) {
   const items = await client.list('/v1.0/me/joinedTeams', channel, { signal: signal(req) });

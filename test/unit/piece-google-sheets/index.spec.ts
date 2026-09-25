@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
@@ -79,7 +79,7 @@ async function fixture({
       },
       connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key }) },
     },
-  } as unknown as FrogbotRequest;
+  } as unknown as FrogBotRequest;
   const client = await piece.client({ req });
   const rows: unknown[][] = [
     ['Name', 'Count', ''],

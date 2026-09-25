@@ -1,10 +1,10 @@
 import { createHmac, randomBytes } from 'node:crypto';
 
 import { getPayloadConfig } from '../config/getPayloadConfig.js';
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 import { pieceInstanceRuntime } from '../pieces/definePiece.js';
 import type { PieceInstance, PieceJSON } from '../pieces/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import { refreshOAuthConnection } from './oauth/refresh.js';
 import { oauthAuth, parseOAuthTokens } from './oauth/tokens.js';
 import { type ConnectionOwner, ConnectionStore } from './store.js';
@@ -20,7 +20,7 @@ export type AuthorizationRequirement = {
 
 export type ConnectionResolveArgs = {
   piece: PieceInstance;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   scopes?: readonly string[];
 };
 
@@ -56,7 +56,7 @@ export class Connections {
   >();
 
   constructor(
-    private readonly frogbot: Frogbot,
+    private readonly frogbot: FrogBot,
     private readonly config: SanitizedConnectionsConfig,
   ) {}
 
@@ -67,7 +67,7 @@ export class Connections {
     ));
   }
 
-  private async owner(req: FrogbotRequest): Promise<ConnectionOwner | undefined> {
+  private async owner(req: FrogBotRequest): Promise<ConnectionOwner | undefined> {
     const { admin } = await getPayloadConfig(this.frogbot.config);
     const user = req.user;
     if (
@@ -191,7 +191,7 @@ export class Connections {
     return { auth, key: identity.key };
   }
 
-  async list({ req }: { req: FrogbotRequest }) {
+  async list({ req }: { req: FrogBotRequest }) {
     const owner = await this.owner(req);
     if (!owner) throw new Error('Connections require an owner from the admin user collection.');
     const rows = await (await this.store).list({ owner });
@@ -210,7 +210,7 @@ export class Connections {
     return rows;
   }
 
-  async delete({ req, id }: { req: FrogbotRequest; id: number | string }): Promise<boolean> {
+  async delete({ req, id }: { req: FrogBotRequest; id: number | string }): Promise<boolean> {
     const owner = await this.owner(req);
     if (!owner) throw new Error('Connections require an owner from the admin user collection.');
     const store = await this.store;
@@ -228,7 +228,7 @@ export class Connections {
     req,
   }: {
     pieces: readonly PieceInstance[];
-    req: FrogbotRequest;
+    req: FrogBotRequest;
   }): Promise<AuthorizationRequirement[]> {
     const requirements = new Map<string, AuthorizationRequirement>();
     const { routes } = await getPayloadConfig(this.frogbot.config);

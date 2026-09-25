@@ -1,7 +1,7 @@
 import createLucideIcon from '../createLucideIcon.js';
 import type { IconNode } from '../types.js';
 
-export const frogBotFavicon: IconNode = [
+export const frogbotFavicon: IconNode = [
   [
     'circle',
     {
@@ -56,7 +56,7 @@ export const frogBotFavicon: IconNode = [
 
 const FrogBotFavicon = createLucideIcon(
   'FrogBotFaviconIcon',
-  frogBotFavicon,
+  frogbotFavicon,
   0,
   '0 0 139.05405 139.05405',
 );

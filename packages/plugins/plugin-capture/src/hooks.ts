@@ -6,7 +6,7 @@ import type {
   AIBeforeOperationHookArgs,
   AIBeforeUpstreamHookArgs,
   AIHooks,
-  FrogbotRequest,
+  FrogBotRequest,
 } from 'frogbot';
 
 import { captureBlobKey, encodeCapture } from './blob.js';
@@ -33,7 +33,7 @@ function errorValue(error: unknown): CaptureRecord['error'] {
   return { message: String(error) };
 }
 
-function logFailure(req: FrogbotRequest | undefined, error: unknown): void {
+function logFailure(req: FrogBotRequest | undefined, error: unknown): void {
   req?.frogbot.logger.error({ err: error }, '[plugin-capture] capture failed');
 }
 

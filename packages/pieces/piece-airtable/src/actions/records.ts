@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
@@ -212,7 +212,7 @@ const uploadInput = z.object({
   filename: z.string().optional().meta({ label: 'File name' }),
 });
 
-async function loadFile(req: FrogbotRequest, fileId: string | number) {
+async function loadFile(req: FrogBotRequest, fileId: string | number) {
   const collection = req.frogbot.config.files?.slug;
 
   if (!collection) {

@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 import { gunzip } from 'node:zlib';
 
 import { loadConfig } from '../config/load.js';
-import { Frogbot } from '../frogbot.js';
+import { FrogBot } from '../frogbot.js';
 import type { Where } from '../types/payload.js';
 import { type ExportCapturesArgs, parseExportCapturesArgs } from './exportCapturesArgs.js';
 import { writeCaptureLine } from './exportCapturesStream.js';
@@ -28,7 +28,7 @@ function whereFor(args: ExportCapturesArgs): Where | undefined {
 }
 
 export async function exportCaptures(args: string[]): Promise<void> {
-  let frogbot: Frogbot | undefined;
+  let frogbot: FrogBot | undefined;
   let destination: ReturnType<typeof createWriteStream> | undefined;
   try {
     const parsed = parseExportCapturesArgs(args);
@@ -36,7 +36,7 @@ export async function exportCaptures(args: string[]): Promise<void> {
     const payloadConfig = await config._internal.payloadConfig;
     const registration = payloadConfig.custom?.frogbotCapture as CaptureRegistration | undefined;
     if (!registration) throw new Error('@frogbotai/plugin-capture is not configured');
-    frogbot = await new Frogbot().init({ config, disableOnInit: true });
+    frogbot = await new FrogBot().init({ config, disableOnInit: true });
     destination = parsed.output ? createWriteStream(parsed.output) : undefined;
     const output = destination ?? process.stdout;
     let page = 1;

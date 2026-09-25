@@ -3,7 +3,7 @@ import type {
   DashboardConfig,
   DocumentTabConfig,
   Field,
-  FrogbotRequest,
+  FrogBotRequest,
   Widget,
 } from 'frogbot';
 import { expectTypeOf } from 'vitest';
@@ -29,7 +29,7 @@ const dashboard = {
           type: 'text',
           access: {
             read: ({ req }) => {
-              expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+              expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
 
               return Boolean(req.frogbot);
             },
@@ -37,14 +37,14 @@ const dashboard = {
           hooks: {
             beforeValidate: [
               ({ req, value }) => {
-                expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+                expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
 
                 return value;
               },
             ],
           },
           validate: (_, { req }) => {
-            expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+            expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
 
             return true;
           },
@@ -69,7 +69,7 @@ const collection = {
           default: {
             tab: {
               condition: ({ req }) => {
-                expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+                expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
 
                 return Boolean(req.frogbot);
               },

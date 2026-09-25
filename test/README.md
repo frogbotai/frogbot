@@ -28,9 +28,9 @@ pnpm test:int
 ```
 test/
 ├── __helpers/shared/           # boot harness, REST client, seeders
-│   ├── bootFrogbot.ts          # boots a frogbot HTTP server + DB
+│   ├── bootFrogBot.ts          # boots a frogbot HTTP server + DB
 │   ├── buildTestConfig.ts      # shared config builder (db, secret, defaults)
-│   ├── FrogbotRESTClient.ts    # fetch wrapper bound to the booted port
+│   ├── FrogBotRESTClient.ts    # fetch wrapper bound to the booted port
 │   ├── db/                     # adapter registry + codegen
 │   │   └── dbAdapters.ts       # maps FROGBOT_DATABASE to adapter imports
 │   ├── storage/                # storage contract suite + skip helpers
@@ -67,7 +67,7 @@ test/
 ## Principles
 
 1. **Tests speak FrogBot, not Payload.** Use `booted.frogbot.create(...)`,
-   never `payload.create(...)`. The test surface is `FrogbotInstance`.
+   never `payload.create(...)`. The test surface is `FrogBotInstance`.
 2. **Feature-focused suites.** One directory per concern (auth, config,
    database, plugins, storage, kv, email). Not monolithic.
 3. **`buildTestConfig` for all suite configs.** Every `config.ts` uses the
@@ -137,16 +137,16 @@ This mirrors Payload's adapter swap pattern from their test infrastructure.
 
 Storage adapters are wrapped in `@frogbotai/storage-*` packages (thin cast from Payload plugin to `Plugin` type — same function at runtime). The execution flow:
 
-1. `runPlugins` (frogbot) executes plugins on `FrogbotConfig`
+1. `runPlugins` (frogbot) executes plugins on `FrogBotConfig`
 2. Storage plugins inject `upload.handlers` into collections
 3. `sanitize()` passes collections through untouched (handlers preserved)
 4. Payload receives config with handlers already wired — no re-run needed
 
 Test configs use a single `plugins: [s3Storage(...)]` array, same as a real app would.
 
-### FrogbotInstance Facade
+### FrogBotInstance Facade
 
-KV and email are exposed through `FrogbotInstance.kv` and `FrogbotInstance.email`:
+KV and email are exposed through `FrogBotInstance.kv` and `FrogBotInstance.email`:
 
 - `kv` is wired directly from the Payload instance
 - `email.sendEmail` sends through the email-capable piece configured in `email`
@@ -223,18 +223,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, beforeEach, describe, it, expect } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import { thingsSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('my-feature', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname);
+    booted = await bootFrogBot(dirname);
   });
   afterAll(async () => {
     await booted.shutdown();
@@ -265,11 +265,11 @@ describe('my-feature', () => {
 import { describe, it, expect } from 'vitest';
 import { mongooseAdapter } from '@frogbotai/db-mongodb';
 import { buildConfig } from 'frogbot';
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 
 describe('my-feature', () => {
   it('validates something', async () => {
-    const config: FrogbotConfig = {
+    const config: FrogBotConfig = {
       secret: 'x',
       db: mongooseAdapter({ url: 'mongodb://localhost:27017/x' }),
       collections: [{ slug: 'users', auth: true, fields: [] }],
@@ -290,7 +290,7 @@ This creates `frogbot-types.ts` in your suite directory. Commit it.
 
 ### 6. Key rules
 
-- **`FrogbotInstance` methods**: `find`, `findByID`, `create`, `update`, `delete`, `count`.
+- **`FrogBotInstance` methods**: `find`, `findByID`, `create`, `update`, `delete`, `count`.
   - `update` and `delete` are overloaded: pass `id` for single-doc, `where` for bulk.
   - There is no `updateByID` or `deleteByID` — use `update({ id, ... })`.
 - **Auth in tests**: For suites testing auth flows, manually POST to
@@ -301,14 +301,14 @@ This creates `frogbot-types.ts` in your suite directory. Commit it.
 - **Scenarios**: `clearAndSeed(frogbot, 'empty')` truncates all collections.
   Add richer scenarios under `__helpers/shared/clearAndSeed/scenarios/`.
 
-## `bootFrogbot` internals
+## `bootFrogBot` internals
 
-`bootFrogbot(dirname)` does:
+`bootFrogBot(dirname)` does:
 
 1. Reads `FROGBOT_DATABASE` and uses the generated adapter
 2. Dynamic-imports `<dirname>/config.ts` (must default-export a `buildTestConfig(...)` call)
 3. Calls `bootPayload({ config })` via `frogbot/test` (thin wrapper around Payload's `getPayload`)
-4. Wraps Payload in a `FrogbotInstance` (same surface as `req.frogbot`)
+4. Wraps Payload in a `FrogBotInstance` (same surface as `req.frogbot`)
 5. Creates a Hono server via `createServer(payload)`
 6. Listens on an ephemeral port
 7. Returns `{ frogbot, payload, restClient, baseUrl, shutdown }`
@@ -330,7 +330,7 @@ To add a scenario:
 1. Add an atomic seeder under `seeders/` if needed
    (e.g. `seeders/projects.ts`). Use `frogbot.create(...)`.
 2. Add `scenarios/myScenario.ts` exporting
-   `async function myScenario(frogbot: FrogbotInstance)`.
+   `async function myScenario(frogbot: FrogBotInstance)`.
 3. Wire into `clearAndSeed/index.ts`: extend the `Scenario` union + map.
 
 ## Per-suite generated types
@@ -419,7 +419,7 @@ pnpm docker:clean                # tear down all containers + volumes
 
 This test infrastructure is modeled after Payload's (v3.85.1). Key differences:
 
-- Payload tests against their own API directly; we test through the `FrogbotInstance` facade
+- Payload tests against their own API directly; we test through the `FrogBotInstance` facade
 - Payload uses a monorepo with per-package test configs; we use a centralized `test/` directory
 - Payload has MongoDB replica set + Atlas search tests; we skip those (not needed for v0)
 - Our storage plugins are wrapped (cast to `Plugin` type) rather than using Payload's plugin system directly

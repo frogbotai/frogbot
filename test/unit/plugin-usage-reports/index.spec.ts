@@ -1,5 +1,5 @@
 import { importExportPlugin } from '@frogbotai/plugin-import-export';
-import type { FrogbotConfig, FrogbotRequest, Plugin } from 'frogbot';
+import type { FrogBotConfig, FrogBotRequest, Plugin } from 'frogbot';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { usageReportsPlugin } from '../../../packages/plugins/plugin-usage-reports/src/index.js';
@@ -21,7 +21,7 @@ function createConfig() {
       },
     ],
     ai: { providers: { openai: { apiKey: 'test' } } },
-  } as FrogbotConfig;
+  } as FrogBotConfig;
 }
 
 async function setup(pageSize = 2) {
@@ -40,7 +40,7 @@ function request(
     url,
     user,
     frogbot: { find, logger: { error: vi.fn() } },
-  } as unknown as FrogbotRequest;
+  } as unknown as FrogBotRequest;
 }
 
 describe('usageReportsPlugin', () => {

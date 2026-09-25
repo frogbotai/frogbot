@@ -8,13 +8,13 @@ import { pathToFileURL } from 'node:url';
 
 import type { InitOptions } from '../frogbot.js';
 import { findConfigFile, resolveEnvConfigPath } from './resolveConfigPath.js';
-import type { FrogbotSanitizedConfig } from './sanitized.js';
+import type { FrogBotSanitizedConfig } from './sanitized.js';
 import type { ValidationMode } from './validationContext.js';
 import { runWithValidationMode } from './validationContext.js';
 
 export { resolveConfigDir } from './resolveConfigPath.js';
 
-function isSanitizedConfig(value: unknown): value is FrogbotSanitizedConfig {
+function isSanitizedConfig(value: unknown): value is FrogBotSanitizedConfig {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -55,7 +55,7 @@ export async function loadConfig({
 
   if (!isSanitizedConfig(resolved)) {
     throw new Error(
-      `[frogbot] ${configPath} default export is not a FrogbotSanitizedConfig (missing collections array or _internal)`,
+      `[frogbot] ${configPath} default export is not a FrogBotSanitizedConfig (missing collections array or _internal)`,
     );
   }
 

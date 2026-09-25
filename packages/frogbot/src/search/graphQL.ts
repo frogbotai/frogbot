@@ -2,7 +2,7 @@ import type { GraphQLExtension, PayloadRequest, TypedLocale, Where } from 'paylo
 import { isolateObjectProperty } from 'payload';
 
 import type { CollectionSlug } from '../types/generated.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 
 type SearchQueryArgs = {
   draft?: boolean | null;
@@ -22,10 +22,10 @@ function withoutNulls<T extends object>(value: T): { [K in keyof T]: Exclude<T[K
 }
 
 export function buildSearchQueries({
-  attachFrogbot,
+  attachFrogBot,
   collections,
 }: {
-  attachFrogbot: (req: PayloadRequest) => Promise<FrogbotRequest>;
+  attachFrogBot: (req: PayloadRequest) => Promise<FrogBotRequest>;
   collections: string[];
 }): GraphQLExtension {
   return (graphQL, { collections: graphQLCollections, types }) => {
@@ -104,7 +104,7 @@ export function buildSearchQueries({
         ) => {
           const { index, text, vector, ...options } = withoutNulls(args);
 
-          const req = isolateObjectProperty(await attachFrogbot(context.req), [
+          const req = isolateObjectProperty(await attachFrogBot(context.req), [
             'fallbackLocale',
             'locale',
             'transactionID',

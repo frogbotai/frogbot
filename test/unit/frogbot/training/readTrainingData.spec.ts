@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Frogbot } from '../../../../packages/frogbot/src/frogbot.js';
+import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
 import { readTrainingData } from '../../../../packages/frogbot/src/training/readTrainingData.js';
 
 type Page = { docs: Record<string, unknown>[]; hasNextPage: boolean };
 
-function stubFrogbot(pages: { chats: Page[]; messages: Record<string, Page[]> }) {
+function stubFrogBot(pages: { chats: Page[]; messages: Record<string, Page[]> }) {
   const find = vi.fn(async (args: Record<string, unknown>) => {
     const page = (args.page as number) - 1;
     if (args.collection === 'chats') return pages.chats[page];
@@ -25,7 +25,7 @@ function stubFrogbot(pages: { chats: Page[]; messages: Record<string, Page[]> })
         },
       },
       find,
-    } as unknown as Frogbot,
+    } as unknown as FrogBot,
   };
 }
 
@@ -37,7 +37,7 @@ async function collect<T>(iterable: AsyncIterable<T>): Promise<T[]> {
 
 describe('readTrainingData', () => {
   it('pages chats and messages and preserves persisted parts', async () => {
-    const { frogbot, find } = stubFrogbot({
+    const { frogbot, find } = stubFrogBot({
       chats: [
         { docs: [{ id: 1 }], hasNextPage: true },
         { docs: [{ id: 2 }], hasNextPage: false },
@@ -77,7 +77,7 @@ describe('readTrainingData', () => {
   });
 
   it('forwards filters and access options', async () => {
-    const { frogbot, find } = stubFrogbot({
+    const { frogbot, find } = stubFrogBot({
       chats: [{ docs: [], hasNextPage: false }],
       messages: {},
     });
@@ -89,7 +89,7 @@ describe('readTrainingData', () => {
   });
 
   it('rejects disabled chat persistence', async () => {
-    const frogbot = { config: { chat: { enabled: false } } } as unknown as Frogbot;
+    const frogbot = { config: { chat: { enabled: false } } } as unknown as FrogBot;
 
     await expect(collect(readTrainingData(frogbot))).rejects.toThrow(
       'Training data export requires chat persistence.',
@@ -97,7 +97,7 @@ describe('readTrainingData', () => {
   });
 
   it('rejects invalid page sizes', async () => {
-    const { frogbot } = stubFrogbot({ chats: [], messages: {} });
+    const { frogbot } = stubFrogBot({ chats: [], messages: {} });
 
     await expect(collect(readTrainingData(frogbot, { pageSize: 0 }))).rejects.toThrow(
       'pageSize must be a positive integer',

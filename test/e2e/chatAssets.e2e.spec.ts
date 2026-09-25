@@ -4,8 +4,8 @@ import { join } from 'node:path';
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot.js';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot.js';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
 import { generateDatabaseAdapter } from '../__helpers/shared/db/dbAdapters.js';
 import { startModelProvider } from './fixtures/chat-assets/provider.js';
@@ -45,7 +45,7 @@ type Message = {
 };
 
 describe('chat assets HTTP e2e', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
   let provider: Awaited<ReturnType<typeof startModelProvider>>;
   let dataDir: string;
   let owner: User;
@@ -228,7 +228,7 @@ describe('chat assets HTTP e2e', () => {
     vi.stubEnv('FROGBOT_DATABASE', 'sqlite');
     generateDatabaseAdapter('sqlite');
 
-    booted = await bootFrogbot(join(import.meta.dirname, 'fixtures/chat-assets'));
+    booted = await bootFrogBot(join(import.meta.dirname, 'fixtures/chat-assets'));
     image = await readFile(join(import.meta.dirname, '../uploads/image.png'));
   });
 

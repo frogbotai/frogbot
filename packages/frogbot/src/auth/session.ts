@@ -12,7 +12,7 @@ import {
 } from 'payload';
 import { addSessionToUser } from 'payload/shared';
 
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import {
   hasSessionTransaction,
   requireSessionTransaction,
@@ -22,7 +22,7 @@ import {
 } from './operation.js';
 
 type SessionIssueArgs = {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   collectionSlug: string;
   userId: string | number;
 };

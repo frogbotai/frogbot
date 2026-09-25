@@ -35,12 +35,12 @@ The async converter can populate relationships and files while converting. In a 
 import config from '@frogbot-config'
 import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical'
 import { convertLexicalToHTMLAsync } from '@frogbotai/richtext-lexical/html-async'
-import { getFrogbotPopulateFn } from '@frogbotai/richtext-lexical'
-import { getFrogbot } from 'frogbot'
+import { getFrogBotPopulateFn } from '@frogbotai/richtext-lexical'
+import { getFrogBot } from 'frogbot'
 
 export async function ArticleBody({ data }: { data: SerializedEditorState }) {
-  const frogbot = await getFrogbot({ config })
-  const populate = await getFrogbotPopulateFn({
+  const frogbot = await getFrogBot({ config })
+  const populate = await getFrogBotPopulateFn({
     currentDepth: 0,
     depth: 1,
     frogbot,
@@ -54,7 +54,7 @@ export async function ArticleBody({ data }: { data: SerializedEditorState }) {
 Pass an existing FrogBot request instead of `frogbot` when conversion must preserve its user, locale, access, and transaction context.
 
 ```ts
-const populate = await getFrogbotPopulateFn({
+const populate = await getFrogBotPopulateFn({
   currentDepth: 0,
   depth: 2,
   req,
@@ -261,10 +261,10 @@ import {
   convertHTMLToLexical,
   editorConfigFactory,
 } from '@frogbotai/richtext-lexical'
-import { getFrogbot } from 'frogbot'
+import { getFrogBot } from 'frogbot'
 import { JSDOM } from 'jsdom'
 
-const frogbot = await getFrogbot({ config })
+const frogbot = await getFrogBot({ config })
 const uploadedFile = await frogbot.create({
   collection: 'files',
   data: { alt: 'Mountain at sunrise' },

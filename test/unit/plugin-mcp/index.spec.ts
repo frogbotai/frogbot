@@ -1,6 +1,6 @@
 import { apiKeysPlugin, createApiKeyToken, hashApiKeyToken } from '@frogbotai/plugin-api-keys';
 import { rolesPlugin } from '@frogbotai/plugin-roles';
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
@@ -8,7 +8,7 @@ import { mcpPlugin } from '../../../packages/plugins/plugin-mcp/src/index.js';
 
 const baseConfig = {
   collections: [{ slug: 'users', auth: true, fields: [] }],
-} as FrogbotConfig;
+} as FrogBotConfig;
 
 const authenticatedConfig = () => apiKeysPlugin()(baseConfig);
 
@@ -46,7 +46,7 @@ describe('MCP plugin', () => {
           fields: [],
         },
       ],
-    } as FrogbotConfig;
+    } as FrogBotConfig;
 
     await expect(mcpPlugin({})(config)).rejects.toThrow(
       '[plugin-mcp] apiKeysPlugin must be configured before mcpPlugin.',
@@ -119,7 +119,7 @@ describe('MCP plugin', () => {
         apiKeysPlugin(),
         mcpPlugin({ collections: { posts: { enabled: { find: true } } } }),
       ],
-    } as FrogbotConfig);
+    } as FrogBotConfig);
     const payloadConfig = await config._internal.payloadConfig;
 
     expect(payloadConfig.endpoints?.filter(({ path }) => path === '/mcp')).toHaveLength(2);
@@ -141,7 +141,7 @@ describe('MCP plugin', () => {
         apiKeysPlugin(),
         mcpPlugin({ collections: { posts: { enabled: { find: true } } } }),
       ],
-    } as FrogbotConfig);
+    } as FrogBotConfig);
     const payloadConfig = await config._internal.payloadConfig;
     const endpoint = payloadConfig.endpoints?.find(
       ({ method, path }) => method === 'post' && path === '/mcp',

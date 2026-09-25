@@ -12,7 +12,7 @@ export {
   type LexicalInlineBlockServerProps,
 } from './features/blocks/server/index.js';
 export { lexicalHTMLField } from './features/converters/lexicalToHtml/async/field/index.js';
-export { getFrogbotPopulateFn } from './features/converters/utilities/frogbotPopulateFn.js';
+export { getFrogBotPopulateFn } from './features/converters/utilities/frogbotPopulateFn.js';
 export type {
   ExtractSerializedNode,
   HTMLConverter,

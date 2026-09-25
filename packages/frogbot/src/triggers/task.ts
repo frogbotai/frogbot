@@ -1,7 +1,7 @@
 import type { JobsConfig, TaskConfig } from 'payload';
 
 import { AGENT_SCHEDULE_TASK_SLUG } from '../agents/resolveScheduleTasks.js';
-import { getFrogbotInstance } from '../instanceRegistry.js';
+import { getFrogBotInstance } from '../instanceRegistry.js';
 
 export const AGENT_TRIGGER_TASK_SLUG = 'frogbot-run-agent-trigger';
 
@@ -15,7 +15,7 @@ export function resolveTriggerTasks(jobs?: JobsConfig): JobsConfig {
   const task: TaskConfig<AgentTriggerTask> = {
     slug: AGENT_TRIGGER_TASK_SLUG,
     handler: async ({ input, req }) => {
-      const frogbot = getFrogbotInstance(req.payload);
+      const frogbot = getFrogBotInstance(req.payload);
       if (!frogbot) return { output: {} };
       const agent = frogbot?.agents[input.agentSlug];
       const configured = agent?.config.triggers?.find(

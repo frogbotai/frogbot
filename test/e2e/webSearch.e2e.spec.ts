@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { FrogbotRESTClient } from '../__helpers/shared/FrogbotRESTClient';
+import { FrogBotRESTClient } from '../__helpers/shared/FrogBotRESTClient';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const hasSearchKey = Boolean(process.env.BRAVE_API_KEY || process.env.EXA_API_KEY);
@@ -28,7 +28,7 @@ describe.skipIf(!RUN_E2E || !hasSearchKey)('web search e2e', () => {
   const fixtureDir = join(repoRoot, 'test', 'e2e', 'fixtures', 'tool-agent');
   const tempRoot = join(repoRoot, '.idea', 'tmp');
   const port = 3990;
-  const client = new FrogbotRESTClient(`http://localhost:${port}`);
+  const client = new FrogBotRESTClient(`http://localhost:${port}`);
   let server: ChildProcess;
   let dataDir: string;
   let token: string;

@@ -4,10 +4,10 @@ import { redirectsPlugin } from '@frogbotai/plugin-redirects';
 import { searchPlugin } from '@frogbotai/plugin-search';
 import { sentryPlugin } from '@frogbotai/plugin-sentry';
 import { stripePlugin } from '@frogbotai/plugin-stripe';
-import { buildConfig, type FrogbotConfig } from 'frogbot';
+import { buildConfig, type FrogBotConfig } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
-function baseConfig(overrides: Partial<FrogbotConfig> = {}): FrogbotConfig {
+function baseConfig(overrides: Partial<FrogBotConfig> = {}): FrogBotConfig {
   return {
     secret: 'test-secret',
     db: { defaultIDType: 'number' } as never,
@@ -16,7 +16,7 @@ function baseConfig(overrides: Partial<FrogbotConfig> = {}): FrogbotConfig {
   };
 }
 
-async function payloadConfig(config: FrogbotConfig) {
+async function payloadConfig(config: FrogBotConfig) {
   return await (
     await buildConfig(config)
   )._internal.payloadConfig;

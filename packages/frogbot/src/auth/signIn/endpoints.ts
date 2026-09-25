@@ -9,7 +9,7 @@ import {
 } from '../../connections/oauth/index.js';
 import type { Endpoint } from '../../endpoints/types.js';
 import type { SignInMethod } from '../../pieces/types.js';
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 import { issueSession } from '../session.js';
 import { resolveSignInIdentity } from './identity.js';
 
@@ -18,7 +18,7 @@ async function routeURLs({
   collectionSlug,
   method,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   collectionSlug: string;
   method: SignInMethod;
 }) {
@@ -58,7 +58,7 @@ export function buildSignInEndpoints({
   methods: SignInMethod[];
 }): Endpoint[] {
   if (!methods.length) return [];
-  const methodFor = (req: FrogbotRequest) =>
+  const methodFor = (req: FrogBotRequest) =>
     methods.find(({ slug }) => slug === req.routeParams?.piece);
   const failure = (status: number, headers: Headers) =>
     Response.json(

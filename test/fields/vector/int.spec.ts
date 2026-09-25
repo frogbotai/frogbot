@@ -3,18 +3,18 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../../__helpers/shared/bootFrogbot.js';
-import { bootFrogbot } from '../../__helpers/shared/bootFrogbot.js';
+import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
+import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const collection = 'vector-documents';
 
 describe('vector field CRUD', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname);
+    booted = await bootFrogBot(dirname);
   });
 
   afterAll(async () => {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { toGatewayHooks, toHookUsage } from '../../../../packages/frogbot/src/ai/hooks.js';
 import type { SanitizedAIHooks } from '../../../../packages/frogbot/src/collections/config/types-ai.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 function makeHooks(overrides: Partial<SanitizedAIHooks> = {}): SanitizedAIHooks {
   return {
@@ -15,11 +15,11 @@ function makeHooks(overrides: Partial<SanitizedAIHooks> = {}): SanitizedAIHooks 
   };
 }
 
-function makeReq(): FrogbotRequest {
+function makeReq(): FrogBotRequest {
   return Object.assign(new Request('http://localhost/ai'), {
     user: { id: 'user-1' },
     frogbot: {},
-  }) as unknown as FrogbotRequest;
+  }) as unknown as FrogBotRequest;
 }
 
 describe('toGatewayHooks', () => {

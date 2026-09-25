@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import type { PieceActionDefinition } from 'frogbot/pieces';
 import { z } from 'zod';
 
@@ -40,11 +40,11 @@ const writableTypes = new Set([
   'world_clock',
 ]);
 
-async function query<T>(client: Monday, req: FrogbotRequest, document: string, variables = {}) {
+async function query<T>(client: Monday, req: FrogBotRequest, document: string, variables = {}) {
   return client.query<T>(document, variables, req.signal ?? undefined);
 }
 
-export async function workspaces({ client, req }: { client: Monday; req: FrogbotRequest }) {
+export async function workspaces({ client, req }: { client: Monday; req: FrogBotRequest }) {
   const data = await query<{ workspaces: Array<{ id: string; name: string }> }>(
     client,
     req,
@@ -61,7 +61,7 @@ export async function boards({
 }: {
   input: { workspaceId?: string };
   client: Monday;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 }) {
   if (!input.workspaceId) return [];
 
@@ -77,7 +77,7 @@ export async function boards({
     .map((board) => ({ label: board.name, value: board.id }));
 }
 
-async function boardDetails(client: Monday, req: FrogbotRequest, board: string) {
+async function boardDetails(client: Monday, req: FrogBotRequest, board: string) {
   const data = await query<{
     boards: Array<{
       groups: Array<{ id: string; title: string }>;
@@ -105,7 +105,7 @@ export function boardOptions(
   }: {
     input: { boardId?: string };
     client: Monday;
-    req: FrogbotRequest;
+    req: FrogBotRequest;
   }) => {
     if (!input.boardId) return [];
 
@@ -132,7 +132,7 @@ const columnOptions = boardOptions('columns');
 
 async function encodedColumnValues(
   client: Monday,
-  req: FrogbotRequest,
+  req: FrogBotRequest,
   board: string,
   values: Record<string, unknown>,
 ) {

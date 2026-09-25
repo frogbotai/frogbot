@@ -1,5 +1,5 @@
-import type { AgentConfig, FrogbotConfig, SkillConfig, Tool } from 'frogbot';
-import { buildConfig, getFrogbot } from 'frogbot';
+import type { AgentConfig, FrogBotConfig, SkillConfig, Tool } from 'frogbot';
+import { buildConfig, getFrogBot } from 'frogbot';
 import { general } from 'frogbot/agents';
 import { z } from 'zod';
 
@@ -11,12 +11,12 @@ export const assistant: AgentConfig = {
   instructions: 'You are a concise and friendly assistant.',
 };
 
-export const agents: FrogbotConfig['agents'] = [general(), assistant];
+export const agents: FrogBotConfig['agents'] = [general(), assistant];
 
 const config = buildConfig({ ...domainConfig, ai, agents });
 
 export async function runAgent() {
-  const frogbot = await getFrogbot({ config });
+  const frogbot = await getFrogBot({ config });
   const result = await frogbot.agents.assistant.generate({
     prompt: "Summarize today's open tasks.",
   });

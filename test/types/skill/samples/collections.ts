@@ -1,4 +1,4 @@
-import type { CollectionConfig, FrogbotInstance } from 'frogbot';
+import type { CollectionConfig, FrogBotInstance } from 'frogbot';
 import { buildConfig } from 'frogbot';
 
 import { createCoreConfig } from './core-context.js';
@@ -81,7 +81,7 @@ export const DraftPosts: CollectionConfig = {
   fields: [{ name: 'title', type: 'text', required: true }],
 };
 
-export async function createDraft(frogbot: FrogbotInstance) {
+export async function createDraft(frogbot: FrogBotInstance) {
   const post = await frogbot.create({
     collection: 'posts',
     data: { title: 'Draft post' },

@@ -1,4 +1,4 @@
-import type { FrogbotConfig, Plugin } from 'frogbot';
+import type { FrogBotConfig, Plugin } from 'frogbot';
 
 import { createAuditLogCollection } from './collection.js';
 import { createAfterChangeHook, createAfterDeleteHook } from './hooks.js';
@@ -12,7 +12,7 @@ export type {
   AuditSnapshot,
 } from './types.js';
 
-function userSlug(config: FrogbotConfig): string {
+function userSlug(config: FrogBotConfig): string {
   const authSlugs = config.collections
     .filter((collection) => collection.auth !== undefined && collection.auth !== false)
     .map((collection) => collection.slug);
@@ -81,7 +81,7 @@ export function auditLogPlugin(options: AuditLogPluginOptions = {}): Plugin {
     });
     if (!options.retention) return { ...config, collections: [...collections, auditCollection] };
     const retention = options.retention;
-    const task: NonNullable<NonNullable<FrogbotConfig['jobs']>['tasks']>[number] = {
+    const task: NonNullable<NonNullable<FrogBotConfig['jobs']>['tasks']>[number] = {
       slug: `frogbot-prune-${auditSlug}`,
       schedule: [
         {

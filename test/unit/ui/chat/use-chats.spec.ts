@@ -1,4 +1,4 @@
-import { createFrogbotSDK } from '@frogbotai/sdk';
+import { createFrogBotSDK } from '@frogbotai/sdk';
 import { describe, expect, it, vi } from 'vitest';
 
 import { loadChats } from '../../../../packages/ui/src/chat/use-chats';
@@ -16,7 +16,7 @@ describe('loadChats', () => {
     const fetch = vi.fn(() => Promise.resolve(Response.json(result)));
     await expect(
       loadChats({
-        sdk: createFrogbotSDK({ baseURL: '/api', fetch }),
+        sdk: createFrogBotSDK({ baseURL: '/api', fetch }),
         agent: 'support',
         chatsSlug: 'conversations',
         page: 2,

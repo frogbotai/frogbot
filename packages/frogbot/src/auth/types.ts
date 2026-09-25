@@ -2,7 +2,7 @@ import type { IncomingAuthType, TypeWithID } from 'payload';
 
 import type { SignInMethod } from '../pieces/types.js';
 import type { CollectionSlug, TypedCollection } from '../types/generated.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 
 export interface AuthConfig {
   signIn?: SignInMethod[];
@@ -41,7 +41,7 @@ type CommonArgs = {
   locale?: string;
   overrideAccess?: boolean;
   populate?: Record<string, unknown>;
-  req?: FrogbotRequest;
+  req?: FrogBotRequest;
   showHiddenFields?: boolean;
   user?: unknown;
 };
@@ -89,7 +89,7 @@ export type UnlockArgs<TSlug extends CollectionSlug> = CommonArgs & {
 
 export type AuthArgs = {
   headers: Request['headers'];
-  req?: FrogbotRequest;
+  req?: FrogBotRequest;
 };
 
 export type AuthResult = {

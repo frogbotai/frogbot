@@ -5,8 +5,8 @@ import { z } from 'zod';
 
 import { ConnectionError, Connections } from '../../../../packages/frogbot/src/connections/api.js';
 import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
-import { Frogbot } from '../../../../packages/frogbot/src/frogbot.js';
-import { registerFrogbotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
+import { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
+import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import { isEmailPiece, pieceEmailAdapter } from '../../../../packages/frogbot/src/pieces/email.js';
 import type { PieceEmail } from '../../../../packages/frogbot/src/pieces/types.js';
@@ -17,7 +17,7 @@ vi.mock('payload', async (importOriginal) => ({
 }));
 
 function runtime(payload = {} as Payload) {
-  const frogbot = new Frogbot();
+  const frogbot = new FrogBot();
 
   frogbot.payload = payload;
   frogbot.config = {
@@ -30,7 +30,7 @@ function runtime(payload = {} as Payload) {
     encryption: createCredentialEncryption({ secret: 'email-test-secret' }),
   });
 
-  registerFrogbotInstance(payload, frogbot);
+  registerFrogBotInstance(payload, frogbot);
 
   return { frogbot, payload };
 }

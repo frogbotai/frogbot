@@ -1,4 +1,4 @@
-import { createFrogbotSDK } from '@frogbotai/sdk';
+import { createFrogBotSDK } from '@frogbotai/sdk';
 import { describe, expect, it, vi } from 'vitest';
 
 import { loadChat } from '../../../../packages/ui/src/chat/use-chat';
@@ -12,7 +12,7 @@ describe('loadChat', () => {
     );
     await expect(
       loadChat({
-        sdk: createFrogbotSDK({ baseURL: '/api', fetch }),
+        sdk: createFrogBotSDK({ baseURL: '/api', fetch }),
         messagesSlug: 'turns',
         chatId: 'chat-1',
       }),

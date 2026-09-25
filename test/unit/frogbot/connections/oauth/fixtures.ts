@@ -8,7 +8,7 @@ import { createKV } from '../../../../../packages/frogbot/src/kv/index.js';
 import { kvAtomic } from '../../../../../packages/frogbot/src/kv/types.js';
 import { definePiece } from '../../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { PieceDefinition } from '../../../../../packages/frogbot/src/pieces/types.js';
-import type { FrogbotRequest } from '../../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../../packages/frogbot/src/types/request.js';
 
 export const definition = {
   slug: 'example',
@@ -69,7 +69,7 @@ export function setup(
   const req = {
     headers: new Headers(),
     user: { id: 'owner', collection: 'users' },
-  } as FrogbotRequest;
+  } as FrogBotRequest;
   const binding = {
     flow: 'link' as const,
     collection: 'users',

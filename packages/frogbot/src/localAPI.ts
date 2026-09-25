@@ -1,9 +1,9 @@
 import type { Payload } from 'payload';
 
-import type { Frogbot } from './frogbot.js';
+import type { FrogBot } from './frogbot.js';
 
-export type FrogbotLocalAPI = Pick<
-  Frogbot,
+export type FrogBotLocalAPI = Pick<
+  FrogBot,
   | 'auth'
   | 'count'
   | 'countVersions'
@@ -24,6 +24,6 @@ export type FrogbotLocalAPI = Pick<
   | 'verifyEmail'
 >;
 
-export function createFrogbotLocalAPI(payload: Payload): FrogbotLocalAPI {
-  return payload as unknown as FrogbotLocalAPI;
+export function createFrogBotLocalAPI(payload: Payload): FrogBotLocalAPI {
+  return payload as unknown as FrogBotLocalAPI;
 }

@@ -13,7 +13,7 @@ import {
 import { createChannelChatAccess } from '../../../../packages/frogbot/src/chat/channelAccess.js';
 import { MESSAGE_USAGE_CONTEXT_KEY } from '../../../../packages/frogbot/src/chat/collections/messages.js';
 import type { AnyTool } from '../../../../packages/frogbot/src/tools/types.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const usage = {
   inputTokens: { total: 2, noCache: 2, cacheRead: 0, cacheWrite: 0 },
@@ -77,7 +77,7 @@ function setup({
         assetsSlug: 'frogbot-chat-assets',
       },
     },
-    createRequest: vi.fn(async (req: FrogbotRequest) => req),
+    createRequest: vi.fn(async (req: FrogBotRequest) => req),
     findByID: vi.fn(async () => chat),
     find: vi.fn(
       async ({
@@ -118,7 +118,7 @@ function setup({
     context: {},
     payload: { db: {} },
     frogbot,
-  } as unknown as FrogbotRequest;
+  } as unknown as FrogBotRequest;
 
   const agent = createAgentInstance(
     { slug: 'support', instructions: 'Help', model: 'openai/test', access, tools },
@@ -297,7 +297,7 @@ describe('agent persisted stream with the installed AI SDK', () => {
     chat.channelKey = channelConversationKey(identity);
 
     for (const user of [null, 'user-1', 'user-2', null]) {
-      const req = { ...baseReq, user: user === null ? null : { id: user } } as FrogbotRequest;
+      const req = { ...baseReq, user: user === null ? null : { id: user } } as FrogBotRequest;
       const chatId = await resolveChannelChat({ req, identity, user });
       const channelAccess = createChannelChatAccess({
         req,

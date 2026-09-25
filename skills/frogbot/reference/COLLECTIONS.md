@@ -189,7 +189,7 @@ When drafts are enabled, `_status` supports `draft` and `published`. Use collect
 
 ## Live preview
 
-Collection preview functions receive current form data and a `FrogbotRequest`.
+Collection preview functions receive current form data and a `FrogBotRequest`.
 
 ```ts
 import type { CollectionConfig } from 'frogbot';

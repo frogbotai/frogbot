@@ -4,7 +4,7 @@ import type { MessageHandler, StateAdapter } from 'chat';
 import type { z } from 'zod';
 
 import { ChannelChat } from '../channels/chat.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import { pieceFactoryDefinition, pieceInstanceRuntime } from './definePiece.js';
 import type {
   PieceActionDefinition,
@@ -41,14 +41,14 @@ type ConformanceChannelRequest = {
   method?: string;
   headers?: HeadersInit;
   body?: BodyInit;
-  data?: FrogbotRequest['data'];
+  data?: FrogBotRequest['data'];
 };
 
 type ConformanceChannel = {
   adapter: { name: string };
   identity: {
     author: Parameters<NonNullable<PieceDefinition['channel']>['identity']>[0]['author'];
-    req: FrogbotRequest;
+    req: FrogBotRequest;
     expect: unknown;
   };
   webhook?: {
@@ -104,12 +104,12 @@ function matchesError(error: unknown, expected: ConformanceError): boolean {
   return typeof expected === 'string' ? message.includes(expected) : expected.test(message);
 }
 
-function channelRequest(fixture: ConformanceChannelRequest): FrogbotRequest & Request {
+function channelRequest(fixture: ConformanceChannelRequest): FrogBotRequest & Request {
   const req = new Request(fixture.url ?? 'https://example.com/api/webhooks/conformance', {
     method: fixture.method ?? 'POST',
     headers: fixture.headers,
     body: fixture.body,
-  }) as FrogbotRequest & Request;
+  }) as FrogBotRequest & Request;
 
   req.data = fixture.data;
 

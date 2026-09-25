@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { env } from '../../../../packages/frogbot/src/env/builders.js';
 import { defineEnv } from '../../../../packages/frogbot/src/env/defineEnv.js';
-import { FrogbotEnvError } from '../../../../packages/frogbot/src/env/error.js';
+import { FrogBotEnvError } from '../../../../packages/frogbot/src/env/error.js';
 
 const originalEnv = { ...process.env };
 
@@ -21,7 +21,7 @@ describe('defineEnv', () => {
         databaseUrl: env.string().required(),
       }),
     ).toThrowError(
-      new FrogbotEnvError([
+      new FrogBotEnvError([
         { envName: 'PORT', message: 'must be a number', name: 'port' },
         { envName: 'FROGBOT_SECRET', message: 'is required', name: 'frogbotSecret' },
         { envName: 'DATABASE_URL', message: 'is required', name: 'databaseUrl' },
@@ -36,8 +36,8 @@ describe('defineEnv', () => {
       defineEnv({ secret: env.string().required() });
       expect.unreachable();
     } catch (error) {
-      expect(error).toBeInstanceOf(FrogbotEnvError);
-      expect((error as FrogbotEnvError).issues).toEqual([
+      expect(error).toBeInstanceOf(FrogBotEnvError);
+      expect((error as FrogBotEnvError).issues).toEqual([
         { envName: 'SECRET', message: 'is required', name: 'secret' },
       ]);
     }

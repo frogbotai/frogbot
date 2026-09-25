@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { z } from 'zod';
 
 import { microsoftTeamsAuth, microsoftTeamsClouds } from './config.js';
@@ -144,7 +144,7 @@ export function createMicrosoftTeamsClient({ auth }: { auth: unknown }) {
   };
 }
 
-export function signal(req: FrogbotRequest) {
+export function signal(req: FrogBotRequest) {
   req.signal?.throwIfAborted();
 
   return req.signal ?? undefined;

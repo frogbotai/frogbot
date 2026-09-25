@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import type { PieceOption } from 'frogbot/pieces';
 import { z } from 'zod';
 
@@ -24,7 +24,7 @@ async function listPages({
   includeSharedDrives,
 }: {
   client: GoogleDriveClient;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   query: string;
   includeSharedDrives: boolean;
 }): Promise<{ files: DriveFile[]; incompleteSearch: boolean }> {
@@ -62,7 +62,7 @@ export async function folderOptions({
   input,
 }: {
   client: GoogleDriveClient;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   input: { includeSharedDrives?: boolean };
 }): Promise<PieceOption[]> {
   const result = await listPages({

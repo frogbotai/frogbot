@@ -5,12 +5,12 @@ import { resolveSmallModel } from '../ai/models.js';
 import { resolveModel } from '../ai/resolve.js';
 import type { ModelId } from '../ai/types.js';
 import type { DocID } from '../collections/config/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import { firstUserText } from './firstUserText.js';
 import { messagesToUIMessages, type PersistedMessage } from './messagesToUIMessages.js';
 
 type SuggestChatTitleProps = {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   history: UIMessage[];
   mainModel: string;
 };
@@ -31,7 +31,7 @@ export async function suggestChatTitleForChat({
   req,
   chatId,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   chatId: DocID;
 }): Promise<string | undefined> {
   const config = req.frogbot.config.chat;

@@ -5,7 +5,7 @@ import type {
   DefaultServerCellComponentProps,
   DocumentTabServerProps,
   DocumentViewServerProps,
-  FrogbotRequest,
+  FrogBotRequest,
   ListViewServerProps,
   RootAdminConfig,
   SaveButtonServerProps,
@@ -25,12 +25,12 @@ type ComponentProps<T> = T extends (props: infer TProps) => unknown ? TProps : n
 type TextServerComponentProps = ComponentProps<TextFieldServerComponent>;
 
 expectTypeOf<TextServerComponentProps>().toEqualTypeOf<TextFieldServerProps>();
-expectTypeOf<TextServerComponentProps['req']>().toEqualTypeOf<FrogbotRequest>();
+expectTypeOf<TextServerComponentProps['req']>().toEqualTypeOf<FrogBotRequest>();
 expectTypeOf<TextFieldClientComponent>().toEqualTypeOf<PayloadTextFieldClientComponent>();
 
 declare const textProps: TextFieldServerProps;
 
-export const textFrogbot = textProps.req.frogbot;
+export const textFrogBot = textProps.req.frogbot;
 
 // @ts-expect-error FrogBot server field props do not expose the underlying runtime.
 export const textPayload = textProps.payload;
@@ -38,9 +38,9 @@ export const textPayload = textProps.payload;
 // @ts-expect-error FrogBot requests expose req.frogbot instead.
 export const textRequestPayload = textProps.req.payload;
 
-expectTypeOf<AdminViewServerProps['initPageResult']['req']>().toEqualTypeOf<FrogbotRequest>();
-expectTypeOf<DocumentViewServerProps['initPageResult']['req']>().toEqualTypeOf<FrogbotRequest>();
-expectTypeOf<DocumentTabServerProps['req']>().toEqualTypeOf<FrogbotRequest>();
+expectTypeOf<AdminViewServerProps['initPageResult']['req']>().toEqualTypeOf<FrogBotRequest>();
+expectTypeOf<DocumentViewServerProps['initPageResult']['req']>().toEqualTypeOf<FrogBotRequest>();
+expectTypeOf<DocumentTabServerProps['req']>().toEqualTypeOf<FrogBotRequest>();
 
 declare const adminViewProps: AdminViewServerProps;
 
@@ -56,7 +56,7 @@ expectTypeOf<DefaultServerCellComponentProps>().not.toHaveProperty('payload');
 
 type WelcomeWidgetProps = WidgetServerProps<WelcomeWidget>;
 
-expectTypeOf<WelcomeWidgetProps['req']>().toEqualTypeOf<FrogbotRequest>();
+expectTypeOf<WelcomeWidgetProps['req']>().toEqualTypeOf<FrogBotRequest>();
 expectTypeOf<WelcomeWidgetProps['widgetSlug']>().toEqualTypeOf<'welcome'>();
 expectTypeOf<WelcomeWidgetProps['widgetData']>().toEqualTypeOf<
   | {
@@ -75,7 +75,7 @@ expectTypeOf<WidgetInstance<'welcome'>>().toEqualTypeOf<{
 
 const dashboard = {
   defaultLayout: ({ req }) => {
-    expectTypeOf(req.frogbot).toMatchTypeOf<FrogbotRequest['frogbot']>();
+    expectTypeOf(req.frogbot).toMatchTypeOf<FrogBotRequest['frogbot']>();
 
     return [{ data: { heading: 'Welcome' }, widgetSlug: 'welcome', width: 'small' }];
   },

@@ -133,8 +133,8 @@ The execution context has this exact shape.
 
 ```ts
 type ToolCtx = {
-  req: FrogbotRequest
-  frogbot: Frogbot
+  req: FrogBotRequest
+  frogbot: FrogBot
   agent: {
     slug: string
     runId: string
@@ -444,7 +444,7 @@ curl http://localhost:3000/api/agents/support \
   --data '{ "prompt": "Help with ticket SUP-42" }'
 ```
 
-Stream responses return the chat ID in the `X-Frogbot-Chat-Id` header. Continue the conversation by sending that ID with only the next user message.
+Stream responses return the chat ID in the `X-FrogBot-Chat-Id` header. Continue the conversation by sending that ID with only the next user message.
 
 ```bash
 curl http://localhost:3000/api/agents/support \

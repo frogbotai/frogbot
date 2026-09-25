@@ -8,9 +8,9 @@ import type {
   ConnectionSchema,
 } from '../connections/types.js';
 import type { ConnectionEntry as PublicPieceConnectionEntry } from '../exports/pieces.js';
-import type { ConnectionEntry as PublicConnectionEntry, FrogbotConfig } from '../index.js';
+import type { ConnectionEntry as PublicConnectionEntry, FrogBotConfig } from '../index.js';
 import type { TriggerEvent } from '../triggers/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import { definePiece, pieceTriggerInstance } from './definePiece.js';
 import type {
   ConnectionEntry,
@@ -20,7 +20,7 @@ import type {
   SignInMethod,
 } from './types.js';
 
-declare const req: FrogbotRequest;
+declare const req: FrogBotRequest;
 
 const empty = z.object({});
 const tokenAuth = z.object({ token: z.string() });
@@ -137,7 +137,7 @@ const createCredentialed = definePiece({
           >();
           expectTypeOf(client).toEqualTypeOf<TokenClient>();
           expectTypeOf(options).toEqualTypeOf<CredentialedTypes['options']>();
-          expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+          expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
           return [{ label: 'Value', value: 'id' }];
         },
       },
@@ -147,7 +147,7 @@ const createCredentialed = definePiece({
         expectTypeOf(client).toEqualTypeOf<TokenClient>();
         expectTypeOf(client.token).toEqualTypeOf<string>();
         expectTypeOf(options).toEqualTypeOf<CredentialedTypes['options']>();
-        expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
         return { value: input.id };
       },
     },
@@ -164,11 +164,11 @@ const undefinedAuth = createCredentialed({ auth: undefined });
 expectTypeOf(undefinedAuth.getValue({ input: { id: 'id' }, req })).toEqualTypeOf<
   Promise<{ value: string }>
 >();
-expectTypeOf<Parameters<typeof undefinedAuth.getValue>[0]['req']>().toEqualTypeOf<FrogbotRequest>();
-expectTypeOf<Parameters<typeof undefinedAuth.client>[0]['req']>().toEqualTypeOf<FrogbotRequest>();
+expectTypeOf<Parameters<typeof undefinedAuth.getValue>[0]['req']>().toEqualTypeOf<FrogBotRequest>();
+expectTypeOf<Parameters<typeof undefinedAuth.client>[0]['req']>().toEqualTypeOf<FrogBotRequest>();
 connected.getValue({ input: { id: 'id' }, req });
 expectTypeOf(connected.client({ req })).toEqualTypeOf<Promise<TokenClient>>();
-expectTypeOf<Parameters<typeof connected.client>[0]>().toEqualTypeOf<{ req: FrogbotRequest }>();
+expectTypeOf<Parameters<typeof connected.client>[0]>().toEqualTypeOf<{ req: FrogBotRequest }>();
 expectTypeOf<'missing'>().not.toExtend<keyof typeof connected>();
 // @ts-expect-error req is required without factory auth
 connected.getValue({ input: { id: 'id' } });
@@ -244,7 +244,7 @@ const createDefaultOptions = definePiece({
         expectTypeOf(client).toEqualTypeOf<undefined>();
         expectTypeOf(options).toEqualTypeOf<DefaultOptionsTypes['options']>();
         expectTypeOf(options.region).toEqualTypeOf<string>();
-        expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
         return options.region;
       },
     },
@@ -273,16 +273,16 @@ const createEmail = definePiece({
       expectTypeOf(message.to).not.toBeNever();
       expectTypeOf(client).toEqualTypeOf<undefined>();
       expectTypeOf(options).toEqualTypeOf<PlainTypes['options']>();
-      expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+      expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
       return null;
     },
   },
 } satisfies PieceDefinition<PlainTypes, undefined>);
 const email = createEmail({});
-const emailConfig: Pick<FrogbotConfig, 'email'> = { email };
+const emailConfig: Pick<FrogBotConfig, 'email'> = { email };
 expectTypeOf(emailConfig.email).not.toBeNever();
 // @ts-expect-error a plain piece cannot fill the email slot
-const invalidEmailConfig: Pick<FrogbotConfig, 'email'> = { email: createWithoutOAuth({}) };
+const invalidEmailConfig: Pick<FrogBotConfig, 'email'> = { email: createWithoutOAuth({}) };
 void invalidEmailConfig;
 
 const createChannel = definePiece({
@@ -300,7 +300,7 @@ const createChannel = definePiece({
     async identity({ author, client, req }) {
       expectTypeOf(author).toEqualTypeOf<Author>();
       expectTypeOf(client).toEqualTypeOf<TokenClient>();
-      expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+      expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
       return null;
     },
   },
@@ -341,7 +341,7 @@ const createTrigger = definePiece({
         expectTypeOf(input).toEqualTypeOf<TriggerTypes['triggers']['created']['input']>();
         expectTypeOf(client).toEqualTypeOf<undefined>();
         expectTypeOf(options).toEqualTypeOf<TriggerTypes['options']>();
-        expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
         expectTypeOf(state).toEqualTypeOf<TriggerState>();
         return [{ dedupeKey: 'created', data: { id: input.project } }];
       },
@@ -386,7 +386,7 @@ const inferredTriggerAgent: AgentConfig<typeof trigger.triggers.created> = {
       handler: ({ event, agent, req }) => {
         expectTypeOf(event).toEqualTypeOf<z.output<typeof triggerOutput>>();
         expectTypeOf(agent).toEqualTypeOf<AgentInstance>();
-        expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
       },
     },
     { type: 'schedule', slug: 'daily', schedule: { every: '1d' }, prompt: 'Run' },
@@ -410,7 +410,7 @@ const unparameterizedAgent: AgentConfig = {
       input: { project: 'project' },
       handler: ({ event, req }) => {
         expectTypeOf(event).toBeUnknown();
-        expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
       },
     },
   ],
@@ -468,7 +468,7 @@ const createSignIn = definePiece({
     async account({ tokens, client, req }) {
       expectTypeOf(tokens).toEqualTypeOf<OAuthTokens>();
       expectTypeOf(client).toEqualTypeOf<OAuthClient>();
-      expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+      expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
       return { id: 'id', label: 'Account', email: 'user@example.com' };
     },
   },
@@ -531,7 +531,7 @@ const missingAppConnection: ConnectionEntry<typeof oauthWithoutApp> = {
 };
 void missingAppConnection;
 
-type PublicConnections = NonNullable<FrogbotConfig['connections']>;
+type PublicConnections = NonNullable<FrogBotConfig['connections']>;
 type PublicConnection = PublicConnections[number];
 expectTypeOf<PublicConnectionEntry>().toEqualTypeOf<DomainConnectionEntry>();
 expectTypeOf<PublicPieceConnectionEntry>().toEqualTypeOf<DomainConnectionEntry>();
@@ -553,7 +553,7 @@ expectTypeOf<
 >();
 const connectionsConfig = {
   connections: [oauthConnection, bothConnection, secretConnection],
-} satisfies Pick<FrogbotConfig, 'connections'>;
+} satisfies Pick<FrogBotConfig, 'connections'>;
 expectTypeOf(connectionsConfig.connections).toExtend<PublicConnections>();
 expectTypeOf<typeof oauthConnection>().toExtend<PublicConnection>();
 expectTypeOf<typeof bothConnection>().toExtend<PublicConnection>();

@@ -7,12 +7,12 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { buildConfig, type FrogbotConfig } from 'frogbot';
+import { buildConfig, type FrogBotConfig } from 'frogbot';
 import { getJobLeaseContext } from 'frogbot/jobs';
-import { Frogbot } from 'frogbot/test';
+import { FrogBot } from 'frogbot/test';
 import { BasePayload, type Payload, type PayloadRequest } from 'payload';
 
-import { initFrogbotFromPayload } from '../../packages/frogbot/dist/frogbot.js';
+import { initFrogBotFromPayload } from '../../packages/frogbot/dist/frogbot.js';
 
 export const adapterName =
   process.env.FROGBOT_JOBS_ADAPTER ??
@@ -50,7 +50,7 @@ function externalRequire() {
 async function createDatabase() {
   const name = `ticket121_${randomUUID().replaceAll('-', '')}`;
   const cleanups: (() => Promise<void>)[] = [];
-  let descriptor: FrogbotConfig['db'];
+  let descriptor: FrogBotConfig['db'];
 
   if (adapterName === 'sqlite') {
     const { sqliteAdapter } = sourceAdapters
@@ -196,8 +196,8 @@ export async function bootJobsFixture({
   jobs = {},
   config: overrides = {},
 }: {
-  jobs?: FrogbotConfig['jobs'];
-  config?: Pick<FrogbotConfig, 'agents' | 'ai' | 'routes'>;
+  jobs?: FrogBotConfig['jobs'];
+  config?: Pick<FrogBotConfig, 'agents' | 'ai' | 'routes'>;
 } = {}) {
   process.env.PAYLOAD_DROP_DATABASE = 'false';
 
@@ -206,7 +206,7 @@ export async function bootJobsFixture({
   const actions = new Map<string, (req: PayloadRequest) => Promise<void>>();
   const hookEvents: { operation: string; id: string }[] = [];
   const nativeDatabases: Payload['db'][] = [];
-  let frogbot: Frogbot | undefined;
+  let frogbot: FrogBot | undefined;
   let workerPayload: Payload | undefined;
 
   const recordCallback = async ({
@@ -385,7 +385,7 @@ export async function bootJobsFixture({
       },
     });
 
-    frogbot = await new Frogbot().init({ config, disableOnInit: true });
+    frogbot = await new FrogBot().init({ config, disableOnInit: true });
 
     const payload = (frogbot as unknown as { payload: Payload }).payload;
 
@@ -407,7 +407,7 @@ export async function bootJobsFixture({
       cron: false,
     });
 
-    const worker = await initFrogbotFromPayload(workerPayload, config, { disableOnInit: true });
+    const worker = await initFrogBotFromPayload(workerPayload, config, { disableOnInit: true });
 
     return {
       frogbot,

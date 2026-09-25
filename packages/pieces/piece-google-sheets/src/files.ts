@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { z } from 'zod';
 
 export const fileReference = z.object({
@@ -15,7 +15,7 @@ export async function loadFile({
   req,
   file,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   file: z.output<typeof fileReference>;
 }) {
   const collection = req.frogbot.config.files?.slug;
@@ -63,7 +63,7 @@ export async function saveFile({
   name,
   mimeType,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   data: Buffer;
   name: string;
   mimeType: string;

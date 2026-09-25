@@ -95,7 +95,7 @@ Each endpoint object needs to have:
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`path`**    | A string for the endpoint route after the collection slug                                                                                                                                                                                                  |
 | **`method`**  | The lowercase HTTP verb to use: 'get', 'head', 'post', 'put', 'delete', 'connect' or 'options'                                                                                                                                                             |
-| **`handler`** | A function that accepts **req** - `FrogbotRequest` object which contains [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) properties, currently authenticated `user` and the Local API instance `frogbot`.                          |
+| **`handler`** | A function that accepts **req** - `FrogBotRequest` object which contains [Web Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) properties, currently authenticated `user` and the Local API instance `frogbot`.                          |
 | **`root`**    | When `true`, defines the endpoint on the root Next.js app, bypassing FrogBot handlers and the `routes.api` subpath. Note: this only applies to top-level endpoints of your FrogBot Config; endpoints defined on `collections` cannot be root.              |
 | **`custom`**  | Extension point for adding custom data (e.g. for plugins)                                                                                                                                                                                                  |
 
@@ -330,9 +330,9 @@ Use `request(path, init)` for collection, authentication, version, and custom en
 Example:
 
 ```ts
-import { createFrogbotSDK } from '@frogbotai/sdk'
+import { createFrogBotSDK } from '@frogbotai/sdk'
 
-const sdk = createFrogbotSDK({
+const sdk = createFrogBotSDK({
   baseURL: 'https://example.com/api',
 })
 ```
@@ -378,7 +378,7 @@ const response = await sdk.request('/users/login', {
 })
 const { token } = await response.json()
 
-const authenticatedSDK = createFrogbotSDK({
+const authenticatedSDK = createFrogBotSDK({
   baseURL: 'https://example.com/api',
   headers: { Authorization: `JWT ${token}` },
 })
@@ -424,7 +424,7 @@ await sdk.request('/send-data', {
 Pass standard `RequestInit` options such as `credentials` per request, or supply a custom `fetch` to set shared defaults. This browser example uses session cookies:
 
 ```ts
-const sdk = createFrogbotSDK({
+const sdk = createFrogBotSDK({
   baseURL: 'https://example.com/api',
   fetch: (url, init) => fetch(url, { credentials: 'include', ...init }),
 })

@@ -1,7 +1,7 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { createResend } from '@frogbotai/piece-resend';
 import { s3Storage } from '@frogbotai/storage-s3';
-import type { FrogbotInstance } from 'frogbot';
+import type { FrogBotInstance } from 'frogbot';
 import { buildConfig } from 'frogbot';
 
 import { Media } from './collections.js';
@@ -39,7 +39,7 @@ export const config = buildConfig({
   email: resend,
 });
 
-export async function sendEmail(frogbot: FrogbotInstance) {
+export async function sendEmail(frogbot: FrogBotInstance) {
   await frogbot.email.sendEmail({
     to: 'customer@example.com',
     subject: 'Order confirmed',

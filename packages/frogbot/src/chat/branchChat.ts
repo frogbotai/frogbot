@@ -2,12 +2,12 @@ import { generateId } from 'ai';
 import { commitTransaction, initTransaction, killTransaction, NotFound } from 'payload';
 
 import type { DocID } from '../collections/config/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import { MESSAGE_USAGE_CONTEXT_KEY } from './collections/messages.js';
 import { firstUserText } from './firstUserText.js';
 
 export type BranchChatProps = {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   chatId: DocID;
   messageId: DocID;
 };
@@ -48,7 +48,7 @@ async function duplicateTitle({
   ownerId,
   sourceTitle,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   chatsSlug: string;
   ownerId: DocID;
   sourceTitle: string;

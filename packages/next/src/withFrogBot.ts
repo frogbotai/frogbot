@@ -4,7 +4,7 @@ import { relative } from 'node:path';
 import { withPayload } from '@payloadcms/next/withPayload';
 import type { NextConfig } from 'next';
 
-type WithFrogbotOptions = {
+type WithFrogBotOptions = {
   devBundleServerPackages?: boolean;
 };
 
@@ -32,9 +32,9 @@ function getTurbopackPayloadUIRoot(): string {
   return projectRelativePath.startsWith('.') ? projectRelativePath : `./${projectRelativePath}`;
 }
 
-export function withFrogbot(
+export function withFrogBot(
   nextConfig: NextConfig = {},
-  options: WithFrogbotOptions = {},
+  options: WithFrogBotOptions = {},
 ): NextConfig {
   const frogbotConfig: NextConfig = {
     ...nextConfig,

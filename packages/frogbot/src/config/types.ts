@@ -15,14 +15,14 @@ import type { ConnectionsConfig } from '../connections/types.js';
 import type { DatabaseAdapter } from '../database/types.js';
 import type { Endpoint } from '../endpoints/types.js';
 import type { Block } from '../fields/config/types.js';
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 import type { JobsConfig } from '../jobs/types.js';
 import type { EmailPiece } from '../pieces/email.js';
 import type { Piece } from '../pieces/types.js';
 import type { Plugin } from '../plugin.js';
 import type { AnyTool } from '../tools/types.js';
 import type { Locale, PayloadConfig, SanitizedCollectionConfig } from '../types/payload.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 
 export type LivePreviewURLType = null | string | undefined;
 
@@ -30,7 +30,7 @@ export type LivePreviewURLArgs = {
   collectionConfig?: SanitizedCollectionConfig;
   data: Record<string, unknown>;
   locale: Locale;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 };
 
 export type LivePreviewConfig = {
@@ -53,7 +53,7 @@ export type RootLivePreviewConfig = LivePreviewConfig & {
 type PayloadAfterErrorHook = NonNullable<NonNullable<PayloadConfig['hooks']>['afterError']>[number];
 
 export type AfterErrorHook = (
-  args: Omit<Parameters<PayloadAfterErrorHook>[0], 'req'> & { req: FrogbotRequest },
+  args: Omit<Parameters<PayloadAfterErrorHook>[0], 'req'> & { req: FrogBotRequest },
 ) => ReturnType<PayloadAfterErrorHook>;
 
 export type RootHooks = {
@@ -68,7 +68,7 @@ export type RolesPrewiring = {
 
 /** Root config keys FrogBot overrides or forbids. Excluded from the
  *  Payload pass-through so FrogBot can declare its own shape for them. */
-type FrogbotOverridden =
+type FrogBotOverridden =
   | 'admin'
   | 'blocks'
   | 'collections'
@@ -82,9 +82,9 @@ type FrogbotOverridden =
   | 'plugins'
   | 'secret';
 
-export type OnInit = (frogbot: Frogbot) => Promise<void> | void;
+export type OnInit = (frogbot: FrogBot) => Promise<void> | void;
 
-export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
+export type FrogBotConfig = Omit<PayloadConfig, FrogBotOverridden> & {
   blocks?: Block[];
   /** Server-side secret used for tokens, cookies, and signing. */
   secret: string;
@@ -108,9 +108,9 @@ export type FrogbotConfig = Omit<PayloadConfig, FrogbotOverridden> & {
   settings?: SettingsEntry[];
   /** Root-level admin configuration. */
   admin?: RootAdminConfig;
-  /** Root-level custom endpoints. Handler receives FrogbotRequest. */
+  /** Root-level custom endpoints. Handler receives FrogBotRequest. */
   endpoints?: Endpoint[];
-  /** Root-level hooks. `req` is `FrogbotRequest`. */
+  /** Root-level hooks. `req` is `FrogBotRequest`. */
   hooks?: RootHooks;
   /** Runs once after FrogBot boots, with the initialized instance. */
   onInit?: OnInit | OnInit[];

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Frogbot } from '../../../../packages/frogbot/src/frogbot.js';
+import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
 import { createGatewayHandler } from '../../../../packages/frogbot/src/server/gateway.js';
 
 const body = JSON.stringify({
@@ -17,7 +17,7 @@ function makeRequest() {
   });
 }
 
-function makeFrogbot({
+function makeFrogBot({
   user = { id: 'user-1' } as object | null,
   evaluate = () => true,
 }: {
@@ -33,14 +33,14 @@ function makeFrogbot({
     config: { ai: { access: { evaluate } } },
     createRequest,
     auth,
-  } as unknown as Frogbot;
+  } as unknown as FrogBot;
 
   return { frogbot, req, handler, auth, createRequest };
 }
 
 describe('FrogBot gateway evaluation', () => {
   it('authenticates and forwards /api/v1/evaluate with the request context', async () => {
-    const { frogbot, req, handler, auth, createRequest } = makeFrogbot();
+    const { frogbot, req, handler, auth, createRequest } = makeFrogBot();
 
     const response = await createGatewayHandler(frogbot)(makeRequest());
 
@@ -55,7 +55,7 @@ describe('FrogBot gateway evaluation', () => {
   });
 
   it('rejects unauthenticated requests without forwarding them', async () => {
-    const { frogbot, handler } = makeFrogbot({ user: null });
+    const { frogbot, handler } = makeFrogBot({ user: null });
 
     const response = await createGatewayHandler(frogbot)(makeRequest());
 
@@ -64,7 +64,7 @@ describe('FrogBot gateway evaluation', () => {
   });
 
   it('enforces evaluation access before forwarding the request', async () => {
-    const { frogbot, handler } = makeFrogbot({ evaluate: () => false });
+    const { frogbot, handler } = makeFrogBot({ evaluate: () => false });
 
     const response = await createGatewayHandler(frogbot)(makeRequest());
 
@@ -74,7 +74,7 @@ describe('FrogBot gateway evaluation', () => {
   });
 
   it('enforces model policy against the requested model before forwarding', async () => {
-    const { frogbot, handler } = makeFrogbot({
+    const { frogbot, handler } = makeFrogBot({
       user: { id: 'user-1', modelAccess: 'selected', models: ['typesafe-ai/jev-latest'] },
     });
 

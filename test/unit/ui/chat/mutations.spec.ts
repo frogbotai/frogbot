@@ -1,4 +1,4 @@
-import { createFrogbotSDK } from '@frogbotai/sdk';
+import { createFrogBotSDK } from '@frogbotai/sdk';
 import { describe, expect, it, vi } from 'vitest';
 
 import { deleteChat, renameChat } from '../../../../packages/ui/src/chat/mutations';
@@ -10,7 +10,7 @@ describe('chat mutations', () => {
     const fetch = vi.fn(() => Promise.resolve(Response.json({ id: 't1', title: 'New' })));
     await renameChat(
       {
-        sdk: createFrogbotSDK({ baseURL: '/api', fetch }),
+        sdk: createFrogBotSDK({ baseURL: '/api', fetch }),
         chatsSlug: 'conversations',
         chatId: 'c1',
       },
@@ -36,7 +36,7 @@ describe('chat mutations', () => {
       );
     });
     await deleteChat({
-      sdk: createFrogbotSDK({ baseURL: '/api', fetch }),
+      sdk: createFrogBotSDK({ baseURL: '/api', fetch }),
       chatsSlug: 'conversations',
       messagesSlug: 'turns',
       chatId: 'c1',

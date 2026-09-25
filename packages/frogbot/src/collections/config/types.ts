@@ -1,7 +1,7 @@
 // FrogBot's CollectionConfig — the user-facing authoring shape.
 //
 // Strategy: extend Payload's CollectionConfig but override hooks, access,
-// endpoints, and fields with frogbot's own types (which use FrogbotRequest
+// endpoints, and fields with frogbot's own types (which use FrogBotRequest
 // instead of PayloadRequest). Users write hooks against `req.frogbot` —
 // sanitize() wraps them for Payload at runtime.
 //
@@ -11,7 +11,7 @@
 import type { RequestContext, SanitizedCollectionConfig, TypeWithID } from 'payload';
 
 import type { IconName } from '../../admin/icons.js';
-import type { FrogbotComponent } from '../../admin/types.js';
+import type { FrogBotComponent } from '../../admin/types.js';
 import type { CollectionView, DocumentTabConfig } from '../../admin/views/types.js';
 import type { AuthConfig } from '../../auth/types.js';
 import type { LivePreviewConfig } from '../../config/types.js';
@@ -20,7 +20,7 @@ import type { Field } from '../../fields/config/types.js';
 import type { SearchIndexConfig, SearchIndexDescriptors } from '../../search/types.js';
 import type { CollectionSlug, TypedCollection } from '../../types/generated.js';
 import type { PayloadCollectionConfig, SelectType, Sort, Where } from '../../types/payload.js';
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 
 type Overridden = 'auth' | 'hooks' | 'access' | 'endpoints' | 'fields' | 'admin';
 type PayloadAdmin = NonNullable<PayloadCollectionConfig['admin']>;
@@ -62,7 +62,7 @@ export type CollectionAdminConfig = Omit<
 > & {
   components?: CollectionAdminComponents;
   group?: PayloadAdmin['group'] | null;
-  icon?: FrogbotComponent | IconName;
+  icon?: FrogBotComponent | IconName;
   livePreview?: LivePreviewConfig;
   views?: CollectionView[];
 };
@@ -72,10 +72,10 @@ export type CollectionConfig = Omit<PayloadCollectionConfig, Overridden> & {
   /** Per-collection auth. `true` enables FrogBot defaults; object overrides. */
   auth?: boolean | AuthConfig;
 
-  /** Collection hooks. `req` is `FrogbotRequest` with `req.frogbot`. */
+  /** Collection hooks. `req` is `FrogBotRequest` with `req.frogbot`. */
   hooks?: CollectionHooks;
 
-  /** Collection-level access control. `req` is `FrogbotRequest`. */
+  /** Collection-level access control. `req` is `FrogBotRequest`. */
   access?: CollectionAccess;
 
   /** Custom REST endpoints for this collection. */
@@ -110,23 +110,23 @@ export type CollectionMarker = (typeof COLLECTION_MARKERS)[number];
 /**
  * Runtime view of a registered collection. Parallel to `CollectionConfig`
  * (authoring input) vs `Collection` (post-boot reality on the running
- * FrogBot instance). Surfaced via `FrogbotInstance.collections`.
+ * FrogBot instance). Surfaced via `FrogBotInstance.collections`.
  *
  * Intentionally mirrors Payload's `Collection`/`CollectionConfig` split —
  * same concept, FrogBot vocabulary (simple auth boolean) instead of
  * Payload's sanitized internals.
  */
 export type Collection = {
-  /** Collection slug. Also the key in `FrogbotInstance.collections`. */
+  /** Collection slug. Also the key in `FrogBotInstance.collections`. */
   slug: string;
   /** True if this collection was authored with auth enabled. */
   auth: boolean;
   search?: SearchIndexDescriptors;
 };
 
-// Frogbot's access control types.
+// FrogBot's access control types.
 //
-// Same shape as Payload's but with `FrogbotRequest`. Users write access
+// Same shape as Payload's but with `FrogBotRequest`. Users write access
 // functions against these; sanitize() wraps them for Payload at runtime.
 
 export type AccessResult = boolean | Where;
@@ -135,13 +135,13 @@ export type AccessArgs<TData = any> = {
   data?: TData;
   id?: number | string;
   isReadingStaticFile?: boolean;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 };
 
 export type Access<TData = any> = (args: AccessArgs<TData>) => AccessResult | Promise<AccessResult>;
 
 export type CollectionAccess = {
-  admin?: (args: { req: FrogbotRequest }) => boolean | Promise<boolean>;
+  admin?: (args: { req: FrogBotRequest }) => boolean | Promise<boolean>;
   create?: Access;
   delete?: Access;
   read?: Access;
@@ -156,7 +156,7 @@ export type FieldAccessArgs<TData extends TypeWithID = any, TSiblingData = any> 
   data?: Partial<TData>;
   doc?: TData;
   id?: number | string;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   siblingData?: Partial<TSiblingData>;
 };
 
@@ -164,9 +164,9 @@ export type FieldAccess<TData extends TypeWithID = any, TSiblingData = any> = (
   args: FieldAccessArgs<TData, TSiblingData>,
 ) => boolean | Promise<boolean>;
 
-// Frogbot's collection hook types.
+// FrogBot's collection hook types.
 //
-// Same shape as Payload's hooks but with `FrogbotRequest` instead of
+// Same shape as Payload's hooks but with `FrogBotRequest` instead of
 // `PayloadRequest`. Users write hooks against these types; at runtime,
 // sanitize() wraps them so Payload sees PayloadRequest-compatible functions.
 
@@ -178,7 +178,7 @@ export type BeforeValidateHook<T extends TypeWithID = any> = (args: {
   data?: Partial<T>;
   operation: CreateOrUpdateOperation;
   originalDoc?: T;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 }) => any;
 
 export type BeforeChangeHook<T extends TypeWithID = any> = (args: {
@@ -187,7 +187,7 @@ export type BeforeChangeHook<T extends TypeWithID = any> = (args: {
   data: Partial<T>;
   operation: CreateOrUpdateOperation;
   originalDoc?: T;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 }) => any;
 
 export type AfterChangeHook<T extends TypeWithID = any> = (args: {
@@ -198,7 +198,7 @@ export type AfterChangeHook<T extends TypeWithID = any> = (args: {
   operation: CreateOrUpdateOperation;
   overrideAccess?: boolean;
   previousDoc: T;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 }) => any;
 
 export type BeforeReadHook<T extends TypeWithID = any> = (args: {
@@ -207,7 +207,7 @@ export type BeforeReadHook<T extends TypeWithID = any> = (args: {
   doc: T;
   overrideAccess?: boolean;
   query: { [key: string]: any };
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 }) => any;
 
 export type AfterReadHook<T extends TypeWithID = any> = (args: {
@@ -217,14 +217,14 @@ export type AfterReadHook<T extends TypeWithID = any> = (args: {
   findMany?: boolean;
   overrideAccess?: boolean;
   query?: { [key: string]: any };
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 }) => any;
 
 export type BeforeDeleteHook = (args: {
   collection: SanitizedCollectionConfig;
   context: RequestContext;
   id: number | string;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 }) => any;
 
 export type AfterDeleteHook<T extends TypeWithID = any> = (args: {
@@ -232,7 +232,7 @@ export type AfterDeleteHook<T extends TypeWithID = any> = (args: {
   context: RequestContext;
   doc: T;
   id: number | string;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 }) => any;
 
 // ── Auth hooks ────────────────────────────────────────────────────────
@@ -240,14 +240,14 @@ export type AfterDeleteHook<T extends TypeWithID = any> = (args: {
 export type BeforeLoginHook<T extends TypeWithID = any> = (args: {
   collection: SanitizedCollectionConfig;
   context: RequestContext;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   user: T;
 }) => any;
 
 export type AfterLoginHook<T extends TypeWithID = any> = (args: {
   collection: SanitizedCollectionConfig;
   context: RequestContext;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   token: string;
   user: T;
 }) => any;
@@ -255,7 +255,7 @@ export type AfterLoginHook<T extends TypeWithID = any> = (args: {
 export type AfterLogoutHook<_T extends TypeWithID = any> = (args: {
   collection: SanitizedCollectionConfig;
   context: RequestContext;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 }) => any;
 
 export type AfterForgotPasswordHook = (args: {
@@ -266,12 +266,12 @@ export type AfterForgotPasswordHook = (args: {
 
 export type RefreshHook<T extends TypeWithID = any> = (args: {
   exp: number;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   token: string;
   user: T;
 }) => any;
 
-export type MeHook<T extends TypeWithID = any> = (args: { req: FrogbotRequest; user: T }) => any;
+export type MeHook<T extends TypeWithID = any> = (args: { req: FrogBotRequest; user: T }) => any;
 
 export type CollectionHooks<T extends TypeWithID = any> = {
   afterChange?: AfterChangeHook<T>[];
@@ -302,7 +302,7 @@ type CommonArgs = {
   locale?: string;
   overrideAccess?: boolean;
   populate?: Record<string, unknown>;
-  req?: FrogbotRequest;
+  req?: FrogBotRequest;
   select?: SelectType;
   showHiddenFields?: boolean;
   user?: unknown;

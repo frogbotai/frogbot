@@ -1,7 +1,7 @@
 import { createGoogle } from '@frogbotai/piece-google';
 import type {
-  FrogbotInstance,
-  FrogbotRequest,
+  FrogBotInstance,
+  FrogBotRequest,
   Subscription,
   SubscriptionEnableProps,
 } from 'frogbot';
@@ -40,7 +40,7 @@ export const createExample = definePiece({
 
 const piece = createExample({});
 
-export async function lookupItem(req: FrogbotRequest) {
+export async function lookupItem(req: FrogBotRequest) {
   const result = await piece.lookup({
     input: { id: '123' },
     req,
@@ -53,7 +53,7 @@ export async function enableMountedTrigger({
   frogbot,
   mount,
 }: {
-  frogbot: FrogbotInstance;
+  frogbot: FrogBotInstance;
   mount: SubscriptionEnableProps;
 }) {
   const subscription = await frogbot.triggers.enable(mount);
@@ -66,7 +66,7 @@ export async function disableMountedTrigger({
   frogbot,
   subscription,
 }: {
-  frogbot: FrogbotInstance;
+  frogbot: FrogBotInstance;
   subscription: Subscription;
 }) {
   await frogbot.triggers.disable(subscription.id);

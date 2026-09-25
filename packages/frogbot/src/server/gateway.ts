@@ -1,16 +1,16 @@
 import { AIAccessError, enforceAIAccess } from '../ai/access.js';
 import { enforcePolicy } from '../ai/policy.js';
 import type { AIMethod } from '../ai/types.js';
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 
 type HandleGatewayRequestArgs = {
-  frogbot: Frogbot;
+  frogbot: FrogBot;
   request: Request;
 };
 
 export type GatewayHandler = (request: Request) => Promise<Response>;
 
-export function createGatewayHandler(frogbot: Frogbot): GatewayHandler {
+export function createGatewayHandler(frogbot: FrogBot): GatewayHandler {
   return (request) => handleGatewayRequest({ frogbot, request });
 }
 

@@ -1,4 +1,4 @@
-import { type CollectionConfig, type FrogbotRequest, type Plugin } from 'frogbot';
+import { type CollectionConfig, type FrogBotRequest, type Plugin } from 'frogbot';
 
 import { createApiKeysCollection } from './collection.js';
 import { createApiKeyStrategy } from './strategy.js';
@@ -25,7 +25,7 @@ export type ApiKeysPluginOptions = {
   tokenPrefix?: string;
   headerNames?: string[];
   collection?: Partial<CollectionConfig>;
-  canRevokeAnyKey?: (req: FrogbotRequest) => boolean | Promise<boolean>;
+  canRevokeAnyKey?: (req: FrogBotRequest) => boolean | Promise<boolean>;
 };
 
 export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {

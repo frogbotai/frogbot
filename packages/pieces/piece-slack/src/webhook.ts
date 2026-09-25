@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 
 const replayWindowSeconds = 300;
 
@@ -29,7 +29,7 @@ function interactivePayload(data: unknown) {
   }
 }
 
-export function slackEvent(req: FrogbotRequest) {
+export function slackEvent(req: FrogBotRequest) {
   const interaction = interactivePayload(req.data);
 
   if (interaction) return interaction;
@@ -41,7 +41,7 @@ export function slackEvent(req: FrogbotRequest) {
   return eventMap(data.event);
 }
 
-export function slackWorkspace(req: FrogbotRequest) {
+export function slackWorkspace(req: FrogBotRequest) {
   const interaction = interactivePayload(req.data);
 
   if (
@@ -60,7 +60,7 @@ export function slackWorkspace(req: FrogbotRequest) {
   return data && typeof data.team_id === 'string' ? data.team_id : undefined;
 }
 
-export function slackEventType(req: FrogbotRequest) {
+export function slackEventType(req: FrogBotRequest) {
   const interaction = interactivePayload(req.data);
 
   if (interaction && 'type' in interaction && typeof interaction.type === 'string') {
@@ -78,7 +78,7 @@ export async function verifySlackWebhook({
   req,
   options,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   options: { signingSecret?: string };
 }) {
   if (!options.signingSecret) return false;
@@ -123,7 +123,7 @@ export async function verifySlackWebhook({
   return true;
 }
 
-export function slackHandshake(req: FrogbotRequest) {
+export function slackHandshake(req: FrogBotRequest) {
   const data = eventMap(req.data);
 
   if (!data) return null;
@@ -133,6 +133,6 @@ export function slackHandshake(req: FrogbotRequest) {
     : null;
 }
 
-export function parseSlackWebhook(req: FrogbotRequest): { event: string } {
+export function parseSlackWebhook(req: FrogBotRequest): { event: string } {
   return { event: slackEventType(req) };
 }

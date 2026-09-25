@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
     hasGatewayAdapters: vi.fn(),
     runGatewayListener: vi.fn(),
   },
-  initFrogbot: vi.fn(),
+  initFrogBot: vi.fn(),
   loadConfig: vi.fn(),
 }));
 
@@ -20,7 +20,7 @@ vi.mock('../../../../packages/frogbot/src/config/load.js', () => ({
   loadConfig: mocks.loadConfig,
 }));
 vi.mock('../../../../packages/frogbot/src/frogbot.js', () => ({
-  initFrogbotFromPayload: mocks.initFrogbot,
+  initFrogBotFromPayload: mocks.initFrogBot,
 }));
 
 describe('channels:run lifecycle', () => {
@@ -37,7 +37,7 @@ describe('channels:run lifecycle', () => {
     mocks.loadConfig.mockReset().mockResolvedValue({
       _internal: { payloadConfig: Promise.resolve({}) },
     });
-    mocks.initFrogbot.mockReset().mockResolvedValue({ destroy: mocks.destroy });
+    mocks.initFrogBot.mockReset().mockResolvedValue({ destroy: mocks.destroy });
 
     vi.spyOn(BasePayload.prototype, 'init').mockResolvedValue(undefined);
     vi.spyOn(process, 'exit').mockImplementation((code) => {
@@ -67,7 +67,7 @@ describe('channels:run lifecycle', () => {
 
     expect(mocks.host.runGatewayListener.mock.calls[0][0].signal.aborted).toBe(true);
     expect(mocks.destroy).toHaveBeenCalledOnce();
-    expect(mocks.initFrogbot).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+    expect(mocks.initFrogBot).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
       startChannelGateway: false,
     });
   });

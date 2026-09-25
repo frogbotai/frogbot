@@ -18,7 +18,7 @@ import {
   pieceInstanceTools,
 } from '../../../packages/frogbot/src/pieces/definePiece.js';
 import { pieceCapabilities } from '../../../packages/frogbot/src/pieces/types.js';
-import type { FrogbotRequest } from '../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 import { createGmail, gmailScopes } from '../../../packages/pieces/piece-gmail/src/index.js';
 import { createGoogle, googleOAuth } from '../../../packages/pieces/piece-google/src/index.js';
 
@@ -109,7 +109,7 @@ describe('Google identity', () => {
       const req = {
         user: { id: 'owner', collection: 'users' },
         frogbot,
-      } as unknown as FrogbotRequest;
+      } as unknown as FrogBotRequest;
       expect(metadata.scopes).toEqual(granted);
       if (scenario === 'gmail-missing-permission') {
         await expect(api.resolve({ piece, req })).rejects.toMatchObject({

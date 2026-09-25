@@ -2,8 +2,8 @@ import path from 'node:path';
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../bootFrogbot';
-import { bootFrogbot } from '../bootFrogbot';
+import type { BootedFrogBot } from '../bootFrogBot';
+import { bootFrogBot } from '../bootFrogBot';
 import { clearAndSeed } from '../clearAndSeed';
 import { isServiceReachable, storageServices } from './storageServices';
 
@@ -21,7 +21,7 @@ export function storageContractSuite(
   options?: StorageContractOptions,
 ) {
   describe(`storage contract [${adapterName}]`, () => {
-    let booted: BootedFrogbot;
+    let booted: BootedFrogBot;
     let skipSuite = false;
 
     beforeAll(async () => {
@@ -44,7 +44,7 @@ export function storageContractSuite(
         }
       }
       if (options?.beforeSetup) await options.beforeSetup();
-      booted = await bootFrogbot(dirname);
+      booted = await bootFrogBot(dirname);
     });
 
     afterAll(async () => {

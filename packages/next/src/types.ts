@@ -1,3 +1,3 @@
-import type { FrogbotSanitizedConfig } from 'frogbot';
+import type { FrogBotSanitizedConfig } from 'frogbot';
 
-export type FrogbotConfigArg = FrogbotSanitizedConfig | Promise<FrogbotSanitizedConfig>;
+export type FrogBotConfigArg = FrogBotSanitizedConfig | Promise<FrogBotSanitizedConfig>;

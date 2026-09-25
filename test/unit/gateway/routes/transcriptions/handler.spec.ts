@@ -7,8 +7,8 @@ import type { ProviderRegistry } from '../../../../../packages/gateway/src/provi
 describe('transcriptionsRoute', () => {
   it('serves POST /v1/audio/transcriptions', async () => {
     const doGenerate = vi.fn(async () => ({
-      text: 'Hello from Frogbot',
-      segments: [{ text: 'Hello from Frogbot', startSecond: 0, endSecond: 1.5 }],
+      text: 'Hello from FrogBot',
+      segments: [{ text: 'Hello from FrogBot', startSecond: 0, endSecond: 1.5 }],
       language: 'en',
       durationInSeconds: 1.5,
       warnings: [],
@@ -34,12 +34,12 @@ describe('transcriptionsRoute', () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({
-      text: 'Hello from Frogbot',
+      text: 'Hello from FrogBot',
       task: 'transcribe',
       language: 'en',
       duration: 1.5,
       words: [],
-      segments: [{ id: 0, seek: 0, start: 0, end: 1.5, text: 'Hello from Frogbot', tokens: [] }],
+      segments: [{ id: 0, seek: 0, start: 0, end: 1.5, text: 'Hello from FrogBot', tokens: [] }],
     });
     expect(doGenerate).toHaveBeenCalledWith(
       expect.objectContaining({

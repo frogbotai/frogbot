@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { type calendar_v3, google } from 'googleapis';
 
 import { googleCalendarAuth } from './config.js';
@@ -15,7 +15,7 @@ export function createGoogleCalendarClient({ auth }: { auth: unknown }) {
   return google.calendar({ version: 'v3', auth: oauth });
 }
 
-export function requestOptions(req: FrogbotRequest) {
+export function requestOptions(req: FrogBotRequest) {
   req.signal?.throwIfAborted();
   return { signal: req.signal ?? undefined, retry: false };
 }

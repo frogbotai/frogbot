@@ -1,13 +1,13 @@
 import type { TypeWithID } from 'payload';
 import { slugField as upstreamSlugField } from 'payload';
 
-import type { FrogbotRequest } from '../../../types/request.js';
+import type { FrogBotRequest } from '../../../types/request.js';
 import type { RowField } from '../../config/types.js';
 import { generateSlug } from './generateSlug.js';
 
 export type Slugify<T extends TypeWithID = any> = (args: {
   data: T;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   valueToSlugify?: any;
 }) => Promise<string | undefined> | string | undefined;
 

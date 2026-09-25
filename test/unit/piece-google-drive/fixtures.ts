@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
@@ -69,7 +69,7 @@ export async function fixture(route?: Route) {
       create,
       connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key: {} }) },
     },
-  } as unknown as FrogbotRequest;
+  } as unknown as FrogBotRequest;
   const drive = createGoogleDrive({ auth });
   const client = await drive.client({ req });
   const oauth = client.context._options.auth;

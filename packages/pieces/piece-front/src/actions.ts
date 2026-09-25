@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import type { PieceActionDefinition, PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
@@ -61,7 +61,7 @@ function query(values: ActionInput) {
   return encoded ? `?${encoded}` : '';
 }
 
-async function loadAttachments(req: FrogbotRequest, attachments: z.output<typeof fileReference>[]) {
+async function loadAttachments(req: FrogBotRequest, attachments: z.output<typeof fileReference>[]) {
   const collection = req.frogbot.config?.files?.slug;
   if (!collection) throw new Error('[frogbot] Front attachments require the files collection.');
 

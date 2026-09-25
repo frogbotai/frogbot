@@ -48,7 +48,7 @@ export default buildConfig({
 | Property | Type | Description |
 | --- | --- | --- |
 | `slug` | `string` | Unique widget identifier. |
-| `Component` | `FrogbotComponent` | Component Path, including optional `#ExportName`. |
+| `Component` | `FrogBotComponent` | Component Path, including optional `#ExportName`. |
 | `fields` | `Field[]` | Form fields shown in the edit drawer. |
 | `minWidth` | `WidgetWidth` | Smallest allowed width. Defaults to `x-small`. |
 | `maxWidth` | `WidgetWidth` | Largest allowed width. Defaults to `full`. |
@@ -89,7 +89,7 @@ Use FrogBot theme tokens in the widget stylesheet:
 
 ## Default Layout
 
-`defaultLayout` accepts an array or a synchronous or asynchronous callback. The callback receives a `FrogbotRequest`, so it can select a layout using the current user or application data.
+`defaultLayout` accepts an array or a synchronous or asynchronous callback. The callback receives a `FrogBotRequest`, so it can select a layout using the current user or application data.
 
 ```ts
 import { buildConfig } from 'frogbot'

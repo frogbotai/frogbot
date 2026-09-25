@@ -1,4 +1,4 @@
-import { withFrogbot } from '@frogbotai/next/config';
+import { withFrogBot } from '@frogbotai/next/config';
 
 const nextConfig = {
   // The Dockerfile sets NEXT_OUTPUT=standalone to build a self-contained
@@ -6,4 +6,4 @@ const nextConfig = {
   ...(process.env.NEXT_OUTPUT === 'standalone' ? { output: 'standalone' } : {}),
 };
 
-export default withFrogbot(nextConfig, { devBundleServerPackages: false });
+export default withFrogBot(nextConfig, { devBundleServerPackages: false });

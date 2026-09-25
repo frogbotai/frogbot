@@ -10,7 +10,7 @@ import {
   type LexicalInlineBlockLabelServerProps as PayloadLexicalInlineBlockLabelServerProps,
   type LexicalInlineBlockServerProps as PayloadLexicalInlineBlockServerProps,
 } from '@payloadcms/richtext-lexical';
-import type { Field, FrogbotRequest } from 'frogbot';
+import type { Field, FrogBotRequest } from 'frogbot';
 import type { Block, BlockSlug } from 'payload';
 
 type BlockInput = Omit<Block, 'fields'> & { fields: Field[] };
@@ -44,17 +44,17 @@ export type LexicalBlockLabelClientProps = PayloadLexicalBlockLabelClientProps;
 export type LexicalInlineBlockClientProps = PayloadLexicalInlineBlockClientProps;
 export type LexicalInlineBlockLabelClientProps = PayloadLexicalInlineBlockLabelClientProps;
 export type LexicalBlockServerProps = Omit<PayloadLexicalBlockServerProps, 'payload' | 'req'> & {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 };
 export type LexicalBlockLabelServerProps = Omit<
   PayloadLexicalBlockLabelServerProps,
   'payload' | 'req'
-> & { req: FrogbotRequest };
+> & { req: FrogBotRequest };
 export type LexicalInlineBlockServerProps = Omit<
   PayloadLexicalInlineBlockServerProps,
   'payload' | 'req'
-> & { req: FrogbotRequest };
+> & { req: FrogBotRequest };
 export type LexicalInlineBlockLabelServerProps = Omit<
   PayloadLexicalInlineBlockLabelServerProps,
   'payload' | 'req'
-> & { req: FrogbotRequest };
+> & { req: FrogBotRequest };

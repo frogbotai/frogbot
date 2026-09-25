@@ -1,4 +1,4 @@
-import type { Block, Field, FrogbotConfig, Option } from 'frogbot';
+import type { Block, Field, FrogBotConfig, Option } from 'frogbot';
 import {
   fieldHasSubFields,
   fieldIsBlockType,
@@ -122,7 +122,7 @@ export const schema = {
       ],
     },
   ],
-} satisfies Pick<FrogbotConfig, 'blocks' | 'collections'>;
+} satisfies Pick<FrogBotConfig, 'blocks' | 'collections'>;
 
 export const fieldNames: string[] = [];
 

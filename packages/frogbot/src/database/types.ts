@@ -12,7 +12,7 @@
 // FrogBot naming choice — it is the wire contract dictated by every
 // adapter package. Renaming this key would break every adapter we
 // accept. The type alias name (`DatabaseAdapter`) and where it surfaces
-// in `FrogbotConfig` are ours; the shape belongs to the adapter
+// in `FrogBotConfig` are ours; the shape belongs to the adapter
 // ecosystem we deliberately stay compatible with.
 
 import type {

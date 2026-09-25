@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { FrogbotNavClient } from '../../../../../packages/next/src/elements/Nav/index.client';
+import { FrogBotNavClient } from '../../../../../packages/next/src/elements/Nav/index.client';
 
 let isMobile = false;
 let pathname = '/admin';
@@ -35,7 +35,7 @@ function Harness({ initialNavOpen }: { initialNavOpen: boolean }) {
   const [navOpen, setNavOpen] = useState(initialNavOpen);
   nav = { navOpen, setNavOpen };
   return (
-    <FrogbotNavClient
+    <FrogBotNavClient
       accountPath="/admin/account"
       homePath="/admin"
       items={[{ label: 'Users', path: '/admin/collections/users' }]}
@@ -47,7 +47,7 @@ function Harness({ initialNavOpen }: { initialNavOpen: boolean }) {
 const shell = () => document.querySelector('.frogbot-nav-shell') as HTMLElement;
 const backdrop = () => document.querySelector('.frogbot-nav-backdrop');
 
-describe('FrogbotNavClient', () => {
+describe('FrogBotNavClient', () => {
   beforeEach(() => {
     isMobile = false;
     pathname = '/admin';

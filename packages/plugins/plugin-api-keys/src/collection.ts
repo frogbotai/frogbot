@@ -4,7 +4,7 @@ import type {
   CollectionView,
   Endpoint,
   Field,
-  FrogbotRequest,
+  FrogBotRequest,
 } from 'frogbot';
 
 import { ApiKeyServiceError, mintApiKey, revokeApiKey, rotateApiKey } from './server/services.js';
@@ -16,7 +16,7 @@ type CollectionOptions = {
   collectionSlug: string;
   tokenPrefix: string;
   usageCollection?: string;
-  canRevokeAnyKey?: (req: FrogbotRequest) => boolean | Promise<boolean>;
+  canRevokeAnyKey?: (req: FrogBotRequest) => boolean | Promise<boolean>;
   collection?: Partial<CollectionConfig>;
   existing?: CollectionConfig;
 };
@@ -209,7 +209,7 @@ export function createApiKeysCollection(options: CollectionOptions): CollectionC
             },
             hooks: {
               afterRead: [
-                async ({ data, req }: { data?: Record<string, unknown>; req: FrogbotRequest }) => {
+                async ({ data, req }: { data?: Record<string, unknown>; req: FrogBotRequest }) => {
                   if (data?.id === undefined) return 0;
                   const result = await req.frogbot.find({
                     collection: usageCollection as never,

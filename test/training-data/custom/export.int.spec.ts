@@ -4,16 +4,16 @@ import { fileURLToPath } from 'node:url';
 import type { TrainingDataRecord } from 'frogbot';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../../__helpers/shared/bootFrogBot';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('training data export: custom chat collections', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname, 'training-data-custom');
+    booted = await bootFrogBot(dirname, 'training-data-custom');
 
     const chat = (await booted.frogbot.create({
       collection: 'conversations',

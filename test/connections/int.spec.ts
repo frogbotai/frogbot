@@ -11,7 +11,7 @@ import {
   type ConnectionRow,
   ConnectionStore,
 } from '../../packages/frogbot/src/connections/store.js';
-import { Frogbot } from '../../packages/frogbot/src/frogbot.js';
+import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 import { KVLockContentionError } from '../../packages/frogbot/src/kv/errors.js';
 import { definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
 import type { PieceInstance } from '../../packages/frogbot/src/pieces/types.js';
@@ -31,7 +31,7 @@ const createPiece = definePiece({
 });
 
 describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () => {
-  let frogbot: Frogbot;
+  let frogbot: FrogBot;
   let store: ConnectionStore;
   let owner: ConnectionOwner;
   let other: ConnectionOwner;
@@ -164,7 +164,7 @@ describe(`connection storage [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () 
         })),
       ],
     });
-    frogbot = await new Frogbot().init({ config, disableOnInit: true });
+    frogbot = await new FrogBot().init({ config, disableOnInit: true });
     store = new ConnectionStore({ frogbot, config: config.connections, userSlug: 'users' });
     const first = await frogbot.create({
       collection: 'users',

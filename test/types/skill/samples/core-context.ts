@@ -1,5 +1,5 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
-import type { CollectionConfig, FrogbotConfig } from 'frogbot';
+import type { CollectionConfig, FrogBotConfig } from 'frogbot';
 
 export type Post = {
   id: number | string;
@@ -51,7 +51,7 @@ export const AuditEvents: CollectionConfig = {
   ],
 };
 
-export function createCoreConfig(): FrogbotConfig {
+export function createCoreConfig(): FrogBotConfig {
   return {
     secret: process.env.FROGBOT_SECRET || 'skill-sample-secret',
     db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || 'file:skill.db' } }),

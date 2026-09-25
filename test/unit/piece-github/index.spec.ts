@@ -6,7 +6,7 @@ vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pi
 
 import { pieceConformance } from '../../../packages/frogbot/src/pieces/conformance.js';
 import { pieceFactoryDefinition } from '../../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogbotRequest } from '../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 import { createGithubClient } from '../../../packages/pieces/piece-github/src/client.js';
 import {
   createGithub,
@@ -65,7 +65,7 @@ describe('github', () => {
           adapter: { name: 'github' },
           identity: {
             author: { userId: '42' },
-            req: {} as FrogbotRequest,
+            req: {} as FrogBotRequest,
             expect: null,
           },
           webhook: {
@@ -226,7 +226,7 @@ describe('github', () => {
           },
           find,
         },
-      } as unknown as FrogbotRequest,
+      } as unknown as FrogBotRequest,
     });
 
     expect(identity).toEqual({ id: 'user-1', collection: 'members' });

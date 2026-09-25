@@ -1,7 +1,7 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 
 export async function loadAttachment(
-  req: FrogbotRequest,
+  req: FrogBotRequest,
   value: { fileId: number | string; name?: string },
 ) {
   const collection = req.frogbot.config.files?.slug;

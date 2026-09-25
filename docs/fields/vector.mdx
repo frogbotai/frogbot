@@ -37,11 +37,11 @@ This configuration has **no `search` index** and can initialize with the SQLite 
 In trusted server-side code, use the [Local API](/local-api/overview). This example explicitly bypasses collection access; for request-scoped operations, pass the request and use `overrideAccess: false` instead.
 
 ```ts
-import { getFrogbot } from 'frogbot';
+import { getFrogBot } from 'frogbot';
 
 import config from './frogbot.config';
 
-const frogbot = await getFrogbot({ config });
+const frogbot = await getFrogBot({ config });
 
 const created = await frogbot.create({
   collection: 'articles',

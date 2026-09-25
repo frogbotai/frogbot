@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../../__helpers/shared/bootFrogbot.js';
-import { bootFrogbot } from '../../__helpers/shared/bootFrogbot.js';
+import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
+import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
 import {
   countRequests,
@@ -17,10 +17,10 @@ import {
 } from './shared.js';
 
 describe('field runtime boundaries', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname(fileURLToPath(import.meta.url)));
+    booted = await bootFrogBot(dirname(fileURLToPath(import.meta.url)));
   });
 
   afterAll(async () => {

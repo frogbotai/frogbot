@@ -2,18 +2,18 @@ import { isAbsolute, resolve } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const { withFrogbot } = await import('../../../packages/next/src/withFrogbot.js');
+const { withFrogBot } = await import('../../../packages/next/src/withFrogBot.js');
 
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
 });
 
-describe('withFrogbot', () => {
+describe('withFrogBot', () => {
   it.each(['production', undefined])('externalizes the gateway when NODE_ENV is %s', (nodeEnv) => {
     vi.stubEnv('NODE_ENV', nodeEnv);
 
-    const config = withFrogbot();
+    const config = withFrogBot();
 
     expect(config.serverExternalPackages).toContain('@frogbotai/gateway');
   });
@@ -26,7 +26,7 @@ describe('withFrogbot', () => {
     (devBundleServerPackages, includesDevPackages) => {
       vi.stubEnv('NODE_ENV', 'development');
 
-      const config = withFrogbot({}, { devBundleServerPackages });
+      const config = withFrogBot({}, { devBundleServerPackages });
 
       expect(config.serverExternalPackages).toContain('@frogbotai/gateway');
       expect(config.serverExternalPackages).toEqual(
@@ -40,13 +40,13 @@ describe('withFrogbot', () => {
   it('does not add development server packages when explicitly bundled', () => {
     vi.stubEnv('NODE_ENV', 'development');
 
-    const config = withFrogbot({}, { devBundleServerPackages: true });
+    const config = withFrogBot({}, { devBundleServerPackages: true });
 
     expect(config.serverExternalPackages).not.toContain('frogbot');
   });
 
   it('preserves consumer server external packages without duplicating the gateway', () => {
-    const config = withFrogbot({
+    const config = withFrogBot({
       serverExternalPackages: ['consumer-package', '@frogbotai/gateway'],
     });
 
@@ -57,7 +57,7 @@ describe('withFrogbot', () => {
   });
 
   it('uses one Payload UI root identity while preserving public subpath entries', () => {
-    const config = withFrogbot({
+    const config = withFrogBot({
       turbopack: {
         resolveAlias: { consumer: '/consumer' },
       },
@@ -81,7 +81,7 @@ describe('withFrogbot', () => {
   it('uses a slash-normalized project-relative Turbopack alias outside the project root', () => {
     vi.spyOn(process, 'cwd').mockReturnValue('/project/apps/example');
 
-    const config = withFrogbot({
+    const config = withFrogBot({
       turbopack: {
         resolveAlias: { consumer: './consumer' },
       },
@@ -110,7 +110,7 @@ describe('withFrogbot', () => {
         extensionAlias: { '.custom': ['.custom.ts'] },
       },
     }));
-    const config = withFrogbot({ webpack });
+    const config = withFrogBot({ webpack });
     const webpackContext = { webpack: { IgnorePlugin: class {} } };
 
     const result = config.webpack?.({ externals: ['base-external'] }, webpackContext as never);

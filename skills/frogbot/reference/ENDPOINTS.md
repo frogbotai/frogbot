@@ -2,7 +2,7 @@
 
 Docs: https://docs.frogbot.ai/rest-api/overview and https://docs.frogbot.ai/local-api/server-functions
 
-Custom endpoints add HTTP routes to the root API or a collection. Handlers receive a `FrogbotRequest`, which is a Web `Request` with FrogBot request context, and return a Web `Response`.
+Custom endpoints add HTTP routes to the root API or a collection. Handlers receive a `FrogBotRequest`, which is a Web `Request` with FrogBot request context, and return a Web `Response`.
 
 ## Endpoint Shape
 
@@ -20,7 +20,7 @@ export const healthEndpoint: Endpoint = {
 | --------- | ------------------------------------------------------------------------------------- | ----------------------------------- |
 | `path`    | `string`                                                                              | Route beginning with `/`.           |
 | `method`  | `'connect' \| 'delete' \| 'get' \| 'head' \| 'options' \| 'patch' \| 'post' \| 'put'` | Lowercase HTTP method.              |
-| `handler` | `(req: FrogbotRequest) => Response \| Promise<Response>`                              | Web Request/Response handler.       |
+| `handler` | `(req: FrogBotRequest) => Response \| Promise<Response>`                              | Web Request/Response handler.       |
 | `custom`  | `Record<string, any>`                                                                 | Optional metadata for integrations. |
 
 ## Placement

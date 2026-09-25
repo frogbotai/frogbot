@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { APIError, type PayloadRequest } from 'payload';
 
 import type { Endpoint } from '../../endpoints/types.js';
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 import { findWaitpoint, resumeWaitpoint, WaitpointResumeError } from '../waitpoints/operations.js';
 
 const styles = `body { font-family: system-ui, sans-serif; margin: 0; padding: 2rem; }
@@ -88,7 +88,7 @@ function failure({
   return Response.json({ error: { code, message } }, { status, headers });
 }
 
-async function confirmation(req: FrogbotRequest): Promise<Response> {
+async function confirmation(req: FrogBotRequest): Promise<Response> {
   const head = req.method?.toUpperCase() === 'HEAD';
   const token = req.routeParams?.token;
 
@@ -132,7 +132,7 @@ async function confirmation(req: FrogbotRequest): Promise<Response> {
   }
 }
 
-async function resume(req: FrogbotRequest): Promise<Response> {
+async function resume(req: FrogBotRequest): Promise<Response> {
   const contentType = req.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase();
   const form = contentType === 'application/x-www-form-urlencoded';
   const token = req.routeParams?.token;

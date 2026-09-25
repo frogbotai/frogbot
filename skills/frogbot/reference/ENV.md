@@ -27,7 +27,7 @@ Modifiers are `.default(value)`, `.required()`, `.requiredWhen(predicate)`, and 
 
 Property names derive environment names: `apiUrl` becomes `API_URL`, `gitSha1` becomes `GIT_SHA1`, and `s3Bucket` becomes `S3_BUCKET`. `.name()` accepts uppercase names matching `[A-Z_][A-Z0-9_]*`. Duplicate resolved names are rejected.
 
-Empty strings count as unset. All present values are parsed and all parse or missing-value issues are reported together through `FrogbotEnvError`. Required checks are skipped when `NODE_ENV=test`, but present invalid values still fail.
+Empty strings count as unset. All present values are parsed and all parse or missing-value issues are reported together through `FrogBotEnvError`. Required checks are skipped when `NODE_ENV=test`, but present invalid values still fail.
 
 `frogbotEnv` provides:
 

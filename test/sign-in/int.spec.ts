@@ -12,14 +12,14 @@ import { z } from 'zod';
 
 import { buildConfig } from '../../packages/frogbot/src/config/build.js';
 import { createOAuthState } from '../../packages/frogbot/src/connections/oauth/index.js';
-import { Frogbot } from '../../packages/frogbot/src/frogbot.js';
+import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 import * as locks from '../../packages/frogbot/src/kv/lock.js';
 import { definePiece } from '../../packages/frogbot/src/pieces/definePiece.js';
 import type { SignInMethod } from '../../packages/frogbot/src/pieces/types.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
 
 describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]`, () => {
-  let frogbot: Frogbot;
+  let frogbot: FrogBot;
   let server: ReturnType<typeof serve>;
   let provider: ReturnType<typeof serve>;
   let baseURL: string;
@@ -177,7 +177,7 @@ describe(`collection OAuth sign-in [${process.env.FROGBOT_DATABASE || 'sqlite'}]
       ],
       connections: [{ piece: method, oauth: true }],
     });
-    frogbot = await new Frogbot().init({ config, disableOnInit: true });
+    frogbot = await new FrogBot().init({ config, disableOnInit: true });
   });
 
   afterAll(async () => {

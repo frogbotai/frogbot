@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { pieceInstanceRuntime } from '../../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogbotRequest } from '../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 import { getFile, uploadFile } from '../../../packages/pieces/piece-slack/src/actions.js';
 import { createSlackClient } from '../../../packages/pieces/piece-slack/src/client.js';
 import {
@@ -39,7 +39,7 @@ function signedRequest(body: string, timestamp = Math.floor(now / 1000)) {
       'x-slack-signature': signature,
     },
     body,
-  }) as FrogbotRequest;
+  }) as FrogBotRequest;
 }
 
 afterEach(() => {
@@ -74,7 +74,7 @@ describe('Slack native piece', () => {
       definition.oauth?.account?.({
         tokens: { access_token: 'xoxb-bot' },
         client: { request: vi.fn().mockResolvedValue({ ok: true, team_id: 'T1', team: 'Frogs' }) },
-        req: {} as FrogbotRequest,
+        req: {} as FrogBotRequest,
       }),
     ).resolves.toEqual({ id: 'T1', label: 'Frogs' });
   });
@@ -141,7 +141,7 @@ describe('Slack native piece', () => {
           },
           find,
         },
-      } as unknown as FrogbotRequest,
+      } as unknown as FrogBotRequest,
     });
 
     expect(identity).toEqual({ ...user, collection: 'members' });
@@ -164,7 +164,7 @@ describe('Slack native piece', () => {
         },
         find,
       },
-    } as unknown as FrogbotRequest;
+    } as unknown as FrogBotRequest;
 
     await expect(
       definition.channel?.identity({
@@ -199,7 +199,7 @@ describe('Slack native piece', () => {
       definition.channel?.identity({
         author: { userId: 'U1' } as never,
         client: { request: vi.fn().mockRejectedValue(error) } as never,
-        req: {} as FrogbotRequest,
+        req: {} as FrogBotRequest,
       }),
     ).rejects.toBe(error);
   });
@@ -253,7 +253,7 @@ describe('Slack native piece', () => {
           filename: 'test.txt',
         }),
       },
-    } as unknown as FrogbotRequest;
+    } as unknown as FrogBotRequest;
 
     await expect(
       uploadFile.run({
@@ -298,7 +298,7 @@ describe('Slack native piece', () => {
       headers: new Headers(),
       signal,
       frogbot: { config: { files: { slug: 'files' } }, create },
-    } as unknown as FrogbotRequest;
+    } as unknown as FrogBotRequest;
 
     const result = await getFile.run({
       client: createSlackClient({ auth: { botToken: 'xoxb-test' } }),
@@ -338,10 +338,10 @@ describe('Slack native piece', () => {
     req.data = { challenge: 'challenge' };
 
     await expect(
-      verifySlackWebhook({ req: req.clone() as FrogbotRequest, options: { signingSecret } }),
+      verifySlackWebhook({ req: req.clone() as FrogBotRequest, options: { signingSecret } }),
     ).resolves.toBe(true);
     await expect(
-      verifySlackWebhook({ req: req.clone() as FrogbotRequest, options: { signingSecret } }),
+      verifySlackWebhook({ req: req.clone() as FrogBotRequest, options: { signingSecret } }),
     ).resolves.toBe(true);
 
     const response = await pieceInstanceRuntime(

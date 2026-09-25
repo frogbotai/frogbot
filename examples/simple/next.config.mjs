@@ -1,5 +1,5 @@
-import { withFrogbot } from '@frogbotai/next/config';
+import { withFrogBot } from '@frogbotai/next/config';
 
 const nextConfig = {};
 
-export default withFrogbot(nextConfig, { devBundleServerPackages: false });
+export default withFrogBot(nextConfig, { devBundleServerPackages: false });

@@ -10,7 +10,7 @@ import { generateImportMap } from '../../../../../packages/frogbot/src/bin/gener
 import { resolveImportMapFilePath } from '../../../../../packages/frogbot/src/bin/generateImportMap/utilities/resolveImportMapFilePath.js';
 import { buildConfig } from '../../../../../packages/frogbot/src/config/build.js';
 import { sanitize } from '../../../../../packages/frogbot/src/config/sanitize.js';
-import type { FrogbotConfig } from '../../../../../packages/frogbot/src/config/types.js';
+import type { FrogBotConfig } from '../../../../../packages/frogbot/src/config/types.js';
 
 const dirs: string[] = [];
 
@@ -71,7 +71,7 @@ async function makePayloadConfig({
           },
         ]
       : undefined,
-  } as FrogbotConfig);
+  } as FrogBotConfig);
 
   return config._internal.payloadConfig;
 }

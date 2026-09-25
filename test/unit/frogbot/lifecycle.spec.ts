@@ -1,7 +1,7 @@
 import { getPayload } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Frogbot } from '../../../packages/frogbot/src/frogbot.js';
+import type { FrogBot } from '../../../packages/frogbot/src/frogbot.js';
 
 const payloadState = vi.hoisted(() => ({
   payload: {
@@ -63,17 +63,17 @@ vi.mock('../../../packages/frogbot/src/bin/generateImportMap/index.js', () => ({
 const { writeGeneratedTypes } = await import('../../../packages/frogbot/src/typegen/index.js');
 const { resolveConfigDir } = await import('../../../packages/frogbot/src/config/load.js');
 const { sanitize } = await import('../../../packages/frogbot/src/config/sanitize.js');
-const { getCachedFrogbot, getFrogbot, resetFrogbotCache } =
-  await import('../../../packages/frogbot/src/getFrogbot.js');
-const { getFrogbotInstance } = await import('../../../packages/frogbot/src/instanceRegistry.js');
+const { getCachedFrogBot, getFrogBot, resetFrogBotCache } =
+  await import('../../../packages/frogbot/src/getFrogBot.js');
+const { getFrogBotInstance } = await import('../../../packages/frogbot/src/instanceRegistry.js');
 
-describe('Frogbot lifecycle', () => {
-  it('converges interleaved Payload-first and getFrogbot-first initialization', async () => {
-    resetFrogbotCache();
+describe('FrogBot lifecycle', () => {
+  it('converges interleaved Payload-first and getFrogBot-first initialization', async () => {
+    resetFrogBotCache();
     payloadState.entryExists = false;
     payloadState.failNext = false;
     payloadState.promise = null;
-    let lifecycleFrogbot: Frogbot | undefined;
+    let lifecycleFrogBot: FrogBot | undefined;
     let releaseOnInit!: () => void;
     let signalOnInit!: () => void;
     const onInitStarted = new Promise<void>((resolve) => (signalOnInit = resolve));
@@ -84,7 +84,7 @@ describe('Frogbot lifecycle', () => {
       collections: [{ slug: 'users', fields: [] }],
       typescript: { autoGenerate: false },
       onInit: async (frogbot) => {
-        lifecycleFrogbot = frogbot;
+        lifecycleFrogBot = frogbot;
         signalOnInit();
         await allowOnInit;
       },
@@ -99,11 +99,11 @@ describe('Frogbot lifecycle', () => {
         Promise.reject(new Error('Payload initialized before FrogBot onInit')),
       ),
     ]);
-    expect(getFrogbotInstance(payloadState.payload)).toBe(lifecycleFrogbot);
-    expect(getCachedFrogbot()).toBeNull();
+    expect(getFrogBotInstance(payloadState.payload)).toBe(lifecycleFrogBot);
+    expect(getCachedFrogBot()).toBeNull();
 
     let accessorResolved = false;
-    const accessorFirst = getFrogbot({ config }).then((frogbot) => {
+    const accessorFirst = getFrogBot({ config }).then((frogbot) => {
       accessorResolved = true;
       return frogbot;
     });
@@ -111,16 +111,16 @@ describe('Frogbot lifecycle', () => {
     expect(accessorResolved).toBe(false);
 
     releaseOnInit();
-    const [payload, accessorFrogbot] = await Promise.all([payloadFirst, accessorFirst]);
+    const [payload, accessorFrogBot] = await Promise.all([payloadFirst, accessorFirst]);
 
     expect(payload).toBe(payloadState.payload);
-    expect(accessorFrogbot).toBe(lifecycleFrogbot);
-    expect(getFrogbotInstance(payloadState.payload)).toBe(lifecycleFrogbot);
-    expect(getCachedFrogbot()).toBe(lifecycleFrogbot);
+    expect(accessorFrogBot).toBe(lifecycleFrogBot);
+    expect(getFrogBotInstance(payloadState.payload)).toBe(lifecycleFrogBot);
+    expect(getCachedFrogBot()).toBe(lifecycleFrogBot);
   });
 
   it('recovers a Payload retry that skipped onInit', async () => {
-    resetFrogbotCache();
+    resetFrogBotCache();
     payloadState.payload = {
       ...payloadState.payload,
       config: { collections: [] },
@@ -147,17 +147,17 @@ describe('Frogbot lifecycle', () => {
       'transient payload init failure',
     );
     const payload = await getPayload({ config: payloadConfig });
-    expect(getFrogbotInstance(payload)).toBeUndefined();
+    expect(getFrogBotInstance(payload)).toBeUndefined();
 
     const endpoint = payloadConfig.endpoints?.find((item) => item.path === '/recovery');
     const response = await endpoint?.handler({ payload } as never);
 
     await expect(response?.json()).resolves.toEqual({ attached: true });
-    expect(getFrogbotInstance(payload)).toBeDefined();
+    expect(getFrogBotInstance(payload)).toBeDefined();
   });
 
   it('skips type generation when no config file is discoverable from cwd', async () => {
-    resetFrogbotCache();
+    resetFrogBotCache();
     payloadState.entryExists = false;
     payloadState.failNext = false;
     payloadState.promise = null;
@@ -168,7 +168,7 @@ describe('Frogbot lifecycle', () => {
       collections: [{ slug: 'users', fields: [] }],
     });
 
-    await getFrogbot({ config });
+    await getFrogBot({ config });
 
     expect(resolveConfigDir(process.cwd())).toBeNull();
     expect(vi.mocked(writeGeneratedTypes)).not.toHaveBeenCalled();

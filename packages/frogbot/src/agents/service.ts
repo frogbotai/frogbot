@@ -8,7 +8,7 @@ import { createMessageUsage, persistAssistantMessage } from '../chat/messagePers
 import type { ManifestResponse } from '../chat/types.js';
 import type { DocID } from '../collections/config/types.js';
 import { pieceToolInstance } from '../pieces/definePiece.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import type { AgentInstance, AgentManifest } from './types.js';
 
 export class AgentServiceError extends Error {
@@ -20,7 +20,7 @@ export class AgentServiceError extends Error {
   }
 }
 
-export function getAgent({ req, slug }: { req: FrogbotRequest; slug?: string }): AgentInstance {
+export function getAgent({ req, slug }: { req: FrogBotRequest; slug?: string }): AgentInstance {
   const agent = slug ? req.frogbot.agents[slug] : undefined;
   if (!agent) throw new AgentServiceError(`Agent '${slug ?? ''}' not found`, 404);
   return agent;
@@ -30,11 +30,11 @@ export async function assertAgentAccess({
   req,
   agent,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   agent: AgentInstance;
 }): Promise<void> {
   const access =
-    agent.config.access ?? (({ req: current }: { req: FrogbotRequest }) => !!current.user);
+    agent.config.access ?? (({ req: current }: { req: FrogBotRequest }) => !!current.user);
   try {
     if (await access({ req, agent })) return;
   } catch {
@@ -46,7 +46,7 @@ export async function assertAgentAccess({
 export async function listAgents({
   req,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 }): Promise<ManifestResponse['agents']> {
   const agents: ManifestResponse['agents'] = [];
   for (const agent of Object.values(req.frogbot.agents)) {
@@ -63,7 +63,7 @@ export async function listAgents({
   return agents;
 }
 
-export async function getAgentManifest({ req }: { req: FrogbotRequest }): Promise<AgentManifest> {
+export async function getAgentManifest({ req }: { req: FrogBotRequest }): Promise<AgentManifest> {
   const agents: AgentManifest['agents'] = [];
   for (const agent of Object.values(req.frogbot.agents)) {
     try {
@@ -86,7 +86,7 @@ export async function getAgentAuthorizations({
   req,
   agent,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   agent: AgentInstance;
 }) {
   return (
@@ -111,7 +111,7 @@ export async function prepareAgentRequest({
   requestedChatId,
   uiMessages,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   agent: AgentInstance;
   requestedModel?: string;
   requestedChatId?: DocID;
@@ -140,7 +140,7 @@ export function getAgentStreamOptions({
   uiMessages,
   model,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   agent: AgentInstance;
   chatId?: DocID;
   uiMessages: UIMessage[];
@@ -172,7 +172,7 @@ export function getAgentStreamOptions({
             }),
     options: { req, overrideAccess: true, chatId, model },
     abortSignal: req.signal ?? undefined,
-    headers: chatId !== undefined ? { 'X-Frogbot-Chat-Id': String(chatId) } : undefined,
+    headers: chatId !== undefined ? { 'X-FrogBot-Chat-Id': String(chatId) } : undefined,
   };
 }
 
@@ -183,7 +183,7 @@ export async function generateAgentRequest({
   uiMessages,
   model,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   agent: AgentInstance;
   chatId?: DocID;
   uiMessages: UIMessage[];

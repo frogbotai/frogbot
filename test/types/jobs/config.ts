@@ -1,7 +1,7 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 
-export const jobsTypeConfig: FrogbotConfig = {
+export const jobsTypeConfig: FrogBotConfig = {
   secret: 'jobs-type-fixture',
   db: sqliteAdapter({ client: { url: 'file::memory:' } }),
   collections: [{ slug: 'users', auth: true, fields: [] }],

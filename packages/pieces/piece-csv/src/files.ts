@@ -1,6 +1,6 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 
-export async function loadFile(req: FrogbotRequest, fileId: string | number) {
+export async function loadFile(req: FrogBotRequest, fileId: string | number) {
   const collection = req.frogbot.config.files?.slug;
 
   if (!collection) {

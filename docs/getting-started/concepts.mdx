@@ -110,6 +110,6 @@ Anonymous calls remain stateless. Local `generate()` calls also remain stateless
 
 ## Requests connect the layers
 
-`FrogbotRequest` extends FrogBot's request with `req.frogbot`. Pass the same request through Local API operations and agent calls to preserve the authenticated user, transaction, locale, and hook context.
+`FrogBotRequest` extends FrogBot's request with `req.frogbot`. Pass the same request through Local API operations and agent calls to preserve the authenticated user, transaction, locale, and hook context.
 
 Access is enforced only when `overrideAccess: false`. HTTP agent endpoints always enforce configured agent and collection access. Local operations default to trusted server behavior, so opt into access checks when running on behalf of a user.

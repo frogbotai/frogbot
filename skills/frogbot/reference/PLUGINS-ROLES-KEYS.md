@@ -4,14 +4,14 @@ Docs: https://docs.frogbot.ai/plugins/overview, https://docs.frogbot.ai/plugins/
 
 ## Plugins
 
-A FrogBot plugin receives a `FrogbotConfig` and returns a config synchronously or asynchronously. Install plugin packages and add their factories to `plugins`.
+A FrogBot plugin receives a `FrogBotConfig` and returns a config synchronously or asynchronously. Install plugin packages and add their factories to `plugins`.
 
 ```ts
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { rolesPlugin } from '@frogbotai/plugin-roles';
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 
-const plugins: FrogbotConfig['plugins'] = [
+const plugins: FrogBotConfig['plugins'] = [
   apiKeysPlugin(),
   rolesPlugin({ roles: ['admin', 'member'] }),
 ];

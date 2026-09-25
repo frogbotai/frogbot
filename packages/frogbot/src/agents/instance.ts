@@ -15,9 +15,9 @@ import type { SanitizedAIConfig } from '../ai/types.js';
 import { resolveChatContext } from '../chat/chatContext.js';
 import { generateMessage } from '../chat/generateMessage.js';
 import { createMessageUsage, persistAssistantMessage } from '../chat/messagePersistence.js';
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 import type { ToolCtx } from '../tools/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import { toAISDKTools, toAISDKToolsContext } from './tools.js';
 import type {
   AgentCallOptions,
@@ -34,7 +34,7 @@ import type {
 export type AgentInstanceDeps = {
   gateway: Gateway;
   config: SanitizedAIConfig;
-  frogbot: Frogbot;
+  frogbot: FrogBot;
 };
 
 export function createAgentInstance(
@@ -106,7 +106,7 @@ export function createAgentInstance(
 
   const finishSteps = async (
     steps: readonly { finishReason?: string; usage?: unknown }[],
-    context: { req: FrogbotRequest; runId: string; chatId?: number | string },
+    context: { req: FrogBotRequest; runId: string; chatId?: number | string },
   ) => {
     const model = resolveModel(agentConfig.model, config);
     for (const step of steps) {

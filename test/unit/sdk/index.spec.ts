@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createFrogbotSDK, FrogBotSDK, FrogBotSDKError } from '../../../packages/sdk/src/index';
+import { createFrogBotSDK, FrogBotSDK, FrogBotSDKError } from '../../../packages/sdk/src/index';
 
 describe('FrogBotSDK', () => {
   it('composes URLs and configured headers', async () => {
     const fetch = vi.fn(() => Promise.resolve(new Response('{}')));
-    const sdk = createFrogbotSDK({
+    const sdk = createFrogBotSDK({
       baseURL: 'https://frogbot.example/api/',
       fetch,
       headers: { Authorization: 'Bearer token' },
@@ -46,7 +46,7 @@ describe('FrogBotSDK', () => {
 
   it('sends multipart bodies without setting content type', async () => {
     const fetch = vi.fn(() => Promise.resolve(new Response('{}')));
-    const sdk = createFrogbotSDK({ baseURL: 'https://frogbot.example/api', fetch });
+    const sdk = createFrogBotSDK({ baseURL: 'https://frogbot.example/api', fetch });
     const body = new FormData();
     body.append('_payload', JSON.stringify({ alt: 'Frog' }));
     body.append('file', new Blob(['frog']), 'frog.txt');
@@ -67,7 +67,7 @@ describe('FrogBotSDK', () => {
         }),
       ),
     );
-    const sdk = createFrogbotSDK({ baseURL: 'https://frogbot.example/api', fetch });
+    const sdk = createFrogBotSDK({ baseURL: 'https://frogbot.example/api', fetch });
 
     await expect(
       sdk.upload('documents', new File(['frog'], 'frog.txt', { type: 'text/plain' })),
@@ -88,7 +88,7 @@ describe('FrogBotSDK', () => {
         statusText: 'Bad Request',
       },
     );
-    const sdk = createFrogbotSDK({
+    const sdk = createFrogBotSDK({
       baseURL: 'https://frogbot.example/api',
       fetch: vi.fn(() => Promise.resolve(response)),
     });
@@ -105,7 +105,7 @@ describe('FrogBotSDK', () => {
   });
 
   it('uses the HTTP status when an error body is not JSON', async () => {
-    const sdk = createFrogbotSDK({
+    const sdk = createFrogBotSDK({
       baseURL: 'https://frogbot.example/api',
       fetch: vi.fn(() =>
         Promise.resolve(
@@ -125,7 +125,7 @@ describe('FrogBotSDK', () => {
   });
 
   it('surfaces gateway error messages', async () => {
-    const sdk = createFrogbotSDK({
+    const sdk = createFrogBotSDK({
       baseURL: 'https://frogbot.example/api',
       fetch: vi.fn(() =>
         Promise.resolve(
@@ -148,7 +148,7 @@ describe('FrogBotSDK', () => {
 
   it('transcribes audio through the configured fetch', async () => {
     const fetch = vi.fn(() => Promise.resolve(Response.json({ text: 'ribbit' })));
-    const sdk = createFrogbotSDK({
+    const sdk = createFrogBotSDK({
       baseURL: 'https://frogbot.example/api',
       fetch,
       headers: { Authorization: 'Bearer token' },
@@ -178,7 +178,7 @@ describe('FrogBotSDK', () => {
 
   it('sends chat completion requests through the shared request path', async () => {
     const fetch = vi.fn(() => Promise.resolve(Response.json({ id: 'chat-1' })));
-    const sdk = createFrogbotSDK({ baseURL: 'https://frogbot.example/api', fetch });
+    const sdk = createFrogBotSDK({ baseURL: 'https://frogbot.example/api', fetch });
 
     const response = await sdk.ai.chat({
       model: 'openai/gpt-4o',

@@ -1,23 +1,23 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../../__helpers/shared/bootFrogbot.js';
-import { bootFrogbot } from '../../__helpers/shared/bootFrogbot.js';
+import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
+import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
 import { password, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('roles skill access policy', () => {
-  let booted: BootedFrogbot;
-  let memberReq: FrogbotRequest;
-  let ownerReq: FrogbotRequest;
+  let booted: BootedFrogBot;
+  let memberReq: FrogBotRequest;
+  let ownerReq: FrogBotRequest;
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname, 'roles-skill');
+    booted = await bootFrogBot(dirname, 'roles-skill');
   });
 
   afterAll(async () => {

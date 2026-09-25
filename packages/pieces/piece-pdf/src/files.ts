@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { z } from 'zod';
 
 export const fileId = z.union([z.string(), z.number()]);
@@ -9,7 +9,7 @@ export const savedFile = z.object({
   url: z.string().optional(),
 });
 
-export async function loadFile(req: FrogbotRequest, id: z.output<typeof fileId>) {
+export async function loadFile(req: FrogBotRequest, id: z.output<typeof fileId>) {
   const collection = req.frogbot.config.files?.slug;
 
   if (!collection) throw new Error('PDF actions require a configured files collection.');
@@ -63,7 +63,7 @@ export async function saveFile({
   name,
   mimeType,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   data: Uint8Array;
   name: string;
   mimeType: string;

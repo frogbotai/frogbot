@@ -4,15 +4,15 @@ import {
   resolveUsageCollection,
   USAGE_LOGS_SLUG,
 } from '../../../../../packages/frogbot/src/ai/usage/collection.js';
-import type { FrogbotConfig } from '../../../../../packages/frogbot/src/config/types.js';
+import type { FrogBotConfig } from '../../../../../packages/frogbot/src/config/types.js';
 
-function makeConfig(overrides: Partial<FrogbotConfig> = {}): FrogbotConfig {
+function makeConfig(overrides: Partial<FrogBotConfig> = {}): FrogBotConfig {
   return {
     secret: 'test',
     collections: [],
     ai: { providers: { openai: { apiKey: 'test' } } },
     ...overrides,
-  } as FrogbotConfig;
+  } as FrogBotConfig;
 }
 
 describe('resolveUsageCollection', () => {

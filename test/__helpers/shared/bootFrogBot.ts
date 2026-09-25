@@ -1,20 +1,20 @@
 import type { MongooseAdapter } from '@frogbotai/db-mongodb';
 import { serve } from '@hono/node-server';
-import type { FrogbotInstance } from 'frogbot';
+import type { FrogBotInstance } from 'frogbot';
 import { createGatewayHandler } from 'frogbot';
-import type { FrogbotSanitizedConfig } from 'frogbot/test';
-import { Frogbot } from 'frogbot/test';
+import type { FrogBotSanitizedConfig } from 'frogbot/test';
+import { FrogBot } from 'frogbot/test';
 import { Hono } from 'hono';
 import path from 'path';
 import type { Payload } from 'payload';
 import { pathToFileURL } from 'url';
 
-import { FrogbotRESTClient } from './FrogbotRESTClient';
+import { FrogBotRESTClient } from './FrogBotRESTClient';
 
-export type BootedFrogbot = {
-  frogbot: FrogbotInstance;
+export type BootedFrogBot = {
+  frogbot: FrogBotInstance;
   payload: Payload;
-  restClient: FrogbotRESTClient;
+  restClient: FrogBotRESTClient;
   baseUrl: string;
   shutdown: () => Promise<void>;
 };
@@ -31,16 +31,16 @@ export type BootedFrogbot = {
  * when vitest runs files in parallel. Pass `suiteNameOverride` when
  * multiple spec files share a config directory.
  *
- * Returns the FrogBot-vocab `FrogbotInstance` — the same surface
+ * Returns the FrogBot-vocab `FrogBotInstance` — the same surface
  * users see on `req.frogbot`. Payload is not exposed; tests speak
  * frogbot, not Payload.
  *
  * Callers MUST invoke `shutdown` in an `afterAll` hook.
  */
-export async function bootFrogbot(
+export async function bootFrogBot(
   dirname: string,
   suiteNameOverride?: string,
-): Promise<BootedFrogbot> {
+): Promise<BootedFrogBot> {
   const suiteName = suiteNameOverride ?? path.basename(dirname);
   const dbType = process.env.FROGBOT_DATABASE || 'sqlite';
 
@@ -54,11 +54,11 @@ export async function bootFrogbot(
 
   const configPath = path.resolve(dirname, 'config.ts');
   const mod = (await import(pathToFileURL(configPath).href)) as {
-    default: FrogbotSanitizedConfig | Promise<FrogbotSanitizedConfig>;
+    default: FrogBotSanitizedConfig | Promise<FrogBotSanitizedConfig>;
   };
   const config = await mod.default;
 
-  const frogbot: FrogbotInstance = await new Frogbot().init({ config });
+  const frogbot: FrogBotInstance = await new FrogBot().init({ config });
   const payload = (frogbot as unknown as { payload: Payload }).payload;
   if (payload.db.name === 'mongoose') {
     const db = payload.db as MongooseAdapter;
@@ -68,7 +68,7 @@ export async function bootFrogbot(
   const port = await getEphemeralPort();
   const closeServer = await listen(app, port);
   const baseUrl = `http://127.0.0.1:${port}`;
-  const restClient = new FrogbotRESTClient(baseUrl);
+  const restClient = new FrogBotRESTClient(baseUrl);
 
   const shutdown = async () => {
     await closeServer();
@@ -78,7 +78,7 @@ export async function bootFrogbot(
   return { frogbot, payload, restClient, baseUrl, shutdown };
 }
 
-function createTestServer(frogbot: FrogbotInstance): Hono {
+function createTestServer(frogbot: FrogBotInstance): Hono {
   const app = new Hono();
   app.get('/', (c) => c.json({ ok: true, name: 'frogbot' }));
   if (frogbot.config.ai) {

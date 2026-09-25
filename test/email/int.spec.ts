@@ -5,14 +5,14 @@ import { fileURLToPath } from 'node:url';
 
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { createResend } from '@frogbotai/piece-resend';
-import { ConnectionError, definePiece, type FrogbotConfig, type FrogbotRequest } from 'frogbot';
-import { type Frogbot, getFrogbot } from 'frogbot/test';
+import { ConnectionError, definePiece, type FrogBotConfig, type FrogBotRequest } from 'frogbot';
+import { type FrogBot, getFrogBot } from 'frogbot/test';
 import { BasePayload } from 'payload';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot.js';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot.js';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { buildTestConfig } from '../__helpers/shared/buildTestConfig.js';
 import { getTestDatabaseAdapter } from '../__helpers/shared/db/getTestDatabaseAdapter.js';
 import { resend, Users } from './config.js';
@@ -21,13 +21,13 @@ import { usersSlug } from './shared.js';
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const fetch = vi.fn<typeof globalThis.fetch>();
 const message = { to: 'recipient@example.com', subject: 'Hello', text: 'Welcome' };
-const runtimes: Frogbot[] = [];
+const runtimes: FrogBot[] = [];
 
 function requestBody(index = 0) {
   return JSON.parse(fetch.mock.calls[index]![1]!.body as string);
 }
 
-async function bootRuntime(overrides: Partial<FrogbotConfig>) {
+async function bootRuntime(overrides: Partial<FrogBotConfig>) {
   const config = await buildTestConfig({
     db: await getTestDatabaseAdapter({
       sqlite: sqliteAdapter({ client: { url: 'file::memory:' } }),
@@ -41,7 +41,7 @@ async function bootRuntime(overrides: Partial<FrogbotConfig>) {
 
   await new BasePayload().init({ config: config._internal.payloadConfig });
 
-  const runtime = await getFrogbot({ config });
+  const runtime = await getFrogBot({ config });
 
   runtimes.push(runtime);
 
@@ -54,7 +54,7 @@ async function bootRuntime(overrides: Partial<FrogbotConfig>) {
 
 function instrumentedPiece() {
   const clients: { apiKey: string }[] = [];
-  const deliveries: { client: { apiKey: string }; req: FrogbotRequest }[] = [];
+  const deliveries: { client: { apiKey: string }; req: FrogBotRequest }[] = [];
   const createEmail = definePiece({
     slug: 'transactional',
     label: 'Transactional',
@@ -115,10 +115,10 @@ afterEach(async () => {
 });
 
 describe('piece-backed transactional email', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname);
+    booted = await bootFrogBot(dirname);
   });
 
   afterAll(async () => {
@@ -356,7 +356,7 @@ describe('email piece boot and runtime isolation', () => {
       admin: { user: usersSlug, importMap: { autoGenerate: false } },
       collections: [Users],
       telemetry: false,
-      email: Promise.resolve(email) as FrogbotConfig['email'],
+      email: Promise.resolve(email) as FrogBotConfig['email'],
     });
 
     const payload = new BasePayload();

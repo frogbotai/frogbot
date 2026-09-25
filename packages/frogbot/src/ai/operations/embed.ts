@@ -4,7 +4,7 @@ import type { Gateway } from '@frogbotai/gateway';
 import { embed as aiEmbed } from 'ai';
 
 import type { Logger } from '../../frogbot.js';
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
 import { enforcePolicy } from '../policy.js';
@@ -25,7 +25,7 @@ export async function embedOperation(
   const { model: input, req, overrideAccess, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogbotRequest, target: input });
+  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
 
   // 1. Resolve model.
   const modelId = resolveModel(input, config);
@@ -33,7 +33,7 @@ export async function embedOperation(
   // 2. Access control.
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
-      req: req as FrogbotRequest,
+      req: req as FrogBotRequest,
       method: 'embed',
       input,
       config,
@@ -43,7 +43,7 @@ export async function embedOperation(
   const op = gateway.operation({
     operation: 'embeddings',
     model: modelId,
-    context: { req: req as FrogbotRequest | undefined },
+    context: { req: req as FrogBotRequest | undefined },
   });
   await op.start();
 

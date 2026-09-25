@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import { pieceInstanceRuntime } from '../../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogbotRequest } from '../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 import { createLinear } from '../../../packages/pieces/piece-linear/src/index.js';
 import { issueCreated } from '../../../packages/pieces/piece-linear/src/triggers/issueCreated.js';
 
@@ -23,10 +23,10 @@ function request({ body = payload(), signature = sign({ body }) } = {}) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Linear-Signature': signature },
     body,
-  }) as FrogbotRequest;
+  }) as FrogBotRequest;
 }
 
-function verify(req: FrogbotRequest) {
+function verify(req: FrogBotRequest) {
   const runtime = pieceInstanceRuntime(createLinear({ webhookSecret }));
   return runtime.definition.webhook!.verify({ req, options: runtime.options as object });
 }
@@ -54,7 +54,7 @@ describe('Linear webhook verification', () => {
     const req = request({ body });
     req.data = { webhookTimestamp: 0 };
     await expect(
-      verify(Object.assign(req.clone!(), { data: req.data }) as FrogbotRequest),
+      verify(Object.assign(req.clone!(), { data: req.data }) as FrogBotRequest),
     ).resolves.toBe(true);
     await expect(req.text!()).resolves.toBe(body);
     await expect(verify(request({ body: payload(), signature: sign({ body }) }))).resolves.toBe(
@@ -135,7 +135,7 @@ describe('Linear webhook lifecycle', () => {
         connections: { resolvePieceCredential: vi.fn().mockResolvedValue({ auth, key: auth }) },
       },
       user: null,
-    } as unknown as FrogbotRequest;
+    } as unknown as FrogBotRequest;
     const client = await linear.client({ req });
     const args = { client, input: { teamId: 'team' }, options: { webhookSecret }, req };
     const state = await issueCreated.onEnable({

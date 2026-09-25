@@ -28,14 +28,14 @@ Add a board entry to `admin.views` to show documents as cards grouped into colum
 
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
-| `actions` | `FrogbotComponent[]` | No; `[]` | Adds actions to the board action area. |
-| `menuItems` | `FrogbotComponent[]` | No; `[]` | Adds entries to the board menu. |
-| `beforeView` | `FrogbotComponent[]` | No; `[]` | Renders inside the collection shell before the board body. |
-| `afterView` | `FrogbotComponent[]` | No; `[]` | Renders inside the collection shell after the board body. |
-| `beforeColumns` | `FrogbotComponent[]` | No; `[]` | Renders before the columns. |
-| `afterColumns` | `FrogbotComponent[]` | No; `[]` | Renders after the columns. |
-| `ColumnHeader` | `FrogbotComponent` | No; built-in header | Replaces each column header. |
-| `Card` | `FrogbotComponent` | No; built-in card | Replaces each card and receives the document as its `row` prop. |
+| `actions` | `FrogBotComponent[]` | No; `[]` | Adds actions to the board action area. |
+| `menuItems` | `FrogBotComponent[]` | No; `[]` | Adds entries to the board menu. |
+| `beforeView` | `FrogBotComponent[]` | No; `[]` | Renders inside the collection shell before the board body. |
+| `afterView` | `FrogBotComponent[]` | No; `[]` | Renders inside the collection shell after the board body. |
+| `beforeColumns` | `FrogBotComponent[]` | No; `[]` | Renders before the columns. |
+| `afterColumns` | `FrogBotComponent[]` | No; `[]` | Renders after the columns. |
+| `ColumnHeader` | `FrogBotComponent` | No; built-in header | Replaces each column header. |
+| `Card` | `FrogBotComponent` | No; built-in card | Replaces each card and receives the document as its `row` prop. |
 
 ```ts
 export const Tasks: CollectionConfig = {

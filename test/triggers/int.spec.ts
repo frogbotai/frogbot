@@ -4,18 +4,18 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const subscriptionsSlug = 'frogbot-trigger-subscriptions';
 const taskSlug = 'frogbot-run-agent-trigger';
 
 describe('triggers', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname);
+    booted = await bootFrogBot(dirname);
   });
 
   it('reconciles declared subscriptions at boot', async () => {

@@ -2,7 +2,7 @@
 
 Docs: https://docs.frogbot.ai/queries/overview, https://docs.frogbot.ai/queries/depth, https://docs.frogbot.ai/queries/pagination, https://docs.frogbot.ai/queries/select, and https://docs.frogbot.ai/queries/sort
 
-Use the Local API on a `Frogbot` instance for server-side operations, or the REST API over HTTP. A standard FrogBot application does not mount a GraphQL execution endpoint.
+Use the Local API on a `FrogBot` instance for server-side operations, or the REST API over HTTP. A standard FrogBot application does not mount a GraphQL execution endpoint.
 
 ## Query Operators
 
@@ -33,9 +33,9 @@ const query: Where = {
 
 ```ts
 import config from '@/frogbot.config';
-import { getFrogbot } from 'frogbot';
+import { getFrogBot } from 'frogbot';
 
-const frogbot = await getFrogbot({ config });
+const frogbot = await getFrogBot({ config });
 
 const posts = await frogbot.find({
   collection: 'posts',

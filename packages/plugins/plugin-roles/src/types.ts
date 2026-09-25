@@ -1,4 +1,4 @@
-import type { AccessArgs, FieldAccess, FrogbotRequest, RoleSlug } from 'frogbot';
+import type { AccessArgs, FieldAccess, FrogBotRequest, RoleSlug } from 'frogbot';
 import type { Where } from 'payload';
 
 export type { RoleSlug } from 'frogbot';
@@ -10,7 +10,7 @@ export type RoleEntry =
       label?: string;
     };
 
-export type RoleResolver = (req: FrogbotRequest) => RoleSlug[];
+export type RoleResolver = (req: FrogBotRequest) => RoleSlug[];
 
 export type RolesFieldAccess = {
   create?: FieldAccess;

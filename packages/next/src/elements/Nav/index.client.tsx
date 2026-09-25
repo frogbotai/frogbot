@@ -11,7 +11,7 @@ import { AppSidebar } from './AppSidebar.js';
 import { MobileNavToggle } from './MobileNavToggle.js';
 import { getNavShellState } from './navShellState.js';
 
-export type FrogbotNavClientProps = {
+export type FrogBotNavClientProps = {
   accountEmail?: string;
   accountIcon?: ReactNode;
   accountName?: string;
@@ -34,7 +34,7 @@ export type FrogbotNavClientProps = {
   settingsPath: string;
 };
 
-export function FrogbotNavClient({
+export function FrogBotNavClient({
   accountEmail,
   accountIcon,
   accountName,
@@ -55,7 +55,7 @@ export function FrogbotNavClient({
   logoutPath,
   sections,
   settingsPath,
-}: FrogbotNavClientProps) {
+}: FrogBotNavClientProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { setPreference } = usePreferences();

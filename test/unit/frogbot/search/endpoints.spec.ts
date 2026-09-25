@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
-import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import { buildSearchEndpoints } from '../../../../packages/frogbot/src/search/endpoints.js';
 import { SearchValidationError } from '../../../../packages/frogbot/src/search/errors.js';
 import { searchOperation } from '../../../../packages/frogbot/src/search/operation.js';
@@ -81,9 +81,9 @@ describe('collection search REST endpoint', () => {
   });
 
   it('registers the endpoint only on collections with search indexes', async () => {
-    const config: FrogbotConfig = {
+    const config: FrogBotConfig = {
       secret: 'test-secret',
-      db: { defaultIDType: 'number' } as FrogbotConfig['db'],
+      db: { defaultIDType: 'number' } as FrogBotConfig['db'],
       collections: [
         {
           slug: 'articles',

@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { z } from 'zod';
 
 export const attachment = z.object({
@@ -6,7 +6,7 @@ export const attachment = z.object({
   name: z.string().optional(),
 });
 
-export async function loadFileAttachment(req: FrogbotRequest, value: z.output<typeof attachment>) {
+export async function loadFileAttachment(req: FrogBotRequest, value: z.output<typeof attachment>) {
   const collection = req.frogbot.config.files?.slug;
   if (!collection) {
     throw new Error('[frogbot] Gmail attachments require the files collection to be configured.');

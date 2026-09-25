@@ -1,8 +1,8 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 
 import { type GoogleCalendar, requestOptions } from '../client.js';
 
-type CalendarOptionsArgs = { client: GoogleCalendar; req: FrogbotRequest };
+type CalendarOptionsArgs = { client: GoogleCalendar; req: FrogBotRequest };
 
 export const calendars =
   (minAccessRole?: 'writer') =>

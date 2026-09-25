@@ -4,11 +4,11 @@ import type {
   EvaluateOpts,
   EvaluateResult,
   EvaluationQuestion,
-  FrogbotInstance,
+  FrogBotInstance,
 } from 'frogbot';
 import { expectTypeOf } from 'vitest';
 
-declare const frogbot: FrogbotInstance;
+declare const frogbot: FrogBotInstance;
 
 declare module 'frogbot' {
   export interface GeneratedTypes {

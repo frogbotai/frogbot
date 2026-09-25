@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 
 import type { DiscordClient } from './client.js';
 
@@ -6,7 +6,7 @@ type OptionArgs = {
   input: Record<string, unknown>;
   client: DiscordClient;
   options: object;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 };
 
 function records(value: unknown): Array<Record<string, unknown>> {

@@ -1,5 +1,5 @@
-import type { AfterChangeHook, FrogbotInstance, FrogbotRequest, SelectType, Where } from 'frogbot';
-import { buildConfig, getFrogbot } from 'frogbot';
+import type { AfterChangeHook, FrogBotInstance, FrogBotRequest, SelectType, Where } from 'frogbot';
+import { buildConfig, getFrogBot } from 'frogbot';
 
 import { createCoreConfig, type Post } from './core-context.js';
 
@@ -20,7 +20,7 @@ export const nestedQuery: Where = {
 
 export async function localAPI() {
   const config = buildConfig(createCoreConfig());
-  const frogbot = await getFrogbot({ config });
+  const frogbot = await getFrogBot({ config });
 
   const posts = await frogbot.find({
     collection: 'posts',
@@ -67,7 +67,7 @@ export const select = {
   meta: { featured: true },
 } satisfies SelectType;
 
-export async function findPosts(frogbot: FrogbotInstance) {
+export async function findPosts(frogbot: FrogBotInstance) {
   const posts = await frogbot.find({
     collection: 'posts',
     select,
@@ -85,8 +85,8 @@ export async function accessControl({
   frogbot,
   currentUser,
 }: {
-  frogbot: FrogbotInstance;
-  currentUser: FrogbotRequest['user'];
+  frogbot: FrogBotInstance;
+  currentUser: FrogBotRequest['user'];
 }) {
   const posts = await frogbot.find({
     collection: 'posts',

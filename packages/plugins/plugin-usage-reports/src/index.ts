@@ -1,4 +1,4 @@
-import type { Access, AccessResult, Endpoint, FrogbotRequest, Plugin } from 'frogbot';
+import type { Access, AccessResult, Endpoint, FrogBotRequest, Plugin } from 'frogbot';
 
 export type UsageReportGroup = 'apiKey' | 'day' | 'model' | 'user';
 
@@ -88,7 +88,7 @@ function addDoc(row: UsageReportRow, doc: Record<string, unknown>): void {
   row.costUSD += number(doc, 'costUSD');
 }
 
-function parseRequest(req: FrogbotRequest, groups: ReadonlySet<UsageReportGroup>) {
+function parseRequest(req: FrogBotRequest, groups: ReadonlySet<UsageReportGroup>) {
   const search = new URL(req.url ?? '', 'http://localhost').searchParams;
   const groupBy = search.get('groupBy') as UsageReportGroup | null;
   const fromDate = new Date(search.get('from') ?? '');

@@ -1,10 +1,10 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
-import { buildConfig, type FrogbotConfig } from 'frogbot';
+import { buildConfig, type FrogBotConfig } from 'frogbot';
 
 import { Posts } from './collections/Posts';
 import { Users } from './collections/Users';
 
-const config: FrogbotConfig = {
+const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET || '',
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || '' } }),
   collections: [Users, Posts],

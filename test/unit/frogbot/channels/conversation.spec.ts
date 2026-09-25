@@ -5,7 +5,7 @@ import {
   resolveChannelChat,
 } from '../../../../packages/frogbot/src/channels/conversation.js';
 import type { ChannelConversationIdentity } from '../../../../packages/frogbot/src/channels/types.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const identity: ChannelConversationIdentity = {
   agent: 'support',
@@ -38,7 +38,7 @@ function request({
         create,
         find,
       },
-    } as unknown as FrogbotRequest,
+    } as unknown as FrogBotRequest,
     create,
     find,
   };

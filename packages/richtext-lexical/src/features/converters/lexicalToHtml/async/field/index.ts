@@ -4,7 +4,7 @@ import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical
 import type { Field, FieldHookArgs } from 'frogbot';
 
 import { resolveConfig } from '../../../../../utilities/resolveConfig.js';
-import { getFrogbotPopulateFn } from '../../../utilities/frogbotPopulateFn.js';
+import { getFrogBotPopulateFn } from '../../../utilities/frogbotPopulateFn.js';
 
 type Args = Parameters<typeof upstreamLexicalHTMLField>[0];
 type AfterReadArgs = FieldHookArgs & {
@@ -30,7 +30,7 @@ export function lexicalHTMLField(args: Args): Field {
     if (!data) return '';
 
     const resolvedDepth = depth ?? (await resolveConfig(req.frogbot.config)).defaultDepth;
-    const populate = await getFrogbotPopulateFn({
+    const populate = await getFrogBotPopulateFn({
       currentDepth: currentDepth ?? 0,
       depth: resolvedDepth,
       draft: draft ?? false,

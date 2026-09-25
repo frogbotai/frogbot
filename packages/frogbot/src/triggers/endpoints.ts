@@ -3,7 +3,7 @@ import { addDataAndFileToRequest, type PayloadRequest } from 'payload';
 import { getChannelHost } from '../channels/host.js';
 import type { Endpoint } from '../endpoints/types.js';
 import { pieceInstanceRuntime } from '../pieces/definePiece.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import { TRIGGER_SUBSCRIPTIONS_SLUG } from './collection.js';
 import { dispatchTriggerEvents } from './dispatch.js';
 import { parseSubscriptionInput } from './input.js';
@@ -11,11 +11,11 @@ import { requiresAdapterVerification } from './registry.js';
 import type { Subscription } from './subscriptions.js';
 import type { TriggerSubscriber } from './types.js';
 
-function requestClone(req: FrogbotRequest): FrogbotRequest {
-  return Object.assign(req.clone!(), Object.fromEntries(Object.entries(req))) as FrogbotRequest;
+function requestClone(req: FrogBotRequest): FrogBotRequest {
+  return Object.assign(req.clone!(), Object.fromEntries(Object.entries(req))) as FrogBotRequest;
 }
 
-async function handler(req: FrogbotRequest): Promise<Response> {
+async function handler(req: FrogBotRequest): Promise<Response> {
   const instanceSlug = req.routeParams?.instance as string | undefined;
   const subscription = req.routeParams?.subscription as string | undefined;
   const entry = instanceSlug ? req.frogbot.config._internal.triggers[instanceSlug] : undefined;
@@ -99,12 +99,12 @@ async function dispatchWebhookTriggers({
   runtime,
   webhookReq,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   instanceSlug: string;
   subscription?: string;
-  entry: NonNullable<FrogbotRequest['frogbot']['config']['_internal']['triggers'][string]>;
+  entry: NonNullable<FrogBotRequest['frogbot']['config']['_internal']['triggers'][string]>;
   runtime: ReturnType<typeof pieceInstanceRuntime>;
-  webhookReq: FrogbotRequest;
+  webhookReq: FrogBotRequest;
 }): Promise<Response> {
   const { definition } = runtime;
 

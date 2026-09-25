@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 import { AGENT_TRIGGER_TASK_SLUG } from './task.js';
 import type { TriggerEvent, TriggerSubscriber } from './types.js';
 
@@ -10,7 +10,7 @@ export async function dispatchTriggerEvents({
   subscribers,
 }: {
   events: TriggerEvent[];
-  frogbot: Frogbot;
+  frogbot: FrogBot;
   subscribers: TriggerSubscriber[];
 }): Promise<void> {
   for (const event of events) {

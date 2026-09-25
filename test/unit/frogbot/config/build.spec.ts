@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
-import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import type { Plugin } from '../../../../packages/frogbot/src/plugin.js';
 
 vi.mock('payload', async (importOriginal) => ({
@@ -10,16 +10,16 @@ vi.mock('payload', async (importOriginal) => ({
   handleEndpoints: vi.fn(),
 }));
 
-vi.mock('../../../../packages/frogbot/src/getFrogbot.js', () => ({
-  getCachedFrogbot: vi.fn(() => null),
+vi.mock('../../../../packages/frogbot/src/getFrogBot.js', () => ({
+  getCachedFrogBot: vi.fn(() => null),
 }));
 
 const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
 
-function makeConfig(overrides?: Partial<FrogbotConfig>): FrogbotConfig {
+function makeConfig(overrides?: Partial<FrogBotConfig>): FrogBotConfig {
   return {
     secret: 'test-secret',
-    db: {} as FrogbotConfig['db'],
+    db: {} as FrogBotConfig['db'],
     collections: [{ slug: 'users', auth: true, fields: [{ name: 'name', type: 'text' }] }],
     ...overrides,
   };
@@ -43,7 +43,7 @@ describe('frogbot buildConfig', () => {
 
     it('rejects a missing `db`', async () => {
       const config = makeConfig({
-        db: undefined as unknown as FrogbotConfig['db'],
+        db: undefined as unknown as FrogBotConfig['db'],
       });
       await expect(buildConfig(config)).rejects.toThrowError(
         '[frogbot] `db` is required. Pass a database adapter.',
@@ -62,7 +62,7 @@ describe('frogbot buildConfig', () => {
     it('rejects a `globals` key with a `[frogbot]` error', async () => {
       const config = makeConfig() as unknown as Record<string, unknown>;
       config.globals = [{ slug: 'site', fields: [] }];
-      await expect(buildConfig(config as unknown as FrogbotConfig)).rejects.toThrowError(
+      await expect(buildConfig(config as unknown as FrogBotConfig)).rejects.toThrowError(
         '[frogbot] `globals` is not a FrogBot concept',
       );
     });
@@ -154,7 +154,7 @@ describe('frogbot buildConfig', () => {
       });
       const config = makeConfig({ plugins: [addField] });
       const result = await buildConfig(config);
-      // Result is now FrogbotSanitizedConfig — check via _internal.payloadConfig
+      // Result is now FrogBotSanitizedConfig — check via _internal.payloadConfig
       const payloadConfig = await result._internal.payloadConfig;
       const users = (payloadConfig as any).collections.find((c: any) => c.slug === 'users');
       const fieldNames = users.fields.map((f: any) => f.name);
@@ -204,16 +204,16 @@ describe('frogbot buildConfig', () => {
   });
 
   describe('sanitization passthrough', () => {
-    it('runs onInit arrays sequentially and shares the Frogbot instance', async () => {
+    it('runs onInit arrays sequentially and shares the FrogBot instance', async () => {
       const order: number[] = [];
       const config = makeConfig({
         onInit: [
           (frogbot) => {
             order.push(1);
-            (frogbot as FrogbotWithState).state = 'ready';
+            (frogbot as FrogBotWithState).state = 'ready';
           },
           (frogbot) => {
-            expect((frogbot as FrogbotWithState).state).toBe('ready');
+            expect((frogbot as FrogBotWithState).state).toBe('ready');
             order.push(2);
           },
         ],
@@ -244,7 +244,7 @@ describe('frogbot buildConfig', () => {
       expect(result.onInit).toBeUndefined();
     });
 
-    it('builds a minimal valid config and returns a FrogbotSanitizedConfig', async () => {
+    it('builds a minimal valid config and returns a FrogBotSanitizedConfig', async () => {
       const config = makeConfig();
       const result = await buildConfig(config);
       expect(result).toBeDefined();
@@ -358,4 +358,4 @@ describe('frogbot buildConfig', () => {
   });
 });
 
-type FrogbotWithState = { state?: string };
+type FrogBotWithState = { state?: string };

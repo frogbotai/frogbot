@@ -11,7 +11,7 @@ import {
   pieceFactoryDefinition,
   pieceInstanceTools,
 } from '../../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogbotRequest } from '../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 import {
   createDiscord,
   discordActions,
@@ -64,7 +64,7 @@ describe('discord', () => {
         adapter: { name: 'discord' },
         identity: {
           author: { userId: '42', userName: 'frog' },
-          req: {} as FrogbotRequest,
+          req: {} as FrogBotRequest,
           expect: null,
         },
         webhook: {

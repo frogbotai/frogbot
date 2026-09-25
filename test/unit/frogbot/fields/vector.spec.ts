@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
-import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import type { MapVectorFieldArgs } from '../../../../packages/frogbot/src/database/types.js';
 import { sanitizeVectorFields } from '../../../../packages/frogbot/src/fields/config/sanitizeVector.js';
 import type {
@@ -15,10 +15,10 @@ import type {
 import { validateVector } from '../../../../packages/frogbot/src/fields/validations.js';
 import { writeGeneratedTypes } from '../../../../packages/frogbot/src/typegen/index.js';
 
-function config(fields: FrogbotConfig['collections'][number]['fields']): FrogbotConfig {
+function config(fields: FrogBotConfig['collections'][number]['fields']): FrogBotConfig {
   return {
     secret: 'test-secret',
-    db: { defaultIDType: 'number' } as FrogbotConfig['db'],
+    db: { defaultIDType: 'number' } as FrogBotConfig['db'],
     collections: [{ slug: 'documents', fields }],
   };
 }

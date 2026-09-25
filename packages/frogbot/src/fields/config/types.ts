@@ -55,7 +55,7 @@ import {
 } from 'payload/shared';
 
 import type { FieldAccess } from '../../collections/config/types.js';
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 
 export interface FieldHookArgs<TData extends TypeWithID = any, TValue = any, TSiblingData = any> {
   collection: null | SanitizedCollectionConfig;
@@ -68,7 +68,7 @@ export interface FieldHookArgs<TData extends TypeWithID = any, TValue = any, TSi
   previousDoc?: TData;
   previousSiblingDoc?: TSiblingData;
   previousValue?: TValue;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   siblingData: Partial<TSiblingData>;
   siblingFields?: (Field | TabAsField)[];
   value?: TValue;
@@ -85,7 +85,7 @@ export type ValidateOptions<TData = any, TSiblingData = any, TValue = any> = {
   operation?: 'create' | 'update';
   path: (number | string)[];
   previousValue?: TValue;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   required?: boolean;
   siblingData: Partial<TSiblingData>;
 };

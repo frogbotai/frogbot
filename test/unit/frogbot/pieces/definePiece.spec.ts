@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-vi.mock('../../../../packages/frogbot/src/getFrogbot.js', () => ({
+vi.mock('../../../../packages/frogbot/src/getFrogBot.js', () => ({
   createDefaultRequest: vi.fn(),
 }));
 

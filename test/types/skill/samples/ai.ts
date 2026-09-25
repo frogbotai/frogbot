@@ -1,5 +1,5 @@
-import type { CollectionConfig, FrogbotConfig, FrogbotInstance, FrogbotRequest } from 'frogbot';
-import { buildConfig, getFrogbot, resolvePolicy } from 'frogbot';
+import type { CollectionConfig, FrogBotConfig, FrogBotInstance, FrogBotRequest } from 'frogbot';
+import { buildConfig, getFrogBot, resolvePolicy } from 'frogbot';
 
 import { domainConfig } from './domain-context.js';
 
@@ -13,12 +13,12 @@ export const ai = {
       models: [{ id: 'big-pickle', mode: 'chat' }],
     },
   },
-} satisfies FrogbotConfig['ai'];
+} satisfies FrogBotConfig['ai'];
 
 const config = buildConfig({ ...domainConfig, ai });
 
 export async function generateUpdate() {
-  const frogbot = await getFrogbot({ config });
+  const frogbot = await getFrogBot({ config });
   const result = await frogbot.generateText({
     model: 'zen/big-pickle',
     prompt: 'Write a one-sentence project update.',
@@ -29,7 +29,7 @@ export async function generateUpdate() {
   return result;
 }
 
-export async function streamReleasePlan(frogbot: FrogbotInstance) {
+export async function streamReleasePlan(frogbot: FrogBotInstance) {
   const result = await frogbot.streamText({
     model: 'zen/big-pickle',
     prompt: 'Explain the release plan.',
@@ -54,7 +54,7 @@ export async function embedProjectNotes() {
     },
   });
 
-  const frogbot = await getFrogbot({ config });
+  const frogbot = await getFrogBot({ config });
   const embedding = await frogbot.embed({
     model: 'openai/text-embedding-3-small',
     value: 'FrogBot project notes',
@@ -102,7 +102,7 @@ export const policyConfig = buildConfig({
   ai,
 });
 
-export async function generatePolicyUpdate(req: FrogbotRequest) {
+export async function generatePolicyUpdate(req: FrogBotRequest) {
   const policy = resolvePolicy(req.user);
   const result = await req.frogbot.generateText({
     model: 'zen/big-pickle',

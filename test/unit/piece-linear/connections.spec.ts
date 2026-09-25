@@ -10,7 +10,7 @@ import {
   pieceFactoryDefinition,
   pieceInstanceRuntime,
 } from '../../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogbotRequest } from '../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 import { createLinear } from '../../../packages/pieces/piece-linear/src/index.js';
 import { memoryKV } from '../frogbot/connections/oauth/fixtures.js';
 
@@ -84,7 +84,7 @@ describe('Linear connections', () => {
       collection: 'users',
       callbackUrl: 'https://app.test/api/connections/linear/callback',
       returnTo: '/',
-      req: { user: { id: 'owner', collection: 'users' } } as FrogbotRequest,
+      req: { user: { id: 'owner', collection: 'users' } } as FrogBotRequest,
     });
 
     const url = new URL(flow.authorizationUrl);
@@ -145,7 +145,7 @@ describe('Linear connections', () => {
       const req = {
         user: { id: 'owner', collection: 'users' },
         frogbot: { ...frogbot, connections: api },
-      } as unknown as FrogbotRequest;
+      } as unknown as FrogBotRequest;
 
       const fetch = vi
         .fn()

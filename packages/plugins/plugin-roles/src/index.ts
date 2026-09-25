@@ -1,4 +1,4 @@
-import type { CollectionConfig, Field, FrogbotConfig, Plugin } from 'frogbot';
+import type { CollectionConfig, Field, FrogBotConfig, Plugin } from 'frogbot';
 import { type Field as PayloadField, formatLabels } from 'payload';
 
 import { bindCompiledAccess, compiledAccess, isCompiledAccess } from './allow.js';
@@ -76,10 +76,10 @@ function bindFields(
 }
 
 function bindAccess(
-  config: FrogbotConfig,
+  config: FrogBotConfig,
   roleSlugs: readonly string[],
   resolver: RoleResolver,
-): FrogbotConfig {
+): FrogBotConfig {
   const listed = new Set(roleSlugs);
   const collections = config.collections.map((collection) => {
     const fields = namedFields(collection.fields as unknown as PayloadField[]);
@@ -188,7 +188,7 @@ function namedFields(fields: PayloadField[]): Array<PayloadField & { name: strin
   return result;
 }
 
-function validateCompiledAccess(config: FrogbotConfig, roleSlugs: readonly string[]): void {
+function validateCompiledAccess(config: FrogBotConfig, roleSlugs: readonly string[]): void {
   const authSlug = 'users';
   for (const collection of config.collections) {
     const fields = namedFields(collection.fields as unknown as PayloadField[]);
@@ -270,7 +270,7 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
         },
       };
     }
-    const prewiring: FrogbotConfig['_roles'] = {
+    const prewiring: FrogBotConfig['_roles'] = {
       ...config._roles,
       present: true,
       configured: true,
@@ -321,7 +321,7 @@ export function rolesPlugin(options: RolesPluginOptions = {}): Plugin {
       collections,
       onInit: [...onInit, (frogbot) => attachRoleResolver(frogbot, resolver)],
       _roles: prewiring,
-    } as FrogbotConfig;
+    } as FrogBotConfig;
     validateCompiledAccess(result, roleSlugs);
     return bindAccess(result, roleSlugs, resolver);
   };

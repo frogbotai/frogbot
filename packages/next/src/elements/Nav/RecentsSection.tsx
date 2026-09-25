@@ -1,5 +1,5 @@
 import type { ChatDocument } from '@frogbotai/ui/chat';
-import { getCachedFrogbot } from 'frogbot';
+import { getCachedFrogBot } from 'frogbot';
 import type { PayloadRequest, ServerProps } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 
@@ -9,7 +9,7 @@ import { RecentsSectionClient } from './RecentsSection.client.js';
 export type RecentsSectionProps = { req?: PayloadRequest } & ServerProps;
 
 export async function RecentsSection({ payload, req }: RecentsSectionProps) {
-  const chat = getCachedFrogbot()?.config.chat;
+  const chat = getCachedFrogBot()?.config.chat;
   const chatsSlug = chat?.enabled ? chat.chatsSlug : '';
   const messagesSlug = chat?.enabled ? chat.messagesSlug : '';
   let recents: ChatDocument[] = [];

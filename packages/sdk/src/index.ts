@@ -154,7 +154,7 @@ export class FrogBotSDK {
   }
 }
 
-export function createFrogbotSDK(config: FrogBotSDKConfig): FrogBotSDK {
+export function createFrogBotSDK(config: FrogBotSDKConfig): FrogBotSDK {
   return new FrogBotSDK(config);
 }
 

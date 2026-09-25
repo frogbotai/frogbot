@@ -17,6 +17,6 @@ export function bearerFetch(
 }
 
 export function createCookieSDK(baseURL = '/api') {
-  return createFrogbotSDK({ baseURL, fetch: cookieFetch() });
+  return createFrogBotSDK({ baseURL, fetch: cookieFetch() });
 }
-import { createFrogbotSDK } from '@frogbotai/sdk';
+import { createFrogBotSDK } from '@frogbotai/sdk';

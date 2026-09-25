@@ -1,3 +1,3 @@
-import { withFrogbot } from '@frogbotai/next/config';
+import { withFrogBot } from '@frogbotai/next/config';
 
-export default withFrogbot({}, { devBundleServerPackages: false });
+export default withFrogBot({}, { devBundleServerPackages: false });

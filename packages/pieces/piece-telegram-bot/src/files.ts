@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { z } from 'zod';
 
 export const telegramFile = z.object({
@@ -12,7 +12,7 @@ const storedFile = z.object({
   name: z.string().optional(),
 });
 
-export async function loadTelegramFile(req: FrogbotRequest, value: z.output<typeof telegramFile>) {
+export async function loadTelegramFile(req: FrogBotRequest, value: z.output<typeof telegramFile>) {
   const collection = req.frogbot.config.files?.slug;
 
   if (!collection) {

@@ -2,11 +2,11 @@ import type { Payload } from 'payload';
 
 import { getChannelHost } from '../channels/host.js';
 import { loadConfig } from '../config/load.js';
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 
 export async function channelsRun(): Promise<void> {
   let payload: Payload | undefined;
-  let frogbot: Frogbot | undefined;
+  let frogbot: FrogBot | undefined;
   const controller = new AbortController();
   let exitCode = 0;
 
@@ -18,7 +18,7 @@ export async function channelsRun(): Promise<void> {
   try {
     const config = await loadConfig({ cwd: process.cwd() });
     const payloadConfig = await config._internal.payloadConfig;
-    const [{ BasePayload }, { initFrogbotFromPayload }] = await Promise.all([
+    const [{ BasePayload }, { initFrogBotFromPayload }] = await Promise.all([
       import('payload'),
       import('../frogbot.js'),
     ]);
@@ -28,7 +28,7 @@ export async function channelsRun(): Promise<void> {
 
     await runtime.init({ config: payloadConfig, cron: false, disableOnInit: true });
 
-    frogbot = await initFrogbotFromPayload(runtime, config, { startChannelGateway: false });
+    frogbot = await initFrogBotFromPayload(runtime, config, { startChannelGateway: false });
     const host = getChannelHost(frogbot);
 
     if (!host?.hasGatewayAdapters()) {

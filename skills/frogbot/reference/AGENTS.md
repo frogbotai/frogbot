@@ -20,12 +20,12 @@ export const assistant: AgentConfig = {
 Register it alongside any presets:
 
 ```ts
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 import { general } from 'frogbot/agents';
 
 import { assistant } from './agents/assistant';
 
-const agents: FrogbotConfig['agents'] = [general(), assistant];
+const agents: FrogBotConfig['agents'] = [general(), assistant];
 ```
 
 The surrounding config must also provide the required database, collections, secret, and AI provider settings. An agent without `model` uses the configured default model.
@@ -35,11 +35,11 @@ The surrounding config must also provide the required database, collections, sec
 Use an initialized FrogBot instance and select the agent by slug:
 
 ```ts
-import { getFrogbot } from 'frogbot';
+import { getFrogBot } from 'frogbot';
 
 import config from './frogbot.config';
 
-const frogbot = await getFrogbot({ config });
+const frogbot = await getFrogBot({ config });
 const result = await frogbot.agents.assistant.generate({
   prompt: "Summarize today's open tasks.",
 });

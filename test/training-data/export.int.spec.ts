@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 import type { TrainingDataRecord } from 'frogbot';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { chatsSlug, messagesSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -40,13 +40,13 @@ async function readRecords(stream: ReadableStream<Uint8Array>): Promise<Training
 }
 
 describe('training data export', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
   let owner: { id: number | string };
   let otherUser: { id: number | string };
   let exportedChatId: number | string;
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname);
+    booted = await bootFrogBot(dirname);
 
     owner = (await booted.frogbot.create({
       collection: usersSlug,

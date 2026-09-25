@@ -12,7 +12,7 @@ import {
   ParagraphNode,
   type SerializedLexicalNode,
 } from '@frogbotai/richtext-lexical/lexical';
-import type { Field, FrogbotRequest } from 'frogbot';
+import type { Field, FrogBotRequest } from 'frogbot';
 import { expectTypeOf } from 'vitest';
 
 interface SerializedDividerNode extends SerializedLexicalNode {
@@ -72,7 +72,7 @@ const dividerNode = createNode({
     html: {
       converter: ({ node, req }) => {
         expectTypeOf(node.fields.label).toBeString();
-        expectTypeOf(req).toEqualTypeOf<FrogbotRequest | null | undefined>();
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest | null | undefined>();
 
         return '<hr>';
       },
@@ -81,27 +81,27 @@ const dividerNode = createNode({
   },
   getSubFields: ({ node, req }) => {
     expectTypeOf(node?.fields.label).toEqualTypeOf<string | undefined>();
-    expectTypeOf(req).toEqualTypeOf<FrogbotRequest | undefined>();
+    expectTypeOf(req).toEqualTypeOf<FrogBotRequest | undefined>();
 
     return fields;
   },
   getSubFieldsData: ({ node, req }) => {
     expectTypeOf(node.fields.label).toBeString();
-    expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+    expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
 
     return node.fields;
   },
   graphQLPopulationPromises: [
     ({ node, req }) => {
       expectTypeOf(node.fields.label).toBeString();
-      expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+      expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
     },
   ],
   hooks: {
     afterRead: [
       ({ node, req }) => {
         expectTypeOf(node.fields.label).toBeString();
-        expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
 
         return node;
       },
@@ -109,7 +109,7 @@ const dividerNode = createNode({
     beforeChange: [
       ({ node, req }) => {
         expectTypeOf(node.fields.label).toBeString();
-        expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
 
         return node;
       },
@@ -117,7 +117,7 @@ const dividerNode = createNode({
     beforeValidate: [
       ({ node, req }) => {
         expectTypeOf(node.fields.label).toBeString();
-        expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+        expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
 
         return node;
       },

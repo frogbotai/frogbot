@@ -1,9 +1,9 @@
-import type { AfterErrorHook, Endpoint, FrogbotConfig, OnInit, Plugin } from 'frogbot';
+import type { AfterErrorHook, Endpoint, FrogBotConfig, OnInit, Plugin } from 'frogbot';
 
 type NotesFeaturesOptions = {
   afterError: AfterErrorHook;
   endpoint: Endpoint;
-  task: NonNullable<NonNullable<FrogbotConfig['jobs']>['tasks']>[number];
+  task: NonNullable<NonNullable<FrogBotConfig['jobs']>['tasks']>[number];
 };
 
 export function notesFeaturesPlugin({ afterError, endpoint, task }: NotesFeaturesOptions): Plugin {

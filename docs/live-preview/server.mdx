@@ -27,7 +27,7 @@ Render a client wrapper from your preview page. This example uses a draft-enable
 
 ```tsx
 import config from '@/frogbot.config'
-import { getFrogbot } from 'frogbot'
+import { getFrogBot } from 'frogbot'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 
@@ -35,7 +35,7 @@ import { LivePreviewRefresh } from './LivePreviewRefresh'
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const frogbot = await getFrogbot({ config })
+  const frogbot = await getFrogBot({ config })
   const requestHeaders = await headers()
   const { user } = await frogbot.auth({ headers: requestHeaders })
 

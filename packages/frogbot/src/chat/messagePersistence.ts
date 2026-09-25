@@ -2,7 +2,7 @@ import type { LanguageModelUsage, UIMessage } from 'ai';
 
 import { toHookUsage } from '../ai/hooks.js';
 import type { DocID } from '../collections/config/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import { MESSAGE_USAGE_CONTEXT_KEY } from './collections/messages.js';
 import { generateChatTitle } from './title.js';
 
@@ -17,7 +17,7 @@ export type MessageUsage = {
 };
 
 export type PersistAssistantMessageProps = {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   chatId: DocID;
   message: UIMessage;
   isContinuation: boolean;

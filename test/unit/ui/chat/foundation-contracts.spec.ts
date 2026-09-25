@@ -13,7 +13,7 @@ describe('Firmware UI foundation contracts', () => {
     const packageName = '@frogbotai/sdk';
     const sdkModule = await import(packageName);
     const fetch = vi.fn(() => Promise.resolve(new Response('{}')));
-    const sdk = sdkModule.createFrogbotSDK({
+    const sdk = sdkModule.createFrogBotSDK({
       baseURL: 'https://frogbot.example/api',
       headers: { Authorization: 'Bearer token' },
       fetch,
