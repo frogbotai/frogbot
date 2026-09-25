@@ -2,26 +2,26 @@ import type * as PayloadModule from 'payload';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
-import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
-import type { Frogbot } from '../../../../packages/frogbot/src/frogbot.js';
-import { resetFrogbotCache } from '../../../../packages/frogbot/src/getFrogbot.js';
-import { registerFrogbotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
+import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
+import { resetFrogBotCache } from '../../../../packages/frogbot/src/getFrogBot.js';
+import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
 
 vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof PayloadModule>()),
   buildConfig: vi.fn((config: unknown) => Promise.resolve(config)),
 }));
 
-function config(overrides: Partial<FrogbotConfig> = {}): FrogbotConfig {
+function config(overrides: Partial<FrogBotConfig> = {}): FrogBotConfig {
   return {
     secret: 'resume-endpoint-test-secret',
-    db: {} as FrogbotConfig['db'],
+    db: {} as FrogBotConfig['db'],
     collections: [{ slug: 'users', auth: true, fields: [] }],
     ...overrides,
   };
 }
 
-afterEach(resetFrogbotCache);
+afterEach(resetFrogBotCache);
 
 describe('resume endpoint registration', () => {
   it('registers GET, HEAD and POST without changing the injected waitpoint collection', async () => {
@@ -83,9 +83,9 @@ describe('resume endpoint registration', () => {
     const payloadConfig = await sanitized._internal.payloadConfig;
     const find = vi.fn().mockResolvedValue({ docs: [] });
     const payload = { db: { find } };
-    const frogbot = {} as Frogbot;
+    const frogbot = {} as FrogBot;
 
-    registerFrogbotInstance(payload, frogbot, sanitized);
+    registerFrogBotInstance(payload, frogbot, sanitized);
 
     const req = Object.assign(new Request('https://example.com/custom-api/jobs/secret/resume'), {
       payload,

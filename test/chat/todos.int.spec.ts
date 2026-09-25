@@ -5,8 +5,8 @@ import type { UIMessage } from 'frogbot';
 import { resolveChatContext } from 'frogbot/test';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { agentSlug, chatsSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -17,11 +17,11 @@ function userMessage(text: string, id: string): UIMessage {
 }
 
 describe('chat persistence: todos', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
   let owner: { id: number | string };
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname, 'chat-todos');
+    booted = await bootFrogBot(dirname, 'chat-todos');
     owner = (await booted.frogbot.create({
       collection: usersSlug,
       data: { email: 'todo-owner@frogbot.local', password: 'frogbot-int-password' },

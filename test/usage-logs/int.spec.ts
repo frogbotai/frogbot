@@ -3,16 +3,16 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('usage logs', () => {
-  let defaultBooted: BootedFrogbot;
+  let defaultBooted: BootedFrogBot;
 
   beforeAll(async () => {
-    defaultBooted = await bootFrogbot(dirname, 'usage-logs-default');
+    defaultBooted = await bootFrogBot(dirname, 'usage-logs-default');
   });
 
   afterAll(async () => {

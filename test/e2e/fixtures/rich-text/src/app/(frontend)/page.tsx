@@ -7,7 +7,7 @@ import {
   type SerializedBlockNode,
   type SerializedInlineBlockNode,
 } from '@frogbotai/richtext-lexical/react';
-import { getFrogbot } from 'frogbot';
+import { getFrogBot } from 'frogbot';
 
 import type { Post } from '../../__docs-samples__/ticket135/views/frogbot-types';
 import { PostBody } from '../../__docs-samples__/ticket135/views/PostBody';
@@ -51,7 +51,7 @@ function hasPostContent(value: unknown): value is NonNullable<Post['content']> {
 }
 
 export default async function Page() {
-  const frogbot = await getFrogbot({ config });
+  const frogbot = await getFrogBot({ config });
   const posts = await frogbot.find({ collection: 'posts', limit: 1, sort: '-createdAt' });
   const post = posts.docs[0];
 

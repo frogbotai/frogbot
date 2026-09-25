@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { resolveScheduleTasks } from '../../../../packages/frogbot/src/agents/resolveScheduleTasks.js';
-import { registerFrogbotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
+import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
 import {
   AGENT_TRIGGER_TASK_SLUG,
   resolveTriggerTasks,
@@ -69,7 +69,7 @@ describe('agent trigger task', () => {
       },
     };
     createRequest.mockImplementation(async ({ context }) => ({ context, frogbot }));
-    registerFrogbotInstance(payload, frogbot as never);
+    registerFrogBotInstance(payload, frogbot as never);
     const task = resolveTriggerTasks().tasks!.find(({ slug }) => slug === AGENT_TRIGGER_TASK_SLUG)!;
 
     await task.handler!({

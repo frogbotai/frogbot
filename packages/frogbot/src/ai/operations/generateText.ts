@@ -4,8 +4,8 @@ import type { Gateway } from '@frogbotai/gateway';
 import { generateId, generateText as aiGenerateText } from 'ai';
 
 import { toAISDKTools, toAISDKToolsContext } from '../../agents/tools.js';
-import type { Frogbot, Logger } from '../../frogbot.js';
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBot, Logger } from '../../frogbot.js';
+import type { FrogBotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
 import { enforcePolicy } from '../policy.js';
@@ -15,7 +15,7 @@ import type { GenerateTextOpts, SanitizedAIConfig } from '../types.js';
 export type GenerateTextDeps = {
   gateway: Gateway;
   config: SanitizedAIConfig;
-  frogbot: Frogbot;
+  frogbot: FrogBot;
   logger: Logger;
 };
 
@@ -27,7 +27,7 @@ export async function generateTextOperation(
   const { model: input, req, overrideAccess, tools, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogbotRequest, target: input });
+  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
 
   // 1. Resolve model.
   const modelId = resolveModel(input, config);
@@ -35,7 +35,7 @@ export async function generateTextOperation(
   // 2. Access control.
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
-      req: req as FrogbotRequest,
+      req: req as FrogBotRequest,
       method: 'generateText',
       input,
       config,
@@ -55,7 +55,7 @@ export async function generateTextOperation(
   const op = gateway.operation({
     operation: 'chat.completions',
     model: modelId,
-    context: { req: req as FrogbotRequest | undefined },
+    context: { req: req as FrogBotRequest | undefined },
   });
   await op.start();
 

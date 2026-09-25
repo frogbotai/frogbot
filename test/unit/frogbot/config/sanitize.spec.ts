@@ -5,15 +5,15 @@ import { z } from 'zod';
 import { general } from '../../../../packages/frogbot/src/agents/presets/general.js';
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import { compileCollectionViews } from '../../../../packages/frogbot/src/config/collectionViews.js';
-import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
-import type { Frogbot } from '../../../../packages/frogbot/src/frogbot.js';
+import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
 import {
-  getCachedFrogbot,
-  resetFrogbotCache,
-} from '../../../../packages/frogbot/src/getFrogbot.js';
+  getCachedFrogBot,
+  resetFrogBotCache,
+} from '../../../../packages/frogbot/src/getFrogBot.js';
 import {
-  getFrogbotInstance,
-  registerFrogbotInstance,
+  getFrogBotInstance,
+  registerFrogBotInstance,
 } from '../../../../packages/frogbot/src/instanceRegistry.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 
@@ -33,10 +33,10 @@ const createEmail = definePiece({
   email: { async send() {} },
 });
 
-function makeConfig(overrides?: Partial<FrogbotConfig>): FrogbotConfig {
+function makeConfig(overrides?: Partial<FrogBotConfig>): FrogBotConfig {
   return {
     secret: 'test-secret',
-    db: {} as FrogbotConfig['db'],
+    db: {} as FrogBotConfig['db'],
     collections: [{ slug: 'users', auth: true, fields: [{ name: 'name', type: 'text' }] }],
     ...overrides,
   };
@@ -300,7 +300,7 @@ describe('frogbot sanitize', () => {
   it('throws `[frogbot] `globals` is not a FrogBot concept` when `globals` is present', () => {
     const config = makeConfig() as unknown as Record<string, unknown>;
     config.globals = [{ slug: 'site', fields: [] }];
-    expect(() => sanitize(config as unknown as FrogbotConfig)).toThrowError(
+    expect(() => sanitize(config as unknown as FrogBotConfig)).toThrowError(
       '[frogbot] `globals` is not a FrogBot concept',
     );
   });
@@ -308,7 +308,7 @@ describe('frogbot sanitize', () => {
   it('throws when admin.livePreview.globals is set', () => {
     const config = makeConfig({
       admin: { livePreview: { globals: ['site'] } },
-    } as unknown as Partial<FrogbotConfig>);
+    } as unknown as Partial<FrogBotConfig>);
 
     expect(() => sanitize(config)).toThrowError(
       '[frogbot] `admin.livePreview.globals` is not a FrogBot concept. Use `collections` instead.',
@@ -346,7 +346,7 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
     const payload = makePayload(payloadConfig);
     const frogbot = { agents: {} };
-    registerFrogbotInstance(payload, frogbot as unknown as Frogbot);
+    registerFrogBotInstance(payload, frogbot as unknown as FrogBot);
 
     const resolved = await (
       payloadConfig.admin.livePreview?.url as (args: Record<string, unknown>) => Promise<unknown>
@@ -372,7 +372,7 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
     const payload = makePayload(payloadConfig);
     const frogbot = { agents: {} };
-    registerFrogbotInstance(payload, frogbot as unknown as Frogbot);
+    registerFrogBotInstance(payload, frogbot as unknown as FrogBot);
     const pages = payloadConfig.collections.find(({ slug }) => slug === 'pages');
 
     const resolved = await (
@@ -410,7 +410,7 @@ describe('frogbot sanitize', () => {
     );
     const payloadConfig = await result._internal.payloadConfig;
     const payload = makePayload(payloadConfig);
-    registerFrogbotInstance(payload, { agents: {} } as unknown as Frogbot);
+    registerFrogBotInstance(payload, { agents: {} } as unknown as FrogBot);
 
     const pending = (
       payloadConfig.admin.livePreview?.url as (args: Record<string, unknown>) => Promise<unknown>
@@ -423,7 +423,7 @@ describe('frogbot sanitize', () => {
     await expect(pending).rejects.toBe(error);
   });
 
-  it('returns a FrogbotSanitizedConfig with collections metadata', () => {
+  it('returns a FrogBotSanitizedConfig with collections metadata', () => {
     const config = makeConfig({
       collections: [
         { slug: 'users', auth: true, fields: [] },
@@ -567,7 +567,7 @@ describe('frogbot sanitize', () => {
 
   it.each([null, false, '', () => ({})])('rejects an invalid email config: %s', (email) => {
     expect(() =>
-      sanitize(makeConfig({ email: email as unknown as FrogbotConfig['email'] })),
+      sanitize(makeConfig({ email: email as unknown as FrogBotConfig['email'] })),
     ).toThrow('email must be a piece that implements email');
   });
 
@@ -588,7 +588,7 @@ describe('frogbot sanitize', () => {
     },
   ])('applies the same validation to promised values: $error', async ({ email, error }) => {
     const result = sanitize(
-      makeConfig({ email: Promise.resolve(email) as FrogbotConfig['email'] }),
+      makeConfig({ email: Promise.resolve(email) as FrogBotConfig['email'] }),
     );
     const payloadConfig = await result._internal.payloadConfig;
 
@@ -761,7 +761,7 @@ describe('frogbot sanitize', () => {
     expect(endpoints.find(({ path }) => path === '/health').handler).not.toBe(handler);
   });
 
-  it('binds endpoint requests to the Frogbot instance for their Payload instance', async () => {
+  it('binds endpoint requests to the FrogBot instance for their Payload instance', async () => {
     const handler = vi.fn(() => new Response('ok'));
     const result = sanitize(
       makeConfig({
@@ -777,7 +777,7 @@ describe('frogbot sanitize', () => {
 
     const payload = {};
     const frogbot = { agents: {} };
-    registerFrogbotInstance(payload, frogbot as any);
+    registerFrogBotInstance(payload, frogbot as any);
 
     await endpoint.handler({ payload });
 
@@ -785,8 +785,8 @@ describe('frogbot sanitize', () => {
     expect(payload).not.toHaveProperty('frogbot');
   });
 
-  it('registers and caches Frogbot during Payload initialization', async () => {
-    resetFrogbotCache();
+  it('registers and caches FrogBot during Payload initialization', async () => {
+    resetFrogBotCache();
     const onInit = vi.fn();
     const result = sanitize(makeConfig({ onInit }));
     const payloadConfig = await result._internal.payloadConfig;
@@ -794,30 +794,30 @@ describe('frogbot sanitize', () => {
 
     await payloadConfig.onInit?.(payload as never);
 
-    const frogbot = getFrogbotInstance(payload);
+    const frogbot = getFrogBotInstance(payload);
     expect(frogbot).toBeDefined();
-    expect(getCachedFrogbot()).toBe(frogbot);
+    expect(getCachedFrogBot()).toBe(frogbot);
     expect(onInit).toHaveBeenCalledOnce();
   });
 
   it('initializes a Payload instance idempotently', async () => {
-    resetFrogbotCache();
+    resetFrogBotCache();
     const onInit = vi.fn();
     const result = sanitize(makeConfig({ onInit }));
     const payloadConfig = await result._internal.payloadConfig;
     const payload = makePayload(payloadConfig);
 
     await payloadConfig.onInit?.(payload as never);
-    const first = getFrogbotInstance(payload);
+    const first = getFrogBotInstance(payload);
     await payloadConfig.onInit?.(payload as never);
 
     expect(first).toBeDefined();
-    expect(getFrogbotInstance(payload)).toBe(first);
+    expect(getFrogBotInstance(payload)).toBe(first);
     expect(onInit).toHaveBeenCalledOnce();
   });
 
   it('warns once through the initialized logger when Payload initialization omits email', async () => {
-    resetFrogbotCache();
+    resetFrogBotCache();
     const result = sanitize(makeConfig());
     const payloadConfig = await result._internal.payloadConfig;
     const payload = makePayload(payloadConfig);
@@ -831,7 +831,7 @@ describe('frogbot sanitize', () => {
   it.each([false, true])(
     'does not warn during Payload initialization when email is configured (promised: %s)',
     async (promised) => {
-      resetFrogbotCache();
+      resetFrogBotCache();
       const piece = createEmail({ from: 'sender@example.com' });
       const result = sanitize(makeConfig({ email: promised ? Promise.resolve(piece) : piece }));
       const payloadConfig = await result._internal.payloadConfig;
@@ -844,7 +844,7 @@ describe('frogbot sanitize', () => {
   );
 
   it('does not warn during production-build Payload initialization', async () => {
-    resetFrogbotCache();
+    resetFrogBotCache();
     const previousPhase = process.env.NEXT_PHASE;
     process.env.NEXT_PHASE = 'phase-production-build';
     try {
@@ -861,7 +861,7 @@ describe('frogbot sanitize', () => {
   });
 
   it('recovers endpoint requests when lifecycle registration is missing', async () => {
-    resetFrogbotCache();
+    resetFrogBotCache();
     const handler = vi.fn((req) => Response.json({ attached: Boolean(req.frogbot) }));
     const result = sanitize(
       makeConfig({ endpoints: [{ path: '/health', method: 'get', handler }] }),
@@ -874,8 +874,8 @@ describe('frogbot sanitize', () => {
     const response = await endpoint.handler({ payload } as never);
 
     await expect(response.json()).resolves.toEqual({ attached: true });
-    expect(getFrogbotInstance(payload)).toBeDefined();
-    expect(getCachedFrogbot()).toBe(getFrogbotInstance(payload));
+    expect(getFrogBotInstance(payload)).toBeDefined();
+    expect(getCachedFrogBot()).toBe(getFrogBotInstance(payload));
   });
 
   it('recovers operations when lifecycle registration is missing', async () => {
@@ -888,7 +888,7 @@ describe('frogbot sanitize', () => {
 
     await bootstrap({ req });
 
-    expect(req).toHaveProperty('frogbot', getFrogbotInstance(payload));
+    expect(req).toHaveProperty('frogbot', getFrogBotInstance(payload));
   });
 
   it('deduplicates concurrent lazy registration', async () => {
@@ -939,14 +939,14 @@ describe('frogbot sanitize', () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
-  it('binds root afterError requests without nesting Frogbot on Payload', async () => {
+  it('binds root afterError requests without nesting FrogBot on Payload', async () => {
     const hookResult = { status: 418 };
     const afterError = vi.fn(() => hookResult);
     const result = sanitize(makeConfig({ hooks: { afterError: [afterError] } }));
     const payloadConfig = await result._internal.payloadConfig;
     const payload = makePayload(payloadConfig);
     const frogbot = { agents: {} };
-    registerFrogbotInstance(payload, frogbot as unknown as Frogbot);
+    registerFrogBotInstance(payload, frogbot as unknown as FrogBot);
     const req = { payload };
 
     const args = {
@@ -966,7 +966,7 @@ describe('frogbot sanitize', () => {
   });
 
   it('drops the FrogBot plugins key from the payload config', async () => {
-    const plugin = (c: FrogbotConfig) => c;
+    const plugin = (c: FrogBotConfig) => c;
     const config = makeConfig({ plugins: [plugin] });
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
@@ -986,7 +986,7 @@ describe('frogbot sanitize', () => {
           ],
         },
       },
-    } as unknown as Partial<FrogbotConfig>);
+    } as unknown as Partial<FrogBotConfig>);
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
     expect((payloadConfig as any).admin.dashboard.widgets[0].Component).toBe(
@@ -998,7 +998,7 @@ describe('frogbot sanitize', () => {
     const config = makeConfig({
       admin: { theme: 'dark', importMap: { baseDir: '/tmp/base' } },
       routes: { api: '/internal' },
-    } as unknown as Partial<FrogbotConfig>);
+    } as unknown as Partial<FrogBotConfig>);
     const result = sanitize(config);
     const payloadConfig = await result._internal.payloadConfig;
     expect((payloadConfig as any).admin.importMap).toEqual({
@@ -1241,8 +1241,8 @@ describe('frogbot sanitize', () => {
     const result = sanitize(makeConfig());
     const payloadConfig = (await result._internal.payloadConfig) as any;
     expect(payloadConfig.admin.components.graphics).toEqual({
-      Icon: '@frogbotai/next/rsc#FrogbotIcon',
-      Logo: '@frogbotai/next/rsc#FrogbotLogo',
+      Icon: '@frogbotai/next/rsc#FrogBotIcon',
+      Logo: '@frogbotai/next/rsc#FrogBotLogo',
     });
     expect(payloadConfig.admin.meta.titleSuffix).toBe('- FrogBot');
     expect(payloadConfig.admin.meta.defaultOGImageType).toBe('static');
@@ -1277,11 +1277,11 @@ describe('frogbot sanitize', () => {
       i18n: {
         translations: { en: { general: { payloadSettings: 'Acme Settings' } } },
       },
-    } as unknown as Partial<FrogbotConfig>);
+    } as unknown as Partial<FrogBotConfig>);
     const result = sanitize(config);
     const payloadConfig = (await result._internal.payloadConfig) as any;
     expect(payloadConfig.admin.components.graphics).toEqual({
-      Icon: '@frogbotai/next/rsc#FrogbotIcon',
+      Icon: '@frogbotai/next/rsc#FrogBotIcon',
       Logo: '/components/Logo#MyLogo',
     });
     expect(payloadConfig.admin.meta.titleSuffix).toBe('- Acme');
@@ -1303,7 +1303,7 @@ describe('frogbot sanitize', () => {
           es: { general: { dashboard: 'Inicio' } },
         },
       },
-    } as unknown as Partial<FrogbotConfig>);
+    } as unknown as Partial<FrogBotConfig>);
     const result = sanitize(config);
     const payloadConfig = (await result._internal.payloadConfig) as any;
     expect(payloadConfig.i18n.fallbackLanguage).toBe('en');
@@ -1715,7 +1715,7 @@ describe('frogbot sanitize', () => {
 
       expect(() =>
         sanitize(
-          makeConfig({ ai, agents: [{ ...agent, channels: [plain] }] } as unknown as FrogbotConfig),
+          makeConfig({ ai, agents: [{ ...agent, channels: [plain] }] } as unknown as FrogBotConfig),
         ),
       ).toThrow("Every channel in agent 'support' must be a channel-capable piece instance");
     });
@@ -2616,7 +2616,7 @@ describe('frogbot sanitize', () => {
   });
 
   describe('ai.telemetry', () => {
-    function aiConfig(overrides?: Partial<FrogbotConfig['ai']>) {
+    function aiConfig(overrides?: Partial<FrogBotConfig['ai']>) {
       return makeConfig({
         ai: {
           providers: { openai: { apiKey: 'sk-test' } },

@@ -26,7 +26,7 @@ export function startupBanner(args: StartupBannerArgs): string {
   const providers = configuredProviders(args.config);
   const hooks = hookSummary(args.config.hooks);
   return [
-    'Frogbot Gateway',
+    'FrogBot Gateway',
     `listen: http://${displayHost(args.host)}:${args.port}`,
     `providers: ${providers.length ? providers.map((name) => `${name} (catalog unknown)`).join(', ') : 'none'}`,
     `modalities: ${modalities(args.config).join(', ')}`,

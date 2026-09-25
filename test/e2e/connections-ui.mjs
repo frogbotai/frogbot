@@ -91,8 +91,8 @@ try {
   }
   await writeFile(
     join(app, 'next.config.mjs'),
-    `import { withFrogbot } from '@frogbotai/next/config';
-export default withFrogbot({ eslint: { ignoreDuringBuilds: true }, typescript: { ignoreBuildErrors: true } });
+    `import { withFrogBot } from '@frogbotai/next/config';
+export default withFrogBot({ eslint: { ignoreDuringBuilds: true }, typescript: { ignoreBuildErrors: true } });
 `,
   );
 
@@ -105,13 +105,13 @@ export default withFrogbot({ eslint: { ignoreDuringBuilds: true }, typescript: {
       `
     import module, { createRequire } from 'node:module';
     import { dirname } from 'node:path';
-    import { getFrogbot } from 'frogbot';
+    import { getFrogBot } from 'frogbot';
     module.registerHooks = undefined;
     const require = createRequire(import.meta.url);
     const { register } = await import(require.resolve('tsx/esm/api', { paths: [dirname(require.resolve('frogbot'))] }));
     register();
     const { default: config } = await import('./src/frogbot.config.ts');
-    const frogbot = await getFrogbot({ config });
+    const frogbot = await getFrogBot({ config });
     await frogbot.create({ collection: 'users', data: { email: 'connections-ui@example.test', password: crypto.randomUUID() } });
     await frogbot.destroy();
     process.exit(0);

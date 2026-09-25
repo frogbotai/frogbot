@@ -4,9 +4,9 @@ import { OwnerNote as OwnerNote_29347ead89d170393c0abfd48123a474 } from '../../c
 import { FolderTableCell as FolderTableCell_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 import { FolderField as FolderField_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 import { FolderTypeField as FolderTypeField_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client';
-import { FrogbotNav as FrogbotNav_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
-import { FrogbotIcon as FrogbotIcon_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
-import { FrogbotLogo as FrogbotLogo_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
+import { FrogBotNav as FrogBotNav_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
+import { FrogBotIcon as FrogBotIcon_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
+import { FrogBotLogo as FrogBotLogo_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 import { CollectionsSection as CollectionsSection_0490761fff9543eb3bcfbb8da78b8101 } from '@frogbotai/next';
 import { RecentsSection as RecentsSection_0490761fff9543eb3bcfbb8da78b8101 } from '@frogbotai/next';
 import { ReportsView as ReportsView_f38cfc1b9ecf3645fff5adb5910da58e } from '../../components/ReportsView';
@@ -23,9 +23,9 @@ export const importMap = {
   '@frogbotai/next/rsc#FolderTableCell': FolderTableCell_0d74ee439e1043043a872b6d428a44d5,
   '@frogbotai/next/rsc#FolderField': FolderField_0d74ee439e1043043a872b6d428a44d5,
   '@frogbotai/next/client#FolderTypeField': FolderTypeField_e1fc65845c25c823b271918436e716b9,
-  '@frogbotai/next/rsc#FrogbotNav': FrogbotNav_0d74ee439e1043043a872b6d428a44d5,
-  '@frogbotai/next/rsc#FrogbotIcon': FrogbotIcon_0d74ee439e1043043a872b6d428a44d5,
-  '@frogbotai/next/rsc#FrogbotLogo': FrogbotLogo_0d74ee439e1043043a872b6d428a44d5,
+  '@frogbotai/next/rsc#FrogBotNav': FrogBotNav_0d74ee439e1043043a872b6d428a44d5,
+  '@frogbotai/next/rsc#FrogBotIcon': FrogBotIcon_0d74ee439e1043043a872b6d428a44d5,
+  '@frogbotai/next/rsc#FrogBotLogo': FrogBotLogo_0d74ee439e1043043a872b6d428a44d5,
   '@frogbotai/next#CollectionsSection': CollectionsSection_0490761fff9543eb3bcfbb8da78b8101,
   '@frogbotai/next#RecentsSection': RecentsSection_0490761fff9543eb3bcfbb8da78b8101,
   '/components/ReportsView#ReportsView': ReportsView_f38cfc1b9ecf3645fff5adb5910da58e,

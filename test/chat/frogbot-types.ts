@@ -70,10 +70,10 @@ export interface Config {
     users: User;
     chats: Chat;
     messages: Message;
-    'frogbot-chat-assets': FrogbotChatAsset;
+    'frogbot-chat-assets': FrogBotChatAsset;
     'usage-logs': UsageLog;
-    'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
-    'frogbot-waitpoints': FrogbotWaitpoint;
+    'frogbot-trigger-subscriptions': FrogBotTriggerSubscription;
+    'frogbot-waitpoints': FrogBotWaitpoint;
     files: File;
   };
   collectionsJoins: {};
@@ -81,10 +81,10 @@ export interface Config {
     users: UsersSelect;
     chats: ChatsSelect;
     messages: MessagesSelect;
-    'frogbot-chat-assets': FrogbotChatAssetsSelect;
+    'frogbot-chat-assets': FrogBotChatAssetsSelect;
     'usage-logs': UsageLogsSelect;
-    'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
-    'frogbot-waitpoints': FrogbotWaitpointsSelect;
+    'frogbot-trigger-subscriptions': FrogBotTriggerSubscriptionsSelect;
+    'frogbot-waitpoints': FrogBotWaitpointsSelect;
     files: FilesSelect;
   };
   db: {
@@ -100,9 +100,9 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
-      'frogbot-reset-ai-budgets': TaskFrogbotResetAiBudgets;
-      'frogbot-sweep-jobs': TaskFrogbotSweepJobs;
-      'frogbot-cleanup-kv': TaskFrogbotCleanupKv;
+      'frogbot-reset-ai-budgets': TaskFrogBotResetAiBudgets;
+      'frogbot-sweep-jobs': TaskFrogBotSweepJobs;
+      'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
       inline: {
         input: unknown;
         output: unknown;
@@ -214,7 +214,7 @@ export interface Message {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-chat-assets".
  */
-export interface FrogbotChatAsset {
+export interface FrogBotChatAsset {
   id: number;
   owner?: (number | null) | User;
   chat?: (number | null) | Chat;
@@ -267,7 +267,7 @@ export interface UsageLog {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-trigger-subscriptions".
  */
-export interface FrogbotTriggerSubscription {
+export interface FrogBotTriggerSubscription {
   id: number;
   agent: string;
   piece: string;
@@ -305,7 +305,7 @@ export interface FrogbotTriggerSubscription {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints".
  */
-export interface FrogbotWaitpoint {
+export interface FrogBotWaitpoint {
   id: number;
   jobId: string;
   name: string;
@@ -434,7 +434,7 @@ export interface MessagesSelect {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-chat-assets_select".
  */
-export interface FrogbotChatAssetsSelect {
+export interface FrogBotChatAssetsSelect {
   owner?: boolean;
   chat?: boolean;
   updatedAt?: boolean;
@@ -476,7 +476,7 @@ export interface UsageLogsSelect {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-trigger-subscriptions_select".
  */
-export interface FrogbotTriggerSubscriptionsSelect {
+export interface FrogBotTriggerSubscriptionsSelect {
   agent?: boolean;
   piece?: boolean;
   instance?: boolean;
@@ -497,7 +497,7 @@ export interface FrogbotTriggerSubscriptionsSelect {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints_select".
  */
-export interface FrogbotWaitpointsSelect {
+export interface FrogBotWaitpointsSelect {
   jobId?: boolean;
   name?: boolean;
   token?: boolean;
@@ -545,25 +545,25 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogbot-reset-ai-budgets".
+ * via the `definition` "TaskFrogBot-reset-ai-budgets".
  */
-export interface TaskFrogbotResetAiBudgets {
+export interface TaskFrogBotResetAiBudgets {
   input?: unknown;
   output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogbot-sweep-jobs".
+ * via the `definition` "TaskFrogBot-sweep-jobs".
  */
-export interface TaskFrogbotSweepJobs {
+export interface TaskFrogBotSweepJobs {
   input?: unknown;
   output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogbot-cleanup-kv".
+ * via the `definition` "TaskFrogBot-cleanup-kv".
  */
-export interface TaskFrogbotCleanupKv {
+export interface TaskFrogBotCleanupKv {
   input?: unknown;
   output?: unknown;
 }

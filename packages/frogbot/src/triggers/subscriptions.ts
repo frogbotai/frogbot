@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 import { KVLockContentionError } from '../kv/errors.js';
 import type { KVLockCallback } from '../kv/types.js';
 import { pieceInstanceRuntime } from '../pieces/definePiece.js';
@@ -54,7 +54,7 @@ const matches = (subscription: Subscription, subscriber: TriggerSubscriber) =>
 export class TriggerSubscriptions {
   private readonly recoveries = new Map<string, SubscriptionRecovery>();
 
-  constructor(private readonly frogbot: Frogbot) {}
+  constructor(private readonly frogbot: FrogBot) {}
 
   async list(): Promise<Subscription[]> {
     const result = await this.frogbot.find({

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { getCachedFrogbot } from 'frogbot';
+import { getCachedFrogBot } from 'frogbot';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConnectionsViewClient } from '../../../../packages/next/src/views/Connections/ConnectionsView.client.js';
@@ -12,7 +12,7 @@ import {
 import type { ConnectionPiece } from '../../../../packages/next/src/views/Connections/types.js';
 
 vi.mock('@payloadcms/ui', () => ({ useTheme: () => ({ theme: 'dark' }) }));
-vi.mock('frogbot', () => ({ getCachedFrogbot: vi.fn() }));
+vi.mock('frogbot', () => ({ getCachedFrogBot: vi.fn() }));
 
 const pieces: ConnectionPiece[] = [
   { slug: 'mail', label: 'Mail', oauth: true, secret: true, secretSchema: { type: 'string' } },
@@ -34,7 +34,7 @@ const props = {
 const fetchMock = vi.fn();
 
 beforeEach(() => {
-  vi.mocked(getCachedFrogbot).mockReset();
+  vi.mocked(getCachedFrogBot).mockReset();
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
   vi.stubGlobal('matchMedia', () => ({
@@ -82,7 +82,7 @@ describe('linked accounts', () => {
         },
       };
       if (adminRequest) {
-        vi.mocked(getCachedFrogbot).mockReturnValue(req.frogbot as never);
+        vi.mocked(getCachedFrogBot).mockReturnValue(req.frogbot as never);
         Reflect.deleteProperty(req, 'frogbot');
       }
       const view = await ConnectionsView({

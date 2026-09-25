@@ -1,7 +1,7 @@
 import type { SelectType, TypedLocale, Where } from 'payload';
 
 import type { CollectionSlug, TypedCollection } from '../types/generated.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 
 export type SearchMetric = 'cosine' | 'euclidean' | 'dotProduct';
 
@@ -83,7 +83,7 @@ export type SearchOptions<T extends CollectionSlug = CollectionSlug> = {
   locale?: string;
   fallbackLocale?: false | TypedLocale;
   overrideAccess?: boolean;
-  req?: FrogbotRequest;
+  req?: FrogBotRequest;
 };
 
 export type SearchHit<T extends CollectionSlug = CollectionSlug> = {

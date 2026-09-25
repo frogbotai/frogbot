@@ -1,4 +1,4 @@
-import type { Access, AgentAccess, FieldAccess, FrogbotRequest } from 'frogbot';
+import type { Access, AgentAccess, FieldAccess, FrogBotRequest } from 'frogbot';
 import type { Where } from 'payload';
 import { expectTypeOf } from 'vitest';
 
@@ -27,4 +27,4 @@ expectTypeOf(ownField).toEqualTypeOf<FieldAccess>();
 expectTypeOf(ownAgent).toEqualTypeOf<AgentAccess>();
 expectTypeOf(whereField).toEqualTypeOf<FieldAccess>();
 expectTypeOf(whereAgent).toEqualTypeOf<AgentAccess>();
-expectTypeOf<FrogbotRequest>().toMatchTypeOf<Parameters<typeof booleanAccess>[0]['req']>();
+expectTypeOf<FrogBotRequest>().toMatchTypeOf<Parameters<typeof booleanAccess>[0]['req']>();

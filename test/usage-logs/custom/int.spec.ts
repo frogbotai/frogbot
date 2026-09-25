@@ -4,16 +4,16 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { logUsage } from '../../../packages/frogbot/src/ai/logUsage.js';
-import type { BootedFrogbot } from '../../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../../__helpers/shared/bootFrogBot';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('custom usage logs', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname, 'usage-logs-custom');
+    booted = await bootFrogBot(dirname, 'usage-logs-custom');
   });
 
   afterAll(async () => {

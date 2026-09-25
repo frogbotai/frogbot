@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import { hookEvents, providerKey, setEvaluationAllowed, usageSlug, usersSlug } from './config.js';
 
@@ -56,7 +56,7 @@ const body = { model: 'typesafe-ai/jev', state, questions };
 type UpstreamCall = { url: string; headers: Headers; body: Record<string, unknown> };
 
 describe('booted TypeSafe evaluation', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
   let originalFetch: typeof fetch;
   let upstreamCalls: UpstreamCall[] = [];
   let upstreamResponses: Response[] = [];
@@ -134,7 +134,7 @@ describe('booted TypeSafe evaluation', () => {
       );
     };
 
-    booted = await bootFrogbot(dirname);
+    booted = await bootFrogBot(dirname);
   });
 
   afterAll(async () => {

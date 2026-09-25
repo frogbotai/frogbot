@@ -2,7 +2,7 @@ import { resolveUserSlug } from '../../chat/resolveUserSlug.js';
 import { resolveMarkedCollection } from '../../collections/config/resolveMarkedCollection.js';
 import type { CollectionAccess } from '../../collections/config/types.js';
 import type { CollectionConfig } from '../../collections/config/types.js';
-import type { FrogbotConfig } from '../../config/types.js';
+import type { FrogBotConfig } from '../../config/types.js';
 
 export const USAGE_LOGS_SLUG = 'usage-logs';
 
@@ -82,7 +82,7 @@ export function defaultUsageCollection({
 }
 
 export function resolveUsageCollection(
-  config: FrogbotConfig,
+  config: FrogBotConfig,
   chatsSlug?: string,
 ): { collections: CollectionConfig[]; slug: string } {
   if (!config.ai) {

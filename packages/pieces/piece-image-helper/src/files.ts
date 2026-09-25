@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { lookup } from 'mime-types';
 import { z } from 'zod';
 
@@ -19,7 +19,7 @@ export type LoadedImage = {
   mimeType: string;
 };
 
-function filesCollection(req: FrogbotRequest) {
+function filesCollection(req: FrogBotRequest) {
   const collection = req.frogbot.config.files?.slug;
 
   if (!collection) {
@@ -29,7 +29,7 @@ function filesCollection(req: FrogbotRequest) {
   return collection;
 }
 
-export async function loadImage(req: FrogbotRequest, id: string | number): Promise<LoadedImage> {
+export async function loadImage(req: FrogBotRequest, id: string | number): Promise<LoadedImage> {
   req.signal?.throwIfAborted();
 
   const doc = await req.frogbot.findByID({
@@ -98,7 +98,7 @@ export async function saveImage({
   name,
   mimeType,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   data: Buffer;
   name: string;
   mimeType: string;

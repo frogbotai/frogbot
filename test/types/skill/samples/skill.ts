@@ -5,11 +5,11 @@ import type {
   AgentConfig,
   BeforeChangeHook,
   CollectionConfig,
-  FrogbotConfig,
-  FrogbotInstance,
-  FrogbotRequest,
+  FrogBotConfig,
+  FrogBotInstance,
+  FrogBotRequest,
 } from 'frogbot';
-import { buildConfig, getFrogbot } from 'frogbot';
+import { buildConfig, getFrogBot } from 'frogbot';
 import { general } from 'frogbot/agents';
 import { todoTools } from 'frogbot/tools';
 
@@ -20,7 +20,7 @@ export const assistant: AgentConfig = {
   instructions: 'You are a concise and friendly assistant.',
 };
 
-export const config: FrogbotConfig = {
+export const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET || '',
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || '' } }),
   editor: lexicalEditor(),
@@ -70,7 +70,7 @@ export const setPublishedAt: BeforeChangeHook<Post> = ({ data, operation }) => {
 
 export async function initializedInstance() {
   const config = buildConfig(createCoreConfig());
-  const frogbot = await getFrogbot({ config });
+  const frogbot = await getFrogBot({ config });
   const posts = await frogbot.find({
     collection: 'posts',
     where: {
@@ -86,8 +86,8 @@ export async function enforceAccess({
   frogbot,
   user,
 }: {
-  frogbot: FrogbotInstance;
-  user: FrogbotRequest['user'];
+  frogbot: FrogBotInstance;
+  user: FrogBotRequest['user'];
 }) {
   const posts = await frogbot.find({
     collection: 'posts',

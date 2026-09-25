@@ -1,6 +1,6 @@
 import type { DocID } from '../collections/config/types.js';
 import type { Endpoint } from '../endpoints/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import { branchChat } from './branchChat.js';
 import { suggestChatTitleForChat } from './title.js';
 
@@ -9,7 +9,7 @@ export function buildChatEndpoints(): Endpoint[] {
     {
       path: '/frogbot/chat/branch',
       method: 'post',
-      handler: async (req: FrogbotRequest) => {
+      handler: async (req: FrogBotRequest) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
         const body = (await req.json?.().catch(() => null)) as {
           chatId?: DocID;
@@ -30,7 +30,7 @@ export function buildChatEndpoints(): Endpoint[] {
     {
       path: '/frogbot/chat/suggest-title',
       method: 'post',
-      handler: async (req: FrogbotRequest) => {
+      handler: async (req: FrogBotRequest) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
         const body = (await req.json?.().catch(() => null)) as { chatId?: DocID } | null;
         if (body === null || !['string', 'number'].includes(typeof body.chatId)) {

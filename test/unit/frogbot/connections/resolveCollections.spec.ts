@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
-import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import {
   DEFAULT_CONNECTIONS_SLUG,
   resolveConnectionsCollections,
@@ -30,10 +30,10 @@ function config({
 }: {
   collections?: CollectionConfig[];
   connections?: ConnectionEntry[];
-} = {}): FrogbotConfig {
+} = {}): FrogBotConfig {
   return {
     secret: 'secret',
-    db: {} as FrogbotConfig['db'],
+    db: {} as FrogBotConfig['db'],
     collections: [{ slug: 'users', auth: true, fields: [] }, ...collections],
     connections,
   };

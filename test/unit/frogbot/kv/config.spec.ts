@@ -1,4 +1,4 @@
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 import { buildConfig, databaseKVAdapter as rootDatabaseKVAdapter } from 'frogbot';
 import type * as PayloadModule from 'payload';
 import type { Field, JobsConfig, KVAdapterResult, Payload } from 'payload';
@@ -30,10 +30,10 @@ vi.mock(
   () => import('../../../../packages/frogbot/src/kv/resolveCleanupTask.js'),
 );
 
-function makeConfig(overrides: Partial<FrogbotConfig> = {}): FrogbotConfig {
+function makeConfig(overrides: Partial<FrogBotConfig> = {}): FrogBotConfig {
   return {
     secret: 'test-secret',
-    db: {} as FrogbotConfig['db'],
+    db: {} as FrogBotConfig['db'],
     collections: [{ slug: 'users', auth: true, fields: [] }],
     ...overrides,
   };

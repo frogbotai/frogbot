@@ -2,16 +2,16 @@
 //
 // `buildConfig` validates the FrogBot-shaped config, runs the plugin
 // pipeline serially, sanitizes the result, and returns a
-// `FrogbotSanitizedConfig`. This is what the config file's default
+// `FrogBotSanitizedConfig`. This is what the config file's default
 // export resolves to.
 
 import { sanitize } from './sanitize.js';
-import type { FrogbotSanitizedConfig } from './sanitized.js';
-import type { FrogbotConfig } from './types.js';
+import type { FrogBotSanitizedConfig } from './sanitized.js';
+import type { FrogBotConfig } from './types.js';
 
-export type { FrogbotSanitizedConfig };
+export type { FrogBotSanitizedConfig };
 
-function validate(config: FrogbotConfig): void {
+function validate(config: FrogBotConfig): void {
   if (!config.secret || typeof config.secret !== 'string') {
     throw new Error('[frogbot] `secret` is required and must be a string.');
   }
@@ -26,7 +26,7 @@ function validate(config: FrogbotConfig): void {
   }
 }
 
-async function runPlugins(config: FrogbotConfig): Promise<FrogbotConfig> {
+async function runPlugins(config: FrogBotConfig): Promise<FrogBotConfig> {
   const plugins = config.plugins ?? [];
   let current = config;
   for (let i = 0; i < plugins.length; i++) {
@@ -41,7 +41,7 @@ async function runPlugins(config: FrogbotConfig): Promise<FrogbotConfig> {
   return current;
 }
 
-function validatePluginMarkers(config: FrogbotConfig): FrogbotConfig {
+function validatePluginMarkers(config: FrogBotConfig): FrogBotConfig {
   if (
     !config._roles?.configured ||
     config.collections.some(
@@ -77,9 +77,9 @@ function validatePluginMarkers(config: FrogbotConfig): FrogbotConfig {
  *      `globals`.
  *   2. Run plugins serially in array order.
  *   3. Sanitize — inject the `req.frogbot` bootstrap hook, wrap
- *      endpoints, produce FrogbotSanitizedConfig.
+ *      endpoints, produce FrogBotSanitizedConfig.
  */
-export async function buildConfig(config: FrogbotConfig): Promise<FrogbotSanitizedConfig> {
+export async function buildConfig(config: FrogBotConfig): Promise<FrogBotSanitizedConfig> {
   validate(config);
   const transformed = validatePluginMarkers(await runPlugins(config));
   return sanitize(transformed);

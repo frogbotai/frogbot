@@ -1,4 +1,4 @@
-import type { FrogbotConfig, FrogbotRequest } from 'frogbot';
+import type { FrogBotConfig, FrogBotRequest } from 'frogbot';
 import type {
   ChannelPieceInstance,
   ConnectionEntry,
@@ -13,7 +13,7 @@ import type { resendActions } from './index.js';
 import { createResend } from './index.js';
 import type { ResendTypes } from './piece-types.js';
 
-declare const req: FrogbotRequest;
+declare const req: FrogBotRequest;
 
 type ResendFactoryOptions = NonNullable<Parameters<typeof createResend>[0]>;
 type SendInput = ResendTypes['actions']['send']['input'];
@@ -28,7 +28,7 @@ const input = {
 } satisfies SendInput;
 
 const resend = createResend({ auth: { apiKey: 'key' } });
-const emailConfig: Pick<FrogbotConfig, 'email'> = { email: resend };
+const emailConfig: Pick<FrogBotConfig, 'email'> = { email: resend };
 void emailConfig;
 
 expectTypeOf(resend).toMatchTypeOf<EmailPieceInstance>();
@@ -38,7 +38,7 @@ expectTypeOf<Exclude<keyof typeof resend, keyof PieceInstance>>().toEqualTypeOf<
 expectTypeOf<(typeof resendActions)[number]>().toEqualTypeOf<keyof ResendTypes['actions']>();
 expectTypeOf<Parameters<typeof resend.send>[0]['input']>().toEqualTypeOf<SendInput>();
 expectTypeOf<Parameters<typeof resend.send>[0]['req']>().toEqualTypeOf<
-  FrogbotRequest | undefined
+  FrogBotRequest | undefined
 >();
 expectTypeOf<Parameters<typeof resend.createDomain>[0]['input']>().toEqualTypeOf<
   ResendTypes['actions']['createDomain']['input']
@@ -69,8 +69,8 @@ createResend({
 });
 connected.send({ input, req });
 connected.client({ req });
-expectTypeOf<Parameters<typeof connected.send>[0]['req']>().toEqualTypeOf<FrogbotRequest>();
-expectTypeOf<Parameters<typeof connected.client>[0]>().toEqualTypeOf<{ req: FrogbotRequest }>();
+expectTypeOf<Parameters<typeof connected.send>[0]['req']>().toEqualTypeOf<FrogBotRequest>();
+expectTypeOf<Parameters<typeof connected.client>[0]>().toEqualTypeOf<{ req: FrogBotRequest }>();
 expectTypeOf<{ input: SendInput }>().not.toMatchTypeOf<Parameters<typeof connected.send>[0]>();
 expectTypeOf<'missing'>().not.toMatchTypeOf<keyof typeof resend>();
 expectTypeOf<{ auth: { apiKey: number } }>().not.toMatchTypeOf<ResendFactoryOptions>();

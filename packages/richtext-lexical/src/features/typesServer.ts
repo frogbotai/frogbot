@@ -18,14 +18,14 @@ import type {
   LexicalNodeReplacement,
   SerializedLexicalNode,
 } from '@payloadcms/richtext-lexical/lexical';
-import type { Field, FrogbotRequest } from 'frogbot';
+import type { Field, FrogBotRequest } from 'frogbot';
 import type { JsonObject } from 'payload';
 
 export type ExtractSerializedNode<TNode extends LexicalNode> = ReturnType<TNode['exportJSON']>;
 
 type WithNode<TArgs, TNode extends SerializedLexicalNode> = Omit<TArgs, 'node' | 'req'> & {
   node: TNode;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 };
 
 type NodeHook<THook, TNode extends SerializedLexicalNode> = (
@@ -47,7 +47,7 @@ export type HTMLConverter<TNode extends SerializedLexicalNode = SerializedLexica
   converter: (
     args: Omit<Parameters<PayloadHTMLConverter<TNode>['converter']>[0], 'node' | 'req'> & {
       node: TNode;
-      req: FrogbotRequest | null | undefined;
+      req: FrogBotRequest | null | undefined;
     },
   ) => ReturnType<PayloadHTMLConverter<TNode>['converter']>;
 };
@@ -57,8 +57,8 @@ export type NodeWithHooks<
   TSerializedNode extends SerializedLexicalNode = ExtractSerializedNode<TNode>,
 > = {
   converters?: { html?: HTMLConverter<TSerializedNode> };
-  getSubFields?: (args: { node?: TSerializedNode; req?: FrogbotRequest }) => Field[] | null;
-  getSubFieldsData?: (args: { node: TSerializedNode; req: FrogbotRequest }) => JsonObject;
+  getSubFields?: (args: { node?: TSerializedNode; req?: FrogBotRequest }) => Field[] | null;
+  getSubFieldsData?: (args: { node: TSerializedNode; req: FrogBotRequest }) => JsonObject;
   graphQLPopulationPromises?: PopulationPromise<TSerializedNode>[];
   hooks?: {
     afterChange?: NodeHook<PayloadAfterChangeNodeHook<TSerializedNode>, TSerializedNode>[];

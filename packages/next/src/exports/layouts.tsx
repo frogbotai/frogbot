@@ -5,12 +5,12 @@ import {
 import { getPayloadConfig } from 'frogbot/internal';
 import type { ComponentProps } from 'react';
 
-import type { FrogbotConfigArg } from '../types.js';
+import type { FrogBotConfigArg } from '../types.js';
 
 export type { ServerFunctionClient } from 'payload';
 
 type RootLayoutProps = Omit<ComponentProps<typeof PayloadRootLayout>, 'config'> & {
-  readonly config: FrogbotConfigArg;
+  readonly config: FrogBotConfigArg;
 };
 
 export function RootLayout({ config, ...rest }: RootLayoutProps) {
@@ -21,7 +21,7 @@ type HandleServerFunctionsArgs = Omit<
   Parameters<typeof payloadHandleServerFunctions>[0],
   'config'
 > & {
-  config: FrogbotConfigArg;
+  config: FrogBotConfigArg;
 };
 
 export function handleServerFunctions(

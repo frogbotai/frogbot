@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot.js';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot.js';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const password = 'frogbot-test-password';
@@ -16,10 +16,10 @@ type User = {
 };
 
 describe('roles', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname);
+    booted = await bootFrogBot(dirname);
   });
 
   afterAll(async () => {

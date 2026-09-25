@@ -5,7 +5,7 @@ import { z } from 'zod';
 import type { KV } from '../../kv/types.js';
 import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import type { PieceInstance } from '../../pieces/types.js';
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 import type { CredentialEncryption } from '../encryption.js';
 import { OAuthError } from './error.js';
 
@@ -91,7 +91,7 @@ export async function createOAuthState({
 }: OAuthStateStorage &
   OAuthStateBinding & {
     returnTo: string;
-    req: Pick<FrogbotRequest, 'user'>;
+    req: Pick<FrogBotRequest, 'user'>;
   }): Promise<{ state: string; authorizationUrl: string; setCookie: string }> {
   const { definition } = pieceInstanceRuntime(piece);
   const recipe = definition.oauth;
@@ -180,7 +180,7 @@ export async function consumeOAuthState({
 }: OAuthStateStorage &
   OAuthStateBinding & {
     state: string;
-    req: Pick<FrogbotRequest, 'headers' | 'user'>;
+    req: Pick<FrogBotRequest, 'headers' | 'user'>;
   }): Promise<{ intent: OAuthState; clearCookie: string }> {
   try {
     randomSchema.parse(state);

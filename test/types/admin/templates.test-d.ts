@@ -1,11 +1,11 @@
 import { DefaultTemplate, type DefaultTemplateProps } from '@frogbotai/next/templates';
-import type { AdminViewServerProps, FrogbotRequest } from 'frogbot';
+import type { AdminViewServerProps, FrogBotRequest } from 'frogbot';
 import { expectTypeOf } from 'vitest';
 
 type ComponentProps<T> = T extends (props: infer TProps) => unknown ? TProps : never;
 
 expectTypeOf<ComponentProps<typeof DefaultTemplate>>().toEqualTypeOf<DefaultTemplateProps>();
-expectTypeOf<DefaultTemplateProps['req']>().toEqualTypeOf<FrogbotRequest>();
+expectTypeOf<DefaultTemplateProps['req']>().toEqualTypeOf<FrogBotRequest>();
 
 expectTypeOf<'payload'>().not.toExtend<keyof DefaultTemplateProps>();
 

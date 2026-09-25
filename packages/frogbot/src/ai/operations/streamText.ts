@@ -5,8 +5,8 @@ import type { LanguageModelUsage } from 'ai';
 import { generateId, streamText as aiStreamText } from 'ai';
 
 import { toAISDKTools, toAISDKToolsContext } from '../../agents/tools.js';
-import type { Frogbot, Logger } from '../../frogbot.js';
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBot, Logger } from '../../frogbot.js';
+import type { FrogBotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { toHookUsage } from '../hooks.js';
 import { enforcePolicy } from '../policy.js';
@@ -16,7 +16,7 @@ import type { SanitizedAIConfig, StreamTextOpts } from '../types.js';
 export type StreamTextDeps = {
   gateway: Gateway;
   config: SanitizedAIConfig;
-  frogbot: Frogbot;
+  frogbot: FrogBot;
   logger: Logger;
 };
 
@@ -39,13 +39,13 @@ export async function streamTextOperation(
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
   // 1. Resolve model (router slug → model ID).
-  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogbotRequest, target: input });
+  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
   const modelId = resolveModel(input, config);
 
   // 2. Access control.
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
-      req: req as FrogbotRequest,
+      req: req as FrogBotRequest,
       method: 'streamText',
       input,
       config,
@@ -55,7 +55,7 @@ export async function streamTextOperation(
   const op = gateway.operation({
     operation: 'chat.completions',
     model: modelId,
-    context: { req: req as FrogbotRequest | undefined },
+    context: { req: req as FrogBotRequest | undefined },
   });
 
   const userEnd = onEnd ?? onFinish;

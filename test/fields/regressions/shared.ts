@@ -2,7 +2,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 
 export { nestedFieldsSlug, draftPostsSlug as postsSlug } from '../shared.js';
 
@@ -11,9 +11,9 @@ export const databasePath = join(databaseDirectory, 'fields.db');
 export const usersSlug = 'users';
 
 export const countRequests: {
-  context: FrogbotRequest['context'];
-  req: FrogbotRequest;
-  transactionID: FrogbotRequest['transactionID'];
+  context: FrogBotRequest['context'];
+  req: FrogBotRequest;
+  transactionID: FrogBotRequest['transactionID'];
   userID: number | string | undefined;
 }[] = [];
 

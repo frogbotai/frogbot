@@ -8,7 +8,7 @@ export type RESTResponse<T = unknown> = {
   headers: Headers;
 };
 
-export class FrogbotRESTClient {
+export class FrogBotRESTClient {
   constructor(private readonly baseUrl: string) {}
 
   async get<T = unknown>(path: string, init?: RequestInit): Promise<RESTResponse<T>> {

@@ -1,4 +1,4 @@
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 import type { PieceJSON, PieceOAuthAccount } from '../pieces/types.js';
 import { CredentialCryptoError } from './encryption.js';
 import type { SanitizedConnectionsConfig } from './types.js';
@@ -52,7 +52,7 @@ function metadata(row: ConnectionRow): ConnectionMetadata {
 }
 
 export class ConnectionStore {
-  private readonly frogbot: Pick<Frogbot, 'find' | 'create' | 'update' | 'delete' | 'kv'>;
+  private readonly frogbot: Pick<FrogBot, 'find' | 'create' | 'update' | 'delete' | 'kv'>;
   private readonly config: SanitizedConnectionsConfig;
   private readonly userSlug: string;
 
@@ -61,7 +61,7 @@ export class ConnectionStore {
     config,
     userSlug,
   }: {
-    frogbot: Pick<Frogbot, 'find' | 'create' | 'update' | 'delete' | 'kv'>;
+    frogbot: Pick<FrogBot, 'find' | 'create' | 'update' | 'delete' | 'kv'>;
     config: SanitizedConnectionsConfig;
     userSlug: string;
   }) {

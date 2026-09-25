@@ -7,7 +7,7 @@ import {
   pieceFactoryDefinition,
   pieceInstanceRuntime,
 } from '../../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogbotRequest } from '../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 import { createGithub } from '../../../packages/pieces/piece-github/src/index.js';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
@@ -102,7 +102,7 @@ describe('GitHub connections', () => {
       const req = {
         user: { id: 'owner', collection: 'users' },
         frogbot: { ...frogbot, connections: api },
-      } as unknown as FrogbotRequest;
+      } as unknown as FrogBotRequest;
 
       const fetch = vi.fn().mockResolvedValue(Response.json({ id: 42 }));
 

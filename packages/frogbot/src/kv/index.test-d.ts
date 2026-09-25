@@ -13,12 +13,12 @@ import type {
   KVSetOptions,
 } from '../exports/kv.js';
 import type { kvAtomic } from '../exports/kv.js';
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 import type { databaseKVAdapter as rootDatabaseKVAdapter } from '../index.js';
 
 expectTypeOf<typeof createKV>().parameters.toEqualTypeOf<[{ adapter: KVAdapter }]>();
 expectTypeOf<typeof createKV>().returns.toEqualTypeOf<KV>();
-expectTypeOf<Frogbot['kv']>().toEqualTypeOf<KV>();
+expectTypeOf<FrogBot['kv']>().toEqualTypeOf<KV>();
 expectTypeOf<KV>().toMatchTypeOf<KVAdapter>();
 expectTypeOf<KVAtomicAdapter>().toMatchTypeOf<KVAdapter>();
 expectTypeOf<KVAdapter>().not.toMatchTypeOf<KVAtomicAdapter>();

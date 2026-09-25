@@ -1,6 +1,6 @@
-import type { FrogbotInstance } from 'frogbot';
+import type { FrogBotInstance } from 'frogbot';
 
-export async function useKV(frogbot: FrogbotInstance) {
+export async function useKV(frogbot: FrogBotInstance) {
   await frogbot.kv.set('settings', { theme: 'dark' });
 
   const settings = await frogbot.kv.get('settings');
@@ -13,7 +13,7 @@ export async function useKV(frogbot: FrogbotInstance) {
   return { settings, exists, keys };
 }
 
-export async function conditionalWrite(frogbot: FrogbotInstance) {
+export async function conditionalWrite(frogbot: FrogBotInstance) {
   await frogbot.kv.set('temporary', 'value', { ttl: 60_000 });
 
   const claimed = await frogbot.kv.setIfAbsent('worker', 'worker-1', {
@@ -23,7 +23,7 @@ export async function conditionalWrite(frogbot: FrogbotInstance) {
   return claimed;
 }
 
-export async function lockReport(frogbot: FrogbotInstance) {
+export async function lockReport(frogbot: FrogBotInstance) {
   const result = await frogbot.kv.lock('report:123', 30_000, async ({ signal }) => {
     const response = await fetch('https://example.com/reports/123', { signal });
 

@@ -6,7 +6,7 @@ vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pi
 
 import { pieceConformance } from '../../../packages/frogbot/src/pieces/conformance.js';
 import { pieceFactoryDefinition } from '../../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogbotRequest } from '../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
 import {
   createLinear,
   linearActions,
@@ -90,7 +90,7 @@ describe('linear', () => {
                 },
                 find: vi.fn().mockResolvedValue({ docs: [] }),
               },
-            } as unknown as FrogbotRequest,
+            } as unknown as FrogBotRequest,
             expect: null,
           },
           webhook: {
@@ -180,7 +180,7 @@ describe('linear', () => {
         },
         find,
       },
-    } as unknown as FrogbotRequest;
+    } as unknown as FrogBotRequest;
 
     const identity = await pieceFactoryDefinition(createLinear).channel?.identity({
       author: { userId: 'linear-user', userName: 'frog' } as never,

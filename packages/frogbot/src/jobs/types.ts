@@ -8,8 +8,8 @@ import type {
   WorkflowHandler as PayloadWorkflowHandler,
 } from 'payload';
 
-import type { FrogbotTypes } from '../types/generated.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotTypes } from '../types/generated.js';
+import type { FrogBotRequest } from '../types/request.js';
 import type { WaitFor, WaitpointOptions } from './waitpoints/types.js';
 
 export type JobsConfig = Omit<PayloadJobsConfig, 'runHooks' | 'depth' | 'workflows'> & {
@@ -23,7 +23,7 @@ export type UntypedJobs = {
   workflows: Record<string, { input: JsonObject }>;
 };
 
-type TypedJobs = FrogbotTypes['jobs'];
+type TypedJobs = FrogBotTypes['jobs'];
 
 type JobTaskSlug = Extract<keyof TypedJobs['tasks'], string>;
 
@@ -50,7 +50,7 @@ export type WorkflowConfig<T extends false | JobWorkflowSlug | object = false> =
 type JobSlug = JobTaskSlug | JobWorkflowSlug;
 
 type JobRequestArgs<T> = T extends { req?: PayloadRequest }
-  ? Omit<T, 'req'> & { req?: FrogbotRequest | PayloadRequest }
+  ? Omit<T, 'req'> & { req?: FrogBotRequest | PayloadRequest }
   : T;
 
 type JobRequestParameters<T extends unknown[]> = {
@@ -115,7 +115,7 @@ export type Jobs = {
   resume: (args: {
     token: string;
     data: unknown;
-    req?: FrogbotRequest | PayloadRequest;
+    req?: FrogBotRequest | PayloadRequest;
   }) => Promise<{ jobId?: number | string }>;
 };
 

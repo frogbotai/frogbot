@@ -11,7 +11,7 @@ import type { z } from 'zod';
 
 import type { ChannelChatAccess } from '../chat/channelAccess.js';
 import type { DocID } from '../collections/config/types.js';
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 import type {
   ChannelPieceInstance,
   PieceAction,
@@ -21,24 +21,24 @@ import type {
 } from '../pieces/types.js';
 import type { SkillConfig } from '../skills/types.js';
 import type { AnyTool } from '../tools/types.js';
-import type { AgentSlug, FrogbotTypes } from '../types/generated.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { AgentSlug, FrogBotTypes } from '../types/generated.js';
+import type { FrogBotRequest } from '../types/request.js';
 
 export type AgentAccess = (args: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   agent: AgentInstance;
 }) => boolean | Promise<boolean>;
 
-export type AgentModelId = FrogbotTypes['models'];
+export type AgentModelId = FrogBotTypes['models'];
 
 export type AgentSchedule =
   | { every: `${number}${'s' | 'm' | 'h' | 'd'}`; cron?: never; timezone?: never }
   | { cron: string; every?: never; timezone?: string };
 
 export type AgentScheduleContext = {
-  frogbot: Frogbot;
+  frogbot: FrogBot;
   agent: AgentInstance;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   job: { id: DocID; scheduledFor: Date };
 };
 
@@ -67,7 +67,7 @@ export type AgentPieceTrigger<TTrigger extends PieceTriggerReference = PieceTrig
             ? z.output<TOutput>
             : PieceResult;
           agent: AgentInstance;
-          req: FrogbotRequest;
+          req: FrogBotRequest;
         }): Promise<void> | void;
       } & AgentPieceTriggerInput<TTrigger['input']>
     : never;
@@ -114,7 +114,7 @@ export type AgentManifest = {
 type AgentRunOpts = (
   { prompt: string; messages?: never } | { prompt?: never; messages: UIMessage[] | ModelMessage[] }
 ) & {
-  req?: FrogbotRequest;
+  req?: FrogBotRequest;
   overrideAccess?: boolean;
   abortSignal?: AbortSignal;
 };
@@ -133,7 +133,7 @@ export type AgentStreamResult = StreamTextResult<ToolSet, Record<string, unknown
 export type AgentStreamMessageResult = AgentStreamResult & { persistence: Promise<void> };
 
 export type AgentCallOptions = {
-  req?: FrogbotRequest;
+  req?: FrogBotRequest;
   overrideAccess?: boolean;
   runId?: string;
   chatId?: DocID;

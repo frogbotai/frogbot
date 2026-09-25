@@ -1,8 +1,8 @@
-import { createFrogbotSDK } from '@frogbotai/sdk';
+import { createFrogBotSDK } from '@frogbotai/sdk';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
-  FrogbotChatTransport,
+  FrogBotChatTransport,
   prepareChatRequest,
 } from '../../../../packages/ui/src/chat/transport';
 
@@ -12,7 +12,7 @@ const message = {
   parts: [{ type: 'text' as const, text: 'Hello' }],
 };
 const sdk = (fetch: typeof globalThis.fetch = globalThis.fetch) =>
-  createFrogbotSDK({ baseURL: '/api', fetch });
+  createFrogBotSDK({ baseURL: '/api', fetch });
 
 async function captureBody(chatId?: string | (() => string | undefined)) {
   const fetch = vi.fn(() =>
@@ -20,7 +20,7 @@ async function captureBody(chatId?: string | (() => string | undefined)) {
       new Response(new ReadableStream({ start: (controller) => controller.close() })),
     ),
   );
-  const transport = new FrogbotChatTransport({
+  const transport = new FrogBotChatTransport({
     agentSlug: 'agent',
     sdk: sdk(fetch),
     prepareSendMessagesRequest: prepareChatRequest(chatId),
@@ -35,7 +35,7 @@ async function captureBody(chatId?: string | (() => string | undefined)) {
   return JSON.parse(fetch.mock.calls[0][1]?.body as string);
 }
 
-describe('FrogbotChatTransport', () => {
+describe('FrogBotChatTransport', () => {
   it('serializes the strict new-chat body', async () => {
     expect(await captureBody()).toEqual({ messages: [message] });
   });
@@ -51,7 +51,7 @@ describe('FrogbotChatTransport', () => {
         new Response(new ReadableStream({ start: (controller) => controller.close() })),
       ),
     );
-    const transport = new FrogbotChatTransport({
+    const transport = new FrogBotChatTransport({
       agentSlug: 'agent',
       sdk: sdk(fetch),
       prepareSendMessagesRequest: prepareChatRequest(
@@ -87,11 +87,11 @@ describe('FrogbotChatTransport', () => {
     const fetch = vi.fn(() =>
       Promise.resolve(
         new Response('data: {"type":"finish"}\n\n', {
-          headers: { 'Content-Type': 'text/event-stream', 'X-Frogbot-Chat-Id': 'chat-1' },
+          headers: { 'Content-Type': 'text/event-stream', 'X-FrogBot-Chat-Id': 'chat-1' },
         }),
       ),
     );
-    const transport = new FrogbotChatTransport({
+    const transport = new FrogBotChatTransport({
       agentSlug: 'support agent',
       sdk: sdk(fetch),
       onChatId,
@@ -119,7 +119,7 @@ describe('FrogbotChatTransport', () => {
         }),
       ),
     );
-    const transport = new FrogbotChatTransport({ agentSlug: 'agent', sdk: sdk(fetch) });
+    const transport = new FrogBotChatTransport({ agentSlug: 'agent', sdk: sdk(fetch) });
     await transport
       .sendMessages({ chatId: 'chat', messages: [], trigger: 'submit-message' })
       .then((stream) => stream.cancel());
@@ -132,7 +132,7 @@ describe('FrogbotChatTransport', () => {
         new Response(new ReadableStream({ start: (controller) => controller.close() })),
       ),
     );
-    const transport = new FrogbotChatTransport({
+    const transport = new FrogBotChatTransport({
       agentSlug: 'agent',
       sdk: sdk(fetch),
       headers: { Accept: 'application/json' },
@@ -142,7 +142,7 @@ describe('FrogbotChatTransport', () => {
   });
 
   it('treats a bodyless 499 as a clean empty stream', async () => {
-    const transport = new FrogbotChatTransport({
+    const transport = new FrogBotChatTransport({
       agentSlug: 'agent',
       sdk: sdk(() => Promise.resolve(new Response(null, { status: 499 }))),
     });
@@ -156,7 +156,7 @@ describe('FrogbotChatTransport', () => {
 
   it('does not reconnect', async () => {
     expect(
-      await new FrogbotChatTransport({ agentSlug: 'agent', sdk: sdk() }).reconnectToStream({
+      await new FrogBotChatTransport({ agentSlug: 'agent', sdk: sdk() }).reconnectToStream({
         chatId: 'chat',
       }),
     ).toBeNull();

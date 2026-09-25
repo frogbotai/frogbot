@@ -96,7 +96,7 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
-      'frogbot-reset-ai-budgets': TaskFrogbotResetAiBudgets;
+      'frogbot-reset-ai-budgets': TaskFrogBotResetAiBudgets;
       inline: {
         input: unknown;
         output: unknown;
@@ -441,9 +441,9 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogbot-reset-ai-budgets".
+ * via the `definition` "TaskFrogBot-reset-ai-budgets".
  */
-export interface TaskFrogbotResetAiBudgets {
+export interface TaskFrogBotResetAiBudgets {
   input?: unknown;
   output?: unknown;
 }

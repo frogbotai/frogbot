@@ -1,5 +1,5 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
-import type { FrogbotInstance } from 'frogbot';
+import type { FrogBotInstance } from 'frogbot';
 import { buildConfig } from 'frogbot';
 import type { JobsConfig, WorkflowConfig, WorkflowHandler } from 'frogbot/jobs';
 
@@ -23,7 +23,7 @@ export const config = buildConfig({
   },
 });
 
-export async function queueReport(frogbot: FrogbotInstance) {
+export async function queueReport(frogbot: FrogBotInstance) {
   await frogbot.jobs.queue({
     task: 'send-report',
     input: { reportId: 'report-123' },

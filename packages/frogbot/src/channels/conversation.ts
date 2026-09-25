@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto';
 
 import type { DocID } from '../collections/config/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import type { ChannelConversationIdentity } from './types.js';
 
 export type ResolveChannelChatProps = {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   identity: ChannelConversationIdentity;
   user: DocID | null;
 };

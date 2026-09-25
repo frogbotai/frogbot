@@ -1,5 +1,5 @@
 import { FrogBotFavicon } from '@frogbotai/ui/icons';
 
-export const FrogbotIcon = () => (
+export const FrogBotIcon = () => (
   <FrogBotFavicon className="graphic-icon frogbot-graphic-icon" size={24} />
 );

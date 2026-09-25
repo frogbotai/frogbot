@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { type gmail_v1 } from 'googleapis';
 import { z } from 'zod';
 
@@ -60,7 +60,7 @@ export async function getOriginal(client: Gmail, id: string) {
 
 export async function saveAttachments(
   client: Gmail,
-  req: FrogbotRequest,
+  req: FrogBotRequest,
   message: gmail_v1.Schema$Message,
 ) {
   const collection = req.frogbot.config.files?.slug;
@@ -127,7 +127,7 @@ export async function createRawMessage({
     subject: string;
     to: string[];
   };
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   extraHeaders?: string[];
 }) {
   const boundary = `frogbot-${crypto.randomUUID()}`;

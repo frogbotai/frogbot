@@ -1,4 +1,4 @@
-import type { AfterChangeHook, FrogbotRequest } from 'frogbot';
+import type { AfterChangeHook, FrogBotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 import { auditLogPlugin } from '../../../packages/plugins/plugin-audit-log/src/index.js';
@@ -26,7 +26,7 @@ function request(user: Record<string, unknown> | null = null) {
         'user-agent': 'audit-test',
       }),
       frogbot: { create, logger: { error } },
-    } as unknown as FrogbotRequest,
+    } as unknown as FrogBotRequest,
     create,
     error,
   };

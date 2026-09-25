@@ -14,8 +14,8 @@ import { join, resolve } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { FrogbotChatTransport, prepareChatRequest } from '../../packages/ui/src/chat/transport';
-import { createFrogbotSDK } from '../../packages/sdk/src/index';
+import { FrogBotChatTransport, prepareChatRequest } from '../../packages/ui/src/chat/transport';
+import { createFrogBotSDK } from '../../packages/sdk/src/index';
 import { terminateProcess } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
@@ -222,7 +222,7 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     for (;;) {
       if ((await reader.read()).done) break;
     }
-    const chatId = response.headers.get('X-Frogbot-Chat-Id');
+    const chatId = response.headers.get('X-FrogBot-Chat-Id');
     expect(chatId).not.toBeNull();
     expectPersisted(chatId!);
   });
@@ -232,9 +232,9 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     expect(page.status).toBe(200);
 
     let responseStatus: number | undefined;
-    const transport = new FrogbotChatTransport({
+    const transport = new FrogBotChatTransport({
       agentSlug: 'assistant',
-      sdk: createFrogbotSDK({
+      sdk: createFrogBotSDK({
         baseURL: `${baseURL}/api`,
         headers: { authorization: `Bearer ${token}` },
         fetch: async (input: RequestInfo | URL, init?: RequestInit) => {

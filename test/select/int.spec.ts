@@ -3,25 +3,25 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { SQLiteAdapter } from '@frogbotai/db-sqlite';
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import { databasePath, postsSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('Local API select', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
   let sqlite: SQLiteAdapter;
   let owner: { id: number | string };
   let other: { id: number | string };
   let testIndex = 0;
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname);
+    booted = await bootFrogBot(dirname);
 
     sqlite = booted.payload.db as SQLiteAdapter;
   });
@@ -134,7 +134,7 @@ describe('Local API select', () => {
     const visible = await createPost('Visible');
     await createPost('Hidden', other.id);
 
-    const req: FrogbotRequest = await booted.frogbot.createRequest({
+    const req: FrogBotRequest = await booted.frogbot.createRequest({
       user: { ...owner, collection: usersSlug },
     });
 

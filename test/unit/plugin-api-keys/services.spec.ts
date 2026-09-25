@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -13,7 +13,7 @@ function request(overrides: Record<string, unknown> = {}) {
     user: { id: 'user-1', roles: ['member'] },
     frogbot: {},
     ...overrides,
-  } as unknown as FrogbotRequest;
+  } as unknown as FrogBotRequest;
 }
 
 describe('API key services', () => {

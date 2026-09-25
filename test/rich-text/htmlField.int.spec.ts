@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import { htmlArticlesSlug, restrictedNotesSlug, usersSlug } from './shared.js';
 
@@ -67,7 +67,7 @@ function relationship(id: number | string): SerializedEditorState {
 }
 
 describe('lexicalHTMLField integration [sqlite]', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
   let pendingTransaction: null | number | string = null;
 
   async function renderRelationship({
@@ -80,7 +80,7 @@ describe('lexicalHTMLField integration [sqlite]', () => {
     depth?: number;
     draft?: boolean;
     id: number | string;
-    req: Awaited<ReturnType<BootedFrogbot['frogbot']['createRequest']>>;
+    req: Awaited<ReturnType<BootedFrogBot['frogbot']['createRequest']>>;
     showHiddenFields?: boolean;
   }) {
     const collection = booted.payload.collections[htmlArticlesSlug].config;
@@ -107,7 +107,7 @@ describe('lexicalHTMLField integration [sqlite]', () => {
   }
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname, 'rich-text-html-field');
+    booted = await bootFrogBot(dirname, 'rich-text-html-field');
   });
 
   afterAll(async () => {

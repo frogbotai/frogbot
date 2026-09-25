@@ -6,7 +6,7 @@ const themeCss = `
 .frogbot-graphic-logo .fb-text{fill:#3acf6a}
 `;
 
-export const FrogbotLogo: React.FC = () => (
+export const FrogBotLogo: React.FC = () => (
   <svg
     className="graphic-logo frogbot-graphic-logo"
     viewBox="0 0 434.88947 89.502669"

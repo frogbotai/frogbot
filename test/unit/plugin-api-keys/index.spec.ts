@@ -1,17 +1,17 @@
-import type { FrogbotConfig, Plugin } from 'frogbot';
+import type { FrogBotConfig, Plugin } from 'frogbot';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { apiKeysPlugin } from '../../../packages/plugins/plugin-api-keys/src/index.js';
 
 describe('apiKeysPlugin', () => {
-  it('provides a Frogbot plugin with zero configuration', async () => {
+  it('provides a FrogBot plugin with zero configuration', async () => {
     const plugin = apiKeysPlugin();
     expectTypeOf(plugin).toMatchTypeOf<Plugin>();
     const config = {
       secret: 'test',
       db: {},
       collections: [{ slug: 'users', auth: true, fields: [] }],
-    } as FrogbotConfig;
+    } as FrogBotConfig;
     const result = await plugin(config);
     expect(result.collections.map((collection) => collection.slug)).toEqual(['users', 'api-keys']);
     expect(result.collections[0]?.auth).toMatchObject({ strategies: [{ name: 'api-key' }] });
@@ -40,7 +40,7 @@ describe('apiKeysPlugin', () => {
       db: {},
       settings: [existing],
       collections: [{ slug: 'users', auth: true, fields: [] }],
-    } as FrogbotConfig);
+    } as FrogBotConfig);
 
     expect(result.settings).toEqual([
       existing,
@@ -58,7 +58,7 @@ describe('apiKeysPlugin', () => {
       secret: 'test',
       db: {},
       collections: [{ slug: 'users', auth: { strategies: [existing] }, fields: [] }],
-    } as FrogbotConfig;
+    } as FrogBotConfig;
     const result = await apiKeysPlugin()(config);
     const users = result.collections[0];
     expect(
@@ -79,7 +79,7 @@ describe('apiKeysPlugin', () => {
         providers: { openai: { apiKey: 'test' } },
         hooks: { beforeOperation: [existingHook] },
       },
-    } as FrogbotConfig;
+    } as FrogBotConfig;
     const result = await apiKeysPlugin({ collectionSlug: 'credentials' })(config);
     const marked = result.collections.filter((collection) => collection.usageLog === true);
     const field = marked[0]?.fields.find((item) => 'name' in item && item.name === 'apiKey');
@@ -104,7 +104,7 @@ describe('apiKeysPlugin', () => {
       secret: 'test',
       db: {},
       collections: [{ slug: 'users', auth: true, fields: [] }],
-    } as FrogbotConfig;
+    } as FrogBotConfig;
     const result = await apiKeysPlugin()(config);
 
     expect(result.collections.some((collection) => collection.usageLog === true)).toBe(false);
@@ -116,7 +116,7 @@ describe('apiKeysPlugin', () => {
       secret: 'test',
       db: {},
       collections: [{ slug: 'users', auth: true, fields: [] }],
-    } as FrogbotConfig;
+    } as FrogBotConfig;
     const result = await apiKeysPlugin()(config);
     const users = result.collections.find(({ slug }) => slug === 'users');
     const keys = result.collections.find(({ slug }) => slug === 'api-keys');
@@ -132,7 +132,7 @@ describe('apiKeysPlugin', () => {
       db: {},
       collections: [{ slug: 'users', auth: true, fields: [] }],
       ai: { providers: { openai: { apiKey: 'test' } } },
-    } as FrogbotConfig;
+    } as FrogBotConfig;
     const result = await apiKeysPlugin()(config);
     const req = { user: { id: 'user-1', apiKeyId: 'key-1' } };
     const context = {};

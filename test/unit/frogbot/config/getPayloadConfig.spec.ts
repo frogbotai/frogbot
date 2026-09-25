@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { getPayloadConfig } from '../../../../packages/frogbot/src/config/getPayloadConfig.js';
-import type { FrogbotSanitizedConfig } from '../../../../packages/frogbot/src/config/sanitized.js';
+import type { FrogBotSanitizedConfig } from '../../../../packages/frogbot/src/config/sanitized.js';
 
 function makeConfig() {
   const payloadConfig = { collections: [] };
   const config = {
     _internal: { payloadConfig: Promise.resolve(payloadConfig) },
-  } as unknown as FrogbotSanitizedConfig;
+  } as unknown as FrogBotSanitizedConfig;
   return { config, payloadConfig };
 }
 

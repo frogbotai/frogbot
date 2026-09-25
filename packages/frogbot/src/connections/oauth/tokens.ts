@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import type { OAuthTokens, PieceInstance, PieceOAuthAccount } from '../../pieces/types.js';
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 import { OAuthError } from './error.js';
 
 const tokenSchema = z
@@ -64,9 +64,9 @@ function callbackRequest({
   req,
   signal,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   signal: AbortSignal;
-}): FrogbotRequest {
+}): FrogBotRequest {
   return new Proxy(req, {
     get(target, property) {
       if (property === 'signal') return signal;
@@ -213,7 +213,7 @@ export async function lookupOAuthAccount({
 }: {
   piece: PieceInstance;
   tokens: OAuthTokens;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   signal?: AbortSignal;
 }): Promise<PieceOAuthAccount | undefined> {
   const { definition, options } = pieceInstanceRuntime(piece);
@@ -258,7 +258,7 @@ export async function refreshOAuthTokens({
 }: {
   piece: PieceInstance;
   tokens: OAuthTokens;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   signal?: AbortSignal;
 }): Promise<OAuthTokens> {
   const recipe = pieceInstanceRuntime(piece).definition.oauth;

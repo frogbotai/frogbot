@@ -1,7 +1,7 @@
 import type { Gateway } from '@frogbotai/gateway';
 import { experimental_evaluate } from 'ai';
 
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
@@ -25,13 +25,13 @@ export async function evaluateOperation<const QUESTIONS extends Record<string, E
   const { model: input, req, overrideAccess, ...aiSdkOpts } = opts;
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
-  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogbotRequest, target: input });
+  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
 
   const modelId = resolveModel(input, config);
 
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
-      req: req as FrogbotRequest,
+      req: req as FrogBotRequest,
       method: 'evaluate',
       input,
       config,
@@ -41,7 +41,7 @@ export async function evaluateOperation<const QUESTIONS extends Record<string, E
   const op = gateway.operation({
     operation: 'evaluate',
     model: modelId,
-    context: { req: req as FrogbotRequest | undefined },
+    context: { req: req as FrogBotRequest | undefined },
   });
 
   await op.start();

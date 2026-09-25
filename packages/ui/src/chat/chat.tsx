@@ -19,7 +19,7 @@ import { MessageList, type MessageListProps } from './message-list.js';
 import { MessagePart } from './message-part.js';
 import { branchChat, deleteChat, renameChat } from './mutations.js';
 import { type ChatManifest, useChatProvider } from './provider.js';
-import { FrogbotChatTransport, prepareChatRequest } from './transport.js';
+import { FrogBotChatTransport, prepareChatRequest } from './transport.js';
 import { useChatMessages } from './use-chat.js';
 import type { ChatDocument } from './use-chats.js';
 import { emitChatMutation, useChats } from './use-chats.js';
@@ -159,7 +159,7 @@ function ChatInner({
   request.current = { chatId: activeChatId, model };
   const transport = useMemo(
     () =>
-      new FrogbotChatTransport({
+      new FrogBotChatTransport({
         agentSlug: agent,
         sdk,
         onChatId: (nextChatId) => {

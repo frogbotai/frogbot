@@ -1,12 +1,12 @@
 import { timingSafeEqual } from 'node:crypto';
 
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 
 export async function verifyTelegramWebhook({
   req,
   options,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   options: { webhookSecret?: string };
 }) {
   if (!options.webhookSecret) return false;

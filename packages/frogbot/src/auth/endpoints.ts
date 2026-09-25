@@ -5,7 +5,7 @@ import {
   type SanitizedCollectionConfig,
 } from 'payload';
 
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import { checkSessionLease, coordinatesSessions, withAuthOperation } from './operation.js';
 
 async function bufferAuthRequest(req: PayloadRequest): Promise<PayloadRequest> {
@@ -61,10 +61,10 @@ async function bufferAuthRequest(req: PayloadRequest): Promise<PayloadRequest> {
 
 export function coordinateAuthEndpoints({
   collection,
-  attachFrogbot,
+  attachFrogBot,
 }: {
   collection: SanitizedCollectionConfig;
-  attachFrogbot: (req: PayloadRequest) => Promise<FrogbotRequest>;
+  attachFrogBot: (req: PayloadRequest) => Promise<FrogBotRequest>;
 }): void {
   if (!coordinatesSessions(collection)) return;
   collection.hooks.afterOperation = [...collection.hooks.afterOperation, checkSessionLease];
@@ -81,7 +81,7 @@ export function coordinateAuthEndpoints({
       handler: async (incoming) => {
         const req = await bufferAuthRequest(incoming);
         return withAuthOperation({
-          req: await attachFrogbot(req),
+          req: await attachFrogBot(req),
           collectionSlug: collection.slug,
           operation:
             endpoint.path === '/refresh-token'

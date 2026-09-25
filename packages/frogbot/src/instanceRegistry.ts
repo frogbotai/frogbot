@@ -1,40 +1,40 @@
-import type { FrogbotSanitizedConfig } from './config/sanitized.js';
-import type { Frogbot } from './frogbot.js';
+import type { FrogBotSanitizedConfig } from './config/sanitized.js';
+import type { FrogBot } from './frogbot.js';
 
-export const refreshFrogbotConfig = Symbol.for('frogbot.refreshConfig');
+export const refreshFrogBotConfig = Symbol.for('frogbot.refreshConfig');
 
-type FrogbotInstanceEntry = {
-  config?: FrogbotSanitizedConfig;
-  frogbot: Frogbot;
+type FrogBotInstanceEntry = {
+  config?: FrogBotSanitizedConfig;
+  frogbot: FrogBot;
 };
 
 const globalRef = globalThis as {
-  _frogbotInstances?: WeakMap<object, FrogbotInstanceEntry>;
-  _frogbotInstancePromises?: WeakMap<object, Promise<Frogbot>>;
+  _frogbotInstances?: WeakMap<object, FrogBotInstanceEntry>;
+  _frogbotInstancePromises?: WeakMap<object, Promise<FrogBot>>;
 };
 const instances = (globalRef._frogbotInstances ??= new WeakMap());
 const promises = (globalRef._frogbotInstancePromises ??= new WeakMap());
 
-export function registerFrogbotInstance(
+export function registerFrogBotInstance(
   payload: object,
-  frogbot: Frogbot,
-  config?: FrogbotSanitizedConfig,
+  frogbot: FrogBot,
+  config?: FrogBotSanitizedConfig,
 ): void {
   instances.set(payload, { config, frogbot });
 }
 
-export function getFrogbotInstance(payload: object): Frogbot | undefined {
+export function getFrogBotInstance(payload: object): FrogBot | undefined {
   return instances.get(payload)?.frogbot;
 }
 
-export function ensureFrogbotInstance(
+export function ensureFrogBotInstance(
   payload: object,
-  init: () => Promise<Frogbot>,
-  config?: FrogbotSanitizedConfig,
-): Promise<Frogbot> {
+  init: () => Promise<FrogBot>,
+  config?: FrogBotSanitizedConfig,
+): Promise<FrogBot> {
   const pending = promises.get(payload);
   if (pending) {
-    return config ? pending.then(() => ensureFrogbotInstance(payload, init, config)) : pending;
+    return config ? pending.then(() => ensureFrogBotInstance(payload, init, config)) : pending;
   }
 
   const registered = instances.get(payload);
@@ -43,7 +43,7 @@ export function ensureFrogbotInstance(
   }
 
   const promise = registered
-    ? registered.frogbot[refreshFrogbotConfig](config!).then(() => {
+    ? registered.frogbot[refreshFrogBotConfig](config!).then(() => {
         registered.config = config;
         return registered.frogbot;
       })

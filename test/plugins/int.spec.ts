@@ -1,5 +1,5 @@
 import { mongooseAdapter } from '@frogbotai/db-mongodb';
-import type { FrogbotConfig, Plugin } from 'frogbot';
+import type { FrogBotConfig, Plugin } from 'frogbot';
 import { buildConfig } from 'frogbot';
 import { describe, expect, it } from 'vitest';
 
@@ -18,7 +18,7 @@ describe('plugins', () => {
         return config;
       };
 
-      const testConfig: FrogbotConfig = {
+      const testConfig: FrogBotConfig = {
         secret: 'serial-test',
         db: mongooseAdapter({ url: 'mongodb://localhost:27017/x' }),
         collections: [{ slug: 'users', auth: true, fields: [] }],
@@ -37,7 +37,7 @@ describe('plugins', () => {
         ],
       });
 
-      const testConfig: FrogbotConfig = {
+      const testConfig: FrogBotConfig = {
         secret: 'register-collection-test',
         db: mongooseAdapter({ url: 'mongodb://localhost:27017/x' }),
         collections: [{ slug: 'users', auth: true, fields: [] }],
@@ -58,7 +58,7 @@ describe('plugins', () => {
         ),
       });
 
-      const testConfig: FrogbotConfig = {
+      const testConfig: FrogBotConfig = {
         secret: 'mutate-fields-test',
         db: mongooseAdapter({ url: 'mongodb://localhost:27017/x' }),
         collections: [
@@ -68,7 +68,7 @@ describe('plugins', () => {
         plugins: [stampCreatedBy],
       };
       const sanitized = await buildConfig(testConfig);
-      // `FrogbotSanitizedConfig.collections` intentionally exposes only
+      // `FrogBotSanitizedConfig.collections` intentionally exposes only
       // FrogBot-vocab metadata (slug/auth/roleMarkers), not Payload field
       // shapes — dig into the internal Payload config to verify the plugin's
       // field mutation actually reached the underlying collection.
@@ -83,7 +83,7 @@ describe('plugins', () => {
 
   describe('error handling', () => {
     it('plugin error is wrapped with index', async () => {
-      const boom: FrogbotConfig = {
+      const boom: FrogBotConfig = {
         secret: 'x',
         db: mongooseAdapter({ url: 'mongodb://localhost:27017/x' }),
         collections: [{ slug: 'users', auth: true, fields: [] }],
@@ -98,7 +98,7 @@ describe('plugins', () => {
     });
 
     it('empty plugins array boots cleanly', async () => {
-      const testConfig: FrogbotConfig = {
+      const testConfig: FrogBotConfig = {
         secret: 'empty-plugins',
         db: mongooseAdapter({ url: 'mongodb://localhost:27017/x' }),
         collections: [{ slug: 'users', auth: true, fields: [] }],

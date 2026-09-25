@@ -1,12 +1,12 @@
-import type { FrogbotConfig, FrogbotRequest } from 'frogbot';
+import type { FrogBotConfig, FrogBotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 import { apiKeysPlugin } from '../../../packages/plugins/plugin-api-keys/src/index.js';
 
-function makeConfig(): FrogbotConfig {
+function makeConfig(): FrogBotConfig {
   return {
     secret: 'test',
-    db: {} as FrogbotConfig['db'],
+    db: {} as FrogBotConfig['db'],
     collections: [{ slug: 'users', auth: true, fields: [] }],
   };
 }
@@ -30,22 +30,22 @@ describe('API keys collection', () => {
     ]);
     expect(
       await collection.access?.read?.({
-        req: { user: { id: 'user-1', roles: ['member'] } } as FrogbotRequest,
+        req: { user: { id: 'user-1', roles: ['member'] } } as FrogBotRequest,
       }),
     ).toEqual({
       owner: { equals: 'user-1' },
     });
     expect(
       await collection.access?.update?.({
-        req: { user: { id: 'user-1', roles: ['member'] } } as FrogbotRequest,
+        req: { user: { id: 'user-1', roles: ['member'] } } as FrogBotRequest,
       }),
     ).toEqual({
       owner: { equals: 'user-1' },
     });
-    expect(await collection.access?.create?.({ req: {} as FrogbotRequest })).toBe(false);
-    expect(await collection.access?.delete?.({ req: {} as FrogbotRequest })).toBe(false);
-    expect(await collection.access?.read?.({ req: {} as FrogbotRequest })).toBe(false);
-    expect(await collection.access?.update?.({ req: {} as FrogbotRequest })).toBe(false);
+    expect(await collection.access?.create?.({ req: {} as FrogBotRequest })).toBe(false);
+    expect(await collection.access?.delete?.({ req: {} as FrogBotRequest })).toBe(false);
+    expect(await collection.access?.read?.({ req: {} as FrogBotRequest })).toBe(false);
+    expect(await collection.access?.update?.({ req: {} as FrogBotRequest })).toBe(false);
     for (const name of ['owner', 'prefix', 'tokenHash', 'lastUsedAt', 'revokedAt']) {
       const field = collection.fields.find((item) => 'name' in item && item.name === name);
       expect('access' in field! && field.access?.update?.({} as never)).toBe(false);
@@ -79,7 +79,7 @@ describe('API keys collection', () => {
       user: { id: 'user-1' },
       json: () => Promise.resolve({ name: 'Deploy' }),
       frogbot: { create },
-    } as unknown as FrogbotRequest;
+    } as unknown as FrogBotRequest;
     const endpoint = collection.endpoints!.find((item) => item.path === '/mint')!;
     const first = await endpoint.handler(req);
     const second = await endpoint.handler(req);
@@ -95,7 +95,7 @@ describe('API keys collection', () => {
 
   it('authenticates key mutations before validating input', async () => {
     const collection = await getCollection();
-    const req = { routeParams: {}, json: () => Promise.resolve({}) } as unknown as FrogbotRequest;
+    const req = { routeParams: {}, json: () => Promise.resolve({}) } as unknown as FrogBotRequest;
 
     for (const path of ['/mint', '/:id/revoke', '/:id/rotate']) {
       const endpoint = collection.endpoints!.find((item) => item.path === path)!;
@@ -155,7 +155,7 @@ describe('API keys collection', () => {
           .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
         update,
       },
-    } as unknown as FrogbotRequest;
+    } as unknown as FrogBotRequest;
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
     const response = await endpoint.handler(req);
 
@@ -180,7 +180,7 @@ describe('API keys collection', () => {
           .mockResolvedValue({ docs: [{ id: 'key-1', name: 'Deploy', owner: 'user-1' }] }),
         update: vi.fn().mockResolvedValue({}),
       },
-    } as unknown as FrogbotRequest;
+    } as unknown as FrogBotRequest;
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/revoke')!;
 
     expect((await endpoint.handler(req)).status).toBe(200);
@@ -207,7 +207,7 @@ describe('API keys collection', () => {
           return { id: 'key-2', createdAt: 'now' };
         }),
       },
-    } as unknown as FrogbotRequest;
+    } as unknown as FrogBotRequest;
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/rotate')!;
     const response = await endpoint.handler(req);
     const body = await response.json();
@@ -237,7 +237,7 @@ describe('API keys collection', () => {
         update,
         create: vi.fn().mockRejectedValue(new Error('database unavailable')),
       },
-    } as unknown as FrogbotRequest;
+    } as unknown as FrogBotRequest;
     const endpoint = collection.endpoints!.find((item) => item.path === '/:id/rotate')!;
 
     await expect(endpoint.handler(req)).rejects.toThrow('database unavailable');
@@ -279,7 +279,7 @@ describe('API keys collection', () => {
         },
       },
     ]);
-    expect(await collection.access?.read?.({ req: {} as FrogbotRequest })).toBe(true);
+    expect(await collection.access?.read?.({ req: {} as FrogBotRequest })).toBe(true);
   });
 
   it('prefers explicit override views and injects the manager into the first list view', async () => {

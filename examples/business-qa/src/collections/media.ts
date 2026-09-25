@@ -1,6 +1,6 @@
-import type { CollectionConfig, FrogbotRequest } from 'frogbot';
+import type { CollectionConfig, FrogBotRequest } from 'frogbot';
 
-const authenticated = ({ req }: { req: FrogbotRequest }) => Boolean(req.user);
+const authenticated = ({ req }: { req: FrogBotRequest }) => Boolean(req.user);
 
 export const Media: CollectionConfig = {
   slug: 'media',

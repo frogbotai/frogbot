@@ -9,7 +9,7 @@
 
 import { resolveMarkedCollection } from '../collections/config/resolveMarkedCollection.js';
 import type { CollectionConfig } from '../collections/config/types.js';
-import type { FrogbotConfig } from '../config/types.js';
+import type { FrogBotConfig } from '../config/types.js';
 import { CHAT_ASSETS_SLUG, defaultChatAssetsCollection } from './collections/assets.js';
 import { defaultChatsCollection } from './collections/chats.js';
 import { defaultMessagesCollection } from './collections/messages.js';
@@ -38,7 +38,7 @@ function findChatCollection(
   return marked[0];
 }
 
-export function resolveChatCollections(config: FrogbotConfig): ResolvedChat {
+export function resolveChatCollections(config: FrogBotConfig): ResolvedChat {
   const chatCollection = findChatCollection(config.collections, 'chat');
   const messageCollection = findChatCollection(config.collections, 'message');
   if (chatCollection && chatCollection === messageCollection) {

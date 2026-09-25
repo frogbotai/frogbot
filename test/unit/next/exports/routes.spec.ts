@@ -1,4 +1,4 @@
-import type { FrogbotSanitizedConfig } from 'frogbot';
+import type { FrogBotSanitizedConfig } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -20,7 +20,7 @@ function makeConfig() {
   const payloadConfig = { collections: [] };
   const config = {
     _internal: { payloadConfig: Promise.resolve(payloadConfig) },
-  } as unknown as FrogbotSanitizedConfig;
+  } as unknown as FrogBotSanitizedConfig;
   return { config, payloadConfig };
 }
 

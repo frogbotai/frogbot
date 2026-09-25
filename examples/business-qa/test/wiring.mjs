@@ -34,7 +34,7 @@ const { qaAnalyst, releaseManager } = await import('../src/agents/index.ts');
 const { Users } = await import('../src/collections/users.ts');
 const { google, googleSheets, googleDrive, googleCalendar, linear } =
   await import('../src/pieces.ts');
-const { getFrogbot } = await import('frogbot');
+const { getFrogBot } = await import('frogbot');
 const config = await pendingConfig;
 (await config._internal.payloadConfig).telemetry = false;
 const products = [googleSheets, googleDrive, googleCalendar];
@@ -95,7 +95,7 @@ async function request({ path, data, authenticated = false }) {
 }
 
 before(async () => {
-  frogbot = await getFrogbot({ config });
+  frogbot = await getFrogBot({ config });
   const data = {
     email: 'business-qa-wiring@example.test',
     password: 'business-qa-dummy-password',

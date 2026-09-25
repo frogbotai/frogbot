@@ -1,16 +1,16 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 
 import { createApiKeyToken, getApiKeyPrefix, hashApiKeyToken } from './token.js';
 
 export type MintApiKeyOptions = {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   collectionSlug: string;
   tokenPrefix: string;
   name: string;
 };
 
 export type RevokeApiKeyOptions = {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   collectionSlug: string;
   id: string;
   anyOwner?: boolean;

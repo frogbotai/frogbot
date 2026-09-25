@@ -1,11 +1,11 @@
 import { Account } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
-import { getCachedFrogbot } from 'frogbot';
+import { getCachedFrogBot } from 'frogbot';
 import type { NavPreferences, PayloadRequest, ServerProps } from 'payload';
 import { formatAdminURL, PREFERENCE_KEYS } from 'payload/shared';
 
 import { buildNavModel } from './buildNavModel.js';
-import { FrogbotNavClient } from './index.client.js';
+import { FrogBotNavClient } from './index.client.js';
 
 async function getNavPreferences(req?: PayloadRequest): Promise<NavPreferences | null> {
   if (!req?.user?.collection) return null;
@@ -26,9 +26,9 @@ async function getNavPreferences(req?: PayloadRequest): Promise<NavPreferences |
   return result.docs[0]?.value as NavPreferences | null;
 }
 
-export type FrogbotNavProps = { req?: PayloadRequest } & ServerProps;
+export type FrogBotNavProps = { req?: PayloadRequest } & ServerProps;
 
-export async function FrogbotNav(props: FrogbotNavProps) {
+export async function FrogBotNav(props: FrogBotNavProps) {
   const {
     documentSubViewType,
     i18n,
@@ -53,7 +53,7 @@ export async function FrogbotNav(props: FrogbotNavProps) {
     beforeSidebarClose?: Parameters<typeof RenderServerComponent>[0]['Component'][];
     navSections?: Parameters<typeof RenderServerComponent>[0]['Component'][];
   };
-  const chat = getCachedFrogbot()?.config.chat;
+  const chat = getCachedFrogBot()?.config.chat;
   const navModel = buildNavModel({
     chatsSlug: chat?.enabled ? chat.chatsSlug : undefined,
     config: payload.config,
@@ -117,7 +117,7 @@ export async function FrogbotNav(props: FrogbotNavProps) {
   ) => components?.map((component, index) => render(component, `${key}-${index}`));
 
   return (
-    <FrogbotNavClient
+    <FrogBotNavClient
       accountEmail={accountEmail}
       accountIcon={<Account />}
       accountName={accountName}

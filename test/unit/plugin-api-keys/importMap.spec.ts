@@ -6,7 +6,7 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 
 import { generateImportMap } from '../../../packages/frogbot/src/bin/generateImportMap/index.js';
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
-import type { FrogbotConfig } from '../../../packages/frogbot/src/config/types.js';
+import type { FrogBotConfig } from '../../../packages/frogbot/src/config/types.js';
 import { apiKeysPlugin } from '../../../packages/plugins/plugin-api-keys/src/index.js';
 
 vi.mock('@payloadcms/ui', () => ({
@@ -30,7 +30,7 @@ describe('api keys import map', () => {
       secret: 'test-secret',
       db: { defaultIDType: 'number' } as never,
       collections: [{ slug: 'users', auth: true, fields: [] }],
-    } as FrogbotConfig);
+    } as FrogBotConfig);
     const payloadConfig = await config._internal.payloadConfig;
 
     expect(
@@ -46,7 +46,7 @@ describe('api keys import map', () => {
       db: { defaultIDType: 'number' } as never,
       collections: [{ slug: 'users', auth: true, fields: [] }],
       plugins: [apiKeysPlugin()],
-    } as FrogbotConfig);
+    } as FrogBotConfig);
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');

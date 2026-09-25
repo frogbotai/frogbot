@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
-import type { FrogbotSanitizedConfig } from '../../../packages/frogbot/src/config/sanitized.js';
-import { Frogbot } from '../../../packages/frogbot/src/frogbot.js';
+import type { FrogBotSanitizedConfig } from '../../../packages/frogbot/src/config/sanitized.js';
+import { FrogBot } from '../../../packages/frogbot/src/frogbot.js';
 import { createGatewayHandler } from '../../../packages/frogbot/src/server/gateway.js';
 
 vi.mock('payload', () => {
@@ -80,7 +80,7 @@ function emailWarnings(warn: ReturnType<typeof vi.fn>) {
   );
 }
 
-function makeConfig(): FrogbotSanitizedConfig {
+function makeConfig(): FrogBotSanitizedConfig {
   return {
     collections: [
       { slug: 'posts', auth: false },
@@ -96,7 +96,7 @@ function makeConfig(): FrogbotSanitizedConfig {
   };
 }
 
-function withAI(config: FrogbotSanitizedConfig): FrogbotSanitizedConfig {
+function withAI(config: FrogBotSanitizedConfig): FrogBotSanitizedConfig {
   config.ai = {
     providers: { openai: { apiKey: 'sk-test' } },
     routers: {},
@@ -120,7 +120,7 @@ function withAI(config: FrogbotSanitizedConfig): FrogbotSanitizedConfig {
 }
 
 async function setup() {
-  const frogbot = new Frogbot();
+  const frogbot = new FrogBot();
   await frogbot.init({ config: makeConfig(), disableOnInit: true });
   return frogbot;
 }
@@ -130,7 +130,7 @@ beforeEach(async () => {
   (payloadMod as unknown as { __resetMockPayload: () => void }).__resetMockPayload();
 });
 
-describe('Frogbot class', () => {
+describe('FrogBot class', () => {
   describe('init + collections registry', () => {
     it('builds a collections registry keyed by slug', async () => {
       const frogbot = await setup();
@@ -169,7 +169,7 @@ describe('Frogbot class', () => {
     it('does not warn when email is configured', async () => {
       const config = makeConfig();
       config._internal.noEmail = false;
-      const frogbot = new Frogbot();
+      const frogbot = new FrogBot();
 
       await frogbot.init({ config, disableOnInit: true });
 
@@ -183,7 +183,7 @@ describe('Frogbot class', () => {
 
     it('creates the embedded gateway when ai is configured', async () => {
       const config = withAI(makeConfig());
-      const frogbot = new Frogbot();
+      const frogbot = new FrogBot();
       await frogbot.init({ config, disableOnInit: true });
       expect(frogbot.gateway).toBeDefined();
       expect(typeof frogbot.gateway!.chatModel).toBe('function');
@@ -194,14 +194,14 @@ describe('Frogbot class', () => {
       const payload = (
         payloadMod as unknown as { __getMockPayload: () => ReturnType<typeof createMockPayload> }
       ).__getMockPayload();
-      const lifecycleFrogbot = new Frogbot();
-      const { registerFrogbotInstance } =
+      const lifecycleFrogBot = new FrogBot();
+      const { registerFrogBotInstance } =
         await import('../../../packages/frogbot/src/instanceRegistry.js');
-      registerFrogbotInstance(payload, lifecycleFrogbot);
+      registerFrogBotInstance(payload, lifecycleFrogBot);
 
-      const result = await new Frogbot().init({ config: makeConfig(), disableOnInit: true });
+      const result = await new FrogBot().init({ config: makeConfig(), disableOnInit: true });
 
-      expect(result).toBe(lifecycleFrogbot);
+      expect(result).toBe(lifecycleFrogBot);
     });
 
     it('refreshes config-derived registries for the same Payload instance', async () => {
@@ -216,12 +216,12 @@ describe('Frogbot class', () => {
         { slug: 'assistant', model: 'openai/gpt-4o', instructions: 'first', access: firstAccess },
       ];
       const onInit = vi.fn();
-      const frogbot = await new Frogbot().init({ config: firstConfig, onInit });
+      const frogbot = await new FrogBot().init({ config: firstConfig, onInit });
       const firstAgent = frogbot.agents.assistant;
       const firstGateway = frogbot.gateway;
       const firstConnections = frogbot.connections;
 
-      await expect(new Frogbot().init({ config: firstConfig, onInit })).resolves.toBe(frogbot);
+      await expect(new FrogBot().init({ config: firstConfig, onInit })).resolves.toBe(frogbot);
       expect(frogbot.agents.assistant).toBe(firstAgent);
 
       payload.config.collections = [
@@ -233,7 +233,7 @@ describe('Frogbot class', () => {
         { slug: 'assistant', model: 'openai/gpt-4o', instructions: 'second', access: secondAccess },
       ];
 
-      await expect(new Frogbot().init({ config: secondConfig, onInit })).resolves.toBe(frogbot);
+      await expect(new FrogBot().init({ config: secondConfig, onInit })).resolves.toBe(frogbot);
 
       expect(frogbot.config).toBe(secondConfig);
       expect(frogbot.agents.assistant).not.toBe(firstAgent);
@@ -248,17 +248,17 @@ describe('Frogbot class', () => {
     });
 
     it('keeps Payload initialization off the public instance API', () => {
-      type HasInitFromPayload = 'initFromPayload' extends keyof Frogbot ? true : false;
+      type HasInitFromPayload = 'initFromPayload' extends keyof FrogBot ? true : false;
 
       expectTypeOf<HasInitFromPayload>().toEqualTypeOf<false>();
-      expect(new Frogbot()).not.toHaveProperty('initFromPayload');
+      expect(new FrogBot()).not.toHaveProperty('initFromPayload');
     });
   });
 
   describe('onInit', () => {
     it('calls onInit from options when not disabled', async () => {
       const onInit = vi.fn();
-      const frogbot = new Frogbot();
+      const frogbot = new FrogBot();
       await frogbot.init({ config: makeConfig(), onInit });
       expect(onInit).toHaveBeenCalledWith(frogbot);
     });
@@ -267,7 +267,7 @@ describe('Frogbot class', () => {
       const onInit = vi.fn();
       const config = makeConfig();
       config.onInit = onInit;
-      const frogbot = new Frogbot();
+      const frogbot = new FrogBot();
       await frogbot.init({ config });
       expect(onInit).toHaveBeenCalledWith(frogbot);
     });
@@ -277,7 +277,7 @@ describe('Frogbot class', () => {
       const configOnInit = vi.fn();
       const config = makeConfig();
       config.onInit = configOnInit;
-      const frogbot = new Frogbot();
+      const frogbot = new FrogBot();
       await frogbot.init({ config, onInit: optionOnInit, disableOnInit: true });
       expect(optionOnInit).not.toHaveBeenCalled();
       expect(configOnInit).not.toHaveBeenCalled();
@@ -315,11 +315,11 @@ describe('Frogbot class', () => {
 
   describe('Gateway HTTP adapter', () => {
     async function setupGateway(
-      access: Partial<NonNullable<FrogbotSanitizedConfig['ai']>['access']>,
+      access: Partial<NonNullable<FrogBotSanitizedConfig['ai']>['access']>,
     ) {
       const config = withAI(makeConfig());
       Object.assign(config.ai!.access, access);
-      const frogbot = new Frogbot();
+      const frogbot = new FrogBot();
       await frogbot.init({ config, disableOnInit: true });
       const payloadMod = await import('payload');
       const payload = (
@@ -335,7 +335,7 @@ describe('Frogbot class', () => {
 
     it('authenticates, strips the mount prefix, and forwards req in the hook context', async () => {
       const config = withAI(makeConfig());
-      const frogbot = new Frogbot();
+      const frogbot = new FrogBot();
       await frogbot.init({ config, disableOnInit: true });
       const payloadMod = await import('payload');
       const payload = (
@@ -372,7 +372,7 @@ describe('Frogbot class', () => {
 
     it('returns 401 when unauthenticated', async () => {
       const config = withAI(makeConfig());
-      const frogbot = new Frogbot();
+      const frogbot = new FrogBot();
       await frogbot.init({ config, disableOnInit: true });
       const payloadMod = await import('payload');
       const payload = (
@@ -510,7 +510,7 @@ describe('Frogbot class', () => {
   });
 
   describe('utilities', () => {
-    it('creates requests with top-level Frogbot only', async () => {
+    it('creates requests with top-level FrogBot only', async () => {
       const frogbot = await setup();
       const request = await frogbot.createRequest();
 

@@ -1,10 +1,10 @@
 import { mongooseAdapter } from '@frogbotai/db-mongodb';
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
 import { describe, expect, it } from 'vitest';
 
 describe('config — buildConfig validation', () => {
-  const validBase: FrogbotConfig = {
+  const validBase: FrogBotConfig = {
     secret: 'test-secret',
     db: mongooseAdapter({ url: 'mongodb://localhost:27017/x' }),
     collections: [{ slug: 'users', auth: true, fields: [] }],
@@ -12,17 +12,17 @@ describe('config — buildConfig validation', () => {
 
   describe('required fields', () => {
     it('missing `secret` is rejected with [frogbot] error', async () => {
-      const bad = { ...validBase, secret: '' } as unknown as FrogbotConfig;
+      const bad = { ...validBase, secret: '' } as unknown as FrogBotConfig;
       await expect(buildConfig(bad)).rejects.toThrow(/\[frogbot\]/);
     });
 
     it('missing `db` is rejected', async () => {
-      const bad = { ...validBase, db: undefined } as unknown as FrogbotConfig;
+      const bad = { ...validBase, db: undefined } as unknown as FrogBotConfig;
       await expect(buildConfig(bad)).rejects.toThrow(/\[frogbot\]/);
     });
 
     it('non-array `collections` is rejected', async () => {
-      const bad = { ...validBase, collections: 'oops' } as unknown as FrogbotConfig;
+      const bad = { ...validBase, collections: 'oops' } as unknown as FrogBotConfig;
       await expect(buildConfig(bad)).rejects.toThrow(/\[frogbot\]/);
     });
   });
@@ -32,7 +32,7 @@ describe('config — buildConfig validation', () => {
       const bad = {
         ...validBase,
         globals: [{ slug: 'site', fields: [] }],
-      } as unknown as FrogbotConfig;
+      } as unknown as FrogBotConfig;
       await expect(buildConfig(bad)).rejects.toThrow(/\[frogbot\].*globals/i);
     });
   });
@@ -45,7 +45,7 @@ describe('config — buildConfig validation', () => {
     });
 
     it('missing optional fields (admin) do not fail validation', async () => {
-      const config: FrogbotConfig = { ...validBase };
+      const config: FrogBotConfig = { ...validBase };
       const sanitized = await buildConfig(config);
       expect(sanitized).toBeDefined();
     });

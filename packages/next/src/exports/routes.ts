@@ -8,17 +8,17 @@ import {
 } from '@payloadcms/next/routes';
 import { getPayloadConfig } from 'frogbot/internal';
 
-import type { FrogbotConfigArg } from '../types.js';
+import type { FrogBotConfigArg } from '../types.js';
 
 type PayloadRestHandlerBuilder = typeof PAYLOAD_REST_GET;
-function withFrogbotConfig(handlerBuilder: PayloadRestHandlerBuilder) {
-  return (config: FrogbotConfigArg): ReturnType<PayloadRestHandlerBuilder> =>
+function withFrogBotConfig(handlerBuilder: PayloadRestHandlerBuilder) {
+  return (config: FrogBotConfigArg): ReturnType<PayloadRestHandlerBuilder> =>
     handlerBuilder(getPayloadConfig(config));
 }
 
-export const REST_DELETE = withFrogbotConfig(PAYLOAD_REST_DELETE);
-export const REST_GET = withFrogbotConfig(PAYLOAD_REST_GET);
-export const REST_OPTIONS = withFrogbotConfig(PAYLOAD_REST_OPTIONS);
-export const REST_PATCH = withFrogbotConfig(PAYLOAD_REST_PATCH);
-export const REST_POST = withFrogbotConfig(PAYLOAD_REST_POST);
-export const REST_PUT = withFrogbotConfig(PAYLOAD_REST_PUT);
+export const REST_DELETE = withFrogBotConfig(PAYLOAD_REST_DELETE);
+export const REST_GET = withFrogBotConfig(PAYLOAD_REST_GET);
+export const REST_OPTIONS = withFrogBotConfig(PAYLOAD_REST_OPTIONS);
+export const REST_PATCH = withFrogBotConfig(PAYLOAD_REST_PATCH);
+export const REST_POST = withFrogBotConfig(PAYLOAD_REST_POST);
+export const REST_PUT = withFrogBotConfig(PAYLOAD_REST_PUT);

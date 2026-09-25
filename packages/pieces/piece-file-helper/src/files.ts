@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { lookup } from 'mime-types';
 import { z } from 'zod';
 
@@ -18,7 +18,7 @@ function resolveMimeType(value: unknown, filename: string) {
   return typeof detected === 'string' ? detected : 'application/octet-stream';
 }
 
-export async function loadFile({ req, id }: { req: FrogbotRequest; id: string | number }) {
+export async function loadFile({ req, id }: { req: FrogBotRequest; id: string | number }) {
   const collection = req.frogbot.config.files?.slug;
 
   if (!collection) throw new Error('File Helper requires a configured files collection.');
@@ -71,7 +71,7 @@ export async function saveFile({
   filename,
   mimeType,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   data: Buffer;
   filename: string;
   mimeType?: string;

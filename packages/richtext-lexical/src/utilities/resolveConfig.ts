@@ -1,7 +1,7 @@
-import type { FrogbotSanitizedConfig } from 'frogbot';
+import type { FrogBotSanitizedConfig } from 'frogbot';
 import type { SanitizedConfig } from 'payload';
 
-export type ConfigInput = FrogbotSanitizedConfig | Promise<FrogbotSanitizedConfig>;
+export type ConfigInput = FrogBotSanitizedConfig | Promise<FrogBotSanitizedConfig>;
 
 export async function resolveConfig(config: ConfigInput): Promise<SanitizedConfig> {
   const resolved = await config;

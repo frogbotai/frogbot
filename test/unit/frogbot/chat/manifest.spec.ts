@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
 import { buildManifestEndpoint } from '../../../../packages/frogbot/src/chat/manifest.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 function makeAgent(
   slug: string,
@@ -34,14 +34,14 @@ function makeRequest({
   chat?: { enabled: false } | { enabled: true; chatsSlug: string; messagesSlug: string };
   providers?: Record<string, unknown>;
   user?: { id: string } | null;
-} = {}): FrogbotRequest {
+} = {}): FrogBotRequest {
   return {
     frogbot: {
       agents: Object.fromEntries(agents.map((agent) => [agent.slug, agent])),
       config: { ai: { providers }, chat, files: { slug: 'uploads' } },
     },
     user,
-  } as unknown as FrogbotRequest;
+  } as unknown as FrogBotRequest;
 }
 
 describe('manifest endpoint', () => {

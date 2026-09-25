@@ -2,20 +2,20 @@ import {
   DefaultTemplate as PayloadDefaultTemplate,
   type DefaultTemplateProps as PayloadDefaultTemplateProps,
 } from '@payloadcms/next/templates';
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 
 export type DefaultTemplateProps = Omit<
   PayloadDefaultTemplateProps,
   'globalSlug' | 'payload' | 'req'
 > & {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 };
 
-type IssuedRequest = FrogbotRequest & {
+type IssuedRequest = FrogBotRequest & {
   [key: symbol]: unknown;
 };
 
-function getIssuedRuntime(req: FrogbotRequest): PayloadDefaultTemplateProps['payload'] {
+function getIssuedRuntime(req: FrogBotRequest): PayloadDefaultTemplateProps['payload'] {
   const issued = req as IssuedRequest;
   const payload = issued[Symbol.for('@frogbotai/request-runtime')];
 

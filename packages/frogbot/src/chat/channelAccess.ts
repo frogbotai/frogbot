@@ -1,10 +1,10 @@
 import type { DocID } from '../collections/config/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 
 export type ChannelChatAccess = Readonly<{ channelKey: string }>;
 
 type ChannelChatAccessScope = {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   agentSlug: string;
   chatId: DocID;
   channelKey: string;
@@ -12,7 +12,7 @@ type ChannelChatAccessScope = {
 
 const grants = new WeakMap<
   ChannelChatAccess,
-  ChannelChatAccessScope & { frogbot: FrogbotRequest['frogbot']; userId: DocID | null }
+  ChannelChatAccessScope & { frogbot: FrogBotRequest['frogbot']; userId: DocID | null }
 >();
 
 export function createChannelChatAccess(scope: ChannelChatAccessScope): ChannelChatAccess {
@@ -34,7 +34,7 @@ export function hasChannelChatAccess({
   chat,
 }: {
   access: ChannelChatAccess;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   agentSlug: string;
   chat: { id: DocID; agent?: string | null; channelKey?: string | null };
 }): boolean {

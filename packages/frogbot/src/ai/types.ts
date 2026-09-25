@@ -17,8 +17,8 @@ import type { experimental_evaluate } from 'ai';
 import type { CatalogModelId } from '../ai/generated.js';
 import type { ProviderName } from '../ai/providerNames.js';
 import type { Tool } from '../tools/types.js';
-import type { FrogbotTypes } from '../types/generated.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotTypes } from '../types/generated.js';
+import type { FrogBotRequest } from '../types/request.js';
 import type { AIHooks, SanitizedAIHooks } from './hooks/types.js';
 
 export type AIOutput = ReturnType<(typeof Output)[keyof typeof Output]>;
@@ -131,7 +131,7 @@ export type RouterConfig = {
 
 // ─── Access Control ──────────────────────────────────────────────────────────
 
-export type AIAccessFn = (args: { req: FrogbotRequest }) => boolean | Promise<boolean>;
+export type AIAccessFn = (args: { req: FrogBotRequest }) => boolean | Promise<boolean>;
 
 export type AIAccessConfig = {
   generate?: AIAccessFn;
@@ -229,13 +229,13 @@ export type SanitizedAIConfig = {
 
 // ─── Model ID Type ───────────────────────────────────────────────────────────
 //
-export type ModelId = FrogbotTypes['models'];
+export type ModelId = FrogBotTypes['models'];
 
 // ─── Operation Options Types ─────────────────────────────────────────────────
 
 export type BaseAIOpts = {
   model: ModelId;
-  req?: Partial<FrogbotRequest>;
+  req?: Partial<FrogBotRequest>;
   overrideAccess?: boolean;
 };
 

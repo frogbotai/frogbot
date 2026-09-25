@@ -2,7 +2,7 @@ import type { Endpoint } from '../endpoints/types.js';
 import { KVLockContentionError } from '../kv/errors.js';
 import { pieceInstanceDefinition } from '../pieces/definePiece.js';
 import type { PieceJSON } from '../pieces/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import type { SanitizedConnectionsConfig } from './types.js';
 
 export function buildSecretEndpoints({
@@ -13,7 +13,7 @@ export function buildSecretEndpoints({
   userSlug: string;
 }): Endpoint[] {
   if (!connections.enabled) return [];
-  const access = (req: FrogbotRequest) => {
+  const access = (req: FrogBotRequest) => {
     if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
     if (req.user.collection !== userSlug) {
       return Response.json({ error: 'Access denied' }, { status: 403 });

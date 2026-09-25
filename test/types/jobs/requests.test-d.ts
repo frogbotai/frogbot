@@ -1,4 +1,4 @@
-import type { Endpoint, Frogbot } from 'frogbot';
+import type { Endpoint, FrogBot } from 'frogbot';
 
 export const jobsEndpoint: Endpoint = {
   path: '/jobs-type-fixture',
@@ -21,7 +21,7 @@ export const jobsEndpoint: Endpoint = {
   },
 };
 
-export async function jobsWithCreatedRequest(frogbot: Frogbot) {
+export async function jobsWithCreatedRequest(frogbot: FrogBot) {
   const req = await frogbot.createRequest();
   const job = await frogbot.jobs.queue({
     workflow: 'onboard-account',

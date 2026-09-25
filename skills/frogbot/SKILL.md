@@ -2,7 +2,7 @@
 name: frogbot
 description: >-
   Builds and maintains FrogBot applications. Use when working with
-  frogbot.config.ts, getFrogbot, collections, fields, hooks, access control,
+  frogbot.config.ts, getFrogBot, collections, fields, hooks, access control,
   Local API queries, agents, tools, pieces, connections, jobs, KV, chat or gateway configuration.
 license: MIT
 metadata:
@@ -53,7 +53,7 @@ The blank template keeps collections and agents in separate files and registers 
 ```ts
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { lexicalEditor } from '@frogbotai/richtext-lexical';
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
 import { general } from 'frogbot/agents';
 import { todoTools } from 'frogbot/tools';
@@ -61,7 +61,7 @@ import { todoTools } from 'frogbot/tools';
 import { assistant } from './agents/assistant';
 import { Users } from './collections';
 
-const config: FrogbotConfig = {
+const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET || '',
   db: sqliteAdapter({
     client: { url: process.env.DATABASE_URL || '' },
@@ -148,11 +148,11 @@ An agent without `model` uses `ai.defaultModel`. Root tools are inherited unless
 ### Initialized Instance
 
 ```ts
-import { getFrogbot } from 'frogbot';
+import { getFrogBot } from 'frogbot';
 
 import config from './frogbot.config';
 
-const frogbot = await getFrogbot({ config });
+const frogbot = await getFrogBot({ config });
 const posts = await frogbot.find({
   collection: 'posts',
   where: {

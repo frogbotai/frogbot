@@ -3,13 +3,13 @@ import { BasePayload } from 'payload';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { jobsRun } from '../../../../packages/frogbot/src/bin/jobsRun.js';
-import type { FrogbotSanitizedConfig } from '../../../../packages/frogbot/src/config/sanitized.js';
-import { Frogbot } from '../../../../packages/frogbot/src/frogbot.js';
+import type { FrogBotSanitizedConfig } from '../../../../packages/frogbot/src/config/sanitized.js';
+import { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
 import {
   createDefaultRequest,
-  getCachedFrogbot,
-  resetFrogbotCache,
-} from '../../../../packages/frogbot/src/getFrogbot.js';
+  getCachedFrogBot,
+  resetFrogBotCache,
+} from '../../../../packages/frogbot/src/getFrogBot.js';
 import {
   jobLeaseOperations,
   recordJobClaims,
@@ -55,7 +55,7 @@ function makePayload() {
 }
 
 describe('jobs:run lifecycle', () => {
-  let config: FrogbotSanitizedConfig;
+  let config: FrogBotSanitizedConfig;
   let payloadConfig: SanitizedConfig;
 
   let exit: ReturnType<typeof vi.spyOn>;
@@ -90,7 +90,7 @@ describe('jobs:run lifecycle', () => {
   }
 
   beforeEach(() => {
-    resetFrogbotCache();
+    resetFrogBotCache();
 
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-13T00:00:00Z'));
@@ -112,7 +112,7 @@ describe('jobs:run lifecycle', () => {
       return this;
     });
 
-    onInit = vi.fn(async (_frogbot: Frogbot) => undefined);
+    onInit = vi.fn(async (_frogbot: FrogBot) => undefined);
 
     payloadConfig = {
       jobs: { autoRun: [{ cron: '* * * * * *', allQueues: true }] },
@@ -127,7 +127,7 @@ describe('jobs:run lifecycle', () => {
         triggers: {},
       },
       onInit,
-    } as unknown as FrogbotSanitizedConfig;
+    } as unknown as FrogBotSanitizedConfig;
 
     mocks.loadConfig.mockReset().mockResolvedValue(config);
 
@@ -150,7 +150,7 @@ describe('jobs:run lifecycle', () => {
     await worker;
 
     worker = undefined;
-    resetFrogbotCache();
+    resetFrogBotCache();
 
     expectWorkerCleanup();
 
@@ -162,8 +162,8 @@ describe('jobs:run lifecycle', () => {
   it('boots the real FrogBot runtime, retains app initialization, and passes it to tasks', async () => {
     let initialized = false;
 
-    onInit.mockImplementation(async (frogbot: Frogbot) => {
-      expect(frogbot).toBeInstanceOf(Frogbot);
+    onInit.mockImplementation(async (frogbot: FrogBot) => {
+      expect(frogbot).toBeInstanceOf(FrogBot);
 
       initialized = true;
     });
@@ -174,14 +174,14 @@ describe('jobs:run lifecycle', () => {
     });
 
     mocks.payload.jobs.run.mockImplementation(async (args) => {
-      const { req } = args as { req: PayloadRequest & { frogbot: Frogbot } };
+      const { req } = args as { req: PayloadRequest & { frogbot: FrogBot } };
 
       expect(initialized).toBe(true);
       expect(req.frogbot).toBe(onInit.mock.calls[0][0]);
       expect(req.frogbot.jobs).toBe(mocks.payload.jobs);
       expect(req.payload).toBe(mocks.payload);
       expect(req.payload).toBeInstanceOf(BasePayload);
-      expect(getCachedFrogbot()).toBe(req.frogbot);
+      expect(getCachedFrogBot()).toBe(req.frogbot);
       expect((await createDefaultRequest()).frogbot).toBe(req.frogbot);
     });
 
@@ -412,7 +412,7 @@ describe('jobs:run lifecycle', () => {
 
     expect(mocks.payload.destroy).not.toHaveBeenCalled();
     expect(mocks.payload.jobs.run).not.toHaveBeenCalled();
-    expect(getCachedFrogbot()).toBeNull();
+    expect(getCachedFrogBot()).toBeNull();
 
     initializing.resolve();
 
@@ -441,7 +441,7 @@ describe('jobs:run lifecycle', () => {
   it('closes the runtime if request creation fails', async () => {
     await start();
 
-    const frogbot = onInit.mock.calls[0][0] as Frogbot;
+    const frogbot = onInit.mock.calls[0][0] as FrogBot;
 
     vi.spyOn(frogbot, 'createRequest').mockRejectedValue(new Error('request failure'));
 

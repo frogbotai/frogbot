@@ -4,14 +4,14 @@ export type EnvIssue = {
   name: string;
 };
 
-export class FrogbotEnvError extends Error {
+export class FrogBotEnvError extends Error {
   issues: EnvIssue[];
 
   constructor(issues: EnvIssue[]) {
     super(
       `Invalid environment:\n${issues.map((issue) => `  - ${issue.name} (${issue.envName}): ${issue.message}`).join('\n')}`,
     );
-    this.name = 'FrogbotEnvError';
+    this.name = 'FrogBotEnvError';
     this.issues = issues;
   }
 }

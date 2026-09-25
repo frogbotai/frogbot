@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import type { PieceRunArgs } from 'frogbot/pieces';
 import { createMessage, encrypt, readKey } from 'openpgp';
 import { z } from 'zod';
@@ -13,7 +13,7 @@ const output = z.discriminatedUnion('success', [
   z.object({ success: z.literal(false), error: z.string().min(1) }),
 ]);
 
-async function loadFile(req: FrogbotRequest, id: string | number) {
+async function loadFile(req: FrogBotRequest, id: string | number) {
   const collection = req.frogbot.config.files?.slug;
 
   if (!collection) {

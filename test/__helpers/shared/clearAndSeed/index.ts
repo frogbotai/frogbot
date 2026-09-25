@@ -1,4 +1,4 @@
-import type { CollectionSlug, FrogbotInstance } from 'frogbot';
+import type { CollectionSlug, FrogBotInstance } from 'frogbot';
 
 import { empty } from './scenarios/empty';
 import { singleUser } from './scenarios/singleUser';
@@ -20,12 +20,12 @@ const scenarios = {
  * relationships are not considered in v0 because only `empty` is
  * functional. Revisit when the first real scenario lands.
  */
-export async function clearAndSeed(frogbot: FrogbotInstance, scenario: Scenario): Promise<void> {
+export async function clearAndSeed(frogbot: FrogBotInstance, scenario: Scenario): Promise<void> {
   await clearAll(frogbot);
   await scenarios[scenario](frogbot);
 }
 
-async function clearAll(frogbot: FrogbotInstance): Promise<void> {
+async function clearAll(frogbot: FrogBotInstance): Promise<void> {
   for (const slug of Object.keys(frogbot.collections) as CollectionSlug[]) {
     await frogbot.delete({
       collection: slug,

@@ -3,15 +3,15 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { BootedFrogbot } from '../../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const upstreamUrl = 'https://api.typesafe.ai/v1/systemone';
 
 describe('booted environment-configured TypeSafe evaluation', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
   let originalFetch: typeof fetch;
   const upstreamCalls: { model: string; authorization: string | null }[] = [];
 
@@ -37,7 +37,7 @@ describe('booted environment-configured TypeSafe evaluation', () => {
       });
     };
 
-    booted = await bootFrogbot(dirname);
+    booted = await bootFrogBot(dirname);
   });
 
   afterAll(async () => {

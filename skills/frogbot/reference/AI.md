@@ -2,14 +2,14 @@
 
 Docs: https://docs.frogbot.ai/ai/overview
 
-FrogBot routes AI operations through providers configured in `frogbot.config.ts`. The initialized `Frogbot` instance exposes text, embedding, image, speech, transcription, video, and reranking operations.
+FrogBot routes AI operations through providers configured in `frogbot.config.ts`. The initialized `FrogBot` instance exposes text, embedding, image, speech, transcription, video, and reranking operations.
 
 ## Configure a provider
 
 The blank template configures an OpenAI-compatible provider and a default chat model:
 
 ```ts
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 
 const ai = {
   defaultModel: 'zen/big-pickle',
@@ -21,7 +21,7 @@ const ai = {
       models: [{ id: 'big-pickle', mode: 'chat' }],
     },
   },
-} satisfies FrogbotConfig['ai'];
+} satisfies FrogBotConfig['ai'];
 ```
 
 Custom model IDs use `<provider>/<model>`. Each custom model declares its mode, such as `chat`, `embedding`, `image_generation`, `audio_speech`, `audio_transcription`, `rerank`, or `video_generation`.
@@ -29,11 +29,11 @@ Custom model IDs use `<provider>/<model>`. Each custom model declares its mode, 
 ## Generate text
 
 ```ts
-import { getFrogbot } from 'frogbot';
+import { getFrogBot } from 'frogbot';
 
 import config from './frogbot.config';
 
-const frogbot = await getFrogbot({ config });
+const frogbot = await getFrogBot({ config });
 const result = await frogbot.generateText({
   model: 'zen/big-pickle',
   prompt: 'Write a one-sentence project update.',
@@ -126,10 +126,10 @@ FrogBot schedules monthly spend resets with `0 0 1 * *` on the `frogbot-reset-ai
 `resolvePolicy(user)` returns the normalized `AIUserPolicy`. AI operations enforce the user's exact target and budget when called with `req` and access enforcement enabled. `enforcePolicy({ req, target })` is also public, but does not replace operation-category access checks. Use the authenticated request from the application:
 
 ```ts
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { resolvePolicy } from 'frogbot';
 
-export async function generatePolicyUpdate(req: FrogbotRequest) {
+export async function generatePolicyUpdate(req: FrogBotRequest) {
   const policy = resolvePolicy(req.user);
   const result = await req.frogbot.generateText({
     model: 'zen/big-pickle',

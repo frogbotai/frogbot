@@ -1,5 +1,5 @@
 import type { Where } from '../types/payload.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 
 export type TrainingDataDocument = Record<string, unknown>;
 
@@ -11,6 +11,6 @@ export type TrainingDataRecord = {
 export type ReadTrainingDataOptions = {
   where?: Where;
   pageSize?: number;
-  req?: FrogbotRequest;
+  req?: FrogBotRequest;
   overrideAccess?: boolean;
 };

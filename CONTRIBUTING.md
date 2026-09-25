@@ -13,8 +13,8 @@ FrogBot is a pnpm monorepo that wraps Payload 3 with an AI-native layer (agents,
 
 | Path                                                                           | Contents                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `packages/frogbot`                                                             | Core package: `buildConfig`, `Frogbot` class, `getFrogbot`, CLI (`bin/`), typegen, and every domain (`agents/`, `ai/`, `chat/`, `collections/`, `connections/`, `jobs/`, `kv/`, `pieces/`, `tools/`, `triggers/`, ...). Public boundary is `src/index.ts` plus `src/exports/*` (subpaths `frogbot/agents`, `frogbot/tools`, `frogbot/jobs`, `frogbot/kv`, `frogbot/pieces`, `frogbot/connections`, `frogbot/env`). |
-| `packages/next`, `packages/ui`                                                 | Next.js integration (`withFrogbot`, admin routes, import map) and the reusable UI/chat component library. See [UI conventions](packages/ui/CONTRIBUTING.md).                                                                                                                                                                                                                                                       |
+| `packages/frogbot`                                                             | Core package: `buildConfig`, `FrogBot` class, `getFrogBot`, CLI (`bin/`), typegen, and every domain (`agents/`, `ai/`, `chat/`, `collections/`, `connections/`, `jobs/`, `kv/`, `pieces/`, `tools/`, `triggers/`, ...). Public boundary is `src/index.ts` plus `src/exports/*` (subpaths `frogbot/agents`, `frogbot/tools`, `frogbot/jobs`, `frogbot/kv`, `frogbot/pieces`, `frogbot/connections`, `frogbot/env`). |
+| `packages/next`, `packages/ui`                                                 | Next.js integration (`withFrogBot`, admin routes, import map) and the reusable UI/chat component library. See [UI conventions](packages/ui/CONTRIBUTING.md).                                                                                                                                                                                                                                                       |
 | `packages/db-*`, `packages/storage-*`, `packages/email-*`, `packages/kv-redis` | Thin adapter wrappers over the Payload adapters, published as `@frogbotai/*`.                                                                                                                                                                                                                                                                                                                                      |
 | `packages/plugins/plugin-*`                                                    | First-party plugins (api-keys, roles, oauth, mcp, audit-log, stripe, ...).                                                                                                                                                                                                                                                                                                                                         |
 | `packages/pieces/piece-*`                                                      | Integration pieces (actions, triggers, OAuth recipes) ported natively; `PORTING.md` is the porting kit.                                                                                                                                                                                                                                                                                                            |
@@ -28,8 +28,8 @@ FrogBot is a pnpm monorepo that wraps Payload 3 with an AI-native layer (agents,
 
 Architecture facts worth knowing before reading code:
 
-- `packages/frogbot/src/config/sanitize.ts` turns a `FrogbotConfig` into a Payload config; FrogBot-only keys (`agents`, `ai`, `connections`, `pieces`, `tools`, ...) are consumed there and never reach Payload. `rewriteComponentPaths.ts` renames `@payloadcms/*` component specifiers to `@frogbotai/*` in the generated import map.
-- `FrogbotRequest` replaces `req.payload` with `req.frogbot`; user code never sees `payload`.
+- `packages/frogbot/src/config/sanitize.ts` turns a `FrogBotConfig` into a Payload config; FrogBot-only keys (`agents`, `ai`, `connections`, `pieces`, `tools`, ...) are consumed there and never reach Payload. `rewriteComponentPaths.ts` renames `@payloadcms/*` component specifiers to `@frogbotai/*` in the generated import map.
+- `FrogBotRequest` replaces `req.payload` with `req.frogbot`; user code never sees `payload`.
 - FrogBot is the sole type generator (`frogbot generate:types` -> `frogbot-types.ts`); Payload's auto-generate is force-disabled. See [Type Generation](#type-generation-packagesfrogbot).
 - Internal source layout mirrors Payload core where a concept matches. See [FrogBot Core Project Structure](#frogbot-core-project-structure).
 
@@ -116,19 +116,20 @@ const joined = getJoinedJobQuery({ query, dialect, selections, groups });
 - **Shorter names**: `createTextDoc` vs `saveTextDocumentToDatabase`
 - **Keep it simple**: Handle the cases the feature needs; do not add unused options or abstractions
 - **Component wrappers**: Name a private component that continues past a provider or readiness guard `*Inner` (for example, `ChatInner`)
+- **Brand casing**: Write `frogbot` when the brand leads a camelCase identifier and `FrogBot` everywhere else in identifiers and file names (`frogbot`, `frogbotFavicon`, `FrogBotConfig`, `getFrogBot`, `attachFrogBot`, `bootFrogBot.ts`). Never write `frogBot` or `Frogbot`. Package names, paths, CLI commands, slugs, environment variables, and wire values stay lowercase (`FROGBOT_*` for constants)
 
 ## FrogBot Type Naming (`packages/frogbot`)
 
-- **Only use `Frogbot*` prefix when wrapping a Payload type that uses `Payload*` prefix** (e.g., `FrogbotConfig` wraps `PayloadConfig`, `FrogbotRequest` wraps `PayloadRequest`)
-- **New domain types should NOT get the `Frogbot` prefix** — the package context is sufficient (e.g., `CollectionConfig`, `Field`, `Endpoint`, `Plugin`)
+- **Only use `FrogBot*` prefix when wrapping a Payload type that uses `Payload*` prefix** (e.g., `FrogBotConfig` wraps `PayloadConfig`, `FrogBotRequest` wraps `PayloadRequest`)
+- **New domain types should NOT get the `FrogBot` prefix** — the package context is sufficient (e.g., `CollectionConfig`, `Field`, `Endpoint`, `Plugin`)
 - **If there's a name collision** with a Payload type, import the Payload type with a `Payload*` alias rather than prefixing our type
-- Current valid prefixed types: `FrogbotConfig`, `FrogbotRequest`, `FrogbotComponent`, `FrogbotInstance`, `FrogbotTypes`, `UntypedFrogbotTypes`
+- Current valid prefixed types: `FrogBotConfig`, `FrogBotRequest`, `FrogBotComponent`, `FrogBotInstance`, `FrogBotTypes`, `UntypedFrogBotTypes`
 
 ## Type Generation (`packages/frogbot`)
 
 - FrogBot is the **sole** type generator (`frogbot generate:types` → `frogbot-types.ts`). It already includes Payload's shapes via `configToJSONSchema` — there is no separate "Payload types" output.
 - Payload's own boot-time auto-generate (`typescript.autoGenerate`, spawns a child process, writes `payload-types.ts`) must always be force-disabled on the Payload config built in `config/sanitize.ts`. Never fix this by telling users to set `typescript: { autoGenerate: false }` in their `frogbot.config.ts`.
-- The user-facing `typescript.autoGenerate` in `frogbot.config.ts` controls **FrogBot's** generation only (`FrogbotSanitizedConfig.typescript.autoGenerate`), wired to a boot-time call in `Frogbot.init()`.
+- The user-facing `typescript.autoGenerate` in `frogbot.config.ts` controls **FrogBot's** generation only (`FrogBotSanitizedConfig.typescript.autoGenerate`), wired to a boot-time call in `FrogBot.init()`.
 - Known related bugs: Payload's auto-generate breaks under Turbopack (vercel/next.js#66723) and trips a tsx/Node `module.registerHooks` bug on Node ≥23.5 (payloadcms/payload#16949, fixed in Payload's own `bin.js`). `config/load.ts` applies the same `registerHooks` guard before calling `tsImport`.
 
 ## UI Parity with Firmware (CRITICAL — do not deviate)
@@ -173,7 +174,7 @@ const joined = getJoinedJobQuery({ query, dialect, selections, groups });
 
 ### Writing tests
 
-- Integration suites boot a real instance with `bootFrogbot` from `test/__helpers/shared`, shut it down in `afterAll`, and reset state with `clearAndSeed` in `beforeEach`; do not leave records behind for the next test. Track anything created outside the seed and delete it in `afterEach`.
+- Integration suites boot a real instance with `bootFrogBot` from `test/__helpers/shared`, shut it down in `afterAll`, and reset state with `clearAndSeed` in `beforeEach`; do not leave records behind for the next test. Track anything created outside the seed and delete it in `afterEach`.
 - Name tests as present-tense statements of observable behavior, e.g. `'POST /api/users/login rejects invalid credentials'`; this repo does not use a `should` prefix.
 - One behavior per test. No `if`/`else` or `try`/`finally` inside a test body; use hooks for cleanup.
 - Keep collection slugs and other shared identifiers in the suite's `config.ts` or a shared constants file and reuse them in fixtures and assertions.

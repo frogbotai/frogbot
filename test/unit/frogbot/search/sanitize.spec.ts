@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
-import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import { sanitizeSearchIndexes } from '../../../../packages/frogbot/src/search/sanitize.js';
 
 function articles(overrides: Partial<CollectionConfig> = {}): CollectionConfig {
@@ -74,9 +74,9 @@ describe('collection search configuration', () => {
         frogbot: { feature: 'keep', search: { forged: true }, signIn: ['forged'] },
       },
     });
-    const config: FrogbotConfig = {
+    const config: FrogBotConfig = {
       secret: 'test-secret',
-      db: { defaultIDType: 'number' } as FrogbotConfig['db'],
+      db: { defaultIDType: 'number' } as FrogBotConfig['db'],
       collections: [collection],
     };
 
@@ -105,9 +105,9 @@ describe('collection search configuration', () => {
   });
 
   it('drops forged search metadata when no public search is declared', async () => {
-    const config: FrogbotConfig = {
+    const config: FrogBotConfig = {
       secret: 'test-secret',
-      db: { defaultIDType: 'number' } as FrogbotConfig['db'],
+      db: { defaultIDType: 'number' } as FrogBotConfig['db'],
       collections: [
         articles({ search: undefined, custom: { frogbot: { feature: 'keep', search: {} } } }),
       ],

@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import type { Where } from 'payload';
 
 import { resolveRequestRoles } from './resolve.js';
@@ -34,7 +34,7 @@ function isOwnClause<TArgs extends RoleAccessArgs>(clause: Clause<TArgs>): claus
   return typeof clause === 'object';
 }
 
-function ownWhere(req: FrogbotRequest, field: string, polymorphic: boolean): Where {
+function ownWhere(req: FrogBotRequest, field: string, polymorphic: boolean): Where {
   const value = polymorphic
     ? {
         relationTo: (req.user as unknown as { collection: string }).collection,

@@ -2,7 +2,7 @@ import { convertToModelMessages, type UIMessage } from 'ai';
 import type * as Payload from 'payload';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { resolveChatAttachments } from '../../../../packages/frogbot/src/uploads/resolveChatAttachments.js';
 
 const { getFileByPath } = vi.hoisted(() => ({ getFileByPath: vi.fn() }));
@@ -42,7 +42,7 @@ function request({
         update,
       },
     },
-  ) as unknown as FrogbotRequest;
+  ) as unknown as FrogBotRequest;
 }
 
 function messages(): UIMessage[] {

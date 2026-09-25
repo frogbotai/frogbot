@@ -260,7 +260,7 @@ export const NormalizedTitle: Field = {
 }
 ```
 
-Hook arguments include a `FrogbotRequest`. Server hooks access the current framework instance through `req.frogbot`, not through a separate global or per-field instance.
+Hook arguments include a `FrogBotRequest`. Server hooks access the current framework instance through `req.frogbot`, not through a separate global or per-field instance.
 
 ```ts
 import type { Field } from 'frogbot'
@@ -381,7 +381,7 @@ Use the context to compare sibling values, inspect the operation, identify the c
 | `operation` | The current `create` or `update` operation. |
 | `path` | The runtime path, including array indexes. |
 | `id` | The current Document ID, or `undefined` during create. |
-| `req` | The current `FrogbotRequest`; on the server, the authenticated user is `req.user` and the instance is `req.frogbot`. |
+| `req` | The current `FrogBotRequest`; on the server, the authenticated user is `req.user` and the instance is `req.frogbot`. |
 | `event` | `onChange` or `submit`, allowing expensive checks to run only on submission. |
 
 ```ts
@@ -688,7 +688,7 @@ Server field components additionally receive:
 | `data` | The current Document data. |
 | `i18n` | The admin internationalization object. |
 | `permissions` | Field permissions for the authenticated user. |
-| `req` | The framework-issued `FrogbotRequest`, including `req.frogbot`. |
+| `req` | The framework-issued `FrogBotRequest`, including `req.frogbot`. |
 | `siblingData` | Data belonging to sibling fields. |
 | `user` | The authenticated user, when present. |
 | `value` | The field value at render time. |
@@ -721,7 +721,7 @@ Client field components receive serializable field and form props. They do not r
 
 #### Server field components
 
-Server component types follow the same field-specific naming convention. For example, `TextFieldServerComponent` and `TextFieldServerProps` are exported from `frogbot`. Their framework-issued `req` is a `FrogbotRequest`, and `req.frogbot` is attached before the component renders, including form-state rebuilds.
+Server component types follow the same field-specific naming convention. For example, `TextFieldServerComponent` and `TextFieldServerProps` are exported from `frogbot`. Their framework-issued `req` is a `FrogBotRequest`, and `req.frogbot` is attached before the component renders, including form-state rebuilds.
 
 ```tsx
 import type { TextFieldServerComponent } from 'frogbot'
@@ -733,7 +733,7 @@ export const CollectionSummary: TextFieldServerComponent = ({ req }) => {
 }
 ```
 
-Do not construct this request yourself or use a fallback instance lookup. Components that genuinely have no request prop can import the app config and call `getFrogbot({ config })` when they need server access.
+Do not construct this request yourself or use a fallback instance lookup. Components that genuinely have no request prop can import the app config and call `getFrogBot({ config })` when they need server access.
 
 #### Field component types
 

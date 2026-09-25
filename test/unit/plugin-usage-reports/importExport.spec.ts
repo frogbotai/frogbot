@@ -1,4 +1,4 @@
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@frogbotai/plugin-import-export', () => {
@@ -22,7 +22,7 @@ function createConfig() {
       { slug: 'ai-usage', usageLog: true, fields: [] },
     ],
     ai: { providers: { openai: { apiKey: 'test' } } },
-  } as FrogbotConfig;
+  } as FrogBotConfig;
 }
 
 describe('usageReportsPlugin without @frogbotai/plugin-import-export', () => {

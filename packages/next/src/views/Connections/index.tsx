@@ -1,5 +1,5 @@
-import type { FrogbotRequest } from 'frogbot';
-import { getCachedFrogbot } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
+import { getCachedFrogBot } from 'frogbot';
 import type { AdminViewServerProps } from 'payload';
 import { formatAdminURL } from 'payload/shared';
 
@@ -8,8 +8,8 @@ import { projectConnectionSchema } from './schema.js';
 import type { ConnectionItem, ConnectionPiece } from './types.js';
 
 export async function ConnectionsView({ initPageResult, payload }: AdminViewServerProps) {
-  const req = initPageResult.req as unknown as FrogbotRequest;
-  const frogbot = req.frogbot ?? getCachedFrogbot();
+  const req = initPageResult.req as unknown as FrogBotRequest;
+  const frogbot = req.frogbot ?? getCachedFrogBot();
   if (!req.user || !frogbot?.config.connections.enabled) return null;
   const connections = frogbot.config.connections;
 

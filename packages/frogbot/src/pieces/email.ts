@@ -1,6 +1,6 @@
 import type { EmailAdapter as PayloadEmailAdapter } from 'payload';
 
-import { getFrogbotInstance } from '../instanceRegistry.js';
+import { getFrogBotInstance } from '../instanceRegistry.js';
 import { isPieceInstance, pieceInstanceRuntime } from './definePiece.js';
 import type { EmailPieceInstance } from './types.js';
 
@@ -51,7 +51,7 @@ export function pieceEmailAdapter(piece: unknown): PayloadEmailAdapter {
     defaultFromAddress: address,
     defaultFromName,
     async sendEmail(message) {
-      const frogbot = getFrogbotInstance(payload);
+      const frogbot = getFrogBotInstance(payload);
 
       if (!frogbot) {
         throw new Error(`Piece '${piece.slug}' cannot send email before FrogBot is initialized`);

@@ -2,17 +2,17 @@
 
 Docs: https://docs.frogbot.ai/plugins/build-your-own
 
-A FrogBot plugin receives the current `FrogbotConfig` and returns the next config, synchronously or asynchronously. Export a factory when the plugin accepts options. This introductory skeleton returns the config unchanged; the collection example below implements the option.
+A FrogBot plugin receives the current `FrogBotConfig` and returns the next config, synchronously or asynchronously. Export a factory when the plugin accepts options. This introductory skeleton returns the config unchanged; the collection example below implements the option.
 
 ```ts
-import type { FrogbotConfig, Plugin } from 'frogbot';
+import type { FrogBotConfig, Plugin } from 'frogbot';
 
 export type NotesPluginOptions = {
   collectionSlug?: string;
 };
 
 export function notesPlugin(_options: NotesPluginOptions = {}): Plugin {
-  return (config: FrogbotConfig) => {
+  return (config: FrogBotConfig) => {
     return config;
   };
 }
@@ -468,12 +468,12 @@ Other application locales and namespaces are preserved. These defaults have flat
 Preserve existing root configuration while adding each feature. Pass real endpoint, `afterError` hook, and task definitions to this composition helper.
 
 ```ts
-import type { AfterErrorHook, Endpoint, FrogbotConfig, Plugin } from 'frogbot';
+import type { AfterErrorHook, Endpoint, FrogBotConfig, Plugin } from 'frogbot';
 
 type NotesFeaturesOptions = {
   afterError: AfterErrorHook;
   endpoint: Endpoint;
-  task: NonNullable<NonNullable<FrogbotConfig['jobs']>['tasks']>[number];
+  task: NonNullable<NonNullable<FrogBotConfig['jobs']>['tasks']>[number];
 };
 
 export function notesFeaturesPlugin({ afterError, endpoint, task }: NotesFeaturesOptions): Plugin {

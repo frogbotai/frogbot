@@ -6,7 +6,7 @@ import type { UntypedJobs } from '../jobs/types.js';
 // `GeneratedTypes` is the augmentation point for the generated Config,
 // including collections and FrogBot-specific domains such as agents.
 //
-// Pre-codegen, `UntypedFrogbotTypes` provides permissive fallbacks.
+// Pre-codegen, `UntypedFrogBotTypes` provides permissive fallbacks.
 
 /** Minimum shape every stored document satisfies. */
 export type TypeWithID = {
@@ -14,7 +14,7 @@ export type TypeWithID = {
 };
 
 /** Permissive fallback. Used when no augmentation is present. */
-export interface UntypedFrogbotTypes {
+export interface UntypedFrogBotTypes {
   agents: {
     [slug: string]: unknown;
   };
@@ -40,17 +40,17 @@ type IsAugmented = keyof GeneratedTypes extends never ? false : true;
  * Resolved types. Augmented config takes precedence; missing top-level
  * keys fall back to the untyped defaults so partial augmentation works.
  */
-export type FrogbotTypes = IsAugmented extends true
-  ? GeneratedTypes & Omit<UntypedFrogbotTypes, keyof GeneratedTypes>
-  : UntypedFrogbotTypes;
+export type FrogBotTypes = IsAugmented extends true
+  ? GeneratedTypes & Omit<UntypedFrogBotTypes, keyof GeneratedTypes>
+  : UntypedFrogBotTypes;
 
 /** Union of every registered collection slug. */
-export type CollectionSlug = Extract<keyof FrogbotTypes['collections'], string>;
+export type CollectionSlug = Extract<keyof FrogBotTypes['collections'], string>;
 
 /** Union of every registered agent slug. */
-export type AgentSlug = Extract<keyof FrogbotTypes['agents'], string>;
+export type AgentSlug = Extract<keyof FrogBotTypes['agents'], string>;
 
-export type RoleSlug = FrogbotTypes['roles'];
+export type RoleSlug = FrogBotTypes['roles'];
 
 /** Document shape for a given collection slug. */
-export type TypedCollection<TSlug extends CollectionSlug> = FrogbotTypes['collections'][TSlug];
+export type TypedCollection<TSlug extends CollectionSlug> = FrogBotTypes['collections'][TSlug];

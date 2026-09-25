@@ -6,7 +6,7 @@ import {
   createMessageUsage,
   persistAssistantMessage,
 } from '../../../../packages/frogbot/src/chat/messagePersistence.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const message: UIMessage = {
   id: 'assistant-1',
@@ -34,7 +34,7 @@ function makeReq() {
       create,
       update,
     },
-  } as unknown as FrogbotRequest;
+  } as unknown as FrogBotRequest;
   return { req, create, update };
 }
 

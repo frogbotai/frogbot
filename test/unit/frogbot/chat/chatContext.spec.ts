@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { resolveChatContext } from '../../../../packages/frogbot/src/chat/chatContext.js';
 import type { SanitizedChatConfig } from '../../../../packages/frogbot/src/chat/types.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const incoming: UIMessage[] = [
   { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'One' }] },
@@ -37,7 +37,7 @@ function makeReq({
     user,
     payload: { db },
     frogbot: { config: { chat }, create, delete: deleteFn, find, findByID, update },
-  } as unknown as FrogbotRequest;
+  } as unknown as FrogBotRequest;
   return { req, create, deleteFn, find, findByID, update };
 }
 

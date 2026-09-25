@@ -1,5 +1,5 @@
 import { getColumns, renderTable } from '@payloadcms/ui/rsc';
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { notFound } from 'next/navigation';
 import type {
   AdminViewServerProps,
@@ -125,7 +125,7 @@ export async function CalendarView(props: AdminViewServerProps) {
   };
   const filter =
     typeof calendar.filter === 'function'
-      ? await calendar.filter({ req: initPageResult.req as unknown as FrogbotRequest })
+      ? await calendar.filter({ req: initPageResult.req as unknown as FrogBotRequest })
       : calendar.filter;
   const canUpdate = Boolean(
     permissions?.update &&

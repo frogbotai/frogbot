@@ -42,7 +42,7 @@ curl -s http://localhost:3000/api/v1/models
 `src/server.ts` is the whole server:
 
 ```ts
-const frogbot = await getFrogbot({ config });
+const frogbot = await getFrogBot({ config });
 const gatewayHandler = createGatewayHandler(frogbot);
 
 const app = new Hono();

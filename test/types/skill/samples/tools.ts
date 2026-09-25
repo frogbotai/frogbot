@@ -1,4 +1,4 @@
-import type { AgentConfig, FrogbotConfig, Tool } from 'frogbot';
+import type { AgentConfig, FrogBotConfig, Tool } from 'frogbot';
 import { todoTools } from 'frogbot/tools';
 import { z } from 'zod';
 
@@ -32,7 +32,7 @@ export const assistant: AgentConfig = {
   tools: [getProjectStatus],
 };
 
-export const tools: FrogbotConfig['tools'] = [getProjectStatus];
-export const agents: FrogbotConfig['agents'] = [assistant];
+export const tools: FrogBotConfig['tools'] = [getProjectStatus];
+export const agents: FrogBotConfig['agents'] = [assistant];
 
-export const builtInTools: FrogbotConfig['tools'] = [...todoTools];
+export const builtInTools: FrogBotConfig['tools'] = [...todoTools];

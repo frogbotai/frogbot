@@ -1,8 +1,8 @@
 import type * as Payload from 'payload';
 
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 
-type ServerProps<T> = Omit<T, 'payload' | 'req'> & { req: FrogbotRequest };
+type ServerProps<T> = Omit<T, 'payload' | 'req'> & { req: FrogBotRequest };
 
 type ServerComponent<T> = T extends (props: infer TProps) => infer TResult
   ? (props: ServerProps<TProps>) => TResult

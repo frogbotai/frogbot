@@ -3,9 +3,9 @@
 //   - exactly one → it is the user collection, regardless of slug
 //   - multiple → `admin.user` must pick one, otherwise throw
 
-import type { FrogbotConfig } from '../config/types.js';
+import type { FrogBotConfig } from '../config/types.js';
 
-export function resolveUserSlug(config: Pick<FrogbotConfig, 'collections' | 'admin'>): string {
+export function resolveUserSlug(config: Pick<FrogBotConfig, 'collections' | 'admin'>): string {
   const authSlugs = config.collections
     .filter((c) => c.auth !== undefined && c.auth !== false)
     .map((c) => c.slug);

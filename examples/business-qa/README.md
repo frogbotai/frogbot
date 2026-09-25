@@ -182,7 +182,7 @@ curl -s http://localhost:3000/api/agents/qa-analyst \
   -d "{\"chatId\":\"$CHAT_ID\",\"prompt\":\"Now rank those blockers by launch risk.\"}" | jq
 ```
 
-Chats are owner-scoped. SSE responses expose the persisted chat ID in the `X-Frogbot-Chat-Id` response header.
+Chats are owner-scoped. SSE responses expose the persisted chat ID in the `X-FrogBot-Chat-Id` response header.
 
 ## QA checklist
 

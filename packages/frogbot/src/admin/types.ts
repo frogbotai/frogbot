@@ -24,14 +24,14 @@ export type RootAdminMetaConfig = {
 
 export interface RootAdminGraphics {
   /** Replace the icon in the admin navigation. Defaults to the FrogBot head mark. */
-  Icon?: FrogbotComponent;
+  Icon?: FrogBotComponent;
   /** Replace the logo on the login page. Defaults to the FrogBot wordmark. */
-  Logo?: FrogbotComponent;
+  Logo?: FrogBotComponent;
 }
 
 export interface NavItem {
   /** Icon shown next to the label in the sidebar. */
-  icon?: FrogbotComponent;
+  icon?: FrogBotComponent;
   /** Text shown in the sidebar. */
   label: string;
   /** Full path the link navigates to, e.g. `/admin/operations`. */
@@ -40,38 +40,38 @@ export interface NavItem {
 
 export interface RootAdminComponents {
   /** Add components to the top right of the admin panel. */
-  actions?: FrogbotComponent[];
+  actions?: FrogBotComponent[];
   /** Add components after the login form's email and password fields. */
-  afterLogin?: FrogbotComponent[];
+  afterLogin?: FrogBotComponent[];
   /** Add components before the login form's email and password fields. */
-  beforeLogin?: FrogbotComponent[];
+  beforeLogin?: FrogBotComponent[];
   /** Add components to the sidebar below the nav links and nav sections. */
-  afterNavLinks?: FrogbotComponent[];
+  afterNavLinks?: FrogBotComponent[];
   /** Add components to the bottom sidebar rail, below Account and Settings. */
-  afterBottomRail?: FrogbotComponent[];
+  afterBottomRail?: FrogBotComponent[];
   /** Add components to the bottom sidebar rail, above Account and Settings. */
-  beforeBottomRail?: FrogbotComponent[];
+  beforeBottomRail?: FrogBotComponent[];
   /** Add components to the sidebar header, left of the collapse button. */
-  beforeSidebarClose?: FrogbotComponent[];
+  beforeSidebarClose?: FrogBotComponent[];
   /** Add components to the sidebar above the nav links. */
-  beforeNavLinks?: FrogbotComponent[];
+  beforeNavLinks?: FrogBotComponent[];
   chat?: {
-    AssistantMessageActions?: FrogbotComponent;
-    Chat?: FrogbotComponent;
-    Greeting?: FrogbotComponent;
-    UserMessageActions?: FrogbotComponent;
+    AssistantMessageActions?: FrogBotComponent;
+    Chat?: FrogBotComponent;
+    Greeting?: FrogBotComponent;
+    UserMessageActions?: FrogBotComponent;
   };
   /** Component slots for admin branding. */
   graphics?: RootAdminGraphics;
   /** Replace the entire admin sidebar navigation. */
-  Nav?: FrogbotComponent;
+  Nav?: FrogBotComponent;
   /** Sidebar links above your collections. Defaults to a single New Chat
    *  link; setting this replaces it, so include New Chat yourself if you
    *  still want it. */
   navItems?: NavItem[];
   /** Sidebar sections below the links. Defaults to Collections + Recents;
    *  setting this replaces those defaults. */
-  navSections?: FrogbotComponent[];
+  navSections?: FrogBotComponent[];
   /** Wrap the admin panel in custom context providers. */
   providers?: ProviderComponent[];
   /** Replace, modify, or add top-level admin routes. */
@@ -95,7 +95,7 @@ export interface RootAdminConfig {
    *
    * @default 'gravatar'
    */
-  avatar?: 'default' | 'gravatar' | { Component: FrogbotComponent };
+  avatar?: 'default' | 'gravatar' | { Component: FrogBotComponent };
   /** Component slots for admin branding and injected UI. */
   components?: RootAdminComponents;
   /** Metadata for generated/admin surfaces. */
@@ -120,7 +120,7 @@ export interface RootAdminConfig {
  * Either an import path (`'@app/components/Banner#Banner'`) or an object with
  * `path` plus optional `clientProps` / `serverProps`.
  */
-export type FrogbotComponent<TProps extends object = Record<string, unknown>> =
+export type FrogBotComponent<TProps extends object = Record<string, unknown>> =
   CustomComponent<TProps>;
 
 /** Payload's root `admin.components` block. Source for the slot value types
@@ -141,9 +141,9 @@ export type SettingsEntry = {
   /** Route relative to `/settings`, e.g. `/billing`. */
   path: string;
   /** Component rendered for this page. */
-  Component: FrogbotComponent;
+  Component: FrogBotComponent;
   /** Icon shown next to the label. */
-  icon?: FrogbotComponent;
+  icon?: FrogBotComponent;
   /** Who can see and open this page. */
   access?: Access;
 };

@@ -15,7 +15,7 @@ import {
   definePiece,
   pieceInstanceTools,
 } from '../../../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 function makeAgent({
   slug = 'support',
@@ -59,7 +59,7 @@ function makeRequest({
   agents: Record<string, AgentInstance>;
   authorizations?: ReturnType<typeof vi.fn>;
   create?: ReturnType<typeof vi.fn>;
-}): FrogbotRequest {
+}): FrogBotRequest {
   return {
     user: { id: 'user-1' },
     signal: undefined,
@@ -81,7 +81,7 @@ function makeRequest({
       logger: { error: vi.fn() },
       update: vi.fn(() => Promise.resolve({ id: 'chat-1' })),
     },
-  } as unknown as FrogbotRequest;
+  } as unknown as FrogBotRequest;
 }
 
 describe('agent service', () => {
@@ -171,7 +171,7 @@ describe('agent service', () => {
       chatId: 'chat-1',
       model: undefined,
     });
-    expect(result.headers).toEqual({ 'X-Frogbot-Chat-Id': 'chat-1' });
+    expect(result.headers).toEqual({ 'X-FrogBot-Chat-Id': 'chat-1' });
   });
 
   it('generates from UI messages and persists the assistant message', async () => {

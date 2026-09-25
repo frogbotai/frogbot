@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 
 import { serve } from '@hono/node-server';
-import { createGatewayHandler, getFrogbot } from 'frogbot';
+import { createGatewayHandler, getFrogBot } from 'frogbot';
 import { Hono } from 'hono';
 
 if (existsSync('.env')) {
@@ -10,7 +10,7 @@ if (existsSync('.env')) {
 
 const { default: config } = await import('./frogbot.config.js');
 
-const frogbot = await getFrogbot({ config });
+const frogbot = await getFrogBot({ config });
 const gatewayHandler = createGatewayHandler(frogbot);
 
 const app = new Hono();

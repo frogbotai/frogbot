@@ -3,16 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { CHAT_ASSETS_SLUG } from '../../../../packages/frogbot/src/chat/collections/assets.js';
 import { resolveChatCollections } from '../../../../packages/frogbot/src/chat/resolveChatCollections.js';
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
-import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 
 const agents = [
   { slug: 'assistant', model: 'openai/test', instructions: 'Assist.' },
-] as FrogbotConfig['agents'];
+] as FrogBotConfig['agents'];
 
-function make(collections: CollectionConfig[], overrides?: Partial<FrogbotConfig>): FrogbotConfig {
+function make(collections: CollectionConfig[], overrides?: Partial<FrogBotConfig>): FrogBotConfig {
   return {
     secret: 'test-secret',
-    db: {} as FrogbotConfig['db'],
+    db: {} as FrogBotConfig['db'],
     collections,
     agents,
     ...overrides,

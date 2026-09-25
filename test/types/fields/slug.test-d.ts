@@ -1,4 +1,4 @@
-import type { FrogbotRequest, RowField, SlugField } from 'frogbot';
+import type { FrogBotRequest, RowField, SlugField } from 'frogbot';
 import { slugField } from 'frogbot';
 import { expectTypeOf } from 'vitest';
 
@@ -14,7 +14,7 @@ const options: NonNullable<Parameters<SlugField>[0]> = {
   required: false,
   slugify: ({ data, req, valueToSlugify }) => {
     expectTypeOf(data).toMatchTypeOf<{ id: number | string }>();
-    expectTypeOf(req).toEqualTypeOf<FrogbotRequest>();
+    expectTypeOf(req).toEqualTypeOf<FrogBotRequest>();
     expectTypeOf(valueToSlugify).toBeAny();
 
     return valueToSlugify;

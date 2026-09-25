@@ -25,7 +25,7 @@ import { format } from 'prettier';
 
 import { getConfiguredModelIds } from '../ai/models.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
-import type { FrogbotSanitizedConfig } from '../config/sanitized.js';
+import type { FrogBotSanitizedConfig } from '../config/sanitized.js';
 
 const BANNER = `/* tslint:disable */
 /* eslint-disable */
@@ -175,7 +175,7 @@ async function compileTypes(
 }
 
 export async function writeGeneratedTypes(
-  frogbotConfig: FrogbotSanitizedConfig,
+  frogbotConfig: FrogBotSanitizedConfig,
   configDir: string,
 ): Promise<{ outputPath: string; changed: boolean }> {
   const config = await frogbotConfig._internal.payloadConfig;

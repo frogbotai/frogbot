@@ -2,7 +2,7 @@ import type { PayloadRequest } from 'payload';
 
 import type { Access, AccessResult, CollectionConfig } from '../../collections/config/types.js';
 import type { Where } from '../../types/payload.js';
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 
 export const CHAT_ASSETS_SLUG = 'frogbot-chat-assets';
 
@@ -29,7 +29,7 @@ async function readableChats({
   req,
   chatsSlug,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   chatsSlug: string;
 }): Promise<AccessResult> {
   const payloadConfig = await req.frogbot.config._internal.payloadConfig;

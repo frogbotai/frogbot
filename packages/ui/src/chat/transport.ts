@@ -8,7 +8,7 @@ import {
 
 import { emitChatMutation } from './use-chats.js';
 
-export type FrogbotChatTransportOptions<UI_MESSAGE extends UIMessage> = Omit<
+export type FrogBotChatTransportOptions<UI_MESSAGE extends UIMessage> = Omit<
   HttpChatTransportInitOptions<UI_MESSAGE>,
   'api' | 'fetch'
 > & {
@@ -40,12 +40,12 @@ export function prepareChatRequest<UI_MESSAGE extends UIMessage>(
   };
 }
 
-export class FrogbotChatTransport<
+export class FrogBotChatTransport<
   UI_MESSAGE extends UIMessage = UIMessage,
 > extends DefaultChatTransport<UI_MESSAGE> {
   chatId?: string;
 
-  constructor({ agentSlug, sdk, onChatId, ...options }: FrogbotChatTransportOptions<UI_MESSAGE>) {
+  constructor({ agentSlug, sdk, onChatId, ...options }: FrogBotChatTransportOptions<UI_MESSAGE>) {
     const capture = { chatId: (_chatId: string) => undefined };
     const configuredHeaders = options.headers;
     super({
@@ -61,7 +61,7 @@ export class FrogbotChatTransport<
       },
       fetch: async (input, init) => {
         const response = await sdk.fetch(input, init);
-        const chatId = response.headers.get('X-Frogbot-Chat-Id');
+        const chatId = response.headers.get('X-FrogBot-Chat-Id');
         if (chatId) {
           capture.chatId(chatId);
           emitChatMutation();

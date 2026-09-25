@@ -1,6 +1,6 @@
 import type { Endpoint } from '../endpoints/types.js';
 import { pieceInstanceDefinition } from '../pieces/definePiece.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import {
   consumeOAuthState,
   createOAuthState,
@@ -16,7 +16,7 @@ async function routeURLs({
   slug,
   piece,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   slug: string;
   piece: string;
 }) {
@@ -56,7 +56,7 @@ export function buildConnectionOAuthEndpoints({
   userSlug: string;
 }): Endpoint[] {
   if (!connections.enabled) return [];
-  const entryFor = (req: FrogbotRequest) => {
+  const entryFor = (req: FrogBotRequest) => {
     const slug = req.routeParams?.piece;
     const entry =
       connections.enabled && typeof slug === 'string' && Object.hasOwn(connections.entries, slug)

@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import type { PieceRunArgs } from 'frogbot/pieces';
 import type { sheets_v4 } from 'googleapis';
 import { z } from 'zod';
@@ -46,7 +46,7 @@ export const worksheetOutput = z
   })
   .passthrough();
 
-export function requestOptions(req: Pick<FrogbotRequest, 'signal'>) {
+export function requestOptions(req: Pick<FrogBotRequest, 'signal'>) {
   req.signal?.throwIfAborted();
   return {
     signal: req.signal ?? undefined,
@@ -99,7 +99,7 @@ export async function readValues({
   range,
 }: {
   client: GoogleSheetsClient;
-  req: Pick<FrogbotRequest, 'signal'>;
+  req: Pick<FrogBotRequest, 'signal'>;
   spreadsheetId: string;
   range: string;
 }) {

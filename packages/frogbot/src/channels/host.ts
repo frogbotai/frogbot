@@ -11,7 +11,7 @@ import { Message, ThreadImpl } from 'chat';
 import { AgentServiceError, assertAgentAccess } from '../agents/service.js';
 import type { AgentInstance } from '../agents/types.js';
 import { createChannelChatAccess } from '../chat/channelAccess.js';
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 import { pieceInstanceRuntime } from '../pieces/definePiece.js';
 import type { PieceInstance } from '../pieces/types.js';
 import { requiresAdapterVerification } from '../triggers/registry.js';
@@ -55,7 +55,7 @@ type ChannelBinding = {
 
 type ChannelConversationBinding = Extract<ChannelBinding, { kind: 'conversation' }>;
 
-const hosts = new WeakMap<Frogbot, ChannelHost>();
+const hosts = new WeakMap<FrogBot, ChannelHost>();
 
 export class ChannelHost {
   private readonly bindings = new Map<string, ChannelBinding>();
@@ -63,7 +63,7 @@ export class ChannelHost {
   private readonly gatewayRuns = new Set<Promise<boolean>>();
   private gatewayLoop?: Promise<void>;
 
-  constructor(private readonly frogbot: Frogbot) {}
+  constructor(private readonly frogbot: FrogBot) {}
 
   async initialize(startGateway = true): Promise<void> {
     try {
@@ -489,14 +489,14 @@ export class ChannelHost {
 
 export const CHANNEL_TASK_SLUG = 'frogbot-run-channel-message';
 
-export async function initializeChannelHost(frogbot: Frogbot, startGateway = true): Promise<void> {
+export async function initializeChannelHost(frogbot: FrogBot, startGateway = true): Promise<void> {
   const host = new ChannelHost(frogbot);
 
   await host.initialize(startGateway);
   hosts.set(frogbot, host);
 }
 
-export async function shutdownChannelHost(frogbot: Frogbot): Promise<void> {
+export async function shutdownChannelHost(frogbot: FrogBot): Promise<void> {
   const host = hosts.get(frogbot);
 
   if (!host) return;
@@ -505,6 +505,6 @@ export async function shutdownChannelHost(frogbot: Frogbot): Promise<void> {
   await host.shutdown();
 }
 
-export function getChannelHost(frogbot: Frogbot): ChannelHost | undefined {
+export function getChannelHost(frogbot: FrogBot): ChannelHost | undefined {
   return hosts.get(frogbot);
 }

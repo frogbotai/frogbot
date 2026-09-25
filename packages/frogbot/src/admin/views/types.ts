@@ -2,24 +2,24 @@ import type * as Payload from 'payload';
 import type { ClientField } from 'payload';
 
 import type { Field } from '../../fields/config/types.js';
-import type { FrogbotTypes } from '../../types/generated.js';
+import type { FrogBotTypes } from '../../types/generated.js';
 import type { Sort, Where } from '../../types/payload.js';
-import type { FrogbotRequest } from '../../types/request.js';
-import type { FrogbotComponent } from '../types.js';
+import type { FrogBotRequest } from '../../types/request.js';
+import type { FrogBotComponent } from '../types.js';
 
 type WithoutPayload<T> = Omit<T, 'payload'>;
 
 type WithoutPayloadOrGlobal<T> = Omit<T, 'globalConfig' | 'payload'>;
 
-export type ViewAccess = (args: { req: FrogbotRequest }) => boolean | Promise<boolean>;
+export type ViewAccess = (args: { req: FrogBotRequest }) => boolean | Promise<boolean>;
 
-export type ViewFilter = Where | ((args: { req: FrogbotRequest }) => Promise<Where> | Where);
+export type ViewFilter = Where | ((args: { req: FrogBotRequest }) => Promise<Where> | Where);
 
 export type ViewComponents = {
-  actions?: FrogbotComponent[];
-  afterView?: FrogbotComponent[];
-  beforeView?: FrogbotComponent[];
-  menuItems?: FrogbotComponent[];
+  actions?: FrogBotComponent[];
+  afterView?: FrogBotComponent[];
+  beforeView?: FrogBotComponent[];
+  menuItems?: FrogBotComponent[];
 };
 
 export type ViewPagination = {
@@ -40,8 +40,8 @@ type ViewConfig = {
 
 export type ListView = ViewConfig & {
   components?: ViewComponents & {
-    afterTable?: FrogbotComponent[];
-    beforeTable?: FrogbotComponent[];
+    afterTable?: FrogBotComponent[];
+    beforeTable?: FrogBotComponent[];
   };
   groupBy?: boolean;
   type: 'list';
@@ -49,10 +49,10 @@ export type ListView = ViewConfig & {
 
 export type BoardView = ViewConfig & {
   components?: ViewComponents & {
-    afterColumns?: FrogbotComponent[];
-    beforeColumns?: FrogbotComponent[];
-    Card?: FrogbotComponent;
-    ColumnHeader?: FrogbotComponent;
+    afterColumns?: FrogBotComponent[];
+    beforeColumns?: FrogBotComponent[];
+    Card?: FrogBotComponent;
+    ColumnHeader?: FrogBotComponent;
   };
   cover?: string;
   groupBy?: string;
@@ -64,9 +64,9 @@ export type CalendarMode = 'day' | 'month' | 'week';
 export type CalendarView = ViewConfig & {
   color?: string;
   components?: ViewComponents & {
-    afterCalendar?: FrogbotComponent[];
-    beforeCalendar?: FrogbotComponent[];
-    Event?: FrogbotComponent;
+    afterCalendar?: FrogBotComponent[];
+    beforeCalendar?: FrogBotComponent[];
+    Event?: FrogBotComponent;
   };
   end?: string;
   modes?: CalendarMode[];
@@ -76,7 +76,7 @@ export type CalendarView = ViewConfig & {
 };
 
 export type CustomView = ViewConfig & {
-  component: FrogbotComponent;
+  component: FrogBotComponent;
   components?: ViewComponents;
   shell?: boolean;
   type: 'custom';
@@ -94,7 +94,7 @@ export type CollectionViewMetadata = Omit<
 };
 
 export type InitPageResult = Omit<Payload.InitPageResult, 'globalConfig' | 'req'> & {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 };
 
 export type AdminViewServerPropsOnly = Omit<
@@ -119,14 +119,14 @@ export type DocumentTabServerPropsOnly = Omit<
   Payload.DocumentTabServerPropsOnly,
   'globalConfig' | 'payload' | 'req'
 > & {
-  readonly req: FrogbotRequest;
+  readonly req: FrogBotRequest;
 };
 
 export type DocumentTabServerProps = Payload.DocumentTabClientProps & DocumentTabServerPropsOnly;
 
 export type DocumentTabCondition = (
   args: Omit<Parameters<Payload.DocumentTabCondition>[0], 'globalConfig' | 'req'> & {
-    req: FrogbotRequest;
+    req: FrogBotRequest;
   },
 ) => boolean;
 
@@ -219,7 +219,7 @@ export type DefaultServerCellComponentProps<
 
 export type WidgetWidth = Payload.WidgetWidth;
 
-type TypedWidget = FrogbotTypes['widgets'];
+type TypedWidget = FrogBotTypes['widgets'];
 type WidgetSlug = Extract<keyof TypedWidget, string>;
 
 type DataFromWidgetSlug<TSlug extends WidgetSlug> = TypedWidget[TSlug] extends {
@@ -249,7 +249,7 @@ export type WidgetInstance<TSlug extends WidgetSlug = WidgetSlug> = TSlug extend
   : never;
 
 export type Widget = {
-  Component: FrogbotComponent;
+  Component: FrogBotComponent;
   fields?: Field[];
   label?: Payload.Widget['label'];
   maxWidth?: WidgetWidth;
@@ -259,7 +259,7 @@ export type Widget = {
 
 export type DashboardConfig = {
   defaultLayout?:
-    | ((args: { req: FrogbotRequest }) => Array<WidgetInstance> | Promise<Array<WidgetInstance>>)
+    | ((args: { req: FrogBotRequest }) => Array<WidgetInstance> | Promise<Array<WidgetInstance>>)
     | Array<WidgetInstance>;
   widgets: Array<Widget>;
 };
@@ -282,7 +282,7 @@ export type WidgetServerProps<TWidget extends { data?: unknown } | never = never
       ? string
       : WidgetSlugFromWidget<{ data?: unknown } & Exclude<TWidget, never>>;
 } & Omit<Payload.WidgetServerProps<TWidget>, 'req' | 'widgetData' | 'widgetSlug'> & {
-    req: FrogbotRequest;
+    req: FrogBotRequest;
   };
 
 export type {

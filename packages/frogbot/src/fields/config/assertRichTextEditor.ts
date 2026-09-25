@@ -1,4 +1,4 @@
-import type { FrogbotConfig } from '../../config/types.js';
+import type { FrogBotConfig } from '../../config/types.js';
 
 type FieldRecord = Record<string, unknown>;
 
@@ -62,7 +62,7 @@ function visitFields(
 }
 
 export function assertRichTextEditor(
-  config: Pick<FrogbotConfig, 'admin' | 'collections' | 'editor'>,
+  config: Pick<FrogBotConfig, 'admin' | 'collections' | 'editor'>,
 ): void {
   const hasRootEditor = Boolean(config.editor);
   const visited = new WeakSet<object>();

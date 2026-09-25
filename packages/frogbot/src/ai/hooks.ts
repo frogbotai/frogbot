@@ -6,16 +6,16 @@
 // HTTP proxy). `toGatewayHooks` is a pure, stateless reshaper: it lifts those
 // values out of `context` onto the top-level hook args so FrogBot hooks read
 // `args.req` / `args.req.user` / `args.agent` — Payload-style — without the
-// gateway ever knowing what a FrogbotRequest is.
+// gateway ever knowing what a FrogBotRequest is.
 
 import type { Hooks, HookUsage } from '@frogbotai/gateway';
 
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import type { AIHookContext, SanitizedAIHooks } from './hooks/types.js';
 
 /** Shape FrogBot seeds into the gateway `context` bag for every operation. */
 export type AIOperationContext = {
-  req?: FrogbotRequest;
+  req?: FrogBotRequest;
   agent?: { slug: string; runId: string; chatId?: number | string };
   trackUsage?: boolean;
   usageFields?: Record<string, unknown>;

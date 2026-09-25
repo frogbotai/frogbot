@@ -15,7 +15,7 @@ import {
 import { KVLockContentionError } from '../kv/errors.js';
 import { runKVLock } from '../kv/lock.js';
 import type { KV, KVLockCallback } from '../kv/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 
 type SessionCleanup = (signal: AbortSignal) => Promise<void>;
 type SessionOperation = {
@@ -278,7 +278,7 @@ export async function withSessionOperation<T>({
   collectionSlug,
   fn,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   collectionSlug: string;
   fn: (operation: Pick<SessionOperation, 'signal' | 'cleanups'>) => Promise<T>;
 }): Promise<T> {
@@ -403,7 +403,7 @@ export async function withAuthOperation<T>({
   operation: kind,
   fn,
 }: {
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   collectionSlug: string;
   operation: 'login' | 'logout' | 'refresh' | 'resetPassword';
   fn: () => Promise<T>;

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildConnectionOAuthEndpoints } from '../../../../packages/frogbot/src/connections/endpoints.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { PieceDefinition } from '../../../../packages/frogbot/src/pieces/types.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { definition, setup } from './oauth/fixtures.js';
 
 function fixture(pieceDefinition: PieceDefinition = definition) {
@@ -26,7 +26,7 @@ function fixture(pieceDefinition: PieceDefinition = definition) {
     user = base.req.user,
     cookie = '',
     piece = 'example',
-  }: { url?: string; user?: FrogbotRequest['user']; cookie?: string; piece?: string } = {}) =>
+  }: { url?: string; user?: FrogBotRequest['user']; cookie?: string; piece?: string } = {}) =>
     ({
       url,
       user,
@@ -38,7 +38,7 @@ function fixture(pieceDefinition: PieceDefinition = definition) {
         connections: { store: Promise.resolve({ upsert }) },
         findByID,
       },
-    }) as unknown as FrogbotRequest;
+    }) as unknown as FrogBotRequest;
   const start = async (query = '') => {
     const response = await endpoints[0]!.handler(
       request({ url: `https://app.test/authorize${query}` }),

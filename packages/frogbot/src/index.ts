@@ -2,7 +2,7 @@
 //
 // Two categories of exports:
 //
-//   1. Runtime — the Frogbot class, singleton accessor, config builder.
+//   1. Runtime — the FrogBot class, singleton accessor, config builder.
 //   2. Types — owned types and re-exports under FrogBot names.
 
 // ---------------------------------------------------------------------------
@@ -10,8 +10,8 @@
 // ---------------------------------------------------------------------------
 
 export type { InitOptions, Logger } from './frogbot.js';
-export { Frogbot } from './frogbot.js';
-// Vocab alias — the `Frogbot` class instance, referred to as `FrogbotInstance`
+export { FrogBot } from './frogbot.js';
+// Vocab alias — the `FrogBot` class instance, referred to as `FrogBotInstance`
 // throughout docs/comments and test helpers.
 export { getConfiguredModelIds } from './ai/models.js';
 export type { AIUserPolicy } from './ai/policy.js';
@@ -24,7 +24,7 @@ export {
 export type { PersistedMessage } from './chat/messagesToUIMessages.js';
 export { messagesToUIMessages } from './chat/messagesToUIMessages.js';
 export { buildConfig } from './config/build.js';
-export type { FrogbotSanitizedConfig } from './config/sanitized.js';
+export type { FrogBotSanitizedConfig } from './config/sanitized.js';
 export type { AuthorizationRequirement, ConnectionResolveArgs } from './connections/api.js';
 export { ConnectionError, Connections } from './connections/api.js';
 export type { CredentialEncryption } from './connections/encryption.js';
@@ -36,8 +36,8 @@ export type {
   SanitizedConnectionsConfig,
 } from './connections/types.js';
 export { slugField } from './fields/baseFields/slug/index.js';
-export type { Frogbot as FrogbotInstance } from './frogbot.js';
-export { getCachedFrogbot, getFrogbot } from './getFrogbot.js';
+export type { FrogBot as FrogBotInstance } from './frogbot.js';
+export { getCachedFrogBot, getFrogBot } from './getFrogBot.js';
 export type { GatewayHandler } from './server/gateway.js';
 export { createGatewayHandler } from './server/gateway.js';
 export type {
@@ -59,7 +59,7 @@ export type {
   RootAdminGraphics,
   RootAdminMetaConfig,
 } from './admin/types.js';
-export type { AdminViews, FrogbotComponent, ProviderComponent } from './admin/types.js';
+export type { AdminViews, FrogBotComponent, ProviderComponent } from './admin/types.js';
 export type { SettingsEntry } from './admin/types.js';
 export type {
   BoardView,
@@ -165,7 +165,7 @@ export type {
 } from './collections/config/types.js';
 export type {
   AfterErrorHook,
-  FrogbotConfig,
+  FrogBotConfig,
   LivePreviewConfig,
   LivePreviewURLArgs,
   LivePreviewURLType,
@@ -266,13 +266,13 @@ export type { IngressRegistry, TriggerEvent, TriggerSubscriber } from './trigger
 export type {
   AgentSlug,
   CollectionSlug,
-  FrogbotTypes,
+  FrogBotTypes,
   GeneratedTypes,
   RoleSlug,
   TypedCollection,
-  UntypedFrogbotTypes,
+  UntypedFrogBotTypes,
 } from './types/generated.js';
-export type { FrogbotRequest } from './types/request.js';
+export type { FrogBotRequest } from './types/request.js';
 export type {
   CountVersionsArgs,
   FindVersionByIDArgs,

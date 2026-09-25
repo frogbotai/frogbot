@@ -140,7 +140,7 @@ The model or alias must resolve to a configured provider. Utility calls use the 
 
 ## Call operations
 
-Call methods on a `Frogbot` instance or `req.frogbot`. Text generation accepts either `prompt` or `messages`, never both.
+Call methods on a `FrogBot` instance or `req.frogbot`. Text generation accepts either `prompt` or `messages`, never both.
 
 ```ts
 const { text, usage, finishReason } = await req.frogbot.generateText({
@@ -170,7 +170,7 @@ Every options type includes this base.
 ```ts
 type BaseAIOpts = {
   model: ModelId
-  req?: FrogbotRequest
+  req?: FrogBotRequest
   overrideAccess?: boolean
 }
 ```
@@ -398,8 +398,8 @@ All phases share `requestId`, `operation`, `startedAt`, mutable `context`, and m
 
 ```ts
 type AIHookContext = {
-  req?: FrogbotRequest
-  user?: FrogbotRequest['user']
+  req?: FrogBotRequest
+  user?: FrogBotRequest['user']
   agent?: {
     slug: string
     runId: string
@@ -447,9 +447,9 @@ The standalone server mounts the embedded gateway at `/api/v1`. Canonical `/api/
 Use `@frogbotai/sdk` in browser and application clients. AI methods use the SDK's configured base URL, headers, and `fetch`, so cookie and bearer authentication wrappers apply without separate AI credentials.
 
 ```ts
-import { createFrogbotSDK } from '@frogbotai/sdk'
+import { createFrogBotSDK } from '@frogbotai/sdk'
 
-const sdk = createFrogbotSDK({
+const sdk = createFrogBotSDK({
   baseURL: '/api',
   fetch: (input, init) => fetch(input, { ...init, credentials: 'include' })
 })

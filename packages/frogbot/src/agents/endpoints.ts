@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { validateChatMessages } from '../chat/validateMessages.js';
 import type { DocID } from '../collections/config/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import { resolveChatAttachments } from '../uploads/resolveChatAttachments.js';
 import {
   AgentServiceError,
@@ -47,7 +47,7 @@ export function buildAgentEndpoints() {
     {
       path: '/agents/:slug',
       method: 'post' as const,
-      handler: async (req: FrogbotRequest) => {
+      handler: async (req: FrogBotRequest) => {
         const slug = req.routeParams?.slug as string | undefined;
         try {
           const agent = getAgent({ req, slug });
@@ -135,7 +135,7 @@ export function buildAgentEndpoints() {
     {
       path: '/agents/:slug/authorizations',
       method: 'get' as const,
-      handler: async (req: FrogbotRequest) => {
+      handler: async (req: FrogBotRequest) => {
         if (!req.user) return Response.json({ error: 'Authentication required' }, { status: 401 });
         const slug = req.routeParams?.slug as string | undefined;
         let agent: ReturnType<typeof getAgent>;
@@ -154,7 +154,7 @@ export function buildAgentEndpoints() {
     {
       path: '/agents',
       method: 'get' as const,
-      handler: async (req: FrogbotRequest) => {
+      handler: async (req: FrogBotRequest) => {
         return Response.json(await getAgentManifest({ req }));
       },
     },

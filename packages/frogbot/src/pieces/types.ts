@@ -3,7 +3,7 @@ import type { SendEmailOptions, TypeWithID } from 'payload';
 import type { z } from 'zod';
 
 import type { TriggerEvent } from '../triggers/types.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 
 export type OAuthTokens = Record<string, PieceJSON> & {
   access_token?: string;
@@ -22,13 +22,13 @@ export type PieceResult = unknown;
 export type PieceCallArgs<TInput, TRequireRequest extends boolean> = {
   input: TInput;
   overrideAccess?: boolean;
-} & (TRequireRequest extends true ? { req: FrogbotRequest } : { req?: FrogbotRequest });
+} & (TRequireRequest extends true ? { req: FrogBotRequest } : { req?: FrogBotRequest });
 
 export type PieceRunArgs<TInput, TOptions, TClient> = {
   input: TInput;
   client: TClient;
   options: TOptions;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
 };
 
 export type PieceActionDefinition<
@@ -49,7 +49,7 @@ export type PieceActionDefinition<
       input: Partial<z.output<TInput>>;
       client: TClient;
       options: TOptions;
-      req: FrogbotRequest;
+      req: FrogBotRequest;
     }) => Promise<PieceOption[]>;
   }>;
   run(args: PieceRunArgs<z.output<TInput>, TOptions, TClient>): Promise<TResult>;
@@ -155,14 +155,14 @@ export type PieceOAuthRecipe<
   pkce?: boolean;
   params?: Record<string, string>;
   toAuth?: (args: { tokens: OAuthTokens }) => TAuth;
-  account?(args: { tokens: OAuthTokens; client: TClient; req: FrogbotRequest }): Promise<TAccount>;
-  refresh?: (args: { tokens: OAuthTokens; req: FrogbotRequest }) => Promise<OAuthTokens>;
+  account?(args: { tokens: OAuthTokens; client: TClient; req: FrogBotRequest }): Promise<TAccount>;
+  refresh?: (args: { tokens: OAuthTokens; req: FrogBotRequest }) => Promise<OAuthTokens>;
 };
 
 export type PieceWebhook<TOptions> = {
-  verify?(args: { req: FrogbotRequest; options: TOptions }): Promise<boolean>;
-  handshake?(args: { req: FrogbotRequest; options: TOptions }): Promise<Response | null>;
-  parse?(args: { req: FrogbotRequest }): { event: string };
+  verify?(args: { req: FrogBotRequest; options: TOptions }): Promise<boolean>;
+  handshake?(args: { req: FrogBotRequest; options: TOptions }): Promise<Response | null>;
+  parse?(args: { req: FrogBotRequest }): { event: string };
 };
 
 export type PieceEmail<TOptions, TClient> = {
@@ -170,7 +170,7 @@ export type PieceEmail<TOptions, TClient> = {
     message: SendEmailOptions;
     client: TClient;
     options: TOptions;
-    req: FrogbotRequest;
+    req: FrogBotRequest;
   }): Promise<PieceResult>;
 };
 
@@ -179,7 +179,7 @@ export type PieceChannel<TAuth, TOptions, TClient> = {
   identity(args: {
     author: Author;
     client: TClient;
-    req: FrogbotRequest;
+    req: FrogBotRequest;
   }): Promise<TypeWithID | null>;
 };
 
@@ -251,7 +251,7 @@ export type PieceInstance = {
   piece: string;
   oauth?: OAuthApp;
   readonly triggers: Readonly<Record<string, PieceTriggerReference>>;
-  client(args: { req: FrogbotRequest }): Promise<unknown>;
+  client(args: { req: FrogBotRequest }): Promise<unknown>;
   readonly [pieceCapabilities]: PieceCapabilities;
 };
 
@@ -276,8 +276,8 @@ type DefinedPiece<T extends PieceDefinition, TConfig> = {
   oauth?: OAuthApp;
   client(
     args: RequiresRequest<TConfig> extends true
-      ? { req: FrogbotRequest }
-      : { req?: FrogbotRequest },
+      ? { req: FrogBotRequest }
+      : { req?: FrogBotRequest },
   ): Promise<
     T extends { client: (...args: never[]) => infer TClient } ? Awaited<TClient> : undefined
   >;

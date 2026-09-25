@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import { testUserEmail, testUserPassword, usersSlug } from './shared.js';
 
@@ -15,10 +15,10 @@ type MeBody = {
 };
 
 describe('auth', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname);
+    booted = await bootFrogBot(dirname);
   });
   afterAll(async () => {
     await booted.shutdown();

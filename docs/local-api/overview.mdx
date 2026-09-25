@@ -46,13 +46,13 @@ const afterChangeHook: CollectionAfterChangeHook = async ({
 If you want to import FrogBot in places where you don't have the option to access it from function arguments or `req`, you can import it and initialize it.
 
 ```ts
-import { getFrogbot } from 'frogbot'
+import { getFrogBot } from 'frogbot'
 import config from '@frogbot-config'
 
-const frogbot = await getFrogbot({ config })
+const frogbot = await getFrogBot({ config })
 ```
 
-If you're working in Next.js' development mode, FrogBot will work with Hot Module Replacement (HMR), and as you make changes to your FrogBot Config, your usage of FrogBot will always be in sync with your changes. In production, `getFrogbot` simply disables all HMR functionality so you don't need to write your code any differently. We handle optimization for you in production mode.
+If you're working in Next.js' development mode, FrogBot will work with Hot Module Replacement (HMR), and as you make changes to your FrogBot Config, your usage of FrogBot will always be in sync with your changes. In production, `getFrogBot` simply disables all HMR functionality so you don't need to write your code any differently. We handle optimization for you in production mode.
 
 If you are accessing FrogBot via function arguments or `req.frogbot`, HMR is automatically supported if you are using it within Next.js.
 

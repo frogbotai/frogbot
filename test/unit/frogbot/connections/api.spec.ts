@@ -6,7 +6,7 @@ import { createCredentialEncryption } from '../../../../packages/frogbot/src/con
 import type { ConnectionRow } from '../../../../packages/frogbot/src/connections/store.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { PieceDefinition } from '../../../../packages/frogbot/src/pieces/types.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const definition = {
   slug: 'example',
@@ -70,7 +70,7 @@ async function setup({
     encryption,
     entries: { example: { piece, oauth, secret } },
   });
-  const req = { user: { id: 'owner', collection: 'users' }, frogbot } as unknown as FrogbotRequest;
+  const req = { user: { id: 'owner', collection: 'users' }, frogbot } as unknown as FrogBotRequest;
   Object.assign(frogbot, { connections: api });
   return { api, req, piece, factory, stored, encryption, find };
 }

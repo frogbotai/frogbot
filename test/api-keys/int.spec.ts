@@ -4,13 +4,13 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot.js';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot.js';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('API keys plugin integration', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
   let upstream: Server;
   const credentials = {
     email: 'api-key-owner@frogbot.local',
@@ -38,7 +38,7 @@ describe('API keys plugin integration', () => {
       );
     });
     await new Promise<void>((resolve) => upstream.listen(3988, '127.0.0.1', resolve));
-    booted = await bootFrogbot(dirname);
+    booted = await bootFrogBot(dirname);
   });
 
   afterAll(async () => {

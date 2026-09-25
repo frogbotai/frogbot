@@ -1,4 +1,4 @@
-import type { FrogbotConfig, FrogbotRequest } from 'frogbot';
+import type { FrogBotConfig, FrogBotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -11,7 +11,7 @@ import {
   viaApiKey,
 } from '../../../packages/plugins/plugin-roles/src/index.js';
 
-function config(): FrogbotConfig {
+function config(): FrogBotConfig {
   return {
     secret: 'test',
     db: {} as never,
@@ -29,8 +29,8 @@ function config(): FrogbotConfig {
   };
 }
 
-function req(roles: string[] = ['member'], id = 'user-1'): FrogbotRequest {
-  return { user: { id, roles } } as unknown as FrogbotRequest;
+function req(roles: string[] = ['member'], id = 'user-1'): FrogBotRequest {
+  return { user: { id, roles } } as unknown as FrogBotRequest;
 }
 
 describe('rolesPlugin', () => {
@@ -148,7 +148,7 @@ describe('predicates and resolution', () => {
     expect(ownRows(request, 'id')).toEqual({ id: { equals: 'user-1' } });
     expect(ownRows(request, 'owner')).toEqual({ owner: { equals: 'user-1' } });
     expect(
-      viaApiKey({ user: { id: 'user-1', _strategy: 'api-key' } } as unknown as FrogbotRequest),
+      viaApiKey({ user: { id: 'user-1', _strategy: 'api-key' } } as unknown as FrogBotRequest),
     ).toBe(true);
   });
 
@@ -162,7 +162,7 @@ describe('predicates and resolution', () => {
     for (const onInit of Array.isArray(result.onInit) ? result.onInit : [result.onInit!]) {
       await onInit(frogbot as never);
     }
-    const request = { ...req([]), frogbot } as unknown as FrogbotRequest;
+    const request = { ...req([]), frogbot } as unknown as FrogBotRequest;
     expect(hasRole(request, 'finance')).toBe(true);
     expect(rolesOf(request)).toEqual(['finance']);
     expect(resolveRoles).toHaveBeenCalledTimes(1);
@@ -186,7 +186,7 @@ describe('allow', () => {
     await expect(bound({ req: req(['member']) })).resolves.toEqual({
       or: [{ owner: { equals: 'user-1' } }, { reviewer: { equals: 'user-1' } }],
     });
-    await expect(bound({ req: { user: null } as FrogbotRequest })).resolves.toBe(false);
+    await expect(bound({ req: { user: null } as FrogBotRequest })).resolves.toBe(false);
   });
 
   it('grants only roles listed in each allow call', async () => {
@@ -244,7 +244,7 @@ describe('allow', () => {
     const result = await rolesPlugin({ roles: ['member'] })(input);
     const request = {
       user: { id: 'user-1', roles: ['member'], collection: 'users' },
-    } as unknown as FrogbotRequest;
+    } as unknown as FrogBotRequest;
     expect(await result.collections[1]!.access!.read!({ req: request })).toEqual({
       subject: { equals: { relationTo: 'users', value: 'user-1' } },
     });

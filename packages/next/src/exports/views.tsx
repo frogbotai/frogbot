@@ -16,7 +16,7 @@ import { Card } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import type { EntityToGroup } from '@payloadcms/ui/shared';
 import { EntityType, groupNavItems } from '@payloadcms/ui/shared';
-import { getCachedFrogbot, messagesToUIMessages } from 'frogbot';
+import { getCachedFrogBot, messagesToUIMessages } from 'frogbot';
 import { getPayloadConfig } from 'frogbot/internal';
 import { redirect } from 'next/navigation';
 import type { AdminViewServerProps, DocumentViewServerProps, PayloadComponent } from 'payload';
@@ -34,14 +34,14 @@ export { CollectionViewSwitcher } from '../views/CollectionViewSwitcher.js';
 export { ConnectionsView } from '../views/Connections/index.js';
 export { CustomCollectionView } from '../views/CustomCollectionView.js';
 export { DefaultListView } from '../views/List/DefaultListView.client.js';
-import type { FrogbotConfigArg } from '../types.js';
+import type { FrogBotConfigArg } from '../types.js';
 import { ChatViewClient } from './ChatView.client.js';
 
 const assetURL = (asset: { src: string } | string): string =>
   typeof asset === 'object' ? asset.src : asset;
 
 type RootPageProps = Omit<ComponentProps<typeof PayloadRootPage>, 'config'> & {
-  readonly config: FrogbotConfigArg;
+  readonly config: FrogBotConfigArg;
 };
 
 export function RootPage({ config, ...rest }: RootPageProps) {
@@ -49,7 +49,7 @@ export function RootPage({ config, ...rest }: RootPageProps) {
 }
 
 type NotFoundPageProps = Omit<ComponentProps<typeof PayloadNotFoundPage>, 'config'> & {
-  readonly config: FrogbotConfigArg;
+  readonly config: FrogBotConfigArg;
 };
 
 export function NotFoundPage({ config, ...rest }: NotFoundPageProps) {
@@ -61,7 +61,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
   const isDashboard = segments.length === 0;
   const [, collectionSlug, documentID] = segments;
   const routeID = isDashboard ? 'create' : documentID;
-  const frogbot = getCachedFrogbot();
+  const frogbot = getCachedFrogBot();
   const chatsSlug = frogbot?.config.chat.enabled ? frogbot.config.chat.chatsSlug : undefined;
   const messagesSlug = frogbot?.config.chat.enabled ? frogbot.config.chat.messagesSlug : undefined;
 
@@ -324,7 +324,7 @@ type GeneratePageMetadataArgs = Omit<
   Parameters<typeof payloadGeneratePageMetadata>[0],
   'config'
 > & {
-  config: FrogbotConfigArg;
+  config: FrogBotConfigArg;
 };
 
 export async function generatePageMetadata(

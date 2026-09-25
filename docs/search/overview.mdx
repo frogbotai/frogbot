@@ -40,9 +40,9 @@ export const Articles: CollectionConfig = {
 The operation accepts `collection`, a named `index`, and `query` (`SearchOptions`). These calls illustrate the current signature, **not working searches**:
 
 ```ts
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 
-export async function searchArticles(req: FrogbotRequest, vector: number[]) {
+export async function searchArticles(req: FrogBotRequest, vector: number[]) {
   const lexical = await req.frogbot.search({
     collection: 'articles',
     index: 'content',

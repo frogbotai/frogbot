@@ -1,14 +1,14 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { rolesPlugin } from '@frogbotai/plugin-roles';
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
 
 import { qaAnalyst, releaseManager } from './agents';
 import { Media, Releases, Users } from './collections';
 import { googleConnections, linear, pieces } from './pieces';
 
-const config: FrogbotConfig = {
+const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET ?? 'dev-secret-change-me',
   db: sqliteAdapter({
     client: {

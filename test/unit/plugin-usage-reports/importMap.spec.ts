@@ -6,7 +6,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { generateImportMap } from '../../../packages/frogbot/src/bin/generateImportMap/index.js';
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
-import type { FrogbotConfig } from '../../../packages/frogbot/src/config/types.js';
+import type { FrogBotConfig } from '../../../packages/frogbot/src/config/types.js';
 import { usageReportsPlugin } from '../../../packages/plugins/plugin-usage-reports/src/index.js';
 
 const dirs: string[] = [];
@@ -25,7 +25,7 @@ describe('usage reports import map', () => {
       collections: [{ slug: 'users', auth: true, fields: [] }],
       ai: { providers: { openai: { apiKey: 'test' } } },
       plugins: [usageReportsPlugin()],
-    } as FrogbotConfig);
+    } as FrogBotConfig);
     const payloadConfig = await config._internal.payloadConfig;
     payloadConfig.admin.importMap.baseDir = dir;
     payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../../packages/frogbot/src/getFrogbot.js', () => ({
+vi.mock('../../../packages/frogbot/src/getFrogBot.js', () => ({
   createDefaultRequest: vi.fn(),
 }));
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/pieces/definePiece.js'));

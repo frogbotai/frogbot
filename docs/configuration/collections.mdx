@@ -264,7 +264,7 @@ export const Projects: CollectionConfig = {
 | `slug` | `string` | No; defaults to `type` | Unique route and saved-preference key after normalization to lowercase kebab case. Duplicate or empty normalized slugs produce a configuration error. The first view uses the collection's root route. |
 | `label` | `string` | No; defaults to the capitalized `type` | Label displayed in the view switcher. |
 | `defaultFields` | `string[]` | No | Ordered field dot paths initially displayed as list columns or board card fields. Users can change list columns through normal list controls. |
-| `filter` | `Where \| ({ req }) => Where \| Promise<Where>` | No | Invisible base filter applied to the view. The function receives the current `FrogbotRequest`. |
+| `filter` | `Where \| ({ req }) => Where \| Promise<Where>` | No | Invisible base filter applied to the view. The function receives the current `FrogBotRequest`. |
 | `defaultSort` | `Sort` (`string \| string[]`) | No | Initial field sort or ordered list of sorts. Prefix a field with `-` for descending order. |
 | `searchableFields` | `string[]` | No | Adds field dot paths to the normal search behavior. The collection's `useAsTitle` field remains included; this option does not replace it. |
 | `pagination` | `ViewPagination` | No | Configures query limits. Defaults depend on the view type. |
@@ -280,14 +280,14 @@ export const Projects: CollectionConfig = {
 
 #### ViewComponents
 
-These shell slots are shared by list, board, calendar, and custom views. Each value uses a `FrogbotComponent` import path; array slots render in declaration order.
+These shell slots are shared by list, board, calendar, and custom views. Each value uses a `FrogBotComponent` import path; array slots render in declaration order.
 
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
-| `actions` | `FrogbotComponent[]` | No; `[]` | Adds actions to the view's action area. |
-| `menuItems` | `FrogbotComponent[]` | No; `[]` | Adds entries to the view menu. |
-| `beforeView` | `FrogbotComponent[]` | No; `[]` | Renders inside the collection shell before the view body. |
-| `afterView` | `FrogbotComponent[]` | No; `[]` | Renders inside the collection shell after the view body. |
+| `actions` | `FrogBotComponent[]` | No; `[]` | Adds actions to the view's action area. |
+| `menuItems` | `FrogBotComponent[]` | No; `[]` | Adds entries to the view menu. |
+| `beforeView` | `FrogBotComponent[]` | No; `[]` | Renders inside the collection shell before the view body. |
+| `afterView` | `FrogBotComponent[]` | No; `[]` | Renders inside the collection shell after the view body. |
 
 #### ListView
 
@@ -300,8 +300,8 @@ These shell slots are shared by list, board, calendar, and custom views. Each va
 
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
-| `beforeTable` | `FrogbotComponent[]` | No; `[]` | Renders after list controls and immediately before the table. |
-| `afterTable` | `FrogbotComponent[]` | No; `[]` | Renders immediately after the table. |
+| `beforeTable` | `FrogBotComponent[]` | No; `[]` | Renders after list controls and immediately before the table. |
+| `afterTable` | `FrogBotComponent[]` | No; `[]` | Renders immediately after the table. |
 
 #### BoardView
 
@@ -316,10 +316,10 @@ These shell slots are shared by list, board, calendar, and custom views. Each va
 
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
-| `beforeColumns` | `FrogbotComponent[]` | No; `[]` | Renders before the board columns. |
-| `afterColumns` | `FrogbotComponent[]` | No; `[]` | Renders after the board columns. |
-| `ColumnHeader` | `FrogbotComponent` | No; built-in header | Replaces each column header. |
-| `Card` | `FrogbotComponent` | No; built-in card | Replaces each board card and receives the document as its `row` prop. |
+| `beforeColumns` | `FrogBotComponent[]` | No; `[]` | Renders before the board columns. |
+| `afterColumns` | `FrogBotComponent[]` | No; `[]` | Renders after the board columns. |
+| `ColumnHeader` | `FrogBotComponent` | No; built-in header | Replaces each column header. |
+| `Card` | `FrogBotComponent` | No; built-in card | Replaces each board card and receives the document as its `row` prop. |
 
 See [Collection board](/admin/collection-board) for grouping, loading, and drag behavior.
 
@@ -339,9 +339,9 @@ See [Collection board](/admin/collection-board) for grouping, loading, and drag 
 
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
-| `beforeCalendar` | `FrogbotComponent[]` | No; `[]` | Renders before the calendar. |
-| `afterCalendar` | `FrogbotComponent[]` | No; `[]` | Renders after the calendar. |
-| `Event` | `FrogbotComponent` | No; built-in event | Replaces each event body and receives the document as its `row` prop. |
+| `beforeCalendar` | `FrogBotComponent[]` | No; `[]` | Renders before the calendar. |
+| `afterCalendar` | `FrogBotComponent[]` | No; `[]` | Renders after the calendar. |
+| `Event` | `FrogBotComponent` | No; built-in event | Replaces each event body and receives the document as its `row` prop. |
 
 See [Collection calendar](/admin/collection-calendar) for modes, date fields, loading, and editing behavior.
 
@@ -350,7 +350,7 @@ See [Collection calendar](/admin/collection-calendar) for modes, date fields, lo
 | Property | Type | Required / default | Behavior |
 | --- | --- | --- | --- |
 | `type` | `'custom'` | Yes | Selects a developer-provided view. |
-| `component` | `FrogbotComponent` | Yes | Component that renders the custom view body. |
+| `component` | `FrogBotComponent` | Yes | Component that renders the custom view body. |
 | `shell` | `boolean` | No; `true` | When `true`, renders within the collection shell and supports `ViewComponents`. When `false`, replaces the complete collection page and must be the collection's only view. |
 | `components` | `ViewComponents` | No | Configures shared shell slots when the shell is enabled. |
 
@@ -419,8 +419,8 @@ Use `admin.components.edit.views` to replace a built-in document view or add a c
 
 | Property | Type | Behavior |
 | --- | --- | --- |
-| `Component` | `FrogbotComponent` | Replaces the view component. Optional, allowing other properties to modify the built-in view. |
-| `actions` | `FrogbotComponent[]` | Adds components to the view's actions. |
+| `Component` | `FrogBotComponent` | Replaces the view component. Optional, allowing other properties to modify the built-in view. |
+| `actions` | `FrogBotComponent[]` | Adds components to the view's actions. |
 | `meta` | `MetaConfig` | Overrides metadata for the view. |
 | `tab` | `DocumentTabConfig` | Modifies the view's document tab. |
 
@@ -428,9 +428,9 @@ Use `admin.components.edit.views` to replace a built-in document view or add a c
 
 | Property | Type | Behavior |
 | --- | --- | --- |
-| `Component` | `FrogbotComponent` | Renders the custom view. Required when `path` is set; otherwise optional. |
+| `Component` | `FrogBotComponent` | Renders the custom view. Required when `path` is set; otherwise optional. |
 | `path` | `` `/${string}` `` | Adds a route below the document URL. Requires `Component`. Omit both `path` and `Component` to add only a tab. |
-| `actions` | `FrogbotComponent[]` | Adds components to the view's actions. |
+| `actions` | `FrogBotComponent[]` | Adds components to the view's actions. |
 | `meta` | `MetaConfig` | Overrides metadata for the view. |
 | `tab` | `DocumentTabConfig` | Configures the custom document tab. |
 
@@ -440,8 +440,8 @@ Document view configs do not support `exact`; custom `path` values use document-
 
 | Property | Type | Behavior |
 | --- | --- | --- |
-| `Component` | `FrogbotComponent` | Replaces the complete tab component. It receives the resolved `path`. |
-| `Pill` | `FrogbotComponent` | Adds a component beside the tab label. |
+| `Component` | `FrogBotComponent` | Replaces the complete tab component. It receives the resolved `path`. |
+| `Pill` | `FrogBotComponent` | Adds a component beside the tab label. |
 | `label` | `string \| ({ t }) => string` | Sets the tab label. |
 | `href` | `string \| function` | Sets or computes the tab destination. |
 | `condition` | `function` | Returns whether the tab should be shown for the current request and permissions. |
@@ -595,7 +595,7 @@ The `formatDocURL` function receives the following arguments:
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `doc`            | The document data for the current row                                                                                                  |
 | `defaultURL`     | The default URL that FrogBot would normally generate for this document. You can return this as-is, modify it, or replace it entirely.  |
-| `req`            | The full `FrogbotRequest` object, providing access to user context, frogbot instance, and other request data |
+| `req`            | The full `FrogBotRequest` object, providing access to user context, frogbot instance, and other request data |
 | `collectionSlug` | The slug of the current collection                                                                                                     |
 | `viewType`       | The current view context (`'list'`, `'trash'`, etc.) where the link is being generated                                                 |
 

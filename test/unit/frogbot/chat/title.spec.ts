@@ -6,7 +6,7 @@ import {
   suggestChatTitle,
   suggestChatTitleForChat,
 } from '../../../../packages/frogbot/src/chat/title.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const userMessage: UIMessage = {
   id: 'user-1',
@@ -50,7 +50,7 @@ function makeReq({ title = null, text = 'Why Frogs Sing at Night' } = {}) {
       agents: { helper: { config: { model: 'internal/chat' } } },
     },
     user: { id: 'user-1' },
-  } as unknown as FrogbotRequest;
+  } as unknown as FrogBotRequest;
   return { req, generateText, findByID, find, update, error };
 }
 

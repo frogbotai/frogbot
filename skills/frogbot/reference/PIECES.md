@@ -93,13 +93,13 @@ If provider registration succeeds but saving state fails, FrogBot attempts clean
 Use these helpers only in trusted server code with an initialized instance. `mount` contains the existing agent slug, instance slug, and webhook trigger slug; optional `input` replaces the mount's input after schema validation. `enable` cannot create an undeclared trigger mount. `list` includes pending/error entries. Disable a returned subscription when provider cleanup is intended:
 
 ```ts
-import type { FrogbotInstance, Subscription, SubscriptionEnableProps } from 'frogbot';
+import type { FrogBotInstance, Subscription, SubscriptionEnableProps } from 'frogbot';
 
 export async function enableMountedTrigger({
   frogbot,
   mount,
 }: {
-  frogbot: FrogbotInstance;
+  frogbot: FrogBotInstance;
   mount: SubscriptionEnableProps;
 }) {
   const subscription = await frogbot.triggers.enable(mount);
@@ -112,7 +112,7 @@ export async function disableMountedTrigger({
   frogbot,
   subscription,
 }: {
-  frogbot: FrogbotInstance;
+  frogbot: FrogBotInstance;
   subscription: Subscription;
 }) {
   await frogbot.triggers.disable(subscription.id);

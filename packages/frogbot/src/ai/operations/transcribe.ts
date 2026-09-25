@@ -5,7 +5,7 @@ import type { Gateway } from '@frogbotai/gateway';
 import { transcribe as aiTranscribe } from 'ai';
 
 import type { Logger } from '../../frogbot.js';
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 import { enforceAIAccess } from '../access.js';
 import { enforcePolicy } from '../policy.js';
 import { resolveModel } from '../resolve.js';
@@ -26,13 +26,13 @@ export async function transcribeOperation(
   const shouldEnforceAccess = overrideAccess === false || (overrideAccess === undefined && !!req);
 
   // 1. Resolve model.
-  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogbotRequest, target: input });
+  if (shouldEnforceAccess && req) enforcePolicy({ req: req as FrogBotRequest, target: input });
   const modelId = resolveModel(input, config);
 
   // 2. Access control.
   if (shouldEnforceAccess && req) {
     await enforceAIAccess({
-      req: req as FrogbotRequest,
+      req: req as FrogBotRequest,
       method: 'transcribe',
       input,
       config,
@@ -42,7 +42,7 @@ export async function transcribeOperation(
   const op = gateway.operation({
     operation: 'transcriptions',
     model: modelId,
-    context: { req: req as FrogbotRequest | undefined },
+    context: { req: req as FrogBotRequest | undefined },
   });
   await op.start();
 

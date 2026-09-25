@@ -1,6 +1,6 @@
 import type { Access, CollectionAccess } from '../../collections/config/types.js';
 import type { CollectionConfig } from '../../collections/config/types.js';
-import type { FrogbotRequest } from '../../types/request.js';
+import type { FrogBotRequest } from '../../types/request.js';
 
 export type DefaultChatsCollectionProps = {
   slug: string;
@@ -8,7 +8,7 @@ export type DefaultChatsCollectionProps = {
   access?: CollectionAccess;
 };
 
-function userID(req: FrogbotRequest): number | string | undefined {
+function userID(req: FrogBotRequest): number | string | undefined {
   return req.user?.id;
 }
 

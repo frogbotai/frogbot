@@ -4,9 +4,9 @@ import { z } from 'zod';
 
 import { resolveSignInIdentity } from '../../../../packages/frogbot/src/auth/signIn/identity.js';
 import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
-import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 import { memoryKV } from '../connections/oauth/fixtures.js';
 
 const oauth = { clientId: 'client', clientSecret: 'private-app-secret' };
@@ -24,10 +24,10 @@ const createIdentity = definePiece({
   actions: [],
 });
 const method = createIdentity({ oauth, slug: 'work' });
-const config = (auth: unknown = { signIn: [method] }, fields: unknown[] = []): FrogbotConfig => ({
+const config = (auth: unknown = { signIn: [method] }, fields: unknown[] = []): FrogBotConfig => ({
   secret: 'test-secret',
-  db: {} as FrogbotConfig['db'],
-  collections: [{ slug: 'users', auth, fields }] as FrogbotConfig['collections'],
+  db: {} as FrogBotConfig['db'],
+  collections: [{ slug: 'users', auth, fields }] as FrogBotConfig['collections'],
 });
 
 describe('collection sign-in configuration', () => {
@@ -153,7 +153,7 @@ describe('sign-in identity matching', () => {
           },
         },
       },
-    } as unknown as FrogbotRequest;
+    } as unknown as FrogBotRequest;
     return {
       req,
       find,

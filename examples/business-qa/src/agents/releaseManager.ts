@@ -1,4 +1,4 @@
-import type { AgentConfig, FrogbotRequest } from 'frogbot';
+import type { AgentConfig, FrogBotRequest } from 'frogbot';
 
 import {
   dateHelper,
@@ -10,7 +10,7 @@ import {
   resend,
 } from '../pieces';
 
-const authenticated = ({ req }: { req: FrogbotRequest }) => Boolean(req.user);
+const authenticated = ({ req }: { req: FrogBotRequest }) => Boolean(req.user);
 
 export const releaseManager: AgentConfig = {
   slug: 'release-manager',

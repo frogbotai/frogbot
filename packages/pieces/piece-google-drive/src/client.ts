@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import type { PieceRunArgs } from 'frogbot/pieces';
 import { type drive_v3, google } from 'googleapis';
 import { z } from 'zod';
@@ -23,7 +23,7 @@ export function createGoogleDriveClient({ auth }: { auth: unknown }): GoogleDriv
   return google.drive({ version: 'v3', auth: oauth });
 }
 
-export function requestOptions(req: FrogbotRequest) {
+export function requestOptions(req: FrogBotRequest) {
   req.signal?.throwIfAborted();
   return {
     signal: req.signal ?? undefined,

@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { COLLECTION_MARKERS } from '../../../../packages/frogbot/src/collections/config/types.js';
 import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
-import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import type { ConnectionEntry } from '../../../../packages/frogbot/src/connections/types.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
 
@@ -40,10 +40,10 @@ const createPiece = definePiece({
   ],
 });
 
-function config(overrides: Partial<FrogbotConfig> = {}): FrogbotConfig {
+function config(overrides: Partial<FrogBotConfig> = {}): FrogBotConfig {
   return {
     secret: 'boot-secret',
-    db: {} as FrogbotConfig['db'],
+    db: {} as FrogBotConfig['db'],
     collections: [{ slug: 'users', auth: true, fields: [] }],
     ...overrides,
   };

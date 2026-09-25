@@ -7,7 +7,7 @@ import {
   resolveScheduleTasks,
 } from '../../../../packages/frogbot/src/agents/resolveScheduleTasks.js';
 import type { AgentConfig, AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
-import { registerFrogbotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
+import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
 
 const baseAgent = {
   slug: 'reporter',
@@ -120,7 +120,7 @@ describe('agent schedule tasks', () => {
       generate,
     } as unknown as AgentInstance;
     const frogbot = { agents: { reporter: agent }, createRequest };
-    registerFrogbotInstance(payload, frogbot as never);
+    registerFrogBotInstance(payload, frogbot as never);
     const config = resolveScheduleTasks({ agents: [agent.config] });
     const run = task(config).handler;
     if (typeof run !== 'function') throw new Error('Expected task handler');
@@ -166,7 +166,7 @@ describe('agent schedule tasks', () => {
     const payload = {};
     const generate = vi.fn();
     const staleAgent = { ...baseAgent, triggers: [] };
-    registerFrogbotInstance(payload, {
+    registerFrogBotInstance(payload, {
       agents: { reporter: { config: staleAgent, generate } },
     } as never);
     const config = resolveScheduleTasks({

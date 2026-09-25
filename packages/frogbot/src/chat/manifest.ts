@@ -1,13 +1,13 @@
 import { listAgents } from '../agents/service.js';
 import { getFilteredCatalog } from '../ai/catalog.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import type { ManifestResponse } from './types.js';
 
 export function buildManifestEndpoint() {
   return {
     path: '/frogbot',
     method: 'get' as const,
-    handler: async (req: FrogbotRequest) => {
+    handler: async (req: FrogBotRequest) => {
       const agents = await listAgents({ req });
 
       const transcription = getFilteredCatalog(

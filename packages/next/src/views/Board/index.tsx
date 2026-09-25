@@ -1,7 +1,7 @@
 import './BoardView.css';
 
 import { getColumns, renderTable } from '@payloadcms/ui/rsc';
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import { notFound } from 'next/navigation';
 import type { AdminViewServerProps, Field, SanitizedFieldPermissions } from 'payload';
 import { getFromImportMap, transformColumnsToSearchParams } from 'payload/shared';
@@ -165,7 +165,7 @@ export async function BoardView(props: AdminViewServerProps) {
   });
   const filter =
     typeof board.filter === 'function'
-      ? await board.filter({ req: initPageResult.req as unknown as FrogbotRequest })
+      ? await board.filter({ req: initPageResult.req as unknown as FrogBotRequest })
       : board.filter;
   let fieldPermission: SanitizedFieldPermissions | undefined;
   let fieldPermissions = permissions?.fields;

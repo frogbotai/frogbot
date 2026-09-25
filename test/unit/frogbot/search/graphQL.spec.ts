@@ -4,9 +4,9 @@ import type { GraphQLExtension, Payload, SanitizedConfig } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 
 import { sanitize } from '../../../../packages/frogbot/src/config/sanitize.js';
-import type { FrogbotConfig } from '../../../../packages/frogbot/src/config/types.js';
-import type { Frogbot } from '../../../../packages/frogbot/src/frogbot.js';
-import { registerFrogbotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
+import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
+import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
 import { ranking } from './fixture.js';
 
 const require = createRequire(import.meta.url);
@@ -16,10 +16,10 @@ const GraphQL = createRequire(require.resolve('payload'))(
 
 const titles = { titles: { lexical: { fields: ['title'] } } };
 
-function config(overrides: Partial<FrogbotConfig> = {}): FrogbotConfig {
+function config(overrides: Partial<FrogBotConfig> = {}): FrogBotConfig {
   return {
     secret: 'test-secret',
-    db: { defaultIDType: 'number' } as FrogbotConfig['db'],
+    db: { defaultIDType: 'number' } as FrogBotConfig['db'],
     collections: [
       { slug: 'articles', fields: [{ name: 'title', type: 'text' }], search: titles },
       { slug: 'notes', fields: [{ name: 'title', type: 'text' }] },
@@ -81,7 +81,7 @@ function graphQLContext(runtime: SanitizedConfig) {
   } as unknown as Parameters<GraphQLExtension>[1];
 }
 
-async function buildQueries(input: FrogbotConfig) {
+async function buildQueries(input: FrogBotConfig) {
   const sanitized = sanitize(input);
   const runtime = await sanitized._internal.payloadConfig;
   const queries = runtime.graphQL.queries?.(GraphQL, graphQLContext(runtime)) ?? {};
@@ -128,9 +128,9 @@ describe('collection search GraphQL queries', () => {
     }));
 
     const payload = {} as Payload;
-    const frogbot = { search } as unknown as Frogbot;
+    const frogbot = { search } as unknown as FrogBot;
 
-    registerFrogbotInstance(payload, frogbot, sanitized);
+    registerFrogBotInstance(payload, frogbot, sanitized);
 
     const schema = new GraphQL.GraphQLSchema({
       query: new GraphQL.GraphQLObjectType({ name: 'Query', fields: queries as never }),

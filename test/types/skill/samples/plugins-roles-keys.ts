@@ -1,11 +1,11 @@
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
 import { allow, hasRole, rolesPlugin } from '@frogbotai/plugin-roles';
-import type { CollectionConfig, FrogbotConfig } from 'frogbot';
+import type { CollectionConfig, FrogBotConfig } from 'frogbot';
 import { buildConfig } from 'frogbot';
 
 import { domainConfig } from './domain-context.js';
 
-export const plugins: FrogbotConfig['plugins'] = [
+export const plugins: FrogBotConfig['plugins'] = [
   apiKeysPlugin(),
   rolesPlugin({ roles: ['admin', 'member'] }),
 ];

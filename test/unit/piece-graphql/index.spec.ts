@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../../packages/frogbot/src/getFrogbot.js', () => ({
+vi.mock('../../../packages/frogbot/src/getFrogBot.js', () => ({
   createDefaultRequest: vi.fn(),
 }));
 

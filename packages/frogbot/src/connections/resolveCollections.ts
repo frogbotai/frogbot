@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { resolveUserSlug } from '../chat/resolveUserSlug.js';
 import type { CollectionConfig } from '../collections/config/types.js';
-import type { FrogbotConfig } from '../config/types.js';
+import type { FrogBotConfig } from '../config/types.js';
 import { isPieceInstance, pieceInstanceDefinition } from '../pieces/definePiece.js';
 import { defaultConnectionsCollection } from './collection.js';
 import { createCredentialEncryption } from './encryption.js';
@@ -39,7 +39,7 @@ function isRenderableSchema(schema: ConnectionSchema | boolean): boolean {
   return ['string', 'number', 'integer', 'boolean'].includes(schema.type as string);
 }
 
-function resolveEntries(config: FrogbotConfig): SanitizedConnectionsConfig['entries'] {
+function resolveEntries(config: FrogBotConfig): SanitizedConnectionsConfig['entries'] {
   if ('credentialSources' in config) {
     throw new Error(
       '[frogbot] `credentialSources` is no longer supported. Configure `connections` entries.',
@@ -101,7 +101,7 @@ function resolveEntries(config: FrogbotConfig): SanitizedConnectionsConfig['entr
   return entries;
 }
 
-export function resolveConnectionsCollections(config: FrogbotConfig): {
+export function resolveConnectionsCollections(config: FrogBotConfig): {
   collections: CollectionConfig[];
   connections: SanitizedConnectionsConfig;
 } {

@@ -9,7 +9,7 @@ import type {
   ModelId,
   ProviderConfig,
 } from '../../../../packages/frogbot/src/ai/types.js';
-import type { FrogbotTypes } from '../../../../packages/frogbot/src/types/generated.js';
+import type { FrogBotTypes } from '../../../../packages/frogbot/src/types/generated.js';
 
 describe('AI config types', () => {
   it('accepts true or an explicit apiKey for built-in providers', () => {
@@ -41,7 +41,7 @@ describe('AI config types', () => {
   });
 
   it('uses the catalog as the pre-generation agent model fallback', () => {
-    expectTypeOf<FrogbotTypes['models']>().toEqualTypeOf<CatalogModelId>();
+    expectTypeOf<FrogBotTypes['models']>().toEqualTypeOf<CatalogModelId>();
     expectTypeOf<ModelId>().toEqualTypeOf<CatalogModelId>();
     expectTypeOf<NonNullable<AIConfig['defaultModel']>>().toEqualTypeOf<ModelId>();
     expectTypeOf<'openai/gpt-4o'>().toMatchTypeOf<AgentModelId>();

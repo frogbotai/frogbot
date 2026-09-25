@@ -1,7 +1,7 @@
 import { calculateCostUSD, calculateModelCostUSD, type ModelCost } from '@frogbotai/gateway';
 import { BudgetExceededError, ModelNotAllowedError } from '@frogbotai/gateway/errors';
 
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import type { CustomProviderEntry } from './types.js';
 
 export type AIUserPolicy = {
@@ -73,7 +73,7 @@ export function enforcePolicy({
   req,
   target,
 }: {
-  req?: FrogbotRequest;
+  req?: FrogBotRequest;
   target: string;
 }): AIUserPolicy | undefined {
   if (!req?.user) return;
@@ -133,7 +133,7 @@ export function createPolicyHooks({
     }
   }
   return {
-    beforeOperation: (args: { req?: FrogbotRequest; context: Record<string, unknown> }) => {
+    beforeOperation: (args: { req?: FrogBotRequest; context: Record<string, unknown> }) => {
       if (!args.req?.user) return;
       const policy = resolvePolicy(args.req.user);
       if (
@@ -145,7 +145,7 @@ export function createPolicyHooks({
       if (policy) args.context.policy = policy;
     },
     afterOperation: async (args: {
-      req?: FrogbotRequest;
+      req?: FrogBotRequest;
       model: string;
       usage?: Parameters<typeof calculateModelCostUSD>[1];
       error?: unknown;

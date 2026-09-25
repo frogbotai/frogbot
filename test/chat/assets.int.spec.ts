@@ -10,8 +10,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { CHAT_ASSETS_SLUG } from '../../packages/frogbot/src/chat/collections/assets.js';
 import type { ToolCtx } from '../../packages/frogbot/src/tools/types.js';
 import { resolveChatAttachments } from '../../packages/frogbot/src/uploads/resolveChatAttachments.js';
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { agentSlug, chatsSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -29,7 +29,7 @@ type Asset = {
 const password = 'frogbot-int-password';
 
 describe('chat assets', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
   let owner: User;
   let stranger: User;
   let ownerToken: string;
@@ -117,7 +117,7 @@ describe('chat assets', () => {
   }
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname, 'chat-assets');
+    booted = await bootFrogBot(dirname, 'chat-assets');
 
     const created = await Promise.all([
       createUser('owner@frogbot.local'),

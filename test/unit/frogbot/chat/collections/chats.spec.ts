@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { defaultChatsCollection } from '../../../../../packages/frogbot/src/chat/collections/chats.js';
 import type { FieldHook } from '../../../../../packages/frogbot/src/fields/config/types.js';
-import type { FrogbotRequest } from '../../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../../packages/frogbot/src/types/request.js';
 
 const collection = defaultChatsCollection({ slug: 'chats', userSlug: 'users' });
 
 function reqWithUser(id?: string) {
-  return (id ? { user: { id } } : {}) as FrogbotRequest;
+  return (id ? { user: { id } } : {}) as FrogBotRequest;
 }
 
 describe('defaultChatsCollection', () => {

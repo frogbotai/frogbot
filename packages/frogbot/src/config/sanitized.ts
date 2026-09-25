@@ -9,7 +9,7 @@ import type { SanitizedAgentConfig } from '../agents/types.js';
 import type { SanitizedAIConfig } from '../ai/types.js';
 import type { SanitizedChatConfig } from '../chat/types.js';
 import type { SanitizedConnectionsConfig } from '../connections/types.js';
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 import type { SanitizedPiecesConfig } from '../pieces/types.js';
 import type { SearchIndexDescriptors } from '../search/types.js';
 import type { IngressRegistry } from '../triggers/types.js';
@@ -21,7 +21,7 @@ export type SanitizedCollectionMeta = {
   search?: SearchIndexDescriptors;
 };
 
-export type FrogbotSanitizedConfig = {
+export type FrogBotSanitizedConfig = {
   admin?: {
     importMap?: {
       autoGenerate?: boolean;
@@ -30,7 +30,7 @@ export type FrogbotSanitizedConfig = {
   collections: SanitizedCollectionMeta[];
   secret: string;
   port?: number;
-  onInit?: (frogbot: Frogbot) => Promise<void> | void;
+  onInit?: (frogbot: FrogBot) => Promise<void> | void;
   ai?: SanitizedAIConfig;
   agents?: SanitizedAgentConfig[];
   chat: SanitizedChatConfig;

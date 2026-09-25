@@ -5,9 +5,9 @@ import type {
   AdapterSearchRow,
   SearchAdapter,
 } from '../../../../packages/frogbot/src/database/types.js';
-import type { Frogbot } from '../../../../packages/frogbot/src/frogbot.js';
+import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
 import { withSearchRuntime } from '../../../../packages/frogbot/src/search/runtime.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 export const index = {
   name: 'content',
@@ -33,7 +33,7 @@ export function searchFixture({
   rows = [{ id: 1, score: 0.5 }],
 }: {
   docs?: Doc[];
-  read?: (args: { req: FrogbotRequest }) => boolean | object;
+  read?: (args: { req: FrogBotRequest }) => boolean | object;
   rows?: AdapterSearchRow[];
 } = {}) {
   const collection = {
@@ -72,14 +72,14 @@ export function searchFixture({
 
   const frogbot = {
     collections: { articles: { slug: 'articles', auth: false, search: { content: index } } },
-  } as unknown as Frogbot;
+  } as unknown as FrogBot;
 
   const req = {
     user: { id: 1, collection: 'users' },
     t: vi.fn(),
     i18n: { t: vi.fn() },
     frogbot,
-  } as unknown as FrogbotRequest;
+  } as unknown as FrogBotRequest;
 
   withSearchRuntime({
     adapter: { defaultIDType: 'number', init: () => db } as unknown as Config['db'],

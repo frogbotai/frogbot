@@ -140,7 +140,7 @@ Reusable FrogBot `Block` objects work in Rich Text through `BlocksFeature({ bloc
 
 ## Conditional fields
 
-`admin.condition` receives top-level form data, sibling data, and a context containing `user`. It does not receive a `FrogbotRequest`. Use top-level data for a document-wide switch and sibling data for a nested group's switch:
+`admin.condition` receives top-level form data, sibling data, and a context containing `user`. It does not receive a `FrogBotRequest`. Use top-level data for a document-wide switch and sibling data for a nested group's switch:
 
 ```ts
 import type { CollectionConfig } from 'frogbot';

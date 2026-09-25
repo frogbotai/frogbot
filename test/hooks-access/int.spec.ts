@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import {
   accessBooleanSlug,
@@ -23,13 +23,13 @@ import {
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
-let booted: BootedFrogbot;
+let booted: BootedFrogBot;
 let clearHookLog: () => void;
 let getHookLog: () => string[];
 
 describe('hooks-access', () => {
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname);
+    booted = await bootFrogBot(dirname);
 
     // Import the hook log from the config module (same instance the hooks write to)
     const configMod = await import('./config.js');

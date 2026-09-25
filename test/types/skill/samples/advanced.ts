@@ -1,10 +1,10 @@
-import type { Endpoint, FrogbotInstance } from 'frogbot';
+import type { Endpoint, FrogBotInstance } from 'frogbot';
 import { buildConfig } from 'frogbot';
 
 import { Pages } from './collections.js';
 import { createCoreConfig } from './core-context.js';
 
-export async function localLogin(frogbot: FrogbotInstance) {
+export async function localLogin(frogbot: FrogBotInstance) {
   const result = await frogbot.login({
     collection: 'users',
     data: {
@@ -70,7 +70,7 @@ export const localizationConfig = buildConfig({
   collections: [{ slug: 'posts', fields: [{ name: 'title', type: 'text', localized: true }] }],
 });
 
-export async function findSpanishPosts(frogbot: FrogbotInstance) {
+export async function findSpanishPosts(frogbot: FrogBotInstance) {
   const posts = await frogbot.find({
     collection: 'posts',
     locale: 'es',

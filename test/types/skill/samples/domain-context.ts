@@ -1,7 +1,7 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
-import type { FrogbotConfig } from 'frogbot';
+import type { FrogBotConfig } from 'frogbot';
 
-export const domainConfig: FrogbotConfig = {
+export const domainConfig: FrogBotConfig = {
   secret: 'skill-domain-validation-secret',
   db: sqliteAdapter({ client: { url: 'file:skill-domains.db' } }),
   collections: [

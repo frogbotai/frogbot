@@ -2,7 +2,7 @@ import {
   type Block,
   type BlocksField,
   type Field,
-  type FrogbotConfig,
+  type FrogBotConfig,
   type GroupField,
   type Tab,
   type TabsField,
@@ -70,7 +70,7 @@ const blocks: BlocksField = {
   type: 'blocks',
 };
 
-const rootBlocks = { blocks: [block] } satisfies Pick<FrogbotConfig, 'blocks'>;
+const rootBlocks = { blocks: [block] } satisfies Pick<FrogBotConfig, 'blocks'>;
 
 expectTypeOf(blocks).toMatchTypeOf<Field>();
 expectTypeOf(rootBlocks.blocks).toMatchTypeOf<Block[]>();

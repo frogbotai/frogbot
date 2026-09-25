@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { agentSlug, chatsSlug, messagesSlug, usersSlug } from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -24,7 +24,7 @@ function close(server: Server): Promise<void> {
 }
 
 describe('agent endpoint composition', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
   let openai: Server;
 
   beforeAll(async () => {
@@ -56,7 +56,7 @@ describe('agent endpoint composition', () => {
       });
     });
     await listen(openai);
-    booted = await bootFrogbot(dirname, 'endpoint-composition');
+    booted = await bootFrogBot(dirname, 'endpoint-composition');
   });
 
   afterAll(async () => {
@@ -131,7 +131,7 @@ describe('agent endpoint composition', () => {
     });
     expect(response.status).toBe(200);
     await response.text();
-    const chatId = response.headers.get('X-Frogbot-Chat-Id');
+    const chatId = response.headers.get('X-FrogBot-Chat-Id');
     expect(chatId).not.toBeNull();
     await expectPersisted(chatId!);
   });
@@ -144,7 +144,7 @@ describe('agent endpoint composition', () => {
     });
     expect(response.status).toBe(200);
     await response.text();
-    return response.headers.get('X-Frogbot-Chat-Id');
+    return response.headers.get('X-FrogBot-Chat-Id');
   }
 
   async function storedRoles(chatId: string) {

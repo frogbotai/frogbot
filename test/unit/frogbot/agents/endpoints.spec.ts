@@ -8,7 +8,7 @@ import {
   definePiece,
   pieceInstanceTools,
 } from '../../../../packages/frogbot/src/pieces/definePiece.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const { createAgentUIStreamResponse, resolveChatAttachments } = vi.hoisted(() => ({
   createAgentUIStreamResponse: vi.fn(() => Promise.resolve(new Response('stream'))),
@@ -94,7 +94,7 @@ function makeRequest({
   signal?: AbortSignal;
   slug?: string;
   user?: { id: string } | null;
-} = {}): FrogbotRequest {
+} = {}): FrogBotRequest {
   const headers = new Headers({ 'content-type': 'application/json' });
   if (accept) {
     headers.set('accept', accept);
@@ -128,7 +128,7 @@ function makeRequest({
     },
     payload: { db: {} },
     user,
-  }) as unknown as FrogbotRequest;
+  }) as unknown as FrogBotRequest;
 }
 
 function postHandler() {
@@ -357,12 +357,12 @@ describe('agent endpoints', () => {
     expect(await response.json()).toMatchObject({ chatId: 'chat-9' });
   });
 
-  it('sets X-Frogbot-Chat-Id on streamed responses', async () => {
+  it('sets X-FrogBot-Chat-Id on streamed responses', async () => {
     const create = vi.fn(() => Promise.resolve({ id: 'chat-9' }));
     await postHandler()(makeRequest({ create, accept: 'text/event-stream' }));
 
     expect(createAgentUIStreamResponse).toHaveBeenCalledWith(
-      expect.objectContaining({ headers: { 'X-Frogbot-Chat-Id': 'chat-9' } }),
+      expect.objectContaining({ headers: { 'X-FrogBot-Chat-Id': 'chat-9' } }),
     );
   });
 

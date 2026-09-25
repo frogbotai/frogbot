@@ -1,4 +1,4 @@
-import type { FrogbotRequest } from 'frogbot';
+import type { FrogBotRequest } from 'frogbot';
 import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
@@ -126,7 +126,7 @@ export function createDropboxClient({ auth }: { auth: unknown }): DropboxClient 
   return new DropboxClient(dropboxAuth.parse(auth));
 }
 
-export function requestSignal(req: FrogbotRequest): AbortSignal | undefined {
+export function requestSignal(req: FrogBotRequest): AbortSignal | undefined {
   req.signal?.throwIfAborted();
 
   return req.signal ?? undefined;

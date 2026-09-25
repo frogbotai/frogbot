@@ -1,3 +1,3 @@
-import type { FrogbotConfig } from './config/types.js';
+import type { FrogBotConfig } from './config/types.js';
 
-export type Plugin = (config: FrogbotConfig) => FrogbotConfig | Promise<FrogbotConfig>;
+export type Plugin = (config: FrogBotConfig) => FrogBotConfig | Promise<FrogBotConfig>;

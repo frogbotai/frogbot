@@ -1,6 +1,6 @@
 import type { CollectionSlug } from '../types/generated.js';
 import type { SelectType, Sort, Where } from '../types/payload.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 
 /** Identifier accepted by ID-keyed operations. Mongo collections key by
  *  string; SQL collections key by number; Payload accepts both. */
@@ -14,7 +14,7 @@ type CommonArgs = {
   locale?: string;
   overrideAccess?: boolean;
   populate?: Record<string, unknown>;
-  req?: FrogbotRequest;
+  req?: FrogBotRequest;
   select?: SelectType;
   showHiddenFields?: boolean;
   user?: unknown;

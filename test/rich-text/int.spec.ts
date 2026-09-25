@@ -13,8 +13,8 @@ import {
 import type { SerializedEditorState } from '@frogbotai/richtext-lexical/lexical';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import type { BootedFrogbot } from '../__helpers/shared/bootFrogbot';
-import { bootFrogbot } from '../__helpers/shared/bootFrogbot';
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import { DividerFeature } from '../e2e/fixtures/rich-text/src/__docs-samples__/ticket135/custom-features/divider/feature.server.js';
 import config, { CalloutBlock, InlineCodeBlock } from './config.js';
@@ -57,10 +57,10 @@ function paragraph(text: string): SerializedEditorState {
 }
 
 describe('rich text integration [sqlite]', () => {
-  let booted: BootedFrogbot;
+  let booted: BootedFrogBot;
 
   beforeAll(async () => {
-    booted = await bootFrogbot(dirname);
+    booted = await bootFrogBot(dirname);
   });
 
   afterAll(async () => {

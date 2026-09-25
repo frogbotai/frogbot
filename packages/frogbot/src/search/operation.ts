@@ -2,9 +2,9 @@ import type { Payload, PayloadRequest, SanitizedCollectionConfig, Where } from '
 import { createLocalReq, validateQueryPaths } from 'payload';
 
 import type { Field } from '../fields/config/types.js';
-import type { Frogbot } from '../frogbot.js';
+import type { FrogBot } from '../frogbot.js';
 import type { CollectionSlug, TypedCollection } from '../types/generated.js';
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import {
   SearchFilterUnsupportedError,
   SearchReadinessError,
@@ -57,7 +57,7 @@ function isReadGuarded(nodes: Map<string, SearchFieldNode[]>, path: string): boo
 }
 
 function getCollectionIndex(
-  frogbot: Frogbot,
+  frogbot: FrogBot,
   collection: string,
   index: string,
 ): SearchIndexDescriptor | undefined {
@@ -67,7 +67,7 @@ function getCollectionIndex(
 }
 
 export async function searchOperation<T extends CollectionSlug>(
-  frogbot: Frogbot,
+  frogbot: FrogBot,
   payload: Payload,
   options: SearchOptions<T>,
 ): Promise<SearchResult<T>> {
@@ -178,7 +178,7 @@ export async function searchOperation<T extends CollectionSlug>(
     payload,
   );
 
-  const req = Object.assign(payloadReq, { frogbot }) as FrogbotRequest;
+  const req = Object.assign(payloadReq, { frogbot }) as FrogBotRequest;
 
   if (req.locale === 'all') {
     throw new SearchFilterUnsupportedError(

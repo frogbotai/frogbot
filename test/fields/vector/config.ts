@@ -1,10 +1,10 @@
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
-import type { FrogbotConfig } from '../../../packages/frogbot/src/config/types.js';
+import type { FrogBotConfig } from '../../../packages/frogbot/src/config/types.js';
 import { openAccess } from '../../__helpers/shared/buildTestConfig.js';
 
 const { databaseAdapter } = await import('../../databaseAdapter.js');
 
-const config: FrogbotConfig = {
+const config: FrogBotConfig = {
   secret: 'test-secret',
   db: databaseAdapter,
   typescript: { autoGenerate: false },

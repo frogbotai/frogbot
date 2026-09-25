@@ -41,9 +41,9 @@ import { FixedToolbarFeatureClient as FixedToolbarFeatureClient_54ba8335448b80c9
 import { DividerClientFeature as DividerClientFeature_94e386be89b7d09d2000043accbdbe20 } from '../../../__docs-samples__/ticket135/custom-features/divider/feature.client';
 import { MismatchedSchemaField as MismatchedSchemaField_c2f8af9d5473262aa453012227f3a5ab } from '../../../__docs-samples__/ticket135/rendering-on-demand';
 import { FolderTypeField as FolderTypeField_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client';
-import { FrogbotNav as FrogbotNav_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
-import { FrogbotIcon as FrogbotIcon_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
-import { FrogbotLogo as FrogbotLogo_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
+import { FrogBotNav as FrogBotNav_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
+import { FrogBotIcon as FrogBotIcon_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
+import { FrogBotLogo as FrogBotLogo_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 import { CollectionsSection as CollectionsSection_0490761fff9543eb3bcfbb8da78b8101 } from '@frogbotai/next';
 import { RecentsSection as RecentsSection_0490761fff9543eb3bcfbb8da78b8101 } from '@frogbotai/next';
 import { ChatView as ChatView_172b1613d7d7a5cf96731bcb4ca4ed45 } from '@frogbotai/next/views';
@@ -133,9 +133,9 @@ export const importMap = {
   '/__docs-samples__/ticket135/rendering-on-demand#MismatchedSchemaField':
     MismatchedSchemaField_c2f8af9d5473262aa453012227f3a5ab,
   '@frogbotai/next/client#FolderTypeField': FolderTypeField_e1fc65845c25c823b271918436e716b9,
-  '@frogbotai/next/rsc#FrogbotNav': FrogbotNav_0d74ee439e1043043a872b6d428a44d5,
-  '@frogbotai/next/rsc#FrogbotIcon': FrogbotIcon_0d74ee439e1043043a872b6d428a44d5,
-  '@frogbotai/next/rsc#FrogbotLogo': FrogbotLogo_0d74ee439e1043043a872b6d428a44d5,
+  '@frogbotai/next/rsc#FrogBotNav': FrogBotNav_0d74ee439e1043043a872b6d428a44d5,
+  '@frogbotai/next/rsc#FrogBotIcon': FrogBotIcon_0d74ee439e1043043a872b6d428a44d5,
+  '@frogbotai/next/rsc#FrogBotLogo': FrogBotLogo_0d74ee439e1043043a872b6d428a44d5,
   '@frogbotai/next#CollectionsSection': CollectionsSection_0490761fff9543eb3bcfbb8da78b8101,
   '@frogbotai/next#RecentsSection': RecentsSection_0490761fff9543eb3bcfbb8da78b8101,
   '@frogbotai/next/views#ChatView': ChatView_172b1613d7d7a5cf96731bcb4ca4ed45,

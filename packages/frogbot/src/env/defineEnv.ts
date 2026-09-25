@@ -1,6 +1,6 @@
 import { type EnvBuilderDescriptor } from './builders.js';
 import { deriveName } from './deriveName.js';
-import { type EnvIssue, FrogbotEnvError } from './error.js';
+import { type EnvIssue, FrogBotEnvError } from './error.js';
 
 type SchemaBuilder = { readonly _output: unknown };
 type EnvSchema = Record<string, SchemaBuilder>;
@@ -71,7 +71,7 @@ export const defineEnv = <const TSchema extends EnvSchema>(
     }
   }
 
-  if (issues.length) throw new FrogbotEnvError(issues);
+  if (issues.length) throw new FrogBotEnvError(issues);
 
   return Object.freeze(values) as DefinedEnv<TSchema>;
 };

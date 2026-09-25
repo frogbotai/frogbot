@@ -2,7 +2,7 @@ import { createWriteStream } from 'node:fs';
 import { Writable } from 'node:stream';
 
 import { loadConfig } from '../config/load.js';
-import { Frogbot } from '../frogbot.js';
+import { FrogBot } from '../frogbot.js';
 import type { Where } from '../types/payload.js';
 
 type ParsedArgs = {
@@ -45,12 +45,12 @@ export function parseExportTrainingDataArgs(args: string[]): ParsedArgs {
 }
 
 export async function exportTrainingData(args: string[]): Promise<void> {
-  let frogbot: Frogbot | undefined;
+  let frogbot: FrogBot | undefined;
 
   try {
     const { where, output, pageSize } = parseExportTrainingDataArgs(args);
     const config = await loadConfig({ cwd: process.cwd() });
-    frogbot = await new Frogbot().init({ config, disableOnInit: true });
+    frogbot = await new FrogBot().init({ config, disableOnInit: true });
 
     const stream = frogbot.exportTrainingData({ where, pageSize, overrideAccess: true });
     const destination = output ? createWriteStream(output) : process.stdout;

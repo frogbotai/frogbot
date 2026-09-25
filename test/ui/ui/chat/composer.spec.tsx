@@ -1,4 +1,4 @@
-import { createFrogbotSDK } from '@frogbotai/sdk';
+import { createFrogBotSDK } from '@frogbotai/sdk';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -58,7 +58,7 @@ describe('Composer', () => {
     render(
       <Composer
         aria-label="Message"
-        sdk={createFrogbotSDK({ baseURL: '/api', fetch })}
+        sdk={createFrogBotSDK({ baseURL: '/api', fetch })}
         assetsSlug="files"
         onSubmit={onSubmit}
         submitContent="Send"
@@ -152,7 +152,7 @@ describe('Composer', () => {
     const { container } = render(
       <Composer
         aria-label="Message"
-        sdk={createFrogbotSDK({ baseURL: '/api', fetch })}
+        sdk={createFrogBotSDK({ baseURL: '/api', fetch })}
         assetsSlug="documents"
         onSubmit={onSubmit}
         submitContent="Send"
@@ -186,7 +186,7 @@ describe('Composer', () => {
       );
     const { container } = render(
       <Composer
-        sdk={createFrogbotSDK({ baseURL: '/api', fetch })}
+        sdk={createFrogBotSDK({ baseURL: '/api', fetch })}
         assetsSlug="files"
         onSubmit={vi.fn()}
         submitContent="Send"

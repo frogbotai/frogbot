@@ -1,24 +1,24 @@
-// Singleton accessor for the Frogbot instance.
+// Singleton accessor for the FrogBot instance.
 //
 // Mirrors Payload's `getPayload()` pattern. Caches the instance on
 // `globalThis` so repeated calls return the same object even when the
 // module graph is re-evaluated (e.g. Next.js dev HMR).
 
-import type { FrogbotSanitizedConfig } from './config/sanitized.js';
+import type { FrogBotSanitizedConfig } from './config/sanitized.js';
 import type { InitOptions } from './frogbot.js';
-import { Frogbot } from './frogbot.js';
-import type { FrogbotRequest } from './types/request.js';
+import { FrogBot } from './frogbot.js';
+import type { FrogBotRequest } from './types/request.js';
 
-type FrogbotCache = {
-  frogbot: Frogbot | null;
+type FrogBotCache = {
+  frogbot: FrogBot | null;
   config: InitOptions['config'] | null;
-  promise: Promise<Frogbot> | null;
+  promise: Promise<FrogBot> | null;
   promiseConfig: InitOptions['config'] | null;
 };
 
-const globalRef = globalThis as { _frogbot?: FrogbotCache };
+const globalRef = globalThis as { _frogbot?: FrogBotCache };
 
-function getCache(): FrogbotCache {
+function getCache(): FrogBotCache {
   return (globalRef._frogbot ??= {
     frogbot: null,
     config: null,
@@ -28,11 +28,11 @@ function getCache(): FrogbotCache {
 }
 
 /**
- * Get (or create) the singleton Frogbot instance.
+ * Get (or create) the singleton FrogBot instance.
  *
  * First call initializes; subsequent calls return the cached instance.
  */
-export function getFrogbot(options: InitOptions): Promise<Frogbot> {
+export function getFrogBot(options: InitOptions): Promise<FrogBot> {
   const config = options.config;
   const cached = getCache();
   if (cached.frogbot && (!cached.config || cached.config === config)) {
@@ -41,11 +41,11 @@ export function getFrogbot(options: InitOptions): Promise<Frogbot> {
 
   if (cached.promise) {
     if (cached.promiseConfig === config) return cached.promise;
-    return cached.promise.then(() => getFrogbot(options));
+    return cached.promise.then(() => getFrogBot(options));
   }
 
   if (!cached.promise) {
-    const promise = new Frogbot().init(options).then((instance) => {
+    const promise = new FrogBot().init(options).then((instance) => {
       cached.frogbot = instance;
       cached.config = config;
       return instance;
@@ -70,16 +70,16 @@ export function getFrogbot(options: InitOptions): Promise<Frogbot> {
 }
 
 /**
- * Returns the cached Frogbot instance synchronously, or null if not yet
+ * Returns the cached FrogBot instance synchronously, or null if not yet
  * initialized. Used internally by the beforeOperation hook to stamp
  * `req.frogbot` without async overhead.
  */
-export function getCachedFrogbot(): Frogbot | null {
+export function getCachedFrogBot(): FrogBot | null {
   return getCache().frogbot;
 }
 
-export async function createDefaultRequest(): Promise<FrogbotRequest> {
-  const frogbot = getCachedFrogbot();
+export async function createDefaultRequest(): Promise<FrogBotRequest> {
+  const frogbot = getCachedFrogBot();
   if (!frogbot) {
     throw new Error(
       '[frogbot] Request-less piece calls require the default FrogBot instance to finish initialization. Pass `req` during `onInit` or when using another runtime.',
@@ -88,7 +88,7 @@ export async function createDefaultRequest(): Promise<FrogbotRequest> {
   return frogbot.createRequest();
 }
 
-export function seedFrogbotCache(frogbot: Frogbot, config?: FrogbotSanitizedConfig): void {
+export function seedFrogBotCache(frogbot: FrogBot, config?: FrogBotSanitizedConfig): void {
   const cached = getCache();
   cached.frogbot = frogbot;
   cached.config = config ?? cached.config;
@@ -98,6 +98,6 @@ export function seedFrogbotCache(frogbot: Frogbot, config?: FrogbotSanitizedConf
  * Reset the singleton cache. Used in tests.
  * @internal
  */
-export function resetFrogbotCache(): void {
+export function resetFrogBotCache(): void {
   globalRef._frogbot = { frogbot: null, config: null, promise: null, promiseConfig: null };
 }

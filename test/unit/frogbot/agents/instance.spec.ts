@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/ai/types.js';
-import type { FrogbotRequest } from '../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
 
 const agentState = vi.hoisted(() => ({
   prepared: undefined as Record<string, unknown> | undefined,
@@ -102,11 +102,11 @@ function emptyHooks(): SanitizedAIConfig['hooks'] {
   };
 }
 
-function makeDeps(config: SanitizedAIConfig, req: FrogbotRequest) {
+function makeDeps(config: SanitizedAIConfig, req: FrogBotRequest) {
   // Mirrors the gateway's operation lifecycle: hooks receive top-level
   // req/user/agent lifted from the seeded context (as toGatewayHooks does in prod).
   const lift = (context: Record<string, unknown>) => {
-    const seed = context as { req?: FrogbotRequest; agent?: unknown };
+    const seed = context as { req?: FrogBotRequest; agent?: unknown };
     return { req: seed.req, user: seed.req?.user, agent: seed.agent };
   };
   const runHooks = async (
@@ -197,7 +197,7 @@ describe('agent hook lifecycle', () => {
     hooks.beforeOperation.push(beforeOperation);
     hooks.afterOperation.push(afterOperation);
     const config = makeConfig(hooks);
-    const req = { user: { id: 'user-1' }, payload: { db: {} } } as unknown as FrogbotRequest;
+    const req = { user: { id: 'user-1' }, payload: { db: {} } } as unknown as FrogBotRequest;
     const tool = {
       slug: 'lookup',
       description: 'Look up data',
@@ -241,7 +241,7 @@ describe('agent hook lifecycle', () => {
     const hooks = emptyHooks();
     hooks.afterOperation.push(afterOperation);
     const config = makeConfig(hooks);
-    const req = { user: { id: 'user-1' } } as FrogbotRequest;
+    const req = { user: { id: 'user-1' } } as FrogBotRequest;
     const agent = createAgentInstance(
       { slug: 'support', model: 'openai/test', instructions: 'Help' },
       makeDeps(config, req),
@@ -271,7 +271,7 @@ describe('agent hook lifecycle', () => {
     const hooks = emptyHooks();
     hooks.afterOperation.push(afterOperation);
     const config = makeConfig(hooks);
-    const req = { user: { id: 'user-1' } } as FrogbotRequest;
+    const req = { user: { id: 'user-1' } } as FrogBotRequest;
     const agent = createAgentInstance(
       { slug: 'support', model: 'openai/test', instructions: 'Help' },
       makeDeps(config, req),
@@ -295,7 +295,7 @@ describe('agent hook lifecycle', () => {
 
   it('persists authenticated local create and continue calls', async () => {
     const config = makeConfig(emptyHooks());
-    const req = { user: { id: 'user-1' }, payload: { db: {} } } as unknown as FrogbotRequest;
+    const req = { user: { id: 'user-1' }, payload: { db: {} } } as unknown as FrogBotRequest;
     const deps = makeDeps(config, req) as unknown as {
       frogbot: {
         create: ReturnType<typeof vi.fn>;
@@ -351,7 +351,7 @@ describe('agent hook lifecycle', () => {
 
   it('persists trusted local create and continue calls without a user', async () => {
     const config = makeConfig(emptyHooks());
-    const req = { user: null, payload: { db: {} } } as unknown as FrogbotRequest;
+    const req = { user: null, payload: { db: {} } } as unknown as FrogBotRequest;
     const deps = makeDeps(config, req) as unknown as {
       frogbot: {
         create: ReturnType<typeof vi.fn>;

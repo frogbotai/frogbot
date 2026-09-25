@@ -11,7 +11,7 @@ import {
   parseOAuthTokens,
   refreshOAuthTokens,
 } from '../../../../../packages/frogbot/src/connections/oauth/tokens.js';
-import type { FrogbotRequest } from '../../../../../packages/frogbot/src/types/request.js';
+import type { FrogBotRequest } from '../../../../../packages/frogbot/src/types/request.js';
 import { definition, setup } from './fixtures.js';
 
 describe('OAuth token and account transport', () => {
@@ -197,9 +197,9 @@ describe('OAuth token and account transport', () => {
       vi.useFakeTimers();
       const requestAbort = new AbortController();
       const leaseAbort = new AbortController();
-      let received!: FrogbotRequest;
+      let received!: FrogBotRequest;
       let transport!: Promise<Response>;
-      const run = async ({ req }: { req: FrogbotRequest }) => {
+      const run = async ({ req }: { req: FrogBotRequest }) => {
         received = req;
         transport = fetch(`http://127.0.0.1:${(server.address() as AddressInfo).port}`, {
           signal: req.signal,
@@ -233,7 +233,7 @@ describe('OAuth token and account transport', () => {
           frogbot: {},
           transactionID: 'transaction',
         },
-      ) as FrogbotRequest;
+      ) as FrogBotRequest;
       const metadata = Symbol('metadata');
       Object.defineProperty(req, metadata, { value: { hidden: true } });
       const accepted = once(server, 'request');

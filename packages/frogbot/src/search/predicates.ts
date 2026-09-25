@@ -1,7 +1,7 @@
 import type { PayloadRequest, SanitizedCollectionConfig, Where } from 'payload';
 import { executeAccess, Forbidden } from 'payload';
 
-import type { FrogbotRequest } from '../types/request.js';
+import type { FrogBotRequest } from '../types/request.js';
 import { SearchFilterUnsupportedError } from './errors.js';
 import type { SearchIndexDescriptor } from './types.js';
 
@@ -103,7 +103,7 @@ export async function resolveSearchPredicate({
   collection: SanitizedCollectionConfig;
   index: SearchIndexDescriptor;
   where?: Where;
-  req: FrogbotRequest;
+  req: FrogBotRequest;
   overrideAccess: boolean;
   draft: boolean;
 }): Promise<Where> {

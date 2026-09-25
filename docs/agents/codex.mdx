@@ -1,9 +1,9 @@
 ---
 title: "Codex"
-description: "Use Frogbot as a custom OpenAI provider"
+description: "Use FrogBot as a custom OpenAI provider"
 ---
 
-Codex CLI can talk to Frogbot by setting a custom base URL.
+Codex CLI can talk to FrogBot by setting a custom base URL.
 This lets you use models from multiple providers with one key.
 
 ---
@@ -34,11 +34,11 @@ codex --version
 ## Configure
 
 Create or edit `~/.codex/config.toml`.
-Set a provider that points to Frogbot.
+Set a provider that points to FrogBot.
 
 ```toml
 [model_providers.frogbot]
-name = "Frogbot"
+name = "FrogBot"
 base_url = "https://app.frogbot.ai/api/v1"
 env_key = "FROGBOT_API_KEY"
 
@@ -64,7 +64,7 @@ You can set it in the profile or pass `--model` per run.
 
 ## Run
 
-Use the Frogbot profile for any session.
+Use the FrogBot profile for any session.
 
 ```bash
 codex --profile frogbot
