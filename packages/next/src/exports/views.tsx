@@ -35,7 +35,10 @@ export { ConnectionsView } from '../views/Connections/index.js';
 export { CustomCollectionView } from '../views/CustomCollectionView.js';
 export { DefaultListView } from '../views/List/DefaultListView.client.js';
 import type { FrogBotConfigArg } from '../types.js';
+import { brandImportMapErrors } from '../utilities/brandImportMapErrors.js';
 import { ChatViewClient } from './ChatView.client.js';
+
+brandImportMapErrors();
 
 const assetURL = (asset: { src: string } | string): string =>
   typeof asset === 'object' ? asset.src : asset;

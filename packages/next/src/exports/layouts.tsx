@@ -6,8 +6,11 @@ import { getPayloadConfig } from 'frogbot/internal';
 import type { ComponentProps } from 'react';
 
 import type { FrogBotConfigArg } from '../types.js';
+import { brandImportMapErrors } from '../utilities/brandImportMapErrors.js';
 
 export type { ServerFunctionClient } from 'payload';
+
+brandImportMapErrors();
 
 type RootLayoutProps = Omit<ComponentProps<typeof PayloadRootLayout>, 'config'> & {
   readonly config: FrogBotConfigArg;
