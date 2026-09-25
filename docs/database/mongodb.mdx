@@ -26,6 +26,10 @@ export default buildConfig({
 })
 ```
 
+## Collection vector fields and search
+
+Use a [vector field](/fields/vector) for ordinary collection CRUD without a search index. **Native collection search is not implemented** in the MongoDB adapter. Adding any collection `search` index, including lexical-only, currently fails setup with `not-implemented`; see the [search API preview](/search/overview). Atlas or qualified self-managed search infrastructure, search-index permissions, readiness, and native metadata filter mappings are future adapter setup concerns. An ordinary MongoDB text index is not the same as an implemented FrogBot collection search operation.
+
 ## Options
 
 | Option                            | Description                                                                                                                                                                                                                                                                                                  |

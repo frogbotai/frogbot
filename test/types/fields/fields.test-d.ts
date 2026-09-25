@@ -22,6 +22,7 @@ import {
   type TextField,
   type UIField,
   type UploadField,
+  type VectorField,
 } from 'frogbot';
 import { expectTypeOf } from 'vitest';
 
@@ -47,7 +48,8 @@ type Variants =
   | TextareaField
   | TextField
   | UIField
-  | UploadField;
+  | UploadField
+  | VectorField;
 
 expectTypeOf<Variants>().toEqualTypeOf<Field>();
 
@@ -59,6 +61,24 @@ const textMany: TextField = {
 };
 
 expectTypeOf(textMany.hasMany).toEqualTypeOf<true>();
+
+const vector: VectorField = {
+  dimensions: 1536,
+  name: 'embedding',
+  required: true,
+  type: 'vector',
+  validate: (value) => {
+    expectTypeOf(value).toEqualTypeOf<number[] | null | undefined>();
+
+    return value === null || value === undefined || value.length === 1536
+      ? true
+      : 'Invalid vector.';
+  },
+};
+
+expectTypeOf(vector).toMatchTypeOf<Field>();
+expectTypeOf(vector.validate).toMatchTypeOf<VectorField['validate']>();
+expectTypeOf<{ name: string; type: 'vector' }>().not.toMatchTypeOf<VectorField>();
 
 type RichValue = { root: { children: unknown[] } };
 type RichProps = { feature: string };

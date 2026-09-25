@@ -173,7 +173,23 @@ export type {
   RootHooks,
   RootLivePreviewConfig,
 } from './config/types.js';
-export type { DatabaseAdapter } from './database/types.js';
+export type {
+  AdapterSearch,
+  AdapterSearchArgs,
+  AdapterSearchResult,
+  AdapterSearchRow,
+  BuildSearchSchema,
+  BuildSearchSchemaArgs,
+  DatabaseAdapter,
+  MapVectorField,
+  MapVectorFieldArgs,
+  SearchAdapter,
+  SearchCapabilities,
+  SearchCapabilitiesArgs,
+  SearchCapability,
+  SearchReadiness,
+  SearchReadinessArgs,
+} from './database/types.js';
 export type {
   JobQueueArgs,
   Jobs,
@@ -222,6 +238,27 @@ export type {
   SignInMethod,
 } from './pieces/types.js';
 export type { Plugin } from './plugin.js';
+export {
+  SearchCapabilityError,
+  SearchFilterUnsupportedError,
+  SearchReadinessError,
+  SearchValidationError,
+} from './search/errors.js';
+export type {
+  SearchCollection,
+  SearchFieldPath,
+  SearchFilterField,
+  SearchHit,
+  SearchIndexConfig,
+  SearchIndexDescriptor,
+  SearchIndexDescriptors,
+  SearchMetric,
+  SearchMode,
+  SearchOptions,
+  SearchQuery,
+  SearchRanking,
+  SearchResult,
+} from './search/types.js';
 export type { SkillConfig, SkillContent, SkillCtx, SkillResource } from './skills/types.js';
 export type { Tool, ToolCtx } from './tools/types.js';
 export type { Subscription, SubscriptionEnableProps } from './triggers/subscriptions.js';
@@ -418,6 +455,7 @@ export type {
   Validate,
   ValidateOptions,
   ValueWithRelation,
+  VectorField,
 } from './fields/config/types.js';
 export {
   fieldAffectsData,

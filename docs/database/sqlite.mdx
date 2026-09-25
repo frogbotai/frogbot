@@ -38,6 +38,10 @@ export default buildConfig({
 })
 ```
 
+## Collection vector fields and search
+
+Use a [vector field](/fields/vector) for ordinary collection CRUD without a search index. **Native collection search is not implemented** in the SQLite/LibSQL or Cloudflare D1 adapters: adding any collection `search` index, including lexical-only, currently fails setup with `not-implemented`. See the [search API preview](/search/overview). SQLite/LibSQL engine builds differ in full-text and vector capabilities; D1 documents FTS5 support but has no documented native vector index. These engine features do not imply a working FrogBot search adapter or an application-side ranking fallback.
+
 ## Options
 
 | Option                     | Description                                                                                                                                                                      |

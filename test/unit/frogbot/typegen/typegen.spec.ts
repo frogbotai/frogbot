@@ -152,6 +152,44 @@ describe('frogbot generate:types', () => {
       await rm(dir, { recursive: true, force: true });
     });
 
+    it('generates numerical arrays for vectors in repeated fields and named tabs', async () => {
+      dir = await mkdtemp(join(tmpdir(), 'frogbot-vector-nested-types-'));
+
+      const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
+      const config = await buildConfig({
+        secret: 'test-secret',
+        db: { defaultIDType: 'number' } as never,
+        collections: [
+          {
+            slug: 'documents',
+            fields: [
+              {
+                name: 'passages',
+                type: 'array',
+                fields: [{ name: 'embedding', type: 'vector', dimensions: 1536, required: true }],
+              },
+              {
+                type: 'tabs',
+                tabs: [
+                  {
+                    name: 'details',
+                    fields: [{ name: 'optionalEmbedding', type: 'vector', dimensions: 3 }],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      const { outputPath } = await writeGeneratedTypes(config, dir);
+      const output = await readFile(outputPath, 'utf-8');
+
+      expect(output).toMatch(/passages\?:[\s\S]*?embedding: number\[\];/);
+      expect(output).toMatch(/details\?:[\s\S]*?optionalEmbedding\?: number\[\] \| null;/);
+      expect(output).not.toMatch(/embedding: \[number/);
+    });
+
     it('emits Chat/Message interfaces with UIMessage-typed parts for injected chat collections', async () => {
       dir = await mkdtemp(join(tmpdir(), 'frogbot-types-'));
       const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');

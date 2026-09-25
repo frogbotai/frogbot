@@ -1,0 +1,147 @@
+---
+title: Collection search
+sidebarTitle: Overview
+description: Learn the collection search API shape and current adapter availability.
+keywords: [search, lexical, vector, hybrid, indexes, rag]
+---
+
+FrogBot supports [vector fields and ordinary CRUD](/fields/vector). The `search` configuration, `frogbot.search()`, and the REST and GraphQL search endpoints are present in core, but **no native database search adapter has shipped**. Adding any named search index currently fails database initialization with `SearchCapabilityError` and reason `not-implemented`, even for lexical-only indexes. Leave `search` off your collection to boot and use vector storage today.
+
+## Index configuration preview — unavailable until adapter support ships
+
+The following collection declaration is a **non-runnable preview**: it will fail database initialization with `not-implemented` on the current adapters. It shows how named indexes select fields; it does not enable search yet.
+
+```ts
+import type { CollectionConfig } from 'frogbot';
+
+export const Articles: CollectionConfig = {
+  slug: 'articles',
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'body', type: 'textarea' },
+    { name: 'embedding', type: 'vector', dimensions: 1536 },
+  ],
+  search: {
+    content: {
+      lexical: { fields: ['title', 'body'] },
+      vector: { field: 'embedding' },
+    },
+    titles: {
+      lexical: { fields: ['title'] },
+    },
+  },
+};
+```
+
+`dimensions` belongs to the vector field, not the index. The index's vector metric defaults to `cosine`; other accepted metric names are `euclidean` and `dotProduct`. When an index includes both components, supplying both query inputs selects hybrid mode with configured reciprocal-rank fusion (`rrf`). Configuration does not calculate an embedding or install native indexes without adapter support.
+
+## Query API preview — unavailable until adapter support ships
+
+The operation accepts `collection`, a named `index`, and `query` (`SearchOptions`). These calls illustrate the current signature, **not working searches**:
+
+```ts
+import type { FrogbotRequest } from 'frogbot';
+
+export async function searchArticles(req: FrogbotRequest, vector: number[]) {
+  const lexical = await req.frogbot.search({
+    collection: 'articles',
+    index: 'content',
+    query: { text: 'account recovery' },
+    where: { title: { equals: 'Account recovery' } },
+    limit: 10,
+    select: { title: true },
+    req,
+  });
+
+  const semantic = await req.frogbot.search({
+    collection: 'articles',
+    index: 'content',
+    query: { vector },
+    req,
+  });
+
+  const hybrid = await req.frogbot.search({
+    collection: 'articles',
+    index: 'content',
+    query: { text: 'account recovery', vector },
+    req,
+  });
+
+  return { lexical, semantic, hybrid };
+}
+```
+
+Search defaults to enforcing access and requires `req` unless you explicitly set `overrideAccess: true`. That default differs from ordinary Local API CRUD. `index` is currently typed as a string; index names are checked against the collection at runtime. The `vector` must match the indexed field's dimensions and contain finite numbers. A text query must be non-empty, and `limit` defaults to 10 (positive integer required). `where`, `select`, `depth` (defaults to `0`), `draft`, `locale`, and `fallbackLocale` are options, but which filters and modes can run depends on the adapter and selected index.
+
+The database ranks only documents the caller can read: collection read access and your `where` filter are applied before ranking. FrogBot then reads the ranked documents in one ordinary collection read, so collection and field read hooks run on each result as they do for any other read. A ranked document that this read does not return, for example because it was deleted or is no longer readable, is left out; `hits` can therefore be shorter than `limit`. Field-level read access on a ranked or filtered field stops the query with `SearchFilterUnsupportedError` while access is enforced, because scores computed over a hidden value would reveal it.
+
+When an adapter implements search, the declared return type is `{ mode, ranking, hits }`: `mode` is `lexical`, `vector`, or `hybrid`; `ranking` contains `method`, `higherIsBetter`, and `approximate`; each hit has `{ doc, score }`, in ranked order. Scores are ordering values, not probabilities; scores from different methods are not directly comparable. An empty `hits` array is a successful no-match result **only after search actually executes**. Ranking and hybrid fusion are intended to run in the database, with no JavaScript similarity or fusion fallback.
+
+## REST API preview — unavailable until adapter support ships
+
+Every collection with a search index gets a `POST /api/{collection-slug}/search` endpoint. The JSON body accepts the same options as `frogbot.search()` except `collection`, `overrideAccess`, and `req`: the endpoint always searches as the requesting user with access enforced.
+
+```ts
+const response = await fetch('/api/articles/search', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',
+  body: JSON.stringify({
+    index: 'content',
+    query: { text: 'account recovery' },
+    where: { title: { equals: 'Account recovery' } },
+    limit: 5,
+  }),
+});
+
+const { mode, ranking, hits } = await response.json();
+```
+
+The response body is the same `{ mode, ranking, hits }` object that `frogbot.search()` returns. See the [REST API](/rest-api/overview) for authentication.
+
+## GraphQL preview — unavailable until adapter support ships
+
+Every searchable collection with GraphQL queries enabled also gets a `search` query named after its plural GraphQL name, such as `searchArticles`. Setting the collection's `graphQL` option to `false` or `graphQL.disableQueries` to `true` omits it.
+
+```graphql
+query {
+  searchArticles(index: "content", text: "account recovery", limit: 5) {
+    mode
+    ranking {
+      method
+      higherIsBetter
+      approximate
+    }
+    hits {
+      score
+      doc {
+        id
+        title
+      }
+    }
+  }
+}
+```
+
+The query accepts `index`, `text`, `vector`, `where`, `limit`, `draft`, and, when localization is enabled, `locale` and `fallbackLocale`. `doc` uses the collection's GraphQL type. Like the REST endpoint, the query always enforces the requesting user's access. See the [GraphQL API](/graphql/overview).
+
+## Setup and errors
+
+FrogBot checks every configured index when the database initializes, including when you create or run migrations. The check is silent when a configured index is compatible. Today, all built-in adapters lack the native implementation, so **any configured index fails initialization** with `SearchCapabilityError` (`reason: 'not-implemented'`), naming the collection, index, and mode. That means adapter work is pending; it does not establish an engine limitation. A collection with `search` cannot boot until an adapter implements it.
+
+The core also exports `SearchValidationError`, `SearchFilterUnsupportedError`, and `SearchReadinessError` for invalid inputs, unsupported filters or visibility rules, and invalid or unready ranked results. REST and GraphQL report them with these HTTP statuses:
+
+| Error                          | Status | Meaning                                                             |
+| ------------------------------ | ------ | ------------------------------------------------------------------- |
+| `SearchValidationError`        | `400`  | The index, query, or an option is invalid.                          |
+| `SearchFilterUnsupportedError` | `400`  | A filter, locale, or field visibility rule cannot be searched.      |
+| `SearchCapabilityError`        | `501`  | The database adapter cannot run the requested mode.                 |
+| `SearchReadinessError`         | `503`  | The native index is not ready or returned an invalid ranked result. |
+
+A caller without collection read access receives `403`. `engine-gap` and `missing-prerequisite` are distinct capability reasons for adapters to report when applicable, **not verified current search outcomes**. See the [database status](/database/overview#collection-search-status) and adapter pages for the present state.
+
+## Adapter integration
+
+Database adapters add search through a `search` object on the adapter. `capabilities` declares which modes an index supports. `buildSchema` receives every collection's normalized indexes while the database initializes, before tables and indexes are created, so native search indexes are part of schema push and migrations. `readiness` can reject a query while an index is still building, and `search` returns ranked `{ id, score }` rows for FrogBot to read back. None of the built-in adapters implements this contract yet.
+
+After native search is available, you can optionally call the existing `frogbot.rerank()` on readable hits, or compose retrieval and answer generation in your own application. There is no automatic embedding or built-in RAG preset for this collection search API. The separate [search plugin](/plugins/search) has its own contract.

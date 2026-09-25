@@ -60,6 +60,10 @@ export default buildConfig({
   for a Docker Neon DB setup.
 </Banner>
 
+## Collection vector fields and search
+
+You can declare a [vector field](/fields/vector) without a search index and use ordinary collection CRUD. **Native collection search is not implemented** in either the Postgres or Vercel Postgres adapter. Any collection `search` index, even lexical-only, currently fails setup with `not-implemented`; see the [search API preview](/search/overview). PostgreSQL full-text search and pgvector are planned integration targets, not shipped FrogBot search support. Future pgvector-based search would require the extension to be available on the connected database; an approximate index is a separate choice from vector storage.
+
 ## Options
 
 | Option                           | Description                                                                                                                                                                                                             |

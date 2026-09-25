@@ -64,6 +64,11 @@
                 ]
               },
               {
+                "group": "Search",
+                "expanded": false,
+                "pages": ["search/overview"]
+              },
+              {
                 "group": "Access Control",
                 "expanded": false,
                 "pages": [
@@ -106,6 +111,7 @@
                   "fields/collapsible",
                   "fields/join",
                   "fields/json",
+                  "fields/vector",
                   "fields/code",
                   "fields/point",
                   "fields/ui",
