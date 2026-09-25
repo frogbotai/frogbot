@@ -9,17 +9,19 @@ import type {
 import { Message, ThreadImpl } from 'chat';
 
 import { AgentServiceError, assertAgentAccess } from '../agents/service.js';
-import type { AgentInstance } from '../agents/types.js';
+import type { AgentInstance, AgentStreamResult } from '../agents/types.js';
 import { createChannelChatAccess } from '../chat/channelAccess.js';
+import type { TurnRunnerArgs } from '../chat/turn/queue.js';
+import { registerTurnRunner } from '../chat/turn/queue.js';
+import { streamTurn } from '../chat/turn/streamTurn.js';
 import type { FrogBot } from '../frogbot.js';
 import { pieceInstanceRuntime } from '../pieces/definePiece.js';
 import type { PieceInstance } from '../pieces/types.js';
 import { requiresAdapterVerification } from '../triggers/registry.js';
 import { ChannelChat } from './chat.js';
 import { channelConversationKey, resolveChannelChat } from './conversation.js';
-import { runChannelLock } from './lock.js';
 import { createChannelStateAdapter } from './state.js';
-import type { ChannelConversationIdentity } from './types.js';
+import type { ChannelConversationIdentity, ChannelThreadReference } from './types.js';
 
 const GATEWAY_LEASE_KEY = 'channels:gateway:listener';
 const GATEWAY_LEASE_TTL = 30_000;
@@ -62,6 +64,7 @@ export class ChannelHost {
   private readonly gatewayController = new AbortController();
   private readonly gatewayRuns = new Set<Promise<boolean>>();
   private gatewayLoop?: Promise<void>;
+  private unregisterRunner?: () => void;
 
   constructor(private readonly frogbot: FrogBot) {}
 
@@ -84,6 +87,8 @@ export class ChannelHost {
 
       throw error;
     }
+
+    this.unregisterRunner = registerTurnRunner(this.frogbot, (args) => this.runQueued(args));
 
     if (startGateway && this.hasGatewayAdapters()) {
       this.gatewayLoop = this.runGatewayLoop(this.gatewayController.signal);
@@ -145,6 +150,7 @@ export class ChannelHost {
   }
 
   async shutdown(): Promise<void> {
+    this.unregisterRunner?.();
     this.gatewayController.abort();
     await this.gatewayLoop;
     await Promise.allSettled(this.gatewayRuns);
@@ -398,49 +404,78 @@ export class ChannelHost {
       req,
       user: user?.id ?? null,
       identity,
+      thread: threadReference(binding, thread),
     });
 
-    await runChannelLock({
-      kv: this.frogbot.kv,
-      key: `chat:${chatId}`,
-      signal: thread.signal,
-      run: async ({ signal }) => {
-        const controller = new AbortController();
-        const channelAccess = createChannelChatAccess({
-          req,
-          agentSlug: binding.agent.slug,
-          chatId,
-          channelKey: channelConversationKey(identity),
-        });
+    const channelAccess = createChannelChatAccess({
+      req,
+      agentSlug: binding.agent.slug,
+      chatId,
+      channelKey: channelConversationKey(identity),
+    });
 
-        await thread.subscribe();
+    await thread.subscribe();
 
-        const result = await binding.agent.streamMessage({
-          chatId,
-          channelAccess,
-          messages: [
-            {
-              id: message.id || generateId(),
-              role: 'user',
-              parts: [{ type: 'text', text: message.text }],
-            },
-          ],
-          req,
-          overrideAccess: true,
-          abortSignal: AbortSignal.any([signal, controller.signal]),
-        });
+    const controller = new AbortController();
 
-        try {
-          await thread.post(result.stream);
-        } catch (error) {
-          controller.abort(error);
+    const result = await binding.agent.streamMessage({
+      chatId,
+      channelAccess,
+      messages: [
+        {
+          id: message.id || generateId(),
+          role: 'user',
+          parts: [{ type: 'text', text: message.text }],
+        },
+      ],
+      req,
+      overrideAccess: true,
+      abortSignal: AbortSignal.any([thread.signal, controller.signal]),
+    });
 
-          throw error;
-        } finally {
-          await result.persistence;
-        }
+    if ('status' in result) return;
+
+    await postTurn({ thread, result, controller });
+  }
+
+  private async runQueued({ req, agent, chat, claim, uiMessages }: TurnRunnerArgs) {
+    const reference = chat.channelThread as ChannelThreadReference | null | undefined;
+    const binding = reference ? this.bindings.get(reference.account) : undefined;
+
+    if (!reference || binding?.kind !== 'conversation' || binding.agent.slug !== agent.slug) {
+      return false;
+    }
+
+    const thread = new ThreadImpl({
+      id: reference.thread.id,
+      channelId: reference.thread.channelId,
+      channelVisibility: reference.thread.channelVisibility,
+      isDM: reference.thread.isDM,
+      adapter: binding.adapter,
+      stateAdapter: binding.chat.getState(),
+    });
+
+    const controller = new AbortController();
+
+    const turn = await streamTurn({
+      req,
+      agent,
+      claim,
+      uiMessages,
+      clientTools: { kinds: [] },
+      abortSignal: AbortSignal.any([thread.signal, controller.signal]),
+      onError: (error) => {
+        throw error;
       },
     });
+
+    await postTurn({
+      thread,
+      result: { stream: turn.result.stream, persistence: turn.persistence },
+      controller,
+    });
+
+    return true;
   }
 
   private isGatewayAdapter(adapter: Adapter): adapter is GatewayAdapter {
@@ -488,6 +523,32 @@ export class ChannelHost {
 }
 
 export const CHANNEL_TASK_SLUG = 'frogbot-run-channel-message';
+
+function threadReference(binding: ChannelBinding, thread: Thread): ChannelThreadReference {
+  const { currentMessage: _currentMessage, ...serialized } = thread.toJSON();
+
+  return { account: binding.instance.slug, thread: serialized };
+}
+
+async function postTurn({
+  thread,
+  result,
+  controller,
+}: {
+  thread: Thread;
+  result: Pick<AgentStreamResult, 'stream'> & { persistence: Promise<void> };
+  controller: AbortController;
+}): Promise<void> {
+  try {
+    await thread.post(result.stream);
+  } catch (error) {
+    controller.abort(error);
+
+    throw error;
+  } finally {
+    await result.persistence;
+  }
+}
 
 export async function initializeChannelHost(frogbot: FrogBot, startGateway = true): Promise<void> {
   const host = new ChannelHost(frogbot);

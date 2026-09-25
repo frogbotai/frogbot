@@ -3,7 +3,7 @@ import type { CollectionConfig } from '../../collections/config/types.js';
 
 export const MESSAGE_USAGE_CONTEXT_KEY = 'frogbotMessageUsage';
 
-type MessageUsage = Record<string, unknown> & {
+export type StoredMessageUsage = Record<string, unknown> & {
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
@@ -11,8 +11,12 @@ type MessageUsage = Record<string, unknown> & {
   cachedInputTokens?: number;
 };
 
-function mergeUsage(previous: MessageUsage | undefined, next: MessageUsage): MessageUsage {
-  const merged: MessageUsage = { ...previous, ...next };
+export function mergeUsage(
+  previous: StoredMessageUsage | null | undefined,
+  next: StoredMessageUsage,
+): StoredMessageUsage {
+  const merged: StoredMessageUsage = { ...previous, ...next };
+
   for (const key of [
     'inputTokens',
     'outputTokens',
@@ -21,10 +25,12 @@ function mergeUsage(previous: MessageUsage | undefined, next: MessageUsage): Mes
     'cachedInputTokens',
   ] as const) {
     const value = (previous?.[key] ?? 0) + (next[key] ?? 0);
+
     if (value !== 0 || previous?.[key] !== undefined || next[key] !== undefined) {
       merged[key] = value;
     }
   }
+
   return merged;
 }
 
@@ -38,6 +44,8 @@ const chatOwner: Access = ({ req }) => {
   const id = req.user?.id;
   return id !== undefined ? { 'chat.user': { equals: id } } : false;
 };
+
+const readOnly = { create: () => false, update: () => false };
 
 export function defaultMessagesCollection({
   slug,
@@ -62,8 +70,8 @@ export function defaultMessagesCollection({
     hooks: {
       beforeChange: [
         ({ context, data, originalDoc }) => {
-          const usage = context[MESSAGE_USAGE_CONTEXT_KEY] as MessageUsage | undefined;
-          if (usage) data.usage = mergeUsage(originalDoc?.usage as MessageUsage | undefined, usage);
+          const usage = context[MESSAGE_USAGE_CONTEXT_KEY] as StoredMessageUsage | undefined;
+          if (usage) data.usage = mergeUsage(originalDoc?.usage as StoredMessageUsage, usage);
           return data;
         },
       ],
@@ -91,12 +99,45 @@ export function defaultMessagesCollection({
       },
       { name: 'metadata', type: 'json' },
       {
+        name: 'status',
+        type: 'select',
+        options: ['active', 'queued'],
+        defaultValue: 'active',
+        index: true,
+        access: readOnly,
+      },
+      {
+        name: 'delivery',
+        type: 'select',
+        options: ['queue', 'steer'],
+        access: readOnly,
+      },
+      {
+        name: 'author',
+        type: 'json',
+        access: readOnly,
+        typescriptSchema: [() => ({ tsType: "import('frogbot').TurnActor" })],
+      },
+      {
+        name: 'settlements',
+        type: 'json',
+        access: readOnly,
+        admin: { hidden: true },
+        typescriptSchema: [
+          () => ({ tsType: "Record<string, import('frogbot').ClientToolSettlement>" }),
+        ],
+      },
+      {
+        name: 'version',
+        type: 'number',
+        defaultValue: 0,
+        access: readOnly,
+        admin: { hidden: true },
+      },
+      {
         name: 'usage',
         type: 'group',
-        access: {
-          create: () => false,
-          update: () => false,
-        },
+        access: readOnly,
         fields: [
           { name: 'inputTokens', type: 'number' },
           { name: 'outputTokens', type: 'number' },

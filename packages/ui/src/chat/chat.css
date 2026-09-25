@@ -46,3 +46,38 @@
 .fb-chat__empty ~ .fb-chat__composer {
   flex: 1 1 0%;
 }
+
+.fb-chat__queued {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.fb-chat__queued-message {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--theme-base-200);
+  border-radius: var(--radius-lg);
+  background: var(--theme-base-100);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+}
+
+.fb-chat__queued-label {
+  flex-shrink: 0;
+  color: var(--theme-base-600);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: var(--text-xs--line-height);
+}
+
+.fb-chat__queued-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,14 +1,28 @@
-import type { CollectionConfig } from 'frogbot';
-import { todoTools } from 'frogbot/tools';
+import type { CollectionConfig, Tool } from 'frogbot';
+import { question, todoTools } from 'frogbot/tools';
+import { z } from 'zod';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
-import { agentSlug, chatsSlug, usersSlug } from './shared.js';
+import { agentSlug, chatsSlug, lookupCalls, questionAgentSlug, usersSlug } from './shared.js';
 
 const Users: CollectionConfig = {
   slug: usersSlug,
   auth: true,
   access: openAccess,
   fields: [{ name: 'name', type: 'text' }],
+};
+
+const lookupInput = z.object({ topic: z.string() });
+
+const lookup: Tool<typeof lookupInput, string> = {
+  slug: 'lookup',
+  description: 'Look up a topic.',
+  inputSchema: lookupInput,
+  execute: ({ topic }) => {
+    lookupCalls.push(topic);
+
+    return `Found ${topic}.`;
+  },
 };
 
 const Chats: CollectionConfig = {
@@ -45,6 +59,13 @@ export default await buildTestConfig({
       instructions: 'Help the user.',
       access: () => true,
       tools: [...todoTools],
+    },
+    {
+      slug: questionAgentSlug,
+      model: 'test/gpt-4.1-mini',
+      instructions: 'Ask before acting.',
+      access: () => true,
+      tools: [question, lookup],
     },
   ],
 });

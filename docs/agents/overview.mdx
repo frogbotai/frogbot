@@ -282,6 +282,23 @@ export const supportAgent: AgentConfig = {
 
 Each item has `content` and a `status` of `pending`, `in_progress`, or `completed`. Keep one item `in_progress` at a time. Todos are stored on the current chat, survive continuations, and are deleted with that chat. Chat persistence must be enabled and the tool must run within a persisted agent chat.
 
+## Ask the user a question
+
+Add the optional `question` tool when an agent should pause for a decision instead of guessing. The reply stops at the question and continues in the same message once the user answers.
+
+```ts
+import { question } from 'frogbot/tools'
+
+export const plannerAgent: AgentConfig = {
+  slug: 'planner',
+  model: 'fast',
+  instructions: 'Ask before choosing between materially different plans.',
+  tools: [question]
+}
+```
+
+See [Ask the user questions](/chat/questions) for the answer shape, the headless API, and client tools of your own.
+
 ---
 
 ## Organize files

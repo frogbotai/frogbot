@@ -6,10 +6,12 @@ import type {
   StreamTextResult,
   ToolSet,
   UIMessage,
+  UIMessageChunk,
 } from 'ai';
 import type { z } from 'zod';
 
 import type { ChannelChatAccess } from '../chat/channelAccess.js';
+import type { ClientToolsOption, MessageDelivery } from '../chat/turn/types.js';
 import type { DocID } from '../collections/config/types.js';
 import type { FrogBot } from '../frogbot.js';
 import type {
@@ -125,19 +127,34 @@ export type AgentStreamOpts = AgentRunOpts;
 export type AgentStreamMessageOpts = AgentRunOpts & {
   chatId: DocID;
   channelAccess?: ChannelChatAccess;
+  clientTools?: ClientToolsOption;
+  delivery?: MessageDelivery;
 };
 
 export type AgentGenerateResult = GenerateTextResult<ToolSet, Record<string, unknown>, never>;
 export type AgentStreamResult = StreamTextResult<ToolSet, Record<string, unknown>, never>;
 
-export type AgentStreamMessageResult = AgentStreamResult & { persistence: Promise<void> };
+export type AgentStreamMessageResult = AgentStreamResult & {
+  chatId: DocID;
+  uiMessageStream: ReadableStream<UIMessageChunk>;
+  persistence: Promise<void>;
+};
+
+export type AgentStreamMessageQueuedResult = {
+  status: 'queued';
+  chatId: DocID;
+  messageId: string;
+  delivery: MessageDelivery;
+};
 
 export type AgentCallOptions = {
   req?: FrogBotRequest;
   overrideAccess?: boolean;
   runId?: string;
   chatId?: DocID;
+  replyCreatedAt?: string;
   model?: AgentModelId;
+  clientTools?: ClientToolsOption;
 };
 
 export type AgentInstance = {
@@ -146,7 +163,9 @@ export type AgentInstance = {
   aiAgent: Agent<AgentCallOptions, ToolSet, Record<string, unknown>, never>;
   generate: (opts: AgentGenerateOpts) => Promise<AgentGenerateResult>;
   stream: (opts: AgentStreamOpts) => Promise<AgentStreamResult>;
-  streamMessage: (opts: AgentStreamMessageOpts) => Promise<AgentStreamMessageResult>;
+  streamMessage: (
+    opts: AgentStreamMessageOpts,
+  ) => Promise<AgentStreamMessageResult | AgentStreamMessageQueuedResult>;
 };
 
 export type AgentRegistry = Record<AgentSlug, AgentInstance>;

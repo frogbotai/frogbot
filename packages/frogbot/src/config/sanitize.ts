@@ -90,6 +90,7 @@ import type { SearchCollection, SearchIndexDescriptors } from '../search/types.j
 import { buildSkillTools } from '../skills/tools.js';
 import type { SkillConfig } from '../skills/types.js';
 import type { AnyTool } from '../tools/types.js';
+import { isClientTool } from '../tools/types.js';
 import {
   defaultTriggerSubscriptionsCollection,
   TRIGGER_SUBSCRIPTIONS_SLUG,
@@ -571,6 +572,23 @@ function sanitizeToolList(
     if (typeof tool.description !== 'string' || !tool.description.trim()) {
       throw new Error(`[frogbot] Tool '${tool.slug}' in ${context} requires a description.`);
     }
+    if (isClientTool(tool)) {
+      if (
+        !tool.inputSchema ||
+        !tool.outputSchema ||
+        typeof tool.client.kind !== 'string' ||
+        !tool.client.kind.trim()
+      ) {
+        throw new Error(
+          `[frogbot] Client tool '${tool.slug}' in ${context} requires inputSchema, outputSchema, and client.kind.`,
+        );
+      }
+
+      toolSlugs.add(tool.slug);
+
+      return tool;
+    }
+
     if (!tool.inputSchema || typeof tool.execute !== 'function') {
       throw new Error(
         `[frogbot] Tool '${tool.slug}' in ${context} requires inputSchema and execute.`,

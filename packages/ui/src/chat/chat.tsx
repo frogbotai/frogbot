@@ -1,7 +1,9 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import type { UIMessage } from 'ai';
+import { FrogBotSDKError } from '@frogbotai/sdk';
+import { isToolUIPart, lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from 'ai';
+import type { TurnErrorCode } from 'frogbot';
 import { type ComponentType, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useControlledState } from '../hooks/use-controlled-state.js';
@@ -17,12 +19,17 @@ import { MessageActions } from './message-actions.js';
 import { MessageEditor } from './message-editor.js';
 import { MessageList, type MessageListProps } from './message-list.js';
 import { MessagePart } from './message-part.js';
-import { branchChat, deleteChat, renameChat } from './mutations.js';
+import { branchChat, deleteChat, dismissToolCall, renameChat } from './mutations.js';
 import { type ChatManifest, useChatProvider } from './provider.js';
-import { FrogBotChatTransport, prepareChatRequest } from './transport.js';
-import { useChatMessages } from './use-chat.js';
+import { type ToolActions, ToolActionsContext } from './tool-actions.js';
+import type { ToolPartValue } from './tool-registry.js';
+import { FrogBotChatTransport, prepareChatRequest, turnErrorCode } from './transport.js';
+import { loadChatMessages, loadTurnState, useChatMessages } from './use-chat.js';
 import type { ChatDocument } from './use-chats.js';
 import { emitChatMutation, useChats } from './use-chats.js';
+
+const TURN_SYNC_ATTEMPTS = 120;
+const TURN_SYNC_INTERVAL = 1_000;
 
 type ChatActions = {
   rename: (title: string) => Promise<void>;
@@ -71,6 +78,16 @@ export type ChatProps = {
   assistantMessageActions?: ComponentType<MessageActionsSlotProps> | false;
   panel?: ReactNode;
 };
+
+function messageText(message: UIMessage) {
+  return message.parts
+    .filter(
+      (part): part is Extract<(typeof message.parts)[number], { type: 'text' }> =>
+        part.type === 'text',
+    )
+    .map((part) => part.text)
+    .join('\n\n');
+}
 
 export function Chat(props: ChatProps) {
   const provider = useChatProvider();
@@ -153,8 +170,12 @@ function ChatInner({
   const history = useChatMessages({ sdk, messagesSlug, chatId: activeChatId });
   const chats = useChats({ sdk, agent, chatsSlug });
   const [aborted, setAborted] = useState(false);
-  const [branchError, setBranchError] = useState<Error>();
+  const [actionError, setActionError] = useState<Error>();
   const [editingMessageId, setEditingMessageId] = useState<string>();
+  const [queued, setQueued] = useState<UIMessage[]>([]);
+  const queuedRequest = useRef(false);
+  const toolOutputAdded = useRef(false);
+  const turnSync = useRef<AbortController | undefined>(undefined);
   const request = useRef({ chatId: activeChatId, model });
   request.current = { chatId: activeChatId, model };
   const transport = useMemo(
@@ -172,30 +193,137 @@ function ChatInner({
       }),
     [agent, sdk],
   );
-  let addToolOutput: ReturnType<typeof useChat>['addToolOutput'] | undefined;
   const chat = useChat({
     id: runtimeChatId,
     messages: initialMessages,
     transport,
     experimental_throttle: throttle,
+    sendAutomaticallyWhen: ({ messages }) => {
+      if (!toolOutputAdded.current || !lastAssistantMessageIsCompleteWithToolCalls({ messages })) {
+        return false;
+      }
+
+      toolOutputAdded.current = false;
+
+      return true;
+    },
     onToolCall: adapter.executeClientTool
       ? async ({ toolCall }) => {
           const output = await adapter.executeClientTool?.(toolCall.toolName, toolCall.input);
-          await addToolOutput?.({
+          await addToolOutput({
             tool: toolCall.toolName,
             toolCallId: toolCall.toolCallId,
             output,
           });
         }
       : undefined,
+    onData: (part) => {
+      if (part.type === 'data-queued') queueMessage((part.data as { messageId: string }).messageId);
+    },
     onFinish: () => {
       if (flushChatId()) window.setTimeout(emitChatMutation, 2_500);
+
+      if (queuedRequest.current) {
+        queuedRequest.current = false;
+
+        return;
+      }
+
+      if (queued.length > 0) void syncTurn();
     },
-    onError: () => {
+    onError: (error) => {
       flushChatId();
+
+      const code = turnErrorCode(error);
+
+      if (code) void recoverTurn(code);
     },
   });
-  addToolOutput = chat.addToolOutput;
+
+  async function addToolOutput(options: Parameters<ToolActions['addToolOutput']>[0]) {
+    toolOutputAdded.current = true;
+
+    await chat.addToolOutput(options);
+  }
+
+  function queueMessage(messageId: string) {
+    queuedRequest.current = true;
+
+    chat.setMessages((messages) => {
+      const message = messages.find(({ id }) => id === messageId);
+
+      if (message) setQueued((current) => [...current, message]);
+
+      return messages.filter(({ id }) => id !== messageId);
+    });
+  }
+
+  async function reloadMessages() {
+    const next = await loadChatMessages({ sdk, messagesSlug, chatId: request.current.chatId });
+
+    toolOutputAdded.current = false;
+    chat.setMessages(next.messages);
+    setQueued(next.queued);
+
+    return next;
+  }
+
+  async function recoverTurn(code?: TurnErrorCode) {
+    try {
+      await reloadMessages();
+    } catch (error) {
+      setActionError(error instanceof Error ? error : new Error('Failed to reload chat'));
+
+      return;
+    }
+
+    if (code === 'already-settled' || code === 'not-awaiting') chat.clearError();
+  }
+
+  async function syncTurn() {
+    const chatId = request.current.chatId;
+
+    if (chatId === undefined) return;
+
+    turnSync.current?.abort();
+
+    const controller = new AbortController();
+
+    turnSync.current = controller;
+
+    try {
+      for (let attempt = 0; attempt < TURN_SYNC_ATTEMPTS; attempt++) {
+        if (attempt > 0) {
+          await new Promise((resolve) => window.setTimeout(resolve, TURN_SYNC_INTERVAL));
+        }
+
+        if (controller.signal.aborted) return;
+
+        const state = await loadTurnState({ sdk, agent, chatId });
+
+        if (state === 'running' || controller.signal.aborted) continue;
+
+        const next = await reloadMessages();
+
+        if (state === 'awaiting' || next.queued.length === 0) return;
+      }
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        setActionError(error instanceof Error ? error : new Error('Failed to reload chat'));
+      }
+    }
+  }
+
+  function applyToolPart(part: ToolPartValue) {
+    const replace = (candidate: UIMessage['parts'][number]) =>
+      isToolUIPart(candidate) && candidate.toolCallId === part.toolCallId
+        ? (part as UIMessage['parts'][number])
+        : candidate;
+
+    chat.setMessages((messages) =>
+      messages.map((message) => ({ ...message, parts: message.parts.map(replace) })),
+    );
+  }
 
   function flushChatId() {
     if (!createdChatId.current) return false;
@@ -210,9 +338,18 @@ function ChatInner({
     createdChatId.current = undefined;
     reportedChatId.current = undefined;
     setEditingMessageId(undefined);
+    setQueued([]);
     setRuntimeChatId(`new:${agent}`);
     chat.setMessages([]);
   };
+
+  useEffect(
+    () => () => {
+      toolOutputAdded.current = false;
+      turnSync.current?.abort();
+    },
+    [runtimeChatId],
+  );
 
   useEffect(() => {
     const node = composerRef.current;
@@ -236,8 +373,16 @@ function ChatInner({
       String(history.loadedChatId) !== reportedChatId.current
     ) {
       chat.setMessages(history.messages);
+      setQueued(history.queued);
     }
-  }, [activeChatId, history.loadedChatId, history.loading, history.messages, chat.setMessages]);
+  }, [
+    activeChatId,
+    history.loadedChatId,
+    history.loading,
+    history.messages,
+    history.queued,
+    chat.setMessages,
+  ]);
 
   useEffect(() => {
     if (!chatIdControlled) return;
@@ -263,6 +408,7 @@ function ChatInner({
   const selectChat = (nextChatId: string | number) => {
     setAborted(false);
     setEditingMessageId(undefined);
+    setQueued([]);
     reportedChatId.current = undefined;
     setRuntimeChatId(String(nextChatId));
     setActiveChatId(nextChatId);
@@ -314,17 +460,59 @@ function ChatInner({
   };
   const branchMessage = async (message: UIMessage) => {
     if (activeChatId === undefined) return;
-    setBranchError(undefined);
+    setActionError(undefined);
     try {
       const nextChatId = await branchChat({ sdk, chatId: activeChatId }, message.id);
       chats.refresh();
       selectChat(nextChatId);
     } catch (error) {
-      setBranchError(error instanceof Error ? error : new Error('Failed to branch chat'));
+      setActionError(error instanceof Error ? error : new Error('Failed to branch chat'));
     }
   };
-  const error = branchError ?? history.error ?? chats.error ?? chat.error;
+  const error = actionError ?? history.error ?? chats.error ?? chat.error;
   const pending = chat.status === 'submitted' || chat.status === 'streaming';
+  const lastMessage = chat.messages.at(-1);
+  const pendingToolCallIds = useMemo(
+    () =>
+      new Set(
+        !pending && lastMessage?.role === 'assistant'
+          ? lastMessage.parts
+              .filter(isToolUIPart)
+              .filter(({ state }) => state === 'input-available')
+              .map(({ toolCallId }) => toolCallId)
+          : [],
+      ),
+    [lastMessage, pending],
+  );
+  const dismissPendingToolCall = async (toolCallId: string) => {
+    const chatId = request.current.chatId;
+
+    if (chatId === undefined) return;
+
+    setActionError(undefined);
+
+    try {
+      const settlement = await dismissToolCall({ sdk, agent, chatId }, toolCallId);
+
+      if (pendingToolCallIds.size > 1) await reloadMessages();
+      else applyToolPart(settlement.part);
+
+      if (queued.length > 0) void syncTurn();
+    } catch (error) {
+      if (error instanceof FrogBotSDKError && error.status === 409) {
+        await recoverTurn();
+
+        return;
+      }
+
+      setActionError(error instanceof Error ? error : new Error('Failed to dismiss'));
+    }
+  };
+  const toolActions: ToolActions = {
+    addToolOutput,
+    dismissToolCall: dismissPendingToolCall,
+    pendingToolCallIds,
+  };
   const displayedChats = (chats.docs ?? []).map((chatDocument) =>
     String(chatDocument.id) === String(activeChatId) && !chatDocument.title
       ? { ...chatDocument, title: deriveChatTitle(chat.messages, fallbackTitle) }
@@ -348,13 +536,7 @@ function ChatInner({
     return now;
   };
   const defaultRenderMessage: MessageListProps['renderMessage'] = (message) => {
-    const text = message.parts
-      .filter(
-        (part): part is Extract<(typeof message.parts)[number], { type: 'text' }> =>
-          part.type === 'text',
-      )
-      .map((part) => part.text)
-      .join('\n\n');
+    const text = messageText(message);
     const defaultActions = !pending ? (
       <MessageActions
         text={text}
@@ -425,54 +607,66 @@ function ChatInner({
   };
 
   return (
-    <ChatShell
-      panel={panel}
-      sidebar={renderSidebar?.({
-        chats: displayedChats,
-        activeChatId,
-        selectChat,
-        actions: mutate,
-      })}
-    >
-      {headerSlot}
-      {chat.messages.length === 0 && !history.loading ? (
-        <div className="fb-chat__empty">
-          {emptyContent ??
-            (GreetingComponent === false ? null : (
-              <GreetingComponent
-                avatar={profile?.avatar}
-                logo={logo}
-                name={displayName}
-                userName={userName}
-              />
-            ))}
+    <ToolActionsContext value={toolActions}>
+      <ChatShell
+        panel={panel}
+        sidebar={renderSidebar?.({
+          chats: displayedChats,
+          activeChatId,
+          selectChat,
+          actions: mutate,
+        })}
+      >
+        {headerSlot}
+        {chat.messages.length === 0 && !history.loading ? (
+          <div className="fb-chat__empty">
+            {emptyContent ??
+              (GreetingComponent === false ? null : (
+                <GreetingComponent
+                  avatar={profile?.avatar}
+                  logo={logo}
+                  name={displayName}
+                  userName={userName}
+                />
+              ))}
+          </div>
+        ) : (
+          <MessageList
+            messages={chat.messages}
+            renderMessage={renderMessage ?? defaultRenderMessage}
+          />
+        )}
+        <div ref={composerRef} className="fb-chat__composer">
+          <ChatStatus
+            aborted={aborted}
+            abortedContent={abortedContent}
+            error={error}
+            errorContent={errorContent}
+            warningContent={warningContent}
+          />
+          {queued.length > 0 && (
+            <div className="fb-chat__queued" role="status">
+              {queued.map((message) => (
+                <div key={message.id} className="fb-chat__queued-message">
+                  <span className="fb-chat__queued-label">Queued</span>
+                  <span className="fb-chat__queued-text">{messageText(message)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <Composer
+            sdk={sdk}
+            assetsSlug={assetsSlug}
+            pending={pending}
+            onStop={stop}
+            onSubmit={submit}
+            startSlot={composerStartSlot}
+            endSlot={composerEndSlot}
+            submitContent={submitContent}
+            stopContent={stopContent}
+          />
         </div>
-      ) : (
-        <MessageList
-          messages={chat.messages}
-          renderMessage={renderMessage ?? defaultRenderMessage}
-        />
-      )}
-      <div ref={composerRef} className="fb-chat__composer">
-        <ChatStatus
-          aborted={aborted}
-          abortedContent={abortedContent}
-          error={error}
-          errorContent={errorContent}
-          warningContent={warningContent}
-        />
-        <Composer
-          sdk={sdk}
-          assetsSlug={assetsSlug}
-          pending={pending}
-          onStop={stop}
-          onSubmit={submit}
-          startSlot={composerStartSlot}
-          endSlot={composerEndSlot}
-          submitContent={submitContent}
-          stopContent={stopContent}
-        />
-      </div>
-    </ChatShell>
+      </ChatShell>
+    </ToolActionsContext>
   );
 }

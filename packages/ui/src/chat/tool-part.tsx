@@ -1,6 +1,7 @@
 import { type DynamicToolUIPart, getToolName, type ToolUIPart, type UITools } from 'ai';
 
 import { useChatProvider } from './provider.js';
+import { useToolActions } from './tool-actions.js';
 import type { ToolRenderer } from './tool-registry.js';
 import { resolveToolRenderer } from './tool-registry.js';
 
@@ -21,11 +22,26 @@ export function ToolPart({
   renderers?: readonly ToolRenderer[];
 }) {
   const provider = useChatProvider();
+  const actions = useToolActions();
   const renderer = resolveToolRenderer(
     renderers ?? provider?.toolRenderers ?? [],
     getToolName(part),
   );
-  if (renderer) return <renderer.render part={part} />;
+
+  if (renderer) {
+    if (!actions?.pendingToolCallIds.has(part.toolCallId)) return <renderer.render part={part} />;
+
+    return (
+      <renderer.render
+        part={part}
+        addToolOutput={(output) =>
+          actions.addToolOutput({ tool: getToolName(part), toolCallId: part.toolCallId, output })
+        }
+        dismiss={() => actions.dismissToolCall(part.toolCallId)}
+      />
+    );
+  }
+
   const content =
     part.state === 'output-available'
       ? part.output

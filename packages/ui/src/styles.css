@@ -57,6 +57,7 @@
 @import "./chat/mic-control.css";
 @import "./chat/model-selector.css";
 @import "./chat/page-context-button.css";
+@import "./chat/question-tool-render.css";
 @import "./chat/reasoning-part.css";
 @import "./chat/rename-chat-dialog.css";
 @import "./chat/source-part.css";

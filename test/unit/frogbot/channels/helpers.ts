@@ -140,16 +140,39 @@ export function channelFixture({
 
   const access = vi.fn(() => true);
   const chats = new Map<string, { id: string }>();
+  const messages: Array<Record<string, unknown>> = [];
+
   const frogbot = {
-    agents: { support: { slug: 'support', config: { channels: [piece], access }, streamMessage } },
-    config: { chat: { enabled: true, chatsSlug: 'chats' }, _internal: { triggers: {} } },
+    agents: {
+      support: {
+        slug: 'support',
+        config: { channels: [piece], access },
+        aiAgent: { tools: {} },
+        streamMessage,
+      },
+    },
+    config: {
+      chat: { enabled: true, chatsSlug: 'chats', messagesSlug: 'messages' },
+      _internal: { triggers: {}, payloadConfig: Promise.resolve({ admin: { user: 'users' } }) },
+    },
     connections: {
       resolvePieceCredential: vi.fn(async () => ({ auth: { token: 'secret' }, key: {} })),
     },
     createRequest: vi.fn(async (req: object) => Object.assign(req, { frogbot })),
-    find: vi.fn(async ({ where }: { where: { channelKey: { equals: string } } }) => ({
-      docs: chats.has(where.channelKey.equals) ? [chats.get(where.channelKey.equals)] : [],
-    })),
+    find: vi.fn(async ({ collection, where }: { collection: string; where: FixtureWhere }) => {
+      if (collection === 'messages') {
+        return { docs: messages.filter((message) => matchesWhere(message, where)) };
+      }
+
+      const channelKey = (where as { channelKey: { equals: string } }).channelKey.equals;
+
+      return { docs: chats.has(channelKey) ? [chats.get(channelKey)] : [] };
+    }),
+    findByID: vi.fn(async ({ collection, id }: { collection: string; id: string }) =>
+      collection === 'chats'
+        ? ([...chats.values()].find((chat) => chat.id === id) ?? null)
+        : { id },
+    ),
     create: vi.fn(async ({ data }: { data: { channelKey: string } }) => {
       const row = { ...data, id: `chat-${chats.size + 1}` };
 
@@ -186,5 +209,18 @@ export function channelFixture({
     posted,
     identity,
     access,
+    messages,
   };
+}
+
+type FixtureWhere = {
+  and?: Array<Record<string, { equals?: unknown; not_equals?: unknown }>>;
+};
+
+function matchesWhere(doc: Record<string, unknown>, where: FixtureWhere): boolean {
+  return (where.and ?? []).every((clause) =>
+    Object.entries(clause).every(([field, operator]) =>
+      'equals' in operator ? doc[field] === operator.equals : doc[field] !== operator.not_equals,
+    ),
+  );
 }

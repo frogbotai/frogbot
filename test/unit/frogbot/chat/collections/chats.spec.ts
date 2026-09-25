@@ -31,6 +31,7 @@ describe('defaultChatsCollection', () => {
       'channel',
       'externalId',
       'channelKey',
+      'channelThread',
       'lastMessageAt',
       'todos',
     ]);
@@ -44,6 +45,17 @@ describe('defaultChatsCollection', () => {
     });
     expect(collection.fields.find((f) => 'name' in f && f.name === 'todos')).toMatchObject({
       type: 'json',
+    });
+  });
+
+  it('stores the channel thread reference as hidden, typed JSON', () => {
+    const channelThread = collection.fields.find(
+      (f) => 'name' in f && f.name === 'channelThread',
+    ) as { typescriptSchema?: Array<(args: { jsonSchema: object }) => object> };
+
+    expect(channelThread).toMatchObject({ type: 'json', admin: { hidden: true } });
+    expect(channelThread.typescriptSchema?.[0]({ jsonSchema: {} })).toEqual({
+      tsType: "import('frogbot').ChannelThreadReference",
     });
   });
 

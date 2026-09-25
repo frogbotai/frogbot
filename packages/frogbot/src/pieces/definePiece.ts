@@ -84,7 +84,7 @@ export function pieceTriggerInstance(reference: unknown): PieceInstance | undefi
 }
 
 export function pieceToolInstance(tool: AnyTool): PieceInstance | undefined {
-  return toolInstances.get(tool.execute);
+  return tool.execute ? toolInstances.get(tool.execute) : undefined;
 }
 
 export function pieceInstanceRuntime(instance: PieceInstance): {

@@ -2,12 +2,13 @@ import { createHash } from 'node:crypto';
 
 import type { DocID } from '../collections/config/types.js';
 import type { FrogBotRequest } from '../types/request.js';
-import type { ChannelConversationIdentity } from './types.js';
+import type { ChannelConversationIdentity, ChannelThreadReference } from './types.js';
 
 export type ResolveChannelChatProps = {
   req: FrogBotRequest;
   identity: ChannelConversationIdentity;
   user: DocID | null;
+  thread?: ChannelThreadReference;
 };
 
 export function channelConversationKey(identity: ChannelConversationIdentity): string {
@@ -28,6 +29,7 @@ export async function resolveChannelChat({
   req,
   identity,
   user,
+  thread,
 }: ResolveChannelChatProps): Promise<DocID> {
   const chat = req.frogbot.config.chat;
 
@@ -46,10 +48,20 @@ export async function resolveChannelChat({
       overrideAccess: true,
     });
 
-    return result.docs[0] as { id: DocID } | undefined;
+    return result.docs[0] as { id: DocID; channelThread?: unknown } | undefined;
   };
 
   const existing = await find();
+
+  if (existing && thread && !existing.channelThread) {
+    await req.frogbot.update({
+      collection: chat.chatsSlug,
+      id: existing.id,
+      data: { channelThread: thread },
+      req,
+      overrideAccess: true,
+    });
+  }
 
   if (existing) return existing.id;
 
@@ -62,6 +74,7 @@ export async function resolveChannelChat({
         channel: identity.piece,
         externalId: identity.thread ?? identity.peer,
         channelKey,
+        ...(thread ? { channelThread: thread } : {}),
       },
       req,
       overrideAccess: true,

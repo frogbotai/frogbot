@@ -1,0 +1,88 @@
+---
+title: "Turns and queued messages"
+sidebarTitle: "Turns and queues"
+description: "How FrogBot runs one agent turn per chat and handles messages that arrive during a turn."
+keywords: ["turn", "queue", "steer", "concurrency", "lease", "awaiting"]
+---
+
+A turn is one run of the agent in response to a user message, from the first model step to the final reply. FrogBot runs at most one turn per chat at a time, whether the message comes from the admin chat, `@frogbotai/ui`, an HTTP client, a channel, or `agent.generate()`.
+
+Local `agent.generate({ chatId })` calls do not queue. If the chat already has a turn in progress, the call rejects with a `turn-in-progress` error.
+
+## Turn states
+
+| State | Meaning |
+| --- | --- |
+| `idle` | No turn is running; the next user message starts one |
+| `running` | The agent is working on a reply |
+| `awaiting` | The reply is paused at a [question](/chat/questions) or another client tool call |
+
+The `pending` endpoint reports the current state as `state`. A turn moves from `awaiting` back to `running` when the last pending call in the step is answered through the chat or the `settle` endpoint, and to `idle` when a call is dismissed. If the waiting assistant message is deleted, the chat returns to `idle`.
+
+## Messages sent during a turn
+
+A user message that arrives while a turn is `running` or `awaiting` is saved as a queued message instead of starting a second run. Queued messages are part of the chat, but they are not sent to the model until they are promoted.
+
+JSON requests receive `202 Accepted`:
+
+```json
+{ "status": "queued", "chatId": "CHAT_ID", "messageId": "MESSAGE_ID", "delivery": "queue" }
+```
+
+Stream requests receive a single transient `data-queued` part with the same `messageId` and `delivery`. The `X-FrogBot-Chat-Id` header is set in both cases.
+
+When the current turn ends, FrogBot promotes the oldest queued message and runs it as the next turn, as the user who sent it. The next queued message waits for that turn to end. Messages sent while a question is waiting stay queued until the question is answered or dismissed, so answer the question first to run them.
+
+In the chat UI, a queued message shows a queued indicator, and the chat reloads when the turn ends so the promoted turn appears once it is saved.
+
+## Steer a running turn
+
+Send `delivery: "steer"` to add a message to the turn that is already running instead of waiting for it to finish.
+
+```bash
+curl http://localhost:3000/api/agents/support \
+  --request POST \
+  --header "Authorization: Bearer $FROGBOT_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{ "prompt": "Only look at last week", "chatId": "CHAT_ID", "delivery": "steer" }'
+```
+
+FrogBot adds a steer message to the model's messages at the next step boundary, so the agent sees it before its next model call. Steering applies only when the sender is the user driving the current run: the sender of the message being answered, or the user who answered the question the turn is continuing from. A steer from anyone else, or one that arrives after the last step, runs as an ordinary queued message.
+
+A steer that joins a turn is stored just before that turn's reply, so history reads in the order the model saw it.
+
+A steer is never treated as the answer to a pending question.
+
+## Edit or remove a queued message
+
+The author of a queued message can change it before it is promoted.
+
+```bash
+curl http://localhost:3000/api/agents/support/chats/CHAT_ID/messages/MESSAGE_ID \
+  --request PATCH \
+  --header "Authorization: Bearer $FROGBOT_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{ "parts": [{ "type": "text", "text": "Only look at yesterday" }], "delivery": "steer" }'
+```
+
+Send `parts`, `delivery`, or both. A `DELETE` request to the same path removes the message and returns `204 No Content`. Both return `403` for anyone other than the author, and `409` with `code: "not-queued"` once the message has been promoted.
+
+## Channels
+
+Channel messages follow the same rules. A message posted while the bot is replying in a thread is queued, and nothing is posted for it until it is promoted. When the channel runs in the same process, FrogBot posts the promoted reply to the same thread; otherwise the reply is saved to the chat without being posted.
+
+A channel chat that has no FrogBot owner can only be continued from its channel. Web and HTTP callers cannot read, answer, or post to it.
+
+## Crash recovery
+
+FrogBot saves the assistant message after every model step, so a reply keeps every step that finished before a failure. When a stream is aborted or fails, FrogBot also saves the partial step and marks its unfinished tool calls as errors.
+
+A running turn holds a lease that is renewed while the agent works. If the process stops, the step in progress is lost and the lease expires after about a minute. The next message then starts a new turn, unless the last saved step asked a question: that question is still waiting after a restart, can be answered normally, and new messages queue behind it.
+
+## Limitations
+
+- FrogBot does not guarantee exactly-once side effects. If a process stops between a tool's execution and the next checkpoint, that step is not saved, and the tool can run again if a later turn repeats the call.
+- Queued messages are promoted when a turn ends. A message queued behind a turn that was interrupted by a crash runs after the next turn in that chat ends.
+- The chat UI shows a promoted turn when it has been saved. It does not stream a promoted turn live into an open chat, and a tab only notices a turn started elsewhere when it reloads.
+- Chats without an owner are shared by every anonymous caller who knows the chat ID. Any of them can answer or dismiss its questions, steer its turns, and edit its queued messages.
+- Turn coordination requires the SQLite, PostgreSQL, or MongoDB adapter.

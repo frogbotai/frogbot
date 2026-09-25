@@ -63,6 +63,12 @@ export function defaultChatsCollection({
       },
       { name: 'externalId', type: 'text', index: true },
       { name: 'channelKey', type: 'text', unique: true, admin: { hidden: true } },
+      {
+        name: 'channelThread',
+        type: 'json',
+        admin: { hidden: true },
+        typescriptSchema: [() => ({ tsType: "import('frogbot').ChannelThreadReference" })],
+      },
       { name: 'lastMessageAt', type: 'date', index: true },
       {
         name: 'todos',

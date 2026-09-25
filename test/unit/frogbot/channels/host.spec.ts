@@ -1,13 +1,39 @@
 import type { Adapter } from 'chat';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  getChannelHost,
-  initializeChannelHost,
-  shutdownChannelHost,
-} from '../../../../packages/frogbot/src/channels/host.js';
 import { hasChannelChatAccess } from '../../../../packages/frogbot/src/chat/channelAccess.js';
 import { channelFixture, deferred } from './helpers.js';
+
+const { claimTurn, releaseTurn, streamTurn, updateIfVersion } = vi.hoisted(() => ({
+  claimTurn: vi.fn(),
+  releaseTurn: vi.fn(),
+  streamTurn: vi.fn(),
+  updateIfVersion: vi.fn(),
+}));
+
+vi.mock('../../../../packages/frogbot/src/chat/turn/state.js', () => ({ claimTurn, releaseTurn }));
+
+vi.mock('../../../../packages/frogbot/src/chat/turn/streamTurn.js', () => ({ streamTurn }));
+
+vi.mock('../../../../packages/frogbot/src/database/compareAndSet.js', () => ({ updateIfVersion }));
+
+const { getChannelHost, initializeChannelHost, shutdownChannelHost } =
+  await import('../../../../packages/frogbot/src/channels/host.js');
+
+const { runQueuedTurn } = await import('../../../../packages/frogbot/src/chat/turn/queue.js');
+
+const claim = { chatId: 'chat-1', attempt: 'attempt-1' };
+
+function activate(messages: Array<Record<string, unknown>>) {
+  return async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
+    Object.assign(
+      messages.find((message) => message.id === id)!,
+      data,
+    );
+
+    return true;
+  };
+}
 
 describe('ChannelHost initialization cleanup', () => {
   it.each([
@@ -91,7 +117,20 @@ describe('ChannelHost initialization cleanup', () => {
 });
 
 describe('ChannelHost conversation loop', () => {
-  afterEach(() => vi.useRealTimers());
+  beforeEach(() => {
+    claimTurn.mockReset().mockResolvedValue(claim);
+    releaseTurn.mockReset().mockResolvedValue(true);
+    updateIfVersion.mockReset().mockResolvedValue(true);
+
+    streamTurn.mockReset().mockImplementation(async () => ({
+      result: {
+        stream: (async function* () {
+          yield 'Queued reply';
+        })(),
+      },
+      persistence: Promise.resolve(),
+    }));
+  });
 
   it('waits for durable enqueue and retains every concurrent turn', async () => {
     const fixture = channelFixture();
@@ -206,86 +245,108 @@ describe('ChannelHost conversation loop', () => {
     await fixture.host.shutdown();
   });
 
-  it('waits through contention and keeps the lock until persistence settles', async () => {
-    vi.useFakeTimers();
-
+  it('queues a message that arrives during a running turn without posting it', async () => {
     const fixture = channelFixture();
-    const persisted = deferred();
-
-    fixture.streamMessage.mockResolvedValueOnce({
-      stream: (async function* () {
-        yield 'First';
-      })(),
-      persistence: persisted.promise,
-    });
 
     await fixture.host.initialize(false);
     await fixture.deliver('message-1');
     await fixture.deliver('message-2');
+    await fixture.host.run(fixture.inputs[0]!);
 
-    const first = fixture.host.run(fixture.inputs[0]!);
+    fixture.streamMessage.mockResolvedValueOnce({
+      status: 'queued',
+      chatId: 'chat-1',
+      messageId: 'message-2',
+      delivery: 'queue',
+    } as never);
 
-    await vi.waitFor(() => expect(fixture.posted).toHaveLength(1));
+    await fixture.host.run(fixture.inputs[1]!);
 
-    let secondDone = false;
-    const second = fixture.host.run(fixture.inputs[1]!).then(() => {
-      secondDone = true;
-    });
-
-    await vi.advanceTimersByTimeAsync(300);
-
-    expect(fixture.streamMessage).toHaveBeenCalledOnce();
-    expect(secondDone).toBe(false);
-    expect(fixture.locks.has('chat:chat-1')).toBe(true);
-
-    persisted.resolve();
-    await first;
-    await vi.advanceTimersByTimeAsync(100);
-    await second;
-
-    expect(fixture.posted.map(({ text }) => text)).toEqual(['First', 'Hello back']);
-    expect(fixture.locks.size).toBe(0);
+    expect(fixture.streamMessage).toHaveBeenCalledTimes(2);
+    expect(fixture.posted).toEqual([{ threadId: 'channel:thread-1', text: 'Hello back' }]);
 
     await fixture.host.shutdown();
   });
 
-  it('aborts the model on lease loss and drains persistence before rejecting the job', async () => {
-    vi.useFakeTimers();
-
+  it('posts a promoted queued turn once through the registered runner', async () => {
     const fixture = channelFixture();
-    const persisted = deferred();
 
-    fixture.streamMessage.mockResolvedValueOnce({
-      stream: (async function* () {
-        yield 'First';
-      })(),
-      persistence: persisted.promise,
-    });
-    fixture.kv.extendLock.mockResolvedValue(false);
+    updateIfVersion.mockImplementation(activate(fixture.messages));
 
     await fixture.host.initialize(false);
-    await fixture.deliver();
+    await fixture.deliver('message-1');
+    await fixture.host.run(fixture.inputs[0]!);
 
-    let done = false;
-    const run = fixture.host.run(fixture.inputs[0]!);
-    const outcome = run.catch((error: unknown) => {
-      done = true;
-
-      return error;
+    fixture.messages.push({
+      id: 'message-2',
+      chat: 'chat-1',
+      role: 'user',
+      parts: [{ type: 'text', text: 'Also this' }],
+      status: 'queued',
+      delivery: 'queue',
+      author: { user: null, channel: { piece: 'slack', id: 'user-2', username: 'toad' } },
+      version: 0,
+      createdAt: '2026-09-24T00:00:00.000Z',
     });
 
-    await vi.waitFor(() => expect(fixture.streamMessage).toHaveBeenCalledOnce());
-    await vi.advanceTimersByTimeAsync(10_000);
+    await runQueuedTurn({ frogbot: fixture.frogbot as never, chatId: 'chat-1' });
 
-    expect(fixture.streamMessage.mock.calls[0]![0].abortSignal?.aborted).toBe(true);
-    expect(done).toBe(false);
-
-    persisted.resolve();
-
-    expect(await outcome).toBeInstanceOf(Error);
-    expect(done).toBe(true);
+    expect(fixture.messages[0]).toMatchObject({ status: 'active', delivery: null });
+    expect(streamTurn).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        agent: fixture.frogbot.agents.support,
+        claim,
+        uiMessages: [
+          { id: 'message-2', role: 'user', parts: [{ type: 'text', text: 'Also this' }] },
+        ],
+        clientTools: { kinds: [] },
+        req: expect.objectContaining({
+          context: {
+            channel: {
+              piece: 'slack',
+              threadId: 'channel:thread-1',
+              author: { id: 'user-2', username: 'toad' },
+            },
+          },
+        }),
+      }),
+    );
+    expect(fixture.streamMessage).toHaveBeenCalledOnce();
+    expect(fixture.posted).toEqual([
+      { threadId: 'channel:thread-1', text: 'Hello back' },
+      { threadId: 'channel:thread-1', text: 'Queued reply' },
+    ]);
+    expect(releaseTurn).not.toHaveBeenCalled();
 
     await fixture.host.shutdown();
+  });
+
+  it('stops posting promoted turns once the host shuts down', async () => {
+    const fixture = channelFixture();
+
+    updateIfVersion.mockImplementation(activate(fixture.messages));
+
+    await fixture.host.initialize(false);
+    await fixture.deliver('message-1');
+    await fixture.host.run(fixture.inputs[0]!);
+    await fixture.host.shutdown();
+
+    fixture.messages.push({
+      id: 'message-2',
+      chat: 'chat-1',
+      role: 'user',
+      parts: [{ type: 'text', text: 'Also this' }],
+      status: 'queued',
+      delivery: 'queue',
+      author: { user: null },
+      version: 0,
+      createdAt: '2026-09-24T00:00:00.000Z',
+    });
+
+    await runQueuedTurn({ frogbot: fixture.frogbot as never, chatId: 'chat-1' });
+
+    expect(streamTurn).toHaveBeenCalledOnce();
+    expect(fixture.posted).toEqual([{ threadId: 'channel:thread-1', text: 'Hello back' }]);
   });
 
   it('aborts and drains persistence after posting fails without retrying the turn', async () => {
@@ -315,7 +376,6 @@ describe('ChannelHost conversation loop', () => {
     );
 
     expect(done).toBe(false);
-    expect(fixture.locks.has('chat:chat-1')).toBe(true);
 
     persisted.resolve();
 
@@ -348,7 +408,6 @@ describe('ChannelHost conversation loop', () => {
     await expect(fixture.host.run(fixture.inputs[0]!)).rejects.toBe(error);
 
     expect(fixture.streamMessage).toHaveBeenCalledOnce();
-    expect(fixture.locks.size).toBe(0);
 
     await fixture.host.shutdown();
   });

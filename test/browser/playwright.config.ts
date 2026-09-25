@@ -12,6 +12,7 @@ const richTextPort = 3113;
 const livePreviewPort = 3114;
 const chatAssetsPort = 3125;
 const chatProviderPort = 3126;
+const questionPort = 3127;
 const selectedProjects = new Set<string>();
 let collectingProjects = false;
 
@@ -131,6 +132,22 @@ const chatAssetsServers = [
   },
 ];
 
+const questionServer = {
+  command: 'node ../../../node_modules/next/dist/bin/next dev',
+  cwd: path.join(dirname, 'fixtures', 'question'),
+  url: `http://localhost:${questionPort}`,
+  reuseExistingServer: false,
+  timeout: 180_000,
+  stdout: 'ignore' as const,
+  stderr: 'pipe' as const,
+  env: {
+    PORT: String(questionPort),
+    DATABASE_URL: 'file:./frogbot.db',
+    FROGBOT_SECRET: 'browser-question-secret',
+    NEXT_TELEMETRY_DISABLED: '1',
+  },
+};
+
 export default defineConfig({
   testDir: dirname,
   testMatch: '*.browser.spec.ts',
@@ -153,6 +170,15 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${chatAssetsPort}`,
+        channel: 'chromium',
+      },
+    },
+    {
+      name: 'question',
+      testMatch: 'question.browser.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://localhost:${questionPort}`,
         channel: 'chromium',
       },
     },
@@ -199,6 +225,7 @@ export default defineConfig({
     'rich-text': richTextServer,
     'live-preview': livePreviewServer,
     'chat-assets': chatAssetsServers,
+    question: questionServer,
   })
     .filter(([name]) => startAllServers || selectedProjects.has(name))
     .flatMap(([, server]) => server),

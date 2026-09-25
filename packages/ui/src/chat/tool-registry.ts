@@ -5,6 +5,8 @@ export type ToolPartValue = DynamicToolUIPart | ToolUIPart<UITools>;
 
 export interface ToolRendererProps {
   part: ToolPartValue;
+  addToolOutput?: (output: unknown) => Promise<void>;
+  dismiss?: () => Promise<void>;
 }
 
 export interface ToolRenderer {

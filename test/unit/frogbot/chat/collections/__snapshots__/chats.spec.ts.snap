@@ -70,6 +70,16 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
       "unique": true,
     },
     {
+      "admin": {
+        "hidden": true,
+      },
+      "name": "channelThread",
+      "type": "json",
+      "typescriptSchema": [
+        [Function],
+      ],
+    },
+    {
       "index": true,
       "name": "lastMessageAt",
       "type": "date",

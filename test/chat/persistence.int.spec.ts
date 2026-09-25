@@ -2,7 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { UIMessage } from 'frogbot';
-import { persistAssistantMessage, resolveChatContext } from 'frogbot/test';
+import { persistAssistantMessage, releaseTurn, resolveChatContext } from 'frogbot/test';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { generateChatTitle } from '../../packages/frogbot/src/chat/title.js';
@@ -37,6 +37,18 @@ describe('chat persistence: chat context', () => {
     return booted.frogbot.createRequest({ user: { ...owner, collection: usersSlug } } as never);
   }
 
+  async function startTurn(props: Parameters<typeof resolveChatContext>[0]) {
+    const context = await resolveChatContext(props);
+
+    if (context.status !== 'ready') {
+      throw new Error(`Expected a ready turn, got '${context.status}'.`);
+    }
+
+    await releaseTurn({ req: props.req, claim: context.claim, state: 'idle' });
+
+    return context;
+  }
+
   async function countDocs(collection: string) {
     const [chats, messages] = await Promise.all([
       booted.frogbot.count({ collection: chatsSlug, overrideAccess: true }),
@@ -47,7 +59,7 @@ describe('chat persistence: chat context', () => {
 
   it('creates a chat, persists the user message, and returns it as history', async () => {
     const req = await makeOwnerReq();
-    const result = await resolveChatContext({
+    const result = await startTurn({
       req,
       agentSlug,
       incoming: [userMessage('Hello there', 'create-user')],
@@ -71,14 +83,14 @@ describe('chat persistence: chat context', () => {
 
   it('creates and continues a chat with null ownership', async () => {
     const createReq = await booted.frogbot.createRequest({});
-    const first = await resolveChatContext({
+    const first = await startTurn({
       req: createReq,
       agentSlug,
       incoming: [userMessage('Anonymous first', 'anonymous-1')],
       tools: {},
     });
     const continueReq = await booted.frogbot.createRequest({});
-    const second = await resolveChatContext({
+    const second = await startTurn({
       req: continueReq,
       agentSlug,
       chatId: first.chatId,
@@ -99,7 +111,7 @@ describe('chat persistence: chat context', () => {
 
   it('persists only the new message on follow-up turns and returns ordered history', async () => {
     const firstReq = await makeOwnerReq();
-    const first = await resolveChatContext({
+    const first = await startTurn({
       req: firstReq,
       agentSlug,
       incoming: [userMessage('First turn', 'follow-up-1')],
@@ -107,7 +119,7 @@ describe('chat persistence: chat context', () => {
     });
 
     const followUpReq = await makeOwnerReq();
-    const followUp = await resolveChatContext({
+    const followUp = await startTurn({
       req: followUpReq,
       agentSlug,
       chatId: first.chatId,
@@ -126,7 +138,7 @@ describe('chat persistence: chat context', () => {
 
   it('rejects a chat owned by another user', async () => {
     const req = await makeOwnerReq();
-    const { chatId } = await resolveChatContext({
+    const { chatId } = await startTurn({
       req,
       agentSlug,
       incoming: [userMessage('Mine', 'owner-message')],
@@ -155,7 +167,7 @@ describe('chat persistence: chat context', () => {
 
   it('rejects an anonymous caller without writing to an authenticated chat', async () => {
     const ownerReq = await makeOwnerReq();
-    const { chatId } = await resolveChatContext({
+    const { chatId } = await startTurn({
       req: ownerReq,
       agentSlug,
       incoming: [userMessage('Private', 'anonymous-bypass-owner')],
@@ -190,7 +202,7 @@ describe('chat persistence: chat context', () => {
 
   it('replaces an edited user message and truncates later history', async () => {
     const req = await makeOwnerReq();
-    const { chatId } = await resolveChatContext({
+    const { chatId } = await startTurn({
       req,
       agentSlug,
       incoming: [userMessage('Original question', 'edit-user-1')],
@@ -199,7 +211,6 @@ describe('chat persistence: chat context', () => {
     await persistAssistantMessage({
       req,
       chatId: chatId!,
-      isContinuation: false,
       message: {
         id: 'edit-assistant-1',
         role: 'assistant',
@@ -208,7 +219,7 @@ describe('chat persistence: chat context', () => {
     });
 
     const retryReq = await makeOwnerReq();
-    const retry = await resolveChatContext({
+    const retry = await startTurn({
       req: retryReq,
       agentSlug,
       chatId,
@@ -234,7 +245,7 @@ describe('chat persistence: chat context', () => {
 
   it('creates and continues an assistant message by UI message id', async () => {
     const req = await makeOwnerReq();
-    const { chatId } = await resolveChatContext({
+    const { chatId } = await startTurn({
       req,
       agentSlug,
       incoming: [userMessage('Start', 'assistant-start')],
@@ -244,7 +255,6 @@ describe('chat persistence: chat context', () => {
     await persistAssistantMessage({
       req,
       chatId: chatId!,
-      isContinuation: false,
       message: {
         id: 'assistant-portable-id',
         role: 'assistant',
@@ -257,7 +267,6 @@ describe('chat persistence: chat context', () => {
     await persistAssistantMessage({
       req,
       chatId: chatId!,
-      isContinuation: true,
       message: {
         id: 'assistant-portable-id',
         role: 'assistant',
@@ -288,7 +297,7 @@ describe('chat persistence: chat context', () => {
     const req = await makeOwnerReq();
     const originalGenerateText = req.frogbot.generateText;
     req.frogbot.generateText = vi.fn().mockResolvedValue({ text: 'Nighttime Frog Songs' }) as never;
-    const first = await resolveChatContext({
+    const first = await startTurn({
       req,
       agentSlug,
       incoming: [userMessage('Why do frogs sing at night?', 'title-user-1')],
@@ -304,7 +313,6 @@ describe('chat persistence: chat context', () => {
       req,
       chatId: first.chatId!,
       message: assistant,
-      isContinuation: false,
     });
     await generateChatTitle({
       req,
