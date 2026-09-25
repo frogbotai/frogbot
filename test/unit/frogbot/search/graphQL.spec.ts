@@ -162,4 +162,58 @@ describe('collection search GraphQL queries', () => {
       }),
     );
   });
+
+  it('passes hybrid candidates and returns component ranks and scores', async () => {
+    const { queries, sanitized } = await buildQueries(config());
+
+    const components = {
+      lexical: { method: 'fts', higherIsBetter: true, approximate: false },
+      vector: { method: 'ann', higherIsBetter: false, approximate: true },
+    };
+
+    const search = vi.fn(async () => ({
+      mode: 'hybrid',
+      ranking: { method: 'rrf', higherIsBetter: true, approximate: true, components },
+      hits: [
+        {
+          doc: { id: 1, title: 'stored' },
+          score: 0.03,
+          components: { lexical: null, vector: { rank: 2, score: 0.4 } },
+        },
+      ],
+    }));
+
+    const payload = {} as Payload;
+
+    registerFrogBotInstance(payload, { search } as unknown as FrogBot, sanitized);
+
+    const schema = new GraphQL.GraphQLSchema({
+      query: new GraphQL.GraphQLObjectType({ name: 'Query', fields: queries as never }),
+    });
+
+    const result = await GraphQL.graphql({
+      schema,
+      source:
+        '{ searchArticles(index: "titles", text: "hello", vector: [1, 0], candidates: 250) { ranking { method components { lexical { method } vector { method higherIsBetter approximate } } } hits { score components { lexical { rank score } vector { rank score } } } } }',
+      contextValue: { req: { payload, context: {}, user: { id: 1 } } },
+    });
+
+    expect(result).toEqual({
+      data: {
+        searchArticles: {
+          ranking: {
+            method: 'rrf',
+            components: {
+              lexical: { method: 'fts' },
+              vector: { method: 'ann', higherIsBetter: false, approximate: true },
+            },
+          },
+          hits: [{ score: 0.03, components: { lexical: null, vector: { rank: 2, score: 0.4 } } }],
+        },
+      },
+    });
+    expect(search).toHaveBeenCalledWith(
+      expect.objectContaining({ candidates: 250, query: { text: 'hello', vector: [1, 0] } }),
+    );
+  });
 });

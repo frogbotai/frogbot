@@ -8,6 +8,8 @@ import type {
   SearchIndexDescriptors,
 } from './types.js';
 
+export const defaultCandidates = 100;
+
 type IndexContext = {
   collection: string;
   index: string;
@@ -147,36 +149,17 @@ function sanitizeVector(
   };
 }
 
-function sanitizeHybrid(
+function sanitizeWeights(
   context: IndexContext,
   value: unknown,
-  modes: { lexical: boolean; vector: boolean },
-): SearchIndexDescriptor['hybrid'] {
-  if (value === undefined) {
-    return modes.lexical && modes.vector
-      ? { fusion: 'rrf', weights: { lexical: 1, vector: 1 } }
-      : undefined;
-  }
+): NonNullable<SearchIndexDescriptor['hybrid']>['weights'] {
+  if (value === undefined) return { lexical: 1, vector: 1 };
 
-  if (!modes.lexical || !modes.vector || !isRecord(value)) {
-    fail(context, 'hybrid requires both lexical and vector modes and an options object');
-  }
+  if (!isRecord(value)) fail(context, 'hybrid.weights must be an object');
 
-  assertKeys(context, value, ['fusion', 'weights'], 'hybrid');
+  assertKeys(context, value, ['lexical', 'vector'], 'hybrid.weights');
 
-  if (value.fusion !== undefined && value.fusion !== 'rrf') {
-    fail(context, 'hybrid.fusion must be rrf');
-  }
-
-  if (value.weights === undefined) {
-    return { fusion: 'rrf', weights: { lexical: 1, vector: 1 } };
-  }
-
-  if (!isRecord(value.weights)) fail(context, 'hybrid.weights must be an object');
-
-  assertKeys(context, value.weights, ['lexical', 'vector'], 'hybrid.weights');
-
-  const { lexical, vector } = value.weights;
+  const { lexical, vector } = value;
 
   if (
     typeof lexical !== 'number' ||
@@ -189,7 +172,42 @@ function sanitizeHybrid(
     fail(context, 'hybrid.weights requires positive finite lexical and vector weights');
   }
 
-  return { fusion: 'rrf', weights: { lexical, vector } };
+  return { lexical, vector };
+}
+
+function sanitizeHybrid(
+  context: IndexContext,
+  value: unknown,
+  modes: { lexical: boolean; vector: boolean },
+): SearchIndexDescriptor['hybrid'] {
+  if (value === undefined) {
+    return modes.lexical && modes.vector
+      ? { fusion: 'rrf', weights: { lexical: 1, vector: 1 }, defaultCandidates }
+      : undefined;
+  }
+
+  if (!modes.lexical || !modes.vector || !isRecord(value)) {
+    fail(context, 'hybrid requires both lexical and vector modes and an options object');
+  }
+
+  assertKeys(context, value, ['fusion', 'weights', 'defaultCandidates'], 'hybrid');
+
+  if (value.fusion !== undefined && value.fusion !== 'rrf') {
+    fail(context, 'hybrid.fusion must be rrf');
+  }
+
+  const candidates =
+    value.defaultCandidates === undefined ? defaultCandidates : value.defaultCandidates;
+
+  if (typeof candidates !== 'number' || !Number.isSafeInteger(candidates) || candidates < 1) {
+    fail(context, 'hybrid.defaultCandidates must be a positive integer');
+  }
+
+  return {
+    fusion: 'rrf',
+    weights: sanitizeWeights(context, value.weights),
+    defaultCandidates: candidates,
+  };
 }
 
 function sanitizeFilterFields({

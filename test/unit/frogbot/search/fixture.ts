@@ -2,6 +2,7 @@ import type { Config, Payload } from 'payload';
 import { vi } from 'vitest';
 
 import type {
+  AdapterSearchResult,
   AdapterSearchRow,
   SearchAdapter,
 } from '../../../../packages/frogbot/src/database/types.js';
@@ -13,7 +14,7 @@ export const index = {
   name: 'content',
   lexical: { fields: [{ path: 'title', localized: false }] },
   vector: { path: 'embedding', localized: false, dimensions: 3, metric: 'cosine' as const },
-  hybrid: { fusion: 'rrf' as const, weights: { lexical: 1, vector: 1 } },
+  hybrid: { fusion: 'rrf' as const, weights: { lexical: 1, vector: 1 }, defaultCandidates: 100 },
   filterFields: {
     id: { path: 'id', type: 'id' as const, localized: false, many: false },
     title: { path: 'title', type: 'string' as const, localized: false, many: false },
@@ -25,16 +26,26 @@ export const index = {
 
 export const ranking = { method: 'stub', higherIsBetter: true, approximate: false };
 
+export const hybridRanking = {
+  ...ranking,
+  components: {
+    lexical: { method: 'stub-lexical', higherIsBetter: true, approximate: false },
+    vector: { method: 'stub-vector', higherIsBetter: false, approximate: true },
+  },
+};
+
 type Doc = Record<string, unknown>;
 
 export function searchFixture({
   docs = [{ id: 1, title: 'stored' }],
   read = () => true,
   rows = [{ id: 1, score: 0.5 }],
+  rowRanking = ranking,
 }: {
   docs?: Doc[];
   read?: (args: { req: FrogBotRequest }) => boolean | object;
   rows?: AdapterSearchRow[];
+  rowRanking?: AdapterSearchResult['ranking'];
 } = {}) {
   const collection = {
     slug: 'articles',
@@ -52,7 +63,7 @@ export function searchFixture({
 
   const find = vi.fn(async (_args: Record<string, unknown>) => ({ docs }));
 
-  const search = vi.fn(async () => ({ ranking, rows }));
+  const search = vi.fn(async () => ({ ranking: rowRanking, rows }));
 
   const adapter: SearchAdapter = {
     capabilities: () => ({ lexical: 'supported', vector: 'supported', hybrid: 'supported' }),

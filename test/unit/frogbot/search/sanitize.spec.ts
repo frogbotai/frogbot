@@ -47,7 +47,7 @@ describe('collection search configuration', () => {
         ],
       },
       vector: { path: 'embedding', localized: false, dimensions: 3, metric: 'cosine' },
-      hybrid: { fusion: 'rrf', weights: { lexical: 1, vector: 1 } },
+      hybrid: { fusion: 'rrf', weights: { lexical: 1, vector: 1 }, defaultCandidates: 100 },
     });
 
     expect(descriptors?.titles).toMatchObject({
@@ -369,6 +369,14 @@ describe('collection search configuration', () => {
       },
       'positive finite',
     ],
+    ...[0, -1, 1.5, '10', null].map((defaultCandidates) => [
+      {
+        lexical: { fields: ['title'] },
+        vector: { field: 'embedding' },
+        hybrid: { defaultCandidates },
+      },
+      'hybrid.defaultCandidates',
+    ]),
     [
       { lexical: { fields: ['title'] }, filters: { fields: ['category'], exclude: ['body'] } },
       'exactly one',
@@ -446,6 +454,22 @@ describe('collection search configuration', () => {
         ),
       ).toThrow('stored and readable');
     }
+  });
+
+  it('keeps configured hybrid weights and default candidates together', () => {
+    const descriptors = sanitizeSearchIndexes(
+      index({
+        lexical: { fields: ['title'] },
+        vector: { field: 'embedding' },
+        hybrid: { weights: { lexical: 1, vector: 3 }, defaultCandidates: 250 },
+      }),
+    );
+
+    expect(descriptors?.content.hybrid).toEqual({
+      fusion: 'rrf',
+      weights: { lexical: 1, vector: 3 },
+      defaultCandidates: 250,
+    });
   });
 
   it('allows multiple named indexes to use the same vector with different metrics', () => {

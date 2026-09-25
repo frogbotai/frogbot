@@ -15,6 +15,7 @@ import {
 } from '../../../packages/frogbot/src/jobs/lease.js';
 
 vi.mock('frogbot/jobs', () => import('../../../packages/frogbot/src/exports/jobs.js'));
+vi.mock('frogbot/search', () => import('../../../packages/frogbot/src/exports/search.js'));
 
 describe.each(['postgres', 'vercel-postgres'] as const)('%s atomic SQL', (kind) => {
   async function setup() {

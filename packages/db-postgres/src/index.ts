@@ -3,6 +3,7 @@ import {
   type PostgresAdapterArgs,
 } from '@payloadcms/db-postgres';
 import { installSQLJobOperations } from 'frogbot/jobs';
+import { postgresSearchAdapter } from 'frogbot/search';
 
 export type {
   MigrateDownArgs,
@@ -23,5 +24,6 @@ export function postgresAdapter(args: PostgresAdapterArgs) {
 
       return database;
     },
+    search: postgresSearchAdapter,
   };
 }

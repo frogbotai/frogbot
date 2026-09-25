@@ -14,15 +14,60 @@ import { getFieldNodes, type SearchFieldNode } from './getEligibleFields.js';
 import { resolveSearchPredicate } from './predicates.js';
 import { assertSearchCapability, getSearchAdapter } from './runtime.js';
 import type {
+  SearchComponentRanking,
+  SearchHitComponent,
+  SearchHitComponents,
   SearchIndexDescriptor,
   SearchMode,
   SearchOptions,
   SearchQuery,
+  SearchRanking,
   SearchResult,
 } from './types.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isComponentRanking(value: unknown): value is SearchComponentRanking {
+  return (
+    isRecord(value) &&
+    typeof value.method === 'string' &&
+    typeof value.higherIsBetter === 'boolean' &&
+    typeof value.approximate === 'boolean'
+  );
+}
+
+function getComponentRanking({
+  approximate,
+  higherIsBetter,
+  method,
+}: SearchComponentRanking): SearchComponentRanking {
+  return { method, higherIsBetter, approximate };
+}
+
+function isHitComponent(value: unknown): value is SearchHitComponent {
+  return (
+    isRecord(value) &&
+    typeof value.rank === 'number' &&
+    Number.isSafeInteger(value.rank) &&
+    value.rank >= 1 &&
+    typeof value.score === 'number' &&
+    Number.isFinite(value.score)
+  );
+}
+
+function isHitComponents(value: unknown): value is SearchHitComponents {
+  return (
+    isRecord(value) &&
+    (value.lexical === null || isHitComponent(value.lexical)) &&
+    (value.vector === null || isHitComponent(value.vector)) &&
+    (value.lexical !== null || value.vector !== null)
+  );
+}
+
+function getHitComponent(component: SearchHitComponent | null): SearchHitComponent | null {
+  return component && { rank: component.rank, score: component.score };
 }
 
 function getRankedPaths(index: SearchIndexDescriptor, mode: SearchMode): string[] {
@@ -132,6 +177,20 @@ export async function searchOperation<T extends CollectionSlug>(
     );
   }
 
+  if (
+    options.candidates !== undefined &&
+    (!Number.isSafeInteger(options.candidates) || options.candidates < 1)
+  ) {
+    throw new SearchValidationError(
+      `Search index '${index.name}' requires a positive integer candidates count.`,
+    );
+  }
+
+  const candidates =
+    mode === 'hybrid'
+      ? Math.max(limit, options.candidates ?? index.hybrid!.defaultCandidates)
+      : undefined;
+
   const depth = options.depth ?? 0;
 
   if (!Number.isSafeInteger(depth) || depth < 0) {
@@ -233,6 +292,7 @@ export async function searchOperation<T extends CollectionSlug>(
   await adapter!.readiness?.({ collection: collection.slug, db: payload.db, index, mode });
 
   const result = await adapter!.search({
+    candidates,
     collection: collection.slug,
     db: payload.db,
     draft,
@@ -253,13 +313,30 @@ export async function searchOperation<T extends CollectionSlug>(
     !result ||
     !Array.isArray(result.rows) ||
     result.rows.length > limit ||
-    !isRecord(result.ranking) ||
-    typeof result.ranking.method !== 'string' ||
-    typeof result.ranking.higherIsBetter !== 'boolean' ||
-    typeof result.ranking.approximate !== 'boolean'
+    !isComponentRanking(result.ranking) ||
+    (mode === 'hybrid' &&
+      (!isRecord(result.ranking.components) ||
+        !isComponentRanking(result.ranking.components.lexical) ||
+        !isComponentRanking(result.ranking.components.vector)))
   ) {
     throw invalidResult();
   }
+
+  const { approximate, higherIsBetter, method } = result.ranking;
+
+  const ranking: SearchRanking = {
+    method,
+    higherIsBetter,
+    approximate,
+    ...(mode === 'hybrid'
+      ? {
+          components: {
+            lexical: getComponentRanking(result.ranking.components!.lexical),
+            vector: getComponentRanking(result.ranking.components!.vector),
+          },
+        }
+      : {}),
+  };
 
   const seen = new Set<string>();
 
@@ -269,7 +346,8 @@ export async function searchOperation<T extends CollectionSlug>(
       (typeof row.id !== 'number' && typeof row.id !== 'string') ||
       seen.has(String(row.id)) ||
       typeof row.score !== 'number' ||
-      !Number.isFinite(row.score)
+      !Number.isFinite(row.score) ||
+      (mode === 'hybrid' && !isHitComponents(row.components))
     ) {
       throw invalidResult();
     }
@@ -277,7 +355,7 @@ export async function searchOperation<T extends CollectionSlug>(
     seen.add(String(row.id));
   }
 
-  if (!result.rows.length) return { mode, ranking: result.ranking, hits: [] };
+  if (!result.rows.length) return { mode, ranking, hits: [] };
 
   const { docs } = await payload.find({
     collection: options.collection,
@@ -296,11 +374,24 @@ export async function searchOperation<T extends CollectionSlug>(
 
   const docsByID = new Map(docs.map((doc) => [String(doc.id), doc as TypedCollection<T>]));
 
-  const hits = result.rows.flatMap(({ id, score }) => {
+  const hits = result.rows.flatMap(({ components, id, score }) => {
     const doc = docsByID.get(String(id));
 
-    return doc ? [{ doc, score }] : [];
+    if (!doc) return [];
+
+    return [
+      mode === 'hybrid'
+        ? {
+            doc,
+            score,
+            components: {
+              lexical: getHitComponent(components!.lexical),
+              vector: getHitComponent(components!.vector),
+            },
+          }
+        : { doc, score },
+    ];
   });
 
-  return { mode, ranking: result.ranking, hits };
+  return { mode, ranking, hits };
 }

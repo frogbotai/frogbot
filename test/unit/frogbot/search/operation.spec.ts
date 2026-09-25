@@ -16,7 +16,7 @@ import {
   withSearchRuntime,
 } from '../../../../packages/frogbot/src/search/runtime.js';
 import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/request.js';
-import { index, searchFixture } from './fixture.js';
+import { hybridRanking, index, ranking, searchFixture } from './fixture.js';
 
 const searchCollections = [{ slug: 'articles', search: { content: index } }];
 
@@ -356,6 +356,193 @@ describe('search hydration', () => {
         collection: 'articles',
         index: 'content',
         query: { text: 'hello' },
+        req,
+      }),
+    ).rejects.toThrow(SearchReadinessError);
+
+    expect(find).not.toHaveBeenCalled();
+  });
+});
+
+describe('hybrid candidates', () => {
+  const hybrid = { text: 'hello', vector: [1, 0, 0] };
+
+  it.each([
+    [{ limit: 10 }, 100],
+    [{ limit: 10, candidates: 250 }, 250],
+    [{ limit: 300 }, 300],
+    [{ limit: 50, candidates: 20 }, 50],
+  ])('resolves %j to %i candidates per component', async (options, candidates) => {
+    const { frogbot, payload, req, search } = searchFixture({
+      rows: [],
+      rowRanking: hybridRanking,
+    });
+
+    await searchOperation(frogbot, payload, {
+      collection: 'articles',
+      index: 'content',
+      query: hybrid,
+      req,
+      ...options,
+    });
+
+    expect(search).toHaveBeenCalledWith(expect.objectContaining({ mode: 'hybrid', candidates }));
+  });
+
+  it('uses the index default candidates when the query omits them', async () => {
+    const { frogbot, payload, req, search } = searchFixture({
+      rows: [],
+      rowRanking: hybridRanking,
+    });
+
+    frogbot.collections.articles.search!.content = {
+      ...index,
+      hybrid: { ...index.hybrid, defaultCandidates: 40 },
+    };
+
+    await searchOperation(frogbot, payload, {
+      collection: 'articles',
+      index: 'content',
+      query: hybrid,
+      limit: 5,
+      req,
+    });
+
+    expect(search).toHaveBeenCalledWith(expect.objectContaining({ candidates: 40 }));
+  });
+
+  it('does not pass candidates to lexical or vector searches', async () => {
+    const { frogbot, payload, req, search } = searchFixture({ rows: [] });
+
+    for (const query of [{ text: 'hello' }, { vector: [1, 0, 0] }]) {
+      await searchOperation(frogbot, payload, {
+        collection: 'articles',
+        index: 'content',
+        query,
+        candidates: 500,
+        req,
+      });
+    }
+
+    expect(search).toHaveBeenNthCalledWith(1, expect.objectContaining({ candidates: undefined }));
+    expect(search).toHaveBeenNthCalledWith(2, expect.objectContaining({ candidates: undefined }));
+  });
+
+  it.each([0, -1, 1.5, Number.NaN])('rejects candidates %s before dispatch', async (candidates) => {
+    const { frogbot, payload, req, search } = searchFixture();
+
+    await expect(
+      searchOperation(frogbot, payload, {
+        collection: 'articles',
+        index: 'content',
+        query: hybrid,
+        candidates,
+        req,
+      }),
+    ).rejects.toThrow('positive integer candidates');
+
+    expect(search).not.toHaveBeenCalled();
+  });
+});
+
+describe('hybrid components', () => {
+  const hybrid = { text: 'hello', vector: [1, 0, 0] };
+
+  it('returns component ranks, scores and ranking metadata on hybrid hits', async () => {
+    const { frogbot, payload, req } = searchFixture({
+      rowRanking: hybridRanking,
+      rows: [
+        {
+          id: 1,
+          score: 0.03,
+          components: { lexical: { rank: 1, score: 0.1 }, vector: { rank: 3, score: 0.92 } },
+        },
+        { id: 2, score: 0.01, components: { lexical: null, vector: { rank: 1, score: 0.97 } } },
+      ],
+      docs: [
+        { id: 1, title: 'first' },
+        { id: 2, title: 'second' },
+      ],
+    });
+
+    const result = await searchOperation(frogbot, payload, {
+      collection: 'articles',
+      index: 'content',
+      query: hybrid,
+      req,
+    });
+
+    expect(result).toEqual({
+      mode: 'hybrid',
+      ranking: hybridRanking,
+      hits: [
+        {
+          doc: { id: 1, title: 'first' },
+          score: 0.03,
+          components: { lexical: { rank: 1, score: 0.1 }, vector: { rank: 3, score: 0.92 } },
+        },
+        {
+          doc: { id: 2, title: 'second' },
+          score: 0.01,
+          components: { lexical: null, vector: { rank: 1, score: 0.97 } },
+        },
+      ],
+    });
+  });
+
+  it('omits components from lexical and vector results', async () => {
+    const { frogbot, payload, req } = searchFixture({
+      rowRanking: hybridRanking,
+      rows: [{ id: 1, score: 0.5, components: { lexical: { rank: 1, score: 0.5 }, vector: null } }],
+    });
+
+    const result = await searchOperation(frogbot, payload, {
+      collection: 'articles',
+      index: 'content',
+      query: { text: 'hello' },
+      req,
+    });
+
+    expect(result).toEqual({
+      mode: 'lexical',
+      ranking,
+      hits: [{ doc: { id: 1, title: 'stored' }, score: 0.5 }],
+    });
+  });
+
+  it.each([
+    [hybridRanking, [{ id: 1, score: 0.5 }], 'missing components'],
+    [
+      hybridRanking,
+      [{ id: 1, score: 0.5, components: { lexical: null, vector: null } }],
+      'no matched component',
+    ],
+    [
+      hybridRanking,
+      [{ id: 1, score: 0.5, components: { lexical: { rank: 0, score: 1 }, vector: null } }],
+      'non-positive rank',
+    ],
+    [
+      hybridRanking,
+      [{ id: 1, score: 0.5, components: { lexical: { rank: 1, score: NaN }, vector: null } }],
+      'non-finite component score',
+    ],
+    [
+      ranking,
+      [{ id: 1, score: 0.5, components: { lexical: { rank: 1, score: 1 }, vector: null } }],
+      'missing component ranking',
+    ],
+  ])('rejects malformed hybrid results (%#: %s)', async (rowRanking, rows, _reason) => {
+    const { find, frogbot, payload, req } = searchFixture({
+      rowRanking,
+      rows: rows as never,
+    });
+
+    await expect(
+      searchOperation(frogbot, payload, {
+        collection: 'articles',
+        index: 'content',
+        query: hybrid,
         req,
       }),
     ).rejects.toThrow(SearchReadinessError);
