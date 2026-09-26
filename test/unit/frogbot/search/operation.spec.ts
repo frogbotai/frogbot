@@ -407,6 +407,22 @@ describe('search candidates', () => {
     expect(search).toHaveBeenCalledWith(expect.objectContaining({ mode: 'vector', candidates }));
   });
 
+  it.each([true, false])('passes draft %s to readiness', async (draft) => {
+    const { frogbot, payload, readiness, req } = searchFixture({ rows: [] });
+
+    await searchOperation(frogbot, payload, {
+      collection: 'articles',
+      index: 'content',
+      query: { text: 'hello' },
+      draft,
+      req,
+    });
+
+    expect(readiness).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'articles', draft, index, mode: 'lexical' }),
+    );
+  });
+
   it('uses the index default candidates when the query omits them', async () => {
     const { frogbot, payload, req, search } = searchFixture({
       rows: [],

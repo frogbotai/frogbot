@@ -72,8 +72,11 @@ export function searchFixture({
 
   const search = vi.fn(async () => ({ ranking: rowRanking, rows }));
 
+  const readiness = vi.fn();
+
   const adapter: SearchAdapter = {
     capabilities: () => ({ lexical: 'supported', vector: 'supported', hybrid: 'supported' }),
+    readiness,
     search,
   };
 
@@ -105,5 +108,5 @@ export function searchFixture({
     search: adapter,
   }).init({ payload });
 
-  return { collection, find, frogbot, payload, req, search };
+  return { collection, find, frogbot, payload, readiness, req, search };
 }

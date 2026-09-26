@@ -1,9 +1,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type { MongooseAdapter } from '@frogbotai/db-mongodb';
 import type { Where } from 'payload';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { ensureSearchIndexes } from '../../../packages/db-mongodb/src/search/index.js';
 import type { BootedFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../../__helpers/shared/bootFrogBot.js';
 import type { SeededArticles } from './shared.js';
@@ -296,5 +298,34 @@ describe.skipIf(skipSearch)('MongoDB vector search', () => {
 
     expect(drafts.ids[0]).toBe(posts.second);
     expect(published.ids[0]).toBe(posts.second);
+  });
+
+  it('checks only the indexes of the requested draft context', async () => {
+    const db = booted.payload.db as MongooseAdapter;
+    const versions = db.versions[postsSlug].collection;
+
+    await versions.dropSearchIndex('content_vector');
+
+    await waitFor(
+      () => versions.listSearchIndexes('content_vector').toArray(),
+      (indexes) => indexes.length === 0,
+    );
+
+    const published = await search({ collection: postsSlug, vector: [1, 0, 0], locale: 'en' });
+
+    expect(published.ids[0]).toBe(posts.first);
+
+    await expect(
+      search({ collection: postsSlug, vector: [1, 0, 0], draft: true, overrideAccess: true }),
+    ).rejects.toMatchObject({ name: 'SearchReadinessError', status: 503 });
+
+    await ensureSearchIndexes({ adapter: db });
+
+    const drafts = await waitFor(
+      () => search({ collection: postsSlug, vector: [0, 0, 1], draft: true, overrideAccess: true }),
+      ({ ids }) => ids.length > 0,
+    );
+
+    expect(drafts.ids[0]).toBe(posts.draft);
   });
 });

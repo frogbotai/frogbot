@@ -6,14 +6,17 @@ import { createSearchSetupError } from './createSearchSetupError.js';
 import { findSearchIndex } from './findSearchIndex.js';
 import { getSearchIndexes } from './getSearchIndexes.js';
 import { getSearchModel } from './getSearchModel.js';
+import { isDraftSearch } from './isDraftSearch.js';
 
-export const readiness: SearchReadiness = async ({ collection, db, index, mode }) => {
+export const readiness: SearchReadiness = async ({ collection, db, draft, index, mode }) => {
   const adapter = db as MongooseAdapter;
+  const versions = isDraftSearch({ adapter, collection, draft });
 
   const searchIndexes = getSearchIndexes(adapter).filter(
     (searchIndex) =>
       searchIndex.collection === collection &&
       searchIndex.index === index.name &&
+      searchIndex.versions === versions &&
       (mode === 'hybrid' || searchIndex.mode === mode),
   );
 
