@@ -8,10 +8,9 @@ import type {
 } from '../../../../packages/frogbot/node_modules/chat/dist/index.js';
 import { Message } from '../../../../packages/frogbot/node_modules/chat/dist/index.js';
 import type { AgentStreamMessageOpts } from '../../../../packages/frogbot/src/agents/types.js';
-import {
-  ChannelHost,
-  type ChannelTaskInput,
-} from '../../../../packages/frogbot/src/channels/host.js';
+import { ChannelHost } from '../../../../packages/frogbot/src/channels/host.js';
+import type { PieceChannelQuestions } from '../../../../packages/frogbot/src/channels/questions/types.js';
+import type { ChannelTaskInput } from '../../../../packages/frogbot/src/channels/types.js';
 import { runKVLock } from '../../../../packages/frogbot/src/kv/lock.js';
 import type { KV, KVLock } from '../../../../packages/frogbot/src/kv/types.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
@@ -29,7 +28,14 @@ export function deferred() {
 export function channelFixture({
   slug = 'slack',
   adapter: suppliedAdapter,
-}: { slug?: string; adapter?: Adapter } = {}) {
+  client = {},
+  questions,
+}: {
+  slug?: string;
+  adapter?: Adapter;
+  client?: object;
+  questions?: PieceChannelQuestions<never>;
+} = {}) {
   const values = new Map<string, unknown>();
   const locks = new Map<string, KVLock>();
   let token = 0;
@@ -80,6 +86,49 @@ export function channelFixture({
     }),
     handleWebhook: vi.fn(async (request: Request, options?: WebhookOptions) => {
       const data = await request.json();
+      const user = {
+        userId: data.author ?? 'user-1',
+        userName: 'frog',
+        fullName: 'Frog',
+        isBot: false,
+        isMe: false,
+      };
+
+      if (data.type === 'action') {
+        chat.processAction(
+          {
+            actionId: data.actionId,
+            value: data.value,
+            messageId: data.messageId,
+            threadId: data.threadId,
+            user,
+            adapter: adapter as unknown as Adapter,
+            raw: data,
+          },
+          options,
+        );
+
+        return new Response(null, { status: 200 });
+      }
+
+      if (data.type === 'modal') {
+        await chat.processModalSubmit(
+          {
+            callbackId: 'modal',
+            viewId: 'view-1',
+            values: {},
+            privateMetadata: data.privateMetadata,
+            user,
+            adapter: adapter as unknown as Adapter,
+            raw: data,
+          },
+          undefined,
+          options,
+        );
+
+        return new Response(null, { status: 200 });
+      }
+
       const message = new Message({
         id: data.id,
         threadId: data.threadId,
@@ -121,9 +170,13 @@ export function channelFixture({
     slug,
     label: slug,
     auth: z.object({ token: z.string() }),
-    client: () => ({}),
+    client: () => client,
     actions: [],
-    channel: { adapter: () => suppliedAdapter ?? (adapter as unknown as Adapter), identity },
+    channel: {
+      adapter: () => suppliedAdapter ?? (adapter as unknown as Adapter),
+      identity,
+      ...(questions ? { questions } : {}),
+    },
   })({ auth: { token: 'secret' } });
 
   const inputs: ChannelTaskInput[] = [];
@@ -180,12 +233,17 @@ export function channelFixture({
 
       return row;
     }),
-    logger: { info: vi.fn(), error: vi.fn() },
+    logger: { debug: vi.fn(), info: vi.fn(), error: vi.fn() },
     kv,
     queue,
   };
 
   const host = new ChannelHost(frogbot as never);
+  const interact = (body: Record<string, unknown>) =>
+    host.webhook(
+      slug,
+      new Request('http://localhost/webhook', { method: 'POST', body: JSON.stringify(body) }),
+    );
   const deliver = (id = 'message-1', threadId = 'channel:thread-1', extra = {}) =>
     host.webhook(
       slug,
@@ -205,6 +263,7 @@ export function channelFixture({
     queue,
     adapter,
     deliver,
+    interact,
     streamMessage,
     posted,
     identity,

@@ -1,0 +1,82 @@
+---
+title: Slack
+description: Run an agent in Slack threads and let participants answer its questions with native controls.
+keywords: [pieces, slack, channels, questions, block kit, interactivity]
+---
+
+`@frogbotai/piece-slack` connects an agent to Slack. Mention the bot or message it in a thread it follows, and the agent replies in the same thread. When the agent uses the [question tool](/chat/questions), participants answer with buttons, menus, and forms in the thread.
+
+## Connect an agent
+
+```ts
+import { createSlack } from '@frogbotai/piece-slack'
+import type { AgentConfig } from 'frogbot'
+import { question } from 'frogbot/tools'
+
+const slack = createSlack({
+  auth: { botToken: process.env.SLACK_BOT_TOKEN! },
+  signingSecret: process.env.SLACK_SIGNING_SECRET!,
+})
+
+export const support: AgentConfig = {
+  slug: 'support',
+  instructions: 'Help the team. Ask before making changes.',
+  tools: [question],
+  channels: [slack],
+  access: ({ req }) => Boolean(req.user),
+}
+```
+
+The instance slug defaults to `slack`. Give each instance its own slug when you connect more than one workspace.
+
+## Create the Slack app
+
+Create the app from the bundled manifest, `node_modules/@frogbotai/piece-slack/slack-manifest.yaml`. Replace `{{FROGBOT_URL}}` with your public server URL and `{{SLACK_INSTANCE_SLUG}}` with the instance slug.
+
+| Setting | Value |
+| --- | --- |
+| Event subscriptions request URL | `https://your-app.example.com/api/webhooks/<instance>` |
+| Interactivity request URL | The same URL. Button clicks and form submissions arrive here |
+| Bot events | `app_mention`, `message.channels`, `message.groups`, `message.im`, `message.mpim` |
+
+| Bot scope | Why |
+| --- | --- |
+| `chat:write` | Post replies and question cards, update answered cards, and send private notices |
+| `users:read`, `users:read.email` | Match a Slack user to a FrogBot user by email |
+| `app_mentions:read`, `channels:history`, `groups:history`, `im:history`, `mpim:history` | Receive messages |
+
+Opening the typed-answer form needs no extra scope. After changing scopes, reinstall the app to the workspace.
+
+## Who can answer
+
+FrogBot matches the Slack user who clicks to a FrogBot user by the email on their Slack profile. It then runs the agent's `access` check for that user. Anyone who passes can answer, including a teammate who did not start the conversation. Being a member of the Slack channel is not enough on its own.
+
+A user without access gets a private notice, and the question stays open. Slack users with no matching email have no FrogBot user; the default agent access denies them. Write an `access` function if unmatched users should be able to answer.
+
+## What participants see
+
+| Question | Slack controls |
+| --- | --- |
+| One question, up to 5 options | A button per option; one tap answers |
+| One question, 6–10 options | Radio buttons; choosing one answers |
+| One question, more than 10 options | A menu; more than 100 options are split into groups, and none are dropped |
+| Several choices allowed, or several questions | A form with checkboxes (up to 10 options) or menus per question, and a **Submit** button |
+| Typed answer allowed (`custom`) | **Type your answer** opens a Slack form. In a single question it answers directly; in a form it saves your typed answer until you press **Submit** |
+
+Every card has a **Dismiss** button. Dismissing tells the agent the question was declined and stops the turn.
+
+When a question is answered, the card is replaced with the answer and `Answered by @name`, and the agent continues in the same thread. The first answer wins; anyone who clicks afterwards gets a private "already answered" notice. Selections in a form are private to each participant until they press **Submit**.
+
+## Limits and failures
+
+| Situation | What happens |
+| --- | --- |
+| No access | Private notice; the question stays open |
+| A second answer, a double click, or a card answered in the FrogBot admin | Private notice; the card shows the stored answer |
+| **Type your answer** after Slack's 3-second window for opening forms | Private notice asking the participant to press the button again |
+| A form submitted with a question unanswered | Private notice naming the question |
+| The server restarts while a question is open | The card stays answerable |
+| Posting the card fails | The question is posted again with the next message in the thread |
+| A card left open for 30 days | The card stops responding; the next message in the thread posts it again |
+
+Slack expects a response to a click within 3 seconds. FrogBot records the answer and updates the card within that time and runs the agent's next step as a job, so a slow model does not delay the click. If identity lookups are slow, Slack may briefly show a warning on the click even though the answer was recorded.

@@ -1,8 +1,16 @@
 import { createHash } from 'node:crypto';
 
+import type { Thread } from 'chat';
+
+import type { ChannelChatAccess } from '../chat/channelAccess.js';
+import { createChannelChatAccess } from '../chat/channelAccess.js';
 import type { DocID } from '../collections/config/types.js';
 import type { FrogBotRequest } from '../types/request.js';
-import type { ChannelConversationIdentity, ChannelThreadReference } from './types.js';
+import type {
+  ChannelConversationBinding,
+  ChannelConversationIdentity,
+  ChannelThreadReference,
+} from './types.js';
 
 export type ResolveChannelChatProps = {
   req: FrogBotRequest;
@@ -25,6 +33,65 @@ export function channelConversationKey(identity: ChannelConversationIdentity): s
   return createHash('sha256').update(JSON.stringify(tuple)).digest('hex');
 }
 
+export function channelThreadIdentity({
+  binding,
+  thread,
+}: {
+  binding: ChannelConversationBinding;
+  thread: Pick<Thread, 'channelId' | 'id' | 'isDM'>;
+}): ChannelConversationIdentity {
+  return {
+    agent: binding.agent.slug,
+    piece: binding.instance.piece,
+    account: binding.instance.slug,
+    kind: thread.isDM ? 'direct' : 'thread',
+    peer: thread.channelId,
+    thread: thread.id,
+  };
+}
+
+export function createChannelThreadAccess({
+  binding,
+  chatId,
+  req,
+  thread,
+}: {
+  binding: ChannelConversationBinding;
+  chatId: DocID;
+  req: FrogBotRequest;
+  thread: Pick<Thread, 'channelId' | 'id' | 'isDM'>;
+}): ChannelChatAccess {
+  return createChannelChatAccess({
+    req,
+    agentSlug: binding.agent.slug,
+    chatId,
+    channelKey: channelConversationKey(channelThreadIdentity({ binding, thread })),
+  });
+}
+
+export async function findChannelChat({
+  req,
+  identity,
+}: {
+  req: FrogBotRequest;
+  identity: ChannelConversationIdentity;
+}): Promise<{ id: DocID; channelThread?: unknown } | undefined> {
+  const chat = req.frogbot.config.chat;
+
+  if (!chat.enabled) return undefined;
+
+  const result = await req.frogbot.find({
+    collection: chat.chatsSlug,
+    where: { channelKey: { equals: channelConversationKey(identity) } },
+    limit: 1,
+    depth: 0,
+    req,
+    overrideAccess: true,
+  });
+
+  return result.docs[0] as { id: DocID; channelThread?: unknown } | undefined;
+}
+
 export async function resolveChannelChat({
   req,
   identity,
@@ -38,18 +105,7 @@ export async function resolveChannelChat({
   }
 
   const channelKey = channelConversationKey(identity);
-  const find = async () => {
-    const result = await req.frogbot.find({
-      collection: chat.chatsSlug,
-      where: { channelKey: { equals: channelKey } },
-      limit: 1,
-      depth: 0,
-      req,
-      overrideAccess: true,
-    });
-
-    return result.docs[0] as { id: DocID; channelThread?: unknown } | undefined;
-  };
+  const find = () => findChannelChat({ req, identity });
 
   const existing = await find();
 

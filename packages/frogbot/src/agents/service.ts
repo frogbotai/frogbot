@@ -35,6 +35,24 @@ export async function assertAgentAccess({
   throw new AgentServiceError(`Access denied for agent '${agent.slug}'`, 403);
 }
 
+export async function hasAgentAccess({
+  req,
+  agent,
+}: {
+  req: FrogBotRequest;
+  agent: AgentInstance;
+}): Promise<boolean> {
+  try {
+    await assertAgentAccess({ req, agent });
+
+    return true;
+  } catch (error) {
+    if (error instanceof AgentServiceError && error.status === 403) return false;
+
+    throw error;
+  }
+}
+
 export async function listAgents({
   req,
 }: {

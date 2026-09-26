@@ -210,7 +210,11 @@ describe('SQL KV with local SQLite', () => {
 
   it('rejects unqualified transports clearly', () => {
     const adapter = adapters[0];
-    for (const packageName of ['@payloadcms/db-d1-sqlite', '@payloadcms/db-vercel-postgres']) {
+    for (const packageName of [
+      '@frogbotai/db-d1-sqlite',
+      '@payloadcms/db-d1-sqlite',
+      '@payloadcms/db-vercel-postgres',
+    ]) {
       expect(() => createSQLKV({ adapter: { ...adapter, packageName }, collectionSlug })).toThrow(
         KVUnsupportedError,
       );

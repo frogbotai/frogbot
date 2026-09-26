@@ -138,6 +138,8 @@ The first valid answer wins. Answers from two tabs or two participants settle on
 
 Anyone who can continue the chat can answer its questions. Over HTTP, that is the chat's owner; for a chat without an owner, it is any anonymous caller who knows the chat ID. FrogBot records who answered or dismissed each call, and when, in the message's `settlements` field.
 
+In a channel conversation, any participant who passes the agent's `access` check can answer, not only the person whose message started the turn. See [Slack](/pieces/slack#who-can-answer).
+
 ## Where questions are offered
 
 FrogBot only offers the tool to the model when the caller can answer it.
@@ -145,7 +147,8 @@ FrogBot only offers the tool to the model when the caller can answer it.
 | Entry point | Question tool |
 | --- | --- |
 | Admin chat, `@frogbotai/ui`, and HTTP requests | Offered |
-| `agent.generate()`, workflows, jobs, and channels | Withheld |
+| Channels whose piece supports questions, such as [Slack](/pieces/slack) | Offered |
+| `agent.generate()`, workflows, jobs, and other channels | Withheld |
 
 If a model calls a withheld tool anyway, the call becomes a tool error and the turn keeps running, so nothing is left waiting.
 

@@ -180,7 +180,7 @@
               { "group": "Chat", "expanded": false, "pages": ["chat/overview", "chat/questions", "chat/turns", "chat/manifest", "chat/training-data", "chat/ui-installation", "chat/ui-provider", "chat/ui-chat", "chat/ui-theming", "chat/ui-registries", "chat/ui-custom-shell"]},
               { "group": "MCP", "expanded": false, "pages": ["mcp/overview"]},
               { "group": "Connections", "expanded": false, "pages": ["connections/overview"]},
-              { "group": "Pieces", "expanded": false, "pages": ["pieces/overview", "pieces/index", "pieces/triggers", "pieces/web-search"]}
+              { "group": "Pieces", "expanded": false, "pages": ["pieces/overview", "pieces/index", "pieces/triggers", "pieces/web-search", "pieces/slack", "pieces/channel-questions"]}
             ]
           },
           {
