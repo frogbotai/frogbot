@@ -20,8 +20,9 @@ import {
   sendWebhookMessage,
   unbanMember,
 } from './actions.js';
-import { createDiscordClient } from './client.js';
+import { createDiscordClient, discordApiUrl } from './client.js';
 import { discordAuth, discordOptions } from './config.js';
+import { discordQuestions } from './questions/index.js';
 import {
   commandReceived,
   componentReceived,
@@ -80,6 +81,7 @@ const discordChannel = {
     }
 
     return createDiscordAdapter({
+      apiUrl: discordApiUrl(options.apiUrl),
       botToken: auth.botToken,
       applicationId: options.applicationId,
       publicKey: options.publicKey,
@@ -92,6 +94,7 @@ const discordChannel = {
   async identity() {
     return null;
   },
+  questions: discordQuestions,
 } satisfies PieceChannel<
   z.output<typeof discordAuth>,
   z.output<typeof discordOptions>,

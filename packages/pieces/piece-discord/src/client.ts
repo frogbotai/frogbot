@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-import { discordAuth } from './config.js';
+import { discordAuth, type discordOptions } from './config.js';
 
-const apiUrl = 'https://discord.com/api/v10';
+const defaultApiUrl = 'https://discord.com/api/v10';
 
 export type DiscordRequest = {
   method?: string;
@@ -13,6 +13,10 @@ export type DiscordRequest = {
 };
 
 export type DiscordClient = ReturnType<typeof createDiscordClient>;
+
+export function discordApiUrl(apiUrl?: string): string | undefined {
+  return apiUrl?.replace(/\/+$/, '');
+}
 
 async function parseResponse(response: Response) {
   const text = await response.text();
@@ -26,8 +30,15 @@ async function parseResponse(response: Response) {
   }
 }
 
-export function createDiscordClient({ auth }: { auth: unknown }) {
+export function createDiscordClient({
+  auth,
+  options,
+}: {
+  auth: unknown;
+  options?: Pick<z.output<typeof discordOptions>, 'apiUrl'>;
+}) {
   const { botToken } = discordAuth.parse(auth);
+  const apiUrl = discordApiUrl(options?.apiUrl) ?? defaultApiUrl;
 
   async function request({
     method = 'GET',
