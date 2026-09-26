@@ -92,11 +92,11 @@ test/
 
 ## Environment Variables
 
-| Variable                | Values                          | Default    | Description                                                                                |
-| ----------------------- | ------------------------------- | ---------- | ------------------------------------------------------------------------------------------ |
-| `FROGBOT_DATABASE`      | `mongodb`, `postgres`, `sqlite` | `mongodb`  | Which DB adapter to use                                                                    |
-| `FROGBOT_SEARCH_DRIVER` | `postgres`, `vercel-postgres`   | `postgres` | Driver for `test/search/postgres/`; `vercel-postgres` runs through a local WebSocket proxy |
-| `FROGBOT_TEST_TOOLS`    | directory path                  | unset      | Directory that resolves `ws` for the Vercel Postgres proxy, e.g. `$PWD/node_modules/.pnpm` |
+| Variable                | Values                          | Default    | Description                                                                                                                   |
+| ----------------------- | ------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `FROGBOT_DATABASE`      | `mongodb`, `postgres`, `sqlite` | `mongodb`  | Which DB adapter to use                                                                                                       |
+| `FROGBOT_SEARCH_DRIVER` | `postgres`, `vercel-postgres`   | `postgres` | Driver for `test/search/postgres/`; `vercel-postgres` runs through a local WebSocket proxy                                    |
+| `FROGBOT_TEST_TOOLS`    | directory path                  | unset      | Directory that resolves `ws` for the Vercel Postgres proxy and `miniflare` (v4) for `test/search/d1/`, which skips without it |
 
 ## Docker Profiles
 

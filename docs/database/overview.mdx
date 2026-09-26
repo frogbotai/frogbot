@@ -44,9 +44,9 @@ You can store supplied vectors on ordinary records using a [vector field](/field
 | [Postgres and Vercel Postgres](/database/postgres#collection-search) | Lexical, vector, and hybrid |
 | [SQLite and LibSQL](/database/sqlite#collection-search) | Lexical, vector, and hybrid |
 | [MongoDB](/database/mongodb) | Not implemented |
-| [Cloudflare D1](/database/sqlite#d1-database) | Not implemented |
+| [Cloudflare D1](/database/sqlite#d1-collection-search) | Lexical (vector and hybrid are an engine gap) |
 
-On an adapter without search, any configured collection `search` index, including lexical-only, fails setup with a `not-implemented` error identifying the collection, index, and mode. With no search index configured, setup does not emit a search capability report.
+Cloudflare D1 has no native vector search, so an index with `vector` fails setup there with an `engine-gap` error. On an adapter without search, any configured collection `search` index, including lexical-only, fails setup with a `not-implemented` error identifying the collection, index, and mode. With no search index configured, setup does not emit a search capability report.
 
 ## Selecting a database
 

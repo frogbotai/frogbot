@@ -396,9 +396,48 @@ export default buildConfig({
 
 It inherits the options from the SQLite adapter above with the exception of the connection options in favour of the `binding`.
 
-Collection search is not implemented in the D1 adapter. Adding any collection `search` index fails setup with `SearchCapabilityError` and reason `not-implemented`.
-
 You can see our [Cloudflare D1 template](https://github.com/frogbot/frogbot/tree/main/templates/with-cloudflare-d1) for a full example of how to set this up.
+
+### D1 collection search
+
+The D1 adapter implements lexical [collection search](/search/overview) with the same FTS5 tables, triggers, query syntax, and `sqlite-fts5` ranking as the [SQLite adapter](#collection-search). Search objects are part of development push and generated migrations, and ranking happens inside D1 after access, `where`, draft, and locale filters are applied.
+
+```ts
+import { sqliteD1Adapter } from '@frogbotai/db-d1-sqlite'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  db: sqliteD1Adapter({ binding: cloudflare.env.D1 }),
+  collections: [
+    {
+      slug: 'articles',
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        { name: 'body', type: 'textarea' },
+        { name: 'embedding', type: 'vector', dimensions: 1536 },
+      ],
+      search: {
+        content: {
+          lexical: { fields: ['title', 'body'], language: 'english' },
+        },
+      },
+    },
+  ],
+})
+```
+
+Cloudflare D1 has no native vector search, so vector and hybrid search are not available. An index that declares `vector` fails startup with `SearchCapabilityError` and reason `engine-gap`, naming the collection and index, before any table is created. Vector fields still store and return supplied vectors without a search index; each vector is one JSON value, so its dimensions are not limited by D1's bound-parameter count.
+
+A `lexical.language` other than `english` or `simple` also fails with reason `engine-gap`. FTS5 is built into D1, so there is no prerequisite to install.
+
+D1 does not wrap writes in transactions by default. Each trigger runs inside the statement that changed the row, so after every statement the search entries match the stored rows.
+
+Keep these D1 limits in mind:
+
+- Every lexical query reads the matching rows of the FTS5 table and the records it joins, and those reads count toward your plan's rows-read quota. Broad terms on large collections read more rows and take longer; each query must finish within D1's query time limit.
+- `wrangler d1 export` does not support databases with virtual tables, which include FTS5 search tables. Remove the search indexes and run migrations before exporting, then restore them.
+- Adding or rebuilding an index fills its search table from every stored record in one statement, which must also finish within the query time limit.
+- D1 accepts at most 100 bound parameters per statement. As with `find`, a long `in` list in `where` can exceed it; `id` lists are exempt except in draft queries. A `draft: true` search also reads its hits back by ID, so keep its `limit` below 100.
 
 ### D1 Read Replicas
 
