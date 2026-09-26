@@ -21,7 +21,7 @@ import {
 } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
-const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY ?? 'public';
+const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY ?? '';
 const RUN_E2E = process.env.RUN_E2E === '1';
 
 const ZEN_BASE_URL = 'https://opencode.ai/zen/v1';
@@ -62,66 +62,69 @@ type ResponsesBody = {
   }>;
 };
 
-describe.skipIf(!RUN_E2E)('gateway E2E — cross-route fidelity (same question, three wires)', () => {
-  const app = makeZenApp();
+describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)(
+  'gateway E2E — cross-route fidelity (same question, three wires)',
+  () => {
+    const app = makeZenApp();
 
-  it(
-    "the same arithmetic question returns 200 + correct answer in each route's own envelope",
-    async () => {
-      const [chat, messages, responses] = await Promise.all([
-        postJson<ChatBody>(app, '/v1/chat/completions', {
-          model: MODEL,
-          messages: [{ role: 'user', content: QUESTION }],
-          max_tokens: 1024,
-        }),
-        postJson<MessagesBody>(app, '/v1/messages', {
-          model: MODEL,
-          messages: [{ role: 'user', content: QUESTION }],
-          max_tokens: 1024,
-        }),
-        postJson<ResponsesBody>(app, '/v1/responses', {
-          model: MODEL,
-          input: QUESTION,
-          max_output_tokens: 1024,
-        }),
-      ]);
+    it(
+      "the same arithmetic question returns 200 + correct answer in each route's own envelope",
+      async () => {
+        const [chat, messages, responses] = await Promise.all([
+          postJson<ChatBody>(app, '/v1/chat/completions', {
+            model: MODEL,
+            messages: [{ role: 'user', content: QUESTION }],
+            max_tokens: 1024,
+          }),
+          postJson<MessagesBody>(app, '/v1/messages', {
+            model: MODEL,
+            messages: [{ role: 'user', content: QUESTION }],
+            max_tokens: 1024,
+          }),
+          postJson<ResponsesBody>(app, '/v1/responses', {
+            model: MODEL,
+            input: QUESTION,
+            max_output_tokens: 1024,
+          }),
+        ]);
 
-      // 1. All three succeed.
-      expect(chat.status, `chat body: ${JSON.stringify(chat.body)}`).toBe(200);
-      expect(messages.status, `messages body: ${JSON.stringify(messages.body)}`).toBe(200);
-      expect(responses.status, `responses body: ${JSON.stringify(responses.body)}`).toBe(200);
+        // 1. All three succeed.
+        expect(chat.status, `chat body: ${JSON.stringify(chat.body)}`).toBe(200);
+        expect(messages.status, `messages body: ${JSON.stringify(messages.body)}`).toBe(200);
+        expect(responses.status, `responses body: ${JSON.stringify(responses.body)}`).toBe(200);
 
-      // 2. Each in ITS OWN correct wire envelope — the shapes must differ.
-      // chat.completions — OpenAI chatcmpl envelope.
-      expect(chat.body.object).toBe('chat.completion');
-      const chatText = chat.body.choices?.[0]?.message?.content ?? '';
-      expect(typeof chatText).toBe('string');
+        // 2. Each in ITS OWN correct wire envelope — the shapes must differ.
+        // chat.completions — OpenAI chatcmpl envelope.
+        expect(chat.body.object).toBe('chat.completion');
+        const chatText = chat.body.choices?.[0]?.message?.content ?? '';
+        expect(typeof chatText).toBe('string');
 
-      // messages — Anthropic message envelope.
-      expect(messages.body.type).toBe('message');
-      expect(messages.body.role).toBe('assistant');
-      expect(Array.isArray(messages.body.content)).toBe(true);
-      const messagesText = (messages.body.content ?? [])
-        .filter((b) => b.type === 'text')
-        .map((b) => b.text ?? '')
-        .join('');
+        // messages — Anthropic message envelope.
+        expect(messages.body.type).toBe('message');
+        expect(messages.body.role).toBe('assistant');
+        expect(Array.isArray(messages.body.content)).toBe(true);
+        const messagesText = (messages.body.content ?? [])
+          .filter((b) => b.type === 'text')
+          .map((b) => b.text ?? '')
+          .join('');
 
-      // responses — OpenAI Responses envelope.
-      expect(responses.body.object).toBe('response');
-      expect(responses.body.status).toBe('completed');
-      expect(typeof responses.body.output_text).toBe('string');
-      const responsesText = responses.body.output_text ?? '';
+        // responses — OpenAI Responses envelope.
+        expect(responses.body.object).toBe('response');
+        expect(responses.body.status).toBe('completed');
+        expect(typeof responses.body.output_text).toBe('string');
+        const responsesText = responses.body.output_text ?? '';
 
-      // The three envelopes are genuinely distinct surfaces (no route leaking
-      // another route's shape).
-      expect(chat.body.object).not.toBe(responses.body.object);
-      expect((messages.body as { object?: string }).object).toBeUndefined();
+        // The three envelopes are genuinely distinct surfaces (no route leaking
+        // another route's shape).
+        expect(chat.body.object).not.toBe(responses.body.object);
+        expect((messages.body as { object?: string }).object).toBeUndefined();
 
-      // 3. All three arrive at the same correct answer.
-      expect(chatText).toContain(EXPECTED);
-      expect(messagesText).toContain(EXPECTED);
-      expect(responsesText).toContain(EXPECTED);
-    },
-    TEST_TIMEOUT,
-  );
-});
+        // 3. All three arrive at the same correct answer.
+        expect(chatText).toContain(EXPECTED);
+        expect(messagesText).toContain(EXPECTED);
+        expect(responsesText).toContain(EXPECTED);
+      },
+      TEST_TIMEOUT,
+    );
+  },
+);

@@ -421,6 +421,28 @@ pnpm test:e2e                    # Playwright
 pnpm docker:clean                # tear down all containers + volumes
 ```
 
+## Live tests (real credentials)
+
+Live tests call real providers and services with your own keys. They run locally only and are part of `pnpm bump` and `pnpm release`.
+
+1. Copy `.env.live.example` to `.env.live.local` and fill in keys. Put credential files (GitHub app key, Vertex service account) in `.live-credentials/`. Both locations are gitignored.
+2. Run `pnpm test:live:doctor` to check every key with one cheap read-only call.
+3. Run `pnpm test:live`. Narrow a run with `E2E_PROVIDERS=openai,anthropic` or `E2E_ROUTES=cache,chat`, and override models with `E2E_MODEL_<LABEL>_<ROUTE>` (for example `E2E_MODEL_OPENAI_TEXT=gpt-5.5`).
+
+A suite whose keys are missing is skipped with the missing names in its title. With `LIVE_STRICT=1` (set by `bump` and `release`) a missing key fails instead; entries marked `optional` in `test/gateway/live/matrix.ts` (Bedrock, Vertex, Azure) still skip.
+
+| File                                      | Covers                                                                                                        |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `test/gateway/live/matrix.ts`             | Which providers and models run, and which user features each scenario model supports                          |
+| `test/gateway/live/matrix.e2e.spec.ts`    | Every text model on all three wires, streamed and not, plus prompt caching; embeddings, rerank, audio, images |
+| `test/gateway/live/scenarios.e2e.spec.ts` | Tools, images, PDFs, audio input, structured output, reasoning, thinking, multi-turn, errors, overflow        |
+| `test/live/rag.live.spec.ts`              | RAG: real embeddings, tenant-filtered hybrid search, model answers from the hit; local and hosted databases   |
+| `test/live/fixtures/`                     | Receipt photo, shapes image, two-page PDF, spoken WAV; facts they contain live in `FIXTURE_FACTS`             |
+
+The RAG suite needs the docker `postgres` and `mongodb-search` profiles running (`docker compose -f test/docker-compose.yml --profile postgres --profile mongodb-search up -d`). Set `NEON_DATABASE_URL` (a throwaway Neon branch) and `ATLAS_URI` (an M0 cluster is enough) to also smoke-test the hosted services; each run creates and drops its own schema or database, so it never touches existing data.
+
+Assertions check meaning (the receipt total, the code on page 2 of the PDF), not just response shape. When a live test fails, first decide whether it is a real failure users would hit before changing code or the test.
+
 ## Payload Reference
 
 This test infrastructure is modeled after Payload's (v3.85.1). Key differences:

@@ -52,3 +52,6 @@ pnpm-publish-summary.json
 test/browser/test-results
 templates/blank/frogbot.browser.db*
 test/e2e/fixtures/rich-text/rich-text.browser.db*
+
+# Live test credentials
+.live-credentials/

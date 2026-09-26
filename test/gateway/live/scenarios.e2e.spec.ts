@@ -1,33 +1,11 @@
-// Gateway E2E — deep scenarios per matrix provider, against REAL upstreams.
-//
-// The matrix suite (matrix.e2e.spec.ts) proves every provider × route × wire
-// answers at all; THIS suite pushes each chat-capable provider through the
-// behaviors real clients depend on:
-//
-//   - tool round trip on all three wires (request → tool_call → result → answer)
-//   - streaming tool-call delta coalescing
-//   - parallel tool calls
-//   - multi-turn recall through history translation
-//   - truncation semantics (finish_reason=length / stop_reason=max_tokens / incomplete)
-//   - wire-correct error envelopes for bogus models
-//   - mid-stream client abort (app must not wedge)
-//   - oversized prompt → valid envelope, never a hang
-//     (fill test/gateway/live/fixtures/huge-prompt.txt to enable; empty = skip)
-//
-// One scenario model per provider (`scenario.model` in matrix.ts, defaults to
-// text[0]). Key-gated and filterable exactly like the matrix suite:
-//   RUN_E2E=1 pnpm vitest run --project=gateway-e2e test/gateway/live/scenarios.e2e.spec.ts
-//   E2E_TIER / E2E_PROVIDERS apply; E2E_ROUTES does not (scenarios span wires).
-
-import { readFileSync } from 'node:fs';
-
 import { describe, it } from 'vitest';
 
-import { LIVE_MATRIX, type LiveProviderEntry } from './matrix.js';
-import { makeLiveApp, type LiveApp } from './routes.js';
+import { describeLive } from '../../live/live.js';
+import { type LiveFeature, selectedEntries } from './matrix.js';
+import { type LiveApp, makeLiveApp } from './routes.js';
 import {
   runChatErrorEnvelope,
-  runChatHugePrompt,
+  runChatContextOverflow,
   runChatMultiTurn,
   runChatParallelToolCalls,
   runChatStreamAbort,
@@ -43,125 +21,137 @@ import {
   runResponsesToolRoundTrip,
   runResponsesTruncation,
 } from './scenarios.js';
+import {
+  runChatAudio,
+  runChatImageFollowUp,
+  runChatMultiImage,
+  runChatPdf,
+  runChatReasoning,
+  runChatStructuredOutput,
+  runChatVision,
+  runChatVisionStream,
+  runChatVisionToolCall,
+  runMessagesPdf,
+  runMessagesThinking,
+  runMessagesThinkingToolLoop,
+  runMessagesVision,
+  runResponsesPdf,
+  runResponsesReasoning,
+  runResponsesStructuredOutput,
+  runResponsesVision,
+} from './userScenarios.js';
 
-const RUN_E2E = process.env.RUN_E2E === '1';
 const TEST_TIMEOUT = 180_000;
 
-function csvFilter(envVar: string): Set<string> | undefined {
-  const raw = process.env[envVar];
-  if (!raw) {
-    return undefined;
-  }
-  return new Set(
-    raw
-      .split(',')
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean),
-  );
-}
-
-const tierFilter = process.env.E2E_TIER;
-const providerFilter = csvFilter('E2E_PROVIDERS');
-
-function entryEnabled(entry: LiveProviderEntry): boolean {
-  if (!RUN_E2E) {
-    return false;
-  }
-  if (!entry.text?.length) {
-    return false;
-  }
-  if (entry.envKey && !process.env[entry.envKey]) {
-    return false;
-  }
-  if (tierFilter && entry.tier !== tierFilter) {
-    return false;
-  }
-  if (providerFilter && !providerFilter.has(entry.label)) {
-    return false;
-  }
-  return true;
-}
-
-// Oversized-prompt fixture — YOU fill this in (not committed content):
-//   test/gateway/live/fixtures/huge-prompt.txt
-let hugePrompt = '';
-try {
-  hugePrompt = readFileSync(new URL('./fixtures/huge-prompt.txt', import.meta.url), 'utf8').trim();
-} catch {
-  // fixture absent — huge-prompt scenario skips
-}
-
-for (const entry of LIVE_MATRIX) {
-  const enabled = entryEnabled(entry);
-  const scenarioModel = entry.scenario?.model ?? entry.text?.[0] ?? '';
+for (const entry of selectedEntries().filter((entry) => entry.text?.length && entry.scenario)) {
+  const scenarioModel = entry.scenario!.model ?? entry.text![0];
   const model = `${entry.label}/${scenarioModel}`;
-  const toolsCapable = entry.scenario?.tools !== false;
+  const features = new Set<LiveFeature>(entry.scenario!.features);
+  const lacks = (feature: LiveFeature) => !features.has(feature);
 
-  describe.skipIf(!enabled)(`live scenarios — ${entry.label} (${scenarioModel})`, () => {
+  describeLive(`live scenarios: ${entry.label} (${scenarioModel})`, entry, () => {
     let app: LiveApp | undefined;
+
     const getApp = () => (app ??= makeLiveApp(entry));
 
-    describe.skipIf(!toolsCapable)('tool round trips', () => {
+    const run = (scenario: (app: LiveApp, model: string) => Promise<void>) => () =>
+      scenario(getApp(), model);
+
+    describe.skipIf(lacks('tools'))('tool calls', () => {
+      it('chat: tool call, result, final answer', run(runChatToolRoundTrip), TEST_TIMEOUT);
+      it('messages: tool use, result, final answer', run(runMessagesToolRoundTrip), TEST_TIMEOUT);
       it(
-        'chat wire: tool_call → tool result → final answer',
-        () => runChatToolRoundTrip(getApp(), model),
+        'responses: function call, output, final answer',
+        run(runResponsesToolRoundTrip),
+        TEST_TIMEOUT,
+      );
+      it('chat: streamed tool-call deltas coalesce', run(runChatStreamingToolCall), TEST_TIMEOUT);
+      it('chat: parallel tool calls have unique ids', run(runChatParallelToolCalls), TEST_TIMEOUT);
+    });
+
+    describe.skipIf(lacks('vision'))('images', () => {
+      it('chat: reads the total from a receipt photo', run(runChatVision), TEST_TIMEOUT);
+      it('chat: streams an answer about a receipt photo', run(runChatVisionStream), TEST_TIMEOUT);
+      it('messages: reads the total from a receipt photo', run(runMessagesVision), TEST_TIMEOUT);
+      it('responses: reads the total from a receipt photo', run(runResponsesVision), TEST_TIMEOUT);
+      it('chat: answers about two images in one message', run(runChatMultiImage), TEST_TIMEOUT);
+      it(
+        'chat: answers a follow-up about an earlier image',
+        run(runChatImageFollowUp),
+        TEST_TIMEOUT,
+      );
+    });
+
+    describe.skipIf(lacks('vision') || lacks('tools'))('images with tools', () => {
+      it('chat: records an expense from a receipt photo', run(runChatVisionToolCall), TEST_TIMEOUT);
+    });
+
+    describe.skipIf(lacks('pdf'))('PDFs', () => {
+      it('chat: finds a fact on page 2', run(runChatPdf), TEST_TIMEOUT);
+      it('messages: finds a fact on page 2', run(runMessagesPdf), TEST_TIMEOUT);
+      it('responses: finds a fact on page 2', run(runResponsesPdf), TEST_TIMEOUT);
+    });
+
+    describe.skipIf(lacks('audio'))('audio input', () => {
+      it('chat: transcribes a spoken recording', run(runChatAudio), TEST_TIMEOUT);
+    });
+
+    describe.skipIf(lacks('json'))('structured output', () => {
+      it(
+        'chat: extracts a receipt into a strict schema',
+        run(runChatStructuredOutput),
         TEST_TIMEOUT,
       );
       it(
-        'messages wire: tool_use → tool_result → final answer',
-        () => runMessagesToolRoundTrip(getApp(), model),
+        'responses: extracts a receipt into a strict schema',
+        run(runResponsesStructuredOutput),
+        TEST_TIMEOUT,
+      );
+    });
+
+    describe.skipIf(lacks('reasoning'))('reasoning effort', () => {
+      it('chat: solves a puzzle with low effort', run(runChatReasoning), TEST_TIMEOUT);
+      it('responses: solves a puzzle with low effort', run(runResponsesReasoning), TEST_TIMEOUT);
+    });
+
+    describe.skipIf(lacks('thinking'))('extended thinking', () => {
+      it(
+        'messages: returns signed thinking and a correct answer',
+        run(runMessagesThinking),
         TEST_TIMEOUT,
       );
       it(
-        'responses wire: function_call → function_call_output → final answer (G3)',
-        () => runResponsesToolRoundTrip(getApp(), model),
-        TEST_TIMEOUT,
-      );
-      it(
-        'chat wire streaming: tool-call deltas coalesce',
-        () => runChatStreamingToolCall(getApp(), model),
-        TEST_TIMEOUT,
-      );
-      it(
-        'chat wire: parallel tool calls have unique ids',
-        () => runChatParallelToolCalls(getApp(), model),
+        'messages: keeps thinking through a tool loop',
+        run(runMessagesThinkingToolLoop),
         TEST_TIMEOUT,
       );
     });
 
     describe('multi-turn recall', () => {
-      it('chat wire', () => runChatMultiTurn(getApp(), model), TEST_TIMEOUT);
-      it('messages wire', () => runMessagesMultiTurn(getApp(), model), TEST_TIMEOUT);
-      it('responses wire', () => runResponsesMultiTurn(getApp(), model), TEST_TIMEOUT);
+      it('chat', run(runChatMultiTurn), TEST_TIMEOUT);
+      it('messages', run(runMessagesMultiTurn), TEST_TIMEOUT);
+      it('responses', run(runResponsesMultiTurn), TEST_TIMEOUT);
     });
 
-    describe('truncation semantics', () => {
-      it('chat wire: finish_reason=length', () => runChatTruncation(getApp(), model), TEST_TIMEOUT);
-      it(
-        'messages wire: stop_reason=max_tokens',
-        () => runMessagesTruncation(getApp(), model),
-        TEST_TIMEOUT,
-      );
-      it(
-        'responses wire: budget binds',
-        () => runResponsesTruncation(getApp(), model),
-        TEST_TIMEOUT,
-      );
+    describe('truncation', () => {
+      it('chat: finish_reason is length', run(runChatTruncation), TEST_TIMEOUT);
+      it('messages: stop_reason is max_tokens', run(runMessagesTruncation), TEST_TIMEOUT);
+      it('responses: output budget binds', run(runResponsesTruncation), TEST_TIMEOUT);
     });
 
-    describe('error envelopes (bogus model)', () => {
+    describe('error envelopes for an unknown model', () => {
       it(
-        'chat wire: OpenAI error dialect',
+        'chat: OpenAI error shape',
         () => runChatErrorEnvelope(getApp(), entry.label),
         TEST_TIMEOUT,
       );
       it(
-        'messages wire: Anthropic error dialect',
+        'messages: Anthropic error shape',
         () => runMessagesErrorEnvelope(getApp(), entry.label),
         TEST_TIMEOUT,
       );
       it(
-        'responses wire: error object present',
+        'responses: error object',
         () => runResponsesErrorEnvelope(getApp(), entry.label),
         TEST_TIMEOUT,
       );
@@ -169,13 +159,13 @@ for (const entry of LIVE_MATRIX) {
 
     describe('resilience', () => {
       it(
-        'mid-stream client abort does not wedge the app',
+        'a client abort mid-stream leaves the app healthy',
         () => runChatStreamAbort(getApp(), model, entry.label),
         TEST_TIMEOUT,
       );
-      it.skipIf(!hugePrompt)(
-        'oversized prompt returns a valid envelope',
-        () => runChatHugePrompt(getApp(), model, hugePrompt),
+      it(
+        'an oversized prompt returns context_length_exceeded',
+        run(runChatContextOverflow),
         TEST_TIMEOUT,
       );
     });
