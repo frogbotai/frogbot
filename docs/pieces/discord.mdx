@@ -1,0 +1,115 @@
+---
+title: Discord
+description: Run an agent in Discord threads and let participants answer its questions with buttons and menus.
+keywords: [pieces, discord, channels, questions, components, interactions]
+---
+
+`@frogbotai/piece-discord` connects an agent to Discord. When the agent uses the [question tool](/chat/questions), participants answer with buttons and menus in the conversation.
+
+## Connect an agent
+
+```ts
+import { createDiscord } from '@frogbotai/piece-discord'
+import type { AgentConfig } from 'frogbot'
+import { question } from 'frogbot/tools'
+
+const discord = createDiscord({
+  auth: { botToken: process.env.DISCORD_BOT_TOKEN! },
+  applicationId: process.env.DISCORD_APPLICATION_ID!,
+  publicKey: process.env.DISCORD_PUBLIC_KEY!,
+})
+
+const members = new Set(['123456789012345678', '234567890123456789'])
+
+export const support: AgentConfig = {
+  slug: 'support',
+  instructions: 'Help the team. Ask before making changes.',
+  tools: [question],
+  channels: [discord],
+  access: ({ req }) => members.has(req.context?.channel?.author.id ?? ''),
+}
+```
+
+The instance slug defaults to `discord`. Give each instance its own slug when you connect more than one application.
+
+| Option | Purpose |
+| --- | --- |
+| `applicationId`, `publicKey` | Required for channels. Copy both from the application's **General Information** page |
+| `botUsername` | The name the bot answers to in plain-text mentions |
+| `mentionRoleIds` | Roles whose mention also counts as mentioning the bot |
+| `respondToChannelIds` | Channels where the bot replies to every message, without a mention |
+| `respondToGlobalMentions` | Treat `@everyone` and `@here` as a mention |
+| `apiUrl` | Base URL for the piece's Discord API requests, such as a proxy. The bot token is sent there. Defaults to `https://discord.com/api/v10`; replies that attach files always go to Discord |
+
+## Where the bot replies
+
+| Where | Behavior |
+| --- | --- |
+| A channel | Mention the bot, and it starts a thread on your message and replies there. In a channel listed in `respondToChannelIds`, every message starts a thread |
+| A thread or forum post | Mention the bot to start. After its first reply, the bot follows the thread and answers every message without a mention |
+| A direct message | The bot answers every message |
+
+## Create the Discord application
+
+1. In the Discord Developer Portal, create an application and add a bot. Copy the bot token.
+2. Set **Interactions Endpoint URL** to `https://your-app.example.com/api/webhooks/<instance>`. Discord sends button and menu clicks there, and FrogBot verifies each one with the public key.
+3. Under **Bot**, turn on the **Message Content** intent. FrogBot needs it to read messages, including typed answers.
+4. Invite the bot with the **View Channels**, **Send Messages**, **Send Messages in Threads**, **Create Public Threads**, and **Read Message History** permissions.
+
+Messages reach FrogBot through Discord's gateway. The FrogBot server keeps one gateway connection open and forwards each message to the same webhook URL. To run the connection in its own process instead, run `frogbot channels:run`.
+
+## Who can answer
+
+Discord does not share email addresses, so FrogBot cannot match a Discord member to a FrogBot user. Every Discord participant arrives without a FrogBot user, and the default agent `access` check, which requires a signed-in user, denies them all. Write an `access` function for every agent that uses Discord.
+
+`req.context.channel.author` holds the Discord user `id`, `username`, and display `name`. The example above admits a fixed list of Discord user IDs. To admit a role instead, look up the member with the Discord API in your `access` function and check their roles.
+
+Anyone who passes the check can answer, including a teammate who did not start the conversation. FrogBot records the Discord user on the answer. Someone who fails the check and clicks a control gets a short reply in the thread that mentions them, and the question stays open. Messages from someone who fails the check are ignored.
+
+## What participants see
+
+Each question appears as a card in the thread, sent in Discord's components v2 message format. The agent's other replies are ordinary messages.
+
+| Question | Discord controls |
+| --- | --- |
+| One choice, up to 5 short options without descriptions | A button per option; one click answers |
+| One choice, otherwise | A menu; picking an option answers. Descriptions appear under each option |
+| Several choices allowed | A menu that accepts several picks, and a **Submit** button (**Next** when more questions follow) |
+| More than 25 options | Several menus of 25 options each; none are dropped |
+| More than 375 options | Pages of 375 options, with page buttons |
+| Typed answer allowed (`custom`) | An **Other…** button |
+
+Every card has a **Dismiss** button. Dismissing tells the agent the question was declined and stops the turn.
+
+When the agent asks several questions in one call, the card shows them one at a time, with progress such as `2 of 3` and the answers so far. When the agent makes several question calls in one step, their cards appear one after another.
+
+When a question is answered, the card is replaced with the answers and `Answered by` the participant's display name and username, and the agent continues in the same thread. The first answer wins.
+
+### Typed answers
+
+Discord cannot open a form after a click, so typed answers are messages in the thread. Press **Other…**, and the card shows that you are typing. Your next message in the thread, sent within 10 minutes, becomes your answer. You do not need to mention the bot. Press **Other…** again to cancel.
+
+Only the person who pressed **Other…** is captured. Messages from anyone else reach the agent as usual and are handled after the question is answered. For a question that allows several choices, the picks you made before pressing **Other…** are kept and sent with your typed answer.
+
+### Picks in a menu
+
+Picks in a menu that accepts several options stay private to each participant until they press **Submit**, and **Submit** sends only that participant's picks. Discord resets the menus whenever the card changes, for example when someone presses **Other…** or changes page, and FrogBot forgets the picks that Discord reset. Picks on other pages are kept.
+
+## Limits and failures
+
+| Situation | What happens |
+| --- | --- |
+| No access | A reply in the thread mentions the participant; the question stays open |
+| A second answer, a double click, or a click on an answered card | Nothing changes. The card already shows the answer |
+| **Submit** with nothing picked | A reply in the thread asks the participant to pick an option |
+| An option label or description longer than 100 characters | The menu shows it numbered and shortened, and the card lists the full text of as many shortened options as fit. The agent always receives the full label |
+| A question longer than the card allows | The card shortens the question text |
+| A typed answer more than 10 minutes after **Other…** | The message is treated as an ordinary message, not as the answer |
+| The server restarts while a question is open | The card stays answerable |
+| Posting the card fails | The question is posted again with the next message in the thread |
+| Updating the card after an answer fails | The answer is still recorded and the agent continues; the card keeps its controls, and clicks on it change nothing |
+| A card left open for 30 days | The card stops responding; the next message in the thread posts it again |
+
+Discord expects a response to a click within 3 seconds. FrogBot records the answer and updates the card before it responds, and runs the agent's next step as a job. If that takes longer, Discord shows "This interaction failed" even though the answer was recorded and the card updates.
+
+Notices are thread replies that mention one participant. Discord offers private replies only through a click's own response, which FrogBot uses to acknowledge the click.

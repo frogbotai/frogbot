@@ -5,6 +5,7 @@ export const discordAuth = z.object({
 });
 
 export const discordOptions = z.object({
+  apiUrl: z.url().optional().meta({ label: 'API URL' }),
   applicationId: z.string().min(1).optional().meta({ label: 'Application ID' }),
   publicKey: z
     .string()
