@@ -149,6 +149,8 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
         resolvedModel: model,
       });
 
+      delete providerOptions.unknown;
+
       const upstream = createUpstreamSignal(c.req.raw.signal, ctx.upstreamTimeoutMs);
       const aiOptions = {
         model,
@@ -431,8 +433,10 @@ function buildOpenAIResponseOptions(body: ResponsesRequest): Record<string, JSON
 // Splits Responses wire params into cross-provider language params (spread as
 // top-level `generateText`/`streamText` options) and OpenAI-only
 // `providerOptions.openai` params (only when the provider is OpenAI and only
-// when non-empty). Mirrors the chat route's `buildLanguageParams` factoring
-// and hebo's `convertToTextCallOptions`.
+// when non-empty). Other providers receive `reasoning.effort` as the
+// cross-provider `providerOptions.unknown.reasoning_effort` for their
+// `beforeUpstream` hooks to translate. Mirrors the chat route's
+// `buildLanguageParams` factoring and hebo's `convertToTextCallOptions`.
 export function forwardResponseParams(
   body: ResponsesRequest,
   providerName: string,
@@ -457,6 +461,8 @@ export function forwardResponseParams(
     if (Object.keys(openaiOptions).length > 0) {
       providerOptions.openai = openaiOptions;
     }
+  } else if (body.reasoning?.effort != null) {
+    providerOptions.unknown = { reasoning_effort: body.reasoning.effort };
   }
 
   return { params, providerOptions };

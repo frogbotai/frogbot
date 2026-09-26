@@ -68,4 +68,11 @@ export const LIVE_MATRIX: LiveProviderEntry[] = [
     tier: 'free',
     text: models('E2E_MODEL_ZEN_TEXT', ['big-pickle', 'nemotron-3-ultra-free', 'mimo-v2.5-free']),
   },
+  {
+    label: 'vercel',
+    provider: 'vercel',
+    envKey: 'AI_GATEWAY_API_KEY',
+    tier: 'paid',
+    text: models('E2E_MODEL_VERCEL_TEXT', ['anthropic/claude-sonnet-4.6', 'openai/gpt-5.4-mini']),
+  },
 ];

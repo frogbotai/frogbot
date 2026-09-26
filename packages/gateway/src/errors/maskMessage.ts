@@ -40,7 +40,7 @@ export function maybeMaskMessage(message: string, opts: MaskMessageOptions): str
 //
 // **Ref:** opencode `packages/llm/src/route/executor.ts` `redactedNames`.
 
-const KEY_FRAGMENT_PATTERN = /\b(?:sk|rk|pk|key|token)[-_][A-Za-z0-9*\-_]{8,}/gi;
+const KEY_FRAGMENT_PATTERN = /\b(?:sk|rk|pk|vck|key|token)[-_][A-Za-z0-9*\-_]{8,}/gi;
 const BEARER_PATTERN = /\bBearer\s+\S+/gi;
 
 /**

@@ -74,4 +74,64 @@ describe('chat reasoning_effort reaches the model — G39/PR3', () => {
     )?.['openai'];
     expect(openai?.['reasoningEffort']).toBe('high');
   });
+
+  it('forwards reasoning_effort:high on a Claude model as providerOptions.anthropic.thinking', async () => {
+    let callOptions: LanguageModelV4CallOptions | undefined;
+    const app = makeApp('anthropic', (o) => {
+      callOptions = o;
+    });
+
+    const { status } = await postJson(app, '/v1/chat/completions', {
+      model: 'anthropic/claude-sonnet-4',
+      messages: [{ role: 'user', content: 'think hard' }],
+      reasoning_effort: 'high',
+      max_tokens: 10_000,
+    });
+
+    expect(status).toBe(200);
+    const anthropic = (
+      callOptions?.providerOptions as Record<string, Record<string, unknown>> | undefined
+    )?.['anthropic'];
+    expect(anthropic?.['thinking']).toEqual({ type: 'enabled', budgetTokens: 8000 });
+  });
+
+  it('forwards reasoning_effort:high on a Vertex Gemini model as google.thinkingConfig', async () => {
+    let callOptions: LanguageModelV4CallOptions | undefined;
+    const app = makeApp('vertex', (o) => {
+      callOptions = o;
+    });
+
+    const { status } = await postJson(app, '/v1/chat/completions', {
+      model: 'vertex/gemini-2.5-pro',
+      messages: [{ role: 'user', content: 'think hard' }],
+      reasoning_effort: 'high',
+      max_tokens: 10_000,
+    });
+
+    expect(status).toBe(200);
+    const google = (
+      callOptions?.providerOptions as Record<string, Record<string, unknown>> | undefined
+    )?.['google'];
+    expect(google?.['thinkingConfig']).toEqual({ thinkingBudget: 8000 });
+  });
+
+  it('forwards Responses reasoning.effort on a Claude model as anthropic.thinking', async () => {
+    let callOptions: LanguageModelV4CallOptions | undefined;
+    const app = makeApp('anthropic', (o) => {
+      callOptions = o;
+    });
+
+    const { status } = await postJson(app, '/v1/responses', {
+      model: 'anthropic/claude-sonnet-4',
+      input: 'think hard',
+      reasoning: { effort: 'high' },
+      max_output_tokens: 10_000,
+    });
+
+    expect(status).toBe(200);
+    const anthropic = (
+      callOptions?.providerOptions as Record<string, Record<string, unknown>> | undefined
+    )?.['anthropic'];
+    expect(anthropic?.['thinking']).toEqual({ type: 'enabled', budgetTokens: 8000 });
+  });
 });

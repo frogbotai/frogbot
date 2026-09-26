@@ -1,5 +1,6 @@
 import type { LogWarningsFunction } from 'ai';
 
+import { redactKeyFragments } from '../errors/maskMessage.js';
 import { unwrapRetryError } from '../errors/unwrapRetryError.js';
 import type { AfterErrorHookArgs, HookOperation, Hooks } from '../hooks.js';
 import { readEnv } from '../shared/runtimeDetection.js';
@@ -142,7 +143,7 @@ export function logGatewayError(
     status: args.status,
     path: args.path,
     errorType: isError ? (args.error as Error).name : undefined,
-    message: rawMessage,
+    message: redactKeyFragments(rawMessage),
   };
   logger[args.status >= 500 ? 'error' : 'warn'](entry, 'request-error');
 }
@@ -179,26 +180,29 @@ function serializeError(error: unknown, seen = new WeakSet<object>()): unknown {
   seen.add(error);
   const serialized: Record<string, unknown> = {
     name: error.name,
-    message: error.message,
-    stack: error.stack,
+    message: redactKeyFragments(error.message),
+    stack: error.stack === undefined ? undefined : redactKeyFragments(error.stack),
   };
   for (const key of Object.keys(error)) {
     try {
       const value = (error as unknown as Record<string, unknown>)[key];
       serialized[key] =
         key === 'responseBody' && typeof value === 'string'
-          ? truncateResponseBody(value)
+          ? truncateResponseBody(redactKeyFragments(value))
           : serializeValue(value, seen);
     } catch {
       serialized[key] = '[Unserializable]';
     }
   }
-  if (error.cause) serialized.cause = serializeValue(error.cause, seen);
+  if (error.cause && !('cause' in serialized)) {
+    serialized.cause = serializeValue(error.cause, seen);
+  }
   return serialized;
 }
 
 function serializeValue(value: unknown, seen: WeakSet<object>): unknown {
-  if (value === null || typeof value === 'string' || typeof value === 'boolean') return value;
+  if (typeof value === 'string') return redactKeyFragments(value);
+  if (value === null || typeof value === 'boolean') return value;
   if (typeof value === 'number') return Number.isFinite(value) ? value : String(value);
   if (typeof value === 'undefined') return value;
   if (typeof value === 'bigint' || typeof value === 'symbol' || typeof value === 'function') {

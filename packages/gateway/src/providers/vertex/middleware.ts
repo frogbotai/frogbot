@@ -9,9 +9,9 @@ import { googleEmbedDimensions } from '../google/middleware.js';
 /**
  * Vertex thinking budget middleware.
  *
- * Reads `providerOptions.openai.reasoning_effort` (cross-provider param)
- * and maps it to `providerOptions.google.thinkingConfig.thinkingBudget` for
- * Gemini models that support thinking on Vertex AI.
+ * Reads the cross-provider `providerOptions.unknown.reasoning_effort` and maps
+ * it to `providerOptions.google.thinkingConfig.thinkingBudget` for Gemini models
+ * that support thinking on Vertex AI.
  *
  * Pass-through: if `providerOptions.google.thinkingConfig` is already set
  * explicitly, this hook does nothing.
@@ -25,10 +25,8 @@ export const vertexThinkingBudget: BeforeUpstreamHook = (args) => {
     { thinkingConfig?: { thinkingBudget?: number } } | undefined;
   if (googleOpts?.thinkingConfig) return;
 
-  // Read the cross-provider reasoning_effort from OpenAI namespace
-  const openaiOpts = args.providerOptions['openai'] as { reasoning_effort?: string } | undefined;
-  const effort = openaiOpts?.reasoning_effort;
-  if (!effort) return;
+  const effort = args.providerOptions['unknown']?.['reasoning_effort'];
+  if (typeof effort !== 'string') return;
 
   // Calculate budget from effort
   const budgetTokens = calculateReasoningBudgetFromEffort(effort, args.params?.maxOutputTokens);

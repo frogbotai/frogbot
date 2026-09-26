@@ -15,14 +15,22 @@
 //        - tolerate numeric `code` values (OpenRouter and similar),
 //        - tolerate `error.message` being a JSON-encoded string of the
 //          real envelope (double-encoded; OpenRouter again).
+//   2b. `@ai-sdk/gateway` `GatewayError` — Vercel AI Gateway call failures.
+//      The adapter throws its own classes instead of `APICallError`; mapped
+//      by their `statusCode`. The statusless error `ai` substitutes for
+//      `GatewayAuthenticationError` maps to 401.
 //   3. AI SDK `RetryError` — thrown by `generateText`/`streamText` once
 //      their internal retries (`maxRetries`) are exhausted on a retryable
-//      upstream failure. Unwraps `err.lastError`: an `APICallError` recurses
-//      into (2); anything else falls back to a 502 `server_error`.
+//      upstream failure. Unwraps `err.lastError`: an `APICallError` or
+//      `GatewayError` recurses into (2)/(2b); anything else falls back to a
+//      502 `server_error`.
 //   4. AI SDK subclasses (`NoSuchModelError`, `InvalidPromptError`,
 //      `LoadAPIKeyError`, `JSONParseError`, `TypeValidationError`,
 //      `AISDKError`) — mapped to specific statuses/codes.
 //   5. Anything else (including non-`Error` throws) → 500 `server_error`.
+//
+// An upstream failure carrying a non-error status (< 400, e.g. a 200 whose
+// body failed to parse) is a bad upstream response → 502.
 //
 // The output is `{ error: { message, type, code, param } }` per OpenAI's
 // schema, paired with the HTTP status to use.
@@ -31,6 +39,7 @@
 // a number — OpenAI's documented schema strings the field, but their
 // libraries accept either; we normalize on output.
 
+import { GatewayError as AIGatewayError, GatewayModelNotFoundError } from '@ai-sdk/gateway';
 import {
   AISDKError,
   APICallError,
@@ -50,7 +59,11 @@ import { isUpstreamAbortError } from './clientAbort.js';
 import { type GatewayErrorCode, isGatewayError } from './gatewayError.js';
 import { maybeMaskMessage, redactKeyFragments } from './maskMessage.js';
 import { CONTEXT_OVERFLOW_ENVELOPE, isContextOverflow } from './overflow.js';
-import { statusToAnthropicType, statusToOpenAIType } from './statusMaps.js';
+import {
+  isUpstreamSuccessStatus,
+  statusToAnthropicType,
+  statusToOpenAIType,
+} from './statusMaps.js';
 import { unwrapRetryError } from './unwrapRetryError.js';
 
 // ---------------------------------------------------------------------------
@@ -342,12 +355,33 @@ function toOpenAIErrorResponseUnmasked(err: unknown): {
     return fromAPICallError(err);
   }
 
+  // 2b. Vercel AI Gateway call failure
+  if (AIGatewayError.isInstance(err)) {
+    return fromAIGatewayError(err);
+  }
+
+  if (isWrappedAIGatewayAuthError(err)) {
+    return envelope(
+      AI_GATEWAY_AUTH_MESSAGE,
+      'authentication_error',
+      openAICodeForStatus(401),
+      null,
+      401,
+    );
+  }
+
   // 3. AI SDK retry exhaustion — unwrap to the last attempt's cause.
   if (RetryError.isInstance(err)) {
     const cause = unwrapRetryError(err);
+
     if (APICallError.isInstance(cause)) {
       return fromAPICallError(cause);
     }
+
+    if (AIGatewayError.isInstance(cause)) {
+      return fromAIGatewayError(cause);
+    }
+
     return envelope(err.message, 'server_error', null, null, 502);
   }
 
@@ -430,6 +464,10 @@ function fromAPICallError(err: APICallError): {
   body: OpenAIErrorEnvelope;
   status: GatewayHttpStatus;
 } {
+  if (isUpstreamSuccessStatus(err.statusCode)) {
+    return invalidUpstreamResponse(redactKeyFragments(err.message));
+  }
+
   const status = (err.statusCode ?? 500) as GatewayHttpStatus;
   const parsedBody = looseJson(err.data) ?? looseJson(err.responseBody);
   const looseBody = asLooseOpenAIBody(parsedBody);
@@ -523,8 +561,67 @@ function fromAPICallError(err: APICallError): {
 }
 
 // ---------------------------------------------------------------------------
-// Small constructor
+// Vercel AI Gateway error handler
 // ---------------------------------------------------------------------------
+
+const AI_GATEWAY_AUTH_MESSAGE = 'AI Gateway authentication failed: Invalid API key or token.';
+
+function isWrappedAIGatewayAuthError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+
+  return (
+    err.name === 'GatewayAuthenticationError' ||
+    (AISDKError.isInstance(err) && err.name === 'GatewayError')
+  );
+}
+
+function fromAIGatewayError(err: AIGatewayError): {
+  body: OpenAIErrorEnvelope;
+  status: GatewayHttpStatus;
+} {
+  const message = redactKeyFragments(err.message.trim() || 'Upstream error');
+
+  if (isUpstreamSuccessStatus(err.statusCode)) {
+    return invalidUpstreamResponse(message);
+  }
+
+  const status = err.statusCode as GatewayHttpStatus;
+  const upstream = APICallError.isInstance(err.cause) ? err.cause : undefined;
+  const parsedBody = looseJson(upstream?.data) ?? looseJson(upstream?.responseBody);
+
+  if (isContextOverflow({ message: err.message, status, body: parsedBody })) {
+    return envelope(
+      message,
+      CONTEXT_OVERFLOW_ENVELOPE.type,
+      CONTEXT_OVERFLOW_ENVELOPE.code,
+      CONTEXT_OVERFLOW_ENVELOPE.param,
+      CONTEXT_OVERFLOW_ENVELOPE.status,
+    );
+  }
+
+  if (GatewayModelNotFoundError.isInstance(err)) {
+    return envelope(message, 'not_found_error', 'model_not_found', 'model', status);
+  }
+
+  return envelope(message, statusToOpenAIType(status), openAICodeForStatus(status), null, status);
+}
+
+// ---------------------------------------------------------------------------
+// Small constructors
+// ---------------------------------------------------------------------------
+
+function invalidUpstreamResponse(message: string): {
+  body: OpenAIErrorEnvelope;
+  status: GatewayHttpStatus;
+} {
+  return envelope(
+    message || 'Upstream returned an invalid response.',
+    'server_error',
+    'upstream_invalid_response',
+    null,
+    502,
+  );
+}
 
 function envelope(
   message: string,
@@ -611,12 +708,27 @@ function toAnthropicErrorResponseUnmasked(err: unknown): {
     return fromAnthropicAPICallError(err);
   }
 
+  // 2b. Vercel AI Gateway call failure
+  if (AIGatewayError.isInstance(err)) {
+    return fromAnthropicAIGatewayError(err);
+  }
+
+  if (isWrappedAIGatewayAuthError(err)) {
+    return anthropicEnvelope(AI_GATEWAY_AUTH_MESSAGE, 'authentication_error', 401);
+  }
+
   // 3. AI SDK retry exhaustion — unwrap to the last attempt's cause.
   if (RetryError.isInstance(err)) {
     const cause = unwrapRetryError(err);
+
     if (APICallError.isInstance(cause)) {
       return fromAnthropicAPICallError(cause);
     }
+
+    if (AIGatewayError.isInstance(cause)) {
+      return fromAnthropicAIGatewayError(cause);
+    }
+
     return anthropicEnvelope(err.message, 'api_error', 502);
   }
 
@@ -704,6 +816,10 @@ function fromAnthropicAPICallError(err: APICallError): {
   body: AnthropicErrorEnvelope;
   status: GatewayHttpStatus;
 } {
+  if (isUpstreamSuccessStatus(err.statusCode)) {
+    return anthropicEnvelope(redactKeyFragments(err.message), 'api_error', 502);
+  }
+
   const status = (err.statusCode ?? 500) as GatewayHttpStatus;
   // Try to extract message from upstream Anthropic body
   const parsedBody = looseJson(err.data) ?? looseJson(err.responseBody);
@@ -725,4 +841,23 @@ function fromAnthropicAPICallError(err: APICallError): {
     },
     status,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Vercel AI Gateway error handler (Anthropic)
+// ---------------------------------------------------------------------------
+
+function fromAnthropicAIGatewayError(err: AIGatewayError): {
+  body: AnthropicErrorEnvelope;
+  status: GatewayHttpStatus;
+} {
+  const message = redactKeyFragments(err.message.trim() || 'An error occurred');
+
+  if (isUpstreamSuccessStatus(err.statusCode)) {
+    return anthropicEnvelope(message, 'api_error', 502);
+  }
+
+  const status = err.statusCode as GatewayHttpStatus;
+
+  return anthropicEnvelope(message, statusToAnthropicType(status), status);
 }

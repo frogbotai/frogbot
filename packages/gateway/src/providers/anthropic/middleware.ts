@@ -9,9 +9,9 @@ import { calculateReasoningBudgetFromEffort } from '../../utils/params.js';
 /**
  * Claude thinking effort middleware.
  *
- * Reads `providerOptions.openai.reasoning_effort` (the OpenAI-native param)
- * and maps it to `providerOptions.anthropic.thinking.budgetTokens` for
- * Claude models that support extended thinking.
+ * Reads the cross-provider `providerOptions.unknown.reasoning_effort` and maps
+ * it to `providerOptions.anthropic.thinking.budgetTokens` for Claude models
+ * that support extended thinking.
  *
  * Pass-through: if `providerOptions.anthropic.thinking` is already set
  * explicitly, this hook does nothing (explicit config wins).
@@ -25,10 +25,8 @@ export const claudeThinkingEffort: BeforeUpstreamHook = (args) => {
     { thinking?: { type?: string; budgetTokens?: number } } | undefined;
   if (anthropicOpts?.thinking) return;
 
-  // Read the cross-provider reasoning_effort from OpenAI namespace
-  const openaiOpts = args.providerOptions['openai'] as { reasoning_effort?: string } | undefined;
-  const effort = openaiOpts?.reasoning_effort;
-  if (!effort) return;
+  const effort = args.providerOptions['unknown']?.['reasoning_effort'];
+  if (typeof effort !== 'string') return;
 
   // Calculate budget from effort
   const budgetTokens = calculateReasoningBudgetFromEffort(effort, args.params?.maxOutputTokens);

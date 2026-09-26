@@ -119,6 +119,29 @@ describe('toOpenAIErrorResponse — APICallError status coverage', () => {
     expect(status).toBe(500);
     expect(body.error.type).toBe('server_error');
   });
+
+  it.each([200, 204, 302])('maps a non-error upstream status %d to 502', (statusCode) => {
+    const err = apiCallError({
+      statusCode,
+      message: 'Invalid JSON response',
+      responseBody: '{"error":{"message":"not really","type":"invalid_request_error"}',
+    });
+
+    const openai = toOpenAIErrorResponse(err);
+    const anthropic = toAnthropicErrorResponse(err);
+
+    expect(openai.status).toBe(502);
+    expect(openai.body.error).toMatchObject({
+      message: 'Invalid JSON response',
+      type: 'server_error',
+      code: 'upstream_invalid_response',
+    });
+    expect(anthropic.status).toBe(502);
+    expect(anthropic.body.error).toMatchObject({
+      message: 'Invalid JSON response',
+      type: 'api_error',
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------

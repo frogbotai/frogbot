@@ -15,6 +15,7 @@ export const PROVIDER_NAMES = [
   'voyage',
   'typesafe-ai',
   'replicate',
+  'vercel',
 ] as const;
 
 export type ProviderName = (typeof PROVIDER_NAMES)[number];

@@ -58,7 +58,7 @@ export default buildConfig({
 })
 ```
 
-Built-in keys are `openai`, `anthropic`, `google`, `bedrock`, `groq`, `mistral`, `cohere`, `togetherai`, `fireworks`, `deepinfra`, `xai`, `perplexity`, `cerebras`, `voyage`, `replicate`, and `typesafe-ai`. See [TypeSafe AI setup](/gateway/providers#typesafe-ai-evaluation) for its server-side credential and evaluation-only models.
+Built-in keys are `openai`, `anthropic`, `google`, `bedrock`, `groq`, `mistral`, `cohere`, `togetherai`, `fireworks`, `deepinfra`, `xai`, `perplexity`, `cerebras`, `voyage`, `replicate`, `typesafe-ai`, and `vercel`. See [TypeSafe AI setup](/gateway/providers#typesafe-ai-evaluation) for its server-side credential and evaluation-only models.
 
 Model IDs use `<provider>/<model>`, where `<provider>` is the exact key you used under `ai.providers`, such as `bedrock/...` or `togetherai/...`. Replicate's `apiKey` maps to its `apiToken` option. Bedrock uses bearer tokens first, then explicit SigV4 keys, then the AWS default credential chain.
 
