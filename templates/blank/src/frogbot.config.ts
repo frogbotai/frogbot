@@ -17,15 +17,8 @@ const config: FrogBotConfig = {
   collections: [Users],
   tools: [...todoTools],
   ai: {
-    defaultModel: 'zen/big-pickle',
-    providers: {
-      zen: {
-        type: 'openai-compatible',
-        baseUrl: 'https://opencode.ai/zen/v1',
-        apiKey: 'public',
-        models: [{ id: 'big-pickle', mode: 'chat' }],
-      },
-    },
+    defaultModel: 'openai/gpt-5.4-mini',
+    providers: { openai: true },
   },
   admin: {},
   agents: [general(), assistant],

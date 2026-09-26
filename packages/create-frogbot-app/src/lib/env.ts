@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import type { ScaffoldPlan } from '../types.js';
-import { providerEnv } from './ai.js';
+import { providerEnv, providerKeyEnv } from './ai.js';
 import { databaseUrl } from './db.js';
 
 function setLine(source: string, key: string, value: string): string {
@@ -19,7 +19,7 @@ function setLine(source: string, key: string, value: string): string {
 
 export function writeEnv(
   dest: string,
-  plan: Pick<ScaffoldPlan, 'ai' | 'database' | 'projectName'>,
+  plan: Pick<ScaffoldPlan, 'ai' | 'apiKey' | 'database' | 'projectName'>,
 ): void {
   const examplePath = path.join(dest, '.env.example');
   let example = fs.readFileSync(examplePath, 'utf8');
@@ -33,6 +33,11 @@ export function writeEnv(
 
   fs.writeFileSync(examplePath, example);
 
-  const env = setLine(example, 'FROGBOT_SECRET', randomBytes(24).toString('hex'));
+  let env = setLine(example, 'FROGBOT_SECRET', randomBytes(24).toString('hex'));
+  const keyEnv = providerKeyEnv(plan.ai);
+
+  // The secret only goes to `.env` (gitignored); `.env.example` keeps the name.
+  if (keyEnv && plan.apiKey) env = setLine(env, keyEnv, plan.apiKey);
+
   fs.writeFileSync(path.join(dest, '.env'), env);
 }

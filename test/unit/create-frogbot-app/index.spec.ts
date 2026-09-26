@@ -87,6 +87,30 @@ describe('scaffold', () => {
     );
   });
 
+  it('defaults to a working OpenAI model, never the Zen free tier', () => {
+    const options = createDest();
+    scaffold({ ...options, templateDir });
+
+    const config = fs.readFileSync(path.join(options.dest, 'src', 'frogbot.config.ts'), 'utf8');
+    expect(config).toContain("defaultModel: 'openai/gpt-5.4-mini'");
+    expect(config).not.toContain("apiKey: 'public'");
+    expect(fs.readFileSync(path.join(options.dest, '.env.example'), 'utf8')).toContain(
+      'OPENAI_API_KEY=\n',
+    );
+  });
+
+  it('writes the provider key to .env only, keeping .env.example secret-free', () => {
+    const options = createDest();
+    scaffold({ ...options, ai: 'google', apiKey: 'AIza-test', templateDir });
+
+    expect(fs.readFileSync(path.join(options.dest, '.env'), 'utf8')).toContain(
+      'GOOGLE_GENERATIVE_AI_API_KEY=AIza-test',
+    );
+    const example = fs.readFileSync(path.join(options.dest, '.env.example'), 'utf8');
+    expect(example).toContain('GOOGLE_GENERATIVE_AI_API_KEY=\n');
+    expect(example).not.toContain('AIza-test');
+  });
+
   it('rejects an existing destination without changing it', () => {
     const options = createDest();
     fs.mkdirSync(options.dest);

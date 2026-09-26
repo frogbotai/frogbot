@@ -19,9 +19,10 @@ On pnpm 10.26 or newer, the generated `pnpm-workspace.yaml` pre-approves the
 dependency build scripts this project needs.
 
 `create-frogbot-app` already wrote a `.env` with a generated `FROGBOT_SECRET`.
-With the default AI option, the `assistant` agent runs on opencode Zen's free
-`zen/big-pickle` — no API key needed. Choose another provider with the
-`create-frogbot-app --ai` option when creating a project.
+The `assistant` agent runs on the provider you picked (OpenAI's
+`openai/gpt-5.4-mini` by default). If you entered an API key, it is already in
+`.env`; otherwise set it there (for example `OPENAI_API_KEY=...`) before your
+first chat. Choose another provider with the `create-frogbot-app --ai` option.
 
 FrogBot commands load `.env`, `.env.local`, and mode-specific `.env*` files with Next.js
 precedence. Existing shell variables take priority.

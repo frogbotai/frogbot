@@ -5,7 +5,7 @@ export const CONFIG_ANCHORS = {
   toolsImport: "import { todoTools } from 'frogbot/tools';\n",
   assistantImport: "import { assistant } from './agents/assistant';\n",
   tools: '  tools: [...todoTools],\n',
-  ai: "  ai: {\n    defaultModel: 'zen/big-pickle',\n    providers: {\n      zen: {\n        type: 'openai-compatible',\n        baseUrl: 'https://opencode.ai/zen/v1',\n        apiKey: 'public',\n        models: [{ id: 'big-pickle', mode: 'chat' }],\n      },\n    },\n  },\n",
+  ai: "  ai: {\n    defaultModel: 'openai/gpt-5.4-mini',\n    providers: { openai: true },\n  },\n",
   agents: '  agents: [general(), assistant],\n',
 } as const;
 

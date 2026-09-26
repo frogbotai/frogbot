@@ -3,19 +3,21 @@
 // admin panel up + FrogBot-branded, agent listing, agent SSE streaming, and
 // the gateway auth gate. Gated by RUN_E2E=1 (`pnpm test:e2e`).
 
-import { spawn } from 'node:child_process';
+import '../live/env';
+
 import type { ChildProcess } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { connect, createServer } from 'node:net';
-import { DatabaseSync } from 'node:sqlite';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { FrogBotChatTransport, prepareChatRequest } from '../../packages/ui/src/chat/transport';
 import { createFrogBotSDK } from '../../packages/sdk/src/index';
+import { FrogBotChatTransport, prepareChatRequest } from '../../packages/ui/src/chat/transport';
 import { terminateProcess } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
@@ -93,8 +95,9 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     const deadline = Date.now() + 210000;
     for (;;) {
       if (await isListening(port)) break;
-      if (server.exitCode !== null)
+      if (server.exitCode !== null) {
         throw new Error(`scaffold dev server exited with code ${server.exitCode}`);
+      }
       if (Date.now() > deadline) throw new Error('scaffold dev server did not become ready');
       await new Promise((r) => setTimeout(r, 2000));
     }
@@ -133,23 +136,20 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
       headers: { authorization: `Bearer ${token}` },
     });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
+    // `reasoning` levels vary by model; assert the agent/model wiring only.
+    expect(await res.json()).toMatchObject({
       defaultAgent: 'general',
       agents: [
-        {
+        expect.objectContaining({
           slug: 'general',
-          label: 'general',
-          source: 'config',
-          defaultModel: 'zen/big-pickle',
-          models: ['zen/big-pickle'],
-        },
-        {
+          defaultModel: 'openai/gpt-5.4-mini',
+          models: ['openai/gpt-5.4-mini'],
+        }),
+        expect.objectContaining({
           slug: 'assistant',
-          label: 'assistant',
-          source: 'config',
-          defaultModel: 'zen/big-pickle',
-          models: ['zen/big-pickle'],
-        },
+          defaultModel: 'openai/gpt-5.4-mini',
+          models: ['openai/gpt-5.4-mini'],
+        }),
       ],
     });
   });
@@ -173,6 +173,33 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
     await reader.cancel();
     expect(new TextDecoder().decode(value)).toContain('data:');
   });
+
+  // The template's default model must actually answer — a scaffold whose first
+  // chat errors (as the old Zen free-tier default did) must fail here.
+  it.skipIf(!process.env.OPENAI_API_KEY)(
+    'answers the first chat with the default model',
+    async () => {
+      const res = await fetch(`${baseURL}/api/agents/assistant`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'text/event-stream',
+          authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ prompt: 'Reply with exactly the word: ribbit' }),
+      });
+
+      expect(res.status).toBe(200);
+      const stream = await res.text();
+      expect(stream).not.toContain('"type":"error"');
+      expect(stream).toContain('"type":"text-delta"');
+      const text = [...stream.matchAll(/"type":"text-delta"[^\n]*?"delta":"((?:[^"\\]|\\.)*)"/g)]
+        .map((match) => JSON.parse(`"${match[1]}"`) as string)
+        .join('');
+      expect(text.toLowerCase()).toContain('ribbit');
+    },
+    120000,
+  );
 
   function expectPersisted(chatId: string | number) {
     const db = new DatabaseSync(join(dataDir, 'e2e.db'));

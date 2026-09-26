@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import * as p from '@clack/prompts';
 
-import { applyAI } from './lib/ai.js';
+import { applyAI, providerKeyEnv } from './lib/ai.js';
 import { HELP, parseArgs } from './lib/args.js';
 import { applyDatabase } from './lib/db.js';
 import { writeEnv } from './lib/env.js';
@@ -33,6 +33,7 @@ const COMMANDS: Record<PackageManager, string> = {
 interface ScaffoldOptions {
   agents?: AgentTarget[];
   ai?: AIProvider;
+  apiKey?: string;
   database?: Database;
   dest: string;
   packageManager?: PackageManager;
@@ -51,7 +52,7 @@ function readVersion(): string {
 export function scaffold(options: ScaffoldOptions): void {
   const packageManager = options.packageManager ?? detectPackageManager();
   const database = options.database ?? 'sqlite';
-  const ai = options.ai ?? 'zen';
+  const ai = options.ai ?? 'openai';
 
   if (fs.existsSync(options.dest)) {
     throw new Error(`Directory "${options.projectName}" already exists.`);
@@ -69,6 +70,7 @@ export function scaffold(options: ScaffoldOptions): void {
 
   const envPlan = {
     ai,
+    apiKey: options.apiKey,
     database,
     projectName: options.projectName,
   };
@@ -83,6 +85,7 @@ function scaffoldPlan(plan: ScaffoldPlan): boolean {
   scaffold({
     agents: plan.agents,
     ai: plan.ai,
+    apiKey: plan.apiKey,
     database: plan.database,
     dest: plan.dest,
     packageManager: plan.packageManager,
@@ -136,6 +139,16 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     if (!installDependencies(plan.dest, plan.packageManager)) {
       p.log.warn(`Install failed. Run ${plan.packageManager} install in the project.`);
     }
+  }
+
+  const keyEnv = providerKeyEnv(plan.ai);
+
+  if (keyEnv && !plan.apiKey) {
+    p.log.warn(
+      plan.ai === 'bedrock'
+        ? `Set ${keyEnv} (or AWS_PROFILE) in ${plan.projectName}/.env before chatting.`
+        : `Set ${keyEnv} in ${plan.projectName}/.env before chatting — the assistant needs it.`,
+    );
   }
 
   const providerDocs =

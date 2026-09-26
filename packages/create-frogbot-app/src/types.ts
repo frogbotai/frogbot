@@ -8,6 +8,8 @@ export type PackageManager = 'bun' | 'npm' | 'pnpm' | 'yarn';
 export interface ScaffoldPlan {
   agents: AgentTarget[];
   ai: AIProvider;
+  /** Credential for `ai`, written to `.env` under the provider's key env var. */
+  apiKey?: string;
   database: Database;
   dest: string;
   git: boolean;
