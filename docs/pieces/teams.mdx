@@ -1,0 +1,127 @@
+---
+title: Microsoft Teams
+description: Run an agent in Teams channels and chats, and let participants answer its questions on an Adaptive Card.
+keywords: [pieces, microsoft teams, teams, channels, questions, adaptive cards, azure bot]
+---
+
+`@frogbotai/piece-microsoft-teams` connects an agent to Microsoft Teams through an Azure Bot. Mention the bot in a channel or group chat, or message it in a personal chat, and the agent replies in the same conversation. When the agent uses the [question tool](/chat/questions), participants answer on an Adaptive Card in the conversation.
+
+## Connect an agent
+
+```ts
+import { createMicrosoftTeams } from '@frogbotai/piece-microsoft-teams'
+import type { AgentConfig } from 'frogbot'
+import { question } from 'frogbot/tools'
+
+const teams = createMicrosoftTeams({
+  slug: 'teams',
+  auth: {
+    appId: process.env.TEAMS_BOT_APP_ID!,
+    appPassword: process.env.TEAMS_BOT_APP_PASSWORD!,
+  },
+})
+
+export const support: AgentConfig = {
+  slug: 'support',
+  instructions: 'Help the team. Ask before making changes.',
+  tools: [question],
+  channels: [teams],
+  access: ({ req }) => Boolean(req.user),
+}
+```
+
+The instance slug defaults to `microsoft-teams`. Give each instance its own slug when you connect more than one bot.
+
+| Option | Default | Use |
+| --- | --- | --- |
+| `botAppType` | `'MultiTenant'` | Set `'SingleTenant'` for a bot registered in one tenant |
+| `botTenantId` | — | Required with `'SingleTenant'` |
+| `botApiUrl` | Public Bot Framework service | Bot Framework service URL for sovereign clouds |
+
+## Register the bot
+
+1. In Azure, create an **Azure Bot** with a Microsoft Entra application. Record the application ID as `appId` and create a client secret for `appPassword`.
+2. Match the bot type to the Entra application. FrogBot defaults to multi-tenant. For a single-tenant bot, which works only in its own tenant, set `botAppType: 'SingleTenant'` and `botTenantId` to that tenant's ID.
+3. Set the bot's **Messaging endpoint** to `https://your-app.example.com/api/webhooks/<instance>`. Messages, card submissions, and installs all arrive at this URL.
+4. Under **Channels**, add **Microsoft Teams**.
+
+FrogBot checks the signature on every request from Teams before reading it. A request signed for another bot gets `401`.
+
+## Install the Teams app
+
+A Teams app manifest links your Azure Bot to Teams. Add a `bots` entry with the same application ID and the scopes you want:
+
+```json
+{
+  "bots": [
+    {
+      "botId": "<Azure Bot application ID>",
+      "scopes": ["personal", "team", "groupChat"],
+      "isNotificationOnly": false
+    }
+  ]
+}
+```
+
+Package the manifest with its icons, then upload it in the Teams admin center or, where your tenant allows custom apps, from **Apps > Manage your apps > Upload an app**. Install it in each team or chat where the agent should work.
+
+## Who can answer
+
+FrogBot looks up the person who submits a card in the conversation's member list, the same list Teams uses for @mentions, and reads their email address. It matches that address to a FrogBot user, then runs the agent's `access` check for that user. Anyone who passes can answer, including a teammate who did not start the conversation. Being a member of the Teams channel is not enough on its own.
+
+A person without access gets a private notice, and the question stays open. People whose Teams account has no email, such as some guest accounts, have no FrogBot user; the default agent access denies them with a notice saying their account could not be matched. Write an `access` function if unmatched people should be able to answer.
+
+The member lookup needs no Microsoft Graph permission. If it fails, FrogBot uses the profile Teams cached from the person's earlier messages, and then Microsoft Graph, which works only if you granted the bot's application the `User.Read.All` application permission.
+
+## What participants see
+
+Every question in a call appears on one card with **Submit** and **Dismiss** buttons.
+
+| Question | Teams controls |
+| --- | --- |
+| One choice, up to 10 options | Radio buttons |
+| Several choices allowed, up to 10 options | Checkboxes |
+| More than 10 options | A dropdown; a multi-select dropdown when several choices are allowed |
+| Typed answer allowed (`custom`, the default) | A text box below the choices |
+
+Option descriptions appear after the option's label. Questions, options, and typed answers appear exactly as written; Markdown is not formatted. A typed answer replaces the choice on a one-choice question and is added to the choices on a several-choice question. When a question does not allow a typed answer, Teams asks for a choice before it sends the card.
+
+When the agent asks several questions in separate calls, FrogBot posts one card at a time and posts the next card after the current one is answered.
+
+After an answer, the card is replaced in place with each question, the answer, and `Answered by <name>`, and the agent continues in the same conversation. **Dismiss** replaces the card with `Dismissed by <name>` and stops the turn. The first answer wins.
+
+Notices about access and late answers are Teams targeted messages in channels and group chats, which only the person they are for sees. In a personal chat, where only you and the bot are present, they are ordinary messages. If Teams cannot deliver a notice, FrogBot logs the failure and the card stays as it was.
+
+## Supported clients
+
+Cards use Adaptive Cards 1.5, which current Teams clients support. FrogBot checks every submission itself, so a client that skips a required-choice check still gets a clear message on the card.
+
+## Limits and failures
+
+| Situation | What happens |
+| --- | --- |
+| No access | Private notice; the question stays open |
+| Teams account without a matching FrogBot user | Private notice that the account could not be matched |
+| A second answer, a double click, or a card answered in the FrogBot admin | Private notice that it was already answered; the card shows the stored answer. If Teams resends a submission, the person who answered can also get this notice |
+| A card whose question is no longer waiting, for example after the conversation moved on | The card closes and the person gets a notice that the question is no longer open |
+| A submission with a question unanswered, or with a choice the card did not offer | The card is redrawn with a red message and the submitted choices |
+| A card larger than FrogBot's 24 KB budget | Choices switch to dropdowns, then descriptions are shortened and removed, then long labels are shortened on screen. No option is dropped |
+| A card still too large after that | FrogBot posts the questions without their choices, a note to answer in FrogBot, and a **Dismiss** button. The error is logged |
+| Very long answers | The answered card shortens them on screen; the agent receives them in full |
+| Replacing the card fails after an answer | The answer is kept and the agent continues. The next click on the card restores the answered view |
+| Posting the card fails | The question is posted again with the next message in the conversation |
+| The server restarts while a question is open | The card stays answerable |
+| A card left open for 30 days | The card stops responding; the next message in the conversation posts it again |
+| Typed answers | Up to 2,000 characters |
+
+FrogBot acknowledges a card submission once it has recorded the answer and updated the card. The agent's next step runs as a job, so a slow model does not delay the submission.
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| The bot never replies | The messaging endpoint uses the right instance slug, the Teams channel is enabled on the Azure Bot, and the app is installed in that team or chat |
+| Every request gets `401` | `appId` matches the Azure Bot's application ID, and `botAppType` and `botTenantId` match its registration |
+| **Submit** does nothing | The server logs; FrogBot logs at debug level when Teams sends a submission without the card's message ID, and whether it could find the card |
+| "FrogBot couldn't match your Teams account to a user" | The person's Teams email or sign-in name must equal a FrogBot user's email |
+| The card shows as unsupported | Update the Teams client; Adaptive Cards 1.5 is required |

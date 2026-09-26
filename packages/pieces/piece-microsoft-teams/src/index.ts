@@ -1,8 +1,8 @@
-import { createTeamsAdapter } from '@chat-adapter/teams';
 import { definePiece, type PieceChannel, type PieceOAuthRecipe } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { microsoftTeamsActionDefinitions } from './actions.js';
+import { FrogBotTeamsAdapter } from './adapter.js';
 import { createMicrosoftTeamsClient } from './client.js';
 import {
   microsoftTeamsAuth,
@@ -11,6 +11,7 @@ import {
   microsoftTeamsOptions,
   microsoftTeamsScopes,
 } from './config.js';
+import { teamsQuestions } from './questions/index.js';
 import { user } from './schemas.js';
 import { microsoftTeamsTriggerDefinitions } from './triggers.js';
 import { microsoftTeamsWebhook } from './webhook.js';
@@ -88,7 +89,7 @@ export function defineMicrosoftTeams(environment?: z.input<typeof microsoftTeams
         throw new Error('Single-tenant Microsoft Teams bots require a botTenantId option.');
       }
 
-      return createTeamsAdapter({
+      return new FrogBotTeamsAdapter({
         appId: auth.appId,
         appPassword: auth.appPassword,
         appType: options.botAppType,
@@ -115,6 +116,7 @@ export function defineMicrosoftTeams(environment?: z.input<typeof microsoftTeams
 
       return match ? { ...match, collection: payloadConfig.admin.user } : null;
     },
+    questions: teamsQuestions,
   } satisfies PieceChannel<
     z.output<typeof environmentAuth>,
     z.output<typeof microsoftTeamsOptions>,
