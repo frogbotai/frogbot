@@ -10,7 +10,7 @@ Compare ways to achieve the approved outcome and agree on an approach before pla
 
 - **Approved outcome:** one-sentence summary and link to Step 1 and applicable owner/program rulings.
 - **Options:** usually two or three, named A/B/C. Compare how well each meets the requirements, what existing code it reuses, how hard it is to build and run, and what can go wrong. Use a small table or short bullets.
-- **Evidence:** link `research.md` findings and relevant reference code; separate checked facts from uncertainties. Recheck code that has changed and update stale research instead of repeating the entire investigation.
+- **Evidence:** link `research.md` findings and relevant reference code, including how Payload solves the closest equivalent ([design principles](../../CONTRIBUTING.md#design-principles)); separate checked facts from uncertainties. Recheck code that has changed and update stale research instead of repeating the entire investigation.
 - **Recommendation:** preferred option, why it fits, and its principal downside.
 - **Decisions:** choices that significantly affect behavior, complexity, or cost and need the owner's answer; use Step 1's question format.
 
