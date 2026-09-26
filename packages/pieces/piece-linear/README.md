@@ -58,6 +58,11 @@ For a personal API key bot that responds to issue comments, set `channelMode: 'c
 an admin-created workspace webhook to **Comments**, and set `botUsername` to the name users mention.
 Comment mode supports post-and-edit streaming, but not Agent Session thoughts or native activity streaming.
 
+Agents with the `question` tool ask in Agent Sessions with Linear's native elicitation: a single-choice
+question up to 25 options shows buttons, and other questions show numbered options answered by reply.
+**Send stop request** dismisses the question. Comment mode does not offer the tool. See
+[Linear](https://docs.frogbot.ai/pieces/linear) in the FrogBot docs.
+
 Linear signs the exact request body in `Linear-Signature` with HMAC-SHA256. FrogBot rejects missing,
 invalid, or stale signed deliveries before channel or trigger dispatch. Channel replies are handled
 by the adapter; the triggers below remain independent per-subscription workflows.

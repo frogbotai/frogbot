@@ -1,4 +1,3 @@
-import { createLinearAdapter } from '@chat-adapter/linear';
 import { definePiece, type PieceChannel, type PieceOAuthRecipe } from 'frogbot/pieces';
 import type { z } from 'zod';
 
@@ -8,8 +7,10 @@ import { createProject } from './actions/createProject.js';
 import { rawGraphqlQuery } from './actions/rawGraphqlQuery.js';
 import { updateIssue } from './actions/updateIssue.js';
 import { updateProject } from './actions/updateProject.js';
+import { LinearChannelAdapter } from './adapter.js';
 import { createLinearClient, type Linear } from './client.js';
 import { linearAuth, linearOptions } from './config.js';
+import { linearQuestions } from './questions/index.js';
 import { commentCreated } from './triggers/commentCreated.js';
 import { issueCreated } from './triggers/issueCreated.js';
 import { issueRemoved } from './triggers/issueRemoved.js';
@@ -68,7 +69,7 @@ const linearChannel = {
       throw new Error('Linear channels require a webhookSecret option.');
     }
 
-    return createLinearAdapter({
+    return new LinearChannelAdapter({
       ...('apiKey' in auth ? { apiKey: auth.apiKey } : { accessToken: auth.accessToken }),
       webhookSecret: options.webhookSecret,
       mode: options.channelMode,
@@ -94,6 +95,7 @@ const linearChannel = {
 
     return match ? { ...match, collection: payloadConfig.admin.user } : null;
   },
+  questions: linearQuestions,
 } satisfies PieceChannel<z.output<typeof linearAuth>, z.output<typeof linearOptions>, Linear>;
 
 export const createLinear = definePiece({
