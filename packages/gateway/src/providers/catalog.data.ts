@@ -1,4 +1,4 @@
-import { defineModelCatalog, type ModelCatalog,presetFor } from './catalog.js';
+import { defineModelCatalog, presetFor, type ModelCatalog } from './catalog.js';
 
 const model = presetFor<string>();
 
@@ -8547,45 +8547,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['fireworks'],
   }),
-  model('fireworks/accounts/fireworks/models/qwen3p7-plus', {
-    name: 'Qwen 3.7 Plus',
-    created: '2026-06-12',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'toggle',
-        },
-        {
-          type: 'effort',
-          values: ['low', 'medium', 'high'],
-        },
-        {
-          type: 'budget_tokens',
-          min: 1,
-        },
-      ],
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 65536,
-    },
-    cost: {
-      input: 0.4,
-      output: 1.6,
-      cache_read: 0.08,
-    },
-    providers: ['fireworks'],
-  }),
   model('fireworks/accounts/fireworks/models/qwen3p8-2p4t-a95b', {
     name: 'Qwen3.8 2.4T A95B',
     created: '2026-08-12',
@@ -8683,40 +8644,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.22,
       output: 0.66,
       cache_read: 0.007,
-    },
-    providers: ['fireworks'],
-  }),
-  model('fireworks/accounts/fireworks/routers/glm-5p2-fast', {
-    name: 'GLM 5.2 Fast',
-    created: '2026-06-26',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'toggle',
-        },
-        {
-          type: 'effort',
-          values: ['high', 'max'],
-        },
-      ],
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1048575,
-      output: 131072,
-    },
-    cost: {
-      input: 2.1,
-      output: 6.6,
-      cache_read: 0.21,
     },
     providers: ['fireworks'],
   }),
@@ -13193,6 +13120,7806 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 0,
     },
     providers: ['typesafe-ai'],
+  }),
+  model('vercel/alibaba/qwen-3-14b', {
+    name: 'Qwen3-14B',
+    created: '2025-04-28',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 40960,
+      output: 16384,
+    },
+    cost: {
+      input: 0.12,
+      output: 0.24,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen-3-235b', {
+    name: 'Qwen3 235B A22B Instruct 2507',
+    created: '2025-04-28',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 16384,
+    },
+    cost: {
+      input: 0.22,
+      output: 0.88,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen-3-30b', {
+    name: 'Qwen3-30B-A3B',
+    created: '2025-04-28',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 40960,
+      output: 16384,
+    },
+    cost: {
+      input: 0.12,
+      output: 0.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen-3-32b', {
+    name: 'Qwen 3.32B',
+    created: '2025-04-28',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1,
+          max: 38912,
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 8192,
+    },
+    cost: {
+      input: 0.16,
+      output: 0.64,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen-3.6-max-preview', {
+    name: 'Qwen 3.6 Max Preview',
+    created: '2026-04-20',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1,
+          max: 131072,
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 240000,
+      output: 64000,
+    },
+    cost: {
+      input: 1.3,
+      output: 7.8,
+      cache_read: 0.13,
+      cache_write: 1.625,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3-235b-a22b-thinking', {
+    name: 'Qwen3 235B A22B Thinking 2507',
+    created: '2025-09-23',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+          min: 1,
+          max: 81920,
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 32768,
+    },
+    cost: {
+      input: 0.4,
+      output: 4,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3-coder', {
+    name: 'Qwen3 Coder 480B A35B Instruct',
+    created: '2025-07-22',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 65536,
+    },
+    cost: {
+      input: 1.5,
+      output: 7.5,
+      cache_read: 0.3,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3-coder-30b-a3b', {
+    name: 'Qwen 3 Coder 30B A3B Instruct',
+    created: '2025-07-31',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 8192,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3-coder-next', {
+    name: 'Qwen3 Coder Next',
+    created: '2026-02-03',
+    knowledge: '2025-09',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 256000,
+    },
+    cost: {
+      input: 0.5,
+      output: 1.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3-coder-plus', {
+    name: 'Qwen3 Coder Plus',
+    created: '2025-07-23',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65536,
+    },
+    cost: {
+      input: 1,
+      output: 5,
+      cache_read: 0.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3-max', {
+    name: 'Qwen3 Max',
+    created: '2025-09-23',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 1.2,
+      output: 6,
+      cache_read: 0.24,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3-max-preview', {
+    name: 'Qwen3 Max Preview',
+    created: '2025-09-05',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 1.2,
+      output: 6,
+      cache_read: 0.24,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3-max-thinking', {
+    name: 'Qwen 3 Max Thinking',
+    created: '2026-01-23',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+          min: 1,
+          max: 81920,
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 65536,
+    },
+    cost: {
+      input: 1.2,
+      output: 6,
+      cache_read: 0.24,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3-next-80b-a3b-instruct', {
+    name: 'Qwen3 Next 80B A3B Instruct',
+    created: '2025-09',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 262114,
+      output: 262114,
+    },
+    cost: {
+      input: 0.15,
+      output: 1.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3-next-80b-a3b-thinking', {
+    name: 'Qwen3 Next 80B A3B Thinking',
+    created: '2025-09',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+          min: 1,
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 262144,
+    },
+    cost: {
+      input: 0.15,
+      output: 1.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3-vl-235b-a22b-instruct', {
+    name: 'Qwen3 VL 235B A22B Instruct',
+    created: '2025-09-23',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 129024,
+    },
+    cost: {
+      input: 0.4,
+      output: 1.6,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3-vl-instruct', {
+    name: 'Qwen3 VL Instruct',
+    created: '2025-09-23',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 129024,
+    },
+    cost: {
+      input: 0.4,
+      output: 1.6,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3-vl-thinking', {
+    name: 'Qwen3 VL Thinking',
+    created: '2025-09-23',
+    knowledge: '2025-09',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+          min: 1,
+          max: 81920,
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 32768,
+    },
+    cost: {
+      input: 0.4,
+      output: 4,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3.5-flash', {
+    name: 'Qwen 3.5 Flash',
+    created: '2026-02-23',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1,
+          max: 81920,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 64000,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.4,
+      cache_read: 0.01,
+      cache_write: 0.125,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3.5-plus', {
+    name: 'Qwen 3.5 Plus',
+    created: '2026-02-16',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1,
+          max: 81920,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 64000,
+    },
+    cost: {
+      input: 0.4,
+      output: 2.5,
+      cache_read: 0.04,
+      cache_write: 0.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3.6-27b', {
+    name: 'Qwen 3.6 27B',
+    created: '2026-04-22',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1,
+          max: 131072,
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 65536,
+    },
+    cost: {
+      input: 0.6,
+      output: 3.6,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3.6-plus', {
+    name: 'Qwen 3.6 Plus',
+    created: '2026-04-02',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1,
+          max: 131072,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 64000,
+    },
+    cost: {
+      input: 0.5,
+      output: 3,
+      cache_read: 0.05,
+      cache_write: 0.625,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3.7-flash', {
+    name: 'Qwen 3.7 Flash',
+    created: '2026-07-15',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 991000,
+      output: 64000,
+    },
+    cost: {
+      input: 0.03,
+      output: 0.13,
+      cache_read: 0.006,
+      cache_write: 0.038,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3.7-max', {
+    name: 'Qwen 3.7 Max',
+    created: '2026-05-21',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1,
+          max: 262144,
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 991000,
+      output: 64000,
+    },
+    cost: {
+      input: 2.5,
+      output: 7.5,
+      cache_read: 0.5,
+      cache_write: 3.125,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3.7-plus', {
+    name: 'Qwen 3.7 Plus',
+    created: '2026-06-02',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1,
+          max: 262144,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 64000,
+    },
+    cost: {
+      input: 0.4,
+      output: 1.6,
+      cache_read: 0.08,
+      cache_write: 0.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3.8-2.4t-a95b', {
+    name: 'Qwen3.8 2.4T A95B',
+    created: '2026-08-12',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3.8-27b', {
+    name: 'Qwen3.8 27B',
+    created: '2026-08-14',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 0.5,
+      output: 3,
+      cache_read: 0.1,
+      cache_write: 0.625,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3.8-flash', {
+    name: 'Qwen 3.8 Flash',
+    created: '2026-08-26',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'xhigh'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 991000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.47,
+      cache_read: 0.016,
+      cache_write: 0.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3.8-max', {
+    name: 'Qwen 3.8 Max',
+    created: '2026-07-19',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'xhigh'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 0,
+          max: 262144,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3.8-max-0902', {
+    name: 'Qwen3.8 Max 0902',
+    created: '2026-09-02',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'xhigh'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 0,
+          max: 262144,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 991000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.25,
+      cache_write: 2.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3.8-max-prime', {
+    name: 'Qwen 3.8 Max Prime',
+    created: '2026-09-23',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 4,
+      output: 12,
+      cache_read: 0.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/alibaba/qwen3.8-omni-flash', {
+    name: 'Qwen 3.8 Omni Flash',
+    created: '2026-09-17',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.47,
+      cache_read: 0.016,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/amazon/nova-2-lite', {
+    name: 'Nova 2 Lite',
+    created: '2025-12-02',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65535,
+    },
+    cost: {
+      input: 0.3,
+      output: 2.5,
+      cache_read: 0.075,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/amazon/nova-lite', {
+    name: 'Nova Lite',
+    created: '2024-12-03',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 300000,
+      output: 10000,
+    },
+    cost: {
+      input: 0.06,
+      output: 0.24,
+      cache_read: 0.015,
+      cache_write: 0.06,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/amazon/nova-micro', {
+    name: 'Nova Micro',
+    created: '2024-12-03',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 10000,
+    },
+    cost: {
+      input: 0.035,
+      output: 0.14,
+      cache_read: 0.00875,
+      cache_write: 0.035,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/amazon/nova-pro', {
+    name: 'Nova Pro',
+    created: '2024-12-03',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 300000,
+      output: 10000,
+    },
+    cost: {
+      input: 0.8,
+      output: 3.2,
+      cache_read: 0.2,
+      cache_write: 0.8,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-3-haiku', {
+    name: 'Claude Haiku 3',
+    created: '2024-03-13',
+    knowledge: '2023-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 4096,
+    },
+    cost: {
+      input: 0.25,
+      output: 1.25,
+      cache_read: 0.03,
+      cache_write: 0.3,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-fable-5', {
+    name: 'Claude Fable 5',
+    created: '2026-06-09',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 1,
+      cache_write: 12.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-fable-5.1', {
+    name: 'Claude Fable 5.1',
+    created: '2026-09-01',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 0.25,
+      cache_write: 12.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-haiku-4.5', {
+    name: 'Claude Haiku 4.5',
+    created: '2025-10-15',
+    knowledge: '2025-02-28',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 1,
+      output: 5,
+      cache_read: 0.1,
+      cache_write: 1.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-opus-4', {
+    name: 'Claude Opus 4',
+    created: '2025-05-22',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 32000,
+    },
+    cost: {
+      input: 15,
+      output: 75,
+      cache_read: 1.5,
+      cache_write: 18.75,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-opus-4.5', {
+    name: 'Claude Opus 4.5',
+    created: '2025-11-24',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-opus-4.6', {
+    name: 'Claude Opus 4.6',
+    created: '2026-02-05',
+    knowledge: '2025-05-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-opus-4.7', {
+    name: 'Claude Opus 4.7',
+    created: '2026-04-16',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-opus-4.8', {
+    name: 'Claude Opus 4.8',
+    created: '2026-05-28',
+    knowledge: '2026-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-opus-4.8-fast', {
+    name: 'Claude Opus 4.8 (Fast)',
+    created: '2026-05-28',
+    knowledge: '2026-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 1,
+      cache_write: 12.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-opus-5', {
+    name: 'Claude Opus 5',
+    created: '2026-07-24',
+    knowledge: '2026-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-opus-5-fast', {
+    name: 'Claude Opus 5 (Fast)',
+    created: '2026-07-24',
+    knowledge: '2026-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 1,
+      cache_write: 12.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-opus-5.5', {
+    name: 'Claude Opus 5.5',
+    created: '2026-09-22',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 4,
+      output: 20,
+      cache_read: 0.2,
+      cache_write: 5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-opus-5.5-fast', {
+    name: 'Claude Opus 5.5 (Fast)',
+    created: '2026-09-22',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 8,
+      output: 40,
+      cache_read: 0.4,
+      cache_write: 10,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-sonnet-4', {
+    name: 'Claude Sonnet 4',
+    created: '2025-05-22',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 64000,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+      cache_write: 3.75,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-sonnet-4.5', {
+    name: 'Claude Sonnet 4.5',
+    created: '2025-09-29',
+    knowledge: '2025-07-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 64000,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+      cache_write: 3.75,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-sonnet-4.6', {
+    name: 'Claude Sonnet 4.6',
+    created: '2026-02-17',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+      cache_write: 3.75,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/anthropic/claude-sonnet-5', {
+    name: 'Claude Sonnet 5',
+    created: '2026-06-30',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/arcee-ai/trinity-large-thinking', {
+    name: 'Trinity Large Thinking',
+    created: '2026-04-01',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 262100,
+      output: 80000,
+    },
+    cost: {
+      input: 0.25,
+      output: 0.9,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/bytedance/seed-1.6', {
+    name: 'Seed 1.6',
+    created: '2025-09-01',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 32000,
+    },
+    cost: {
+      input: 0.25,
+      output: 2,
+      cache_read: 0.05,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/bytedance/seed-1.8', {
+    name: 'Seed 1.8',
+    created: '2025-09-01',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 32768,
+    },
+    cost: {
+      input: 0.25,
+      output: 2,
+      cache_read: 0.05,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/bytedance/seed-2.1-turbo', {
+    name: 'Seed 2.1 Turbo',
+    created: '2026-06-23',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 262144,
+    },
+    cost: {
+      input: 0.5,
+      output: 2.5,
+      cache_read: 0.1,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/cohere/command-a', {
+    name: 'Command A',
+    created: '2025-03-13',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 8000,
+    },
+    cost: {
+      input: 2.5,
+      output: 10,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/deepseek/deepseek-r1', {
+    name: 'DeepSeek-R1',
+    created: '2025-01-20',
+    knowledge: '2024-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 32768,
+    },
+    cost: {
+      input: 1.35,
+      output: 5.4,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/deepseek/deepseek-v3.1', {
+    name: 'DeepSeek-V3.1',
+    created: '2025-08-21',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 163840,
+      output: 128000,
+    },
+    cost: {
+      input: 0.25,
+      output: 0.95,
+      cache_read: 0.13,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/deepseek/deepseek-v3.1-terminus', {
+    name: 'DeepSeek V3.1 Terminus',
+    created: '2025-09-22',
+    knowledge: '2025-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 32768,
+    },
+    cost: {
+      input: 0.27,
+      output: 1,
+      cache_read: 0.135,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/deepseek/deepseek-v3.2', {
+    name: 'DeepSeek V3.2',
+    created: '2025-12-01',
+    knowledge: '2024-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 8000,
+    },
+    cost: {
+      input: 0.62,
+      output: 1.85,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/deepseek/deepseek-v3.2-thinking', {
+    name: 'DeepSeek V3.2 Thinking',
+    created: '2025-12-01',
+    knowledge: '2024-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 8000,
+    },
+    cost: {
+      input: 0.62,
+      output: 1.85,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/deepseek/deepseek-v4-flash', {
+    name: 'DeepSeek V4 Flash',
+    created: '2026-04-24',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 384000,
+    },
+    cost: {
+      input: 0.13,
+      output: 0.26,
+      cache_read: 0.028,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/deepseek/deepseek-v4-flash-0731', {
+    name: 'DeepSeek V4 Flash 0731',
+    created: '2026-07-31',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 384000,
+    },
+    cost: {
+      input: 0.076,
+      output: 0.153,
+      cache_read: 0.014,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/deepseek/deepseek-v4-flash-vision-exp', {
+    name: 'DeepSeek V4 Flash Vision Exp',
+    created: '2026-08-21',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 1048576,
+    },
+    cost: {
+      input: 0.22,
+      output: 0.66,
+      cache_read: 0.007,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/deepseek/deepseek-v4-pro', {
+    name: 'DeepSeek V4 Pro',
+    created: '2026-04-24',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 384000,
+    },
+    cost: {
+      input: 0.66,
+      output: 1.98,
+      cache_read: 0.022,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/deepseek/deepseek-v4-pro-0813', {
+    name: 'DeepSeek V4 Pro 0813',
+    created: '2026-08-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 384000,
+    },
+    cost: {
+      input: 0.66,
+      output: 1.98,
+      cache_read: 0.066,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/deepseek/deepseek-v4.1-flash', {
+    name: 'DeepSeek V4.1 Flash',
+    created: '2026-09-10',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 32768,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.007,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemini-2.5-flash', {
+    name: 'Gemini 2.5 Flash',
+    created: '2025-06-17',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 0,
+          max: 24576,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.3,
+      output: 2.5,
+      cache_read: 0.03,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemini-2.5-flash-lite', {
+    name: 'Gemini 2.5 Flash Lite',
+    created: '2025-06-17',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65535,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.4,
+      cache_read: 0.01,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemini-2.5-pro', {
+    name: 'Gemini 2.5 Pro',
+    created: '2025-06-17',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+          min: 128,
+          max: 32768,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 1.25,
+      output: 10,
+      cache_read: 0.125,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemini-3-flash', {
+    name: 'Gemini 3 Flash',
+    created: '2025-12-17',
+    knowledge: '2025-03',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65000,
+    },
+    cost: {
+      input: 0.5,
+      output: 3,
+      cache_read: 0.05,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemini-3.1-flash-lite', {
+    name: 'Gemini 3.1 Flash Lite',
+    created: '2026-05-07',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65000,
+    },
+    cost: {
+      input: 0.25,
+      output: 1.5,
+      cache_read: 0.03,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemini-3.1-pro-preview', {
+    name: 'Gemini 3.1 Pro Preview',
+    created: '2026-02-19',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 64000,
+    },
+    cost: {
+      input: 2,
+      output: 12,
+      cache_read: 0.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemini-3.5-flash', {
+    name: 'Gemini 3.5 Flash',
+    created: '2026-05-19',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 64000,
+    },
+    cost: {
+      input: 1.5,
+      output: 9,
+      cache_read: 0.15,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemini-3.5-flash-lite', {
+    name: 'Gemini 3.5 Flash Lite',
+    created: '2026-07-21',
+    knowledge: '2026-03',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65000,
+    },
+    cost: {
+      input: 0.3,
+      output: 2.5,
+      cache_read: 0.03,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemini-3.5-transcribe', {
+    name: 'Gemini 3.5 Transcribe',
+    created: '2026-08-26',
+    modalities: {
+      input: ['audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 0,
+      output: 0,
+    },
+    cost: {
+      input: 2,
+      output: 12,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemini-3.6-flash', {
+    name: 'Gemini 3.6 Flash',
+    created: '2026-07-21',
+    knowledge: '2026-03',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 64000,
+    },
+    cost: {
+      input: 0.75,
+      output: 3.75,
+      cache_read: 0.075,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemini-3.7-flash', {
+    name: 'Gemini 3.7 Flash',
+    created: '2026-08-13',
+    knowledge: '2026-03',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65535,
+    },
+    cost: {
+      input: 0.75,
+      output: 3.75,
+      cache_read: 0.075,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemini-3.8-flash', {
+    name: 'Gemini 3.8 Flash',
+    created: '2026-09-02',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65535,
+    },
+    cost: {
+      input: 0.75,
+      output: 3.75,
+      cache_read: 0.075,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemini-omni-flash-preview', {
+    name: 'Gemini Omni Flash Preview',
+    created: '2026-06-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 57920,
+    },
+    cost: {
+      input: 1.5,
+      output: 9,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemma-4-26b-a4b-it', {
+    name: 'Gemma 4 26B A4B IT',
+    created: '2026-04-02',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+      cache_read: 0.015,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/google/gemma-4-31b-it', {
+    name: 'Gemma 4 31B IT',
+    created: '2026-04-02',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 0.14,
+      output: 0.4,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/inception/mercury-2', {
+    name: 'Mercury 2',
+    created: '2026-02-24',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 50000,
+    },
+    cost: {
+      input: 0.25,
+      output: 0.75,
+      cache_read: 0.024999999999999998,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/inception/mercury-2.5', {
+    name: 'Mercury 2.5',
+    created: '2026-09-08',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 260000,
+      output: 65536,
+    },
+    cost: {
+      input: 0.04,
+      output: 0.15,
+      cache_read: 0.004,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/inception/mercury-coder-small', {
+    name: 'Mercury Coder Small Beta',
+    created: '2025-02-26',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 32000,
+      output: 16384,
+    },
+    cost: {
+      input: 0.25,
+      output: 1,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/inclusionai/ling-3.0-flash', {
+    name: 'Ling 3.0 Flash',
+    created: '2026-08-06',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 32000,
+    },
+    cost: {
+      input: 0.021,
+      output: 0.063,
+      cache_read: 0.0042,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/inclusionai/ling-3.0-flash-fin', {
+    name: 'Ling 3.0 Flash Fin',
+    created: '2026-08-27',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 32000,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/inclusionai/ling-3.0-flash-fin-free', {
+    name: 'Ling 3.0 Flash Fin (Free)',
+    created: '2026-08-27',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 32000,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/inclusionai/ling-3.0-flash-sante', {
+    name: 'Ling 3.0 Flash Sante',
+    created: '2026-09-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 32000,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/inclusionai/ling-3.0-flash-sante-free', {
+    name: 'Ling 3.0 Flash Sante (Free)',
+    created: '2026-09-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 32000,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/inclusionai/ling-3.0-flash-vl', {
+    name: 'Ling 3.0 Flash VL',
+    created: '2026-09-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 32000,
+    },
+    cost: {
+      input: 0.075,
+      output: 0.22,
+      cache_read: 0.015,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/inference-net/schematron-v2-small', {
+    name: 'Schematron V2 Small',
+    created: '2026-04-16',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 4096,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.23,
+      cache_read: 0.05,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/inference-net/schematron-v2-turbo', {
+    name: 'Schematron V2 Turbo',
+    created: '2026-04-16',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 8192,
+    },
+    cost: {
+      input: 0.03,
+      output: 0.15,
+      cache_read: 0.03,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/interfaze/interfaze-beta', {
+    name: 'Interfaze Beta',
+    created: '2025-10-07',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 32000,
+    },
+    cost: {
+      input: 1.5,
+      output: 3.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/meta/llama-3.1-70b', {
+    name: 'Llama 3.1 70B Instruct',
+    created: '2024-07-23',
+    knowledge: '2023-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 8192,
+    },
+    cost: {
+      input: 0.72,
+      output: 0.72,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/meta/llama-3.1-8b', {
+    name: 'Llama 3.1 8B Instruct',
+    created: '2024-07-23',
+    knowledge: '2023-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 8192,
+    },
+    cost: {
+      input: 0.22,
+      output: 0.22,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/meta/llama-3.3-70b', {
+    name: 'Llama-3.3-70B-Instruct',
+    created: '2024-12-06',
+    knowledge: '2023-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 4096,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/meta/llama-4-maverick', {
+    name: 'Llama-4-Maverick-17B-128E-Instruct-FP8',
+    created: '2025-04-05',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 4096,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/meta/llama-4-scout', {
+    name: 'Llama-4-Scout-17B-16E-Instruct-FP8',
+    created: '2025-04-05',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 4096,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/meta/muse-glimmer-30b', {
+    name: 'Muse Glimmer 30B',
+    created: '2026-08-10',
+    knowledge: '2026-01-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 131072,
+    },
+    cost: {
+      input: 0.35,
+      output: 1.5,
+      cache_read: 0.04,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/meta/muse-spark-1.1', {
+    name: 'Muse Spark 1.1',
+    created: '2026-04-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 1048576,
+    },
+    cost: {
+      input: 1.25,
+      output: 4.25,
+      cache_read: 0.15,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/meta/muse-spark-1.2', {
+    name: 'Muse Spark 1.2',
+    created: '2026-08-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 1048576,
+    },
+    cost: {
+      input: 1.25,
+      output: 4.25,
+      cache_read: 0.15,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/meta/muse-spark-1.2-contributor', {
+    name: 'Muse Spark 1.2 Contributor',
+    created: '2026-08-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 1048576,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.2,
+      cache_read: 0.002,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/meta/muse-spark-1.3', {
+    name: 'Muse Spark 1.3',
+    created: '2026-09-02',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 1048576,
+    },
+    cost: {
+      input: 1.25,
+      output: 4.25,
+      cache_read: 0.15,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/meta/muse-spark-1.3-contributor', {
+    name: 'Muse Spark 1.3 Contributor',
+    created: '2026-09-02',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 1048576,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.2,
+      cache_read: 0.002,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/minimax/minimax-m2', {
+    name: 'MiniMax M2',
+    created: '2025-10-27',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 205000,
+      output: 196608,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.03,
+      cache_write: 0.375,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/minimax/minimax-m2.1', {
+    name: 'MiniMax M2.1',
+    created: '2025-12-23',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 204800,
+      output: 131072,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.03,
+      cache_write: 0.375,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/minimax/minimax-m2.1-lightning', {
+    name: 'MiniMax M2.1 Lightning',
+    created: '2025-12-23',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 204800,
+      output: 131072,
+    },
+    cost: {
+      input: 0.3,
+      output: 2.4,
+      cache_read: 0.03,
+      cache_write: 0.375,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/minimax/minimax-m2.5', {
+    name: 'MiniMax M2.5',
+    created: '2026-02-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 204800,
+      output: 131000,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.03,
+      cache_write: 0.375,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/minimax/minimax-m2.5-highspeed', {
+    name: 'MiniMax M2.5 High Speed',
+    created: '2026-02-13',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 204800,
+      output: 131000,
+    },
+    cost: {
+      input: 0.6,
+      output: 2.4,
+      cache_read: 0.03,
+      cache_write: 0.375,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/minimax/minimax-m2.7', {
+    name: 'Minimax M2.7',
+    created: '2026-03-18',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 204800,
+      output: 131000,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.06,
+      cache_write: 0.375,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/minimax/minimax-m2.7-highspeed', {
+    name: 'MiniMax M2.7 High Speed',
+    created: '2026-03-18',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 204800,
+      output: 131100,
+    },
+    cost: {
+      input: 0.6,
+      output: 2.4,
+      cache_read: 0.06,
+      cache_write: 0.375,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/minimax/minimax-m3', {
+    name: 'MiniMax M3',
+    created: '2026-06-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 512000,
+      output: 512000,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.06,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/mistral/codestral', {
+    name: 'Codestral (latest)',
+    created: '2024-05-29',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 4096,
+    },
+    cost: {
+      input: 0.3,
+      output: 0.9,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/mistral/ministral-14b', {
+    name: 'Ministral 14B',
+    created: '2025-12-02',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 256000,
+    },
+    cost: {
+      input: 0.2,
+      output: 0.2,
+      cache_read: 0.02,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/mistral/ministral-3b', {
+    name: 'Ministral 3B (latest)',
+    created: '2024-10-01',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.04,
+      output: 0.04,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/mistral/ministral-8b', {
+    name: 'Ministral 8B (latest)',
+    created: '2024-10-01',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.1,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/mistral/mistral-large-3', {
+    name: 'Mistral Large 3',
+    created: '2025-12-02',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 256000,
+    },
+    cost: {
+      input: 0.5,
+      output: 1.5,
+      cache_read: 0.05,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/mistral/mistral-medium-3.5', {
+    name: 'Mistral Medium Latest',
+    created: '2026-04-29',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 256000,
+    },
+    cost: {
+      input: 1.5,
+      output: 7.5,
+      cache_read: 0.15,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/mistral/mistral-nemo', {
+    name: 'Mistral Nemo',
+    created: '2024-07-18',
+    knowledge: '2024-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 60288,
+      output: 16000,
+    },
+    cost: {
+      input: 0.04,
+      output: 0.17,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/mistral/mistral-small', {
+    name: 'Mistral Small (latest)',
+    created: '2024-09-17',
+    knowledge: '2025-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 4000,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+      cache_read: 0.015,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/mixedbread/toast-1', {
+    name: 'Toast 1',
+    created: '2026-08-13',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131000,
+      output: 4000,
+    },
+    cost: {
+      input: 0.3,
+      output: 0.72,
+      cache_read: 0.036,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/moonshotai/kimi-k2', {
+    name: 'Kimi K2 Instruct',
+    created: '2025-07-11',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 131072,
+    },
+    cost: {
+      input: 0.57,
+      output: 2.3,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/moonshotai/kimi-k2-thinking', {
+    name: 'Kimi K2 Thinking',
+    created: '2025-11-06',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 216144,
+      output: 216144,
+    },
+    cost: {
+      input: 0.47,
+      output: 2,
+      cache_read: 0.141,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/moonshotai/kimi-k2.5', {
+    name: 'Kimi K2.5',
+    created: '2026-01',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 256000,
+    },
+    cost: {
+      input: 0.6,
+      output: 3,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/moonshotai/kimi-k2.6', {
+    name: 'Kimi K2.6',
+    created: '2026-04-21',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262000,
+      output: 262000,
+    },
+    cost: {
+      input: 0.95,
+      output: 4,
+      cache_read: 0.16,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/moonshotai/kimi-k2.7-code', {
+    name: 'Kimi K2.7 Code',
+    created: '2026-06-12',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 32768,
+    },
+    cost: {
+      input: 0.95,
+      output: 4,
+      cache_read: 0.16,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/moonshotai/kimi-k2.7-code-highspeed', {
+    name: 'Kimi K2.7 Code High Speed',
+    created: '2026-06-12',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 1.9,
+      output: 8,
+      cache_read: 0.38,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/moonshotai/kimi-k3', {
+    name: 'Kimi K3',
+    created: '2026-07-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/moonshotai/kimi-k3-fast', {
+    name: 'Kimi K3 Fast',
+    created: '2026-07-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 4.5,
+      output: 22.5,
+      cache_read: 0.45,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/morph/morph-v3-fast', {
+    name: 'Morph v3 Fast',
+    created: '2024-08-15',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 16000,
+      output: 16000,
+    },
+    cost: {
+      input: 0.8,
+      output: 1.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/morph/morph-v3-large', {
+    name: 'Morph v3 Large',
+    created: '2024-08-15',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 32000,
+      output: 32000,
+    },
+    cost: {
+      input: 0.9,
+      output: 1.9,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/nvidia/nemotron-3-nano-30b-a3b', {
+    name: 'Nemotron 3 Nano 30B A3B',
+    created: '2025-12-15',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 262144,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.2,
+      cache_read: 0.025,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/nvidia/nemotron-3-super-120b-a12b', {
+    name: 'NVIDIA Nemotron 3 Super 120B A12B',
+    created: '2026-03-11',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 32000,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.65,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/nvidia/nemotron-3-ultra-550b-a55b', {
+    name: 'Nemotron 3 Ultra',
+    created: '2026-06-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65000,
+    },
+    cost: {
+      input: 0.6,
+      output: 2.4,
+      cache_read: 0.12,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/nvidia/nemotron-3.5-lightning', {
+    name: 'Nemotron 3.5 Lightning 30B',
+    created: '2026-08-11',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1,
+          max: 32768,
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.2,
+      cache_read: 0.01,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/nvidia/nemotron-nano-12b-v2-vl', {
+    name: 'Nvidia Nemotron Nano 12B V2 VL',
+    created: '2025-10-28',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 131072,
+    },
+    cost: {
+      input: 0.2,
+      output: 0.6,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/nvidia/nemotron-nano-9b-v2', {
+    name: 'Nvidia Nemotron Nano 9B V2',
+    created: '2025-08-18',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 131072,
+    },
+    cost: {
+      input: 0.06,
+      output: 0.23,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-3.5-turbo', {
+    name: 'GPT-3.5 Turbo',
+    created: '2023-03-01',
+    knowledge: '2021-09',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 16385,
+      output: 4096,
+    },
+    cost: {
+      input: 0.5,
+      output: 1.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-4.1', {
+    name: 'GPT-4.1',
+    created: '2025-04-14',
+    knowledge: '2024-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1047576,
+      output: 32768,
+    },
+    cost: {
+      input: 2,
+      output: 8,
+      cache_read: 0.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-4.1-fast', {
+    name: 'GPT-4.1 (Fast)',
+    created: '2025-04-14',
+    knowledge: '2024-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1047576,
+      output: 32768,
+    },
+    cost: {
+      input: 3.5,
+      output: 14,
+      cache_read: 0.875,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-4.1-mini', {
+    name: 'GPT-4.1 mini',
+    created: '2025-04-14',
+    knowledge: '2024-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1047576,
+      output: 32768,
+    },
+    cost: {
+      input: 0.4,
+      output: 1.6,
+      cache_read: 0.1,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-4.1-mini-fast', {
+    name: 'GPT-4.1 mini (Fast)',
+    created: '2025-04-14',
+    knowledge: '2024-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1047576,
+      output: 32768,
+    },
+    cost: {
+      input: 0.7,
+      output: 2.8,
+      cache_read: 0.175,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-4.1-nano-fast', {
+    name: 'GPT-4.1 nano (Fast)',
+    created: '2025-04-14',
+    knowledge: '2024-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1047576,
+      output: 32768,
+    },
+    cost: {
+      input: 0.2,
+      output: 0.8,
+      cache_read: 0.05,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-4o', {
+    name: 'GPT-4o',
+    created: '2024-05-13',
+    knowledge: '2023-09',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16384,
+    },
+    cost: {
+      input: 2.5,
+      output: 10,
+      cache_read: 1.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-4o-fast', {
+    name: 'GPT-4o (Fast)',
+    created: '2024-05-13',
+    knowledge: '2023-09',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16384,
+    },
+    cost: {
+      input: 4.25,
+      output: 17,
+      cache_read: 2.125,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-4o-mini', {
+    name: 'GPT-4o mini',
+    created: '2024-07-18',
+    knowledge: '2023-09',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16384,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+      cache_read: 0.075,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-4o-mini-fast', {
+    name: 'GPT-4o mini (Fast)',
+    created: '2024-07-18',
+    knowledge: '2023-09',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16384,
+    },
+    cost: {
+      input: 0.25,
+      output: 1,
+      cache_read: 0.125,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-4o-mini-transcribe', {
+    name: 'GPT-4o mini Transcribe',
+    created: '2024-03-13',
+    modalities: {
+      input: ['audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 0,
+      output: 0,
+    },
+    cost: {
+      input: 1.25,
+      output: 5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-4o-transcribe', {
+    name: 'GPT-4o Transcribe',
+    created: '2024-03-13',
+    modalities: {
+      input: ['audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 0,
+      output: 0,
+    },
+    cost: {
+      input: 2.5,
+      output: 10,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5', {
+    name: 'GPT-5',
+    created: '2025-08-07',
+    knowledge: '2024-09-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.25,
+      output: 10,
+      cache_read: 0.125,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5-codex', {
+    name: 'GPT-5-Codex',
+    created: '2025-09-15',
+    knowledge: '2024-09-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.25,
+      output: 10,
+      cache_read: 0.13,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5-fast', {
+    name: 'GPT-5 (Fast)',
+    created: '2025-08-07',
+    knowledge: '2024-09-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 2.5,
+      output: 20,
+      cache_read: 0.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5-mini', {
+    name: 'GPT-5 Mini',
+    created: '2025-08-07',
+    knowledge: '2024-05-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.25,
+      output: 2,
+      cache_read: 0.025,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5-mini-fast', {
+    name: 'GPT-5 mini (Fast)',
+    created: '2025-08-07',
+    knowledge: '2024-05-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.45,
+      output: 3.6,
+      cache_read: 0.045,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5-nano', {
+    name: 'GPT-5 Nano',
+    created: '2025-08-07',
+    knowledge: '2024-05-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.4,
+      cache_read: 0.005,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5-pro', {
+    name: 'GPT-5 pro',
+    created: '2025-10-06',
+    knowledge: '2024-09-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['high'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 272000,
+    },
+    cost: {
+      input: 15,
+      output: 120,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.1-codex', {
+    name: 'GPT-5.1-Codex',
+    created: '2025-11-13',
+    knowledge: '2024-09-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.25,
+      output: 10,
+      cache_read: 0.13,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.1-codex-max', {
+    name: 'GPT 5.1 Codex Max',
+    created: '2025-11-13',
+    knowledge: '2024-09-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.25,
+      output: 10,
+      cache_read: 0.125,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.1-codex-mini', {
+    name: 'GPT-5.1 Codex mini',
+    created: '2025-11-13',
+    knowledge: '2024-09-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.25,
+      output: 2,
+      cache_read: 0.03,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.1-thinking', {
+    name: 'GPT 5.1 Thinking',
+    created: '2025-11-12',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.25,
+      output: 10,
+      cache_read: 0.125,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.1-thinking-fast', {
+    name: 'GPT 5.1 Thinking (Fast)',
+    created: '2025-11-12',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 2.5,
+      output: 20,
+      cache_read: 0.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.2', {
+    name: 'GPT-5.2',
+    created: '2025-12-11',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.75,
+      output: 14,
+      cache_read: 0.175,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.2-codex', {
+    name: 'GPT-5.2-Codex',
+    created: '2025-12-11',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.75,
+      output: 14,
+      cache_read: 0.175,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.2-fast', {
+    name: 'GPT 5.2 (Fast)',
+    created: '2025-12-11',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 3.5,
+      output: 28,
+      cache_read: 0.35,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.2-pro', {
+    name: 'GPT 5.2 ',
+    created: '2025-12-11',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 21,
+      output: 168,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.3-codex', {
+    name: 'GPT 5.3 Codex',
+    created: '2026-02-05',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.75,
+      output: 14,
+      cache_read: 0.175,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.3-codex-fast', {
+    name: 'GPT 5.3 Codex (Fast)',
+    created: '2026-02-05',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 3.5,
+      output: 28,
+      cache_read: 0.35,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.4', {
+    name: 'GPT 5.4',
+    created: '2026-03-05',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2.5,
+      output: 15,
+      cache_read: 0.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.4-fast', {
+    name: 'GPT 5.4 (Fast)',
+    created: '2026-03-05',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 30,
+      cache_read: 0.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.4-mini', {
+    name: 'GPT 5.4 Mini',
+    created: '2026-03-17',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.75,
+      output: 4.5,
+      cache_read: 0.075,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.4-mini-fast', {
+    name: 'GPT 5.4 Mini (Fast)',
+    created: '2026-03-17',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.5,
+      output: 9,
+      cache_read: 0.15,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.4-nano', {
+    name: 'GPT 5.4 Nano',
+    created: '2026-03-17',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.2,
+      output: 1.25,
+      cache_read: 0.02,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.4-pro', {
+    name: 'GPT 5.4 Pro',
+    created: '2026-03-05',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 30,
+      output: 180,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.5', {
+    name: 'GPT 5.5',
+    created: '2026-04-23',
+    knowledge: '2025-12-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 30,
+      cache_read: 0.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.5-fast', {
+    name: 'GPT 5.5 (Fast)',
+    created: '2026-04-23',
+    knowledge: '2025-12-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 12.5,
+      output: 75,
+      cache_read: 1.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.5-pro', {
+    name: 'GPT 5.5 Pro',
+    created: '2026-04-23',
+    knowledge: '2025-12-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 30,
+      output: 180,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.6-luna', {
+    name: 'GPT 5.6 Luna',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.2,
+      output: 1.2,
+      cache_read: 0.02,
+      cache_write: 0.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.6-luna-fast', {
+    name: 'GPT 5.6 Luna (Fast)',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.4,
+      output: 2.4,
+      cache_read: 0.04,
+      cache_write: 0.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.6-sol', {
+    name: 'GPT 5.6 Sol',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 4,
+      output: 20,
+      cache_read: 0.4,
+      cache_write: 5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.6-sol-fast', {
+    name: 'GPT 5.6 Sol (Fast)',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 8,
+      output: 40,
+      cache_read: 0.8,
+      cache_write: 10,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.6-terra', {
+    name: 'GPT 5.6 Terra',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 12,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-5.6-terra-fast', {
+    name: 'GPT 5.6 Terra (Fast)',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 4,
+      output: 24,
+      cache_read: 0.4,
+      cache_write: 5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-6-astra', {
+    name: 'GPT-6 Astra',
+    created: '2026-09-04',
+    knowledge: '2026-04-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 1,
+      cache_write: 12.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-6-astra-fast', {
+    name: 'GPT-6 Astra (Fast)',
+    created: '2026-09-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 20,
+      output: 100,
+      cache_read: 2,
+      cache_write: 25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-6-luna', {
+    name: 'GPT-6 Luna',
+    created: '2026-09-22',
+    knowledge: '2026-05-18',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.5,
+      cache_read: 0.01,
+      cache_write: 0.125,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-6-luna-fast', {
+    name: 'GPT-6 Luna (Fast)',
+    created: '2026-09-22',
+    knowledge: '2026-05-18',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.2,
+      output: 1,
+      cache_read: 0.02,
+      cache_write: 0.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-6-sol', {
+    name: 'GPT-6 Sol',
+    created: '2026-09-22',
+    knowledge: '2026-04-20',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-6-sol-fast', {
+    name: 'GPT-6 Sol (Fast)',
+    created: '2026-09-22',
+    knowledge: '2026-04-20',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 4,
+      output: 20,
+      cache_read: 0.4,
+      cache_write: 5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-oss-120b', {
+    name: 'GPT OSS 120B',
+    created: '2025-08-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 131072,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.5,
+      cache_read: 0.1,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-oss-20b', {
+    name: 'GPT OSS 20B',
+    created: '2025-08-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 8192,
+    },
+    cost: {
+      input: 0.03,
+      output: 0.14,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-oss-safeguard-120b', {
+    name: 'GPT OSS Safeguard 120B',
+    created: '2025-10-29',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16000,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/gpt-oss-safeguard-20b', {
+    name: 'gpt-oss-safeguard-20b',
+    created: '2025-10-29',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16000,
+    },
+    cost: {
+      input: 0.07,
+      output: 0.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/o3', {
+    name: 'o3',
+    created: '2025-04-16',
+    knowledge: '2024-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 100000,
+    },
+    cost: {
+      input: 2,
+      output: 8,
+      cache_read: 0.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/o3-fast', {
+    name: 'o3 (Fast)',
+    created: '2025-04-16',
+    knowledge: '2024-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 100000,
+    },
+    cost: {
+      input: 3.5,
+      output: 14,
+      cache_read: 0.875,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/o3-pro', {
+    name: 'o3 Pro',
+    created: '2025-06-10',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 100000,
+    },
+    cost: {
+      input: 20,
+      output: 80,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/openai/o4-mini-fast', {
+    name: 'o4-mini (Fast)',
+    created: '2025-04-16',
+    knowledge: '2024-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 100000,
+    },
+    cost: {
+      input: 2,
+      output: 8,
+      cache_read: 0.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/poolside/laguna-s-2.1', {
+    name: 'Laguna S 2.1',
+    created: '2026-07-21',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.2,
+      cache_read: 0.01,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/poolside/laguna-s-2.1-free', {
+    name: 'Laguna S 2.1 Free',
+    created: '2026-07-21',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 32768,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/sakana/fugu-max', {
+    name: 'Fugu Max',
+    created: '2026-09-10',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 1000000,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.25,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/sakana/fugu-ultra', {
+    name: 'Fugu Ultra',
+    created: '2026-06-15',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 1000000,
+    },
+    cost: {
+      input: 5,
+      output: 30,
+      cache_read: 0.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/sakana/fugu-ultra-v2', {
+    name: 'Fugu Ultra v2',
+    created: '2026-09-10',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 1000000,
+    },
+    cost: {
+      input: 5,
+      output: 30,
+      cache_read: 0.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/sakana/namazu', {
+    name: 'Sakana Namazu',
+    created: '2026-08-03',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 256000,
+    },
+    cost: {
+      input: 0.95,
+      output: 4,
+      cache_read: 0.15,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/spacexai/grok-4.1-fast-non-reasoning', {
+    name: 'Grok 4.1 Fast Non-Reasoning',
+    created: '2025-11-19',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 1000000,
+    },
+    cost: {
+      input: 0.2,
+      output: 0.5,
+      cache_read: 0.05,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/spacexai/grok-4.1-fast-reasoning', {
+    name: 'Grok 4.1 Fast Reasoning',
+    created: '2025-11-19',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 1000000,
+    },
+    cost: {
+      input: 0.2,
+      output: 0.5,
+      cache_read: 0.05,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/spacexai/grok-4.20-multi-agent', {
+    name: 'Grok 4.20 Multi-Agent',
+    created: '2026-03-10',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 2000000,
+      output: 2000000,
+    },
+    cost: {
+      input: 1.25,
+      output: 2.5,
+      cache_read: 0.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/spacexai/grok-4.20-multi-agent-beta', {
+    name: 'Grok 4.20 Multi Agent Beta',
+    created: '2026-03-11',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 2000000,
+      output: 2000000,
+    },
+    cost: {
+      input: 1.25,
+      output: 2.5,
+      cache_read: 0.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/spacexai/grok-4.20-non-reasoning', {
+    name: 'Grok 4.20 Non-Reasoning',
+    created: '2026-03-10',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 2000000,
+      output: 2000000,
+    },
+    cost: {
+      input: 1.25,
+      output: 2.5,
+      cache_read: 0.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/spacexai/grok-4.20-non-reasoning-beta', {
+    name: 'Grok 4.20 Beta Non-Reasoning',
+    created: '2026-03-11',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 2000000,
+      output: 2000000,
+    },
+    cost: {
+      input: 1.25,
+      output: 2.5,
+      cache_read: 0.4,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/spacexai/grok-4.20-reasoning', {
+    name: 'Grok 4.20 Reasoning',
+    created: '2026-03-10',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 2000000,
+      output: 2000000,
+    },
+    cost: {
+      input: 1.25,
+      output: 2.5,
+      cache_read: 0.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/spacexai/grok-4.20-reasoning-beta', {
+    name: 'Grok 4.20 Beta Reasoning',
+    created: '2026-03-11',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 2000000,
+      output: 2000000,
+    },
+    cost: {
+      input: 1.25,
+      output: 2.5,
+      cache_read: 0.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/spacexai/grok-4.3', {
+    name: 'Grok 4.3',
+    created: '2026-04-17',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 1000000,
+    },
+    cost: {
+      input: 1.25,
+      output: 2.5,
+      cache_read: 0.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/spacexai/grok-4.5', {
+    name: 'Grok 4.5',
+    created: '2026-07-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 500000,
+      output: 500000,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.3,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/spacexai/grok-4.6', {
+    name: 'Grok 4.6',
+    created: '2026-08-12',
+    knowledge: '2026-02-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 500000,
+      output: 500000,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.5,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/spacexai/grok-4.7', {
+    name: 'Grok 4.7',
+    created: '2026-09-21',
+    knowledge: '2026-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 500000,
+      output: 500000,
+    },
+    cost: {
+      input: 1.2,
+      output: 3.6,
+      cache_read: 0.3,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/spacexai/grok-build-0.1', {
+    name: 'Grok Build 0.1',
+    created: '2026-04-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 256000,
+    },
+    cost: {
+      input: 1,
+      output: 2,
+      cache_read: 0.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/stepfun/step-3.5-flash', {
+    name: 'StepFun 3.5 Flash',
+    created: '2026-01-29',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262114,
+      output: 262114,
+    },
+    cost: {
+      input: 0.09,
+      output: 0.3,
+      cache_read: 0.02,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/stepfun/step-3.7-flash', {
+    name: 'Step 3.7 Flash',
+    created: '2026-05-29',
+    knowledge: '2026-03-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 256000,
+    },
+    cost: {
+      input: 0.2,
+      output: 1.15,
+      cache_read: 0.04,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/stepfun/step-5-preview', {
+    name: 'Step 5 Preview',
+    created: '2026-09-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 1000000,
+    },
+    cost: {
+      input: 1,
+      output: 2.7,
+      cache_read: 0.05,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/tencent/hy-mt2-lite', {
+    name: 'Tencent Hy-MT2-Lite',
+    created: '2026-06-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 8000,
+      output: 4000,
+    },
+    cost: {
+      input: 0.044,
+      output: 0.177,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/tencent/hy-mt2-plus', {
+    name: 'Tencent Hy-MT2-Plus',
+    created: '2026-06-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 8000,
+      output: 4000,
+    },
+    cost: {
+      input: 0.074,
+      output: 0.295,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/tencent/hy-mt2-pro', {
+    name: 'Tencent Hy-MT2-Pro',
+    created: '2026-05-21',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 8000,
+      output: 4000,
+    },
+    cost: {
+      input: 0.074,
+      output: 0.295,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/tencent/hy3', {
+    name: 'Hy3',
+    created: '2026-07-06',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 262144,
+    },
+    cost: {
+      input: 0.14,
+      output: 0.58,
+      cache_read: 0.035,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/tencent/hy4-preview', {
+    name: 'Tencent Hy4 Preview',
+    created: '2026-08-28',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1024000,
+      output: 64000,
+    },
+    cost: {
+      input: 0.834,
+      output: 2.501,
+      cache_read: 0.042,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/thinkingmachines/inkling', {
+    name: 'Inkling',
+    created: '2026-07-15',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 256000,
+    },
+    cost: {
+      input: 1,
+      output: 4.05,
+      cache_read: 0.17,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/thinkingmachines/inkling-small', {
+    name: 'Inkling Small',
+    created: '2026-07-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 1000000,
+    },
+    cost: {
+      input: 0.5,
+      output: 1.2,
+      cache_read: 0.1,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/xiaomi/mimo-v2.5', {
+    name: 'MiMo M2.5',
+    created: '2026-04-22',
+    knowledge: '2024-12',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 131100,
+    },
+    cost: {
+      input: 0.14,
+      output: 0.28,
+      cache_read: 0.0028,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/xiaomi/mimo-v2.5-pro', {
+    name: 'MiMo V2.5 Pro',
+    created: '2026-04-22',
+    knowledge: '2024-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 131000,
+    },
+    cost: {
+      input: 0.435,
+      output: 0.87,
+      cache_read: 0.0036,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/xiaomi/mimo-v2.6-flash', {
+    name: 'MiMo V2.6 Flash',
+    created: '2026-09-22',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 0.14,
+      output: 0.28,
+      cache_read: 0.0028,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/xiaomi/mimo-v2.6-pro', {
+    name: 'MiMo V2.6 Pro',
+    created: '2026-09-22',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 0.435,
+      output: 0.87,
+      cache_read: 0.0036,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/xiaomi/mimo-v2.6-pro-ultraspeed', {
+    name: 'MiMo V2.6 Pro UltraSpeed',
+    created: '2026-09-21',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 4.35,
+      output: 8.7,
+      cache_read: 0.036,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-4.5', {
+    name: 'GLM 4.5',
+    created: '2025-07-28',
+    knowledge: '2025-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 96000,
+    },
+    cost: {
+      input: 0.6,
+      output: 2.2,
+      cache_read: 0.11,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-4.5-air', {
+    name: 'GLM 4.5 Air',
+    created: '2025-07-28',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 96000,
+    },
+    cost: {
+      input: 0.2,
+      output: 1.1,
+      cache_read: 0.03,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-4.5v', {
+    name: 'GLM 4.5V',
+    created: '2025-08-11',
+    knowledge: '2025-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 66000,
+      output: 16000,
+    },
+    cost: {
+      input: 0.6,
+      output: 1.8,
+      cache_read: 0.11,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-4.6', {
+    name: 'GLM 4.6',
+    created: '2025-09-30',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 96000,
+    },
+    cost: {
+      input: 0.6,
+      output: 2.2,
+      cache_read: 0.11,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-4.7', {
+    name: 'GLM 4.7',
+    created: '2025-12-22',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 120000,
+    },
+    cost: {
+      input: 0.6,
+      output: 2.2,
+      cache_read: 0.12,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-4.7-flash', {
+    name: 'GLM 4.7 Flash',
+    created: '2026-01-19',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 131000,
+    },
+    cost: {
+      input: 0.07,
+      output: 0.4,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-4.7-flashx', {
+    name: 'GLM 4.7 FlashX',
+    created: '2026-01-19',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.06,
+      output: 0.4,
+      cache_read: 0.01,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-5', {
+    name: 'GLM-5',
+    created: '2026-02-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 202800,
+      output: 131100,
+    },
+    cost: {
+      input: 1,
+      output: 3.2,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-5-turbo', {
+    name: 'GLM 5 Turbo',
+    created: '2026-03-16',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 202800,
+      output: 131072,
+    },
+    cost: {
+      input: 1.2,
+      output: 4,
+      cache_read: 0.24,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-5.1', {
+    name: 'GLM 5.1',
+    created: '2026-04-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 202800,
+      output: 64000,
+    },
+    cost: {
+      input: 1.4,
+      output: 4.4,
+      cache_read: 0.26,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-5.2', {
+    name: 'GLM 5.2',
+    created: '2026-06-13',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.8,
+      output: 2.55,
+      cache_read: 0.16,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-5.2-fast', {
+    name: 'GLM 5.2 Fast',
+    created: '2026-06-13',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2.1,
+      output: 6.6,
+      cache_read: 0.21,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-5.3', {
+    name: 'GLM 5.3',
+    created: '2026-08-14',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 1000000,
+    },
+    cost: {
+      input: 1.4,
+      output: 4.4,
+      cache_read: 0.14,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-5.3-fast', {
+    name: 'GLM 5.3 Fast',
+    created: '2026-08-14',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 262144,
+    },
+    cost: {
+      input: 2.1,
+      output: 6.6,
+      cache_read: 0.21,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-5.3-flash', {
+    name: 'GLM 5.3 Flash',
+    created: '2026-08-26',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131000,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.5,
+      cache_read: 0.03,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-5.3-flashx', {
+    name: 'GLM 5.3 FlashX',
+    created: '2026-08-26',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 0.37,
+      output: 1.25,
+      cache_read: 0.075,
+    },
+    providers: ['vercel'],
+  }),
+  model('vercel/zai/glm-5v-turbo', {
+    name: 'GLM 5V Turbo',
+    created: '2026-04-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.2,
+      output: 4,
+      cache_read: 0.24,
+    },
+    providers: ['vercel'],
   }),
   model('voyage/voyage-3', {
     name: 'Voyage 3',

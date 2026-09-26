@@ -11,8 +11,10 @@
 // Both functions unwrap `RetryError` first (via `unwrapRetryError`) so a
 // retry-exhausted upstream failure — the real `APICallError` is buried in
 // `err.lastError` — is classified and forwards its headers the same as an
-// unwrapped `APICallError` would.
+// unwrapped `APICallError` would. A Vercel AI Gateway `GatewayError` keeps
+// the upstream `APICallError` (and its headers) in `cause`.
 
+import { GatewayError as AIGatewayError } from '@ai-sdk/gateway';
 import { APICallError } from '@ai-sdk/provider';
 
 import { filterResponseHeaders } from './filterResponseHeaders.js';
@@ -38,8 +40,10 @@ export function headersForError(err: unknown, status: number): Record<string, st
   }
 
   const cause = unwrapRetryError(err);
-  if (APICallError.isInstance(cause)) {
-    upstreamHeaders = cause.responseHeaders;
+  const upstream = AIGatewayError.isInstance(cause) ? cause.cause : cause;
+
+  if (APICallError.isInstance(upstream)) {
+    upstreamHeaders = upstream.responseHeaders;
   }
 
   const filtered = filterResponseHeaders(upstreamHeaders);
@@ -49,9 +53,16 @@ export function headersForError(err: unknown, status: number): Record<string, st
 
 export function isRetryableError(err: unknown, status: number): boolean {
   if (isRetryableStatus(status)) return true;
+
   const cause = unwrapRetryError(err);
+
   if (APICallError.isInstance(cause) && typeof cause.statusCode === 'number') {
     return isRetryableStatus(cause.statusCode);
   }
+
+  if (AIGatewayError.isInstance(cause)) {
+    return isRetryableStatus(cause.statusCode);
+  }
+
   return false;
 }

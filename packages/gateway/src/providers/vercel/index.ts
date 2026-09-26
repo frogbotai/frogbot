@@ -1,23 +1,42 @@
-// Provider definition: Vercel.
+// Provider definition: Vercel AI Gateway.
+//
+// `apiKey` is a required key so the adapter never falls back to Vercel's OIDC
+// deployment token: a Vercel deployment alone must not enable this provider.
 
-import { createVercel, type VercelProvider, type VercelProviderSettings } from '@ai-sdk/vercel';
+import { createGateway, type GatewayProvider, type GatewayProviderSettings } from '@ai-sdk/gateway';
 
 import type { ProviderDefinition } from '../types.js';
 
-export type VercelConfig = Omit<VercelProviderSettings, 'apiKey' | 'fetch'> & {
+export type VercelConfig = Omit<GatewayProviderSettings, 'apiKey' | 'fetch' | '_internal'> & {
   apiKey?: string;
 };
+
+const VERCEL_ATTRIBUTION_HEADERS: Record<string, string> = {
+  'http-referer': 'https://www.frogbot.ai',
+  'x-title': 'FrogBot',
+};
+
+function withAttribution(headers: Record<string, string> = {}): Record<string, string> {
+  const overridden = new Set(Object.keys(headers).map((name) => name.toLowerCase()));
+
+  const defaults = Object.entries(VERCEL_ATTRIBUTION_HEADERS).filter(
+    ([name]) => !overridden.has(name),
+  );
+
+  return { ...Object.fromEntries(defaults), ...headers };
+}
 
 export const vercelProvider = {
   name: 'vercel',
   requiredKeys: ['apiKey'],
-  envVars: ['VERCEL_API_KEY', 'VERCEL_BASE_URL'],
+  envVars: ['AI_GATEWAY_API_KEY', 'AI_GATEWAY_BASE_URL'],
   fromEnv: (env) => {
-    if (!env.VERCEL_API_KEY) return undefined;
+    if (!env.AI_GATEWAY_API_KEY) return undefined;
+
     return {
-      apiKey: env.VERCEL_API_KEY,
-      ...(env.VERCEL_BASE_URL && { baseURL: env.VERCEL_BASE_URL }),
+      apiKey: env.AI_GATEWAY_API_KEY,
+      ...(env.AI_GATEWAY_BASE_URL && { baseURL: env.AI_GATEWAY_BASE_URL }),
     };
   },
-  build: (cfg) => createVercel(cfg),
-} satisfies ProviderDefinition<'vercel', VercelConfig, VercelProvider>;
+  build: (cfg) => createGateway({ ...cfg, headers: withAttribution(cfg.headers) }),
+} satisfies ProviderDefinition<'vercel', VercelConfig, GatewayProvider>;

@@ -25,7 +25,7 @@ const gw = createGateway({
 
 ## Built-in providers
 
-Alibaba, Anthropic, Anthropic (AWS), AssemblyAI, Azure, Baseten, Amazon Bedrock, Black Forest Labs, ByteDance, Cerebras, Cohere, Deepgram, DeepInfra, DeepSeek, ElevenLabs, fal, Fireworks, Gladia, Google, Google Vertex, Groq, Hugging Face, Hume, Kling AI, LMNT, Luma, Mistral, Moonshot AI, OpenAI, Perplexity, Prodia, Replicate, Together AI, TypeSafe AI, Vercel, Voyage, xAI.
+Alibaba, Anthropic, Anthropic (AWS), AssemblyAI, Azure, Baseten, Amazon Bedrock, Black Forest Labs, ByteDance, Cerebras, Cohere, Deepgram, DeepInfra, DeepSeek, ElevenLabs, fal, Fireworks, Gladia, Google, Google Vertex, Groq, Hugging Face, Hume, Kling AI, LMNT, Luma, Mistral, Moonshot AI, OpenAI, Perplexity, Prodia, Replicate, Together AI, TypeSafe AI, Vercel AI Gateway, Voyage, xAI.
 
 Each ships its own credential shape (`apiKey`, `region`, `accessKeyId`, ...) and its `envVars` list, used for config fallback and CLI env auto-discovery. Bedrock also supports ambient AWS credentials. See [Configuration](/gateway/configuration#auto-discover-from-env) for the full env var reference.
 
@@ -57,6 +57,46 @@ ai: {
 The key stays on the server; authenticate callers in your standalone host or through FrogBot's authenticated `/api/v1/evaluate` mount. FrogBot accepts `typesafe-ai/jev` and `typesafe-ai/jev-latest` and sends both to TypeSafe as `jev-latest`. Bare `jev` is not a documented TypeSafe upstream model ID. An optional built-in `models` allowlist uses unprefixed IDs, for example `models: ['jev-latest']`; the alias is canonicalized before checking it.
 
 As of September 23, 2026, TypeSafe lists Jev 1.13 at **$0.042 per million input tokens**, with no charge for output tokens. FrogBot's USD cost uses these catalog rates as an estimate, not a provider invoice. The upstream `jev-latest` alias and its pricing can change; check [TypeSafe's model list](https://docs.typesafe.ai/models.md) for current rates.
+
+---
+
+## Vercel AI Gateway
+
+The `vercel` provider sends requests to [Vercel AI Gateway](https://vercel.com/docs/ai-gateway), which serves many model creators through one key. Set `AI_GATEWAY_API_KEY` in the server environment and configure `providers: { vercel: {} }` in a standalone gateway, or `ai: { providers: { vercel: true } }` in FrogBot. `AI_GATEWAY_BASE_URL` optionally overrides the endpoint. To use a different secret, set `apiKey` instead.
+
+The key is required. A Vercel deployment's OIDC token does not enable the provider, so a project on Vercel can send its traffic to another provider without AI Gateway turning on.
+
+Model IDs have the form `vercel/<creator>/<model>`, for example `vercel/anthropic/claude-sonnet-4.6` or `vercel/openai/gpt-5.4-mini`. FrogBot accepts the chat models that [models.dev](https://models.dev) lists for Vercel with a price, and uses those prices for usage cost. Other IDs return `model_not_found`. Image, video, speech, transcription, embedding, and rerank models are not available through this provider. Narrow the list with `models`, which uses IDs without the `vercel/` prefix:
+
+```ts
+createGateway({
+  providers: {
+    vercel: { models: ['anthropic/claude-sonnet-4.6', 'openai/gpt-5.4-mini'] }
+  }
+})
+```
+
+For Anthropic, OpenAI, and Google models, reasoning and cache options are translated as they are for the direct provider. For example, chat `reasoning_effort` on a Claude model becomes a thinking budget, and `cache_control` markers become Anthropic cache control.
+
+Pass [AI Gateway routing options](https://vercel.com/docs/ai-gateway/models-and-providers/provider-options) such as `order`, `only`, and `models` in a `gateway` field on `/v1/chat/completions`, or set `providerOptions.gateway` in a [`beforeUpstream` hook](/gateway/hooks). They reach AI Gateway unchanged:
+
+```json
+{
+  "model": "vercel/anthropic/claude-sonnet-4.6",
+  "messages": [{ "role": "user", "content": "Hello" }],
+  "gateway": { "order": ["bedrock", "anthropic"] }
+}
+```
+
+Requests identify FrogBot to AI Gateway with the [app attribution](https://vercel.com/docs/ai-gateway/ecosystem/app-attribution) headers `http-referer: https://www.frogbot.ai` and `x-title: FrogBot`. To use your own values, set them in `headers`:
+
+```ts
+createGateway({
+  providers: {
+    vercel: { headers: { 'http-referer': 'https://example.com', 'x-title': 'Example' } }
+  }
+})
+```
 
 ---
 

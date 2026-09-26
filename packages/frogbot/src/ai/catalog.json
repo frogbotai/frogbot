@@ -1365,11 +1365,6 @@
     "mode": "chat"
   },
   {
-    "id": "fireworks/accounts/fireworks/models/qwen3p7-plus",
-    "provider": "fireworks",
-    "mode": "chat"
-  },
-  {
     "id": "fireworks/accounts/fireworks/models/qwen3p8-2p4t-a95b",
     "provider": "fireworks",
     "mode": "chat"
@@ -1381,11 +1376,6 @@
   },
   {
     "id": "fireworks/accounts/fireworks/routers/deepseek-flash-latest",
-    "provider": "fireworks",
-    "mode": "chat"
-  },
-  {
-    "id": "fireworks/accounts/fireworks/routers/glm-5p2-fast",
     "provider": "fireworks",
     "mode": "chat"
   },
@@ -2193,6 +2183,1261 @@
     "id": "typesafe-ai/jev-latest",
     "provider": "typesafe-ai",
     "mode": "evaluate"
+  },
+  {
+    "id": "vercel/alibaba/qwen-3-14b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen-3-235b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen-3-30b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen-3-32b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen-3.6-max-preview",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3-235b-a22b-thinking",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3-coder",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3-coder-30b-a3b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3-coder-next",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3-coder-plus",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3-max",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3-max-preview",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3-max-thinking",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3-next-80b-a3b-instruct",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3-next-80b-a3b-thinking",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3-vl-235b-a22b-instruct",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3-vl-instruct",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3-vl-thinking",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3.5-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3.5-plus",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3.6-27b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3.6-plus",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3.7-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3.7-max",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3.7-plus",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3.8-2.4t-a95b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3.8-27b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3.8-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3.8-max",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3.8-max-0902",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3.8-max-prime",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/alibaba/qwen3.8-omni-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/amazon/nova-2-lite",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/amazon/nova-lite",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/amazon/nova-micro",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/amazon/nova-pro",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-3-haiku",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-fable-5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-fable-5.1",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-haiku-4.5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-opus-4",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-opus-4.5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-opus-4.6",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-opus-4.7",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-opus-4.8",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-opus-4.8-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-opus-5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-opus-5-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-opus-5.5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-opus-5.5-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-sonnet-4",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-sonnet-4.5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-sonnet-4.6",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-sonnet-5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/arcee-ai/trinity-large-thinking",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/bytedance/seed-1.6",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/bytedance/seed-1.8",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/bytedance/seed-2.1-turbo",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/cohere/command-a",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/deepseek/deepseek-r1",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/deepseek/deepseek-v3.1",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/deepseek/deepseek-v3.1-terminus",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/deepseek/deepseek-v3.2",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/deepseek/deepseek-v3.2-thinking",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/deepseek/deepseek-v4-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/deepseek/deepseek-v4-flash-0731",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/deepseek/deepseek-v4-flash-vision-exp",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/deepseek/deepseek-v4-pro",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/deepseek/deepseek-v4-pro-0813",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/deepseek/deepseek-v4.1-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/google/gemini-2.5-flash",
+    "provider": "vercel",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "vercel/google/gemini-2.5-flash-lite",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/google/gemini-2.5-pro",
+    "provider": "vercel",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "vercel/google/gemini-3-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/google/gemini-3.1-flash-lite",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/google/gemini-3.1-pro-preview",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/google/gemini-3.5-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/google/gemini-3.5-flash-lite",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/google/gemini-3.5-transcribe",
+    "provider": "vercel",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "vercel/google/gemini-3.6-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/google/gemini-3.7-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/google/gemini-3.8-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/google/gemini-omni-flash-preview",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/google/gemma-4-26b-a4b-it",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/google/gemma-4-31b-it",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/inception/mercury-2",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/inception/mercury-2.5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/inception/mercury-coder-small",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/inclusionai/ling-3.0-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/inclusionai/ling-3.0-flash-fin",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/inclusionai/ling-3.0-flash-fin-free",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/inclusionai/ling-3.0-flash-sante",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/inclusionai/ling-3.0-flash-sante-free",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/inclusionai/ling-3.0-flash-vl",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/inference-net/schematron-v2-small",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/inference-net/schematron-v2-turbo",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/interfaze/interfaze-beta",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/meta/llama-3.1-70b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/meta/llama-3.1-8b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/meta/llama-3.3-70b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/meta/llama-4-maverick",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/meta/llama-4-scout",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/meta/muse-glimmer-30b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/meta/muse-spark-1.1",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/meta/muse-spark-1.2",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/meta/muse-spark-1.2-contributor",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/meta/muse-spark-1.3",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/meta/muse-spark-1.3-contributor",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/minimax/minimax-m2",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/minimax/minimax-m2.1",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/minimax/minimax-m2.1-lightning",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/minimax/minimax-m2.5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/minimax/minimax-m2.5-highspeed",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/minimax/minimax-m2.7",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/minimax/minimax-m2.7-highspeed",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/minimax/minimax-m3",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/mistral/codestral",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/mistral/ministral-14b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/mistral/ministral-3b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/mistral/ministral-8b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/mistral/mistral-large-3",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/mistral/mistral-medium-3.5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/mistral/mistral-nemo",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/mistral/mistral-small",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/mixedbread/toast-1",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/moonshotai/kimi-k2",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/moonshotai/kimi-k2-thinking",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/moonshotai/kimi-k2.5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/moonshotai/kimi-k2.6",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/moonshotai/kimi-k2.7-code",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/moonshotai/kimi-k2.7-code-highspeed",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/moonshotai/kimi-k3",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/moonshotai/kimi-k3-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/morph/morph-v3-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/morph/morph-v3-large",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/nvidia/nemotron-3-nano-30b-a3b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/nvidia/nemotron-3-super-120b-a12b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/nvidia/nemotron-3-ultra-550b-a55b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/nvidia/nemotron-3.5-lightning",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/nvidia/nemotron-nano-12b-v2-vl",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/nvidia/nemotron-nano-9b-v2",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-3.5-turbo",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-4.1",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-4.1-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-4.1-mini",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-4.1-mini-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-4.1-nano-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-4o",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-4o-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-4o-mini",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-4o-mini-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-4o-mini-transcribe",
+    "provider": "vercel",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "vercel/openai/gpt-4o-transcribe",
+    "provider": "vercel",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "vercel/openai/gpt-5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5-codex",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5-mini",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5-mini-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5-nano",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5-pro",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.1-codex",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.1-codex-max",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.1-codex-mini",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.1-thinking",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.1-thinking-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.2",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.2-codex",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.2-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.2-pro",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.3-codex",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.3-codex-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.4",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.4-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.4-mini",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.4-mini-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.4-nano",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.4-pro",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.5-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.5-pro",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.6-luna",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.6-luna-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.6-sol",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.6-sol-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.6-terra",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-5.6-terra-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-6-astra",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-6-astra-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-6-luna",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-6-luna-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-6-sol",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-6-sol-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-oss-120b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-oss-20b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-oss-safeguard-120b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/gpt-oss-safeguard-20b",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/o3",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/o3-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/o3-pro",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/openai/o4-mini-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/poolside/laguna-s-2.1",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/poolside/laguna-s-2.1-free",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/sakana/fugu-max",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/sakana/fugu-ultra",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/sakana/fugu-ultra-v2",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/sakana/namazu",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/spacexai/grok-4.1-fast-non-reasoning",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/spacexai/grok-4.1-fast-reasoning",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/spacexai/grok-4.20-multi-agent",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/spacexai/grok-4.20-multi-agent-beta",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/spacexai/grok-4.20-non-reasoning",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/spacexai/grok-4.20-non-reasoning-beta",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/spacexai/grok-4.20-reasoning",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/spacexai/grok-4.20-reasoning-beta",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/spacexai/grok-4.3",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/spacexai/grok-4.5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/spacexai/grok-4.6",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/spacexai/grok-4.7",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/spacexai/grok-build-0.1",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/stepfun/step-3.5-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/stepfun/step-3.7-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/stepfun/step-5-preview",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/tencent/hy-mt2-lite",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/tencent/hy-mt2-plus",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/tencent/hy-mt2-pro",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/tencent/hy3",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/tencent/hy4-preview",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/thinkingmachines/inkling",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/thinkingmachines/inkling-small",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/xiaomi/mimo-v2.5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/xiaomi/mimo-v2.5-pro",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/xiaomi/mimo-v2.6-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/xiaomi/mimo-v2.6-pro",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/xiaomi/mimo-v2.6-pro-ultraspeed",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-4.5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-4.5-air",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-4.5v",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-4.6",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-4.7",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-4.7-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-4.7-flashx",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-5-turbo",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-5.1",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-5.2",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-5.2-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-5.3",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-5.3-fast",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-5.3-flash",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-5.3-flashx",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/zai/glm-5v-turbo",
+    "provider": "vercel",
+    "mode": "chat"
   },
   {
     "id": "voyage/voyage-3",

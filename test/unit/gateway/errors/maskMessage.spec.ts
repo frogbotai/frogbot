@@ -53,6 +53,12 @@ describe('redactKeyFragments (G34)', () => {
     );
   });
 
+  it('redacts Vercel AI Gateway keys', () => {
+    expect(redactKeyFragments('Invalid API key: vck_abcd1234efgh5678ijkl')).toBe(
+      'Invalid API key: [REDACTED_KEY]',
+    );
+  });
+
   it('redacts Bearer tokens', () => {
     expect(redactKeyFragments('Authorization failed for Bearer eyJhbGciOi.abc')).toBe(
       'Authorization failed for Bearer [REDACTED]',

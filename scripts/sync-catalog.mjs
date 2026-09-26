@@ -22,10 +22,12 @@ const PROVIDERS = {
   openai: 'openai',
   perplexity: 'perplexity',
   togetherai: 'togetherai',
+  vercel: 'vercel',
   xai: 'xai',
 };
 const SYNCED_PROVIDERS = new Set(Object.values(PROVIDERS));
 const OVERLAY_PROVIDERS = new Set(['replicate', 'typesafe-ai', 'voyage']);
+const AGGREGATOR_PROVIDERS = new Set(['vercel']);
 
 const MODALITIES = new Set(['text', 'image', 'audio', 'video', 'embedding']);
 
@@ -91,6 +93,14 @@ function reasoningOptionsFor(options) {
   return normalized.length > 0 ? normalized : undefined;
 }
 
+function isPricedLanguageModel(model) {
+  // A real $0 price (free variants) is kept; only a missing price is skipped.
+  const priced = model.cost !== undefined;
+  const textOnly = model.modalities.output.every((modality) => modality === 'text');
+
+  return priced && textOnly;
+}
+
 function mapModel({ model, provider }) {
   const modalities = {
     input: model.modalities.input.filter((modality) => MODALITIES.has(modality)),
@@ -144,10 +154,13 @@ export function buildCatalogs({ overlays, source }) {
   for (const [sourceProvider, provider] of Object.entries(PROVIDERS)) {
     const models = source[sourceProvider]?.models ?? {};
     for (const model of Object.values(models)) {
-      if (model.status !== 'deprecated') {
-        const entry = mapModel({ model, provider });
-        if (!excluded.has(entry.id)) entries.set(entry.id, entry);
-      }
+      if (model.status === 'deprecated') continue;
+
+      if (AGGREGATOR_PROVIDERS.has(provider) && !isPricedLanguageModel(model)) continue;
+
+      const entry = mapModel({ model, provider });
+
+      if (!excluded.has(entry.id)) entries.set(entry.id, entry);
     }
   }
   for (const [provider, correction] of Object.entries(overlays)) {

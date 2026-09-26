@@ -29,7 +29,7 @@ function makeArgs(
 describe('claudeThinkingEffort', () => {
   it('maps reasoning_effort high → thinking.budget_tokens for Claude', () => {
     const args = makeArgs('anthropic/claude-4-sonnet', {
-      providerOptions: { openai: { reasoning_effort: 'high' } },
+      providerOptions: { unknown: { reasoning_effort: 'high' } },
       params: { maxOutputTokens: 16384 },
     });
     claudeThinkingEffort(args);
@@ -40,7 +40,7 @@ describe('claudeThinkingEffort', () => {
 
   it('maps reasoning_effort medium → ~50% of maxOutputTokens', () => {
     const args = makeArgs('anthropic/claude-4-sonnet', {
-      providerOptions: { openai: { reasoning_effort: 'medium' } },
+      providerOptions: { unknown: { reasoning_effort: 'medium' } },
       params: { maxOutputTokens: 10000 },
     });
     claudeThinkingEffort(args);
@@ -51,7 +51,7 @@ describe('claudeThinkingEffort', () => {
 
   it('applies minimum budget floor of 1024', () => {
     const args = makeArgs('anthropic/claude-4-sonnet', {
-      providerOptions: { openai: { reasoning_effort: 'low' } },
+      providerOptions: { unknown: { reasoning_effort: 'low' } },
       params: { maxOutputTokens: 2048 },
     });
     claudeThinkingEffort(args);
@@ -63,7 +63,7 @@ describe('claudeThinkingEffort', () => {
 
   it('uses default maxOutputTokens when not specified', () => {
     const args = makeArgs('anthropic/claude-4-sonnet', {
-      providerOptions: { openai: { reasoning_effort: 'high' } },
+      providerOptions: { unknown: { reasoning_effort: 'high' } },
       params: {},
     });
     claudeThinkingEffort(args);
@@ -75,7 +75,7 @@ describe('claudeThinkingEffort', () => {
 
   it('skips non-Claude models', () => {
     const args = makeArgs('openai/gpt-4o', {
-      providerOptions: { openai: { reasoning_effort: 'high' } },
+      providerOptions: { unknown: { reasoning_effort: 'high' } },
     });
     claudeThinkingEffort(args);
     expect(args.providerOptions['anthropic']).toBeUndefined();
@@ -84,7 +84,7 @@ describe('claudeThinkingEffort', () => {
   it('skips if anthropic.thinking is already explicitly set', () => {
     const args = makeArgs('anthropic/claude-4-sonnet', {
       providerOptions: {
-        openai: { reasoning_effort: 'high' },
+        unknown: { reasoning_effort: 'high' },
         anthropic: { thinking: { type: 'enabled', budget_tokens: 999 } },
       },
     });
@@ -103,7 +103,7 @@ describe('claudeThinkingEffort', () => {
 
   it('returns 0 for effort "none"', () => {
     const args = makeArgs('anthropic/claude-4-sonnet', {
-      providerOptions: { openai: { reasoning_effort: 'none' } },
+      providerOptions: { unknown: { reasoning_effort: 'none' } },
     });
     claudeThinkingEffort(args);
     // budget = 0, so hook returns early

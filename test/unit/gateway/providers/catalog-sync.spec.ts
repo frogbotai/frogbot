@@ -75,6 +75,62 @@ describe('catalog sync reasoning options', () => {
   });
 });
 
+describe('catalog sync aggregator providers', () => {
+  const priced = { input: 3, output: 15, cache_read: 0.3, cache_write: 3.75 };
+
+  const syncVercel = (models: Record<string, unknown>) =>
+    buildCatalogs({ overlays: {}, source: { vercel: { models } } }).gateway.map(({ id }) => id);
+
+  it('keeps nested creator/model IDs under the vercel prefix', () => {
+    const ids = syncVercel({
+      'anthropic/claude-sonnet-4.6': { ...model, id: 'anthropic/claude-sonnet-4.6', cost: priced },
+    });
+
+    expect(ids).toEqual(['vercel/anthropic/claude-sonnet-4.6']);
+  });
+
+  it('skips unpriced and non-text models but keeps real $0 prices', () => {
+    const ids = syncVercel({
+      'voyage/voyage-3.5': { ...model, id: 'voyage/voyage-3.5' },
+      'meta/llama-free': { ...model, id: 'meta/llama-free', cost: { input: 0, output: 0 } },
+      'openai/gpt-image-1': {
+        ...model,
+        id: 'openai/gpt-image-1',
+        modalities: { input: ['text'], output: ['image'] },
+        cost: priced,
+      },
+      'openai/gpt-5.4-mini': { ...model, id: 'openai/gpt-5.4-mini', cost: priced },
+    });
+
+    expect(ids).toEqual(['vercel/meta/llama-free', 'vercel/openai/gpt-5.4-mini']);
+  });
+
+  it('keeps unpriced models for direct providers', () => {
+    const { gateway } = buildCatalogs({
+      overlays: {},
+      source: { openai: { models: { [model.id]: model } } },
+    });
+
+    expect(gateway.map(({ id }) => id)).toEqual([`openai/${model.id}`]);
+  });
+
+  it('publishes only priced text-output models for vercel in the committed catalog', () => {
+    const entries = [...DEFAULT_MODEL_CATALOG.values()].filter(({ id }) =>
+      id.startsWith('vercel/'),
+    );
+
+    expect(entries.length).toBeGreaterThan(0);
+    expect(DEFAULT_MODEL_CATALOG.get('vercel/anthropic/claude-sonnet-4.6')?.cost).toBeDefined();
+    expect(entries.some(({ id }) => id.startsWith('vercel/voyage/'))).toBe(false);
+
+    for (const entry of entries) {
+      expect(entry.operations).toContain('chat.completions');
+      expect(entry.modalities.output).toEqual(['text']);
+      expect(entry.cost).toBeDefined();
+    }
+  });
+});
+
 describe('catalog sync SDK metadata', () => {
   it('preserves per-model provider routing metadata', () => {
     const { gateway } = buildCatalogs({

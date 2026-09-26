@@ -23,6 +23,7 @@ import type { BeforeUpstreamHook } from '../../../../packages/gateway/src/hooks.
 import { claudeThinkingEffort } from '../../../../packages/gateway/src/providers/anthropic/middleware.js';
 import { bedrockCachePoint } from '../../../../packages/gateway/src/providers/bedrock/middleware.js';
 import { openaiReasoningEffort } from '../../../../packages/gateway/src/providers/openai/middleware.js';
+import { vercelBeforeUpstream } from '../../../../packages/gateway/src/providers/vercel/middleware.js';
 import { vertexThinkingBudget } from '../../../../packages/gateway/src/providers/vertex/middleware.js';
 import { effortFromBudget } from '../../../../packages/gateway/src/utils/params.js';
 
@@ -48,7 +49,7 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
   // budget the operator asked for is dropped by the SDK → thinking silent no-op.
   it('claudeThinkingEffort emits the SDK-read anthropic.thinking.budgetTokens key', () => {
     const providerOptions: Record<string, Record<string, unknown>> = {
-      openai: { reasoning_effort: 'high' },
+      unknown: { reasoning_effort: 'high' },
     };
     void claudeThinkingEffort(makeArgs({ model: 'anthropic/claude-sonnet-4', providerOptions }));
 
@@ -122,7 +123,7 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
   // passes as a plain it() to document that not every middleware drifts.
   it('vertexThinkingBudget emits the SDK-read google.thinkingConfig.thinkingBudget key', () => {
     const providerOptions: Record<string, Record<string, unknown>> = {
-      openai: { reasoning_effort: 'high' },
+      unknown: { reasoning_effort: 'high' },
     };
     void vertexThinkingBudget(
       makeArgs({ model: 'vertex/gemini-2.5-pro', providerOptions, maxOutputTokens: 4096 }),
@@ -130,5 +131,37 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
 
     const google = providerOptions['google'] as GoogleGenerativeAIProviderOptions;
     expect(google.thinkingConfig?.thinkingBudget).toBeTypeOf('number');
+  });
+
+  it('vercelBeforeUpstream emits SDK-read Anthropic and OpenAI option keys', async () => {
+    const claude: Record<string, Record<string, unknown>> = {
+      unknown: { reasoning_effort: 'high', cache_control: { type: 'ephemeral' } },
+    };
+    const gpt: Record<string, Record<string, unknown>> = {
+      unknown: { reasoning_effort: 'low' },
+    };
+
+    for (const hook of vercelBeforeUpstream) {
+      await hook(makeArgs({ model: 'vercel/anthropic/claude-sonnet-4.6', providerOptions: claude }));
+      await hook(makeArgs({ model: 'vercel/openai/gpt-5.4-mini', providerOptions: gpt }));
+    }
+
+    const anthropic = claude['anthropic'] ?? {};
+    const thinking = anthropic['thinking'] as { budgetTokens: number };
+
+    const anthropicOptions = {
+      thinking: { type: 'enabled' as const, budgetTokens: thinking.budgetTokens },
+      cacheControl: anthropic['cacheControl'] as AnthropicProviderOptions['cacheControl'],
+    } satisfies AnthropicProviderOptions;
+
+    const openaiOptions = {
+      reasoningEffort: gpt['openai']?.[
+        'reasoningEffort'
+      ] as OpenAIChatLanguageModelOptions['reasoningEffort'],
+    } satisfies OpenAIChatLanguageModelOptions;
+
+    expect(anthropicOptions.thinking.budgetTokens).toBeTypeOf('number');
+    expect(anthropicOptions.cacheControl).toEqual({ type: 'ephemeral' });
+    expect(openaiOptions.reasoningEffort).toBe('low');
   });
 });

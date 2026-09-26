@@ -286,6 +286,36 @@ describe('createLoggingHooks', () => {
     expect(() => JSON.stringify(entries[0]?.obj)).not.toThrow();
   });
 
+  it('redacts key fragments from messages, stacks, bodies, and nested values', async () => {
+    const { entries, logger } = captureLogger();
+    const hooks = createLoggingHooks(logger);
+    const key = 'sk-proj-abcd1234efgh5678';
+    const error = apiCallError({
+      message: `Incorrect API key provided: ${key}`,
+      responseBody: JSON.stringify({ error: { message: `Incorrect API key provided: ${key}` } }),
+      data: { error: { message: `Incorrect API key provided: ${key}` } },
+      cause: new Error(`inner Bearer ${key}`),
+    });
+
+    await hooks.afterError?.[0]?.({
+      ...base,
+      phase: 'afterError',
+      failedPhase: 'upstream',
+      error,
+    } satisfies AfterErrorHookArgs);
+
+    const serialized = (entries[0]?.obj as { error: Record<string, unknown> }).error;
+
+    expect(JSON.stringify(entries[0]?.obj)).not.toContain(key);
+    expect(serialized.message).toBe('Incorrect API key provided: [REDACTED_KEY]');
+    expect(serialized.stack).toContain('Incorrect API key provided: [REDACTED_KEY]');
+    expect(serialized.responseBody).toContain('[REDACTED_KEY]');
+    expect(serialized.data).toEqual({
+      error: { message: 'Incorrect API key provided: [REDACTED_KEY]' },
+    });
+    expect(serialized.cause).toMatchObject({ message: 'inner Bearer [REDACTED]' });
+  });
+
   it('unwraps RetryError to log the final upstream error', async () => {
     const { entries, logger } = captureLogger();
     const hooks = createLoggingHooks(logger);
@@ -458,6 +488,19 @@ describe('logGatewayError with a real pino instance', () => {
     } finally {
       process.env.NODE_ENV = previousNodeEnv;
     }
+  });
+
+  it('redacts key fragments from the logged message', () => {
+    const { logger, lines } = capturePino();
+
+    logGatewayError(logger, {
+      requestId: 'req_1',
+      status: 401,
+      path: '/v1/chat/completions',
+      error: new Error('Invalid API key: vck_abcd1234efgh5678ijkl'),
+    });
+
+    expect(lines()).toMatchObject([{ message: 'Invalid API key: [REDACTED_KEY]' }]);
   });
 });
 

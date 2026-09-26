@@ -9,6 +9,10 @@
 
 import type { AnthropicErrorType, GatewayHttpStatus, OpenAIErrorType } from './envelope.js';
 
+export function isUpstreamSuccessStatus(status: number | undefined): boolean {
+  return status !== undefined && status < 400;
+}
+
 /** Map an HTTP status to OpenAI's documented `error.type` values. */
 export function statusToOpenAIType(status: number): OpenAIErrorType {
   if (status === 401) return 'authentication_error';

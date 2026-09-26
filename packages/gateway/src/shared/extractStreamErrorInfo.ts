@@ -7,7 +7,12 @@
 // the JSON envelope path in `errors/envelope.ts`.
 
 import { maybeMaskMessage, redactKeyFragments } from '../errors/maskMessage.js';
-import { statusToAnthropicType, statusToOpenAIType } from '../errors/statusMaps.js';
+import {
+  isUpstreamSuccessStatus,
+  statusToAnthropicType,
+  statusToOpenAIType,
+} from '../errors/statusMaps.js';
+import { unwrapRetryError } from '../errors/unwrapRetryError.js';
 import { isProduction } from './runtimeDetection.js';
 
 export type StreamErrorInfo = {
@@ -38,34 +43,44 @@ function maskStreamErrorMessage(
   });
 }
 
+function errorStatusCode(error: Error): number | undefined {
+  const { statusCode } = error as { statusCode?: unknown };
+
+  if (typeof statusCode !== 'number') return undefined;
+
+  return isUpstreamSuccessStatus(statusCode) ? 502 : statusCode;
+}
+
 export function extractOpenAIStreamErrorInfo(
   error: unknown,
   opts: StreamErrorMaskOptions = {},
 ): StreamErrorInfo {
-  if (error instanceof Error) {
-    const apiErr = error as { statusCode?: number; message: string };
+  const cause = unwrapRetryError(error);
+
+  if (cause instanceof Error) {
+    const statusCode = errorStatusCode(cause);
+
     return {
       message: maskStreamErrorMessage(
-        apiErr.message || 'An error occurred during streaming',
-        apiErr.statusCode,
+        cause.message || 'An error occurred during streaming',
+        statusCode,
         opts,
       ),
-      type:
-        typeof apiErr.statusCode === 'number'
-          ? statusToOpenAIType(apiErr.statusCode)
-          : 'server_error',
-      code: typeof apiErr.statusCode === 'number' ? String(apiErr.statusCode) : null,
+      type: statusCode !== undefined ? statusToOpenAIType(statusCode) : 'server_error',
+      code: statusCode !== undefined ? String(statusCode) : null,
     };
   }
-  if (typeof error === 'string') {
+
+  if (typeof cause === 'string') {
     return {
-      message: maskStreamErrorMessage(error, undefined, opts),
+      message: maskStreamErrorMessage(cause, undefined, opts),
       type: 'server_error',
       code: null,
     };
   }
-  if (typeof error === 'object' && error !== null) {
-    const obj = error as Record<string, unknown>;
+
+  if (typeof cause === 'object' && cause !== null) {
+    const obj = cause as Record<string, unknown>;
     return {
       message: maskStreamErrorMessage(
         typeof obj.message === 'string' ? obj.message : 'An error occurred during streaming',
@@ -76,6 +91,7 @@ export function extractOpenAIStreamErrorInfo(
       code: typeof obj.code === 'string' ? obj.code : null,
     };
   }
+
   return { message: 'An error occurred during streaming', type: 'server_error', code: null };
 }
 
@@ -83,27 +99,32 @@ export function extractAnthropicStreamErrorInfo(
   error: unknown,
   opts: StreamErrorMaskOptions = {},
 ): StreamErrorInfo {
-  if (error instanceof Error) {
-    const apiErr = error as { statusCode?: number; message: string };
+  const cause = unwrapRetryError(error);
+
+  if (cause instanceof Error) {
+    const statusCode = errorStatusCode(cause);
+
     return {
       message: maskStreamErrorMessage(
-        apiErr.message || 'An error occurred during streaming',
-        apiErr.statusCode,
+        cause.message || 'An error occurred during streaming',
+        statusCode,
         opts,
       ),
-      type: apiErr.statusCode ? statusToAnthropicType(apiErr.statusCode) : 'api_error',
-      code: typeof apiErr.statusCode === 'number' ? String(apiErr.statusCode) : null,
+      type: statusCode ? statusToAnthropicType(statusCode) : 'api_error',
+      code: statusCode !== undefined ? String(statusCode) : null,
     };
   }
-  if (typeof error === 'string') {
+
+  if (typeof cause === 'string') {
     return {
-      message: maskStreamErrorMessage(error, undefined, opts),
+      message: maskStreamErrorMessage(cause, undefined, opts),
       type: 'api_error',
       code: null,
     };
   }
-  if (typeof error === 'object' && error !== null) {
-    const obj = error as Record<string, unknown>;
+
+  if (typeof cause === 'object' && cause !== null) {
+    const obj = cause as Record<string, unknown>;
     return {
       message: maskStreamErrorMessage(
         typeof obj.message === 'string' ? obj.message : 'An error occurred during streaming',
@@ -114,5 +135,6 @@ export function extractAnthropicStreamErrorInfo(
       code: typeof obj.code === 'string' ? obj.code : null,
     };
   }
+
   return { message: 'An error occurred during streaming', type: 'api_error', code: null };
 }
