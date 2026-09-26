@@ -40,6 +40,10 @@ Bot Framework Activities are authenticated by the official Teams adapter. FrogBo
 
 The separate Graph OAuth app registration uses the scopes below for user actions. It may be the same Entra application only when its bot credential, redirect URI, delegated permissions, and operational ownership are intentionally managed together; the two credentials remain separate in FrogBot configuration.
 
+## Agent questions
+
+When an agent with the `question` tool runs in Teams, each question call appears as one Adaptive Card with the choices, an optional text box, and **Submit** and **Dismiss** buttons. The card is replaced in place with the answer and who gave it, and the agent continues in the same conversation. The person who submits is matched to a FrogBot user by the email from the conversation's member list and must pass the agent's `access` check; others get a private notice. No Microsoft Graph permission is required. See the Microsoft Teams page in the FrogBot docs for the manifest, limits, and troubleshooting.
+
 ## Actions
 
 | Upstream action slug                           | Previous wrapper export                  | Native action              | Notes                                                                                                                                        |
