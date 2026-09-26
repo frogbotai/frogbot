@@ -6,19 +6,28 @@ FrogBot routes AI operations through providers configured in `frogbot.config.ts`
 
 ## Configure a provider
 
-The blank template configures an OpenAI-compatible provider and a default chat model:
+The blank template configures a built-in provider and a default chat model. Built-in providers read their key from the environment (`OPENAI_API_KEY` here):
 
 ```ts
 import type { FrogBotConfig } from 'frogbot';
 
 const ai = {
-  defaultModel: 'zen/big-pickle',
+  defaultModel: 'openai/gpt-5.4-mini',
+  providers: { openai: true },
+} satisfies FrogBotConfig['ai'];
+```
+
+Any OpenAI-compatible endpoint can be added as a custom provider:
+
+```ts
+const ai = {
+  defaultModel: 'local/llama3',
   providers: {
-    zen: {
+    local: {
       type: 'openai-compatible',
-      baseUrl: 'https://opencode.ai/zen/v1',
-      apiKey: 'public',
-      models: [{ id: 'big-pickle', mode: 'chat' }],
+      baseUrl: 'http://localhost:11434/v1',
+      apiKey: process.env.LOCAL_API_KEY,
+      models: [{ id: 'llama3', mode: 'chat' }],
     },
   },
 } satisfies FrogBotConfig['ai'];
@@ -35,7 +44,7 @@ import config from './frogbot.config';
 
 const frogbot = await getFrogBot({ config });
 const result = await frogbot.generateText({
-  model: 'zen/big-pickle',
+  model: 'openai/gpt-5.4-mini',
   prompt: 'Write a one-sentence project update.',
 });
 
@@ -48,7 +57,7 @@ Direct AI operations require `model`, even when `ai.defaultModel` is configured.
 
 ```ts
 const result = await frogbot.streamText({
-  model: 'zen/big-pickle',
+  model: 'openai/gpt-5.4-mini',
   prompt: 'Explain the release plan.',
 });
 
@@ -59,7 +68,7 @@ for await (const text of result.textStream) {
 
 ## Other operations
 
-All operation methods are public on the initialized instance. This embedding example requires an OpenAI provider entry in addition to the Zen text provider shown above:
+All operation methods are public on the initialized instance. This embedding example uses the OpenAI provider shown above:
 
 ```ts
 const embedding = await frogbot.embed({
@@ -80,7 +89,7 @@ Agents use the configured AI gateway and resolve their optional `model` from the
 
 When AI is configured, FrogBot adds policy fields to the configured admin auth collection. `modelAccess: 'all'` permits every configured target, including targets added later. `selected` requires at least one exact model ID or router slug in `models`; granting a router does not grant direct access to its underlying model.
 
-Register this collection in `collections` with the Zen provider above. These defaults allow only `zen/big-pickle` and set a USD 10 budget. Same-name fields override injected policy fields. The access callbacks prevent ordinary create/update requests from changing their own model grants, budget, or spend; trusted server operations can manage policy with explicit access override.
+Register this collection in `collections` with the provider above. These defaults allow only `openai/gpt-5.4-mini` and set a USD 10 budget. Same-name fields override injected policy fields. The access callbacks prevent ordinary create/update requests from changing their own model grants, budget, or spend; trusted server operations can manage policy with explicit access override.
 
 ```ts
 import type { CollectionConfig } from 'frogbot';
@@ -100,8 +109,8 @@ export const PolicyUsers: CollectionConfig = {
       name: 'models',
       type: 'select',
       hasMany: true,
-      options: ['zen/big-pickle'],
-      defaultValue: ['zen/big-pickle'],
+      options: ['openai/gpt-5.4-mini'],
+      defaultValue: ['openai/gpt-5.4-mini'],
       access: { create: () => false, update: () => false },
     },
     {
@@ -132,7 +141,7 @@ import { resolvePolicy } from 'frogbot';
 export async function generatePolicyUpdate(req: FrogBotRequest) {
   const policy = resolvePolicy(req.user);
   const result = await req.frogbot.generateText({
-    model: 'zen/big-pickle',
+    model: 'openai/gpt-5.4-mini',
     prompt: 'Write a one-sentence project update.',
     req,
     overrideAccess: false,

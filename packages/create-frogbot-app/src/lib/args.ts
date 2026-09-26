@@ -3,6 +3,7 @@ import { parseArgs as parseNodeArgs } from 'node:util';
 export interface CliArgs {
   agents?: string;
   ai?: string;
+  apiKey?: string;
   database?: string;
   git: boolean;
   help: boolean;
@@ -19,7 +20,8 @@ Options:
   -n, --name <name>           Project name
   -t, --template <template>   Template (default: blank)
   -d, --db <database>         sqlite, postgres, or mongodb
-      --ai <provider>         zen, openai, anthropic, google, bedrock, or none
+      --ai <provider>         openai, anthropic, google, bedrock, zen, or none
+      --api-key <key>         API key for the chosen provider (written to .env)
       --agents <targets>      Comma-separated claude, codex, cursor, opencode, copilot, gemini
       --no-agents             Do not install coding-agent skills
       --use-npm               Use npm
@@ -41,6 +43,7 @@ export function parseArgs(argv: string[]): CliArgs {
     options: {
       agents: { type: 'string' },
       ai: { type: 'string' },
+      'api-key': { type: 'string' },
       db: { type: 'string', short: 'd' },
       help: { type: 'boolean', short: 'h', default: false },
       name: { type: 'string', short: 'n' },
@@ -70,6 +73,7 @@ export function parseArgs(argv: string[]): CliArgs {
   return {
     agents: values['no-agents'] ? '' : values.agents,
     ai: values.ai,
+    apiKey: values['api-key'],
     database: values.db,
     git: !values['no-git'],
     help: values.help,

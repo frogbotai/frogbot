@@ -70,9 +70,11 @@ export interface Config {
     users: User;
     chats: Chat;
     messages: Message;
+    'frogbot-chat-assets': FrogbotChatAsset;
+    'frogbot-chat-turns': FrogbotChatTurn;
     'usage-logs': UsageLog;
-    'frogbot-trigger-subscriptions': FrogBotTriggerSubscription;
-    'frogbot-waitpoints': FrogBotWaitpoint;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscription;
+    'frogbot-waitpoints': FrogbotWaitpoint;
     files: File;
   };
   collectionsJoins: {};
@@ -80,9 +82,11 @@ export interface Config {
     users: UsersSelect;
     chats: ChatsSelect;
     messages: MessagesSelect;
+    'frogbot-chat-assets': FrogbotChatAssetsSelect;
+    'frogbot-chat-turns': FrogbotChatTurnsSelect;
     'usage-logs': UsageLogsSelect;
-    'frogbot-trigger-subscriptions': FrogBotTriggerSubscriptionsSelect;
-    'frogbot-waitpoints': FrogBotWaitpointsSelect;
+    'frogbot-trigger-subscriptions': FrogbotTriggerSubscriptionsSelect;
+    'frogbot-waitpoints': FrogbotWaitpointsSelect;
     files: FilesSelect;
   };
   db: {
@@ -98,9 +102,9 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
-      'frogbot-reset-ai-budgets': TaskFrogBotResetAiBudgets;
-      'frogbot-sweep-jobs': TaskFrogBotSweepJobs;
-      'frogbot-cleanup-kv': TaskFrogBotCleanupKv;
+      'frogbot-reset-ai-budgets': TaskFrogbotResetAiBudgets;
+      'frogbot-sweep-jobs': TaskFrogbotSweepJobs;
+      'frogbot-cleanup-kv': TaskFrogbotCleanupKv;
       inline: {
         input: unknown;
         output: unknown;
@@ -135,7 +139,48 @@ export interface User {
   id: number;
   name?: string | null;
   modelAccess?: ('all' | 'selected') | null;
-  models?: 'zen/big-pickle'[] | null;
+  models?:
+    | (
+        | 'openai/chatgpt-image-latest'
+        | 'openai/gpt-4.1'
+        | 'openai/gpt-4.1-mini'
+        | 'openai/gpt-4o'
+        | 'openai/gpt-4o-2024-08-06'
+        | 'openai/gpt-4o-2024-11-20'
+        | 'openai/gpt-4o-mini'
+        | 'openai/gpt-5'
+        | 'openai/gpt-5-mini'
+        | 'openai/gpt-5-nano'
+        | 'openai/gpt-5-pro'
+        | 'openai/gpt-5.1'
+        | 'openai/gpt-5.2'
+        | 'openai/gpt-5.2-pro'
+        | 'openai/gpt-5.3-codex'
+        | 'openai/gpt-5.3-codex-spark'
+        | 'openai/gpt-5.4'
+        | 'openai/gpt-5.4-mini'
+        | 'openai/gpt-5.4-nano'
+        | 'openai/gpt-5.4-pro'
+        | 'openai/gpt-5.5'
+        | 'openai/gpt-5.5-pro'
+        | 'openai/gpt-5.6'
+        | 'openai/gpt-5.6-luna'
+        | 'openai/gpt-5.6-sol'
+        | 'openai/gpt-5.6-terra'
+        | 'openai/gpt-6-astra'
+        | 'openai/gpt-6-luna'
+        | 'openai/gpt-6-sol'
+        | 'openai/gpt-image-1-mini'
+        | 'openai/gpt-image-1.5'
+        | 'openai/gpt-image-2'
+        | 'openai/gpt-realtime-2.1'
+        | 'openai/o3'
+        | 'openai/o3-pro'
+        | 'openai/text-embedding-3-large'
+        | 'openai/text-embedding-3-small'
+        | 'openai/text-embedding-ada-002'
+      )[]
+    | null;
   monthlyBudget?: number | null;
   spendThisPeriodUSD?: number | null;
   updatedAt: string;
@@ -170,6 +215,8 @@ export interface Chat {
   channel?: string | null;
   externalId?: string | null;
   channelKey?: string | null;
+  channelThread?: import('frogbot').ChannelThreadReference;
+  channelLabel?: string | null;
   lastMessageAt?: string | null;
   todos?: import('frogbot/tools').TodoItem[];
   updatedAt: string;
@@ -194,6 +241,13 @@ export interface Message {
     | number
     | boolean
     | null;
+  status?: ('active' | 'queued') | null;
+  delivery?: ('queue' | 'steer') | null;
+  model?: string | null;
+  reasoning?: string | null;
+  author?: import('frogbot').TurnActor;
+  settlements?: Record<string, import('frogbot').ClientToolSettlement>;
+  version?: number | null;
   usage?: {
     inputTokens?: number | null;
     outputTokens?: number | null;
@@ -206,6 +260,38 @@ export interface Message {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-assets".
+ */
+export interface FrogbotChatAsset {
+  id: number;
+  owner?: (number | null) | User;
+  chat?: (number | null) | Chat;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-turns".
+ */
+export interface FrogbotChatTurn {
+  id: string;
+  state: 'idle' | 'running' | 'awaiting';
+  attempt?: string | null;
+  leaseUntil?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -227,7 +313,8 @@ export interface UsageLog {
     | 'speech'
     | 'transcriptions'
     | 'videos'
-    | 'rerank';
+    | 'rerank'
+    | 'evaluate';
   inputTokens: number;
   outputTokens: number;
   cachedInputTokens?: number | null;
@@ -244,7 +331,7 @@ export interface UsageLog {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-trigger-subscriptions".
  */
-export interface FrogBotTriggerSubscription {
+export interface FrogbotTriggerSubscription {
   id: number;
   agent: string;
   piece: string;
@@ -282,7 +369,7 @@ export interface FrogBotTriggerSubscription {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints".
  */
-export interface FrogBotWaitpoint {
+export interface FrogbotWaitpoint {
   id: number;
   jobId: string;
   name: string;
@@ -375,6 +462,8 @@ export interface ChatsSelect {
   channel?: boolean;
   externalId?: boolean;
   channelKey?: boolean;
+  channelThread?: boolean;
+  channelLabel?: boolean;
   lastMessageAt?: boolean;
   todos?: boolean;
   updatedAt?: boolean;
@@ -391,6 +480,13 @@ export interface MessagesSelect {
   role?: boolean;
   parts?: boolean;
   metadata?: boolean;
+  status?: boolean;
+  delivery?: boolean;
+  model?: boolean;
+  reasoning?: boolean;
+  author?: boolean;
+  settlements?: boolean;
+  version?: boolean;
   usage?:
     | boolean
     | {
@@ -405,6 +501,37 @@ export interface MessagesSelect {
   updatedAt?: boolean;
   createdAt?: boolean;
   deletedAt?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-assets_select".
+ */
+export interface FrogbotChatAssetsSelect {
+  owner?: boolean;
+  chat?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
+  url?: boolean;
+  thumbnailURL?: boolean;
+  filename?: boolean;
+  mimeType?: boolean;
+  filesize?: boolean;
+  width?: boolean;
+  height?: boolean;
+  focalX?: boolean;
+  focalY?: boolean;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frogbot-chat-turns_select".
+ */
+export interface FrogbotChatTurnsSelect {
+  id?: boolean;
+  state?: boolean;
+  attempt?: boolean;
+  leaseUntil?: boolean;
+  updatedAt?: boolean;
+  createdAt?: boolean;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -433,7 +560,7 @@ export interface UsageLogsSelect {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-trigger-subscriptions_select".
  */
-export interface FrogBotTriggerSubscriptionsSelect {
+export interface FrogbotTriggerSubscriptionsSelect {
   agent?: boolean;
   piece?: boolean;
   instance?: boolean;
@@ -454,7 +581,7 @@ export interface FrogBotTriggerSubscriptionsSelect {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "frogbot-waitpoints_select".
  */
-export interface FrogBotWaitpointsSelect {
+export interface FrogbotWaitpointsSelect {
   jobId?: boolean;
   name?: boolean;
   token?: boolean;
@@ -502,25 +629,25 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBot-reset-ai-budgets".
+ * via the `definition` "TaskFrogbot-reset-ai-budgets".
  */
-export interface TaskFrogBotResetAiBudgets {
+export interface TaskFrogbotResetAiBudgets {
   input?: unknown;
   output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBot-sweep-jobs".
+ * via the `definition` "TaskFrogbot-sweep-jobs".
  */
-export interface TaskFrogBotSweepJobs {
+export interface TaskFrogbotSweepJobs {
   input?: unknown;
   output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskFrogBot-cleanup-kv".
+ * via the `definition` "TaskFrogbot-cleanup-kv".
  */
-export interface TaskFrogBotCleanupKv {
+export interface TaskFrogbotCleanupKv {
   input?: unknown;
   output?: unknown;
 }
@@ -538,7 +665,45 @@ declare module 'frogbot' {
       general: unknown;
       assistant: unknown;
     };
-    models: 'zen/big-pickle';
+    models:
+      | 'openai/chatgpt-image-latest'
+      | 'openai/gpt-4.1'
+      | 'openai/gpt-4.1-mini'
+      | 'openai/gpt-4o'
+      | 'openai/gpt-4o-2024-08-06'
+      | 'openai/gpt-4o-2024-11-20'
+      | 'openai/gpt-4o-mini'
+      | 'openai/gpt-5'
+      | 'openai/gpt-5-mini'
+      | 'openai/gpt-5-nano'
+      | 'openai/gpt-5-pro'
+      | 'openai/gpt-5.1'
+      | 'openai/gpt-5.2'
+      | 'openai/gpt-5.2-pro'
+      | 'openai/gpt-5.3-codex'
+      | 'openai/gpt-5.3-codex-spark'
+      | 'openai/gpt-5.4'
+      | 'openai/gpt-5.4-mini'
+      | 'openai/gpt-5.4-nano'
+      | 'openai/gpt-5.4-pro'
+      | 'openai/gpt-5.5'
+      | 'openai/gpt-5.5-pro'
+      | 'openai/gpt-5.6'
+      | 'openai/gpt-5.6-luna'
+      | 'openai/gpt-5.6-sol'
+      | 'openai/gpt-5.6-terra'
+      | 'openai/gpt-6-astra'
+      | 'openai/gpt-6-luna'
+      | 'openai/gpt-6-sol'
+      | 'openai/gpt-image-1-mini'
+      | 'openai/gpt-image-1.5'
+      | 'openai/gpt-image-2'
+      | 'openai/gpt-realtime-2.1'
+      | 'openai/o3'
+      | 'openai/o3-pro'
+      | 'openai/text-embedding-3-large'
+      | 'openai/text-embedding-3-small'
+      | 'openai/text-embedding-ada-002';
     roles: never;
   }
 }

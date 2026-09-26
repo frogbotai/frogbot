@@ -16,7 +16,7 @@ const AGENTS: Array<{ label: string; value: AgentTarget }> = [
   { label: 'Gemini CLI', value: 'gemini' },
 ];
 
-const AI_VALUES: AIProvider[] = ['zen', 'openai', 'anthropic', 'google', 'bedrock', 'none'];
+const AI_VALUES: AIProvider[] = ['openai', 'anthropic', 'google', 'bedrock', 'zen', 'none'];
 const AGENT_VALUES = AGENTS.map(({ value }) => value);
 
 export class PromptCancelledError extends Error {}
@@ -49,9 +49,11 @@ export async function resolvePlan({
   args,
   cwd,
   detectedPackageManager,
+  env = process.env,
   tty,
 }: {
   args: CliArgs;
+  env?: Record<string, string | undefined>;
   cwd: string;
   detectedPackageManager: PackageManager;
   tty: boolean;
@@ -116,16 +118,29 @@ export async function resolvePlan({
     ai = resolvePromptValue<AIProvider>(
       await p.select({
         message: 'AI provider',
-        initialValue: 'zen',
+        initialValue: 'openai',
         options: AI_VALUES.map((value) => ({
           label: value === 'none' ? 'None / add later' : AI_PROVIDERS[value].label,
+          hint: value === 'none' ? undefined : AI_PROVIDERS[value].hint,
           value,
         })),
       }),
     );
   }
 
-  const resolvedAI = validateValue(ai ?? 'zen', AI_VALUES, 'AI provider');
+  const resolvedAI = validateValue(ai ?? 'openai', AI_VALUES, 'AI provider');
+  const keyEnv = resolvedAI === 'none' ? undefined : AI_PROVIDERS[resolvedAI].keyEnv;
+  // A key already exported in the shell wins over prompting.
+  let apiKey = args.apiKey?.trim() || (keyEnv ? env[keyEnv]?.trim() : undefined) || undefined;
+
+  if (!apiKey && keyEnv && interactive) {
+    apiKey =
+      resolvePromptValue<string>(
+        await p.password({
+          message: `${keyEnv} (leave blank to add it to .env later)`,
+        }),
+      ).trim() || undefined;
+  }
   let agents: AgentTarget[] | string | undefined = args.agents;
 
   if (agents === undefined && interactive) {
@@ -145,6 +160,7 @@ export async function resolvePlan({
   return {
     agents: resolvedAgents as AgentTarget[],
     ai: resolvedAI,
+    apiKey,
     database: resolvedDatabase as Database,
     dest: path.resolve(cwd, projectName),
     git: args.git,

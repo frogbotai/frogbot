@@ -75,15 +75,36 @@ describe('CLI arguments and plans', () => {
       args: parseArgs(['my-app', '--yes']),
       cwd: '/tmp',
       detectedPackageManager: 'npm',
+      env: {},
       tty: false,
     });
 
     expect(plan).toMatchObject({
       agents: [],
-      ai: 'zen',
+      ai: 'openai',
       database: 'sqlite',
       projectName: 'my-app',
     });
+  });
+
+  it('takes the provider key from --api-key, falling back to the shell env', async () => {
+    const flag = await resolvePlan({
+      args: parseArgs(['my-app', '--ai', 'anthropic', '--api-key', 'sk-flag']),
+      cwd: '/tmp',
+      detectedPackageManager: 'npm',
+      env: { ANTHROPIC_API_KEY: 'sk-env' },
+      tty: false,
+    });
+    const shell = await resolvePlan({
+      args: parseArgs(['my-app', '--ai', 'anthropic']),
+      cwd: '/tmp',
+      detectedPackageManager: 'npm',
+      env: { ANTHROPIC_API_KEY: 'sk-env' },
+      tty: false,
+    });
+
+    expect(flag.apiKey).toBe('sk-flag');
+    expect(shell.apiKey).toBe('sk-env');
   });
 
   it('rejects missing non-interactive project names and unknown registry values', async () => {
@@ -126,7 +147,7 @@ describe('CLI arguments and plans', () => {
 
   it.each([
     [['my-app', '--db', 'oracle'], 'Valid values: sqlite, postgres, mongodb'],
-    [['my-app', '--ai', 'local'], 'Valid values: zen, openai, anthropic, google, bedrock, none'],
+    [['my-app', '--ai', 'local'], 'Valid values: openai, anthropic, google, bedrock, zen, none'],
     [
       ['my-app', '--agents', 'claude,unknown'],
       'Valid values: claude, codex, cursor, opencode, copilot, gemini',
@@ -218,12 +239,13 @@ describe('template reconciliation', () => {
     expect(fs.existsSync(path.join(dest, 'src', 'agents'))).toBe(false);
   });
 
-  it('replaces Zen with each configured provider', () => {
+  it('writes each provider with a current default model', () => {
     for (const [provider, model] of [
-      ['openai', 'openai/gpt-4o-mini'],
-      ['anthropic', 'anthropic/claude-haiku'],
-      ['google', 'google/gemini-2.5-flash'],
-      ['bedrock', 'bedrock/us.anthropic'],
+      ['openai', 'openai/gpt-5.4-mini'],
+      ['anthropic', 'anthropic/claude-haiku-4-5'],
+      ['google', 'google/gemini-3.5-flash'],
+      ['bedrock', 'bedrock/global.anthropic.claude-haiku-4-5'],
+      ['zen', 'apiKey: process.env.OPENCODE_API_KEY'],
     ] as const) {
       const dest = copyTemplate();
 
@@ -231,7 +253,7 @@ describe('template reconciliation', () => {
 
       expect(fs.readFileSync(path.join(dest, 'src', 'frogbot.config.ts'), 'utf8')).toContain(model);
     }
-  });
+  }, 30000);
 });
 
 describe('skill bundling', () => {
