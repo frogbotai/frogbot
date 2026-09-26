@@ -4,11 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
-import {
-  CHANNEL_TASK_SLUG,
-  type ChannelTaskInput,
-  getChannelHost,
-} from '../../../packages/frogbot/src/channels/host.js';
+import { CHANNEL_TASK_SLUG, getChannelHost } from '../../../packages/frogbot/src/channels/host.js';
+import type { ChannelTaskInput } from '../../../packages/frogbot/src/channels/types.js';
 import { buildTriggerEndpoints } from '../../../packages/frogbot/src/triggers/endpoints.js';
 import { buildIngressRegistry } from '../../../packages/frogbot/src/triggers/registry.js';
 import { AGENT_TRIGGER_TASK_SLUG } from '../../../packages/frogbot/src/triggers/task.js';

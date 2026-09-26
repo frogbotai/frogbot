@@ -171,7 +171,7 @@ export async function settleCall({
     const allSettled = pending.length === 1 || settledPart.state === 'output-error';
 
     if (settledPart.state === 'output-error' && (await closeAwaitingTurn({ req, chatId }))) {
-      promoteQueuedMessage({ req, chatId });
+      await promoteQueuedMessage({ req, chatId });
     }
 
     return { status: 'settled', part: settledPart, allSettled };

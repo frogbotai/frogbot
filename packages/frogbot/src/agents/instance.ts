@@ -377,7 +377,7 @@ export function createAgentInstance(
       lease.stop();
 
       if (await releaseTurn({ req, claim, state: 'idle' })) {
-        promoteQueuedMessage({ req, chatId: context.chatId });
+        await promoteQueuedMessage({ req, chatId: context.chatId });
       }
     }
   };

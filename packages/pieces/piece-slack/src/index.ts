@@ -10,6 +10,7 @@ import type { z } from 'zod';
 import { slackActions } from './actions.js';
 import { createSlackClient, type SlackClient } from './client.js';
 import { slackAuth, slackOptions, slackScopes } from './config.js';
+import { slackQuestions } from './questions/index.js';
 import { slackTriggers } from './triggers.js';
 import { parseSlackWebhook, slackHandshake, verifySlackWebhook } from './webhook.js';
 
@@ -119,6 +120,7 @@ export const createSlack = definePiece({
 
       return match ? { ...match, collection: payloadConfig.admin.user } : null;
     },
+    questions: slackQuestions,
   } satisfies PieceChannel<z.output<typeof slackAuth>, z.output<typeof slackOptions>, SlackClient>,
   actions: slackActions,
   triggers: slackTriggers,
