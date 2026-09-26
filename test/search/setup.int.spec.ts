@@ -6,6 +6,8 @@ import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 
 const { databaseAdapter } = await import('../databaseAdapter.js');
 
+const implemented = ['postgres', 'sqlite'].includes(process.env.FROGBOT_DATABASE || 'sqlite');
+
 function searchConfig() {
   return sanitize({
     secret: 'search-test',
@@ -21,16 +23,31 @@ function searchConfig() {
   } as FrogBotConfig);
 }
 
-describe.skipIf(process.env.FROGBOT_DATABASE === 'postgres')('search setup', () => {
-  it('rejects an unimplemented search index at database initialization', async () => {
-    await expect(new FrogBot().init({ config: searchConfig() })).rejects.toThrow(
-      /titles.*search-articles.*lexical.*not-implemented/,
-    );
-  });
+describe('search setup', () => {
+  it.skipIf(implemented)(
+    'rejects an unimplemented search index at database initialization',
+    async () => {
+      await expect(new FrogBot().init({ config: searchConfig() })).rejects.toThrow(
+        /titles.*search-articles.*lexical.*not-implemented/,
+      );
+    },
+  );
 
-  it('rejects an unimplemented search index when initializing without a database connection', async () => {
-    await expect(
-      new FrogBot().init({ config: searchConfig(), disableDBConnect: true }),
-    ).rejects.toThrow(/titles.*search-articles.*lexical.*not-implemented/);
-  });
+  it.skipIf(implemented)(
+    'rejects an unimplemented search index when initializing without a database connection',
+    async () => {
+      await expect(
+        new FrogBot().init({ config: searchConfig(), disableDBConnect: true }),
+      ).rejects.toThrow(/titles.*search-articles.*lexical.*not-implemented/);
+    },
+  );
+
+  it.runIf(implemented)(
+    'initializes a supported search index without a database connection',
+    async () => {
+      await expect(
+        new FrogBot().init({ config: searchConfig(), disableDBConnect: true }),
+      ).resolves.toBeInstanceOf(FrogBot);
+    },
+  );
 });

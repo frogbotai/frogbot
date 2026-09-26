@@ -123,7 +123,7 @@ function sanitizeVector(
 ): SearchIndexDescriptor['vector'] {
   if (!isRecord(value)) fail(context, 'vector must be an object');
 
-  assertKeys(context, value, ['field', 'metric'], 'vector');
+  assertKeys(context, value, ['field', 'metric', 'approximate'], 'vector');
 
   if (typeof value.field !== 'string') fail(context, 'vector.field must name a vector field');
 
@@ -141,11 +141,16 @@ function sanitizeVector(
     fail(context, 'vector.metric must be cosine, euclidean, or dotProduct');
   }
 
+  if (value.approximate !== undefined && typeof value.approximate !== 'boolean') {
+    fail(context, 'vector.approximate must be a boolean');
+  }
+
   return {
     path: resolved.path,
     localized: resolved.localized,
     dimensions: resolved.field.dimensions,
     metric,
+    approximate: value.approximate ?? true,
   };
 }
 
@@ -182,7 +187,7 @@ function sanitizeHybrid(
 ): SearchIndexDescriptor['hybrid'] {
   if (value === undefined) {
     return modes.lexical && modes.vector
-      ? { fusion: 'rrf', weights: { lexical: 1, vector: 1 }, defaultCandidates }
+      ? { fusion: 'rrf', weights: { lexical: 1, vector: 1 } }
       : undefined;
   }
 
@@ -190,24 +195,33 @@ function sanitizeHybrid(
     fail(context, 'hybrid requires both lexical and vector modes and an options object');
   }
 
-  assertKeys(context, value, ['fusion', 'weights', 'defaultCandidates'], 'hybrid');
+  assertKeys(context, value, ['fusion', 'weights'], 'hybrid');
 
   if (value.fusion !== undefined && value.fusion !== 'rrf') {
     fail(context, 'hybrid.fusion must be rrf');
   }
 
-  const candidates =
-    value.defaultCandidates === undefined ? defaultCandidates : value.defaultCandidates;
+  return { fusion: 'rrf', weights: sanitizeWeights(context, value.weights) };
+}
 
-  if (typeof candidates !== 'number' || !Number.isSafeInteger(candidates) || candidates < 1) {
-    fail(context, 'hybrid.defaultCandidates must be a positive integer');
+function sanitizeDefaultCandidates(
+  context: IndexContext,
+  value: unknown,
+  vector: boolean,
+): number | undefined {
+  if (value !== undefined && !vector) {
+    fail(context, 'defaultCandidates requires vector search');
   }
 
-  return {
-    fusion: 'rrf',
-    weights: sanitizeWeights(context, value.weights),
-    defaultCandidates: candidates,
-  };
+  if (!vector) return undefined;
+
+  const candidates = value === undefined ? defaultCandidates : value;
+
+  if (typeof candidates !== 'number' || !Number.isSafeInteger(candidates) || candidates < 1) {
+    fail(context, 'defaultCandidates must be a positive integer');
+  }
+
+  return candidates;
 }
 
 function sanitizeFilterFields({
@@ -282,7 +296,12 @@ function sanitizeSearchIndex({
 
   if (!isRecord(value)) fail(context, 'definition must be an object');
 
-  assertKeys(context, value, ['lexical', 'vector', 'hybrid', 'filters'], 'index');
+  assertKeys(
+    context,
+    value,
+    ['lexical', 'vector', 'hybrid', 'defaultCandidates', 'filters'],
+    'index',
+  );
 
   if (value.lexical === undefined && value.vector === undefined) {
     fail(context, 'configure lexical and/or vector search');
@@ -299,6 +318,8 @@ function sanitizeSearchIndex({
     vector: Boolean(vector),
   });
 
+  const candidates = sanitizeDefaultCandidates(context, value.defaultCandidates, Boolean(vector));
+
   const filterFields = sanitizeFilterFields({
     collection,
     context,
@@ -311,6 +332,7 @@ function sanitizeSearchIndex({
     ...(lexical ? { lexical } : {}),
     ...(vector ? { vector } : {}),
     ...(hybrid ? { hybrid } : {}),
+    ...(candidates ? { defaultCandidates: candidates } : {}),
     filterFields: Object.fromEntries(filterFields.map((field) => [field.path, field])),
   };
 }

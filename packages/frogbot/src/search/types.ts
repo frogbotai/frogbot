@@ -13,6 +13,7 @@ export type SearchIndexConfig = {
   vector?: {
     field: string;
     metric?: SearchMetric;
+    approximate?: boolean;
   };
   hybrid?: {
     fusion?: 'rrf';
@@ -20,8 +21,8 @@ export type SearchIndexConfig = {
       lexical: number;
       vector: number;
     };
-    defaultCandidates?: number;
   };
+  defaultCandidates?: number;
   filters?: { exclude: string[]; fields?: never } | { fields: string[]; exclude?: never };
 };
 
@@ -44,12 +45,13 @@ export type SearchIndexDescriptor = {
   vector?: SearchFieldPath & {
     dimensions: number;
     metric: SearchMetric;
+    approximate: boolean;
   };
   hybrid?: {
     fusion: 'rrf';
     weights: { lexical: number; vector: number };
-    defaultCandidates: number;
   };
+  defaultCandidates?: number;
   filterFields: Record<string, SearchFilterField>;
 };
 

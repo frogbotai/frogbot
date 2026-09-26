@@ -6,6 +6,7 @@ import {
   type SQLiteAdapterArgs,
 } from '@payloadcms/db-sqlite';
 import { installSQLJobOperations } from 'frogbot/jobs';
+import { sqliteSearchAdapter } from 'frogbot/search';
 
 export { sql } from '@payloadcms/db-sqlite';
 export type { MigrateDownArgs, MigrateUpArgs, SQLiteAdapter, SQLiteAdapterArgs };
@@ -31,5 +32,6 @@ export function sqliteAdapter(args: SQLiteAdapterArgs) {
 
       return database;
     },
+    search: sqliteSearchAdapter,
   };
 }
