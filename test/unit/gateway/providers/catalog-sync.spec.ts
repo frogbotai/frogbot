@@ -19,6 +19,62 @@ const model = {
   limit: { context: 128_000, output: 16_384 },
 };
 
+describe('catalog sync reasoning options', () => {
+  const reasoningModel = (reasoning_options: unknown) => ({
+    ...model,
+    reasoning: true,
+    reasoning_options,
+  });
+
+  const sync = (reasoning_options: unknown) =>
+    buildCatalogs({
+      overlays: {},
+      source: { openai: { models: { [model.id]: reasoningModel(reasoning_options) } } },
+    }).gateway[0]?.capabilities;
+
+  it('normalizes effort, budget and toggle options', () => {
+    const capabilities = sync([
+      { type: 'effort', values: ['low', null, 'null', 'high'] },
+      { type: 'budget_tokens', min: 1024, max: 32_768 },
+      { type: 'toggle' },
+    ]);
+
+    expect(capabilities?.reasoningOptions).toEqual([
+      { type: 'effort', values: ['low', 'high'] },
+      { type: 'budget_tokens', min: 1024, max: 32_768 },
+      { type: 'toggle' },
+    ]);
+  });
+
+  it('keeps effort without values and drops non-numeric budget limits', () => {
+    const capabilities = sync([{ type: 'effort' }, { type: 'budget_tokens', min: '1024' }]);
+
+    expect(capabilities?.reasoningOptions).toEqual([{ type: 'effort' }, { type: 'budget_tokens' }]);
+  });
+
+  it('drops unknown option shapes', () => {
+    const capabilities = sync([{ type: 'adaptive' }, null, 'effort', { type: 'toggle' }]);
+
+    expect(capabilities?.reasoningOptions).toEqual([{ type: 'toggle' }]);
+  });
+
+  it('omits reasoning options when none remain', () => {
+    expect(sync([])).not.toHaveProperty('reasoningOptions');
+    expect(sync([{ type: 'adaptive' }])).not.toHaveProperty('reasoningOptions');
+    expect(sync(undefined)).not.toHaveProperty('reasoningOptions');
+  });
+
+  it('publishes reasoning options in the committed gateway catalog', () => {
+    expect(DEFAULT_MODEL_CATALOG.get('anthropic/claude-sonnet-4-6')?.capabilities).toHaveProperty(
+      'reasoningOptions',
+      [
+        { type: 'effort', values: ['low', 'medium', 'high', 'max'] },
+        { type: 'budget_tokens', min: 1024 },
+      ],
+    );
+  });
+});
+
 describe('catalog sync SDK metadata', () => {
   it('preserves per-model provider routing metadata', () => {
     const { gateway } = buildCatalogs({

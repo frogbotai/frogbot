@@ -40,7 +40,11 @@ export type {
   ModelCatalogEntry,
   ModelContext,
   ModelCost,
+  ModelReasoningOption,
   Operation,
 } from './providers/catalog.js';
 export { calculateCostUSD } from './providers/catalog.js';
 export { calculateModelCostUSD } from './providers/cost.js';
+export type { ReasoningVariant, ResolveReasoningVariantsArgs } from './providers/reasoning.js';
+export { resolveReasoningVariants } from './providers/reasoning.js';
+export { canonicalizeModelId } from './providers/registry.js';

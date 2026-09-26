@@ -105,7 +105,7 @@
     "@next/env": "15.4.10",
     "@payloadcms/drizzle": "3.90.1",
     "@payloadcms/translations": "3.90.1",
-    "ai": "7.0.112",
+    "ai": "7.0.116",
     "chat": "^4.40.0",
     "croner": "10.0.1",
     "drizzle-orm": "0.45.2",
@@ -117,7 +117,7 @@
     "zod": "^4.3.6"
   },
   "peerDependencies": {
-    "@ai-sdk/otel": "^1.0.112",
+    "@ai-sdk/otel": "^1.0.116",
     "next": "^15.4.10"
   },
   "peerDependenciesMeta": {
@@ -126,7 +126,7 @@
     }
   },
   "devDependencies": {
-    "@ai-sdk/otel": "1.0.112",
+    "@ai-sdk/otel": "1.0.116",
     "@types/node": "^22.10.2",
     "@types/to-snake-case": "1.0.0",
     "eslint": "^9.16.0",

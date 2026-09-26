@@ -9,6 +9,11 @@
 
 export type Modality = 'text' | 'image' | 'audio' | 'video' | 'embedding';
 
+export type ModelReasoningOption =
+  | { type: 'effort'; values?: readonly string[] }
+  | { type: 'budget_tokens'; min?: number; max?: number }
+  | { type: 'toggle' };
+
 export type ModelCapabilities = {
   /** Supports tool/function calling. */
   toolCalling?: boolean;
@@ -16,6 +21,7 @@ export type ModelCapabilities = {
   structuredOutput?: boolean;
   /** Supports reasoning/thinking mode. */
   reasoning?: boolean;
+  reasoningOptions?: readonly ModelReasoningOption[];
   /** Supports vision (image input). */
   vision?: boolean;
   /** Supports prompt caching. */
