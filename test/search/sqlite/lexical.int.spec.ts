@@ -71,7 +71,11 @@ describe('SQLite lexical search', () => {
     });
 
     expect(result.mode).toBe('lexical');
-    expect(result.ranking).toEqual({ method: 'sqlite-fts5', higherIsBetter: true, approximate: false });
+    expect(result.ranking).toEqual({
+      method: 'sqlite-fts5',
+      higherIsBetter: true,
+      approximate: false,
+    });
     expect(result.hits.map(({ doc }) => doc.id)).toEqual([strong.id, weak.id]);
     expect(result.hits[0].score).toBeGreaterThan(result.hits[1].score);
   });

@@ -206,7 +206,9 @@ describe('SQLite search migrations', () => {
       'DROP TRIGGER IF EXISTS "frogbot_search_search_pages_content_update"',
     );
     expect(statements).toContain('DROP TABLE IF EXISTS "frogbot_search_search_pages_content_fts"');
-    expect(statements).toContain('DROP TABLE IF EXISTS "frogbot_search_search_pages_content_vectors"');
+    expect(statements).toContain(
+      'DROP TABLE IF EXISTS "frogbot_search_search_pages_content_vectors"',
+    );
     expect(statements.slice(-2)).toEqual([
       expect.stringMatching(/^INSERT INTO "frogbot_search_search_pages_content_fts"/),
       expect.stringMatching(/^INSERT INTO "frogbot_search_search_pages_content_vectors"/),

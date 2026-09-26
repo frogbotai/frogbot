@@ -119,12 +119,8 @@ describe('SQLite hybrid search', () => {
       });
     }
 
-    expect(hybrid.hits.find(({ doc }) => doc.id === lexicalOnly.id)?.components?.vector).toBe(
-      null,
-    );
-    expect(hybrid.hits.find(({ doc }) => doc.id === vectorOnly.id)?.components?.lexical).toBe(
-      null,
-    );
+    expect(hybrid.hits.find(({ doc }) => doc.id === lexicalOnly.id)?.components?.vector).toBe(null);
+    expect(hybrid.hits.find(({ doc }) => doc.id === vectorOnly.id)?.components?.lexical).toBe(null);
     expect(hybrid.hits[0].doc.id).toBe(both.id);
     expect(hybrid.hits.map(({ doc }) => doc.id)).toEqual(
       expect.arrayContaining([lexicalOnly.id, vectorOnly.id]),

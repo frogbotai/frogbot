@@ -70,7 +70,11 @@ export function getSearchTarget({
     const tokenize = getTokenizer(index.lexical.language);
 
     if (!tokenize) {
-      fail(collection, index.name, `lexical.language '${index.lexical.language}' has no FTS5 tokenizer`);
+      fail(
+        collection,
+        index.name,
+        `lexical.language '${index.lexical.language}' has no FTS5 tokenizer`,
+      );
     }
 
     const reserved = lexicalColumns.find(({ name: column }) =>
