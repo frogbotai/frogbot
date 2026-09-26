@@ -15,6 +15,7 @@ export const PROVIDER_NAMES = [
   'voyage',
   'typesafe-ai',
   'replicate',
+  'openrouter',
   'vercel',
 ] as const;
 

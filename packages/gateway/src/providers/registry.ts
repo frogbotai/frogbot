@@ -69,6 +69,7 @@ import {
   buildOpenAICompatibleProvider,
   type OpenAICompatibleConfig,
 } from './openai-compatible/index.js';
+import { openrouterProvider } from './openrouter/index.js';
 import { perplexityProvider } from './perplexity/index.js';
 import { prodiaProvider } from './prodia/index.js';
 import { replicateProvider } from './replicate/index.js';
@@ -112,6 +113,7 @@ export const providers = {
   mistral: mistralProvider,
   moonshotai: moonshotaiProvider,
   openai: openaiProvider,
+  openrouter: openrouterProvider,
   perplexity: perplexityProvider,
   prodia: prodiaProvider,
   replicate: replicateProvider,
@@ -191,7 +193,6 @@ export type ProvidersInput<C> = {
 /** Minimal duck-typed provider instance — mirrors {@link isProviderInstance}. */
 export type ProviderInstanceShape = {
   languageModel: (modelId: string) => unknown;
-  embeddingModel: (modelId: string) => unknown;
 };
 
 /** Constructed registry: each key carries that provider's specific instance type. */
@@ -209,17 +210,17 @@ function buildOne<K extends ProviderName>(name: K, cfg: ConfigOf<K>): InstanceOf
 }
 
 /**
- * Duck-type a value as a pre-built AI SDK provider instance. All `ProviderV2`+
- * instances expose `languageModel` and `embeddingModel` as functions
- * (`ai/packages/provider/src/provider/v2/provider-v2.ts`); shorthand configs
- * are plain option bags with no such methods.
+ * Duck-type a value as a pre-built AI SDK provider instance. Every provider
+ * instance exposes `languageModel` as a function, and `create*()` factories
+ * return callable functions rather than plain objects; shorthand configs are
+ * plain option bags with no such method. `embeddingModel` is not required
+ * because some adapters (e.g. `@openrouter/ai-sdk-provider`) do not expose it.
  */
 export function isProviderInstance(value: unknown): value is AIProvider {
   return (
-    typeof value === 'object' &&
+    (typeof value === 'object' || typeof value === 'function') &&
     value !== null &&
-    typeof (value as { languageModel?: unknown }).languageModel === 'function' &&
-    typeof (value as { embeddingModel?: unknown }).embeddingModel === 'function'
+    typeof (value as { languageModel?: unknown }).languageModel === 'function'
   );
 }
 

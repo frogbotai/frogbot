@@ -1,5 +1,6 @@
 // Registry unit tests — resolveProvider, buildProviderRegistry.
 
+import { createOpenAI } from '@ai-sdk/openai';
 import { MockProviderV4 } from 'ai/test';
 import { describe, expect, it } from 'vitest';
 
@@ -17,6 +18,7 @@ import {
 } from '../../../../packages/gateway/src/providers/catalog.js';
 import {
   buildProviderRegistry,
+  isProviderInstance,
   PROVIDER_NAMES,
   type ProviderRegistry,
   providers,
@@ -340,11 +342,21 @@ describe('buildProviderRegistry', () => {
     expect(registry.groq).toBeDefined();
     expect(registry.groq).not.toBe(prebuilt);
   });
+
+  it('recognizes an instance by languageModel alone and still builds settings objects', () => {
+    const { embeddingModel: _, ...languageOnly } = new MockProviderV4();
+    const settings = { apiKey: 'sk-or-test' };
+
+    expect(isProviderInstance(languageOnly)).toBe(true);
+    expect(isProviderInstance(createOpenAI({ apiKey: 'sk-test' }))).toBe(true);
+    expect(isProviderInstance(settings)).toBe(false);
+    expect(buildProviderRegistry({ openrouter: settings }).openrouter).not.toBe(settings);
+  });
 });
 
 describe('provider table', () => {
-  it('has 37 built-in providers', () => {
-    expect(PROVIDER_NAMES.length).toBe(37);
+  it('has 38 built-in providers', () => {
+    expect(PROVIDER_NAMES.length).toBe(38);
   });
 
   it('providers table keys match PROVIDER_NAMES', () => {

@@ -192,6 +192,42 @@ describe('catalog sync SDK metadata', () => {
     expect(gateway.map(({ id }) => id)).toEqual([`bedrock/${replacement.id}`]);
   });
 
+  it('keeps priced aggregator models, including free variants, and skips unpriced routers', () => {
+    const priced = { ...model, cost: { input: 3, output: 15, cache_read: 0.3 } };
+
+    const { gateway } = buildCatalogs({
+      overlays: {},
+      source: {
+        openrouter: {
+          models: {
+            'anthropic/claude-sonnet-4.6': { ...priced, id: 'anthropic/claude-sonnet-4.6' },
+            'meta-llama/llama-3.3-70b-instruct:free': {
+              ...model,
+              id: 'meta-llama/llama-3.3-70b-instruct:free',
+              cost: { input: 0, output: 0 },
+            },
+            'openrouter/auto': { ...model, id: 'openrouter/auto' },
+          },
+        },
+      },
+    });
+
+    expect(gateway.map(({ id }) => id)).toEqual([
+      'openrouter/anthropic/claude-sonnet-4.6',
+      'openrouter/meta-llama/llama-3.3-70b-instruct:free',
+    ]);
+    expect(gateway[0]?.cost).toEqual({ input: 3, output: 15, cache_read: 0.3 });
+  });
+
+  it('keeps unpriced models for direct providers', () => {
+    const { gateway } = buildCatalogs({
+      overlays: {},
+      source: { openai: { models: { [model.id]: model } } },
+    });
+
+    expect(gateway.map(({ id }) => id)).toEqual([`openai/${model.id}`]);
+  });
+
   it('preserves overlay-only provider entries', () => {
     const { gateway } = buildCatalogs({
       overlays: {

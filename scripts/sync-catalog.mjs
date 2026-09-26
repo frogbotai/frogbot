@@ -20,6 +20,7 @@ const PROVIDERS = {
   groq: 'groq',
   mistral: 'mistral',
   openai: 'openai',
+  openrouter: 'openrouter',
   perplexity: 'perplexity',
   togetherai: 'togetherai',
   vercel: 'vercel',
@@ -27,7 +28,7 @@ const PROVIDERS = {
 };
 const SYNCED_PROVIDERS = new Set(Object.values(PROVIDERS));
 const OVERLAY_PROVIDERS = new Set(['replicate', 'typesafe-ai', 'voyage']);
-const AGGREGATOR_PROVIDERS = new Set(['vercel']);
+const AGGREGATOR_PROVIDERS = new Set(['openrouter', 'vercel']);
 
 const MODALITIES = new Set(['text', 'image', 'audio', 'video', 'embedding']);
 

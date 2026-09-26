@@ -4,6 +4,7 @@ import { bedrockBeforeUpstream } from './bedrock/middleware.js';
 import { cohereBeforeUpstream } from './cohere/middleware.js';
 import { googleBeforeUpstream } from './google/middleware.js';
 import { openaiBeforeUpstream } from './openai/middleware.js';
+import { openrouterBeforeUpstream } from './openrouter/middleware.js';
 import { vercelBeforeUpstream } from './vercel/middleware.js';
 import { vertexBeforeUpstream } from './vertex/middleware.js';
 import { voyageBeforeUpstream } from './voyage/middleware.js';
@@ -15,6 +16,7 @@ export function getProviderHooks(providerName: string): Hooks {
   if (providerName === 'google') return { beforeUpstream: googleBeforeUpstream };
   if (providerName === 'openai') return { beforeUpstream: openaiBeforeUpstream };
   if (providerName === 'vercel') return { beforeUpstream: vercelBeforeUpstream };
+  if (providerName === 'openrouter') return { beforeUpstream: openrouterBeforeUpstream };
   if (providerName === 'vertex') return { beforeUpstream: vertexBeforeUpstream };
   if (providerName === 'voyage') return { beforeUpstream: voyageBeforeUpstream };
   return {};
