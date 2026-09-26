@@ -2,6 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
+vi.mock('../../../packages/frogbot/src/chat/turn/settle.js', () => ({
+  listPendingCalls: vi.fn(async () => []),
+  settleClientToolCall: vi.fn(),
+}));
+
 import { createTelegramBot } from '../../../packages/pieces/piece-telegram-bot/src/index.js';
 import { channelFixture, deferred } from '../frogbot/channels/helpers.js';
 
@@ -211,7 +216,7 @@ describe('Telegram commands through the installed adapter and channel host', () 
       await fixture.run(0);
 
       expect(fixture.streamMessage).not.toHaveBeenCalled();
-      expect(fixture.frogbot.find).not.toHaveBeenCalled();
+      expect(fixture.frogbot.create).not.toHaveBeenCalled();
       expect(fixture.frogbot.logger.info).toHaveBeenCalledOnce();
     } finally {
       await fixture.host.shutdown();

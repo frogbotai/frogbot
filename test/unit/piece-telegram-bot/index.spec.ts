@@ -42,6 +42,7 @@ describe('telegram-bot', () => {
         from: { id: 42, is_bot: false, first_name: 'Frog' },
         chat: { id: -100123, type: 'supergroup', title: 'FrogBot', is_forum: true },
         message_thread_id: 7,
+        is_topic_message: true,
       },
     });
     const webhookSecret = 'telegram-webhook-secret';

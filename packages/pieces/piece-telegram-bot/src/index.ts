@@ -1,4 +1,3 @@
-import { createTelegramAdapter } from '@chat-adapter/telegram';
 import { definePiece, type PieceChannel, type PieceWebhook } from 'frogbot/pieces';
 import type { z } from 'zod';
 
@@ -23,8 +22,10 @@ import {
   sendTextMessage,
   unpinMessage,
 } from './actions/index.js';
+import { createFrogBotTelegramAdapter } from './adapter.js';
 import { createTelegramBotClient, type TelegramBotClient } from './client.js';
 import { telegramBotAuth, telegramBotOptions } from './config.js';
+import { telegramQuestions } from './questions/index.js';
 import { newUpdate } from './triggers/newUpdate.js';
 import { parseTelegramWebhook, verifyTelegramWebhook } from './webhook.js';
 
@@ -65,7 +66,7 @@ const telegramBotChannel = {
       throw new Error('Telegram channels require a webhookSecret option.');
     }
 
-    return createTelegramAdapter({
+    return createFrogBotTelegramAdapter({
       botToken: auth.botToken,
       secretToken: options.webhookSecret,
       userName: options.botUsername,
@@ -76,6 +77,7 @@ const telegramBotChannel = {
   async identity() {
     return null;
   },
+  questions: telegramQuestions,
 } satisfies PieceChannel<
   z.output<typeof telegramBotAuth>,
   z.output<typeof telegramBotOptions>,
@@ -84,7 +86,7 @@ const telegramBotChannel = {
 
 export const createTelegramBot = definePiece({
   slug: 'telegramBot',
-  label: 'Telegram Bot',
+  label: 'Telegram',
   admin: { description: 'Build chatbots and respond to Telegram updates', group: 'Communication' },
   auth: telegramBotAuth,
   options: telegramBotOptions,

@@ -1,0 +1,113 @@
+---
+title: Telegram
+description: Run an agent in Telegram chats and let participants answer its questions with inline buttons.
+keywords: [pieces, telegram, channels, questions, inline keyboard, webhook]
+---
+
+`@frogbotai/piece-telegram-bot` connects an agent to a Telegram bot. Message the bot directly, or mention it in a group, and the agent replies in the same chat or forum topic. When the agent uses the [question tool](/chat/questions), participants answer by tapping buttons under the question or by replying to it.
+
+## Connect an agent
+
+```ts
+import { createTelegramBot } from '@frogbotai/piece-telegram-bot'
+import type { AgentConfig } from 'frogbot'
+import { question } from 'frogbot/tools'
+
+const telegram = createTelegramBot({
+  auth: { botToken: process.env.TELEGRAM_BOT_TOKEN! },
+  webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET!,
+  botUsername: 'my_frogbot',
+})
+
+const answerers = new Set(['123456789', '987654321'])
+
+export const support: AgentConfig = {
+  slug: 'support',
+  instructions: 'Help the team. Ask before making changes.',
+  tools: [question],
+  channels: [telegram],
+  access: ({ req }) => Boolean(req.user) || answerers.has(req.context.channel?.author.id ?? ''),
+}
+```
+
+| Option | Purpose |
+| --- | --- |
+| `auth.botToken` | The token BotFather gives you for the bot |
+| `webhookSecret` | Required for channels. Telegram sends it with every update, and FrogBot rejects updates without it. Letters, numbers, `_`, and `-` only |
+| `botUsername` | The bot's username without `@`, used to recognize mentions in groups |
+| `allowedUserIds` | Optional numeric Telegram user ids. Updates from anyone else are dropped before they reach FrogBot |
+
+The instance slug defaults to `telegramBot`. Give each instance its own slug when you connect more than one bot.
+
+## Set the webhook
+
+Point the bot at your server once, using the same secret:
+
+```bash
+curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
+  --data-urlencode "url=https://your-app.example.com/api/webhooks/telegramBot" \
+  --data-urlencode "secret_token=$TELEGRAM_WEBHOOK_SECRET"
+```
+
+Replace `telegramBot` with the instance slug. If you pass `allowed_updates`, include `message` and `callback_query`; button taps arrive as `callback_query` updates.
+
+To use a self-hosted Bot API server, set `TELEGRAM_API_BASE_URL` to its origin. The channel, the piece's actions, and questions all use it.
+
+## Groups, privacy mode, and topics
+
+Bots start with privacy mode on. In a group, the bot then receives commands, messages that mention it, and replies to its own messages. Taps on its buttons always arrive. That is enough to use questions: mention the bot to start, then tap, or reply to the question to type an answer. With privacy mode off (BotFather, `/setprivacy`), the agent also receives the rest of the group's messages once it has joined the conversation.
+
+Each chat is one conversation, and each forum topic is its own conversation. Replies in a group without topics, and in a forum's General topic, stay in the group's conversation.
+
+## Who can answer
+
+Telegram does not tell FrogBot who a participant is, so no one is signed in as a FrogBot user. The agent's default `access` check requires a signed-in user and denies everyone. Write an `access` function that admits the Telegram participants who may use the agent, as in the example above, which also keeps the agent available to signed-in FrogBot users in the admin chat. `req.context.channel.author` holds the participant's numeric Telegram `id`, `username`, and `name`. A built-in sender policy for channels is planned; until then, the `access` function is the way to admit Telegram participants.
+
+The same check decides who may answer a question. An authorized participant can answer a question someone else started. A participant without access gets a short reply saying so, and the question stays open.
+
+`allowedUserIds` is a stricter, earlier filter. It drops everything from other users, so they get no reply at all. An allowed user still needs to pass the agent's `access` check.
+
+FrogBot records the answer with the participant's Telegram id and name.
+
+## What participants see
+
+| Question | Telegram controls |
+| --- | --- |
+| One choice | One button per option; one tap answers |
+| Several choices allowed | Buttons with ☐ and ☑ that toggle, then **Done** |
+| More than 10 options, or long descriptions | Pages of up to 10 options with **‹ Prev** and **Next ›**; none are dropped |
+| Typed answer allowed (`custom`) | **Type your answer**, then reply to the question message. **‹ Back** returns to the buttons |
+| Several questions in one call | One message, one question at a time, with "2 of 3" progress |
+| Several question calls in one reply | One message per call, posted after the previous one is answered |
+
+Every question has a **Dismiss** button. Dismissing tells the agent the question was declined and stops the turn.
+
+Option descriptions are listed in the message. A label too long for a button is shortened on the button and shown in full in the message. The agent always receives the exact label.
+
+Selections belong to the question, not to one participant: in a group, anyone with access can toggle options, and whoever taps **Done** answers.
+
+A typed answer only counts as a reply to the question message after tapping **Type your answer**. Other messages, including replies to the bot's other messages, go to the agent as ordinary messages and are handled after the question is answered.
+
+When a question is answered, the buttons are removed and the message shows the answer and `Answered by <name>`. The agent continues in the same chat or topic. The first answer wins.
+
+Questions are answered only in Telegram. The FrogBot admin chat shows the conversation [read-only](/chat/questions#channel-conversations).
+
+## Limits and failures
+
+| Situation | What happens |
+| --- | --- |
+| No access | A short reply, naming the participant after a tap or under their message after a typed reply; the question stays open |
+| A second answer, a double tap, or a tap on an answered question | Nothing is recorded. The message shows the answer |
+| A tap on a button of an earlier question in the set, from a phone that hasn't caught up | Nothing is recorded |
+| A typed reply that arrives just after someone else answered | A reply saying the question was already answered |
+| **Done** with nothing selected | A short reply asking for a selection |
+| Showing the next question of a set fails, for example because Telegram rate-limits the edit | Taps and typed answers get a reply: "The next question is still posting — try again in a moment." Nothing is recorded. FrogBot redraws the message on retry, and it then answers normally |
+| Redrawing a selection, a page, or **Type your answer** fails | The change is still saved, and the next tap redraws the message |
+| Marking the question answered fails | The answer is still recorded and the agent continues. The next tap on the message shows the answer |
+| The server restarts while a question is open | The question stays answerable |
+| Posting the question fails | The question is posted again with the next message in the chat |
+| A question left open for 30 days | Its buttons stop responding; the next message in the chat posts it again |
+
+Every tap edits the message once. Telegram limits how often a bot can edit messages in one chat, about once a second in a private chat and 20 times a minute in a group, so very fast taps in a busy group can hit the limits above. Telegram Business chats do not offer questions.
+
+See [channel questions](/pieces/channel-questions) to add questions to another channel piece.
