@@ -43,10 +43,10 @@ You can store supplied vectors on ordinary records using a [vector field](/field
 | --- | --- |
 | [Postgres and Vercel Postgres](/database/postgres#collection-search) | Lexical, vector, and hybrid |
 | [SQLite and LibSQL](/database/sqlite#collection-search) | Lexical, vector, and hybrid |
-| [MongoDB](/database/mongodb) | Not implemented |
+| [MongoDB](/database/mongodb#collection-search) | Lexical, vector, and hybrid on deployments with a search process (Atlas or `mongot`) |
 | [Cloudflare D1](/database/sqlite#d1-database) | Not implemented |
 
-On an adapter without search, any configured collection `search` index, including lexical-only, fails setup with a `not-implemented` error identifying the collection, index, and mode. With no search index configured, setup does not emit a search capability report.
+On an adapter without search, any configured collection `search` index, including lexical-only, fails setup with a `not-implemented` error identifying the collection, index, and mode. On a MongoDB deployment without a search process, it fails with `missing-prerequisite` instead. With no search index configured, setup does not emit a search capability report.
 
 ## Selecting a database
 

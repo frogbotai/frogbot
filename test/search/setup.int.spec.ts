@@ -6,7 +6,9 @@ import { FrogBot } from '../../packages/frogbot/src/frogbot.js';
 
 const { databaseAdapter } = await import('../databaseAdapter.js');
 
-const implemented = ['postgres', 'sqlite'].includes(process.env.FROGBOT_DATABASE || 'sqlite');
+const implemented = ['mongodb', 'postgres', 'sqlite'].includes(
+  process.env.FROGBOT_DATABASE || 'sqlite',
+);
 
 function searchConfig() {
   return sanitize({

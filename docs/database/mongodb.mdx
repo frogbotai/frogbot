@@ -26,9 +26,100 @@ export default buildConfig({
 })
 ```
 
-## Collection vector fields and search
+## Collection search
 
-Use a [vector field](/fields/vector) for ordinary collection CRUD without a search index. **Native collection search is not implemented** in the MongoDB adapter. Adding any collection `search` index, including lexical-only, currently fails setup with `not-implemented`; see [collection search](/search/overview). Atlas or qualified self-managed search infrastructure, search-index permissions, readiness, and native metadata filter mappings are future adapter setup concerns. An ordinary MongoDB text index is not the same as an implemented FrogBot collection search operation.
+The adapter implements [collection search](/search/overview) with MongoDB Search and MongoDB Vector Search. Lexical queries run as a `$search` stage, vector queries as a `$vectorSearch` stage, and hybrid queries fuse both in one aggregation. Ranking happens inside the database after access, `where`, draft, and locale filters are applied.
+
+```ts
+import { mongooseAdapter } from '@frogbotai/db-mongodb'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: mongooseAdapter({ url: process.env.DATABASE_URL! }),
+  collections: [
+    {
+      slug: 'articles',
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        { name: 'body', type: 'textarea' },
+        { name: 'embedding', type: 'vector', dimensions: 1536 },
+      ],
+      search: {
+        content: {
+          lexical: { fields: ['title', 'body'], language: 'english' },
+          vector: { field: 'embedding' },
+        },
+      },
+    },
+  ],
+})
+```
+
+### Prerequisites
+
+[Vector fields](/fields/vector) store plain number arrays and work on any MongoDB deployment. Search indexes need a deployment with MongoDB's search process, `mongot`:
+
+- [MongoDB Atlas](https://www.mongodb.com/atlas).
+- A self-managed deployment that runs `mongot` alongside `mongod`. For local development, the `mongodb/mongodb-atlas-local` Docker image includes both.
+
+The database user also needs permission to list, create, and update search indexes on the collections you search.
+
+When the adapter connects, it creates and updates the search indexes. If that fails, it closes the connection and stops setup with `SearchCapabilityError`. The message names the collection, index, mode, and reason:
+
+| Reason                 | Cause                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| `missing-prerequisite` | The deployment has no search process, for example a plain replica set or standalone `mongod`. |
+| `permission-denied`    | The database user cannot list, create, or update search indexes.                              |
+| `setup-failed`         | The server rejected an index definition, or an index failed to build.                         |
+
+Collections without a `search` index connect as usual on any deployment.
+
+Before connecting, setup reports `engine-gap` for configurations that MongoDB cannot index:
+
+- A vector field with more than 8,192 dimensions.
+- A `lexical.language` without a built-in MongoDB language analyzer. Supported names include `english`, `french`, `german`, `spanish`, `italian`, `portuguese`, `dutch`, `russian`, `chinese`, `japanese`, `korean`, `arabic`, and the other `lucene.<language>` analyzers. Without `language`, text uses the standard analyzer.
+
+### Search indexes
+
+Each named index becomes up to two MongoDB search indexes on the collection:
+
+| Index component | MongoDB index name | Type           |
+| --------------- | ------------------ | -------------- |
+| `lexical`       | `<name>_lexical`   | `search`       |
+| `vector`        | `<name>_vector`    | `vectorSearch` |
+
+MongoDB needs the `vectorSearch` index for exact vector search as well, so an index with `vector.approximate: false` still creates it. Collections with drafts get the same indexes on their versions collection, so `draft: true` queries rank the latest draft of each document. Each index counts toward your deployment's search index limit: one named index with both components on a collection with drafts uses four MongoDB search indexes.
+
+The adapter creates missing indexes and updates an index in place when its definition differs from your configuration, for example after you add a filterable field or someone edits the index by hand. It never drops a search index. If the server rejects an in-place update, setup fails with `setup-failed` and the server's message. Drop the index yourself, and the adapter recreates it on the next connection. An index that MongoDB reports as failed to build also stops setup with `setup-failed`; fix the cause, then drop it so it is recreated. Search configuration is read once at startup, so restart the app, including the development server, after changing a collection's `search` indexes.
+
+MongoDB builds search indexes asynchronously, so a new or rebuilt index is not usable right away. Every search checks the indexes it needs first. A missing index, or one that is not queryable yet, returns `SearchReadinessError` (HTTP `503`) rather than an empty result. Ordinary reads and writes are never blocked while an index builds.
+
+### Filters
+
+MongoDB can only filter search results on paths that the search index maps, so the adapter maps every eligible filterable field: IDs and single relationships, dates, numbers, checkboxes, and text-like values (text, textarea, email, select, and radio). Use `filters.fields` or `filters.exclude` on the index to narrow the list. Text fields that are both searched and filtered are indexed as searchable text and as exact-match tokens. Fields with `hasMany`, and fields inside arrays or blocks, cannot be filtered.
+
+Your `where` filter, collection read access, trash visibility, and draft status run inside the `$search` or `$vectorSearch` stage, before the result limit, so hidden documents never take up result slots. Filters on unmapped paths, or operators such as `like` and `contains`, fail with `SearchFilterUnsupportedError`. Exact-match tokens are case-sensitive, and very long text values may not be indexed as tokens, so filter on short, exact values.
+
+### Ranking
+
+| Mode    | `ranking.method`                   | Score                                                                                                  |
+| ------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Lexical | `mongodb-search`                   | The `$search` relevance score (BM25). Higher is better.                                                |
+| Vector  | `mongodb-hnsw` or `mongodb-exact`  | Cosine similarity, Euclidean distance (lower is better), or dot product.                               |
+| Hybrid  | `rrf`                              | Weighted reciprocal rank fusion, `weight / (60 + rank)` summed over both components. Higher is better. |
+
+MongoDB reports vector scores normalized to the 0–1 range. The adapter converts them back in the database, so vector scores use the same scale as on the other adapters. The `dotProduct` metric expects unit-length vectors; use `cosine` if yours aren't normalized.
+
+Approximate vector queries report `approximate: true` and pass the [resolved candidate count](/search/overview#candidates) to `$vectorSearch` as `numCandidates`, capped at MongoDB's maximum of 10,000. Your filters run inside the vector index scan, so they don't reduce the number of hits. Indexes with `vector.approximate: false` search exactly, and so does any query whose `limit` exceeds 10,000, because `numCandidates` cannot be lower than the limit.
+
+Hybrid search takes up to the [resolved candidate count](/search/overview#candidates) from each component and returns the top `limit` by fused score. A record that matches only one component still ranks, with the other component reported as `null`. Documents with equal component scores share a rank. On servers that support `$rankFusion`, the adapter uses it; otherwise, for example on MongoDB 8.0, it computes the same fusion with `$unionWith`. Both paths run entirely in the database.
+
+### Limits
+
+- Localized fields are indexed once per locale and ranked on the requested locale's stored value. Fallback-locale values are not ranked.
+- Search indexes update shortly after a write, not in the same transaction, so a new or changed document can take a moment to appear in results. A deleted document can stay in the index briefly, but ranked documents are read back before they are returned, so deleted and no-longer-readable documents are left out and `hits` may be shorter than `limit`.
+- Search does not read uncommitted writes from the request's transaction.
 
 ## Options
 

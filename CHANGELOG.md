@@ -10,6 +10,7 @@
 ### Features
 
 - `@frogbotai/db-sqlite` implements collection search: FTS5 lexical search, LibSQL vector search on a DiskANN index or exact, and hybrid reciprocal rank fusion, each in one SQL statement. Search tables, indexes, and triggers are part of development push and generated migrations.
+- `@frogbotai/db-mongodb` implements collection search on deployments with MongoDB Search (Atlas or `mongot`): `$search` lexical search, `$vectorSearch` approximate or exact vector search, and hybrid reciprocal rank fusion with `$rankFusion`, or `$unionWith` on servers without it. The adapter creates and updates the collection's search indexes when it connects.
 - Search indexes accept `vector.approximate` (default `true`) to choose between an approximate nearest-neighbour index and exact vector search, and an index-level `defaultCandidates` that replaces `hybrid.defaultCandidates`. The query's `candidates` now also applies to approximate vector search: Postgres uses it as `hnsw.ef_search` and SQLite as the `vector_top_k` neighbour count.
 
 ### Fixes
