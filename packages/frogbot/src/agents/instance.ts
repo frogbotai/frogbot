@@ -18,12 +18,14 @@ import { persistAssistantMessage } from '../chat/messagePersistence.js';
 import { actorFromRequest } from '../chat/turn/actor.js';
 import { repairInterruptedParts } from '../chat/turn/messages.js';
 import { promoteQueuedMessage, promoteSteerMessages } from '../chat/turn/queue.js';
+import { assertStoredSelection } from '../chat/turn/selection.js';
 import { holdTurn, releaseTurn } from '../chat/turn/state.js';
 import { streamTurn } from '../chat/turn/streamTurn.js';
 import type { FrogBot } from '../frogbot.js';
 import type { ToolCtx } from '../tools/types.js';
 import { isClientTool } from '../tools/types.js';
 import type { FrogBotRequest } from '../types/request.js';
+import type { ResolvedAgentSelection } from './service.js';
 import { toAISDKTools, toAISDKToolsContext } from './tools.js';
 import type {
   AgentCallOptions,
@@ -44,6 +46,11 @@ export type AgentInstanceDeps = {
   frogbot: FrogBot;
 };
 
+type AgentRun = {
+  selection: ResolvedAgentSelection;
+  models: string[];
+};
+
 export function createAgentInstance(
   agentConfig: SanitizedAgentConfig,
   deps: AgentInstanceDeps,
@@ -56,6 +63,7 @@ export function createAgentInstance(
     skip: (messages) => clientSteps.has(messages),
   });
   const access = agentConfig.access ?? (({ req }) => !!req.user);
+  const runs = new WeakMap<AgentCallOptions, AgentRun>();
   let instance: AgentInstance;
 
   const baseAgent = new ToolLoopAgent<AgentCallOptions, typeof tools, Record<string, unknown>>({
@@ -78,10 +86,11 @@ export function createAgentInstance(
       const kinds = new Set(options.clientTools?.kinds ?? []);
       const req = options.req!;
       const chatId = options.chatId;
+      const run = runs.get(options)!;
 
       return {
         ...call,
-        model: gateway.chatModel(resolveModel(options.model ?? agentConfig.model, config)),
+        model: gateway.chatModel(run.selection.model),
         runtimeContext: { agent: ctx.agent },
         toolsContext: toAISDKToolsContext(agentConfig.tools, ctx),
         ...(clientTools.length === 0
@@ -96,24 +105,47 @@ export function createAgentInstance(
                 return 'not-applicable';
               },
             }),
-        ...(chatId === undefined
-          ? {}
-          : {
-              prepareStep: async ({ messages }) => {
-                const steered = await promoteSteerMessages({
+        prepareStep: async ({ messages, stepNumber }) => {
+          const steered =
+            chatId === undefined
+              ? []
+              : await promoteSteerMessages({
                   req,
                   chatId,
                   before: options.replyCreatedAt,
                   actor: actorFromRequest(req),
                 });
 
-                if (steered.length === 0) return undefined;
+          const governing = steered.at(-1);
 
-                return {
-                  messages: [...messages, ...(await convertToModelMessages(steered, { tools }))],
-                };
-              },
-            }),
+          if (governing) {
+            run.selection = assertStoredSelection({
+              agent: instance,
+              config,
+              selection: governing.selection,
+            });
+          }
+
+          run.models[stepNumber] = run.selection.model;
+
+          const { model, variant } = run.selection;
+
+          return {
+            model: gateway.chatModel(model),
+            ...(variant ? { providerOptions: variant.providerOptions } : {}),
+            ...(steered.length === 0
+              ? {}
+              : {
+                  messages: [
+                    ...messages,
+                    ...(await convertToModelMessages(
+                      steered.map(({ message }) => message),
+                      { tools },
+                    )),
+                  ],
+                }),
+          };
+        },
       };
     },
   });
@@ -121,12 +153,15 @@ export function createAgentInstance(
   type Call = AgentCallParameters<AgentCallOptions, typeof tools, Record<string, unknown>>;
   type StreamCall = AgentStreamParameters<AgentCallOptions, typeof tools, Record<string, unknown>>;
 
-  const buildCall = async (opts: AgentStreamOpts & Pick<AgentCallOptions, 'chatId'>) => ({
+  const buildCall = async (
+    opts: AgentStreamOpts & Pick<AgentCallOptions, 'chatId' | 'selection'>,
+  ) => ({
     ...(await buildPrompt(opts, tools)),
     options: {
       req: opts.req,
       overrideAccess: opts.overrideAccess ?? true,
       ...('chatId' in opts && opts.chatId !== undefined ? { chatId: opts.chatId } : {}),
+      ...(opts.selection ? { selection: opts.selection } : {}),
     },
     abortSignal: opts.abortSignal,
   });
@@ -141,21 +176,39 @@ export function createAgentInstance(
       });
     }
 
+    const selection = assertStoredSelection({
+      agent: instance,
+      config,
+      selection: options.selection ?? {},
+    });
+
     const runId = options.runId ?? generateId();
+    const preparedOptions = { ...options, req, overrideAccess, runId };
+    const run: AgentRun = { selection, models: [] };
+
+    runs.set(preparedOptions, run);
 
     return {
       req,
       runId,
-      call: { ...call, options: { ...options, req, overrideAccess, runId } },
+      run,
+      call: { ...call, options: preparedOptions },
     };
   };
 
   const finishSteps = async (
     steps: readonly { finishReason?: string; usage?: unknown }[],
-    context: { req: FrogBotRequest; runId: string; chatId?: number | string },
+    context: {
+      req: FrogBotRequest;
+      runId: string;
+      chatId?: number | string;
+      model: string;
+      models: readonly string[];
+    },
   ) => {
-    const model = resolveModel(agentConfig.model, config);
-    for (const step of steps) {
+    for (const [index, step] of steps.entries()) {
+      const model = context.models[index] ?? context.model;
+
       await logUsage({
         phase: 'afterOperation',
         operation: 'chat.completions',
@@ -180,18 +233,19 @@ export function createAgentInstance(
   };
 
   const runGenerate = async (call: Call): Promise<AgentGenerateResult> => {
-    const { req, runId, call: preparedCall } = await prepareRun(call);
+    const { req, runId, run, call: preparedCall } = await prepareRun(call);
+    const model = run.selection.model;
     // Op-model-join NOT taken: the agent's chat model is fixed at construction and
     // re-set per call inside `prepareCall`, which has no access to the op. The AI SDK's
     // `AgentCallParameters` (what `baseAgent.generate` accepts) carries no `model` field,
     // so `preparedCall.model = op.chatModel()` would be ignored — model overrides only
-    // flow through `prepareCall`'s return. Injecting a per-op model via a shared closure
-    // variable would race across concurrent invocations. So upstream calls use
+    // flow through the `prepareCall` and `prepareStep` returns. Injecting a per-op model via
+    // a shared closure variable would race across concurrent invocations. So upstream calls use
     // `gateway.chatModel(...)` (upstream hooks mint their own requestId), and the op only
     // drives beforeOperation (start) / afterOperation (finish).
     const op = gateway.operation({
       operation: 'chat.completions',
-      model: resolveModel(agentConfig.model, config),
+      model,
       context: {
         req,
         agent: {
@@ -210,6 +264,8 @@ export function createAgentInstance(
         req,
         runId,
         chatId: preparedCall.options.chatId,
+        model,
+        models: run.models,
       });
       await op.finish({
         finishReason: result.finishReason,
@@ -223,10 +279,11 @@ export function createAgentInstance(
   };
 
   const runStream = async (call: StreamCall): Promise<AgentStreamResult> => {
-    const { req, runId, call: preparedCall } = await prepareRun(call);
+    const { req, runId, run, call: preparedCall } = await prepareRun(call);
+    const model = run.selection.model;
     const op = gateway.operation({
       operation: 'chat.completions',
-      model: resolveModel(agentConfig.model, config),
+      model,
       context: {
         req,
         agent: {
@@ -289,6 +346,8 @@ export function createAgentInstance(
             req,
             runId,
             chatId: preparedCall.options.chatId,
+            model,
+            models: run.models,
           });
           await finishOperation({
             finishReason: event.finishReason,
@@ -339,9 +398,9 @@ export function createAgentInstance(
       throw new Error(`[frogbot] Chat '${context.chatId}' could not start a turn.`);
     }
 
-    const { claim, uiMessages } = context;
+    const { claim, uiMessages, selection } = context;
     const lease = holdTurn({ req, claim });
-    const mainModel = resolveModel(agentConfig.model, config);
+    const mainModel = resolveModel(selection.model ?? agentConfig.model, config);
 
     try {
       const result = await aiAgent.generate(
@@ -350,6 +409,7 @@ export function createAgentInstance(
           req,
           overrideAccess: true,
           chatId: context.chatId,
+          selection,
           abortSignal: AbortSignal.any([
             lease.signal,
             ...(runOpts.abortSignal ? [runOpts.abortSignal] : []),
@@ -418,6 +478,7 @@ export function createAgentInstance(
       agent: instance,
       claim: context.claim,
       uiMessages: context.uiMessages,
+      selection: context.selection,
       clientTools,
       abortSignal: runOpts.abortSignal,
       onError: (error) => {

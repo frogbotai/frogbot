@@ -19,10 +19,25 @@ export type FrogBotChatTransportOptions<UI_MESSAGE extends UIMessage> = Omit<
   onChatId?: (chatId: string) => void;
 };
 
-export function prepareChatRequest<UI_MESSAGE extends UIMessage>(
-  chatId?: string | number | (() => string | number | undefined),
-  model?: string | (() => string | undefined),
-): PrepareSendMessagesRequest<UI_MESSAGE> {
+type ChatRequestValue<T extends string | number> = T | (() => T | undefined);
+
+type ChatRequestFields = {
+  chatId?: ChatRequestValue<string | number>;
+  model?: ChatRequestValue<string>;
+  reasoning?: ChatRequestValue<string>;
+};
+
+function resolveRequestValue<T extends string | number>(
+  value: ChatRequestValue<T> | undefined,
+): T | undefined {
+  return typeof value === 'function' ? value() : value;
+}
+
+export function prepareChatRequest<UI_MESSAGE extends UIMessage>({
+  chatId,
+  model,
+  reasoning,
+}: ChatRequestFields = {}): PrepareSendMessagesRequest<UI_MESSAGE> {
   return ({ messages }) => {
     const unsafe = messages.some((message) =>
       message.parts.some(
@@ -30,13 +45,17 @@ export function prepareChatRequest<UI_MESSAGE extends UIMessage>(
       ),
     );
     if (unsafe) throw new Error('Chat attachments require a stable FrogBot file reference');
-    const resolvedChatId = typeof chatId === 'function' ? chatId() : chatId;
-    const resolvedModel = typeof model === 'function' ? model() : model;
+
+    const resolvedChatId = resolveRequestValue(chatId);
+    const resolvedModel = resolveRequestValue(model);
+    const resolvedReasoning = resolveRequestValue(reasoning);
+
     return {
       body: {
         messages,
         ...(resolvedChatId === undefined ? {} : { chatId: resolvedChatId }),
         ...(resolvedModel === undefined ? {} : { model: resolvedModel }),
+        ...(resolvedReasoning === undefined ? {} : { reasoning: resolvedReasoning }),
       },
     };
   };

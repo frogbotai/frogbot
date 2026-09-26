@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { findTurnState } from 'frogbot/test';
+import { findTurnState, runQueuedTurn } from 'frogbot/test';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
@@ -44,6 +44,8 @@ type StoredMessage = {
   id: string;
   role: string;
   status?: string;
+  model?: string | null;
+  reasoning?: string | null;
   parts: StoredPart[];
 };
 
@@ -465,6 +467,78 @@ describe('chat turns: recovery, access, and forged input', () => {
       status: 'queued',
       parts: [{ type: 'text', text: 'Mine.' }],
     });
+  });
+
+  it('a queued message whose stored choice is no longer offered fails without a model call', async () => {
+    const { body } = await post(`/agents/${questionAgentSlug}`, { prompt: 'Start.' });
+
+    await booted.frogbot.create({
+      collection: messagesSlug,
+      data: {
+        id: `stale-${Date.now()}`,
+        chat: body.chatId,
+        role: 'user',
+        parts: [{ type: 'text', text: 'Think harder.' }],
+        status: 'queued',
+        delivery: 'queue',
+        author: { user: null },
+        model: 'test/thinker',
+        reasoning: 'max',
+      },
+      overrideAccess: true,
+    });
+
+    model.reset();
+
+    await expect(
+      runQueuedTurn({ frogbot: booted.frogbot, chatId: body.chatId }),
+    ).rejects.toMatchObject({
+      code: 'selection-unavailable',
+      message: "Reasoning option 'max' is not available for model 'test/thinker'",
+    });
+
+    expect(model.requests).toEqual([]);
+    await expect(
+      findTurnState({ req: await booted.frogbot.createRequest({}), chatId: body.chatId }),
+    ).resolves.toBe('idle');
+  });
+
+  it('clients cannot write the model or reasoning option of a message', async () => {
+    const headers = await loginHeaders(`selection-${Date.now()}@frogbot.local`);
+
+    const { body } = await post(
+      `/agents/${questionAgentSlug}`,
+      { prompt: 'Start.', model: 'test/thinker', reasoning: 'low' },
+      headers,
+    );
+
+    const [message] = await storedMessages(body.chatId);
+
+    const updated = await fetch(`${booted.baseUrl}/api/${messagesSlug}/${message!.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', ...headers },
+      body: JSON.stringify({ model: 'test/writer', reasoning: 'max' }),
+    });
+
+    const created = await fetch(`${booted.baseUrl}/api/${messagesSlug}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...headers },
+      body: JSON.stringify({
+        id: `forged-${Date.now()}`,
+        chat: body.chatId,
+        role: 'user',
+        parts: [{ type: 'text', text: 'Forged.' }],
+        model: 'test/writer',
+        reasoning: 'max',
+      }),
+    });
+
+    expect([updated.status, created.status]).toEqual([200, 201]);
+
+    const [stored, , forged] = await storedMessages(body.chatId);
+
+    expect(stored).toMatchObject({ model: 'test/thinker', reasoning: 'low' });
+    expect([forged!.model ?? null, forged!.reasoning ?? null]).toEqual([null, null]);
   });
 
   it('deleting the waiting assistant message does not wedge the chat', async () => {

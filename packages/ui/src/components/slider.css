@@ -1,0 +1,93 @@
+.fb-slider {
+  --fb-slider-thumb: 1rem;
+  --fb-slider-track: 0.25rem;
+  --fb-slider-fill: calc(
+    var(--fb-slider-thumb) / 2 + (100% - var(--fb-slider-thumb)) * var(--fb-slider-progress)
+  );
+
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.fb-slider__input {
+  height: var(--fb-slider-thumb);
+  margin: 0 calc(50% / var(--fb-slider-count) - var(--fb-slider-thumb) / 2);
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  outline: none;
+}
+
+.fb-slider__input:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.fb-slider__input::-webkit-slider-runnable-track {
+  height: var(--fb-slider-track);
+  background: linear-gradient(
+    to right,
+    var(--theme-base-850) var(--fb-slider-fill),
+    var(--theme-base-400) var(--fb-slider-fill)
+  );
+  border-radius: 9999px;
+}
+
+.fb-slider__input::-moz-range-track {
+  height: var(--fb-slider-track);
+  background: linear-gradient(
+    to right,
+    var(--theme-base-850) var(--fb-slider-fill),
+    var(--theme-base-400) var(--fb-slider-fill)
+  );
+  border-radius: 9999px;
+}
+
+.fb-slider__input::-webkit-slider-thumb {
+  width: var(--fb-slider-thumb);
+  height: var(--fb-slider-thumb);
+  margin-top: calc((var(--fb-slider-track) - var(--fb-slider-thumb)) / 2);
+  background: var(--theme-base-0);
+  border: 2px solid var(--theme-base-850);
+  border-radius: 9999px;
+  appearance: none;
+  transition: box-shadow 150ms;
+}
+
+.fb-slider__input::-moz-range-thumb {
+  box-sizing: border-box;
+  width: var(--fb-slider-thumb);
+  height: var(--fb-slider-thumb);
+  background: var(--theme-base-0);
+  border: 2px solid var(--theme-base-850);
+  border-radius: 9999px;
+  transition: box-shadow 150ms;
+}
+
+.fb-slider__input:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--theme-base-500);
+}
+
+.fb-slider__input:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--theme-base-500);
+}
+
+.fb-slider__stops {
+  display: grid;
+  grid-template-columns: repeat(var(--fb-slider-count), 1fr);
+}
+
+.fb-slider__stop {
+  padding: 0 0.25rem;
+  color: var(--theme-base-600);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  text-align: center;
+}
+
+.fb-slider__stop--active {
+  color: var(--theme-base-900);
+}

@@ -21,6 +21,8 @@ export type TurnMessageDocument = {
   metadata?: unknown;
   status?: 'active' | 'queued' | null;
   delivery?: MessageDelivery | null;
+  model?: string | null;
+  reasoning?: string | null;
   author?: TurnActor | null;
   settlements?: Record<string, ClientToolSettlement> | null;
   version?: number | null;

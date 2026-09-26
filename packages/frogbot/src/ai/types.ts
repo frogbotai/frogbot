@@ -3,6 +3,7 @@
 // Near-passthrough of AI SDK 7 — developers who know the AI SDK feel at home.
 // FrogBot adds: typed model resolution, access control, hooks, and routers.
 
+import type { ModelReasoningOption } from '@frogbotai/gateway';
 import type {
   Experimental_EvaluationQuestion,
   Experimental_EvaluationResult,
@@ -115,6 +116,7 @@ export type ModelConfig = {
     output: ModelModality[];
   };
   reasoning?: boolean;
+  reasoningOptions?: readonly ModelReasoningOption[];
   tool_call?: boolean;
   structured_output?: boolean;
   temperature?: boolean;

@@ -8,41 +8,31 @@ import { buildTurnEndpoints } from '../chat/turn/endpoints.js';
 import { releaseTurn } from '../chat/turn/state.js';
 import { allClientTools, streamTurn } from '../chat/turn/streamTurn.js';
 import { validateChatMessages } from '../chat/validateMessages.js';
-import type { DocID } from '../collections/config/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { resolveChatAttachments } from '../uploads/resolveChatAttachments.js';
 import { agentResult, errorResponse } from './responses.js';
 import {
   assertAgentAccess,
-  assertAllowedModel,
+  assertAgentSelection,
   getAgent,
   getAgentAuthorizations,
   getAgentManifest,
 } from './service.js';
+import type { AgentModelId, AgentSelection } from './types.js';
 
-const chatIdSchema = z.union([z.string(), z.number()]).optional();
-const deliverySchema = z.enum(['queue', 'steer']).optional();
-
-const bodySchema = z.union([
-  z
-    .object({
-      prompt: z.string().min(1),
-      messages: z.never().optional(),
-      chatId: chatIdSchema,
-      model: z.string().min(1).optional(),
-      delivery: deliverySchema,
-    })
-    .strict(),
-  z
-    .object({
-      messages: z.array(z.unknown()).min(1),
-      prompt: z.never().optional(),
-      chatId: chatIdSchema,
-      model: z.string().min(1).optional(),
-      delivery: deliverySchema,
-    })
-    .strict(),
-]);
+const bodySchema = z
+  .object({
+    prompt: z.string().min(1).optional(),
+    messages: z.array(z.unknown()).min(1).optional(),
+    chatId: z.union([z.string(), z.number()]).optional(),
+    model: z.string().min(1).optional(),
+    reasoning: z.string().min(1).optional(),
+    delivery: z.enum(['queue', 'steer']).optional(),
+  })
+  .strict()
+  .refine((body) => (body.prompt === undefined) !== (body.messages === undefined), {
+    message: 'Body must include either `prompt` (string) or `messages` (array)',
+  });
 
 type AgentRequestBody =
   { prompt: string; messages?: never } | { messages: UIMessage[]; prompt?: never };
@@ -58,50 +48,50 @@ export function buildAgentEndpoints() {
           const agent = getAgent({ req, slug });
           await assertAgentAccess({ req, agent });
 
-          let body: AgentRequestBody;
-          let requestedChatId: DocID | undefined;
-          let requestedModel: string | undefined;
-          let delivery: 'queue' | 'steer' | undefined;
+          const parsed = bodySchema.safeParse(await req.json!().catch(() => undefined));
 
-          try {
-            const {
-              chatId,
-              model,
-              delivery: requestedDelivery,
-              ...parsed
-            } = bodySchema.parse(await req.json!());
-
-            requestedChatId = chatId;
-            requestedModel = model;
-            delivery = requestedDelivery;
-            body =
-              'messages' in parsed && parsed.messages
-                ? {
-                    messages: await validateChatMessages(
-                      parsed.messages,
-                      agent.aiAgent.tools as never,
-                    ),
-                  }
-                : parsed;
-          } catch (error) {
-            req.frogbot.logger.error(
-              { err: error, agent: slug },
-              '[frogbot] Invalid agent request body',
-            );
+          if (!parsed.success) {
             return Response.json(
-              { error: 'Body must include `prompt` (string) or `messages` (array)' },
+              { error: describeIssue(parsed.error.issues[0]!) },
               { status: 400 },
             );
           }
 
-          const model = assertAllowedModel({ agent, model: requestedModel });
+          const { chatId, model, reasoning, delivery, prompt, messages } = parsed.data;
+
+          let body: AgentRequestBody;
+
+          try {
+            body = messages
+              ? { messages: await validateChatMessages(messages, agent.aiAgent.tools as never) }
+              : { prompt: prompt! };
+          } catch (error) {
+            req.frogbot.logger.error(
+              { err: error, agent: slug },
+              '[frogbot] Invalid agent request messages',
+            );
+
+            return Response.json(
+              { error: '`messages` must be valid UI messages' },
+              { status: 400 },
+            );
+          }
+
+          const selection: AgentSelection = {
+            ...(model ? { model: model as AgentModelId } : {}),
+            ...(reasoning ? { reasoning } : {}),
+          };
+
+          assertAgentSelection({ agent, config: req.frogbot.config.ai!, selection });
+
           const eventStream = acceptsEventStream(req.headers.get('accept'));
 
           const context = await resolveChatContext({
             req,
             agentSlug: agent.slug,
-            chatId: requestedChatId,
+            chatId,
             incoming: toUIMessages(body),
+            selection,
             tools: agent.aiAgent.tools,
             delivery,
           });
@@ -124,7 +114,7 @@ export function buildAgentEndpoints() {
             claim: context.claim,
             uiMessages: context.uiMessages,
             providerMessages,
-            model,
+            selection: context.selection,
             clientTools: allClientTools(agent),
             abortSignal: req.signal ?? undefined,
             ...(eventStream
@@ -190,6 +180,12 @@ function toUIMessages(body: AgentRequestBody): UIMessage[] {
       parts: [{ type: 'text', text: body.prompt }],
     } satisfies UIMessage,
   ];
+}
+
+function describeIssue(issue: z.ZodError['issues'][number]): string {
+  const path = issue.path.join('.');
+
+  return path ? `\`${path}\`: ${issue.message}` : issue.message;
 }
 
 function queuedResponse({

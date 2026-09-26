@@ -1,10 +1,11 @@
 import { getAgent } from '../../agents/service.js';
-import type { AgentStreamMessageResult } from '../../agents/types.js';
+import type { AgentSelection, AgentStreamMessageResult } from '../../agents/types.js';
 import type { DocID } from '../../collections/config/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import type { ChannelChatAccess } from '../channelAccess.js';
 import { findChat } from '../findChat.js';
 import { findTurnMessage, getPendingCalls, loadChatHistory } from './messages.js';
+import { findGoverningSelection } from './selection.js';
 import { claimTurn, findTurnState, releaseTurn } from './state.js';
 import { streamTurn } from './streamTurn.js';
 import type { ClientToolsOption } from './types.js';
@@ -44,9 +45,11 @@ export async function continueTurn({
   if (!claim) return { status: 'claimed' };
 
   let uiMessages;
+  let selection: AgentSelection;
 
   try {
     uiMessages = await loadChatHistory({ req, chatId: chat.id, tools: agent.aiAgent.tools });
+    selection = await findGoverningSelection({ req, chatId: chat.id });
   } catch (error) {
     await releaseTurn({ req, claim, state: 'awaiting' });
 
@@ -58,6 +61,7 @@ export async function continueTurn({
     agent,
     claim,
     uiMessages,
+    selection,
     clientTools,
     abortSignal,
     onError: (error) => {

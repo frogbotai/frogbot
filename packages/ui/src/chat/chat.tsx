@@ -52,6 +52,7 @@ export type MessageActionsSlotProps = {
 export type ChatProps = {
   agent: string;
   model?: string;
+  reasoning?: string;
   initialMessages?: UIMessage[];
   chatId?: string | number;
   defaultChatId?: string | number;
@@ -140,6 +141,7 @@ function ChatInner({
   model,
   onChatIdChange,
   panel,
+  reasoning,
   renderMessage,
   renderSidebar,
   sdk,
@@ -176,8 +178,8 @@ function ChatInner({
   const queuedRequest = useRef(false);
   const toolOutputAdded = useRef(false);
   const turnSync = useRef<AbortController | undefined>(undefined);
-  const request = useRef({ chatId: activeChatId, model });
-  request.current = { chatId: activeChatId, model };
+  const request = useRef({ chatId: activeChatId, model, reasoning });
+  request.current = { chatId: activeChatId, model, reasoning };
   const transport = useMemo(
     () =>
       new FrogBotChatTransport({
@@ -186,10 +188,11 @@ function ChatInner({
         onChatId: (nextChatId) => {
           createdChatId.current = nextChatId;
         },
-        prepareSendMessagesRequest: prepareChatRequest(
-          () => request.current.chatId,
-          () => request.current.model,
-        ),
+        prepareSendMessagesRequest: prepareChatRequest({
+          chatId: () => request.current.chatId,
+          model: () => request.current.model,
+          reasoning: () => request.current.reasoning,
+        }),
       }),
     [agent, sdk],
   );

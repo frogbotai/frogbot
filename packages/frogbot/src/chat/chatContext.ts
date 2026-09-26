@@ -1,6 +1,7 @@
 import type { UIMessage } from 'ai';
 import { commitTransaction, initTransaction, killTransaction } from 'payload';
 
+import type { AgentSelection } from '../agents/types.js';
 import type { DocID } from '../collections/config/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { ChannelChatAccess } from './channelAccess.js';
@@ -15,12 +16,19 @@ import {
   loadChatHistory,
   messagesConfig,
 } from './turn/messages.js';
+import { findGoverningSelection, selectionData } from './turn/selection.js';
 import { settleCall } from './turn/settle.js';
 import { claimTurn, releaseTurn } from './turn/state.js';
 import type { MessageDelivery, TurnClaim } from './turn/types.js';
 
 export type ChatContext =
-  | { status: 'ready'; chatId: DocID; uiMessages: UIMessage[]; claim: TurnClaim }
+  | {
+      status: 'ready';
+      chatId: DocID;
+      uiMessages: UIMessage[];
+      claim: TurnClaim;
+      selection: AgentSelection;
+    }
   | { status: 'queued'; chatId: DocID; messageId: string; delivery: MessageDelivery };
 
 export type ResolveChatContextProps = {
@@ -28,6 +36,7 @@ export type ResolveChatContextProps = {
   agentSlug: string;
   chatId?: DocID;
   incoming: UIMessage[];
+  selection?: AgentSelection;
   tools: unknown;
   channelAccess?: ChannelChatAccess;
   delivery?: MessageDelivery;
@@ -41,6 +50,7 @@ export async function resolveChatContext({
   agentSlug,
   chatId,
   incoming,
+  selection = {},
   tools,
   channelAccess,
   delivery = 'queue',
@@ -75,17 +85,17 @@ export async function resolveChatContext({
       throw new TurnError('turn-in-progress', 'This chat already has a turn in progress.');
     }
 
-    await persistIncoming({ req, chatId: resolvedChatId, messages: [last], delivery });
+    await persistIncoming({ req, chatId: resolvedChatId, messages: [last], selection, delivery });
 
     return { status: 'queued', chatId: resolvedChatId, messageId: last.id, delivery };
   }
 
   try {
-    await persistIncoming({ req, chatId: resolvedChatId, messages: newMessages });
+    await persistIncoming({ req, chatId: resolvedChatId, messages: newMessages, selection });
 
     const uiMessages = await loadChatHistory({ req, chatId: resolvedChatId, tools });
 
-    return { status: 'ready', chatId: resolvedChatId, uiMessages, claim };
+    return { status: 'ready', chatId: resolvedChatId, uiMessages, claim, selection };
   } catch (error) {
     await releaseTurn({ req, claim, state: 'idle' });
 
@@ -117,11 +127,13 @@ async function persistIncoming({
   req,
   chatId,
   messages,
+  selection,
   delivery,
 }: {
   req: FrogBotRequest;
   chatId: DocID;
   messages: UIMessage[];
+  selection: AgentSelection;
   delivery?: MessageDelivery;
 }): Promise<void> {
   const { messagesSlug } = messagesConfig(req);
@@ -164,7 +176,7 @@ async function persistIncoming({
         await req.frogbot.update({
           collection: messagesSlug,
           id: existing.id,
-          data: { parts: message.parts, metadata: message.metadata },
+          data: { parts: message.parts, metadata: message.metadata, ...selectionData(selection) },
           req,
           overrideAccess,
         });
@@ -193,6 +205,7 @@ async function persistIncoming({
           role: message.role,
           parts: message.parts,
           metadata: message.metadata,
+          ...selectionData(selection),
           author,
           ...(delivery ? { status: 'queued', delivery } : {}),
         },
@@ -279,8 +292,9 @@ async function resumeChat({
 
   try {
     const uiMessages = await loadChatHistory({ req, chatId: chat.id, tools });
+    const selection = await findGoverningSelection({ req, chatId: chat.id });
 
-    return { status: 'ready', chatId: chat.id, uiMessages, claim };
+    return { status: 'ready', chatId: chat.id, uiMessages, claim, selection };
   } catch (error) {
     await releaseTurn({ req, claim, state: 'awaiting' });
 

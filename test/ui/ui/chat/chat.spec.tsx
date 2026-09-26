@@ -233,6 +233,16 @@ describe('Chat', () => {
     expect(await sendTransportMessage()).toEqual({ messages: [message], chatId: 'chat-1' });
   });
 
+  it('sends the selected model and reasoning level with the message', async () => {
+    render(<Chat agent="support" model="openai/gpt-5" reasoning="high" />);
+
+    expect(await sendTransportMessage()).toEqual({
+      messages: [message],
+      model: 'openai/gpt-5',
+      reasoning: 'high',
+    });
+  });
+
   it('carries a server-created chat id into the next turn on the same transport', async () => {
     render(<Chat agent="support" />);
     const chatInit = () => state.options as import('ai').ChatInit<import('ai').UIMessage>;

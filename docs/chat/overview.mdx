@@ -18,13 +18,13 @@ FrogBot injects both collections when agents are configured and no collection cl
 | Collection | Stored fields |
 | --- | --- |
 | `chats` | `title`, `user`, `agent`, `lastMessageAt` |
-| `messages` | Text `id`, `chat`, `role`, `parts`, `metadata`, `usage`, `status`, `delivery`, `author`, `settlements`, `version` |
+| `messages` | Text `id`, `chat`, `role`, `parts`, `metadata`, `usage`, `status`, `delivery`, `model`, `reasoning`, `author`, `settlements`, `version` |
 
 Chat and message collections use soft deletion and appear under **Chat** in the admin panel. Access is owner-scoped through the chat's `user` relationship.
 
 Messages store the AI SDK `UIMessage.parts` array. Tool calls, tool results, reasoning, and custom data parts therefore remain available on later turns instead of being flattened into text.
 
-FrogBot manages the remaining message fields and they are read-only through the API. `status` is `queued` for a message waiting behind a running turn, `author` records who sent it, and `settlements` records who answered each [question](/chat/questions). A hidden `frogbot-chat-turns` collection tracks each chat's current [turn](/chat/turns).
+FrogBot manages the remaining message fields and they are read-only through the API. `status` is `queued` for a message waiting behind a running turn, `model` and `reasoning` record the model and reasoning option a user message was sent with, `author` records who sent it, and `settlements` records who answered each [question](/chat/questions). A hidden `frogbot-chat-turns` collection tracks each chat's current [turn](/chat/turns).
 
 ## Chat assets
 
@@ -179,7 +179,7 @@ Your field definitions win when they are compatible with the base schema. FrogBo
 - `messages.id`
 - `messages.chat`
 - `messages.parts`
-- `messages.status`, `messages.delivery`, `messages.author`, `messages.settlements`, and `messages.version`
+- `messages.status`, `messages.delivery`, `messages.model`, `messages.reasoning`, `messages.author`, `messages.settlements`, and `messages.version`
 
 Mark at most one collection for each role. If an unmarked collection already uses the default `chats` or `messages` slug, sanitization asks you to mark or rename it rather than adopting it implicitly.
 

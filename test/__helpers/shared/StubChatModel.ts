@@ -13,6 +13,8 @@ export type StubChatResponse = {
 };
 
 export type StubChatRequest = {
+  model: string;
+  reasoning_effort?: string;
   stream: boolean;
   messages: Array<{ role: string; content?: unknown; tool_calls?: unknown; tool_call_id?: string }>;
   tools?: Array<{ function: { name: string } }>;

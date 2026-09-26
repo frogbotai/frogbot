@@ -31,7 +31,9 @@ JSON requests receive `202 Accepted`:
 
 Stream requests receive a single transient `data-queued` part with the same `messageId` and `delivery`. The `X-FrogBot-Chat-Id` header is set in both cases.
 
-When the current turn ends, FrogBot promotes the oldest queued message and runs it as the next turn, as the user who sent it. The next queued message waits for that turn to end. Messages sent while a question is waiting stay queued until the question is answered or dismissed, so answer the question first to run them.
+When the current turn ends, FrogBot promotes the oldest queued message and runs it as the next turn, as the user who sent it and with the model and reasoning option it was sent with. The next queued message waits for that turn to end. Messages sent while a question is waiting stay queued until the question is answered or dismissed, so answer the question first to run them.
+
+A turn that continues after a question is answered uses the model and reasoning option of the chat's latest user message, not the ones sent with the answer. If a stored model or reasoning option is no longer offered when its turn runs, for example after a configuration change, the turn fails with `code: "selection-unavailable"` before calling the model. FrogBot never substitutes another model or option.
 
 In the chat UI, a queued message shows a queued indicator, and the chat reloads when the turn ends so the promoted turn appears once it is saved.
 
@@ -47,7 +49,7 @@ curl http://localhost:3000/api/agents/support \
   --data '{ "prompt": "Only look at last week", "chatId": "CHAT_ID", "delivery": "steer" }'
 ```
 
-FrogBot adds a steer message to the model's messages at the next step boundary, so the agent sees it before its next model call. Steering applies only when the sender is the user driving the current run: the sender of the message being answered, or the user who answered the question the turn is continuing from. A steer from anyone else, or one that arrives after the last step, runs as an ordinary queued message.
+FrogBot adds a steer message to the model's messages at the next step boundary, so the agent sees it before its next model call. From that step on, the turn uses the steer message's model and reasoning option. Steering applies only when the sender is the user driving the current run: the sender of the message being answered, or the user who answered the question the turn is continuing from. A steer from anyone else, or one that arrives after the last step, runs as an ordinary queued message.
 
 A steer that joins a turn is stored just before that turn's reply, so history reads in the order the model saw it.
 

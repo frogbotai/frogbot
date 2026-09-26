@@ -7,6 +7,7 @@ export type TurnErrorCode =
   | 'not-found'
   | 'not-queued'
   | 'pending-calls'
+  | 'selection-unavailable'
   | 'turn-in-progress'
   | 'write-conflict';
 
@@ -19,6 +20,7 @@ const statuses: Record<TurnErrorCode, 400 | 403 | 404 | 409> = {
   'not-found': 404,
   'not-queued': 409,
   'pending-calls': 409,
+  'selection-unavailable': 409,
   'turn-in-progress': 409,
   'write-conflict': 409,
 };

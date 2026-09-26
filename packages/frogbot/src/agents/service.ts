@@ -1,7 +1,23 @@
+import type { ReasoningVariant } from '@frogbotai/gateway';
+
+import { resolveModelReasoning } from '../ai/reasoning.js';
+import { resolveModel } from '../ai/resolve.js';
+import type { SanitizedAIConfig } from '../ai/types.js';
 import type { ManifestResponse } from '../chat/types.js';
 import { pieceToolInstance } from '../pieces/definePiece.js';
 import type { FrogBotRequest } from '../types/request.js';
-import type { AgentInstance, AgentManifest } from './types.js';
+import type {
+  AgentInstance,
+  AgentManifest,
+  AgentManifestEntry,
+  AgentModelId,
+  AgentSelection,
+} from './types.js';
+
+export type ResolvedAgentSelection = {
+  model: string;
+  variant?: ReasoningVariant;
+};
 
 export class AgentServiceError extends Error {
   constructor(
@@ -81,12 +97,17 @@ export async function getAgentManifest({ req }: { req: FrogBotRequest }): Promis
     } catch {
       continue;
     }
+
+    const models = agentModels(agent);
+    const reasoning = agentReasoning({ config: req.frogbot.config.ai!, models });
+
     agents.push({
       slug: agent.slug,
       label: agent.config.profile?.name ?? agent.slug,
       source: 'config',
       defaultModel: agent.config.model,
-      models: [...new Set([agent.config.model, ...(agent.config.allowModels ?? [])])],
+      models,
+      ...(reasoning ? { reasoning } : {}),
     });
   }
   return { defaultAgent: agents[0]?.slug ?? '', agents };
@@ -114,18 +135,55 @@ export async function getAgentAuthorizations({
   );
 }
 
-export function assertAllowedModel({
+export function assertAgentSelection({
   agent,
-  model,
+  config,
+  selection,
 }: {
   agent: AgentInstance;
-  model?: string;
-}): AgentInstance['config']['model'] | undefined {
-  const models = new Set<string>([agent.config.model, ...(agent.config.allowModels ?? [])]);
+  config: SanitizedAIConfig;
+  selection: AgentSelection;
+}): ResolvedAgentSelection {
+  const model = selection.model ?? agent.config.model;
 
-  if (model !== undefined && !models.has(model)) {
+  if (!agentModels(agent).includes(model)) {
     throw new AgentServiceError(`Model '${model}' is not allowed for agent '${agent.slug}'`, 403);
   }
 
-  return model as AgentInstance['config']['model'] | undefined;
+  if (selection.reasoning === undefined) return { model: resolveModel(model, config) };
+
+  const variant = resolveModelReasoning({ config, model }).find(
+    ({ key }) => key === selection.reasoning,
+  );
+
+  if (!variant) {
+    throw new AgentServiceError(
+      `Reasoning option '${selection.reasoning}' is not available for model '${model}'`,
+      400,
+    );
+  }
+
+  return { model: resolveModel(model, config), variant };
+}
+
+function agentModels(agent: AgentInstance): AgentModelId[] {
+  return [...new Set([agent.config.model, ...(agent.config.allowModels ?? [])])];
+}
+
+function agentReasoning({
+  config,
+  models,
+}: {
+  config: SanitizedAIConfig;
+  models: AgentModelId[];
+}): AgentManifestEntry['reasoning'] {
+  const reasoning: NonNullable<AgentManifestEntry['reasoning']> = {};
+
+  for (const model of models) {
+    const variants = resolveModelReasoning({ config, model });
+
+    if (variants.length > 0) reasoning[model] = variants.map(({ key, label }) => ({ key, label }));
+  }
+
+  return Object.keys(reasoning).length === 0 ? undefined : reasoning;
 }

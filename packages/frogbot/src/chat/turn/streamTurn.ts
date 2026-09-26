@@ -7,7 +7,7 @@ import {
   toUIMessageStream,
 } from 'ai';
 
-import type { AgentInstance, AgentModelId, AgentStreamResult } from '../../agents/types.js';
+import type { AgentInstance, AgentSelection, AgentStreamResult } from '../../agents/types.js';
 import { resolveModel } from '../../ai/resolve.js';
 import { isClientTool } from '../../tools/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
@@ -28,7 +28,7 @@ export type StreamTurnProps = {
   claim: TurnClaim;
   uiMessages: UIMessage[];
   providerMessages?: UIMessage[];
-  model?: AgentModelId;
+  selection: AgentSelection;
   clientTools?: ClientToolsOption;
   abortSignal?: AbortSignal;
   onError?: (error: unknown) => string;
@@ -54,7 +54,7 @@ export async function streamTurn({
   claim,
   uiMessages,
   providerMessages = uiMessages,
-  model,
+  selection,
   clientTools,
   abortSignal,
   onError,
@@ -64,7 +64,7 @@ export async function streamTurn({
   const lease = holdTurn({ req: turnReq, claim });
   const checkpointFailure = new AbortController();
   const signals = [lease.signal, checkpointFailure.signal, ...(abortSignal ? [abortSignal] : [])];
-  const mainModel = resolveModel(model ?? agent.config.model, req.frogbot.config.ai!);
+  const mainModel = resolveModel(selection.model ?? agent.config.model, req.frogbot.config.ai!);
 
   const last = uiMessages.at(-1);
   const messageId = last?.role === 'assistant' ? last.id : generateId();
@@ -78,7 +78,7 @@ export async function streamTurn({
   try {
     result = await agent.aiAgent.stream({
       messages: await convertToModelMessages(providerMessages, { tools: agent.aiAgent.tools }),
-      options: { req, overrideAccess: true, chatId, replyCreatedAt, model, clientTools },
+      options: { req, overrideAccess: true, chatId, replyCreatedAt, selection, clientTools },
       abortSignal: AbortSignal.any(signals),
     });
   } catch (error) {
