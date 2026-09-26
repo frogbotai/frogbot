@@ -17,14 +17,94 @@ FrogBot injects both collections when agents are configured and no collection cl
 
 | Collection | Stored fields |
 | --- | --- |
-| `chats` | `title`, `user`, `agent`, `lastMessageAt` |
+| `chats` | `title`, `user`, `agent`, `lastMessageAt`, and for a chat started in a channel, `channel`, `externalId`, `channelKey`, and `channelThread` |
 | `messages` | Text `id`, `chat`, `role`, `parts`, `metadata`, `usage`, `status`, `delivery`, `model`, `reasoning`, `author`, `settlements`, `version` |
 
-Chat and message collections use soft deletion and appear under **Chat** in the admin panel. Access is owner-scoped through the chat's `user` relationship.
+Chat and message collections use soft deletion and appear under **Chat** in the admin panel. Access is owner-scoped through the chat's `user` relationship, and a channel chat is written only from its channel. See [who can write a chat](#who-can-write-a-chat).
 
 Messages store the AI SDK `UIMessage.parts` array. Tool calls, tool results, reasoning, and custom data parts therefore remain available on later turns instead of being flattened into text.
 
 FrogBot manages the remaining message fields and they are read-only through the API. `status` is `queued` for a message waiting behind a running turn, `model` and `reasoning` record the model and reasoning option a user message was sent with, `author` records who sent it, and `settlements` records who answered each [question](/chat/questions). A hidden `frogbot-chat-turns` collection tracks each chat's current [turn](/chat/turns).
+
+## Who can write a chat
+
+Every chat has one home, and it is written only from there.
+
+| Chat | Who can write it |
+| --- | --- |
+| Web chat, created in the admin chat, `@frogbotai/ui`, over HTTP, or with `generate({ chatId })` | Its owner, the chat's `user`. A chat without an owner can be written by any anonymous caller who knows its ID |
+| Channel chat, started in a channel such as a Slack thread | Only that channel thread |
+
+Writing covers sending a message, answering or dismissing a question, continuing a turn, and running a queued message. The owner of a channel chat can still read it, and the admin chat shows it [read-only with Branch](/chat/questions#channel-conversations).
+
+The agent endpoints and local agent calls check this rule themselves, whatever the collections' access says. For a channel chat, they return `409`:
+
+```json
+{
+  "error": "This conversation happens in Slack. Continue it there, or branch it into a new chat.",
+  "code": "channel-chat"
+}
+```
+
+Local calls such as `generate({ chatId })` reject with an error whose `code` is `channel-chat` and `status` is `409`. A web chat that belongs to another user returns `404`, as if it did not exist.
+
+`canWriteChat` from `frogbot` is the rule itself. It takes the request and the chat, and returns whether the request can write it:
+
+```ts
+import { canWriteChat } from 'frogbot'
+
+const writable = canWriteChat({ req, chat })
+```
+
+### Channel label
+
+Chats have a virtual `channelLabel` field: the label of the channel piece a channel chat belongs to, such as `Slack`, and `null` for a web chat. FrogBot computes it on every read and stores nothing. It needs `channel`, `channelKey`, and `channelThread` from the same document, so a read that selects only `channelLabel` gets `null`.
+
+### Default collection access
+
+| Collection | Operation | Who is allowed |
+| --- | --- | --- |
+| `chats` | Create | Any signed-in user |
+| `chats` | Read, update, delete | The chat's owner |
+| `chats` | `channel`, `externalId`, `channelKey`, `channelThread`, `channelLabel` | No one through the API. Written values are ignored |
+| `messages` | Create | A signed-in user who can write the target `chat` under `canWriteChat`, which means the owner of a web chat |
+| `messages` | Read | The chat's owner |
+| `messages` | Update, delete | The owner, in their own web chats |
+| `messages` | `chat` | Set on create; no one can move a message to another chat through the API |
+
+A collection write these rules refuse returns `403 Forbidden`, like any other access denial.
+
+These rules are defaults. Setting `access` on a collection marked `chat: true` or `message: true` replaces the default for each operation you set. The agent endpoints keep the rule, but REST, GraphQL, and Local API writes to the collection follow your function. Compose `canWriteChat` to keep channel chats and other users' chats closed:
+
+```ts
+import { canWriteChat, type CollectionConfig } from 'frogbot'
+
+import { hasSeat } from './access'
+
+export const Turns: CollectionConfig = {
+  slug: 'turns',
+  message: true,
+  access: {
+    create: async ({ req, data }) => {
+      if (!req.user || !data?.chat || !hasSeat(req.user)) return false
+
+      const chat = await req.frogbot.findByID({
+        collection: 'conversations',
+        id: data.chat,
+        depth: 0,
+        disableErrors: true,
+        overrideAccess: true,
+        req,
+      })
+
+      return Boolean(chat) && canWriteChat({ req, chat })
+    },
+  },
+  fields: [],
+}
+```
+
+For `update` and `delete`, the default is the query `{ 'chat.user': { equals: req.user.id }, 'chat.channelKey': { exists: false } }`. Include it in your own query to keep channel messages read-only.
 
 ## Chat assets
 
@@ -159,9 +239,9 @@ export const Conversations: CollectionConfig = {
   chat: true,
   fields: [
     {
-      name: 'channel',
+      name: 'topic',
       type: 'select',
-      options: ['web', 'support']
+      options: ['sales', 'support']
     }
   ]
 }
@@ -175,7 +255,7 @@ export const Turns: CollectionConfig = {
 
 Your field definitions win when they are compatible with the base schema. FrogBot appends missing base fields and combines hooks. It rejects incompatible field types and protects these fields:
 
-- `chats.user`
+- `chats.user`, `chats.channel`, `chats.externalId`, `chats.channelKey`, `chats.channelThread`, and `chats.channelLabel`
 - `messages.id`
 - `messages.chat`
 - `messages.parts`

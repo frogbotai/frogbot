@@ -8,21 +8,24 @@ export const settleSlackQuestion: PieceChannelQuestions<SlackClient>['settled'] 
   actor,
   call,
   client,
-  messageId,
   outcome,
+  question,
   thread,
 }) => {
   const { channel } = slackThread(thread.id);
   const actorId = actor?.channel?.piece === 'slack' ? actor.channel.id : undefined;
 
-  await client.request('chat.update', {
-    channel,
-    ts: messageId,
-    text: fallbackText(call.input),
-    blocks: settledBlocks({
-      actorId,
-      answers: 'output' in outcome ? outcome.output.answers : undefined,
-      call,
-    }),
+  const text = fallbackText(call.input);
+
+  const blocks = settledBlocks({
+    actorId,
+    answers: 'output' in outcome ? outcome.output.answers : undefined,
+    call,
   });
+
+  await Promise.all(
+    question.messages.map(({ id }) =>
+      client.request('chat.update', { channel, ts: id, text, blocks }),
+    ),
+  );
 };

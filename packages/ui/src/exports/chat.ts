@@ -3,6 +3,8 @@ export type { AgentSelectorProps } from '../chat/agent-selector.js';
 export { AgentSelector } from '../chat/agent-selector.js';
 export type { ComposerAttachment, FileReference, PasteAttachment } from '../chat/attachments.js';
 export { bearerFetch, cookieFetch, createCookieSDK } from '../chat/auth.js';
+export type { ChannelConversationNoticeProps } from '../chat/channel-conversation-notice.js';
+export { ChannelConversationNotice } from '../chat/channel-conversation-notice.js';
 export type { ChatProps, ChatSidebarContext, MessageActionsSlotProps } from '../chat/chat.js';
 export { Chat } from '../chat/chat.js';
 export type { ChatHistoryProps } from '../chat/chat-history.js';
@@ -90,7 +92,14 @@ export type { FrogBotChatTransportOptions } from '../chat/transport.js';
 export { FrogBotChatTransport } from '../chat/transport.js';
 export type { ChatMessages, LoadTurnStateOptions, UseChatOptions } from '../chat/use-chat.js';
 export { loadChat, loadChatMessages, loadTurnState, useChatMessages } from '../chat/use-chat.js';
-export type { ChatDocument, UseChatsOptions } from '../chat/use-chats.js';
-export { CHAT_MUTATION_EVENT, emitChatMutation, loadChats, useChats } from '../chat/use-chats.js';
+export type { ChatDocument, UseChatDocumentOptions, UseChatsOptions } from '../chat/use-chats.js';
+export {
+  CHAT_MUTATION_EVENT,
+  emitChatMutation,
+  loadChatDocument,
+  loadChats,
+  useChatDocument,
+  useChats,
+} from '../chat/use-chats.js';
 export type { TranscriptionStatus } from '../chat/use-transcription.js';
 export { useTranscription } from '../chat/use-transcription.js';

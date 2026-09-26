@@ -22,6 +22,7 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
       },
     ],
   },
+  "disableDuplicate": true,
   "fields": [
     {
       "name": "id",
@@ -29,6 +30,9 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
       "type": "text",
     },
     {
+      "access": {
+        "update": [Function],
+      },
       "index": true,
       "name": "chat",
       "relationTo": "chats",

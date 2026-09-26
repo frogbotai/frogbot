@@ -212,42 +212,13 @@ describe('FrogBot Teams adapter', () => {
     expect(user).not.toHaveProperty('email');
   });
 
-  it('locates the card from its record when Teams omits replyToId', async () => {
+  it('dispatches the submit activity id when Teams omits replyToId, like the Teams adapter', async () => {
     const { adapter, chat } = await initialized();
-    const activity = submitActivity({ serviceUrl: server.serviceUrl, toolCallId: 'call-1' });
 
-    await adapter.saveQuestionRecord({
-      threadId: threadIdOf(adapter, activity),
-      toolCallId: 'call-1',
-      record: { messageId: '1700000000042' },
-    });
-
-    await dispatched(adapter, activity);
-
-    expect(chat.processAction.mock.calls[0]![0].messageId).toBe('1700000000042');
-  });
-
-  it('keeps the submit activity id when the record belongs to another conversation', async () => {
-    const { adapter, chat } = await initialized();
-    const elsewhere = submitActivity({
-      scope: 'groupChat',
-      serviceUrl: server.serviceUrl,
-      toolCallId: 'call-1',
-    });
-
-    await adapter.saveQuestionRecord({
-      threadId: threadIdOf(adapter, elsewhere),
-      toolCallId: 'call-1',
-      record: { messageId: '1700000000042' },
-    });
-
-    const activity = submitActivity({
-      id: 'submit-own',
-      serviceUrl: server.serviceUrl,
-      toolCallId: 'call-1',
-    });
-
-    await dispatched(adapter, activity);
+    await dispatched(
+      adapter,
+      submitActivity({ id: 'submit-own', serviceUrl: server.serviceUrl, toolCallId: 'call-1' }),
+    );
 
     expect(chat.processAction.mock.calls[0]![0].messageId).toBe('submit-own');
   });

@@ -1,10 +1,12 @@
-import type { QuestionHookArgs, QuestionInteraction } from 'frogbot/pieces';
+import type { QuestionHookArgs, QuestionInteraction, QuestionRecord } from 'frogbot/pieces';
 
 import { FrogBotTeamsAdapter } from '../adapter.js';
-import { inputIds, type QuestionValues } from './card.js';
+import { type AdaptiveCard, inputIds, type QuestionValues, type SettledView } from './card.js';
 import { submittedInputs } from './parse.js';
 
 type Thread = QuestionHookArgs<unknown>['thread'];
+
+export type TeamsQuestionState = { settled?: SettledView };
 
 export function teamsAdapter(thread: Thread): FrogBotTeamsAdapter {
   if (!(thread.adapter instanceof FrogBotTeamsAdapter)) {
@@ -12,6 +14,32 @@ export function teamsAdapter(thread: Thread): FrogBotTeamsAdapter {
   }
 
   return thread.adapter;
+}
+
+export function cardId(question: QuestionRecord): string {
+  return question.messages.at(-1)!.id;
+}
+
+export function settledView(question: QuestionRecord): SettledView | undefined {
+  return (question.state as TeamsQuestionState | undefined)?.settled;
+}
+
+export async function updateCards({
+  card,
+  question,
+  thread,
+}: {
+  card: AdaptiveCard;
+  question: QuestionRecord;
+  thread: Thread;
+}): Promise<void> {
+  const adapter = teamsAdapter(thread);
+
+  await Promise.all(
+    question.messages.map(({ id }) =>
+      adapter.updateAdaptiveCard({ threadId: thread.id, messageId: id, card }),
+    ),
+  );
 }
 
 export function interactionUser(interaction: QuestionInteraction) {

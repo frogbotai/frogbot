@@ -29,6 +29,10 @@ export function ToolPart({
   );
 
   if (renderer) {
+    if (actions?.isReadonly) {
+      return <renderer.render part={part} isReadonly channelLabel={actions.channelLabel} />;
+    }
+
     if (!actions?.pendingToolCallIds.has(part.toolCallId)) return <renderer.render part={part} />;
 
     return (

@@ -47,6 +47,10 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
       "type": "text",
     },
     {
+      "access": {
+        "create": [Function],
+        "update": [Function],
+      },
       "admin": {
         "components": {
           "Cell": "@frogbotai/next/client#ChannelCell",
@@ -57,11 +61,19 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
       "type": "text",
     },
     {
+      "access": {
+        "create": [Function],
+        "update": [Function],
+      },
       "index": true,
       "name": "externalId",
       "type": "text",
     },
     {
+      "access": {
+        "create": [Function],
+        "update": [Function],
+      },
       "admin": {
         "hidden": true,
       },
@@ -70,6 +82,10 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
       "unique": true,
     },
     {
+      "access": {
+        "create": [Function],
+        "update": [Function],
+      },
       "admin": {
         "hidden": true,
       },
@@ -78,6 +94,23 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
       "typescriptSchema": [
         [Function],
       ],
+    },
+    {
+      "access": {
+        "create": [Function],
+        "update": [Function],
+      },
+      "admin": {
+        "hidden": true,
+      },
+      "hooks": {
+        "afterRead": [
+          [Function],
+        ],
+      },
+      "name": "channelLabel",
+      "type": "text",
+      "virtual": true,
     },
     {
       "index": true,

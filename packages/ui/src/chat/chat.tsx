@@ -8,6 +8,7 @@ import { type ComponentType, type ReactNode, useEffect, useMemo, useRef, useStat
 
 import { useControlledState } from '../hooks/use-controlled-state.js';
 import type { ComposerAttachment } from './attachments.js';
+import { ChannelConversationNotice } from './channel-conversation-notice.js';
 import { deriveChatTitle } from './chat-history.js';
 import { ChatShell } from './chat-shell.js';
 import { ChatStatus } from './chat-status.js';
@@ -26,7 +27,7 @@ import type { ToolPartValue } from './tool-registry.js';
 import { FrogBotChatTransport, prepareChatRequest, turnErrorCode } from './transport.js';
 import { loadChatMessages, loadTurnState, useChatMessages } from './use-chat.js';
 import type { ChatDocument } from './use-chats.js';
-import { emitChatMutation, useChats } from './use-chats.js';
+import { emitChatMutation, useChatDocument, useChats } from './use-chats.js';
 
 const TURN_SYNC_ATTEMPTS = 120;
 const TURN_SYNC_INTERVAL = 1_000;
@@ -54,6 +55,7 @@ export type ChatProps = {
   model?: string;
   reasoning?: string;
   initialMessages?: UIMessage[];
+  initialChat?: ChatDocument;
   chatId?: string | number;
   defaultChatId?: string | number;
   onChatIdChange?: (chatId: string | number | undefined) => void;
@@ -134,6 +136,7 @@ function ChatInner({
   assetsSlug,
   greeting: GreetingComponent = Greeting,
   headerSlot,
+  initialChat,
   initialMessages,
   logo,
   messagesSlug,
@@ -171,8 +174,18 @@ function ChatInner({
   const composerRef = useRef<HTMLDivElement>(null);
   const history = useChatMessages({ sdk, messagesSlug, chatId: activeChatId });
   const chats = useChats({ sdk, agent, chatsSlug });
+  const activeChat = useChatDocument({
+    sdk,
+    chatsSlug,
+    chatId: activeChatId,
+    initialData: initialChat,
+  });
+  const channel = activeChat.chat?.channel || undefined;
+  const channelLabel = channel && (activeChat.chat?.channelLabel || channel);
+  const isReadonly = channelLabel !== undefined;
   const [aborted, setAborted] = useState(false);
   const [actionError, setActionError] = useState<Error>();
+  const [branching, setBranching] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string>();
   const [queued, setQueued] = useState<UIMessage[]>([]);
   const queuedRequest = useRef(false);
@@ -272,6 +285,8 @@ function ChatInner({
   }
 
   async function recoverTurn(code?: TurnErrorCode) {
+    activeChat.refresh();
+
     try {
       await reloadMessages();
     } catch (error) {
@@ -280,7 +295,9 @@ function ChatInner({
       return;
     }
 
-    if (code === 'already-settled' || code === 'not-awaiting') chat.clearError();
+    if (code === 'already-settled' || code === 'not-awaiting' || code === 'channel-chat') {
+      chat.clearError();
+    }
   }
 
   async function syncTurn() {
@@ -464,15 +481,18 @@ function ChatInner({
   const branchMessage = async (message: UIMessage) => {
     if (activeChatId === undefined) return;
     setActionError(undefined);
+    setBranching(true);
     try {
       const nextChatId = await branchChat({ sdk, chatId: activeChatId }, message.id);
       chats.refresh();
       selectChat(nextChatId);
     } catch (error) {
       setActionError(error instanceof Error ? error : new Error('Failed to branch chat'));
+    } finally {
+      setBranching(false);
     }
   };
-  const error = actionError ?? history.error ?? chats.error ?? chat.error;
+  const error = actionError ?? history.error ?? activeChat.error ?? chats.error ?? chat.error;
   const pending = chat.status === 'submitted' || chat.status === 'streaming';
   const lastMessage = chat.messages.at(-1);
   const pendingToolCallIds = useMemo(
@@ -515,6 +535,8 @@ function ChatInner({
     addToolOutput,
     dismissToolCall: dismissPendingToolCall,
     pendingToolCallIds,
+    isReadonly,
+    channelLabel,
   };
   const displayedChats = (chats.docs ?? []).map((chatDocument) =>
     String(chatDocument.id) === String(activeChatId) && !chatDocument.title
@@ -550,7 +572,9 @@ function ChatInner({
             ? () => branchMessage(message)
             : undefined
         }
-        onEdit={message.role === 'user' ? () => setEditingMessageId(message.id) : undefined}
+        onEdit={
+          message.role === 'user' && !isReadonly ? () => setEditingMessageId(message.id) : undefined
+        }
       />
     ) : null;
     const MessageActionsSlot =
@@ -657,17 +681,25 @@ function ChatInner({
               ))}
             </div>
           )}
-          <Composer
-            sdk={sdk}
-            assetsSlug={assetsSlug}
-            pending={pending}
-            onStop={stop}
-            onSubmit={submit}
-            startSlot={composerStartSlot}
-            endSlot={composerEndSlot}
-            submitContent={submitContent}
-            stopContent={stopContent}
-          />
+          {channelLabel ? (
+            <ChannelConversationNotice
+              channelLabel={channelLabel}
+              branching={branching}
+              onBranch={lastMessage ? () => branchMessage(lastMessage) : undefined}
+            />
+          ) : (
+            <Composer
+              sdk={sdk}
+              assetsSlug={assetsSlug}
+              pending={pending}
+              onStop={stop}
+              onSubmit={submit}
+              startSlot={composerStartSlot}
+              endSlot={composerEndSlot}
+              submitContent={submitContent}
+              stopContent={stopContent}
+            />
+          )}
         </div>
       </ChatShell>
     </ToolActionsContext>

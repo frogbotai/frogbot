@@ -127,6 +127,7 @@ When that answer settles the last pending call in the step, FrogBot continues th
 | `403` | `forbidden` | The tool's `client.access` rejected this caller |
 | `404` | `call-not-found` | No pending call has that ID in this chat |
 | `409` | `already-settled` | Someone else answered first; `settlement.part` holds the stored answer |
+| `409` | `channel-chat` | The chat is a [channel conversation](#channel-conversations); answer in its channel |
 | `409` | `not-awaiting` | The chat is not waiting for input |
 | `409` | `write-conflict` | The message kept changing while FrogBot tried to save the answer; retry |
 
@@ -138,7 +139,19 @@ The first valid answer wins. Answers from two tabs or two participants settle on
 
 Anyone who can continue the chat can answer its questions. Over HTTP, that is the chat's owner; for a chat without an owner, it is any anonymous caller who knows the chat ID. FrogBot records who answered or dismissed each call, and when, in the message's `settlements` field.
 
-In a channel conversation, any participant who passes the agent's `access` check can answer, not only the person whose message started the turn. See [Slack](/pieces/slack#who-can-answer), [Discord](/pieces/discord#who-can-answer), and [Microsoft Teams](/pieces/teams#who-can-answer).
+A question in a channel conversation is answered only in its channel. Any participant who passes the agent's `access` check can answer, not only the person whose message started the turn. See [Slack](/pieces/slack#who-can-answer), [Discord](/pieces/discord#who-can-answer), and [Microsoft Teams](/pieces/teams#who-can-answer).
+
+## Channel conversations
+
+A conversation started in a channel, such as a Slack thread, is written only in that channel: its messages, its answers, and the agent's replies. Its owner can open it in the admin chat to read it, but not to write to it.
+
+- A notice replaces the composer: "This conversation happens in Slack. Continue it there, or branch it into a new chat."
+- A waiting question shows "Waiting for an answer in Slack" with its questions, and no controls. Answered and closed questions look the same as in any chat.
+- Messages have no **Edit** action.
+- **Branch** on the notice copies the whole conversation into a new private chat, and **Branch** on an assistant message copies it up to that message. The branch is an ordinary web chat. Questions still waiting in the channel arrive in it closed, and nothing written in it reaches the channel.
+- New channel messages appear when you reload the chat.
+
+HTTP and programmatic writes to a channel conversation fail with `409` and `code: "channel-chat"`. See [who can write a chat](/chat/overview#who-can-write-a-chat).
 
 ## Where questions are offered
 

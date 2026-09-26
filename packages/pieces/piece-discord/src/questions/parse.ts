@@ -26,16 +26,14 @@ const ignore: QuestionParseResult = { kind: 'ignore' };
 export const parseDiscordQuestion: PieceChannelQuestions['parse'] = ({
   call,
   interaction,
+  question,
   settled,
-  state,
 }) => {
-  if (interaction.type === 'action') {
-    return parseAction({ call, interaction, state: readState(state) });
-  }
+  const state = readState(question.state);
 
-  if (interaction.type === 'message' && !settled) {
-    return parseReply({ call, interaction, state: readState(state) });
-  }
+  if (interaction.type === 'action') return parseAction({ call, interaction, state });
+
+  if (interaction.type === 'message' && !settled) return parseReply({ call, interaction, state });
 
   return ignore;
 };
@@ -51,9 +49,9 @@ function parseAction({
 }): QuestionParseResult {
   const control = decodeQuestionId(interaction.event.actionId);
 
-  if (!control || control.key !== callKey(call.toolCallId) || control.q !== stored.q) {
-    return ignore;
-  }
+  if (!control || control.key !== callKey(call.toolCallId)) return ignore;
+
+  if (control.q !== stored.q) return { kind: 'stale' };
 
   const item = call.input.questions[control.q];
 

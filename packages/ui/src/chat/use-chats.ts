@@ -1,6 +1,7 @@
 'use client';
 
 import type { FrogBotSDK } from '@frogbotai/sdk';
+import type { ChannelThreadReference } from 'frogbot';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { chatRequest, type PayloadPage } from './rest.js';
@@ -10,6 +11,9 @@ export type ChatDocument = {
   title?: string | null;
   agent: string;
   lastMessageAt?: string | null;
+  channel?: string | null;
+  channelLabel?: string | null;
+  channelThread?: ChannelThreadReference | null;
 };
 
 export type UseChatsOptions = {
@@ -21,6 +25,13 @@ export type UseChatsOptions = {
   initialData?: PayloadPage<ChatDocument>;
   revalidate?: boolean;
   refreshInterval?: number;
+};
+
+export type UseChatDocumentOptions = {
+  sdk: FrogBotSDK;
+  chatsSlug: string;
+  chatId?: string | number;
+  initialData?: ChatDocument;
 };
 
 export const CHAT_MUTATION_EVENT = 'frogbot:chats:mutated';
@@ -44,6 +55,68 @@ export async function loadChats({
   });
   if (agent) params.set('where[agent][equals]', agent);
   return chatRequest(sdk, `/${encodeURIComponent(chatsSlug)}?${params}`);
+}
+
+export async function loadChatDocument({
+  sdk,
+  chatsSlug,
+  chatId,
+}: Omit<UseChatDocumentOptions, 'initialData'> & {
+  chatId: string | number;
+}): Promise<ChatDocument> {
+  const path = `/${encodeURIComponent(chatsSlug)}/${encodeURIComponent(String(chatId))}`;
+
+  return chatRequest(sdk, `${path}?depth=0`);
+}
+
+function isChatDocument(chat: ChatDocument | undefined, chatId: string | number | undefined) {
+  return chat !== undefined && chatId !== undefined && String(chat.id) === String(chatId);
+}
+
+export function useChatDocument({ sdk, chatsSlug, chatId, initialData }: UseChatDocumentOptions) {
+  const [chat, setChat] = useState(initialData);
+  const [error, setError] = useState<Error>();
+  const request = useRef(0);
+  const initial = useRef(initialData);
+
+  initial.current = initialData;
+
+  const refresh = useCallback(() => {
+    const current = ++request.current;
+
+    setError(undefined);
+
+    if (chatId === undefined) return;
+
+    void loadChatDocument({ sdk, chatsSlug, chatId })
+      .then((next) => {
+        if (request.current === current) setChat(next);
+      })
+      .catch((value: unknown) => {
+        if (request.current === current) {
+          setError(value instanceof Error ? value : new Error(String(value)));
+        }
+      });
+  }, [sdk, chatsSlug, chatId]);
+
+  useEffect(() => {
+    if (isChatDocument(initial.current, chatId)) {
+      setError(undefined);
+      setChat(initial.current);
+    } else {
+      refresh();
+    }
+
+    return () => {
+      request.current++;
+    };
+  }, [chatId, refresh]);
+
+  return {
+    chat: isChatDocument(chat, chatId) ? chat : undefined,
+    error,
+    refresh,
+  };
 }
 
 export function useChats(options: UseChatsOptions) {

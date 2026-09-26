@@ -1,4 +1,4 @@
-import type { Author } from 'chat';
+import type { Author, Thread } from 'chat';
 import { NotFound } from 'payload';
 
 import { AgentServiceError, hasAgentAccess } from '../../agents/service.js';
@@ -8,83 +8,82 @@ import type { ToolPart } from '../../chat/turn/messages.js';
 import { settleClientToolCall } from '../../chat/turn/settle.js';
 import type { TurnActor } from '../../chat/turn/types.js';
 import type { FrogBot } from '../../frogbot.js';
-import { pieceInstanceRuntime } from '../../pieces/definePiece.js';
 import type { QuestionOutput } from '../../tools/question.js';
 import { createChannelThreadAccess } from '../conversation.js';
 import type { ChannelRequest } from '../createChannelRequest.js';
-import { createChannelRequest } from '../createChannelRequest.js';
+import { createChannelRequest, createInternalChannelRequest } from '../createChannelRequest.js';
 import { deserializeThread } from '../deserializeThread.js';
+import { queueChannelTask } from '../queueChannelTask.js';
 import type { ChannelConversationBinding, ChannelQuestionsBinding } from '../types.js';
+import { applyQuestionChange, toQuestionRecord } from './questionRecord.js';
 import type {
-  QuestionDelivery,
+  QuestionChange,
   QuestionInteraction,
   QuestionOutcome,
   QuestionParseResult,
+  StoredQuestion,
 } from './types.js';
+
+export const PENDING_QUESTION_REASON =
+  'The next question is still posting — try again in a moment.';
 
 export type QuestionInteractionResult =
   | { status: 'ignored' }
   | { status: 'handled' }
-  | { status: 'settled'; allSettled: boolean; delivery: QuestionDelivery; dismissed: boolean };
+  | { status: 'settled'; allSettled: boolean; dismissed: boolean; question: StoredQuestion };
 
-type AuthorizedRequest = ChannelRequest & { allowed: boolean };
+export type AuthorizedChannelRequest = ChannelRequest & { allowed: boolean };
 
-type HookName = 'denied' | 'rejected' | 'settled' | 'stale' | 'updated';
+type NoticeHook = 'denied' | 'rejected' | 'stale';
 
 export async function handleQuestionInteraction({
   author,
   binding,
-  deliveries,
+  candidates,
   frogbot,
   interaction,
   request,
+  target,
 }: {
   author: Author;
   binding: ChannelConversationBinding;
-  deliveries: QuestionDelivery[];
+  candidates: StoredQuestion[];
   frogbot: FrogBot;
   interaction: QuestionInteraction;
-  request?: AuthorizedRequest;
+  request?: AuthorizedChannelRequest;
+  target?: string;
 }): Promise<QuestionInteractionResult> {
   const questions = binding.questions;
 
-  if (!questions) return { status: 'ignored' };
+  if (!questions || candidates.length === 0) return { status: 'ignored' };
 
-  const match = findMatch({ binding, deliveries, frogbot, interaction, questions });
+  const match = findMatch({ binding, candidates, frogbot, interaction, questions, target });
 
   if (!match) return { status: 'ignored' };
 
   const thread = deserializeThread({ binding, thread: match.thread });
 
-  const runHook = async (
-    name: HookName,
-    delivery: QuestionDelivery,
+  const notify = async (
+    name: NoticeHook,
+    question: StoredQuestion,
     channel: ChannelRequest,
     extra: object = {},
-  ): Promise<{ messageId?: string } | void> => {
-    const hook = questions.hooks[name] as ((args: object) => Promise<unknown>) | undefined;
+  ): Promise<void> => {
+    const hook = questions.hooks[name] as ((args: object) => Promise<void>) | undefined;
 
     try {
-      return (await hook?.({
-        call: delivery.call,
-        client: channel.client,
+      await hook?.({
+        ...hookArgs({ channel, question, thread }),
         interaction,
-        messageId: delivery.messageId,
-        req: channel.req,
-        state: delivery.state,
-        thread,
         ...extra,
-      })) as { messageId?: string } | void;
+      });
     } catch (error) {
-      frogbot.logger.error(
-        { err: error, piece: binding.instance.slug, toolCallId: delivery.call.toolCallId },
-        `[frogbot] Channel question '${name}' hook failed.`,
-      );
+      logHookFailure({ binding, error, frogbot, name, question });
     }
   };
 
-  if (match.settled) {
-    await runHook('stale', match, await internalRequest({ binding, frogbot }));
+  if (match.settled || isStaleClick({ question: match, target })) {
+    await notify('stale', match, await createInternalChannelRequest({ binding, frogbot }));
 
     return { status: 'handled' };
   }
@@ -92,45 +91,49 @@ export async function handleQuestionInteraction({
   const channel = request ?? (await authorize({ author, binding, frogbot, thread }));
 
   if (!channel.allowed) {
-    await runHook('denied', match, channel);
+    await notify('denied', match, channel);
 
     return { status: 'handled' };
   }
 
   const reference = { chatId: match.chatId, toolCallId: match.call.toolCallId };
 
-  return questions.deliveries.lock(reference, async () => {
-    const current = await questions.deliveries.find(reference);
+  return questions.store.lock(reference, async () => {
+    const current = await questions.store.find(reference);
 
     if (!current) return { status: 'handled' };
 
-    if (current.settled) {
-      await runHook('stale', current, channel);
+    if (current.settled || isStaleClick({ question: current, target })) {
+      await notify('stale', current, channel);
 
       return { status: 'handled' };
     }
 
-    const result = parse({ binding, delivery: current, frogbot, interaction, questions });
+    if (current.pending === 'update') {
+      await queueUpdate({ binding, frogbot, question: current });
+      await notify('rejected', current, channel, { reason: PENDING_QUESTION_REASON });
+
+      return { status: 'handled' };
+    }
+
+    const result = parse({ binding, frogbot, interaction, question: current, questions });
 
     if (result.kind === 'ignore') return { status: 'handled' };
 
+    if (result.kind === 'stale') {
+      await notify('stale', current, channel);
+
+      return { status: 'handled' };
+    }
+
     if (result.kind === 'rejected') {
-      await runHook('rejected', current, channel, { reason: result.reason });
+      await notify('rejected', current, channel, { reason: result.reason });
 
       return { status: 'handled' };
     }
 
     if (result.kind === 'partial') {
-      const next: QuestionDelivery =
-        result.state === undefined ? current : { ...current, state: result.state };
-
-      if (next !== current) await questions.deliveries.update(next, current);
-
-      const moved = await runHook('updated', next, channel);
-
-      if (moved?.messageId && moved.messageId !== next.messageId) {
-        await questions.deliveries.update({ ...next, messageId: moved.messageId }, next);
-      }
+      await advance({ binding, channel, frogbot, interaction, question: current, result, thread });
 
       return { status: 'handled' };
     }
@@ -160,86 +163,221 @@ export async function handleQuestionInteraction({
       const failure = settleFailure(error);
 
       if (failure.kind === 'stale') {
-        await questions.deliveries.settle(current);
-        await runHook('stale', current, channel);
+        await questions.store.settle({ question: current });
+        await notify('stale', current, channel);
       } else if (failure.kind === 'denied') {
-        await runHook('denied', current, channel);
+        await notify('denied', current, channel);
       } else {
-        await runHook('rejected', current, channel, { reason: failure.reason });
+        await notify('rejected', current, channel, { reason: failure.reason });
       }
 
       return { status: 'handled' };
     }
 
-    await questions.deliveries.settle(current);
+    const runSettled = async (args: {
+      actor: TurnActor | null;
+      outcome: QuestionOutcome;
+    }): Promise<QuestionChange | void> => {
+      try {
+        return await questions.hooks.settled({
+          ...hookArgs({ channel, question: current, thread }),
+          ...args,
+        });
+      } catch (error) {
+        logHookFailure({ binding, error, frogbot, name: 'settled', question: current });
+      }
+    };
+
+    const settle = async (args: { actor: TurnActor | null; outcome: QuestionOutcome }) => {
+      const change = await runSettled(args);
+      const settled = applyQuestionChange({ change, question: current });
+
+      await questions.store.settle({ question: settled });
+
+      return settled;
+    };
 
     if (settlement.status === 'already-settled') {
-      await runHook('settled', current, channel, {
-        actor: null,
-        outcome: outcomeFromPart(settlement.part),
-      });
-      await runHook('stale', current, channel);
+      const settled = await settle({ actor: null, outcome: outcomeFromPart(settlement.part) });
+
+      await notify('stale', settled, channel);
 
       return { status: 'handled' };
     }
 
-    await runHook('settled', current, channel, { actor, outcome });
-
     return {
       status: 'settled',
       allSettled: settlement.allSettled,
-      delivery: current,
       dismissed: 'dismissed' in outcome,
+      question: await settle({ actor, outcome }),
     };
   });
 }
 
+async function advance({
+  binding,
+  channel,
+  frogbot,
+  interaction,
+  question,
+  result,
+  thread,
+}: {
+  binding: ChannelConversationBinding;
+  channel: ChannelRequest;
+  frogbot: FrogBot;
+  interaction: QuestionInteraction;
+  question: StoredQuestion;
+  result: Extract<QuestionParseResult, { kind: 'partial' }>;
+  thread: Thread;
+}): Promise<void> {
+  const { hooks, store } = binding.questions!;
+
+  const staged: StoredQuestion = {
+    ...question,
+    revision: question.revision + 1,
+    ...(result.state === undefined ? {} : { state: result.state }),
+    ...(hooks.updated ? { pending: 'update' as const } : {}),
+  };
+
+  const saved = await store.change({ expected: question.revision, question: staged });
+
+  if (!saved || !hooks.updated) return;
+
+  try {
+    const change = await hooks.updated({
+      ...hookArgs({ channel, question: staged, thread }),
+      interaction,
+    });
+
+    await store.change({
+      expected: staged.revision,
+      question: applyQuestionChange({ change, question: staged }),
+    });
+  } catch (error) {
+    logHookFailure({ binding, error, frogbot, name: 'updated', question: staged });
+
+    await queueUpdate({ binding, frogbot, question: staged });
+  }
+}
+
+function queueUpdate({
+  binding,
+  frogbot,
+  question,
+}: {
+  binding: ChannelConversationBinding;
+  frogbot: FrogBot;
+  question: StoredQuestion;
+}): Promise<void> {
+  return queueChannelTask({
+    binding,
+    frogbot,
+    input: {
+      kind: 'update',
+      agentSlug: binding.agent.slug,
+      instanceSlug: binding.instance.slug,
+      chatId: question.chatId,
+      toolCallId: question.call.toolCallId,
+      revision: question.revision,
+      thread: question.thread,
+    },
+  });
+}
+
+function hookArgs({
+  channel,
+  question,
+  thread,
+}: {
+  channel: ChannelRequest;
+  question: StoredQuestion;
+  thread: Thread;
+}) {
+  return {
+    call: question.call,
+    client: channel.client,
+    question: toQuestionRecord(question),
+    req: channel.req,
+    thread,
+  };
+}
+
+function isStaleClick({ question, target }: { question: StoredQuestion; target?: string }) {
+  return target !== undefined && question.messages.at(-1)?.id !== target;
+}
+
 function findMatch({
   binding,
-  deliveries,
+  candidates,
   frogbot,
   interaction,
   questions,
+  target,
 }: {
   binding: ChannelConversationBinding;
-  deliveries: QuestionDelivery[];
+  candidates: StoredQuestion[];
   frogbot: FrogBot;
   interaction: QuestionInteraction;
   questions: ChannelQuestionsBinding;
-}): QuestionDelivery | undefined {
-  return deliveries.find(
-    (delivery) => parse({ binding, delivery, frogbot, interaction, questions }).kind !== 'ignore',
+  target?: string;
+}): StoredQuestion | undefined {
+  const current = candidates.find(
+    (question) =>
+      !isStaleClick({ question, target }) &&
+      parse({ binding, frogbot, interaction, question, questions }).kind !== 'ignore',
   );
+
+  return current ?? candidates.find((question) => isStaleClick({ question, target }));
 }
 
 function parse({
   binding,
-  delivery,
   frogbot,
   interaction,
+  question,
   questions,
 }: {
   binding: ChannelConversationBinding;
-  delivery: QuestionDelivery;
   frogbot: FrogBot;
   interaction: QuestionInteraction;
+  question: StoredQuestion;
   questions: ChannelQuestionsBinding;
 }): QuestionParseResult {
   try {
     return questions.hooks.parse({
-      call: delivery.call,
+      call: question.call,
       interaction,
-      settled: delivery.settled === true,
-      state: delivery.state,
+      question: toQuestionRecord(question),
+      settled: question.settled !== undefined,
     });
   } catch (error) {
     frogbot.logger.error(
-      { err: error, piece: binding.instance.slug, toolCallId: delivery.call.toolCallId },
+      { err: error, piece: binding.instance.slug, toolCallId: question.call.toolCallId },
       '[frogbot] Channel question parse failed; the interaction was ignored.',
     );
 
     return { kind: 'ignore' };
   }
+}
+
+function logHookFailure({
+  binding,
+  error,
+  frogbot,
+  name,
+  question,
+}: {
+  binding: ChannelConversationBinding;
+  error: unknown;
+  frogbot: FrogBot;
+  name: string;
+  question: StoredQuestion;
+}): void {
+  frogbot.logger.error(
+    { err: error, piece: binding.instance.slug, toolCallId: question.call.toolCallId },
+    `[frogbot] Channel question '${name}' hook failed.`,
+  );
 }
 
 async function authorize({
@@ -252,7 +390,7 @@ async function authorize({
   binding: ChannelConversationBinding;
   frogbot: FrogBot;
   thread: { id: string };
-}): Promise<AuthorizedRequest> {
+}): Promise<AuthorizedChannelRequest> {
   const channel = await createChannelRequest({ author, binding, frogbot, thread });
   const allowed = await hasAgentAccess({ req: channel.req, agent: binding.agent });
 
@@ -264,18 +402,6 @@ async function authorize({
   }
 
   return { ...channel, allowed };
-}
-
-async function internalRequest({
-  binding,
-  frogbot,
-}: {
-  binding: ChannelConversationBinding;
-  frogbot: FrogBot;
-}): Promise<ChannelRequest> {
-  const req = await frogbot.createRequest({});
-
-  return { client: await pieceInstanceRuntime(binding.instance).client({ req }), req };
 }
 
 function channelActor({
@@ -301,7 +427,7 @@ function settleFailure(
 
   if (!(error instanceof TurnError)) throw error;
 
-  if (error.code === 'forbidden') return { kind: 'denied' };
+  if (error.code === 'forbidden' || error.code === 'channel-chat') return { kind: 'denied' };
 
   if (error.code === 'call-not-found' || error.code === 'not-awaiting') return { kind: 'stale' };
 

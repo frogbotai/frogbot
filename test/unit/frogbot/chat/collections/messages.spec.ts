@@ -6,9 +6,31 @@ import type { FrogBotRequest } from '../../../../../packages/frogbot/src/types/r
 
 const collection = defaultMessagesCollection({ slug: 'messages', chatsSlug: 'chats' });
 
-function reqWithUser(id?: string) {
-  return (id ? { user: { id } } : {}) as FrogBotRequest;
+function reqWithUser(id?: string, context: FrogBotRequest['context'] = {}) {
+  return { context, ...(id ? { user: { id } } : {}) } as FrogBotRequest;
 }
+
+function reqWithChat(
+  chat: Record<string, unknown> | null,
+  context: FrogBotRequest['context'] = {},
+) {
+  return {
+    ...reqWithUser('u1', context),
+    frogbot: { findByID: async () => chat, config: { pieces: { instances: [] } } },
+  } as unknown as FrogBotRequest;
+}
+
+const channelChat = {
+  id: 'chat-1',
+  user: 'u1',
+  channel: 'slack',
+  channelKey: 'channel-key',
+  channelThread: { account: 'slack-support', thread: { id: 'thread-1' } },
+};
+
+const channelContext = {
+  channel: { piece: 'slack', threadId: 'thread-1', author: { id: 'U1' } },
+};
 
 function field(name: string) {
   return collection.fields.find((f) => 'name' in f && f.name === name);
@@ -130,13 +152,44 @@ describe('defaultMessagesCollection', () => {
       expect(await collection.access?.create?.({ req: reqWithUser() })).toBe(false);
     });
 
-    it('read/update/delete resolve ownership through the chat relation', async () => {
-      for (const op of ['read', 'update', 'delete'] as const) {
+    it.each([
+      ['allows', 'the caller’s own web chat', { id: 'chat-1', user: 'u1' }, {}],
+      ['refuses', 'another user’s web chat', { id: 'chat-1', user: 'u2' }, {}],
+      ['refuses', 'a channel chat from outside its channel', channelChat, {}],
+      ['allows', 'a channel chat from its own channel thread', channelChat, channelContext],
+      ['refuses', 'a missing chat', null, {}],
+    ])('create %s a message into %s', async (verdict, _, chat, context) => {
+      const req = reqWithChat(chat, context);
+
+      expect(await collection.access?.create?.({ req, data: { chat: 'chat-1' } })).toBe(
+        verdict === 'allows',
+      );
+    });
+
+    it('read resolves ownership through the chat relation', async () => {
+      expect(await collection.access?.read?.({ req: reqWithUser('u1') })).toEqual({
+        'chat.user': { equals: 'u1' },
+      });
+      expect(await collection.access?.read?.({ req: reqWithUser() })).toBe(false);
+    });
+
+    it('update/delete are limited to the caller’s web chats', async () => {
+      for (const op of ['update', 'delete'] as const) {
         expect(await collection.access?.[op]?.({ req: reqWithUser('u1') })).toEqual({
           'chat.user': { equals: 'u1' },
+          'chat.channelKey': { exists: false },
         });
         expect(await collection.access?.[op]?.({ req: reqWithUser() })).toBe(false);
+        expect(await collection.access?.[op]?.({ req: reqWithUser('u1', channelContext) })).toBe(
+          false,
+        );
       }
+    });
+
+    it('blocks moving a message to another chat', async () => {
+      const access = (field('chat') as { access?: { update?: FieldAccess } }).access;
+
+      expect(await access?.update?.({ req: reqWithUser('u1') } as never)).toBe(false);
     });
 
     it('permits per-operation access overrides', async () => {
@@ -149,6 +202,7 @@ describe('defaultMessagesCollection', () => {
       expect(configured.access?.read).toBe(read);
       expect(await configured.access?.update?.({ req: reqWithUser('u1') })).toEqual({
         'chat.user': { equals: 'u1' },
+        'chat.channelKey': { exists: false },
       });
     });
   });

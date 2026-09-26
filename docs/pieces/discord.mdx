@@ -85,6 +85,8 @@ When the agent asks several questions in one call, the card shows them one at a 
 
 When a question is answered, the card is replaced with the answers and `Answered by` the participant's display name and username, and the agent continues in the same thread. The first answer wins.
 
+Questions are answered only in Discord. The FrogBot admin chat shows the conversation [read-only](/chat/questions#channel-conversations).
+
 ### Typed answers
 
 Discord cannot open a form after a click, so typed answers are messages in the thread. Press **Other…**, and the card shows that you are typing. Your next message in the thread, sent within 10 minutes, becomes your answer. You do not need to mention the bot. Press **Other…** again to cancel.
@@ -107,6 +109,7 @@ Picks in a menu that accepts several options stay private to each participant un
 | A typed answer more than 10 minutes after **Other…** | The message is treated as an ordinary message, not as the answer |
 | The server restarts while a question is open | The card stays answerable |
 | Posting the card fails | The question is posted again with the next message in the thread |
+| Showing the next question of a set fails, or the card can't be redrawn after **Other…** or a page change | Clicks on the card and typed answers get a reply in the thread that mentions the participant: "The next question is still posting — try again in a moment." Nothing is recorded. FrogBot redraws the card on retry, and it then answers normally |
 | Updating the card after an answer fails | The answer is still recorded and the agent continues; the card keeps its controls, and clicks on it change nothing |
 | A card left open for 30 days | The card stops responding; the next message in the thread posts it again |
 

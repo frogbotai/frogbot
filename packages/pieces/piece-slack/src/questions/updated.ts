@@ -1,4 +1,8 @@
-import { encodeQuestionModalMetadata, type PieceChannelQuestions } from 'frogbot/pieces';
+import {
+  encodeQuestionModalMetadata,
+  type PieceChannelQuestions,
+  type QuestionInteraction,
+} from 'frogbot/pieces';
 
 import type { SlackClient } from '../client.js';
 import { actionIds, customAnswerView } from './blocks.js';
@@ -6,9 +10,39 @@ import { interactionUserId, postEphemeral } from './slackThread.js';
 import type { SlackQuestionState } from './state.js';
 import { customAnswers } from './state.js';
 
-export const updateSlackQuestion: NonNullable<
-  PieceChannelQuestions<SlackClient>['updated']
-> = async ({ call, client, interaction, messageId, state, thread }) => {
+type SlackQuestionUpdate = NonNullable<PieceChannelQuestions<SlackClient>['updated']>;
+
+type SlackInteractionResponse = Omit<Parameters<SlackQuestionUpdate>[0], 'interaction' | 'req'> & {
+  interaction: QuestionInteraction;
+};
+
+export const updateSlackQuestion: SlackQuestionUpdate = async ({
+  call,
+  client,
+  interaction,
+  question,
+  req,
+  thread,
+}) => {
+  if (!interaction) return;
+
+  try {
+    await respond({ call, client, interaction, question, thread });
+  } catch (error) {
+    req.frogbot.logger.error(
+      { err: error, piece: 'slack', toolCallId: call.toolCallId },
+      '[piece-slack] Could not respond to a question interaction.',
+    );
+  }
+};
+
+async function respond({
+  call,
+  client,
+  interaction,
+  question,
+  thread,
+}: SlackInteractionResponse): Promise<void> {
   if (interaction.type === 'modalSubmit') {
     await postEphemeral({
       client,
@@ -32,10 +66,13 @@ export const updateSlackQuestion: NonNullable<
   const view = customAnswerView({
     call,
     initialValue: customAnswers({
-      state: state as SlackQuestionState | undefined,
+      state: question.state as SlackQuestionState | undefined,
       userId: interactionUserId(interaction),
     })[q],
-    metadata: encodeQuestionModalMetadata({ threadId: thread.id, messageId }),
+    metadata: encodeQuestionModalMetadata({
+      threadId: thread.id,
+      messageId: question.messages.at(-1)!.id,
+    }),
     q,
   });
 
@@ -51,4 +88,4 @@ export const updateSlackQuestion: NonNullable<
       threadId: thread.id,
     });
   }
-};
+}

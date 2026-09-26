@@ -6,6 +6,8 @@ export type ToolActions = {
   addToolOutput: (options: { tool: string; toolCallId: string; output: unknown }) => Promise<void>;
   dismissToolCall: (toolCallId: string) => Promise<void>;
   pendingToolCallIds: ReadonlySet<string>;
+  isReadonly?: boolean;
+  channelLabel?: string;
 };
 
 export const ToolActionsContext = createContext<ToolActions | undefined>(undefined);

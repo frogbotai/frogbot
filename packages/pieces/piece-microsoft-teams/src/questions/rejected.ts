@@ -2,11 +2,11 @@ import type { PieceChannelQuestions } from 'frogbot/pieces';
 
 import type { MicrosoftTeamsClient } from '../client.js';
 import { questionCard, TeamsQuestionCardTooLarge } from './card.js';
-import { postTargeted, submittedValues, teamsAdapter } from './teamsThread.js';
+import { cardId, postTargeted, submittedValues, teamsAdapter } from './teamsThread.js';
 
 export const rejectTeamsQuestion: NonNullable<
   PieceChannelQuestions<MicrosoftTeamsClient>['rejected']
-> = async ({ call, interaction, messageId, reason, thread }) => {
+> = async ({ call, interaction, question, reason, thread }) => {
   const values = submittedValues({ count: call.input.questions.length, interaction });
 
   let card;
@@ -21,5 +21,9 @@ export const rejectTeamsQuestion: NonNullable<
     return;
   }
 
-  await teamsAdapter(thread).updateAdaptiveCard({ threadId: thread.id, messageId, card });
+  await teamsAdapter(thread).updateAdaptiveCard({
+    threadId: thread.id,
+    messageId: cardId(question),
+    card,
+  });
 };

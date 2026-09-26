@@ -10,7 +10,7 @@ import { isClientTool } from '../../tools/types.js';
 import { createChannelThreadAccess } from '../conversation.js';
 import { serializeThread } from '../deserializeThread.js';
 import type { ChannelConversationBinding } from '../types.js';
-import type { ChannelQuestionCall, QuestionDelivery } from './types.js';
+import type { ChannelQuestionCall, StoredQuestion } from './types.js';
 
 export async function renderPendingQuestions({
   binding,
@@ -34,16 +34,16 @@ export async function renderPendingQuestions({
     toQuestionCall({ binding, call }),
   );
 
-  const deliveries = await Promise.all(
-    calls.map(({ toolCallId }) => questions.deliveries.find({ chatId, toolCallId })),
+  const existing = await Promise.all(
+    calls.map(({ toolCallId }) => questions.store.find({ chatId, toolCallId })),
   );
 
-  if (deliveries.some((delivery) => delivery && !delivery.settled)) return;
+  if (existing.some((question) => question && !question.settled)) return;
 
   const claimed: ChannelQuestionCall[] = [];
 
   for (const call of calls) {
-    if (await questions.deliveries.claim({ chatId, toolCallId: call.toolCallId })) {
+    if (await questions.store.claim({ chatId, toolCallId: call.toolCallId })) {
       claimed.push(call);
     }
   }
@@ -51,46 +51,43 @@ export async function renderPendingQuestions({
   if (claimed.length === 0) return;
 
   const release = (calls: ChannelQuestionCall[]) =>
-    Promise.all(
-      calls.map(({ toolCallId }) => questions.deliveries.release({ chatId, toolCallId })),
-    );
+    Promise.all(calls.map(({ toolCallId }) => questions.store.release({ chatId, toolCallId })));
 
-  let rendered;
+  const serialized = serializeThread(thread);
+  const byId = new Map(claimed.map((call) => [call.toolCallId, call]));
 
   try {
     const client = await pieceInstanceRuntime(binding.instance).client({ req });
+    const rendered = await questions.hooks.render({ calls: claimed, client, req, thread });
 
-    rendered = await questions.hooks.render({ calls: claimed, client, req, thread });
+    const saved = rendered.flatMap(({ calls: covered, messages, state }) =>
+      covered.flatMap((toolCallId): StoredQuestion[] => {
+        const call = byId.get(toolCallId);
+
+        if (!call) return [];
+
+        byId.delete(toolCallId);
+
+        return [
+          {
+            call,
+            chatId,
+            messages,
+            revision: 0,
+            thread: serialized,
+            ...(state === undefined ? {} : { state }),
+          },
+        ];
+      }),
+    );
+
+    await questions.store.save({ questions: saved });
   } catch (error) {
     await release(claimed);
 
     throw error;
   }
 
-  const serialized = serializeThread(thread);
-  const byId = new Map(claimed.map((call) => [call.toolCallId, call]));
-
-  const saved = rendered.flatMap(({ messageId, calls: covered, state }) =>
-    covered.flatMap((toolCallId): QuestionDelivery[] => {
-      const call = byId.get(toolCallId);
-
-      if (!call) return [];
-
-      byId.delete(toolCallId);
-
-      return [
-        {
-          call,
-          chatId,
-          messageId,
-          thread: serialized,
-          ...(state === undefined ? {} : { state }),
-        },
-      ];
-    }),
-  );
-
-  await questions.deliveries.save(saved);
   await release([...byId.values()]);
 }
 

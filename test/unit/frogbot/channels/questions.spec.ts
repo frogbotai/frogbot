@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { CHANNEL_QUESTION_UPDATE_TASK_SLUG } from '../../../../packages/frogbot/src/channels/host.js';
+import { PENDING_QUESTION_REASON } from '../../../../packages/frogbot/src/channels/questions/handleQuestionInteraction.js';
 import { encodeQuestionModalMetadata } from '../../../../packages/frogbot/src/channels/questions/questionModalMetadata.js';
 import type {
   PieceChannelQuestions,
@@ -27,6 +29,10 @@ vi.mock('../../../../packages/frogbot/src/chat/turn/continueTurn.js', () => ({ c
 const thread = 'channel:thread-1';
 
 const output = { answers: [{ header: 'Color', selected: ['Red'] }] };
+
+const card = { id: 'card-1', postedAt: '2026-09-26T00:00:00.000Z' };
+
+const key = (value: string) => `channels:support:slack:questions:${value}`;
 
 function pendingCall(toolCallId = 'call-1'): PendingCall {
   return {
@@ -71,7 +77,7 @@ function parseInteraction(interaction: QuestionInteraction) {
 function questionHooks() {
   return {
     render: vi.fn<PieceChannelQuestions['render']>(async ({ calls }) => [
-      { messageId: 'card-1', calls: calls.map(({ toolCallId }) => toolCallId) },
+      { messages: [card], calls: calls.map(({ toolCallId }) => toolCallId) },
     ]),
     parse: vi.fn<PieceChannelQuestions['parse']>(({ interaction }) =>
       parseInteraction(interaction),
@@ -155,7 +161,7 @@ describe('channel question delivery', () => {
     }));
   });
 
-  it('renders a pending question once and records its delivery', async () => {
+  it('renders a pending question once and records its messages', async () => {
     const { fixture, hooks } = await askedFixture();
 
     await fixture.deliver('message-2', thread, { mention: false });
@@ -172,17 +178,16 @@ describe('channel question delivery', () => {
 
     expect(hooks.render).toHaveBeenCalledOnce();
     expect(hooks.render.mock.calls[0]![0].calls[0]!.input.questions[0]!.header).toBe('Color');
-    expect(fixture.values.get('channels:support:slack:questions:message:channel:card-1')).toEqual({
+    expect(fixture.values.get(key('message:channel:card-1'))).toEqual({
       chatId: 'chat-1',
       toolCallIds: ['call-1'],
     });
-    expect(fixture.values.get('channels:support:slack:questions:call:chat-1:call-1')).toMatchObject(
-      {
-        chatId: 'chat-1',
-        messageId: 'card-1',
-        thread: { id: thread },
-      },
-    );
+    expect(fixture.values.get(key('call:chat-1:call-1'))).toMatchObject({
+      chatId: 'chat-1',
+      messages: [card],
+      revision: 0,
+      thread: { id: thread },
+    });
 
     await fixture.host.shutdown();
   });
@@ -211,7 +216,7 @@ describe('channel question delivery', () => {
     await fixture.host.run(fixture.inputs[1]!);
 
     expect(hooks.render).toHaveBeenCalledTimes(2);
-    expect(fixture.values.has('channels:support:slack:questions:call:chat-1:call-1')).toBe(true);
+    expect(fixture.values.has(key('call:chat-1:call-1'))).toBe(true);
 
     await fixture.host.shutdown();
   });
@@ -220,7 +225,7 @@ describe('channel question delivery', () => {
     const hooks = questionHooks();
 
     hooks.render.mockImplementation(async ({ calls }) => [
-      { messageId: 'card-1', calls: [calls[0]!.toolCallId] },
+      { messages: [card], calls: [calls[0]!.toolCallId] },
     ]);
 
     const fixture = channelFixture({ questions: hooks });
@@ -241,7 +246,7 @@ describe('channel question delivery', () => {
     await fixture.host.run(fixture.inputs[1]!);
 
     expect(hooks.render).toHaveBeenCalledOnce();
-    expect(fixture.values.has('channels:support:slack:questions:call:chat-1:call-2')).toBe(false);
+    expect(fixture.values.has(key('call:chat-1:call-2'))).toBe(false);
 
     await fixture.host.shutdown();
   });
@@ -291,7 +296,10 @@ describe('channel question delivery', () => {
       }),
     ).toBe(true);
     expect(hooks.settled).toHaveBeenCalledWith(
-      expect.objectContaining({ messageId: 'card-1', outcome: { output } }),
+      expect.objectContaining({
+        question: { messages: [card], revision: 0, state: undefined },
+        outcome: { output },
+      }),
     );
     expect(fixture.inputs[1]).toMatchObject({
       kind: 'continue',
@@ -333,9 +341,7 @@ describe('channel question delivery', () => {
 
     expect(hooks.denied).toHaveBeenCalledOnce();
     expect(settleClientToolCall).not.toHaveBeenCalled();
-    expect(
-      fixture.values.get('channels:support:slack:questions:call:chat-1:call-1'),
-    ).not.toHaveProperty('settled');
+    expect(fixture.values.get(key('call:chat-1:call-1'))).not.toHaveProperty('settled');
 
     await fixture.host.shutdown();
   });
@@ -358,26 +364,75 @@ describe('channel question delivery', () => {
     await fixture.host.shutdown();
   });
 
-  it('persists partial state, then passes it to later hooks and a moved card', async () => {
+  it('saves partial state before updated, then the change updated returns', async () => {
     const { fixture, hooks } = await askedFixture();
+    const moved = { id: 'card-2', postedAt: '2026-09-26T00:00:05.000Z' };
 
-    hooks.updated.mockResolvedValueOnce({ messageId: 'card-2' });
+    hooks.updated.mockImplementationOnce(async ({ question }) => {
+      expect(fixture.values.get(key('call:chat-1:call-1'))).toMatchObject({
+        pending: 'update',
+        revision: 1,
+        state: { step: 2 },
+      });
+      expect(question).toEqual({ messages: [card], revision: 1, state: { step: 2 } });
+
+      return { messages: [moved], state: { step: 3 } };
+    });
 
     await fixture.interact(click('partial'));
 
-    expect(hooks.updated).toHaveBeenCalledWith(expect.objectContaining({ state: { step: 2 } }));
-    expect(fixture.values.get('channels:support:slack:questions:call:chat-1:call-1')).toMatchObject(
-      {
-        messageId: 'card-2',
-        state: { step: 2 },
-      },
-    );
+    const saved = fixture.values.get(key('call:chat-1:call-1'));
+
+    expect(saved).toMatchObject({ messages: [moved], revision: 1, state: { step: 3 } });
+    expect(saved).not.toHaveProperty('pending');
 
     await fixture.interact(click('answer', { messageId: 'card-2' }));
 
-    expect(hooks.settled).toHaveBeenCalledWith(
-      expect.objectContaining({ messageId: 'card-2', state: { step: 2 } }),
+    expect(hooks.parse).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        question: { messages: [moved], revision: 1, state: { step: 3 } },
+        settled: false,
+      }),
     );
+    expect(hooks.settled).toHaveBeenCalledWith(
+      expect.objectContaining({ question: { messages: [moved], revision: 1, state: { step: 3 } } }),
+    );
+
+    await fixture.host.shutdown();
+  });
+
+  it('keeps the messages and state when updated returns nothing', async () => {
+    const { fixture } = await askedFixture();
+
+    await fixture.interact(click('partial'));
+
+    const saved = fixture.values.get(key('call:chat-1:call-1'));
+
+    expect(saved).toMatchObject({ messages: [card], revision: 1, state: { step: 2 } });
+    expect(saved).not.toHaveProperty('pending');
+
+    await fixture.host.shutdown();
+  });
+
+  it('saves partial state without a pending update when the piece has no updated hook', async () => {
+    const { updated: _updated, ...hooks } = questionHooks();
+    const fixture = channelFixture({ questions: hooks });
+
+    Object.assign(fixture.frogbot.agents.support.config, { tools: [question] });
+    fixture.identity.mockResolvedValue({ id: 'user-1', collection: 'users' } as never);
+
+    await fixture.host.initialize(false);
+    await fixture.deliver();
+
+    listPendingCalls.mockResolvedValueOnce([pendingCall()]);
+
+    await fixture.host.run(fixture.inputs[0]!);
+    await fixture.interact(click('partial'));
+
+    const saved = fixture.values.get(key('call:chat-1:call-1'));
+
+    expect(saved).toMatchObject({ revision: 1, state: { step: 2 } });
+    expect(saved).not.toHaveProperty('pending');
 
     await fixture.host.shutdown();
   });
@@ -425,6 +480,83 @@ describe('channel question delivery', () => {
     );
     expect(hooks.stale).toHaveBeenCalledOnce();
     expect(fixture.inputs).toHaveLength(1);
+
+    await fixture.host.shutdown();
+  });
+
+  it('saves what settled returns on the settled record and hands it to stale', async () => {
+    const hooks = questionHooks();
+    const closed = { id: 'closed-1', postedAt: '2026-09-26T00:00:09.000Z' };
+
+    hooks.settled.mockImplementation(async ({ question }) => ({
+      messages: [...question.messages, closed],
+      state: { view: 'Answered by user-2' },
+    }));
+
+    const { fixture } = await askedFixture(hooks);
+
+    await fixture.interact(click('answer', { author: 'user-2' }));
+    await fixture.interact(click('answer', { messageId: 'closed-1' }));
+
+    const settled = {
+      messages: [card, closed],
+      revision: 0,
+      state: { view: 'Answered by user-2' },
+    };
+
+    expect(fixture.values.get(key('call:chat-1:call-1'))).toMatchObject({
+      ...settled,
+      settled: { at: expect.any(String) },
+    });
+    expect(hooks.stale).toHaveBeenCalledOnce();
+    expect(hooks.stale.mock.calls[0]![0].question).toEqual(settled);
+    expect(settleClientToolCall).toHaveBeenCalledOnce();
+
+    await fixture.host.shutdown();
+  });
+
+  it('hands what settled returns to stale when the call was already settled', async () => {
+    const hooks = questionHooks();
+
+    hooks.settled.mockResolvedValueOnce({ state: { view: 'Answered' } });
+
+    const { fixture } = await askedFixture(hooks);
+
+    settleClientToolCall.mockResolvedValueOnce({
+      status: 'already-settled',
+      part: { state: 'output-available', output },
+      allSettled: true,
+    });
+
+    await fixture.interact(click('answer'));
+
+    expect(hooks.stale.mock.calls[0]![0].question).toEqual({
+      messages: [card],
+      revision: 0,
+      state: { view: 'Answered' },
+    });
+    expect(fixture.values.get(key('call:chat-1:call-1'))).toMatchObject({
+      state: { view: 'Answered' },
+      settled: { at: expect.any(String) },
+    });
+
+    await fixture.host.shutdown();
+  });
+
+  it('settles the record even when settled fails', async () => {
+    const { fixture, hooks } = await askedFixture();
+
+    hooks.settled.mockRejectedValueOnce(new Error('chat.update failed'));
+
+    await fixture.interact(click('answer'));
+    await fixture.interact(click('answer'));
+
+    expect(fixture.values.get(key('call:chat-1:call-1'))).toMatchObject({
+      messages: [card],
+      settled: { at: expect.any(String) },
+    });
+    expect(hooks.stale).toHaveBeenCalledOnce();
+    expect(settleClientToolCall).toHaveBeenCalledOnce();
 
     await fixture.host.shutdown();
   });
@@ -508,6 +640,195 @@ describe('channel question delivery', () => {
     await fixture.host.run(fixture.inputs.at(-1)!);
 
     expect(fixture.streamMessage).toHaveBeenCalledTimes(2);
+
+    await fixture.host.shutdown();
+  });
+
+  it('records every message of a question and hands all of them to settled', async () => {
+    const hooks = questionHooks();
+
+    hooks.render.mockImplementation(async ({ calls }) => [
+      {
+        messages: [{ id: 'page-1', postedAt: '2026-09-26T00:00:00.000Z' }, card],
+        calls: calls.map(({ toolCallId }) => toolCallId),
+      },
+    ]);
+
+    const { fixture } = await askedFixture(hooks);
+
+    await fixture.interact(click('answer'));
+
+    expect(hooks.settled).toHaveBeenCalledWith(
+      expect.objectContaining({
+        question: expect.objectContaining({
+          messages: [{ id: 'page-1', postedAt: '2026-09-26T00:00:00.000Z' }, card],
+        }),
+      }),
+    );
+
+    await fixture.host.shutdown();
+  });
+
+  it('sends a click on the previous question message to stale instead of the next question', async () => {
+    const hooks = questionHooks();
+
+    hooks.updated.mockImplementation(async ({ question }) => ({
+      messages: [...question.messages, { id: 'card-2', postedAt: '2026-09-26T00:00:05.000Z' }],
+    }));
+
+    const { fixture } = await askedFixture(hooks);
+
+    await fixture.interact(click('partial'));
+    await fixture.interact(click('answer'));
+
+    expect(hooks.stale).toHaveBeenCalledOnce();
+    expect(settleClientToolCall).not.toHaveBeenCalled();
+
+    await fixture.host.shutdown();
+  });
+
+  it('lets parse send a reply written before the current question to stale', async () => {
+    const hooks = questionHooks();
+
+    hooks.parse.mockImplementation(({ interaction, question }) => {
+      if (interaction.type !== 'message') return parseInteraction(interaction);
+
+      const sent = new Date(interaction.message.metadata.dateSent).getTime();
+      const posted = new Date(question.messages.at(-1)!.postedAt).getTime();
+
+      return sent < posted ? { kind: 'stale' } : parseInteraction(interaction);
+    });
+
+    hooks.updated.mockImplementation(async ({ question }) => ({
+      messages: [...question.messages, { id: 'card-2', postedAt: '2999-01-01T00:00:00.000Z' }],
+    }));
+
+    const { fixture } = await askedFixture(hooks);
+
+    await fixture.interact(click('partial'));
+    await fixture.deliver('message-2', thread, { mention: false, text: 'answer' });
+    await fixture.host.run(fixture.inputs.at(-1)!);
+
+    expect(hooks.stale).toHaveBeenCalledOnce();
+    expect(settleClientToolCall).not.toHaveBeenCalled();
+    expect(fixture.streamMessage).toHaveBeenCalledOnce();
+
+    await fixture.host.shutdown();
+  });
+
+  it('queues an update job when the next question fails to post', async () => {
+    const hooks = questionHooks();
+
+    hooks.updated.mockRejectedValueOnce(new Error('Slack is down'));
+
+    const { fixture } = await askedFixture(hooks);
+
+    await fixture.interact(click('partial'));
+
+    expect(fixture.values.get(key('call:chat-1:call-1'))).toMatchObject({
+      messages: [card],
+      pending: 'update',
+      revision: 1,
+      state: { step: 2 },
+    });
+    expect(fixture.queue).toHaveBeenLastCalledWith({
+      task: CHANNEL_QUESTION_UPDATE_TASK_SLUG,
+      queue: 'frogbot-channel:support:slack',
+      input: {
+        kind: 'update',
+        agentSlug: 'support',
+        instanceSlug: 'slack',
+        chatId: 'chat-1',
+        toolCallId: 'call-1',
+        revision: 1,
+        thread: expect.objectContaining({ id: thread }),
+      },
+    });
+    expect(fixture.frogbot.logger.error).toHaveBeenCalledOnce();
+
+    await fixture.host.shutdown();
+  });
+
+  it('holds a click while the next question is posting and queues the update again', async () => {
+    const hooks = questionHooks();
+
+    hooks.updated.mockRejectedValueOnce(new Error('Slack is down'));
+
+    const { fixture } = await askedFixture(hooks);
+
+    await fixture.interact(click('partial'));
+    await fixture.interact(click('answer'));
+
+    expect(hooks.rejected).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: PENDING_QUESTION_REASON }),
+    );
+    expect(settleClientToolCall).not.toHaveBeenCalled();
+    expect(fixture.inputs.filter((input) => input.kind === 'update')).toHaveLength(2);
+
+    await fixture.host.shutdown();
+  });
+
+  it('holds an answering reply while the next question is posting', async () => {
+    const hooks = questionHooks();
+
+    hooks.updated.mockRejectedValueOnce(new Error('Slack is down'));
+
+    const { fixture } = await askedFixture(hooks);
+
+    await fixture.interact(click('partial'));
+    await fixture.deliver('message-2', thread, { mention: false, text: 'answer' });
+    await fixture.host.run(fixture.inputs.at(-1)!);
+
+    expect(hooks.rejected).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: PENDING_QUESTION_REASON }),
+    );
+    expect(settleClientToolCall).not.toHaveBeenCalled();
+    expect(fixture.streamMessage).toHaveBeenCalledOnce();
+
+    await fixture.host.shutdown();
+  });
+
+  it('sends a click on an earlier page of the question to stale', async () => {
+    const hooks = questionHooks();
+
+    hooks.render.mockImplementation(async ({ calls }) => [
+      {
+        messages: [{ id: 'page-1', postedAt: '2026-09-26T00:00:00.000Z' }, card],
+        calls: calls.map(({ toolCallId }) => toolCallId),
+      },
+    ]);
+
+    const { fixture } = await askedFixture(hooks);
+
+    fixture.identity.mockClear();
+
+    await fixture.interact(click('answer', { messageId: 'page-1' }));
+
+    expect(hooks.stale).toHaveBeenCalledOnce();
+    expect(hooks.parse).not.toHaveBeenCalled();
+    expect(fixture.identity).not.toHaveBeenCalled();
+    expect(settleClientToolCall).not.toHaveBeenCalled();
+
+    await fixture.host.shutdown();
+  });
+
+  it('sends a modal submission opened from the previous question message to stale', async () => {
+    const hooks = questionHooks();
+
+    hooks.updated.mockImplementation(async ({ question }) => ({
+      messages: [...question.messages, { id: 'card-2', postedAt: '2026-09-26T00:00:05.000Z' }],
+    }));
+
+    const { fixture } = await askedFixture(hooks);
+
+    await fixture.interact(click('partial'));
+    await fixture.interact({
+      type: 'modal',
+      privateMetadata: encodeQuestionModalMetadata({ threadId: thread, messageId: 'card-1' }),
+    });
+
+    expect(hooks.stale).toHaveBeenCalledOnce();
+    expect(settleClientToolCall).not.toHaveBeenCalled();
 
     await fixture.host.shutdown();
   });

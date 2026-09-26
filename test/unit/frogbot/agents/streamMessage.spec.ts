@@ -220,7 +220,9 @@ function setup({
     user: owner,
     title: 'Existing title',
     agent: 'support',
+    channel: 'slack',
     channelKey: 'channel-key',
+    channelThread: { account: 'slack-support', thread: { id: 'thread-1' } },
     lastMessageAt: undefined as string | undefined,
   };
 
@@ -277,7 +279,7 @@ function setup({
 
   const req = {
     user: user === null ? null : { id: user },
-    context: {},
+    context: { channel: { piece: 'slack', threadId: 'thread-1', author: { id: 'author-1' } } },
     payload: { db: {} },
     frogbot,
   } as unknown as FrogBotRequest;

@@ -528,6 +528,7 @@ describe('@frogbotai/next views', () => {
       agent: 'general',
       chatId: 'chat-1',
       documentPath: '/admin/collections/conversations',
+      initialChat: { id: 'chat-1', agent: 'general', title: null, channel: null, channelLabel: null },
       initialMessages: [{ id: '12', role: 'assistant', parts, metadata: { source: 'test' } }],
     });
   });

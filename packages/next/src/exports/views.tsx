@@ -1,4 +1,5 @@
 import type {
+  ChatDocument,
   ChatProps,
   GreetingProps,
   MessageActionsSlotProps,
@@ -57,6 +58,24 @@ type NotFoundPageProps = Omit<ComponentProps<typeof PayloadNotFoundPage>, 'confi
 
 export function NotFoundPage({ config, ...rest }: NotFoundPageProps) {
   return <PayloadNotFoundPage {...rest} config={getPayloadConfig(config)} />;
+}
+
+function toInitialChat({
+  doc,
+  id,
+}: {
+  doc: DocumentViewServerProps['doc'];
+  id: string;
+}): ChatDocument {
+  const text = (value: unknown) => (typeof value === 'string' ? value : null);
+
+  return {
+    id,
+    agent: text(doc.agent) ?? '',
+    title: text(doc.title),
+    channel: text(doc.channel),
+    channelLabel: text(doc.channelLabel),
+  };
 }
 
 export async function ChatView({ doc, payload, routeSegments, user }: DocumentViewServerProps) {
@@ -202,11 +221,14 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
         }
       : undefined;
 
+  const initialChat = toInitialChat({ doc, id: routeID });
+
   return (
     <ChatViewClient
-      agent={typeof doc.agent === 'string' ? doc.agent : ''}
+      agent={initialChat.agent}
       chatId={routeID}
       documentPath={documentPath}
+      initialChat={initialChat}
       initialMessages={messagesToUIMessages(result.docs as never)}
       initialSelection={initialSelection}
       {...componentProps}

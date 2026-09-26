@@ -7,6 +7,8 @@ export interface ToolRendererProps {
   part: ToolPartValue;
   addToolOutput?: (output: unknown) => Promise<void>;
   dismiss?: () => Promise<void>;
+  isReadonly?: boolean;
+  channelLabel?: string;
 }
 
 export interface ToolRenderer {

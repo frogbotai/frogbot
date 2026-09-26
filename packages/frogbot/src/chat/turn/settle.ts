@@ -7,7 +7,9 @@ import { updateIfVersion } from '../../database/compareAndSet.js';
 import type { ClientTool } from '../../tools/types.js';
 import { isClientTool } from '../../tools/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
+import { assertCanWriteChat } from '../access/canWriteChat.js';
 import type { ChannelChatAccess } from '../channelAccess.js';
+import type { ChatDocument } from '../findChat.js';
 import { findChat } from '../findChat.js';
 import { actorFromRequest } from './actor.js';
 import { TurnError } from './errors.js';
@@ -55,7 +57,7 @@ export async function settleClientToolCall({
   return settleCall({
     req,
     agentSlug,
-    chatId: chat.id,
+    chat,
     toolCallId,
     outcome,
     actor: actor ?? actorFromRequest(req),
@@ -83,18 +85,21 @@ export async function listPendingCalls({
 export async function settleCall({
   req,
   agentSlug,
-  chatId,
+  chat,
   toolCallId,
   outcome,
   actor,
 }: {
   req: FrogBotRequest;
   agentSlug: string;
-  chatId: DocID;
+  chat: ChatDocument;
   toolCallId: string;
   outcome: SettleOutcome;
   actor: TurnActor;
 }): Promise<SettleClientToolCallResult> {
+  assertCanWriteChat({ req, chat });
+
+  const chatId = chat.id;
   const agent = getAgent({ req, slug: agentSlug });
   const awaiting = (await findTurnState({ req, chatId })) === 'awaiting';
 

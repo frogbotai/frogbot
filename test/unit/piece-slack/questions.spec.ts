@@ -1,15 +1,22 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { Thread } from '../../../packages/frogbot/node_modules/chat/dist/index.js';
 import type {
   ChannelQuestionCall,
   QuestionInteraction,
 } from '../../../packages/frogbot/src/exports/pieces.js';
+import { decodeQuestionModalMetadata } from '../../../packages/frogbot/src/exports/pieces.js';
+import type { FrogBotRequest } from '../../../packages/frogbot/src/types/request.js';
+import type { SlackClient } from '../../../packages/pieces/piece-slack/src/client.js';
 import {
   customAnswerView,
   questionBlocks,
   settledBlocks,
 } from '../../../packages/pieces/piece-slack/src/questions/blocks.js';
 import { parseSlackQuestion } from '../../../packages/pieces/piece-slack/src/questions/parse.js';
+import { renderSlackQuestion } from '../../../packages/pieces/piece-slack/src/questions/render.js';
+import { settleSlackQuestion } from '../../../packages/pieces/piece-slack/src/questions/settled.js';
+import { updateSlackQuestion } from '../../../packages/pieces/piece-slack/src/questions/updated.js';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
@@ -34,6 +41,14 @@ function call(...questions: Array<Partial<Item> & Pick<Item, 'header'>>): Channe
   };
 }
 
+function record({ ids = ['1.000002'], state }: { ids?: string[]; state?: object } = {}) {
+  return {
+    messages: ids.map((id) => ({ id, postedAt: '2026-09-26T00:00:00.000Z' })),
+    revision: 1,
+    ...(state ? { state } : {}),
+  };
+}
+
 function options(count: number) {
   return Array.from({ length: count }, (_, index) => ({ label: `Option ${index}` }));
 }
@@ -45,6 +60,7 @@ function action(actionId: string, raw: object = {}, value?: string): QuestionInt
       actionId,
       value,
       raw: { actions: [{ action_id: actionId, value }], ...raw },
+      triggerId: 'trigger-1',
       user: { userId: 'U1' },
     },
   } as unknown as QuestionInteraction;
@@ -155,6 +171,7 @@ describe('Slack question parsing', () => {
       parseSlackQuestion({
         call: question,
         interaction: action('frogbot:question:choose:call-1:0:1', {}, '1'),
+        question: record(),
         settled: false,
       }),
     ).toEqual({ kind: 'answer', output: { answers: [{ header: 'Color', selected: [long] }] } });
@@ -165,7 +182,9 @@ describe('Slack question parsing', () => {
       actions: [{ action_id: 'frogbot:question:choose:call-1:0', selected_option: { value: '0' } }],
     });
 
-    expect(parseSlackQuestion({ call: quick, interaction, settled: false })).toMatchObject({
+    expect(
+      parseSlackQuestion({ call: quick, interaction, question: record(), settled: false }),
+    ).toMatchObject({
       kind: 'answer',
       output: { answers: [{ selected: ['Red'] }] },
     });
@@ -178,7 +197,12 @@ describe('Slack question parsing', () => {
     ['input:other', { kind: 'ignore' }],
   ])('parses %s', (actionId, expected) => {
     expect(
-      parseSlackQuestion({ call: quick, interaction: action(actionId), settled: false }),
+      parseSlackQuestion({
+        call: quick,
+        interaction: action(actionId),
+        question: record(),
+        settled: false,
+      }),
     ).toEqual(expected);
   });
 
@@ -189,6 +213,7 @@ describe('Slack question parsing', () => {
       parseSlackQuestion({
         call: form,
         interaction: action('frogbot:question:choose:call-1:0'),
+        question: record(),
         settled: false,
       }),
     ).toEqual({ kind: 'ignore' });
@@ -214,8 +239,8 @@ describe('Slack question parsing', () => {
     const result = parseSlackQuestion({
       call: form,
       interaction,
+      question: record({ state: { custom: { U1: { 1: 'Huge' }, U2: { 0: 'Green' } } } }),
       settled: false,
-      state: { custom: { U1: { 1: 'Huge' }, U2: { 0: 'Green' } } },
     });
 
     expect(result).toEqual({
@@ -233,7 +258,9 @@ describe('Slack question parsing', () => {
     const form = call({ header: 'Colors', multiple: true }, { header: 'Size' });
     const interaction = action('frogbot:question:submit:call-1', { state: { values: {} } });
 
-    expect(parseSlackQuestion({ call: form, interaction, settled: false })).toEqual({
+    expect(
+      parseSlackQuestion({ call: form, interaction, question: record(), settled: false }),
+    ).toEqual({
       kind: 'rejected',
       reason: 'Answer “Colors” before submitting.',
     });
@@ -244,6 +271,7 @@ describe('Slack question parsing', () => {
       parseSlackQuestion({
         call: quick,
         interaction: modal('frogbot:question:custom:call-1:0', '  Green  '),
+        question: record(),
         settled: false,
       }),
     ).toEqual({
@@ -260,8 +288,8 @@ describe('Slack question parsing', () => {
       parseSlackQuestion({
         call: form,
         interaction: modal('frogbot:question:custom:call-1:1', 'Huge'),
+        question: record({ state }),
         settled: false,
-        state,
       }),
     ).toEqual({
       kind: 'partial',
@@ -271,8 +299,8 @@ describe('Slack question parsing', () => {
       parseSlackQuestion({
         call: form,
         interaction: modal('frogbot:question:custom:call-1:0', ' '),
+        question: record({ state }),
         settled: false,
-        state,
       }),
     ).toEqual({ kind: 'partial', state: { custom: { U1: {}, U2: { 1: 'Tiny' } } } });
   });
@@ -282,8 +310,122 @@ describe('Slack question parsing', () => {
       parseSlackQuestion({
         call: quick,
         interaction: { type: 'message', message: {} } as QuestionInteraction,
+        question: record(),
         settled: false,
       }),
     ).toEqual({ kind: 'ignore' });
+  });
+});
+
+describe('Slack question hooks', () => {
+  const thread = { id: 'slack:C1:1.000001' } as Thread;
+
+  function slack() {
+    const requests: Array<{ method: string; body: Record<string, unknown> }> = [];
+
+    const client = {
+      request: vi.fn(async (method: string, body: Record<string, unknown>) => {
+        requests.push({ method, body });
+
+        return { ok: true, ts: '1712345678.000100' };
+      }),
+    };
+
+    return { client: client as unknown as SlackClient, requests };
+  }
+
+  it('records the card with the time Slack posted it', async () => {
+    const { client } = slack();
+
+    const rendered = await renderSlackQuestion({
+      calls: [call({ header: 'Color' })],
+      client,
+      req: {} as FrogBotRequest,
+      thread,
+    });
+
+    expect(rendered).toEqual([
+      {
+        calls: ['call-1'],
+        messages: [{ id: '1712345678.000100', postedAt: '2024-04-05T19:34:38.000Z' }],
+      },
+    ]);
+  });
+
+  it('opens the typed-answer modal for the current card', async () => {
+    const { client, requests } = slack();
+
+    await updateSlackQuestion({
+      call: call({ header: 'Color' }),
+      client,
+      interaction: action('frogbot:question:custom:call-1:0'),
+      question: record({ ids: ['1.000002', '1.000003'] }),
+      req: {} as FrogBotRequest,
+      thread,
+    });
+
+    const view = requests[0]!.body.view as { private_metadata: string };
+    const locator = decodeQuestionModalMetadata(JSON.parse(view.private_metadata).m);
+
+    expect(requests[0]!.method).toBe('views.open');
+    expect(locator).toEqual({ threadId: thread.id, messageId: '1.000003' });
+  });
+
+  it.each([
+    ['opening the typed-answer modal', action('frogbot:question:custom:call-1:0')],
+    ['confirming a saved typed answer', modal('frogbot:question:custom:call-1:0', 'Green')],
+  ])('logs a failure %s instead of holding the question', async (_, interaction) => {
+    const error = new Error('Slack API request failed: internal_error');
+    const logger = { error: vi.fn() };
+    const client = { request: vi.fn().mockRejectedValue(error) } as unknown as SlackClient;
+
+    const change = await updateSlackQuestion({
+      call: call({ header: 'Color' }, { header: 'Size' }),
+      client,
+      interaction,
+      question: record(),
+      req: { frogbot: { logger } } as unknown as FrogBotRequest,
+      thread,
+    });
+
+    expect(change).toBeUndefined();
+    expect(logger.error).toHaveBeenCalledWith(
+      { err: error, piece: 'slack', toolCallId: 'call-1' },
+      '[piece-slack] Could not respond to a question interaction.',
+    );
+  });
+
+  it('leaves the card as it is when the retry job runs without an interaction', async () => {
+    const { client, requests } = slack();
+
+    const change = await updateSlackQuestion({
+      call: call({ header: 'Color' }),
+      client,
+      question: record(),
+      req: {} as FrogBotRequest,
+      thread,
+    });
+
+    expect(change).toBeUndefined();
+    expect(requests).toEqual([]);
+  });
+
+  it('closes every message of the question when it settles', async () => {
+    const { client, requests } = slack();
+
+    await settleSlackQuestion({
+      actor: null,
+      call: call({ header: 'Color' }),
+      client,
+      outcome: { dismissed: true },
+      question: record({ ids: ['1.000002', '1.000003'] }),
+      req: {} as FrogBotRequest,
+      thread,
+    });
+
+    expect(requests.map(({ method, body }) => [method, body.ts])).toEqual([
+      ['chat.update', '1.000002'],
+      ['chat.update', '1.000003'],
+    ]);
   });
 });

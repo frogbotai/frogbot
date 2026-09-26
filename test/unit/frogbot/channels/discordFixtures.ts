@@ -8,6 +8,7 @@ export type DiscordCall = {
   path: string;
   body: Record<string, unknown>;
   id?: string;
+  timestamp?: string;
 };
 
 type DiscordUser = { id: string; username?: string; global_name?: string };
@@ -181,6 +182,8 @@ export async function startDiscordApi() {
     const reply = (status: number, value: Record<string, unknown>) => {
       if (typeof value.id === 'string') call.id = value.id;
 
+      if (typeof value.timestamp === 'string') call.timestamp = value.timestamp;
+
       res.writeHead(status, { 'content-type': 'application/json' });
       res.end(JSON.stringify(value));
     };
@@ -207,8 +210,17 @@ export async function startDiscordApi() {
 
     const messages = /^\/channels\/([^/]+)\/messages(?:\/([^/]+))?$/.exec(path);
 
-    if (messages && (method === 'POST' || method === 'PATCH')) {
-      return reply(200, { id: messages[2] ?? snowflake(), channel_id: messages[1], ...body });
+    if (messages && method === 'POST') {
+      return reply(200, {
+        id: snowflake(),
+        channel_id: messages[1],
+        timestamp: new Date().toISOString(),
+        ...body,
+      });
+    }
+
+    if (messages && method === 'PATCH') {
+      return reply(200, { id: messages[2], channel_id: messages[1], ...body });
     }
 
     return reply(200, {});
