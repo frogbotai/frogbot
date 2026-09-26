@@ -532,6 +532,53 @@ describe('@frogbotai/next views', () => {
     });
   });
 
+  it('ChatView starts an existing chat at its latest active user message selection', async () => {
+    const user = { id: 'user-1' };
+    const latest = { id: 14, role: 'user', parts: [], model: 'openai/gpt-5', reasoning: 'high' };
+    const find = vi.fn(({ limit }: { limit: number }) =>
+      Promise.resolve({ docs: limit === 1 ? [latest] : [] }),
+    );
+
+    const element = await ChatView({
+      doc: { id: 'chat-1', agent: 'general' },
+      payload: { config: { routes: { admin: '/admin' } }, find },
+      routeSegments: ['collections', 'conversations', 'chat-1'],
+      user,
+    } as never);
+
+    expect(find).toHaveBeenCalledWith({
+      collection: 'turns',
+      depth: 0,
+      limit: 1,
+      overrideAccess: false,
+      sort: ['-createdAt', '-id'],
+      user,
+      where: {
+        and: [
+          { chat: { equals: 'chat-1' } },
+          { role: { equals: 'user' } },
+          { status: { not_equals: 'queued' } },
+        ],
+      },
+    });
+    expect(element?.props.initialSelection).toEqual({ model: 'openai/gpt-5', reasoning: 'high' });
+  });
+
+  it('ChatView leaves the selection to preferences when the latest message has no model', async () => {
+    const find = vi.fn(({ limit }: { limit: number }) =>
+      Promise.resolve({ docs: limit === 1 ? [{ id: 14, role: 'user', parts: [] }] : [] }),
+    );
+
+    const element = await ChatView({
+      doc: { id: 'chat-1', agent: 'general' },
+      payload: { config: { routes: { admin: '/admin' } }, find },
+      routeSegments: ['collections', 'conversations', 'chat-1'],
+      user: { id: 'user-1' },
+    } as never);
+
+    expect(element?.props.initialSelection).toBeUndefined();
+  });
+
   it('ChatView renders an empty uncontrolled chat on the canonical create route', async () => {
     const find = vi.fn();
     const element = await ChatView({

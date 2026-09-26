@@ -88,6 +88,22 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
         "create": [Function],
         "update": [Function],
       },
+      "name": "model",
+      "type": "text",
+    },
+    {
+      "access": {
+        "create": [Function],
+        "update": [Function],
+      },
+      "name": "reasoning",
+      "type": "text",
+    },
+    {
+      "access": {
+        "create": [Function],
+        "update": [Function],
+      },
       "name": "author",
       "type": "json",
       "typescriptSchema": [

@@ -1,7 +1,7 @@
 import type { UIMessage } from 'ai';
 
 import { hasAgentAccess } from '../../agents/service.js';
-import type { AgentInstance } from '../../agents/types.js';
+import type { AgentInstance, AgentSelection } from '../../agents/types.js';
 import type { DocID } from '../../collections/config/types.js';
 import { updateIfVersion } from '../../database/compareAndSet.js';
 import type { FrogBot } from '../../frogbot.js';
@@ -10,6 +10,7 @@ import type { ChatDocument } from '../findChat.js';
 import { messagesToUIMessages } from '../messagesToUIMessages.js';
 import type { TurnMessageDocument } from './messages.js';
 import { loadChatHistory, messagesConfig } from './messages.js';
+import { readSelection } from './selection.js';
 import { claimTurn, releaseTurn } from './state.js';
 import { allClientTools, streamTurn } from './streamTurn.js';
 import type { MessageDelivery, TurnActor, TurnClaim } from './types.js';
@@ -24,6 +25,12 @@ export type TurnRunnerArgs = {
   chat: QueuedChatDocument;
   claim: TurnClaim;
   uiMessages: UIMessage[];
+  selection: AgentSelection;
+};
+
+export type SteerMessage = {
+  message: UIMessage;
+  selection: AgentSelection;
 };
 
 export type TurnRunner = {
@@ -117,17 +124,19 @@ export async function runQueuedTurn({
     }
 
     const uiMessages = await loadChatHistory({ req, chatId, tools: agent.aiAgent.tools });
+    const selection = readSelection(message);
     const runner = chat.channelKey ? runners.get(frogbot) : undefined;
 
     started = true;
 
-    if (runner && (await runner.run({ req, agent, chat, claim, uiMessages }))) return;
+    if (runner && (await runner.run({ req, agent, chat, claim, uiMessages, selection }))) return;
 
     const turn = await streamTurn({
       req,
       agent,
       claim,
       uiMessages,
+      selection,
       clientTools: chat.channelKey ? { kinds: [] } : allClientTools(agent),
     });
 
@@ -151,7 +160,7 @@ export async function promoteSteerMessages({
   chatId: DocID;
   before?: string;
   actor: TurnActor;
-}): Promise<UIMessage[]> {
+}): Promise<SteerMessage[]> {
   const messages = (await findQueuedMessages({ req, chatId, delivery: 'steer' })).filter(
     (message) => isSameActor(message.author, actor),
   );
@@ -175,7 +184,10 @@ export async function promoteSteerMessages({
     if (activated) promoted.push(message);
   }
 
-  return messagesToUIMessages(promoted as never);
+  return promoted.map((message) => ({
+    message: messagesToUIMessages([message as never])[0]!,
+    selection: readSelection(message),
+  }));
 }
 
 export async function updateQueuedMessage({

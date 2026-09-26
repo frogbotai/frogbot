@@ -44,7 +44,11 @@ type AgentConfig = {
 
 `stopWhen` defaults to the AI SDK's `isStepCount(20)`. If provided as an array, `stopWhen` must be non-empty.
 
-`allowModels` adds models the user may select for this agent. FrogBot validates each model against configured providers and routers. The composer hides the model selector when only the default model is allowed, stores valid selections as a user preference, and falls back to the current default when a saved selection is no longer allowed.
+`allowModels` adds models the user may select for this agent. FrogBot validates each model against configured providers and routers.
+
+The chat composer shows the active model name and its reasoning level, for example `gpt-5 · High`. Clicking it opens a reasoning slider for that model; clicking the model name inside switches to the list of allowed models. The slider starts at `Default`, which leaves the level to the provider, and offers only the options that model supports. The selector is hidden when the agent allows one model and that model has no reasoning options.
+
+FrogBot saves the chosen model as a user preference and remembers one reasoning level per model. Switching models restores the level last used with the new model, or `Default` if it has none; levels never carry over from one model to another. A saved model or level that is no longer allowed or offered falls back to the agent's default model or to `Default`. Opening an existing chat starts from the model and level of its latest sent message instead of the saved preference, as long as that model is still allowed.
 
 ### Use the general preset
 
@@ -437,10 +441,10 @@ Configuring at least one worker mounts two FrogBot endpoints at the root API pat
 
 | Method | Path | Result |
 | --- | --- | --- |
-| `GET` | `/api/agents` | Permission-filtered agent manifest with defaults and allowed models |
+| `GET` | `/api/agents` | Permission-filtered agent manifest with defaults, allowed models, and their reasoning options |
 | `POST` | `/api/agents/:slug` | Generated JSON or an AI SDK UI message stream |
 
-POST exactly one non-empty `prompt` or non-empty `messages` array. Add `model` to select one of the agent's allowed models; FrogBot rejects other models with a 403 response. Authenticated calls create a chat when `chatId` is absent. Without an explicit event-stream accept header, the response is `{ text, usage, finishReason, chatId }`.
+POST exactly one non-empty `prompt` or non-empty `messages` array. Add `model` to select one of the agent's allowed models; FrogBot rejects other models with a 403 response. Add `reasoning` to select one of the options the manifest lists under `reasoning` for that model, or for the default model when `model` is omitted; an option the model does not offer returns 400. A request without `model` uses the agent's default model. Each user message keeps the model and reasoning option it was sent with, and every turn it starts uses them. Authenticated calls create a chat when `chatId` is absent. Without an explicit event-stream accept header, the response is `{ text, usage, finishReason, chatId }`.
 
 ```bash
 curl http://localhost:3000/api/agents/support \

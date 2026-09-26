@@ -30,6 +30,8 @@ type MessageDocument = {
   role: 'assistant' | 'system' | 'user';
   parts: Array<Record<string, unknown>>;
   metadata?: unknown;
+  model?: string | null;
+  reasoning?: string | null;
   usage?: unknown;
   createdAt: string;
 };
@@ -139,6 +141,8 @@ export async function branchChat({
           role: message.role,
           parts: repairInterruptedParts(message.parts as UIMessage['parts']),
           metadata: message.metadata,
+          model: message.model ?? null,
+          reasoning: message.reasoning ?? null,
         },
         context: { [MESSAGE_USAGE_CONTEXT_KEY]: message.usage ?? null },
         depth: 0,

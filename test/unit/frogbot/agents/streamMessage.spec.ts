@@ -1,4 +1,8 @@
-import type { LanguageModelV4StreamPart } from '@ai-sdk/provider';
+import type {
+  LanguageModelV4CallOptions,
+  LanguageModelV4GenerateResult,
+  LanguageModelV4StreamPart,
+} from '@ai-sdk/provider';
 import type { UIMessage } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,6 +10,7 @@ import { z } from 'zod';
 
 import type {
   AgentAccess,
+  AgentModelId,
   AgentStreamMessageResult,
 } from '../../../../packages/frogbot/src/agents/types.js';
 import {
@@ -24,6 +29,7 @@ const turn = vi.hoisted(() => ({
   claimTurn: vi.fn(),
   holdTurn: vi.fn(),
   promoteQueuedMessage: vi.fn(),
+  promoteSteerMessages: vi.fn(),
   releaseTurn: vi.fn(),
 }));
 
@@ -35,7 +41,7 @@ vi.mock('../../../../packages/frogbot/src/chat/turn/state.js', () => ({
 
 vi.mock('../../../../packages/frogbot/src/chat/turn/queue.js', () => ({
   promoteQueuedMessage: turn.promoteQueuedMessage,
-  promoteSteerMessages: async () => [],
+  promoteSteerMessages: turn.promoteSteerMessages,
 }));
 
 vi.mock('../../../../packages/frogbot/src/database/compareAndSet.js', () => ({
@@ -61,6 +67,35 @@ vi.mock('../../../../packages/frogbot/src/database/compareAndSet.js', () => ({
 const { createAgentInstance } = await import('../../../../packages/frogbot/src/agents/instance.js');
 
 const claim = { chatId: 'chat-1', attempt: 'attempt-1' };
+
+const ai = {
+  providers: {
+    local: {
+      type: 'openai-compatible',
+      baseUrl: 'http://localhost:11434/v1',
+      models: [
+        {
+          id: 'thinker',
+          mode: 'chat',
+          reasoningOptions: [{ type: 'effort', values: ['low', 'high'] }],
+        },
+        {
+          id: 'writer',
+          mode: 'chat',
+          reasoningOptions: [{ type: 'effort', values: ['max'] }],
+        },
+      ],
+    },
+  },
+  routers: {},
+};
+
+const lookup: AnyTool = {
+  slug: 'lookup',
+  description: 'Look up data',
+  inputSchema: z.object({}),
+  execute: async () => ({ found: true }),
+};
 
 const usage = {
   inputTokens: { total: 2, noCache: 2, cacheRead: 0, cacheWrite: 0 },
@@ -89,20 +124,96 @@ function modelStream(parts: LanguageModelV4StreamPart[]) {
   });
 }
 
+function toolLoopStream(): MockLanguageModelV4['doStream'] {
+  let step = 0;
+
+  return async () => ({
+    stream: modelStream(
+      step++ === 0
+        ? [
+            { type: 'stream-start', warnings: [] },
+            { type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: '{}' },
+            { type: 'finish', finishReason: { unified: 'tool-calls', raw: 'tool_calls' }, usage },
+          ]
+        : response('Found it'),
+    ),
+  });
+}
+
+function toolLoopGenerate(): MockLanguageModelV4['doGenerate'] {
+  let step = 0;
+
+  return async (): Promise<LanguageModelV4GenerateResult> =>
+    step++ === 0
+      ? {
+          content: [{ type: 'tool-call', toolCallId: 'call-1', toolName: 'lookup', input: '{}' }],
+          finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
+          usage,
+          warnings: [],
+        }
+      : {
+          content: [{ type: 'text', text: 'Found it' }],
+          finishReason: { unified: 'stop', raw: 'stop' },
+          usage,
+          warnings: [],
+        };
+}
+
 function setup({
   access = () => true,
   user = 'user-1',
   owner = user,
   doStream = async () => ({ stream: modelStream(response()) }),
+  doGenerate,
+  model: agentModel = 'openai/test' as AgentModelId,
+  allowModels,
   tools,
 }: {
   access?: AgentAccess;
   user?: string | null;
   owner?: string | null;
   doStream?: MockLanguageModelV4['doStream'];
+  doGenerate?: MockLanguageModelV4['doGenerate'];
+  model?: AgentModelId;
+  allowModels?: AgentModelId[];
   tools?: AnyTool[];
 } = {}) {
-  const model = new MockLanguageModelV4({ doStream });
+  const calls: Array<{
+    model: string;
+    providerOptions: LanguageModelV4CallOptions['providerOptions'];
+  }> = [];
+
+  const models = new Map<string, MockLanguageModelV4>();
+
+  const chatModel = (id: string) => {
+    const existing = models.get(id);
+
+    if (existing) return existing;
+
+    const created = new MockLanguageModelV4({
+      modelId: id,
+      doStream: async (options) => {
+        calls.push({ model: id, providerOptions: options.providerOptions });
+
+        return doStream(options);
+      },
+      ...(doGenerate
+        ? {
+            doGenerate: async (options: LanguageModelV4CallOptions) => {
+              calls.push({ model: id, providerOptions: options.providerOptions });
+
+              return doGenerate(options);
+            },
+          }
+        : {}),
+    });
+
+    models.set(id, created);
+
+    return created;
+  };
+
+  const model = chatModel(agentModel);
   const messages: StoredMessage[] = [];
   const chat = {
     id: 'chat-1',
@@ -116,7 +227,7 @@ function setup({
   const finish = vi.fn(async () => {});
   const frogbot = {
     config: {
-      ai: { routers: {} },
+      ai,
       chat: {
         enabled: true,
         chatsSlug: 'chats',
@@ -172,20 +283,20 @@ function setup({
   } as unknown as FrogBotRequest;
 
   const agent = createAgentInstance(
-    { slug: 'support', instructions: 'Help', model: 'openai/test', access, tools },
+    { slug: 'support', instructions: 'Help', model: agentModel, allowModels, access, tools },
     {
       gateway: {
-        chatModel: () => model,
+        chatModel,
         operation: () => ({ start: async () => {}, finish }),
       },
-      config: { providers: {}, routers: {} },
+      config: ai,
       frogbot,
     } as never,
   );
 
   turn.messages = messages;
 
-  return { agent, chat, finish, frogbot, messages, model, req };
+  return { agent, calls, chat, finish, frogbot, messages, model, req };
 }
 
 async function streamMessage(
@@ -206,6 +317,7 @@ describe('agent persisted stream with the installed AI SDK', () => {
       .mockReset()
       .mockReturnValue({ signal: new AbortController().signal, stop: vi.fn() });
     turn.promoteQueuedMessage.mockReset();
+    turn.promoteSteerMessages.mockReset().mockResolvedValue([]);
     turn.releaseTurn.mockReset().mockResolvedValue(true);
   });
 
@@ -691,5 +803,205 @@ describe('agent persisted stream with the installed AI SDK', () => {
     expect(messages[1]?.parts).toContainEqual(
       expect.objectContaining({ type: 'tool-question', state: 'input-available' }),
     );
+  });
+});
+
+describe('agent model and reasoning selection with the installed AI SDK', () => {
+  beforeEach(() => {
+    turn.promoteSteerMessages.mockReset().mockResolvedValue([]);
+  });
+
+  it('sends the selected variant on every step of a streamed tool loop', async () => {
+    const { agent, calls, req } = setup({
+      model: 'local/thinker',
+      tools: [lookup],
+      doStream: toolLoopStream(),
+    });
+
+    const result = await agent.aiAgent.stream({
+      prompt: 'Find it',
+      options: { req, selection: { reasoning: 'high' } },
+    });
+
+    await result.consumeStream();
+
+    expect(calls).toEqual([
+      { model: 'local/thinker', providerOptions: { local: { reasoningEffort: 'high' } } },
+      { model: 'local/thinker', providerOptions: { local: { reasoningEffort: 'high' } } },
+    ]);
+  });
+
+  it('sends the selected model and variant on every step of a generated tool loop', async () => {
+    const { agent, calls, req } = setup({
+      allowModels: ['local/writer'],
+      tools: [lookup],
+      doGenerate: toolLoopGenerate(),
+    });
+
+    await agent.aiAgent.generate({
+      prompt: 'Find it',
+      options: { req, selection: { model: 'local/writer', reasoning: 'max' } },
+    });
+
+    expect(calls).toEqual([
+      { model: 'local/writer', providerOptions: { local: { reasoningEffort: 'max' } } },
+      { model: 'local/writer', providerOptions: { local: { reasoningEffort: 'max' } } },
+    ]);
+  });
+
+  it('sends no reasoning options when no option is selected', async () => {
+    const { agent, calls, req } = setup({
+      model: 'local/thinker',
+      tools: [lookup],
+      doStream: toolLoopStream(),
+    });
+
+    const result = await agent.aiAgent.stream({ prompt: 'Find it', options: { req } });
+
+    await result.consumeStream();
+
+    expect(calls).toEqual([
+      { model: 'local/thinker', providerOptions: undefined },
+      { model: 'local/thinker', providerOptions: undefined },
+    ]);
+  });
+
+  it('switches to a steer message model and variant from the next step', async () => {
+    const { agent, calls, req } = setup({
+      model: 'local/thinker',
+      allowModels: ['local/writer'],
+      tools: [lookup],
+      doStream: toolLoopStream(),
+    });
+
+    turn.promoteSteerMessages.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {
+        message: { id: 'steer-1', role: 'user', parts: [{ type: 'text', text: 'Write it up' }] },
+        selection: { model: 'local/writer', reasoning: 'max' },
+      },
+    ]);
+
+    const result = await agent.aiAgent.stream({
+      prompt: 'Find it',
+      options: { req, chatId: 'chat-1', selection: { reasoning: 'high' } },
+    });
+
+    await result.consumeStream();
+
+    expect(calls).toEqual([
+      { model: 'local/thinker', providerOptions: { local: { reasoningEffort: 'high' } } },
+      { model: 'local/writer', providerOptions: { local: { reasoningEffort: 'max' } } },
+    ]);
+  });
+
+  it('drops the previous variant when a steer message selects none', async () => {
+    const { agent, calls, req } = setup({
+      model: 'local/thinker',
+      tools: [lookup],
+      doStream: toolLoopStream(),
+    });
+
+    turn.promoteSteerMessages.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {
+        message: { id: 'steer-1', role: 'user', parts: [{ type: 'text', text: 'Quickly' }] },
+        selection: {},
+      },
+    ]);
+
+    const result = await agent.aiAgent.stream({
+      prompt: 'Find it',
+      options: { req, chatId: 'chat-1', selection: { reasoning: 'high' } },
+    });
+
+    await result.consumeStream();
+
+    expect(calls).toEqual([
+      { model: 'local/thinker', providerOptions: { local: { reasoningEffort: 'high' } } },
+      { model: 'local/thinker', providerOptions: undefined },
+    ]);
+  });
+
+  it('stops before the next model call when a steer message selection is unavailable', async () => {
+    const { agent, calls, req } = setup({
+      model: 'local/thinker',
+      tools: [lookup],
+      doStream: toolLoopStream(),
+    });
+
+    turn.promoteSteerMessages.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {
+        message: { id: 'steer-1', role: 'user', parts: [{ type: 'text', text: 'Harder' }] },
+        selection: { reasoning: 'max' },
+      },
+    ]);
+
+    const result = await agent.aiAgent.stream({
+      prompt: 'Find it',
+      options: { req, chatId: 'chat-1' },
+    });
+
+    const errors: unknown[] = [];
+
+    for await (const part of result.fullStream) {
+      if (part.type === 'error') errors.push(part.error);
+    }
+
+    expect(errors).toEqual([
+      expect.objectContaining({
+        code: 'selection-unavailable',
+        message: "Reasoning option 'max' is not available for model 'local/thinker'",
+      }),
+    ]);
+    expect(calls).toHaveLength(1);
+  });
+
+  it('rejects an unavailable selection before any model call', async () => {
+    const { agent, calls, finish, req } = setup({ model: 'local/thinker' });
+
+    await expect(
+      agent.aiAgent.stream({
+        prompt: 'Hello',
+        options: { req, selection: { model: 'local/writer' } },
+      }),
+    ).rejects.toMatchObject({
+      code: 'selection-unavailable',
+      status: 409,
+      message: "Model 'local/writer' is not allowed for agent 'support'",
+    });
+
+    expect(calls).toEqual([]);
+    expect(finish).not.toHaveBeenCalled();
+  });
+
+  it('logs usage against the model that ran each step', async () => {
+    const { agent, frogbot, req } = setup({
+      model: 'local/thinker',
+      allowModels: ['local/writer'],
+      tools: [lookup],
+      doStream: toolLoopStream(),
+    });
+
+    turn.promoteSteerMessages.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {
+        message: { id: 'steer-1', role: 'user', parts: [{ type: 'text', text: 'Write it up' }] },
+        selection: { model: 'local/writer' },
+      },
+    ]);
+
+    const result = await agent.aiAgent.stream({
+      prompt: 'Find it',
+      options: { req, chatId: 'chat-1' },
+    });
+
+    await result.consumeStream();
+
+    await vi.waitFor(() => {
+      expect(
+        frogbot.create.mock.calls
+          .map(([args]) => args)
+          .filter(({ collection }) => collection === 'usage-logs')
+          .map(({ data }) => data.model),
+      ).toEqual(['local/thinker', 'local/writer']);
+    });
   });
 });

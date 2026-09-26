@@ -100,12 +100,23 @@ export type SanitizedAgentConfig = Omit<AgentConfig, 'model' | 'tools'> & {
   tools?: readonly AnyTool[];
 };
 
+export type AgentReasoningOption = {
+  key: string;
+  label: string;
+};
+
+export type AgentSelection = {
+  model?: AgentModelId;
+  reasoning?: string;
+};
+
 export type AgentManifestEntry = {
   slug: string;
   label: string;
   source: 'config' | 'collection';
   defaultModel: AgentModelId;
   models: AgentModelId[];
+  reasoning?: Partial<Record<AgentModelId, AgentReasoningOption[]>>;
 };
 
 export type AgentManifest = {
@@ -153,7 +164,7 @@ export type AgentCallOptions = {
   runId?: string;
   chatId?: DocID;
   replyCreatedAt?: string;
-  model?: AgentModelId;
+  selection?: AgentSelection;
   clientTools?: ClientToolsOption;
 };
 

@@ -83,6 +83,8 @@ export function resolveChatCollections(config: FrogBotConfig): ResolvedChat {
       'chat',
       'status',
       'delivery',
+      'model',
+      'reasoning',
       'author',
       'settlements',
       'version',

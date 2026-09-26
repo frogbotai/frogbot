@@ -2,7 +2,14 @@ import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { type AgentModelId, buildConfig } from 'frogbot';
 import { question } from 'frogbot/tools';
 
-import { agentSlug, chatsSlug, messagesSlug, modelPort, usersSlug } from '../shared';
+import {
+  agentSlug,
+  chatPicksPreference,
+  chatsSlug,
+  messagesSlug,
+  modelPort,
+  usersSlug,
+} from '../shared';
 
 export default buildConfig({
   secret: process.env.FROGBOT_SECRET || 'browser-question-secret',
@@ -16,7 +23,14 @@ export default buildConfig({
         type: 'openai-compatible',
         baseUrl: `http://127.0.0.1:${modelPort}/v1`,
         apiKey: 'browser-provider-key',
-        models: [{ id: 'questioner', mode: 'chat' }],
+        models: [
+          { id: 'questioner', mode: 'chat' },
+          {
+            id: 'thinker',
+            mode: 'chat',
+            reasoningOptions: [{ type: 'effort', values: ['low', 'high'] }],
+          },
+        ],
       },
     },
   },
@@ -24,6 +38,7 @@ export default buildConfig({
     {
       slug: agentSlug,
       model: 'browser/questioner' as AgentModelId,
+      allowModels: ['browser/thinker' as AgentModelId],
       instructions: 'Ask before acting.',
       access: ({ req }) => Boolean(req.user),
       tools: [question],
@@ -39,6 +54,13 @@ export default buildConfig({
         for (const collection of [messagesSlug, chatsSlug, 'frogbot-chat-turns']) {
           await req.frogbot.delete({ collection, where: {}, overrideAccess: true, req });
         }
+
+        await req.frogbot.delete({
+          collection: 'payload-preferences',
+          where: { key: { equals: chatPicksPreference } },
+          overrideAccess: true,
+          req,
+        });
 
         return Response.json({ reset: true });
       },

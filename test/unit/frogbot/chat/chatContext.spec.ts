@@ -139,12 +139,59 @@ describe('resolveChatContext', () => {
           role: 'user',
           parts: incoming[0].parts,
           metadata: undefined,
+          model: null,
+          reasoning: null,
           author: { user: { collection: 'users', id: 'user-1' } },
         },
         req,
         overrideAccess: true,
       });
       expect(result.chatId).toBe('chat-1');
+    });
+
+    it('stores the selection on new messages and returns it as the turn selection', async () => {
+      const { req, create } = makeReq();
+      const selection = { model: 'openai/other', reasoning: 'high' } as const;
+
+      const result = await resolveChatContext({
+        req,
+        agentSlug: 'support',
+        chatId: 'chat-1',
+        incoming,
+        selection,
+        tools: {},
+      });
+
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ id: 'u2', model: 'openai/other', reasoning: 'high' }),
+        }),
+      );
+      expect(result).toMatchObject({ status: 'ready', selection });
+    });
+
+    it('replaces the stored selection when a user message is edited', async () => {
+      const { req, update } = makeReq({
+        existing: [
+          { id: 'u2', role: 'user', status: 'active', createdAt: '2026-08-29T00:00:00.000Z' },
+        ],
+      });
+
+      await resolveChatContext({
+        req,
+        agentSlug: 'support',
+        chatId: 'chat-1',
+        incoming,
+        selection: { reasoning: 'low' },
+        tools: {},
+      });
+
+      expect(update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'u2',
+          data: { parts: incoming[1].parts, metadata: undefined, model: null, reasoning: 'low' },
+        }),
+      );
     });
 
     it('claims the idle turn before writing messages and returns the claim', async () => {
@@ -237,7 +284,7 @@ describe('resolveChatContext', () => {
         expect.objectContaining({
           collection: 'messages',
           id: 'u2',
-          data: { parts: incoming[1].parts, metadata: undefined },
+          data: { parts: incoming[1].parts, metadata: undefined, model: null, reasoning: null },
         }),
       );
       expect(deleteFn).toHaveBeenCalledWith(
@@ -425,7 +472,7 @@ describe('resolveChatContext', () => {
     });
 
     it.each(['queue', 'steer'] as const)(
-      'persists only the last message as queued for %s delivery',
+      'persists only the last message as queued with its selection for %s delivery',
       async (delivery) => {
         const { req, create } = makeReq();
 
@@ -434,6 +481,7 @@ describe('resolveChatContext', () => {
           agentSlug: 'support',
           chatId: 'chat-1',
           incoming,
+          selection: { model: 'openai/other', reasoning: 'high' },
           tools: {},
           delivery,
         });
@@ -442,7 +490,13 @@ describe('resolveChatContext', () => {
         expect(create).toHaveBeenCalledExactlyOnceWith(
           expect.objectContaining({
             collection: 'messages',
-            data: expect.objectContaining({ id: 'u2', status: 'queued', delivery }),
+            data: expect.objectContaining({
+              id: 'u2',
+              status: 'queued',
+              delivery,
+              model: 'openai/other',
+              reasoning: 'high',
+            }),
           }),
         );
       },
@@ -535,7 +589,53 @@ describe('resolveChatContext', () => {
         chatId: 'chat-1',
         uiMessages: [{ id: 'm1', role: 'user', parts: [{ type: 'text', text: 'One' }] }],
         claim: { chatId: 'chat-1', attempt: 'attempt-1' },
+        selection: {},
       });
+    });
+
+    it('resumes with the latest user message selection instead of the request selection', async () => {
+      const find = vi.fn((args: FindArgs & { where?: { and?: object[] } }) => {
+        if (args.limit !== 1) return Promise.resolve({ docs: [historyDoc] });
+
+        const governing = args.where?.and?.some(
+          (condition) => 'role' in condition && condition.role !== undefined,
+        );
+
+        return Promise.resolve({
+          docs: [
+            governing ? { ...historyDoc, model: 'openai/other', reasoning: 'high' } : turnMessage,
+          ],
+        });
+      });
+
+      const { req } = makeReq({ find });
+
+      const result = await resolveChatContext({
+        req,
+        agentSlug: 'support',
+        chatId: 'chat-1',
+        incoming: [answered],
+        selection: { model: 'openai/test' },
+        tools: {},
+      });
+
+      expect(result).toMatchObject({
+        status: 'ready',
+        selection: { model: 'openai/other', reasoning: 'high' },
+      });
+      expect(find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            and: [
+              { chat: { equals: 'chat-1' } },
+              { role: { equals: 'user' } },
+              { status: { not_equals: 'queued' } },
+            ],
+          },
+          sort: ['-createdAt', '-id'],
+          limit: 1,
+        }),
+      );
     });
 
     it('rejects an assistant message that is not the latest turn message', async () => {

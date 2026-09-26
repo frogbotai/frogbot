@@ -177,14 +177,22 @@ describe('resolveChatCollections', () => {
     },
   );
 
-  it.each(['id', 'parts', 'chat', 'status', 'delivery', 'author', 'settlements', 'version'])(
-    'throws when a marked message collection redefines `%s`',
-    (name) => {
-      expect(() =>
-        resolveChatCollections(
-          make([{ slug: 'turns', message: true, fields: [{ name, type: 'json' }] }]),
-        ),
-      ).toThrow(`[frogbot] Field '${name}' on collection 'turns' is reserved by chat persistence.`);
-    },
-  );
+  it.each([
+    'id',
+    'parts',
+    'chat',
+    'status',
+    'delivery',
+    'model',
+    'reasoning',
+    'author',
+    'settlements',
+    'version',
+  ])('throws when a marked message collection redefines `%s`', (name) => {
+    expect(() =>
+      resolveChatCollections(
+        make([{ slug: 'turns', message: true, fields: [{ name, type: 'json' }] }]),
+      ),
+    ).toThrow(`[frogbot] Field '${name}' on collection 'turns' is reserved by chat persistence.`);
+  });
 });

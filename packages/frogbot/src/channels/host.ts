@@ -604,7 +604,7 @@ export class ChannelHost {
     return true;
   }
 
-  private async runQueued({ req, agent, chat, claim, uiMessages }: TurnRunnerArgs) {
+  private async runQueued({ req, agent, chat, claim, uiMessages, selection }: TurnRunnerArgs) {
     const reference = chat.channelThread as ChannelThreadReference | null | undefined;
     const binding = reference ? this.bindings.get(reference.account) : undefined;
 
@@ -621,6 +621,7 @@ export class ChannelHost {
       agent,
       claim,
       uiMessages,
+      selection,
       clientTools: getQuestionClientTools({ binding, frogbot: this.frogbot, thread }),
       abortSignal: AbortSignal.any([thread.signal, controller.signal]),
       onError: (error) => {

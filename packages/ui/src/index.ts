@@ -150,6 +150,7 @@ export {
   useSidebar,
 } from './components/sidebar.js';
 export { Skeleton } from './components/skeleton.js';
+export { Slider, type SliderProps } from './components/slider.js';
 export {
   StatusIconWithText,
   type StatusIconWithTextProps,

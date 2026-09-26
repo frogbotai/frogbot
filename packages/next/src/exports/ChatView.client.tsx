@@ -26,6 +26,12 @@ const chatPicksPreference = 'frogbot-chat-picks';
 type ChatPicks = {
   agent: string;
   model: string;
+  reasoning?: Record<string, string>;
+};
+
+export type ChatViewSelection = {
+  model: string;
+  reasoning?: string;
 };
 
 export type ChatViewClientProps = {
@@ -41,6 +47,7 @@ export type ChatViewClientProps = {
   chatId?: string | number;
   documentPath: string;
   initialMessages: UIMessage[];
+  initialSelection?: ChatViewSelection;
   logo?: ReactNode;
   toolRenderersByAgent?: Record<string, readonly ToolRenderer[]>;
   userName?: string;
@@ -59,6 +66,7 @@ export function ChatViewClient({
   chatId,
   documentPath,
   initialMessages,
+  initialSelection,
   logo,
   toolRenderersByAgent = {},
   userName,
@@ -84,6 +92,7 @@ export function ChatViewClient({
             agent={agent}
             {...(chatId === undefined ? {} : { chatId })}
             initialMessages={initialMessages}
+            initialSelection={initialSelection}
             onChatIdChange={onChatIdChange}
             ChatComponent={ChatComponent}
             GreetingComponent={GreetingComponent}
@@ -116,6 +125,7 @@ function ChatViewInner({
   chatId,
   agent: initialAgent,
   initialMessages,
+  initialSelection,
   logo,
   onChatIdChange,
   selectedAgent,
@@ -131,6 +141,7 @@ function ChatViewInner({
   const manifest = provider?.agentManifest;
   const entry = manifest?.agents.find(({ slug }) => slug === selectedAgent);
   const [selectedModel, setSelectedModel] = useState<string>();
+  const [reasoningByModel, setReasoningByModel] = useState<Record<string, string>>({});
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
   useEffect(() => {
@@ -140,30 +151,51 @@ function ChatViewInner({
 
   useEffect(() => {
     if (!manifest) return;
+
     let current = true;
-    void getPreference<ChatPicks | null>(chatPicksPreference).then((preference) => {
+
+    void getPreference<unknown>(chatPicksPreference).then((value) => {
       if (!current) return;
-      const preferredAgent = manifest.agents.find(({ slug }) => slug === preference?.agent);
+
+      const preference = readChatPicks(value);
+      const preferredAgent = manifest.agents.find(({ slug }) => slug === preference.agent);
       const nextAgent =
         chatId === undefined ? (preferredAgent?.slug ?? manifest.defaultAgent) : initialAgent;
       const nextEntry = manifest.agents.find(({ slug }) => slug === nextAgent);
+      const offers = (model: string | undefined) =>
+        nextEntry?.models.some((option) => option === model) ?? false;
+
+      const chatSelection =
+        chatId !== undefined && offers(initialSelection?.model) ? initialSelection : undefined;
+
       setSelectedAgent(nextAgent);
       setSelectedModel(
-        preference?.model && nextEntry?.models.some((model) => model === preference.model)
-          ? preference.model
-          : undefined,
+        chatSelection?.model ?? (offers(preference.model) ? preference.model : undefined),
+      );
+      setReasoningByModel(
+        chatSelection
+          ? rememberReasoning(preference.reasoning, chatSelection.model, chatSelection.reasoning)
+          : preference.reasoning,
       );
       setPreferencesLoaded(true);
     });
+
     return () => {
       current = false;
     };
-  }, [chatId, getPreference, initialAgent, manifest, setSelectedAgent]);
+  }, [chatId, getPreference, initialAgent, initialSelection, manifest, setSelectedAgent]);
 
-  const activeModel =
-    entry && selectedModel && entry.models.some((model) => model === selectedModel)
-      ? selectedModel
-      : entry?.defaultModel;
+  const activeModel = entry?.models.find((model) => model === selectedModel) ?? entry?.defaultModel;
+  const reasoningOptions = activeModel ? entry?.reasoning?.[activeModel] : undefined;
+  const rememberedReasoning = activeModel ? reasoningByModel[activeModel] : undefined;
+
+  const activeReasoning = reasoningOptions?.some(({ key }) => key === rememberedReasoning)
+    ? rememberedReasoning
+    : undefined;
+
+  const savePicks = (picks: ChatPicks) => {
+    void setPreference<ChatPicks>(chatPicksPreference, picks);
+  };
 
   const changeAgent = async (nextAgent: string) => {
     const nextEntry = manifest?.agents.find(({ slug }) => slug === nextAgent);
@@ -179,17 +211,33 @@ function ChatViewInner({
         return;
       }
     }
+
     setSelectedAgent(nextAgent);
     setSelectedModel(undefined);
-    void setPreference<ChatPicks>(chatPicksPreference, {
-      agent: nextAgent,
-      model: nextEntry.defaultModel,
-    });
+    savePicks({ agent: nextAgent, model: nextEntry.defaultModel, reasoning: reasoningByModel });
+  };
+
+  if (!entry || !activeModel || !preferencesLoaded) return null;
+
+  const changeModel = (id: string) => {
+    const nextModel = entry.models.find((model) => model === id);
+
+    if (!nextModel) return;
+
+    setSelectedModel(nextModel);
+    savePicks({ agent: selectedAgent, model: nextModel, reasoning: reasoningByModel });
+  };
+
+  const changeReasoning = (key: string | undefined) => {
+    const nextReasoning = rememberReasoning(reasoningByModel, activeModel, key);
+
+    setReasoningByModel(nextReasoning);
+    savePicks({ agent: selectedAgent, model: activeModel, reasoning: nextReasoning });
   };
 
   const controls = (
     <>
-      {(manifest?.agents.length ?? 0) > 1 ? (
+      {manifest && manifest.agents.length > 1 ? (
         <AgentSelector
           selectedAgent={selectedAgent}
           onAgentChange={(nextAgent) => {
@@ -197,33 +245,27 @@ function ChatViewInner({
           }}
         />
       ) : null}
-      {(entry?.models.length ?? 0) > 1 ? (
+      {entry.models.length > 1 || reasoningOptions?.length ? (
         <ModelSelector
-          models={entry?.models.map((id) => {
+          models={entry.models.map((id) => {
             const separator = id.indexOf('/');
+
             return {
               id,
               name: separator === -1 ? id : id.slice(separator + 1),
               provider: separator === -1 ? undefined : id.slice(0, separator),
+              reasoning: entry.reasoning?.[id],
             };
           })}
           selectedModelId={activeModel}
-          onModelChange={(model) => {
-            const nextModel = model ?? entry?.defaultModel;
-            setSelectedModel(nextModel);
-            if (nextModel) {
-              void setPreference<ChatPicks>(chatPicksPreference, {
-                agent: selectedAgent,
-                model: nextModel,
-              });
-            }
-          }}
+          selectedReasoning={activeReasoning}
+          onModelChange={changeModel}
+          onReasoningChange={changeReasoning}
         />
       ) : null}
     </>
   );
 
-  if (!entry || !preferencesLoaded) return null;
   const UserActions = UserMessageActions
     ? (props: MessageActionsSlotProps) => (
         <UserMessageActions {...userMessageActionsProps} {...props} />
@@ -242,6 +284,7 @@ function ChatViewInner({
       {...chatComponentProps}
       agent={selectedAgent}
       model={activeModel}
+      reasoning={activeReasoning}
       {...(chatId === undefined ? {} : { chatId })}
       {...(ChatGreeting ? { greeting: ChatGreeting } : {})}
       initialMessages={initialMessages}
@@ -253,4 +296,34 @@ function ChatViewInner({
       assistantMessageActions={AssistantActions}
     />
   );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readChatPicks(value: unknown) {
+  const picks = isRecord(value) ? value : {};
+
+  const reasoning = isRecord(picks.reasoning)
+    ? Object.entries(picks.reasoning).filter(
+        (level): level is [string, string] => typeof level[1] === 'string',
+      )
+    : [];
+
+  return {
+    agent: typeof picks.agent === 'string' ? picks.agent : undefined,
+    model: typeof picks.model === 'string' ? picks.model : undefined,
+    reasoning: Object.fromEntries(reasoning),
+  };
+}
+
+function rememberReasoning(
+  levels: Record<string, string>,
+  model: string,
+  key: string | undefined,
+): Record<string, string> {
+  const { [model]: _previous, ...rest } = levels;
+
+  return key === undefined ? rest : { ...rest, [model]: key };
 }

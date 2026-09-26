@@ -264,9 +264,13 @@ beforeEach(() => {
   turn.promoteSteerMessages.mockReset().mockResolvedValue([]);
   turn.releaseTurn.mockReset().mockResolvedValue(true);
 
-  turn.resolveChatContext
-    .mockReset()
-    .mockResolvedValue({ status: 'ready', chatId: 'chat-1', uiMessages: history, claim });
+  turn.resolveChatContext.mockReset().mockResolvedValue({
+    status: 'ready',
+    chatId: 'chat-1',
+    uiMessages: history,
+    claim,
+    selection: {},
+  });
 });
 
 describe('agent hook lifecycle', () => {
@@ -599,7 +603,7 @@ describe('agent steer messages', () => {
       parts: [{ type: 'text', text: 'Faster' }],
     };
 
-    turn.promoteSteerMessages.mockResolvedValue([steer]);
+    turn.promoteSteerMessages.mockResolvedValue([{ message: steer, selection: {} }]);
 
     const req = makeReq();
     const agent = createAgentInstance(
@@ -615,6 +619,7 @@ describe('agent steer messages', () => {
     const messages: ModelMessage[] = [{ role: 'user', content: 'Hello' }];
 
     await expect(prepareStep({ messages })).resolves.toEqual({
+      model: expect.anything(),
       messages: [...messages, { role: 'user', content: [{ type: 'text', text: 'Faster' }] }],
     });
     expect(turn.promoteSteerMessages).toHaveBeenCalledWith({
@@ -624,7 +629,7 @@ describe('agent steer messages', () => {
     });
   });
 
-  it('keeps the step unchanged when no steer message is waiting', async () => {
+  it('keeps the messages unchanged when no steer message is waiting', async () => {
     const req = makeReq();
     const agent = createAgentInstance(
       { slug: 'support', model: 'openai/test', instructions: 'Help' },
@@ -637,7 +642,7 @@ describe('agent steer messages', () => {
       messages: ModelMessage[];
     }) => Promise<unknown>;
 
-    await expect(prepareStep({ messages: [] })).resolves.toBeUndefined();
+    await expect(prepareStep({ messages: [] })).resolves.toEqual({ model: expect.anything() });
   });
 
   it('does not steer runs without a chat', async () => {
@@ -649,6 +654,12 @@ describe('agent steer messages', () => {
 
     await agent.aiAgent.stream({ prompt: 'Hello', options: { req } });
 
-    expect(agentState.prepared).not.toHaveProperty('prepareStep');
+    const prepareStep = agentState.prepared?.prepareStep as (args: {
+      messages: ModelMessage[];
+    }) => Promise<unknown>;
+
+    await prepareStep({ messages: [] });
+
+    expect(turn.promoteSteerMessages).not.toHaveBeenCalled();
   });
 });

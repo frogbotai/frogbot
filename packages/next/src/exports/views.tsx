@@ -36,7 +36,7 @@ export { CustomCollectionView } from '../views/CustomCollectionView.js';
 export { DefaultListView } from '../views/List/DefaultListView.client.js';
 import type { FrogBotConfigArg } from '../types.js';
 import { brandImportMapErrors } from '../utilities/brandImportMapErrors.js';
-import { ChatViewClient } from './ChatView.client.js';
+import { ChatViewClient, type ChatViewSelection } from './ChatView.client.js';
 
 brandImportMapErrors();
 
@@ -165,15 +165,42 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
     ) : null;
   }
 
-  const result = await payload.find({
-    collection: messagesSlug,
-    depth: 0,
-    limit: 500,
-    overrideAccess: false,
-    sort: ['createdAt', 'id'],
-    user,
-    where: { chat: { equals: routeID } },
-  });
+  const [result, latest] = await Promise.all([
+    payload.find({
+      collection: messagesSlug,
+      depth: 0,
+      limit: 500,
+      overrideAccess: false,
+      sort: ['createdAt', 'id'],
+      user,
+      where: { chat: { equals: routeID } },
+    }),
+    payload.find({
+      collection: messagesSlug,
+      depth: 0,
+      limit: 1,
+      overrideAccess: false,
+      sort: ['-createdAt', '-id'],
+      user,
+      where: {
+        and: [
+          { chat: { equals: routeID } },
+          { role: { equals: 'user' } },
+          { status: { not_equals: 'queued' } },
+        ],
+      },
+    }),
+  ]);
+
+  const governing = latest.docs[0] as { model?: unknown; reasoning?: unknown } | undefined;
+
+  const initialSelection: ChatViewSelection | undefined =
+    typeof governing?.model === 'string'
+      ? {
+          model: governing.model,
+          ...(typeof governing.reasoning === 'string' ? { reasoning: governing.reasoning } : {}),
+        }
+      : undefined;
 
   return (
     <ChatViewClient
@@ -181,6 +208,7 @@ export async function ChatView({ doc, payload, routeSegments, user }: DocumentVi
       chatId={routeID}
       documentPath={documentPath}
       initialMessages={messagesToUIMessages(result.docs as never)}
+      initialSelection={initialSelection}
       {...componentProps}
     />
   );

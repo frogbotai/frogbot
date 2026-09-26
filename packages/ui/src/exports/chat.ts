@@ -54,7 +54,11 @@ export { MessagePart } from '../chat/message-part.js';
 export type { MessageDocument } from '../chat/messages.js';
 export { messageDocumentToUIMessage, uiMessageToDocument } from '../chat/messages.js';
 export { MicControl } from '../chat/mic-control.js';
-export type { ModelSelectorModel, ModelSelectorProps } from '../chat/model-selector.js';
+export type {
+  ModelSelectorModel,
+  ModelSelectorProps,
+  ModelSelectorReasoning,
+} from '../chat/model-selector.js';
 export { ModelSelector } from '../chat/model-selector.js';
 export type { ToolCallSettlement } from '../chat/mutations.js';
 export {

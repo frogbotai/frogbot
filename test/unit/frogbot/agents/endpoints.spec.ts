@@ -41,6 +41,30 @@ const { buildAgentEndpoints } =
 
 const claim = { chatId: 'chat-1', attempt: 'attempt-1' };
 
+const ai = {
+  providers: {
+    openai: true,
+    local: {
+      type: 'openai-compatible',
+      baseUrl: 'http://localhost:11434/v1',
+      models: [
+        {
+          id: 'thinker',
+          mode: 'chat',
+          reasoningOptions: [{ type: 'effort', values: ['low', 'high'] }],
+        },
+        {
+          id: 'deep',
+          mode: 'chat',
+          reasoningOptions: [{ type: 'effort', values: ['max'] }],
+        },
+        { id: 'plain', mode: 'chat' },
+      ],
+    },
+  },
+  routers: {},
+};
+
 const history: UIMessage[] = [{ id: 'm1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }];
 
 const pendingCall = {
@@ -121,6 +145,7 @@ function makeRequest({
     routeParams: { slug },
     frogbot: {
       agents: { support: agent },
+      config: { ai },
       connections: authorizations ? { authorizations } : undefined,
       logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
     },
@@ -153,9 +178,13 @@ describe('agent endpoints', () => {
       .mockReset()
       .mockImplementation(({ messages }) => Promise.resolve(messages));
 
-    resolveChatContext
-      .mockReset()
-      .mockResolvedValue({ status: 'ready', chatId: 'chat-1', uiMessages: history, claim });
+    resolveChatContext.mockReset().mockImplementation(async ({ selection }) => ({
+      status: 'ready',
+      chatId: 'chat-1',
+      uiMessages: history,
+      claim,
+      selection,
+    }));
 
     streamTurn.mockReset().mockImplementation(() => Promise.resolve(makeTurn()));
   });
@@ -177,6 +206,27 @@ describe('agent endpoints', () => {
           source: 'config',
           defaultModel: 'openai/test',
           models: ['openai/test'],
+        },
+      ],
+    });
+  });
+
+  it('advertises reasoning options only for allowed models that offer them', async () => {
+    const agent = makeAgent();
+    agent.config.allowModels = ['local/thinker', 'local/plain'];
+
+    const response = await listHandler()(makeRequest({ agent }));
+
+    expect(await response.json()).toMatchObject({
+      agents: [
+        {
+          models: ['openai/test', 'local/thinker', 'local/plain'],
+          reasoning: {
+            'local/thinker': [
+              { key: 'low', label: 'Low' },
+              { key: 'high', label: 'High' },
+            ],
+          },
         },
       ],
     });
@@ -236,6 +286,7 @@ describe('agent endpoints', () => {
       incoming: [
         { id: expect.any(String), role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
       ],
+      selection: {},
       tools: agent.aiAgent.tools,
       delivery: 'steer',
     });
@@ -334,7 +385,7 @@ describe('agent endpoints', () => {
         claim,
         uiMessages: history,
         providerMessages: history,
-        model: undefined,
+        selection: {},
         clientTools: { kinds: ['question'] },
         abortSignal: req.signal,
       }),
@@ -372,7 +423,103 @@ describe('agent endpoints', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(streamTurn).toHaveBeenCalledWith(expect.objectContaining({ model: 'openai/other' }));
+    expect(streamTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ selection: { model: 'openai/other' } }),
+    );
+  });
+
+  it('stores and runs the selected model and reasoning option', async () => {
+    const agent = makeAgent();
+    agent.config.allowModels = ['local/thinker'];
+
+    const response = await postHandler()(
+      makeRequest({ agent, body: { prompt: 'Hello', model: 'local/thinker', reasoning: 'high' } }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(resolveChatContext).toHaveBeenCalledWith(
+      expect.objectContaining({ selection: { model: 'local/thinker', reasoning: 'high' } }),
+    );
+    expect(streamTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ selection: { model: 'local/thinker', reasoning: 'high' } }),
+    );
+  });
+
+  it('runs the selection resolved by the chat context rather than the body', async () => {
+    const agent = makeAgent();
+    agent.config.allowModels = ['local/thinker', 'local/plain'];
+
+    resolveChatContext.mockResolvedValue({
+      status: 'ready',
+      chatId: 'chat-1',
+      uiMessages: history,
+      claim,
+      selection: { model: 'local/thinker', reasoning: 'low' },
+    });
+
+    await postHandler()(
+      makeRequest({ agent, body: { messages: history, chatId: 'chat-1', model: 'local/plain' } }),
+    );
+
+    expect(streamTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ selection: { model: 'local/thinker', reasoning: 'low' } }),
+    );
+  });
+
+  it.each([
+    ['text/plain', { model: 'local/plain', reasoning: 'high' }, 'local/plain'],
+    ['text/event-stream', { model: 'local/plain', reasoning: 'high' }, 'local/plain'],
+    ['text/plain', { reasoning: 'high' }, 'openai/test'],
+    ['text/plain', { model: 'local/deep', reasoning: 'high' }, 'local/deep'],
+  ])(
+    'rejects an unavailable reasoning option before the chat is resolved (%s, %o)',
+    async (accept, selection, model) => {
+      const agent = makeAgent();
+      agent.config.allowModels = ['local/thinker', 'local/deep', 'local/plain'];
+
+      const response = await postHandler()(
+        makeRequest({ accept, agent, body: { prompt: 'Hello', ...selection } }),
+      );
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({
+        error: `Reasoning option 'high' is not available for model '${model}'`,
+      });
+      expect(resolveChatContext).not.toHaveBeenCalled();
+      expect(streamTurn).not.toHaveBeenCalled();
+    },
+  );
+
+  it('rejects a disallowed model with 403 even when the reasoning option exists', async () => {
+    const response = await postHandler()(
+      makeRequest({ body: { prompt: 'Hello', model: 'local/thinker', reasoning: 'high' } }),
+    );
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: "Model 'local/thinker' is not allowed for agent 'support'",
+    });
+    expect(resolveChatContext).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      { prompt: 'Hello', reasoning: 5 },
+      '`reasoning`: Invalid input: expected string, received number',
+    ],
+    [{ prompt: 'Hello', model: '' }, '`model`: Too small: expected string to have >=1 characters'],
+    [{ prompt: 'Hello', effort: 'high' }, 'Unrecognized key: "effort"'],
+    [{ chatId: 'chat-1' }, 'Body must include either `prompt` (string) or `messages` (array)'],
+    [
+      { prompt: 'Hello', messages: history },
+      'Body must include either `prompt` (string) or `messages` (array)',
+    ],
+  ])('names the invalid body field for %o', async (body, error) => {
+    const response = await postHandler()(makeRequest({ body }));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error });
+    expect(resolveChatContext).not.toHaveBeenCalled();
   });
 
   it('accepts stable file references and resolves them for the provider only', async () => {
@@ -381,6 +528,7 @@ describe('agent endpoints', () => {
       { type: 'file-reference', id: 'file-1', filename: 'client.txt', mediaType: 'text/plain' },
     ] as UIMessage['parts'];
     const uiMessages: UIMessage[] = [{ id: 'one', role: 'user', parts }];
+
     const resolved: UIMessage[] = [
       {
         id: 'one',
@@ -392,7 +540,13 @@ describe('agent endpoints', () => {
       },
     ];
 
-    resolveChatContext.mockResolvedValue({ status: 'ready', chatId: 'chat-1', uiMessages, claim });
+    resolveChatContext.mockResolvedValue({
+      status: 'ready',
+      chatId: 'chat-1',
+      uiMessages,
+      claim,
+      selection: {},
+    });
     resolveChatAttachments.mockResolvedValue(resolved);
 
     const request = makeRequest({

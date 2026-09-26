@@ -105,7 +105,7 @@ import {
 
 ## Composer selectors
 
-`AgentSelector` reads the agents available to the current user from `ChatProvider`. Keep the selected agent in your application state and pass it to both the selector and `<Chat>`. Changing it starts a new conversation.
+`AgentSelector` reads the agents available to the current user from `ChatProvider`. Keep the selected agent in your application state and pass it to both the selector and `<Chat>`. Changing it starts a new conversation. Place selectors in `composerStartSlot`, as the admin chat does; keep `headerSlot` for content above the messages.
 
 ```tsx
 'use client'
@@ -122,20 +122,79 @@ export function AgentChat() {
     <ChatProvider adapter={adapter}>
       <Chat
         agent={agent}
-        headerSlot={<AgentSelector selectedAgent={agent} onAgentChange={setAgent} />}
+        composerStartSlot={<AgentSelector selectedAgent={agent} onAgentChange={setAgent} />}
       />
     </ChatProvider>
   )
 }
 ```
 
-`ModelSelector` and `ToolSelector` accept caller-supplied lists and controlled selection state. Place `ModelSelector` in `headerSlot` and `ToolSelector` in `composerStartSlot` or `composerEndSlot`. They render nothing when their lists are empty.
+`ModelSelector` shows the active model and reasoning level as compact text. Clicking it opens a reasoning slider for that model; clicking the model name switches to the model list, grouped by provider when there is more than one. It is fully controlled and renders nothing when `models` is empty.
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `models` | `ModelSelectorModel[]` | `{ id, name, provider?, reasoning? }` for each model the user may choose. `reasoning` lists `{ key, label }` options; omit it for models without levels to hide the slider. |
+| `selectedModelId` | `string` | Active model ID. |
+| `selectedReasoning` | `string \| undefined` | Active reasoning key, or `undefined` for `Default`. |
+| `onModelChange` | `(id: string) => void` | Called with the chosen model ID. |
+| `onReasoningChange` | `(key: string \| undefined) => void` | Called with the chosen key, or `undefined` when the slider returns to `Default`. |
+
+Pass the same choice to `<Chat>` through `model` and `reasoning`; each message is sent with them. The agent manifest lists allowed models and each model's reasoning options, so a selector fed from it never offers a choice the server rejects. When the model changes, reset or restore the level yourself: a key from one model does not apply to another.
+
+```tsx
+'use client'
+
+import { useState } from 'react'
+import { Chat, ChatProvider, cookieFetch, ModelSelector, useChatProvider } from '@frogbotai/ui/chat'
+
+const adapter = { fetch: cookieFetch() }
+
+function SupportChat() {
+  const entry = useChatProvider()?.agentManifest?.agents.find(({ slug }) => slug === 'support')
+  const [model, setModel] = useState<string>()
+  const [reasoning, setReasoning] = useState<string>()
+
+  if (!entry) return null
+
+  const activeModel = model ?? entry.defaultModel
+
+  return (
+    <Chat
+      agent="support"
+      model={activeModel}
+      reasoning={reasoning}
+      composerStartSlot={
+        <ModelSelector
+          models={entry.models.map((id) => ({ id, name: id, reasoning: entry.reasoning?.[id] }))}
+          selectedModelId={activeModel}
+          selectedReasoning={reasoning}
+          onModelChange={(id) => {
+            setModel(id)
+            setReasoning(undefined)
+          }}
+          onReasoningChange={setReasoning}
+        />
+      }
+    />
+  )
+}
+
+export function ModelChat() {
+  return (
+    <ChatProvider adapter={adapter}>
+      <SupportChat />
+    </ChatProvider>
+  )
+}
+```
+
+`ToolSelector` accepts a caller-supplied tool list and controlled multi-select state. Place it in `composerStartSlot` or `composerEndSlot`. It renders nothing when its list is empty.
 
 <Warning>
-  Model and tool selections are currently client-side only. They do not override the server model, change tool availability, or add fields to chat requests.
+  Tool selections are currently client-side only. They do not change tool availability or add fields to chat requests.
 </Warning>
 
-The selectors intentionally differ from Firmware where FrogBot has no matching concept: agents have no "Default" row, model billing locks are omitted, tools use multi-select availability instead of prompt injection, and Radix handles menu positioning.
+The selectors intentionally differ from Firmware where FrogBot has no matching concept: agents have no "Default" row, model billing locks are omitted, reasoning levels use a per-model slider, tools use multi-select availability instead of prompt injection, and Radix handles menu positioning.
 
 ## Page context
 

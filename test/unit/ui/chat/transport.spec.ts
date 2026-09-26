@@ -14,7 +14,7 @@ const message = {
 const sdk = (fetch: typeof globalThis.fetch = globalThis.fetch) =>
   createFrogBotSDK({ baseURL: '/api', fetch });
 
-async function captureBody(chatId?: string | (() => string | undefined)) {
+async function captureBody(request?: Parameters<typeof prepareChatRequest>[0]) {
   const fetch = vi.fn(() =>
     Promise.resolve(
       new Response(new ReadableStream({ start: (controller) => controller.close() })),
@@ -23,7 +23,7 @@ async function captureBody(chatId?: string | (() => string | undefined)) {
   const transport = new FrogBotChatTransport({
     agentSlug: 'agent',
     sdk: sdk(fetch),
-    prepareSendMessagesRequest: prepareChatRequest(chatId),
+    prepareSendMessagesRequest: prepareChatRequest(request),
     body: { unsupported: true },
   });
   await transport.sendMessages({
@@ -41,7 +41,22 @@ describe('FrogBotChatTransport', () => {
   });
 
   it('serializes the strict existing-chat body', async () => {
-    expect(await captureBody('chat-1')).toEqual({ messages: [message], chatId: 'chat-1' });
+    expect(await captureBody({ chatId: 'chat-1' })).toEqual({
+      messages: [message],
+      chatId: 'chat-1',
+    });
+  });
+
+  it('sends the selected reasoning level beside the model', async () => {
+    const body = await captureBody({ model: 'openai/gpt-5', reasoning: () => 'high' });
+
+    expect(body).toEqual({ messages: [message], model: 'openai/gpt-5', reasoning: 'high' });
+  });
+
+  it('omits reasoning when the Default level is selected', async () => {
+    const body = await captureBody({ model: 'openai/gpt-5', reasoning: () => undefined });
+
+    expect(body).toEqual({ messages: [message], model: 'openai/gpt-5' });
   });
 
   it('resolves a lazy chat id at send time', async () => {
@@ -54,10 +69,10 @@ describe('FrogBotChatTransport', () => {
     const transport = new FrogBotChatTransport({
       agentSlug: 'agent',
       sdk: sdk(fetch),
-      prepareSendMessagesRequest: prepareChatRequest(
-        () => chatId,
-        () => 'zen/big-pickle',
-      ),
+      prepareSendMessagesRequest: prepareChatRequest({
+        chatId: () => chatId,
+        model: () => 'zen/big-pickle',
+      }),
     });
     const send = () =>
       transport.sendMessages({

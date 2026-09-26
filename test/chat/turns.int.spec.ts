@@ -38,6 +38,8 @@ type StoredMessage = {
   id: string;
   role: string;
   status?: string;
+  model?: string | null;
+  reasoning?: string | null;
   parts: Array<{ type: string; state?: string; output?: unknown; text?: string }>;
   version: number;
   settlements?: Record<string, { outcome: string; actor: unknown }>;
@@ -567,6 +569,168 @@ describe('chat turns: client tools, settlement, and queued messages', () => {
 
     expect(model.requests).toHaveLength(3);
     expect(JSON.stringify(model.requests[2]!.messages)).toContain('Use oil paint.');
+  });
+
+  it('a request runs every tool-loop step with the model and reasoning option it sends', async () => {
+    model.respond(
+      { toolCalls: [{ id: 'call-lookup', name: 'lookup', input: { topic: 'paint' } }] },
+      { text: 'Found it.' },
+    );
+
+    const { body } = await post(`/agents/${questionAgentSlug}`, {
+      prompt: 'Look up paint.',
+      model: 'test/thinker',
+      reasoning: 'high',
+    });
+
+    expect(model.requests.map(({ model, reasoning_effort }) => [model, reasoning_effort])).toEqual([
+      ['thinker', 'high'],
+      ['thinker', 'high'],
+    ]);
+    expect((await storedMessages(body.chatId))[0]).toMatchObject({
+      role: 'user',
+      model: 'test/thinker',
+      reasoning: 'high',
+    });
+  });
+
+  it('a request without a model runs the agent default without a reasoning option', async () => {
+    await post(`/agents/${questionAgentSlug}`, { prompt: 'Start.' });
+
+    expect(model.requests[0]).toMatchObject({ model: 'gpt-4.1-mini' });
+    expect(model.requests[0]).not.toHaveProperty('reasoning_effort');
+  });
+
+  it('a queued message runs with the model and reasoning option it was sent with', async () => {
+    const first = await post(`/agents/${questionAgentSlug}`, { prompt: 'Start.' });
+    const hold = deferred();
+
+    model.respond({ text: 'Slow reply.', hold: hold.promise }, { text: 'Queued reply.' });
+
+    const running = post(`/agents/${questionAgentSlug}`, {
+      chatId: first.body.chatId,
+      prompt: 'A',
+      model: 'test/thinker',
+      reasoning: 'low',
+    });
+
+    await vi.waitFor(() => expect(model.requests).toHaveLength(2));
+
+    const queued = await post(`/agents/${questionAgentSlug}`, {
+      chatId: first.body.chatId,
+      prompt: 'B',
+      model: 'test/writer',
+      reasoning: 'max',
+    });
+
+    expect(queued.status).toBe(202);
+
+    hold.resolve();
+
+    await running;
+    await vi.waitFor(() => expect(model.requests).toHaveLength(3), { timeout: 10_000 });
+
+    expect(
+      model.requests.slice(1).map(({ model, reasoning_effort }) => [model, reasoning_effort]),
+    ).toEqual([
+      ['thinker', 'low'],
+      ['writer', 'max'],
+    ]);
+  });
+
+  it('a steer message switches the model and reasoning option from the next step', async () => {
+    const first = await post(`/agents/${questionAgentSlug}`, { prompt: 'Start.' });
+    const hold = deferred();
+
+    model.respond(
+      {
+        toolCalls: [{ id: 'call-lookup', name: 'lookup', input: { topic: 'paint' } }],
+        hold: hold.promise,
+      },
+      { text: 'Steered.' },
+    );
+
+    const running = post(`/agents/${questionAgentSlug}`, {
+      chatId: first.body.chatId,
+      prompt: 'Look up paint.',
+      model: 'test/thinker',
+      reasoning: 'high',
+    });
+
+    await vi.waitFor(() => expect(model.requests).toHaveLength(2));
+
+    await post(`/agents/${questionAgentSlug}`, {
+      chatId: first.body.chatId,
+      prompt: 'Write it up.',
+      model: 'test/writer',
+      reasoning: 'max',
+      delivery: 'steer',
+    });
+
+    hold.resolve();
+    await running;
+
+    expect(
+      model.requests.slice(1).map(({ model, reasoning_effort }) => [model, reasoning_effort]),
+    ).toEqual([
+      ['thinker', 'high'],
+      ['writer', 'max'],
+    ]);
+  });
+
+  it('answering a question continues with the choice of the message that asked it', async () => {
+    model.respond({ toolCalls: [{ id: 'call-question', name: 'question', input: questionInput }] });
+
+    const { body } = await post(`/agents/${questionAgentSlug}`, {
+      prompt: 'Paint the fence.',
+      model: 'test/thinker',
+      reasoning: 'high',
+    });
+
+    model.respond({ text: 'Blue it is.' });
+
+    await settle(body.chatId, { toolCallId: 'call-question', output: answer });
+
+    expect(model.requests[1]).toMatchObject({ model: 'thinker', reasoning_effort: 'high' });
+  });
+
+  it('a resubmitted answer continues with the stored choice, not the request choice', async () => {
+    model.respond({ toolCalls: [{ id: 'call-question', name: 'question', input: questionInput }] });
+
+    const { body } = await post(`/agents/${questionAgentSlug}`, {
+      prompt: 'Paint the fence.',
+      model: 'test/thinker',
+      reasoning: 'low',
+    });
+
+    const [, assistant] = await storedMessages(body.chatId);
+
+    model.respond({ text: 'Blue it is.' });
+
+    const response = await fetch(`${booted.baseUrl}/api/agents/${questionAgentSlug}`, {
+      method: 'POST',
+      headers: { accept: 'text/event-stream', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        chatId: body.chatId,
+        model: 'test/writer',
+        reasoning: 'max',
+        messages: [
+          {
+            ...assistant,
+            parts: assistant!.parts.map((part) =>
+              part.type === 'tool-question'
+                ? { ...part, state: 'output-available', output: answer }
+                : part,
+            ),
+          },
+        ],
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    await response.text();
+
+    expect(model.requests[1]).toMatchObject({ model: 'thinker', reasoning_effort: 'low' });
   });
 
   it('agent.generate withholds the question tool and turns a stray call into a tool error', async () => {

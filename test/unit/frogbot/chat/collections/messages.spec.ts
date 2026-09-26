@@ -42,6 +42,8 @@ describe('defaultMessagesCollection', () => {
       'metadata',
       'status',
       'delivery',
+      'model',
+      'reasoning',
       'author',
       'settlements',
       'version',
@@ -77,7 +79,7 @@ describe('defaultMessagesCollection', () => {
     expect(field('settlements')).toMatchObject({ type: 'json', admin: { hidden: true } });
   });
 
-  it.each(['status', 'delivery', 'author', 'settlements', 'version'])(
+  it.each(['status', 'delivery', 'model', 'reasoning', 'author', 'settlements', 'version'])(
     'blocks direct writes to the %s field',
     async (name) => {
       const access = (field(name) as { access?: { create?: FieldAccess; update?: FieldAccess } })

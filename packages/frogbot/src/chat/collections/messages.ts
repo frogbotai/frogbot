@@ -112,6 +112,8 @@ export function defaultMessagesCollection({
         options: ['queue', 'steer'],
         access: readOnly,
       },
+      { name: 'model', type: 'text', access: readOnly },
+      { name: 'reasoning', type: 'text', access: readOnly },
       {
         name: 'author',
         type: 'json',

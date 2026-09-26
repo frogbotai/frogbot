@@ -48,7 +48,15 @@ export default await buildTestConfig({
         type: 'openai-compatible',
         baseUrl: 'http://127.0.0.1:3988/v1',
         apiKey: 'test-key',
-        models: [{ id: 'gpt-4.1-mini', mode: 'chat' }],
+        models: [
+          { id: 'gpt-4.1-mini', mode: 'chat' },
+          {
+            id: 'thinker',
+            mode: 'chat',
+            reasoningOptions: [{ type: 'effort', values: ['low', 'high'] }],
+          },
+          { id: 'writer', mode: 'chat', reasoningOptions: [{ type: 'effort', values: ['max'] }] },
+        ],
       },
     },
   },
@@ -63,6 +71,7 @@ export default await buildTestConfig({
     {
       slug: questionAgentSlug,
       model: 'test/gpt-4.1-mini',
+      allowModels: ['test/thinker', 'test/writer'],
       instructions: 'Ask before acting.',
       access: () => true,
       tools: [question, lookup],
