@@ -21,6 +21,8 @@ export {
   isTargetAllowed,
   resolvePolicy,
 } from './ai/policy.js';
+export type { CanWriteChatProps, WritableChat } from './chat/access/canWriteChat.js';
+export { canWriteChat } from './chat/access/canWriteChat.js';
 export type { PersistedMessage } from './chat/messagesToUIMessages.js';
 export { messagesToUIMessages } from './chat/messagesToUIMessages.js';
 export { buildConfig } from './config/build.js';

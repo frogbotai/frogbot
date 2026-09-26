@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import type {
   ChannelQuestionCall,
   QuestionInteraction,
+  QuestionMessage,
 } from '../../../packages/frogbot/src/channels/questions/types.js';
 import type { QuestionInput } from '../../../packages/frogbot/src/tools/question.js';
 import { FrogBotTeamsAdapter } from '../../../packages/pieces/piece-microsoft-teams/src/adapter.js';
@@ -93,6 +94,7 @@ function submit(call: ChannelQuestionCall, values: Record<string, unknown>) {
   return parse({
     call,
     interaction: action({ values, toolCallId: call.toolCallId }),
+    question: { messages: [cardMessage], revision: 0 },
     settled: false,
   });
 }
@@ -111,11 +113,23 @@ async function teamsThread() {
     mentionActivity({ id: '1000', serviceUrl: server.serviceUrl }),
   ).threadId;
 
-  return { adapter, state, thread: { id, adapter } as never };
+  return { adapter, thread: { id, adapter } as never };
 }
 
-function hookArgs(thread: never, call: ChannelQuestionCall) {
-  return { call, client: {} as never, messageId: '1700000000001', req: {} as never, thread };
+const cardMessage = { id: '1700000000001', postedAt: '2026-09-26T00:00:00.000Z' };
+
+function hookArgs(
+  thread: never,
+  call: ChannelQuestionCall,
+  { messages = [cardMessage], state }: { messages?: QuestionMessage[]; state?: unknown } = {},
+) {
+  return {
+    call,
+    client: {} as never,
+    question: { messages, revision: 0, state },
+    req: {} as never,
+    thread,
+  };
 }
 
 describe('Teams question hooks', () => {
@@ -261,6 +275,7 @@ describe('Teams question hooks', () => {
         parse({
           call: questionCall('call-1'),
           interaction: action({ actionId: 'frogbot.question.dismiss' }),
+          question: { messages: [cardMessage], revision: 0 },
           settled: false,
         }),
       ).toEqual({ kind: 'dismiss' });
@@ -271,6 +286,7 @@ describe('Teams question hooks', () => {
         parse({
           call: questionCall('call-1'),
           interaction: action({ values: { 'question-0': '0' } }),
+          question: { messages: [cardMessage], revision: 0 },
           settled: true,
         }).kind,
       ).toBe('answer');
@@ -309,14 +325,19 @@ describe('Teams question hooks', () => {
       ['a form submission', { type: 'modalSubmit', event: { values: {}, raw: {} } }],
     ])('ignores %s', (_, interaction) => {
       expect(
-        parse({ call: questionCall('call-1'), interaction: interaction as never, settled: false }),
+        parse({
+          call: questionCall('call-1'),
+          interaction: interaction as never,
+          question: { messages: [cardMessage], revision: 0 },
+          settled: false,
+        }),
       ).toEqual({ kind: 'ignore' });
     });
   });
 
   describe('render', () => {
-    it('posts the first call as one card and records its message', async () => {
-      const { adapter, thread } = await teamsThread();
+    it('posts the first call as one card and returns its message', async () => {
+      const { thread } = await teamsThread();
 
       const rendered = await teamsQuestions.render({
         calls: [questionCall('call-1'), questionCall('call-2')],
@@ -330,13 +351,9 @@ describe('Teams question hooks', () => {
         actionId: 'frogbot.question.submit',
         value: 'call-1',
       });
-      expect(rendered).toEqual([{ messageId: expect.stringMatching(/^\d+$/), calls: ['call-1'] }]);
-      expect(
-        await adapter.findQuestionRecord({
-          threadId: (thread as { id: string }).id,
-          toolCallId: 'call-1',
-        }),
-      ).toEqual({ messageId: rendered[0]!.messageId });
+      expect(rendered).toEqual([
+        { messages: [{ id: server.cards()[0]!.sentId, postedAt: '' }], calls: ['call-1'] },
+      ]);
     });
 
     it('renders nothing without calls', async () => {
@@ -362,7 +379,9 @@ describe('Teams question hooks', () => {
 
       const card = cardOf(server.cards()[0]);
 
-      expect(rendered).toEqual([{ messageId: server.cards()[0]!.sentId, calls: ['call-1'] }]);
+      expect(rendered).toEqual([
+        { messages: [{ id: server.cards()[0]!.sentId, postedAt: '' }], calls: ['call-1'] },
+      ]);
       expect(cardInputs(server.cards()[0])).toEqual([]);
       expect(card!.actions).toEqual([
         expect.objectContaining({
@@ -371,28 +390,12 @@ describe('Teams question hooks', () => {
         }),
       ]);
       expect(textRuns(card!.body).at(-1)).toMatchObject({
-        text: 'This question is too large to show in Teams. Answer it in FrogBot, or dismiss it here.',
+        text: 'This question is too large to show in Teams. Dismiss it, then ask the agent again with fewer or shorter choices.',
       });
       expect(logger.warn).toHaveBeenCalledWith(
         expect.objectContaining({ err: expect.any(TeamsQuestionCardTooLarge) }),
         expect.any(String),
       );
-    });
-
-    it('keeps the posted card when its record cannot be saved', async () => {
-      const { state, thread } = await teamsThread();
-
-      state.set.mockRejectedValueOnce(new Error('KV unavailable'));
-
-      const rendered = await teamsQuestions.render({
-        calls: [questionCall('call-1')],
-        client: {} as never,
-        req: {} as never,
-        thread,
-      });
-
-      expect(server.cards()).toHaveLength(1);
-      expect(rendered).toEqual([{ messageId: server.cards()[0]!.sentId, calls: ['call-1'] }]);
     });
 
     it('requires the FrogBot Teams adapter', async () => {
@@ -408,12 +411,12 @@ describe('Teams question hooks', () => {
   });
 
   describe('settled', () => {
-    it('replaces the card with the answers and the responder and records the view', async () => {
-      const { adapter, thread } = await teamsThread();
+    it('replaces the card with the answers and the responder and returns the view', async () => {
+      const { thread } = await teamsThread();
       const call = questionCall('call-1');
       const outcome = { output: { answers: [{ header: 'Q1', selected: ['Blue'] }] } };
 
-      await teamsQuestions.settled({
+      const change = await teamsQuestions.settled({
         ...hookArgs(thread, call),
         actor: {
           user: null,
@@ -429,12 +432,43 @@ describe('Teams question hooks', () => {
       expect(cardOf(update)).not.toHaveProperty('actions');
       expect(JSON.stringify(cardOf(update))).toContain('✅ Blue');
       expect(JSON.stringify(cardOf(update))).toContain('Answered by Grace Hopper');
-      expect(
-        await adapter.findQuestionRecord({
-          threadId: (thread as { id: string }).id,
-          toolCallId: 'call-1',
-        }),
-      ).toEqual({ messageId: '1700000000001', settled: { outcome, by: 'Grace Hopper' } });
+      expect(change).toEqual({ state: { settled: { outcome, by: 'Grace Hopper' } } });
+    });
+
+    it('returns the view and logs when the card cannot be updated', async () => {
+      const { adapter, thread } = await teamsThread();
+      const warn = vi.spyOn(adapter, 'logQuestionWarning');
+
+      server.fail('PUT', 500);
+
+      const change = await teamsQuestions.settled({
+        ...hookArgs(thread, questionCall('call-1')),
+        actor: null,
+        outcome: { dismissed: true },
+      });
+
+      expect(change).toEqual({ state: { settled: { outcome: { dismissed: true } } } });
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('settled Teams question card failed'),
+        expect.objectContaining({ toolCallId: 'call-1' }),
+      );
+    });
+
+    it('closes every message of the question', async () => {
+      const { thread } = await teamsThread();
+      const older = { id: '1700000000000', postedAt: '2026-09-25T00:00:00.000Z' };
+
+      await teamsQuestions.settled({
+        ...hookArgs(thread, questionCall('call-1'), { messages: [older, cardMessage] }),
+        actor: null,
+        outcome: { dismissed: true },
+      });
+
+      expect(server.updates().map(({ activityId }) => activityId)).toEqual([
+        '1700000000000',
+        '1700000000001',
+      ]);
+      expect(server.updates().map((update) => cardInputs(update))).toEqual([[], []]);
     });
 
     it('shows a stored answer without a responder when it was answered elsewhere', async () => {
@@ -476,6 +510,19 @@ describe('Teams question hooks', () => {
         color: 'Attention',
       });
       expect(cardOf(update)!.actions).toHaveLength(2);
+    });
+
+    it('redraws only the current message', async () => {
+      const { thread } = await teamsThread();
+      const older = { id: '1700000000000', postedAt: '2026-09-25T00:00:00.000Z' };
+
+      await teamsQuestions.rejected!({
+        ...hookArgs(thread, questionCall('call-1'), { messages: [older, cardMessage] }),
+        interaction: action({ values: { 'question-0': '1' } }),
+        reason: 'Answer “Q1” before submitting.',
+      });
+
+      expect(server.updates()).toMatchObject([{ activityId: '1700000000001' }]);
     });
 
     it('tells the responder privately when the card cannot be redrawn', async () => {
@@ -530,23 +577,14 @@ describe('Teams question hooks', () => {
   });
 
   describe('stale', () => {
-    it('restores the settled card and tells the late responder', async () => {
+    it('restores the settled card from the question state and tells the late responder', async () => {
       const { thread } = await teamsThread();
-      const call = questionCall('call-1');
-
-      await teamsQuestions.settled({
-        ...hookArgs(thread, call),
-        actor: {
-          user: null,
-          channel: { piece: 'microsoft-teams', id: '29:grace', name: 'Grace Hopper' },
-        },
-        outcome: { output: { answers: [{ header: 'Q1', selected: ['Red'] }] } },
-      });
-
-      server.reset();
+      const outcome = { output: { answers: [{ header: 'Q1', selected: ['Red'] }] } };
 
       await teamsQuestions.stale!({
-        ...hookArgs(thread, call),
+        ...hookArgs(thread, questionCall('call-1'), {
+          state: { settled: { outcome, by: 'Grace Hopper' } },
+        }),
         interaction: action({ from: members.ada }),
       });
 
@@ -578,19 +616,15 @@ describe('Teams question hooks', () => {
 
     it('still sends the notice when the card cannot be restored', async () => {
       const { thread } = await teamsThread();
-      const call = questionCall('call-1');
+      const state = { settled: { outcome: { dismissed: true } } };
 
-      await teamsQuestions.settled({
-        ...hookArgs(thread, call),
-        actor: null,
-        outcome: { dismissed: true },
-      });
-
-      server.reset();
       server.fail('PUT', 500);
 
       await expect(
-        teamsQuestions.stale!({ ...hookArgs(thread, call), interaction: action() }),
+        teamsQuestions.stale!({
+          ...hookArgs(thread, questionCall('call-1'), { state }),
+          interaction: action(),
+        }),
       ).rejects.toThrow();
       expect(server.targeted()).toHaveLength(1);
     });

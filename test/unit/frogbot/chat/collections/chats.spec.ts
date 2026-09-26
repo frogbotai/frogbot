@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { defaultChatsCollection } from '../../../../../packages/frogbot/src/chat/collections/chats.js';
+import type { FieldAccess } from '../../../../../packages/frogbot/src/collections/config/types.js';
 import type { FieldHook } from '../../../../../packages/frogbot/src/fields/config/types.js';
+import { definePiece } from '../../../../../packages/frogbot/src/pieces/definePiece.js';
 import type { FrogBotRequest } from '../../../../../packages/frogbot/src/types/request.js';
 
 const collection = defaultChatsCollection({ slug: 'chats', userSlug: 'users' });
@@ -32,6 +34,7 @@ describe('defaultChatsCollection', () => {
       'externalId',
       'channelKey',
       'channelThread',
+      'channelLabel',
       'lastMessageAt',
       'todos',
     ]);
@@ -56,6 +59,62 @@ describe('defaultChatsCollection', () => {
     expect(channelThread).toMatchObject({ type: 'json', admin: { hidden: true } });
     expect(channelThread.typescriptSchema?.[0]({ jsonSchema: {} })).toEqual({
       tsType: "import('frogbot').ChannelThreadReference",
+    });
+  });
+
+  it.each(['channel', 'externalId', 'channelKey', 'channelThread', 'channelLabel'])(
+    'keeps the %s field read-only through the API',
+    async (name) => {
+      const access = (
+        collection.fields.find((f) => 'name' in f && f.name === name) as {
+          access?: { create?: FieldAccess; update?: FieldAccess };
+        }
+      ).access;
+
+      expect(await access?.create?.({ req: reqWithUser('u1') } as never)).toBe(false);
+      expect(await access?.update?.({ req: reqWithUser('u1') } as never)).toBe(false);
+    },
+  );
+
+  describe('channelLabel', () => {
+    const channelLabel = collection.fields.find(
+      (f) => 'name' in f && f.name === 'channelLabel',
+    ) as { hooks?: { afterRead?: Array<(args: unknown) => unknown> } };
+
+    const req = {
+      frogbot: {
+        config: {
+          pieces: {
+            instances: [
+              definePiece({ slug: 'slack', label: 'Slack', actions: [] })({
+                slug: 'slack-support',
+              }),
+            ],
+          },
+        },
+      },
+    } as unknown as FrogBotRequest;
+
+    function read(siblingData: Record<string, unknown>) {
+      return channelLabel.hooks?.afterRead?.[0]?.({ req, siblingData });
+    }
+
+    it('is a hidden virtual text field', () => {
+      expect(channelLabel).toMatchObject({ type: 'text', virtual: true, admin: { hidden: true } });
+    });
+
+    it('reads the piece label for a channel chat', () => {
+      expect(
+        read({
+          channel: 'slack',
+          channelKey: 'channel-key',
+          channelThread: { account: 'slack-support', thread: { id: 'thread-1' } },
+        }),
+      ).toBe('Slack');
+    });
+
+    it('reads null for a web chat', () => {
+      expect(read({ user: 'u1' })).toBeNull();
     });
   });
 

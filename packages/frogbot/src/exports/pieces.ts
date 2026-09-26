@@ -6,10 +6,13 @@ export {
 export type {
   ChannelQuestionCall,
   PieceChannelQuestions,
+  QuestionChange,
   QuestionHookArgs,
   QuestionInteraction,
+  QuestionMessage,
   QuestionOutcome,
   QuestionParseResult,
+  QuestionRecord,
   RenderedQuestion,
 } from '../channels/questions/types.js';
 export type { TurnActor } from '../chat/turn/types.js';

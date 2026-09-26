@@ -122,7 +122,13 @@ function parse({
   settled?: boolean;
   state?: unknown;
 }): QuestionParseResult {
-  return parseDiscordQuestion({ call: input, interaction, settled, state });
+  const question = {
+    messages: [{ id: '900', postedAt: new Date(armedAt).toISOString() }],
+    revision: 0,
+    state,
+  };
+
+  return parseDiscordQuestion({ call: input, interaction, question, settled });
 }
 
 function partialState(result: QuestionParseResult): DiscordQuestionState {
@@ -648,13 +654,13 @@ describe('Discord question parsing', () => {
     });
   });
 
-  it('ignores a click on an earlier question after the card advanced', () => {
+  it('reports a click on an earlier question as stale after the card advanced', () => {
     const input = call({ header: 'Color' }, { header: 'Size' });
 
     expect(
       parse({ input, interaction: click({ actionId: id('option', 0) }), state: { q: 1 } }),
     ).toEqual({
-      kind: 'ignore',
+      kind: 'stale',
     });
   });
 

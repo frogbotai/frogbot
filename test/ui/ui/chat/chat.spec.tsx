@@ -51,6 +51,7 @@ vi.mock('../../../../packages/ui/src/chat/use-chat', () => ({
 }));
 vi.mock('../../../../packages/ui/src/chat/use-chats', () => ({
   emitChatMutation: vi.fn(),
+  useChatDocument: () => ({ refresh: vi.fn() }),
   useChats: () => ({
     docs: [
       { id: 'one', agent: 'support', title: 'One' },

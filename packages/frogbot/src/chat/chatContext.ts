@@ -6,7 +6,7 @@ import type { DocID } from '../collections/config/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import type { ChannelChatAccess } from './channelAccess.js';
 import type { ChatDocument } from './findChat.js';
-import { findChat } from './findChat.js';
+import { findWritableChat } from './findChat.js';
 import { actorFromRequest } from './turn/actor.js';
 import { TurnError } from './turn/errors.js';
 import {
@@ -64,7 +64,7 @@ export async function resolveChatContext({
   }
 
   if (last.role === 'assistant' && chatId !== undefined) {
-    const chat = await findChat({ req, agentSlug, chatId, channelAccess });
+    const chat = await findWritableChat({ req, agentSlug, chatId, channelAccess });
 
     return resumeChat({ req, agentSlug, chat, message: last, tools });
   }
@@ -76,7 +76,7 @@ export async function resolveChatContext({
   const resolvedChatId =
     chatId === undefined
       ? await createChat({ req, agentSlug })
-      : (await findChat({ req, agentSlug, chatId, channelAccess })).id;
+      : (await findWritableChat({ req, agentSlug, chatId, channelAccess })).id;
 
   const claim = await claimTurn({ req, chatId: resolvedChatId, from: 'idle' });
 
@@ -269,7 +269,7 @@ async function resumeChat({
     const settlement = await settleCall({
       req,
       agentSlug,
-      chatId: chat.id,
+      chat,
       toolCallId: part.toolCallId,
       outcome: { output: part.output },
       actor: actorFromRequest(req),

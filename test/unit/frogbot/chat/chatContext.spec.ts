@@ -532,6 +532,27 @@ describe('resolveChatContext', () => {
       expect(update).not.toHaveBeenCalled();
     });
 
+    it('refuses a send into a channel chat from outside its channel before writing', async () => {
+      const findByID = vi.fn(() =>
+        Promise.resolve({
+          id: 'chat-1',
+          user: 'user-1',
+          channel: 'slack',
+          channelKey: 'channel-key',
+          channelThread: { account: 'slack-support', thread: { id: 'thread-1' } },
+        }),
+      );
+      const { req, create } = makeReq({ findByID });
+
+      Object.assign(req.frogbot.config, { pieces: { instances: [] } });
+
+      await expect(
+        resolveChatContext({ req, agentSlug: 'support', chatId: 'chat-1', incoming, tools: {} }),
+      ).rejects.toMatchObject({ code: 'channel-chat', status: 409 });
+      expect(claimTurn).not.toHaveBeenCalled();
+      expect(create).not.toHaveBeenCalled();
+    });
+
     it('throws turn-in-progress without writing when queueing is disabled', async () => {
       const { req, create } = makeReq();
 
@@ -577,7 +598,7 @@ describe('resolveChatContext', () => {
       expect(settleCall).toHaveBeenCalledWith({
         req,
         agentSlug: 'support',
-        chatId: 'chat-1',
+        chat: { id: 'chat-1', user: 'user-1' },
         toolCallId: 'call-1',
         outcome: { output: questionPart.output },
         actor: { user: { collection: 'users', id: 'user-1' } },

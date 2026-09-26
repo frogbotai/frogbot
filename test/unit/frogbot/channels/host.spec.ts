@@ -338,7 +338,7 @@ describe('ChannelHost conversation loop', () => {
       parts: [{ type: 'text', text: 'Also this' }],
       status: 'queued',
       delivery: 'queue',
-      author: { user: null },
+      author: { user: null, channel: { piece: 'slack', account: 'slack', id: 'user-1' } },
       version: 0,
       createdAt: '2026-09-24T00:00:00.000Z',
     });

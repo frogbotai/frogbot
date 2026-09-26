@@ -38,22 +38,24 @@ type SlackViewPayload = {
 export const parseSlackQuestion: PieceChannelQuestions['parse'] = ({
   call,
   interaction,
-  state,
+  question,
 }) => {
   if (interaction.type === 'message') return { kind: 'ignore' };
+
+  const state = question.state as SlackQuestionState | undefined;
 
   return interaction.type === 'action'
     ? parseAction({
         actionId: interaction.event.actionId,
         call,
         payload: interaction.event.raw as SlackActionPayload,
-        state: state as SlackQuestionState | undefined,
+        state,
         userId: interaction.event.user.userId,
       })
     : parseCustomAnswer({
         call,
         payload: interaction.event.raw as SlackViewPayload,
-        state: state as SlackQuestionState | undefined,
+        state,
         userId: interaction.event.user.userId,
       });
 };

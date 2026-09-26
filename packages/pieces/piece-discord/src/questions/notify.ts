@@ -8,13 +8,13 @@ type DiscordQuestions = Required<PieceChannelQuestions<DiscordClient>>;
 export const denyDiscordQuestion: DiscordQuestions['denied'] = ({
   client,
   interaction,
-  messageId,
+  question,
   thread,
 }) =>
   postNotice({
     client,
     interaction,
-    messageId,
+    question,
     text: "You don't have access to answer this question.",
     threadId: thread.id,
   });
@@ -22,7 +22,7 @@ export const denyDiscordQuestion: DiscordQuestions['denied'] = ({
 export const rejectDiscordQuestion: DiscordQuestions['rejected'] = ({
   client,
   interaction,
-  messageId,
+  question,
   reason,
   thread,
-}) => postNotice({ client, interaction, messageId, text: reason, threadId: thread.id });
+}) => postNotice({ client, interaction, question, text: reason, threadId: thread.id });

@@ -1,7 +1,9 @@
 import { NotFound } from 'payload';
 
+import type { ChannelThreadReference } from '../channels/types.js';
 import type { DocID } from '../collections/config/types.js';
 import type { FrogBotRequest } from '../types/request.js';
+import { assertCanWriteChat, chatOwnerId } from './access/canWriteChat.js';
 import type { ChannelChatAccess } from './channelAccess.js';
 import { hasChannelChatAccess } from './channelAccess.js';
 import { messagesConfig } from './turn/messages.js';
@@ -10,7 +12,17 @@ export type ChatDocument = {
   id: DocID;
   user?: { id: DocID } | DocID | null;
   agent?: string | null;
+  channel?: string | null;
   channelKey?: string | null;
+  channelThread?: ChannelThreadReference | null;
+  channelLabel?: string | null;
+};
+
+type FindChatProps = {
+  req: FrogBotRequest;
+  agentSlug?: string;
+  chatId: DocID;
+  channelAccess?: ChannelChatAccess;
 };
 
 export async function findChat({
@@ -18,12 +30,7 @@ export async function findChat({
   agentSlug,
   chatId,
   channelAccess,
-}: {
-  req: FrogBotRequest;
-  agentSlug?: string;
-  chatId: DocID;
-  channelAccess?: ChannelChatAccess;
-}): Promise<ChatDocument> {
+}: FindChatProps): Promise<ChatDocument> {
   const chat = (await req.frogbot.findByID({
     collection: messagesConfig(req).chatsSlug,
     id: chatId,
@@ -32,7 +39,7 @@ export async function findChat({
     overrideAccess: true,
   })) as ChatDocument;
 
-  const ownerId = typeof chat.user === 'object' && chat.user !== null ? chat.user.id : chat.user;
+  const ownerId = chatOwnerId(chat);
   const allowed = channelAccess
     ? hasChannelChatAccess({
         access: channelAccess,
@@ -40,9 +47,17 @@ export async function findChat({
         agentSlug: agentSlug ?? chat.agent ?? '',
         chat,
       })
-    : (ownerId ?? null) === (req.user?.id ?? null) && !(chat.channelKey && ownerId == null);
+    : ownerId === (req.user?.id ?? null) && !(chat.channelKey && ownerId == null);
 
   if (!allowed) throw new NotFound(req.t);
+
+  return chat;
+}
+
+export async function findWritableChat(props: FindChatProps): Promise<ChatDocument> {
+  const chat = await findChat(props);
+
+  assertCanWriteChat({ req: props.req, chat });
 
   return chat;
 }

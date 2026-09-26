@@ -27,7 +27,9 @@ const mocks = vi.hoisted(() => ({
   getPreference: vi.fn(),
   manifest: { defaultAgent: 'general', agents: [] as unknown[] },
   provider: vi.fn(),
+  push: vi.fn(),
   setPreference: vi.fn(),
+  startRouteTransition: vi.fn((transition: () => void) => transition()),
 }));
 
 vi.mock('@payloadcms/ui', () => ({
@@ -35,7 +37,12 @@ vi.mock('@payloadcms/ui', () => ({
     getPreference: mocks.getPreference,
     setPreference: mocks.setPreference,
   }),
+  useRouteTransition: () => ({ startRouteTransition: mocks.startRouteTransition }),
   useTheme: () => ({ theme: 'dark' }),
+}));
+
+vi.mock('next/navigation.js', () => ({
+  useRouter: () => ({ push: mocks.push }),
 }));
 
 vi.mock('@frogbotai/ui/chat', async () => {
@@ -117,7 +124,9 @@ describe('ChatViewClient', () => {
 
     mocks.chat.mockClear();
     mocks.provider.mockClear();
+    mocks.push.mockClear();
     mocks.setPreference.mockClear();
+    mocks.startRouteTransition.mockClear();
     mocks.getPreference.mockReset().mockResolvedValue(null);
   });
 
@@ -354,5 +363,35 @@ describe('ChatViewClient', () => {
     renderChatView({ initialSelection: { model: 'anthropic/opus', reasoning: 'max' } });
 
     expect((await trigger()).textContent).toBe('gpt-5 · Default');
+  });
+
+  it('navigates to another chat opened from an existing chat', async () => {
+    useManifest(agentEntry('general'));
+
+    const replaceState = vi.spyOn(window.history, 'replaceState');
+
+    replaceState.mockClear();
+
+    const initialChat = { id: 'chat-1', agent: 'general', channel: 'slack', channelLabel: 'Slack' };
+
+    renderChatView({ chatId: 'chat-1', initialChat });
+
+    await waitFor(() => expect(mocks.chat).toHaveBeenCalled());
+
+    const props = mocks.chat.mock.calls.at(-1)![0] as unknown as {
+      onChatIdChange: (id: string) => void;
+    };
+
+    expect(props).toMatchObject({ chatId: 'chat-1', initialChat });
+
+    props.onChatIdChange('chat-1');
+
+    expect(mocks.push).not.toHaveBeenCalled();
+
+    props.onChatIdChange('chat/2');
+
+    expect(mocks.startRouteTransition).toHaveBeenCalledOnce();
+    expect(mocks.push).toHaveBeenCalledWith('/admin/collections/conversations/chat%2F2');
+    expect(replaceState).not.toHaveBeenCalled();
   });
 });

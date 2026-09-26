@@ -4,6 +4,7 @@ import type {
   ChannelQuestionCall,
   QuestionHookArgs,
   QuestionInteraction,
+  QuestionRecord,
 } from '../../../packages/frogbot/src/exports/pieces.js';
 import { pieceFactoryDefinition } from '../../../packages/frogbot/src/pieces/definePiece.js';
 import {
@@ -71,11 +72,15 @@ function click(verb: 'select' | 'custom' | 'dismiss', n?: number): QuestionInter
   } as unknown as QuestionInteraction;
 }
 
-function hookArgs(client: DiscordClient, threadId = 'discord:G1:C1:T1') {
+function question(state?: unknown, id = '900'): QuestionRecord {
+  return { messages: [{ id, postedAt: '2026-09-26T12:00:00.000Z' }], revision: 1, state };
+}
+
+function hookArgs(client: DiscordClient, state?: unknown, threadId = 'discord:G1:C1:T1') {
   return {
     call: input,
     client,
-    messageId: '900',
+    question: question(state),
     req: {} as QuestionHookArgs<DiscordClient>['req'],
     thread: thread(threadId),
   };
@@ -100,7 +105,7 @@ describe('Discord question hooks', () => {
       thread: thread(threadId),
     });
 
-    expect(rendered).toEqual([{ messageId: '900', calls: ['call-1'] }]);
+    expect(rendered).toEqual([{ calls: ['call-1'], messages: [{ id: '900', postedAt: '' }] }]);
     expect(requests).toHaveLength(1);
     expect(requests[0]).toMatchObject({
       method: 'POST',
@@ -122,18 +127,29 @@ describe('Discord question hooks', () => {
     ).rejects.toThrow('Discord did not return the question message id.');
   });
 
+  it('records the card with the send time Discord returns', async () => {
+    const { client } = fixture({ id: '900', timestamp: '2026-09-26T12:00:00.123000+00:00' });
+
+    const rendered = await discordQuestions.render({
+      calls: [input],
+      client,
+      req: {} as never,
+      thread: thread('discord:G1:C1:T1'),
+    });
+
+    expect(rendered[0]!.messages).toEqual([{ id: '900', postedAt: '2026-09-26T12:00:00.123Z' }]);
+  });
+
   it('redraws the card in place after arming, and skips a multi-select pick', async () => {
     const { client, requests } = fixture();
 
     await discordQuestions.updated!({
-      ...hookArgs(client),
+      ...hookArgs(client, { armed: { U7: { at: 1, picks: [] } } }),
       interaction: click('custom'),
-      state: { armed: { U7: { at: 1, picks: [] } } },
     });
     await discordQuestions.updated!({
-      ...hookArgs(client),
+      ...hookArgs(client, { picks: { U7: { 0: [1] } } }),
       interaction: click('select', 0),
-      state: { picks: { U7: { 0: [1] } } },
     });
 
     expect(requests).toHaveLength(1);
@@ -145,13 +161,32 @@ describe('Discord question hooks', () => {
     const { client, requests } = fixture();
 
     await discordQuestions.updated!({
-      ...hookArgs(client),
+      ...hookArgs(client, { q: 1, answers: [{ header: 'Colors', selected: [], custom: 'Teal' }] }),
       interaction: { type: 'message', message: {} } as unknown as QuestionInteraction,
-      state: { q: 1, answers: [{ header: 'Colors', selected: [], custom: 'Teal' }] },
     });
 
     expect(requests).toHaveLength(1);
     expect(JSON.stringify(requests[0]!.body)).toContain('**Size** · 2 of 2');
+  });
+
+  it('redraws the current card from the saved record when the retry job runs', async () => {
+    const { client, requests } = fixture();
+    const state = { q: 1, answers: [{ header: 'Colors', selected: ['Red'] }] };
+
+    await discordQuestions.updated!({ ...hookArgs(client), question: question(state, '901') });
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toMatchObject({ method: 'PATCH', path: '/channels/T1/messages/901' });
+    expect(JSON.stringify(requests[0]!.body)).toContain('**Size** · 2 of 2');
+  });
+
+  it('forgets the picks in the menus a redraw resets', async () => {
+    const { client } = fixture();
+    const state = { picks: { U7: { 0: [1] }, U8: { 0: [0] } } };
+
+    const change = await discordQuestions.updated!(hookArgs(client, state));
+
+    expect(change).toEqual({ state: expect.objectContaining({ q: 0, picks: {} }) });
   });
 
   it('retires the card with one edit naming the responder without pinging them', async () => {

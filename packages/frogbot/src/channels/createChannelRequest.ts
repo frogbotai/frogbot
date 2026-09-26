@@ -42,3 +42,15 @@ export async function createChannelRequest({
 
   return { client, req: Object.assign(req, { user }) };
 }
+
+export async function createInternalChannelRequest({
+  binding,
+  frogbot,
+}: {
+  binding: ChannelBinding;
+  frogbot: FrogBot;
+}): Promise<ChannelRequest> {
+  const req = await frogbot.createRequest({});
+
+  return { client: await pieceInstanceRuntime(binding.instance).client({ req }), req };
+}

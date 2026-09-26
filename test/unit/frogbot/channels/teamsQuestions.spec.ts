@@ -169,6 +169,15 @@ describe('Teams native questions through the channel host', () => {
     ]);
     expect(server.texts()).toEqual(['Hello back']);
 
+    const [record] = [...fixture.values.entries()].flatMap(([key, value]) =>
+      key.includes(':questions:call:') ? [value] : [],
+    );
+
+    expect(record).toMatchObject({
+      messages: [{ id: card!.sentId, postedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/) }],
+      revision: 0,
+    });
+
     await fixture.host.shutdown();
   });
 
@@ -274,7 +283,7 @@ describe('Teams native questions through the channel host', () => {
     await fixture.host.shutdown();
   });
 
-  it('settles a submission that arrives without replyToId', async () => {
+  it('ignores a submission that arrives without replyToId', async () => {
     const fixture = await askedFixture();
 
     await click(fixture, {
@@ -284,8 +293,8 @@ describe('Teams native questions through the channel host', () => {
       values: { 'question-0': '1' },
     });
 
-    expect(settleClientToolCall).toHaveBeenCalledOnce();
-    expect(server.updates()).toHaveLength(1);
+    expect(settleClientToolCall).not.toHaveBeenCalled();
+    expect(server.requests.filter(({ method }) => method !== 'GET')).toEqual([]);
 
     await fixture.host.shutdown();
   });

@@ -366,6 +366,8 @@ describe('QuestionToolRender in Chat', () => {
 
       if (url.pathname === '/api/chats') return Response.json({ docs: [] });
 
+      if (url.pathname === `/api/chats/${chatId}`) return Response.json({ id: chatId, agent });
+
       if (url.pathname === '/api/messages') return Response.json({ docs: server.documents });
 
       return new Response(null, { status: 404 });

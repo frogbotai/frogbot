@@ -175,7 +175,11 @@ export default defineConfig({
     },
     {
       name: 'question',
-      testMatch: ['question.browser.spec.ts', 'reasoningSelector.browser.spec.ts'],
+      testMatch: [
+        'question.browser.spec.ts',
+        'reasoningSelector.browser.spec.ts',
+        'channelChat.browser.spec.ts',
+      ],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${questionPort}`,

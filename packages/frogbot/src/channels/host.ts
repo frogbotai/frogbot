@@ -1,11 +1,11 @@
 import { generateId } from 'ai';
-import type { ActionEvent, Adapter, Message as ChatMessage, ModalSubmitEvent, Thread } from 'chat';
+import type { Adapter, Message as ChatMessage, Thread } from 'chat';
 import { Message } from 'chat';
 
 import { hasAgentAccess } from '../agents/service.js';
-import type { AgentInstance, AgentStreamResult } from '../agents/types.js';
-import { continueTurn } from '../chat/turn/continueTurn.js';
-import type { QueuedChatDocument, TurnRunnerArgs } from '../chat/turn/queue.js';
+import type { AgentInstance } from '../agents/types.js';
+import type { ChatDocument } from '../chat/findChat.js';
+import type { TurnRunnerArgs } from '../chat/turn/queue.js';
 import { registerTurnRunner, runQueuedTurn } from '../chat/turn/queue.js';
 import { streamTurn } from '../chat/turn/streamTurn.js';
 import type { DocID } from '../collections/config/types.js';
@@ -20,16 +20,18 @@ import {
   findChannelChat,
   resolveChannelChat,
 } from './conversation.js';
-import type { ChannelRequest } from './createChannelRequest.js';
 import { createChannelRequest } from './createChannelRequest.js';
 import { deserializeThread, serializeThread } from './deserializeThread.js';
-import { createQuestionDeliveryStore } from './questions/createQuestionDeliveryStore.js';
+import { postTurn } from './postTurn.js';
+import { continueAfterQuestions } from './questions/continueAfterQuestions.js';
+import { createQuestionsBinding } from './questions/createQuestionsBinding.js';
 import { getQuestionClientTools } from './questions/getQuestionClientTools.js';
-import type { QuestionInteractionResult } from './questions/handleQuestionInteraction.js';
-import { handleQuestionInteraction } from './questions/handleQuestionInteraction.js';
-import { decodeQuestionModalMetadata } from './questions/questionModalMetadata.js';
 import { renderPendingQuestions } from './questions/renderPendingQuestions.js';
-import type { QuestionDelivery, QuestionInteraction } from './questions/types.js';
+import { routeQuestionAction } from './questions/routeQuestionAction.js';
+import { routeQuestionModalSubmit } from './questions/routeQuestionModalSubmit.js';
+import { routeQuestionReply } from './questions/routeQuestionReply.js';
+import { runQuestionUpdate } from './questions/runQuestionUpdate.js';
+import { queueChannelTask } from './queueChannelTask.js';
 import { createChannelStateAdapter } from './state.js';
 import type {
   ChannelBinding,
@@ -37,6 +39,8 @@ import type {
   ChannelTaskInput,
   ChannelThreadReference,
 } from './types.js';
+
+export { CHANNEL_QUESTION_UPDATE_TASK_SLUG, CHANNEL_TASK_SLUG } from './queueChannelTask.js';
 
 const GATEWAY_LEASE_KEY = 'channels:gateway:listener';
 const GATEWAY_LEASE_TTL = 30_000;
@@ -125,15 +129,13 @@ export class ChannelHost {
       concurrency: 'concurrent',
     });
 
-    const hooks = runtime.definition.channel!.questions;
-
-    const questions =
-      hooks && agent
-        ? {
-            deliveries: createQuestionDeliveryStore({ adapter, kv: this.frogbot.kv, namespace }),
-            hooks: hooks as NonNullable<ChannelConversationBinding['questions']>['hooks'],
-          }
-        : undefined;
+    const questions = createQuestionsBinding({
+      adapter,
+      agent,
+      hooks: runtime.definition.channel!.questions,
+      kv: this.frogbot.kv,
+      namespace,
+    });
 
     const binding: ChannelBinding = agent
       ? { kind: 'conversation', adapter, agent, chat, instance, questions }
@@ -150,9 +152,9 @@ export class ChannelHost {
       chat.onSubscribedMessage(enqueue);
 
       if (binding.questions) {
-        chat.onAction((event) => this.handleAction(binding, event));
+        chat.onAction((event) => routeQuestionAction({ binding, event, frogbot: this.frogbot }));
         chat.onModalSubmit(async (event) => {
-          await this.handleModalSubmit(binding, event);
+          await routeQuestionModalSubmit({ binding, event, frogbot: this.frogbot });
         });
       }
 
@@ -341,9 +343,13 @@ export class ChannelHost {
     }
 
     if (input.kind === 'continue') {
-      const thread = deserializeThread({ binding, thread: input.thread, signal });
+      await continueAfterQuestions({ binding, frogbot: this.frogbot, input, signal });
 
-      await this.continue(binding, thread, input);
+      return;
+    }
+
+    if (input.kind === 'update') {
+      await runQuestionUpdate({ binding, frogbot: this.frogbot, input, signal });
 
       return;
     }
@@ -364,23 +370,16 @@ export class ChannelHost {
     thread: Thread,
     message: ChatMessage,
   ): Promise<void> {
-    await this.queueTask(binding, {
-      kind: 'message',
-      agentSlug: binding.agent.slug,
-      instanceSlug: binding.instance.slug,
-      message: message.toJSON(),
-      thread: thread.toJSON(),
-    });
-  }
-
-  private async queueTask(
-    binding: ChannelConversationBinding,
-    input: ChannelTaskInput,
-  ): Promise<void> {
-    await this.frogbot.queue({
-      task: CHANNEL_TASK_SLUG,
-      queue: `frogbot-channel:${binding.agent.slug}:${binding.instance.slug}`,
-      input,
+    await queueChannelTask({
+      binding,
+      frogbot: this.frogbot,
+      input: {
+        kind: 'message',
+        agentSlug: binding.agent.slug,
+        instanceSlug: binding.instance.slug,
+        message: message.toJSON(),
+        thread: thread.toJSON(),
+      },
     });
   }
 
@@ -408,7 +407,13 @@ export class ChannelHost {
       const existing = binding.questions ? await findChannelChat({ req, identity }) : undefined;
 
       if (existing) {
-        await this.handleReply(binding, message, existing.id, { ...channel, allowed: false });
+        await routeQuestionReply({
+          binding,
+          chatId: existing.id,
+          frogbot: this.frogbot,
+          message,
+          request: { ...channel, allowed: false },
+        });
       }
 
       return;
@@ -421,7 +426,13 @@ export class ChannelHost {
       thread: threadReference(binding, thread),
     });
 
-    const reply = await this.handleReply(binding, message, chatId, { ...channel, allowed: true });
+    const reply = await routeQuestionReply({
+      binding,
+      chatId,
+      frogbot: this.frogbot,
+      message,
+      request: { ...channel, allowed: true },
+    });
 
     if (reply.status !== 'ignored') return;
 
@@ -450,129 +461,6 @@ export class ChannelHost {
     await renderPendingQuestions({ binding, chatId, frogbot: this.frogbot, thread });
   }
 
-  private async continue(
-    binding: ChannelConversationBinding,
-    thread: Thread,
-    input: Extract<ChannelTaskInput, { kind: 'continue' }>,
-  ): Promise<void> {
-    const { req } = await createChannelRequest({
-      author: input.responder,
-      binding,
-      frogbot: this.frogbot,
-      thread,
-    });
-
-    const controller = new AbortController();
-
-    const result = await continueTurn({
-      req,
-      chatId: input.chatId,
-      channelAccess: createChannelThreadAccess({ binding, chatId: input.chatId, req, thread }),
-      clientTools: getQuestionClientTools({ binding, frogbot: this.frogbot, thread }),
-      abortSignal: AbortSignal.any([thread.signal, controller.signal]),
-    });
-
-    if ('status' in result) {
-      this.frogbot.logger.debug(
-        { chatId: input.chatId, piece: binding.instance.slug, status: result.status },
-        '[frogbot] Channel question continuation skipped.',
-      );
-
-      return;
-    }
-
-    await postTurn({ thread, result, controller });
-    await renderPendingQuestions({ binding, chatId: input.chatId, frogbot: this.frogbot, thread });
-  }
-
-  private async handleAction(binding: ChannelConversationBinding, event: ActionEvent) {
-    if (!event.threadId || !event.messageId) return;
-
-    const deliveries = await binding.questions!.deliveries.findByMessage({
-      threadId: event.threadId,
-      messageId: event.messageId,
-    });
-
-    await this.handleInteraction(binding, { type: 'action', event }, event.user, deliveries);
-  }
-
-  private async handleModalSubmit(binding: ChannelConversationBinding, event: ModalSubmitEvent) {
-    const locator =
-      event.relatedThread && event.relatedMessage
-        ? { threadId: event.relatedThread.id, messageId: event.relatedMessage.id }
-        : decodeQuestionModalMetadata(event.privateMetadata);
-
-    if (!locator) return;
-
-    const deliveries = await binding.questions!.deliveries.findByMessage(locator);
-
-    await this.handleInteraction(binding, { type: 'modalSubmit', event }, event.user, deliveries);
-  }
-
-  private async handleReply(
-    binding: ChannelConversationBinding,
-    message: ChatMessage,
-    chatId: DocID,
-    request: ChannelRequest & { allowed: boolean },
-  ): Promise<QuestionInteractionResult> {
-    if (!binding.questions) return { status: 'ignored' };
-
-    const deliveries = await binding.questions.deliveries.findByChat({ chatId });
-
-    return this.handleInteraction(
-      binding,
-      { type: 'message', message },
-      message.author,
-      deliveries,
-      request,
-    );
-  }
-
-  private async handleInteraction(
-    binding: ChannelConversationBinding,
-    interaction: QuestionInteraction,
-    author: ChatMessage['author'],
-    deliveries: QuestionDelivery[],
-    request?: ChannelRequest & { allowed: boolean },
-  ): Promise<QuestionInteractionResult> {
-    if (deliveries.length === 0) return { status: 'ignored' };
-
-    const result = await handleQuestionInteraction({
-      author,
-      binding,
-      deliveries,
-      frogbot: this.frogbot,
-      interaction,
-      request,
-    });
-
-    if (result.status !== 'settled' || result.dismissed) return result;
-
-    const { delivery } = result;
-
-    if (!result.allSettled) {
-      await renderPendingQuestions({
-        binding,
-        chatId: delivery.chatId,
-        frogbot: this.frogbot,
-        thread: deserializeThread({ binding, thread: delivery.thread }),
-      });
-
-      return result;
-    }
-
-    await this.queueTask(binding, {
-      kind: 'continue',
-      agentSlug: binding.agent.slug,
-      instanceSlug: binding.instance.slug,
-      chatId: delivery.chatId,
-      thread: delivery.thread,
-      responder: author,
-    });
-
-    return result;
-  }
-
   private async scheduleQueued({ chatId }: { chatId: DocID }): Promise<boolean> {
     const config = this.frogbot.config.chat;
 
@@ -584,7 +472,7 @@ export class ChannelHost {
       depth: 0,
       disableErrors: true,
       overrideAccess: true,
-    })) as QueuedChatDocument | null;
+    })) as ChatDocument | null;
 
     const reference = chat?.channelThread as ChannelThreadReference | null | undefined;
     const binding = reference ? this.bindings.get(reference.account) : undefined;
@@ -593,12 +481,16 @@ export class ChannelHost {
       return false;
     }
 
-    await this.queueTask(binding, {
-      kind: 'promote',
-      agentSlug: binding.agent.slug,
-      instanceSlug: binding.instance.slug,
-      chatId,
-      thread: reference.thread,
+    await queueChannelTask({
+      binding,
+      frogbot: this.frogbot,
+      input: {
+        kind: 'promote',
+        agentSlug: binding.agent.slug,
+        instanceSlug: binding.instance.slug,
+        chatId,
+        thread: reference.thread,
+      },
     });
 
     return true;
@@ -684,73 +576,8 @@ export class ChannelHost {
   }
 }
 
-export const CHANNEL_TASK_SLUG = 'frogbot-run-channel-message';
-
 function threadReference(binding: ChannelBinding, thread: Thread): ChannelThreadReference {
   return { account: binding.instance.slug, thread: serializeThread(thread) };
-}
-
-async function postTurn({
-  thread,
-  result,
-  controller,
-}: {
-  thread: Thread;
-  result: Pick<AgentStreamResult, 'stream'> & { persistence: Promise<void> };
-  controller: AbortController;
-}): Promise<void> {
-  try {
-    const stream = await withText(result.stream);
-
-    if (stream) await thread.post(stream);
-  } catch (error) {
-    controller.abort(error);
-
-    throw error;
-  } finally {
-    await result.persistence;
-  }
-}
-
-async function withText<T>(stream: AsyncIterable<T>): Promise<AsyncIterable<T> | undefined> {
-  const iterator = stream[Symbol.asyncIterator]();
-  const buffered: T[] = [];
-
-  for (;;) {
-    const next = await iterator.next();
-
-    if (next.done) return undefined;
-
-    buffered.push(next.value);
-
-    if (hasText(next.value)) break;
-  }
-
-  return (async function* () {
-    yield* buffered;
-
-    for (;;) {
-      const next = await iterator.next();
-
-      if (next.done) return;
-
-      yield next.value;
-    }
-  })();
-}
-
-function hasText(chunk: unknown): boolean {
-  if (typeof chunk === 'string') return chunk.trim().length > 0;
-
-  return (
-    !!chunk &&
-    typeof chunk === 'object' &&
-    'type' in chunk &&
-    chunk.type === 'text-delta' &&
-    'text' in chunk &&
-    typeof chunk.text === 'string' &&
-    chunk.text.trim().length > 0
-  );
 }
 
 export async function initializeChannelHost(frogbot: FrogBot, startGateway = true): Promise<void> {

@@ -454,30 +454,31 @@ describe('Teams questions with SQLite persistence', () => {
     expect(lastToolResults()).toEqual([{ answers: [{ header: 'Color', selected: ['Blue'] }] }]);
   });
 
-  it('shows the stored answer on a card that was answered elsewhere', async () => {
+  it('refuses a web answer and keeps the card answerable in Teams', async () => {
     const root = '1006';
     const card = await ask({ root, toolCallId: 'call-web' });
     const req = await frogbot.createRequest({});
 
     Object.assign(req, { user: { ...ada, collection: 'users' } });
 
-    await settleClientToolCall({
-      req,
-      chatId: await chatId(root),
-      toolCallId: 'call-web',
-      outcome: { output: { answers: [{ header: 'Color', selected: ['Blue'] }] } },
-    });
+    await expect(
+      settleClientToolCall({
+        req,
+        chatId: await chatId(root),
+        toolCallId: 'call-web',
+        outcome: { output: { answers: [{ header: 'Color', selected: ['Blue'] }] } },
+      }),
+    ).rejects.toMatchObject({ code: 'channel-chat', status: 409 });
+
+    expect(await settlements(root)).toEqual([]);
+    expect(updates(root)).toEqual([]);
 
     await submit({ card, root, toolCallId: 'call-web', values: { 'question-0': '0' } });
 
-    const [update] = updates(root);
-
-    expect(JSON.stringify(cardOf(update))).toContain('✅ Blue');
-    expect(cardInputs(update)).toEqual([]);
-    expect(notices(root)).toEqual([
-      { user: '29:grace', text: 'This question was already answered.' },
-    ]);
-    expect(await continuations(root)).toEqual([]);
+    expect(await settlements(root)).toMatchObject([['call-web', { outcome: 'answered' }]]);
+    expect(JSON.stringify(cardOf(updates(root).at(-1)))).toContain('Answered by Grace Hopper');
+    expect(notices(root)).toEqual([]);
+    expect(await continuations(root)).toHaveLength(1);
   });
 
   it('dismisses without continuing and lets the next message start a new turn', async () => {

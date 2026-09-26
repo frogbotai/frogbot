@@ -43,7 +43,10 @@ import { attachSessionPayload, unwrapSessionPayload } from '../auth/operation.js
 import { buildSignInEndpoints } from '../auth/signIn/endpoints.js';
 import { validateSignIn, validateSignInFields } from '../auth/signIn/validate.js';
 import { buildChannelGatewayEndpoints } from '../channels/endpoints.js';
-import { CHANNEL_TASK_SLUG } from '../channels/host.js';
+import {
+  CHANNEL_QUESTION_UPDATE_TASK_SLUG,
+  CHANNEL_TASK_SLUG,
+} from '../channels/queueChannelTask.js';
 import { resolveChannelTask } from '../channels/task.js';
 import { buildChatEndpoints } from '../chat/endpoints.js';
 import { buildManifestEndpoint } from '../chat/manifest.js';
@@ -1485,11 +1488,17 @@ export function sanitize(
       `[frogbot] Job task slug '${AGENT_TRIGGER_TASK_SLUG}' is reserved for agent triggers.`,
     );
   }
-  if (
-    agents?.some((agent) => agent.channels?.length) &&
-    config.jobs?.tasks?.some((task) => task.slug === CHANNEL_TASK_SLUG)
-  ) {
-    throw new Error(`[frogbot] Job task slug '${CHANNEL_TASK_SLUG}' is reserved for channels.`);
+  const reservedChannelTask = agents?.some((agent) => agent.channels?.length)
+    ? config.jobs?.tasks?.find(
+        (task) =>
+          task.slug === CHANNEL_TASK_SLUG || task.slug === CHANNEL_QUESTION_UPDATE_TASK_SLUG,
+      )
+    : undefined;
+
+  if (reservedChannelTask) {
+    throw new Error(
+      `[frogbot] Job task slug '${reservedChannelTask.slug}' is reserved for channels.`,
+    );
   }
 
   const kv = config.kv ?? databaseKVAdapter();

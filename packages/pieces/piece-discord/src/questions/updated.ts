@@ -1,23 +1,30 @@
 import type { PieceChannelQuestions } from 'frogbot/pieces';
 
 import type { DiscordClient } from '../client.js';
-import { questionPayload } from './components.js';
-import { discordChannelId } from './discordThread.js';
+import { questionLayout, questionPayload } from './components.js';
+import { cardPath } from './discordThread.js';
 import { decodeQuestionId } from './ids.js';
-import { readState } from './state.js';
+import { readState, withoutPicks } from './state.js';
 
 export const updateDiscordQuestion: NonNullable<
   PieceChannelQuestions<DiscordClient>['updated']
-> = async ({ call, client, interaction, messageId, state, thread }) => {
+> = async ({ call, client, interaction, question, thread }) => {
   const control =
-    interaction.type === 'action' ? decodeQuestionId(interaction.event.actionId) : null;
+    interaction?.type === 'action' ? decodeQuestionId(interaction.event.actionId) : null;
   const pick = control?.verb === 'select' && call.input.questions[control.q]?.multiple;
 
   if (pick) return;
 
+  const state = readState(question.state);
+
   await client.request({
     method: 'PATCH',
-    path: `/channels/${discordChannelId(thread.id)}/messages/${encodeURIComponent(messageId)}`,
-    body: questionPayload({ call, state: readState(state) }),
+    path: cardPath({ question, threadId: thread.id }),
+    body: questionPayload({ call, state }),
   });
+
+  const layout = questionLayout({ item: call.input.questions[state.q]!, page: state.page });
+  const selects = layout.kind === 'selects' ? layout.selects : [];
+
+  return { state: withoutPicks({ selects, state }) };
 };

@@ -166,7 +166,7 @@ export function overflowCard({ call }: { call: ChannelQuestionCall }): AdaptiveC
   ]);
 
   const notice = text(
-    'This question is too large to show in Teams. Answer it in FrogBot, or dismiss it here.',
+    'This question is too large to show in Teams. Dismiss it, then ask the agent again with fewer or shorter choices.',
     { color: 'Attention', spacing: 'Medium' },
   );
 

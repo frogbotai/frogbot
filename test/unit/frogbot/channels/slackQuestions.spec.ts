@@ -341,6 +341,54 @@ describe('Slack native questions', () => {
     await fixture.host.shutdown();
   });
 
+  it('points the typed-answer modal at the current card', async () => {
+    const fixture = await askedFixture();
+
+    await fixture.host.webhook(
+      'slack',
+      blockAction({ actionId: 'frogbot:question:custom:call-1:0' }),
+    );
+
+    const open = lastCall('views.open') as { view: { private_metadata: string } };
+
+    expect(JSON.parse(JSON.parse(open.view.private_metadata).m)).toMatchObject({
+      threadId: 'slack:C1:1.000001',
+      messageId: cardTs,
+    });
+
+    await fixture.host.shutdown();
+  });
+
+  it('logs a failed modal open and keeps the card answerable', async () => {
+    const fixture = await askedFixture();
+
+    failures.set('views.open', 'internal_error');
+
+    await fixture.host.webhook(
+      'slack',
+      blockAction({ actionId: 'frogbot:question:custom:call-1:0' }),
+    );
+
+    failures.clear();
+
+    await fixture.host.webhook(
+      'slack',
+      blockAction({ actionId: 'frogbot:question:choose:call-1:0:0', value: '0' }),
+    );
+
+    expect(fixture.inputs.map(({ kind }) => kind)).not.toContain('update');
+    expect(lastCall('chat.postEphemeral')).toBeUndefined();
+    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+      output: { answers: [{ header: 'Color', selected: ['Red'] }] },
+    });
+    expect(fixture.frogbot.logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ toolCallId: 'call-1' }),
+      '[piece-slack] Could not respond to a question interaction.',
+    );
+
+    await fixture.host.shutdown();
+  });
+
   it('submits a multi-select form from its state values', async () => {
     const fixture = await askedFixture(
       pendingCall({

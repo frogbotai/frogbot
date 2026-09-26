@@ -6,6 +6,7 @@ import type { DocID } from '../../collections/config/types.js';
 import { updateIfVersion } from '../../database/compareAndSet.js';
 import type { FrogBot } from '../../frogbot.js';
 import type { FrogBotRequest } from '../../types/request.js';
+import { canWriteChat } from '../access/canWriteChat.js';
 import type { ChatDocument } from '../findChat.js';
 import { messagesToUIMessages } from '../messagesToUIMessages.js';
 import type { TurnMessageDocument } from './messages.js';
@@ -15,14 +16,10 @@ import { claimTurn, releaseTurn } from './state.js';
 import { allClientTools, streamTurn } from './streamTurn.js';
 import type { MessageDelivery, TurnActor, TurnClaim } from './types.js';
 
-export type QueuedChatDocument = ChatDocument & {
-  channelThread?: { account: string; thread: { id: string } } | null;
-};
-
 export type TurnRunnerArgs = {
   req: FrogBotRequest;
   agent: AgentInstance;
-  chat: QueuedChatDocument;
+  chat: ChatDocument;
   claim: TurnClaim;
   uiMessages: UIMessage[];
   selection: AgentSelection;
@@ -95,7 +92,7 @@ export async function runQueuedTurn({
       disableErrors: true,
       req: baseReq,
       overrideAccess: true,
-    })) as QueuedChatDocument | null;
+    })) as ChatDocument | null;
 
     const agent = chat?.agent ? frogbot.agents[chat.agent] : undefined;
 
@@ -103,7 +100,7 @@ export async function runQueuedTurn({
 
     const req = await requestForActor({ frogbot, chat, actor: message.author });
 
-    if (!(await hasAgentAccess({ req, agent }))) {
+    if (!canWriteChat({ req, chat }) || !(await hasAgentAccess({ req, agent }))) {
       promoteNext = await discardQueuedMessage({ req: baseReq, message });
 
       return;
@@ -271,7 +268,7 @@ async function requestForActor({
   actor,
 }: {
   frogbot: FrogBot;
-  chat: QueuedChatDocument;
+  chat: ChatDocument;
   actor?: TurnActor | null;
 }): Promise<FrogBotRequest> {
   const collection =

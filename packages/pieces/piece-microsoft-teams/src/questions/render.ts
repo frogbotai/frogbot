@@ -18,20 +18,12 @@ export const renderTeamsQuestion: PieceChannelQuestions<MicrosoftTeamsClient>['r
 
   if (!call) return [];
 
-  const adapter = teamsAdapter(thread);
-
-  const messageId = await adapter.sendAdaptiveCard({
+  const messageId = await teamsAdapter(thread).sendAdaptiveCard({
     threadId: thread.id,
     card: renderedCard({ call, req }),
   });
 
-  await adapter.saveQuestionRecord({
-    threadId: thread.id,
-    toolCallId: call.toolCallId,
-    record: { messageId },
-  });
-
-  return [{ messageId, calls: [call.toolCallId] }];
+  return [{ messages: [{ id: messageId, postedAt: '' }], calls: [call.toolCallId] }];
 };
 
 function renderedCard({

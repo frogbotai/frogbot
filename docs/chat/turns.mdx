@@ -73,7 +73,7 @@ Send `parts`, `delivery`, or both. A `DELETE` request to the same path removes t
 
 Channel messages follow the same rules. A message posted while the bot is replying in a thread is queued, and nothing is posted for it until it is promoted. When the channel runs in the same process, FrogBot posts the promoted reply to the same thread; otherwise the reply is saved to the chat without being posted.
 
-A channel chat that has no FrogBot owner can only be continued from its channel. Web and HTTP callers cannot read, answer, or post to it.
+A channel chat is continued only from its channel. Its owner can read it in the admin chat, but web and HTTP messages, answers, and dismissals are refused with `409` and `code: "channel-chat"`, so nothing is queued behind a channel turn from outside the thread. A channel chat that has no FrogBot owner cannot be opened from the web at all. See [who can write a chat](/chat/overview#who-can-write-a-chat).
 
 ## Crash recovery
 

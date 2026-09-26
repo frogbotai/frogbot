@@ -46,4 +46,29 @@ A renderer for a [client tool](/chat/questions#build-a-client-tool) receives two
 
 Both props are absent while the reply is streaming and for calls that were already answered, so render the part read-only when they are missing. `QuestionToolRender` is the built-in renderer for the `question` tool. Custom chat surfaces that render `ToolPart` outside `Chat` can supply the same actions through `ToolActionsContext`.
 
+## Read-only conversations
+
+In a [channel conversation](/chat/questions#channel-conversations), `Chat` is read-only, and every tool renderer receives two more props instead of the answer callbacks.
+
+| Prop | Purpose |
+| --- | --- |
+| `isReadonly` | `true` in a read-only conversation. `addToolOutput` and `dismiss` are never passed, even for a call that is still waiting |
+| `channelLabel` | The channel's name, such as `Slack`, for copy like "Waiting for an answer in Slack" |
+
+```tsx
+import type { ToolRendererProps } from '@frogbotai/ui/chat/tools'
+
+function PickFileCard({ addToolOutput, channelLabel, isReadonly, part }: ToolRendererProps) {
+  if (part.state !== 'input-available') return <PickedFile part={part} />
+
+  if (isReadonly) return <p>Waiting for an answer in {channelLabel}</p>
+
+  const { files } = part.input as { files: string[] }
+
+  return <FilePicker files={files} onPick={(file) => addToolOutput?.({ file })} />
+}
+```
+
+Custom surfaces set `isReadonly` and `channelLabel` on `ToolActionsContext` to get the same behavior.
+
 Add `initialize` and `onStreamPart` to an artifact registration when data parts progressively build an artifact. Add `artifactPersistence` to `ChatProvider` to provide application-specific `load` and `save` functions.

@@ -1,6 +1,7 @@
 export type TurnErrorCode =
   | 'already-settled'
   | 'call-not-found'
+  | 'channel-chat'
   | 'forbidden'
   | 'invalid-output'
   | 'not-awaiting'
@@ -14,6 +15,7 @@ export type TurnErrorCode =
 const statuses: Record<TurnErrorCode, 400 | 403 | 404 | 409> = {
   'already-settled': 409,
   'call-not-found': 404,
+  'channel-chat': 409,
   forbidden: 403,
   'invalid-output': 400,
   'not-awaiting': 409,

@@ -8,6 +8,7 @@ import { Textarea } from '../components/textarea.js';
 import CheckIcon from '../icons/icons/CheckIcon.js';
 import CheckmarkCircleIcon from '../icons/icons/CheckmarkCircleIcon.js';
 import CloseIcon from '../icons/icons/CloseIcon.js';
+import HourglassIcon from '../icons/icons/HourglassIcon.js';
 import LoadingIcon from '../icons/icons/LoadingIcon.js';
 import QuestionMarkCircleIcon from '../icons/icons/QuestionMarkCircleIcon.js';
 import type { ToolRendererProps } from './tool-registry.js';
@@ -77,7 +78,13 @@ function toAnswer(question: Question, draft: QuestionDraft): QuestionAnswer {
   return { header: question.header, selected, ...(custom ? { custom } : {}) };
 }
 
-export function QuestionToolRender({ addToolOutput, dismiss, part }: ToolRendererProps) {
+export function QuestionToolRender({
+  addToolOutput,
+  channelLabel,
+  dismiss,
+  isReadonly,
+  part,
+}: ToolRendererProps) {
   const questions = readQuestions(part.input);
 
   if (part.state === 'output-available') {
@@ -102,6 +109,8 @@ export function QuestionToolRender({ addToolOutput, dismiss, part }: ToolRendere
     );
   }
 
+  if (isReadonly) return <QuestionWaiting channelLabel={channelLabel} questions={questions} />;
+
   return <QuestionForm addToolOutput={addToolOutput} dismiss={dismiss} questions={questions} />;
 }
 
@@ -113,7 +122,7 @@ function QuestionCard({
 }: {
   children?: ReactNode;
   icon: ReactNode;
-  modifier?: 'answered' | 'closed';
+  modifier?: 'answered' | 'closed' | 'waiting';
   title: string;
 }) {
   return (
@@ -158,6 +167,28 @@ function QuestionClosed({ questions, reason }: { questions: Question[]; reason?:
       title="Not answered"
     >
       {reason && <p className="fb-question-tool__reason">{reason}</p>}
+      <ul className="fb-question-tool__questions">
+        {questions.map((question) => (
+          <li key={question.header}>{question.question}</li>
+        ))}
+      </ul>
+    </QuestionCard>
+  );
+}
+
+function QuestionWaiting({
+  channelLabel,
+  questions,
+}: {
+  channelLabel?: string;
+  questions: Question[];
+}) {
+  return (
+    <QuestionCard
+      icon={<HourglassIcon className="fb-question-tool__icon" />}
+      modifier="waiting"
+      title={channelLabel ? `Waiting for an answer in ${channelLabel}` : 'Waiting for an answer'}
+    >
       <ul className="fb-question-tool__questions">
         {questions.map((question) => (
           <li key={question.header}>{question.question}</li>

@@ -97,6 +97,7 @@ describe('resolveChatCollections', () => {
       'externalId',
       'channelKey',
       'channelThread',
+      'channelLabel',
       'lastMessageAt',
       'todos',
     ]);
@@ -164,7 +165,7 @@ describe('resolveChatCollections', () => {
     );
   });
 
-  it.each(['user', 'channel', 'externalId', 'channelKey', 'channelThread'])(
+  it.each(['user', 'channel', 'externalId', 'channelKey', 'channelThread', 'channelLabel'])(
     'throws when a marked chat collection redefines `%s`',
     (name) => {
       expect(() =>

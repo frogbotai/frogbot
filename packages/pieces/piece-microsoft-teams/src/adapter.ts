@@ -1,30 +1,15 @@
 import { TeamsAdapter } from '@chat-adapter/teams';
 
-import {
-  type AdaptiveCard,
-  cardActivity,
-  QUESTION_ACTION_PREFIX,
-  type SettledView,
-} from './questions/card.js';
+import { type AdaptiveCard, cardActivity, QUESTION_ACTION_PREFIX } from './questions/card.js';
 
 type MessageContext = Parameters<TeamsAdapter['handleMessageActivity']>[0];
-type MessageActivity = MessageContext['activity'];
 type ChatInstance = NonNullable<TeamsAdapter['chat']>;
 type QuestionActionEvent = Parameters<ChatInstance['processAction']>[0];
 type Responder = QuestionActionEvent['user'];
 
 type QuestionAction = { actionId: string; value: string };
 
-type QuestionReference = { threadId: string; toolCallId: string };
-
 type ResponderProfile = { email?: string; fullName?: string };
-
-export type QuestionRecord = {
-  messageId: string;
-  settled?: SettledView;
-};
-
-const QUESTION_RECORD_TTL = 30 * 24 * 60 * 60_000;
 
 export class FrogBotTeamsAdapter extends TeamsAdapter {
   async sendAdaptiveCard({
@@ -59,31 +44,6 @@ export class FrogBotTeamsAdapter extends TeamsAdapter {
       .update(messageId, cardActivity(card));
   }
 
-  async findQuestionRecord(reference: QuestionReference): Promise<QuestionRecord | null> {
-    if (!this.chat) return null;
-
-    try {
-      return await this.chat.getState().get<QuestionRecord>(this.questionRecordKey(reference));
-    } catch (error) {
-      this.logger.warn('Reading a Teams question record failed', { ...reference, error });
-
-      return null;
-    }
-  }
-
-  async saveQuestionRecord({
-    record,
-    ...reference
-  }: QuestionReference & { record: QuestionRecord }): Promise<void> {
-    try {
-      await this.chat
-        ?.getState()
-        .set(this.questionRecordKey(reference), record, QUESTION_RECORD_TTL);
-    } catch (error) {
-      this.logger.warn('Saving a Teams question record failed', { ...reference, error });
-    }
-  }
-
   logQuestionWarning(message: string, context: Record<string, unknown>): void {
     this.logger.warn(message, context);
   }
@@ -96,19 +56,13 @@ export class FrogBotTeamsAdapter extends TeamsAdapter {
     const activity = ctx.activity;
     const threadId = this.parseMessage(activity).threadId;
 
-    const [user, messageId] = await Promise.all([
-      this.responder(ctx),
-      this.questionMessageId({ activity, threadId, toolCallId: action.value }),
-    ]);
+    const user = await this.responder(ctx);
+    const messageId = activity.replyToId || activity.id;
 
     this.chat.processAction(
       { ...action, user, messageId, threadId, adapter: this, raw: activity },
       this.bridgeAdapter.getWebhookOptions(activity.id),
     );
-  }
-
-  private questionRecordKey({ threadId, toolCallId }: QuestionReference): string {
-    return `frogbot:question:${this.channelIdFromThreadId(threadId)}:${toolCallId}`;
   }
 
   private async responder(ctx: MessageContext): Promise<Responder> {
@@ -146,27 +100,6 @@ export class FrogBotTeamsAdapter extends TeamsAdapter {
 
       return null;
     }
-  }
-
-  private async questionMessageId({
-    activity,
-    threadId,
-    toolCallId,
-  }: {
-    activity: MessageActivity;
-    threadId: string;
-    toolCallId: string;
-  }): Promise<string> {
-    if (activity.replyToId) return activity.replyToId;
-
-    const record = await this.findQuestionRecord({ threadId, toolCallId });
-
-    this.logger.debug('Teams question action arrived without replyToId', {
-      activityId: activity.id,
-      located: Boolean(record),
-    });
-
-    return record?.messageId ?? activity.id;
   }
 }
 

@@ -2,7 +2,7 @@ import type { PieceChannelQuestions } from 'frogbot/pieces';
 
 import type { DiscordClient } from '../client.js';
 import { questionPayload } from './components.js';
-import { discordChannelId } from './discordThread.js';
+import { discordChannelId, postedAt } from './discordThread.js';
 import { readState } from './state.js';
 
 export const renderDiscordQuestion: PieceChannelQuestions<DiscordClient>['render'] = async ({
@@ -20,9 +20,16 @@ export const renderDiscordQuestion: PieceChannelQuestions<DiscordClient>['render
     body: questionPayload({ call, state: readState(undefined) }),
   });
 
-  const id = (response.body as { id?: unknown } | undefined)?.id;
+  const body = response.body as { id?: unknown; timestamp?: unknown } | undefined;
 
-  if (typeof id !== 'string') throw new Error('Discord did not return the question message id.');
+  if (typeof body?.id !== 'string') {
+    throw new Error('Discord did not return the question message id.');
+  }
 
-  return [{ messageId: id, calls: [call.toolCallId] }];
+  return [
+    {
+      calls: [call.toolCallId],
+      messages: [{ id: body.id, postedAt: postedAt(body.timestamp) }],
+    },
+  ];
 };

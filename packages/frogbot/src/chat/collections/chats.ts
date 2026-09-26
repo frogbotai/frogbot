@@ -1,6 +1,7 @@
 import type { Access, CollectionAccess } from '../../collections/config/types.js';
 import type { CollectionConfig } from '../../collections/config/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
+import { resolveChannelLabel } from '../channelLabel.js';
 
 export type DefaultChatsCollectionProps = {
   slug: string;
@@ -16,6 +17,8 @@ const owner: Access = ({ req }) => {
   const id = userID(req);
   return id !== undefined ? { user: { equals: id } } : false;
 };
+
+const readOnly = { create: () => false, update: () => false };
 
 export function defaultChatsCollection({
   slug,
@@ -59,15 +62,33 @@ export function defaultChatsCollection({
         name: 'channel',
         type: 'text',
         index: true,
+        access: readOnly,
         admin: { components: { Cell: '@frogbotai/next/client#ChannelCell' } },
       },
-      { name: 'externalId', type: 'text', index: true },
-      { name: 'channelKey', type: 'text', unique: true, admin: { hidden: true } },
+      { name: 'externalId', type: 'text', index: true, access: readOnly },
+      {
+        name: 'channelKey',
+        type: 'text',
+        unique: true,
+        access: readOnly,
+        admin: { hidden: true },
+      },
       {
         name: 'channelThread',
         type: 'json',
+        access: readOnly,
         admin: { hidden: true },
         typescriptSchema: [() => ({ tsType: "import('frogbot').ChannelThreadReference" })],
+      },
+      {
+        name: 'channelLabel',
+        type: 'text',
+        virtual: true,
+        access: readOnly,
+        admin: { hidden: true },
+        hooks: {
+          afterRead: [({ req, siblingData }) => resolveChannelLabel({ req, chat: siblingData })],
+        },
       },
       { name: 'lastMessageAt', type: 'date', index: true },
       {

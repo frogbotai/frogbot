@@ -8,6 +8,10 @@ export function slackThread(threadId: string): { channel: string; threadTs?: str
   return { channel, ...(threadTs ? { threadTs } : {}) };
 }
 
+export function slackPostedAt(ts: string): string {
+  return new Date(Number(ts) * 1000).toISOString();
+}
+
 export function interactionUserId(interaction: QuestionInteraction): string {
   return interaction.type === 'message'
     ? interaction.message.author.userId

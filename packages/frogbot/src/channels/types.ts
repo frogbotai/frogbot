@@ -4,7 +4,7 @@ import type { AgentInstance } from '../agents/types.js';
 import type { DocID } from '../collections/config/types.js';
 import type { PieceInstance } from '../pieces/types.js';
 import type { ChannelChat } from './chat.js';
-import type { QuestionDeliveryStore } from './questions/createQuestionDeliveryStore.js';
+import type { QuestionStore } from './questions/createQuestionStore.js';
 import type { PieceChannelQuestions } from './questions/types.js';
 
 export type ChannelContext = {
@@ -44,8 +44,8 @@ export type ChannelBinding = {
 export type ChannelConversationBinding = Extract<ChannelBinding, { kind: 'conversation' }>;
 
 export type ChannelQuestionsBinding = {
-  deliveries: QuestionDeliveryStore;
   hooks: PieceChannelQuestions;
+  store: QuestionStore;
 };
 
 type ChannelTaskBase = {
@@ -57,4 +57,5 @@ type ChannelTaskBase = {
 export type ChannelTaskInput =
   | (ChannelTaskBase & { kind?: 'message'; message: SerializedMessage })
   | (ChannelTaskBase & { kind: 'continue'; chatId: DocID; responder: Author })
-  | (ChannelTaskBase & { kind: 'promote'; chatId: DocID });
+  | (ChannelTaskBase & { kind: 'promote'; chatId: DocID })
+  | (ChannelTaskBase & { kind: 'update'; chatId: DocID; toolCallId: string; revision: number });

@@ -90,6 +90,8 @@ When the agent asks several questions in separate calls, FrogBot posts one card 
 
 After an answer, the card is replaced in place with each question, the answer, and `Answered by <name>`, and the agent continues in the same conversation. **Dismiss** replaces the card with `Dismissed by <name>` and stops the turn. The first answer wins.
 
+Questions are answered only in Teams. The FrogBot admin chat shows the conversation [read-only](/chat/questions#channel-conversations).
+
 Notices about access and late answers are Teams targeted messages in channels and group chats, which only the person they are for sees. In a personal chat, where only you and the bot are present, they are ordinary messages. If Teams cannot deliver a notice, FrogBot logs the failure and the card stays as it was.
 
 ## Supported clients
@@ -102,11 +104,11 @@ Cards use Adaptive Cards 1.5, which current Teams clients support. FrogBot check
 | --- | --- |
 | No access | Private notice; the question stays open |
 | Teams account without a matching FrogBot user | Private notice that the account could not be matched |
-| A second answer, a double click, or a card answered in the FrogBot admin | Private notice that it was already answered; the card shows the stored answer. If Teams resends a submission, the person who answered can also get this notice |
+| A second answer or a double click | Private notice that it was already answered; the card shows the stored answer. If Teams resends a submission, the person who answered can also get this notice |
 | A card whose question is no longer waiting, for example after the conversation moved on | The card closes and the person gets a notice that the question is no longer open |
 | A submission with a question unanswered, or with a choice the card did not offer | The card is redrawn with a red message and the submitted choices |
 | A card larger than FrogBot's 24 KB budget | Choices switch to dropdowns, then descriptions are shortened and removed, then long labels are shortened on screen. No option is dropped |
-| A card still too large after that | FrogBot posts the questions without their choices, a note to answer in FrogBot, and a **Dismiss** button. The error is logged |
+| A card still too large after that | FrogBot posts the questions without their choices and with a **Dismiss** button. The error is logged |
 | Very long answers | The answered card shortens them on screen; the agent receives them in full |
 | Replacing the card fails after an answer | The answer is kept and the agent continues. The next click on the card restores the answered view |
 | Posting the card fails | The question is posted again with the next message in the conversation |
@@ -122,6 +124,6 @@ FrogBot acknowledges a card submission once it has recorded the answer and updat
 | --- | --- |
 | The bot never replies | The messaging endpoint uses the right instance slug, the Teams channel is enabled on the Azure Bot, and the app is installed in that team or chat |
 | Every request gets `401` | `appId` matches the Azure Bot's application ID, and `botAppType` and `botTenantId` match its registration |
-| **Submit** does nothing | The server logs; FrogBot logs at debug level when Teams sends a submission without the card's message ID, and whether it could find the card |
+| **Submit** does nothing | The server logs for a failed question hook. FrogBot ignores a submission that does not name a card it posted |
 | "FrogBot couldn't match your Teams account to a user" | The person's Teams email or sign-in name must equal a FrogBot user's email |
 | The card shows as unsupported | Update the Teams client; Adaptive Cards 1.5 is required |

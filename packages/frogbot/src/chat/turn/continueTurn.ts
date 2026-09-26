@@ -3,7 +3,7 @@ import type { AgentSelection, AgentStreamMessageResult } from '../../agents/type
 import type { DocID } from '../../collections/config/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import type { ChannelChatAccess } from '../channelAccess.js';
-import { findChat } from '../findChat.js';
+import { findWritableChat } from '../findChat.js';
 import { findTurnMessage, getPendingCalls, loadChatHistory } from './messages.js';
 import { findGoverningSelection } from './selection.js';
 import { claimTurn, findTurnState, releaseTurn } from './state.js';
@@ -27,7 +27,7 @@ export async function continueTurn({
   clientTools,
   abortSignal,
 }: ContinueTurnProps): Promise<ContinueTurnResult> {
-  const chat = await findChat({ req, chatId, channelAccess });
+  const chat = await findWritableChat({ req, chatId, channelAccess });
   const agent = getAgent({ req, slug: chat.agent ?? undefined });
 
   if ((await findTurnState({ req, chatId: chat.id })) !== 'awaiting') {

@@ -2,9 +2,23 @@ import { expect, type Page } from '@playwright/test';
 
 export const user = { email: 'browser@example.com', password: 'browser-test-password' };
 
-export async function signIn(page: Page) {
+const authPage = /\/(create-first-user|login)/;
+
+async function waitForHydratedForm(page: Page) {
+  await page.waitForFunction(() => {
+    const form = document.querySelector('form');
+
+    return !!form && Object.keys(form).some((key) => key.startsWith('__reactProps$'));
+  });
+}
+
+async function submitAuthForm(page: Page) {
   await page.goto('/');
-  await page.waitForURL(/\/(create-first-user|login)/);
+  await page.locator('input[name="email"], .frogbot-nav-shell').first().waitFor();
+
+  if (!authPage.test(new URL(page.url()).pathname)) return;
+
+  await waitForHydratedForm(page);
   await page.fill('input[name="email"]', user.email);
   await page.fill('input[name="password"]', user.password);
 
@@ -13,6 +27,11 @@ export async function signIn(page: Page) {
   }
 
   await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !/\/(create-first-user|login)/.test(url.pathname));
+  await page.waitForURL((url) => !authPage.test(url.pathname), { timeout: 10_000 });
+}
+
+export async function signIn(page: Page) {
+  await expect(() => submitAuthForm(page)).toPass({ timeout: 90_000 });
+
   await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute('data-nav-hydrated', 'true');
 }

@@ -25,18 +25,9 @@ export function deferred() {
   return { promise, resolve };
 }
 
-export function channelFixture({
-  slug = 'slack',
-  adapter: suppliedAdapter,
-  client = {},
-  questions,
-}: {
-  slug?: string;
-  adapter?: Adapter;
-  client?: object;
-  questions?: PieceChannelQuestions<never>;
-} = {}) {
+export function createMemoryKV() {
   const values = new Map<string, unknown>();
+  const ttls = new Map<string, number | undefined>();
   const locks = new Map<string, KVLock>();
   let token = 0;
 
@@ -61,8 +52,9 @@ export function channelFixture({
     }),
     get: vi.fn(async (key: string) => values.get(key) ?? null),
     has: vi.fn(async (key: string) => values.has(key)),
-    set: vi.fn(async (key: string, value: unknown) => {
+    set: vi.fn(async (key: string, value: unknown, options?: { ttl?: number }) => {
       values.set(key, value);
+      ttls.set(key, options?.ttl);
     }),
     setIfAbsent: vi.fn(async (key: string, value: unknown) => {
       if (values.has(key)) return false;
@@ -76,6 +68,22 @@ export function channelFixture({
         runKVLock({ kv: kv as unknown as KV, key, ttl, fn }) as Promise<T>,
     ),
   };
+
+  return { kv, locks, ttls, values };
+}
+
+export function channelFixture({
+  slug = 'slack',
+  adapter: suppliedAdapter,
+  client = {},
+  questions,
+}: {
+  slug?: string;
+  adapter?: Adapter;
+  client?: object;
+  questions?: PieceChannelQuestions<never>;
+} = {}) {
+  const { kv, locks, values } = createMemoryKV();
 
   let chat!: ChatInstance;
   const posted: Array<{ threadId: string; text: string }> = [];
@@ -211,7 +219,9 @@ export function channelFixture({
     connections: {
       resolvePieceCredential: vi.fn(async () => ({ auth: { token: 'secret' }, key: {} })),
     },
-    createRequest: vi.fn(async (req: object) => Object.assign(req, { frogbot })),
+    createRequest: vi.fn(async (req: { context?: object }) =>
+      Object.assign(req, { context: req.context ?? {}, frogbot }),
+    ),
     find: vi.fn(async ({ collection, where }: { collection: string; where: FixtureWhere }) => {
       if (collection === 'messages') {
         return { docs: messages.filter((message) => matchesWhere(message, where)) };

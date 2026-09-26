@@ -245,6 +245,20 @@ describe('Discord native questions through the channel host', () => {
     expect(card!.body).toMatchObject({ flags: 32768, allowed_mentions: { parse: [] } });
     expect(JSON.stringify(card!.body)).toContain(control('option', 1));
   });
+  it('records the card with the time Discord posted it', async () => {
+    const { fixture, messageId } = await asked();
+    const [card] = api.cards('T1');
+
+    const [, record] = [...fixture.values].find(([key]) =>
+      key.endsWith(':questions:call:chat-1:call-1'),
+    )!;
+
+    expect(record).toMatchObject({
+      messages: [{ id: messageId, postedAt: card!.timestamp }],
+      revision: 0,
+    });
+  });
+
   it('settles a click, retires the card in one edit, and queues one continuation', async () => {
     const { fixture, messageId } = await asked();
     const before = api.calls.length;
@@ -428,6 +442,54 @@ describe('Discord native questions through the channel host', () => {
       },
     });
     expect(api.edits('T1', messageId)).toHaveLength(2);
+  });
+
+  it('holds a set whose next question failed to post until the update job redraws the card', async () => {
+    const { fixture, messageId } = await asked({ calls: [colorSet] });
+    const edit = `PATCH /channels/T1/messages/${messageId}`;
+
+    api.failures.set(edit, { status: 500, message: 'Discord is down' });
+
+    await click({ fixture, messageId, customId: control('option', 1) });
+
+    const update = fixture.inputs.at(-1)!;
+
+    expect(update).toMatchObject({ kind: 'update', toolCallId: 'call-1', revision: 1 });
+
+    api.failures.delete(edit);
+
+    const before = api.calls.length;
+
+    await click({ fixture, messageId, customId: control('option', 0, 1), user: 'U3' });
+
+    expect(settleClientToolCall).not.toHaveBeenCalled();
+    expect(since(before)).toEqual([
+      expect.objectContaining({
+        method: 'POST',
+        path: '/channels/T1/messages',
+        body: expect.objectContaining({
+          content: '<@U3> The next question is still posting — try again in a moment.',
+        }),
+      }),
+    ]);
+
+    await fixture.host.run(JSON.parse(JSON.stringify(update)));
+
+    const redraw = api.edits('T1', messageId).at(-1)!;
+
+    expect(JSON.stringify(redraw.body)).toContain('**Size** · 2 of 2');
+    expect(JSON.stringify(redraw.body)).toContain('✓ Color: Blue');
+
+    await click({ fixture, messageId, customId: control('option', 0, 1), user: 'U3' });
+
+    expect(settleClientToolCall.mock.calls[0]![0].outcome).toEqual({
+      output: {
+        answers: [
+          { header: 'Color', selected: ['Blue'] },
+          { header: 'Size', selected: ['S'] },
+        ],
+      },
+    });
   });
 
   it('captures the armed participant’s unmentioned reply and consumes it', async () => {

@@ -61,7 +61,7 @@ Pass the SDK and configured collection slugs to add the same actions to a portab
 
 ## Message actions
 
-Completed user messages include Copy, Edit, and Branch actions. Assistant messages include Copy and Branch. Editing preserves non-text parts, replaces the selected message, removes later responses, and retries the conversation from that point. Branch creates and opens a separate chat containing the conversation through the selected message.
+Completed user messages include Copy and Edit actions. Assistant messages include Copy and Branch. Editing preserves non-text parts, replaces the selected message, removes later responses, and retries the conversation from that point. Branch creates and opens a separate chat containing the conversation through the selected message.
 
 Copy writes rendered HTML and original Markdown to the clipboard. Formatting is preserved when pasted into rich-text editors, while plain-text destinations receive the original Markdown.
 
@@ -102,6 +102,12 @@ import {
   MessageTimestamp
 } from '@frogbotai/ui/chat'
 ```
+
+## Channel conversations
+
+`Chat` reads the active chat's document, from the `initialChat` prop when it matches the active chat and otherwise with a request. Pass `initialChat` when your server already has the document, so a channel conversation renders read-only from the first paint. When the chat belongs to a channel, `Chat` shows the conversation [read-only](/chat/questions#channel-conversations): `ChannelConversationNotice` replaces the composer, user messages have no Edit action, and tool renderers receive [`isReadonly`](/chat/ui-registries#read-only-conversations). Branch stays on the notice and on assistant messages.
+
+Custom shells can build the same view from `useChatDocument({ sdk, chatsSlug, chatId })`, which returns `{ chat, error, refresh }` with the chat's `channel` and `channelLabel`, and from `ChannelConversationNotice`, which takes `channelLabel`, `onBranch`, and `branching`.
 
 ## Composer selectors
 

@@ -1,6 +1,7 @@
 'use client';
 
 import type {
+  ChatDocument,
   ChatProps,
   GreetingProps,
   MessageActionsSlotProps,
@@ -16,8 +17,9 @@ import {
   useChatProvider,
 } from '@frogbotai/ui/chat';
 import { ThemeProvider } from '@frogbotai/ui/theme';
-import { usePreferences, useTheme } from '@payloadcms/ui';
+import { usePreferences, useRouteTransition, useTheme } from '@payloadcms/ui';
 import type { UIMessage } from 'frogbot';
+import { useRouter } from 'next/navigation.js';
 import { type ComponentType, type ReactNode, useEffect, useRef, useState } from 'react';
 
 const adapter = { fetch: cookieFetch() };
@@ -46,6 +48,7 @@ export type ChatViewClientProps = {
   agent: string;
   chatId?: string | number;
   documentPath: string;
+  initialChat?: ChatDocument;
   initialMessages: UIMessage[];
   initialSelection?: ChatViewSelection;
   logo?: ReactNode;
@@ -65,6 +68,7 @@ export function ChatViewClient({
   agent,
   chatId,
   documentPath,
+  initialChat,
   initialMessages,
   initialSelection,
   logo,
@@ -72,16 +76,26 @@ export function ChatViewClient({
   userName,
 }: ChatViewClientProps) {
   const { theme } = useTheme();
+  const router = useRouter();
+  const { startRouteTransition } = useRouteTransition();
   const [selectedAgent, setSelectedAgent] = useState(agent);
   const replaced = useRef(false);
+
   const onChatIdChange = (nextChatId: string | number | undefined) => {
-    if (chatId !== undefined || nextChatId === undefined || replaced.current) return;
+    if (nextChatId === undefined) return;
+
+    const path = `${documentPath}/${encodeURIComponent(String(nextChatId))}`;
+
+    if (chatId !== undefined) {
+      if (String(nextChatId) !== String(chatId)) startRouteTransition(() => router.push(path));
+
+      return;
+    }
+
+    if (replaced.current) return;
+
     replaced.current = true;
-    window.history.replaceState(
-      window.history.state,
-      '',
-      `${documentPath}/${encodeURIComponent(String(nextChatId))}`,
-    );
+    window.history.replaceState(window.history.state, '', path);
   };
 
   return (
@@ -91,6 +105,7 @@ export function ChatViewClient({
           <ChatViewInner
             agent={agent}
             {...(chatId === undefined ? {} : { chatId })}
+            {...(initialChat === undefined ? {} : { initialChat })}
             initialMessages={initialMessages}
             initialSelection={initialSelection}
             onChatIdChange={onChatIdChange}
@@ -124,6 +139,7 @@ function ChatViewInner({
   userMessageActionsProps,
   chatId,
   agent: initialAgent,
+  initialChat,
   initialMessages,
   initialSelection,
   logo,
@@ -287,6 +303,7 @@ function ChatViewInner({
       reasoning={activeReasoning}
       {...(chatId === undefined ? {} : { chatId })}
       {...(ChatGreeting ? { greeting: ChatGreeting } : {})}
+      {...(initialChat === undefined ? {} : { initialChat })}
       initialMessages={initialMessages}
       logo={logo}
       onChatIdChange={onChatIdChange}

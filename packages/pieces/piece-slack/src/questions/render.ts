@@ -2,7 +2,7 @@ import type { PieceChannelQuestions } from 'frogbot/pieces';
 
 import type { SlackClient } from '../client.js';
 import { fallbackText, questionBlocks } from './blocks.js';
-import { slackThread } from './slackThread.js';
+import { slackPostedAt, slackThread } from './slackThread.js';
 
 export const renderSlackQuestion: PieceChannelQuestions<SlackClient>['render'] = async ({
   calls,
@@ -26,5 +26,10 @@ export const renderSlackQuestion: PieceChannelQuestions<SlackClient>['render'] =
     throw new Error('Slack chat.postMessage did not return a message timestamp.');
   }
 
-  return [{ messageId: response.ts, calls: [call.toolCallId] }];
+  return [
+    {
+      calls: [call.toolCallId],
+      messages: [{ id: response.ts, postedAt: slackPostedAt(response.ts) }],
+    },
+  ];
 };

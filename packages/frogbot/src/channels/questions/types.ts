@@ -13,27 +13,44 @@ export type QuestionInteraction =
   | { type: 'modalSubmit'; event: ModalSubmitEvent }
   | { type: 'message'; message: ChatMessage };
 
+export type QuestionMessage = {
+  id: string;
+  postedAt: string;
+  question?: number;
+};
+
+export type QuestionRecord = Readonly<{
+  messages: QuestionMessage[];
+  revision: number;
+  state?: unknown;
+}>;
+
+export type QuestionChange = {
+  messages?: QuestionMessage[];
+  state?: unknown;
+};
+
+export type RenderedQuestion = {
+  calls: string[];
+  messages: QuestionMessage[];
+  state?: unknown;
+};
+
 export type QuestionParseResult =
   | { kind: 'answer'; output: QuestionOutput }
   | { kind: 'dismiss' }
   | { kind: 'partial'; state?: unknown }
   | { kind: 'rejected'; reason: string }
+  | { kind: 'stale' }
   | { kind: 'ignore' };
 
 export type QuestionOutcome = { output: QuestionOutput } | { dismissed: true };
 
-export type RenderedQuestion = {
-  messageId: string;
-  calls: string[];
-  state?: unknown;
-};
-
 export type QuestionHookArgs<TClient> = {
   call: ChannelQuestionCall;
   client: TClient;
-  messageId: string;
+  question: QuestionRecord;
   req: FrogBotRequest;
-  state?: unknown;
   thread: Thread;
 };
 
@@ -48,15 +65,15 @@ export type PieceChannelQuestions<TClient = unknown> = {
   parse(args: {
     call: ChannelQuestionCall;
     interaction: QuestionInteraction;
+    question: QuestionRecord;
     settled: boolean;
-    state?: unknown;
   }): QuestionParseResult;
+  updated?(
+    args: QuestionHookArgs<TClient> & { interaction?: QuestionInteraction },
+  ): Promise<QuestionChange | void>;
   settled(
     args: QuestionHookArgs<TClient> & { actor: TurnActor | null; outcome: QuestionOutcome },
-  ): Promise<void>;
-  updated?(
-    args: QuestionHookArgs<TClient> & { interaction: QuestionInteraction },
-  ): Promise<{ messageId?: string } | void>;
+  ): Promise<QuestionChange | void>;
   rejected?(
     args: QuestionHookArgs<TClient> & { interaction: QuestionInteraction; reason: string },
   ): Promise<void>;
@@ -64,11 +81,13 @@ export type PieceChannelQuestions<TClient = unknown> = {
   stale?(args: QuestionHookArgs<TClient> & { interaction: QuestionInteraction }): Promise<void>;
 };
 
-export type QuestionDelivery = {
+export type StoredQuestion = {
   call: ChannelQuestionCall;
   chatId: DocID;
-  messageId: string;
-  thread: ChannelThreadReference['thread'];
+  messages: QuestionMessage[];
+  pending?: 'update';
+  revision: number;
+  settled?: { at: string };
   state?: unknown;
-  settled?: true;
+  thread: ChannelThreadReference['thread'];
 };

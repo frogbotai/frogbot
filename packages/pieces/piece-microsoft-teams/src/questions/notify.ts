@@ -2,7 +2,7 @@ import type { PieceChannelQuestions } from 'frogbot/pieces';
 
 import type { MicrosoftTeamsClient } from '../client.js';
 import { closedCard, settledCard } from './card.js';
-import { interactionUser, postTargeted, teamsAdapter } from './teamsThread.js';
+import { interactionUser, postTargeted, settledView, updateCards } from './teamsThread.js';
 
 type TeamsQuestions = Required<PieceChannelQuestions<MicrosoftTeamsClient>>;
 
@@ -18,23 +18,16 @@ export const denyTeamsQuestion: TeamsQuestions['denied'] = ({ interaction, threa
 export const staleTeamsQuestion: TeamsQuestions['stale'] = async ({
   call,
   interaction,
-  messageId,
+  question,
   thread,
 }) => {
-  const adapter = teamsAdapter(thread);
-
-  const record = await adapter.findQuestionRecord({
-    threadId: thread.id,
-    toolCallId: call.toolCallId,
-  });
-
-  const settled = record?.settled;
+  const settled = settledView(question);
 
   await Promise.all([
-    adapter.updateAdaptiveCard({
-      threadId: thread.id,
-      messageId,
+    updateCards({
       card: settled ? settledCard({ call, ...settled }) : closedCard({ call }),
+      question,
+      thread,
     }),
     postTargeted({
       interaction,
