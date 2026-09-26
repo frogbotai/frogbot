@@ -46,8 +46,15 @@ describe('collection search configuration', () => {
           { path: 'body', localized: false },
         ],
       },
-      vector: { path: 'embedding', localized: false, dimensions: 3, metric: 'cosine' },
-      hybrid: { fusion: 'rrf', weights: { lexical: 1, vector: 1 }, defaultCandidates: 100 },
+      vector: {
+        path: 'embedding',
+        localized: false,
+        dimensions: 3,
+        metric: 'cosine',
+        approximate: true,
+      },
+      hybrid: { fusion: 'rrf', weights: { lexical: 1, vector: 1 } },
+      defaultCandidates: 100,
     });
 
     expect(descriptors?.titles).toMatchObject({
@@ -56,6 +63,7 @@ describe('collection search configuration', () => {
     });
     expect(descriptors?.titles.vector).toBeUndefined();
     expect(descriptors?.titles.hybrid).toBeUndefined();
+    expect(descriptors?.titles.defaultCandidates).toBeUndefined();
     expect(descriptors?.content.filterFields).toMatchObject({
       id: { path: 'id', type: 'id', many: false },
       _status: { path: '_status', type: 'string', many: false },
@@ -166,6 +174,7 @@ describe('collection search configuration', () => {
       dimensions: 4,
       localized: true,
       metric: 'cosine',
+      approximate: true,
     });
     expect(descriptors?.localized.filterFields['details.copy.title']).toMatchObject({
       localized: true,
@@ -370,13 +379,19 @@ describe('collection search configuration', () => {
       'positive finite',
     ],
     ...[0, -1, 1.5, '10', null].map((defaultCandidates) => [
+      { vector: { field: 'embedding' }, defaultCandidates },
+      'defaultCandidates must be a positive integer',
+    ]),
+    [{ lexical: { fields: ['title'] }, defaultCandidates: 50 }, 'requires vector search'],
+    [
       {
         lexical: { fields: ['title'] },
         vector: { field: 'embedding' },
-        hybrid: { defaultCandidates },
+        hybrid: { defaultCandidates: 50 },
       },
-      'hybrid.defaultCandidates',
-    ]),
+      "hybrid does not support 'defaultCandidates'",
+    ],
+    [{ vector: { field: 'embedding', approximate: 'yes' } }, 'vector.approximate'],
     [
       { lexical: { fields: ['title'] }, filters: { fields: ['category'], exclude: ['body'] } },
       'exactly one',
@@ -456,20 +471,31 @@ describe('collection search configuration', () => {
     }
   });
 
-  it('keeps configured hybrid weights and default candidates together', () => {
+  it('keeps configured hybrid weights and index default candidates', () => {
     const descriptors = sanitizeSearchIndexes(
       index({
         lexical: { fields: ['title'] },
         vector: { field: 'embedding' },
-        hybrid: { weights: { lexical: 1, vector: 3 }, defaultCandidates: 250 },
+        hybrid: { weights: { lexical: 1, vector: 3 } },
+        defaultCandidates: 250,
       }),
     );
 
     expect(descriptors?.content.hybrid).toEqual({
       fusion: 'rrf',
       weights: { lexical: 1, vector: 3 },
-      defaultCandidates: 250,
     });
+    expect(descriptors?.content.defaultCandidates).toBe(250);
+  });
+
+  it('keeps default candidates and the approximate choice on vector-only indexes', () => {
+    const descriptors = sanitizeSearchIndexes(
+      index({ vector: { field: 'embedding', approximate: false }, defaultCandidates: 30 }),
+    );
+
+    expect(descriptors?.content.vector?.approximate).toBe(false);
+    expect(descriptors?.content.defaultCandidates).toBe(30);
+    expect(descriptors?.content.hybrid).toBeUndefined();
   });
 
   it('allows multiple named indexes to use the same vector with different metrics', () => {

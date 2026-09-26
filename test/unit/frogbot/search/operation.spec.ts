@@ -364,7 +364,7 @@ describe('search hydration', () => {
   });
 });
 
-describe('hybrid candidates', () => {
+describe('search candidates', () => {
   const hybrid = { text: 'hello', vector: [1, 0, 0] };
 
   it.each([
@@ -389,16 +389,31 @@ describe('hybrid candidates', () => {
     expect(search).toHaveBeenCalledWith(expect.objectContaining({ mode: 'hybrid', candidates }));
   });
 
+  it.each([
+    [{ limit: 10 }, 100],
+    [{ limit: 10, candidates: 250 }, 250],
+    [{ limit: 50, candidates: 20 }, 50],
+  ])('resolves %j to %i vector candidates', async (options, candidates) => {
+    const { frogbot, payload, req, search } = searchFixture({ rows: [] });
+
+    await searchOperation(frogbot, payload, {
+      collection: 'articles',
+      index: 'content',
+      query: { vector: [1, 0, 0] },
+      req,
+      ...options,
+    });
+
+    expect(search).toHaveBeenCalledWith(expect.objectContaining({ mode: 'vector', candidates }));
+  });
+
   it('uses the index default candidates when the query omits them', async () => {
     const { frogbot, payload, req, search } = searchFixture({
       rows: [],
       rowRanking: hybridRanking,
     });
 
-    frogbot.collections.articles.search!.content = {
-      ...index,
-      hybrid: { ...index.hybrid, defaultCandidates: 40 },
-    };
+    frogbot.collections.articles.search!.content = { ...index, defaultCandidates: 40 };
 
     await searchOperation(frogbot, payload, {
       collection: 'articles',
@@ -411,21 +426,18 @@ describe('hybrid candidates', () => {
     expect(search).toHaveBeenCalledWith(expect.objectContaining({ candidates: 40 }));
   });
 
-  it('does not pass candidates to lexical or vector searches', async () => {
+  it('does not pass candidates to lexical searches', async () => {
     const { frogbot, payload, req, search } = searchFixture({ rows: [] });
 
-    for (const query of [{ text: 'hello' }, { vector: [1, 0, 0] }]) {
-      await searchOperation(frogbot, payload, {
-        collection: 'articles',
-        index: 'content',
-        query,
-        candidates: 500,
-        req,
-      });
-    }
+    await searchOperation(frogbot, payload, {
+      collection: 'articles',
+      index: 'content',
+      query: { text: 'hello' },
+      candidates: 500,
+      req,
+    });
 
-    expect(search).toHaveBeenNthCalledWith(1, expect.objectContaining({ candidates: undefined }));
-    expect(search).toHaveBeenNthCalledWith(2, expect.objectContaining({ candidates: undefined }));
+    expect(search).toHaveBeenCalledWith(expect.objectContaining({ candidates: undefined }));
   });
 
   it.each([0, -1, 1.5, Number.NaN])('rejects candidates %s before dispatch', async (candidates) => {

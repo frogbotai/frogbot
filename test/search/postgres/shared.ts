@@ -34,7 +34,11 @@ export const articles: NonNullable<FrogBotConfig['collections']>[number] = {
     narrow: {
       lexical: { fields: ['title', 'body'], language: 'english' },
       vector: { field: 'embedding' },
-      hybrid: { defaultCandidates: 1 },
+      defaultCandidates: 1,
+    },
+    exact: {
+      vector: { field: 'embedding', approximate: false },
+      filters: { fields: ['tenant'] },
     },
     weighted: {
       lexical: { fields: ['title', 'body'], language: 'english' },

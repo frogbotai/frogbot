@@ -38,9 +38,85 @@ export default buildConfig({
 })
 ```
 
-## Collection vector fields and search
+## Collection search
 
-Use a [vector field](/fields/vector) for ordinary collection CRUD without a search index. **Native collection search is not implemented** in the SQLite/LibSQL or Cloudflare D1 adapters: adding any collection `search` index, including lexical-only, currently fails setup with `not-implemented`. See the [search API preview](/search/overview). SQLite/LibSQL engine builds differ in full-text and vector capabilities; D1 documents FTS5 support but has no documented native vector index. These engine features do not imply a working FrogBot search adapter or an application-side ranking fallback.
+The SQLite adapter implements [collection search](/search/overview) with SQLite's FTS5 full-text engine and LibSQL's native vector functions. Lexical, vector, and hybrid queries each run as a single SQL statement, and ranking happens inside the database after access, `where`, draft, and locale filters are applied.
+
+```ts
+import { sqliteAdapter } from '@frogbotai/db-sqlite'
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  secret: process.env.FROGBOT_SECRET!,
+  db: sqliteAdapter({ client: { url: process.env.DATABASE_URL! } }),
+  collections: [
+    {
+      slug: 'articles',
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        { name: 'body', type: 'textarea' },
+        { name: 'embedding', type: 'vector', dimensions: 1536 },
+      ],
+      search: {
+        content: {
+          lexical: { fields: ['title', 'body'], language: 'english' },
+          vector: { field: 'embedding' },
+        },
+      },
+    },
+  ],
+})
+```
+
+### Prerequisites
+
+Each mode needs a feature from the connected database. The adapter checks the connection when it connects, before development push and before `migrate`:
+
+| Mode    | Needs                                                                                  |
+| ------- | -------------------------------------------------------------------------------------- |
+| Lexical | The FTS5 module                                                                        |
+| Vector  | LibSQL vector functions (`vector32`, `vector_distance_cos`, `vector_distance_l2`, `vector_top_k`) |
+| Hybrid  | Both                                                                                   |
+
+The local LibSQL client bundled with the adapter includes both. A remote LibSQL server must provide them too. If a configured index needs a feature the connection lacks, startup fails with `SearchCapabilityError` and reason `missing-prerequisite`, naming the collection, index, and mode.
+
+Two index options fail at startup with reason `engine-gap`:
+
+- The `dotProduct` metric. LibSQL has no inner-product distance, so use `cosine` or `euclidean`.
+- A `lexical.language` other than `english` or `simple`.
+
+### Storage and indexes
+
+Vector fields keep their ordinary JSON storage. Each search index adds its own objects, all named with a `frogbot_search_` prefix:
+
+- An FTS5 table over the index's lexical fields. `lexical.language` selects the tokenizer: `simple` (the default) matches Unicode words case-insensitively with diacritics removed, and `english` adds English stemming, so `running` matches `run`.
+- For an index with `vector` and `approximate` left on, a table holding a 32-bit float copy of every vector and a LibSQL vector index (DiskANN) on it, using the index's metric. Set `vector.approximate: false` to skip it and always search exactly.
+
+Database triggers keep these copies in sync in the same transaction as every create, update, and delete, so a rolled-back write never leaves stale search entries behind. Collections with drafts get the same objects on the version table, so `draft: true` queries rank the latest draft of each document. Records without a vector, or with a vector of different dimensions, are not indexed.
+
+### Ranking
+
+| Mode    | `ranking.method`                     | Score                                                                                     |
+| ------- | ------------------------------------ | ----------------------------------------------------------------------------------------- |
+| Lexical | `sqlite-fts5`                        | Negated BM25. Higher is better.                                                           |
+| Vector  | `libsql-diskann` or `libsql-exact`   | Cosine similarity, or Euclidean distance (lower is better). Computed with 32-bit floats. |
+| Hybrid  | `rrf`                                | Weighted reciprocal rank fusion, `weight / (60 + rank)` summed over both components. Higher is better. |
+
+Query text supports web search syntax: the terms must all match, quoted words match as a phrase, `or` between terms accepts either one, and `-` excludes a term. Other punctuation separates words and is never parsed as FTS5 syntax. The text is always sent as a bound parameter.
+
+Vector and hybrid queries on a vector index report `approximate: true`. The index cannot apply your filters itself, so it returns the [resolved candidate count](/search/overview#candidates) of nearest records, and the same statement then applies access and `where` filters and returns the top `limit`. A selective filter can therefore return fewer than `limit` hits even when more matching records exist; raise `candidates` to trade speed for completeness. Exact vector search applies filters first, compares the query with every remaining record, and ignores `candidates`.
+
+Hybrid search takes up to the resolved candidate count from each component, joins them in the database, and returns the top `limit` by fused score. A record that matches only one component still ranks, with the other component reported as `null`. When the request already runs in a transaction, search reads through it and sees its uncommitted writes.
+
+### Push and migrations
+
+Search tables, indexes, and triggers are part of your schema. Development push creates them and leaves them untouched while they match your configuration. When an index definition changes, or a push changes a table an index reads from, the adapter drops the search objects and rebuilds them from the stored records. `migrate:create` writes the same statements into your migration and rebuilds only the indexes whose definition or source tables changed. Changing a field list, metric, dimensions, or `approximate` produces a rebuild; embeddings are never regenerated.
+
+### Limits
+
+- Localized fields are ranked on the requested locale's stored value. Fallback-locale values are not ranked.
+- If a search runs before its search objects match the configuration, for example before you run migrations, it fails with `SearchReadinessError`.
+- The adapter removes objects with the `frogbot_search_` prefix that no longer match your configuration. Do not create your own tables, indexes, or triggers with this prefix.
 
 ## Options
 
@@ -319,6 +395,8 @@ export default buildConfig({
 ```
 
 It inherits the options from the SQLite adapter above with the exception of the connection options in favour of the `binding`.
+
+Collection search is not implemented in the D1 adapter. Adding any collection `search` index fails setup with `SearchCapabilityError` and reason `not-implemented`.
 
 You can see our [Cloudflare D1 template](https://github.com/frogbot/frogbot/tree/main/templates/with-cloudflare-d1) for a full example of how to set this up.
 

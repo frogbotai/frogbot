@@ -206,6 +206,24 @@ describePostgres(`postgres vector search [${driver}]`, () => {
     expect(outside.hits[0]?.doc.title).not.toBe('Uncommitted');
   });
 
+  it('runs exact search when the index opts out of approximation', async () => {
+    const where = { tenant: { equals: 'a' } };
+    const result = await search('exact', { limit: 25, where });
+
+    const expected = corpus
+      .filter(({ tenant }) => tenant === 'a')
+      .map(({ embedding, id }) => ({ id, score: cosineSimilarity(embedding, query) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 25);
+
+    expect(result.ranking).toEqual({
+      method: 'pgvector-exact',
+      higherIsBetter: true,
+      approximate: false,
+    });
+    expect(result.hits.map(({ doc }) => doc.id)).toEqual(expected.map(({ id }) => id));
+  });
+
   it('uses exact search when dimensions exceed the HNSW limit', async () => {
     const vector = Array.from({ length: wideDimensions }, (_, index) => (index % 7) / 7);
 

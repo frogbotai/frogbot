@@ -131,7 +131,10 @@ export const search: AdapterSearch = async ({
 }) => {
   const adapter = db as unknown as BasePostgresAdapter;
 
-  const approximate = mode !== 'lexical' && index.vector!.dimensions <= maxHNSWDimensions;
+  const approximate =
+    mode !== 'lexical' &&
+    index.vector!.approximate &&
+    index.vector!.dimensions <= maxHNSWDimensions;
 
   const lexicalRanking: SearchComponentRanking = {
     method: 'postgres-fts',
@@ -161,7 +164,7 @@ export const search: AdapterSearch = async ({
     ...(mode !== 'lexical' ? [index.vector!.path] : []),
   ];
 
-  const depth = mode === 'hybrid' ? Math.max(limit, candidates ?? limit) : limit;
+  const depth = Math.max(limit, candidates ?? limit);
 
   try {
     const parts = buildSearchQuery({
@@ -211,10 +214,18 @@ export const search: AdapterSearch = async ({
     const database = await getDatabase(adapter, req);
     const efSearch = Math.min(maxEFSearch, Math.max(defaultEFSearch, depth));
 
-    const { rows } = approximate
+    const settings = approximate
+      ? [
+          sql`set local hnsw.iterative_scan = strict_order`,
+          sql`set local hnsw.ef_search = ${sql.raw(String(efSearch))}`,
+        ]
+      : mode !== 'lexical' && index.vector!.dimensions <= maxHNSWDimensions
+        ? [sql`set local enable_indexscan = off`]
+        : [];
+
+    const { rows } = settings.length
       ? await database.transaction(async (tx) => {
-          await tx.execute(sql`set local hnsw.iterative_scan = strict_order`);
-          await tx.execute(sql`set local hnsw.ef_search = ${sql.raw(String(efSearch))}`);
+          for (const setting of settings) await tx.execute(setting);
 
           return tx.execute<HybridRow>(statement);
         })

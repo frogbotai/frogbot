@@ -7,7 +7,7 @@ keywords: [search, lexical, vector, hybrid, indexes, rag]
 
 Collection search ranks records of one collection by text relevance, vector similarity, or both. You declare named indexes on the collection and query them with `frogbot.search()`, REST, or GraphQL. Ranking runs in the database.
 
-The [Postgres and Vercel Postgres adapters](/database/postgres#collection-search) implement search. On other adapters, any configured search index fails database initialization with `SearchCapabilityError` and reason `not-implemented`; leave `search` off those collections and use [vector fields](/fields/vector) for storage only.
+The [Postgres and Vercel Postgres](/database/postgres#collection-search) and [SQLite](/database/sqlite#collection-search) adapters implement search, and every option on this page works the same way on each. Adapter pages list engine-specific details such as supported metrics and languages. On other adapters, any configured search index fails database initialization with `SearchCapabilityError` and reason `not-implemented`; leave `search` off those collections and use [vector fields](/fields/vector) for storage only.
 
 ## Configure indexes
 
@@ -35,9 +35,21 @@ export const Articles: CollectionConfig = {
 };
 ```
 
-`dimensions` belongs to the vector field, not the index. The index's vector metric defaults to `cosine`; other accepted metric names are `euclidean` and `dotProduct`. When an index includes both components, supplying both query inputs selects hybrid mode with configured reciprocal-rank fusion (`rrf`). FrogBot does not calculate embeddings; your application supplies stored vectors and query vectors. The adapter creates any native indexes as part of the database schema.
+`dimensions` belongs to the vector field, not the index. When an index includes both components, supplying both query inputs selects hybrid mode with configured reciprocal-rank fusion (`rrf`). FrogBot does not calculate embeddings; your application supplies stored vectors and query vectors. The adapter creates any native indexes as part of the database schema.
 
-### Hybrid options
+### Index options
+
+| Option               | Default                     | Meaning                                                                                                   |
+| -------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `lexical.fields`     |                             | Text and textarea fields to rank by text relevance.                                                       |
+| `lexical.language`   | `'simple'`                  | Stemming and tokenizing language. Each adapter lists the languages it supports.                            |
+| `vector.field`       |                             | The vector field to rank by similarity.                                                                    |
+| `vector.metric`      | `'cosine'`                  | `cosine`, `euclidean`, or `dotProduct`.                                                                    |
+| `vector.approximate` | `true`                      | Build an approximate nearest-neighbour index for this field. Set `false` to always search exactly.          |
+| `hybrid.fusion`      | `'rrf'`                     | Reciprocal rank fusion. It is the only method.                                                             |
+| `hybrid.weights`     | `{ lexical: 1, vector: 1 }` | Positive multipliers for each component's contribution to the fused score.                                 |
+| `defaultCandidates`  | `100`                       | The [candidate count](#candidates) when the query does not set `candidates`. Only indexes with `vector` accept it. |
+| `filters`            | every eligible field        | `{ fields }` or `{ exclude }` to choose which stored fields `where` may filter on.                          |
 
 An index with both `lexical` and `vector` accepts a `hybrid` object:
 
@@ -54,17 +66,12 @@ export const Articles: CollectionConfig = {
     content: {
       lexical: { fields: ['title'] },
       vector: { field: 'embedding' },
-      hybrid: { weights: { lexical: 1, vector: 2 }, defaultCandidates: 200 },
+      hybrid: { weights: { lexical: 1, vector: 2 } },
+      defaultCandidates: 200,
     },
   },
 };
 ```
-
-| Option              | Default                       | Meaning                                                                             |
-| ------------------- | ----------------------------- | ----------------------------------------------------------------------------------- |
-| `fusion`            | `'rrf'`                       | Reciprocal rank fusion. It is the only method.                                      |
-| `weights`           | `{ lexical: 1, vector: 1 }`   | Positive multipliers for each component's contribution to the fused score.          |
-| `defaultCandidates` | `100`                         | How many top matches each component contributes before fusion, when the query does not set `candidates`. |
 
 ## Query
 
@@ -108,11 +115,16 @@ The database ranks only documents the caller can read: collection read access an
 
 The result is `{ mode, ranking, hits }`: `mode` is `lexical`, `vector`, or `hybrid`; `ranking` contains `method`, `higherIsBetter`, and `approximate`; each hit has `{ doc, score }`, in ranked order. Hybrid results add component details, described below. Scores are ordering values, not probabilities; scores from different methods are not directly comparable. An empty `hits` array is a successful no-match result. Ranking and hybrid fusion run in the database, with no JavaScript similarity or fusion fallback.
 
-### Hybrid candidates
+### Candidates
 
-Hybrid search takes the top matches from the lexical and vector components separately, then fuses them. `candidates` sets how many each component contributes. A document outside both candidate lists cannot appear in the results, so a larger value can surface documents that rank moderately in both components, at the cost of a slower query.
+`candidates` sets how many top matches a ranked component considers before `limit` is applied. It has one meaning on every adapter and applies to vector and hybrid queries:
 
-The count comes from the query's `candidates`, then the index's `hybrid.defaultCandidates`, then `100`, and is never lower than `limit`:
+- **Approximate vector search** asks the nearest-neighbour index for this many neighbours. A larger value finds more true neighbours, and leaves more hits after your filters on adapters whose index cannot filter, at the cost of a slower query.
+- **Hybrid search** takes this many top matches from the lexical and vector components separately, then fuses them. A document outside both candidate lists cannot appear in the results, so a larger value can surface documents that rank moderately in both components.
+
+Lexical queries and exact vector queries rank every matching document and ignore it. Each adapter page describes how its engine uses the count.
+
+The count comes from the query's `candidates`, then the index's `defaultCandidates`, then `100`, and is never lower than `limit`:
 
 ```ts
 import type { FrogBotRequest } from 'frogbot';
@@ -129,7 +141,7 @@ export async function deepSearch(req: FrogBotRequest, vector: number[]) {
 }
 ```
 
-`candidates` must be a positive integer. Lexical and vector queries ignore it.
+`candidates` must be a positive integer.
 
 ### Hybrid components
 
@@ -200,7 +212,7 @@ The query accepts `index`, `text`, `vector`, `where`, `limit`, `candidates`, `dr
 
 ## Setup and errors
 
-FrogBot checks every configured index when the database initializes, including when you create or run migrations. The check is silent when a configured index is compatible. On an adapter without search, **any configured index fails initialization** with `SearchCapabilityError` (`reason: 'not-implemented'`), naming the collection, index, and mode. An adapter can also stop setup when a database prerequisite is missing; see the [Postgres prerequisites](/database/postgres#prerequisites).
+FrogBot checks every configured index when the database initializes, including when you create or run migrations. The check is silent when a configured index is compatible. On an adapter without search, **any configured index fails initialization** with `SearchCapabilityError` (`reason: 'not-implemented'`), naming the collection, index, and mode. An adapter also stops setup when the engine cannot run an option (`engine-gap`) or a database prerequisite is missing; see the [Postgres](/database/postgres#prerequisites) and [SQLite](/database/sqlite#prerequisites) prerequisites.
 
 The core also exports `SearchValidationError`, `SearchFilterUnsupportedError`, and `SearchReadinessError` for invalid inputs, unsupported filters or visibility rules, and invalid or unready ranked results. REST and GraphQL report them with these HTTP statuses:
 
@@ -215,6 +227,6 @@ A caller without collection read access receives `403`. `SearchCapabilityError` 
 
 ## Adapter integration
 
-Database adapters add search through a `search` object on the adapter. `capabilities` declares which modes an index supports. `buildSchema` receives every collection's normalized indexes while the database initializes, before tables and indexes are created, so native search indexes are part of schema push and migrations. `readiness` can reject a query while an index is still building, and `search` returns ranked `{ id, score }` rows for FrogBot to read back. The Postgres adapters implement this contract.
+Database adapters add search through a `search` object on the adapter. `capabilities` declares which modes an index supports. `buildSchema` receives every collection's normalized indexes while the database initializes, before tables and indexes are created, so native search indexes are part of schema push and migrations. `readiness` can reject a query while an index is still building, and `search` returns ranked `{ id, score }` rows for FrogBot to read back. The Postgres and SQLite adapters implement this contract. `search` receives the resolved `candidates` count for vector and hybrid queries.
 
 You can optionally call the existing `frogbot.rerank()` on readable hits, or compose retrieval and answer generation in your own application. There is no automatic embedding or built-in RAG preset for this collection search API. The separate [search plugin](/plugins/search) has its own contract.

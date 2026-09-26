@@ -13,6 +13,7 @@ import {
 import { getFieldNodes, type SearchFieldNode } from './getEligibleFields.js';
 import { resolveSearchPredicate } from './predicates.js';
 import { assertSearchCapability, getSearchAdapter } from './runtime.js';
+import { defaultCandidates } from './sanitize.js';
 import type {
   SearchComponentRanking,
   SearchHitComponent,
@@ -187,9 +188,9 @@ export async function searchOperation<T extends CollectionSlug>(
   }
 
   const candidates =
-    mode === 'hybrid'
-      ? Math.max(limit, options.candidates ?? index.hybrid!.defaultCandidates)
-      : undefined;
+    mode === 'lexical'
+      ? undefined
+      : Math.max(limit, options.candidates ?? index.defaultCandidates ?? defaultCandidates);
 
   const depth = options.depth ?? 0;
 

@@ -13,8 +13,15 @@ import type { FrogBotRequest } from '../../../../packages/frogbot/src/types/requ
 export const index = {
   name: 'content',
   lexical: { fields: [{ path: 'title', localized: false }] },
-  vector: { path: 'embedding', localized: false, dimensions: 3, metric: 'cosine' as const },
-  hybrid: { fusion: 'rrf' as const, weights: { lexical: 1, vector: 1 }, defaultCandidates: 100 },
+  vector: {
+    path: 'embedding',
+    localized: false,
+    dimensions: 3,
+    metric: 'cosine' as const,
+    approximate: true,
+  },
+  hybrid: { fusion: 'rrf' as const, weights: { lexical: 1, vector: 1 } },
+  defaultCandidates: 100,
   filterFields: {
     id: { path: 'id', type: 'id' as const, localized: false, many: false },
     title: { path: 'title', type: 'string' as const, localized: false, many: false },

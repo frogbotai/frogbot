@@ -7,6 +7,11 @@
 - Replaced the non-invocable Bedrock IDs `amazon.nova-2-lite-v1:0`, `meta.llama3-1-8b-instruct-v1:0`, and `meta.llama3-3-70b-instruct-v1:0` with `global.amazon.nova-2-lite-v1:0`, `us.meta.llama3-1-8b-instruct-v1:0`, and `us.meta.llama3-3-70b-instruct-v1:0`, respectively.
 - The admin nav shell no longer carries Payload's `nav` / `nav--nav-open` classes. Its layout is driven by `data-nav-state` on `.frogbot-nav-shell` (`desktop-nav-open`, `desktop-nav-closed`, `mobile-nav-open`, `mobile-nav-closed`) and the `--frogbot-nav-width` custom property. Custom CSS targeting `.nav--nav-open` inside the FrogBot shell must switch to the state attribute.
 
+### Features
+
+- `@frogbotai/db-sqlite` implements collection search: FTS5 lexical search, LibSQL vector search on a DiskANN index or exact, and hybrid reciprocal rank fusion, each in one SQL statement. Search tables, indexes, and triggers are part of development push and generated migrations.
+- Search indexes accept `vector.approximate` (default `true`) to choose between an approximate nearest-neighbour index and exact vector search, and an index-level `defaultCandidates` that replaces `hybrid.defaultCandidates`. The query's `candidates` now also applies to approximate vector search: Postgres uses it as `hnsw.ef_search` and SQLite as the `vector_top_k` neighbour count.
+
 ### Fixes
 
 - The collapsed desktop sidebar rail was invisible: without Payload's `nav--nav-open` class the shell inherited `.nav { opacity: 0 }`.

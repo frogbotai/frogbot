@@ -59,7 +59,7 @@ export const buildSchema: BuildSearchSchema = ({ collections, db }) => {
           const searchable = !versions || Boolean(versioned && versioned.drafts);
 
           if (index.vector) {
-            const { dimensions, metric, path } = index.vector;
+            const { approximate, dimensions, metric, path } = index.vector;
             const { key, tableName } = resolveColumn({
               adapter: drizzleAdapter,
               collection: slug,
@@ -80,7 +80,7 @@ export const buildSchema: BuildSearchSchema = ({ collections, db }) => {
             const operatorClass = operatorClasses[metric];
             const id = `hnsw:${tableName}:${key}:${operatorClass}`;
 
-            if (searchable && dimensions <= maxHNSWDimensions && !plans.has(id)) {
+            if (searchable && approximate && dimensions <= maxHNSWDimensions && !plans.has(id)) {
               plans.set(id, {
                 type: 'hnsw',
                 key,
