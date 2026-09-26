@@ -61,7 +61,7 @@ Each chat is one conversation, and each forum topic is its own conversation. Rep
 
 ## Who can answer
 
-Telegram does not tell FrogBot who a participant is, so no one is signed in as a FrogBot user. The agent's default `access` check requires a signed-in user and denies everyone. Write an `access` function that admits the Telegram participants who may use the agent, as in the example above, which also keeps the agent available to signed-in FrogBot users in the admin chat. `req.context.channel.author` holds the participant's numeric Telegram `id`, `username`, and `name`. A built-in sender policy for channels is planned; until then, the `access` function is the way to admit Telegram participants.
+Telegram does not tell FrogBot who a participant is, so no one is signed in as a FrogBot user. The agent's default `access` check requires a signed-in user and denies everyone. Write an `access` function that admits the Telegram participants who may use the agent, as in the example above, which also keeps the agent available to signed-in FrogBot users in the admin chat. `req.context.channel.author` holds the participant's numeric Telegram `id`, `username`, and `name`.
 
 The same check decides who may answer a question. An authorized participant can answer a question someone else started. A participant without access gets a short reply saying so, and the question stays open.
 
