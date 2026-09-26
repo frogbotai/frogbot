@@ -130,15 +130,24 @@ export default defineConfig({
         test: {
           name: 'gateway-e2e',
           include: [
-            'test/gateway/e2e.spec.ts',
             'test/gateway/live/matrix.e2e.spec.ts',
             'test/gateway/live/scenarios.e2e.spec.ts',
-            'test/gateway/cacheLive.smoke.spec.ts',
           ],
           environment: 'node',
           fileParallelism: false,
-          setupFiles: ['./test/gateway/live/loadEnv.ts'],
-          testTimeout: 30000,
+          setupFiles: ['./test/live/env.ts'],
+          testTimeout: 120000,
+        },
+      },
+      {
+        test: {
+          name: 'live',
+          include: ['test/live/**/*.live.spec.ts'],
+          environment: 'node',
+          fileParallelism: false,
+          setupFiles: ['./test/live/env.ts'],
+          hookTimeout: 240000,
+          testTimeout: 180000,
         },
       },
       {
@@ -147,6 +156,7 @@ export default defineConfig({
           include: ['test/gateway/crossRoute.e2e.spec.ts', 'test/gateway/zen*.e2e.spec.ts'],
           environment: 'node',
           fileParallelism: false,
+          setupFiles: ['./test/live/env.ts'],
           testTimeout: 90000,
         },
       },

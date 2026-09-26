@@ -27,7 +27,7 @@ import {
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
-const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY ?? 'public';
+const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY ?? '';
 const RUN_E2E = process.env.RUN_E2E === '1';
 
 const ZEN_BASE_URL = 'https://opencode.ai/zen/v1';
@@ -69,7 +69,7 @@ type ToolCall = {
   function?: { name?: string; arguments?: string };
 };
 
-describe.skipIf(!RUN_E2E)('gateway E2E — OpenCode Zen free models', () => {
+describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)('gateway E2E — OpenCode Zen free models', () => {
   const app = makeZenApp();
 
   it(
@@ -180,15 +180,9 @@ describe.skipIf(!RUN_E2E)('gateway E2E — OpenCode Zen free models', () => {
       expect(choice).toBeDefined();
 
       if (choice!.finish_reason !== 'tool_calls') {
-        // Free models don't reliably call tools — validate whatever came back
-        // instead of failing the suite on model flakiness.
-        console.warn(
-          `[zen.e2e] model did not call the tool (finish_reason=${String(choice!.finish_reason)}); ` +
-            'asserting plain-completion wire shape instead',
+        throw new Error(
+          `[zen.e2e] model did not call the tool (finish_reason=${String(choice!.finish_reason)})`,
         );
-        expect(choice!.finish_reason).toBeTruthy();
-        expect(body.usage?.prompt_tokens).toBeGreaterThan(0);
-        return;
       }
 
       const toolCalls = choice!.message?.tool_calls as ToolCall[] | undefined;

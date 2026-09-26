@@ -15,6 +15,7 @@ import {
 } from '../../../packages/gateway/src/providers/registry.js';
 import { parseSse } from '../../__helpers/gateway/parse-sse.js';
 import { type JsonResponse, postJson } from '../../__helpers/gateway/post-json.js';
+import { FIXTURE_FACTS, fixtureFile } from '../../live/live.js';
 import type { LiveProviderEntry } from './matrix.js';
 
 export type LiveApp = Hono;
@@ -25,10 +26,7 @@ export type LiveApp = Hono;
 
 export function makeLiveApp(entry: LiveProviderEntry): LiveApp {
   if (entry.compat) {
-    const apiKey =
-      (entry.compat.apiKeyEnv ? process.env[entry.compat.apiKeyEnv] : undefined) ??
-      entry.compat.apiKeyFallback ??
-      'public';
+    const apiKey = process.env[entry.compat.apiKeyEnv];
     const registry = buildProviderRegistry({
       [entry.label]: { baseURL: entry.compat.baseURL, apiKey },
     });
@@ -52,7 +50,7 @@ export function makeLiveApp(entry: LiveProviderEntry): LiveApp {
 }
 
 // ---------------------------------------------------------------------------
-// 429 backoff — free tiers throttle; retrying keeps looped runs green.
+// Backoff for rate limits and transient upstream overload.
 // ---------------------------------------------------------------------------
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -64,10 +62,11 @@ async function withRetry<T extends { status: number; headers: Headers }>(
   let last: T | undefined;
   for (let i = 0; i < attempts; i++) {
     last = await fn();
-    if (last.status !== 429) {
+    const retryAfter = Number(last.headers.get('retry-after'));
+    const rateLimited = last.status === 429 && Number.isFinite(retryAfter) && retryAfter > 0;
+    if (!rateLimited && ![503, 529].includes(last.status)) {
       return last;
     }
-    const retryAfter = Number(last.headers.get('retry-after'));
     const waitMs =
       Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2000 * (i + 1);
     await sleep(Math.min(waitMs, 30_000));
@@ -80,7 +79,7 @@ export async function post<T>(app: LiveApp, path: string, body: unknown): Promis
 }
 
 export async function postRaw(app: LiveApp, path: string, body: unknown): Promise<Response> {
-  return withRetry(() =>
+  return withRetry(async () =>
     app.request(`http://localhost${path}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -264,17 +263,36 @@ type EmbeddingsBody = {
 export async function runEmbeddings(app: LiveApp, model: string): Promise<void> {
   const { status, body } = await post<EmbeddingsBody>(app, '/v1/embeddings', {
     model,
-    input: ['The frog jumped over the gateway.', 'A second document.'],
+    input: [
+      'How do I reset my password?',
+      'To change your password, open Settings and choose Reset password.',
+      'Our office is closed on public holidays.',
+    ],
   });
 
   expect(status).toBe(200);
   expect(body.object).toBe('list');
-  expect(body.data?.length).toBe(2);
-  for (const item of body.data!) {
-    expect(Array.isArray(item.embedding)).toBe(true);
-    expect(item.embedding!.length).toBeGreaterThan(10);
-    expect(typeof item.embedding![0]).toBe('number');
-  }
+  expect(body.data?.map((item) => item.index)).toEqual([0, 1, 2]);
+
+  const [query, answer, unrelated] = body.data!.map((item) => item.embedding!);
+
+  expect(query.length).toBeGreaterThan(10);
+  expect(answer.length).toBe(query.length);
+  expect(cosine(query, answer)).toBeGreaterThan(cosine(query, unrelated));
+}
+
+function cosine(a: number[], b: number[]): number {
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+
+  a.forEach((value, index) => {
+    dot += value * b[index];
+    normA += value * value;
+    normB += b[index] * b[index];
+  });
+
+  return dot / Math.sqrt(normA * normB);
 }
 
 type RerankBody = {
@@ -308,48 +326,13 @@ export async function runRerank(app: LiveApp, model: string): Promise<void> {
 // Audio — transcriptions (multipart WAV upload) + speech (audio bytes back).
 // ---------------------------------------------------------------------------
 
-/** 0.5s 440Hz sine, 16kHz 16-bit mono PCM WAV — a valid, tiny audio fixture. */
-export function makeWavFixture(): File {
-  const sampleRate = 16_000;
-  const seconds = 0.5;
-  const sampleCount = Math.floor(sampleRate * seconds);
-  const dataBytes = sampleCount * 2;
-  const buffer = new ArrayBuffer(44 + dataBytes);
-  const view = new DataView(buffer);
-
-  const writeAscii = (offset: number, s: string) => {
-    for (let i = 0; i < s.length; i++) {
-      view.setUint8(offset + i, s.charCodeAt(i));
-    }
-  };
-  writeAscii(0, 'RIFF');
-  view.setUint32(4, 36 + dataBytes, true);
-  writeAscii(8, 'WAVE');
-  writeAscii(12, 'fmt ');
-  view.setUint32(16, 16, true); // PCM chunk size
-  view.setUint16(20, 1, true); // PCM format
-  view.setUint16(22, 1, true); // mono
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true); // byte rate
-  view.setUint16(32, 2, true); // block align
-  view.setUint16(34, 16, true); // bits per sample
-  writeAscii(36, 'data');
-  view.setUint32(40, dataBytes, true);
-  for (let i = 0; i < sampleCount; i++) {
-    const sample = Math.sin((2 * Math.PI * 440 * i) / sampleRate) * 0.3;
-    view.setInt16(44 + i * 2, Math.round(sample * 32767), true);
-  }
-
-  return new File([buffer], 'fixture.wav', { type: 'audio/wav' });
-}
-
 type TranscriptionBody = { text?: string };
 
 export async function runTranscription(app: LiveApp, model: string): Promise<void> {
-  const res = await withRetry(() => {
+  const res = await withRetry(async () => {
     const form = new FormData();
     form.set('model', model);
-    form.set('file', makeWavFixture());
+    form.set('file', fixtureFile('speech.wav'));
     return app.request('http://localhost/v1/audio/transcriptions', {
       method: 'POST',
       body: form,
@@ -358,9 +341,7 @@ export async function runTranscription(app: LiveApp, model: string): Promise<voi
 
   expect(res.status).toBe(200);
   const body = (await res.json()) as TranscriptionBody;
-  // A sine tone transcribes to empty/near-empty text — the contract under
-  // test is the envelope, not ASR quality.
-  expect(typeof body.text).toBe('string');
+  expect(body.text).toMatch(FIXTURE_FACTS.speech);
 }
 
 export async function runSpeech(app: LiveApp, model: string, voice: string): Promise<void> {

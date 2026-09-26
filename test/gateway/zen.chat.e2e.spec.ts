@@ -34,7 +34,7 @@ import {
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
 
-const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY ?? 'public';
+const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY ?? '';
 const RUN_E2E = process.env.RUN_E2E === '1';
 
 const ZEN_BASE_URL = 'https://opencode.ai/zen/v1';
@@ -151,7 +151,7 @@ const POPULATION_TOOL = {
   },
 };
 
-describe.skipIf(!RUN_E2E)(
+describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)(
   'gateway E2E — Zen /v1/chat/completions realistic client behaviors',
   () => {
     const app = makeZenApp();
@@ -217,12 +217,9 @@ describe.skipIf(!RUN_E2E)(
         expect(choice).toBeDefined();
 
         if (choice!.finish_reason !== 'tool_calls' || !choice!.message?.tool_calls?.length) {
-          console.warn(
-            `[zen.chat.e2e] model did not call the tool (finish_reason=${String(choice!.finish_reason)}); ` +
-              'skipping loop turn 2',
+          throw new Error(
+            `[zen.chat.e2e] model did not call the tool (finish_reason=${String(choice!.finish_reason)})`,
           );
-          expect(choice!.finish_reason).toBeTruthy();
-          return;
         }
 
         const call = choice!.message.tool_calls[0]!;
@@ -358,14 +355,7 @@ describe.skipIf(!RUN_E2E)(
         }
 
         if (acc.size === 0) {
-          console.warn(
-            '[zen.chat.e2e] model did not stream a tool call; asserting plain stream shape instead',
-          );
-          const finishReasons = chunks
-            .map((c) => c.choices?.[0]?.finish_reason)
-            .filter((r): r is string => typeof r === 'string');
-          expect(finishReasons.length).toBeGreaterThan(0);
-          return;
+          throw new Error('[zen.chat.e2e] model did not stream a tool call');
         }
 
         const call = acc.get(0)!;
@@ -612,12 +602,9 @@ describe.skipIf(!RUN_E2E)(
         expect(c1).toBeDefined();
 
         if (c1!.finish_reason !== 'tool_calls' || !c1!.message?.tool_calls?.length) {
-          console.warn(
-            `[zen.chat.e2e] seq-loop: model skipped tool A (finish_reason=${String(c1!.finish_reason)}); ` +
-              'asserting plain envelope and stopping',
+          throw new Error(
+            `[zen.chat.e2e] seq-loop: model skipped tool A (finish_reason=${String(c1!.finish_reason)})`,
           );
-          expect(c1!.finish_reason).toBeTruthy();
-          return;
         }
 
         const callA = c1!.message.tool_calls[0]!;
@@ -733,12 +720,9 @@ describe.skipIf(!RUN_E2E)(
         expect(c1).toBeDefined();
 
         if (c1!.finish_reason !== 'tool_calls' || !c1!.message?.tool_calls?.length) {
-          console.warn(
-            `[zen.chat.e2e] parallel: model called no tools (finish_reason=${String(c1!.finish_reason)}); ` +
-              'asserting plain envelope and stopping',
+          throw new Error(
+            `[zen.chat.e2e] parallel: model called no tools (finish_reason=${String(c1!.finish_reason)})`,
           );
-          expect(c1!.finish_reason).toBeTruthy();
-          return;
         }
 
         const calls = c1!.message.tool_calls;
@@ -754,11 +738,9 @@ describe.skipIf(!RUN_E2E)(
         }
 
         if (calls.length < 2) {
-          console.warn(
-            `[zen.chat.e2e] parallel: model emitted only ${calls.length} tool call(s); ` +
-              'single call is well-formed, skipping the two-result follow-up',
+          throw new Error(
+            `[zen.chat.e2e] parallel: model emitted only ${calls.length} tool call(s)`,
           );
-          return;
         }
 
         // Return a result for EACH call, matching tool_call_id. Order of tool
@@ -833,14 +815,7 @@ describe.skipIf(!RUN_E2E)(
         }
 
         if (acc.size === 0) {
-          console.warn(
-            '[zen.chat.e2e] streaming+tools: model streamed no tool call; skipping follow-up',
-          );
-          const finishReasons = chunks
-            .map((c) => c.choices?.[0]?.finish_reason)
-            .filter((r): r is string => typeof r === 'string');
-          expect(finishReasons.length).toBeGreaterThan(0);
-          return;
+          throw new Error('[zen.chat.e2e] streaming+tools: model streamed no tool call');
         }
 
         const call = acc.get(0)!;
