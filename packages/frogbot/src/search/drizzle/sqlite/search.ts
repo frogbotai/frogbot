@@ -53,7 +53,8 @@ export const search: AdapterSearch = async ({
 }) => {
   const adapter = db as unknown as SQLiteSearchAdapter;
   const { localization } = adapter.payload.config;
-  const versions = draft && Boolean(adapter.payload.collections[collection].config.versions?.drafts);
+  const versions =
+    draft && Boolean(adapter.payload.collections[collection].config.versions?.drafts);
   const target = getSearchTarget({ adapter, collection, index, versions });
   const approximate = mode !== 'lexical' && Boolean(target.vector?.index);
 

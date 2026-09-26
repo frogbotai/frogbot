@@ -33,7 +33,9 @@ describe('brandImportMapErrors', () => {
     const component = lookup('@frogbotai/next/views#DefaultListView');
 
     expect(component).toBeUndefined();
-    expect(output).toHaveBeenCalledExactlyOnceWith('[frogbot] Component "@frogbotai/next/views#DefaultListView" is missing from the import map. Run `frogbot generate:importmap`, then rebuild or restart the app.');
+    expect(output).toHaveBeenCalledExactlyOnceWith(
+      '[frogbot] Component "@frogbotai/next/views#DefaultListView" is missing from the import map. Run `frogbot generate:importmap`, then rebuild or restart the app.',
+    );
     expect(JSON.stringify(output.mock.calls)).not.toMatch(/payload/i);
   });
 
