@@ -1,0 +1,103 @@
+---
+title: Linear
+description: Run an agent in Linear agent sessions and let people answer its questions with native choices.
+keywords: [pieces, linear, channels, agent sessions, questions, elicitation]
+---
+
+`@frogbotai/piece-linear` connects an agent to Linear. Mention or assign the app on an issue, and the agent replies in that issue's agent session. When the agent uses the [question tool](/chat/questions), Linear shows the question in the session, marks the session as waiting for input, and the agent continues once someone answers.
+
+## Connect an agent
+
+```ts
+import { createLinear } from '@frogbotai/piece-linear'
+import type { AgentConfig } from 'frogbot'
+import { question } from 'frogbot/tools'
+
+const linear = createLinear({
+  auth: { accessToken: process.env.LINEAR_ACCESS_TOKEN! },
+  webhookSecret: process.env.LINEAR_WEBHOOK_SECRET!,
+})
+
+export const triage: AgentConfig = {
+  slug: 'triage',
+  instructions: 'Triage issues. Ask before changing priority.',
+  tools: [question],
+  channels: [linear],
+  access: ({ req }) => Boolean(req.user),
+}
+```
+
+The instance slug defaults to `linear`. Give each instance its own slug when you connect more than one workspace.
+
+## Create the Linear app
+
+Create an OAuth application under **Settings > API > Applications** in Linear, and have a workspace admin install it as an app user. The built-in OAuth recipe requests `actor=app`.
+
+| Setting | Value |
+| --- | --- |
+| Webhook URL | `https://your-app.example.com/api/webhooks/<instance>` |
+| Webhook events | **Agent session events**. Add **Comments** only for comments mode |
+| Webhook signing secret | The `webhookSecret` option |
+
+| Scope | Why |
+| --- | --- |
+| `read`, `write` | Read issues and users, and post agent activities |
+| `comments:create`, `issues:create` | Used by the piece's actions |
+| `app:mentionable` | Start a session by mentioning the app |
+| `app:assignable` | Start a session by delegating an issue to the app. Not requested by default; add it to `oauth.scopes` if you want delegation |
+
+FrogBot checks the `Linear-Signature` header and the signed timestamp on every delivery and rejects anything missing, invalid, or stale before the agent sees it.
+
+## Channel modes
+
+| `channelMode` | Conversation | Questions |
+| --- | --- | --- |
+| `agent-sessions` (default) | Linear agent sessions, with the reply streamed as activities | Offered |
+| `comments` | Issue comment threads, for a bot that uses a personal API key | Not offered |
+
+In comments mode the agent does not get the question tool, so it asks in plain text when it needs to. Linear comments have no interactive controls.
+
+## What people see
+
+| Question | In Linear |
+| --- | --- |
+| One question, one choice, up to 25 options | The options as buttons, also listed in the text with their descriptions. Clicking one answers |
+| One question with more than 25 options, a multiple-choice question, or several questions | A numbered list of options with the reply format under each question |
+| Typed answer allowed (`custom`) | Any reply that is not an option becomes the typed answer |
+
+Replies are read like this:
+
+- An option's exact label, in any letter case.
+- In a numbered list, an option's number (`2`). Beside buttons, a number that is not a label is a typed answer.
+- Several options on a multiple-choice question, separated by commas (`1, 3` or `Red, Blue`).
+- Several questions: one line per question, in the order shown. A list marker such as `1.` or `-` at the start of a line is ignored.
+- A label wins over a number, so an option labelled `2` is chosen by typing `2`.
+
+**Send stop request** in Linear dismisses the question and ends the turn. FrogBot confirms the stop in the session. Typing the word "stop" is an ordinary reply.
+
+When a question is answered, the session shows the reply and the agent continues with its next activity. The first valid answer wins. When a step asks several questions in separate calls, Linear shows them one at a time.
+
+Questions are answered only in Linear. The FrogBot admin chat shows the conversation [read-only](/chat/questions#channel-conversations).
+
+## Who can answer
+
+FrogBot matches the Linear user who replies to a FrogBot user by email, then runs the agent's `access` check for that user. Anyone in the session who passes can answer, not only the person who started it. A Linear user with no matching FrogBot account has no FrogBot user; the default agent access denies them. Write an `access` function if they should be able to answer.
+
+## Limits and failures
+
+| Situation | What happens |
+| --- | --- |
+| No access | The question is asked again with a note naming the person; it stays open |
+| A reply that does not fit, when typed answers are off | The question is asked again with the expected format |
+| An option chosen after the question was answered, including a duplicate click | A short response says it was already answered |
+| An option sent before the current question appeared, for example while the next question was being posted | A short response says it was already answered; nothing is recorded against the new question |
+| Free text after the question was answered, or sent before it appeared | A new message to the agent |
+| The server restarts while a question is open | The question stays answerable |
+| Posting the question fails | The question is posted again with the next message in the session |
+| A stop request within 24 hours after the question was answered | A short response that only open questions can be dismissed. The agent's reply is not stopped |
+| A question left open for 30 days | Replies no longer answer it; the next message in the session posts it again |
+| A stop request with no question open or recently answered | An ordinary message to the agent |
+
+Linear agent activities cannot be edited, so FrogBot never rewrites a question. Each re-ask is a new activity.
+
+Linear expects a webhook response within 5 seconds. FrogBot verifies the delivery, queues it, and responds; recording the answer and running the agent happen in jobs. Linear also expects a first activity within 10 seconds of a new session. FrogBot's first activity is the agent's reply or its question, so a slow model can take longer, and Linear may then show the session as unresponsive until the reply arrives.
