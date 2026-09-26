@@ -13,6 +13,7 @@ import { getSearchIndexes } from './getSearchIndexes.js';
 import type { SearchPipeline } from './getSearchModel.js';
 import { getSearchModel } from './getSearchModel.js';
 import { getSearchFields, getSearchPath } from './getSearchPath.js';
+import { isDraftSearch } from './isDraftSearch.js';
 import { buildHybridPipeline } from './pipelines/buildHybridPipeline.js';
 import { buildSearchStage } from './pipelines/buildSearchStage.js';
 import { buildVectorScore } from './pipelines/buildVectorScore.js';
@@ -122,8 +123,7 @@ export const search: AdapterSearch = async ({
   const adapter = db as MongooseAdapter;
   const { localization } = adapter.payload.config;
   const locale = requestedLocale ?? (localization ? localization.defaultLocale : undefined);
-  const versions =
-    draft && Boolean(adapter.payload.collections[collection].config.versions?.drafts);
+  const versions = isDraftSearch({ adapter, collection, draft });
 
   const searchIndexes = getSearchIndexes(adapter).filter(
     (searchIndex) =>

@@ -56,6 +56,7 @@ export type BuildSearchSchema = (args: BuildSearchSchemaArgs) => void;
 export type SearchReadinessArgs = {
   collection: string;
   db: Payload['db'];
+  draft: boolean;
   index: SearchIndexDescriptor;
   mode: SearchMode;
 };

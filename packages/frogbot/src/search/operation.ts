@@ -290,7 +290,13 @@ export async function searchOperation<T extends CollectionSlug>(
 
   assertSearchCapability({ adapter, collection: collection.slug, db: payload.db, index, mode });
 
-  await adapter!.readiness?.({ collection: collection.slug, db: payload.db, index, mode });
+  await adapter!.readiness?.({
+    collection: collection.slug,
+    db: payload.db,
+    draft,
+    index,
+    mode,
+  });
 
   const result = await adapter!.search({
     candidates,
