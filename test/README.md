@@ -14,6 +14,10 @@ pnpm test:unit
 docker compose -f test/docker-compose.yml --profile mongodb up -d
 pnpm test:int
 
+# MongoDB search suites (test/search/mongodb) also need a search-enabled server
+docker compose -f test/docker-compose.yml --profile mongodb-search up -d
+MONGODB_SEARCH_URI="mongodb://localhost:27019/?directConnection=true" pnpm test:int:mongo test/search/mongodb
+
 # Integration tests with Postgres
 docker compose -f test/docker-compose.yml --profile postgres up -d
 pnpm test:int:pg

@@ -9,9 +9,10 @@ name: frogbot-test
 #
 # Profiles:
 #   --profile postgres   - PostgreSQL only
+#   --profile mongodb-search - MongoDB with search infrastructure (mongot)
 #   --profile storage    - LocalStack (S3/R2), Azurite, fake-gcs-server, Vercel Blob
 #   --profile redis      - Redis (kv-redis adapter)
-#   --profile all        - Everything
+#   --profile all        - Everything except mongodb-search
 
 services:
   # ── MongoDB (replica set for transaction support) ────────────
@@ -37,6 +38,22 @@ services:
       timeout: 5s
       retries: 30
       start_period: 2s
+    restart: unless-stopped
+
+  # ── MongoDB with search (mongod + mongot, single-node replica set) ──
+  # Connection: mongodb://localhost:27019/frogbot-test?directConnection=true
+  mongodb-search:
+    profiles: [mongodb-search]
+    image: mongodb/mongodb-atlas-local:8.3.11
+    container_name: mongodb-search-frogbot-test
+    ports:
+      - '27019:27017'
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.runCommand({ ping: 1 }).ok']
+      interval: 2s
+      timeout: 5s
+      retries: 60
+      start_period: 10s
     restart: unless-stopped
 
   # ── PostgreSQL (PostGIS + pgvector) ──────────────────────────
