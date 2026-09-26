@@ -14,6 +14,31 @@ const telegramResponse = z
 
 export type TelegramResponse = z.output<typeof telegramResponse>;
 
+export class TelegramApiError extends Error {
+  readonly code?: number;
+  readonly description?: string;
+  readonly retryAfter?: number;
+
+  constructor({
+    code,
+    description,
+    method,
+    retryAfter,
+  }: {
+    code?: number;
+    description?: string;
+    method: string;
+    retryAfter?: number;
+  }) {
+    super(`Telegram API ${method} failed${code ? ` (${code})` : ''}: ${description}`);
+
+    this.name = 'TelegramApiError';
+    this.code = code;
+    this.description = description;
+    this.retryAfter = retryAfter;
+  }
+}
+
 export type TelegramRequest = {
   method?: string;
   headers?: Record<string, string>;
@@ -33,13 +58,36 @@ function queryString(query: Record<string, unknown> | undefined) {
   return value ? `?${value}` : '';
 }
 
+function apiError({
+  method,
+  response,
+  result,
+}: {
+  method: string;
+  response: Response;
+  result: TelegramResponse;
+}): TelegramApiError {
+  const retryAfter = result.parameters?.retry_after;
+
+  return new TelegramApiError({
+    method,
+    code: result.error_code,
+    description: result.description ?? response.statusText,
+    ...(typeof retryAfter === 'number' ? { retryAfter } : {}),
+  });
+}
+
 export function createTelegramBotClient({ auth: value }: { auth: unknown }) {
   const auth = telegramBotAuth.parse(value);
-  const baseUrl = `https://api.telegram.org/bot${auth.botToken}`;
+  const apiUrl = (process.env.TELEGRAM_API_BASE_URL ?? 'https://api.telegram.org').replace(
+    /\/+$/,
+    '',
+  );
+  const baseUrl = `${apiUrl}/bot${auth.botToken}`;
 
   return {
     fileUrl(path: string) {
-      return `https://api.telegram.org/file/bot${auth.botToken}/${path.replace(/^\/+/, '')}`;
+      return `${apiUrl}/file/bot${auth.botToken}/${path.replace(/^\/+/, '')}`;
     },
     async call(method: string, body?: unknown): Promise<TelegramResponse> {
       const multipart = body instanceof FormData;
@@ -50,11 +98,7 @@ export function createTelegramBotClient({ auth: value }: { auth: unknown }) {
       });
       const result = telegramResponse.parse(await response.json());
 
-      if (!response.ok || !result.ok) {
-        throw new Error(
-          `Telegram API ${method} failed${result.error_code ? ` (${result.error_code})` : ''}: ${result.description ?? response.statusText}`,
-        );
-      }
+      if (!response.ok || !result.ok) throw apiError({ method, response, result });
 
       return result;
     },
@@ -71,9 +115,7 @@ export function createTelegramBotClient({ auth: value }: { auth: unknown }) {
       const result = telegramResponse.parse(await response.json());
 
       if (!response.ok || (typeof result.ok === 'boolean' && !result.ok)) {
-        throw new Error(
-          `Telegram API ${path} failed${result.error_code ? ` (${result.error_code})` : ''}: ${result.description ?? response.statusText}`,
-        );
+        throw apiError({ method: path, response, result });
       }
 
       return result;
