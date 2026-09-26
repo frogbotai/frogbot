@@ -71,13 +71,15 @@ export function getConnectionKind(adapter: SQLiteSearchAdapter): string {
   return url.startsWith('file:') || url === ':memory:' ? 'local' : 'remote';
 }
 
+export type AssertSearchPrerequisitesArgs = {
+  adapter: SQLiteSearchAdapter;
+  collections: SearchCollection[];
+};
+
 export async function assertSearchPrerequisites({
   adapter,
   collections,
-}: {
-  adapter: SQLiteSearchAdapter;
-  collections: SearchCollection[];
-}): Promise<void> {
+}: AssertSearchPrerequisitesArgs): Promise<void> {
   if (!collections.length || !adapter.client) return;
 
   await probeSearchPrerequisites(adapter);

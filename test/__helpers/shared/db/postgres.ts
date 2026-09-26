@@ -5,6 +5,8 @@ import { connect } from 'node:net';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { requireTestTool } from './requireTestTool.js';
+
 const packageURL = (name: string) =>
   new URL(`../../../../packages/${name}/package.json`, import.meta.url);
 
@@ -63,17 +65,6 @@ export async function closePostgresPool(pool: PostgresPool | undefined): Promise
   }
 
   await pool.end();
-}
-
-export function requireTestTool(name: string) {
-  const directory =
-    process.env.FROGBOT_TEST_TOOLS ?? process.env.FROGBOT_JOBS_TOOLS ?? process.env.TICKET121_TOOLS;
-
-  if (!directory) {
-    throw new Error(`Set FROGBOT_TEST_TOOLS to a directory that can resolve '${name}'.`);
-  }
-
-  return createRequire(join(directory, 'package.json'))(name);
 }
 
 export async function createVercelPostgresProxy(url: URL): Promise<() => Promise<void>> {

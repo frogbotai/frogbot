@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@ai-sdk/mcp": "^2.0.3",
+    "@frogbotai/db-d1-sqlite": "workspace:*",
     "@frogbotai/db-mongodb": "workspace:*",
     "@frogbotai/db-postgres": "workspace:*",
     "@frogbotai/db-sqlite": "workspace:*",
