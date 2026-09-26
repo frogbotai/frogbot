@@ -2,6 +2,7 @@ import type { Adapter, Author } from 'chat';
 import type { SendEmailOptions, TypeWithID } from 'payload';
 import type { z } from 'zod';
 
+import type { PieceChannelQuestions } from '../channels/questions/types.js';
 import type { TriggerEvent } from '../triggers/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 
@@ -181,6 +182,7 @@ export type PieceChannel<TAuth, TOptions, TClient> = {
     client: TClient;
     req: FrogBotRequest;
   }): Promise<TypeWithID | null>;
+  questions?: PieceChannelQuestions<TClient>;
 };
 
 export type PieceCapabilities = {

@@ -7,7 +7,7 @@ keywords: [search, lexical, vector, hybrid, indexes, rag]
 
 Collection search ranks records of one collection by text relevance, vector similarity, or both. You declare named indexes on the collection and query them with `frogbot.search()`, REST, or GraphQL. Ranking runs in the database.
 
-The [Postgres and Vercel Postgres](/database/postgres#collection-search), [SQLite](/database/sqlite#collection-search), and [MongoDB](/database/mongodb#collection-search) adapters implement search, and every option on this page works the same way on each. Adapter pages list engine-specific details such as supported metrics and languages. On other adapters, any configured search index fails database initialization with `SearchCapabilityError` and reason `not-implemented`; leave `search` off those collections and use [vector fields](/fields/vector) for storage only.
+The [Postgres and Vercel Postgres](/database/postgres#collection-search), [SQLite](/database/sqlite#collection-search), and [MongoDB](/database/mongodb#collection-search) adapters implement search, and every option on this page works the same way on each. The [Cloudflare D1](/database/sqlite#d1-collection-search) adapter implements lexical search; D1 has no native vector search, so an index with `vector` fails setup with reason `engine-gap`. Adapter pages list engine-specific details such as supported metrics and languages. On other adapters, any configured search index fails database initialization with `SearchCapabilityError` and reason `not-implemented`; leave `search` off those collections and use [vector fields](/fields/vector) for storage only.
 
 ## Configure indexes
 
@@ -212,7 +212,7 @@ The query accepts `index`, `text`, `vector`, `where`, `limit`, `candidates`, `dr
 
 ## Setup and errors
 
-FrogBot checks every configured index when the database initializes, including when you create or run migrations. The check is silent when a configured index is compatible. On an adapter without search, **any configured index fails initialization** with `SearchCapabilityError` (`reason: 'not-implemented'`), naming the collection, index, and mode. An adapter also stops setup when the engine cannot run an option (`engine-gap`) or a database prerequisite is missing; see the [Postgres](/database/postgres#prerequisites) and [SQLite](/database/sqlite#prerequisites) prerequisites.
+FrogBot checks every configured index when the database initializes, including when you create or run migrations. The check is silent when a configured index is compatible. On an adapter without search, **any configured index fails initialization** with `SearchCapabilityError` (`reason: 'not-implemented'`), naming the collection, index, and mode. An adapter also stops setup when the engine cannot run an option (`engine-gap`) or a database prerequisite is missing; see the [Postgres](/database/postgres#prerequisites) and [SQLite](/database/sqlite#prerequisites) prerequisites and the [D1 limits](/database/sqlite#d1-collection-search).
 
 The core also exports `SearchValidationError`, `SearchFilterUnsupportedError`, and `SearchReadinessError` for invalid inputs, unsupported filters or visibility rules, and invalid or unready ranked results. REST and GraphQL report them with these HTTP statuses:
 
@@ -227,6 +227,6 @@ A caller without collection read access receives `403`. `SearchCapabilityError` 
 
 ## Adapter integration
 
-Database adapters add search through a `search` object on the adapter. `capabilities` declares which modes an index supports. `buildSchema` receives every collection's normalized indexes while the database initializes, before tables and indexes are created, so native search indexes are part of schema push and migrations. `readiness` can reject a query while an index is still building, and `search` returns ranked `{ id, score }` rows for FrogBot to read back. The Postgres, SQLite, and MongoDB adapters implement this contract. `search` receives the resolved `candidates` count for vector and hybrid queries.
+Database adapters add search through a `search` object on the adapter. `capabilities` declares which modes an index supports. `buildSchema` receives every collection's normalized indexes while the database initializes, before tables and indexes are created, so native search indexes are part of schema push and migrations. `readiness` can reject a query while an index is still building, and `search` returns ranked `{ id, score }` rows for FrogBot to read back. The Postgres, SQLite, MongoDB, and D1 adapters implement this contract. `search` receives the resolved `candidates` count for vector and hybrid queries.
 
 You can optionally call the existing `frogbot.rerank()` on readable hits, or compose retrieval and answer generation in your own application. There is no automatic embedding or built-in RAG preset for this collection search API. The separate [search plugin](/plugins/search) has its own contract.

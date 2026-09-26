@@ -1,7 +1,8 @@
 import type { JobsConfig, TaskConfig } from 'payload';
 
 import { getFrogBotInstance } from '../instanceRegistry.js';
-import { CHANNEL_TASK_SLUG, type ChannelTaskInput, getChannelHost } from './host.js';
+import { CHANNEL_TASK_SLUG, getChannelHost } from './host.js';
+import type { ChannelTaskInput } from './types.js';
 
 type ChannelTask = {
   input: ChannelTaskInput;
