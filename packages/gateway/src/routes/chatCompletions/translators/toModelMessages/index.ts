@@ -10,7 +10,7 @@ import type { ModelMessage, ToolModelMessage, ToolResultPart } from '@ai-sdk/pro
 
 import type { OpenAIMessage, OpenAIToolMessage } from '../types.js';
 import { parseAssistantMessage } from './assistant.js';
-import { parseSystemMessage, parseUnknownMessage } from './system.js';
+import { parseSystemMessages, parseUnknownMessage } from './system.js';
 import { parseUserMessage } from './user.js';
 
 function parseToolRun(
@@ -76,7 +76,7 @@ export function toModelMessages(messages: OpenAIMessage[]): ModelMessage[] {
     switch (msg.role) {
       case 'system':
       case 'developer': {
-        out.push(parseSystemMessage(msg));
+        out.push(...parseSystemMessages(msg));
         break;
       }
 

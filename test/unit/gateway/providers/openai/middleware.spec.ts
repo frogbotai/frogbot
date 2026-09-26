@@ -125,13 +125,30 @@ describe('openaiEmbedDimensions', () => {
 });
 
 describe('openaiPromptCacheBreakpoint', () => {
+  it('keeps system content a string and marks the message itself', () => {
+    const message = {
+      role: 'system',
+      content: 'Long policy.',
+      providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
+    };
+    const args = makeArgs('openai/gpt-5.6', { messages: [message] });
+
+    openaiPromptCacheBreakpoint(args);
+
+    expect(message).toEqual({
+      role: 'system',
+      content: 'Long policy.',
+      providerOptions: { openai: { promptCacheBreakpoint: { mode: 'explicit' } } },
+    });
+  });
+
   it('translates message-level cache control', () => {
     const message = {
       role: 'user',
       content: 'hello',
       providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
     };
-    const args = makeArgs('openai/gpt-5', { messages: [message] });
+    const args = makeArgs('openai/gpt-5.6', { messages: [message] });
 
     openaiPromptCacheBreakpoint(args);
 
@@ -153,7 +170,7 @@ describe('openaiPromptCacheBreakpoint', () => {
       text: 'hello',
       providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
     };
-    const args = makeArgs('openai/gpt-5', {
+    const args = makeArgs('openai/gpt-5.6', {
       messages: [{ role: 'user', content: [part] }],
     });
 
@@ -170,7 +187,7 @@ describe('openaiPromptCacheBreakpoint', () => {
       content: 'hello',
       providerOptions: { unknown: { cache_control: { type: 'ephemeral', ttl: '24h' } } },
     };
-    const args = makeArgs('openai/gpt-5', { messages: [message] });
+    const args = makeArgs('openai/gpt-5.6', { messages: [message] });
 
     openaiPromptCacheBreakpoint(args);
 
@@ -188,7 +205,7 @@ describe('openaiPromptCacheBreakpoint', () => {
       { role: 'user', content: 'first' },
       { role: 'assistant', content: 'last' },
     ];
-    const args = makeArgs('openai/gpt-5', {
+    const args = makeArgs('openai/gpt-5.6', {
       messages,
       providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
     });
@@ -209,9 +226,27 @@ describe('openaiPromptCacheBreakpoint', () => {
     expect(args.providerOptions.unknown).toBeUndefined();
   });
 
+  it('drops cache control for models without explicit breakpoints', () => {
+    const part = {
+      type: 'text',
+      text: 'hello',
+      providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
+    };
+    const messages = [{ role: 'user', content: [part] }];
+    const args = makeArgs('openai/gpt-4o-mini', {
+      messages,
+      providerOptions: { unknown: { cache_control: { type: 'ephemeral' } } },
+    });
+
+    openaiPromptCacheBreakpoint(args);
+
+    expect(messages).toEqual([{ role: 'user', content: [{ type: 'text', text: 'hello' }] }]);
+    expect(args.providerOptions).toEqual({});
+  });
+
   it('does nothing without cache control', () => {
     const messages = [{ role: 'user', content: 'hello' }];
-    const args = makeArgs('openai/gpt-5', { messages });
+    const args = makeArgs('openai/gpt-5.6', { messages });
 
     openaiPromptCacheBreakpoint(args);
 

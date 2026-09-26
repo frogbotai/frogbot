@@ -5,6 +5,7 @@ export function toAnthropicReasoning(
     type: string;
     text?: string;
     providerMetadata?: Record<string, Record<string, unknown>>;
+    providerOptions?: Record<string, Record<string, unknown>>;
   }>,
 ) {
   if (reasoning.length === 0) return undefined;
@@ -12,6 +13,8 @@ export function toAnthropicReasoning(
     .filter((r) => r.type === 'reasoning' && typeof r.text === 'string')
     .map((r) => ({
       text: r.text as string,
-      ...extractReasoningMetadata(r.providerMetadata),
+      // `finalStep.reasoning` parts carry the signature on `providerOptions`
+      // (the replayable message shape); stream/content parts use `providerMetadata`.
+      ...extractReasoningMetadata(r.providerMetadata ?? r.providerOptions),
     }));
 }

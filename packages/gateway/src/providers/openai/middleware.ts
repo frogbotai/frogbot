@@ -70,6 +70,8 @@ export const openaiEmbedDimensions: BeforeUpstreamHook = (args) => {
 };
 
 export const openaiPromptCacheBreakpoint: BeforeUpstreamHook = (args) => {
+  const explicit = supportsExplicitCacheBreakpoints(args.model.split('/').pop() ?? '');
+
   const applyBreakpoint = (value: unknown) => {
     if (!value || typeof value !== 'object') return;
     const target = value as Record<string, unknown>;
@@ -78,12 +80,16 @@ export const openaiPromptCacheBreakpoint: BeforeUpstreamHook = (args) => {
     const cacheControl = providerOptions?.unknown?.cache_control;
     if (!cacheControl || typeof cacheControl !== 'object') return;
 
-    providerOptions.openai = {
-      ...(providerOptions.openai ?? {}),
-      promptCacheBreakpoint: { mode: 'explicit' },
-    };
+    if (explicit) {
+      providerOptions.openai = {
+        ...(providerOptions.openai ?? {}),
+        promptCacheBreakpoint: { mode: 'explicit' },
+      };
+    }
+
     delete providerOptions.unknown.cache_control;
     if (Object.keys(providerOptions.unknown).length === 0) delete providerOptions.unknown;
+    if (Object.keys(providerOptions).length === 0) delete target.providerOptions;
   };
 
   const applyMessageBreakpoint = (value: unknown) => {
@@ -92,7 +98,15 @@ export const openaiPromptCacheBreakpoint: BeforeUpstreamHook = (args) => {
     const providerOptions = message.providerOptions as
       Record<string, Record<string, unknown>> | undefined;
     const cacheControl = providerOptions?.unknown?.cache_control;
-    if (typeof message.content === 'string' && cacheControl && typeof cacheControl === 'object') {
+    // System messages must keep string content (the AI SDK schema rejects
+    // parts); the OpenAI SDK reads a message-level `promptCacheBreakpoint`
+    // for them, which `applyBreakpoint` below sets.
+    if (
+      message.role !== 'system' &&
+      typeof message.content === 'string' &&
+      cacheControl &&
+      typeof cacheControl === 'object'
+    ) {
       message.content = [
         {
           type: 'text',
@@ -139,6 +153,17 @@ export const openaiPromptCacheBreakpoint: BeforeUpstreamHook = (args) => {
     }
   }
 };
+
+function supportsExplicitCacheBreakpoints(modelName: string): boolean {
+  const match = /^gpt-(\d+)(?:\.(\d+))?/.exec(modelName);
+
+  if (!match) return false;
+
+  const major = Number(match[1]);
+  const minor = Number(match[2] ?? 0);
+
+  return major > 5 || (major === 5 && minor >= 6);
+}
 
 /** Check if a model name is an o-series reasoning model. */
 function isReasoningModel(modelName: string): boolean {

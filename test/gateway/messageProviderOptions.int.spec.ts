@@ -153,7 +153,7 @@ describe('message provider options ordering', () => {
     });
 
     const { status } = await postJson(app, '/v1/chat/completions', {
-      model: 'openai/gpt-5',
+      model: 'openai/gpt-5.6',
       prompt_cache_key: 'cache-key',
       cache_control: { type: 'ephemeral' },
       messages: [
@@ -182,7 +182,7 @@ describe('message provider options ordering', () => {
     });
 
     const { status } = await postJson(app, '/v1/messages', {
-      model: 'openai/gpt-5',
+      model: 'openai/gpt-5.6',
       max_tokens: 100,
       cache_control: { type: 'ephemeral' },
       messages: [

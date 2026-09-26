@@ -131,6 +131,17 @@ describe('bedrockCachePoint', () => {
 });
 
 describe('bedrockThinkingEffort', () => {
+  it('re-homes the /v1/messages thinking param as reasoningConfig', () => {
+    const args = makeArgs('global.anthropic.claude-haiku-4-5-20251001-v1:0', {
+      operation: 'messages',
+      providerOptions: { anthropic: { thinking: { type: 'enabled', budgetTokens: 2048 } } },
+    });
+    void bedrockThinkingEffort(args);
+    expect(args.providerOptions['bedrock']).toEqual({
+      reasoningConfig: { type: 'enabled', budgetTokens: 2048 },
+    });
+  });
+
   it('translates reasoning_effort to reasoningConfig for Claude on Bedrock', () => {
     const args = makeArgs('anthropic.claude-sonnet-4-20250514-v1:0', {
       params: { maxOutputTokens: 10000 },
