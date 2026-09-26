@@ -108,6 +108,30 @@ export const bedrockThinkingEffort: BeforeUpstreamHook = (args) => {
     { reasoningConfig?: unknown } | undefined;
   if (bedrockOpts?.reasoningConfig || amazonBedrockOpts?.reasoningConfig) return;
 
+  // `/v1/messages` maps the Anthropic `thinking` param to
+  // `providerOptions.anthropic.thinking`, which the Bedrock SDK never reads.
+  // Re-home it as `reasoningConfig` so Claude-on-Bedrock actually thinks.
+  const anthropicThinking = (
+    args.providerOptions['anthropic'] as
+      { thinking?: { type?: unknown; budgetTokens?: unknown } } | undefined
+  )?.thinking;
+  if (
+    anthropicThinking?.type === 'enabled' ||
+    anthropicThinking?.type === 'disabled' ||
+    anthropicThinking?.type === 'adaptive'
+  ) {
+    args.providerOptions['bedrock'] = {
+      ...(args.providerOptions['bedrock'] ?? {}),
+      reasoningConfig: {
+        type: anthropicThinking.type,
+        ...(typeof anthropicThinking.budgetTokens === 'number'
+          ? { budgetTokens: anthropicThinking.budgetTokens }
+          : {}),
+      },
+    };
+    return;
+  }
+
   const unknown = args.providerOptions['unknown'];
   const effort = unknown?.['reasoning_effort'];
   if (typeof effort !== 'string') return;

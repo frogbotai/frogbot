@@ -44,7 +44,7 @@ const successBodies = {
     id: 'chatcmpl_test',
     object: 'chat.completion',
     created: 0,
-    model: 'gpt-4o-mini',
+    model: 'gpt-5.6',
     choices: [{ index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' }],
     usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
   },
@@ -70,7 +70,7 @@ function buildCacheApp(args: {
                 id: 'chatcmpl_test',
                 object: 'chat.completion.chunk',
                 created: 0,
-                model: 'gpt-4o-mini',
+                model: 'gpt-5.6',
                 choices: [
                   { index: 0, delta: { role: 'assistant', content: 'ok' }, finish_reason: null },
                 ],
@@ -79,7 +79,7 @@ function buildCacheApp(args: {
                 id: 'chatcmpl_test',
                 object: 'chat.completion.chunk',
                 created: 0,
-                model: 'gpt-4o-mini',
+                model: 'gpt-5.6',
                 choices: [{ index: 0, delta: {}, finish_reason: 'stop' }],
                 usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
               },
@@ -141,7 +141,7 @@ const providers = [
   },
   {
     name: 'openai',
-    model: 'gpt-4o-mini',
+    model: 'gpt-5.6',
     successBody: successBodies.openai,
     factory: (fetch: typeof globalThis.fetch) => {
       const provider = createOpenAI({ apiKey: 'test', fetch });

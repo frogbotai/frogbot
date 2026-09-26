@@ -46,6 +46,7 @@ import { prepareForwardHeaders } from '../../utils/headers.js';
 import { parseJsonBody } from '../../utils/parseJsonBody.js';
 import { ensureRequestId } from '../../utils/requestId.js';
 import { GATEWAY_PACKAGE_VERSION } from '../../version.js';
+import { withInstructionsCache } from './instructionsCache.js';
 import { parseResponsesRequest, type ResponsesRequest } from './schema.js';
 import {
   createResponsesStreamTransform,
@@ -129,7 +130,11 @@ export function responsesRoute(ctx: ResponsesRouteContext) {
       const tools = toResponsesTools(body.tools, resolved.providerName);
       const toolChoice = toResponsesToolChoice(body.tool_choice);
       const output = toResponsesOutput(body.text);
-      const instructions = body.instructions ?? undefined;
+      const instructions = withInstructionsCache(
+        body.instructions ?? undefined,
+        resolved.providerName,
+        resolved.modelName,
+      );
       const { params, providerOptions } = forwardResponseParams(body, resolved.providerName);
       const headers = prepareForwardHeaders(c.req.raw.headers, {
         userAgent: `@frogbotai/gateway/${GATEWAY_PACKAGE_VERSION}`,

@@ -24,6 +24,7 @@
 
 import type { TextStreamPart, ToolSet } from 'ai';
 
+import { extractReasoningMetadata } from '../../../shared/extractReasoningMetadata.js';
 import {
   extractAnthropicStreamErrorInfo,
   type StreamErrorMaskOptions,
@@ -463,9 +464,7 @@ function formatEvent(eventType: string, data: unknown): string {
 function extractSignature(part: {
   providerMetadata?: Record<string, Record<string, unknown>>;
 }): string | undefined {
-  const meta = part.providerMetadata;
-  if (!meta) return undefined;
-  const anthropic = meta.anthropic ?? meta.unknown;
-  const sig = anthropic?.signature;
-  return typeof sig === 'string' ? sig : undefined;
+  // Any namespace: `anthropic` (direct), `bedrock`/`amazonBedrock` (Claude on
+  // Bedrock), `unknown` (compat adapters).
+  return extractReasoningMetadata(part.providerMetadata).signature;
 }
