@@ -49,7 +49,7 @@ Historical tickets may use a different filename order. Identify their approved c
 - Keep documents concise, but do not sacrifice decision context to a one-page limit. Link detailed evidence rather than repeating it.
 - Group related work into stages and state what remains incomplete after each one. Once the feature works as a whole, test the agreed behavior, realistic failure cases, and related behavior that could break. Follow [CONTRIBUTING.md](../../CONTRIBUTING.md#when-tests-find-a-problem) when tests reveal a problem; not every new finding is a requirement to expand the feature. Do not run full suites against intentionally unfinished work or call partial progress complete.
 - If the feature exceeds roughly a day or eight stages, propose a split before implementation. Do not compress code to satisfy a line-count target.
-- Make schema changes when the approved behavior needs them; do not add extra compatibility code merely to avoid a necessary change.
+- Make API and schema changes when the approved behavior needs them. The [design principles](../../CONTRIBUTING.md#design-principles) cover breaking changes and compatibility code.
 - If new evidence means changing the approved behavior or design, pause the affected work and ask for approval of that change.
 - Update requirements, examples, and success criteria when the owner makes a decision. Mark replaced decisions as no longer current; do not leave conflicting instructions active.
 

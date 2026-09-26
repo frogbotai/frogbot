@@ -33,6 +33,15 @@ Architecture facts worth knowing before reading code:
 - FrogBot is the sole type generator (`frogbot generate:types` -> `frogbot-types.ts`); Payload's auto-generate is force-disabled. See [Type Generation](#type-generation-packagesfrogbot).
 - Internal source layout mirrors Payload core where a concept matches. See [FrogBot Core Project Structure](#frogbot-core-project-structure).
 
+## Design principles
+
+FrogBot is in beta. The goal is the best and most consistent developer experience across all of FrogBot, not the smallest diff. These principles decide between designs that all work.
+
+- **Break things to get the design right.** When a better API, schema, or extension point needs a breaking change, make it, and update every caller, piece, plugin, test, and doc in the same change. Don't add shims, flags, or parallel old and new paths to avoid the break: each one is a second way to do the same thing, and the inconsistency outlives the beta. List user-facing breaks under "Breaking changes" in [CHANGELOG.md](CHANGELOG.md).
+- **Ask how Payload would solve it.** FrogBot users build on Payload's model, so a familiar shape is better DX than a clever one. Before designing an API, lifecycle, or runtime flow, find Payload's closest equivalent in [`~/code/payload`](#reference-repos) and follow it unless there is a concrete reason not to. Record that reason in the plan. Examples: definitions are config; a hook returns the value core saves (`beforeChange`) instead of keeping state of its own; side effects run in `afterChange` on the document that owns the data, so every write path triggers them; and a job saves each task's output so a retry skips finished work.
+- **One pattern per concept.** Extension points that do the same kind of job (piece hooks, plugin options, adapters, channel renderers) share naming, argument shapes, return shapes, and lifecycle. When one integration needs a seam that core lacks, change the core seam for every implementation instead of adding a workaround inside one package.
+- **Generic where the variation is real.** Put shared behavior in core behind a typed, documented extension point once two or more implementations need it, and keep platform specifics inside their own package. Don't build extension points for needs nobody has yet.
+
 ## Commands
 
 Run everything from the repo root with `pnpm`. Scripts live in [package.json](package.json).
