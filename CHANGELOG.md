@@ -27,6 +27,7 @@
 - `@frogbotai/db-mongodb` implements collection search on deployments with MongoDB Search (Atlas or `mongot`): `$search` lexical search, `$vectorSearch` approximate or exact vector search, and hybrid reciprocal rank fusion with `$rankFusion`, or `$unionWith` on servers without it. The adapter creates and updates the collection's search indexes when it connects.
 - `@frogbotai/db-d1-sqlite` implements lexical collection search with FTS5 tables and triggers that are part of development push and generated migrations. Cloudflare D1 has no native vector search, so an index with `vector` fails setup with `SearchCapabilityError` and reason `engine-gap`; vector fields still store values. Generated D1 migrations now import `MigrateUpArgs`, `MigrateDownArgs`, and `sql` from `@frogbotai/db-d1-sqlite`.
 - Search indexes accept `vector.approximate` (default `true`) to choose between an approximate nearest-neighbour index and exact vector search, and an index-level `defaultCandidates` that replaces `hybrid.defaultCandidates`. The query's `candidates` now also applies to approximate vector search: Postgres uses it as `hnsw.ef_search` and SQLite as the `vector_top_k` neighbour count.
+- `@frogbotai/gateway` has a built-in `openrouter` provider on `@openrouter/ai-sdk-provider`, enabled by `OPENROUTER_API_KEY`. It accepts the priced OpenRouter models that models.dev lists, such as `openrouter/anthropic/claude-sonnet-4.6` and `:free` variants, and translates reasoning from every route into OpenRouter's `reasoning` option. Requests send FrogBot attribution headers, overridable with `appName` and `appUrl`. Embeddings are not supported.
 
 ### Fixes
 
@@ -34,6 +35,7 @@
 - Vercel AI Gateway failures keep their upstream status and error type on chat completions, Responses, and Messages, streaming or not, instead of becoming a 500 (or a 502 after retries). A 429 forwards the upstream `retry-after`, and retry-exhausted streaming failures report the last attempt's status. Vercel AI Gateway keys (`vck_…`) are redacted from error messages.
 - Server logs redact key-shaped tokens from error messages, stack traces, response bodies, and nested error fields, as client-facing errors already did. An error's `cause` is logged in full instead of as `[Circular]`.
 - An upstream error with a non-error status, such as a 200 whose body is not valid JSON, returns 502 instead of passing the 200 through as an error response.
+- A pre-built AI SDK provider instance passed to `createGateway()` is used as-is. Previously every callable `create*()` result, such as `createOpenAI()`, was mistaken for a config object and rejected. An instance now needs only `languageModel`, not `embeddingModel`.
 - Usage logs record the model that ran each step instead of the agent's default model.
 - Queued messages and continuations after a dismissed client tool no longer drop the chosen model.
 - Any signed-in user could create a message in another user's chat through the REST API.

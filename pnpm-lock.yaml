@@ -40,6 +40,9 @@ importers:
       '@eslint/js':
         specifier: ^9.16.0
         version: 9.39.5
+      '@openrouter/ai-sdk-provider':
+        specifier: ^3.1.0
+        version: 3.1.0(ai@7.0.116(zod@4.4.3))(zod@4.4.3)
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
@@ -547,6 +550,9 @@ importers:
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.19.14(hono@4.12.31)
+      '@openrouter/ai-sdk-provider':
+        specifier: ^3.1.0
+        version: 3.1.0(ai@7.0.116(zod@4.4.3))(zod@4.4.3)
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.1
@@ -5809,6 +5815,16 @@ packages:
       {
         integrity: sha512-l6bAF43PNxkJp6g+W4PjoUSSkxHomXw2nOum5CTftJz1NlV3vu93NImgOYtLf6CbBUb5j+fiuzW0PPQ5JTSvZA==,
       }
+
+  '@openrouter/ai-sdk-provider@3.1.0':
+    resolution:
+      {
+        integrity: sha512-BQy1TA9fKrh47s9ivsO6FY5QimN7GUF0i8Qon3pkxQclEgShso0dClpcWn8OIyPLEZZPFaFKgI8TW4S/O0p0Dw==,
+      }
+    engines: { node: '>=22' }
+    peerDependencies:
+      ai: ^7.0.0
+      zod: ^4.3.6
 
   '@opentelemetry/api-logs@0.203.0':
     resolution:
@@ -11561,6 +11577,7 @@ packages:
       {
         integrity: sha512-T9eIRCs6b0J1SHKYIvD8+KCJMcWZ900iZyxdnSCdqxN12Z1ijzT+jY5nrk72Jw4B0HGzms2NgpryArlJqvc3Lw==,
       }
+    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lightningcss-android-arm64@1.32.0:
@@ -17799,6 +17816,11 @@ snapshots:
   '@octokit/types@18.0.0':
     dependencies:
       '@octokit/openapi-types': 29.0.1
+
+  '@openrouter/ai-sdk-provider@3.1.0(ai@7.0.116(zod@4.4.3))(zod@4.4.3)':
+    dependencies:
+      ai: 7.0.116(zod@4.4.3)
+      zod: 4.4.3
 
   '@opentelemetry/api-logs@0.203.0':
     dependencies:

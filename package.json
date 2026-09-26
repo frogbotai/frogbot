@@ -52,6 +52,7 @@
     "@ai-sdk/typesafe-ai": "3.0.8",
     "@basetenlabs/performance-client": "^0.0.10",
     "@eslint/js": "^9.16.0",
+    "@openrouter/ai-sdk-provider": "^3.1.0",
     "@playwright/test": "^1.63.0",
     "@types/node": "^22.10.2",
     "@vitest/eslint-plugin": "^1.1.0",

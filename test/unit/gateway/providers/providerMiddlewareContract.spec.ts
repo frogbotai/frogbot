@@ -17,12 +17,14 @@
 import type { AnthropicProviderOptions } from '@ai-sdk/anthropic';
 import type { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google';
 import type { OpenAIChatLanguageModelOptions } from '@ai-sdk/openai';
+import type { OpenRouterProviderOptions } from '@openrouter/ai-sdk-provider';
 import { describe, expect, it } from 'vitest';
 
 import type { BeforeUpstreamHook } from '../../../../packages/gateway/src/hooks.js';
 import { claudeThinkingEffort } from '../../../../packages/gateway/src/providers/anthropic/middleware.js';
 import { bedrockCachePoint } from '../../../../packages/gateway/src/providers/bedrock/middleware.js';
 import { openaiReasoningEffort } from '../../../../packages/gateway/src/providers/openai/middleware.js';
+import { openrouterReasoning } from '../../../../packages/gateway/src/providers/openrouter/middleware.js';
 import { vercelBeforeUpstream } from '../../../../packages/gateway/src/providers/vercel/middleware.js';
 import { vertexThinkingBudget } from '../../../../packages/gateway/src/providers/vertex/middleware.js';
 import { effortFromBudget } from '../../../../packages/gateway/src/utils/params.js';
@@ -163,5 +165,31 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     expect(anthropicOptions.thinking.budgetTokens).toBeTypeOf('number');
     expect(anthropicOptions.cacheControl).toEqual({ type: 'ephemeral' });
     expect(openaiOptions.reasoningEffort).toBe('low');
+  });
+
+  it('openrouterReasoning emits the adapter-read openrouter.reasoning shape', () => {
+    const fromEffort: Record<string, Record<string, unknown>> = {
+      unknown: { reasoning_effort: 'high' },
+    };
+    const fromThinking: Record<string, Record<string, unknown>> = {
+      anthropic: { thinking: { type: 'enabled', budgetTokens: 2048 } },
+    };
+
+    void openrouterReasoning(
+      makeArgs({ model: 'openrouter/anthropic/claude-sonnet-4.6', providerOptions: fromEffort }),
+    );
+    void openrouterReasoning(
+      makeArgs({ model: 'openrouter/anthropic/claude-sonnet-4.6', providerOptions: fromThinking }),
+    );
+
+    const effort = fromEffort['openrouter'] as OpenRouterProviderOptions;
+    const budget = fromThinking['openrouter'] as OpenRouterProviderOptions;
+
+    expect(effort.reasoning).toEqual({
+      effort: 'high',
+    } satisfies OpenRouterProviderOptions['reasoning']);
+    expect(budget.reasoning).toEqual({
+      max_tokens: 2048,
+    } satisfies OpenRouterProviderOptions['reasoning']);
   });
 });

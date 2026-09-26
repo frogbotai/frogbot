@@ -75,4 +75,11 @@ export const LIVE_MATRIX: LiveProviderEntry[] = [
     tier: 'paid',
     text: models('E2E_MODEL_VERCEL_TEXT', ['anthropic/claude-sonnet-4.6', 'openai/gpt-5.4-mini']),
   },
+  {
+    label: 'openrouter',
+    provider: 'openrouter',
+    envKey: 'OPENROUTER_API_KEY',
+    tier: 'paid',
+    text: models('E2E_MODEL_OPENROUTER_TEXT', ['anthropic/claude-sonnet-4.6']),
+  },
 ];

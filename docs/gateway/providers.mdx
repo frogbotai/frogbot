@@ -1,8 +1,8 @@
 ---
 title: "Providers"
 sidebarTitle: "Providers"
-description: "36+ built-in providers, plus any self-hosted OpenAI-compatible endpoint, in one providers map."
-keywords: ["providers", "openai-compatible", "ollama", "bedrock", "vertex", "baseURL"]
+description: "37+ built-in providers, plus any self-hosted OpenAI-compatible endpoint, in one providers map."
+keywords: ["providers", "openai-compatible", "openrouter", "ollama", "bedrock", "vertex", "baseURL"]
 ---
 
 Every provider — built-in or self-hosted — lives under the same `providers` key. There is no separate list for custom endpoints.
@@ -25,7 +25,7 @@ const gw = createGateway({
 
 ## Built-in providers
 
-Alibaba, Anthropic, Anthropic (AWS), AssemblyAI, Azure, Baseten, Amazon Bedrock, Black Forest Labs, ByteDance, Cerebras, Cohere, Deepgram, DeepInfra, DeepSeek, ElevenLabs, fal, Fireworks, Gladia, Google, Google Vertex, Groq, Hugging Face, Hume, Kling AI, LMNT, Luma, Mistral, Moonshot AI, OpenAI, Perplexity, Prodia, Replicate, Together AI, TypeSafe AI, Vercel AI Gateway, Voyage, xAI.
+Alibaba, Anthropic, Anthropic (AWS), AssemblyAI, Azure, Baseten, Amazon Bedrock, Black Forest Labs, ByteDance, Cerebras, Cohere, Deepgram, DeepInfra, DeepSeek, ElevenLabs, fal, Fireworks, Gladia, Google, Google Vertex, Groq, Hugging Face, Hume, Kling AI, LMNT, Luma, Mistral, Moonshot AI, OpenAI, OpenRouter, Perplexity, Prodia, Replicate, Together AI, TypeSafe AI, Vercel AI Gateway, Voyage, xAI.
 
 Each ships its own credential shape (`apiKey`, `region`, `accessKeyId`, ...) and its `envVars` list, used for config fallback and CLI env auto-discovery. Bedrock also supports ambient AWS credentials. See [Configuration](/gateway/configuration#auto-discover-from-env) for the full env var reference.
 
@@ -116,6 +116,32 @@ OpenAI retention accepts only `in_memory` and `24h`. Marker TTL values are omitt
 
 ---
 
+## OpenRouter
+
+OpenRouter gives one API key access to models from many vendors. Set `OPENROUTER_API_KEY` in the server environment and configure `providers: { openrouter: {} }` in a standalone gateway, or `ai: { providers: { openrouter: true } }` in FrogBot. `OPENROUTER_BASE_URL` optionally overrides the API URL.
+
+Model IDs keep OpenRouter's own `<creator>/<model>` form after the `openrouter/` prefix, including variants such as `:free`, for example `openrouter/anthropic/claude-sonnet-4.6` or `openrouter/google/gemma-4-31b-it:free`. FrogBot accepts the priced models that models.dev lists for OpenRouter. Dynamic routers without a fixed price, such as `openrouter/auto`, and models not yet in the catalog return a model-not-found error before any upstream call. Narrow the set with an allowlist, for example `models: ['anthropic/claude-sonnet-4.6']`; the allowlist applies only to config objects, not to a [pre-built instance](#pre-built-instances). Usage cost is estimated from those catalog prices, not read from OpenRouter's invoice.
+
+Requests identify FrogBot to OpenRouter with the `X-OpenRouter-Title: FrogBot` and `HTTP-Referer: https://www.frogbot.ai` headers. Override them with `appName` and `appUrl`:
+
+```ts
+providers: {
+  openrouter: { appName: 'Acme Support', appUrl: 'https://acme.example' }
+}
+```
+
+Reasoning requests from every route become OpenRouter's `reasoning` option: `reasoning_effort` on `/v1/chat/completions`, `thinking` on `/v1/messages`, and `reasoning.effort` on `/v1/responses`. Disabled thinking is sent as effort `none`. Anthropic-style `cache_control` markers on messages and content parts reach OpenRouter unchanged.
+
+On `/v1/chat/completions`, OpenRouter's own request fields pass through unchanged, for example `provider: { order: ['anthropic'], allow_fallbacks: false }`, `models` fallbacks, `plugins`, or a native `reasoning` object, which takes priority over `reasoning_effort`. `/v1/messages` and `/v1/responses` don't forward unknown request fields; use a [`beforeUpstream` hook](/gateway/hooks) to set `providerOptions.openrouter` there.
+
+OpenRouter embeddings are not supported; `/v1/embeddings` with an `openrouter/...` model returns an error.
+
+<Note>
+  Prefer the built-in `openrouter` provider over a custom OpenAI-compatible entry pointing at `https://openrouter.ai/api/v1`. The generic entry drops per-part `cache_control`, cache-write token counts, OpenRouter's reasoning format, routing options, and PDFs supplied by URL.
+</Note>
+
+---
+
 ## Custom OpenAI-compatible endpoints
 
 Any key that isn't a built-in provider name is a generic OpenAI-compatible endpoint. `baseURL` is required — it's what tells the gateway a key is a deliberate custom endpoint rather than a typo of a built-in name.
@@ -166,7 +192,7 @@ const gw = createGateway({
 })
 ```
 
-For a known key, the instance is checked against that provider's real AI SDK type. For a custom key, TypeScript can only confirm it looks like a provider (`languageModel` and `embeddingModel` present) — the specific instance type isn't known ahead of time.
+For a known key, the instance is checked against that provider's real AI SDK type. For a custom key, TypeScript can only confirm it looks like a provider (`languageModel` present) — the specific instance type isn't known ahead of time.
 
 ---
 

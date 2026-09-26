@@ -12205,6 +12205,10919 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openai'],
   }),
+  model('openrouter/~anthropic/claude-fable-latest', {
+    name: 'Claude Fable Latest',
+    created: '2026-06-09',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 0.25,
+      cache_write: 12.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~anthropic/claude-haiku-latest', {
+    name: 'Claude Haiku Latest',
+    created: '2026-04-27',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 1,
+      output: 5,
+      cache_read: 0.1,
+      cache_write: 1.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~anthropic/claude-opus-latest', {
+    name: 'Claude Opus Latest',
+    created: '2026-04-21',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 4,
+      output: 20,
+      cache_read: 0.2,
+      cache_write: 5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~anthropic/claude-sonnet-latest', {
+    name: 'Claude Sonnet Latest',
+    created: '2026-04-27',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~deepseek/deepseek-flash-latest', {
+    name: 'DeepSeek Flash Latest',
+    created: '2026-09-14',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 384000,
+    },
+    cost: {
+      input: 0.035,
+      output: 0.29,
+      cache_read: 0.001,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~deepseek/deepseek-pro-latest', {
+    name: 'DeepSeek Pro Latest',
+    created: '2026-09-14',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 393216,
+    },
+    cost: {
+      input: 0.24948,
+      output: 0.74844,
+      cache_read: 0.007938,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~deepseek/deepseek-v4-flash-latest', {
+    name: 'DeepSeek V4 Flash Latest',
+    created: '2026-08-01',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1310720,
+      output: 943718,
+    },
+    cost: {
+      input: 0.021,
+      output: 0.32,
+      cache_read: 0.016,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~google/gemini-flash-latest', {
+    name: 'Gemini Flash Latest',
+    created: '2026-04-27',
+    knowledge: '2025-01-01',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.75,
+      output: 3.75,
+      cache_read: 0.075,
+      cache_write: 0.041667,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~google/gemini-pro-latest', {
+    name: 'Gemini Pro Latest',
+    created: '2026-04-27',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['audio', 'image', 'text', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 2,
+      output: 12,
+      cache_read: 0.2,
+      cache_write: 0.375,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~moonshotai/kimi-latest', {
+    name: 'Kimi Latest',
+    created: '2026-04-27',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 943718,
+    },
+    cost: {
+      input: 1.0301,
+      output: 9.043,
+      cache_read: 0.3,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~openai/gpt-astra-latest', {
+    name: 'GPT Astra Latest',
+    created: '2026-09-11',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 1,
+      cache_write: 12.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~openai/gpt-luna-latest', {
+    name: 'GPT Luna Latest',
+    created: '2026-09-11',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.5,
+      cache_read: 0.01,
+      cache_write: 0.125,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~openai/gpt-mini-latest', {
+    name: 'GPT Mini Latest',
+    created: '2026-04-27',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.75,
+      output: 4.5,
+      cache_read: 0.075,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~openai/gpt-sol-latest', {
+    name: 'GPT Sol Latest',
+    created: '2026-09-11',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~openai/gpt-terra-latest', {
+    name: 'GPT Terra Latest',
+    created: '2026-09-11',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 12,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~x-ai/grok-latest', {
+    name: 'Grok Latest',
+    created: '2026-07-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 500000,
+      output: 450000,
+    },
+    cost: {
+      input: 1.6,
+      output: 4.8,
+      cache_read: 0.4,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~z-ai/glm-flash-latest', {
+    name: 'GLM Flash Latest',
+    created: '2026-08-27',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1310720,
+      output: 131072,
+    },
+    cost: {
+      input: 0.04,
+      output: 0.5,
+      cache_read: 0.015,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/~z-ai/glm-latest', {
+    name: 'GLM Latest',
+    created: '2026-08-19',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1310720,
+      output: 131072,
+    },
+    cost: {
+      input: 0.3794,
+      output: 1.1924,
+      cache_read: 0.07046,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/aion-labs/aion-2.0', {
+    name: 'Aion-2.0',
+    created: '2026-02-23',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 32768,
+    },
+    cost: {
+      input: 0.8,
+      output: 1.6,
+      cache_read: 0.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/aion-labs/aion-3.0', {
+    name: 'Aion-3.0',
+    created: '2026-07-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 32768,
+    },
+    cost: {
+      input: 3,
+      output: 6,
+      cache_read: 0.75,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/aion-labs/aion-3.0-mini', {
+    name: 'Aion-3.0-Mini',
+    created: '2026-07-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 32768,
+    },
+    cost: {
+      input: 0.7,
+      output: 1.4,
+      cache_read: 0.18,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/aion-labs/aion-3.5', {
+    name: 'Aion 3.5',
+    created: '2026-09-23',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 3,
+      output: 6,
+      cache_read: 0.75,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/aion-labs/aion-3.5-mini', {
+    name: 'Aion 3.5 Mini',
+    created: '2026-09-23',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.7,
+      output: 1.4,
+      cache_read: 0.18,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/aion-labs/aion-rp-llama-3.1-8b', {
+    name: 'Aion-RP 1.0 (8B)',
+    created: '2025-02-04',
+    knowledge: '2023-12-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 29491,
+    },
+    cost: {
+      input: 0.8,
+      output: 1.6,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/amazon/nova-2-lite-v1', {
+    name: 'Nova 2 Lite',
+    created: '2025-12-02',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65535,
+    },
+    cost: {
+      input: 0.3,
+      output: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/amazon/nova-lite-v1', {
+    name: 'Nova Lite 1.0',
+    created: '2024-12-05',
+    knowledge: '2024-10-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 300000,
+      output: 5120,
+    },
+    cost: {
+      input: 0.06,
+      output: 0.24,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/amazon/nova-micro-v1', {
+    name: 'Nova Micro 1.0',
+    created: '2024-12-05',
+    knowledge: '2024-10-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 5120,
+    },
+    cost: {
+      input: 0.035,
+      output: 0.14,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/amazon/nova-premier-v1', {
+    name: 'Nova Premier 1.0',
+    created: '2025-10-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 32000,
+    },
+    cost: {
+      input: 2.5,
+      output: 12.5,
+      cache_read: 0.625,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/amazon/nova-pro-v1', {
+    name: 'Nova Pro 1.0',
+    created: '2024-12-05',
+    knowledge: '2024-10-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 300000,
+      output: 5120,
+    },
+    cost: {
+      input: 0.8,
+      output: 3.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthracite-org/magnum-v4-72b', {
+    name: 'Magnum v4 72B',
+    created: '2024-10-22',
+    knowledge: '2024-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 4096,
+    },
+    cost: {
+      input: 2.5,
+      output: 5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthropic/claude-fable-5', {
+    name: 'Claude Fable 5',
+    created: '2026-06-09',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 1,
+      cache_write: 12.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthropic/claude-fable-5.1', {
+    name: 'Claude Fable 5.1',
+    created: '2026-09-01',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 0.25,
+      cache_write: 12.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthropic/claude-haiku-4.5', {
+    name: 'Claude Haiku 4.5 (latest)',
+    created: '2025-10-15',
+    knowledge: '2025-02-28',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 1,
+      output: 5,
+      cache_read: 0.1,
+      cache_write: 1.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthropic/claude-opus-4.1', {
+    name: 'Claude Opus 4.1 (latest)',
+    created: '2025-08-05',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 32000,
+    },
+    cost: {
+      input: 15,
+      output: 75,
+      cache_read: 1.5,
+      cache_write: 18.75,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthropic/claude-opus-4.5', {
+    name: 'Claude Opus 4.5 (latest)',
+    created: '2025-11-24',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthropic/claude-opus-4.6', {
+    name: 'Claude Opus 4.6',
+    created: '2026-02-05',
+    knowledge: '2025-05-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthropic/claude-opus-4.7', {
+    name: 'Claude Opus 4.7',
+    created: '2026-04-16',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthropic/claude-opus-4.8', {
+    name: 'Claude Opus 4.8',
+    created: '2026-05-28',
+    knowledge: '2026-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthropic/claude-opus-5', {
+    name: 'Claude Opus 5',
+    created: '2026-07-24',
+    knowledge: '2026-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthropic/claude-opus-5.5', {
+    name: 'Claude Opus 5.5',
+    created: '2026-09-22',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 4,
+      output: 20,
+      cache_read: 0.2,
+      cache_write: 5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthropic/claude-sonnet-4', {
+    name: 'Claude Sonnet 4',
+    created: '2025-05-22',
+    knowledge: '2025-01-31',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+      cache_write: 3.75,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthropic/claude-sonnet-4.5', {
+    name: 'Claude Sonnet 4.5 (latest)',
+    created: '2025-09-29',
+    knowledge: '2025-07-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 64000,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+      cache_write: 3.75,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthropic/claude-sonnet-4.6', {
+    name: 'Claude Sonnet 4.6',
+    created: '2026-02-17',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+      cache_write: 3.75,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/anthropic/claude-sonnet-5', {
+    name: 'Claude Sonnet 5',
+    created: '2026-06-30',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/arcee-ai/trinity-large-thinking', {
+    name: 'Trinity Large Thinking',
+    created: '2026-04-01',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 80000,
+    },
+    cost: {
+      input: 0.25,
+      output: 0.8,
+      cache_read: 0.06,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/baidu/ernie-4.5-vl-424b-a47b', {
+    name: 'ERNIE 4.5 VL 424B A47B ',
+    created: '2025-06-30',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 123000,
+      output: 16000,
+    },
+    cost: {
+      input: 0.42,
+      output: 1.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/bytedance-seed/seed-1.6', {
+    name: 'Seed 1.6',
+    created: '2025-12-23',
+    modalities: {
+      input: ['image', 'text', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.25,
+      output: 2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/bytedance-seed/seed-1.6-flash', {
+    name: 'Seed 1.6 Flash',
+    created: '2025-12-23',
+    modalities: {
+      input: ['image', 'text', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.075,
+      output: 0.3,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/bytedance-seed/seed-2-1-turbo', {
+    name: 'Seed 2.1 Turbo',
+    created: '2026-08-12',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.5,
+      output: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/bytedance-seed/seed-2.0-code', {
+    name: 'Seed 2.0 Code',
+    created: '2026-02-14',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 0.5,
+      output: 3,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/bytedance-seed/seed-2.0-lite', {
+    name: 'Seed 2.0 Lite',
+    created: '2026-02-14',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 0.25,
+      output: 2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/bytedance-seed/seed-2.0-mini', {
+    name: 'Seed 2.0 Mini',
+    created: '2026-02-14',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.4,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/bytedance/ui-tars-1.5-7b', {
+    name: 'UI-TARS 7B ',
+    created: '2025-07-22',
+    knowledge: '2025-01-31',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 2048,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.2,
+      cache_read: 0.1,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition', {
+    name: 'Uncensored',
+    created: '2025-07-09',
+    knowledge: '2024-04-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 8192,
+    },
+    cost: {
+      input: 0.2,
+      output: 0.9,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/cohere/command-a', {
+    name: 'Command A',
+    created: '2025-03-13',
+    knowledge: '2024-08-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 8192,
+    },
+    cost: {
+      input: 2.5,
+      output: 10,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/cohere/command-a-plus', {
+    name: 'Command A+',
+    created: '2026-09-22',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 192000,
+      output: 64000,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.5,
+      cache_read: 0.15,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/cohere/command-r-08-2024', {
+    name: 'Command R',
+    created: '2024-08-30',
+    knowledge: '2024-06-01',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 4000,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/cohere/command-r-plus-08-2024', {
+    name: 'Command R+',
+    created: '2024-08-30',
+    knowledge: '2024-06-01',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 4000,
+    },
+    cost: {
+      input: 2.5,
+      output: 10,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/cohere/command-r7b-12-2024', {
+    name: 'Command R7B',
+    created: '2024-12-02',
+    knowledge: '2024-06-01',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 4000,
+    },
+    cost: {
+      input: 0.0375,
+      output: 0.15,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/cohere/north-mini-code:free', {
+    name: 'North Mini Code (free)',
+    created: '2026-06-17',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 64000,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-chat', {
+    name: 'DeepSeek Chat',
+    created: '2025-12-01',
+    knowledge: '2025-09',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 163840,
+      output: 16384,
+    },
+    cost: {
+      input: 0.32,
+      output: 0.89,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-chat-v3-0324', {
+    name: 'DeepSeek V3 0324',
+    created: '2025-03-24',
+    knowledge: '2024-07-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 163840,
+      output: 147456,
+    },
+    cost: {
+      input: 0.25,
+      output: 1,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-chat-v3.1', {
+    name: 'DeepSeek V3.1',
+    created: '2025-08-21',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 163840,
+      output: 32768,
+    },
+    cost: {
+      input: 0.25,
+      output: 0.95,
+      cache_read: 0.13,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-r1', {
+    name: 'DeepSeek-R1',
+    created: '2025-01-20',
+    knowledge: '2024-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 64000,
+      output: 16000,
+    },
+    cost: {
+      input: 0.7,
+      output: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-r1-0528', {
+    name: 'R1 0528',
+    created: '2025-05-28',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 163840,
+      output: 32768,
+    },
+    cost: {
+      input: 0.5,
+      output: 2.15,
+      cache_read: 0.35,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-r1-distill-llama-70b', {
+    name: 'R1 Distill Llama 70B',
+    created: '2025-01-23',
+    knowledge: '2024-07-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 8192,
+      output: 7372,
+    },
+    cost: {
+      input: 0.8,
+      output: 0.8,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-v3.1-terminus', {
+    name: 'DeepSeek V3.1 Terminus',
+    created: '2025-09-22',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 163840,
+      output: 32768,
+    },
+    cost: {
+      input: 0.27,
+      output: 1,
+      cache_read: 0.135,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-v3.2', {
+    name: 'DeepSeek V3.2',
+    created: '2025-12-01',
+    knowledge: '2024-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 163840,
+      output: 65536,
+    },
+    cost: {
+      input: 0.269,
+      output: 0.4,
+      cache_read: 0.1345,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-v3.2-exp', {
+    name: 'DeepSeek V3.2 Exp',
+    created: '2025-09-29',
+    knowledge: '2025-07-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 163840,
+      output: 65536,
+    },
+    cost: {
+      input: 0.27,
+      output: 0.41,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-v4-flash', {
+    name: 'DeepSeek V4 Flash',
+    created: '2026-04-24',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['high', 'xhigh'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 384000,
+    },
+    cost: {
+      input: 0.04704,
+      output: 0.09408,
+      cache_read: 0.009408,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-v4-flash-0731', {
+    name: 'DeepSeek V4 Flash 0731',
+    created: '2026-07-31',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1310720,
+      output: 943718,
+    },
+    cost: {
+      input: 0.021,
+      output: 0.32,
+      cache_read: 0.016,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-v4-flash-vision-exp', {
+    name: 'DeepSeek V4 Flash Vision Exp',
+    created: '2026-08-21',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 943718,
+    },
+    cost: {
+      input: 0.22,
+      output: 0.66,
+      cache_read: 0.007,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-v4-pro', {
+    name: 'DeepSeek V4 Pro',
+    created: '2026-04-24',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['high', 'xhigh'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 384000,
+    },
+    cost: {
+      input: 0.348,
+      output: 0.696,
+      cache_read: 0.029,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-v4-pro-0813', {
+    name: 'DeepSeek V4 Pro 0813',
+    created: '2026-08-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 384000,
+    },
+    cost: {
+      input: 0.264,
+      output: 0.792,
+      cache_read: 0.0088,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/deepseek/deepseek-v4.1-flash', {
+    name: 'DeepSeek V4.1 Flash',
+    created: '2026-09-10',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 384000,
+    },
+    cost: {
+      input: 0.035,
+      output: 0.29,
+      cache_read: 0.001,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/dots-studio/dots-3-note-preview:free', {
+    name: 'Dots3-Note Preview (free)',
+    created: '2026-08-14',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 512000,
+      output: 460800,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/fireworks/ember-1', {
+    name: 'Ember-1',
+    created: '2026-09-24',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 943718,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemini-2.5-flash', {
+    name: 'Gemini 2.5 Flash',
+    created: '2025-06-17',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65535,
+    },
+    cost: {
+      input: 0.3,
+      output: 2.5,
+      cache_read: 0.03,
+      cache_write: 0.083333,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemini-2.5-flash-lite', {
+    name: 'Gemini 2.5 Flash-Lite',
+    created: '2025-06-17',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65535,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.4,
+      cache_read: 0.01,
+      cache_write: 0.083333,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemini-2.5-pro', {
+    name: 'Gemini 2.5 Pro',
+    created: '2025-06-17',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+          min: 128,
+          max: 32768,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 1.25,
+      output: 10,
+      cache_read: 0.125,
+      cache_write: 0.375,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemini-2.5-pro-preview', {
+    name: 'Gemini 2.5 Pro Preview 06-05',
+    created: '2025-06-05',
+    knowledge: '2025-01-31',
+    modalities: {
+      input: ['image', 'text', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+          min: 128,
+          max: 32768,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 1.25,
+      output: 10,
+      cache_read: 0.125,
+      cache_write: 0.375,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemini-3-flash-preview', {
+    name: 'Gemini 3 Flash Preview',
+    created: '2025-12-17',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.5,
+      output: 3,
+      cache_read: 0.05,
+      cache_write: 0.083333,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemini-3.1-flash-lite', {
+    name: 'Gemini 3.1 Flash Lite',
+    created: '2026-05-07',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.25,
+      output: 1.5,
+      cache_read: 0.025,
+      cache_write: 0.083333,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemini-3.1-flash-lite-preview', {
+    name: 'Gemini 3.1 Flash Lite Preview',
+    created: '2026-03-03',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.25,
+      output: 1.5,
+      cache_read: 0.025,
+      cache_write: 0.083333,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemini-3.1-pro-preview', {
+    name: 'Gemini 3.1 Pro Preview',
+    created: '2026-02-19',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 2,
+      output: 12,
+      cache_read: 0.2,
+      cache_write: 0.375,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemini-3.1-pro-preview-customtools', {
+    name: 'Gemini 3.1 Pro Preview Custom Tools',
+    created: '2026-02-19',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 2,
+      output: 12,
+      cache_read: 0.2,
+      cache_write: 0.375,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemini-3.5-flash', {
+    name: 'Gemini 3.5 Flash',
+    created: '2026-05-19',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 1.5,
+      output: 9,
+      cache_read: 0.15,
+      cache_write: 0.083333,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemini-3.5-flash-lite', {
+    name: 'Gemini 3.5 Flash Lite',
+    created: '2026-07-21',
+    knowledge: '2026-03',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.3,
+      output: 2.5,
+      cache_read: 0.03,
+      cache_write: 0.083333,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemini-3.6-flash', {
+    name: 'Gemini 3.6 Flash',
+    created: '2026-07-21',
+    knowledge: '2026-03',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.75,
+      output: 3.75,
+      cache_read: 0.075,
+      cache_write: 0.041667,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemini-3.7-flash', {
+    name: 'Gemini 3.7 Flash',
+    created: '2026-08-13',
+    knowledge: '2026-03',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.75,
+      output: 3.75,
+      cache_read: 0.075,
+      cache_write: 0.041667,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemini-3.8-flash', {
+    name: 'Gemini 3.8 Flash',
+    created: '2026-09-02',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.75,
+      output: 3.75,
+      cache_read: 0.075,
+      cache_write: 0.041667,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemma-2-27b-it', {
+    name: 'Gemma 2 27B',
+    created: '2024-07-13',
+    knowledge: '2024-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 8192,
+      output: 2048,
+    },
+    cost: {
+      input: 0.65,
+      output: 0.65,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemma-3-12b-it', {
+    name: 'Gemma 3 12B IT',
+    created: '2025-03-12',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 16384,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.15,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemma-3-27b-it', {
+    name: 'Gemma 3 27B IT',
+    created: '2025-03-12',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 117964,
+    },
+    cost: {
+      input: 0.08,
+      output: 0.45,
+      cache_read: 0.04,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemma-3-4b-it', {
+    name: 'Gemma 3 4B IT',
+    created: '2025-03-12',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 16384,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.1,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemma-4-26b-a4b-it', {
+    name: 'Gemma 4 26B A4B IT',
+    created: '2026-04-02',
+    modalities: {
+      input: ['image', 'text', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.0675,
+      output: 0.225,
+      cache_read: 0.0375,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemma-4-26b-a4b-it:free', {
+    name: 'Gemma 4 26B A4B  (free)',
+    created: '2026-04-02',
+    modalities: {
+      input: ['image', 'text', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemma-4-31b-it', {
+    name: 'Gemma 4 31B IT',
+    created: '2026-04-02',
+    modalities: {
+      input: ['image', 'text', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 16384,
+    },
+    cost: {
+      input: 0.09,
+      output: 0.34,
+      cache_read: 0.05,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/google/gemma-4-31b-it:free', {
+    name: 'Gemma 4 31B (free)',
+    created: '2026-04-02',
+    modalities: {
+      input: ['image', 'text', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/gryphe/mythomax-l2-13b', {
+    name: 'MythoMax 13B',
+    created: '2023-07-02',
+    knowledge: '2023-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 8192,
+      output: 3686,
+    },
+    cost: {
+      input: 0.08,
+      output: 0.11,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/ibm-granite/granite-4.0-h-micro', {
+    name: 'Granite 4.0 Micro',
+    created: '2025-10-20',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 131000,
+      output: 117900,
+    },
+    cost: {
+      input: 0.017,
+      output: 0.112,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/ibm-granite/granite-4.2-8b', {
+    name: 'Granite 4.2 8B',
+    created: '2026-08-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 117964,
+    },
+    cost: {
+      input: 0.06,
+      output: 0.25,
+      cache_read: 0.015,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/inception/mercury-2', {
+    name: 'Mercury 2',
+    created: '2026-03-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 50000,
+    },
+    cost: {
+      input: 0.25,
+      output: 0.75,
+      cache_read: 0.025,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/inception/mercury-2.5', {
+    name: 'Mercury 2.5',
+    created: '2026-09-08',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 260000,
+      output: 65536,
+    },
+    cost: {
+      input: 0.04,
+      output: 0.15,
+      cache_read: 0.004,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/inclusionai/ling-3.0-flash', {
+    name: 'Ling 3.0 Flash',
+    created: '2026-07-23',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.021,
+      output: 0.063,
+      cache_read: 0.0042,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/inclusionai/ling-3.0-flash-fin', {
+    name: 'Ling 3.0 Flash Fin',
+    created: '2026-08-27',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.06,
+      output: 0.18,
+      cache_read: 0.012,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/inclusionai/ling-3.0-flash-fin:free', {
+    name: 'Ling 3.0 Flash Fin (free)',
+    created: '2026-08-27',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/inclusionai/ling-3.0-flash-sante:free', {
+    name: 'Ling 3.0 Flash Sante (free)',
+    created: '2026-09-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/inclusionai/ling-3.0-flash-vl', {
+    name: 'Ling 3.0 Flash VL',
+    created: '2026-09-10',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.021,
+      output: 0.0616,
+      cache_read: 0.0042,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/inference-net/schematron-v2-small', {
+    name: 'Schematron V2 Small',
+    created: '2026-09-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 4096,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.23,
+      cache_read: 0.05,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/inference-net/schematron-v2-turbo', {
+    name: 'Schematron V2 Turbo',
+    created: '2026-09-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 8192,
+    },
+    cost: {
+      input: 0.03,
+      output: 0.15,
+      cache_read: 0.03,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/kwaipilot/kat-coder-pro-v2.5', {
+    name: 'KAT-Coder-Pro V2.5',
+    created: '2026-07-10',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.74,
+      output: 2.96,
+      cache_read: 0.15,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/liquid/lfm-2.5-2.6b:free', {
+    name: 'LFM2.5-2.6B (free)',
+    created: '2026-08-11',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 65536,
+      output: 8192,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mancer/weaver', {
+    name: 'Weaver (alpha)',
+    created: '2023-08-02',
+    knowledge: '2023-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 8000,
+      output: 6000,
+    },
+    cost: {
+      input: 0.4,
+      output: 0.75,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meituan/longcat-2.0', {
+    name: 'LongCat 2.0',
+    created: '2026-07-20',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048756,
+      output: 262144,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.006,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meta-llama/llama-3.1-70b-instruct', {
+    name: 'Llama-3.1-70B-Instruct',
+    created: '2024-07-23',
+    knowledge: '2023-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 16384,
+    },
+    cost: {
+      input: 0.4,
+      output: 0.4,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meta-llama/llama-3.1-8b-instruct', {
+    name: 'Llama-3.1-8B-Instruct',
+    created: '2024-07-23',
+    knowledge: '2023-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 117964,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.08,
+      cache_read: 0.025,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meta-llama/llama-3.2-1b-instruct', {
+    name: 'Llama 3.2 1B Instruct',
+    created: '2024-09-25',
+    knowledge: '2023-12-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 60000,
+      output: 54000,
+    },
+    cost: {
+      input: 0.027,
+      output: 0.201,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meta-llama/llama-3.2-3b-instruct', {
+    name: 'Llama 3.2 3B Instruct',
+    created: '2024-09-25',
+    knowledge: '2023-12-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 117964,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.33,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meta-llama/llama-3.3-70b-instruct', {
+    name: 'Llama-3.3-70B-Instruct',
+    created: '2024-12-06',
+    knowledge: '2023-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 16384,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.32,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meta-llama/llama-4-maverick', {
+    name: 'Llama 4 Maverick',
+    created: '2025-04-05',
+    knowledge: '2024-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 16384,
+    },
+    cost: {
+      input: 0.1875,
+      output: 0.6525,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meta-llama/llama-4-scout', {
+    name: 'Llama 4 Scout',
+    created: '2025-04-05',
+    knowledge: '2024-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1310720,
+      output: 16384,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.3,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meta-llama/llama-guard-4-12b', {
+    name: 'Llama Guard 4 12B',
+    created: '2025-04-30',
+    knowledge: '2024-08-31',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 163840,
+      output: 16384,
+    },
+    cost: {
+      input: 0.18,
+      output: 0.18,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meta/muse-glimmer-30b', {
+    name: 'Muse Glimmer 30B',
+    created: '2026-08-10',
+    knowledge: '2026-01-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 16384,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.04,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meta/muse-spark-1.1', {
+    name: 'Muse Spark 1.1',
+    created: '2026-04-08',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 943718,
+    },
+    cost: {
+      input: 1.25,
+      output: 4.25,
+      cache_read: 0.15,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meta/muse-spark-1.2', {
+    name: 'Muse Spark 1.2',
+    created: '2026-08-05',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 943718,
+    },
+    cost: {
+      input: 1.25,
+      output: 4.25,
+      cache_read: 0.15,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meta/muse-spark-1.2-contributor', {
+    name: 'Muse Spark 1.2 Contributor',
+    created: '2026-08-21',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 943718,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.2,
+      cache_read: 0.002,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meta/muse-spark-1.3', {
+    name: 'Muse Spark 1.3',
+    created: '2026-09-02',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 943718,
+    },
+    cost: {
+      input: 1.25,
+      output: 4.25,
+      cache_read: 0.15,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/meta/muse-spark-1.3-contributor', {
+    name: 'Muse Spark 1.3 Contributor',
+    created: '2026-09-02',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 943718,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.2,
+      cache_read: 0.002,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/microsoft/phi-4', {
+    name: 'Phi 4',
+    created: '2025-01-10',
+    knowledge: '2024-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 16384,
+      output: 14745,
+    },
+    cost: {
+      input: 0.07,
+      output: 0.14,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/microsoft/wizardlm-2-8x22b', {
+    name: 'WizardLM-2 8x22B',
+    created: '2024-04-16',
+    knowledge: '2024-04-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 65535,
+      output: 8000,
+    },
+    cost: {
+      input: 0.62,
+      output: 0.62,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/minimax/minimax-01', {
+    name: 'MiniMax-01',
+    created: '2025-01-15',
+    knowledge: '2024-03-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000192,
+      output: 40000,
+    },
+    cost: {
+      input: 0.2,
+      output: 1.1,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/minimax/minimax-m1', {
+    name: 'MiniMax M1',
+    created: '2025-06-17',
+    knowledge: '2024-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 40000,
+    },
+    cost: {
+      input: 0.4,
+      output: 2.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/minimax/minimax-m2', {
+    name: 'MiniMax-M2',
+    created: '2025-10-27',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 204800,
+      output: 176947,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/minimax/minimax-m2-her', {
+    name: 'MiniMax-M2 Her',
+    created: '2026-01-23',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 65536,
+      output: 2048,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.03,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/minimax/minimax-m2.1', {
+    name: 'MiniMax-M2.1',
+    created: '2025-12-23',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 204800,
+      output: 131072,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.03,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/minimax/minimax-m2.5', {
+    name: 'MiniMax-M2.5',
+    created: '2026-02-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 204800,
+      output: 128000,
+    },
+    cost: {
+      input: 0.27,
+      output: 1.08,
+      cache_read: 0.027,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/minimax/minimax-m2.7', {
+    name: 'MiniMax-M2.7',
+    created: '2026-03-18',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 204800,
+      output: 131072,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.06,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/minimax/minimax-m3', {
+    name: 'MiniMax-M3',
+    created: '2026-06-01',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 512000,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.06,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/codestral-2508', {
+    name: 'Codestral 2508',
+    created: '2025-08-01',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 204800,
+    },
+    cost: {
+      input: 0.3,
+      output: 0.9,
+      cache_read: 0.03,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/devstral-2512', {
+    name: 'Devstral 2',
+    created: '2025-12-09',
+    knowledge: '2025-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 209715,
+    },
+    cost: {
+      input: 0.4,
+      output: 2,
+      cache_read: 0.04,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/ministral-14b-2512', {
+    name: 'Ministral 3 14B 2512',
+    created: '2025-12-02',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 209715,
+    },
+    cost: {
+      input: 0.2,
+      output: 0.2,
+      cache_read: 0.02,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/ministral-3b-2512', {
+    name: 'Ministral 3 3B 2512',
+    created: '2025-12-02',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 104857,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.1,
+      cache_read: 0.01,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/ministral-8b-2512', {
+    name: 'Ministral 3 8B 2512',
+    created: '2025-12-02',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 209715,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.15,
+      cache_read: 0.015,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/mistral-large', {
+    name: 'Mistral Large',
+    created: '2024-02-26',
+    knowledge: '2024-11-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 102400,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/mistral-large-2407', {
+    name: 'Mistral Large 2407',
+    created: '2024-11-19',
+    knowledge: '2024-03-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 104857,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/mistral-large-2512', {
+    name: 'Mistral Large 3',
+    created: '2025-12-02',
+    knowledge: '2024-11',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 209715,
+    },
+    cost: {
+      input: 0.5,
+      output: 1.5,
+      cache_read: 0.05,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/mistral-medium-3', {
+    name: 'Mistral Medium 3',
+    created: '2025-05-07',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 104857,
+    },
+    cost: {
+      input: 0.4,
+      output: 2,
+      cache_read: 0.04,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/mistral-medium-3-5', {
+    name: 'Mistral Medium 3.5',
+    created: '2026-04-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 209715,
+    },
+    cost: {
+      input: 1.5,
+      output: 7.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/mistral-medium-3.1', {
+    name: 'Mistral Medium 3.1',
+    created: '2025-08-13',
+    knowledge: '2025-06-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 104857,
+    },
+    cost: {
+      input: 0.4,
+      output: 2,
+      cache_read: 0.04,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/mistral-nemo', {
+    name: 'Mistral Nemo',
+    created: '2024-07-01',
+    knowledge: '2024-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 16384,
+    },
+    cost: {
+      input: 0.019,
+      output: 0.03,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/mistral-saba', {
+    name: 'Saba',
+    created: '2025-02-17',
+    knowledge: '2024-09-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 26214,
+    },
+    cost: {
+      input: 0.2,
+      output: 0.6,
+      cache_read: 0.02,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/mistral-small-24b-instruct-2501', {
+    name: 'Mistral Small 3',
+    created: '2025-01-30',
+    knowledge: '2023-10-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 16384,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.08,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/mistral-small-2603', {
+    name: 'Mistral Small 4',
+    created: '2026-03-16',
+    knowledge: '2025-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 209715,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+      cache_read: 0.015,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/mistral-small-3.1-24b-instruct', {
+    name: 'Mistral Small 3.1 24B',
+    created: '2025-03-17',
+    knowledge: '2023-10-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 102400,
+    },
+    cost: {
+      input: 0.351,
+      output: 0.555,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/mistral-small-3.2-24b-instruct', {
+    name: 'Mistral Small 3.2 24B',
+    created: '2025-06-20',
+    knowledge: '2023-10-31',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 16384,
+    },
+    cost: {
+      input: 0.09375,
+      output: 0.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/mixtral-8x22b-instruct', {
+    name: 'Mixtral 8x22B Instruct',
+    created: '2024-04-17',
+    knowledge: '2024-01-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 65536,
+      output: 52428,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/mistralai/voxtral-small-24b-2507', {
+    name: 'Voxtral Small 24B 2507',
+    created: '2025-07-15',
+    modalities: {
+      input: ['text', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 26214,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.3,
+      cache_read: 0.01,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/moonshotai/kimi-k2', {
+    name: 'Kimi K2 0711',
+    created: '2025-07-11',
+    knowledge: '2024-12-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 98304,
+    },
+    cost: {
+      input: 0.57,
+      output: 2.3,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/moonshotai/kimi-k2-0905', {
+    name: 'Kimi K2 0905',
+    created: '2025-09-04',
+    knowledge: '2024-12-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 98304,
+    },
+    cost: {
+      input: 0.6,
+      output: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/moonshotai/kimi-k2-thinking', {
+    name: 'Kimi K2 Thinking',
+    created: '2025-11-06',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 98304,
+    },
+    cost: {
+      input: 0.6,
+      output: 2.5,
+      cache_read: 0.15,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/moonshotai/kimi-k2.5', {
+    name: 'Kimi K2.5',
+    created: '2026-01',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.45,
+      output: 2.25,
+      cache_read: 0.07,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/moonshotai/kimi-k2.6', {
+    name: 'Kimi K2.6',
+    created: '2026-04-21',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.95,
+      output: 4,
+      cache_read: 0.16,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/moonshotai/kimi-k2.7-code', {
+    name: 'Kimi K2.7 Code',
+    created: '2026-06-12',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.6562,
+      output: 3.3,
+      cache_read: 0.18,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/moonshotai/kimi-k3', {
+    name: 'Kimi K3',
+    created: '2026-07-16',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 943718,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/morph/morph-v3-fast', {
+    name: 'Morph V3 Fast',
+    created: '2025-07-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 81920,
+      output: 38000,
+    },
+    cost: {
+      input: 0.8,
+      output: 1.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/morph/morph-v3-large', {
+    name: 'Morph V3 Large',
+    created: '2025-07-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 0.9,
+      output: 1.9,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/nousresearch/hermes-3-llama-3.1-405b', {
+    name: 'Hermes 3 405B Instruct',
+    created: '2024-08-16',
+    knowledge: '2023-12-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 16384,
+    },
+    cost: {
+      input: 1,
+      output: 1,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/nousresearch/hermes-3-llama-3.1-70b', {
+    name: 'Hermes 3 70B Instruct',
+    created: '2024-08-18',
+    knowledge: '2023-12-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 16384,
+    },
+    cost: {
+      input: 0.7,
+      output: 0.7,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/nousresearch/hermes-4-405b', {
+    name: 'Hermes 4 405B',
+    created: '2025-08-26',
+    knowledge: '2024-08-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 117964,
+    },
+    cost: {
+      input: 1,
+      output: 3,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/nvidia/nemotron-3-nano-30b-a3b', {
+    name: 'Nemotron 3 Nano 30B A3B',
+    created: '2025-12-15',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.2,
+      cache_read: 0.03,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', {
+    name: 'Nemotron 3 Nano Omni (free)',
+    created: '2026-04-28',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 65536,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/nvidia/nemotron-3-super-120b-a12b', {
+    name: 'Nemotron 3 Super 120B A12B',
+    created: '2026-03-11',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.08,
+      output: 0.45,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/nvidia/nemotron-3-super-120b-a12b:free', {
+    name: 'Nemotron 3 Super (free)',
+    created: '2026-03-11',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/nvidia/nemotron-3-ultra-550b-a55b', {
+    name: 'Nemotron 3 Ultra 550B A55B',
+    created: '2026-06-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['medium', 'high'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 182520,
+    },
+    cost: {
+      input: 0.6,
+      output: 2.4,
+      cache_read: 0.12,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/nvidia/nemotron-3-ultra-550b-a55b:free', {
+    name: 'Nemotron 3 Ultra (free)',
+    created: '2026-06-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['medium', 'high'],
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65536,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/nvidia/nemotron-3.5-content-safety', {
+    name: 'Nemotron 3.5 Content Safety',
+    created: '2026-06-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 117964,
+    },
+    cost: {
+      input: 0.2,
+      output: 0.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/nvidia/nemotron-3.5-content-safety:free', {
+    name: 'Nemotron 3.5 Content Safety (free)',
+    created: '2026-06-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 8192,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/nvidia/nemotron-3.5-lightning', {
+    name: 'Nemotron 3.5 Lightning 30B A3B',
+    created: '2026-08-11',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 0.08,
+      output: 0.2,
+      cache_read: 0.04,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/nvidia/nemotron-3.5-lightning:free', {
+    name: 'Nemotron 3.5 Lightning (free)',
+    created: '2026-08-11',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65536,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-3.5-turbo', {
+    name: 'GPT-3.5-turbo',
+    created: '2023-03-01',
+    knowledge: '2021-09-01',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 16385,
+      output: 4096,
+    },
+    cost: {
+      input: 0.5,
+      output: 1.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-3.5-turbo-0613', {
+    name: 'GPT-3.5 Turbo (older v0613)',
+    created: '2024-01-25',
+    knowledge: '2021-09-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 4095,
+      output: 3685,
+    },
+    cost: {
+      input: 1,
+      output: 2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-3.5-turbo-16k', {
+    name: 'GPT-3.5 Turbo 16k',
+    created: '2023-08-28',
+    knowledge: '2021-09-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 16385,
+      output: 4096,
+    },
+    cost: {
+      input: 3,
+      output: 4,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-3.5-turbo-instruct', {
+    name: 'GPT-3.5 Turbo Instruct',
+    created: '2023-09-28',
+    knowledge: '2021-09-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 4095,
+      output: 3685,
+    },
+    cost: {
+      input: 1.5,
+      output: 2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-4', {
+    name: 'GPT-4',
+    created: '2023-11-06',
+    knowledge: '2023-11',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 8191,
+      output: 4096,
+    },
+    cost: {
+      input: 30,
+      output: 60,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-4-turbo', {
+    name: 'GPT-4 Turbo',
+    created: '2023-11-06',
+    knowledge: '2023-12',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 4096,
+    },
+    cost: {
+      input: 10,
+      output: 30,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-4.1', {
+    name: 'GPT-4.1',
+    created: '2025-04-14',
+    knowledge: '2024-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1047576,
+      output: 32768,
+    },
+    cost: {
+      input: 2,
+      output: 8,
+      cache_read: 0.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-4.1-mini', {
+    name: 'GPT-4.1 mini',
+    created: '2025-04-14',
+    knowledge: '2024-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1047576,
+      output: 32768,
+    },
+    cost: {
+      input: 0.4,
+      output: 1.6,
+      cache_read: 0.1,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-4.1-nano', {
+    name: 'GPT-4.1 nano',
+    created: '2025-04-14',
+    knowledge: '2024-04',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1047576,
+      output: 32768,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.4,
+      cache_read: 0.025,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-4o', {
+    name: 'GPT-4o',
+    created: '2024-05-13',
+    knowledge: '2023-09',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16384,
+    },
+    cost: {
+      input: 2.5,
+      output: 10,
+      cache_read: 1.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-4o-2024-05-13', {
+    name: 'GPT-4o (2024-05-13)',
+    created: '2024-05-13',
+    knowledge: '2023-09',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 4096,
+    },
+    cost: {
+      input: 5,
+      output: 15,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-4o-2024-08-06', {
+    name: 'GPT-4o (2024-08-06)',
+    created: '2024-08-06',
+    knowledge: '2023-09',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16384,
+    },
+    cost: {
+      input: 2.5,
+      output: 10,
+      cache_read: 1.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-4o-2024-11-20', {
+    name: 'GPT-4o (2024-11-20)',
+    created: '2024-11-20',
+    knowledge: '2023-09',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16384,
+    },
+    cost: {
+      input: 2.5,
+      output: 10,
+      cache_read: 1.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-4o-mini', {
+    name: 'GPT-4o mini',
+    created: '2024-07-18',
+    knowledge: '2023-09',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16384,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+      cache_read: 0.075,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-4o-mini-2024-07-18', {
+    name: 'GPT-4o-mini (2024-07-18)',
+    created: '2024-07-18',
+    knowledge: '2023-10-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16384,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+      cache_read: 0.075,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5', {
+    name: 'GPT-5',
+    created: '2025-08-07',
+    knowledge: '2024-09-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.25,
+      output: 10,
+      cache_read: 0.125,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5-mini', {
+    name: 'GPT-5 Mini',
+    created: '2025-08-07',
+    knowledge: '2024-05-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.25,
+      output: 2,
+      cache_read: 0.025,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5-nano', {
+    name: 'GPT-5 Nano',
+    created: '2025-08-07',
+    knowledge: '2024-05-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.4,
+      cache_read: 0.005,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5-pro', {
+    name: 'GPT-5 Pro',
+    created: '2025-10-06',
+    knowledge: '2024-09-30',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['high'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 15,
+      output: 120,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.1', {
+    name: 'GPT-5.1',
+    created: '2025-11-13',
+    knowledge: '2024-09-30',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.25,
+      output: 10,
+      cache_read: 0.125,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.1-codex', {
+    name: 'GPT-5.1 Codex',
+    created: '2025-11-13',
+    knowledge: '2024-09-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.25,
+      output: 10,
+      cache_read: 0.13,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.1-codex-max', {
+    name: 'GPT-5.1 Codex Max',
+    created: '2025-11-13',
+    knowledge: '2024-09-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.25,
+      output: 10,
+      cache_read: 0.125,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.1-codex-mini', {
+    name: 'GPT-5.1 Codex mini',
+    created: '2025-11-13',
+    knowledge: '2024-09-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.25,
+      output: 2,
+      cache_read: 0.03,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.2', {
+    name: 'GPT-5.2',
+    created: '2025-12-11',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.75,
+      output: 14,
+      cache_read: 0.175,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.2-chat', {
+    name: 'GPT-5.2 Chat',
+    created: '2025-12-10',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 32000,
+    },
+    cost: {
+      input: 1.75,
+      output: 14,
+      cache_read: 0.175,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.2-codex', {
+    name: 'GPT-5.2 Codex',
+    created: '2025-12-11',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.75,
+      output: 14,
+      cache_read: 0.175,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.2-pro', {
+    name: 'GPT-5.2 Pro',
+    created: '2025-12-11',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 21,
+      output: 168,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.3-codex', {
+    name: 'GPT-5.3 Codex',
+    created: '2026-02-05',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 1.75,
+      output: 14,
+      cache_read: 0.175,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.4', {
+    name: 'GPT-5.4',
+    created: '2026-03-05',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2.5,
+      output: 15,
+      cache_read: 0.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.4-mini', {
+    name: 'GPT-5.4 mini',
+    created: '2026-03-17',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.75,
+      output: 4.5,
+      cache_read: 0.075,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.4-nano', {
+    name: 'GPT-5.4 nano',
+    created: '2026-03-17',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.2,
+      output: 1.25,
+      cache_read: 0.02,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.4-pro', {
+    name: 'GPT-5.4 Pro',
+    created: '2026-03-05',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 30,
+      output: 180,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.5', {
+    name: 'GPT-5.5',
+    created: '2026-04-23',
+    knowledge: '2025-12-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 30,
+      cache_read: 0.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.5-pro', {
+    name: 'GPT-5.5 Pro',
+    created: '2026-04-23',
+    knowledge: '2025-12-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 30,
+      output: 180,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.6-luna', {
+    name: 'GPT-5.6 Luna',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.2,
+      output: 1.2,
+      cache_read: 0.02,
+      cache_write: 0.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.6-luna-pro', {
+    name: 'GPT-5.6 Luna Pro',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.2,
+      output: 1.2,
+      cache_read: 0.02,
+      cache_write: 0.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.6-sol', {
+    name: 'GPT-5.6 Sol',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.6-sol-pro', {
+    name: 'GPT-5.6 Sol Pro',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.6-terra', {
+    name: 'GPT-5.6 Terra',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 12,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-5.6-terra-pro', {
+    name: 'GPT-5.6 Terra Pro',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 12,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-6-astra', {
+    name: 'GPT-6 Astra',
+    created: '2026-09-04',
+    knowledge: '2026-04-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 1,
+      cache_write: 12.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-6-astra-pro', {
+    name: 'GPT-6 Astra Pro',
+    created: '2026-09-04',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 1,
+      cache_write: 12.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-6-luna', {
+    name: 'GPT-6 Luna',
+    created: '2026-09-22',
+    knowledge: '2026-05-18',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.5,
+      cache_read: 0.01,
+      cache_write: 0.125,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-6-luna-pro', {
+    name: 'GPT-6 Luna Pro',
+    created: '2026-09-22',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.5,
+      cache_read: 0.01,
+      cache_write: 0.125,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-6-sol', {
+    name: 'GPT-6 Sol',
+    created: '2026-09-22',
+    knowledge: '2026-04-20',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-6-sol-pro', {
+    name: 'GPT-6 Sol Pro',
+    created: '2026-09-22',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-chat-latest', {
+    name: 'GPT Chat Latest',
+    created: '2026-05-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 400000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 30,
+      cache_read: 0.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-oss-120b', {
+    name: 'GPT OSS 120B',
+    created: '2025-08-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 65536,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+      cache_read: 0.075,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-oss-20b', {
+    name: 'GPT OSS 20B',
+    created: '2025-08-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 32768,
+    },
+    cost: {
+      input: 0.018,
+      output: 0.09,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/gpt-oss-safeguard-20b', {
+    name: 'GPT OSS Safeguard 20B',
+    created: '2025-10-29',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 65536,
+    },
+    cost: {
+      input: 0.075,
+      output: 0.3,
+      cache_read: 0.0375,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/o1', {
+    name: 'o1',
+    created: '2024-12-05',
+    knowledge: '2023-09',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 100000,
+    },
+    cost: {
+      input: 15,
+      output: 60,
+      cache_read: 7.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/o1-pro', {
+    name: 'o1-pro',
+    created: '2025-03-19',
+    knowledge: '2023-09',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 100000,
+    },
+    cost: {
+      input: 150,
+      output: 600,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/o3', {
+    name: 'o3',
+    created: '2025-04-16',
+    knowledge: '2024-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 100000,
+    },
+    cost: {
+      input: 2,
+      output: 8,
+      cache_read: 0.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/o3-mini', {
+    name: 'o3-mini',
+    created: '2024-12-20',
+    knowledge: '2024-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 100000,
+    },
+    cost: {
+      input: 1.1,
+      output: 4.4,
+      cache_read: 0.55,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/o3-mini-high', {
+    name: 'o3 Mini High',
+    created: '2025-02-12',
+    knowledge: '2023-10-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 100000,
+    },
+    cost: {
+      input: 1.1,
+      output: 4.4,
+      cache_read: 0.55,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/o3-pro', {
+    name: 'o3-pro',
+    created: '2025-06-10',
+    knowledge: '2024-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 100000,
+    },
+    cost: {
+      input: 20,
+      output: 80,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/o4-mini', {
+    name: 'o4-mini',
+    created: '2025-04-16',
+    knowledge: '2024-05',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 100000,
+    },
+    cost: {
+      input: 1.1,
+      output: 4.4,
+      cache_read: 0.275,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openai/o4-mini-high', {
+    name: 'o4 Mini High',
+    created: '2025-04-16',
+    knowledge: '2024-06-30',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 100000,
+    },
+    cost: {
+      input: 1.1,
+      output: 4.4,
+      cache_read: 0.275,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/openrouter/free', {
+    name: 'Free Models Router',
+    created: '2026-02-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 8000,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/perceptron/perceptron-mk1', {
+    name: 'Perceptron Mk1',
+    created: '2026-05-12',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 8192,
+    },
+    cost: {
+      input: 0.15,
+      output: 1.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/perceptron/perceptron-mk1.5', {
+    name: 'Perceptron Mk1.5',
+    created: '2026-09-25',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 36864,
+      output: 8192,
+    },
+    cost: {
+      input: 0.15,
+      output: 1.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/perplexity/sonar', {
+    name: 'Sonar',
+    created: '2025-01-27',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 127072,
+      output: 114364,
+    },
+    cost: {
+      input: 1,
+      output: 1,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/perplexity/sonar-deep-research', {
+    name: 'Sonar Deep Research',
+    created: '2025-03-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 115200,
+    },
+    cost: {
+      input: 2,
+      output: 8,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/perplexity/sonar-pro', {
+    name: 'Sonar Pro',
+    created: '2025-03-07',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 8000,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/perplexity/sonar-pro-search', {
+    name: 'Sonar Pro Search',
+    created: '2025-10-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 8000,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/perplexity/sonar-reasoning-pro', {
+    name: 'Sonar Reasoning Pro',
+    created: '2025-03-07',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 115200,
+    },
+    cost: {
+      input: 2,
+      output: 8,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/poolside/laguna-s-2.1', {
+    name: 'Laguna S 2.1',
+    created: '2026-07-21',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 0.09,
+      output: 0.18,
+      cache_read: 0.009,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/poolside/laguna-s-2.1:free', {
+    name: 'Laguna S 2.1 (free)',
+    created: '2026-07-21',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/poolside/laguna-xs-2.1', {
+    name: 'Laguna XS 2.1',
+    created: '2026-07-02',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.06,
+      output: 0.12,
+      cache_read: 0.03,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/poolside/laguna-xs-2.1:free', {
+    name: 'Laguna XS 2.1 (free)',
+    created: '2026-07-02',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/prism-ml/ternary-bonsai-2-27b', {
+    name: 'Ternary Bonsai 2 27B',
+    created: '2026-09-18',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['medium', 'xhigh'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.075,
+      output: 0.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen-2.5-72b-instruct', {
+    name: 'Qwen2.5 72B Instruct',
+    created: '2024-09-19',
+    knowledge: '2024-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 16384,
+    },
+    cost: {
+      input: 0.36,
+      output: 0.4,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen-2.5-7b-instruct', {
+    name: 'Qwen2.5 7B Instruct',
+    created: '2024-10-16',
+    knowledge: '2024-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 29491,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen-2.5-coder-32b-instruct', {
+    name: 'Qwen2.5 Coder 32B Instruct',
+    created: '2024-11-11',
+    knowledge: '2024-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 29491,
+    },
+    cost: {
+      input: 0.66,
+      output: 1,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen-plus', {
+    name: 'Qwen Plus',
+    created: '2024-01-25',
+    knowledge: '2024-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 32768,
+    },
+    cost: {
+      input: 0.26,
+      output: 0.78,
+      cache_read: 0.052,
+      cache_write: 0.325,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen-plus-2025-07-28', {
+    name: 'Qwen Plus 0728',
+    created: '2025-09-08',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 32768,
+    },
+    cost: {
+      input: 0.26,
+      output: 0.78,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen2.5-vl-72b-instruct', {
+    name: 'Qwen2.5 VL 72B Instruct',
+    created: '2025-02-01',
+    knowledge: '2024-06-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 115200,
+    },
+    cost: {
+      input: 0.8,
+      output: 1,
+      cache_read: 0.4,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-14b', {
+    name: 'Qwen3 14B',
+    created: '2025-04-28',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 16384,
+    },
+    cost: {
+      input: 0.12,
+      output: 0.24,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-235b-a22b', {
+    name: 'Qwen3 235B-A22B',
+    created: '2025-04',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 8192,
+    },
+    cost: {
+      input: 0.455,
+      output: 1.82,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-235b-a22b-2507', {
+    name: 'Qwen3 235B A22B Instruct 2507',
+    created: '2025-07-21',
+    knowledge: '2025-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.0875,
+      output: 0.35,
+      cache_read: 0.0175,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-235b-a22b-thinking-2507', {
+    name: 'Qwen3 235B A22B Thinking 2507',
+    created: '2025-07-25',
+    knowledge: '2025-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 117964,
+    },
+    cost: {
+      input: 0.23,
+      output: 2.3,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-30b-a3b', {
+    name: 'Qwen3 30B A3B',
+    created: '2025-04-28',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 16384,
+    },
+    cost: {
+      input: 0.12,
+      output: 0.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-30b-a3b-instruct-2507', {
+    name: 'Qwen3 30B A3B Instruct 2507',
+    created: '2025-07-29',
+    knowledge: '2025-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.3,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-30b-a3b-thinking-2507', {
+    name: 'Qwen3 30B A3B Thinking 2507',
+    created: '2025-08-28',
+    knowledge: '2025-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 81920,
+      output: 32768,
+    },
+    cost: {
+      input: 0.2,
+      output: 2.4,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-32b', {
+    name: 'Qwen3 32B',
+    created: '2025-04',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 16384,
+    },
+    cost: {
+      input: 0.08,
+      output: 0.28,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-8b', {
+    name: 'Qwen3 8B',
+    created: '2025-04-28',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 8192,
+    },
+    cost: {
+      input: 0.117,
+      output: 0.455,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-coder', {
+    name: 'Qwen3 Coder 480B A35B',
+    created: '2025-07-23',
+    knowledge: '2025-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 65536,
+    },
+    cost: {
+      input: 0.3,
+      output: 1,
+      cache_read: 0.1,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-coder-30b-a3b-instruct', {
+    name: 'Qwen3-Coder 30B-A3B Instruct',
+    created: '2025-04',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.07,
+      output: 0.28,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-coder-flash', {
+    name: 'Qwen3 Coder Flash',
+    created: '2025-07-28',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65536,
+    },
+    cost: {
+      input: 0.195,
+      output: 0.975,
+      cache_read: 0.039,
+      cache_write: 0.24375,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-coder-next', {
+    name: 'Qwen3 Coder Next',
+    created: '2026-02-03',
+    knowledge: '2025-09',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.12,
+      output: 0.8,
+      cache_read: 0.07,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-coder-plus', {
+    name: 'Qwen3 Coder Plus',
+    created: '2025-07-23',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65536,
+    },
+    cost: {
+      input: 0.65,
+      output: 3.25,
+      cache_read: 0.13,
+      cache_write: 0.8125,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-max', {
+    name: 'Qwen3 Max',
+    created: '2025-09-23',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 65536,
+    },
+    cost: {
+      input: 0.78,
+      output: 3.9,
+      cache_read: 0.156,
+      cache_write: 0.975,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-max-thinking', {
+    name: 'Qwen3 Max Thinking',
+    created: '2026-02-09',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 65536,
+    },
+    cost: {
+      input: 0.78,
+      output: 3.9,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-next-80b-a3b-instruct', {
+    name: 'Qwen3-Next 80B-A3B Instruct',
+    created: '2025-09',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.1,
+      output: 1.1,
+      cache_read: 0.07,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-next-80b-a3b-thinking', {
+    name: 'Qwen3-Next 80B-A3B (Thinking)',
+    created: '2025-09',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.15,
+      output: 1.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-vl-235b-a22b-instruct', {
+    name: 'Qwen3 VL 235B A22B Instruct',
+    created: '2025-09-23',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.21,
+      output: 1.9,
+      cache_read: 0.1,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-vl-235b-a22b-thinking', {
+    name: 'Qwen3 VL 235B A22B Thinking',
+    created: '2025-09-23',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 32768,
+    },
+    cost: {
+      input: 0.4,
+      output: 4,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-vl-30b-a3b-instruct', {
+    name: 'Qwen3 VL 30B A3B Instruct',
+    created: '2025-10-06',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 16384,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-vl-30b-a3b-thinking', {
+    name: 'Qwen3 VL 30B A3B Thinking',
+    created: '2025-10-06',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.2,
+      output: 2.4,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-vl-32b-instruct', {
+    name: 'Qwen3 VL 32B Instruct',
+    created: '2025-10-23',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 32768,
+    },
+    cost: {
+      input: 0.104,
+      output: 0.416,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-vl-8b-instruct', {
+    name: 'Qwen3 VL 8B Instruct',
+    created: '2025-10-14',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.117,
+      output: 0.455,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3-vl-8b-thinking', {
+    name: 'Qwen3 VL 8B Thinking',
+    created: '2025-10-14',
+    modalities: {
+      input: ['image', 'text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 32768,
+    },
+    cost: {
+      input: 0.18,
+      output: 2.1,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.5-122b-a10b', {
+    name: 'Qwen3.5 122B-A10B',
+    created: '2026-02-23',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.26,
+      output: 2.08,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.5-27b', {
+    name: 'Qwen3.5 27B',
+    created: '2026-02-23',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 65536,
+    },
+    cost: {
+      input: 0.195,
+      output: 1.56,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.5-35b-a3b', {
+    name: 'Qwen3.5 35B-A3B',
+    created: '2026-02-23',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 16384,
+    },
+    cost: {
+      input: 0.3125,
+      output: 1.25,
+      cache_read: 0.15625,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.5-397b-a17b', {
+    name: 'Qwen3.5 397B-A17B',
+    created: '2026-02-15',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.55,
+      output: 3.5,
+      cache_read: 0.225,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.5-9b', {
+    name: 'Qwen3.5 9B',
+    created: '2026-02-23',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.15,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.5-flash-02-23', {
+    name: 'Qwen3.5-Flash',
+    created: '2026-02-25',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65536,
+    },
+    cost: {
+      input: 0.065,
+      output: 0.26,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.5-plus-02-15', {
+    name: 'Qwen3.5 Plus 2026-02-15',
+    created: '2026-02-16',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65536,
+    },
+    cost: {
+      input: 0.26,
+      output: 1.56,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.5-plus-20260420', {
+    name: 'Qwen3.5 Plus 2026-04-20',
+    created: '2026-04-27',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65536,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.8,
+      cache_write: 0.375,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.6-27b', {
+    name: 'Qwen3.6 27B',
+    created: '2026-04-22',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 81920,
+    },
+    cost: {
+      input: 0.32,
+      output: 3.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.6-35b-a3b', {
+    name: 'Qwen3.6 35B-A3B',
+    created: '2026-04-17',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.15,
+      output: 1,
+      cache_read: 0.05,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.6-flash', {
+    name: 'Qwen3.6 Flash',
+    created: '2026-04-27',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65536,
+    },
+    cost: {
+      input: 0.1875,
+      output: 1.125,
+      cache_write: 0.234375,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.6-max-preview', {
+    name: 'Qwen3.6 Max Preview',
+    created: '2026-04-20',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 65536,
+    },
+    cost: {
+      input: 1.027,
+      output: 6.162,
+      cache_write: 1.28375,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.6-plus', {
+    name: 'Qwen3.6 Plus',
+    created: '2026-04-02',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65536,
+    },
+    cost: {
+      input: 0.325,
+      output: 1.95,
+      cache_write: 0.40625,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.7-flash', {
+    name: 'Qwen3.7 Flash',
+    created: '2026-07-15',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65536,
+    },
+    cost: {
+      input: 0.03,
+      output: 0.13,
+      cache_read: 0.006,
+      cache_write: 0.038,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.7-max', {
+    name: 'Qwen3.7 Max',
+    created: '2026-05-21',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 1.475,
+      output: 4.425,
+      cache_read: 0.295,
+      cache_write: 1.84375,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.7-plus', {
+    name: 'Qwen3.7 Plus',
+    created: '2026-06-02',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 0.32,
+      output: 1.28,
+      cache_read: 0.064,
+      cache_write: 0.4,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.8-2.4t-a95b', {
+    name: 'Qwen3.8 2.4T A95B',
+    created: '2026-08-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'xhigh'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.8-27b', {
+    name: 'Qwen3.8 27B',
+    created: '2026-08-14',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 0.42,
+      output: 3,
+      cache_read: 0.085,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.8-27b:free', {
+    name: 'Qwen3.8 27B (free)',
+    created: '2026-08-14',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'xhigh'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.8-flash', {
+    name: 'Qwen3.8 Flash',
+    created: '2026-08-26',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.47,
+      cache_read: 0.016,
+      cache_write: 0.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.8-max-0902', {
+    name: 'Qwen3.8 Max 0902',
+    created: '2026-09-02',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.25,
+      cache_write: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.8-max-prime', {
+    name: 'Qwen 3.8 Max Prime',
+    created: '2026-09-23',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 4,
+      output: 12,
+      cache_read: 0.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/qwen/qwen3.8-omni-flash', {
+    name: 'Qwen3.8 Omni Flash',
+    created: '2026-09-17',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.47,
+      cache_read: 0.016,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/rekaai/reka-edge', {
+    name: 'Reka Edge',
+    created: '2026-03-20',
+    modalities: {
+      input: ['image', 'text', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 16384,
+      output: 14745,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.1,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/rekaai/reka-flash-3', {
+    name: 'Reka Flash 3',
+    created: '2025-03-12',
+    knowledge: '2025-01-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 65536,
+      output: 58982,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/relace/relace-apply-3', {
+    name: 'Relace Apply 3',
+    created: '2025-09-26',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.85,
+      output: 1.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/relace/relace-search', {
+    name: 'Relace Search',
+    created: '2025-12-08',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 128000,
+    },
+    cost: {
+      input: 1,
+      output: 3,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/sakana/fugu-max', {
+    name: 'Fugu Max',
+    created: '2026-09-11',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/sakana/fugu-ultra', {
+    name: 'Fugu Ultra',
+    created: '2026-06-15',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 30,
+      cache_read: 0.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/sakana/fugu-ultra-v2', {
+    name: 'Fugu Ultra v2',
+    created: '2026-09-11',
+    knowledge: '2026-08-28',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 30,
+      cache_read: 0.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/sakana/sakana-namazu', {
+    name: 'Sakana Namazu',
+    created: '2026-08-03',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 65536,
+    },
+    cost: {
+      input: 0.95,
+      output: 4,
+      cache_read: 0.15,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/sao10k/l3-lunaris-8b', {
+    name: 'Llama 3 8B Lunaris',
+    created: '2024-08-13',
+    knowledge: '2023-12-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 8192,
+      output: 7372,
+    },
+    cost: {
+      input: 0.04,
+      output: 0.05,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/sao10k/l3.1-euryale-70b', {
+    name: 'Llama 3.1 Euryale 70B v2.2',
+    created: '2024-08-28',
+    knowledge: '2023-12-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 16384,
+    },
+    cost: {
+      input: 0.85,
+      output: 0.85,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/sao10k/l3.3-euryale-70b', {
+    name: 'Llama 3.3 Euryale 70B',
+    created: '2024-12-18',
+    knowledge: '2023-12-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 16384,
+    },
+    cost: {
+      input: 0.65,
+      output: 0.75,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/stealth/space-bunny-alpha', {
+    name: 'Space Bunny Alpha',
+    created: '2026-09-23',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 524288,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/stepfun/step-3.5-flash', {
+    name: 'Step 3.5 Flash',
+    created: '2026-01-29',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 65536,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.3,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/stepfun/step-3.7-flash', {
+    name: 'Step 3.7 Flash',
+    created: '2026-05-29',
+    knowledge: '2026-03-01',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 230400,
+    },
+    cost: {
+      input: 0.2,
+      output: 1.15,
+      cache_read: 0.04,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/tencent/hunyuan-a13b-instruct', {
+    name: 'Hunyuan A13B Instruct',
+    created: '2025-07-08',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 117964,
+    },
+    cost: {
+      input: 0.14,
+      output: 0.57,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/tencent/hy-mt2-1.8b', {
+    name: 'Hy-MT2-1.8B',
+    created: '2026-08-20',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 8192,
+      output: 4096,
+    },
+    cost: {
+      input: 0.044,
+      output: 0.177,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/tencent/hy-mt2-30b-a3b', {
+    name: 'Hy-MT2-30B-A3B',
+    created: '2026-08-20',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 8192,
+      output: 4096,
+    },
+    cost: {
+      input: 0.074,
+      output: 0.295,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/tencent/hy-mt2-7b', {
+    name: 'Hy-MT2-7B',
+    created: '2026-08-19',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 8192,
+      output: 4096,
+    },
+    cost: {
+      input: 0.074,
+      output: 0.295,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/tencent/hy3', {
+    name: 'Hy3',
+    created: '2026-07-06',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 128000,
+    },
+    cost: {
+      input: 0.0825,
+      output: 0.33,
+      cache_read: 0.020625,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/tencent/hy3-preview', {
+    name: 'Hy3 preview',
+    created: '2026-04-20',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.18,
+      output: 0.6,
+      cache_read: 0.06,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/tencent/hy4-preview', {
+    name: 'Hy4 preview',
+    created: '2026-08-28',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 64000,
+    },
+    cost: {
+      input: 0.834,
+      output: 2.501,
+      cache_read: 0.042,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/thedrummer/cydonia-24b-v4.1', {
+    name: 'Cydonia 24B V4.1',
+    created: '2025-09-27',
+    knowledge: '2024-04-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 117964,
+    },
+    cost: {
+      input: 0.3,
+      output: 0.5,
+      cache_read: 0.15,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/thedrummer/skyfall-36b-v2', {
+    name: 'Skyfall 36B V2',
+    created: '2025-03-10',
+    knowledge: '2024-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 29491,
+    },
+    cost: {
+      input: 0.55,
+      output: 0.8,
+      cache_read: 0.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/thedrummer/unslopnemo-12b', {
+    name: 'UnslopNemo 12B',
+    created: '2024-11-08',
+    knowledge: '2024-04-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 1024000,
+      output: 819200,
+    },
+    cost: {
+      input: 0.4,
+      output: 0.4,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/thinkingmachines/inkling', {
+    name: 'Inkling',
+    created: '2026-07-15',
+    modalities: {
+      input: ['text', 'image', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 524288,
+      output: 471859,
+    },
+    cost: {
+      input: 1,
+      output: 4.05,
+      cache_read: 0.17,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/thinkingmachines/inkling-small', {
+    name: 'Inkling Small',
+    created: '2026-07-30',
+    modalities: {
+      input: ['text', 'image', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 524288,
+      output: 262144,
+    },
+    cost: {
+      input: 0.45,
+      output: 1.2,
+      cache_read: 0.1,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/thinkingmachines/inkling-small:free', {
+    name: 'Inkling Small (free)',
+    created: '2026-07-30',
+    modalities: {
+      input: ['text', 'image', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 262144,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/thinkingmachines/inkling:free', {
+    name: 'Inkling (free)',
+    created: '2026-07-15',
+    modalities: {
+      input: ['text', 'image', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 262144,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/unbiased/pareto', {
+    name: 'Pareto',
+    created: '2026-09-17',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 2.5,
+      output: 7.5,
+      cache_read: 0.25,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/undi95/remm-slerp-l2-13b', {
+    name: 'ReMM SLERP 13B',
+    created: '2023-07-22',
+    knowledge: '2023-06-30',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 6144,
+      output: 5529,
+    },
+    cost: {
+      input: 0.35,
+      output: 0.65,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/upstage/solar-mini4', {
+    name: 'Solar Mini 4',
+    created: '2026-09-23',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 524288,
+      output: 131072,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.2,
+      cache_read: 0.005,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/upstage/solar-pro-3', {
+    name: 'Solar Pro 3',
+    created: '2026-01-27',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 117964,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+      cache_read: 0.015,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/upstage/solar-pro4', {
+    name: 'Solar Pro 4',
+    created: '2026-08-10',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 524288,
+      output: 131072,
+    },
+    cost: {
+      input: 0.09,
+      output: 0.36,
+      cache_read: 0.018,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/writer/palmyra-x5', {
+    name: 'Palmyra X5',
+    created: '2026-01-21',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 1040000,
+      output: 8192,
+    },
+    cost: {
+      input: 0.6,
+      output: 6,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/x-ai/grok-4.20', {
+    name: 'Grok 4.20',
+    created: '2026-03-31',
+    knowledge: '2025-09-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 2000000,
+      output: 1800000,
+    },
+    cost: {
+      input: 1.25,
+      output: 2.5,
+      cache_read: 0.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/x-ai/grok-4.20-multi-agent', {
+    name: 'Grok 4.20 Multi-Agent',
+    created: '2026-03-31',
+    knowledge: '2025-09-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 2000000,
+      output: 1800000,
+    },
+    cost: {
+      input: 1.25,
+      output: 2.5,
+      cache_read: 0.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/x-ai/grok-4.3', {
+    name: 'Grok 4.3',
+    created: '2026-04-17',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 900000,
+    },
+    cost: {
+      input: 1.25,
+      output: 2.5,
+      cache_read: 0.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/x-ai/grok-4.5', {
+    name: 'Grok 4.5',
+    created: '2026-07-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 500000,
+      output: 450000,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.3,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/x-ai/grok-4.6', {
+    name: 'Grok 4.6',
+    created: '2026-08-12',
+    knowledge: '2026-02-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 500000,
+      output: 450000,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.5,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/x-ai/grok-4.7', {
+    name: 'Grok 4.7',
+    created: '2026-09-21',
+    knowledge: '2026-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 500000,
+      output: 450000,
+    },
+    cost: {
+      input: 1.6,
+      output: 4.8,
+      cache_read: 0.4,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/x-ai/grok-build-0.1', {
+    name: 'Grok Build 0.1',
+    created: '2026-04-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 230400,
+    },
+    cost: {
+      input: 1,
+      output: 2,
+      cache_read: 0.2,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/xiaomi/mimo-v2.5', {
+    name: 'MiMo-V2.5',
+    created: '2026-04-22',
+    knowledge: '2024-12',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 131072,
+    },
+    cost: {
+      input: 0.14,
+      output: 0.28,
+      cache_read: 0.0028,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/xiaomi/mimo-v2.5-pro', {
+    name: 'MiMo-V2.5-Pro',
+    created: '2026-04-22',
+    knowledge: '2024-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 131072,
+    },
+    cost: {
+      input: 0.435,
+      output: 0.87,
+      cache_read: 0.0036,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/xiaomi/mimo-v2.6-flash', {
+    name: 'MiMo-V2.6-Flash',
+    created: '2026-09-22',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 0.14,
+      output: 0.28,
+      cache_read: 0.0028,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/xiaomi/mimo-v2.6-pro', {
+    name: 'MiMo-V2.6-Pro',
+    created: '2026-09-22',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 131072,
+    },
+    cost: {
+      input: 0.435,
+      output: 0.87,
+      cache_read: 0.0036,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/xiaomi/mimo-v2.6-pro-ultraspeed', {
+    name: 'MiMo-V2.6-Pro-UltraSpeed',
+    created: '2026-09-21',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 4.35,
+      output: 8.7,
+      cache_read: 0.036,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-4.5', {
+    name: 'GLM-4.5',
+    created: '2025-07-28',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 98304,
+    },
+    cost: {
+      input: 0.6,
+      output: 2.2,
+      cache_read: 0.11,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-4.5-air', {
+    name: 'GLM-4.5-Air',
+    created: '2025-07-28',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 98304,
+    },
+    cost: {
+      input: 0.13,
+      output: 0.85,
+      cache_read: 0.025,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-4.5v', {
+    name: 'GLM-4.5V',
+    created: '2025-08-11',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 65536,
+      output: 16384,
+    },
+    cost: {
+      input: 0.6,
+      output: 1.8,
+      cache_read: 0.11,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-4.6', {
+    name: 'GLM-4.6',
+    created: '2025-09-30',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 204800,
+      output: 16384,
+    },
+    cost: {
+      input: 0.43,
+      output: 1.75,
+      cache_read: 0.08,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-4.6v', {
+    name: 'GLM-4.6V',
+    created: '2025-12-08',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 32768,
+    },
+    cost: {
+      input: 0.3,
+      output: 0.9,
+      cache_read: 0.055,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-4.7', {
+    name: 'GLM-4.7',
+    created: '2025-12-22',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 204800,
+      output: 131072,
+    },
+    cost: {
+      input: 0.6,
+      output: 2.2,
+      cache_read: 0.11,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-4.7-flash', {
+    name: 'GLM-4.7-Flash',
+    created: '2026-01-19',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 117964,
+    },
+    cost: {
+      input: 0.0605,
+      output: 0.4,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-5', {
+    name: 'GLM-5',
+    created: '2026-02-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 204800,
+      output: 128000,
+    },
+    cost: {
+      input: 0.6,
+      output: 1.92,
+      cache_read: 0.12,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-5-turbo', {
+    name: 'GLM-5-Turbo',
+    created: '2026-03-16',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 202752,
+      output: 131072,
+    },
+    cost: {
+      input: 1.2,
+      output: 4,
+      cache_read: 0.24,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-5.1', {
+    name: 'GLM-5.1',
+    created: '2026-04-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 204800,
+      output: 131072,
+    },
+    cost: {
+      input: 0.9646,
+      output: 3.0316,
+      cache_read: 0.17914,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-5.2', {
+    name: 'GLM-5.2',
+    created: '2026-06-13',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['high', 'xhigh'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 0.6496,
+      output: 2.0416,
+      cache_read: 0.12064,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-5.3', {
+    name: 'GLM-5.3',
+    created: '2026-08-14',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1310720,
+      output: 131072,
+    },
+    cost: {
+      input: 0.3794,
+      output: 1.1924,
+      cache_read: 0.07046,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-5.3-flash', {
+    name: 'GLM-5.3-Flash',
+    created: '2026-08-26',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1310720,
+      output: 131072,
+    },
+    cost: {
+      input: 0.04,
+      output: 0.5,
+      cache_read: 0.015,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-5.3-flashx', {
+    name: 'GLM 5.3 FlashX',
+    created: '2026-09-18',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 0.37,
+      output: 1.25,
+      cache_read: 0.09,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-5.3-prime', {
+    name: 'GLM 5.3 Prime',
+    created: '2026-09-23',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 2.8,
+      output: 8.8,
+      cache_read: 0.56,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/z-ai/glm-5v-turbo', {
+    name: 'GLM-5V-Turbo',
+    created: '2026-04-01',
+    modalities: {
+      input: ['image', 'text', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 202752,
+      output: 131072,
+    },
+    cost: {
+      input: 1.2,
+      output: 4,
+      cache_read: 0.24,
+    },
+    providers: ['openrouter'],
+  }),
   model('perplexity/sonar', {
     name: 'Sonar',
     created: '2024-01-01',
