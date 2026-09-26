@@ -42,7 +42,7 @@ describe('TypeSafe AI provider', () => {
 
   it('rejects non-evaluation SDK modalities and missing evaluation capability', () => {
     const provider = typeSafeAiProvider.build({ apiKey: 'secret' });
-    const otherProvider = buildProviderRegistry({ openai: { apiKey: 'secret' } }).openai;
+    const otherProvider = buildProviderRegistry({ groq: { apiKey: 'secret' } }).groq;
 
     expect(() => provider.languageModel('jev-latest')).toThrow(NoSuchModelError);
     expect(() => provider.embeddingModel('jev-latest')).toThrow(NoSuchModelError);
@@ -50,8 +50,8 @@ describe('TypeSafe AI provider', () => {
     expect(() =>
       requireEvaluationModel({
         provider: otherProvider!,
-        providerName: 'openai',
-        modelName: 'gpt-4o-mini',
+        providerName: 'groq',
+        modelName: 'llama-3.3-70b-versatile',
       }),
     ).toThrow(UnsupportedModalityError);
   });

@@ -4,8 +4,10 @@ The committed FrogBot and gateway model catalogs are generated from the current
 `https://models.dev/api.json` dataset by a maintainer. Application startup and
 user type generation never fetch model metadata.
 
-Run `pnpm sync:catalog`, review the provider and model changes, and commit these
-artifacts together:
+`pnpm bump` runs `pnpm sync:catalog` first, so every release ships a fresh
+catalog and its build and tests run against it. To refresh between releases, run
+`pnpm sync:catalog` directly. Either way, review the provider and model changes
+and commit these artifacts together:
 
 - `packages/frogbot/src/ai/catalog.json`
 - `packages/frogbot/src/ai/generated.ts`

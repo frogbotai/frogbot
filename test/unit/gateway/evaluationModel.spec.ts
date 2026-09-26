@@ -69,17 +69,15 @@ describe('gateway evaluation model', () => {
   it('rejects evaluation when the configured provider lacks that capability', () => {
     const entry = DEFAULT_MODEL_CATALOG.get('typesafe-ai/jev-latest')!;
     const catalog = new Map([
-      ['openai/evaluation-only', { ...entry, id: 'openai/evaluation-only', providers: ['openai'] }],
+      ['groq/evaluation-only', { ...entry, id: 'groq/evaluation-only', providers: ['groq'] }],
     ]);
 
     const gateway = createGateway({
-      providers: { openai: { apiKey: 'secret', models: ['evaluation-only'] } },
+      providers: { groq: { apiKey: 'secret', models: ['evaluation-only'] } },
       catalog,
     });
 
-    expect(() => gateway.evaluationModel('openai/evaluation-only')).toThrow(
-      UnsupportedModalityError,
-    );
+    expect(() => gateway.evaluationModel('groq/evaluation-only')).toThrow(UnsupportedModalityError);
   });
 
   it('shares operation context and normalizes optional evaluation tokens once', async () => {

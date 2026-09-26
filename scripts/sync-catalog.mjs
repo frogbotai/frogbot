@@ -59,6 +59,38 @@ function compact(value) {
   return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined));
 }
 
+function tokenLimit(value) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function reasoningOption(option) {
+  if (option?.type === 'toggle') return { type: 'toggle' };
+
+  if (option?.type === 'budget_tokens') {
+    return compact({
+      type: 'budget_tokens',
+      min: tokenLimit(option.min),
+      max: tokenLimit(option.max),
+    });
+  }
+
+  if (option?.type !== 'effort') return undefined;
+
+  if (!Array.isArray(option.values)) return { type: 'effort' };
+
+  const values = option.values.filter((value) => typeof value === 'string' && value !== 'null');
+
+  return { type: 'effort', values };
+}
+
+function reasoningOptionsFor(options) {
+  if (!Array.isArray(options)) return undefined;
+
+  const normalized = options.map(reasoningOption).filter((option) => option !== undefined);
+
+  return normalized.length > 0 ? normalized : undefined;
+}
+
 function mapModel({ model, provider }) {
   const modalities = {
     input: model.modalities.input.filter((modality) => MODALITIES.has(modality)),
@@ -68,6 +100,7 @@ function mapModel({ model, provider }) {
     toolCalling: model.tool_call || undefined,
     structuredOutput: model.structured_output || undefined,
     reasoning: model.reasoning || undefined,
+    reasoningOptions: reasoningOptionsFor(model.reasoning_options),
     vision: modalities.input.includes('image') || undefined,
     promptCaching: model.cost?.cache_read !== undefined || undefined,
     streaming: modalities.output.includes('text') || undefined,

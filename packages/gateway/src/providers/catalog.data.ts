@@ -1,31 +1,550 @@
-import { defineModelCatalog, type ModelCatalog, presetFor } from './catalog.js';
+import { defineModelCatalog, type ModelCatalog,presetFor } from './catalog.js';
 
 const model = presetFor<string>();
 
 export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
-  model('bedrock/global.amazon.nova-2-lite-v1:0', {
-    name: 'Nova 2 Lite',
-    created: '2024-12-01',
+  model('anthropic/claude-fable-5', {
+    name: 'Claude Fable 5',
+    created: '2026-06-07',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text', 'image'],
       output: ['text'],
     },
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
+      structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
-      input: 128000,
-      output: 4096,
+      input: 1000000,
+      output: 128000,
     },
     cost: {
-      input: 0.33,
-      output: 2.75,
+      input: 10,
+      output: 50,
+      cache_read: 1,
+      cache_write: 12.5,
     },
-    providers: ['bedrock'],
+    providers: ['anthropic'],
+  }),
+  model('anthropic/claude-fable-5-1', {
+    name: 'Claude Fable 5.1',
+    created: '2026-09-01',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 0.25,
+      cache_write: 12.5,
+    },
+    providers: ['anthropic'],
+  }),
+  model('anthropic/claude-haiku-4-5', {
+    name: 'Claude Haiku 4.5 (latest)',
+    created: '2025-10-15',
+    knowledge: '2025-02-28',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 1,
+      output: 5,
+      cache_read: 0.1,
+      cache_write: 1.25,
+    },
+    providers: ['anthropic'],
+  }),
+  model('anthropic/claude-haiku-4-5-20251001', {
+    name: 'Claude Haiku 4.5',
+    created: '2025-10-15',
+    knowledge: '2025-02-28',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 1,
+      output: 5,
+      cache_read: 0.1,
+      cache_write: 1.25,
+    },
+    providers: ['anthropic'],
+  }),
+  model('anthropic/claude-opus-4-5', {
+    name: 'Claude Opus 4.5 (latest)',
+    created: '2025-11-24',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['anthropic'],
+  }),
+  model('anthropic/claude-opus-4-5-20251101', {
+    name: 'Claude Opus 4.5',
+    created: '2025-11-24',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['anthropic'],
+  }),
+  model('anthropic/claude-opus-4-6', {
+    name: 'Claude Opus 4.6',
+    created: '2026-02-04',
+    knowledge: '2025-05-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['anthropic'],
+  }),
+  model('anthropic/claude-opus-4-7', {
+    name: 'Claude Opus 4.7',
+    created: '2026-04-14',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['anthropic'],
+  }),
+  model('anthropic/claude-opus-4-8', {
+    name: 'Claude Opus 4.8',
+    created: '2026-05-28',
+    knowledge: '2026-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['anthropic'],
+  }),
+  model('anthropic/claude-opus-5', {
+    name: 'Claude Opus 5',
+    created: '2026-07-24',
+    knowledge: '2026-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5,
+      output: 25,
+      cache_read: 0.5,
+      cache_write: 6.25,
+    },
+    providers: ['anthropic'],
+  }),
+  model('anthropic/claude-opus-5-5', {
+    name: 'Claude Opus 5.5',
+    created: '2026-09-22',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 4,
+      output: 20,
+      cache_read: 0.2,
+      cache_write: 5,
+    },
+    providers: ['anthropic'],
+  }),
+  model('anthropic/claude-sonnet-4-5', {
+    name: 'Claude Sonnet 4.5 (latest)',
+    created: '2025-09-29',
+    knowledge: '2025-07-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 64000,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+      cache_write: 3.75,
+    },
+    providers: ['anthropic'],
+  }),
+  model('anthropic/claude-sonnet-4-5-20250929', {
+    name: 'Claude Sonnet 4.5',
+    created: '2025-09-29',
+    knowledge: '2025-07-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 64000,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+      cache_write: 3.75,
+    },
+    providers: ['anthropic'],
+  }),
+  model('anthropic/claude-sonnet-4-6', {
+    name: 'Claude Sonnet 4.6',
+    created: '2026-02-17',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+      cache_write: 3.75,
+    },
+    providers: ['anthropic'],
+  }),
+  model('anthropic/claude-sonnet-5', {
+    name: 'Claude Sonnet 5',
+    created: '2026-06-29',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['anthropic'],
   }),
   model('bedrock/amazon.nova-lite-v1:0', {
     name: 'Nova Lite',
@@ -44,12 +563,13 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 300000,
-      output: 8192,
+      output: 10000,
     },
     cost: {
       input: 0.06,
       output: 0.24,
       cache_read: 0.015,
+      cache_write: 0.06,
     },
     providers: ['bedrock'],
   }),
@@ -69,12 +589,13 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 128000,
-      output: 8192,
+      output: 10000,
     },
     cost: {
       input: 0.035,
       output: 0.14,
       cache_read: 0.00875,
+      cache_write: 0.035,
     },
     providers: ['bedrock'],
   }),
@@ -95,12 +616,13 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 300000,
-      output: 8192,
+      output: 10000,
     },
     cost: {
       input: 0.8,
       output: 3.2,
       cache_read: 0.2,
+      cache_write: 0.8,
     },
     providers: ['bedrock'],
   }),
@@ -116,6 +638,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -128,6 +656,40 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 10,
       output: 50,
       cache_read: 1,
+      cache_write: 12.5,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/anthropic.claude-fable-5-1', {
+    name: 'Claude Fable 5.1',
+    created: '2026-09-01',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 0.25,
       cache_write: 12.5,
     },
     providers: ['bedrock'],
@@ -145,6 +707,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -163,8 +734,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
   }),
   model('bedrock/anthropic.claude-opus-4-5-20251101-v1:0', {
     name: 'Claude Opus 4.5',
-    created: '2025-11-24',
-    knowledge: '2025-03-31',
+    created: '2025-11-01',
+    knowledge: '2025-05',
     modalities: {
       input: ['text', 'image'],
       output: ['text'],
@@ -174,6 +745,19 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -203,6 +787,19 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -212,10 +809,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
+      input: 5.5,
+      output: 27.5,
+      cache_read: 0.55,
+      cache_write: 6.875,
     },
     providers: ['bedrock'],
   }),
@@ -231,6 +828,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -259,6 +865,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -287,6 +902,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -303,6 +927,40 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['bedrock'],
   }),
+  model('bedrock/anthropic.claude-opus-5-5', {
+    name: 'Claude Opus 5.5',
+    created: '2026-09-22',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 4,
+      output: 20,
+      cache_read: 0.2,
+      cache_write: 5,
+    },
+    providers: ['bedrock'],
+  }),
   model('bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0', {
     name: 'Claude Sonnet 4.5',
     created: '2025-09-29',
@@ -316,6 +974,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -345,19 +1012,32 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
     },
     context: {
       input: 1000000,
-      output: 64000,
+      output: 128000,
     },
     cost: {
-      input: 3,
-      output: 15,
-      cache_read: 0.3,
-      cache_write: 3.75,
+      input: 3.3,
+      output: 16.5,
+      cache_read: 0.33,
+      cache_write: 4.125,
     },
     providers: ['bedrock'],
   }),
@@ -372,8 +1052,16 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
-      structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -390,6 +1078,86 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['bedrock'],
   }),
+  model('bedrock/apac.amazon.nova-lite-v1:0', {
+    name: 'Nova Lite (APAC)',
+    created: '2024-12-03',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 300000,
+      output: 10000,
+    },
+    cost: {
+      input: 0.063,
+      output: 0.252,
+      cache_read: 0.01575,
+      cache_write: 0.063,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/apac.amazon.nova-micro-v1:0', {
+    name: 'Nova Micro (APAC)',
+    created: '2024-12-03',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 10000,
+    },
+    cost: {
+      input: 0.037,
+      output: 0.148,
+      cache_read: 0.00925,
+      cache_write: 0.037,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/apac.amazon.nova-pro-v1:0', {
+    name: 'Nova Pro (APAC)',
+    created: '2024-12-03',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 300000,
+      output: 10000,
+    },
+    cost: {
+      input: 0.84,
+      output: 3.36,
+      cache_read: 0.21,
+      cache_write: 0.84,
+    },
+    providers: ['bedrock'],
+  }),
   model('bedrock/au.anthropic.claude-haiku-4-5-20251001-v1:0', {
     name: 'Claude Haiku 4.5 (AU)',
     created: '2025-10-15',
@@ -403,6 +1171,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -412,17 +1189,17 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 64000,
     },
     cost: {
-      input: 1,
-      output: 5,
-      cache_read: 0.1,
-      cache_write: 1.25,
+      input: 1.1,
+      output: 5.5,
+      cache_read: 0.11,
+      cache_write: 1.375,
     },
     providers: ['bedrock'],
   }),
   model('bedrock/au.anthropic.claude-opus-4-6-v1', {
     name: 'AU Anthropic Claude Opus 4.6',
     created: '2026-02-05',
-    knowledge: '2025-05',
+    knowledge: '2025-05-31',
     modalities: {
       input: ['text', 'image'],
       output: ['text'],
@@ -432,6 +1209,19 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -441,10 +1231,47 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 16.5,
-      output: 82.5,
-      cache_read: 1.65,
-      cache_write: 20.625,
+      input: 5.5,
+      output: 27.5,
+      cache_read: 0.55,
+      cache_write: 6.875,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/au.anthropic.claude-opus-4-7', {
+    name: 'Claude Opus 4.7 (AU)',
+    created: '2026-04-16',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5.5,
+      output: 27.5,
+      cache_read: 0.55,
+      cache_write: 6.875,
     },
     providers: ['bedrock'],
   }),
@@ -460,6 +1287,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -469,10 +1305,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
+      input: 5.5,
+      output: 27.5,
+      cache_read: 0.55,
+      cache_write: 6.875,
     },
     providers: ['bedrock'],
   }),
@@ -488,6 +1324,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -497,10 +1342,44 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
+      input: 5.5,
+      output: 27.5,
+      cache_read: 0.55,
+      cache_write: 6.875,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/au.anthropic.claude-opus-5-5', {
+    name: 'Claude Opus 5.5 (AU)',
+    created: '2026-09-22',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 4.4,
+      output: 22,
+      cache_read: 0.22,
+      cache_write: 5.5,
     },
     providers: ['bedrock'],
   }),
@@ -517,6 +1396,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -526,17 +1414,17 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 64000,
     },
     cost: {
-      input: 3,
-      output: 15,
-      cache_read: 0.3,
-      cache_write: 3.75,
+      input: 3.3,
+      output: 16.5,
+      cache_read: 0.33,
+      cache_write: 4.125,
     },
     providers: ['bedrock'],
   }),
   model('bedrock/au.anthropic.claude-sonnet-4-6', {
     name: 'AU Anthropic Claude Sonnet 4.6',
     created: '2026-02-17',
-    knowledge: '2025-08',
+    knowledge: '2025-08-31',
     modalities: {
       input: ['text', 'image'],
       output: ['text'],
@@ -546,6 +1434,19 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -573,8 +1474,16 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
-      structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -584,10 +1493,37 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 2,
-      output: 10,
-      cache_read: 0.2,
-      cache_write: 2.5,
+      input: 2.2,
+      output: 11,
+      cache_read: 0.22,
+      cache_write: 2.75,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/ca.amazon.nova-lite-v1:0', {
+    name: 'Nova Lite (CA)',
+    created: '2024-12-03',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 300000,
+      output: 10000,
+    },
+    cost: {
+      input: 0.064,
+      output: 0.256,
+      cache_read: 0.016,
+      cache_write: 0.064,
     },
     providers: ['bedrock'],
   }),
@@ -601,7 +1537,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     operations: ['chat.completions'],
     capabilities: {
-      toolCalling: true,
       reasoning: true,
       streaming: true,
     },
@@ -617,8 +1552,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
   }),
   model('bedrock/deepseek.v3-v1:0', {
     name: 'DeepSeek-V3.1',
-    created: '2025-09-18',
-    knowledge: '2024-07',
+    created: '2025-08-21',
     modalities: {
       input: ['text'],
       output: ['text'],
@@ -628,6 +1562,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       streaming: true,
     },
     context: {
@@ -641,8 +1580,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     providers: ['bedrock'],
   }),
   model('bedrock/deepseek.v3.2', {
-    name: 'DeepSeek-V3.2',
-    created: '2026-02-06',
+    name: 'DeepSeek V3.2',
+    created: '2025-12-01',
     knowledge: '2024-07',
     modalities: {
       input: ['text'],
@@ -653,6 +1592,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       streaming: true,
     },
     context: {
@@ -662,6 +1606,123 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.62,
       output: 1.85,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/eu.amazon.nova-2-lite-v1:0', {
+    name: 'Nova 2 Lite (EU)',
+    created: '2025-12-02',
+    knowledge: '2025-10',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65535,
+    },
+    cost: {
+      input: 0.374,
+      output: 3.157,
+      cache_read: 0.0935,
+      cache_write: 0.374,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/eu.amazon.nova-lite-v1:0', {
+    name: 'Nova Lite (EU)',
+    created: '2024-12-03',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 300000,
+      output: 10000,
+    },
+    cost: {
+      input: 0.069,
+      output: 0.276,
+      cache_read: 0.01725,
+      cache_write: 0.069,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/eu.amazon.nova-micro-v1:0', {
+    name: 'Nova Micro (EU)',
+    created: '2024-12-03',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 10000,
+    },
+    cost: {
+      input: 0.04,
+      output: 0.16,
+      cache_read: 0.01,
+      cache_write: 0.04,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/eu.amazon.nova-pro-v1:0', {
+    name: 'Nova Pro (EU)',
+    created: '2024-12-03',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 300000,
+      output: 10000,
+    },
+    cost: {
+      input: 0.92,
+      output: 3.68,
+      cache_read: 0.23,
+      cache_write: 0.92,
     },
     providers: ['bedrock'],
   }),
@@ -677,6 +1738,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -706,6 +1773,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -724,8 +1800,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
   }),
   model('bedrock/eu.anthropic.claude-opus-4-5-20251101-v1:0', {
     name: 'Claude Opus 4.5 (EU)',
-    created: '2025-11-24',
-    knowledge: '2025-03-31',
+    created: '2025-11-01',
+    knowledge: '2025-05',
     modalities: {
       input: ['text', 'image'],
       output: ['text'],
@@ -735,6 +1811,19 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -764,6 +1853,19 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -792,6 +1894,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -820,6 +1931,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -848,6 +1968,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -864,6 +1993,40 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['bedrock'],
   }),
+  model('bedrock/eu.anthropic.claude-opus-5-5', {
+    name: 'Claude Opus 5.5 (EU)',
+    created: '2026-09-22',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 4.4,
+      output: 22,
+      cache_read: 0.22,
+      cache_write: 5.5,
+    },
+    providers: ['bedrock'],
+  }),
   model('bedrock/eu.anthropic.claude-sonnet-4-5-20250929-v1:0', {
     name: 'Claude Sonnet 4.5 (EU)',
     created: '2025-09-29',
@@ -877,6 +2040,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -906,13 +2078,26 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
     },
     context: {
       input: 1000000,
-      output: 64000,
+      output: 128000,
     },
     cost: {
       input: 3.3,
@@ -933,8 +2118,16 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
-      structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -951,6 +2144,53 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['bedrock'],
   }),
+  model('bedrock/eu.mistral.pixtral-large-2502-v1:0', {
+    name: 'Pixtral Large (25.02) (EU)',
+    created: '2025-04-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 8192,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/global.amazon.nova-2-lite-v1:0', {
+    name: 'Nova 2 Lite',
+    created: '2024-12-01',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 4096,
+    },
+    cost: {
+      input: 0.33,
+      output: 2.75,
+    },
+    providers: ['bedrock'],
+  }),
   model('bedrock/global.anthropic.claude-fable-5', {
     name: 'Claude Fable 5 (Global)',
     created: '2026-06-09',
@@ -963,6 +2203,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -975,6 +2221,40 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 10,
       output: 50,
       cache_read: 1,
+      cache_write: 12.5,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/global.anthropic.claude-fable-5-1', {
+    name: 'Claude Fable 5.1 (Global)',
+    created: '2026-09-01',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 0.25,
       cache_write: 12.5,
     },
     providers: ['bedrock'],
@@ -992,6 +2272,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -1010,8 +2299,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
   }),
   model('bedrock/global.anthropic.claude-opus-4-5-20251101-v1:0', {
     name: 'Claude Opus 4.5 (Global)',
-    created: '2025-11-24',
-    knowledge: '2025-03-31',
+    created: '2025-11-01',
+    knowledge: '2025-05',
     modalities: {
       input: ['text', 'image'],
       output: ['text'],
@@ -1021,6 +2310,19 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -1050,6 +2352,19 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -1078,6 +2393,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -1106,6 +2430,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -1134,6 +2467,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -1150,6 +2492,40 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['bedrock'],
   }),
+  model('bedrock/global.anthropic.claude-opus-5-5', {
+    name: 'Claude Opus 5.5 (Global)',
+    created: '2026-09-22',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 4,
+      output: 20,
+      cache_read: 0.2,
+      cache_write: 5,
+    },
+    providers: ['bedrock'],
+  }),
   model('bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0', {
     name: 'Claude Sonnet 4.5 (Global)',
     created: '2025-09-29',
@@ -1163,6 +2539,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -1192,13 +2577,26 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
     },
     context: {
       input: 1000000,
-      output: 64000,
+      output: 128000,
     },
     cost: {
       input: 3,
@@ -1219,8 +2617,16 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
-      structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -1237,10 +2643,279 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['bedrock'],
   }),
+  model('bedrock/global.moonshotai.kimi-k3', {
+    name: 'Kimi K3 (Global)',
+    created: '2026-07-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 128000,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+      cache_write: 3.75,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/global.openai.gpt-5.6-luna', {
+    name: 'GPT-5.6 Luna (Global)',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.2,
+      output: 1.2,
+      cache_read: 0.02,
+      cache_write: 0.25,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/global.openai.gpt-5.6-sol', {
+    name: 'GPT-5.6 Sol (Global)',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 4,
+      output: 20,
+      cache_read: 0.4,
+      cache_write: 5,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/global.openai.gpt-5.6-terra', {
+    name: 'GPT-5.6 Terra (Global)',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 12,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/global.openai.gpt-6-astra', {
+    name: 'GPT-6 Astra (Global)',
+    created: '2026-09-04',
+    knowledge: '2026-04-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 1,
+      cache_write: 12.5,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/global.openai.gpt-6-luna', {
+    name: 'GPT-6 Luna (Global)',
+    created: '2026-09-22',
+    knowledge: '2026-05-18',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.5,
+      cache_read: 0.01,
+      cache_write: 0.125,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/global.openai.gpt-6-sol', {
+    name: 'GPT-6 Sol (Global)',
+    created: '2026-09-22',
+    knowledge: '2026-04-20',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/global.xai.grok-4.6', {
+    name: 'Grok 4.6 (Global)',
+    created: '2026-08-12',
+    knowledge: '2026-02-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 500000,
+      output: 500000,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.5,
+    },
+    providers: ['bedrock'],
+  }),
   model('bedrock/google.gemma-3-12b-it', {
-    name: 'Google Gemma 3 12B',
-    created: '2024-12-01',
-    knowledge: '2024-12',
+    name: 'Gemma 3 12B IT',
+    created: '2025-03-12',
+    knowledge: '2024-08',
     modalities: {
       input: ['text', 'image'],
       output: ['text'],
@@ -1256,15 +2931,170 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 8192,
     },
     cost: {
-      input: 0.049999999999999996,
-      output: 0.09999999999999999,
+      input: 0.09,
+      output: 0.29,
     },
     providers: ['bedrock'],
   }),
   model('bedrock/google.gemma-3-27b-it', {
-    name: 'Google Gemma 3 27B Instruct',
-    created: '2025-07-27',
-    knowledge: '2025-07',
+    name: 'Gemma 3 27B IT',
+    created: '2025-03-12',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 8192,
+    },
+    cost: {
+      input: 0.23,
+      output: 0.38,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/google.gemma-3-4b-it', {
+    name: 'Gemma 3 4B IT',
+    created: '2025-03-12',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 4096,
+    },
+    cost: {
+      input: 0.04,
+      output: 0.08,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/google.gemma-4-26b-a4b', {
+    name: 'Gemma 4 26B A4B IT',
+    created: '2026-04-02',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.13,
+      output: 0.4,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/google.gemma-4-31b', {
+    name: 'Gemma 4 31B IT',
+    created: '2026-04-02',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.14,
+      output: 0.4,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/google.gemma-4-e2b', {
+    name: 'Gemma 4 E2B IT',
+    created: '2026-04-02',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 8192,
+    },
+    cost: {
+      input: 0.04,
+      output: 0.08,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/in.openai.gpt-5.6-luna', {
+    name: 'GPT-5.6 Luna (India)',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
     modalities: {
       input: ['text', 'image'],
       output: ['text'],
@@ -1273,22 +3103,33 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
-      input: 202752,
-      output: 8192,
+      input: 1050000,
+      output: 128000,
     },
     cost: {
-      input: 0.12,
-      output: 0.2,
+      input: 0.22,
+      output: 1.32,
+      cache_read: 0.022,
+      cache_write: 0.275,
     },
     providers: ['bedrock'],
   }),
-  model('bedrock/google.gemma-3-4b-it', {
-    name: 'Gemma 3 4B IT',
-    created: '2024-12-01',
+  model('bedrock/in.openai.gpt-5.6-terra', {
+    name: 'GPT-5.6 Terra (India)',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
     modalities: {
       input: ['text', 'image'],
       output: ['text'],
@@ -1296,16 +3137,63 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
-      input: 128000,
-      output: 4096,
+      input: 1050000,
+      output: 128000,
     },
     cost: {
-      input: 0.04,
-      output: 0.08,
+      input: 2.2,
+      output: 13.2,
+      cache_read: 0.22,
+      cache_write: 2.75,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/jp.amazon.nova-2-lite-v1:0', {
+    name: 'Nova 2 Lite (JP)',
+    created: '2025-12-02',
+    knowledge: '2025-10',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65535,
+    },
+    cost: {
+      input: 0.396,
+      output: 3.311,
+      cache_read: 0.099,
+      cache_write: 0.396,
     },
     providers: ['bedrock'],
   }),
@@ -1322,6 +3210,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -1331,10 +3228,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 64000,
     },
     cost: {
-      input: 1,
-      output: 5,
-      cache_read: 0.1,
-      cache_write: 1.25,
+      input: 1.1,
+      output: 5.5,
+      cache_read: 0.11,
+      cache_write: 1.375,
     },
     providers: ['bedrock'],
   }),
@@ -1350,6 +3247,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -1359,10 +3265,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
+      input: 5.5,
+      output: 27.5,
+      cache_read: 0.55,
+      cache_write: 6.875,
     },
     providers: ['bedrock'],
   }),
@@ -1378,6 +3284,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -1387,10 +3302,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
+      input: 5.5,
+      output: 27.5,
+      cache_read: 0.55,
+      cache_write: 6.875,
     },
     providers: ['bedrock'],
   }),
@@ -1406,6 +3321,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -1415,10 +3339,44 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
+      input: 5.5,
+      output: 27.5,
+      cache_read: 0.55,
+      cache_write: 6.875,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/jp.anthropic.claude-opus-5-5', {
+    name: 'Claude Opus 5.5 (JP)',
+    created: '2026-09-22',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 4.4,
+      output: 22,
+      cache_read: 0.22,
+      cache_write: 5.5,
     },
     providers: ['bedrock'],
   }),
@@ -1435,6 +3393,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -1444,10 +3411,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 64000,
     },
     cost: {
-      input: 3,
-      output: 15,
-      cache_read: 0.3,
-      cache_write: 3.75,
+      input: 3.3,
+      output: 16.5,
+      cache_read: 0.33,
+      cache_write: 4.125,
     },
     providers: ['bedrock'],
   }),
@@ -1464,19 +3431,32 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
     },
     context: {
       input: 1000000,
-      output: 64000,
+      output: 128000,
     },
     cost: {
-      input: 3,
-      output: 15,
-      cache_read: 0.3,
-      cache_write: 3.75,
+      input: 3.3,
+      output: 16.5,
+      cache_read: 0.33,
+      cache_write: 4.125,
     },
     providers: ['bedrock'],
   }),
@@ -1491,8 +3471,16 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
-      structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -1502,15 +3490,1858 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 2,
-      output: 10,
-      cache_read: 0.2,
-      cache_write: 2.5,
+      input: 2.2,
+      output: 11,
+      cache_read: 0.22,
+      cache_write: 2.75,
     },
     providers: ['bedrock'],
   }),
   model('bedrock/meta.llama3-1-70b-instruct-v1:0', {
     name: 'Llama 3.1 70B Instruct',
+    created: '2024-07-23',
+    knowledge: '2023-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 4096,
+    },
+    cost: {
+      input: 0.72,
+      output: 0.72,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/meta.llama4-maverick-17b-instruct-v1:0', {
+    name: 'Llama 4 Maverick 17B Instruct',
+    created: '2025-04-05',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 8192,
+    },
+    cost: {
+      input: 0.24,
+      output: 0.97,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/meta.llama4-scout-17b-instruct-v1:0', {
+    name: 'Llama 4 Scout 17B Instruct',
+    created: '2025-04-05',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 10000000,
+      output: 8192,
+    },
+    cost: {
+      input: 0.17,
+      output: 0.66,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/minimax.minimax-m2', {
+    name: 'MiniMax-M2',
+    created: '2025-10-27',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 204608,
+      output: 128000,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/minimax.minimax-m2.1', {
+    name: 'MiniMax-M2.1',
+    created: '2025-12-23',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 196608,
+      output: 131072,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/minimax.minimax-m2.5', {
+    name: 'MiniMax-M2.5',
+    created: '2026-02-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 196608,
+      output: 98304,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/mistral.devstral-2-123b', {
+    name: 'Devstral 2 123B',
+    created: '2025-12-09',
+    knowledge: '2025-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 8192,
+    },
+    cost: {
+      input: 0.4,
+      output: 2,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/mistral.magistral-small-2509', {
+    name: 'Magistral Small 1.2',
+    created: '2025-09-18',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 40000,
+    },
+    cost: {
+      input: 0.5,
+      output: 1.5,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/mistral.ministral-3-14b-instruct', {
+    name: 'Ministral 14B 3.0',
+    created: '2025-12-02',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 4096,
+    },
+    cost: {
+      input: 0.2,
+      output: 0.2,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/mistral.ministral-3-3b-instruct', {
+    name: 'Ministral 3 3B',
+    created: '2025-12-02',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 8192,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.1,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/mistral.ministral-3-8b-instruct', {
+    name: 'Ministral 3 8B',
+    created: '2025-12-02',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 4096,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.15,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/mistral.mistral-large-3-675b-instruct', {
+    name: 'Mistral Large 3',
+    created: '2025-12-02',
+    knowledge: '2024-11',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 8192,
+    },
+    cost: {
+      input: 0.5,
+      output: 1.5,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/mistral.pixtral-large-2502-v1:0', {
+    name: 'Pixtral Large (25.02)',
+    created: '2025-04-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 8192,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/mistral.voxtral-mini-3b-2507', {
+    name: 'Voxtral Mini 3B 2507',
+    created: '2025-07-15',
+    modalities: {
+      input: ['text', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 4096,
+    },
+    cost: {
+      input: 0.04,
+      output: 0.04,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/mistral.voxtral-small-24b-2507', {
+    name: 'Voxtral Small 24B 2507',
+    created: '2025-07-15',
+    modalities: {
+      input: ['text', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 8192,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.3,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/moonshot.kimi-k2-thinking', {
+    name: 'Kimi K2 Thinking',
+    created: '2025-11-06',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 16000,
+    },
+    cost: {
+      input: 0.6,
+      output: 2.5,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/moonshotai.kimi-k2.5', {
+    name: 'Kimi K2.5',
+    created: '2026-01-27',
+    knowledge: '2025-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 16384,
+    },
+    cost: {
+      input: 0.6,
+      output: 3,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/nvidia.nemotron-nano-12b-v2', {
+    name: 'NVIDIA Nemotron Nano 12B v2 VL BF16',
+    created: '2025-10-28',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 8192,
+    },
+    cost: {
+      input: 0.2,
+      output: 0.6,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/nvidia.nemotron-nano-3-30b', {
+    name: 'NVIDIA Nemotron Nano 3 30B',
+    created: '2025-12-15',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 8192,
+    },
+    cost: {
+      input: 0.06,
+      output: 0.24,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/nvidia.nemotron-nano-9b-v2', {
+    name: 'NVIDIA Nemotron Nano 9B v2',
+    created: '2025-08-18',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 8192,
+    },
+    cost: {
+      input: 0.06,
+      output: 0.23,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/nvidia.nemotron-super-3-120b', {
+    name: 'NVIDIA Nemotron 3 Super 120B A12B',
+    created: '2026-03-11',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.65,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-5.4', {
+    name: 'GPT-5.4',
+    created: '2026-03-05',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2.75,
+      output: 16.5,
+      cache_read: 0.275,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-5.5', {
+    name: 'GPT-5.5',
+    created: '2026-04-23',
+    knowledge: '2025-12-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5.5,
+      output: 33,
+      cache_read: 0.55,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-5.6-luna', {
+    name: 'GPT-5.6 Luna',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.22,
+      output: 1.32,
+      cache_read: 0.022,
+      cache_write: 0.275,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-5.6-sol', {
+    name: 'GPT-5.6 Sol',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 4.4,
+      output: 22,
+      cache_read: 0.44,
+      cache_write: 5.5,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-5.6-terra', {
+    name: 'GPT-5.6 Terra',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2.2,
+      output: 13.2,
+      cache_read: 0.22,
+      cache_write: 2.75,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-6-astra', {
+    name: 'GPT-6 Astra',
+    created: '2026-09-04',
+    knowledge: '2026-04-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 11,
+      output: 55,
+      cache_read: 1.1,
+      cache_write: 13.75,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-6-luna', {
+    name: 'GPT-6 Luna',
+    created: '2026-09-22',
+    knowledge: '2026-05-18',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.11,
+      output: 0.55,
+      cache_read: 0.011,
+      cache_write: 0.1375,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-6-sol', {
+    name: 'GPT-6 Sol',
+    created: '2026-09-22',
+    knowledge: '2026-04-20',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2.2,
+      output: 11,
+      cache_read: 0.22,
+      cache_write: 2.75,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-oss-120b', {
+    name: 'gpt-oss-120b',
+    created: '2025-08-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 131072,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-oss-120b-1:0', {
+    name: 'gpt-oss-120b',
+    created: '2025-08-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 128000,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-oss-20b', {
+    name: 'gpt-oss-20b',
+    created: '2025-08-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 131072,
+    },
+    cost: {
+      input: 0.07,
+      output: 0.3,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-oss-20b-1:0', {
+    name: 'gpt-oss-20b',
+    created: '2025-08-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 128000,
+    },
+    cost: {
+      input: 0.07,
+      output: 0.3,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-oss-safeguard-120b', {
+    name: 'GPT OSS Safeguard 120B',
+    created: '2025-10-29',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16384,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/openai.gpt-oss-safeguard-20b', {
+    name: 'GPT OSS Safeguard 20B',
+    created: '2025-10-29',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16384,
+    },
+    cost: {
+      input: 0.07,
+      output: 0.2,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/qwen.qwen3-235b-a22b-2507-v1:0', {
+    name: 'Qwen3 235B-A22B Instruct 2507',
+    created: '2025-07-21',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 0.22,
+      output: 0.88,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/qwen.qwen3-32b-v1:0', {
+    name: 'Qwen3 32B',
+    created: '2025-04',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 32768,
+      output: 16384,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/qwen.qwen3-coder-30b-a3b-v1:0', {
+    name: 'Qwen3-Coder 30B-A3B Instruct',
+    created: '2025-07-31',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.6,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/qwen.qwen3-coder-480b-a35b-v1:0', {
+    name: 'Qwen3-Coder 480B-A35B Instruct',
+    created: '2025-07-23',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 65536,
+    },
+    cost: {
+      input: 0.45,
+      output: 1.8,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/qwen.qwen3-coder-next', {
+    name: 'Qwen3 Coder Next',
+    created: '2026-02-03',
+    knowledge: '2025-09',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 65536,
+    },
+    cost: {
+      input: 0.5,
+      output: 1.2,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/qwen.qwen3-next-80b-a3b', {
+    name: 'Qwen3-Next 80B-A3B Instruct',
+    created: '2025-09-11',
+    knowledge: '2025-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 262000,
+    },
+    cost: {
+      input: 0.15,
+      output: 1.2,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/qwen.qwen3-vl-235b-a22b', {
+    name: 'Qwen3 VL 235B A22B Instruct',
+    created: '2025-09-23',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 262000,
+    },
+    cost: {
+      input: 0.53,
+      output: 2.66,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us-gov.openai.gpt-oss-120b-1:0', {
+    name: 'gpt-oss-120b (GovCloud)',
+    created: '2025-08-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16384,
+    },
+    cost: {
+      input: 0.18,
+      output: 0.72,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us-gov.openai.gpt-oss-20b-1:0', {
+    name: 'gpt-oss-20b (GovCloud)',
+    created: '2025-08-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 16384,
+    },
+    cost: {
+      input: 0.084,
+      output: 0.36,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.amazon.nova-2-lite-v1:0', {
+    name: 'Nova 2 Lite (US)',
+    created: '2025-12-02',
+    knowledge: '2025-10',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 65535,
+    },
+    cost: {
+      input: 0.33,
+      output: 2.75,
+      cache_read: 0.0825,
+      cache_write: 0.33,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.amazon.nova-lite-v1:0', {
+    name: 'Nova Lite (US)',
+    created: '2024-12-03',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 300000,
+      output: 10000,
+    },
+    cost: {
+      input: 0.06,
+      output: 0.24,
+      cache_read: 0.015,
+      cache_write: 0.06,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.amazon.nova-micro-v1:0', {
+    name: 'Nova Micro (US)',
+    created: '2024-12-03',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 10000,
+    },
+    cost: {
+      input: 0.035,
+      output: 0.14,
+      cache_read: 0.00875,
+      cache_write: 0.035,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.amazon.nova-pro-v1:0', {
+    name: 'Nova Pro (US)',
+    created: '2024-12-03',
+    knowledge: '2024-10',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 300000,
+      output: 10000,
+    },
+    cost: {
+      input: 0.8,
+      output: 3.2,
+      cache_read: 0.2,
+      cache_write: 0.8,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.anthropic.claude-fable-5', {
+    name: 'Claude Fable 5 (US)',
+    created: '2026-06-09',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 11,
+      output: 55,
+      cache_read: 1.1,
+      cache_write: 13.75,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.anthropic.claude-fable-5-1', {
+    name: 'Claude Fable 5.1 (US)',
+    created: '2026-09-01',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 11,
+      output: 55,
+      cache_read: 0.275,
+      cache_write: 13.75,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0', {
+    name: 'Claude Haiku 4.5 (US)',
+    created: '2025-10-15',
+    knowledge: '2025-02-28',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 1.1,
+      output: 5.5,
+      cache_read: 0.11,
+      cache_write: 1.375,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.anthropic.claude-opus-4-5-20251101-v1:0', {
+    name: 'Claude Opus 4.5 (US)',
+    created: '2025-11-01',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 5.5,
+      output: 27.5,
+      cache_read: 0.55,
+      cache_write: 6.875,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.anthropic.claude-opus-4-6-v1', {
+    name: 'Claude Opus 4.6 (US)',
+    created: '2026-02-05',
+    knowledge: '2025-05-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5.5,
+      output: 27.5,
+      cache_read: 0.55,
+      cache_write: 6.875,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.anthropic.claude-opus-4-7', {
+    name: 'Claude Opus 4.7 (US)',
+    created: '2026-04-16',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5.5,
+      output: 27.5,
+      cache_read: 0.55,
+      cache_write: 6.875,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.anthropic.claude-opus-4-8', {
+    name: 'Claude Opus 4.8 (US)',
+    created: '2026-05-28',
+    knowledge: '2026-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5.5,
+      output: 27.5,
+      cache_read: 0.55,
+      cache_write: 6.875,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.anthropic.claude-opus-5', {
+    name: 'Claude Opus 5 (US)',
+    created: '2026-07-24',
+    knowledge: '2026-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 5.5,
+      output: 27.5,
+      cache_read: 0.55,
+      cache_write: 6.875,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.anthropic.claude-opus-5-5', {
+    name: 'Claude Opus 5.5 (US)',
+    created: '2026-09-22',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 4.4,
+      output: 22,
+      cache_read: 0.22,
+      cache_write: 5.5,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0', {
+    name: 'Claude Sonnet 4.5 (US)',
+    created: '2025-09-29',
+    knowledge: '2025-07-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 200000,
+      output: 64000,
+    },
+    cost: {
+      input: 3.3,
+      output: 16.5,
+      cache_read: 0.33,
+      cache_write: 4.125,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.anthropic.claude-sonnet-4-6', {
+    name: 'Claude Sonnet 4.6 (US)',
+    created: '2026-02-17',
+    knowledge: '2025-08-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 3.3,
+      output: 16.5,
+      cache_read: 0.33,
+      cache_write: 4.125,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.anthropic.claude-sonnet-5', {
+    name: 'Claude Sonnet 5 (US)',
+    created: '2026-06-30',
+    knowledge: '2026-01-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2.2,
+      output: 11,
+      cache_read: 0.22,
+      cache_write: 2.75,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.deepseek.r1-v1:0', {
+    name: 'DeepSeek-R1 (US)',
+    created: '2025-01-20',
+    knowledge: '2024-07',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 32768,
+    },
+    cost: {
+      input: 1.35,
+      output: 5.4,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.meta.llama3-1-70b-instruct-v1:0', {
+    name: 'Llama 3.1 70B Instruct (US)',
     created: '2024-07-23',
     knowledge: '2023-12',
     modalities: {
@@ -1578,1276 +5409,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['bedrock'],
   }),
-  model('bedrock/meta.llama4-maverick-17b-instruct-v1:0', {
-    name: 'Llama 4 Maverick 17B Instruct',
-    created: '2025-04-05',
-    knowledge: '2024-08',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 16384,
-    },
-    cost: {
-      input: 0.24,
-      output: 0.97,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/meta.llama4-scout-17b-instruct-v1:0', {
-    name: 'Llama 4 Scout 17B Instruct',
-    created: '2025-04-05',
-    knowledge: '2024-08',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 3500000,
-      output: 16384,
-    },
-    cost: {
-      input: 0.17,
-      output: 0.66,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/minimax.minimax-m2', {
-    name: 'MiniMax M2',
-    created: '2025-10-27',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 204608,
-      output: 128000,
-    },
-    cost: {
-      input: 0.3,
-      output: 1.2,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/minimax.minimax-m2.1', {
-    name: 'MiniMax M2.1',
-    created: '2025-12-23',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 204800,
-      output: 131072,
-    },
-    cost: {
-      input: 0.3,
-      output: 1.2,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/minimax.minimax-m2.5', {
-    name: 'MiniMax M2.5',
-    created: '2026-03-18',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 196608,
-      output: 98304,
-    },
-    cost: {
-      input: 0.3,
-      output: 1.2,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/mistral.devstral-2-123b', {
-    name: 'Devstral 2 123B',
-    created: '2026-02-17',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      streaming: true,
-    },
-    context: {
-      input: 256000,
-      output: 8192,
-    },
-    cost: {
-      input: 0.4,
-      output: 2,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/mistral.magistral-small-2509', {
-    name: 'Magistral Small 1.2',
-    created: '2025-12-02',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 40000,
-    },
-    cost: {
-      input: 0.5,
-      output: 1.5,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/mistral.ministral-3-14b-instruct', {
-    name: 'Ministral 14B 3.0',
-    created: '2024-12-01',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 4096,
-    },
-    cost: {
-      input: 0.2,
-      output: 0.2,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/mistral.ministral-3-3b-instruct', {
-    name: 'Ministral 3 3B',
-    created: '2025-12-02',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 256000,
-      output: 8192,
-    },
-    cost: {
-      input: 0.1,
-      output: 0.1,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/mistral.ministral-3-8b-instruct', {
-    name: 'Ministral 3 8B',
-    created: '2024-12-01',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 4096,
-    },
-    cost: {
-      input: 0.15,
-      output: 0.15,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/mistral.mistral-large-3-675b-instruct', {
-    name: 'Mistral Large 3',
-    created: '2025-12-02',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 256000,
-      output: 8192,
-    },
-    cost: {
-      input: 0.5,
-      output: 1.5,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/mistral.pixtral-large-2502-v1:0', {
-    name: 'Pixtral Large (25.02)',
-    created: '2025-04-08',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 8192,
-    },
-    cost: {
-      input: 2,
-      output: 6,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/mistral.voxtral-mini-3b-2507', {
-    name: 'Voxtral Mini 3B 2507',
-    created: '2024-12-01',
-    modalities: {
-      input: ['audio', 'text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions', 'audio.transcriptions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 4096,
-    },
-    cost: {
-      input: 0.04,
-      output: 0.04,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/mistral.voxtral-small-24b-2507', {
-    name: 'Voxtral Small 24B 2507',
-    created: '2025-07-01',
-    modalities: {
-      input: ['text', 'audio'],
-      output: ['text'],
-    },
-    operations: ['chat.completions', 'audio.transcriptions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      streaming: true,
-    },
-    context: {
-      input: 32000,
-      output: 8192,
-    },
-    cost: {
-      input: 0.15,
-      output: 0.35,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/moonshot.kimi-k2-thinking', {
-    name: 'Kimi K2 Thinking',
-    created: '2025-12-02',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 262143,
-      output: 16000,
-    },
-    cost: {
-      input: 0.6,
-      output: 2.5,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/moonshotai.kimi-k2.5', {
-    name: 'Kimi K2.5',
-    created: '2026-02-06',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 262143,
-      output: 16000,
-    },
-    cost: {
-      input: 0.6,
-      output: 3,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/nvidia.nemotron-nano-12b-v2', {
-    name: 'NVIDIA Nemotron Nano 12B v2 VL BF16',
-    created: '2024-12-01',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 4096,
-    },
-    cost: {
-      input: 0.2,
-      output: 0.6,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/nvidia.nemotron-nano-3-30b', {
-    name: 'NVIDIA Nemotron Nano 3 30B',
-    created: '2025-12-23',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 4096,
-    },
-    cost: {
-      input: 0.06,
-      output: 0.24,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/nvidia.nemotron-nano-9b-v2', {
-    name: 'NVIDIA Nemotron Nano 9B v2',
-    created: '2024-12-01',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 4096,
-    },
-    cost: {
-      input: 0.06,
-      output: 0.23,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/nvidia.nemotron-super-3-120b', {
-    name: 'NVIDIA Nemotron 3 Super 120B A12B',
-    created: '2026-03-11',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 131072,
-    },
-    cost: {
-      input: 0.15,
-      output: 0.65,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/openai.gpt-5.4', {
-    name: 'GPT-5.4',
-    created: '2026-03-05',
-    knowledge: '2025-08-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 272000,
-      output: 128000,
-    },
-    cost: {
-      input: 2.75,
-      output: 16.5,
-      cache_read: 0.275,
-    },
-    sdk: {
-      npm: '@ai-sdk/amazon-bedrock/mantle',
-      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
-      shape: 'responses',
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/openai.gpt-5.5', {
-    name: 'GPT-5.5',
-    created: '2026-04-23',
-    knowledge: '2025-12-01',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 272000,
-      output: 128000,
-    },
-    cost: {
-      input: 5.5,
-      output: 33,
-      cache_read: 0.55,
-    },
-    sdk: {
-      npm: '@ai-sdk/amazon-bedrock/mantle',
-      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
-      shape: 'responses',
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/openai.gpt-5.6-luna', {
-    name: 'GPT-5.6 Luna',
-    created: '2026-07-09',
-    knowledge: '2026-02-16',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 272000,
-      output: 128000,
-    },
-    cost: {
-      input: 1,
-      output: 6,
-      cache_read: 0.1,
-      cache_write: 1.25,
-    },
-    sdk: {
-      npm: '@ai-sdk/amazon-bedrock/mantle',
-      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
-      shape: 'responses',
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/openai.gpt-5.6-sol', {
-    name: 'GPT-5.6 Sol',
-    created: '2026-07-09',
-    knowledge: '2026-02-16',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 272000,
-      output: 128000,
-    },
-    cost: {
-      input: 5,
-      output: 30,
-      cache_read: 0.5,
-      cache_write: 6.25,
-    },
-    sdk: {
-      npm: '@ai-sdk/amazon-bedrock/mantle',
-      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
-      shape: 'responses',
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/openai.gpt-5.6-terra', {
-    name: 'GPT-5.6 Terra',
-    created: '2026-07-09',
-    knowledge: '2026-02-16',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 272000,
-      output: 128000,
-    },
-    cost: {
-      input: 2.5,
-      output: 15,
-      cache_read: 0.25,
-      cache_write: 3.125,
-    },
-    sdk: {
-      npm: '@ai-sdk/amazon-bedrock/mantle',
-      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
-      shape: 'responses',
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/openai.gpt-oss-120b', {
-    name: 'gpt-oss-120b',
-    created: '2025-08-05',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 16384,
-    },
-    cost: {
-      input: 0.15,
-      output: 0.6,
-    },
-    sdk: {
-      npm: '@ai-sdk/amazon-bedrock/mantle',
-      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/v1',
-      shape: 'responses',
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/openai.gpt-oss-120b-1:0', {
-    name: 'gpt-oss-120b',
-    created: '2025-08-05',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 16384,
-    },
-    cost: {
-      input: 0.15,
-      output: 0.6,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/openai.gpt-oss-20b', {
-    name: 'gpt-oss-20b',
-    created: '2025-08-05',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 16384,
-    },
-    cost: {
-      input: 0.07,
-      output: 0.3,
-    },
-    sdk: {
-      npm: '@ai-sdk/amazon-bedrock/mantle',
-      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/v1',
-      shape: 'responses',
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/openai.gpt-oss-20b-1:0', {
-    name: 'gpt-oss-20b',
-    created: '2025-08-05',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 16384,
-    },
-    cost: {
-      input: 0.07,
-      output: 0.3,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/openai.gpt-oss-safeguard-120b', {
-    name: 'GPT OSS Safeguard 120B',
-    created: '2025-10-29',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 16384,
-    },
-    cost: {
-      input: 0.15,
-      output: 0.6,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/openai.gpt-oss-safeguard-20b', {
-    name: 'GPT OSS Safeguard 20B',
-    created: '2025-10-29',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 16384,
-    },
-    cost: {
-      input: 0.07,
-      output: 0.2,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/qwen.qwen3-235b-a22b-2507-v1:0', {
-    name: 'Qwen3 235B A22B 2507',
-    created: '2025-09-18',
-    knowledge: '2024-04',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 131072,
-    },
-    cost: {
-      input: 0.22,
-      output: 0.88,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/qwen.qwen3-32b-v1:0', {
-    name: 'Qwen3 32B (dense)',
-    created: '2025-09-18',
-    knowledge: '2024-04',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 16384,
-      output: 16384,
-    },
-    cost: {
-      input: 0.15,
-      output: 0.6,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/qwen.qwen3-coder-30b-a3b-v1:0', {
-    name: 'Qwen3 Coder 30B A3B Instruct',
-    created: '2025-09-18',
-    knowledge: '2024-04',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 131072,
-    },
-    cost: {
-      input: 0.15,
-      output: 0.6,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/qwen.qwen3-coder-480b-a35b-v1:0', {
-    name: 'Qwen3 Coder 480B A35B Instruct',
-    created: '2025-09-18',
-    knowledge: '2024-04',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      streaming: true,
-    },
-    context: {
-      input: 131072,
-      output: 65536,
-    },
-    cost: {
-      input: 0.22,
-      output: 1.8,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/qwen.qwen3-coder-next', {
-    name: 'Qwen3 Coder Next',
-    created: '2026-02-06',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 131072,
-      output: 65536,
-    },
-    cost: {
-      input: 0.22,
-      output: 1.8,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/qwen.qwen3-next-80b-a3b', {
-    name: 'Qwen/Qwen3-Next-80B-A3B-Instruct',
-    created: '2025-09-18',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      streaming: true,
-    },
-    context: {
-      input: 262000,
-      output: 262000,
-    },
-    cost: {
-      input: 0.14,
-      output: 1.4,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/qwen.qwen3-vl-235b-a22b', {
-    name: 'Qwen/Qwen3-VL-235B-A22B-Instruct',
-    created: '2025-10-04',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 262000,
-      output: 262000,
-    },
-    cost: {
-      input: 0.3,
-      output: 1.5,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/us.anthropic.claude-fable-5', {
-    name: 'Claude Fable 5 (US)',
-    created: '2026-06-09',
-    knowledge: '2026-01-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 10,
-      output: 50,
-      cache_read: 1,
-      cache_write: 12.5,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0', {
-    name: 'Claude Haiku 4.5 (US)',
-    created: '2025-10-15',
-    knowledge: '2025-02-28',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 200000,
-      output: 64000,
-    },
-    cost: {
-      input: 1,
-      output: 5,
-      cache_read: 0.1,
-      cache_write: 1.25,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/us.anthropic.claude-opus-4-5-20251101-v1:0', {
-    name: 'Claude Opus 4.5 (US)',
-    created: '2025-11-24',
-    knowledge: '2025-03-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 200000,
-      output: 64000,
-    },
-    cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/us.anthropic.claude-opus-4-6-v1', {
-    name: 'Claude Opus 4.6 (US)',
-    created: '2026-02-05',
-    knowledge: '2025-05-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/us.anthropic.claude-opus-4-7', {
-    name: 'Claude Opus 4.7 (US)',
-    created: '2026-04-16',
-    knowledge: '2026-01-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/us.anthropic.claude-opus-4-8', {
-    name: 'Claude Opus 4.8 (US)',
-    created: '2026-05-28',
-    knowledge: '2026-01',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/us.anthropic.claude-opus-5', {
-    name: 'Claude Opus 5 (US)',
-    created: '2026-07-24',
-    knowledge: '2026-05',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0', {
-    name: 'Claude Sonnet 4.5 (US)',
-    created: '2025-09-29',
-    knowledge: '2025-07-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 200000,
-      output: 64000,
-    },
-    cost: {
-      input: 3,
-      output: 15,
-      cache_read: 0.3,
-      cache_write: 3.75,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/us.anthropic.claude-sonnet-4-6', {
-    name: 'Claude Sonnet 4.6 (US)',
-    created: '2026-02-17',
-    knowledge: '2025-08-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 64000,
-    },
-    cost: {
-      input: 3,
-      output: 15,
-      cache_read: 0.3,
-      cache_write: 3.75,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/us.anthropic.claude-sonnet-5', {
-    name: 'Claude Sonnet 5 (US)',
-    created: '2026-06-30',
-    knowledge: '2026-01-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 2,
-      output: 10,
-      cache_read: 0.2,
-      cache_write: 2.5,
-    },
-    providers: ['bedrock'],
-  }),
-  model('bedrock/us.deepseek.r1-v1:0', {
-    name: 'DeepSeek-R1 (US)',
-    created: '2025-01-20',
-    knowledge: '2024-07',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 32768,
-    },
-    cost: {
-      input: 1.35,
-      output: 5.4,
-    },
-    providers: ['bedrock'],
-  }),
   model('bedrock/us.meta.llama4-maverick-17b-instruct-v1:0', {
     name: 'Llama 4 Maverick 17B Instruct (US)',
     created: '2025-04-05',
@@ -2864,7 +5425,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1000000,
-      output: 16384,
+      output: 8192,
     },
     cost: {
       input: 0.24,
@@ -2887,8 +5448,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       streaming: true,
     },
     context: {
-      input: 3500000,
-      output: 16384,
+      input: 10000000,
+      output: 8192,
     },
     cost: {
       input: 0.17,
@@ -2896,9 +5457,347 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['bedrock'],
   }),
+  model('bedrock/us.mistral.pixtral-large-2502-v1:0', {
+    name: 'Pixtral Large (25.02) (US)',
+    created: '2025-04-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 128000,
+      output: 8192,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.moonshotai.kimi-k3', {
+    name: 'Kimi K3 (US)',
+    created: '2026-07-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 128000,
+    },
+    cost: {
+      input: 3.3,
+      output: 16.5,
+      cache_read: 0.33,
+      cache_write: 4.125,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.openai.gpt-5.6-luna', {
+    name: 'GPT-5.6 Luna (US)',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.22,
+      output: 1.32,
+      cache_read: 0.022,
+      cache_write: 0.275,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.openai.gpt-5.6-sol', {
+    name: 'GPT-5.6 Sol (US)',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 4.4,
+      output: 22,
+      cache_read: 0.44,
+      cache_write: 5.5,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.openai.gpt-5.6-terra', {
+    name: 'GPT-5.6 Terra (US)',
+    created: '2026-07-09',
+    knowledge: '2026-02-16',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2.2,
+      output: 13.2,
+      cache_read: 0.22,
+      cache_write: 2.75,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.openai.gpt-6-astra', {
+    name: 'GPT-6 Astra (US)',
+    created: '2026-09-04',
+    knowledge: '2026-04-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 11,
+      output: 55,
+      cache_read: 1.1,
+      cache_write: 13.75,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.openai.gpt-6-luna', {
+    name: 'GPT-6 Luna (US)',
+    created: '2026-09-22',
+    knowledge: '2026-05-18',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.11,
+      output: 0.55,
+      cache_read: 0.011,
+      cache_write: 0.1375,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.openai.gpt-6-sol', {
+    name: 'GPT-6 Sol (US)',
+    created: '2026-09-22',
+    knowledge: '2026-04-20',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2.2,
+      output: 11,
+      cache_read: 0.22,
+      cache_write: 2.75,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.writer.palmyra-x4-v1:0', {
+    name: 'Palmyra X4 (US)',
+    created: '2024-10-09',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 122880,
+      output: 8192,
+    },
+    cost: {
+      input: 2.5,
+      output: 10,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.writer.palmyra-x5-v1:0', {
+    name: 'Palmyra X5 (US)',
+    created: '2025-04-28',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 1040000,
+      output: 8192,
+    },
+    cost: {
+      input: 0.6,
+      output: 6,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/us.xai.grok-4.6', {
+    name: 'Grok 4.6 (US)',
+    created: '2026-08-12',
+    knowledge: '2026-02-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 500000,
+      output: 500000,
+    },
+    cost: {
+      input: 2.2,
+      output: 6.6,
+      cache_read: 0.55,
+    },
+    providers: ['bedrock'],
+  }),
   model('bedrock/writer.palmyra-x4-v1:0', {
     name: 'Palmyra X4',
-    created: '2025-04-28',
+    created: '2024-10-09',
     modalities: {
       input: ['text'],
       output: ['text'],
@@ -2954,6 +5853,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -2966,6 +5871,45 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 1.25,
       output: 2.5,
       cache_read: 0.2,
+    },
+    sdk: {
+      npm: '@ai-sdk/amazon-bedrock/mantle',
+      api: 'https://bedrock-mantle.${AWS_REGION}.api.aws/openai/v1',
+      shape: 'responses',
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/xai.grok-4.6', {
+    name: 'Grok 4.6',
+    created: '2026-08-12',
+    knowledge: '2026-02-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 500000,
+      output: 500000,
+    },
+    cost: {
+      input: 2.2,
+      output: 6.6,
+      cache_read: 0.55,
     },
     sdk: {
       npm: '@ai-sdk/amazon-bedrock/mantle',
@@ -2987,10 +5931,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       streaming: true,
     },
     context: {
-      input: 204800,
+      input: 202752,
       output: 131072,
     },
     cost: {
@@ -3012,10 +5961,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       streaming: true,
     },
     context: {
-      input: 200000,
+      input: 202752,
       output: 131072,
     },
     cost: {
@@ -3026,7 +5980,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
   }),
   model('bedrock/zai.glm-5', {
     name: 'GLM-5',
-    created: '2026-03-18',
+    created: '2026-02-12',
     modalities: {
       input: ['text'],
       output: ['text'],
@@ -3036,419 +5990,22 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       streaming: true,
     },
     context: {
       input: 202752,
-      output: 101376,
+      output: 131072,
     },
     cost: {
       input: 1,
       output: 3.2,
     },
     providers: ['bedrock'],
-  }),
-  model('anthropic/claude-fable-5', {
-    name: 'Claude Fable 5',
-    created: '2026-06-07',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 10,
-      output: 50,
-      cache_read: 1,
-      cache_write: 12.5,
-    },
-    providers: ['anthropic'],
-  }),
-  model('anthropic/claude-haiku-4-5', {
-    name: 'Claude Haiku 4.5 (latest)',
-    created: '2025-10-15',
-    knowledge: '2025-02-28',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 200000,
-      output: 64000,
-    },
-    cost: {
-      input: 1,
-      output: 5,
-      cache_read: 0.1,
-      cache_write: 1.25,
-    },
-    providers: ['anthropic'],
-  }),
-  model('anthropic/claude-haiku-4-5-20251001', {
-    name: 'Claude Haiku 4.5',
-    created: '2025-10-15',
-    knowledge: '2025-02-28',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 200000,
-      output: 64000,
-    },
-    cost: {
-      input: 1,
-      output: 5,
-      cache_read: 0.1,
-      cache_write: 1.25,
-    },
-    providers: ['anthropic'],
-  }),
-  model('anthropic/claude-opus-4-5', {
-    name: 'Claude Opus 4.5 (latest)',
-    created: '2025-11-24',
-    knowledge: '2025-05',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 200000,
-      output: 64000,
-    },
-    cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
-    },
-    providers: ['anthropic'],
-  }),
-  model('anthropic/claude-opus-4-5-20251101', {
-    name: 'Claude Opus 4.5',
-    created: '2025-11-24',
-    knowledge: '2025-05',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 200000,
-      output: 64000,
-    },
-    cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
-    },
-    providers: ['anthropic'],
-  }),
-  model('anthropic/claude-opus-4-6', {
-    name: 'Claude Opus 4.6',
-    created: '2026-02-04',
-    knowledge: '2025-05-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
-    },
-    providers: ['anthropic'],
-  }),
-  model('anthropic/claude-opus-4-7', {
-    name: 'Claude Opus 4.7',
-    created: '2026-04-14',
-    knowledge: '2026-01-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
-    },
-    providers: ['anthropic'],
-  }),
-  model('anthropic/claude-opus-4-8', {
-    name: 'Claude Opus 4.8',
-    created: '2026-05-28',
-    knowledge: '2026-01',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
-    },
-    providers: ['anthropic'],
-  }),
-  model('anthropic/claude-opus-5', {
-    name: 'Claude Opus 5',
-    created: '2026-07-24',
-    knowledge: '2026-05',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 5,
-      output: 25,
-      cache_read: 0.5,
-      cache_write: 6.25,
-    },
-    providers: ['anthropic'],
-  }),
-  model('anthropic/claude-sonnet-4-5', {
-    name: 'Claude Sonnet 4.5 (latest)',
-    created: '2025-09-29',
-    knowledge: '2025-07-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 64000,
-    },
-    cost: {
-      input: 3,
-      output: 15,
-      cache_read: 0.3,
-      cache_write: 3.75,
-    },
-    providers: ['anthropic'],
-  }),
-  model('anthropic/claude-sonnet-4-5-20250929', {
-    name: 'Claude Sonnet 4.5',
-    created: '2025-09-29',
-    knowledge: '2025-07-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 64000,
-    },
-    cost: {
-      input: 3,
-      output: 15,
-      cache_read: 0.3,
-      cache_write: 3.75,
-    },
-    providers: ['anthropic'],
-  }),
-  model('anthropic/claude-sonnet-4-6', {
-    name: 'Claude Sonnet 4.6',
-    created: '2026-02-17',
-    knowledge: '2025-08-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 3,
-      output: 15,
-      cache_read: 0.3,
-      cache_write: 3.75,
-    },
-    providers: ['anthropic'],
-  }),
-  model('anthropic/claude-sonnet-5', {
-    name: 'Claude Sonnet 5',
-    created: '2026-06-29',
-    knowledge: '2026-01-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 128000,
-    },
-    cost: {
-      input: 2,
-      output: 10,
-      cache_read: 0.2,
-      cache_write: 2.5,
-    },
-    providers: ['anthropic'],
-  }),
-  model('cerebras/gemma-4-31b', {
-    name: 'Gemma 4 31B IT',
-    created: '2026-04-02',
-    status: 'beta',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 131072,
-      output: 40960,
-    },
-    cost: {
-      input: 0.99,
-      output: 1.49,
-    },
-    providers: ['cerebras'],
   }),
   model('cerebras/gpt-oss-120b', {
     name: 'GPT OSS 120B',
@@ -3462,6 +6019,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       streaming: true,
     },
     context: {
@@ -3474,12 +6037,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['cerebras'],
   }),
-  model('cerebras/zai-glm-4.7', {
-    name: 'Z.AI GLM-4.7',
-    created: '2026-01-07',
-    status: 'beta',
+  model('cerebras/qwen-3.8-27b', {
+    name: 'Qwen3.8 27B',
+    created: '2026-08-14',
     modalities: {
-      input: ['text'],
+      input: ['text', 'image'],
       output: ['text'],
     },
     operations: ['chat.completions'],
@@ -3487,7 +6049,13 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
-      promptCaching: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
       streaming: true,
     },
     context: {
@@ -3495,10 +6063,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 40960,
     },
     cost: {
-      input: 2.25,
-      output: 2.75,
-      cache_read: 2.25,
-      cache_write: 0,
+      input: 0.99,
+      output: 1.49,
     },
     providers: ['cerebras'],
   }),
@@ -3608,6 +6174,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1,
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -3633,6 +6208,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 1,
+        },
+      ],
       streaming: true,
     },
     context: {
@@ -3796,6 +6380,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high'],
+        },
+      ],
       streaming: true,
     },
     context: {
@@ -3806,7 +6396,98 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0,
       output: 0,
     },
+    sdk: {
+      npm: '@ai-sdk/openai-compatible',
+      api: 'https://api.cohere.ai/compatibility/v1',
+    },
     providers: ['cohere'],
+  }),
+  model('deepinfra/ByteDance/Seed-2.0-code', {
+    name: 'Seed 2.0 Code',
+    created: '2026-02-14',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 131072,
+    },
+    cost: {
+      input: 0.5,
+      output: 3,
+      cache_read: 0.1,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/ByteDance/Seed-2.0-mini', {
+    name: 'Seed 2.0 Mini',
+    created: '2026-02-14',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 32000,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.4,
+      cache_read: 0.02,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/ByteDance/Seed-2.0-pro', {
+    name: 'Seed 2.0 Pro',
+    created: '2026-02-14',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.5,
+      output: 3,
+      cache_read: 0.1,
+    },
+    providers: ['deepinfra'],
   }),
   model('deepinfra/deepseek-ai/DeepSeek-R1-0528', {
     name: 'DeepSeek-R1-0528',
@@ -3835,6 +6516,85 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['deepinfra'],
   }),
+  model('deepinfra/deepseek-ai/DeepSeek-V3', {
+    name: 'DeepSeek-V3',
+    created: '2024-12-26',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 163840,
+      output: 8192,
+    },
+    cost: {
+      input: 0.32,
+      output: 0.89,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/deepseek-ai/DeepSeek-V3-0324', {
+    name: 'DeepSeek V3 0324',
+    created: '2025-03-24',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 163840,
+      output: 163840,
+    },
+    cost: {
+      input: 0.24,
+      output: 0.9,
+      cache_read: 0.135,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/deepseek-ai/DeepSeek-V3.1', {
+    name: 'DeepSeek-V3.1',
+    created: '2025-08-21',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 163840,
+      output: 8192,
+    },
+    cost: {
+      input: 0.25,
+      output: 0.95,
+      cache_read: 0.13,
+    },
+    providers: ['deepinfra'],
+  }),
   model('deepinfra/deepseek-ai/DeepSeek-V3.2', {
     name: 'DeepSeek-V3.2',
     created: '2025-12-02',
@@ -3848,6 +6608,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
@@ -3875,6 +6640,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
@@ -3886,6 +6660,71 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.09,
       output: 0.18,
       cache_read: 0.018,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/deepseek-ai/DeepSeek-V4-Flash-0731', {
+    name: 'DeepSeek V4 Flash 0731',
+    created: '2026-07-31',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 384000,
+    },
+    cost: {
+      input: 0.06,
+      output: 0.18,
+      cache_read: 0.015,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp', {
+    name: 'DeepSeek V4 Flash Vision Exp',
+    created: '2026-08-21',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 384000,
+    },
+    cost: {
+      input: 0.44,
+      output: 1.32,
+      cache_read: 0.014,
     },
     providers: ['deepinfra'],
   }),
@@ -3902,6 +6741,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
@@ -3913,6 +6761,150 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 1.3,
       output: 2.6,
       cache_read: 0.1,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/deepseek-ai/DeepSeek-V4-Pro-0813', {
+    name: 'DeepSeek V4 Pro 0813',
+    created: '2026-08-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 384000,
+    },
+    cost: {
+      input: 1.3,
+      output: 2.6,
+      cache_read: 0.1,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/deepseek-ai/DeepSeek-V4.1-Flash', {
+    name: 'DeepSeek V4.1 Flash',
+    created: '2026-09-10',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 384000,
+    },
+    cost: {
+      input: 0.2,
+      output: 0.6,
+      cache_read: 0.006,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/google/gemma-3-12b-it', {
+    name: 'Gemma 3 12B IT',
+    created: '2025-03-12',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 131072,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.15,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/google/gemma-3-27b-it', {
+    name: 'Gemma 3 27B IT',
+    created: '2025-03-12',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 131072,
+    },
+    cost: {
+      input: 0.08,
+      output: 0.16,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/google/gemma-3-4b-it', {
+    name: 'Gemma 3 4B IT',
+    created: '2025-03-12',
+    knowledge: '2024-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 131072,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.1,
     },
     providers: ['deepinfra'],
   }),
@@ -3928,6 +6920,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -3953,6 +6950,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -3963,6 +6965,36 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.13,
       output: 0.38,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/google/gemma-4-E4B-it', {
+    name: 'Gemma 4 E4B IT',
+    created: '2026-04-02',
+    modalities: {
+      input: ['text', 'image', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131072,
+      output: 8192,
+    },
+    cost: {
+      input: 0.02,
+      output: 0.1,
     },
     providers: ['deepinfra'],
   }),
@@ -4036,61 +7068,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['deepinfra'],
   }),
-  model('deepinfra/MiniMaxAI/MiniMax-M2.7', {
-    name: 'MiniMax-M2.7',
-    created: '2026-03-18',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 196608,
-      output: 131072,
-    },
-    cost: {
-      input: 0.25,
-      output: 1,
-      cache_read: 0.05,
-    },
-    providers: ['deepinfra'],
-  }),
   model('deepinfra/MiniMaxAI/MiniMax-M3', {
     name: 'MiniMax-M3',
     created: '2026-06-01',
-    modalities: {
-      input: ['text', 'image', 'video'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 524288,
-      output: 128000,
-    },
-    cost: {
-      input: 0.3,
-      output: 1.2,
-      cache_read: 0.06,
-    },
-    providers: ['deepinfra'],
-  }),
-  model('deepinfra/moonshotai/Kimi-K2.5', {
-    name: 'Kimi K2.5',
-    created: '2026-01-27',
-    knowledge: '2025-01',
     modalities: {
       input: ['text', 'image', 'video'],
       output: ['text'],
@@ -4105,13 +7085,13 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       streaming: true,
     },
     context: {
-      input: 262144,
-      output: 32768,
+      input: 524288,
+      output: 512000,
     },
     cost: {
-      input: 0.45,
-      output: 2.25,
-      cache_read: 0.07,
+      input: 0.28,
+      output: 1.1,
+      cache_read: 0.056,
     },
     providers: ['deepinfra'],
   }),
@@ -4128,6 +7108,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -4156,6 +7141,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -4165,9 +7155,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 262144,
     },
     cost: {
-      input: 0.74,
-      output: 3.5,
-      cache_read: 0.15,
+      input: 0.68,
+      output: 3.4,
+      cache_read: 0.136,
     },
     providers: ['deepinfra'],
   }),
@@ -4183,6 +7173,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -4192,9 +7188,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 131072,
     },
     cost: {
-      input: 2.7,
-      output: 13.5,
-      cache_read: 0.27,
+      input: 2.85,
+      output: 14.25,
+      cache_read: 0.285,
     },
     providers: ['deepinfra'],
   }),
@@ -4209,6 +7205,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -4218,6 +7220,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.05,
       output: 0.2,
+      cache_read: 0.025,
     },
     providers: ['deepinfra'],
   }),
@@ -4233,6 +7236,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       streaming: true,
     },
     context: {
@@ -4257,6 +7266,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       streaming: true,
     },
     context: {
@@ -4266,6 +7281,53 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.03,
       output: 0.14,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/Qwen/Qwen3-235B-A22B-Instruct-2507', {
+    name: 'Qwen3 235B-A22B Instruct 2507',
+    created: '2025-07-21',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 16384,
+    },
+    cost: {
+      input: 0.09,
+      output: 0.55,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/Qwen/Qwen3-30B-A3B', {
+    name: 'Qwen3 30B A3B',
+    created: '2025-04-28',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      streaming: true,
+    },
+    context: {
+      input: 40960,
+      output: 16384,
+    },
+    cost: {
+      input: 0.12,
+      output: 0.5,
     },
     providers: ['deepinfra'],
   }),
@@ -4367,6 +7429,33 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.09,
       output: 1.1,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct', {
+    name: 'Qwen3 VL 235B A22B Instruct',
+    created: '2025-09-23',
+    knowledge: '2025-03-31',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.2,
+      output: 0.88,
+      cache_read: 0.11,
     },
     providers: ['deepinfra'],
   }),
@@ -4546,7 +7635,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 81920,
     },
     cost: {
-      input: 0.15,
+      input: 0.1,
       output: 0.95,
     },
     providers: ['deepinfra'],
@@ -4576,6 +7665,233 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['deepinfra'],
   }),
+  model('deepinfra/Qwen/Qwen3.8-2.4T-A95B', {
+    name: 'Qwen3.8 2.4T A95B',
+    created: '2026-08-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'xhigh'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.2,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/Qwen/Qwen3.8-27B', {
+    name: 'Qwen3.8 27B',
+    created: '2026-08-14',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 32768,
+    },
+    cost: {
+      input: 0.2,
+      output: 2.5,
+      cache_read: 0.05,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/Qwen/Qwen3.8-Flash', {
+    name: 'Qwen3.8 Flash',
+    created: '2026-08-26',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 0.113,
+      output: 0.382,
+      cache_read: 0.0141,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/Qwen/Qwen3.8-Max', {
+    name: 'Qwen3.8 Max',
+    created: '2026-08-03',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 256000,
+      output: 131072,
+    },
+    cost: {
+      input: 1.65,
+      output: 4.951,
+      cache_read: 0.206,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/stepfun-ai/Step-3.7-Flash', {
+    name: 'Step 3.7 Flash',
+    created: '2026-05-29',
+    knowledge: '2026-03-01',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 256000,
+    },
+    cost: {
+      input: 0.2,
+      output: 1.15,
+      cache_read: 0.04,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/tencent/Hy3', {
+    name: 'Hy3',
+    created: '2026-07-06',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 128000,
+    },
+    cost: {
+      input: 0.13,
+      output: 0.53,
+      cache_read: 0.033,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/thinkingmachines/Inkling', {
+    name: 'Inkling',
+    created: '2026-07-15',
+    modalities: {
+      input: ['text', 'image', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 524288,
+      output: 1048576,
+    },
+    cost: {
+      input: 0.95,
+      output: 4.05,
+      cache_read: 0.16,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/thinkingmachines/Inkling-Small', {
+    name: 'Inkling Small',
+    created: '2026-07-30',
+    modalities: {
+      input: ['text', 'image', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 524288,
+      output: 1048576,
+    },
+    cost: {
+      input: 0.45,
+      output: 1.2,
+      cache_read: 0.1,
+    },
+    providers: ['deepinfra'],
+  }),
   model('deepinfra/XiaomiMiMo/MiMo-V2.5', {
     name: 'MiMo-V2.5',
     created: '2026-04-22',
@@ -4589,6 +7905,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -4598,9 +7919,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 16384,
     },
     cost: {
-      input: 0.4,
-      output: 2,
-      cache_read: 0.08,
+      input: 0.14,
+      output: 0.28,
+      cache_read: 0.0028,
     },
     providers: ['deepinfra'],
   }),
@@ -4617,6 +7938,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
@@ -4628,6 +7954,70 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 1,
       output: 3,
       cache_read: 0.2,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/XiaomiMiMo/MiMo-V2.6-Flash', {
+    name: 'MiMo-V2.6-Flash',
+    created: '2026-09-22',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 0.14,
+      output: 0.28,
+      cache_read: 0.0028,
+    },
+    providers: ['deepinfra'],
+  }),
+  model('deepinfra/XiaomiMiMo/MiMo-V2.6-Pro', {
+    name: 'MiMo-V2.6-Pro',
+    created: '2026-09-22',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 0.435,
+      output: 0.87,
+      cache_read: 0.0036,
     },
     providers: ['deepinfra'],
   }),
@@ -4644,6 +8034,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
@@ -4671,6 +8066,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
@@ -4682,60 +8082,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.4,
       output: 1.75,
       cache_read: 0.08,
-    },
-    providers: ['deepinfra'],
-  }),
-  model('deepinfra/zai-org/GLM-4.7-Flash', {
-    name: 'GLM-4.7-Flash',
-    created: '2026-01-19',
-    knowledge: '2025-04',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 202752,
-      output: 16384,
-    },
-    cost: {
-      input: 0.06,
-      output: 0.4,
-      cache_read: 0.01,
-    },
-    providers: ['deepinfra'],
-  }),
-  model('deepinfra/zai-org/GLM-5', {
-    name: 'GLM-5',
-    created: '2026-02-12',
-    knowledge: '2025-12',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 202752,
-      output: 16384,
-    },
-    cost: {
-      input: 0.6,
-      output: 2.08,
-      cache_read: 0.12,
     },
     providers: ['deepinfra'],
   }),
@@ -4752,6 +8098,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
@@ -4778,6 +8129,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
@@ -4786,16 +8146,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 32768,
     },
     cost: {
-      input: 0.93,
-      output: 3,
-      cache_read: 0.18,
+      input: 0.75,
+      output: 2.4,
+      cache_read: 0.14,
     },
     providers: ['deepinfra'],
   }),
-  model('fireworks/accounts/fireworks/models/deepseek-v4-flash', {
-    name: 'DeepSeek V4 Flash',
-    created: '2026-04-24',
-    knowledge: '2025-05',
+  model('deepinfra/zai-org/GLM-5.3', {
+    name: 'GLM-5.3',
+    created: '2026-08-14',
     modalities: {
       input: ['text'],
       output: ['text'],
@@ -4805,177 +8164,63 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
     context: {
-      input: 1000000,
-      output: 384000,
-    },
-    cost: {
-      input: 0.14,
-      output: 0.28,
-      cache_read: 0.028,
-    },
-    providers: ['fireworks'],
-  }),
-  model('fireworks/accounts/fireworks/models/deepseek-v4-pro', {
-    name: 'DeepSeek V4 Pro',
-    created: '2026-04-24',
-    knowledge: '2025-05',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1000000,
-      output: 384000,
-    },
-    cost: {
-      input: 1.74,
-      output: 3.48,
-      cache_read: 0.145,
-    },
-    providers: ['fireworks'],
-  }),
-  model('fireworks/accounts/fireworks/models/glm-5p2', {
-    name: 'GLM 5.2',
-    created: '2026-06-16',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 1048575,
+      input: 1048576,
       output: 131072,
     },
     cost: {
-      input: 1.4,
-      output: 4.4,
-      cache_read: 0.14,
+      input: 0.9,
+      output: 4,
+      cache_read: 0.2,
     },
-    providers: ['fireworks'],
+    providers: ['deepinfra'],
   }),
-  model('fireworks/accounts/fireworks/models/gpt-oss-120b', {
-    name: 'GPT OSS 120B',
-    created: '2025-08-05',
+  model('deepinfra/zai-org/GLM-5.3-Flash', {
+    name: 'GLM-5.3-Flash',
+    created: '2026-08-26',
     modalities: {
-      input: ['text'],
+      input: ['text', 'image', 'video'],
       output: ['text'],
     },
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
+      structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
       promptCaching: true,
       streaming: true,
     },
     context: {
-      input: 131072,
-      output: 32768,
+      input: 1048576,
+      output: 131072,
     },
     cost: {
       input: 0.15,
-      output: 0.6,
-      cache_read: 0.015,
+      output: 0.5,
+      cache_read: 0.03,
     },
-    providers: ['fireworks'],
+    providers: ['deepinfra'],
   }),
-  model('fireworks/accounts/fireworks/models/gpt-oss-20b', {
-    name: 'GPT OSS 20B',
-    created: '2025-08-05',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 131072,
-      output: 32768,
-    },
-    cost: {
-      input: 0.07,
-      output: 0.3,
-      cache_read: 0.035,
-    },
-    providers: ['fireworks'],
-  }),
-  model('fireworks/accounts/fireworks/models/kimi-k2p6', {
-    name: 'Kimi K2.6',
-    created: '2026-04-17',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 262000,
-      output: 262000,
-    },
-    cost: {
-      input: 0.95,
-      output: 4,
-      cache_read: 0.16,
-    },
-    providers: ['fireworks'],
-  }),
-  model('fireworks/accounts/fireworks/models/kimi-k2p7-code', {
-    name: 'Kimi K2.7 Code',
-    created: '2026-06-12',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 262000,
-      output: 262000,
-    },
-    cost: {
-      input: 0.95,
-      output: 4,
-      cache_read: 0.19,
-    },
-    providers: ['fireworks'],
-  }),
-  model('fireworks/accounts/fireworks/models/kimi-k3', {
-    name: 'Kimi K3',
-    created: '2026-07-27',
+  model('fireworks/accounts/fireworks/models/deepseek-v4p1-flash', {
+    name: 'DeepSeek V4.1 Flash',
+    created: '2026-09-10',
+    knowledge: '2025-05',
     modalities: {
       input: ['text', 'image'],
       output: ['text'],
@@ -4985,6 +8230,54 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 384000,
+    },
+    cost: {
+      input: 0.22,
+      output: 0.66,
+      cache_read: 0.007,
+    },
+    providers: ['fireworks'],
+  }),
+  model('fireworks/accounts/fireworks/models/ember-1', {
+    name: 'Ember-1',
+    created: '2026-09-22',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5000,9 +8293,74 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['fireworks'],
   }),
-  model('fireworks/accounts/fireworks/models/minimax-m2p7', {
-    name: 'MiniMax-M2.7',
-    created: '2026-04-12',
+  model('fireworks/accounts/fireworks/models/glm-5p3', {
+    name: 'GLM 5.3',
+    created: '2026-08-14',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048573,
+      output: 262144,
+    },
+    cost: {
+      input: 1.4,
+      output: 4.4,
+      cache_read: 0.26,
+    },
+    providers: ['fireworks'],
+  }),
+  model('fireworks/accounts/fireworks/models/glm-5p3-flash', {
+    name: 'GLM 5.3 Flash',
+    created: '2026-08-26',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048573,
+      output: 131072,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.5,
+      cache_read: 0.03,
+    },
+    providers: ['fireworks'],
+  }),
+  model('fireworks/accounts/fireworks/models/gpt-oss-120b', {
+    name: 'GPT OSS 120B',
+    created: '2025-08-05',
     modalities: {
       input: ['text'],
       output: ['text'],
@@ -5011,17 +8369,89 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
     context: {
-      input: 196608,
-      output: 196608,
+      input: 131072,
+      output: 32768,
     },
     cost: {
-      input: 0.3,
-      output: 1.2,
-      cache_read: 0.06,
+      input: 0.15,
+      output: 0.6,
+      cache_read: 0.015,
+    },
+    providers: ['fireworks'],
+  }),
+  model('fireworks/accounts/fireworks/models/inkling', {
+    name: 'Inkling',
+    created: '2026-07-15',
+    modalities: {
+      input: ['text', 'image', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 1048576,
+    },
+    cost: {
+      input: 1,
+      output: 4.05,
+      cache_read: 0.17,
+    },
+    providers: ['fireworks'],
+  }),
+  model('fireworks/accounts/fireworks/models/kimi-k3', {
+    name: 'Kimi K3',
+    created: '2026-07-27',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
     },
     providers: ['fireworks'],
   }),
@@ -5029,14 +8459,19 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'MiniMax-M3',
     created: '2026-06-12',
     modalities: {
-      input: ['text', 'image', 'video'],
+      input: ['text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
       reasoning: true,
-      vision: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
@@ -5051,6 +8486,67 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['fireworks'],
   }),
+  model('fireworks/accounts/fireworks/models/nemotron-3-ultra-nvfp4', {
+    name: 'Nemotron 3 Ultra 550B A55B',
+    created: '2026-06-04',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 128000,
+    },
+    cost: {
+      input: 0.6,
+      output: 2.4,
+      cache_read: 0.12,
+    },
+    providers: ['fireworks'],
+  }),
+  model('fireworks/accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b', {
+    name: 'Nemotron 3.5 Lightning 30B A3B',
+    created: '2026-08-11',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 262144,
+    },
+    cost: {
+      input: 0.05,
+      output: 0.2,
+      cache_read: 0.01,
+    },
+    providers: ['fireworks'],
+  }),
   model('fireworks/accounts/fireworks/models/qwen3p7-plus', {
     name: 'Qwen 3.7 Plus',
     created: '2026-06-12',
@@ -5062,6 +8558,19 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5077,6 +8586,106 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['fireworks'],
   }),
+  model('fireworks/accounts/fireworks/models/qwen3p8-2p4t-a95b', {
+    name: 'Qwen3.8 2.4T A95B',
+    created: '2026-08-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'xhigh'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.25,
+    },
+    providers: ['fireworks'],
+  }),
+  model('fireworks/accounts/fireworks/models/qwen3p8-max', {
+    name: 'Qwen3.8 Max',
+    created: '2026-08-03',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.25,
+    },
+    providers: ['fireworks'],
+  }),
+  model('fireworks/accounts/fireworks/routers/deepseek-flash-latest', {
+    name: 'DeepSeek Flash Latest',
+    created: '2026-09-10',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 384000,
+    },
+    cost: {
+      input: 0.22,
+      output: 0.66,
+      cache_read: 0.007,
+    },
+    providers: ['fireworks'],
+  }),
   model('fireworks/accounts/fireworks/routers/glm-5p2-fast', {
     name: 'GLM 5.2 Fast',
     created: '2026-06-26',
@@ -5088,6 +8697,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['high', 'max'],
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
@@ -5102,61 +8720,73 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['fireworks'],
   }),
-  model('fireworks/accounts/fireworks/routers/kimi-k2p6-fast', {
-    name: 'Kimi K2.6 Fast',
-    created: '2026-04-17',
+  model('fireworks/accounts/fireworks/routers/glm-5p3-fast', {
+    name: 'GLM 5.3 Fast',
+    created: '2026-08-28',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
+      structuredOutput: true,
       reasoning: true,
-      vision: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
     context: {
-      input: 262000,
-      output: 262000,
+      input: 1048572,
+      output: 262144,
     },
     cost: {
-      input: 2,
-      output: 8,
-      cache_read: 0.3,
+      input: 2.1,
+      output: 6.6,
+      cache_read: 0.39,
     },
     providers: ['fireworks'],
   }),
-  model('fireworks/accounts/fireworks/routers/kimi-k2p6-turbo', {
-    name: 'Kimi K2.6 Turbo',
-    created: '2026-04-17',
+  model('fireworks/accounts/fireworks/routers/glm-fast-latest', {
+    name: 'GLM 5.3 Fast (Latest)',
+    created: '2026-08-28',
     modalities: {
-      input: ['text', 'image'],
+      input: ['text'],
       output: ['text'],
     },
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
+      structuredOutput: true,
       reasoning: true,
-      vision: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
     context: {
-      input: 262000,
-      output: 262000,
+      input: 1048572,
+      output: 262144,
     },
     cost: {
-      input: 2,
-      output: 8,
-      cache_read: 0.3,
+      input: 2.1,
+      output: 6.6,
+      cache_read: 0.39,
     },
     providers: ['fireworks'],
   }),
-  model('fireworks/accounts/fireworks/routers/kimi-k2p7-code-fast', {
-    name: 'Kimi K2.7 Code Fast',
-    created: '2026-06-12',
+  model('fireworks/accounts/fireworks/routers/glm-flash-latest', {
+    name: 'GLM Flash Latest (GLM 5.3 Flash)',
+    created: '2026-08-26',
     modalities: {
       input: ['text', 'image'],
       output: ['text'],
@@ -5164,19 +8794,98 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
+      structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
     },
     context: {
-      input: 262000,
-      output: 262000,
+      input: 1048573,
+      output: 131072,
     },
     cost: {
-      input: 1.9,
-      output: 8,
-      cache_read: 0.38,
+      input: 0.15,
+      output: 0.5,
+      cache_read: 0.03,
+    },
+    providers: ['fireworks'],
+  }),
+  model('fireworks/accounts/fireworks/routers/glm-latest', {
+    name: 'GLM Latest',
+    created: '2026-08-14',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048573,
+      output: 262144,
+    },
+    cost: {
+      input: 1.4,
+      output: 4.4,
+      cache_read: 0.26,
+    },
+    providers: ['fireworks'],
+  }),
+  model('fireworks/accounts/fireworks/routers/kimi-fast-latest', {
+    name: 'Kimi Fast Latest',
+    created: '2026-07-27',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 4.5,
+      output: 22.5,
+      cache_read: 0.45,
     },
     providers: ['fireworks'],
   }),
@@ -5192,6 +8901,19 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5204,6 +8926,108 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 4.5,
       output: 22.5,
       cache_read: 0.45,
+    },
+    providers: ['fireworks'],
+  }),
+  model('fireworks/accounts/fireworks/routers/kimi-latest', {
+    name: 'Kimi Latest',
+    created: '2026-07-27',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'max'],
+        },
+        {
+          type: 'budget_tokens',
+          min: 1024,
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 131072,
+    },
+    cost: {
+      input: 3,
+      output: 15,
+      cache_read: 0.3,
+    },
+    providers: ['fireworks'],
+  }),
+  model('fireworks/accounts/fireworks/routers/minimax-latest', {
+    name: 'MiniMax Latest',
+    created: '2026-06-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 512000,
+      output: 512000,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.06,
+    },
+    providers: ['fireworks'],
+  }),
+  model('fireworks/accounts/fireworks/routers/qwen-max-latest', {
+    name: 'Qwen Max Latest (Qwen3.8 Max)',
+    created: '2026-08-03',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 131072,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.25,
     },
     providers: ['fireworks'],
   }),
@@ -5277,8 +9101,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       streaming: true,
     },
     context: {
-      input: 131072,
-      output: 65536,
+      input: 128000,
+      output: 64000,
     },
     cost: {
       input: 1.25,
@@ -5299,6 +9123,16 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 0,
+          max: 24576,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5353,6 +9187,16 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'budget_tokens',
+          min: 512,
+          max: 24576,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5401,6 +9245,13 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'budget_tokens',
+          min: 128,
+          max: 32768,
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5449,6 +9300,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5475,11 +9332,17 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions', 'images.generations'],
     capabilities: {
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
     context: {
-      input: 131072,
+      input: 65536,
       output: 32768,
     },
     cost: {
@@ -5523,12 +9386,18 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions', 'images.generations'],
     capabilities: {
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'high'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
     context: {
-      input: 65536,
-      output: 65536,
+      input: 131072,
+      output: 32768,
     },
     cost: {
       input: 0.5,
@@ -5547,6 +9416,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions', 'images.generations'],
     capabilities: {
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'high'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -5573,6 +9448,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5600,12 +9481,18 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'high'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
     context: {
       input: 65536,
-      output: 65536,
+      output: 4096,
     },
     cost: {
       input: 0.25,
@@ -5625,6 +9512,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -5673,6 +9566,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5701,6 +9600,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5729,6 +9634,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5757,6 +9668,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5807,6 +9724,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5816,9 +9739,76 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 65536,
     },
     cost: {
-      input: 1.5,
-      output: 7.5,
-      cache_read: 0.15,
+      input: 0.75,
+      output: 3.75,
+      cache_read: 0.075,
+    },
+    providers: ['google'],
+  }),
+  model('google/gemini-3.7-flash', {
+    name: 'Gemini 3.7 Flash',
+    created: '2026-08-13',
+    knowledge: '2026-03',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.75,
+      output: 3.75,
+      cache_read: 0.075,
+    },
+    providers: ['google'],
+  }),
+  model('google/gemini-3.8-flash', {
+    name: 'Gemini 3.8 Flash',
+    created: '2026-09-02',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 65536,
+    },
+    cost: {
+      input: 0.75,
+      output: 3.75,
+      cache_read: 0.075,
     },
     providers: ['google'],
   }),
@@ -5869,8 +9859,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
   }),
   model('google/gemini-flash-latest', {
     name: 'Gemini Flash Latest',
-    created: '2026-05-19',
-    knowledge: '2025-01',
+    created: '2026-08-13',
+    knowledge: '2026-03',
     modalities: {
       input: ['text', 'image', 'video', 'audio'],
       output: ['text'],
@@ -5880,6 +9870,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5889,16 +9885,16 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 65536,
     },
     cost: {
-      input: 1.5,
-      output: 9,
-      cache_read: 0.15,
+      input: 0.75,
+      output: 3.75,
+      cache_read: 0.075,
     },
     providers: ['google'],
   }),
   model('google/gemini-flash-lite-latest', {
     name: 'Gemini Flash-Lite Latest',
-    created: '2026-05-07',
-    knowledge: '2025-01',
+    created: '2026-07-21',
+    knowledge: '2026-03',
     modalities: {
       input: ['text', 'image', 'video', 'audio'],
       output: ['text'],
@@ -5908,6 +9904,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -5917,9 +9919,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 65536,
     },
     cost: {
-      input: 0.25,
-      output: 1.5,
-      cache_read: 0.025,
+      input: 0.3,
+      output: 2.5,
+      cache_read: 0.03,
     },
     providers: ['google'],
   }),
@@ -5945,32 +9947,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['google'],
   }),
-  model('google/gemini-robotics-er-1.6-preview', {
-    name: 'Gemini Robotics-ER 1.6 Preview',
-    created: '2026-04-14',
-    knowledge: '2025-01',
-    modalities: {
-      input: ['text', 'image', 'video', 'audio'],
-      output: ['text'],
-    },
-    operations: ['chat.completions', 'audio.transcriptions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 131072,
-      output: 65536,
-    },
-    cost: {
-      input: 1,
-      output: 5,
-    },
-    providers: ['google'],
-  }),
   model('google/gemma-4-26b-a4b-it', {
     name: 'Gemma 4 26B A4B IT',
     created: '2026-04-02',
@@ -5983,6 +9959,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -6004,6 +9985,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -6108,6 +10094,27 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 8192,
     },
     providers: ['google'],
+  }),
+  model('groq/allam-2-7b', {
+    name: 'ALLaM-2-7b',
+    created: '2025-01-23',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 4096,
+      output: 4096,
+    },
+    cost: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['groq'],
   }),
   model('groq/canopylabs/orpheus-arabic-saudi', {
     name: 'Canopy Labs Orpheus Arabic Saudi',
@@ -6221,32 +10228,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['groq'],
   }),
-  model('groq/meta-llama/llama-4-scout-17b-16e-instruct', {
-    name: 'Llama 4 Scout 17B 16E',
-    created: '2025-04-05',
-    knowledge: '2024-08',
-    status: 'beta',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      vision: true,
-      streaming: true,
-    },
-    context: {
-      input: 131072,
-      output: 8192,
-    },
-    cost: {
-      input: 0.11,
-      output: 0.34,
-    },
-    providers: ['groq'],
-  }),
   model('groq/meta-llama/llama-prompt-guard-2-22m', {
     name: 'Llama Prompt Guard 2 22M',
     created: '2025-05-29',
@@ -6303,6 +10284,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
@@ -6329,6 +10316,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
@@ -6356,6 +10349,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       streaming: true,
     },
     context: {
@@ -6368,27 +10367,67 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['groq'],
   }),
-  model('groq/qwen/qwen3-32b', {
-    name: 'Qwen3-32B',
-    created: '2025-06-11',
-    status: 'beta',
+  model('groq/qwen/qwen3.6-27b', {
+    name: 'Qwen3.6 27B',
+    created: '2026-04-22',
     modalities: {
-      input: ['text'],
+      input: ['text', 'image'],
       output: ['text'],
     },
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
+      structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'default'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
       input: 131072,
-      output: 40960,
+      output: 16384,
     },
     cost: {
-      input: 0.29,
-      output: 0.59,
+      input: 0.6,
+      output: 3,
+      cache_read: 0.3,
+    },
+    providers: ['groq'],
+  }),
+  model('groq/qwen/qwen3.8-27b', {
+    name: 'Qwen3.8 27B',
+    created: '2026-08-14',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'default', 'low', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      streaming: true,
+    },
+    context: {
+      input: 131042,
+      output: 16384,
+    },
+    cost: {
+      input: 0.8,
+      output: 4,
     },
     providers: ['groq'],
   }),
@@ -6695,6 +10734,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -6720,6 +10765,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -6792,6 +10843,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -6817,6 +10874,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -6944,6 +11007,125 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 2,
       output: 6,
+    },
+    providers: ['mistral'],
+  }),
+  model('mistral/voxtral-mini-latest', {
+    name: 'Voxtral Mini (latest)',
+    created: '2026-02-01',
+    modalities: {
+      input: ['audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      streaming: true,
+    },
+    context: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['mistral'],
+  }),
+  model('mistral/voxtral-mini-tts-latest', {
+    name: 'Voxtral Mini TTS (latest)',
+    created: '2026-03-01',
+    modalities: {
+      input: ['text'],
+      output: ['audio'],
+    },
+    operations: ['audio.speech'],
+    capabilities: {},
+    context: {
+      input: 0,
+      output: 0,
+    },
+    providers: ['mistral'],
+  }),
+  model('mistral/voxtral-small-latest', {
+    name: 'Voxtral Small (latest)',
+    created: '2025-07-15',
+    modalities: {
+      input: ['text', 'audio'],
+      output: ['text'],
+    },
+    operations: ['chat.completions', 'audio.transcriptions'],
+    capabilities: {
+      toolCalling: true,
+      streaming: true,
+    },
+    context: {
+      input: 32000,
+      output: 32000,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.3,
+    },
+    providers: ['mistral'],
+  }),
+  model('mistral/zai-glm-5-2', {
+    name: 'GLM-5.2',
+    created: '2026-06-13',
+    status: 'beta',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 1.4,
+      output: 4.4,
+      cache_read: 0.14,
+    },
+    providers: ['mistral'],
+  }),
+  model('mistral/zai-glm-5-3', {
+    name: 'GLM-5.3',
+    created: '2026-08-14',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 131072,
+    },
+    cost: {
+      input: 1.4,
+      output: 4.4,
+      cache_read: 0.14,
     },
     providers: ['mistral'],
   }),
@@ -7140,6 +11322,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7168,6 +11356,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7196,6 +11390,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7224,6 +11424,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['high'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -7250,6 +11456,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7278,6 +11490,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7285,34 +11503,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     context: {
       input: 400000,
       output: 128000,
-    },
-    cost: {
-      input: 1.75,
-      output: 14,
-      cache_read: 0.175,
-    },
-    providers: ['openai'],
-  }),
-  model('openai/gpt-5.2-chat-latest', {
-    name: 'GPT-5.2 Chat',
-    created: '2025-12-11',
-    knowledge: '2025-08-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 16384,
     },
     cost: {
       input: 1.75,
@@ -7333,6 +11523,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['medium', 'high', 'xhigh'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -7343,33 +11539,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 21,
       output: 168,
-    },
-    providers: ['openai'],
-  }),
-  model('openai/gpt-5.3-chat-latest', {
-    name: 'GPT-5.3 Chat (latest)',
-    created: '2026-03-03',
-    knowledge: '2025-08-31',
-    modalities: {
-      input: ['text', 'image'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 16384,
-    },
-    cost: {
-      input: 1.75,
-      output: 14,
-      cache_read: 0.175,
     },
     providers: ['openai'],
   }),
@@ -7386,6 +11555,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7414,6 +11589,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7442,6 +11623,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7470,6 +11657,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7498,6 +11691,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7525,6 +11724,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['medium', 'high', 'xhigh'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -7551,6 +11756,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7579,6 +11790,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['medium', 'high', 'xhigh'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -7605,6 +11822,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7614,10 +11837,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 5,
-      output: 30,
-      cache_read: 0.5,
-      cache_write: 6.25,
+      input: 4,
+      output: 20,
+      cache_read: 0.4,
+      cache_write: 5,
     },
     providers: ['openai'],
   }),
@@ -7634,6 +11857,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7643,10 +11872,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 1,
-      output: 6,
-      cache_read: 0.1,
-      cache_write: 1.25,
+      input: 0.2,
+      output: 1.2,
+      cache_read: 0.02,
+      cache_write: 0.25,
     },
     providers: ['openai'],
   }),
@@ -7663,6 +11892,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7672,10 +11907,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 5,
-      output: 30,
-      cache_read: 0.5,
-      cache_write: 6.25,
+      input: 4,
+      output: 20,
+      cache_read: 0.4,
+      cache_write: 5,
     },
     providers: ['openai'],
   }),
@@ -7692,6 +11927,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7701,10 +11942,115 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 2.5,
-      output: 15,
-      cache_read: 0.25,
-      cache_write: 3.125,
+      input: 2,
+      output: 12,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['openai'],
+  }),
+  model('openai/gpt-6-astra', {
+    name: 'GPT-6 Astra',
+    created: '2026-09-04',
+    knowledge: '2026-04-30',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 10,
+      output: 50,
+      cache_read: 1,
+      cache_write: 12.5,
+    },
+    providers: ['openai'],
+  }),
+  model('openai/gpt-6-luna', {
+    name: 'GPT-6 Luna',
+    created: '2026-09-22',
+    knowledge: '2026-05-18',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 0.1,
+      output: 0.5,
+      cache_read: 0.01,
+      cache_write: 0.125,
+    },
+    providers: ['openai'],
+  }),
+  model('openai/gpt-6-sol', {
+    name: 'GPT-6 Sol',
+    created: '2026-09-22',
+    knowledge: '2026-04-20',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1050000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
     },
     providers: ['openai'],
   }),
@@ -7779,6 +12125,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high', 'xhigh'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7807,6 +12159,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -7835,6 +12193,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -7947,6 +12311,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
       streaming: true,
     },
     context: {
@@ -7993,6 +12363,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['minimal', 'low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -8016,6 +12392,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       streaming: true,
     },
     context: {
@@ -8025,6 +12406,42 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 1.25,
       output: 1.25,
+    },
+    providers: ['togetherai'],
+  }),
+  model('togetherai/deepseek-ai/DeepSeek-V4-Flash-0731', {
+    name: 'DeepSeek V4 Flash 0731',
+    created: '2026-07-31',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 384000,
+    },
+    cost: {
+      input: 0.14,
+      output: 0.28,
+      cache_read: 0.03,
     },
     providers: ['togetherai'],
   }),
@@ -8040,6 +12457,15 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['high', 'max'],
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
@@ -8051,6 +12477,75 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 1.74,
       output: 3.48,
       cache_read: 0.2,
+    },
+    providers: ['togetherai'],
+  }),
+  model('togetherai/deepseek-ai/DeepSeek-V4-Pro-0813', {
+    name: 'DeepSeek V4 Pro 0813',
+    created: '2026-08-12',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 384000,
+    },
+    cost: {
+      input: 1.32,
+      output: 3.96,
+      cache_read: 0.13,
+    },
+    providers: ['togetherai'],
+  }),
+  model('togetherai/deepseek-ai/DeepSeek-V4.1-Flash', {
+    name: 'DeepSeek V4.1 Flash',
+    created: '2026-09-10',
+    knowledge: '2025-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 384000,
+    },
+    cost: {
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.006,
     },
     providers: ['togetherai'],
   }),
@@ -8183,7 +12678,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       streaming: true,
     },
     context: {
-      input: 202752,
+      input: 196608,
       output: 131072,
     },
     cost: {
@@ -8233,6 +12728,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -8286,6 +12786,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -8313,6 +12819,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
@@ -8339,6 +12850,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       streaming: true,
     },
     context: {
@@ -8363,6 +12880,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       streaming: true,
     },
     context: {
@@ -8432,6 +12955,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       vision: true,
       streaming: true,
     },
@@ -8456,6 +12984,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+      ],
       streaming: true,
     },
     context: {
@@ -8478,6 +13011,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -8487,6 +13021,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 1.25,
       output: 3.75,
+      cache_read: 0.125,
     },
     providers: ['togetherai'],
   }),
@@ -8502,6 +13037,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['max', 'xhigh', 'high', 'medium', 'low', 'none'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -8529,17 +13070,91 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'toggle',
+        },
+        {
+          type: 'effort',
+          values: ['high', 'max'],
+        },
+      ],
       promptCaching: true,
       streaming: true,
     },
     context: {
-      input: 262144,
+      input: 1048575,
       output: 164000,
     },
     cost: {
       input: 1.4,
       output: 4.4,
       cache_read: 0.26,
+    },
+    providers: ['togetherai'],
+  }),
+  model('togetherai/zai-org/GLM-5.3', {
+    name: 'GLM-5.3',
+    created: '2026-08-14',
+    modalities: {
+      input: ['text'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048576,
+      output: 262144,
+    },
+    cost: {
+      input: 1.4,
+      output: 4.4,
+      cache_read: 0.26,
+    },
+    providers: ['togetherai'],
+  }),
+  model('togetherai/zai-org/GLM-5.3-Flash', {
+    name: 'GLM-5.3-Flash',
+    created: '2026-08-26',
+    modalities: {
+      input: ['text', 'image', 'video'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'high', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1048575,
+      output: 400000,
+    },
+    cost: {
+      input: 0.15,
+      output: 0.5,
+      cache_read: 0.03,
     },
     providers: ['togetherai'],
   }),
@@ -8685,6 +13300,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -8712,6 +13333,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -8739,6 +13366,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       toolCalling: true,
       structuredOutput: true,
       reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high'],
+        },
+      ],
       vision: true,
       promptCaching: true,
       streaming: true,
@@ -8751,6 +13384,74 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 2,
       output: 6,
       cache_read: 0.3,
+    },
+    providers: ['xai'],
+  }),
+  model('xai/grok-4.6', {
+    name: 'Grok 4.6',
+    created: '2026-08-12',
+    knowledge: '2026-02-01',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 500000,
+      output: 500000,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.5,
+    },
+    providers: ['xai'],
+  }),
+  model('xai/grok-4.7', {
+    name: 'Grok 4.7',
+    created: '2026-09-21',
+    knowledge: '2026-05',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 500000,
+      output: 500000,
+    },
+    cost: {
+      input: 2,
+      output: 6,
+      cache_read: 0.5,
     },
     providers: ['xai'],
   }),
@@ -8793,7 +13494,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       vision: true,
     },
     context: {
-      input: 8000,
+      input: 16000,
       output: 0,
     },
     providers: ['xai'],
@@ -8810,7 +13511,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       vision: true,
     },
     context: {
-      input: 8000,
+      input: 16000,
       output: 0,
     },
     providers: ['xai'],
@@ -8836,7 +13537,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     name: 'Grok Imagine Video 1.5',
     created: '2026-05-30',
     modalities: {
-      input: ['image'],
+      input: ['text', 'image', 'audio'],
       output: ['video'],
     },
     operations: ['video.generations'],

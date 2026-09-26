@@ -1,7 +1,77 @@
 [
   {
-    "id": "bedrock/global.amazon.nova-2-lite-v1:0",
-    "provider": "bedrock",
+    "id": "anthropic/claude-fable-5",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-fable-5-1",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-haiku-4-5",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-haiku-4-5-20251001",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-opus-4-5",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-opus-4-5-20251101",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-opus-4-6",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-opus-4-7",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-opus-4-8",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-opus-5",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-opus-5-5",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-sonnet-4-5",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-sonnet-4-6",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
+    "id": "anthropic/claude-sonnet-5",
+    "provider": "anthropic",
     "mode": "chat"
   },
   {
@@ -21,6 +91,11 @@
   },
   {
     "id": "bedrock/anthropic.claude-fable-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/anthropic.claude-fable-5-1",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -55,6 +130,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/anthropic.claude-opus-5-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -70,6 +150,21 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/apac.amazon.nova-lite-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/apac.amazon.nova-micro-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/apac.amazon.nova-pro-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/au.anthropic.claude-haiku-4-5-20251001-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -80,12 +175,22 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/au.anthropic.claude-opus-4-7",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/au.anthropic.claude-opus-4-8",
     "provider": "bedrock",
     "mode": "chat"
   },
   {
     "id": "bedrock/au.anthropic.claude-opus-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/au.anthropic.claude-opus-5-5",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -105,6 +210,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/ca.amazon.nova-lite-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/deepseek.r1-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -116,6 +226,26 @@
   },
   {
     "id": "bedrock/deepseek.v3.2",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/eu.amazon.nova-2-lite-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/eu.amazon.nova-lite-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/eu.amazon.nova-micro-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/eu.amazon.nova-pro-v1:0",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -155,6 +285,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/eu.anthropic.claude-opus-5-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -170,7 +305,22 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/eu.mistral.pixtral-large-2502-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/global.amazon.nova-2-lite-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/global.anthropic.claude-fable-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/global.anthropic.claude-fable-5-1",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -205,6 +355,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/global.anthropic.claude-opus-5-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -220,6 +375,46 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/global.moonshotai.kimi-k3",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/global.openai.gpt-5.6-luna",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/global.openai.gpt-5.6-sol",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/global.openai.gpt-5.6-terra",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/global.openai.gpt-6-astra",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/global.openai.gpt-6-luna",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/global.openai.gpt-6-sol",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/global.xai.grok-4.6",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/google.gemma-3-12b-it",
     "provider": "bedrock",
     "mode": "chat"
@@ -231,6 +426,36 @@
   },
   {
     "id": "bedrock/google.gemma-3-4b-it",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/google.gemma-4-26b-a4b",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/google.gemma-4-31b",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/google.gemma-4-e2b",
+    "provider": "bedrock",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "bedrock/in.openai.gpt-5.6-luna",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/in.openai.gpt-5.6-terra",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/jp.amazon.nova-2-lite-v1:0",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -255,6 +480,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/jp.anthropic.claude-opus-5-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/jp.anthropic.claude-sonnet-4-5-20250929-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -271,16 +501,6 @@
   },
   {
     "id": "bedrock/meta.llama3-1-70b-instruct-v1:0",
-    "provider": "bedrock",
-    "mode": "chat"
-  },
-  {
-    "id": "bedrock/us.meta.llama3-1-8b-instruct-v1:0",
-    "provider": "bedrock",
-    "mode": "chat"
-  },
-  {
-    "id": "bedrock/us.meta.llama3-3-70b-instruct-v1:0",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -410,6 +630,21 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/openai.gpt-6-astra",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/openai.gpt-6-luna",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/openai.gpt-6-sol",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/openai.gpt-oss-120b",
     "provider": "bedrock",
     "mode": "chat"
@@ -475,7 +710,42 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/us-gov.openai.gpt-oss-120b-1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us-gov.openai.gpt-oss-20b-1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.amazon.nova-2-lite-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.amazon.nova-lite-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.amazon.nova-micro-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.amazon.nova-pro-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/us.anthropic.claude-fable-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.anthropic.claude-fable-5-1",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -510,6 +780,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/us.anthropic.claude-opus-5-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -530,12 +805,82 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/us.meta.llama3-1-70b-instruct-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.meta.llama3-1-8b-instruct-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.meta.llama3-3-70b-instruct-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/us.meta.llama4-maverick-17b-instruct-v1:0",
     "provider": "bedrock",
     "mode": "chat"
   },
   {
     "id": "bedrock/us.meta.llama4-scout-17b-instruct-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.mistral.pixtral-large-2502-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.moonshotai.kimi-k3",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.openai.gpt-5.6-luna",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.openai.gpt-5.6-sol",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.openai.gpt-5.6-terra",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.openai.gpt-6-astra",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.openai.gpt-6-luna",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.openai.gpt-6-sol",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.writer.palmyra-x4-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.writer.palmyra-x5-v1:0",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/us.xai.grok-4.6",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -555,6 +900,11 @@
     "mode": "chat"
   },
   {
+    "id": "bedrock/xai.grok-4.6",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/zai.glm-4.7",
     "provider": "bedrock",
     "mode": "chat"
@@ -570,82 +920,12 @@
     "mode": "chat"
   },
   {
-    "id": "anthropic/claude-fable-5",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
-    "id": "anthropic/claude-haiku-4-5",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
-    "id": "anthropic/claude-haiku-4-5-20251001",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
-    "id": "anthropic/claude-opus-4-5",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
-    "id": "anthropic/claude-opus-4-5-20251101",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
-    "id": "anthropic/claude-opus-4-6",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
-    "id": "anthropic/claude-opus-4-7",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
-    "id": "anthropic/claude-opus-4-8",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
-    "id": "anthropic/claude-opus-5",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
-    "id": "anthropic/claude-sonnet-4-5",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
-    "id": "anthropic/claude-sonnet-4-5-20250929",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
-    "id": "anthropic/claude-sonnet-4-6",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
-    "id": "anthropic/claude-sonnet-5",
-    "provider": "anthropic",
-    "mode": "chat"
-  },
-  {
-    "id": "cerebras/gemma-4-31b",
-    "provider": "cerebras",
-    "mode": "chat"
-  },
-  {
     "id": "cerebras/gpt-oss-120b",
     "provider": "cerebras",
     "mode": "chat"
   },
   {
-    "id": "cerebras/zai-glm-4.7",
+    "id": "cerebras/qwen-3.8-27b",
     "provider": "cerebras",
     "mode": "chat"
   },
@@ -720,7 +1000,37 @@
     "mode": "chat"
   },
   {
+    "id": "deepinfra/ByteDance/Seed-2.0-code",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/ByteDance/Seed-2.0-mini",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/ByteDance/Seed-2.0-pro",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
     "id": "deepinfra/deepseek-ai/DeepSeek-R1-0528",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/deepseek-ai/DeepSeek-V3",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/deepseek-ai/DeepSeek-V3-0324",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/deepseek-ai/DeepSeek-V3.1",
     "provider": "deepinfra",
     "mode": "chat"
   },
@@ -735,7 +1045,42 @@
     "mode": "chat"
   },
   {
+    "id": "deepinfra/deepseek-ai/DeepSeek-V4-Flash-0731",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
     "id": "deepinfra/deepseek-ai/DeepSeek-V4-Pro",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/deepseek-ai/DeepSeek-V4-Pro-0813",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/deepseek-ai/DeepSeek-V4.1-Flash",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/google/gemma-3-12b-it",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/google/gemma-3-27b-it",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/google/gemma-3-4b-it",
     "provider": "deepinfra",
     "mode": "chat"
   },
@@ -748,6 +1093,11 @@
     "id": "deepinfra/google/gemma-4-31B-it",
     "provider": "deepinfra",
     "mode": "chat"
+  },
+  {
+    "id": "deepinfra/google/gemma-4-E4B-it",
+    "provider": "deepinfra",
+    "mode": "audio_transcription"
   },
   {
     "id": "deepinfra/meta-llama/Llama-3.3-70B-Instruct-Turbo",
@@ -765,17 +1115,7 @@
     "mode": "chat"
   },
   {
-    "id": "deepinfra/MiniMaxAI/MiniMax-M2.7",
-    "provider": "deepinfra",
-    "mode": "chat"
-  },
-  {
     "id": "deepinfra/MiniMaxAI/MiniMax-M3",
-    "provider": "deepinfra",
-    "mode": "chat"
-  },
-  {
-    "id": "deepinfra/moonshotai/Kimi-K2.5",
     "provider": "deepinfra",
     "mode": "chat"
   },
@@ -810,6 +1150,16 @@
     "mode": "chat"
   },
   {
+    "id": "deepinfra/Qwen/Qwen3-235B-A22B-Instruct-2507",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3-30B-A3B",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
     "id": "deepinfra/Qwen/Qwen3-32B",
     "provider": "deepinfra",
     "mode": "chat"
@@ -826,6 +1176,11 @@
   },
   {
     "id": "deepinfra/Qwen/Qwen3-Next-80B-A3B-Instruct",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct",
     "provider": "deepinfra",
     "mode": "chat"
   },
@@ -870,12 +1225,62 @@
     "mode": "chat"
   },
   {
+    "id": "deepinfra/Qwen/Qwen3.8-2.4T-A95B",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3.8-27B",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3.8-Flash",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/Qwen/Qwen3.8-Max",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/stepfun-ai/Step-3.7-Flash",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/tencent/Hy3",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/thinkingmachines/Inkling",
+    "provider": "deepinfra",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "deepinfra/thinkingmachines/Inkling-Small",
+    "provider": "deepinfra",
+    "mode": "audio_transcription"
+  },
+  {
     "id": "deepinfra/XiaomiMiMo/MiMo-V2.5",
     "provider": "deepinfra",
     "mode": "audio_transcription"
   },
   {
     "id": "deepinfra/XiaomiMiMo/MiMo-V2.5-Pro",
+    "provider": "deepinfra",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "deepinfra/XiaomiMiMo/MiMo-V2.6-Flash",
+    "provider": "deepinfra",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "deepinfra/XiaomiMiMo/MiMo-V2.6-Pro",
     "provider": "deepinfra",
     "mode": "audio_transcription"
   },
@@ -890,16 +1295,6 @@
     "mode": "chat"
   },
   {
-    "id": "deepinfra/zai-org/GLM-4.7-Flash",
-    "provider": "deepinfra",
-    "mode": "chat"
-  },
-  {
-    "id": "deepinfra/zai-org/GLM-5",
-    "provider": "deepinfra",
-    "mode": "chat"
-  },
-  {
     "id": "deepinfra/zai-org/GLM-5.1",
     "provider": "deepinfra",
     "mode": "chat"
@@ -910,17 +1305,32 @@
     "mode": "chat"
   },
   {
-    "id": "fireworks/accounts/fireworks/models/deepseek-v4-flash",
+    "id": "deepinfra/zai-org/GLM-5.3",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "deepinfra/zai-org/GLM-5.3-Flash",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/deepseek-v4p1-flash",
     "provider": "fireworks",
     "mode": "chat"
   },
   {
-    "id": "fireworks/accounts/fireworks/models/deepseek-v4-pro",
+    "id": "fireworks/accounts/fireworks/models/ember-1",
     "provider": "fireworks",
     "mode": "chat"
   },
   {
-    "id": "fireworks/accounts/fireworks/models/glm-5p2",
+    "id": "fireworks/accounts/fireworks/models/glm-5p3",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/glm-5p3-flash",
     "provider": "fireworks",
     "mode": "chat"
   },
@@ -930,27 +1340,12 @@
     "mode": "chat"
   },
   {
-    "id": "fireworks/accounts/fireworks/models/gpt-oss-20b",
+    "id": "fireworks/accounts/fireworks/models/inkling",
     "provider": "fireworks",
-    "mode": "chat"
-  },
-  {
-    "id": "fireworks/accounts/fireworks/models/kimi-k2p6",
-    "provider": "fireworks",
-    "mode": "chat"
-  },
-  {
-    "id": "fireworks/accounts/fireworks/models/kimi-k2p7-code",
-    "provider": "fireworks",
-    "mode": "chat"
+    "mode": "audio_transcription"
   },
   {
     "id": "fireworks/accounts/fireworks/models/kimi-k3",
-    "provider": "fireworks",
-    "mode": "chat"
-  },
-  {
-    "id": "fireworks/accounts/fireworks/models/minimax-m2p7",
     "provider": "fireworks",
     "mode": "chat"
   },
@@ -960,7 +1355,32 @@
     "mode": "chat"
   },
   {
+    "id": "fireworks/accounts/fireworks/models/nemotron-3-ultra-nvfp4",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
     "id": "fireworks/accounts/fireworks/models/qwen3p7-plus",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/qwen3p8-2p4t-a95b",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/models/qwen3p8-max",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/routers/deepseek-flash-latest",
     "provider": "fireworks",
     "mode": "chat"
   },
@@ -970,22 +1390,47 @@
     "mode": "chat"
   },
   {
-    "id": "fireworks/accounts/fireworks/routers/kimi-k2p6-fast",
+    "id": "fireworks/accounts/fireworks/routers/glm-5p3-fast",
     "provider": "fireworks",
     "mode": "chat"
   },
   {
-    "id": "fireworks/accounts/fireworks/routers/kimi-k2p6-turbo",
+    "id": "fireworks/accounts/fireworks/routers/glm-fast-latest",
     "provider": "fireworks",
     "mode": "chat"
   },
   {
-    "id": "fireworks/accounts/fireworks/routers/kimi-k2p7-code-fast",
+    "id": "fireworks/accounts/fireworks/routers/glm-flash-latest",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/routers/glm-latest",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/routers/kimi-fast-latest",
     "provider": "fireworks",
     "mode": "chat"
   },
   {
     "id": "fireworks/accounts/fireworks/routers/kimi-k3-fast",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/routers/kimi-latest",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/routers/minimax-latest",
+    "provider": "fireworks",
+    "mode": "chat"
+  },
+  {
+    "id": "fireworks/accounts/fireworks/routers/qwen-max-latest",
     "provider": "fireworks",
     "mode": "chat"
   },
@@ -1110,6 +1555,16 @@
     "mode": "audio_transcription"
   },
   {
+    "id": "google/gemini-3.7-flash",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "google/gemini-3.8-flash",
+    "provider": "google",
+    "mode": "audio_transcription"
+  },
+  {
     "id": "google/gemini-embedding-001",
     "provider": "google",
     "mode": "chat"
@@ -1133,11 +1588,6 @@
     "id": "google/gemini-omni-flash-preview",
     "provider": "google",
     "mode": "video_generation"
-  },
-  {
-    "id": "google/gemini-robotics-er-1.6-preview",
-    "provider": "google",
-    "mode": "audio_transcription"
   },
   {
     "id": "google/gemma-4-26b-a4b-it",
@@ -1175,6 +1625,11 @@
     "mode": "video_generation"
   },
   {
+    "id": "groq/allam-2-7b",
+    "provider": "groq",
+    "mode": "chat"
+  },
+  {
     "id": "groq/canopylabs/orpheus-arabic-saudi",
     "provider": "groq",
     "mode": "audio_speech"
@@ -1205,11 +1660,6 @@
     "mode": "chat"
   },
   {
-    "id": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
-    "provider": "groq",
-    "mode": "chat"
-  },
-  {
     "id": "groq/meta-llama/llama-prompt-guard-2-22m",
     "provider": "groq",
     "mode": "chat"
@@ -1235,7 +1685,12 @@
     "mode": "chat"
   },
   {
-    "id": "groq/qwen/qwen3-32b",
+    "id": "groq/qwen/qwen3.6-27b",
+    "provider": "groq",
+    "mode": "chat"
+  },
+  {
+    "id": "groq/qwen/qwen3.8-27b",
     "provider": "groq",
     "mode": "chat"
   },
@@ -1360,6 +1815,31 @@
     "mode": "chat"
   },
   {
+    "id": "mistral/voxtral-mini-latest",
+    "provider": "mistral",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "mistral/voxtral-mini-tts-latest",
+    "provider": "mistral",
+    "mode": "audio_speech"
+  },
+  {
+    "id": "mistral/voxtral-small-latest",
+    "provider": "mistral",
+    "mode": "audio_transcription"
+  },
+  {
+    "id": "mistral/zai-glm-5-2",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
+    "id": "mistral/zai-glm-5-3",
+    "provider": "mistral",
+    "mode": "chat"
+  },
+  {
     "id": "openai/chatgpt-image-latest",
     "provider": "openai",
     "mode": "image_generation"
@@ -1425,17 +1905,7 @@
     "mode": "chat"
   },
   {
-    "id": "openai/gpt-5.2-chat-latest",
-    "provider": "openai",
-    "mode": "chat"
-  },
-  {
     "id": "openai/gpt-5.2-pro",
-    "provider": "openai",
-    "mode": "chat"
-  },
-  {
-    "id": "openai/gpt-5.3-chat-latest",
     "provider": "openai",
     "mode": "chat"
   },
@@ -1496,6 +1966,21 @@
   },
   {
     "id": "openai/gpt-5.6-terra",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-6-astra",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-6-luna",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-6-sol",
     "provider": "openai",
     "mode": "chat"
   },
@@ -1570,7 +2055,22 @@
     "mode": "chat"
   },
   {
+    "id": "togetherai/deepseek-ai/DeepSeek-V4-Flash-0731",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
     "id": "togetherai/deepseek-ai/DeepSeek-V4-Pro",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/deepseek-ai/DeepSeek-V4-Pro-0813",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/deepseek-ai/DeepSeek-V4.1-Flash",
     "provider": "togetherai",
     "mode": "chat"
   },
@@ -1675,6 +2175,16 @@
     "mode": "chat"
   },
   {
+    "id": "togetherai/zai-org/GLM-5.3",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
+    "id": "togetherai/zai-org/GLM-5.3-Flash",
+    "provider": "togetherai",
+    "mode": "chat"
+  },
+  {
     "id": "typesafe-ai/jev",
     "provider": "typesafe-ai",
     "mode": "evaluate"
@@ -1721,6 +2231,16 @@
   },
   {
     "id": "xai/grok-4.5",
+    "provider": "xai",
+    "mode": "chat"
+  },
+  {
+    "id": "xai/grok-4.6",
+    "provider": "xai",
+    "mode": "chat"
+  },
+  {
+    "id": "xai/grok-4.7",
     "provider": "xai",
     "mode": "chat"
   },

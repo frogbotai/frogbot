@@ -9,7 +9,7 @@
 //
 // Model IDs churn (free catalogs especially). Every list is overridable via
 // env: E2E_MODEL_<LABEL>_<ROUTE> as a comma-separated list
-// (e.g. E2E_MODEL_GROQ_TEXT=llama-3.1-8b-instant,qwen3-32b).
+// (e.g. E2E_MODEL_GROQ_TEXT=llama-3.1-8b-instant,llama-3.3-70b-versatile).
 
 import type { ProviderName } from '../../../packages/gateway/src/providers/registry.js';
 
