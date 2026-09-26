@@ -4,6 +4,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', () => import('../../../packages/frogbot/src/exports/pieces.js'));
 
+vi.mock('../../../packages/frogbot/src/chat/turn/settle.js', () => ({
+  listPendingCalls: vi.fn(async () => []),
+  settleClientToolCall: vi.fn(),
+}));
+
 import { createGithub } from '../../../packages/pieces/piece-github/src/index.js';
 import { channelFixture } from '../frogbot/channels/helpers.js';
 

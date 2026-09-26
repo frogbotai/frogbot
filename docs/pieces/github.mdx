@@ -1,0 +1,128 @@
+---
+title: GitHub
+description: Run an agent in GitHub issues and pull requests, and let participants answer its questions with /answer comments.
+keywords: [pieces, github, channels, questions, issues, pull requests, github app, answer]
+---
+
+`@frogbotai/piece-github` connects an agent to GitHub issues and pull requests through a GitHub App. Mention the bot in a comment, and the agent replies in the same conversation. When the agent uses the [question tool](/chat/questions), it posts the question as a comment, and participants answer by commenting `/answer`.
+
+## Connect an agent
+
+```ts
+import { createGithub } from '@frogbotai/piece-github'
+import type { AgentConfig } from 'frogbot'
+import { question } from 'frogbot/tools'
+
+const github = createGithub({
+  auth: {
+    appId: process.env.GITHUB_APP_ID!,
+    privateKey: process.env.GITHUB_APP_PRIVATE_KEY!,
+    installationId: Number(process.env.GITHUB_APP_INSTALLATION_ID),
+  },
+  webhookSecret: process.env.GITHUB_WEBHOOK_SECRET!,
+  botUsername: 'my-app[bot]',
+  botUserId: Number(process.env.GITHUB_BOT_USER_ID),
+})
+
+const maintainers = new Set(['583231', '7654321'])
+
+export const triage: AgentConfig = {
+  slug: 'triage',
+  instructions: 'Help triage issues. Ask before labeling or closing anything.',
+  tools: [question],
+  channels: [github],
+  access: ({ req }) => maintainers.has(req.context?.channel?.author.id ?? ''),
+}
+```
+
+The instance slug defaults to `github`. Give each instance its own slug when you connect more than one app.
+
+| Option | Purpose |
+| --- | --- |
+| `webhookSecret` | Required for channels. The secret you set on the app's webhook; FrogBot rejects deliveries that are not signed with it |
+| `botUsername` | The name participants mention, such as `my-app[bot]` |
+| `botUserId` | The numeric user ID of the app's bot account. FrogBot uses it to ignore its own comments; set it so this never depends on looking the bot up at startup |
+
+Channels need GitHub App credentials. A personal access token works for the piece's actions, not for channels.
+
+## Create the GitHub App
+
+1. In your GitHub settings, create a GitHub App. Set **Webhook URL** to `https://your-app.example.com/api/webhooks/<instance>` and set a **Webhook secret**.
+2. Under **Repository permissions**, grant **Issues: Read and write**, **Pull requests: Read and write**, and **Metadata: Read-only**.
+3. Under **Subscribe to events**, select **Issue comment** and **Pull request review comment**.
+4. Generate a private key, then install the app on the repositories the agent should work in. The installation ID is the number at the end of the installation's settings URL.
+5. To find `botUserId`, open `https://api.github.com/users/<app-slug>[bot]` and copy `id`.
+
+## Where the bot replies
+
+| Where | Behavior |
+| --- | --- |
+| An issue | Mention the bot in a comment, and it replies in the issue |
+| A pull request's conversation | The same as an issue |
+| A review comment thread on a pull request | Mention the bot in a review comment, and it replies in that thread |
+
+After its first reply, the bot follows the conversation and answers every new comment there without a mention. Each issue, pull request conversation, and review thread is its own conversation. The bot ignores edited and deleted comments.
+
+## Who can answer
+
+FrogBot matches a commenter to a FrogBot user by the email address on their public GitHub profile. Most GitHub accounts don't show an email, so most commenters arrive without a FrogBot user. The default agent `access` check requires a signed-in user and denies them. Write an `access` function for every agent that uses GitHub.
+
+`req.context.channel.author` holds the GitHub user `id` and login as `username`. The example above admits a fixed list of user IDs; find a user's ID at `https://api.github.com/users/<login>`. Prefer IDs to logins: a login can be renamed, and someone else can then claim it. To admit a repository's collaborators instead, look up the commenter with the GitHub API in your `access` function.
+
+Anyone who passes the check can answer, including a teammate who did not start the conversation. FrogBot records the GitHub login on the answer. Someone who fails the check and comments `/answer` or `/dismiss` while the question is open gets a short reply saying they don't have access, and the question stays open. Their other comments are ignored.
+
+## What participants see
+
+Each question is a comment in the conversation. It shows the header, the question, the options as a numbered list with their descriptions, and how to reply:
+
+```md
+### Color
+
+Which color should the button be?
+
+1. **Red** — Warm and loud
+2. **Blue**
+3. **Green**
+
+Reply in a new comment:
+- `/answer 1` to choose an option
+- `/answer "your answer"` to answer in your own words
+- `/dismiss` to decline this question
+```
+
+Answer with a new comment in the same conversation that starts with the command:
+
+| Comment | Meaning |
+| --- | --- |
+| `/answer 2` | Choose option 2 |
+| `/answer 1, 3` or `/answer 1 3` | Choose several options, when the question allows it. Shown only on those questions |
+| `/answer "Teal, with a dark border"` | Answer in your own words, when the question allows it. Straight or curly quotes work, and so does `/answer Teal` without quotes |
+| `/dismiss` | Decline the question, or the whole set when the agent asked several. The agent is told, and the turn stops; answers already given to earlier questions of the set are not sent |
+
+Commands are not case-sensitive, and extra spaces are ignored. A comment counts only when the command is the first thing in it: a comment that quotes a command, mentions the bot first, or wraps the command in backticks is ordinary discussion and reaches the agent. Every comment that doesn't start with a command also reaches the agent, and it is handled after the question is answered.
+
+When the agent asks several questions in one call, FrogBot posts them one comment at a time, each marked `Question 2 of 3`. Answering one closes its comment and posts the next. When the agent makes several question calls in one step, their comments appear one after another.
+
+When a question is answered, FrogBot edits its comment to show the answer and who answered, removes the reply instructions, and the agent continues in the same conversation. The first answer wins.
+
+Questions are answered only in GitHub. The FrogBot admin chat shows the conversation [read-only](/chat/questions#channel-conversations).
+
+FrogBot escapes Markdown in the agent's question text, so every character of an option appears as the agent wrote it (a line break inside an option becomes a space), and `@` mentions and `#123` or `GH-123` issue references don't notify anyone or link to an issue. Replies and closed questions show logins as code, so naming a participant doesn't send a notification.
+
+## Limits and failures
+
+| Situation | What happens |
+| --- | --- |
+| No access | A reply says the commenter doesn't have access; the question stays open |
+| A malformed answer, such as `/answer 7` for a question with 3 options, several numbers where one is allowed, typed text where only options are allowed, or text after `/dismiss` | A reply explains the problem and repeats how to answer; the question stays open |
+| An answer after the question was answered or dismissed | A reply says so, and names who answered when FrogBot knows it. The comment is not sent to the agent. After 24 hours, a late answer reaches the agent as an ordinary comment |
+| Two answers at the same moment | The first one is recorded. The other gets the "already answered" reply, or, in a set, the "earlier question" reply |
+| An answer written before the current question was posted, such as a late answer to an earlier question of a set | A reply says it was for an earlier question, and names the question to answer now. Nothing is recorded |
+| An edited comment | Ignored. Post the corrected answer as a new comment |
+| A question longer than a GitHub comment allows | The options continue in more comments, marked `(continued)`, with the reply instructions in the last one. No option is dropped |
+| The server restarts while a question is open | The question stays answerable |
+| Posting the question fails | FrogBot deletes any part of it that was posted, and posts it again with the next comment that reaches the agent |
+| Posting the next question of a set fails | FrogBot deletes any part of it that was posted. Answers get a reply: "The next question is still posting — try again in a moment. Nothing was recorded, so read the next question before you answer again." FrogBot posts the question on retry, and it then answers normally |
+| The server stops right after posting a question | The question can appear twice, and the older copy keeps its reply instructions. Answers count for the newest copy |
+| Editing a comment after an answer fails | The answer is still recorded and the agent continues. The comment keeps its reply instructions, and later answers get the "already answered" reply |
+| A question left open for 30 days | It stops responding; the next comment in the conversation posts it again |

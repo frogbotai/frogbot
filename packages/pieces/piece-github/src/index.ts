@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { githubActionDefinitions } from './actions.js';
 import { createGithubClient, type GithubClient } from './client.js';
 import { githubAuth, githubOptions, githubScopes } from './config.js';
+import { githubQuestions } from './questions/index.js';
 import { githubTriggerDefinitions } from './triggers.js';
 import { parseGithubWebhook, verifyGithubWebhook } from './webhook.js';
 
@@ -133,6 +134,7 @@ const githubChannel = {
 
     return match ? { ...match, collection: payloadConfig.admin.user } : null;
   },
+  questions: githubQuestions,
 } satisfies PieceChannel<z.output<typeof githubAuth>, z.output<typeof githubOptions>, GithubClient>;
 
 export const createGithub = definePiece({
