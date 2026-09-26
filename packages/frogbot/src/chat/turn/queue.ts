@@ -1,6 +1,6 @@
 import type { UIMessage } from 'ai';
 
-import { AgentServiceError, assertAgentAccess } from '../../agents/service.js';
+import { hasAgentAccess } from '../../agents/service.js';
 import type { AgentInstance } from '../../agents/types.js';
 import type { DocID } from '../../collections/config/types.js';
 import { updateIfVersion } from '../../database/compareAndSet.js';
@@ -26,7 +26,10 @@ export type TurnRunnerArgs = {
   uiMessages: UIMessage[];
 };
 
-export type TurnRunner = (args: TurnRunnerArgs) => Promise<boolean>;
+export type TurnRunner = {
+  schedule?: (args: { chatId: DocID }) => Promise<boolean>;
+  run: (args: TurnRunnerArgs) => Promise<boolean>;
+};
 
 const runners = new WeakMap<FrogBot, TurnRunner>();
 
@@ -38,16 +41,24 @@ export function registerTurnRunner(frogbot: FrogBot, runner: TurnRunner): () => 
   };
 }
 
-export function promoteQueuedMessage({
+export async function promoteQueuedMessage({
   req,
   chatId,
 }: {
   req: FrogBotRequest;
   chatId: DocID;
-}): void {
-  void runQueuedTurn({ frogbot: req.frogbot, chatId }).catch((error: unknown) => {
+}): Promise<void> {
+  const log = (error: unknown) => {
     req.frogbot.logger.error({ err: error, chatId }, '[frogbot] Failed to run a queued message.');
-  });
+  };
+
+  try {
+    if (await runners.get(req.frogbot)?.schedule?.({ chatId })) return;
+  } catch (error) {
+    log(error);
+  }
+
+  void runQueuedTurn({ frogbot: req.frogbot, chatId }).catch(log);
 }
 
 export async function runQueuedTurn({
@@ -110,7 +121,7 @@ export async function runQueuedTurn({
 
     started = true;
 
-    if (runner && (await runner({ req, agent, chat, claim, uiMessages }))) return;
+    if (runner && (await runner.run({ req, agent, chat, claim, uiMessages }))) return;
 
     const turn = await streamTurn({
       req,
@@ -125,7 +136,7 @@ export async function runQueuedTurn({
     if (!started) {
       const released = await releaseTurn({ req: baseReq, claim, state: 'idle' });
 
-      if (released && promoteNext) promoteQueuedMessage({ req: baseReq, chatId });
+      if (released && promoteNext) await promoteQueuedMessage({ req: baseReq, chatId });
     }
   }
 }
@@ -285,22 +296,4 @@ async function requestForActor({
         }
       : {}),
   });
-}
-
-async function hasAgentAccess({
-  req,
-  agent,
-}: {
-  req: FrogBotRequest;
-  agent: AgentInstance;
-}): Promise<boolean> {
-  try {
-    await assertAgentAccess({ req, agent });
-
-    return true;
-  } catch (error) {
-    if (error instanceof AgentServiceError && error.status === 403) return false;
-
-    throw error;
-  }
 }

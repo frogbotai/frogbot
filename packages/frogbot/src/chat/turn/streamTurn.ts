@@ -85,7 +85,7 @@ export async function streamTurn({
     lease.stop();
 
     if (await releaseTurn({ req: turnReq, claim, state: 'idle' })) {
-      promoteQueuedMessage({ req: turnReq, chatId });
+      await promoteQueuedMessage({ req: turnReq, chatId });
     }
 
     throw error;
@@ -149,7 +149,7 @@ export async function streamTurn({
         }
       } finally {
         if (!awaiting && (await releaseTurn({ req: turnReq, claim, state: 'idle' }))) {
-          promoteQueuedMessage({ req: turnReq, chatId });
+          await promoteQueuedMessage({ req: turnReq, chatId });
         }
       }
     },

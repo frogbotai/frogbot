@@ -1,0 +1,107 @@
+---
+title: Channel questions
+description: Let a channel piece render agent questions and turn platform interactions into answers.
+keywords: [pieces, channels, questions, client tools, interactions]
+---
+
+A channel piece can let participants answer the [question tool](/chat/questions) inside the conversation. Add `questions` to the piece's `channel` definition. The piece only draws and reads platform controls. FrogBot finds the question, checks who is answering, records the answer once, and continues the agent in the same conversation.
+
+## Where the tool is offered
+
+FrogBot offers the question tool to an agent in a channel conversation only when the piece defines `questions` and `supports({ thread })` does not return `false`. Use `supports` to turn questions off where a platform surface cannot show controls. If `supports` throws, FrogBot logs the error and does not offer questions for that turn.
+
+## Define the hooks
+
+```ts
+import { definePiece, type PieceChannelQuestions } from 'frogbot/pieces'
+
+type ChatClient = { post(args: object): Promise<{ id: string }> }
+
+const questions: PieceChannelQuestions<ChatClient> = {
+  async render({ calls, client, thread }) {
+    const [call] = calls
+
+    const message = await client.post({ thread: thread.id, question: call.input })
+
+    return [{ messageId: message.id, calls: [call.toolCallId] }]
+  },
+
+  parse({ call, interaction }) {
+    if (interaction.type !== 'action') return { kind: 'ignore' }
+
+    if (interaction.event.actionId === `dismiss:${call.toolCallId}`) return { kind: 'dismiss' }
+
+    const item = call.input.questions[0]
+    const option = item.options[Number(interaction.event.value)]
+
+    if (!option) return { kind: 'ignore' }
+
+    return { kind: 'answer', output: { answers: [{ header: item.header, selected: [option.label] }] } }
+  },
+
+  async settled({ client, messageId, outcome }) {
+    await client.post({ replace: messageId, outcome })
+  },
+}
+```
+
+Pass `questions` next to `adapter` and `identity` in the piece's `channel` definition.
+
+| Hook | When FrogBot calls it |
+| --- | --- |
+| `supports({ thread })` | Before each turn, to decide whether the model gets the question tool |
+| `render({ calls, client, req, thread })` | After a turn stops to wait for answers. Post one or more messages and return which calls each covers |
+| `parse({ call, interaction, state, settled })` | For each button click, form submission, or thread reply that may belong to a posted question |
+| `settled(...)` | After an answer or dismissal is recorded; replace the controls with the result |
+| `updated(...)` | After `parse` returns `partial`; open a form or redraw the card. Return `{ messageId }` if the question moved to a new message |
+| `rejected(...)`, `denied(...)`, `stale(...)` | Tell the participant why nothing happened |
+
+`render` may cover only some calls. FrogBot renders the rest after one of the covered calls is answered, which lets a piece ask several questions one at a time.
+
+Each call's `input` is the validated question input: `questions`, each with `header`, `question`, `options`, `multiple`, and `custom`. Answers use the question tool's output shape, with each option's exact `label`.
+
+## Parse interactions
+
+`interaction` is one of:
+
+| `type` | Contents |
+| --- | --- |
+| `action` | `event`: the button or menu event, with `actionId`, `value`, `user`, `triggerId`, and the platform's `raw` payload |
+| `modalSubmit` | `event`: the submitted form, with `values`, `privateMetadata`, `user`, and `raw` |
+| `message` | `message`: a reply in the conversation thread |
+
+Keep `parse` free of side effects. FrogBot may call it more than once for the same event: first to discard unrelated events cheaply, then again after it has checked access and locked the question. Return one of:
+
+| Result | What FrogBot does |
+| --- | --- |
+| `{ kind: 'ignore' }` | Nothing. A thread reply continues as an ordinary message |
+| `{ kind: 'answer', output }` | Checks access, records the answer, calls `settled`, and continues the agent |
+| `{ kind: 'dismiss' }` | Checks access, records the dismissal, calls `settled`, and stops the turn |
+| `{ kind: 'partial', state? }` | Checks access, saves `state` if given, and calls `updated` |
+| `{ kind: 'rejected', reason }` | Checks access and calls `rejected` with the reason |
+
+A thread reply that returns anything other than `ignore` is consumed and is not sent to the agent as a new message.
+
+`state` belongs to the piece. Use it for progress that must survive between interactions, such as a typed answer saved before a form is submitted. It must be JSON-serializable. FrogBot serializes updates to one question, so two fast interactions never overwrite each other's state.
+
+## Who can answer
+
+FrogBot resolves the participant with the piece's `identity` hook and runs the agent's `access` check, the same checks as for a new message. A participant who fails gets `denied`, and the question stays open. An answer is only accepted for the conversation the question was posted in.
+
+After a question is answered, a matching interaction gets `stale`. The same happens when the question was answered somewhere else, such as the admin chat; in that case FrogBot first calls `settled` with `actor: null` so the card shows the stored answer.
+
+## Forms opened by the piece
+
+When a piece opens a platform form itself, the submission has no link to the question's message. Store a locator in the form's metadata and FrogBot finds the question from it:
+
+```ts
+import { encodeQuestionModalMetadata } from 'frogbot/pieces'
+
+const metadata = encodeQuestionModalMetadata({ threadId: thread.id, messageId })
+```
+
+FrogBot reads the locator from `privateMetadata` on the submission. The locator only finds the question; FrogBot still checks the participant's access and that the question belongs to that conversation.
+
+## Delivery records
+
+FrogBot stores each posted question in the configured KV store: the message it was posted in, a snapshot of its input, and the piece's `state`. Records expire after 30 days. After an answer, the record is kept for 24 hours so late clicks get `stale`. A card whose record has expired stops responding; the next message in the conversation posts the question again.
