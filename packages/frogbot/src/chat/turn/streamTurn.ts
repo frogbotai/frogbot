@@ -91,6 +91,22 @@ export async function streamTurn({
     throw error;
   }
 
+  const source = onError
+    ? result.stream.pipeThrough(
+        new TransformStream({
+          transform: (part, controller) => {
+            if (part.type === 'error') {
+              controller.error(part.error);
+
+              return;
+            }
+
+            controller.enqueue(part);
+          },
+        }),
+      )
+    : result.stream;
+
   let awaiting = false;
 
   const stream = createUIMessageStream({
@@ -100,12 +116,11 @@ export async function streamTurn({
     execute: ({ writer }) => {
       writer.merge(
         toUIMessageStream({
-          stream: result.stream,
+          stream: source,
           tools: agent.aiAgent.tools,
           originalMessages: uiMessages,
           generateMessageId: () => messageId,
           sendSources: true,
-          onError,
           messageMetadata: ({ part }) =>
             part.type === 'finish'
               ? { usage: createMessageUsage(part.totalUsage, mainModel) }

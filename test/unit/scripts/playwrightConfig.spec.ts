@@ -1,7 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const originalArgv = process.argv;
-const allProjects = ['blank', 'custom-field', 'rich-text', 'live-preview'];
+const allProjects = [
+  'blank',
+  'custom-field',
+  'rich-text',
+  'live-preview',
+  'chat-assets',
+  'question',
+];
+
+const dependencyURLs: Record<string, string[]> = {
+  'chat-assets': ['http://localhost:3126/health'],
+};
 
 afterEach(() => {
   process.argv = originalArgv;
@@ -13,6 +24,11 @@ describe('browser project servers', () => {
     { name: 'positional test filter', args: ['navShell.browser.spec.ts'], projects: allProjects },
     { name: 'equals form', args: ['--project=live-preview'], projects: ['live-preview'] },
     { name: 'space form', args: ['--project', 'custom-field'], projects: ['custom-field'] },
+    {
+      name: 'project with a dependency server',
+      args: ['--project=chat-assets'],
+      projects: ['chat-assets'],
+    },
     {
       name: 'repeated equals flags',
       args: ['--project=live-preview', '--project=custom-field'],
@@ -80,9 +96,10 @@ describe('browser project servers', () => {
 
     const { default: config } = await import('../../browser/playwright.config.js');
     const servers = Array.isArray(config.webServer) ? config.webServer : [config.webServer];
-    const expectedURLs = projects.map(
-      (name) => config.projects?.find((project) => project.name === name)?.use?.baseURL,
-    );
+    const expectedURLs = projects.flatMap((name) => [
+      ...(dependencyURLs[name] ?? []),
+      config.projects?.find((project) => project.name === name)?.use?.baseURL,
+    ]);
 
     expect(expectedURLs).not.toContain(undefined);
     expect(servers.map((server) => server?.url)).toEqual(expectedURLs);

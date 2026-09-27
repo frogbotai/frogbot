@@ -156,6 +156,24 @@ describe('FrogBotChatTransport', () => {
     expect(new Headers(fetch.mock.calls[0][1]?.headers).get('accept')).toBe('application/json');
   });
 
+  it('sends the SDK headers with every agent request', async () => {
+    const fetch = vi.fn(() =>
+      Promise.resolve(
+        new Response(new ReadableStream({ start: (controller) => controller.close() })),
+      ),
+    );
+    const transport = new FrogBotChatTransport({
+      agentSlug: 'agent',
+      sdk: createFrogBotSDK({
+        baseURL: '/api',
+        fetch,
+        headers: { authorization: 'Bearer token' },
+      }),
+    });
+    await transport.sendMessages({ chatId: 'chat', messages: [], trigger: 'submit-message' });
+    expect(new Headers(fetch.mock.calls[0][1]?.headers).get('authorization')).toBe('Bearer token');
+  });
+
   it('treats a bodyless 499 as a clean empty stream', async () => {
     const transport = new FrogBotChatTransport({
       agentSlug: 'agent',

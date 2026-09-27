@@ -36,6 +36,8 @@ const DATABASES: Record<
   },
 };
 
+export const DATABASE_CHOICES = Object.keys(DATABASES) as Database[];
+
 export function applyDatabase(dest: string, database: Database): void {
   const configPath = path.join(dest, 'src', 'frogbot.config.ts');
   let config = fs.readFileSync(configPath, 'utf8');

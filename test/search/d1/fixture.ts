@@ -2,13 +2,10 @@ import { sqliteD1Adapter } from '@frogbotai/db-d1-sqlite';
 import type { FrogBotConfig, FrogBotInstance } from 'frogbot';
 import { buildConfig } from 'frogbot';
 import { BasePayload, type Payload } from 'payload';
-import { describe } from 'vitest';
 
 import { initFrogBotFromPayload } from '../../../packages/frogbot/dist/frogbot.js';
-import { createD1Database, type D1Binding, hasMiniflare } from '../../__helpers/shared/db/d1.js';
+import { createD1Database, type D1Binding } from '../../__helpers/shared/db/d1.js';
 import { collections as defaultCollections, localization } from './shared.js';
-
-export const describeD1 = hasMiniflare() ? describe : describe.skip;
 
 export type BootOptions = {
   collections?: FrogBotConfig['collections'];

@@ -1,10 +1,8 @@
 import { readFileSync } from 'node:fs';
 
-import { describe, it } from 'vitest';
+import { describe } from 'vitest';
 
 export const LIVE = process.env.RUN_E2E === '1';
-
-export const STRICT = process.env.LIVE_STRICT === '1';
 
 export function missingKeys(keys: readonly string[]): string[] {
   return keys.filter((key) => !process.env[key]);
@@ -12,7 +10,7 @@ export function missingKeys(keys: readonly string[]): string[] {
 
 export function describeLive(
   name: string,
-  { keys, optional = false }: { keys: readonly string[]; optional?: boolean },
+  { keys }: { keys: readonly string[] },
   fn: () => void,
 ): void {
   const missing = missingKeys(keys);
@@ -25,16 +23,6 @@ export function describeLive(
 
   if (missing.length === 0) {
     describe(name, fn);
-
-    return;
-  }
-
-  if (STRICT && !optional) {
-    describe(name, () => {
-      it('has its credentials configured', () => {
-        throw new Error(`Missing ${missing.join(', ')} in .env.live.local`);
-      });
-    });
 
     return;
   }

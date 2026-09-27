@@ -3,8 +3,8 @@
 // This is the flow a new user builds first: index a small knowledge base, ask
 // a question, retrieve the right chunk (scoped to their tenant), and have a
 // model answer from it. It runs against:
-//   - local pgvector + local Atlas (docker `postgres` / `mongodb` profiles) — required
-//   - hosted Neon (NEON_DATABASE_URL) and hosted Atlas (ATLAS_URI) — optional,
+//   - local pgvector + local Atlas (docker `postgres` / `mongodb-search` profiles)
+//   - hosted Neon (NEON_DATABASE_URL) and hosted Atlas (ATLAS_URI) when set,
 //     so hosted-only breakage (TLS, poolers, index build latency) surfaces too.
 
 import { randomUUID } from 'node:crypto';
@@ -62,7 +62,6 @@ const QUESTION = 'How do I get my money back, and what code do I need?';
 type Target = {
   name: string;
   keys: readonly string[];
-  optional: boolean;
   // `beforeDestroy` runs while FrogBot is still connected; `afterDestroy` once its pool is closed.
   setup: () => Promise<{
     db: FrogBotConfig['db'];
@@ -75,7 +74,6 @@ function mongoTarget(name: string, envKey: string, fallback?: string): Target {
   return {
     name,
     keys: fallback ? KEYS : [...KEYS, envKey],
-    optional: !fallback,
     async setup() {
       const url = new URL(process.env[envKey] ?? fallback!);
       url.pathname = `/frogbot-live-rag-${randomUUID().slice(0, 8)}`;
@@ -98,7 +96,6 @@ function postgresTarget(name: string, envKey?: string): Target {
   return {
     name,
     keys: envKey ? [...KEYS, envKey] : KEYS,
-    optional: Boolean(envKey),
     async setup() {
       if (!envKey) {
         const database = await createPostgresDatabase('frogbot_live_rag');
@@ -159,14 +156,15 @@ async function waitFor<T>(read: () => Promise<T>, done: (v: T) => boolean): Prom
     const value = await read().catch((error: unknown) => error as T);
     if (!(value instanceof Error) && done(value)) return value;
     // Atlas search indexes build asynchronously (seconds locally, up to a minute hosted).
-    if (Date.now() - started > 90_000)
+    if (Date.now() - started > 90_000) {
       throw new Error(`search never became ready: ${String(value)}`);
+    }
     await new Promise((r) => setTimeout(r, 1000));
   }
 }
 
 for (const target of TARGETS) {
-  describeLive(`live RAG: ${target.name}`, { keys: target.keys, optional: target.optional }, () => {
+  describeLive(`live RAG: ${target.name}`, { keys: target.keys }, () => {
     let setup: Awaited<ReturnType<Target['setup']>> | undefined;
     let frogbot: FrogBotInstance;
     let payload: BasePayload | undefined;

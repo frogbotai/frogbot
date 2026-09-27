@@ -76,7 +76,8 @@ export class FrogBotChatTransport<
         const headers = await (typeof configuredHeaders === 'function'
           ? configuredHeaders()
           : configuredHeaders);
-        const merged = new Headers({ Accept: 'text/event-stream' });
+        const merged = new Headers(sdk.headers);
+        merged.set('Accept', 'text/event-stream');
         new Headers(headers).forEach((value, key) => merged.set(key, value));
         return merged;
       },

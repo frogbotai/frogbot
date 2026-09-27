@@ -7,7 +7,7 @@ import {
   TooManyEmbeddingValuesForCallError,
   TypeValidationError,
 } from '@ai-sdk/provider';
-import { RetryError } from 'ai';
+import { RetryError, ToolChoiceViolationError } from 'ai';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -141,6 +141,29 @@ describe('toOpenAIErrorResponse — APICallError status coverage', () => {
       message: 'Invalid JSON response',
       type: 'api_error',
     });
+  });
+});
+
+describe('AI SDK tool choice violations', () => {
+  it('maps a model that ignored a required tool choice to 502', () => {
+    const err = new ToolChoiceViolationError({
+      toolChoice: { type: 'tool', toolName: 'get_weather' },
+      finishReason: 'stop',
+      provider: 'openai',
+      modelId: 'gpt-4o-mini',
+      content: [],
+    });
+
+    const openai = toOpenAIErrorResponse(err);
+    const anthropic = toAnthropicErrorResponse(err);
+
+    expect(openai.status).toBe(502);
+    expect(openai.body.error).toMatchObject({
+      message: "Model response did not contain a call to the required tool 'get_weather'.",
+      type: 'server_error',
+    });
+    expect(anthropic.status).toBe(502);
+    expect(anthropic.body.error.type).toBe('api_error');
   });
 });
 

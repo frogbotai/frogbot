@@ -52,7 +52,7 @@ export const AI_PROVIDERS: Record<
     keyEnv: 'OPENCODE_API_KEY',
     env: [],
     snippet:
-      "  ai: {\n    defaultModel: 'zen/big-pickle',\n    providers: {\n      zen: {\n        type: 'openai-compatible',\n        baseUrl: 'https://opencode.ai/zen/v1',\n        apiKey: process.env.OPENCODE_API_KEY,\n        models: [{ id: 'big-pickle', mode: 'chat' }],\n      },\n    },\n  },\n",
+      "  ai: {\n    defaultModel: 'zen/deepseek-v4.1-flash',\n    providers: {\n      zen: {\n        type: 'openai-compatible',\n        baseUrl: 'https://opencode.ai/zen/v1',\n        apiKey: process.env.OPENCODE_API_KEY,\n        models: [{ id: 'deepseek-v4.1-flash', mode: 'chat' }],\n      },\n    },\n  },\n",
   },
 };
 

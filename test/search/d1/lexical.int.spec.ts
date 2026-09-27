@@ -1,16 +1,11 @@
 import type { FrogBotRequest } from 'frogbot';
-import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
-import {
-  type BootedSearch,
-  createSearchDatabase,
-  describeD1,
-  type SearchDatabase,
-} from './fixture.js';
+import { type BootedSearch, createSearchDatabase, type SearchDatabase } from './fixture.js';
 import { articlesSlug, notesSlug, pagesSlug, usersSlug } from './shared.js';
 
-describeD1('D1 lexical search', () => {
+describe('D1 lexical search', () => {
   let database: SearchDatabase;
   let booted: BootedSearch;
 

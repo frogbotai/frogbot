@@ -425,7 +425,7 @@ export async function runResponsesReasoning(app: LiveApp, model: string): Promis
   expect(body.output_text).toMatch(/\b385\b/);
 }
 
-const THINKING = { type: 'enabled', budget_tokens: 1024 };
+const THINKING = { type: 'adaptive', display: 'summarized' };
 
 const MESSAGES_WEATHER_TOOL = {
   name: 'get_weather',
@@ -448,13 +448,14 @@ export async function runMessagesThinking(app: LiveApp, model: string): Promise<
 
   expect(thinking?.thinking?.length).toBeGreaterThan(0);
   expect(thinking?.signature?.length).toBeGreaterThan(0);
-  expect(messagesText(body)).toMatch(/\b8\b/);
+  expect(messagesText(body)).toMatch(/\b385\b/);
 }
 
 export async function runMessagesThinkingToolLoop(app: LiveApp, model: string): Promise<void> {
   const question = {
     role: 'user',
-    content: 'Should I bring an umbrella in Paris today? Check the weather first.',
+    content:
+      'A pond has 17 lily pads with 23 frogs on each, and 6 frogs leave. If the number of frogs that remain is odd, I am in Paris; otherwise I am in Rome. Work out which city I am in, then check its weather and tell me whether to bring an umbrella.',
   };
 
   const first = await messages(app, {

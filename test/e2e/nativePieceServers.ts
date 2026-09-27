@@ -69,7 +69,7 @@ export async function startPieceProviders() {
   app.post('/v1/chat/completions', async (context) => {
     const body = await context.req.json<PieceModelRequest>();
     requests.model.push(body);
-    if (body.stream) throw new Error('The piece fixture expects non-streaming completions');
+    if (!body.stream) throw new Error('The piece fixture expects streaming completions');
     const result = body.messages.at(-1);
     const toolName = body.tools?.find(({ function: tool }) => tool.name.endsWith('_send'))?.function
       .name;
@@ -94,31 +94,37 @@ export async function startPieceProviders() {
       }
     }
 
-    return context.json({
-      id: `completion-${requests.model.length}`,
-      object: 'chat.completion',
-      created: 1,
-      model: body.model,
-      choices: [
-        {
-          index: 0,
-          message: finished
-            ? { role: 'assistant', content: `Tool result: ${result.content}` }
-            : {
-                role: 'assistant',
-                content: null,
-                tool_calls: [
-                  {
-                    id: 'native-send-call',
-                    type: 'function',
-                    function: { name: toolName, arguments: JSON.stringify(input) },
-                  },
-                ],
-              },
-          finish_reason: finished ? 'stop' : 'tool_calls',
-        },
-      ],
-      usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+    const id = `completion-${requests.model.length}`;
+
+    const delta = finished
+      ? { role: 'assistant', content: `Tool result: ${result.content}` }
+      : {
+          role: 'assistant',
+          tool_calls: [
+            {
+              index: 0,
+              id: 'native-send-call',
+              type: 'function',
+              function: { name: toolName, arguments: JSON.stringify(input) },
+            },
+          ],
+        };
+
+    const chunks = [
+      { choices: [{ index: 0, delta, finish_reason: null }] },
+      {
+        choices: [{ index: 0, delta: {}, finish_reason: finished ? 'stop' : 'tool_calls' }],
+        usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+      },
+    ];
+
+    const events = chunks.map(
+      (chunk) =>
+        `data: ${JSON.stringify({ id, object: 'chat.completion.chunk', created: 1, model: body.model, ...chunk })}\n\n`,
+    );
+
+    return new Response([...events, 'data: [DONE]\n\n'].join(''), {
+      headers: { 'content-type': 'text/event-stream' },
     });
   });
 

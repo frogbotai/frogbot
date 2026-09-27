@@ -201,6 +201,31 @@ describe('messages thinking forwarded upstream', () => {
     const thinking = (callOptions?.providerOptions as any)?.anthropic?.thinking;
     expect(thinking).toEqual({ type: 'enabled', budgetTokens: 2048 });
   });
+
+  it('maps adaptive thinking with its display to providerOptions.anthropic.thinking', async () => {
+    let callOptions: LanguageModelV4CallOptions | undefined;
+    const app = makeAppWithModel(
+      'anthropic',
+      createRecordingModel({
+        onCall: (options) => {
+          callOptions = options;
+        },
+      }),
+    );
+
+    const { status } = await postJson(app, '/v1/messages', {
+      model: 'anthropic/claude-sonnet-5',
+      messages: [{ role: 'user', content: 'think hard' }],
+      max_tokens: 4096,
+      thinking: { type: 'adaptive', display: 'summarized' },
+    });
+
+    expect(status).toBe(200);
+
+    const thinking = (callOptions?.providerOptions as any)?.anthropic?.thinking;
+
+    expect(thinking).toEqual({ type: 'adaptive', display: 'summarized' });
+  });
 });
 
 // ---------------------------------------------------------------------------

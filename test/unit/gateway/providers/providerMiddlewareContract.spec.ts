@@ -144,7 +144,9 @@ describe('provider middleware providerOptions key contract — G39/PR4', () => {
     };
 
     for (const hook of vercelBeforeUpstream) {
-      await hook(makeArgs({ model: 'vercel/anthropic/claude-sonnet-4.6', providerOptions: claude }));
+      await hook(
+        makeArgs({ model: 'vercel/anthropic/claude-sonnet-4.6', providerOptions: claude }),
+      );
       await hook(makeArgs({ model: 'vercel/openai/gpt-5.4-mini', providerOptions: gpt }));
     }
 

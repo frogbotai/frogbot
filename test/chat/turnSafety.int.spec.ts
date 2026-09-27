@@ -8,7 +8,14 @@ import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import type { StubChatModel } from '../__helpers/shared/StubChatModel';
 import { startStubChatModel } from '../__helpers/shared/StubChatModel';
-import { chatsSlug, lookupCalls, messagesSlug, questionAgentSlug, usersSlug } from './shared.js';
+import {
+  chatsSlug,
+  lookupCalls,
+  messagesSlug,
+  questionAgentSlug,
+  unavailableTopic,
+  usersSlug,
+} from './shared.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -355,6 +362,25 @@ describe('chat turns: recovery, access, and forged input', () => {
 
     expect(toolIndex).toBeGreaterThan(-1);
     expect(steerIndex).toBeGreaterThan(toolIndex);
+  });
+
+  it('a failing server tool is recorded as a tool error and the JSON turn completes', async () => {
+    model.respond(
+      { toolCalls: [{ id: 'call-lookup', name: 'lookup', input: { topic: unavailableTopic } }] },
+      { text: 'Nothing found.' },
+    );
+
+    const { status, body } = await post(`/agents/${questionAgentSlug}`, { prompt: 'Look it up.' });
+
+    const reply = (await storedMessages(body.chatId)).at(-1);
+    const toolResult = model.requests[1]?.messages.find(({ role }) => role === 'tool');
+
+    expect(status).toBe(200);
+    expect(body.status).toBe('completed');
+    expect(reply?.parts).toContainEqual(
+      expect.objectContaining({ type: 'tool-lookup', state: 'output-error' }),
+    );
+    expect(JSON.stringify(toolResult?.content)).toContain(`No results for ${unavailableTopic}.`);
   });
 
   it('a steered turn persists the steer before the reply that answered it', async () => {

@@ -211,6 +211,26 @@ describe('template reconciliation', () => {
     },
   );
 
+  it('declares the adapter runtime dependencies directly so they resolve from the app root', () => {
+    const dest = copyTemplate();
+
+    applyPackageJson(dest, 'my-app', 'mongodb', '0.24.0', {
+      mongodb: { '@payloadcms/db-mongodb': '3.90.1', payload: '3.90.1' },
+      postgres: { '@payloadcms/db-postgres': '3.90.1' },
+    });
+
+    const pkg = JSON.parse(fs.readFileSync(path.join(dest, 'package.json'), 'utf8')) as {
+      dependencies: Record<string, string>;
+    };
+
+    expect(pkg.dependencies['@payloadcms/db-mongodb']).toBe('3.90.1');
+    expect(pkg.dependencies.payload).toBe('3.90.1');
+    expect(pkg.dependencies['@payloadcms/db-postgres']).toBeUndefined();
+    expect(Object.keys(pkg.dependencies)).toEqual(
+      [...Object.keys(pkg.dependencies)].sort((a, b) => a.localeCompare(b)),
+    );
+  });
+
   it('names a drifted anchor without leaving a partially rewritten config', () => {
     const dest = copyTemplate();
     const configPath = path.join(dest, 'src', 'frogbot.config.ts');

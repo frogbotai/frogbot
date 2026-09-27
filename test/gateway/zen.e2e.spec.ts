@@ -1,21 +1,10 @@
-// Gateway E2E smoke tests — OpenCode Zen's FREE hosted models.
+// Gateway E2E smoke tests against OpenCode Zen (https://opencode.ai/zen/v1),
+// an OpenAI-compatible upstream. Exercises the gateway's openai-compatible
+// provider path: non-streaming chat, SSE streaming, tool calls, and error
+// normalization. Zen's free models only work inside OpenCode, so the suites
+// use a paid model and need OPENCODE_API_KEY in .env.live.local.
 //
-// OpenCode Zen is an OpenAI-compatible API at https://opencode.ai/zen/v1
-// that offers a rotating set of free ($0 in/out) models. This suite exercises
-// the gateway's generic openai-compatible provider path against a REAL
-// upstream, covering the request patterns actual clients use: non-streaming
-// chat, SSE streaming, tool calls, and error normalization.
-//
-// Setup:
-//   No account needed — Zen's free models accept unauthenticated requests
-//   (opencode itself falls back to apiKey: "public" — provider.ts:181).
-//   Optionally: export OPENCODE_API_KEY=<your key> to use your account.
-//   Run: RUN_E2E=1 pnpm vitest run --project=gateway-e2e test/gateway/zen.e2e.spec.ts
-//
-// Skips cleanly (does not fail) when RUN_E2E !== '1'.
-//
-// Free models are "limited time" — if the ids below disappear, the models
-// sanity test warns (does not fail) with the current free catalog.
+// Run: RUN_E2E=1 pnpm vitest run --project=gateway-zen test/gateway/zen.e2e.spec.ts
 
 import { describe, expect, it } from 'vitest';
 
@@ -26,13 +15,13 @@ import {
 } from '../../packages/gateway/src/providers/registry.js';
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { describeLive } from '../live/live.js';
 
 const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY ?? '';
-const RUN_E2E = process.env.RUN_E2E === '1';
 
 const ZEN_BASE_URL = 'https://opencode.ai/zen/v1';
-const ZEN_FREE_MODELS = ['big-pickle', 'nemotron-3-ultra-free', 'mimo-v2.5-free'];
-const MODEL = `zen/${ZEN_FREE_MODELS[0]}`;
+const ZEN_MODEL = 'deepseek-v4.1-flash';
+const MODEL = `zen/${ZEN_MODEL}`;
 
 // Real network: keep prompts tiny and budgets generous.
 const TEST_TIMEOUT = 60_000;
@@ -69,7 +58,7 @@ type ToolCall = {
   function?: { name?: string; arguments?: string };
 };
 
-describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)('gateway E2E — OpenCode Zen free models', () => {
+describeLive('gateway E2E — OpenCode Zen', { keys: ['OPENCODE_API_KEY'] }, () => {
   const app = makeZenApp();
 
   it(
@@ -224,26 +213,16 @@ describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)('gateway E2E — OpenCode Zen fre
   );
 
   it(
-    'upstream GET /v1/models sanity — free model ids still listed',
+    'upstream GET /v1/models lists the suite model',
     async () => {
-      // Direct fetch to Zen (not through the gateway) — the free lineup is
-      // "limited time", so a missing id warns instead of failing the suite.
       const res = await fetch(`${ZEN_BASE_URL}/models`, {
         headers: { authorization: `Bearer ${OPENCODE_API_KEY}` },
       });
-      expect(res.status).toBe(200);
 
       const body = (await res.json()) as { data?: Array<{ id?: string }> };
-      expect(Array.isArray(body.data)).toBe(true);
 
-      const ids = new Set(body.data!.map((m) => m.id));
-      const missing = ZEN_FREE_MODELS.filter((id) => !ids.has(id));
-      if (missing.length > 0) {
-        console.warn(
-          `[zen.e2e] expected free models missing from catalog: ${missing.join(', ')}. ` +
-            `Current catalog ids: ${[...ids].join(', ')}`,
-        );
-      }
+      expect(res.status).toBe(200);
+      expect(body.data?.map((model) => model.id)).toContain(ZEN_MODEL);
     },
     TEST_TIMEOUT,
   );

@@ -55,3 +55,6 @@ test/e2e/fixtures/rich-text/rich-text.browser.db*
 
 # Live test credentials
 .live-credentials/
+
+# Scratch space for e2e/unit fixtures (cleaned per test; leftovers after a killed run)
+test/.tmp/

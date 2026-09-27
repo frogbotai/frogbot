@@ -9,7 +9,7 @@ import { HELP, parseArgs } from './lib/args.js';
 import { applyDatabase } from './lib/db.js';
 import { writeEnv } from './lib/env.js';
 import { initializeGit } from './lib/git.js';
-import { applyPackageJson } from './lib/package-json.js';
+import { applyPackageJson, type DatabaseDependencies } from './lib/package-json.js';
 import {
   detectPackageManager,
   installDependencies,
@@ -49,6 +49,15 @@ function readVersion(): string {
   return pkg.version;
 }
 
+// Written by scripts/pack-templates.mjs next to the built entry point.
+function readDatabaseDependencies(): DatabaseDependencies {
+  const file = path.join(dirname, 'database-dependencies.json');
+
+  return fs.existsSync(file)
+    ? (JSON.parse(fs.readFileSync(file, 'utf8')) as DatabaseDependencies)
+    : {};
+}
+
 export function scaffold(options: ScaffoldOptions): void {
   const packageManager = options.packageManager ?? detectPackageManager();
   const database = options.database ?? 'sqlite';
@@ -66,7 +75,13 @@ export function scaffold(options: ScaffoldOptions): void {
 
   applyDatabase(options.dest, database);
   applyAI(options.dest, ai);
-  applyPackageJson(options.dest, options.projectName, database, readVersion());
+  applyPackageJson(
+    options.dest,
+    options.projectName,
+    database,
+    readVersion(),
+    readDatabaseDependencies(),
+  );
 
   const envPlan = {
     ai,

@@ -17,8 +17,12 @@ describe('withInstructionsCache', () => {
     });
   });
 
-  it('adds an ephemeral cacheControl for Claude on Anthropic', () => {
-    expect(withInstructionsCache('Be terse.', 'anthropic', 'claude-haiku-4-5')).toEqual({
+  it.each([
+    { provider: 'anthropic', model: 'claude-sonnet-5' },
+    { provider: 'openrouter', model: 'anthropic/claude-sonnet-5' },
+    { provider: 'vercel', model: 'anthropic/claude-sonnet-5' },
+  ])('adds an ephemeral cacheControl for Claude on $provider', ({ provider, model }) => {
+    expect(withInstructionsCache('Be terse.', provider, model)).toEqual({
       role: 'system',
       content: 'Be terse.',
       providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } },

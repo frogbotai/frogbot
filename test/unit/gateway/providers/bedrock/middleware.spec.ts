@@ -142,6 +142,19 @@ describe('bedrockThinkingEffort', () => {
     });
   });
 
+  it('keeps the adaptive thinking display when re-homing it', () => {
+    const args = makeArgs('global.anthropic.claude-sonnet-5', {
+      operation: 'messages',
+      providerOptions: { anthropic: { thinking: { type: 'adaptive', display: 'summarized' } } },
+    });
+
+    void bedrockThinkingEffort(args);
+
+    expect(args.providerOptions['bedrock']).toEqual({
+      reasoningConfig: { type: 'adaptive', display: 'summarized' },
+    });
+  });
+
   it('translates reasoning_effort to reasoningConfig for Claude on Bedrock', () => {
     const args = makeArgs('anthropic.claude-sonnet-4-20250514-v1:0', {
       params: { maxOutputTokens: 10000 },

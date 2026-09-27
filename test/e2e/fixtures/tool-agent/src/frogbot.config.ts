@@ -6,7 +6,7 @@ import { toolDemo } from './agents/toolDemo';
 import { braveSearch, braveSearchAgent, exa, exaSearchAgent } from './agents/webSearch';
 import { Users } from './collections/users';
 
-const model = process.env.E2E_ZEN_MODEL ?? 'zen/big-pickle';
+const model = process.env.E2E_ZEN_MODEL ?? 'zen/deepseek-v4.1-flash';
 
 const config: FrogBotConfig = {
   secret: process.env.FROGBOT_SECRET ?? 'e2e-secret',
@@ -20,7 +20,7 @@ const config: FrogBotConfig = {
       zen: {
         type: 'openai-compatible',
         baseUrl: 'https://opencode.ai/zen/v1',
-        apiKey: process.env.OPENCODE_API_KEY ?? 'public',
+        apiKey: process.env.OPENCODE_API_KEY,
         models: [{ id: model.replace(/^zen\//, ''), mode: 'chat' }],
       },
     },

@@ -1,4 +1,4 @@
-// Gateway E2E — /v1/messages (Anthropic wire) against OpenCode Zen's FREE models.
+// Gateway E2E — /v1/messages (Anthropic wire) against OpenCode Zen.
 //
 // THE cross-provider case: an Anthropic-SDK client (e.g. a Claude-SDK app)
 // pointed at the gateway, translated live to Zen's OpenAI-compatible upstream.
@@ -6,16 +6,15 @@
 // loop (tool_use → tool_result), the streaming event sequence, budget/stop
 // params, and the Anthropic error envelope.
 //
-// Model notes (probed 2026-07-11): deepseek-v4-flash-free reasons (thinking
-// blocks appear on this wire) and calls tools reliably; big-pickle honors tiny
-// max_tokens exactly. See zen.chat.e2e.spec.ts header for the full probe.
+// Model: deepseek-v4.1-flash (paid; Zen's free models only work inside
+// OpenCode). It emits reasoning, so budget max_tokens >= 1024 except where a
+// test deliberately truncates.
 //
 // Known-bug interplay (dev/plans/frogbot_gateway/056_full_gateway_review):
 //   - G6 — Anthropic streaming wire reports input_tokens 0 / omits them:
 //     asserted as it.fails real-model confirmation (non-streaming usage works).
 //
-// Run: RUN_E2E=1 pnpm vitest run --project=gateway-e2e test/gateway/zen.messages.e2e.spec.ts
-// Skips cleanly (does not fail) when RUN_E2E !== '1'.
+// Run: RUN_E2E=1 pnpm vitest run --project=gateway-zen test/gateway/zen.messages.e2e.spec.ts
 
 import { describe, expect, it } from 'vitest';
 
@@ -26,13 +25,12 @@ import {
 } from '../../packages/gateway/src/providers/registry.js';
 import { parseSse, type SseFrame } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { describeLive } from '../live/live.js';
 
 const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY ?? '';
-const RUN_E2E = process.env.RUN_E2E === '1';
 
 const ZEN_BASE_URL = 'https://opencode.ai/zen/v1';
-const MODEL = 'zen/big-pickle';
-const TINY_MODEL = 'zen/big-pickle';
+const MODEL = 'zen/deepseek-v4.1-flash';
 
 const TEST_TIMEOUT = 90_000;
 
@@ -122,8 +120,9 @@ const POPULATION_TOOL = {
   },
 };
 
-describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)(
+describeLive(
   'gateway E2E — Zen /v1/messages (Anthropic wire, cross-provider)',
+  { keys: ['OPENCODE_API_KEY'] },
   () => {
     const app = makeZenApp();
 
@@ -348,7 +347,7 @@ describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)(
       'tiny max_tokens → stop_reason max_tokens with capped output',
       async () => {
         const { status, body } = await postJson<MessagesBody>(app, '/v1/messages', {
-          model: TINY_MODEL,
+          model: MODEL,
           messages: [{ role: 'user', content: 'Count from 1 to 100 separated by spaces.' }],
           max_tokens: 16,
         });
