@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { requiredToolCall } from '../__helpers/gateway/required-tool-call.js';
+
+const TOOL_CALLS_FINISH = { unified: 'tool-calls', raw: 'tool_calls' } as const;
 
 /**
  * Recording mock LanguageModelV4 — captures the exact callOptions the AI SDK
@@ -27,9 +30,12 @@ function createRecordingModel(opts?: {
     },
     doGenerate: async (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
+
+      const toolCalls = requiredToolCall(options);
+
       return {
-        content: [{ type: 'text' as const, text }],
-        finishReason: 'stop',
+        content: toolCalls.length > 0 ? toolCalls : [{ type: 'text' as const, text }],
+        finishReason: toolCalls.length > 0 ? TOOL_CALLS_FINISH : 'stop',
         usage,
         warnings: [],
         response: {

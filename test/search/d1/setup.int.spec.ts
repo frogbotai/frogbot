@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'frogbot';
-import { afterAll, beforeAll, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createSearchDatabase, describeD1, type SearchDatabase } from './fixture.js';
+import { createSearchDatabase, type SearchDatabase } from './fixture.js';
 
 const setupSlug = 'search-setup';
 
@@ -16,7 +16,7 @@ function collection(search: CollectionConfig['search'], slug = setupSlug): Colle
   };
 }
 
-describeD1('D1 search setup', () => {
+describe('D1 search setup', () => {
   let database: SearchDatabase;
 
   const hasTable = async (name: string) => {

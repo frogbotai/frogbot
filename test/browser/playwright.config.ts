@@ -53,6 +53,7 @@ const blankServer = {
     PORT: String(blankPort),
     DATABASE_URL: 'file:./frogbot.browser.db',
     FROGBOT_SECRET: 'browser-test-secret',
+    OPENAI_API_KEY: 'browser-test-key',
     NEXT_TELEMETRY_DISABLED: '1',
   },
 };

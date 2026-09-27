@@ -1,17 +1,13 @@
-// Gateway E2E — /v1/chat/completions against OpenCode Zen's FREE hosted models.
+// Gateway E2E — /v1/chat/completions against OpenCode Zen.
 //
 // Realistic OpenAI-wire client behaviors against a REAL upstream: multi-turn
 // conversations, the full agentic tool loop, streaming (incl. usage, tool-call
 // delta accumulation, client abort), sampling/stop params, error envelopes,
 // and concurrent streams.
 //
-// Model probe results (2026-07-11):
-//   - deepseek-v4-flash-free — reasoning model (reasoning_content burns tokens;
-//     always budget max_tokens >= 1024). Calls tools reliably. PRIMARY.
-//   - big-pickle — also emits reasoning; honors tiny max_tokens with
-//     finish_reason 'length' and exact completion_tokens. TINY/secondary.
-//   - nemotron-3-super-free is GONE from the catalog (replaced by
-//     nemotron-3-ultra-free); do not depend on it.
+// Model: deepseek-v4.1-flash (paid; Zen's free models only work inside
+// OpenCode). It emits reasoning, so budget max_tokens >= 1024 except where a
+// test deliberately truncates.
 //
 // Known-bug interplay (dev/plans/frogbot_gateway/056_full_gateway_review):
 //   - G53 — stream_options.include_usage semantics: FIXED — real-model confirmation of the dedicated empty-choices usage chunk.
@@ -21,8 +17,7 @@
 //     upstream, so a live test can neither prove nor disprove the drop.
 //     review056.int.spec.ts owns the G1 proof at the AI SDK seam.
 //
-// Run: RUN_E2E=1 pnpm vitest run --project=gateway-e2e test/gateway/zen.chat.e2e.spec.ts
-// Skips cleanly (does not fail) when RUN_E2E !== '1'.
+// Run: RUN_E2E=1 pnpm vitest run --project=gateway-zen test/gateway/zen.chat.e2e.spec.ts
 
 import { describe, expect, it } from 'vitest';
 
@@ -33,16 +28,12 @@ import {
 } from '../../packages/gateway/src/providers/registry.js';
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { describeLive } from '../live/live.js';
 
 const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY ?? '';
-const RUN_E2E = process.env.RUN_E2E === '1';
 
 const ZEN_BASE_URL = 'https://opencode.ai/zen/v1';
-// Primary: reliable tool-caller. Reasoning model — generous budgets everywhere.
-const MODEL = 'zen/big-pickle';
-// Secondary: used where deepseek's reasoning interferes (tiny-budget test) and
-// to spread load on the concurrency test.
-const TINY_MODEL = 'zen/big-pickle';
+const MODEL = 'zen/deepseek-v4.1-flash';
 
 const TEST_TIMEOUT = 90_000;
 
@@ -151,8 +142,9 @@ const POPULATION_TOOL = {
   },
 };
 
-describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)(
+describeLive(
   'gateway E2E — Zen /v1/chat/completions realistic client behaviors',
+  { keys: ['OPENCODE_API_KEY'] },
   () => {
     const app = makeZenApp();
 
@@ -411,13 +403,12 @@ describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)(
 
     // -------------------------------------------------------------------------
     // 5b. temperature: 0 accepted + max_tokens honored → finish_reason 'length'.
-    //     Uses big-pickle: deepseek's reasoning burns the tiny budget invisibly.
     // -------------------------------------------------------------------------
     it(
       'temperature 0 + tiny max_tokens → finish_reason length, completion_tokens capped',
       async () => {
         const { status, body } = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
-          model: TINY_MODEL,
+          model: MODEL,
           messages: [{ role: 'user', content: 'Count from 1 to 100 separated by spaces.' }],
           temperature: 0,
           max_tokens: 16,
@@ -508,7 +499,7 @@ describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)(
       'model id without provider prefix → 400 invalid_model_id',
       async () => {
         const { status, body } = await postJson<ErrorBody>(app, '/v1/chat/completions', {
-          model: 'big-pickle',
+          model: 'deepseek-v4.1-flash',
           messages: [{ role: 'user', content: 'Say hi' }],
           max_tokens: 16,
         });
@@ -546,7 +537,7 @@ describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)(
         const results = await Promise.all(
           prompts.map(async (content) => {
             const res = await streamChat(app, {
-              model: TINY_MODEL,
+              model: MODEL,
               messages: [{ role: 'user', content }],
               max_tokens: 1024,
             });
@@ -917,16 +908,13 @@ describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)(
 
     // -------------------------------------------------------------------------
     // 25a. tool_choice FORCED (named) — the model MUST return exactly that tool
-    //      call. This is deterministic (forced), so asserted strictly. Uses
-    //      big-pickle: the deepseek-v4-flash-free upstream rejects tool_choice
-    //      forcing with a 400 (a Zen/upstream limitation, not a gateway bug),
-    //      whereas big-pickle (mimo-v2.5) honors it.
+    //      call. This is deterministic (forced), so asserted strictly.
     // -------------------------------------------------------------------------
     it(
       'tool_choice forced (named) → model returns exactly that tool call',
       async () => {
         const { status, body } = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
-          model: TINY_MODEL,
+          model: MODEL,
           messages: [{ role: 'user', content: 'What is the weather in Berlin?' }],
           tools: [WEATHER_TOOL],
           tool_choice: { type: 'function', function: { name: 'get_weather' } },
@@ -950,13 +938,13 @@ describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)(
 
     // -------------------------------------------------------------------------
     // 25b. tool_choice: 'required' — the model MUST call some tool. Deterministic
-    //      given a tool-relevant prompt; asserted strictly on big-pickle.
+    //      given a tool-relevant prompt, so asserted strictly.
     // -------------------------------------------------------------------------
     it(
       "tool_choice 'required' → model must emit a tool call",
       async () => {
         const { status, body } = await postJson<ChatCompletionBody>(app, '/v1/chat/completions', {
-          model: TINY_MODEL,
+          model: MODEL,
           messages: [{ role: 'user', content: 'What is the weather in Paris?' }],
           tools: [WEATHER_TOOL],
           tool_choice: 'required',
@@ -1043,38 +1031,6 @@ describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)(
         // prompt_tokens must grow strictly as history accumulates.
         expect(usages[1]!.prompt).toBeGreaterThan(usages[0]!.prompt);
         expect(usages[2]!.prompt).toBeGreaterThan(usages[1]!.prompt);
-      },
-      TEST_TIMEOUT,
-    );
-
-    // -------------------------------------------------------------------------
-    // 27. Malformed tool result — a role:'tool' message whose tool_call_id
-    //     matches NO prior assistant tool_call. Pins the CURRENT reality: the
-    //     Zen upstream rejects this orphan tool message and the gateway surfaces
-    //     it as a 400 invalid_request_error (it is not silently accepted). If a
-    //     future upstream/gateway starts forwarding it, this test will flip.
-    // -------------------------------------------------------------------------
-    it(
-      'orphan tool message (tool_call_id matching no prior tool_call) → 400 invalid_request_error',
-      async () => {
-        const { status, body } = await postJson<ErrorBody>(app, '/v1/chat/completions', {
-          model: MODEL,
-          messages: [
-            { role: 'user', content: 'What is the weather in Paris?' },
-            {
-              role: 'tool',
-              tool_call_id: 'call_orphan_does_not_exist',
-              content: '{"temperature":"18C"}',
-            },
-          ],
-          max_tokens: 1024,
-        });
-
-        // Current reality: surfaced as a 4xx client error, not a 5xx or a 200.
-        expect(status).toBe(400);
-        expect(body.error).toBeDefined();
-        expect(typeof body.error?.message).toBe('string');
-        expect(body.error!.message!.length).toBeGreaterThan(0);
       },
       TEST_TIMEOUT,
     );

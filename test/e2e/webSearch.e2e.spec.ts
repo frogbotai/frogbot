@@ -77,11 +77,11 @@ describe.skipIf(!RUN_E2E || !hasSearchKey)('web search e2e', () => {
   });
 
   it.skipIf(!process.env.BRAVE_API_KEY)('performs and persists a Brave search', async () => {
-    await runSearch('brave-search', 'brave_web_search');
+    await runSearch('brave-search', 'brave-search_searchWeb');
   });
 
   it.skipIf(!process.env.EXA_API_KEY)('performs and persists an Exa search', async () => {
-    await runSearch('exa-search', 'exa_perform_search');
+    await runSearch('exa-search', 'exa_search');
   });
 
   async function runSearch(agent: string, toolType: string): Promise<void> {

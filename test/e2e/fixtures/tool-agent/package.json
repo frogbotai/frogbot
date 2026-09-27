@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "next build",
+    "build": "rm -rf .next && next build",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

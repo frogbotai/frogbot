@@ -204,12 +204,25 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
       expect(pkg.dependencies['drizzle-kit']).toBeUndefined();
     }
 
+    // Adapter runtime deps are direct so Next dev resolves them even when it
+    // loads the adapter through its node_modules symlink.
+    const adapter = JSON.parse(
+      fs.readFileSync(
+        path.join(repoRoot, 'packages', `db-${appCase.database}`, 'package.json'),
+        'utf8',
+      ),
+    ) as { dependencies: Record<string, string> };
+
+    for (const [name, version] of Object.entries(adapter.dependencies)) {
+      if (!version.startsWith('workspace:')) expect(pkg.dependencies[name]).toBe(version);
+    }
+
     if (appCase.ai === 'none') {
       expect(config).not.toContain('  ai:');
       expect(config).not.toContain('  agents:');
       expect(fs.existsSync(path.join(directory, 'src', 'agents'))).toBe(false);
     } else {
-      expect(config).toContain("defaultModel: 'zen/big-pickle'");
+      expect(config).toContain("defaultModel: 'zen/deepseek-v4.1-flash'");
     }
   });
 
@@ -241,7 +254,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
           'utf8',
         );
 
-        expect(generatedTypes).toContain("models: 'zen/big-pickle'");
+        expect(generatedTypes).toContain("models: 'zen/deepseek-v4.1-flash'");
       }
     },
     120000,
@@ -441,7 +454,7 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app CLI', () => {
     ],
     [
       ['invalid-ai', '--yes', '--no-git', '--no-install', '--ai', 'local'],
-      'Valid values: zen, openai, anthropic, google, bedrock, none',
+      'Valid values: openai, anthropic, google, bedrock, zen, none',
     ],
     [
       ['invalid-agent', '--yes', '--no-git', '--no-install', '--agents', 'unknown'],

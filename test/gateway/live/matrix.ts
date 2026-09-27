@@ -5,7 +5,8 @@ export type TextWire = 'chat' | 'messages' | 'responses';
 export type LiveRoute =
   TextWire | 'cache' | 'embeddings' | 'rerank' | 'transcriptions' | 'speech' | 'images' | 'videos';
 
-export type LiveFeature = 'tools' | 'vision' | 'pdf' | 'audio' | 'json' | 'reasoning' | 'thinking';
+export type LiveFeature =
+  'tools' | 'vision' | 'pdf' | 'audio' | 'json' | 'reasoning' | 'thinking' | 'cache';
 
 export type SpeechSpec = { model: string; voice: string };
 
@@ -14,9 +15,7 @@ export type LiveProviderEntry = {
   provider?: ProviderName;
   compat?: { baseURL: string; apiKeyEnv: string };
   keys: string[];
-  optional?: boolean;
-  text?: string[];
-  scenario?: { model?: string; features: LiveFeature[] };
+  text?: { model: string; features: LiveFeature[] };
   embeddings?: string[];
   rerank?: string[];
   transcriptions?: string[];
@@ -36,25 +35,28 @@ function models(label: string, route: string, fallback: string[]): string[] {
     .filter((model) => model.length > 0);
 }
 
-// Bedrock accepts three auth styles; require whichever one is configured.
-// Default (nothing set) reports the API key as the missing credential.
+function text(label: string, model: string, features: LiveFeature[]): LiveProviderEntry['text'] {
+  return { model: models(label, 'text', [model])[0], features };
+}
+
 function bedrockKeys(): string[] {
   if (process.env.AWS_PROFILE) return ['AWS_PROFILE'];
+
   if (process.env.AWS_ACCESS_KEY_ID) {
     return ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_REGION'];
   }
+
   return ['AWS_BEARER_TOKEN_BEDROCK'];
 }
 
-const USER_FEATURES: LiveFeature[] = ['tools', 'vision', 'pdf', 'json'];
+const USER_FEATURES: LiveFeature[] = ['tools', 'vision', 'pdf', 'json', 'cache'];
 
 export const LIVE_MATRIX: LiveProviderEntry[] = [
   {
     label: 'openai',
     provider: 'openai',
     keys: ['OPENAI_API_KEY'],
-    text: models('openai', 'text', ['gpt-5.4-mini', 'gpt-5.6-luna']),
-    scenario: { model: 'gpt-5.4-mini', features: [...USER_FEATURES, 'reasoning'] },
+    text: text('openai', 'gpt-6-luna', [...USER_FEATURES, 'reasoning']),
     embeddings: models('openai', 'embeddings', ['text-embedding-3-small']),
     transcriptions: models('openai', 'transcriptions', ['gpt-4o-mini-transcribe']),
     speech: [{ model: 'gpt-4o-mini-tts', voice: 'alloy' }],
@@ -64,64 +66,58 @@ export const LIVE_MATRIX: LiveProviderEntry[] = [
     label: 'anthropic',
     provider: 'anthropic',
     keys: ['ANTHROPIC_API_KEY'],
-    text: models('anthropic', 'text', ['claude-haiku-4-5', 'claude-sonnet-4-6']),
-    scenario: { model: 'claude-sonnet-4-6', features: [...USER_FEATURES, 'thinking'] },
+    text: text('anthropic', 'claude-sonnet-5', [...USER_FEATURES, 'thinking']),
   },
   {
     label: 'google',
     provider: 'google',
     keys: ['GOOGLE_GENERATIVE_AI_API_KEY'],
-    text: models('google', 'text', ['gemini-3.5-flash']),
-    scenario: { features: [...USER_FEATURES, 'audio', 'reasoning'] },
+    text: text('google', 'gemini-3.8-flash', [...USER_FEATURES, 'audio', 'reasoning']),
     embeddings: models('google', 'embeddings', ['gemini-embedding-001']),
   },
   {
     label: 'fireworks',
     provider: 'fireworks',
     keys: ['FIREWORKS_API_KEY'],
-    text: models('fireworks', 'text', [
-      'accounts/fireworks/models/kimi-k3',
-      'accounts/fireworks/models/gpt-oss-120b',
-      'accounts/fireworks/models/deepseek-v4p1-flash',
+    text: text('fireworks', 'accounts/fireworks/models/deepseek-v4p1-flash', [
+      'tools',
+      'vision',
+      'json',
+      'reasoning',
+      'cache',
     ]),
-    scenario: { features: ['tools', 'vision', 'json', 'reasoning'] },
   },
   {
     label: 'groq',
     provider: 'groq',
     keys: ['GROQ_API_KEY'],
-    text: models('groq', 'text', ['openai/gpt-oss-120b', 'openai/gpt-oss-20b']),
-    scenario: { features: ['tools', 'json', 'reasoning'] },
+    text: text('groq', 'openai/gpt-oss-120b', ['tools', 'json', 'reasoning', 'cache']),
     transcriptions: models('groq', 'transcriptions', ['whisper-large-v3-turbo']),
   },
   {
     label: 'mistral',
     provider: 'mistral',
     keys: ['MISTRAL_API_KEY'],
-    text: models('mistral', 'text', ['mistral-medium-latest']),
-    scenario: { features: ['tools', 'vision', 'json'] },
+    text: text('mistral', 'mistral-medium-latest', ['tools', 'vision', 'json']),
     embeddings: models('mistral', 'embeddings', ['mistral-embed']),
   },
   {
     label: 'xai',
     provider: 'xai',
     keys: ['XAI_API_KEY'],
-    text: models('xai', 'text', ['grok-4.3']),
-    scenario: { features: ['tools', 'vision', 'json', 'reasoning'] },
+    text: text('xai', 'grok-4.7', ['tools', 'vision', 'json', 'reasoning', 'cache']),
   },
   {
     label: 'deepseek',
     provider: 'deepseek',
     keys: ['DEEPSEEK_API_KEY'],
-    text: models('deepseek', 'text', ['deepseek-chat']),
-    scenario: { features: ['tools', 'json'] },
+    text: text('deepseek', 'deepseek-chat', ['tools', 'json', 'cache']),
   },
   {
     label: 'cohere',
     provider: 'cohere',
     keys: ['COHERE_API_KEY'],
-    text: models('cohere', 'text', ['command-a-03-2025']),
-    scenario: { features: ['tools', 'json'] },
+    text: text('cohere', 'command-a-plus-05-2026', ['tools', 'json']),
     embeddings: models('cohere', 'embeddings', ['embed-v4.0']),
     rerank: models('cohere', 'rerank', ['rerank-v3.5']),
   },
@@ -136,25 +132,19 @@ export const LIVE_MATRIX: LiveProviderEntry[] = [
     label: 'bedrock',
     provider: 'bedrock',
     keys: bedrockKeys(),
-    optional: true,
-    text: models('bedrock', 'text', ['global.anthropic.claude-haiku-4-5-20251001-v1:0']),
-    scenario: { features: [...USER_FEATURES, 'thinking'] },
+    text: text('bedrock', 'global.anthropic.claude-sonnet-5', [...USER_FEATURES, 'thinking']),
   },
   {
     label: 'vertex',
     provider: 'vertex',
     keys: ['GOOGLE_VERTEX_PROJECT', 'GOOGLE_APPLICATION_CREDENTIALS'],
-    optional: true,
-    text: models('vertex', 'text', ['gemini-3.5-flash']),
-    scenario: { features: [...USER_FEATURES, 'reasoning'] },
+    text: text('vertex', 'gemini-3.8-flash', [...USER_FEATURES, 'reasoning']),
   },
   {
     label: 'azure',
     provider: 'azure',
     keys: ['AZURE_API_KEY', 'AZURE_RESOURCE_NAME'],
-    optional: true,
-    text: models('azure', 'text', ['gpt-4o-mini']),
-    scenario: { features: ['tools', 'vision', 'json'] },
+    text: text('azure', 'gpt-4o-mini', ['tools', 'vision', 'json']),
   },
   {
     label: 'replicate',
@@ -181,18 +171,10 @@ export const LIVE_MATRIX: LiveProviderEntry[] = [
     transcriptions: models('deepgram', 'transcriptions', ['nova-3']),
   },
   {
-    label: 'vercel',
-    provider: 'vercel',
-    envKey: 'AI_GATEWAY_API_KEY',
-    tier: 'paid',
-    text: models('E2E_MODEL_VERCEL_TEXT', ['anthropic/claude-sonnet-4.6', 'openai/gpt-5.4-mini']),
-  },
-  {
     label: 'openrouter',
     provider: 'openrouter',
-    envKey: 'OPENROUTER_API_KEY',
-    tier: 'paid',
-    text: models('E2E_MODEL_OPENROUTER_TEXT', ['anthropic/claude-sonnet-4.6']),
+    keys: ['OPENROUTER_API_KEY'],
+    text: text('openrouter', 'anthropic/claude-sonnet-5', ['cache']),
   },
 ];
 

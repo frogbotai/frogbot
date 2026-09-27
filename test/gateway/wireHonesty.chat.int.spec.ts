@@ -25,6 +25,7 @@ import { createApp } from '../../packages/gateway/src/app.js';
 import type { ProviderRegistry } from '../../packages/gateway/src/providers/registry.js';
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { requiredToolCall } from '../__helpers/gateway/required-tool-call.js';
 
 // ---------------------------------------------------------------------------
 // Harness — mirrors paramForwarding.int.spec.ts (batch 1)
@@ -40,6 +41,8 @@ const DEFAULT_USAGE = {
 // createDelayedStreamModel). A bare string normalizes to `unknown` and the
 // responses route would terminate with `response.failed`.
 const STOP_FINISH = { unified: 'stop', raw: 'stop' };
+
+const TOOL_CALLS_FINISH = { unified: 'tool-calls', raw: 'tool_calls' };
 
 /**
  * Recording mock LanguageModelV4 — captures the exact callOptions the AI SDK
@@ -62,9 +65,12 @@ function createRecordingModel(opts?: {
     },
     doGenerate: async (options: LanguageModelV4CallOptions) => {
       onCall?.(options);
+
+      const toolCalls = requiredToolCall(options);
+
       return {
-        content: [{ type: 'text' as const, text }],
-        finishReason: STOP_FINISH,
+        content: toolCalls.length > 0 ? toolCalls : [{ type: 'text' as const, text }],
+        finishReason: toolCalls.length > 0 ? TOOL_CALLS_FINISH : STOP_FINISH,
         usage: DEFAULT_USAGE,
         warnings: [],
         response: {

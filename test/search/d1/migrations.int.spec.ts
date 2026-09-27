@@ -2,14 +2,9 @@ import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import type { CollectionConfig } from 'frogbot';
-import { afterAll, beforeAll, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import {
-  type BootedSearch,
-  createSearchDatabase,
-  describeD1,
-  type SearchDatabase,
-} from './fixture.js';
+import { type BootedSearch, createSearchDatabase, type SearchDatabase } from './fixture.js';
 import { Articles, articlesSlug, collections } from './shared.js';
 
 const getMigrationDir = (name: string) => fileURLToPath(new URL(`./${name}`, import.meta.url));
@@ -54,7 +49,7 @@ async function searchIDs({ frogbot }: BootedSearch, text: string) {
   return result.hits.map(({ doc }) => doc.id);
 }
 
-describeD1('D1 search migrations', () => {
+describe('D1 search migrations', () => {
   const migrationDir = getMigrationDir('migrations');
 
   let database: SearchDatabase;
@@ -114,7 +109,7 @@ describeD1('D1 search migrations', () => {
   });
 });
 
-describeD1('D1 search migrations on a populated database', () => {
+describe('D1 search migrations on a populated database', () => {
   const migrationDir = getMigrationDir('migrations-populated');
 
   const unindexed: CollectionConfig[] = collections.map((collection) =>

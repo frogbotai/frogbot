@@ -14,8 +14,9 @@ function isClaude(modelName: string): boolean {
 }
 
 /**
- * Returns `instructions` as a cache-marked system message for Claude on
- * providers whose SDK honours a breakpoint, otherwise returns it unchanged.
+ * Returns `instructions` as a cache-marked system message for Claude, otherwise
+ * returns it unchanged. Bedrock reads a cache point; every other Claude host
+ * (Anthropic, OpenRouter, Vercel) reads `anthropic.cacheControl`.
  */
 export function withInstructionsCache(
   instructions: string | undefined,
@@ -32,13 +33,9 @@ export function withInstructionsCache(
     };
   }
 
-  if (providerName === 'anthropic' || providerName === 'anthropic-aws') {
-    return {
-      role: 'system',
-      content: instructions,
-      providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } },
-    };
-  }
-
-  return instructions;
+  return {
+    role: 'system',
+    content: instructions,
+    providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } },
+  };
 }

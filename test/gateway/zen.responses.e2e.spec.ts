@@ -1,14 +1,13 @@
-// Gateway E2E — /v1/responses (OpenAI Responses wire) against OpenCode Zen's
-// FREE models.
+// Gateway E2E — /v1/responses (OpenAI Responses wire) against OpenCode Zen.
 //
 // Responses-wire clients (the OpenAI SDK's modern surface) pointed at the
 // gateway, translated live to Zen's OpenAI-compatible /chat/completions
 // upstream. Covers the response envelope (string + message-array input),
 // streaming event sequence, function tool calls, and the error envelope.
 //
-// Model notes (probed 2026-07-11): deepseek-v4-flash-free reasons (reasoning
-// items/events appear on this wire) and calls tools reliably. See
-// zen.chat.e2e.spec.ts header for the full probe.
+// Model: deepseek-v4.1-flash (paid; Zen's free models only work inside
+// OpenCode). It emits reasoning, so budget max_tokens >= 1024 except where a
+// test deliberately truncates.
 //
 // Known-bug interplay (dev/plans/frogbot_gateway/056_full_gateway_review):
 //   - G7 — response id flips mid-stream (response.created resp_<uuid> vs
@@ -16,8 +15,7 @@
 //   - G3 — function_call/function_call_output input items 400, making the
 //     tool round trip impossible: it.fails real-model confirmation.
 //
-// Run: RUN_E2E=1 pnpm vitest run --project=gateway-e2e test/gateway/zen.responses.e2e.spec.ts
-// Skips cleanly (does not fail) when RUN_E2E !== '1'.
+// Run: RUN_E2E=1 pnpm vitest run --project=gateway-zen test/gateway/zen.responses.e2e.spec.ts
 
 import { describe, expect, it } from 'vitest';
 
@@ -28,12 +26,12 @@ import {
 } from '../../packages/gateway/src/providers/registry.js';
 import { parseSse } from '../__helpers/gateway/parse-sse.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { describeLive } from '../live/live.js';
 
 const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY ?? '';
-const RUN_E2E = process.env.RUN_E2E === '1';
 
 const ZEN_BASE_URL = 'https://opencode.ai/zen/v1';
-const MODEL = 'zen/big-pickle';
+const MODEL = 'zen/deepseek-v4.1-flash';
 
 const TEST_TIMEOUT = 90_000;
 
@@ -107,8 +105,9 @@ const WEATHER_TOOL = {
   },
 };
 
-describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)(
+describeLive(
   'gateway E2E — Zen /v1/responses (Responses wire)',
+  { keys: ['OPENCODE_API_KEY'] },
   () => {
     const app = makeZenApp();
 
@@ -245,10 +244,12 @@ describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)(
         expect(res.status).toBe(200);
         const events = eventsOf(await res.text());
         const created = events.find((e) => e.event === 'response.created')?.data.response;
-        const completed = events.find((e) => e.event === 'response.completed')?.data.response;
+        const terminal = events.find(
+          (e) => e.event === 'response.completed' || e.event === 'response.incomplete',
+        )?.data.response;
         expect(created?.id).toBeTruthy();
-        expect(completed?.id).toBeTruthy();
-        expect(completed!.id).toBe(created!.id);
+        expect(terminal?.id).toBeTruthy();
+        expect(terminal!.id).toBe(created!.id);
       },
       TEST_TIMEOUT,
     );

@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import type { SQLiteAdapterArgs } from '@frogbotai/db-d1-sqlite';
-
-import { hasTestTool, requireTestTool } from './requireTestTool.js';
+import { Miniflare } from 'miniflare';
 
 export type D1Binding = SQLiteAdapterArgs['binding'];
 
@@ -12,10 +11,7 @@ export type D1Database = {
   name: string;
 };
 
-export const hasMiniflare = () => hasTestTool('miniflare');
-
 export async function createD1Database(prefix: string): Promise<D1Database> {
-  const { Miniflare } = requireTestTool('miniflare');
   const name = `${prefix}_${randomUUID().replaceAll('-', '')}`;
 
   const miniflare = new Miniflare({

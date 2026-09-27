@@ -490,16 +490,18 @@ function applyThinking(
   thinking: unknown,
 ) {
   if (!thinking || typeof thinking !== 'object') return;
-  const { type, budget_tokens } = thinking as {
+  const { type, budget_tokens, display } = thinking as {
     type?: unknown;
     budget_tokens?: unknown;
+    display?: unknown;
   };
   if (typeof type !== 'string') return;
 
   const mapped: Record<string, JSONValue> = { type };
-  if (typeof budget_tokens === 'number') {
-    mapped.budgetTokens = budget_tokens;
-  }
+
+  if (typeof budget_tokens === 'number') mapped.budgetTokens = budget_tokens;
+
+  if (typeof display === 'string') mapped.display = display;
 
   providerOptions.anthropic = {
     ...(providerOptions.anthropic ?? {}),

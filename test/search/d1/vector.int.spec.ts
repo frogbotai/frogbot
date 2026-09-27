@@ -1,18 +1,13 @@
-import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
-import {
-  type BootedSearch,
-  createSearchDatabase,
-  describeD1,
-  type SearchDatabase,
-} from './fixture.js';
+import { type BootedSearch, createSearchDatabase, type SearchDatabase } from './fixture.js';
 import { articlesSlug, embeddingsSlug, pagesSlug } from './shared.js';
 
 const createVector = (dimensions: number, offset = 0) =>
   Array.from({ length: dimensions }, (_, index) => Math.sin(index + offset) / 3);
 
-describeD1('D1 vector storage', () => {
+describe('D1 vector storage', () => {
   let database: SearchDatabase;
   let booted: BootedSearch;
 

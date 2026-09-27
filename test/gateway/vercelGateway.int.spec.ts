@@ -383,7 +383,10 @@ describe('Vercel AI Gateway provider — upstream errors', () => {
       'fetch',
       vi.fn<typeof fetch>(() =>
         Promise.resolve(
-          new Response('not json', { status: 200, headers: { 'content-type': 'application/json' } }),
+          new Response('not json', {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
         ),
       ),
     );

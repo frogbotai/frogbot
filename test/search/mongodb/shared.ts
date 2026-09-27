@@ -6,9 +6,10 @@ export const authorsSlug = 'search-authors';
 
 export const postsSlug = 'search-posts';
 
-export const searchURI = process.env.MONGODB_SEARCH_URI;
+export const searchURI =
+  process.env.MONGODB_SEARCH_URI ?? 'mongodb://localhost:27019/?directConnection=true';
 
-export const skipSearch = process.env.FROGBOT_DATABASE !== 'mongodb' || !searchURI;
+export const skipSearch = process.env.FROGBOT_DATABASE !== 'mongodb';
 
 export function useSearchDatabase(): () => void {
   const previous = process.env.MONGODB_URI;

@@ -104,24 +104,28 @@ describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () =
       headers: { authorization: `Bearer ${token}` },
     });
     expect(listResponse.status).toBe(200);
+    const model = 'openai/gpt-5.4-mini';
+    const reasoning = {
+      [model]: [
+        { key: 'none', label: 'Off' },
+        { key: 'low', label: 'Low' },
+        { key: 'medium', label: 'Medium' },
+        { key: 'high', label: 'High' },
+        { key: 'xhigh', label: 'Extra High' },
+      ],
+    };
+    const agent = (slug: string) => ({
+      slug,
+      label: slug,
+      source: 'config',
+      defaultModel: model,
+      models: [model],
+      reasoning,
+    });
+
     expect(await listResponse.json()).toEqual({
       defaultAgent: 'general',
-      agents: [
-        {
-          slug: 'general',
-          label: 'general',
-          source: 'config',
-          defaultModel: 'bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0',
-          models: ['bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0'],
-        },
-        {
-          slug: 'assistant',
-          label: 'assistant',
-          source: 'config',
-          defaultModel: 'bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0',
-          models: ['bedrock/us.anthropic.claude-haiku-4-5-20251001-v1:0'],
-        },
-      ],
+      agents: [agent('general'), agent('assistant')],
     });
   });
 });

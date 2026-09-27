@@ -113,7 +113,7 @@ export const bedrockThinkingEffort: BeforeUpstreamHook = (args) => {
   // Re-home it as `reasoningConfig` so Claude-on-Bedrock actually thinks.
   const anthropicThinking = (
     args.providerOptions['anthropic'] as
-      { thinking?: { type?: unknown; budgetTokens?: unknown } } | undefined
+      { thinking?: { type?: unknown; budgetTokens?: unknown; display?: unknown } } | undefined
   )?.thinking;
   if (
     anthropicThinking?.type === 'enabled' ||
@@ -126,6 +126,9 @@ export const bedrockThinkingEffort: BeforeUpstreamHook = (args) => {
         type: anthropicThinking.type,
         ...(typeof anthropicThinking.budgetTokens === 'number'
           ? { budgetTokens: anthropicThinking.budgetTokens }
+          : {}),
+        ...(typeof anthropicThinking.display === 'string'
+          ? { display: anthropicThinking.display }
           : {}),
       },
     };

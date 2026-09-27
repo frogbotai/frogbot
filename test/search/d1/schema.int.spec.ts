@@ -1,12 +1,7 @@
-import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
-import {
-  type BootedSearch,
-  createSearchDatabase,
-  describeD1,
-  type SearchDatabase,
-} from './fixture.js';
+import { type BootedSearch, createSearchDatabase, type SearchDatabase } from './fixture.js';
 import { articlesSlug } from './shared.js';
 
 const fts = 'frogbot_search_search_articles_content_fts';
@@ -16,7 +11,7 @@ type PushResult = {
   statementsToExecute: string[];
 };
 
-describeD1('D1 search schema push', () => {
+describe('D1 search schema push', () => {
   let database: SearchDatabase;
   let booted: BootedSearch;
 

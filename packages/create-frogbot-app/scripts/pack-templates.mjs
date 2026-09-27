@@ -28,7 +28,11 @@ for (const template of TEMPLATES) {
     recursive: true,
     filter: (entry) => {
       const base = path.basename(entry);
-      return !skip.has(base) && !base.startsWith('frogbot.db') && !base.endsWith('.tsbuildinfo');
+      return (
+        !skip.has(base) &&
+        !/\.db(-journal|-shm|-wal)?$/.test(base) &&
+        !base.endsWith('.tsbuildinfo')
+      );
     },
   });
 
@@ -78,6 +82,31 @@ for (const template of TEMPLATES) {
     `[create-frogbot-app] packed templates/${template.dir} -> dist/templates/${template.dir}`,
   );
 }
+
+// Generated apps declare each FrogBot database adapter's runtime dependencies
+// directly (at the adapter's exact versions, so pnpm dedupes them). Next dev can
+// load an externalized adapter through its node_modules symlink rather than its
+// real path; without a direct dependency, `@payloadcms/db-*` is then unresolvable.
+const { DATABASE_CHOICES } = await import('../dist/lib/db.js');
+const databaseDependencies = {};
+
+for (const database of DATABASE_CHOICES) {
+  const adapter = JSON.parse(
+    fs.readFileSync(path.join(repoRoot, 'packages', `db-${database}`, 'package.json'), 'utf8'),
+  );
+
+  databaseDependencies[database] = Object.fromEntries(
+    Object.entries(adapter.dependencies ?? {}).filter(
+      ([, version]) => !version.startsWith('workspace:'),
+    ),
+  );
+}
+
+fs.writeFileSync(
+  path.join(packageRoot, 'dist', 'database-dependencies.json'),
+  `${JSON.stringify(databaseDependencies, null, 2)}\n`,
+);
+console.log('[create-frogbot-app] wrote dist/database-dependencies.json');
 
 const skillSource = path.join(repoRoot, 'skills', 'frogbot');
 const skillDest = path.join(packageRoot, 'dist', 'skills', 'frogbot');

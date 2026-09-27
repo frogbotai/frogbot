@@ -47,6 +47,7 @@ import {
   NoVideoGeneratedError,
   ToolCallNotFoundForApprovalError,
   ToolCallRepairError,
+  ToolChoiceViolationError,
   UIMessageStreamError,
 } from 'ai';
 
@@ -79,7 +80,8 @@ export function classifyAiSdkError(err: unknown): AiSdkErrorClassification | und
     InvalidStreamPartError.isInstance(err) ||
     UIMessageStreamError.isInstance(err) ||
     DownloadError.isInstance(err) ||
-    ToolCallRepairError.isInstance(err)
+    ToolCallRepairError.isInstance(err) ||
+    ToolChoiceViolationError.isInstance(err)
   ) {
     return { bucket: 'upstream', status: 502 };
   }

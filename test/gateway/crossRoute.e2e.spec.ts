@@ -9,8 +9,7 @@
 // high-value fidelity coverage: it catches a route that silently mistranslates
 // a request the other two handle.
 //
-// Run: RUN_E2E=1 pnpm vitest run --project=gateway-e2e test/gateway/crossRoute.e2e.spec.ts
-// Skips cleanly (does not fail) when RUN_E2E !== '1'.
+// Run: RUN_E2E=1 pnpm vitest run --project=gateway-zen test/gateway/crossRoute.e2e.spec.ts
 
 import { describe, expect, it } from 'vitest';
 
@@ -20,12 +19,12 @@ import {
   type ProviderRegistry,
 } from '../../packages/gateway/src/providers/registry.js';
 import { postJson } from '../__helpers/gateway/post-json.js';
+import { describeLive } from '../live/live.js';
 
 const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY ?? '';
-const RUN_E2E = process.env.RUN_E2E === '1';
 
 const ZEN_BASE_URL = 'https://opencode.ai/zen/v1';
-const MODEL = 'zen/big-pickle';
+const MODEL = 'zen/deepseek-v4.1-flash';
 
 const TEST_TIMEOUT = 90_000;
 
@@ -62,8 +61,9 @@ type ResponsesBody = {
   }>;
 };
 
-describe.skipIf(!RUN_E2E || !OPENCODE_API_KEY)(
+describeLive(
   'gateway E2E — cross-route fidelity (same question, three wires)',
+  { keys: ['OPENCODE_API_KEY'] },
   () => {
     const app = makeZenApp();
 
