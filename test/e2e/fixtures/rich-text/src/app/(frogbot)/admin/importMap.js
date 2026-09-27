@@ -25,21 +25,21 @@ import { BlockquoteFeatureClient as BlockquoteFeatureClient_54ba8335448b80c96780
 import { UploadFeatureClient as UploadFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
 import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
 import { InlineToolbarFeatureClient as InlineToolbarFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
-import { BannerLabel as BannerLabel_188cb6cea391ebc58d8dc265b52528d3 } from '../../../__docs-samples__/ticket135/blocks/components';
-import { BannerBlock as BannerBlock_188cb6cea391ebc58d8dc265b52528d3 } from '../../../__docs-samples__/ticket135/blocks/components';
-import { BannerLabel as BannerLabel_7c8bf0d5fbf79c2a3224ed49df3bc9cb } from '../../../__docs-samples__/ticket135/blocks/server-components';
-import { BannerBlock as BannerBlock_7c8bf0d5fbf79c2a3224ed49df3bc9cb } from '../../../__docs-samples__/ticket135/blocks/server-components';
-import { MentionLabel as MentionLabel_188cb6cea391ebc58d8dc265b52528d3 } from '../../../__docs-samples__/ticket135/blocks/components';
-import { MentionBlock as MentionBlock_188cb6cea391ebc58d8dc265b52528d3 } from '../../../__docs-samples__/ticket135/blocks/components';
-import { PreviewContentField as PreviewContentField_c2f8af9d5473262aa453012227f3a5ab } from '../../../__docs-samples__/ticket135/rendering-on-demand';
-import { ControlledEditor as ControlledEditor_c2f8af9d5473262aa453012227f3a5ab } from '../../../__docs-samples__/ticket135/rendering-on-demand';
-import { postViews as postViews_3988be0451eae222f678e8a22803bfe3 } from '../../../__docs-samples__/ticket135/views/views';
+import { BannerLabel as BannerLabel_188cb6cea391ebc58d8dc265b52528d3 } from '../../../__docs-samples__/guide-examples/blocks/components';
+import { BannerBlock as BannerBlock_188cb6cea391ebc58d8dc265b52528d3 } from '../../../__docs-samples__/guide-examples/blocks/components';
+import { BannerLabel as BannerLabel_7c8bf0d5fbf79c2a3224ed49df3bc9cb } from '../../../__docs-samples__/guide-examples/blocks/server-components';
+import { BannerBlock as BannerBlock_7c8bf0d5fbf79c2a3224ed49df3bc9cb } from '../../../__docs-samples__/guide-examples/blocks/server-components';
+import { MentionLabel as MentionLabel_188cb6cea391ebc58d8dc265b52528d3 } from '../../../__docs-samples__/guide-examples/blocks/components';
+import { MentionBlock as MentionBlock_188cb6cea391ebc58d8dc265b52528d3 } from '../../../__docs-samples__/guide-examples/blocks/components';
+import { PreviewContentField as PreviewContentField_c2f8af9d5473262aa453012227f3a5ab } from '../../../__docs-samples__/guide-examples/rendering-on-demand';
+import { ControlledEditor as ControlledEditor_c2f8af9d5473262aa453012227f3a5ab } from '../../../__docs-samples__/guide-examples/rendering-on-demand';
+import { postViews as postViews_3988be0451eae222f678e8a22803bfe3 } from '../../../__docs-samples__/guide-examples/views/views';
 import { CodeComponent as CodeComponent_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
 import { codeConverterClient as codeConverterClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
 import { CodeBlockBlockComponent as CodeBlockBlockComponent_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
 import { FixedToolbarFeatureClient as FixedToolbarFeatureClient_54ba8335448b80c9678012348095a8b7 } from '@frogbotai/richtext-lexical/client';
-import { DividerClientFeature as DividerClientFeature_94e386be89b7d09d2000043accbdbe20 } from '../../../__docs-samples__/ticket135/custom-features/divider/feature.client';
-import { MismatchedSchemaField as MismatchedSchemaField_c2f8af9d5473262aa453012227f3a5ab } from '../../../__docs-samples__/ticket135/rendering-on-demand';
+import { DividerClientFeature as DividerClientFeature_94e386be89b7d09d2000043accbdbe20 } from '../../../__docs-samples__/guide-examples/custom-features/divider/feature.client';
+import { MismatchedSchemaField as MismatchedSchemaField_c2f8af9d5473262aa453012227f3a5ab } from '../../../__docs-samples__/guide-examples/rendering-on-demand';
 import { FolderTypeField as FolderTypeField_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client';
 import { FrogBotNav as FrogBotNav_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 import { FrogBotIcon as FrogBotIcon_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
@@ -103,23 +103,23 @@ export const importMap = {
     HorizontalRuleFeatureClient_54ba8335448b80c9678012348095a8b7,
   '@frogbotai/richtext-lexical/client#InlineToolbarFeatureClient':
     InlineToolbarFeatureClient_54ba8335448b80c9678012348095a8b7,
-  '/__docs-samples__/ticket135/blocks/components#BannerLabel':
+  '/__docs-samples__/guide-examples/blocks/components#BannerLabel':
     BannerLabel_188cb6cea391ebc58d8dc265b52528d3,
-  '/__docs-samples__/ticket135/blocks/components#BannerBlock':
+  '/__docs-samples__/guide-examples/blocks/components#BannerBlock':
     BannerBlock_188cb6cea391ebc58d8dc265b52528d3,
-  '/__docs-samples__/ticket135/blocks/server-components#BannerLabel':
+  '/__docs-samples__/guide-examples/blocks/server-components#BannerLabel':
     BannerLabel_7c8bf0d5fbf79c2a3224ed49df3bc9cb,
-  '/__docs-samples__/ticket135/blocks/server-components#BannerBlock':
+  '/__docs-samples__/guide-examples/blocks/server-components#BannerBlock':
     BannerBlock_7c8bf0d5fbf79c2a3224ed49df3bc9cb,
-  '/__docs-samples__/ticket135/blocks/components#MentionLabel':
+  '/__docs-samples__/guide-examples/blocks/components#MentionLabel':
     MentionLabel_188cb6cea391ebc58d8dc265b52528d3,
-  '/__docs-samples__/ticket135/blocks/components#MentionBlock':
+  '/__docs-samples__/guide-examples/blocks/components#MentionBlock':
     MentionBlock_188cb6cea391ebc58d8dc265b52528d3,
-  '/__docs-samples__/ticket135/rendering-on-demand#PreviewContentField':
+  '/__docs-samples__/guide-examples/rendering-on-demand#PreviewContentField':
     PreviewContentField_c2f8af9d5473262aa453012227f3a5ab,
-  '/__docs-samples__/ticket135/rendering-on-demand#ControlledEditor':
+  '/__docs-samples__/guide-examples/rendering-on-demand#ControlledEditor':
     ControlledEditor_c2f8af9d5473262aa453012227f3a5ab,
-  '/__docs-samples__/ticket135/views/views#postViews': postViews_3988be0451eae222f678e8a22803bfe3,
+  '/__docs-samples__/guide-examples/views/views#postViews': postViews_3988be0451eae222f678e8a22803bfe3,
   '@frogbotai/richtext-lexical/client#CodeComponent':
     CodeComponent_54ba8335448b80c9678012348095a8b7,
   '@frogbotai/richtext-lexical/client#codeConverterClient':
@@ -128,9 +128,9 @@ export const importMap = {
     CodeBlockBlockComponent_54ba8335448b80c9678012348095a8b7,
   '@frogbotai/richtext-lexical/client#FixedToolbarFeatureClient':
     FixedToolbarFeatureClient_54ba8335448b80c9678012348095a8b7,
-  '/__docs-samples__/ticket135/custom-features/divider/feature.client#DividerClientFeature':
+  '/__docs-samples__/guide-examples/custom-features/divider/feature.client#DividerClientFeature':
     DividerClientFeature_94e386be89b7d09d2000043accbdbe20,
-  '/__docs-samples__/ticket135/rendering-on-demand#MismatchedSchemaField':
+  '/__docs-samples__/guide-examples/rendering-on-demand#MismatchedSchemaField':
     MismatchedSchemaField_c2f8af9d5473262aa453012227f3a5ab,
   '@frogbotai/next/client#FolderTypeField': FolderTypeField_e1fc65845c25c823b271918436e716b9,
   '@frogbotai/next/rsc#FrogBotNav': FrogBotNav_0d74ee439e1043043a872b6d428a44d5,

@@ -9,8 +9,8 @@ import {
 } from '@frogbotai/richtext-lexical/react';
 import { getFrogBot } from 'frogbot';
 
-import type { Post } from '../../__docs-samples__/ticket135/views/frogbot-types';
-import { PostBody } from '../../__docs-samples__/ticket135/views/PostBody';
+import type { Post } from '../../__docs-samples__/guide-examples/views/frogbot-types';
+import { PostBody } from '../../__docs-samples__/guide-examples/views/PostBody';
 
 export const dynamic = 'force-dynamic';
 

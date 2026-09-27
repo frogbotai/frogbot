@@ -1,4 +1,4 @@
-# Ticket 135 fence coverage
+# Rich-text guide fence coverage
 
 Each executable fence is assigned once to a complete sample module. Repeated fences in a section are successive extracts of the same module.
 
