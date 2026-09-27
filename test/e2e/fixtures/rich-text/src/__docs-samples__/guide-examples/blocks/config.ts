@@ -5,8 +5,8 @@ export const BannerBlock: Block = {
   slug: 'banner',
   admin: {
     components: {
-      Block: '/__docs-samples__/ticket135/blocks/components#BannerBlock',
-      Label: '/__docs-samples__/ticket135/blocks/components#BannerLabel',
+      Block: '/__docs-samples__/guide-examples/blocks/components#BannerBlock',
+      Label: '/__docs-samples__/guide-examples/blocks/components#BannerLabel',
     },
   },
   fields: [

@@ -6,8 +6,8 @@ import {
   CallToActionBlock,
   MentionBlock,
   TypedCodeBlock,
-} from './__docs-samples__/ticket135/blocks/config';
-import { DividerFeature } from './__docs-samples__/ticket135/custom-features/divider/feature.server';
+} from './__docs-samples__/guide-examples/blocks/config';
+import { DividerFeature } from './__docs-samples__/guide-examples/custom-features/divider/feature.server';
 
 const InlineBadge = {
   slug: 'inlineBadge',
@@ -53,7 +53,7 @@ export const SchemaMismatch: CollectionConfig = {
       type: 'json',
       admin: {
         components: {
-          Field: '/__docs-samples__/ticket135/rendering-on-demand#MismatchedSchemaField',
+          Field: '/__docs-samples__/guide-examples/rendering-on-demand#MismatchedSchemaField',
         },
       },
     },
@@ -120,8 +120,8 @@ export const Posts: CollectionConfig = {
                 ],
                 admin: {
                   components: {
-                    Block: '/__docs-samples__/ticket135/blocks/server-components#BannerBlock',
-                    Label: '/__docs-samples__/ticket135/blocks/server-components#BannerLabel',
+                    Block: '/__docs-samples__/guide-examples/blocks/server-components#BannerBlock',
+                    Label: '/__docs-samples__/guide-examples/blocks/server-components#BannerLabel',
                   },
                 },
               },
@@ -139,8 +139,8 @@ export const Posts: CollectionConfig = {
                 ],
                 admin: {
                   components: {
-                    Block: '/__docs-samples__/ticket135/blocks/components#MentionBlock',
-                    Label: '/__docs-samples__/ticket135/blocks/components#MentionLabel',
+                    Block: '/__docs-samples__/guide-examples/blocks/components#MentionBlock',
+                    Label: '/__docs-samples__/guide-examples/blocks/components#MentionLabel',
                   },
                 },
               },
@@ -154,7 +154,7 @@ export const Posts: CollectionConfig = {
       type: 'json',
       admin: {
         components: {
-          Field: '/__docs-samples__/ticket135/rendering-on-demand#PreviewContentField',
+          Field: '/__docs-samples__/guide-examples/rendering-on-demand#PreviewContentField',
         },
       },
     },
@@ -163,7 +163,7 @@ export const Posts: CollectionConfig = {
       type: 'ui',
       admin: {
         components: {
-          Field: '/__docs-samples__/ticket135/rendering-on-demand#ControlledEditor',
+          Field: '/__docs-samples__/guide-examples/rendering-on-demand#ControlledEditor',
         },
       },
     },
@@ -188,7 +188,7 @@ export const Posts: CollectionConfig = {
             ],
           }),
         ],
-        views: '/__docs-samples__/ticket135/views/views#postViews',
+        views: '/__docs-samples__/guide-examples/views/views#postViews',
       }),
     },
     {

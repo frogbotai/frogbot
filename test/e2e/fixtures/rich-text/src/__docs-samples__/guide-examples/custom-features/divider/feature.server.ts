@@ -39,7 +39,7 @@ export const DividerFeature = createServerFeature<
 
     return {
       ClientFeature:
-        '/__docs-samples__/ticket135/custom-features/divider/feature.client#DividerClientFeature',
+        '/__docs-samples__/guide-examples/custom-features/divider/feature.client#DividerClientFeature',
       clientFeatureProps: sanitizedProps,
       i18n: {
         de: { label: 'Trennlinie' },

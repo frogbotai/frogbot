@@ -16,7 +16,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
-import { DividerFeature } from '../e2e/fixtures/rich-text/src/__docs-samples__/ticket135/custom-features/divider/feature.server.js';
+import { DividerFeature } from '../e2e/fixtures/rich-text/src/__docs-samples__/guide-examples/custom-features/divider/feature.server.js';
 import config, { CalloutBlock, InlineCodeBlock } from './config.js';
 import { articlesSlug } from './shared.js';
 

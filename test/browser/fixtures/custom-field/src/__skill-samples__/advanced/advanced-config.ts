@@ -10,10 +10,10 @@ export default buildConfig({
   collections: [Users, Posts],
   admin: {
     components: {
-      beforeNavLinks: ['/__skill-samples__/ticket128/advanced#Welcome'],
+      beforeNavLinks: ['/__skill-samples__/advanced/advanced#Welcome'],
       views: {
         reports: {
-          Component: '/__skill-samples__/ticket128/advanced#ReportsView',
+          Component: '/__skill-samples__/advanced/advanced#ReportsView',
           path: '/reports',
           exact: true,
         },

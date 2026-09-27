@@ -28,7 +28,7 @@ const template = path.join(repoRoot, 'templates', 'blank');
 const roots: string[] = [];
 
 function copyTemplate(): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'create-frogbot-app-130-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'create-frogbot-app-scaffold-'));
   const dest = path.join(root, 'app');
 
   roots.push(root);
