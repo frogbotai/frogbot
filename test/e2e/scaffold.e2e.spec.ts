@@ -9,7 +9,7 @@ import type { ChildProcess } from 'node:child_process';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { connect, createServer } from 'node:net';
+import { connect } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -18,7 +18,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createFrogBotSDK } from '../../packages/sdk/src/index';
 import { FrogBotChatTransport, prepareChatRequest } from '../../packages/ui/src/chat/transport';
-import { terminateProcess } from './process';
+import { getFreePort, spawnServer, terminateProcess } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
@@ -31,22 +31,6 @@ function isListening(port: number): Promise<boolean> {
       resolveListening(true);
     });
     socket.once('error', () => resolveListening(false));
-  });
-}
-
-function getEphemeralPort(): Promise<number> {
-  return new Promise((resolvePort, reject) => {
-    const server = createServer();
-    server.unref();
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      if (typeof address !== 'object' || !address) {
-        reject(new Error('could not resolve ephemeral port'));
-        return;
-      }
-      server.close(() => resolvePort(address.port));
-    });
   });
 }
 
@@ -73,16 +57,14 @@ describe.skipIf(!RUN_E2E)('scaffold e2e — templates/blank via next dev', () =>
   let token: string;
 
   beforeAll(async () => {
-    const port = await getEphemeralPort();
+    const port = await getFreePort();
     baseURL = `http://localhost:${port}`;
     dataDir = mkdtempSync(join(tmpdir(), 'frogbot-e2e-'));
     const require = createRequire(join(templateDir, 'package.json'));
     const nextBin = require.resolve('next/dist/bin/next');
 
-    server = spawn(process.execPath, [nextBin, 'dev', '--port', String(port)], {
+    server = spawnServer(process.execPath, [nextBin, 'dev', '--port', String(port)], {
       cwd: templateDir,
-      detached: true,
-      stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
         FROGBOT_SECRET: 'e2e-secret',

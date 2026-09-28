@@ -1,4 +1,3 @@
-import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -8,7 +7,7 @@ import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { FrogBotRESTClient } from '../__helpers/shared/FrogBotRESTClient';
-import { terminateProcess } from './process';
+import { getFreePort, spawnServer, terminateProcess } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
@@ -44,8 +43,8 @@ function isListening(port: number): Promise<boolean> {
 describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
   const fixtureDir = join(repoRoot, 'test', 'e2e', 'fixtures', 'tool-agent');
   const tempRoot = join(repoRoot, '.idea', 'tmp');
-  const port = 3989;
-  const client = new FrogBotRESTClient(`http://localhost:${port}`);
+  let port: number;
+  let client: FrogBotRESTClient;
   let server: ChildProcess;
   let dataDir: string;
   let token: string;
@@ -58,10 +57,10 @@ describe.skipIf(!RUN_E2E)('agent tool calling e2e', () => {
     const require = createRequire(join(fixtureDir, 'package.json'));
     const nextBin = require.resolve('next/dist/bin/next');
 
-    server = spawn(process.execPath, [nextBin, 'dev', '--port', String(port)], {
+    port = await getFreePort();
+    client = new FrogBotRESTClient(`http://localhost:${port}`);
+    server = spawnServer(process.execPath, [nextBin, 'dev', '--port', String(port)], {
       cwd: fixtureDir,
-      detached: true,
-      stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
         DATABASE_URL: `file:${join(dataDir, 'e2e.db')}`,

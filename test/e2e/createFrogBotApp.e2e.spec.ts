@@ -1,6 +1,4 @@
-import { spawn } from 'node:child_process';
 import fs from 'node:fs';
-import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -15,7 +13,7 @@ import {
   subprocessEnvironment,
   type LocalPackage,
 } from './fixtures/create-frogbot-app/harness';
-import { terminateProcess } from './process';
+import { getFreePort, spawnServer, terminateProcess } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const RUN_COMPILER_CHECKS = process.env.RUN_COMPILER_CHECKS === '1';
@@ -27,27 +25,9 @@ const cliPackage = JSON.parse(
 const postgresAvailable = RUN_E2E ? await serviceAvailable(5433) : false;
 const mongodbAvailable = RUN_E2E ? await serviceAvailable(27018) : false;
 
-function ephemeralPort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer();
-
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-
-      if (!address || typeof address === 'string') {
-        reject(new Error('Could not allocate an HTTP port.'));
-        return;
-      }
-
-      server.close(() => resolve(address.port));
-    });
-  });
-}
-
 async function bootApp(directory: string, databaseUrl?: string): Promise<void> {
-  const port = await ephemeralPort();
-  const child = spawn(
+  const port = await getFreePort();
+  const child = spawnServer(
     process.execPath,
     [
       path.join(directory, 'node_modules', 'next', 'dist', 'bin', 'next'),
@@ -57,9 +37,8 @@ async function bootApp(directory: string, databaseUrl?: string): Promise<void> {
     ],
     {
       cwd: directory,
-      detached: true,
       env: subprocessEnvironment(directory, databaseUrl ? { DATABASE_URL: databaseUrl } : {}),
-      stdio: ['ignore', 'ignore', 'pipe'],
+      stdout: 'ignore',
     },
   );
   let errors = '';

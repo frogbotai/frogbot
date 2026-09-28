@@ -93,6 +93,7 @@ export default defineConfig({
           exclude: ['**/node_modules/**', '**/dist/**', '**/*.legacy/**'],
           environment: 'node',
           setupFiles: ['./test/live/env.ts'],
+          globalSetup: ['./test/e2e/sweep.ts'],
           fileParallelism: false,
           hookTimeout: 240000,
           testTimeout: 120000,

@@ -1,9 +1,10 @@
-import { spawn } from 'node:child_process';
 import { rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
+
+import { spawnServer } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
@@ -20,7 +21,7 @@ describe.skipIf(!RUN_E2E)('@frogbotai/next client build', () => {
       const require = createRequire(join(fixtureDir, 'package.json'));
       const nextBin = require.resolve('next/dist/bin/next');
       const result = await new Promise<{ code: number; output: string }>((resolveExit) => {
-        const child = spawn(process.execPath, [nextBin, 'build'], {
+        const child = spawnServer(process.execPath, [nextBin, 'build'], {
           cwd: fixtureDir,
           env: {
             ...process.env,
@@ -30,8 +31,8 @@ describe.skipIf(!RUN_E2E)('@frogbotai/next client build', () => {
           },
         });
         let output = '';
-        child.stdout.on('data', (chunk: Buffer) => (output += chunk));
-        child.stderr.on('data', (chunk: Buffer) => (output += chunk));
+        child.stdout?.on('data', (chunk: Buffer) => (output += chunk));
+        child.stderr?.on('data', (chunk: Buffer) => (output += chunk));
         child.on('close', (code) => resolveExit({ code: code ?? 1, output }));
       });
       rmSync(buildDir, { recursive: true, force: true });

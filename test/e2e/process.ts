@@ -1,13 +1,82 @@
-import type { ChildProcess } from 'node:child_process';
+import type { ChildProcess, SpawnOptions } from 'node:child_process';
+import { spawn } from 'node:child_process';
+import { createServer } from 'node:net';
+import { fileURLToPath } from 'node:url';
 
-export async function terminateProcess(child?: ChildProcess): Promise<void> {
-  if (!child?.pid || child.exitCode !== null) return;
+const guardian = fileURLToPath(new URL('./guardian.mjs', import.meta.url));
+const live = new Set<ChildProcess>();
 
-  const closed = new Promise<void>((resolve) => child.once('close', () => resolve()));
+function killGroup(child: ChildProcess): void {
+  if (!child.pid) return;
   try {
     process.kill(-child.pid, 'SIGKILL');
   } catch {
-    child.kill('SIGKILL');
+    // Group already gone.
   }
+}
+
+// Fast path on a normal exit. The guardian covers every other way this
+// process can die (Ctrl-C, crash, SIGKILL, OOM).
+process.once('exit', () => live.forEach(killGroup));
+
+/**
+ * Spawn a long-running server (for example `next dev`) for a test.
+ *
+ * The command runs under `guardian.mjs` in its own process group. The whole
+ * group, including grandchildren such as `next-server`, is killed when this
+ * test process exits for any reason, even SIGKILL. Always pair it with
+ * `terminateProcess` in `afterAll`/`finally`.
+ */
+export function spawnServer(
+  command: string,
+  args: readonly string[],
+  options: Omit<SpawnOptions, 'detached' | 'stdio'> & {
+    stdout?: 'ignore' | 'pipe' | 'inherit';
+    stderr?: 'ignore' | 'pipe' | 'inherit';
+  } = {},
+): ChildProcess {
+  const { stdout = 'pipe', stderr = 'pipe', ...rest } = options;
+  const child = spawn(process.execPath, [guardian, command, ...args], {
+    ...rest,
+    detached: true,
+    // stdin stays a pipe: when this process dies, the guardian sees EOF.
+    stdio: ['pipe', stdout, stderr],
+  });
+  live.add(child);
+  child.once('exit', () => live.delete(child));
+  return child;
+}
+
+/**
+ * Kill a spawned server's entire process group and wait for it to close.
+ * Kills the group even if the leader already exited, since grandchildren
+ * such as `next-server` can outlive it.
+ */
+export async function terminateProcess(child?: ChildProcess): Promise<void> {
+  if (!child?.pid) return;
+  const closed =
+    child.exitCode === null && child.signalCode === null
+      ? new Promise<void>((resolve) => child.once('close', () => resolve()))
+      : Promise.resolve();
+  killGroup(child);
+  if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
   await closed;
+  live.delete(child);
+}
+
+/** Ask the OS for a free TCP port instead of hard-coding one. */
+export function getFreePort(): Promise<number> {
+  return new Promise((resolvePort, reject) => {
+    const server = createServer();
+    server.unref();
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (typeof address !== 'object' || !address) {
+        reject(new Error('could not resolve a free port'));
+        return;
+      }
+      server.close(() => resolvePort(address.port));
+    });
+  });
 }
