@@ -52,6 +52,15 @@ test.describe('nav shell on desktop', () => {
     await noHorizontalOverflow(page);
   });
 
+  test('collections section links to the configured collections', async ({ page }) => {
+    await signIn(page);
+    await expandSidebar(page);
+
+    await expect(
+      page.locator('#frogbot-nav-section-collections').getByRole('link', { name: 'Users' }),
+    ).toHaveAttribute('href', '/collections/users');
+  });
+
   test('collapsed sidebar stays visible as an icon rail', async ({ page }) => {
     await signIn(page);
     await expandSidebar(page);
