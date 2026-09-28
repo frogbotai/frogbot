@@ -35,7 +35,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && cp src/client/styles.css dist/client/styles.css",
+    "build": "rm -rf dist && tsc -p tsconfig.json && cp src/client/styles.css dist/client/styles.css",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },

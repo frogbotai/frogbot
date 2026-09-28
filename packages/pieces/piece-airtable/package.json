@@ -19,7 +19,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "rm -rf dist && tsc -p tsconfig.json",
     "clean": "rm -rf dist",
     "generate:types": "frogbot generate:piece-types src/index.ts --export createAirtable --output src/piece-types.ts",
     "typecheck": "tsc --noEmit"

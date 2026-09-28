@@ -19,7 +19,7 @@
     "bin.js"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/pack-templates.mjs && chmod +x bin.js",
+    "build": "rm -rf dist && tsc -p tsconfig.json && node scripts/pack-templates.mjs && chmod +x bin.js",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },

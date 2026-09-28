@@ -35,14 +35,15 @@
     "sync:catalog": "node scripts/sync-catalog.mjs",
     "check:branding": "node scripts/check-branding.mjs",
     "check:docs-fences": "node scripts/check-docs-fences.mjs",
+    "check:dist-imports": "node scripts/check-dist-imports.mjs",
     "check:docs-links": "node scripts/check-docs-links.mjs",
     "check:ui-architecture": "node scripts/check-ui-architecture.mjs",
     "docker:start": "docker compose -f test/docker-compose.yml --profile",
     "docker:clean": "docker compose -f test/docker-compose.yml down -v --remove-orphans",
     "bump": "node scripts/prerelease.mjs",
     "publish-packages": "pnpm -r publish --access public --no-git-checks --report-summary",
-    "release": "npm whoami && pnpm install --frozen-lockfile && pnpm build && pnpm publish-packages && pnpm release:status",
-    "release:resume": "npm whoami && pnpm build && pnpm publish-packages && pnpm release:status",
+    "release": "npm whoami && pnpm install --frozen-lockfile && pnpm build && pnpm check:dist-imports && pnpm publish-packages && pnpm release:status",
+    "release:resume": "npm whoami && pnpm build && pnpm check:dist-imports && pnpm publish-packages && pnpm release:status",
     "release:status": "node scripts/release-status.mjs"
   },
   "devDependencies": {
