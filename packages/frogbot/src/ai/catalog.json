@@ -1255,6 +1255,11 @@
     "mode": "chat"
   },
   {
+    "id": "deepinfra/tencent/Hy4-preview",
+    "provider": "deepinfra",
+    "mode": "chat"
+  },
+  {
     "id": "deepinfra/thinkingmachines/Inkling",
     "provider": "deepinfra",
     "mode": "audio_transcription"
@@ -1975,6 +1980,16 @@
     "mode": "chat"
   },
   {
+    "id": "openai/gpt-daybreak-blue-latest",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
+    "id": "openai/gpt-daybreak-red-latest",
+    "provider": "openai",
+    "mode": "chat"
+  },
+  {
     "id": "openai/gpt-image-1-mini",
     "provider": "openai",
     "mode": "image_generation"
@@ -2642,27 +2657,27 @@
   {
     "id": "openrouter/meta/muse-spark-1.1",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/meta/muse-spark-1.2",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/meta/muse-spark-1.2-contributor",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/meta/muse-spark-1.3",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/meta/muse-spark-1.3-contributor",
     "provider": "openrouter",
-    "mode": "audio_transcription"
+    "mode": "chat"
   },
   {
     "id": "openrouter/microsoft/phi-4",
@@ -4370,6 +4385,11 @@
     "mode": "chat"
   },
   {
+    "id": "vercel/fireworks/ember-1",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
     "id": "vercel/google/gemini-2.5-flash",
     "provider": "vercel",
     "mode": "audio_transcription"
@@ -4470,11 +4490,6 @@
     "mode": "chat"
   },
   {
-    "id": "vercel/inclusionai/ling-3.0-flash-fin-free",
-    "provider": "vercel",
-    "mode": "chat"
-  },
-  {
     "id": "vercel/inclusionai/ling-3.0-flash-sante",
     "provider": "vercel",
     "mode": "chat"
@@ -4501,6 +4516,11 @@
   },
   {
     "id": "vercel/interfaze/interfaze-beta",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/meituan/longcat-2.5-preview",
     "provider": "vercel",
     "mode": "chat"
   },
@@ -5111,6 +5131,11 @@
   },
   {
     "id": "vercel/spacexai/grok-build-0.1",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/stealth/pixel-canary",
     "provider": "vercel",
     "mode": "chat"
   },

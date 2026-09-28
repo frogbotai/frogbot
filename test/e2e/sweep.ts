@@ -17,7 +17,14 @@ function processTable(): Row[] {
   return output.split('\n').flatMap((line) => {
     const match = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/.exec(line);
     return match
-      ? [{ pid: Number(match[1]), ppid: Number(match[2]), rss: Number(match[3]), command: match[4] }]
+      ? [
+          {
+            pid: Number(match[1]),
+            ppid: Number(match[2]),
+            rss: Number(match[3]),
+            command: match[4],
+          },
+        ]
       : [];
   });
 }
