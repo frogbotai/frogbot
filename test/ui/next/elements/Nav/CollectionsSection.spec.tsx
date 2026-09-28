@@ -1,11 +1,18 @@
+import { BubbleChatIcon, FolderIcon } from '@frogbotai/ui/icons';
 import { render, screen } from '@testing-library/react';
 import type { ServerProps } from 'payload';
-import { describe, expect, it, vi } from 'vitest';
+import { isValidElement, type ReactNode } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CollectionsSection } from '../../../../../packages/next/src/elements/Nav/CollectionsSection';
 
+const renderServerComponent = vi.hoisted(() =>
+  vi.fn((_args: { Component: unknown }) => <svg data-testid="custom-icon" />),
+);
+
 vi.mock('@payloadcms/ui/elements/RenderServerComponent', () => ({
-  RenderServerComponent: () => <svg data-testid="custom-icon" />,
+  RenderServerComponent: renderServerComponent,
 }));
 
 vi.mock('../../../../../packages/next/src/elements/Nav/NavSection', () => ({
@@ -15,8 +22,9 @@ vi.mock('../../../../../packages/next/src/elements/Nav/NavSection', () => ({
 }));
 
 vi.mock('../../../../../packages/next/src/elements/Nav/NavItem', () => ({
-  NavItem: ({ icon, label, path }: { icon: React.ReactNode; label: string; path: string }) => (
-    <a data-icon={icon ? 'present' : 'missing'} href={path}>
+  NavItem: ({ icon, label, path }: { icon: ReactNode; label: string; path: string }) => (
+    <a data-element={isValidElement(icon) ? 'element' : 'other'} href={path}>
+      <span data-testid={`icon-${label}`}>{icon}</span>
       {label}
     </a>
   ),
@@ -27,6 +35,9 @@ const i18n = {
     ({ 'general:collections': 'Collections', 'general:globals': 'Globals' })[key] ?? key,
 } as ServerProps['i18n'];
 
+const iconMarkup = (Icon: typeof FolderIcon) =>
+  renderToStaticMarkup(<Icon className="frogbot-nav-item__icon-svg" size={20} />);
+
 function props(): ServerProps {
   return {
     i18n,
@@ -34,10 +45,16 @@ function props(): ServerProps {
       config: {
         collections: [
           {
-            admin: { group: 'Content', icon: 'CustomIcon' },
+            admin: { group: 'Content', icon: './CustomIcon#CustomIcon' },
             labels: { plural: 'Posts' },
             slug: 'posts',
           },
+          {
+            admin: { group: 'Content', icon: 'bubble-chat' },
+            labels: { plural: 'Chats' },
+            slug: 'chats',
+          },
+          { admin: { group: 'Content' }, labels: { plural: 'Pages' }, slug: 'pages' },
           { admin: { group: 'Content' }, labels: { plural: 'Drafts' }, slug: 'drafts' },
           { admin: { group: false }, labels: { plural: 'Hidden' }, slug: 'hidden' },
           { admin: { group: 'Content' }, labels: { plural: 'Secret' }, slug: 'secret' },
@@ -49,19 +66,28 @@ function props(): ServerProps {
     },
     permissions: {
       collections: {
+        chats: { read: true },
         drafts: { read: false },
         hidden: { read: true },
+        pages: { read: true },
         posts: { read: true },
         secret: { read: true },
       },
       globals: {},
     },
-    visibleEntities: { collections: ['posts', 'drafts', 'hidden'], globals: [] },
+    visibleEntities: {
+      collections: ['posts', 'chats', 'pages', 'drafts', 'hidden'],
+      globals: [],
+    },
   } as unknown as ServerProps;
 }
 
 describe('CollectionsSection', () => {
-  it('renders grouped, visible entities with read access and configured icons', () => {
+  beforeEach(() => {
+    renderServerComponent.mockClear();
+  });
+
+  it('renders grouped, visible entities with read access', () => {
     render(<CollectionsSection {...props()} />);
 
     expect(screen.getByRole('region', { name: 'Collections' })).not.toBeNull();
@@ -69,10 +95,42 @@ describe('CollectionsSection', () => {
     expect(screen.getByRole('link', { name: 'Posts' }).getAttribute('href')).toBe(
       '/admin/collections/posts',
     );
-    expect(screen.getByRole('link', { name: 'Posts' }).dataset.icon).toBe('present');
     expect(screen.queryByText('Drafts')).toBeNull();
     expect(screen.queryByText('Hidden')).toBeNull();
     expect(screen.queryByText('Secret')).toBeNull();
+  });
+
+  it('renders a built-in icon name from the icon registry', () => {
+    render(<CollectionsSection {...props()} />);
+
+    expect(screen.getByRole('link', { name: 'Chats' }).dataset.element).toBe('element');
+    expect(screen.getByTestId('icon-Chats').innerHTML).toBe(iconMarkup(BubbleChatIcon));
+    expect(renderServerComponent).not.toHaveBeenCalledWith(
+      expect.objectContaining({ Component: 'bubble-chat' }),
+    );
+  });
+
+  it('renders a component path icon through the server component renderer', () => {
+    render(<CollectionsSection {...props()} />);
+
+    expect(renderServerComponent).toHaveBeenCalledTimes(1);
+    expect(renderServerComponent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clientProps: { className: 'frogbot-nav-item__icon-svg', size: 20 },
+        Component: './CustomIcon#CustomIcon',
+      }),
+    );
+    expect(screen.getByRole('link', { name: 'Posts' }).dataset.element).toBe('element');
+    expect(screen.getByTestId('icon-Posts').querySelector('[data-testid="custom-icon"]')).not.toBe(
+      null,
+    );
+  });
+
+  it('renders a folder icon element when no icon is configured', () => {
+    render(<CollectionsSection {...props()} />);
+
+    expect(screen.getByRole('link', { name: 'Pages' }).dataset.element).toBe('element');
+    expect(screen.getByTestId('icon-Pages').innerHTML).toBe(iconMarkup(FolderIcon));
   });
 
   it('renders nothing without the collection model inputs', () => {
