@@ -87,7 +87,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && chmod +x bin.js",
+    "build": "rm -rf dist && tsc -p tsconfig.json && chmod +x bin.js",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit && pnpm typecheck:types",
     "typecheck:types": "tsc --noEmit -p tsconfig.typetest.json && pnpm typecheck:jobs && pnpm typecheck:email && pnpm typecheck:fields && pnpm typecheck:collections && pnpm typecheck:live-preview && pnpm typecheck:admin && pnpm typecheck:skill && pnpm typecheck:ai",

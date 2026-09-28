@@ -23,7 +23,7 @@
     "zod": "^4.3.6"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "rm -rf dist && tsc -p tsconfig.json",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },

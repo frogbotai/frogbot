@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
+import { publishablePackages } from '../../../scripts/lib/workspace.mjs';
+
 const { scripts } = JSON.parse(
   readFileSync(new URL('../../../package.json', import.meta.url), 'utf8'),
 ) as { scripts: Record<string, string> };
@@ -11,7 +13,7 @@ function steps(script: string): string[] {
 }
 
 describe('release scripts', () => {
-  it('bump builds, starts services, and tests before bumping versions', async () => {
+  it('bump builds, checks dist imports, starts services, and tests before bumping versions', async () => {
     expect(scripts.bump).toBe('node scripts/prerelease.mjs');
 
     const { STEPS } = (await import('../../../scripts/prerelease.mjs')) as {
@@ -22,20 +24,49 @@ describe('release scripts', () => {
     );
 
     const build = bump.indexOf('pnpm build');
+    const check = bump.indexOf('pnpm check:dist-imports');
     const services = bump.indexOf('pnpm test:services');
     const test = bump.indexOf('pnpm test:release');
 
     expect(build).toBeGreaterThanOrEqual(0);
-    expect(services).toBeGreaterThan(build);
+    expect(check).toBe(build + 1);
+    expect(services).toBeGreaterThan(check);
     expect(test).toBeGreaterThan(services);
     expect(bump.at(-1)).toBe('node scripts/bump.mjs minor');
   });
 
-  it('release builds and publishes without rerunning the tests bump already ran', () => {
-    const release = steps('release');
+  it.each(['release', 'release:resume'])(
+    '%s builds, checks dist imports, then publishes without rerunning the tests bump already ran',
+    (script) => {
+      const release = steps(script);
 
-    expect(release.indexOf('pnpm publish-packages')).toBeGreaterThan(release.indexOf('pnpm build'));
-    expect(release).not.toContain('pnpm test:release');
+      const build = release.indexOf('pnpm build');
+      const check = release.indexOf('pnpm check:dist-imports');
+
+      expect(build).toBeGreaterThanOrEqual(0);
+      expect(check).toBe(build + 1);
+      expect(release.indexOf('pnpm publish-packages')).toBe(check + 1);
+      expect(release).not.toContain('pnpm test:release');
+    },
+  );
+
+  it('check:dist-imports runs the exact-case import check', () => {
+    expect(scripts['check:dist-imports']).toBe('node scripts/check-dist-imports.mjs');
+  });
+
+  it('every publishable package removes dist before building', () => {
+    const builds = publishablePackages().map(({ dir, name }) => {
+      const manifest = JSON.parse(readFileSync(`${dir}/package.json`, 'utf8')) as {
+        scripts?: Record<string, string>;
+      };
+
+      return { build: manifest.scripts?.build, name };
+    });
+
+    const unclean = builds.filter(({ build }) => !build?.startsWith('rm -rf dist && '));
+
+    expect(builds.length).toBeGreaterThan(0);
+    expect(unclean).toEqual([]);
   });
 
   it('test:release runs every project with live suites on, then the Postgres and Mongo suites', () => {

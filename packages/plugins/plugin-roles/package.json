@@ -24,7 +24,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "rm -rf dist && tsc -p tsconfig.json",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit && pnpm typecheck:types",
     "typecheck:types": "tsc --noEmit -p tsconfig.typetest.json"

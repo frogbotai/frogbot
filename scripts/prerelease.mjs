@@ -1,8 +1,9 @@
 // `pnpm bump <major|minor|patch> [--from <step>] [--list]`
 //
-// Runs the release gate (install, sync, format, build, services, tests) and
-// only then rewrites versions with scripts/bump.mjs. Each step is named so a
-// failure can be resumed with `--from <step>` instead of redoing everything.
+// Runs the release gate (install, sync, format, build, dist imports, services,
+// tests) and only then rewrites versions with scripts/bump.mjs. Each step is
+// named so a failure can be resumed with `--from <step>` instead of redoing
+// everything.
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -16,6 +17,7 @@ export const STEPS = [
   { name: 'lint', run: ['pnpm', 'lint:fix'] },
   { name: 'format', run: ['pnpm', 'prettier:write'] },
   { name: 'build', run: ['pnpm', 'build'] },
+  { name: 'check-dist-imports', run: ['pnpm', 'check:dist-imports'] },
   { name: 'services', run: ['pnpm', 'test:services'], docker: true },
   { name: 'test', run: ['pnpm', 'test:release'], docker: true },
   // { name: 'browser', run: ['pnpm', 'test:browser'] },
