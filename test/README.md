@@ -93,6 +93,16 @@ test/
 9. **Per-suite DB isolation.** Each suite gets a unique database name
    (derived from filename) to avoid conflicts when suites run sequentially
    against shared Docker services.
+10. **Start long-running servers with `spawnServer`.** Any spec that starts
+    `next dev`, `next build` or another long-lived process must use
+    `spawnServer` from `test/e2e/process.ts`, and stop it with
+    `terminateProcess`. Each server then runs under `test/e2e/guardian.mjs`,
+    which kills its whole process group as soon as the test process dies, even
+    on Ctrl-C, a crash or SIGKILL. Never use `spawn(..., { detached: true })`
+    directly. An orphaned `next dev` holds about 2 GB, and leftovers pile up
+    across runs. Get ports from `getFreePort()` instead of hard-coding them.
+    The e2e project's `globalSetup` (`test/e2e/sweep.ts`) also kills orphaned
+    servers left over from earlier runs.
 
 ## Environment Variables
 

@@ -1,4 +1,3 @@
-import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -8,7 +7,7 @@ import { join, resolve } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { terminateProcess } from './process';
+import { getFreePort, spawnServer, terminateProcess } from './process';
 
 const RUN_E2E = process.env.RUN_E2E === '1';
 const repoRoot = resolve(import.meta.dirname, '..', '..');
@@ -26,21 +25,21 @@ function isListening(port: number): Promise<boolean> {
 
 describe.skipIf(!RUN_E2E)('cold REST e2e — templates/blank via next dev', () => {
   const templateDir = join(repoRoot, 'templates', 'blank');
-  const port = 3988;
-  const baseURL = `http://localhost:${port}`;
+  let port: number;
+  let baseURL: string;
   let server: ChildProcess;
   let dataDir: string;
   let token: string;
 
   beforeAll(async () => {
+    port = await getFreePort();
+    baseURL = `http://localhost:${port}`;
     dataDir = mkdtempSync(join(tmpdir(), 'frogbot-e2e-cold-'));
     const require = createRequire(join(templateDir, 'package.json'));
     const nextBin = require.resolve('next/dist/bin/next');
 
-    server = spawn(process.execPath, [nextBin, 'dev', '--port', String(port)], {
+    server = spawnServer(process.execPath, [nextBin, 'dev', '--port', String(port)], {
       cwd: templateDir,
-      detached: true,
-      stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
         OPENAI_API_KEY: 'sk-e2e-dummy',
