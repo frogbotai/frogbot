@@ -106,11 +106,16 @@ export function providerKeyEnv(provider: AIProvider): string | undefined {
 
 export function missingKeyWarning(
   plan: Pick<ScaffoldPlan, 'ai' | 'apiKey' | 'projectName'>,
+  env: Record<string, string | undefined>,
 ): string | undefined {
   if (plan.ai === 'none' || plan.apiKey) return undefined;
 
   const { keyEnv, keyRequiredToStart } = AI_PROVIDERS[plan.ai];
   const envFile = `${plan.projectName}/.env`;
+
+  if (env[keyEnv]?.trim()) {
+    return `Found ${keyEnv} in your environment but did not copy it to ${envFile}. Add it there, or scaffold with --api-key.`;
+  }
 
   if (keyRequiredToStart) return `Set ${keyEnv} in ${envFile}. The app won't start without it.`;
 

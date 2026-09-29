@@ -6,7 +6,7 @@ Create a new [FrogBot](https://docs.frogbot.ai) app: a Next.js project with an A
 npx create-frogbot-app@latest my-frogbot
 ```
 
-The command asks a few questions, installs dependencies, and sets up Git. Then start the app:
+The command asks a few questions, installs dependencies, and then sets up Git, so the first commit includes the lockfile. Then start the app:
 
 ```bash
 cd my-frogbot
@@ -46,15 +46,15 @@ Pass the project name once, either as the first argument or with `--name`.
 
 ## Defaults
 
-| Setting         | Default                                                                          |
-| --------------- | -------------------------------------------------------------------------------- |
-| Template        | `blank`                                                                          |
-| Database        | SQLite                                                                           |
-| AI provider     | OpenAI (`openai/gpt-5.4-mini`), which needs `OPENAI_API_KEY`                     |
-| Package manager | The one that ran the command (npm when you use `npx`)                            |
-| Git             | A new repository with an initial commit, unless the folder is already inside one |
-| Dependencies    | Installed                                                                        |
-| Coding agents   | None                                                                             |
+| Setting         | Default                                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Template        | `blank`                                                                                                                        |
+| Database        | SQLite                                                                                                                         |
+| AI provider     | OpenAI (`openai/gpt-5.4-mini`), which needs `OPENAI_API_KEY`                                                                   |
+| Package manager | The one that ran the command (npm when you use `npx`)                                                                          |
+| Git             | A new repository whose initial commit includes the lockfile, unless the folder is already inside a Git or Mercurial repository |
+| Dependencies    | Installed                                                                                                                      |
+| Coding agents   | None                                                                                                                           |
 
 ## Run without prompts
 
@@ -64,7 +64,7 @@ The questions appear only in an interactive terminal. With `--yes`, or when no t
 npx create-frogbot-app@latest my-frogbot --yes --agents codex
 ```
 
-The provider key comes from `--api-key`, or from the matching variable if it is already set in your shell (such as `OPENAI_API_KEY`). Without either, the scaffolder reminds you to add it to `.env`.
+Pass the provider key with `--api-key` to write it to `.env`. Without prompts, a key already set in your environment (such as `OPENAI_API_KEY`) is not copied into the app; the scaffolder says so and reminds you to add the key to `.env`. In an interactive terminal, it asks whether to use that key for the app instead.
 
 Project names use lowercase letters, numbers, dots, dashes, and underscores, and start with a letter or number. The name is also the folder the project is created in, inside the current directory.
 
@@ -86,16 +86,19 @@ See [Coding agents](https://docs.frogbot.ai/skills/coding-agents) for other ways
 
 ## Troubleshooting
 
-| Message                                                                             | What to do                                                                                             |
-| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `Directory "<name>" already exists.`                                                | Choose another project name, or remove the existing folder.                                            |
-| `A project name is required. Pass --name <name>.`                                   | Pass a name as the first argument or with `--name`. This happens with `--yes` or without a terminal.   |
-| `Provide the project name once, either positionally or with --name.`                | Pass one name without spaces, either as the first argument or with `--name`, not both.                 |
-| `Invalid project name "<name>".`                                                    | Use lowercase letters, numbers, dots, dashes, or underscores, starting with a letter or number.        |
-| `Set <KEY_NAME> in <name>/.env. The app won't start without it.`                    | OpenAI, Anthropic, or Google: add your key to `.env` before you run the app.                           |
-| `Set <KEY_NAME> in <name>/.env before chatting.`                                    | Bedrock or Zen: add your key to `.env` before you chat. The Bedrock message also offers `AWS_PROFILE`. |
-| `Install failed. Run <package-manager> install in the project.`                     | Run that install command inside the project folder.                                                    |
-| `FrogBot skill is not bundled in this build; run npx skills add frogbotai/frogbot.` | Run `npx skills add frogbotai/frogbot` inside the project folder.                                      |
+| Message                                                                             | What to do                                                                                                                                     |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Directory "<name>" already exists.`                                                | Choose another project name, or remove the existing folder.                                                                                    |
+| `A project name is required. Pass --name <name>.`                                   | Pass a name as the first argument or with `--name`. This happens with `--yes` or without a terminal.                                           |
+| `Provide the project name once, either positionally or with --name.`                | Pass one name without spaces, either as the first argument or with `--name`, not both.                                                         |
+| `Invalid project name "<name>". Use lowercase letters, numbers, …`                  | Use lowercase letters, numbers, dots, dashes, or underscores, starting with a letter or number.                                                |
+| `Set <KEY_NAME> in <name>/.env. The app won't start without it.`                    | OpenAI, Anthropic, or Google: add your key to `.env` before you run the app.                                                                   |
+| `Set <KEY_NAME> in <name>/.env before chatting.`                                    | Bedrock or Zen: add your key to `.env` before you chat. The Bedrock message also offers `AWS_PROFILE`.                                         |
+| `Found <KEY_NAME> in your environment but did not copy it to <name>/.env. …`        | The key works only in terminals where it is set. Add it to `.env` so the app always has it.                                                    |
+| `<package-manager> install failed. Git was not initialized. …`                      | Fix the error shown above it and run the install command in the project folder. Git runs after the install, so set up the repository yourself. |
+| `FrogBot skill is not bundled in this build; run npx skills add frogbotai/frogbot.` | Run `npx skills add frogbotai/frogbot` inside the project folder.                                                                              |
+
+Errors print one line that starts with `[create-frogbot-app] error:`, and the command exits with status 1. A longer report with a stack trace means an unexpected problem; please [open an issue](https://github.com/frogbotai/frogbot/issues).
 
 FrogBot needs Node.js 22 or newer. Once the app runs, a key set in your shell takes priority over the one in `.env`.
 

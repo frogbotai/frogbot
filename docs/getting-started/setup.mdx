@@ -35,7 +35,7 @@ Would you rather have a coding agent such as Codex or Claude Code do this for yo
     npx create-frogbot-app@latest my-frogbot
     ```
 
-    If it asks to install `create-frogbot-app`, type `y` and press Enter. It then asks a few questions. Press Enter to accept the default for each one. When it asks for `OPENAI_API_KEY`, paste your key if you already have one, or leave it blank and add it in step 5.
+    If it asks to install `create-frogbot-app`, type `y` and press Enter. It then asks a few questions. Press Enter to accept the default for each one. When it asks for `OPENAI_API_KEY`, paste your key if you already have one, or leave it blank and add it in step 5. If it says `Found OPENAI_API_KEY in your environment. Use it for this app?`, press Enter to use that key.
 
     **You should see:** `Created my-frogbot.` followed by the commands to start the app. If you left the key blank, it first prints `Set OPENAI_API_KEY in my-frogbot/.env. The app won't start without it.` Your app is in a new folder named `my-frogbot` in the folder where you ran the command (your home folder, if you just opened the terminal).
   </Step>
@@ -47,7 +47,7 @@ Would you rather have a coding agent such as Codex or Claude Code do this for yo
     To use Anthropic or Google instead, see [Installation](/getting-started/installation).
   </Step>
   <Step title="Add the key to your app">
-    Skip this step if you pasted your key in step 3. Otherwise, add the key before you start the app; without it, the app does not open.
+    Skip this step if you pasted your key, or chose to use the one it found, in step 3. Otherwise, add the key before you start the app; without it, the app does not open.
 
     Open the `my-frogbot` folder and find the file named `.env`:
 

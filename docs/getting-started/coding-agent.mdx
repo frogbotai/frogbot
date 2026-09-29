@@ -16,7 +16,7 @@ A coding agent can do the whole setup for you: check your computer, create the a
 2. Asks which AI provider key you have: OpenAI, Anthropic, or Google. If you have none, it sends you to create an OpenAI key.
 3. Creates the app in a `my-frogbot` folder with `create-frogbot-app`, which also installs the FrogBot skill for that agent. If the folder already exists, it asks you for another name.
 4. Reads the FrogBot skill, so it knows how FrogBot apps work before it changes anything.
-5. Asks how you want to add your AI key. The key goes in the `.env` file inside the app folder, which the app's `.gitignore` keeps out of Git.
+5. Asks how you want to add your AI key. The key goes in the `.env` file inside the app folder, which the app's `.gitignore` keeps out of Git. `create-frogbot-app` does not copy a key that is already set in the agent's environment, so this step is still needed.
 6. Starts the app with `npm run dev`. If it cannot keep the app running, it tells you how to start it yourself.
 7. Tells you to open [http://localhost:3000](http://localhost:3000) and create your admin account. You then open **Chats** in the sidebar and select **Create New** to send your first message.
 

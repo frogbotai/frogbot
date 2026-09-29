@@ -1,3 +1,4 @@
+import { CliError } from './lib/errors.js';
 import type { Database } from './types.js';
 
 export interface TemplateRegistryEntry {
@@ -22,7 +23,7 @@ export function getTemplate(name: string): TemplateRegistryEntry {
   const template = TEMPLATES.find((entry) => entry.name === name);
 
   if (!template) {
-    throw new Error(
+    throw new CliError(
       `Unknown template "${name}". Valid templates: ${TEMPLATES.map(({ name }) => name).join(', ')}.`,
     );
   }

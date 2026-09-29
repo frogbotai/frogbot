@@ -13,6 +13,7 @@ import {
 } from '../../../packages/create-frogbot-app/src/lib/anchors.js';
 import { parseArgs } from '../../../packages/create-frogbot-app/src/lib/args.js';
 import { applyDatabase } from '../../../packages/create-frogbot-app/src/lib/db.js';
+import { CliError } from '../../../packages/create-frogbot-app/src/lib/errors.js';
 import { applyPackageJson } from '../../../packages/create-frogbot-app/src/lib/package-json.js';
 import { installSkill } from '../../../packages/create-frogbot-app/src/lib/skill.js';
 import {
@@ -87,15 +88,20 @@ describe('CLI arguments and plans', () => {
     });
   });
 
-  it('takes the provider key from --api-key, falling back to the shell env', async () => {
-    const flag = await resolvePlan({
+  it('takes the provider key from --api-key over the environment', async () => {
+    const plan = await resolvePlan({
       args: parseArgs(['my-app', '--ai', 'anthropic', '--api-key', 'sk-flag']),
       cwd: '/tmp',
       detectedPackageManager: 'npm',
       env: { ANTHROPIC_API_KEY: 'sk-env' },
       tty: false,
     });
-    const shell = await resolvePlan({
+
+    expect(plan.apiKey).toBe('sk-flag');
+  });
+
+  it('does not copy an environment key without prompts', async () => {
+    const plan = await resolvePlan({
       args: parseArgs(['my-app', '--ai', 'anthropic']),
       cwd: '/tmp',
       detectedPackageManager: 'npm',
@@ -103,22 +109,24 @@ describe('CLI arguments and plans', () => {
       tty: false,
     });
 
-    expect(flag.apiKey).toBe('sk-flag');
-    expect(shell.apiKey).toBe('sk-env');
+    expect(plan.apiKey).toBeUndefined();
   });
 
   it('rejects missing non-interactive project names and unknown registry values', async () => {
     await expect(
       resolvePlan({ args: parseArgs([]), cwd: '/tmp', detectedPackageManager: 'npm', tty: false }),
-    ).rejects.toThrow('--name');
+    ).rejects.toStrictEqual(new CliError('A project name is required. Pass --name <name>.'));
+    expect(() => getTemplate('missing')).toThrow(CliError);
     expect(() => getTemplate('missing')).toThrow('Valid templates: blank');
   });
 
   it.each([
-    [['my-app', '--unknown'], 'Unknown option'],
+    [['my-app', '--unknown'], "Unknown option '--unknown'"],
+    [['my-app', '--ai'], "Option '--ai <value>' argument missing"],
     [['one', '--name', 'two'], 'project name once'],
     [['my-app', '--use-npm', '--use-pnpm'], 'only one package manager'],
-  ])('rejects conflicting or unknown arguments', (argv, message) => {
+  ])('rejects conflicting or unknown arguments as user errors', (argv, message) => {
+    expect(() => parseArgs(argv)).toThrow(CliError);
     expect(() => parseArgs(argv)).toThrow(message);
   });
 
@@ -130,8 +138,12 @@ describe('CLI arguments and plans', () => {
         detectedPackageManager: 'npm',
         tty: false,
       }),
-    ).rejects.toThrow('Invalid project name');
-    expect(() => validateValue('mongodb', ['sqlite'], 'database')).toThrow('Valid values: sqlite');
+    ).rejects.toStrictEqual(
+      new CliError(
+        'Invalid project name "Invalid Name". Use lowercase letters, numbers, dots, dashes, or underscores, starting with a letter or number.',
+      ),
+    );
+    expect(() => validateValue('mongodb', ['sqlite'], 'database')).toThrow(CliError);
   });
 
   it('turns a prompt cancellation into the dedicated cancellation error', () => {
@@ -146,11 +158,17 @@ describe('CLI arguments and plans', () => {
   });
 
   it.each([
-    [['my-app', '--db', 'oracle'], 'Valid values: sqlite, postgres, mongodb'],
-    [['my-app', '--ai', 'local'], 'Valid values: openai, anthropic, google, bedrock, zen, none'],
+    [
+      ['my-app', '--db', 'oracle'],
+      'Unknown database "oracle". Valid values: sqlite, postgres, mongodb.',
+    ],
+    [
+      ['my-app', '--ai', 'local'],
+      'Unknown AI provider "local". Valid values: openai, anthropic, google, bedrock, zen, none.',
+    ],
     [
       ['my-app', '--agents', 'claude,unknown'],
-      'Valid values: claude, codex, cursor, opencode, copilot, gemini',
+      'Unknown agent "unknown". Valid values: claude, codex, cursor, opencode, copilot, gemini.',
     ],
   ])('rejects unsupported non-interactive values', async (argv, message) => {
     await expect(
@@ -160,7 +178,7 @@ describe('CLI arguments and plans', () => {
         detectedPackageManager: 'npm',
         tty: false,
       }),
-    ).rejects.toThrow(message);
+    ).rejects.toStrictEqual(new CliError(message));
   });
 });
 

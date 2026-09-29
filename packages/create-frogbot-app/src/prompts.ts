@@ -4,6 +4,7 @@ import * as p from '@clack/prompts';
 
 import { AI_PROVIDERS } from './lib/ai.js';
 import type { CliArgs } from './lib/args.js';
+import { CliError } from './lib/errors.js';
 import { getTemplate, TEMPLATES } from './templates.js';
 import type { AgentTarget, AIProvider, Database, PackageManager, ScaffoldPlan } from './types.js';
 
@@ -18,6 +19,9 @@ const AGENTS: Array<{ label: string; value: AgentTarget }> = [
 
 const AI_VALUES: AIProvider[] = ['openai', 'anthropic', 'google', 'bedrock', 'zen', 'none'];
 const AGENT_VALUES = AGENTS.map(({ value }) => value);
+const PROJECT_NAME = /^[a-z0-9][a-z0-9._-]*$/;
+const PROJECT_NAME_RULE =
+  'Use lowercase letters, numbers, dots, dashes, or underscores, starting with a letter or number.';
 
 export class PromptCancelledError extends Error {}
 
@@ -39,7 +43,7 @@ export function validateValue<T extends string>(
   name: string,
 ): T {
   if (!valid.includes(value as T)) {
-    throw new Error(`Unknown ${name} "${value}". Valid values: ${valid.join(', ')}.`);
+    throw new CliError(`Unknown ${name} "${value}". Valid values: ${valid.join(', ')}.`);
   }
 
   return value as T;
@@ -66,17 +70,15 @@ export async function resolvePlan({
       await p.text({
         message: 'Project name',
         placeholder: 'my-frogbot-app',
-        validate: (value) =>
-          /^[a-z0-9][a-z0-9._-]*$/.test(value ?? '')
-            ? undefined
-            : 'Use lowercase letters, numbers, dots, dashes, or underscores.',
+        validate: (value) => (PROJECT_NAME.test(value ?? '') ? undefined : PROJECT_NAME_RULE),
       }),
     );
   }
 
-  if (!projectName) throw new Error('A project name is required. Pass --name <name>.');
-  if (!/^[a-z0-9][a-z0-9._-]*$/.test(projectName)) {
-    throw new Error(`Invalid project name "${projectName}".`);
+  if (!projectName) throw new CliError('A project name is required. Pass --name <name>.');
+
+  if (!PROJECT_NAME.test(projectName)) {
+    throw new CliError(`Invalid project name "${projectName}". ${PROJECT_NAME_RULE}`);
   }
 
   let templateName = args.template;
@@ -130,8 +132,19 @@ export async function resolvePlan({
 
   const resolvedAI = validateValue(ai ?? 'openai', AI_VALUES, 'AI provider');
   const keyEnv = resolvedAI === 'none' ? undefined : AI_PROVIDERS[resolvedAI].keyEnv;
-  // A key already exported in the shell wins over prompting.
-  let apiKey = args.apiKey?.trim() || (keyEnv ? env[keyEnv]?.trim() : undefined) || undefined;
+  const environmentKey = keyEnv ? env[keyEnv]?.trim() || undefined : undefined;
+  let apiKey = args.apiKey?.trim() || undefined;
+
+  if (!apiKey && environmentKey && interactive) {
+    const useEnvironmentKey = resolvePromptValue<boolean>(
+      await p.confirm({
+        message: `Found ${keyEnv} in your environment. Use it for this app?`,
+        initialValue: true,
+      }),
+    );
+
+    if (useEnvironmentKey) apiKey = environmentKey;
+  }
 
   if (!apiKey && keyEnv && interactive) {
     apiKey =
@@ -141,6 +154,7 @@ export async function resolvePlan({
         }),
       ).trim() || undefined;
   }
+
   let agents: AgentTarget[] | string | undefined = args.agents;
 
   if (agents === undefined && interactive) {
