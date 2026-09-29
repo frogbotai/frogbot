@@ -1,7 +1,6 @@
-import { type PieceActionDefinition, type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { PagerdutyClient } from './client.js';
+import { defineAction } from './define.js';
 
 const incident = z.object({ id: z.string(), status: z.string().optional() }).passthrough();
 const incidentOutput = incident;
@@ -26,14 +25,14 @@ const createIncidentInput = z.object({
   conferenceUrl: z.url().optional(),
 });
 
-export const createIncident = {
+export const createIncident = defineAction({
   slug: 'createIncident',
   description: 'Create a PagerDuty incident.',
   input: createIncidentInput,
   output: incidentOutput,
   idempotent: false,
   options: {
-    serviceId: async ({ client }: { client: PagerdutyClient }) => {
+    serviceId: async ({ client }) => {
       const services: Array<{ id: string; name: string }> = [];
       let offset = 0;
       let more = true;
@@ -55,10 +54,7 @@ export const createIncident = {
       return services.map(({ id, name }) => ({ label: name, value: id }));
     },
   },
-  async run({
-    input,
-    client,
-  }: PieceRunArgs<z.output<typeof createIncidentInput>, object, PagerdutyClient>) {
+  async run({ input, client }) {
     const payload: Record<string, unknown> = {
       type: 'incident',
       title: input.title,
@@ -92,12 +88,7 @@ export const createIncident = {
 
     return response.incident;
   },
-} satisfies PieceActionDefinition<
-  typeof createIncidentInput,
-  typeof incidentOutput,
-  object,
-  PagerdutyClient
->;
+});
 
 const listIncidentsInput = z.object({
   statuses: z.array(z.enum(['triggered', 'acknowledged', 'resolved'])).optional(),
@@ -116,16 +107,13 @@ const listIncidentsOutput = z
   })
   .passthrough();
 
-export const listIncidents = {
+export const listIncidents = defineAction({
   slug: 'listIncidents',
   description: 'List PagerDuty incidents with optional filters and pagination.',
   input: listIncidentsInput,
   output: listIncidentsOutput,
   idempotent: true,
-  async run({
-    input,
-    client,
-  }: PieceRunArgs<z.output<typeof listIncidentsInput>, object, PagerdutyClient>) {
+  async run({ input, client }) {
     const response = await client.request({
       method: 'GET',
       path: '/incidents',
@@ -141,15 +129,10 @@ export const listIncidents = {
 
     return listIncidentsOutput.parse(response);
   },
-} satisfies PieceActionDefinition<
-  typeof listIncidentsInput,
-  typeof listIncidentsOutput,
-  object,
-  PagerdutyClient
->;
+});
 
-function updateIncident(
-  slug: 'acknowledgeIncident' | 'resolveIncident',
+function updateIncident<const TSlug extends string>(
+  slug: TSlug,
   status: 'acknowledged' | 'resolved',
 ) {
   const input = z.object({
@@ -158,16 +141,13 @@ function updateIncident(
     ...(status === 'resolved' ? { resolution: z.string().optional() } : {}),
   });
 
-  return {
+  return defineAction({
     slug,
     description: `${status === 'resolved' ? 'Resolve' : 'Acknowledge'} a PagerDuty incident.`,
     input,
     output: incidentOutput,
     idempotent: true,
-    async run({
-      input: values,
-      client,
-    }: PieceRunArgs<z.output<typeof input>, object, PagerdutyClient>) {
+    async run({ input: values, client }) {
       const resolution = 'resolution' in values ? values.resolution : undefined;
       const response = incidentResponse.parse(
         await client.request({
@@ -186,21 +166,18 @@ function updateIncident(
 
       return response.incident;
     },
-  } satisfies PieceActionDefinition<typeof input, typeof incidentOutput, object, PagerdutyClient>;
+  });
 }
 
 const getIncidentInput = z.object({ incidentId });
 
-export const getIncident = {
+export const getIncident = defineAction({
   slug: 'getIncident',
   description: 'Get a PagerDuty incident by ID.',
   input: getIncidentInput,
   output: incidentOutput,
   idempotent: true,
-  async run({
-    input,
-    client,
-  }: PieceRunArgs<z.output<typeof getIncidentInput>, object, PagerdutyClient>) {
+  async run({ input, client }) {
     const response = incidentResponse.parse(
       await client.request({
         method: 'GET',
@@ -210,12 +187,7 @@ export const getIncident = {
 
     return response.incident;
   },
-} satisfies PieceActionDefinition<
-  typeof getIncidentInput,
-  typeof incidentOutput,
-  object,
-  PagerdutyClient
->;
+});
 
 export const acknowledgeIncident = updateIncident('acknowledgeIncident', 'acknowledged');
 export const resolveIncident = updateIncident('resolveIncident', 'resolved');
@@ -228,15 +200,12 @@ const customApiCallInput = z.object({
 });
 const customApiCallOutput = z.json();
 
-export const customApiCall = {
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Make a custom PagerDuty REST API v2 call.',
   input: customApiCallInput,
   output: customApiCallOutput,
-  async run({
-    input,
-    client,
-  }: PieceRunArgs<z.output<typeof customApiCallInput>, object, PagerdutyClient>) {
+  async run({ input, client }) {
     const response = await client.request({
       method: input.method,
       path: input.path,
@@ -246,9 +215,4 @@ export const customApiCall = {
 
     return customApiCallOutput.parse(response);
   },
-} satisfies PieceActionDefinition<
-  typeof customApiCallInput,
-  typeof customApiCallOutput,
-  object,
-  PagerdutyClient
->;
+});

@@ -1,12 +1,10 @@
 import { BlobReader, BlobWriter, getMimeType, ZipReader, ZipWriter } from '@zip.js/zip.js';
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { lookup } from 'mime-types';
 import { z } from 'zod';
 
 import { encoding } from './config.js';
+import { defineAction } from './define.js';
 import { fileId, loadFile, savedFile, saveFile } from './files.js';
-
-type RunArgs<T extends z.ZodType> = PieceRunArgs<z.output<T>, object, undefined>;
 
 const passwordOptions = z
   .object({
@@ -56,20 +54,20 @@ const unzipFileInput = z.object({
   ),
 });
 
-export const createFile = {
+export const createFile = defineAction({
   slug: 'createFile',
   label: 'Create file',
   description: 'Create a file from content',
   input: createFileInput,
   output: savedFile,
-  async run({ input, req }: RunArgs<typeof createFileInput>) {
+  async run({ input, req }) {
     const data = Buffer.from(input.content, input.encoding);
 
     return saveFile({ req, data, filename: input.fileName });
   },
-};
+});
 
-export const readFile = {
+export const readFile = defineAction({
   slug: 'readFile',
   label: 'Read file',
   description: 'Read a file as text or Base64',
@@ -78,7 +76,7 @@ export const readFile = {
     z.object({ text: z.string() }),
     z.object({ base64: z.string(), base64WithMimeType: z.string() }),
   ]),
-  async run({ input, req }: RunArgs<typeof readFileInput>) {
+  async run({ input, req }) {
     const file = await loadFile({ req, id: input.file });
 
     if (input.format === 'text') return { text: file.data.toString('utf8') };
@@ -87,57 +85,57 @@ export const readFile = {
 
     return { base64, base64WithMimeType: `data:${file.mimeType};base64,${base64}` };
   },
-};
+});
 
-export const getFileName = {
+export const getFileName = defineAction({
   slug: 'getFileName',
   label: 'Get file name',
   description: 'Get the name of a file',
   input: getFileNameInput,
   output: z.object({ fileName: z.string() }),
-  async run({ input, req }: RunArgs<typeof getFileNameInput>) {
+  async run({ input, req }) {
     const file = await loadFile({ req, id: input.file });
 
     return { fileName: file.filename };
   },
-};
+});
 
-export const checkFileType = {
+export const checkFileType = defineAction({
   slug: 'checkFileType',
   label: 'Check file type',
   description: 'Check whether a file matches a MIME type',
   input: checkFileTypeInput,
   output: z.object({ mimeType: z.string(), isMatch: z.boolean() }),
-  async run({ input, req }: RunArgs<typeof checkFileTypeInput>) {
+  async run({ input, req }) {
     const file = await loadFile({ req, id: input.file });
     const mimeType = lookup(file.filename) || 'application/octet-stream';
 
     return { mimeType, isMatch: mimeType === input.mimeType };
   },
-};
+});
 
-export const changeFileEncoding = {
+export const changeFileEncoding = defineAction({
   slug: 'changeFileEncoding',
   label: 'Change file encoding',
   description: 'Change the encoding of a file',
   input: changeFileEncodingInput,
   output: savedFile,
-  async run({ input, req }: RunArgs<typeof changeFileEncodingInput>) {
+  async run({ input, req }) {
     const file = await loadFile({ req, id: input.inputFile });
     const decoded = file.data.toString(input.inputEncoding);
     const data = Buffer.from(decoded, input.outputEncoding);
 
     return saveFile({ req, data, filename: input.outputFileName });
   },
-};
+});
 
-export const zipFiles = {
+export const zipFiles = defineAction({
   slug: 'zipFiles',
   label: 'Zip files',
   description: 'Create a compressed ZIP file from one or more files',
   input: zipFilesInput,
   output: savedFile,
-  async run({ input, req }: RunArgs<typeof zipFilesInput>) {
+  async run({ input, req }) {
     const writer = new BlobWriter('application/zip');
     const zip = new ZipWriter(writer);
     const options: { password?: string; zipCrypto?: boolean; encryptionStrength?: 3 } = {};
@@ -170,15 +168,15 @@ export const zipFiles = {
 
     return saveFile({ req, data, filename: input.outputFileName, mimeType: 'application/zip' });
   },
-};
+});
 
-export const unzipFile = {
+export const unzipFile = defineAction({
   slug: 'unzipFile',
   label: 'Unzip file',
   description: 'Extract files from a compressed ZIP file',
   input: unzipFileInput,
   output: z.array(z.object({ file: savedFile, filePath: z.string() })),
-  async run({ input, req }: RunArgs<typeof unzipFileInput>) {
+  async run({ input, req }) {
     const file = await loadFile({ req, id: input.file });
     const reader = new ZipReader(new BlobReader(new Blob([file.data])));
 
@@ -219,4 +217,4 @@ export const unzipFile = {
       await reader.close();
     }
   },
-};
+});

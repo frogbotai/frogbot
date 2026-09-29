@@ -1,8 +1,6 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { AirtableClient } from '../client.js';
-import { defineAirtableAction } from '../definitions.js';
+import { defineAction } from '../define.js';
 
 const inputSchema = z.object({
   method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']),
@@ -14,16 +12,12 @@ const inputSchema = z.object({
   body: z.unknown().optional(),
 });
 
-export const customApiCall = defineAirtableAction({
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Call an Airtable API endpoint with the configured credential.',
   input: inputSchema,
   output: z.unknown(),
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof inputSchema>, object, AirtableClient>) {
+  async run({ client, input, req }) {
     return client.request({
       method: input.method,
       path: input.path,

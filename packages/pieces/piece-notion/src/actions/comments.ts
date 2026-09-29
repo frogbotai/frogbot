@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 import { notionId } from '../config.js';
-import { defineNotionAction } from '../definitions.js';
+import { defineAction } from '../define.js';
 import { notionComment } from '../schemas.js';
 
-export const addComment = defineNotionAction({
+export const addComment = defineAction({
   slug: 'addComment',
   description: 'Add a comment to a page.',
   input: z.object({ pageId: notionId, commentText: z.string().min(1) }),

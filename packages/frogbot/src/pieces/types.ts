@@ -132,6 +132,62 @@ export type PieceTriggerDefinition<
   | PiecePollingTrigger<TInput, TOutput, TOptions, TClient>
   | PieceWebhookTrigger<TInput, TOutput, TOptions, TClient, TState>;
 
+type AfterOutputInference<TOutput, TDefinition> = TOutput extends unknown ? TDefinition : never;
+
+export type PieceHelpers<TClient, TOptions> = {
+  defineAction<
+    const TSlug extends string,
+    TInput extends z.ZodType,
+    TOutput extends z.ZodType | undefined = undefined,
+    TResult = PieceResult,
+  >(
+    action: AfterOutputInference<
+      TOutput,
+      PieceActionDefinition<
+        TInput,
+        TOutput,
+        TOptions,
+        TClient,
+        TOutput extends z.ZodType ? z.output<TOutput> : TResult
+      > & { slug: TSlug }
+    >,
+  ): PieceActionDefinition<
+    TInput,
+    TOutput,
+    TOptions,
+    TClient,
+    TOutput extends z.ZodType ? z.output<TOutput> : TResult
+  > & { slug: TSlug };
+  defineAppTrigger<
+    const TSlug extends string,
+    TInput extends z.ZodType,
+    TOutput extends z.ZodType | undefined = undefined,
+  >(
+    trigger: AfterOutputInference<
+      TOutput,
+      PieceAppTrigger<TInput, TOutput, TOptions, TClient> & { slug: TSlug }
+    >,
+  ): PieceAppTrigger<TInput, TOutput, TOptions, TClient> & { slug: TSlug };
+  definePollingTrigger<
+    const TSlug extends string,
+    TInput extends z.ZodType,
+    TOutput extends z.ZodType | undefined = undefined,
+  >(
+    trigger: AfterOutputInference<
+      TOutput,
+      PiecePollingTrigger<TInput, TOutput, TOptions, TClient> & { slug: TSlug }
+    >,
+  ): PiecePollingTrigger<TInput, TOutput, TOptions, TClient> & { slug: TSlug };
+  defineWebhookTrigger<
+    const TSlug extends string,
+    TInput extends z.ZodType,
+    TOutput extends z.ZodType | undefined = undefined,
+    TState extends PieceResult = PieceJSON,
+  >(
+    trigger: PieceWebhookTrigger<TInput, TOutput, TOptions, TClient, TState> & { slug: TSlug },
+  ): PieceWebhookTrigger<TInput, TOutput, TOptions, TClient, TState> & { slug: TSlug };
+};
+
 export type PieceTriggerReference = Readonly<
   | (PieceTriggerBase<z.ZodType, z.ZodType | undefined> & {
       type: 'app';
@@ -261,7 +317,11 @@ type FactoryOptions<T extends PieceDefinition> = {
   slug?: string;
   auth?: T extends { auth: infer TAuth extends z.ZodType } ? z.input<TAuth> : never;
   oauth?: T extends { oauth: object } ? OAuthApp : never;
-} & (T extends { options: infer TOptions extends z.ZodType } ? z.input<TOptions> : object);
+} & (T extends { options: infer TOptions extends z.ZodType }
+  ? z.input<TOptions> extends Record<string, never>
+    ? object
+    : z.input<TOptions>
+  : object);
 
 type DefinedCapability<T, K extends PropertyKey> =
   T extends Record<K, infer TValue> ? TValue : undefined;

@@ -22,6 +22,8 @@ export const microsoftTeamsOptions = z.object({
   botUsername: z.string().trim().min(1).default('bot'),
 });
 
+export type MicrosoftTeamsOptions = z.output<typeof microsoftTeamsOptions>;
+
 export const microsoftTeamsClouds = {
   commercial: {
     loginHost: 'login.microsoftonline.com',

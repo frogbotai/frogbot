@@ -1,6 +1,8 @@
-import { definePiece, type PieceRunArgs } from 'frogbot/pieces';
+import { definePiece } from 'frogbot/pieces';
 import { toBuffer } from 'qrcode';
 import { z } from 'zod';
+
+import { defineAction } from './define.js';
 
 const inputSchema = z.object({
   text: z.string().min(1).meta({ label: 'Content' }),
@@ -14,13 +16,13 @@ const outputSchema = z.object({
   url: z.string().min(1).optional(),
 });
 
-const createQrCodeAction = {
+const createQrCodeAction = defineAction({
   slug: 'createQrCode',
   description: 'Create a QR code image from text.',
   input: inputSchema,
   output: outputSchema,
   idempotent: false,
-  async run({ input, req }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input, req }) {
     const collection = req.frogbot.config.files?.slug;
 
     if (!collection) {
@@ -51,7 +53,7 @@ const createQrCodeAction = {
       url: typeof file.url === 'string' ? file.url : undefined,
     };
   },
-};
+});
 
 export const createQrCode = definePiece({
   slug: 'qrcode',

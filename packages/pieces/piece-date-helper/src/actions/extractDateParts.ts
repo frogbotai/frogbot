@@ -1,7 +1,7 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { extractUnits, formatSchema, parseDate } from '../date.js';
+import { defineAction } from '../define.js';
 
 const input = z.object({
   inputDate: z.string().meta({ label: 'Input Date' }),
@@ -9,14 +9,14 @@ const input = z.object({
   unitExtract: z.array(z.enum(extractUnits)).default(['year']).meta({ label: 'Units to Extract' }),
 });
 
-export const extractDateParts = {
+export const extractDateParts = defineAction({
   slug: 'extractDateParts',
   label: 'Extract Date Parts',
   description: 'Extract selected units from a date.',
   input,
   output: z.record(z.string(), z.union([z.string(), z.number()])),
   idempotent: true,
-  async run({ input: value }: PieceRunArgs<z.output<typeof input>, object, undefined>) {
+  async run({ input: value }) {
     const date = parseDate(value.inputDate, value.inputFormat);
     const available = {
       year: date.year(),
@@ -36,4 +36,4 @@ export const extractDateParts = {
 
     return result;
   },
-};
+});

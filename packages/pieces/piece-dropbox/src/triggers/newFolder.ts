@@ -1,7 +1,6 @@
-import type { PiecePollingTrigger, PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { DropboxClient } from '../client.js';
+import { definePollingTrigger } from '../define.js';
 import { folderMetadata } from '../schemas.js';
 
 const inputSchema = z.object({
@@ -16,22 +15,15 @@ const pageSchema = z.object({
   has_more: z.boolean(),
 });
 
-export const newFolder = {
+export const newFolder = definePollingTrigger({
   slug: 'newFolder',
   description: 'Emit folders created inside a watched Dropbox folder.',
   type: 'polling',
   schedule: '*/5 * * * *',
   input: inputSchema,
   output: folderMetadata,
-  async run({
-    client,
-    input,
-    cursor,
-    req,
-  }: PieceRunArgs<z.output<typeof inputSchema>, Record<string, never>, DropboxClient> & {
-    cursor?: string;
-  }) {
-    if (!cursor) {
+  async run({ client, input, cursor, req }) {
+    if (typeof cursor !== 'string' || !cursor) {
       const initial = await client.rpc(
         'files/list_folder/get_latest_cursor',
         { path: input.path, recursive: input.recursive, include_deleted: false },
@@ -66,10 +58,4 @@ export const newFolder = {
 
     return { events, cursor: nextCursor };
   },
-} satisfies PiecePollingTrigger<
-  typeof inputSchema,
-  typeof folderMetadata,
-  Record<string, never>,
-  DropboxClient,
-  string
->;
+});

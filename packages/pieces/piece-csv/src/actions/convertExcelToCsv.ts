@@ -1,7 +1,7 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import * as XLSX from 'xlsx';
 import { z } from 'zod';
 
+import { defineAction } from '../define.js';
 import { loadFile } from '../files.js';
 
 const inputSchema = z.object({
@@ -24,13 +24,13 @@ const output = z.object({
   availableSheets: z.array(z.string()),
 });
 
-export const convertExcelToCsv = {
+export const convertExcelToCsv = defineAction({
   slug: 'convertExcelToCsv',
   label: 'Convert Excel to CSV',
   description: 'Convert an Excel workbook into CSV text.',
   input: inputSchema,
   output,
-  async run({ input, req }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input, req }) {
     const buffer = await loadFile(req, input.fileId);
     const isXlsx = buffer[0] === 0x50 && buffer[1] === 0x4b;
     const isXls = buffer[0] === 0xd0 && buffer[1] === 0xcf;
@@ -62,4 +62,4 @@ export const convertExcelToCsv = {
       availableSheets: workbook.SheetNames,
     };
   },
-};
+});

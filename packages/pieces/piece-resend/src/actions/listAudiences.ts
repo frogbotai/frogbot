@@ -1,9 +1,9 @@
 import type { PieceJSON } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { ResendAction } from './types.js';
+import { defineAction } from '../define.js';
 
-export const listAudiences = {
+export const listAudiences = defineAction({
   slug: 'listAudiences',
   description: 'List audiences',
   idempotent: true,
@@ -12,4 +12,4 @@ export const listAudiences = {
     const result = await client.request({ path: '/audiences' });
     return (result as { data?: PieceJSON[] })?.data ?? [];
   },
-} satisfies ResendAction;
+});

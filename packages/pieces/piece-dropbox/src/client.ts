@@ -1,5 +1,4 @@
 import type { FrogBotRequest } from 'frogbot';
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 export const dropboxAuth = z.object({
@@ -8,11 +7,6 @@ export const dropboxAuth = z.object({
 });
 
 export type DropboxAuth = z.output<typeof dropboxAuth>;
-export type DropboxRunArgs<T extends z.ZodType> = PieceRunArgs<
-  z.output<T>,
-  Record<string, never>,
-  DropboxClient
->;
 
 type RequestOptions = {
   method?: string;

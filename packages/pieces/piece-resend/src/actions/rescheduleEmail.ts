@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-import type { ResendAction } from './types.js';
+import { defineAction } from '../define.js';
 
 const input = z.object({ email_id: z.string() }).passthrough().extend({ scheduled_at: z.string() });
 
-export const rescheduleEmail = {
+export const rescheduleEmail = defineAction({
   slug: 'rescheduleEmail',
   description: 'Reschedule an email',
   idempotent: false,
@@ -13,4 +13,4 @@ export const rescheduleEmail = {
     const { email_id, ...body } = input;
     return client.request({ method: 'PATCH', path: `/emails/${email_id}`, body });
   },
-} satisfies ResendAction;
+});

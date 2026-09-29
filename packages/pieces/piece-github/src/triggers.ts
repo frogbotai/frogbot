@@ -1,9 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 
-import type { PieceWebhookTrigger } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { GithubClient } from './client.js';
+import { defineWebhookTrigger } from './define.js';
 import { githubObject, repositoryInput, userOutput } from './schemas.js';
 
 const input = z.object({ repository: repositoryInput });
@@ -21,26 +20,26 @@ type WebhookState = {
 type Delivery = z.output<typeof output>;
 type Match = (delivery: Delivery, state: WebhookState) => Delivery[];
 
-function trigger({
+function trigger<const TSlug extends string>({
   slug,
   description,
   event,
   match,
   username,
 }: {
-  slug: string;
+  slug: TSlug;
   description: string;
   event: string | string[];
   match?: Match;
   username?: boolean;
-}): PieceWebhookTrigger<typeof input, typeof output, object, GithubClient, WebhookState> {
-  return {
+}) {
+  return defineWebhookTrigger({
     slug,
     description,
     type: 'webhook',
     input,
     output,
-    async onEnable({ client, input: values, webhookUrl }) {
+    async onEnable({ client, input: values, webhookUrl }): Promise<WebhookState> {
       const secret = randomBytes(32).toString('hex');
       const events = Array.isArray(event) ? event : [event];
       const hook = await client.request(
@@ -105,7 +104,7 @@ function trigger({
         dedupeKey: `${deliveryId}:${index}`,
       }));
     },
-  };
+  });
 }
 
 function actionIs(...actions: string[]): Match {

@@ -1,7 +1,7 @@
-import type { PieceActionDefinition } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { AttioClient } from './client.js';
+import { defineAction } from './define.js';
 
 const jsonObject = z.record(z.string(), z.unknown());
 const resource = jsonObject;
@@ -10,14 +10,13 @@ const attributes = jsonObject.optional();
 const objectId = z.string().meta({ label: 'Object' });
 const listId = z.string().meta({ label: 'List' });
 
-function action<TInput extends z.ZodType, TOutput extends z.ZodType>(
-  definition: PieceActionDefinition<TInput, TOutput, object, AttioClient, unknown>,
-) {
-  return definition;
-}
+type Resource = z.output<typeof resource>;
 
-async function data(client: AttioClient, request: Parameters<AttioClient['request']>[0]) {
-  const response = await client.request<{ data: unknown }>(request);
+async function data<T = Resource>(
+  client: AttioClient,
+  request: Parameters<AttioClient['request']>[0],
+) {
+  const response = await client.request<{ data: T }>(request);
 
   return response.data;
 }
@@ -46,13 +45,9 @@ function attributeValue(value: unknown): unknown {
   return value;
 }
 
-function normalizeRecord(value: unknown): unknown {
-  if (!value || typeof value !== 'object') return value;
-
-  const record = value as Record<string, unknown>;
-
+function normalizeRecord(record: Resource): Resource {
   if (!record.values || typeof record.values !== 'object' || Array.isArray(record.values)) {
-    return value;
+    return record;
   }
 
   const values = Object.fromEntries(
@@ -71,13 +66,13 @@ function normalizeRecord(value: unknown): unknown {
 }
 
 async function paginatedData(client: AttioClient, request: Parameters<AttioClient['request']>[0]) {
-  const results: unknown[] = [];
+  const results: Resource[] = [];
 
   for (let offset = 0; ; offset += 500) {
-    const page = (await data(client, {
+    const page = await data<Resource[]>(client, {
       ...request,
       query: { ...request.query, limit: 500, offset },
-    })) as unknown[];
+    });
 
     results.push(...page);
 
@@ -111,9 +106,11 @@ const objectOptions = async ({ client }: { client: AttioClient }) =>
   choices(client, '/objects', 'singular_noun');
 const listOptions = async ({ client }: { client: AttioClient }) =>
   choices(client, '/lists', 'name');
+const taskOptions = async ({ client }: { client: AttioClient }) =>
+  choices(client, '/tasks?limit=500', 'content');
 
 export const attioActions = [
-  action({
+  defineAction({
     slug: 'createRecord',
     description: 'Create an Attio record',
     input: z.object({ objectId, attributes }),
@@ -130,7 +127,7 @@ export const attioActions = [
       );
     },
   }),
-  action({
+  defineAction({
     slug: 'updateRecord',
     description: 'Update an Attio record',
     input: z.object({ objectId, recordId: z.string(), attributes }),
@@ -147,7 +144,7 @@ export const attioActions = [
       );
     },
   }),
-  action({
+  defineAction({
     slug: 'findRecords',
     description: 'Find Attio records by ID or attributes',
     input: z.object({ objectId, recordId: z.string().optional(), attributes }),
@@ -172,7 +169,7 @@ export const attioActions = [
       return { found: records.length > 0, result: records.map(normalizeRecord) };
     },
   }),
-  action({
+  defineAction({
     slug: 'getRecord',
     description: 'Get an Attio record',
     input: z.object({ objectId, recordId: z.string() }),
@@ -185,7 +182,7 @@ export const attioActions = [
       );
     },
   }),
-  action({
+  defineAction({
     slug: 'createListEntry',
     description: 'Add a record to an Attio list',
     input: z.object({ listId, parentObjectId: z.string(), parentRecordId: z.string(), attributes }),
@@ -205,7 +202,7 @@ export const attioActions = [
         },
       }),
   }),
-  action({
+  defineAction({
     slug: 'updateListEntry',
     description: 'Update an Attio list entry',
     input: z.object({ listId, entryId: z.string(), attributes }),
@@ -219,7 +216,7 @@ export const attioActions = [
         body: { data: { entry_values: input.attributes ?? {} } },
       }),
   }),
-  action({
+  defineAction({
     slug: 'findListEntries',
     description: 'Find entries in an Attio list',
     input: z.object({ listId, attributes }),
@@ -236,7 +233,7 @@ export const attioActions = [
       return { found: entries.length > 0, result: entries.map(normalizeRecord) };
     },
   }),
-  action({
+  defineAction({
     slug: 'createNote',
     description: 'Create a note on an Attio record',
     input: z.object({
@@ -264,7 +261,7 @@ export const attioActions = [
         },
       }),
   }),
-  action({
+  defineAction({
     slug: 'getCallTranscript',
     description: 'Get an Attio call recording transcript',
     input: z.object({ meetingId: z.string(), callRecordingId: z.string() }),
@@ -275,7 +272,7 @@ export const attioActions = [
         path: `/meetings/${input.meetingId}/call_recordings/${input.callRecordingId}/transcript`,
       }),
   }),
-  action({
+  defineAction({
     slug: 'createTask',
     description: 'Create an Attio task',
     input: z.object({
@@ -310,7 +307,7 @@ export const attioActions = [
         },
       }),
   }),
-  action({
+  defineAction({
     slug: 'listTasks',
     description: 'List Attio tasks',
     input: z.object({
@@ -323,7 +320,7 @@ export const attioActions = [
     idempotent: true,
     options: { linkedObject: objectOptions },
     async run({ input, client }) {
-      const tasks = (await data(client, {
+      const tasks = await data<Resource[]>(client, {
         path: '/tasks',
         query: {
           limit: 500,
@@ -333,31 +330,34 @@ export const attioActions = [
           assignee: input.assignee,
           is_completed: input.isCompleted === 'all' ? undefined : input.isCompleted,
         },
-      })) as unknown[];
+      });
 
       return { found: tasks.length > 0, result: tasks };
     },
   }),
-  ...(['getTask', 'deleteTask'] as const).map((slug) =>
-    action({
-      slug,
-      description: `${slug === 'getTask' ? 'Get' : 'Delete'} an Attio task`,
-      input: z.object({ taskId: z.string() }),
-      output: slug === 'getTask' ? resource : z.object({ success: z.literal(true) }),
-      idempotent: true,
-      options: { taskId: async ({ client }) => choices(client, '/tasks?limit=500', 'content') },
-      async run({ input, client }) {
-        if (slug === 'deleteTask') {
-          await client.request({ method: 'DELETE', path: `/tasks/${input.taskId}` });
+  defineAction({
+    slug: 'getTask',
+    description: 'Get an Attio task',
+    input: z.object({ taskId: z.string() }),
+    output: resource,
+    idempotent: true,
+    options: { taskId: taskOptions },
+    run: ({ input, client }) => data(client, { path: `/tasks/${input.taskId}` }),
+  }),
+  defineAction({
+    slug: 'deleteTask',
+    description: 'Delete an Attio task',
+    input: z.object({ taskId: z.string() }),
+    output: z.object({ success: z.literal(true) }),
+    idempotent: true,
+    options: { taskId: taskOptions },
+    async run({ input, client }) {
+      await client.request({ method: 'DELETE', path: `/tasks/${input.taskId}` });
 
-          return { success: true };
-        }
-
-        return data(client, { path: `/tasks/${input.taskId}` });
-      },
-    }),
-  ),
-  action({
+      return { success: true };
+    },
+  }),
+  defineAction({
     slug: 'updateTask',
     description: 'Update an Attio task',
     input: z.object({
@@ -399,7 +399,7 @@ export const attioActions = [
       });
     },
   }),
-  action({
+  defineAction({
     slug: 'customApiCall',
     description: 'Make a custom Attio API call',
     input: z.object({

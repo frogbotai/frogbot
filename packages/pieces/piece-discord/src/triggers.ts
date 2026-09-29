@@ -1,7 +1,7 @@
-import { type PieceAppTrigger, type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import { type DiscordClient, discordObject } from './client.js';
+import { discordObject } from './client.js';
+import { defineAppTrigger } from './define.js';
 
 const triggerInput = z.object({});
 const triggerOutput = discordObject;
@@ -40,8 +40,8 @@ function deliveryKey(slug: string, delivery: Record<string, unknown>): string | 
   return messageId && userId && emojiKey ? `${slug}:${messageId}:${userId}:${emojiKey}` : undefined;
 }
 
-function appTrigger(slug: string, description: string) {
-  return {
+function appTrigger<const TSlug extends string>(slug: TSlug, description: string) {
+  return defineAppTrigger({
     slug,
     description,
     type: 'app',
@@ -49,7 +49,7 @@ function appTrigger(slug: string, description: string) {
     input: triggerInput,
     output: triggerOutput,
     sample: {},
-    async run({ req }: PieceRunArgs<object, object, DiscordClient>) {
+    async run({ req }) {
       const delivery = discordObject.parse(req.data);
       const dedupeKey = deliveryKey(slug, delivery);
 
@@ -57,7 +57,7 @@ function appTrigger(slug: string, description: string) {
 
       return [{ data: delivery, dedupeKey }];
     },
-  } satisfies PieceAppTrigger<typeof triggerInput, typeof triggerOutput, object, DiscordClient>;
+  });
 }
 
 export const commandReceived = appTrigger(

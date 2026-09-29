@@ -137,7 +137,12 @@ describe('piecesPort', () => {
     expect(await exists(join(legacy, 'src/index.ts'))).toBe(true);
     expect(await exists(join(current, 'package.json'))).toBe(true);
     expect(await exists(join(current, 'tsconfig.json'))).toBe(true);
-    expect(await exists(join(current, 'src/index.ts'))).toBe(true);
+    expect(await readFile(join(current, 'src/define.ts'), 'utf8')).toBe(
+      "import { createPieceHelpers } from 'frogbot/pieces';\n\nexport const { defineAction } = createPieceHelpers();\n",
+    );
+    expect(await readFile(join(current, 'src/index.ts'), 'utf8')).toBe(
+      "import { definePiece } from 'frogbot/pieces';\nimport { z } from 'zod';\n\nimport { defineAction } from './define.js';\n\nconst example = defineAction({\n  slug: 'example',\n  description: 'Replace with the first ported action.',\n  input: z.object({}),\n  output: z.object({}),\n  async run() {\n    return {};\n  },\n});\n\nexport const createDemo = definePiece({\n  slug: 'demo',\n  label: 'Demo',\n  actions: [example],\n});\n",
+    );
     expect(await exists(join(current, 'README.md'))).toBe(true);
     expect(await exists(join(root, 'test/unit/piece-demo/index.spec.ts'))).toBe(true);
     expect(await readFile(join(root, 'test/unit/piece-demo.legacy/legacy.spec.ts'), 'utf8')).toBe(
@@ -146,6 +151,7 @@ describe('piecesPort', () => {
     expect(JSON.parse(await readFile(join(current, 'package.json'), 'utf8'))).toMatchObject({
       name: '@frogbotai/piece-demo',
       version: '1.2.3',
+      dependencies: { zod: '^4.3.6' },
     });
     expect(log).toHaveBeenCalledWith(
       '[frogbot] Test: pnpm vitest run --project unit test/unit/piece-demo',
@@ -187,6 +193,7 @@ describe('piecesPort', () => {
     expect(await readFile(join(test, 'legacy.spec.ts'), 'utf8')).toBe('legacy\n');
     expect(await exists(`${piece}.legacy`)).toBe(false);
     expect(await exists(`${test}.legacy`)).toBe(false);
+    expect(await exists(join(piece, 'src/define.ts'))).toBe(false);
     expect(await exists(join(piece, 'README.md'))).toBe(false);
     expect(await exists(join(test, 'index.spec.ts'))).toBe(false);
   });

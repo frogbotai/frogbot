@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
 import { notionId } from '../config.js';
-import { defineNotionTrigger } from '../definitions.js';
+import { definePollingTrigger } from '../define.js';
 import { notionComment, notionPage } from '../schemas.js';
 
-function databaseTrigger(
-  slug: 'newDatabaseItem' | 'updatedDatabaseItem',
+function databaseTrigger<const TSlug extends string>(
+  slug: TSlug,
   timestamp: 'created_time' | 'last_edited_time',
 ) {
-  return defineNotionTrigger({
+  return definePollingTrigger({
     slug,
     description: `Emit ${timestamp === 'created_time' ? 'new' : 'updated'} database items.`,
     type: 'polling',
@@ -17,9 +17,10 @@ function databaseTrigger(
     output: notionPage,
     sample: { object: 'page', id: 'example' },
     async run({ client, input, cursor, req }) {
+      const since = typeof cursor === 'number' ? cursor : undefined;
       const now = Date.now();
-      const filter = cursor
-        ? { timestamp, [timestamp]: { on_or_after: new Date(cursor).toISOString() } }
+      const filter = since
+        ? { timestamp, [timestamp]: { on_or_after: new Date(since).toISOString() } }
         : undefined;
       const pages = z.array(notionPage).parse(
         await client.listAll({
@@ -32,7 +33,7 @@ function databaseTrigger(
       const events = pages.filter((page) => {
         const time = page[timestamp];
 
-        if (seen.has(page.id) || (cursor && (time === undefined || Date.parse(time) <= cursor))) {
+        if (seen.has(page.id) || (since && (time === undefined || Date.parse(time) <= since))) {
           return false;
         }
 
@@ -49,7 +50,7 @@ function databaseTrigger(
 export const newDatabaseItem = databaseTrigger('newDatabaseItem', 'created_time');
 export const updatedDatabaseItem = databaseTrigger('updatedDatabaseItem', 'last_edited_time');
 
-export const newComment = defineNotionTrigger({
+export const newComment = definePollingTrigger({
   slug: 'newComment',
   description: 'Emit comments added to a page.',
   type: 'polling',
@@ -58,6 +59,7 @@ export const newComment = defineNotionTrigger({
   output: notionComment,
   sample: { object: 'comment', id: 'example', created_time: '2026-01-01T00:00:00.000Z' },
   async run({ client, input, cursor, req }) {
+    const since = typeof cursor === 'number' ? cursor : undefined;
     const now = Date.now();
     const comments = z.array(notionComment).parse(
       await client.listAll({
@@ -69,7 +71,7 @@ export const newComment = defineNotionTrigger({
 
     const seen = new Set<string>();
     const events = comments.filter((comment) => {
-      if (seen.has(comment.id) || (cursor && Date.parse(comment.created_time) <= cursor)) {
+      if (seen.has(comment.id) || (since && Date.parse(comment.created_time) <= since)) {
         return false;
       }
 
@@ -82,7 +84,7 @@ export const newComment = defineNotionTrigger({
   },
 });
 
-export const updatedPage = defineNotionTrigger({
+export const updatedPage = definePollingTrigger({
   slug: 'updatedPage',
   description: 'Emit updated workspace pages.',
   type: 'polling',
@@ -91,6 +93,7 @@ export const updatedPage = defineNotionTrigger({
   output: notionPage,
   sample: { object: 'page', id: 'example' },
   async run({ client, cursor, req }) {
+    const since = typeof cursor === 'number' ? cursor : undefined;
     const now = Date.now();
     const pages = z.array(notionPage).parse(
       await client.listAll({
@@ -106,8 +109,8 @@ export const updatedPage = defineNotionTrigger({
     const events = pages.filter((page) => {
       if (
         seen.has(page.id) ||
-        (cursor &&
-          (page.last_edited_time === undefined || Date.parse(page.last_edited_time) <= cursor))
+        (since &&
+          (page.last_edited_time === undefined || Date.parse(page.last_edited_time) <= since))
       ) {
         return false;
       }

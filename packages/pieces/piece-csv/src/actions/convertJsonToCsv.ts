@@ -1,6 +1,7 @@
 import { stringify } from 'csv-stringify/sync';
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
+
+import { defineAction } from '../define.js';
 
 const jsonObject = z.record(z.string(), z.unknown());
 const inputSchema = z.object({
@@ -30,15 +31,15 @@ function flatten(value: Record<string, unknown>, prefix = ''): Record<string, un
   return result;
 }
 
-export const convertJsonToCsv = {
+export const convertJsonToCsv = defineAction({
   slug: 'convertJsonToCsv',
   label: 'Convert JSON to CSV',
   description: 'Flatten a JSON array and convert it into CSV text.',
   input: inputSchema,
   output: z.string(),
-  async run({ input }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input }) {
     const flattened = input.jsonArray.map((item) => flatten(item));
 
     return stringify(flattened, { header: true, delimiter: input.delimiter });
   },
-};
+});

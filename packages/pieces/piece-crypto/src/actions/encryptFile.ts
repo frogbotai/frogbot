@@ -1,7 +1,8 @@
 import type { FrogBotRequest } from 'frogbot';
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { createMessage, encrypt, readKey } from 'openpgp';
 import { z } from 'zod';
+
+import { defineAction } from '../define.js';
 
 const fileId = z.union([z.string(), z.number()]);
 const inputSchema = z.object({
@@ -56,18 +57,13 @@ async function loadFile(req: FrogBotRequest, id: string | number) {
   };
 }
 
-export const encryptFile = {
+export const encryptFile = defineAction({
   slug: 'encryptFile',
   label: 'Encrypt File',
   description: 'Encrypt a file with an ASCII-armored OpenPGP public key.',
   input: inputSchema,
   output,
-  async run({
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>): Promise<
-    z.output<typeof output>
-  > {
+  async run({ input, req }) {
     try {
       const source = await loadFile(req, input.file);
       const publicKey = await readKey({ armoredKey: input.publicKey });
@@ -102,4 +98,4 @@ export const encryptFile = {
       };
     }
   },
-};
+});

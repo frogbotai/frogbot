@@ -135,7 +135,7 @@ export function createMicrosoftTeamsClient({ auth }: { auth: unknown }) {
     list,
     page: getPage,
     meetingId,
-    async custom(path: string, schema: z.ZodType, options?: RequestOptions) {
+    async custom<T>(path: string, schema: z.ZodType<T>, options?: RequestOptions) {
       const response = await raw(path, options);
       const value: unknown = response.status === 204 ? null : await response.json();
 

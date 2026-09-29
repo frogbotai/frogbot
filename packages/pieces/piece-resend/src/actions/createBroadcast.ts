@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
+import { defineAction } from '../define.js';
 import { compact } from '../format.js';
-import type { ResendAction } from './types.js';
 
 const input = z.object({
   audience_id: z.string(),
@@ -14,7 +14,7 @@ const input = z.object({
   content: z.string(),
 });
 
-export const createBroadcast = {
+export const createBroadcast = defineAction({
   slug: 'createBroadcast',
   description: 'Create a broadcast',
   idempotent: false,
@@ -35,4 +35,4 @@ export const createBroadcast = {
       }),
     });
   },
-} satisfies ResendAction;
+});

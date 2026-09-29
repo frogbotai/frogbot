@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
+import { defineAction } from '../define.js';
 import { emailBody, send as request } from '../format.js';
-import type { ResendAction } from './types.js';
 
 const input = z.object({
   to: z.array(z.string()),
@@ -16,7 +16,7 @@ const input = z.object({
   scheduled_at: z.string().optional(),
 });
 
-export const send = {
+export const send = defineAction({
   slug: 'send',
   description: 'Send a text or HTML email',
   idempotent: false,
@@ -24,4 +24,4 @@ export const send = {
   async run({ input, client }) {
     return request(client, emailBody(input, true), true);
   },
-} satisfies ResendAction;
+});

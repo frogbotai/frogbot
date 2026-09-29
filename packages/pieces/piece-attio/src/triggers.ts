@@ -1,9 +1,8 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
-import type { PieceWebhookTrigger } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { AttioClient } from './client.js';
+import { defineWebhookTrigger } from './define.js';
 
 const objectInput = z.object({ objectId: z.string() });
 const listInput = z.object({ listId: z.string() });
@@ -21,7 +20,6 @@ const webhookDelivery = z.object({ events: z.array(webhookEvent).optional() });
 const webhookRegistration = z.object({
   data: z.object({ id: z.object({ webhook_id: z.string() }), secret: z.string() }),
 });
-type AttioWebhookState = { webhookId: string; webhookSecret: string };
 
 function verifySignature(body: string, signature: string | null, secret: string): void {
   if (!signature || !/^[\da-f]{64}$/i.test(signature)) {
@@ -36,7 +34,7 @@ function verifySignature(body: string, signature: string | null, secret: string)
   }
 }
 
-function trigger<TInput extends z.ZodType>({
+function trigger<const TSlug extends string, TInput extends z.ZodType>({
   slug,
   eventType,
   input,
@@ -45,24 +43,18 @@ function trigger<TInput extends z.ZodType>({
   resourcePath,
   matches,
 }: {
-  slug: string;
+  slug: TSlug;
   eventType: string;
   input: TInput;
   filterField?: string;
   filterValue?: (input: z.output<TInput>) => string;
   resourcePath?: (input: z.output<TInput>, event: z.output<typeof webhookEvent>) => string;
   matches?: (value: z.output<typeof webhookData>, input: z.output<TInput>) => boolean;
-}): PieceWebhookTrigger<
-  TInput,
-  typeof webhookData,
-  Record<string, never>,
-  AttioClient,
-  AttioWebhookState
-> {
-  return {
+}) {
+  return defineWebhookTrigger({
     slug,
     description: `Trigger when an Attio ${eventType} event occurs`,
-    type: 'webhook' as const,
+    type: 'webhook',
     input,
     output: webhookData,
     async onEnable({ client, input, webhookUrl, req }) {
@@ -132,7 +124,7 @@ function trigger<TInput extends z.ZodType>({
         },
       ];
     },
-  };
+  });
 }
 
 export const attioTriggers = [

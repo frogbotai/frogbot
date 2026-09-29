@@ -1,7 +1,6 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { PosthogClient } from '../client.js';
+import { defineAction } from '../define.js';
 
 const inputSchema = z.object({
   event: z.string().min(1).meta({ label: 'Event name' }),
@@ -15,13 +14,15 @@ const inputSchema = z.object({
   category: z.string().optional(),
 });
 
-export const createEvent = {
+const output = z.object({ status: z.number() }).passthrough();
+
+export const createEvent = defineAction({
   slug: 'createEvent',
   description: 'Capture an event in PostHog.',
   input: inputSchema,
-  output: z.object({ status: z.number() }).passthrough(),
+  output,
   idempotent: false,
-  async run({ input, client }: PieceRunArgs<z.output<typeof inputSchema>, object, PosthogClient>) {
+  async run({ input, client }) {
     const response = await client.request({
       method: 'POST',
       path: '/capture/',
@@ -37,6 +38,6 @@ export const createEvent = {
       },
     });
 
-    return response.body;
+    return response.body as z.output<typeof output>;
   },
-};
+});

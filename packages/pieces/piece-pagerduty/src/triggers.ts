@@ -1,8 +1,6 @@
-import type { PieceWebhookTrigger } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { PagerdutyClient } from './client.js';
-import type { PagerdutyOptions } from './config.js';
+import { defineWebhookTrigger } from './define.js';
 
 const input = z.object({});
 const output = z
@@ -16,26 +14,18 @@ const output = z
   })
   .passthrough();
 
-type ManualWebhookState = { webhookUrl: string };
-
-function manualTrigger({
+function manualTrigger<const TSlug extends string>({
   slug,
   label,
   description,
   eventType,
 }: {
-  slug: string;
+  slug: TSlug;
   label: string;
   description: string;
   eventType: string;
-}): PieceWebhookTrigger<
-  typeof input,
-  typeof output,
-  PagerdutyOptions,
-  PagerdutyClient,
-  ManualWebhookState
-> {
-  return {
+}) {
+  return defineWebhookTrigger({
     slug,
     label,
     description,
@@ -55,7 +45,7 @@ function manualTrigger({
 
       return [{ data: delivery.data, dedupeKey: delivery.data.event.id }];
     },
-  };
+  });
 }
 
 export const newIncident = manualTrigger({

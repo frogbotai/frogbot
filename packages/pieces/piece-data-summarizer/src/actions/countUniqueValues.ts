@@ -1,5 +1,6 @@
-import { type PieceActionDefinition, type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
+
+import { defineAction } from '../define.js';
 
 const inputSchema = z.object({
   values: z.array(z.unknown()).meta({ label: 'Values' }),
@@ -23,13 +24,13 @@ function selectFields(value: unknown, fields: string[]) {
   return selected;
 }
 
-export const countUniqueValues = {
+export const countUniqueValues = defineAction({
   slug: 'countUniqueValues',
   label: 'Count Unique Values',
   description: 'Count unique values, optionally using selected object fields.',
   input: inputSchema,
   output: outputSchema,
-  async run({ input }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input }) {
     const fields = input.fields;
     const values = fields?.length
       ? input.values.map((value) => selectFields(value, fields))
@@ -39,4 +40,4 @@ export const countUniqueValues = {
 
     return { numUniques };
   },
-} satisfies PieceActionDefinition<typeof inputSchema, typeof outputSchema, object, undefined>;
+});

@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
+import { defineAction } from '../define.js';
 import { compact } from '../format.js';
-import type { ResendAction } from './types.js';
 
 const input = z.object({
   name: z.string(),
   region: z.enum(['us-east-1', 'eu-west-1', 'ap-northeast-1', 'sa-east-1']).optional(),
 });
 
-export const createDomain = {
+export const createDomain = defineAction({
   slug: 'createDomain',
   description: 'Create a domain',
   idempotent: false,
@@ -30,4 +30,4 @@ export const createDomain = {
       dns_records: result.records,
     };
   },
-} satisfies ResendAction;
+});

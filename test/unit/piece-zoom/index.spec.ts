@@ -115,12 +115,10 @@ describe('zoom', () => {
     );
     const options = await action?.options?.meeting_id?.({ client } as never);
 
-    expect(options).toEqual({
-      options: [
-        { label: 'First', value: '1' },
-        { label: 'Meeting 2', value: '2' },
-      ],
-    });
+    expect(options).toEqual([
+      { label: 'First', value: '1' },
+      { label: 'Meeting 2', value: '2' },
+    ]);
     expect(String(fetch.mock.calls[0]?.[0])).toContain('page_size=300');
     expect(String(fetch.mock.calls[1]?.[0])).toContain('next_page_token=next');
   });

@@ -1,7 +1,6 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { Gmail } from '../client.js';
+import { defineAction } from '../define.js';
 
 const inputSchema = z.object({
   method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']),
@@ -10,13 +9,13 @@ const inputSchema = z.object({
   body: z.unknown().optional(),
 });
 
-export const customApiCall = {
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Make an authenticated Gmail API call.',
   input: inputSchema,
   output: z.unknown(),
   idempotent: false,
-  async run({ client, input }: PieceRunArgs<z.output<typeof inputSchema>, object, Gmail>) {
+  async run({ client, input }) {
     const request = client.context._options.auth;
     if (!request || typeof request === 'string' || !('request' in request)) {
       throw new Error('[frogbot] Gmail client is missing authenticated transport.');
@@ -30,4 +29,4 @@ export const customApiCall = {
       })
     ).data;
   },
-};
+});

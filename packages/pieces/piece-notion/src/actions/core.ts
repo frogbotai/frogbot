@@ -1,9 +1,8 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { NotionClient } from '../client.js';
 import { databaseFields, notionId } from '../config.js';
-import { defineNotionAction } from '../definitions.js';
+import { defineAction } from '../define.js';
 import { buildFilters } from '../filtering.js';
 import { buildProperty, hasValue } from '../properties.js';
 import { notionList, notionObject, notionPage, pagination } from '../schemas.js';
@@ -37,17 +36,13 @@ async function properties(
   return result;
 }
 
-export const createDatabaseItem = defineNotionAction({
+export const createDatabaseItem = defineAction({
   slug: 'createDatabaseItem',
   description: 'Create an item in a database.',
   input: args.extend({ content: z.string().optional() }),
   output: notionPage,
   idempotent: false,
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof args> & { content?: string }, object, NotionClient>) {
+  async run({ client, input, req }) {
     const values = await properties(
       client,
       input.databaseId,
@@ -79,7 +74,7 @@ export const createDatabaseItem = defineNotionAction({
   },
 });
 
-export const updateDatabaseItem = defineNotionAction({
+export const updateDatabaseItem = defineAction({
   slug: 'updateDatabaseItem',
   description: 'Update fields on a database item.',
   input: args.extend({ itemId: notionId }),
@@ -104,7 +99,7 @@ export const updateDatabaseItem = defineNotionAction({
   },
 });
 
-export const createPage = defineNotionAction({
+export const createPage = defineAction({
   slug: 'createPage',
   description: 'Create a child page.',
   input: z.object({
@@ -138,7 +133,7 @@ export const createPage = defineNotionAction({
   },
 });
 
-export const appendToPage = defineNotionAction({
+export const appendToPage = defineAction({
   slug: 'appendToPage',
   description: 'Append content to a page.',
   input: z.object({ pageId: notionId, content: z.string() }),
@@ -164,8 +159,8 @@ export const appendToPage = defineNotionAction({
   },
 });
 
-function archive(slug: 'archiveDatabaseItem' | 'restoreDatabaseItem', archived: boolean) {
-  return defineNotionAction({
+function archive<const TSlug extends string>(slug: TSlug, archived: boolean) {
+  return defineAction({
     slug,
     description: `${archived ? 'Archive' : 'Restore'} a database item.`,
     input: z.object({ databaseId: notionId, itemId: notionId }),
@@ -187,7 +182,7 @@ function archive(slug: 'archiveDatabaseItem' | 'restoreDatabaseItem', archived: 
 export const archiveDatabaseItem = archive('archiveDatabaseItem', true);
 export const restoreDatabaseItem = archive('restoreDatabaseItem', false);
 
-export const listDatabases = defineNotionAction({
+export const listDatabases = defineAction({
   slug: 'listDatabases',
   description: 'List accessible databases.',
   input: z.object({ limit: z.number().min(1).max(100).default(10), cursor: z.string().optional() }),
@@ -221,7 +216,7 @@ export const listDatabases = defineNotionAction({
   },
 });
 
-export const listDatabasePages = defineNotionAction({
+export const listDatabasePages = defineAction({
   slug: 'listDatabasePages',
   description: 'List pages in a database.',
   input: args

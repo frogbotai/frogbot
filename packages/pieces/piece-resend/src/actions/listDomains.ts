@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-import type { ResendAction } from './types.js';
+import { defineAction } from '../define.js';
 
-export const listDomains = {
+export const listDomains = defineAction({
   slug: 'listDomains',
   description: 'List domains',
   idempotent: true,
@@ -20,4 +20,4 @@ export const listDomains = {
       receiving: (domain.capabilities as Record<string, unknown> | undefined)?.receiving ?? '',
     }));
   },
-} satisfies ResendAction;
+});

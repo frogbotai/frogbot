@@ -1,9 +1,8 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { MicrosoftTeamsClient } from './client.js';
 import { signal } from './client.js';
 import { contentType, identifier, meetingIdentifierType } from './config.js';
+import { defineAction } from './define.js';
 import { channels, chats, members, teams } from './options.js';
 import {
   channel,
@@ -16,8 +15,6 @@ import {
   transcript,
   user,
 } from './schemas.js';
-
-type Run<T extends z.ZodType> = PieceRunArgs<z.output<T>, object, MicrosoftTeamsClient>;
 
 const teamInput = { teamId: identifier.meta({ label: 'Team' }) };
 const channelInput = { ...teamInput, channelId: identifier.meta({ label: 'Channel' }) };
@@ -35,27 +32,27 @@ const createChannelInput = z.object({
   channelDescription: z.string().optional().meta({ label: 'Channel description' }),
 });
 
-export const createChannel = {
+export const createChannel = defineAction({
   slug: 'createChannel',
   description: 'Create a standard channel in a team.',
   input: createChannelInput,
   output: channel,
   options: { teamId: teams },
   idempotent: false,
-  async run({ client, input, req }: Run<typeof createChannelInput>) {
+  async run({ client, input, req }) {
     return client.request(`/v1.0/teams/${encodeURIComponent(input.teamId)}/channels`, channel, {
       method: 'POST',
       body: { displayName: input.channelDisplayName, description: input.channelDescription },
       signal: signal(req),
     });
   },
-};
+});
 
-export const createPrivateChannel = {
+export const createPrivateChannel = defineAction({
   ...createChannel,
   slug: 'createPrivateChannel',
   description: 'Create a private channel in a team.',
-  async run({ client, input, req }: Run<typeof createChannelInput>) {
+  async run({ client, input, req }) {
     return client.request(`/v1.0/teams/${encodeURIComponent(input.teamId)}/channels`, channel, {
       method: 'POST',
       body: {
@@ -66,18 +63,18 @@ export const createPrivateChannel = {
       signal: signal(req),
     });
   },
-};
+});
 
 const sendChannelMessageInput = z.object({ ...channelInput, ...bodyInput });
 
-export const sendChannelMessage = {
+export const sendChannelMessage = defineAction({
   slug: 'sendChannelMessage',
   description: 'Send a top-level message to a channel.',
   input: sendChannelMessageInput,
   output: message,
   options: channelOptions,
   idempotent: false,
-  async run({ client, input, req }: Run<typeof sendChannelMessageInput>) {
+  async run({ client, input, req }) {
     return client.request(
       `/v1.0/teams/${encodeURIComponent(input.teamId)}/channels/${encodeURIComponent(input.channelId)}/messages`,
       message,
@@ -88,36 +85,36 @@ export const sendChannelMessage = {
       },
     );
   },
-};
+});
 
 const sendChatMessageInput = z.object({ ...chatInput, ...bodyInput });
 
-export const sendChatMessage = {
+export const sendChatMessage = defineAction({
   slug: 'sendChatMessage',
   description: 'Send a message to an existing chat.',
   input: sendChatMessageInput,
   output: message,
   options: chatOptions,
   idempotent: false,
-  async run({ client, input, req }: Run<typeof sendChatMessageInput>) {
+  async run({ client, input, req }) {
     return client.request(`/v1.0/chats/${encodeURIComponent(input.chatId)}/messages`, message, {
       method: 'POST',
       body: { body: { content: input.content, contentType: input.contentType } },
       signal: signal(req),
     });
   },
-};
+});
 
 const replyInput = z.object({ ...channelInput, messageId: identifier, ...bodyInput });
 
-export const replyToChannelMessage = {
+export const replyToChannelMessage = defineAction({
   slug: 'replyToChannelMessage',
   description: 'Reply to an existing channel message.',
   input: replyInput,
   output: message,
   options: channelOptions,
   idempotent: false,
-  async run({ client, input, req }: Run<typeof replyInput>) {
+  async run({ client, input, req }) {
     const path = `/v1.0/teams/${encodeURIComponent(input.teamId)}/channels/${encodeURIComponent(input.channelId)}/messages/${encodeURIComponent(input.messageId)}/replies`;
 
     return client.request(path, message, {
@@ -126,7 +123,7 @@ export const replyToChannelMessage = {
       signal: signal(req),
     });
   },
-};
+});
 
 const createChatInput = z.object({
   ...teamInput,
@@ -135,14 +132,14 @@ const createChatInput = z.object({
 });
 const createChatOutput = z.object({ chat, message });
 
-export const createChatAndSendMessage = {
+export const createChatAndSendMessage = defineAction({
   slug: 'createChatAndSendMessage',
   description: 'Create a chat and send its first message.',
   input: createChatInput,
   output: createChatOutput,
   options: { teamId: teams, members },
   idempotent: false,
-  async run({ client, input, req }: Run<typeof createChatInput>) {
+  async run({ client, input, req }) {
     const current = await client.request('/v1.0/me', user, { signal: signal(req) });
     const bindings = [current.id, ...input.members].map((id) => ({
       '@odata.type': '#microsoft.graph.aadUserConversationMember',
@@ -166,25 +163,25 @@ export const createChatAndSendMessage = {
 
     return { chat: created, message: sent };
   },
-};
+});
 
 const getChatMessageInput = z.object({ ...chatInput, messageId: identifier });
 
-export const getChatMessage = {
+export const getChatMessage = defineAction({
   slug: 'getChatMessage',
   description: 'Get one message from a chat.',
   input: getChatMessageInput,
   output: message,
   options: chatOptions,
   idempotent: true,
-  async run({ client, input, req }: Run<typeof getChatMessageInput>) {
+  async run({ client, input, req }) {
     return client.request(
       `/v1.0/chats/${encodeURIComponent(input.chatId)}/messages/${encodeURIComponent(input.messageId)}`,
       message,
       { signal: signal(req) },
     );
   },
-};
+});
 
 const deleteChatMessageOutput = z.object({
   success: z.literal(true),
@@ -192,14 +189,14 @@ const deleteChatMessageOutput = z.object({
   chatId: z.string(),
 });
 
-export const deleteChatMessage = {
+export const deleteChatMessage = defineAction({
   slug: 'deleteChatMessage',
   description: 'Soft-delete a chat message sent by the current user.',
   input: getChatMessageInput,
   output: deleteChatMessageOutput,
   options: chatOptions,
   idempotent: true,
-  async run({ client, input, req }: Run<typeof getChatMessageInput>) {
+  async run({ client, input, req }) {
     const current = await client.request('/v1.0/me', user, { signal: signal(req) });
     const path = `/v1.0/users/${encodeURIComponent(current.id)}/chats/${encodeURIComponent(input.chatId)}/messages/${encodeURIComponent(input.messageId)}/softDelete`;
 
@@ -207,7 +204,7 @@ export const deleteChatMessage = {
 
     return { success: true, messageId: input.messageId, chatId: input.chatId };
   },
-};
+});
 
 const getChannelMessageInput = z.object({
   ...channelInput,
@@ -215,31 +212,31 @@ const getChannelMessageInput = z.object({
   replyId: identifier.optional(),
 });
 
-export const getChannelMessage = {
+export const getChannelMessage = defineAction({
   slug: 'getChannelMessage',
   description: 'Get a channel message or one of its replies.',
   input: getChannelMessageInput,
   output: message,
   options: channelOptions,
   idempotent: true,
-  async run({ client, input, req }: Run<typeof getChannelMessageInput>) {
+  async run({ client, input, req }) {
     const root = `/v1.0/teams/${encodeURIComponent(input.teamId)}/channels/${encodeURIComponent(input.channelId)}/messages/${encodeURIComponent(input.messageId)}`;
     const path = input.replyId ? `${root}/replies/${encodeURIComponent(input.replyId)}` : root;
 
     return client.request(path, message, { signal: signal(req) });
   },
-};
+});
 
 const findChannelInput = z.object({ ...teamInput, channelName: z.string().trim().min(1) });
 
-export const findChannel = {
+export const findChannel = defineAction({
   slug: 'findChannel',
   description: 'Find channels by exact display name.',
   input: findChannelInput,
   output: searchResult(channel),
   options: { teamId: teams },
   idempotent: true,
-  async run({ client, input, req }: Run<typeof findChannelInput>) {
+  async run({ client, input, req }) {
     const escaped = input.channelName.replaceAll("'", "''");
     const result = await client.request(
       `/v1.0/teams/${encodeURIComponent(input.teamId)}/allChannels`,
@@ -249,7 +246,7 @@ export const findChannel = {
 
     return { found: result.value.length > 0, result: result.value };
   },
-};
+});
 
 const findMemberInput = z.object({
   ...teamInput,
@@ -257,14 +254,14 @@ const findMemberInput = z.object({
   searchValue: z.string().trim().min(1),
 });
 
-export const findTeamMember = {
+export const findTeamMember = defineAction({
   slug: 'findTeamMember',
   description: 'Find team members by exact email or display name.',
   input: findMemberInput,
   output: searchResult(member),
   options: { teamId: teams },
   idempotent: true,
-  async run({ client, input, req }: Run<typeof findMemberInput>) {
+  async run({ client, input, req }) {
     const escaped = input.searchValue.replaceAll("'", "''");
     const field = input.searchBy === 'email' ? 'email' : 'displayName';
     const result = await client.request(
@@ -278,7 +275,7 @@ export const findTeamMember = {
 
     return { found: result.value.length > 0, result: result.value };
   },
-};
+});
 
 const meetingInput = {
   meetingIdentifierType,
@@ -287,13 +284,13 @@ const meetingInput = {
 const transcriptInput = z.object({ ...meetingInput, transcriptId: identifier.optional() });
 const transcriptOutput = z.union([z.object({ content: z.string() }), page(transcript)]);
 
-export const getMeetingTranscript = {
+export const getMeetingTranscript = defineAction({
   slug: 'getMeetingTranscript',
   description: 'List meeting transcripts or retrieve VTT transcript text.',
   input: transcriptInput,
   output: transcriptOutput,
   idempotent: true,
-  async run({ client, input, req }: Run<typeof transcriptInput>) {
+  async run({ client, input, req }) {
     const meetingId = await client.meetingId(
       input.meetingIdentifierType,
       input.meetingIdentifierValue,
@@ -310,18 +307,18 @@ export const getMeetingTranscript = {
 
     return { content };
   },
-};
+});
 
 const recordingInput = z.object({ ...meetingInput, recordingId: identifier.optional() });
 const recordingOutput = z.union([recording, page(recording)]);
 
-export const getMeetingRecording = {
+export const getMeetingRecording = defineAction({
   slug: 'getMeetingRecording',
   description: 'List meeting recordings or retrieve recording metadata.',
   input: recordingInput,
   output: recordingOutput,
   idempotent: true,
-  async run({ client, input, req }: Run<typeof recordingInput>) {
+  async run({ client, input, req }) {
     const meetingId = await client.meetingId(
       input.meetingIdentifierType,
       input.meetingIdentifierValue,
@@ -335,7 +332,7 @@ export const getMeetingRecording = {
         })
       : client.request(root, page(recording), { signal: signal(req) });
   },
-};
+});
 
 const customInput = z.object({
   method: z.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']),
@@ -345,13 +342,13 @@ const customInput = z.object({
 });
 const customOutput = z.object({ status: z.number().int(), body: z.json() });
 
-export const customApiCall = {
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Make an authenticated JSON request within Microsoft Graph v1.0.',
   input: customInput,
   output: customOutput,
   idempotent: false,
-  async run({ client, input, req }: Run<typeof customInput>) {
+  async run({ client, input, req }) {
     const target = new URL(input.path, `${client.baseUrl}/v1.0/`);
 
     if (target.origin !== client.baseUrl || !target.pathname.startsWith('/v1.0/')) {
@@ -365,7 +362,7 @@ export const customApiCall = {
       signal: signal(req),
     });
   },
-};
+});
 
 export const microsoftTeamsActionDefinitions = [
   createChannel,

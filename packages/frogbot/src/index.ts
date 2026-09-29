@@ -218,7 +218,7 @@ export type { DatabaseKVAdapterOptions } from './kv/adapters/DatabaseKVAdapter.j
 export { databaseKVAdapter } from './kv/adapters/DatabaseKVAdapter.js';
 export { KVLeaseLostError, KVLockContentionError, KVUnsupportedError } from './kv/errors.js';
 export type { KV, KVAtomicAdapter, KVLock, KVLockCallback, KVSetOptions } from './kv/types.js';
-export { definePiece } from './pieces/definePiece.js';
+export { createPieceHelpers, definePiece } from './pieces/definePiece.js';
 export type { EmailPiece } from './pieces/email.js';
 export type {
   ChannelPieceInstance,
@@ -237,6 +237,7 @@ export type {
   PieceDefinition,
   PieceEmail,
   PieceFactory,
+  PieceHelpers,
   PieceInstance,
   PieceJSON,
   PieceOAuthAccount,

@@ -1,7 +1,6 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { BraveSearch } from '../client.js';
+import { defineAction } from '../define.js';
 
 const input = z.object({
   query: z.string().min(1).meta({ label: 'Query', description: 'The search query' }),
@@ -29,23 +28,19 @@ const output = z
   })
   .passthrough();
 
-export const searchWeb = {
+export const searchWeb = defineAction({
   slug: 'searchWeb',
   description: 'Search the public web with Brave Search.',
   input,
   output,
   idempotent: true,
-  async run({
-    client,
-    input: values,
-    req,
-  }: PieceRunArgs<z.output<typeof input>, object, BraveSearch>) {
+  async run({ client, input: values, req }) {
     const response = await client.request({
       path: '/web/search',
       query: { q: values.query, count: values.count },
       signal: req.signal ?? undefined,
     });
 
-    return response.body;
+    return response.body as z.output<typeof output>;
   },
-};
+});

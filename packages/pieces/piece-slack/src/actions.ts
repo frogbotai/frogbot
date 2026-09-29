@@ -1,4 +1,3 @@
-import type { PieceActionDefinition, PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import {
@@ -9,22 +8,9 @@ import {
   slackValue,
   slackValues,
 } from './client.js';
+import { defineAction } from './define.js';
 import { loadSlackFile, slackFile } from './files.js';
 import { channelOptions, userOptions } from './options.js';
-
-type Args<T> = PieceRunArgs<T, { signingSecret?: string }, SlackClient>;
-
-function action<TInput extends z.ZodType, TOutput extends z.ZodType>(
-  definition: PieceActionDefinition<
-    TInput,
-    TOutput,
-    { signingSecret?: string },
-    SlackClient,
-    z.output<TOutput>
-  >,
-) {
-  return definition;
-}
 
 const channel = z.string().min(1).meta({ label: 'Channel' });
 const user = z.string().min(1).meta({ label: 'User' });
@@ -114,14 +100,14 @@ const messageFields = {
 };
 const sendDirectMessageInput = z.object({ userId: user, ...messageFields });
 
-export const sendDirectMessage = action({
+export const sendDirectMessage = defineAction({
   slug: 'sendDirectMessage',
   description: 'Send a direct message to a Slack user.',
   input: sendDirectMessageInput,
   output: messageResult,
   idempotent: false,
   options: { userId: userOptions },
-  async run({ client, input }: Args<z.output<typeof sendDirectMessageInput>>) {
+  async run({ client, input }) {
     return client.request('chat.postMessage', {
       channel: input.userId,
       text: input.text,
@@ -152,14 +138,14 @@ const sendChannelInput = z
     message: 'A message or Block Kit blocks are required.',
   });
 
-export const sendChannelMessage = action({
+export const sendChannelMessage = defineAction({
   slug: 'sendChannelMessage',
   description: 'Send a message and optional file to a Slack channel.',
   input: sendChannelInput,
   output: slackResponse,
   idempotent: false,
   options: { channel: channelOptions },
-  async run({ client, input, req }: Args<z.output<typeof sendChannelInput>>) {
+  async run({ client, input, req }) {
     const token = input.sendAsBot ? 'bot' : 'user';
 
     if (input.file) {
@@ -203,14 +189,14 @@ const addReactionInput = z.object({
   reactAsUser: z.boolean().default(false),
 });
 
-export const addReaction = action({
+export const addReaction = defineAction({
   slug: 'addReaction',
   description: 'Add an emoji reaction to a message.',
   input: addReactionInput,
   output: slackResponse,
   idempotent: true,
   options: { channel: channelOptions },
-  async run({ client, input }: Args<z.output<typeof addReactionInput>>) {
+  async run({ client, input }) {
     return client.request(
       'reactions.add',
       {
@@ -230,14 +216,14 @@ const uploadFileInput = z.object({
   channel: channel.optional(),
 });
 
-export const uploadFile = action({
+export const uploadFile = defineAction({
   slug: 'uploadFile',
   description: 'Upload a file, optionally sharing it to a channel.',
   input: uploadFileInput,
   output: slackResponse,
   idempotent: false,
   options: { channel: channelOptions },
-  async run({ client, input, req }: Args<z.output<typeof uploadFileInput>>) {
+  async run({ client, input, req }) {
     const loaded = await loadSlackFile(req, {
       ...input.file,
       name: input.filename ?? input.file.name,
@@ -255,13 +241,13 @@ export const uploadFile = action({
 
 const getFileInput = z.object({ fileId: z.string().min(1) });
 
-export const getFile = action({
+export const getFile = defineAction({
   slug: 'getFile',
   description: 'Get Slack file metadata and safely download its contents.',
   input: getFileInput,
   output: slackValue,
   idempotent: true,
-  async run({ client, input, req }: Args<z.output<typeof getFileInput>>) {
+  async run({ client, input, req }) {
     const response = await client.request('files.info', { file: input.fileId });
     const file = response.file;
 
@@ -329,13 +315,13 @@ export const getFile = action({
 
 const searchMessagesInput = z.object({ query: z.string().min(1) });
 
-export const searchMessages = action({
+export const searchMessages = defineAction({
   slug: 'searchMessages',
   description: 'Search all Slack messages matching a query.',
   input: searchMessagesInput,
   output: slackValues,
   idempotent: true,
-  async run({ client, input }: Args<z.output<typeof searchMessagesInput>>) {
+  async run({ client, input }) {
     const matches: Record<string, unknown>[] = [];
     let cursor: string | undefined = '*';
 
@@ -370,26 +356,26 @@ export const searchMessages = action({
 
 const emailInput = z.object({ email: z.email() });
 
-export const findUserByEmail = action({
+export const findUserByEmail = defineAction({
   slug: 'findUserByEmail',
   description: 'Find a Slack user by exact email address.',
   input: emailInput,
   output: slackResponse,
   idempotent: true,
-  async run({ client, input }: Args<z.output<typeof emailInput>>) {
+  async run({ client, input }) {
     return client.request('users.lookupByEmail', input);
   },
 });
 
 const handleInput = z.object({ handle: z.string().min(1) });
 
-export const findUserByHandle = action({
+export const findUserByHandle = defineAction({
   slug: 'findUserByHandle',
   description: 'Find a Slack user by display-name handle.',
   input: handleInput,
   output: slackValue,
   idempotent: true,
-  async run({ client, input }: Args<z.output<typeof handleInput>>) {
+  async run({ client, input }) {
     const handle = input.handle.replace(/^@/, '');
     const members = await client.paginate({
       path: 'users.list',
@@ -419,13 +405,13 @@ export const findUserByHandle = action({
 
 const findUserByIdInput = z.object({ id: z.string().min(1) });
 
-export const findUserById = action({
+export const findUserById = defineAction({
   slug: 'findUserById',
   description: 'Find a Slack user profile by ID.',
   input: findUserByIdInput,
   output: slackResponse,
   idempotent: true,
-  async run({ client, input }: Args<z.output<typeof findUserByIdInput>>) {
+  async run({ client, input }) {
     return client.request('users.profile.get', { user: input.id });
   },
 });
@@ -435,13 +421,13 @@ const listUsersInput = z.object({
   includeDisabled: z.boolean().default(false),
 });
 
-export const listUsers = action({
+export const listUsers = defineAction({
   slug: 'listUsers',
   description: 'List all users in the workspace.',
   input: listUsersInput,
   output: slackValues,
   idempotent: true,
-  async run({ client, input }: Args<z.output<typeof listUsersInput>>) {
+  async run({ client, input }) {
     const members = await client.paginate({
       path: 'users.list',
       item: 'members',
@@ -460,14 +446,14 @@ export const listUsers = action({
 
 const updateMessageInput = z.object({ channel, timestamp, text: z.string().min(1), blocks });
 
-export const updateMessage = action({
+export const updateMessage = defineAction({
   slug: 'updateMessage',
   description: 'Update an existing Slack message.',
   input: updateMessageInput,
   output: slackResponse,
   idempotent: true,
   options: { channel: channelOptions },
-  async run({ client, input }: Args<z.output<typeof updateMessageInput>>) {
+  async run({ client, input }) {
     return client.request('chat.update', {
       channel: input.channel,
       ts: normalizeTimestamp(input.timestamp),
@@ -479,14 +465,14 @@ export const updateMessage = action({
 
 const deleteMessageInput = z.object({ channel, timestamp });
 
-export const deleteMessage = action({
+export const deleteMessage = defineAction({
   slug: 'deleteMessage',
   description: 'Delete a Slack message after confirming it exists.',
   input: deleteMessageInput,
   output: slackResponse,
   idempotent: false,
   options: { channel: channelOptions },
-  async run({ client, input }: Args<z.output<typeof deleteMessageInput>>) {
+  async run({ client, input }) {
     const ts = normalizeTimestamp(input.timestamp);
     const history = await client.request(
       'conversations.history',
@@ -507,13 +493,13 @@ const createChannelInput = z.object({
   isPrivate: z.boolean().default(false),
 });
 
-export const createChannel = action({
+export const createChannel = defineAction({
   slug: 'createChannel',
   description: 'Create a public or private Slack channel.',
   input: createChannelInput,
   output: slackResponse,
   idempotent: false,
-  async run({ client, input }: Args<z.output<typeof createChannelInput>>) {
+  async run({ client, input }) {
     return client.request('conversations.create', {
       name: input.channelName,
       is_private: input.isPrivate,
@@ -528,13 +514,13 @@ const updateProfileInput = z.object({
   userId: z.string().optional(),
 });
 
-export const updateProfile = action({
+export const updateProfile = defineAction({
   slug: 'updateProfile',
   description: 'Update a Slack user profile.',
   input: updateProfileInput,
   output: slackResponse,
   idempotent: true,
-  async run({ client, input }: Args<z.output<typeof updateProfileInput>>) {
+  async run({ client, input }) {
     return client.request(
       'users.profile.set',
       {
@@ -554,14 +540,14 @@ const getChannelHistoryInput = z.object({
   includeAllMetadata: z.boolean().default(false),
 });
 
-export const getChannelHistory = action({
+export const getChannelHistory = defineAction({
   slug: 'getChannelHistory',
   description: 'Get all messages in a channel between optional timestamps.',
   input: getChannelHistoryInput,
   output: slackValues,
   idempotent: true,
   options: { channel: channelOptions },
-  async run({ client, input }: Args<z.output<typeof getChannelHistoryInput>>) {
+  async run({ client, input }) {
     return client.paginate({
       path: 'conversations.history',
       item: 'messages',
@@ -583,13 +569,13 @@ const setUserStatusInput = z.object({
   expiration: z.number().int().optional(),
 });
 
-export const setUserStatus = action({
+export const setUserStatus = defineAction({
   slug: 'setUserStatus',
   description: 'Set the authenticated user custom status.',
   input: setUserStatusInput,
   output: slackResponse,
   idempotent: true,
-  async run({ client, input }: Args<z.output<typeof setUserStatusInput>>) {
+  async run({ client, input }) {
     return client.request(
       'users.profile.set',
       {
@@ -607,13 +593,13 @@ export const setUserStatus = action({
 const markdownToSlackInput = z.object({ markdown: z.string() });
 const markdownToSlackOutput = z.object({ text: z.string() });
 
-export const markdownToSlack = action({
+export const markdownToSlack = defineAction({
   slug: 'markdownToSlack',
   description: 'Convert Markdown text to Slack mrkdwn.',
   input: markdownToSlackInput,
   output: markdownToSlackOutput,
   idempotent: true,
-  async run({ input }: Args<z.output<typeof markdownToSlackInput>>) {
+  async run({ input }) {
     const text = input.markdown
       .replace(/\[([^\]]+)]\((https?:\/\/[^)]+)\)/g, '<$2|$1>')
       .replace(/\*\*([^*]+)\*\*/g, '*$1*')
@@ -625,14 +611,14 @@ export const markdownToSlack = action({
 
 const listThreadMessagesInput = z.object({ channel, threadTimestamp: timestamp });
 
-export const listThreadMessages = action({
+export const listThreadMessages = defineAction({
   slug: 'listThreadMessages',
   description: 'Retrieve all messages in a Slack thread.',
   input: listThreadMessagesInput,
   output: slackValues,
   idempotent: true,
   options: { channel: channelOptions },
-  async run({ client, input }: Args<z.output<typeof listThreadMessagesInput>>) {
+  async run({ client, input }) {
     return client.paginate({
       path: 'conversations.replies',
       item: 'messages',
@@ -643,28 +629,28 @@ export const listThreadMessages = action({
 
 const setChannelTopicInput = z.object({ channel, topic: z.string() });
 
-export const setChannelTopic = action({
+export const setChannelTopic = defineAction({
   slug: 'setChannelTopic',
   description: 'Set a Slack channel topic.',
   input: setChannelTopicInput,
   output: slackResponse,
   idempotent: true,
   options: { channel: channelOptions },
-  async run({ client, input }: Args<z.output<typeof setChannelTopicInput>>) {
+  async run({ client, input }) {
     return client.request('conversations.setTopic', input);
   },
 });
 
 const getMessageInput = z.object({ channel, timestamp });
 
-export const getMessage = action({
+export const getMessage = defineAction({
   slug: 'getMessage',
   description: 'Get a Slack message by channel and timestamp.',
   input: getMessageInput,
   output: slackResponse,
   idempotent: true,
   options: { channel: channelOptions },
-  async run({ client, input }: Args<z.output<typeof getMessageInput>>) {
+  async run({ client, input }) {
     return client.request('conversations.history', {
       channel: input.channel,
       oldest: normalizeTimestamp(input.timestamp),
@@ -676,25 +662,25 @@ export const getMessage = action({
 
 const inviteUserToChannelInput = z.object({ channel, userId: user });
 
-export const inviteUserToChannel = action({
+export const inviteUserToChannel = defineAction({
   slug: 'inviteUserToChannel',
   description: 'Invite an existing user to a Slack channel.',
   input: inviteUserToChannelInput,
   output: slackResponse,
   idempotent: false,
   options: { channel: channelOptions, userId: userOptions },
-  async run({ client, input }: Args<z.output<typeof inviteUserToChannelInput>>) {
+  async run({ client, input }) {
     return client.request('conversations.invite', { channel: input.channel, users: input.userId });
   },
 });
 
-export const getUserGroupByHandle = action({
+export const getUserGroupByHandle = defineAction({
   slug: 'getUserGroupByHandle',
   description: 'Get a Slack user group by handle.',
   input: handleInput,
   output: slackValue,
   idempotent: true,
-  async run({ client, input }: Args<z.output<typeof handleInput>>) {
+  async run({ client, input }) {
     return findUserGroup(client, input.handle);
   },
 });
@@ -723,13 +709,13 @@ const updateUserGroupMembersInput = handleInput.extend({
   appendUsers: z.boolean().default(true),
 });
 
-export const updateUserGroupMembers = action({
+export const updateUserGroupMembers = defineAction({
   slug: 'updateUserGroupMembers',
   description: 'Replace or append members in a Slack user group.',
   input: updateUserGroupMembersInput,
   output: slackResponse,
   idempotent: false,
-  async run({ client, input }: Args<z.output<typeof updateUserGroupMembersInput>>) {
+  async run({ client, input }) {
     const group = await findUserGroup(client, input.handle);
     const id = 'id' in group ? String(group.id) : '';
     const existing =
@@ -751,13 +737,13 @@ const customApiInput = z.object({
   useUserToken: z.boolean().default(false),
 });
 
-export const customApiCall = action({
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Call one relative Slack Web API method.',
   input: customApiInput,
   output: slackApiResult,
   idempotent: false,
-  async run({ client, input }: Args<z.output<typeof customApiInput>>) {
+  async run({ client, input }) {
     const query = new URLSearchParams();
 
     for (const [key, value] of Object.entries(input.queryParams)) query.set(key, String(value));

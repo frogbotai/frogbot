@@ -20,3 +20,4 @@ export const telegramBotOptions = z.object({
 });
 
 export type TelegramBotAuth = z.output<typeof telegramBotAuth>;
+export type TelegramBotOptions = z.output<typeof telegramBotOptions>;

@@ -1,7 +1,7 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import Jimp from 'jimp';
 import { z } from 'zod';
 
+import { defineAction } from '../define.js';
 import { imageFile, loadImage, savedImage, saveImage } from '../files.js';
 
 const inputSchema = z.object({
@@ -12,13 +12,13 @@ const inputSchema = z.object({
   resultFileName: z.string().min(1).optional(),
 });
 
-export const resize = {
+export const resize = defineAction({
   slug: 'resize',
   label: 'Resize image',
   description: 'Resize an image to the requested dimensions.',
   input: inputSchema,
   output: savedImage,
-  async run({ input, req }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input, req }) {
     const source = await loadImage(req, input.image);
     const image = await Jimp.read(source.data);
 
@@ -33,4 +33,4 @@ export const resize = {
       mimeType: image.getMIME(),
     });
   },
-};
+});

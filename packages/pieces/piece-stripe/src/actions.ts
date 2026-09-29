@@ -1,7 +1,8 @@
-import type { PieceActionDefinition, PieceRunArgs } from 'frogbot/pieces';
+import type { PieceActionDefinition } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { StripeClient, StripeResponse } from './client.js';
+import { defineAction } from './define.js';
 
 const output = z.record(z.string(), z.json());
 const metadata = z.record(z.string(), z.string()).optional();
@@ -14,18 +15,6 @@ const optionalAddress = {
 };
 
 type ActionInput = z.ZodObject<Record<string, z.ZodType>>;
-
-function defineAction<
-  const TSlug extends string,
-  TInput extends z.ZodType,
-  TOutput extends z.ZodType,
->(
-  definition: PieceActionDefinition<TInput, TOutput, object, StripeClient, z.output<TOutput>> & {
-    slug: TSlug;
-  },
-) {
-  return definition;
-}
 
 function action<const TSlug extends string, TInput extends ActionInput>({
   slug,
@@ -44,7 +33,12 @@ function action<const TSlug extends string, TInput extends ActionInput>({
   method?: 'DELETE' | 'GET' | 'POST' | ((input: z.output<TInput>) => 'DELETE' | 'GET' | 'POST');
   idempotent?: boolean;
   map?: (input: z.output<TInput>) => Record<string, unknown>;
-  options?: PieceActionDefinition<TInput, typeof output, object, StripeClient>['options'];
+  options?: PieceActionDefinition<
+    TInput,
+    typeof output,
+    Record<string, never>,
+    StripeClient
+  >['options'];
 }) {
   return defineAction({
     slug,
@@ -53,7 +47,7 @@ function action<const TSlug extends string, TInput extends ActionInput>({
     output,
     idempotent,
     options,
-    async run({ client, input }: PieceRunArgs<z.output<TInput>, object, StripeClient>) {
+    async run({ client, input }) {
       const requestPath = typeof path === 'function' ? path(input) : path;
       const requestMethod = typeof method === 'function' ? method(input) : method;
 
@@ -495,7 +489,7 @@ export const sendRequest = defineAction({
   description: 'Send an authenticated request to the Stripe API.',
   input: customInput,
   output: customOutput,
-  async run({ client, input }: PieceRunArgs<z.output<typeof customInput>, object, StripeClient>) {
+  async run({ client, input }) {
     return client.requestResponse(
       input.path,
       input.method,

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
+import { defineAction } from '../define.js';
 import { compact } from '../format.js';
-import type { ResendAction } from './types.js';
 
 const input = z.object({
   audience_id: z.string(),
@@ -11,7 +11,7 @@ const input = z.object({
   unsubscribed: z.boolean().optional(),
 });
 
-export const updateContact = {
+export const updateContact = defineAction({
   slug: 'updateContact',
   description: 'Update an audience contact',
   idempotent: false,
@@ -29,4 +29,4 @@ export const updateContact = {
       body,
     });
   },
-} satisfies ResendAction;
+});

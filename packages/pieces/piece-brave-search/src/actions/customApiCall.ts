@@ -1,7 +1,6 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { BraveSearch } from '../client.js';
+import { defineAction } from '../define.js';
 
 const scalar = z.union([z.string(), z.number(), z.boolean()]);
 const input = z.object({
@@ -22,17 +21,13 @@ const output = z.object({
   body: z.unknown(),
 });
 
-export const customApiCall = {
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Make an authenticated request to the Brave Search API.',
   input,
   output,
   idempotent: false,
-  async run({
-    client,
-    input: values,
-    req,
-  }: PieceRunArgs<z.output<typeof input>, object, BraveSearch>) {
+  async run({ client, input: values, req }) {
     const headers = { ...values.headers };
     let body: BodyInit | undefined;
 
@@ -56,4 +51,4 @@ export const customApiCall = {
       signal: req.signal ?? undefined,
     });
   },
-};
+});

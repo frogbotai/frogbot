@@ -1,7 +1,8 @@
 import { createSign } from 'node:crypto';
 
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
+
+import { defineAction } from '../define.js';
 
 const inputSchema = z.object({
   privateKey: z.string().meta({ label: 'Private Key', secret: true }),
@@ -11,13 +12,13 @@ const inputSchema = z.object({
   outputEncoding: z.enum(['base64', 'hex']).default('base64').meta({ label: 'Output Encoding' }),
 });
 
-export const generateRsaSignature = {
+export const generateRsaSignature = defineAction({
   slug: 'generateRsaSignature',
   label: 'Generate RSA Signature',
   description: 'Sign text with an RSA private key.',
   input: inputSchema,
   output: z.string().min(1),
-  async run({ input }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input }) {
     const signer = createSign(input.method).update(input.text);
     const key = input.passphrase
       ? { key: input.privateKey, passphrase: input.passphrase }
@@ -27,4 +28,4 @@ export const generateRsaSignature = {
 
     return signer.sign(key, input.outputEncoding);
   },
-};
+});

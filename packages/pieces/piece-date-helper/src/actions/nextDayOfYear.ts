@@ -1,4 +1,3 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import {
@@ -9,6 +8,7 @@ import {
   timeSchema,
   timeZoneSchema,
 } from '../date.js';
+import { defineAction } from '../define.js';
 
 const input = z.object({
   month: z.number().int().min(1).max(12).meta({ label: 'Month' }),
@@ -19,14 +19,14 @@ const input = z.object({
   timeZone: timeZoneSchema,
 });
 
-export const nextDayOfYear = {
+export const nextDayOfYear = defineAction({
   slug: 'nextDayOfYear',
   label: 'Next Day of Year',
   description: 'Get the next occurrence of a month and day.',
   input,
   output: z.object({ result: z.string() }),
   idempotent: false,
-  async run({ input: value }: PieceRunArgs<z.output<typeof input>, object, undefined>) {
+  async run({ input: value }) {
     const now = dayjs().tz(value.timeZone);
     const selectedTime = value.currentTime ? now.format('HH:mm') : value.time;
     const { hours, minutes } = parseTime(selectedTime);
@@ -50,4 +50,4 @@ export const nextDayOfYear = {
 
     return { result: result.format(correctedFormat(value.timeFormat)) };
   },
-};
+});

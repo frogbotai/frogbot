@@ -5,3 +5,5 @@ export const frontAuth = z.object({
 });
 
 export const frontOptions = z.object({});
+
+export type FrontOptions = z.output<typeof frontOptions>;

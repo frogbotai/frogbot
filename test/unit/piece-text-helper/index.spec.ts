@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('frogbot/pieces', async () => {
-  const { definePiece } = await import('../../../packages/frogbot/src/pieces/definePiece.js');
+  const { createPieceHelpers, definePiece } =
+    await import('../../../packages/frogbot/src/pieces/definePiece.js');
 
-  return { definePiece };
+  return { createPieceHelpers, definePiece };
 });
 
 import { createTextHelper } from '../../../packages/pieces/piece-text-helper/src/index.js';

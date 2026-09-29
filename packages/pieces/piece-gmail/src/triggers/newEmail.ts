@@ -1,7 +1,6 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { Gmail } from '../client.js';
+import { definePollingTrigger } from '../define.js';
 import { emailOutput, getOriginal, saveAttachments, searchQuery } from '../mail.js';
 
 const inputSchema = z.object({
@@ -14,19 +13,14 @@ const inputSchema = z.object({
   includeSpamTrash: z.boolean().default(false),
 });
 
-export const newEmail = {
+export const newEmail = definePollingTrigger({
   slug: 'newEmail',
   description: 'Emit newly received emails matching optional filters.',
-  type: 'polling' as const,
+  type: 'polling',
   schedule: '*/5 * * * *',
   input: inputSchema,
   output: emailOutput,
-  async run({
-    client,
-    input,
-    cursor,
-    req,
-  }: PieceRunArgs<z.output<typeof inputSchema>, object, Gmail> & { cursor?: number }) {
+  async run({ client, input, cursor, req }) {
     const now = Date.now();
     const list = await client.users.messages.list({
       userId: 'me',
@@ -42,4 +36,4 @@ export const newEmail = {
     );
     return { events, cursor: now };
   },
-};
+});

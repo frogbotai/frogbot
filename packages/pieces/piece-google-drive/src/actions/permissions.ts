@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-import { type DriveRunArgs, requestOptions } from '../client.js';
+import { requestOptions } from '../client.js';
+import { defineAction } from '../define.js';
 import { downloadDriveFile } from '../files.js';
 import {
   type DrivePermission,
@@ -18,17 +19,13 @@ const createPermissionInput = fileInput.extend({
   sendNotificationEmail: z.boolean().default(false),
 });
 export type CreatePermissionInput = z.input<typeof createPermissionInput>;
-export const createPermission = {
-  slug: 'createPermission' as const,
+export const createPermission = defineAction({
+  slug: 'createPermission',
   description: 'Grant a role on a Drive file or folder to a user by email.',
   input: createPermissionInput,
   output: permissionOutput,
   idempotent: false,
-  async run({
-    client,
-    input,
-    req,
-  }: DriveRunArgs<typeof createPermissionInput>): Promise<DrivePermission> {
+  async run({ client, input, req }): Promise<DrivePermission> {
     return permissionOutput.parse(
       (
         await client.permissions.create(
@@ -44,23 +41,19 @@ export const createPermission = {
       ).data,
     );
   },
-};
+});
 
 const deletePermissionInput = fileInput.extend({ email: z.email(), role });
 const deletePermissionOutput = z.object({ removed: z.boolean(), message: z.string() });
 export type DeletePermissionInput = z.input<typeof deletePermissionInput>;
 export type DeletePermissionOutput = z.output<typeof deletePermissionOutput>;
-export const deletePermission = {
-  slug: 'deletePermission' as const,
+export const deletePermission = defineAction({
+  slug: 'deletePermission',
   description: 'Remove a Drive permission matching both user email and role.',
   input: deletePermissionInput,
   output: deletePermissionOutput,
   idempotent: true,
-  async run({
-    client,
-    input,
-    req,
-  }: DriveRunArgs<typeof deletePermissionInput>): Promise<DeletePermissionOutput> {
+  async run({ client, input, req }): Promise<DeletePermissionOutput> {
     let pageToken: string | undefined;
     const tokens = new Set<string>();
     do {
@@ -97,7 +90,7 @@ export const deletePermission = {
     } while (pageToken);
     return { removed: false, message: 'Permission not found' };
   },
-};
+});
 
 const setPublicAccessInput = fileInput.extend({
   role: z.enum(['reader', 'commenter', 'writer']).default('reader'),
@@ -109,18 +102,14 @@ const setPublicAccessOutput = z.object({
 });
 export type SetPublicAccessInput = z.input<typeof setPublicAccessInput>;
 export type SetPublicAccessOutput = z.output<typeof setPublicAccessOutput>;
-export const setPublicAccess = {
-  slug: 'setPublicAccess' as const,
+export const setPublicAccess = defineAction({
+  slug: 'setPublicAccess',
   description:
     'Grant anyone-with-link access and return the view link and a FrogBot file download.',
   input: setPublicAccessInput,
   output: setPublicAccessOutput,
   idempotent: false,
-  async run({
-    client,
-    input,
-    req,
-  }: DriveRunArgs<typeof setPublicAccessInput>): Promise<SetPublicAccessOutput> {
+  async run({ client, input, req }): Promise<SetPublicAccessOutput> {
     const permission = permissionOutput.parse(
       (
         await client.permissions.create(
@@ -158,4 +147,4 @@ export const setPublicAccess = {
           });
     return { permission, webViewLink: file.webViewLink, download };
   },
-};
+});

@@ -1,8 +1,7 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { Linear } from '../client.js';
 import { teamId } from '../config.js';
+import { defineAction } from '../define.js';
 import { priorities, teamOptions, teams, users } from './options.js';
 
 const inputSchema = z.object({
@@ -17,7 +16,7 @@ const inputSchema = z.object({
 });
 const output = z.object({ success: z.boolean(), lastSyncId: z.number().optional() }).passthrough();
 
-export const updateIssue = {
+export const updateIssue = defineAction({
   slug: 'updateIssue',
   description: 'Update an existing Linear issue.',
   input: inputSchema,
@@ -31,7 +30,7 @@ export const updateIssue = {
     assigneeId: users,
     priority: priorities,
   },
-  async run({ client, input }: PieceRunArgs<z.output<typeof inputSchema>, object, Linear>) {
+  async run({ client, input }) {
     const { teamId: _, issueId, ...fields } = input;
     const response = await client.updateIssue(issueId, fields);
     return {
@@ -40,4 +39,4 @@ export const updateIssue = {
       issue: { id: response.issueId },
     };
   },
-};
+});

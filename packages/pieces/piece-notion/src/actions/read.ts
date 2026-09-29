@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { notionId } from '../config.js';
-import { defineNotionAction } from '../definitions.js';
+import { defineAction } from '../define.js';
 import { buildFilters } from '../filtering.js';
 import { notionComment, notionList, notionObject } from '../schemas.js';
 
@@ -13,7 +13,7 @@ const blockContentOutput = z.array(notionObject);
 const pageCommentsOutput = z.array(notionComment);
 const findPageOutput = z.array(notionObject);
 
-export const findDatabaseItem = defineNotionAction({
+export const findDatabaseItem = defineAction({
   slug: 'findDatabaseItem',
   description: 'Find database items by fields.',
   input: z.object({ databaseId: notionId, fields: z.record(z.string(), z.unknown()) }),
@@ -43,7 +43,7 @@ export const findDatabaseItem = defineNotionAction({
   },
 });
 
-export const getBlockContent = defineNotionAction({
+export const getBlockContent = defineAction({
   slug: 'getBlockContent',
   description: 'Retrieve page or block children.',
   input: z.object({ parentId: notionId, depth: z.number().int().min(1).default(1) }),
@@ -76,7 +76,7 @@ export const getBlockContent = defineNotionAction({
   },
 });
 
-export const retrieveDatabase = defineNotionAction({
+export const retrieveDatabase = defineAction({
   slug: 'retrieveDatabase',
   description: 'Retrieve a database structure.',
   input: z.object({ databaseId: notionId }),
@@ -92,7 +92,7 @@ export const retrieveDatabase = defineNotionAction({
   },
 });
 
-export const getPageComments = defineNotionAction({
+export const getPageComments = defineAction({
   slug: 'getPageComments',
   description: 'Retrieve all comments from a page.',
   input: z.object({ pageId: notionId }),
@@ -109,7 +109,7 @@ export const getPageComments = defineNotionAction({
   },
 });
 
-export const findPage = defineNotionAction({
+export const findPage = defineAction({
   slug: 'findPage',
   description: 'Find pages by title.',
   input: z.object({

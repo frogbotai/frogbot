@@ -1,4 +1,3 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import {
@@ -9,6 +8,7 @@ import {
   timeSchema,
   timeZoneSchema,
 } from '../date.js';
+import { defineAction } from '../define.js';
 
 const input = z.object({
   weekday: z.number().int().min(0).max(6).meta({ label: 'Weekday' }),
@@ -18,14 +18,14 @@ const input = z.object({
   timeZone: timeZoneSchema,
 });
 
-export const nextDayOfWeek = {
+export const nextDayOfWeek = defineAction({
   slug: 'nextDayOfWeek',
   label: 'Next Day of Week',
   description: 'Get the next occurrence of a weekday.',
   input,
   output: z.object({ result: z.string() }),
   idempotent: false,
-  async run({ input: value }: PieceRunArgs<z.output<typeof input>, object, undefined>) {
+  async run({ input: value }) {
     const now = dayjs().tz(value.timeZone);
     const selectedTime = value.currentTime ? now.format('HH:mm') : value.time;
     const { hours, minutes } = parseTime(selectedTime);
@@ -38,4 +38,4 @@ export const nextDayOfWeek = {
 
     return { result: result.format(correctedFormat(value.timeFormat)) };
   },
-};
+});

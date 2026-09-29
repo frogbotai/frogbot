@@ -1,8 +1,8 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { XeroClient, XeroJSON } from './client.js';
 import { xeroResponse } from './client.js';
+import { defineAction } from './define.js';
 
 const tenant = { tenantId: z.string().min(1).meta({ label: 'Organization' }) };
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -17,44 +17,24 @@ const lineItem = z.object({
   DiscountRate: z.number().optional(),
   LineItemID: z.string().optional(),
 });
-function apiAction<TInput extends z.ZodType>({
-  slug,
-  label,
-  description,
-  input,
-  idempotent = false,
-  run,
-}: {
-  slug: string;
-  label: string;
-  description: string;
-  input: TInput;
-  idempotent?: boolean;
-  run(args: PieceRunArgs<z.output<TInput>, object, XeroClient>): Promise<unknown>;
-}) {
-  return {
-    slug,
-    label,
-    description,
-    input,
-    output: xeroResponse,
-    idempotent,
-    options: {
-      async tenantId({
-        client,
-        req,
-      }: {
-        client: XeroClient;
-        req: { signal?: AbortSignal | null };
-      }) {
-        const tenants = await client.listTenants(req.signal ?? undefined);
 
-        return tenants.map(({ tenantId, tenantName }) => ({ label: tenantName, value: tenantId }));
-      },
-    },
-    run,
-  };
+async function tenantOptions({
+  client,
+  req,
+}: {
+  client: XeroClient;
+  req: { signal?: AbortSignal | null };
+}) {
+  const tenants = await client.listTenants(req.signal ?? undefined);
+
+  return tenants.map(({ tenantId, tenantName }) => ({ label: tenantName, value: tenantId }));
 }
+
+const apiDefaults = {
+  output: xeroResponse,
+  idempotent: false,
+  options: { tenantId: tenantOptions },
+};
 
 function accountingRequest(
   client: XeroClient,
@@ -74,7 +54,8 @@ const createOrUpdateContactInput = z.object({
   email: z.string().email().optional(),
 });
 
-const createOrUpdateContact = apiAction({
+const createOrUpdateContact = defineAction({
+  ...apiDefaults,
   slug: 'createOrUpdateContact',
   label: 'Create or update contact',
   description: 'Create a Xero contact or update one by ID.',
@@ -104,7 +85,8 @@ const createOrUpdateInvoiceInput = z.object({
   status: z.enum(['DRAFT', 'SUBMITTED', 'AUTHORISED', 'DELETED', 'VOIDED']),
 });
 
-const createOrUpdateInvoice = apiAction({
+const createOrUpdateInvoice = defineAction({
+  ...apiDefaults,
   slug: 'createOrUpdateInvoice',
   label: 'Create or update invoice',
   description: 'Create or update an accounts-receivable invoice.',
@@ -141,7 +123,8 @@ const allocateCreditNoteInput = z.object({
   date: date.optional(),
 });
 
-const allocateCreditNote = apiAction({
+const allocateCreditNote = defineAction({
+  ...apiDefaults,
   slug: 'allocateCreditNote',
   label: 'Allocate credit note',
   description: 'Allocate a credit note to an invoice.',
@@ -173,7 +156,8 @@ const createBankTransferInput = z.object({
   toIsReconciled: z.boolean().default(false),
 });
 
-const createBankTransfer = apiAction({
+const createBankTransfer = defineAction({
+  ...apiDefaults,
   slug: 'createBankTransfer',
   label: 'Create bank transfer',
   description: 'Transfer between bank accounts.',
@@ -216,7 +200,8 @@ const createQuoteInput = z.object({
   terms: z.string().optional(),
   status: z.literal('DRAFT').default('DRAFT'),
 });
-const createQuote = apiAction({
+const createQuote = defineAction({
+  ...apiDefaults,
   slug: 'createQuote',
   label: 'Create quote',
   description: 'Create a draft quote.',
@@ -250,17 +235,13 @@ const createQuote = apiAction({
 });
 
 const sendInvoiceEmailInput = z.object({ ...tenant, invoiceId: z.string().min(1) });
-const sendInvoiceEmail = {
+const sendInvoiceEmail = defineAction({
   slug: 'sendInvoiceEmail',
   label: 'Send invoice email',
   description: 'Send a sales invoice by email.',
   input: sendInvoiceEmailInput,
   output: z.object({ success: z.literal(true) }),
-  async run({
-    input,
-    client,
-    req,
-  }: PieceRunArgs<z.output<typeof sendInvoiceEmailInput>, object, XeroClient>) {
+  async run({ input, client, req }) {
     await client.request(
       {
         path: `/Invoices/${input.invoiceId}/Email`,
@@ -272,7 +253,7 @@ const sendInvoiceEmail = {
     );
     return { success: true };
   },
-};
+});
 
 const invoiceBase = {
   ...tenant,
@@ -285,7 +266,8 @@ const invoiceBase = {
   status: z.enum(['DRAFT', 'SUBMITTED', 'AUTHORISED']).default('DRAFT'),
 };
 const createBillInput = z.object(invoiceBase);
-const createBill = apiAction({
+const createBill = defineAction({
+  ...apiDefaults,
   slug: 'createBill',
   label: 'Create bill',
   description: 'Create an accounts-payable bill.',
@@ -324,7 +306,8 @@ const createPaymentInput = z.object({
   reference: z.string().optional(),
   isReconciled: z.boolean().default(false),
 });
-const createPayment = apiAction({
+const createPayment = defineAction({
+  ...apiDefaults,
   slug: 'createPayment',
   label: 'Create payment',
   description: 'Apply a payment to an invoice.',
@@ -369,7 +352,8 @@ const purchaseOrderInput = z.object({
   deliveryInstructions: z.string().optional(),
   expectedArrivalDate: date.optional(),
 });
-const createPurchaseOrder = apiAction({
+const createPurchaseOrder = defineAction({
+  ...apiDefaults,
   slug: 'createPurchaseOrder',
   label: 'Create purchase order',
   description: 'Create a purchase order.',
@@ -416,7 +400,8 @@ const updatePurchaseOrderInput = z.object({
   deliveryInstructions: z.string().optional(),
   expectedArrivalDate: date.optional(),
 });
-const updatePurchaseOrder = apiAction({
+const updatePurchaseOrder = defineAction({
+  ...apiDefaults,
   slug: 'updatePurchaseOrder',
   label: 'Update purchase order',
   description: 'Update a purchase order.',
@@ -468,7 +453,8 @@ const uploadAttachmentInput = z.object({
   contentType: z.string().min(1).default('application/octet-stream'),
   includeOnline: z.boolean().default(false),
 });
-const uploadAttachment = apiAction({
+const uploadAttachment = defineAction({
+  ...apiDefaults,
   slug: 'uploadAttachment',
   label: 'Upload attachment',
   description: 'Upload an attachment to a Xero resource.',
@@ -538,7 +524,8 @@ const addInvoiceItemsInput = z.object({
   invoiceId: z.string().min(1),
   newLineItems: z.array(lineItem).min(1),
 });
-const addInvoiceItems = apiAction({
+const addInvoiceItems = defineAction({
+  ...apiDefaults,
   slug: 'addInvoiceItems',
   label: 'Add invoice items',
   description: 'Append items to a sales invoice.',
@@ -584,7 +571,8 @@ const createCreditNoteInput = z.object({
   brandingThemeId: z.string().optional(),
   lineItems: z.array(lineItem).optional(),
 });
-const createCreditNote = apiAction({
+const createCreditNote = defineAction({
+  ...apiDefaults,
   slug: 'createCreditNote',
   label: 'Create credit note',
   description: 'Create a credit note.',
@@ -631,7 +619,8 @@ const createItemInput = z.object({
   cogsAccountId: z.string().optional(),
   inventoryAssetAccountId: z.string().optional(),
 });
-const createItem = apiAction({
+const createItem = defineAction({
+  ...apiDefaults,
   slug: 'createItem',
   label: 'Create inventory item',
   description: 'Create an inventory item.',
@@ -675,7 +664,8 @@ const createProjectInput = z.object({
   deadlineUtc: z.string().datetime().optional(),
   estimateAmount: z.number().optional(),
 });
-const createProject = apiAction({
+const createProject = defineAction({
+  ...apiDefaults,
   slug: 'createProject',
   label: 'Create project',
   description: 'Create a Xero project.',
@@ -714,7 +704,8 @@ const updateInvoiceInput = z.object({
   replaceAllLineItems: z.boolean().default(false),
   lineItems: z.array(lineItem).optional(),
 });
-const updateInvoice = apiAction({
+const updateInvoice = defineAction({
+  ...apiDefaults,
   slug: 'updateInvoice',
   label: 'Update sales invoice',
   description: 'Update a sales invoice.',
@@ -805,7 +796,8 @@ const repeatingInput = z.object({
   includePdf: z.boolean().default(false),
   lineItems: z.array(lineItem).min(1),
 });
-const createRepeatingInvoice = apiAction({
+const createRepeatingInvoice = defineAction({
+  ...apiDefaults,
   slug: 'createRepeatingInvoice',
   label: 'Create repeating invoice',
   description: 'Create a repeating sales invoice.',
@@ -859,25 +851,24 @@ const createRepeatingInvoice = apiAction({
   },
 });
 
-function lookupAction(
-  slug: string,
+function lookupAction<const TSlug extends string>(
+  slug: TSlug,
   label: string,
   path: string,
-  input: z.ZodType,
   query: (
     value: z.output<typeof lookupInput>,
   ) => Record<string, boolean | number | string | undefined>,
 ) {
-  return apiAction({
+  return defineAction({
+    ...apiDefaults,
     slug,
     label,
     description: label,
-    input,
+    input: lookupInput,
     idempotent: true,
-    async run({ input: value, client, req }) {
-      const parsed = lookupInput.parse(value);
+    async run({ input, client, req }) {
       return client.request(
-        { path, tenantId: parsed.tenantId, query: query(parsed), signal: req.signal ?? undefined },
+        { path, tenantId: input.tenantId, query: query(input), signal: req.signal ?? undefined },
         xeroResponse,
       );
     },
@@ -889,40 +880,29 @@ const lookupInput = z.object({
   value: z.string().min(1),
   page: z.number().int().positive().optional(),
 });
-const findContact = lookupAction(
-  'findContact',
-  'Find contact',
-  '/Contacts',
-  lookupInput,
-  (input) =>
-    input.searchBy === 'SEARCH_TERM'
-      ? { SearchTerm: input.value, page: input.page ?? 1 }
-      : {
-          where: `${input.searchBy === 'ACCOUNT_NUMBER' ? 'AccountNumber' : 'Name'}=="${input.value.replaceAll('"', '\\"')}"`,
-          page: input.page ?? 1,
-        },
+const findContact = lookupAction('findContact', 'Find contact', '/Contacts', (input) =>
+  input.searchBy === 'SEARCH_TERM'
+    ? { SearchTerm: input.value, page: input.page ?? 1 }
+    : {
+        where: `${input.searchBy === 'ACCOUNT_NUMBER' ? 'AccountNumber' : 'Name'}=="${input.value.replaceAll('"', '\\"')}"`,
+        page: input.page ?? 1,
+      },
 );
-const findInvoice = lookupAction(
-  'findInvoice',
-  'Find invoice',
-  '/Invoices',
-  lookupInput,
-  (input) =>
-    input.searchBy === 'SEARCH_TERM'
-      ? { SearchTerm: input.value, page: input.page ?? 1 }
-      : {
-          where: `${input.searchBy === 'REFERENCE' ? 'Reference' : 'InvoiceNumber'}=="${input.value.replaceAll('"', '\\"')}"`,
-          page: input.page ?? 1,
-        },
+const findInvoice = lookupAction('findInvoice', 'Find invoice', '/Invoices', (input) =>
+  input.searchBy === 'SEARCH_TERM'
+    ? { SearchTerm: input.value, page: input.page ?? 1 }
+    : {
+        where: `${input.searchBy === 'REFERENCE' ? 'Reference' : 'InvoiceNumber'}=="${input.value.replaceAll('"', '\\"')}"`,
+        page: input.page ?? 1,
+      },
 );
-const findItem = lookupAction('findItem', 'Find item', '/Items', lookupInput, (input) => ({
+const findItem = lookupAction('findItem', 'Find item', '/Items', (input) => ({
   where: `${input.searchBy === 'NAME' ? 'Name' : 'Code'}=="${input.value.replaceAll('"', '\\"')}"`,
 }));
 const findPurchaseOrder = lookupAction(
   'findPurchaseOrder',
   'Find purchase order',
   '/PurchaseOrders',
-  lookupInput,
   (input) => ({
     where: `${input.searchBy === 'REFERENCE' ? 'Reference' : 'PurchaseOrderNumber'}=="${input.value.replaceAll('"', '\\"')}"`,
     page: String(input.page ?? 1),
@@ -930,7 +910,8 @@ const findPurchaseOrder = lookupAction(
 );
 
 const getInvoiceHistoryInput = z.object({ ...tenant, invoiceId: z.string().min(1) });
-const getInvoiceHistory = apiAction({
+const getInvoiceHistory = defineAction({
+  ...apiDefaults,
   slug: 'getInvoiceHistory',
   label: 'Get invoice history',
   description: 'Get invoice history.',
@@ -959,7 +940,8 @@ const createBankTransactionInput = z.object({
   lineAmountTypes: lineAmountType.optional(),
   isReconciled: z.boolean().default(false),
 });
-const createBankTransaction = apiAction({
+const createBankTransaction = defineAction({
+  ...apiDefaults,
   slug: 'createBankTransaction',
   label: 'Create bank transaction',
   description: 'Create a spend or receive transaction.',
@@ -989,7 +971,8 @@ const createBankTransaction = apiAction({
   },
 });
 
-const findOrCreateContact = apiAction({
+const findOrCreateContact = defineAction({
+  ...apiDefaults,
   slug: 'findOrCreateContact',
   label: 'Find or create contact',
   description: 'Find a contact by name or create it.',
@@ -1028,7 +1011,8 @@ const customApiInput = z.object({
   query: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).default({}),
   body: z.json().optional(),
 });
-const customApiCall = apiAction({
+const customApiCall = defineAction({
+  ...apiDefaults,
   slug: 'customApiCall',
   label: 'Custom API call',
   description: 'Call a relative Xero accounting API path.',

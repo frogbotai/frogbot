@@ -1,6 +1,7 @@
 import { parse } from 'csv-parse/sync';
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
+
+import { defineAction } from '../define.js';
 
 const delimiter = z.enum([',', '\t']).meta({
   label: 'Delimiter Type',
@@ -13,16 +14,16 @@ const inputSchema = z.object({
 });
 const output = z.array(z.union([z.array(z.string()), z.record(z.string(), z.string())]));
 
-export const convertCsvToJson = {
+export const convertCsvToJson = defineAction({
   slug: 'convertCsvToJson',
   label: 'Convert CSV to JSON',
   description: 'Read CSV text and convert it into a JSON array.',
   input: inputSchema,
   output,
-  async run({ input }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input }) {
     return parse(input.csvText, {
       columns: input.hasHeaders,
       delimiter: input.delimiter,
     });
   },
-};
+});

@@ -6,3 +6,5 @@ export const twilioAuth = z.object({
 });
 
 export const twilioOptions = z.object({});
+
+export type TwilioOptions = z.output<typeof twilioOptions>;

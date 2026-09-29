@@ -1,14 +1,15 @@
 import { z } from 'zod';
 
+import { defineAction } from './define.js';
 import { fileReference, loadFile, savedFile, saveFile } from './files.js';
-import { requestOptions, sheetInput, type SheetsArgs } from './shared.js';
+import { requestOptions, sheetInput } from './shared.js';
 
 const exportInput = sheetInput.extend({
   format: z.enum(['csv', 'tsv']).default('csv'),
   returnAsText: z.boolean().default(false),
 });
-export const exportWorksheet = {
-  slug: 'exportWorksheet' as const,
+export const exportWorksheet = defineAction({
+  slug: 'exportWorksheet',
   description: 'Export the selected worksheet as formatted CSV or TSV text or a saved file.',
   input: exportInput,
   output: z.union([
@@ -16,7 +17,7 @@ export const exportWorksheet = {
     z.object({ file: savedFile, format: z.enum(['csv', 'tsv']) }),
   ]),
   idempotent: true,
-  async run({ client, req, input }: SheetsArgs<z.output<typeof exportInput>>) {
+  async run({ client, req, input }) {
     let url = new URL(
       `https://docs.google.com/spreadsheets/d/${encodeURIComponent(input.spreadsheetId)}/export`,
     );
@@ -68,7 +69,7 @@ export const exportWorksheet = {
     }
     throw new Error('Worksheet export exceeded the redirect limit.');
   },
-};
+});
 
 const customInput = z.object({
   method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']).default('GET'),
@@ -95,8 +96,8 @@ const customInput = z.object({
   failOnError: z.boolean().default(true),
   timeoutMs: z.number().int().positive().max(300_000).default(30_000),
 });
-export const customApiCall = {
-  slug: 'customApiCall' as const,
+export const customApiCall = defineAction({
+  slug: 'customApiCall',
   description: 'Call a Sheets v4 endpoint under /spreadsheets with redirects disabled.',
   input: customInput,
   output: z.object({
@@ -106,7 +107,7 @@ export const customApiCall = {
     file: savedFile.optional(),
   }),
   idempotent: false,
-  async run({ client, req, input }: SheetsArgs<z.output<typeof customInput>>) {
+  async run({ client, req, input }) {
     const url = new URL(`https://sheets.googleapis.com/v4${input.path}`);
     if (
       /[\\\r\n]/.test(input.path) ||
@@ -181,4 +182,4 @@ export const customApiCall = {
       body: response.data == null || response.data === '' ? null : z.json().parse(response.data),
     };
   },
-};
+});

@@ -1,7 +1,6 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { ExaClient } from './client.js';
+import { defineAction } from './define.js';
 
 const result = z
   .object({
@@ -49,23 +48,23 @@ const searchInput = z.object({
   numResults: filters.numResults.default(10),
 });
 
-export const search = {
+export const search = defineAction({
   slug: 'search',
   label: 'Search',
   description: 'Search the web using semantic or keyword-based search.',
   idempotent: true,
   input: searchInput,
   output: results,
-  async run({ input, client, req }: PieceRunArgs<z.output<typeof searchInput>, object, ExaClient>) {
-    const response = await client(
+  async run({ input, client, req }) {
+    const response = await client<{ results: z.output<typeof results> }>(
       '/search',
       { ...input, contents: { text: true } },
       req.signal ?? undefined,
     );
 
-    return (response as { results: unknown[] }).results;
+    return response.results;
   },
-};
+});
 
 const getContentsInput = z.object({
   urls: z.array(z.string().url()).min(1),
@@ -76,23 +75,23 @@ const getContentsInput = z.object({
   subpageTarget: z.string().optional(),
 });
 
-export const getContents = {
+export const getContents = defineAction({
   slug: 'getContents',
   label: 'Get contents',
   description: 'Retrieve clean content from specified URLs.',
   idempotent: true,
   input: getContentsInput,
   output: results,
-  async run({
-    input,
-    client,
-    req,
-  }: PieceRunArgs<z.output<typeof getContentsInput>, object, ExaClient>) {
-    const response = await client('/contents', input, req.signal ?? undefined);
+  async run({ input, client, req }) {
+    const response = await client<{ results: z.output<typeof results> }>(
+      '/contents',
+      input,
+      req.signal ?? undefined,
+    );
 
-    return (response as { results: unknown[] }).results;
+    return response.results;
   },
-};
+});
 
 const generateAnswerInput = z.object({
   query: z.string().min(1),
@@ -100,23 +99,19 @@ const generateAnswerInput = z.object({
   model: z.enum(['exa', 'exa-pro']).default('exa'),
 });
 
-export const generateAnswer = {
+export const generateAnswer = defineAction({
   slug: 'generateAnswer',
   label: 'Generate answer',
   description: 'Answer a question using live web search results.',
   idempotent: true,
   input: generateAnswerInput,
   output: z.string(),
-  async run({
-    input,
-    client,
-    req,
-  }: PieceRunArgs<z.output<typeof generateAnswerInput>, object, ExaClient>) {
-    const response = await client('/answer', input, req.signal ?? undefined);
+  async run({ input, client, req }) {
+    const response = await client<{ answer: string }>('/answer', input, req.signal ?? undefined);
 
-    return (response as { answer: unknown }).answer;
+    return response.answer;
   },
-};
+});
 
 const findSimilarPagesInput = z.object({
   url: z.string().url(),
@@ -124,20 +119,20 @@ const findSimilarPagesInput = z.object({
   numResults: filters.numResults.default(10),
 });
 
-export const findSimilarPages = {
+export const findSimilarPages = defineAction({
   slug: 'findSimilarPages',
   label: 'Find similar pages',
   description: 'Find web pages similar to a reference URL.',
   idempotent: true,
   input: findSimilarPagesInput,
   output: results,
-  async run({
-    input,
-    client,
-    req,
-  }: PieceRunArgs<z.output<typeof findSimilarPagesInput>, object, ExaClient>) {
-    const response = await client('/findSimilar', input, req.signal ?? undefined);
+  async run({ input, client, req }) {
+    const response = await client<{ results: z.output<typeof results> }>(
+      '/findSimilar',
+      input,
+      req.signal ?? undefined,
+    );
 
-    return (response as { results: unknown[] }).results;
+    return response.results;
   },
-};
+});

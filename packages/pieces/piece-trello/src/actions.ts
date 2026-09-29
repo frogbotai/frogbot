@@ -1,19 +1,16 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { Trello } from './client.js';
+import { defineAction } from './define.js';
 import { loadAttachment } from './files.js';
 import { boardOptions, labelOptions, listOptions } from './options.js';
 import { attachmentOutput, cardOutput, emptyOutput } from './schemas.js';
-
-type Args<T> = PieceRunArgs<T, Record<string, never>, Trello>;
 
 const cardIdInput = z.object({ cardId: z.string().min(1).meta({ label: 'Card ID' }) });
 const attachmentIdInput = cardIdInput.extend({
   attachmentId: z.string().min(1).meta({ label: 'Attachment ID' }),
 });
 
-export const createCard = {
+export const createCard = defineAction({
   slug: 'createCard',
   description: 'Create a Trello card.',
   input: z.object({
@@ -27,17 +24,7 @@ export const createCard = {
   output: cardOutput,
   idempotent: false,
   options: { boardId: boardOptions, listId: listOptions, labelIds: labelOptions },
-  async run({
-    client,
-    input,
-  }: Args<{
-    boardId: string;
-    description?: string;
-    labelIds?: string[];
-    listId: string;
-    name: string;
-    position?: 'bottom' | 'top';
-  }>) {
+  async run({ client, input }) {
     return client.request('cards', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -50,20 +37,20 @@ export const createCard = {
       query: { idList: input.listId },
     });
   },
-};
+});
 
-export const getCard = {
+export const getCard = defineAction({
   slug: 'getCard',
   description: 'Get a Trello card by ID.',
   input: cardIdInput,
   output: cardOutput,
   idempotent: true,
-  async run({ client, input }: Args<{ cardId: string }>) {
+  async run({ client, input }) {
     return client.getCard(input.cardId);
   },
-};
+});
 
-export const updateCard = {
+export const updateCard = defineAction({
   slug: 'updateCard',
   description: 'Update a Trello card.',
   input: z.object({
@@ -80,7 +67,7 @@ export const updateCard = {
   output: cardOutput,
   idempotent: true,
   options: { boardId: boardOptions, listId: listOptions, labelIds: labelOptions },
-  async run({ client, input }: Args<Record<string, unknown> & { cardId: string }>) {
+  async run({ client, input }) {
     return client.request(`cards/${input.cardId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -95,31 +82,31 @@ export const updateCard = {
       }),
     });
   },
-};
+});
 
-export const deleteCard = {
+export const deleteCard = defineAction({
   slug: 'deleteCard',
   description: 'Permanently delete a Trello card.',
   input: cardIdInput,
   output: emptyOutput,
   idempotent: false,
-  async run({ client, input }: Args<{ cardId: string }>) {
+  async run({ client, input }) {
     return client.request(`cards/${input.cardId}`, { method: 'DELETE' });
   },
-};
+});
 
-export const listCardAttachments = {
+export const listCardAttachments = defineAction({
   slug: 'listCardAttachments',
   description: 'List attachments on a Trello card.',
   input: cardIdInput,
   output: z.array(attachmentOutput),
   idempotent: true,
-  async run({ client, input }: Args<{ cardId: string }>) {
+  async run({ client, input }) {
     return client.request(`cards/${input.cardId}/attachments`);
   },
-};
+});
 
-export const addCardAttachment = {
+export const addCardAttachment = defineAction({
   slug: 'addCardAttachment',
   description: 'Upload an attachment to a Trello card.',
   input: cardIdInput.extend({
@@ -133,17 +120,7 @@ export const addCardAttachment = {
   }),
   output: attachmentOutput,
   idempotent: false,
-  async run({
-    client,
-    input,
-    req,
-  }: Args<{
-    attachment: { fileId: number | string; name?: string };
-    cardId: string;
-    mimeType?: string;
-    name?: string;
-    setCover?: boolean;
-  }>) {
+  async run({ client, input, req }) {
     const attachment = await loadAttachment(req, input.attachment);
     const form = new FormData();
 
@@ -159,31 +136,31 @@ export const addCardAttachment = {
       },
     });
   },
-};
+});
 
-export const getCardAttachment = {
+export const getCardAttachment = defineAction({
   slug: 'getCardAttachment',
   description: 'Get one attachment from a Trello card.',
   input: attachmentIdInput,
   output: attachmentOutput,
   idempotent: true,
-  async run({ client, input }: Args<{ attachmentId: string; cardId: string }>) {
+  async run({ client, input }) {
     return client.request(`cards/${input.cardId}/attachments/${input.attachmentId}`);
   },
-};
+});
 
-export const deleteCardAttachment = {
+export const deleteCardAttachment = defineAction({
   slug: 'deleteCardAttachment',
   description: 'Permanently delete an attachment from a Trello card.',
   input: attachmentIdInput,
   output: emptyOutput,
   idempotent: false,
-  async run({ client, input }: Args<{ attachmentId: string; cardId: string }>) {
+  async run({ client, input }) {
     return client.request(`cards/${input.cardId}/attachments/${input.attachmentId}`, {
       method: 'DELETE',
     });
   },
-};
+});
 
 const customInput = z.object({
   method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']),
@@ -193,13 +170,13 @@ const customInput = z.object({
   body: z.json().optional(),
 });
 
-export const customApiCall = {
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Make an authenticated Trello API call.',
   input: customInput,
   output: z.json(),
   idempotent: false,
-  async run({ client, input }: Args<z.output<typeof customInput>>) {
+  async run({ client, input }) {
     return client.request(input.path, {
       method: input.method,
       headers: {
@@ -210,4 +187,4 @@ export const customApiCall = {
       query: input.query,
     });
   },
-};
+});

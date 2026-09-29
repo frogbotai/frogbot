@@ -1,7 +1,6 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { ZoomClient } from '../client.js';
+import { defineAction } from '../define.js';
 
 const json: z.ZodType<unknown> = z.lazy(() =>
   z.union([
@@ -21,21 +20,17 @@ const customApiCallInput = z.object({
   body: json.optional(),
 });
 
-export const customApiCall = {
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   label: 'Custom API call',
   description: 'Call a Zoom API endpoint.',
   input: customApiCallInput,
   output: json,
-  async run({
-    input,
-    client,
-    req,
-  }: PieceRunArgs<z.output<typeof customApiCallInput>, object, ZoomClient>) {
+  async run({ input, client, req }) {
     const headers = Object.fromEntries(
       Object.entries(input.headers).filter(([name]) => name.toLowerCase() !== 'authorization'),
     );
 
     return client({ ...input, headers, signal: req.signal ?? undefined });
   },
-};
+});

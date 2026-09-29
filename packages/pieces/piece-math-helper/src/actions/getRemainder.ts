@@ -1,5 +1,6 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
+
+import { defineAction } from '../define.js';
 
 const inputSchema = z.object({
   firstNumber: z.number().meta({ label: 'First Number' }),
@@ -7,13 +8,13 @@ const inputSchema = z.object({
 });
 const output = z.number();
 
-export const getRemainder = {
+export const getRemainder = defineAction({
   slug: 'getRemainder',
   label: 'Get Remainder',
   description: 'Get the remainder after dividing the first number by the second number.',
   input: inputSchema,
   output,
-  async run({ input }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input }) {
     return input.firstNumber % input.secondNumber;
   },
-};
+});

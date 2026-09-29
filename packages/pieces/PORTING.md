@@ -10,7 +10,7 @@ Port from the Activepieces 0.32.0 source into a native `definePiece` package. Us
 - Add declaration packages needed to type-check the package to `devDependencies`; do not rely on another workspace package installing them.
 - Export a `create<Service>` factory created by `definePiece`.
 - Keep definitions declarative: object schemas and inline arrays of actions and triggers.
-- A package may run `frogbot generate:piece-types` and ship its generated types. Pass them as `PieceDefinition<GeneratedTypes, Client>`; applications do not generate types for installed pieces.
+- A package may run `frogbot generate:piece-types` and ship its generated types. Pass them as `PieceDefinition<GeneratedTypes, Client>`; applications do not generate types for installed pieces. Generated types are optional; the helpers in `define.ts` type actions and triggers without them.
 - Prefer a maintained, ESM-compatible official vendor SDK. Use `fetch` when no suitable SDK exists.
 
 ## Module layout
@@ -20,6 +20,7 @@ Each piece exposes its public definition from `src/index.ts`. Keep that definiti
 ```text
 src/
   index.ts
+  define.ts
   config.ts
   client.ts
   piece-types.ts
@@ -35,6 +36,7 @@ src/
 | Module                  | Owns                                                                   |
 | ----------------------- | ---------------------------------------------------------------------- |
 | `index.ts`              | The `definePiece` call, action/trigger assembly, and public exports.   |
+| `define.ts`             | The piece's typed action and trigger helpers.                          |
 | `config.ts`             | Authentication and factory-option schemas.                             |
 | `client.ts`             | The vendor client, request transport, and client type.                 |
 | `actions/<action>.ts`   | One action's schema, metadata, and `run` implementation.               |
@@ -45,13 +47,55 @@ src/
 Create an action or trigger directory when the piece has more than one of that kind. Small pieces may keep their sole action or trigger in `index.ts`.
 
 - Define an action's input and output schemas beside that action. A reader should understand its entire vendor operation from one file.
-- Use `satisfies` with generated types. Keep authoring declarative; do not add builder callbacks.
+- Wrap each action and trigger in the [helpers from `define.ts`](#action-and-trigger-helpers). They keep its slug literal and type `run`, `options`, and trigger `state` with the piece's client and options.
+- Call `createPieceHelpers` once, in `define.ts`. Keep authoring declarative; do not add other builder callbacks.
 - Extract only genuinely shared, specifically named concerns such as `format.ts` or `pagination.ts`. Do not create catch-all `shared.ts`, `utils.ts`, or `schemas.ts` modules.
 - Keep vendor transport in `client.ts`; actions call the client rather than `fetch` directly.
 - Internal modules import each other directly. Do not import internal code through `index.ts`.
 - Add a capability module only when the piece implements that capability. Do not create empty placeholders.
-- Run `frogbot generate:piece-types` after schema changes and ship the resulting `piece-types.ts` file.
-- Do not register placeholder actions. If an action cannot be implemented without a new product or dependency decision, stop and report the blocker rather than shipping an action that always fails.
+- If the piece ships generated types, run `frogbot generate:piece-types` after schema changes and ship the resulting `piece-types.ts` file.
+- Do not register placeholder actions. If an action cannot be implemented without a new product or dependency decision, stop and report the blocker rather than shipping an action that always fails. `frogbot pieces:port` scaffolds an `example` action in `index.ts` so the fresh package builds; replace it with the first ported action.
+
+## Action and trigger helpers
+
+`define.ts` binds the helpers to the piece's client and options types and exports only the helpers the piece uses:
+
+```ts
+import { createPieceHelpers } from 'frogbot/pieces';
+
+import type { ExampleClient } from './client.js';
+import type { ExampleOptions } from './config.js';
+
+export const { defineAction, defineWebhookTrigger } = createPieceHelpers<
+  ExampleClient,
+  ExampleOptions
+>();
+```
+
+Omit the options type when the piece has no `options` schema, and call `createPieceHelpers()` when it has no `client` either. The four helpers are `defineAction`, `defineAppTrigger`, `definePollingTrigger`, and `defineWebhookTrigger`.
+
+Each action or trigger module wraps its definition. Do not annotate `run` arguments; the helper infers them:
+
+```ts
+import { z } from 'zod';
+
+import { defineAction } from '../define.js';
+
+export const getItem = defineAction({
+  slug: 'getItem',
+  label: 'Get Item',
+  description: 'Get one item by id.',
+  input: z.object({ id: z.string() }),
+  output: z.object({ id: z.string(), name: z.string() }),
+  async run({ client, input }) {
+    return client.getItem(input.id);
+  },
+});
+```
+
+- With `output`, `run` must return that schema's output type. Without it, the result type comes from `run`'s return.
+- A webhook trigger's `state` is inferred from what `onEnable` returns. Write `onEnable` before `onDisable`, `renew`, and `run`.
+- A factory that builds several similar definitions takes `<const TSlug extends string>` for its slug and returns a helper call. Never type a slug as `string`: the instance then loses its per-action method types.
 
 ## Callback arguments
 

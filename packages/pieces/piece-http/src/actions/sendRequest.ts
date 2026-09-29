@@ -1,7 +1,7 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { sendHttpRequest } from '../client.js';
+import { defineAction } from '../define.js';
 
 const scalar = z.union([z.string(), z.number(), z.boolean()]);
 const queryValue = z.union([scalar, z.array(scalar)]);
@@ -39,13 +39,13 @@ function createBody(bodyType: z.output<typeof inputSchema>['bodyType'], body: un
   return form;
 }
 
-export const sendRequest = {
+export const sendRequest = defineAction({
   slug: 'sendRequest',
   label: 'Send HTTP request',
   description: 'Send an HTTP request and return its status, headers, and body.',
   input: inputSchema,
   output,
-  async run({ input }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input }) {
     const url = new URL(input.url);
     for (const [key, value] of Object.entries(input.queryParams)) {
       for (const entry of Array.isArray(value) ? value : [value]) {
@@ -96,4 +96,4 @@ export const sendRequest = {
 
     return { status: response.status, headers: responseHeaders, body: responseBody };
   },
-};
+});

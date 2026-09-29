@@ -1930,15 +1930,126 @@ importers:
       '@frogbotai/next':
         specifier: workspace:*
         version: link:../packages/next
+      '@frogbotai/piece-airtable':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-airtable
+      '@frogbotai/piece-attio':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-attio
+      '@frogbotai/piece-brave-search':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-brave-search
+      '@frogbotai/piece-crypto':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-crypto
+      '@frogbotai/piece-csv':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-csv
+      '@frogbotai/piece-data-summarizer':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-data-summarizer
+      '@frogbotai/piece-date-helper':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-date-helper
+      '@frogbotai/piece-discord':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-discord
+      '@frogbotai/piece-dropbox':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-dropbox
+      '@frogbotai/piece-exa':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-exa
+      '@frogbotai/piece-file-helper':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-file-helper
+      '@frogbotai/piece-front':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-front
+      '@frogbotai/piece-github':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-github
       '@frogbotai/piece-gmail':
         specifier: workspace:*
         version: link:../packages/pieces/piece-gmail
       '@frogbotai/piece-google':
         specifier: workspace:*
         version: link:../packages/pieces/piece-google
+      '@frogbotai/piece-google-calendar':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-google-calendar
+      '@frogbotai/piece-google-drive':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-google-drive
+      '@frogbotai/piece-google-sheets':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-google-sheets
+      '@frogbotai/piece-graphql':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-graphql
+      '@frogbotai/piece-http':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-http
+      '@frogbotai/piece-image-helper':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-image-helper
+      '@frogbotai/piece-linear':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-linear
+      '@frogbotai/piece-math-helper':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-math-helper
+      '@frogbotai/piece-microsoft-teams':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-microsoft-teams
+      '@frogbotai/piece-monday':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-monday
+      '@frogbotai/piece-notion':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-notion
+      '@frogbotai/piece-pagerduty':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-pagerduty
+      '@frogbotai/piece-pdf':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-pdf
+      '@frogbotai/piece-posthog':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-posthog
+      '@frogbotai/piece-qrcode':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-qrcode
       '@frogbotai/piece-resend':
         specifier: workspace:*
         version: link:../packages/pieces/piece-resend
+      '@frogbotai/piece-slack':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-slack
+      '@frogbotai/piece-stripe':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-stripe
+      '@frogbotai/piece-telegram-bot':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-telegram-bot
+      '@frogbotai/piece-text-helper':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-text-helper
+      '@frogbotai/piece-trello':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-trello
+      '@frogbotai/piece-twilio':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-twilio
+      '@frogbotai/piece-xero':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-xero
+      '@frogbotai/piece-xml':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-xml
+      '@frogbotai/piece-zoom':
+        specifier: workspace:*
+        version: link:../packages/pieces/piece-zoom
       '@frogbotai/plugin-api-keys':
         specifier: workspace:*
         version: link:../packages/plugins/plugin-api-keys

@@ -1,7 +1,7 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { dayjs, formatSchema, parseDate, units } from '../date.js';
+import { defineAction } from '../define.js';
 
 const input = z.object({
   startDate: z.string().meta({ label: 'Starting Date' }),
@@ -11,14 +11,14 @@ const input = z.object({
   unitDifference: z.array(z.enum(units)).default(['year']).meta({ label: 'Units' }),
 });
 
-export const dateDifference = {
+export const dateDifference = defineAction({
   slug: 'dateDifference',
   label: 'Date Difference',
   description: 'Get the component difference between two dates.',
   input,
   output: z.record(z.string(), z.number()),
   idempotent: true,
-  async run({ input: value }: PieceRunArgs<z.output<typeof input>, object, undefined>) {
+  async run({ input: value }) {
     const start = parseDate(value.startDate, value.startDateFormat);
     const end = parseDate(value.endDate, value.endDateFormat);
     const difference = dayjs.duration(end.diff(start));
@@ -38,4 +38,4 @@ export const dateDifference = {
 
     return result;
   },
-};
+});

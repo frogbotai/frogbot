@@ -62,7 +62,7 @@ export function createTrelloClient({ auth }: { auth: unknown }) {
         before = page.at(-1)?.id;
       }
     },
-    getCard: (cardId: string) => request<Record<string, unknown>>(`cards/${cardId}`),
+    getCard: <T = Record<string, unknown>>(cardId: string) => request<T>(`cards/${cardId}`),
     listBoards: () => request<Array<{ id: string; name: string }>>('members/me/boards'),
     listLists: (boardId: string) =>
       request<Array<{ id: string; name: string }>>(`boards/${boardId}/lists`),
