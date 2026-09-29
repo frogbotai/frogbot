@@ -118,9 +118,10 @@ describe('defaultChatsCollection', () => {
     });
   });
 
-  it('enables soft delete and the Chat admin group', () => {
+  it('enables soft delete and lists chats ungrouped in the admin', () => {
     expect(collection.trash).toBe(true);
-    expect(collection.admin).toMatchObject({ group: 'Chat', useAsTitle: 'title' });
+    expect(collection.admin).toMatchObject({ useAsTitle: 'title' });
+    expect(collection.admin).not.toHaveProperty('group');
   });
 
   describe('access', () => {

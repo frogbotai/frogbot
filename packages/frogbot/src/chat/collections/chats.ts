@@ -30,7 +30,6 @@ export function defaultChatsCollection({
     trash: true,
     admin: {
       icon: 'bubble-chat',
-      group: 'Chat',
       useAsTitle: 'title',
       views: [
         {

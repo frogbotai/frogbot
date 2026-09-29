@@ -13,7 +13,7 @@ cd my-frogbot
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and create your admin account. The dashboard lists your collections; open **Chat → Chats** in the sidebar and select **Create New** to talk to your agent.
+Open [http://localhost:3000](http://localhost:3000) and create your admin account. The dashboard lists your collections; open **Chats** in the sidebar and select **Create New** to talk to your agent.
 
 New to this? The [step-by-step setup](https://docs.frogbot.ai/getting-started/setup) explains each step, and [Start with a coding agent](https://docs.frogbot.ai/getting-started/coding-agent) has a prompt that lets Codex, Claude Code, or another coding agent do it for you.
 

@@ -11,7 +11,6 @@ export function defaultConnectionsCollection({
     slug,
     admin: {
       icon: 'link-square',
-      group: 'Connections',
       useAsTitle: 'piece',
       views: [
         {

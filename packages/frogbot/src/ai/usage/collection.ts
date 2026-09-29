@@ -21,7 +21,6 @@ export function defaultUsageCollection({
     slug: USAGE_LOGS_SLUG,
     admin: {
       icon: 'ai-search',
-      group: 'AI',
       views: [
         {
           type: 'list',

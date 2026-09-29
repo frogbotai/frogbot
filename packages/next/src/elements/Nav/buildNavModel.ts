@@ -14,6 +14,22 @@ export type BuildNavModelProps = {
   visibleEntities: NonNullable<ServerProps['visibleEntities']>;
 };
 
+export type SplitNavGroupsProps = {
+  entities: EntityToGroup[];
+  i18n: ServerProps['i18n'];
+  permissions: NonNullable<ServerProps['permissions']>;
+};
+
+export function splitNavGroups({ entities, i18n, permissions }: SplitNavGroupsProps) {
+  const defaultLabel = i18n.t('general:collections');
+  const groups = groupNavItems(entities, permissions, i18n);
+
+  return {
+    groups: groups.filter(({ label }) => label !== defaultLabel),
+    ungrouped: groups.find(({ label }) => label === defaultLabel)?.entities ?? [],
+  };
+}
+
 export function buildCollectionGroups({
   config,
   i18n,
@@ -48,16 +64,19 @@ export function buildCollectionGroups({
     };
   };
 
+  const { groups, ungrouped } = splitNavGroups({
+    entities: entities.filter(({ entity }) => entity.admin.group !== null),
+    i18n,
+    permissions,
+  });
+
   return {
     entities,
-    groups: groupNavItems(
-      entities.filter(({ entity }) => entity.admin.group !== null),
-      permissions,
-      i18n,
-    ).map(({ entities: groupedEntities, label }) => ({
+    groups: groups.map(({ entities: groupedEntities, label }) => ({
       label,
       items: groupedEntities.map(mapEntity),
     })),
+    items: ungrouped.map(mapEntity),
     mapEntity,
   };
 }

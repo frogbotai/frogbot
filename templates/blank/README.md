@@ -28,7 +28,7 @@ If you created the project with `--no-install`, run `npm install` first. On pnpm
 build scripts this project needs.
 
 Then open [http://localhost:3000](http://localhost:3000) and create your admin
-account. The dashboard lists your collections; open **Chat → Chats** in the
+account. The dashboard lists your collections; open **Chats** in the
 sidebar and select **Create New** to talk to an agent.
 
 To call agents from your own code, see the

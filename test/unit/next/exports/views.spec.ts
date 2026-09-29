@@ -495,7 +495,7 @@ describe('@frogbotai/next views', () => {
     expect(html).toContain('href="/admin/account"');
   });
 
-  it('SettingsView groups visible readable collections and links canonical custom admin routes', async () => {
+  it('SettingsView lists ungrouped collections without a group heading and labels developer groups', async () => {
     const i18n = {
       t: (key: string, args?: { label?: string }) =>
         key === 'general:collections'
@@ -509,18 +509,20 @@ describe('@frogbotai/next views', () => {
       initPageResult: {
         permissions: {
           collections: {
+            media: { read: true },
             posts: { read: true },
             secrets: { read: false },
             users: { read: true },
           },
         },
         req: { i18n, user: { id: 'user-1' } },
-        visibleEntities: { collections: ['posts', 'secrets', 'users'], globals: [] },
+        visibleEntities: { collections: ['media', 'posts', 'secrets', 'users'], globals: [] },
       },
       payload: {
         config: {
           admin: { routes: { account: '/account' }, settings: [] },
           collections: [
+            { admin: {}, labels: { plural: 'Media' }, slug: 'media' },
             { admin: { group: 'Content' }, labels: { plural: 'Posts' }, slug: 'posts' },
             { admin: { group: 'Content' }, labels: { plural: 'Secrets' }, slug: 'secrets' },
             { admin: { group: 'Team' }, labels: { plural: 'Users' }, slug: 'users' },
@@ -535,6 +537,11 @@ describe('@frogbotai/next views', () => {
     const content = element.props.children[1].props.children[1].props.children;
     const html = renderToStaticMarkup(content);
 
+    expect(html).not.toContain('<h2>Collections</h2>');
+    expect(html).toContain('href="/control/collections/media"');
+    expect(html.indexOf('href="/control/collections/media"')).toBeLessThan(
+      html.indexOf('<h2>Content</h2>'),
+    );
     expect(html).toContain('<h2>Content</h2>');
     expect(html).toContain('<h2>Team</h2>');
     expect(html).toContain('href="/control/collections/posts"');

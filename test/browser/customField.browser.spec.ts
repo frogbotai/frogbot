@@ -90,6 +90,43 @@ test('renders built-in and component nav item icons', async ({ page }) => {
   ).toBeVisible();
 });
 
+test('lists ungrouped collections directly under one Collections heading', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  const shell = page.locator('.frogbot-nav-shell');
+
+  if ((await shell.getAttribute('data-nav-state')) === 'desktop-nav-closed') {
+    await page.click('button[aria-label="Open sidebar"]');
+  }
+
+  const collections = page.locator('#frogbot-nav-section-collections');
+
+  await expect(shell.getByText('Collections', { exact: true })).toHaveCount(1);
+  await expect(collections.locator('.frogbot-nav-section__scroll > .frogbot-nav-item')).toHaveText([
+    'Users',
+    'Files',
+  ]);
+  await expect(collections.locator('.frogbot-collections-section__group-label')).toHaveText([
+    'Content',
+  ]);
+  await expect(
+    collections.locator('.frogbot-collections-section__group .frogbot-nav-item'),
+  ).toHaveText(['Posts']);
+});
+
+test('lists ungrouped collection cards directly under the Collections settings page', async ({
+  page,
+}) => {
+  await page.goto('/settings/collections');
+
+  const content = page.locator('.frogbot-settings-template__content');
+
+  await expect(page.locator('.frogbot-settings-template__header')).toHaveText('Collections');
+  await expect(content.getByRole('heading', { level: 2 })).toHaveText(['Content']);
+  await expect(content.getByRole('heading', { level: 3 })).toHaveText(['Users', 'Files', 'Posts']);
+});
+
 test('renders the documented New Chat nav item with its built-in icon', async ({ page }) => {
   await page.goto('/');
 

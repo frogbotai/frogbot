@@ -71,18 +71,29 @@ test.describe('nav shell on desktop', () => {
     await expect(page.locator('.fb-composer')).toHaveCount(0);
   });
 
+  test('home page lists built-in collection cards under one Collections heading', async ({
+    page,
+  }) => {
+    await signIn(page);
+
+    await expect(page.locator('.collections__label')).toHaveText(['Collections']);
+    await expect(page.locator('.collections__group #card-chats')).toHaveCount(1);
+    await expect(page.locator('.collections__group #card-files')).toHaveCount(1);
+  });
+
   test('default sidebar shows only the Collections section, with Chats and its icon', async ({
     page,
   }) => {
     await signIn(page);
     await expandSidebar(page);
 
-    const chats = page
-      .locator('#frogbot-nav-section-collections')
-      .getByRole('link', { name: 'Chats' });
+    const collections = page.locator('#frogbot-nav-section-collections');
+    const chats = collections.getByRole('link', { name: 'Chats' });
 
     await expect(chats).toHaveAttribute('href', '/collections/chats');
     await expect(chats.locator('svg')).toHaveCount(1);
+    await expect(collections.locator('.frogbot-collections-section__group-label')).toHaveCount(0);
+    await expect(shell(page).getByText('Collections', { exact: true })).toHaveCount(1);
     await expect(shell(page).getByRole('button', { name: 'New Chat' })).toHaveCount(0);
     await expect(page.locator('#frogbot-nav-section-recents')).toHaveCount(0);
   });

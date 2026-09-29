@@ -59,7 +59,7 @@ export const Projects: CollectionConfig = {
 }
 ```
 
-Use `group: null` for a top-level collection. Leave `group` undefined for the default Collections group, provide a string or localized value for a named group, or use `false` to hide only the navigation link.
+Use `group: null` to list a collection as a top-level link above the sections. Leave `group` undefined to list it directly under the Collections heading, as FrogBot's built-in collections are, provide a string or localized value to list it under a named group label, or use `false` to hide only the navigation link.
 
 Component icons receive `size` and `className` props and are added to the generated import map:
 
@@ -71,7 +71,7 @@ admin: {
 
 A plain string without `#` must be a built-in icon name. An unknown name, such as a typo, stops startup with `[frogbot] Unknown admin icon '<name>'` followed by the valid names. A component path always names its export after `#`; write `'./src/components/ProjectsIcon#default'` for a default export. Navigation item and settings icons follow the same rules.
 
-Within `CollectionsSection`, top-level collections retain collection configuration order. Named groups follow in first-seen order, with their collections in configuration order.
+Within `CollectionsSection`, ungrouped collections come first, in configuration order. Named groups follow in first-seen order, with their collections in configuration order.
 
 When the sidebar is collapsed, section headings and labels are hidden and each item displays its label in a tooltip. Section state and named-group state persist for the current user.
 

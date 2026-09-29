@@ -20,7 +20,7 @@ FrogBot injects both collections when agents are configured and no collection cl
 | `chats` | `title`, `user`, `agent`, `lastMessageAt`, and for a chat started in a channel, `channel`, `externalId`, `channelKey`, and `channelThread` |
 | `messages` | Text `id`, `chat`, `role`, `parts`, `metadata`, `usage`, `status`, `delivery`, `model`, `reasoning`, `author`, `settlements`, `version` |
 
-Chat and message collections use soft deletion and appear under **Chat** in the admin panel. Access is owner-scoped through the chat's `user` relationship, and a channel chat is written only from its channel. See [who can write a chat](#who-can-write-a-chat).
+Chat and message collections use soft deletion and appear under **Collections** in the admin panel. Access is owner-scoped through the chat's `user` relationship, and a channel chat is written only from its channel. See [who can write a chat](#who-can-write-a-chat).
 
 Messages store the AI SDK `UIMessage.parts` array. Tool calls, tool results, reasoning, and custom data parts therefore remain available on later turns instead of being flattened into text.
 

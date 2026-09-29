@@ -9,7 +9,6 @@ exports[`defaultFilesCollection > produces the base config shape 1`] = `
     "update": [Function],
   },
   "admin": {
-    "group": "Files",
     "icon": "file",
     "useAsTitle": "filename",
     "views": [

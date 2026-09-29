@@ -15,7 +15,6 @@ export function defaultFilesCollection({ slug }: DefaultFilesCollectionProps): C
     trash: true,
     admin: {
       icon: 'file',
-      group: 'Files',
       useAsTitle: 'filename',
       views: [
         {
