@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { AIProvider } from '../types.js';
+import type { AIProvider, ScaffoldPlan } from '../types.js';
 import { CONFIG_ANCHORS, replaceOnce } from './anchors.js';
 
 // Default models are cheap, current, and exercised by the live suite
@@ -11,6 +11,8 @@ export const AI_PROVIDERS: Record<
   {
     /** Env var that holds the credential; the CLI prompts for it. */
     keyEnv: string;
+    /** Whether the app fails to start while `keyEnv` is empty. */
+    keyRequiredToStart: boolean;
     /** Extra non-secret env lines written to `.env` and `.env.example`. */
     env: string[];
     label: string;
@@ -21,12 +23,14 @@ export const AI_PROVIDERS: Record<
   openai: {
     label: 'OpenAI',
     keyEnv: 'OPENAI_API_KEY',
+    keyRequiredToStart: true,
     env: [],
     snippet: CONFIG_ANCHORS.ai,
   },
   anthropic: {
     label: 'Anthropic',
     keyEnv: 'ANTHROPIC_API_KEY',
+    keyRequiredToStart: true,
     env: [],
     snippet:
       "  ai: {\n    defaultModel: 'anthropic/claude-haiku-4-5',\n    providers: { anthropic: true },\n  },\n",
@@ -34,6 +38,7 @@ export const AI_PROVIDERS: Record<
   google: {
     label: 'Google Gemini',
     keyEnv: 'GOOGLE_GENERATIVE_AI_API_KEY',
+    keyRequiredToStart: true,
     env: [],
     snippet:
       "  ai: {\n    defaultModel: 'google/gemini-3.5-flash',\n    providers: { google: true },\n  },\n",
@@ -42,6 +47,7 @@ export const AI_PROVIDERS: Record<
     label: 'AWS Bedrock',
     hint: 'Bedrock API key, or leave blank and set AWS_PROFILE',
     keyEnv: 'AWS_BEARER_TOKEN_BEDROCK',
+    keyRequiredToStart: false,
     env: ['AWS_REGION=us-east-1'],
     snippet:
       "  ai: {\n    defaultModel: 'bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0',\n    providers: { bedrock: { region: process.env.AWS_REGION || 'us-east-1' } },\n  },\n",
@@ -50,6 +56,7 @@ export const AI_PROVIDERS: Record<
     label: 'opencode Zen',
     hint: 'needs a paid Zen API key',
     keyEnv: 'OPENCODE_API_KEY',
+    keyRequiredToStart: false,
     env: [],
     snippet:
       "  ai: {\n    defaultModel: 'zen/deepseek-v4.1-flash',\n    providers: {\n      zen: {\n        type: 'openai-compatible',\n        baseUrl: 'https://opencode.ai/zen/v1',\n        apiKey: process.env.OPENCODE_API_KEY,\n        models: [{ id: 'deepseek-v4.1-flash', mode: 'chat' }],\n      },\n    },\n  },\n",
@@ -95,4 +102,19 @@ export function providerEnv(provider: AIProvider): string[] {
 
 export function providerKeyEnv(provider: AIProvider): string | undefined {
   return provider === 'none' ? undefined : AI_PROVIDERS[provider].keyEnv;
+}
+
+export function missingKeyWarning(
+  plan: Pick<ScaffoldPlan, 'ai' | 'apiKey' | 'projectName'>,
+): string | undefined {
+  if (plan.ai === 'none' || plan.apiKey) return undefined;
+
+  const { keyEnv, keyRequiredToStart } = AI_PROVIDERS[plan.ai];
+  const envFile = `${plan.projectName}/.env`;
+
+  if (keyRequiredToStart) return `Set ${keyEnv} in ${envFile}. The app won't start without it.`;
+
+  if (plan.ai === 'bedrock') return `Set ${keyEnv} (or AWS_PROFILE) in ${envFile} before chatting.`;
+
+  return `Set ${keyEnv} in ${envFile} before chatting.`;
 }
