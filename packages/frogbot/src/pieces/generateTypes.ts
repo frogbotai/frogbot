@@ -49,7 +49,24 @@ export async function generatePieceTypes({ piece }: { piece: object }): Promise<
         }),
       );
     };
-    return rebase(z.toJSONSchema(value, { io })) as JSONSchema;
+
+    const optional = io === 'input' ? 'optin' : 'optout';
+
+    const json = z.toJSONSchema(value, {
+      io,
+      target: 'draft-7',
+      override: ({ zodSchema, jsonSchema }) => {
+        const def = zodSchema._zod.def;
+        if (def.type !== 'tuple' || jsonSchema.minItems !== undefined) return;
+
+        let required = def.items.length;
+        while (required > 0 && def.items[required - 1]!._zod[optional] === 'optional') required--;
+
+        if (required > 0) jsonSchema.minItems = required;
+      },
+    });
+
+    return rebase(json) as JSONSchema;
   };
   const actions = (
     entries: readonly { slug: string; input: z.ZodType; output?: z.ZodType }[],

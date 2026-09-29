@@ -142,6 +142,29 @@ describe('definePiece', () => {
     expect(types).toContain('children?: Input[]');
   });
 
+  it('preserves tuple element requirements when embedding callback types', async () => {
+    const piece = definePiece({
+      slug: 'tuples',
+      label: 'Tuples',
+      actions: [
+        {
+          slug: 'read',
+          description: 'Read',
+          input: z.object({
+            nonEmpty: z.tuple([z.string()], z.string()),
+            pair: z.tuple([z.string(), z.number().optional()]),
+          }),
+          async run() {},
+        },
+      ],
+    });
+
+    const types = await generatePieceTypes({ piece });
+
+    expect(types).toMatch(/nonEmpty: \[string, \.\.\.string\[\]\]/);
+    expect(types).toMatch(/pair: \[string\] \| \[string, number\]/);
+  });
+
   it('derives detached action methods and instance metadata', async () => {
     const example = createExample({ auth: { token: 'factory' }, prefix: 'value' });
     const { req, resolvePieceCredential } = request();
