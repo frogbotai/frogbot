@@ -1030,16 +1030,39 @@ describe('frogbot sanitize', () => {
     expect(payloadConfig.admin.importMap.autoGenerate).toBe(false);
   });
 
-  it('defaults admin nav sections', async () => {
+  it('defaults admin nav sections to the Collections section', async () => {
     const result = sanitize(makeConfig());
     const payloadConfig = await result._internal.payloadConfig;
 
     expect(
       (payloadConfig.admin.components as never as { navSections: string[] }).navSections,
-    ).toEqual(['@frogbotai/next#CollectionsSection', '@frogbotai/next#RecentsSection']);
+    ).toEqual(['@frogbotai/next#CollectionsSection']);
   });
 
-  it('defaults the dashboard and resolved chat collection views', async () => {
+  it('preserves configured admin nav sections', async () => {
+    const navSections = ['@frogbotai/next#CollectionsSection', '@frogbotai/next#RecentsSection'];
+    const result = sanitize(makeConfig({ admin: { components: { navSections } } } as never));
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(
+      (payloadConfig.admin.components as never as { navSections: string[] }).navSections,
+    ).toEqual(navSections);
+  });
+
+  it('preserves empty admin nav sections', async () => {
+    const result = sanitize(makeConfig({ admin: { components: { navSections: [] } } } as never));
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(
+      (payloadConfig.admin.components as never as { navSections: string[] }).navSections,
+    ).toEqual([]);
+  });
+
+  it('defaults to the collections dashboard and the resolved chat collection views', async () => {
+    const { buildConfig } = await vi.importActual<typeof import('payload')>('payload');
+
+    vi.mocked(payloadBuildConfig).mockImplementationOnce(buildConfig);
+
     const result = sanitize(
       makeConfig({
         ai: { providers: { openai: true } },
@@ -1049,10 +1072,13 @@ describe('frogbot sanitize', () => {
     const payloadConfig = await result._internal.payloadConfig;
     const chats = payloadConfig.collections.find(({ slug }) => slug === result.chat.chatsSlug);
 
-    expect(payloadConfig.admin.components.views.dashboard).toEqual({
-      Component: '@frogbotai/next/views#ChatView',
-      path: '/',
-    });
+    expect(payloadConfig.admin.components.views.dashboard).toBeUndefined();
+    expect(payloadConfig.admin.dashboard.widgets).toContainEqual(
+      expect.objectContaining({
+        Component: '@frogbotai/next/rsc#CollectionCards',
+        slug: 'collections',
+      }),
+    );
     expect(chats?.admin.components.views).toMatchObject({
       edit: { root: { Component: '@frogbotai/next/views#ChatView' } },
     });
@@ -1079,7 +1105,17 @@ describe('frogbot sanitize', () => {
     expect(payloadConfig.admin.dashboard.widgets).toHaveLength(1);
   });
 
-  it('selects the modular dashboard over the default Chat view', async () => {
+  it('preserves a Chat dashboard view at the admin root', async () => {
+    const dashboardView = { Component: '@frogbotai/next/views#ChatView', path: '/' as const };
+    const result = sanitize(
+      makeConfig({ admin: { components: { views: { dashboard: dashboardView } } } } as never),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.components.views.dashboard).toEqual(dashboardView);
+  });
+
+  it('keeps configured dashboard widgets without a dashboard view', async () => {
     const result = sanitize(
       makeConfig({
         admin: {

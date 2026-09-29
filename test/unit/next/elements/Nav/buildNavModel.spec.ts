@@ -1,7 +1,10 @@
 import type { SanitizedConfig, ServerProps } from 'payload';
 import { describe, expect, it } from 'vitest';
 
-import { buildNavModel } from '../../../../../packages/next/src/elements/Nav/buildNavModel';
+import {
+  buildCollectionGroups,
+  buildNavModel,
+} from '../../../../../packages/next/src/elements/Nav/buildNavModel';
 
 const i18n = {
   language: 'en',
@@ -53,12 +56,14 @@ function config(): SanitizedConfig {
 
 function bareConfig(): SanitizedConfig {
   const bare = config();
+
   delete (bare.admin as { components?: unknown }).components;
+
   return bare;
 }
 
 describe('buildNavModel', () => {
-  it('builds configured items and translated entity groups in config order', () => {
+  it('builds configured items followed by ungrouped entities', () => {
     expect(
       buildNavModel({
         config: config(),
@@ -67,10 +72,6 @@ describe('buildNavModel', () => {
         visibleEntities: { collections: ['posts', 'users', 'hidden', 'projects'], globals: [] },
       }),
     ).toEqual({
-      groups: [
-        { items: [{ label: 'Posts', path: '/control/collections/posts' }], label: 'Collections' },
-        { items: [{ label: 'Users', path: '/control/collections/users' }], label: 'Accounts' },
-      ],
       items: [
         { label: 'Home', path: '/admin' },
         { icon: 'robot', label: 'Projects', path: '/control/collections/projects' },
@@ -78,48 +79,56 @@ describe('buildNavModel', () => {
     });
   });
 
-  it('defaults to the new chat item when navItems is unset', () => {
+  it('returns no items when navItems is unset', () => {
     const result = buildNavModel({
       config: bareConfig(),
       i18n,
       permissions,
-      visibleEntities: { collections: [], globals: [] },
+      visibleEntities: { collections: ['posts', 'users', 'hidden'], globals: [] },
     });
-    expect(result.items).toEqual([
-      { icon: 'pencil-edit', label: 'New Chat', path: '/control/collections/chats/create' },
-    ]);
+
+    expect(result.items).toEqual([]);
   });
 
-  it('drops the new chat default when navItems is configured', () => {
+  it('returns only configured items when no entity is ungrouped', () => {
     const result = buildNavModel({
       config: config(),
       i18n,
       permissions,
       visibleEntities: { collections: [], globals: [] },
     });
+
     expect(result.items).toEqual([{ label: 'Home', path: '/admin' }]);
   });
+});
 
-  it('targets the resolved chat collection create route', () => {
-    const result = buildNavModel({
-      chatsSlug: 'conversations',
-      config: bareConfig(),
+describe('buildCollectionGroups', () => {
+  it('builds translated entity groups in config order', () => {
+    const result = buildCollectionGroups({
+      config: config(),
       i18n,
       permissions,
-      visibleEntities: { collections: [], globals: [] },
+      visibleEntities: { collections: ['posts', 'users', 'hidden', 'projects'], globals: [] },
     });
-    expect(result.items[0]?.path).toBe('/control/collections/conversations/create');
+
+    expect(result.groups).toEqual([
+      { items: [{ label: 'Posts', path: '/control/collections/posts' }], label: 'Collections' },
+      { items: [{ label: 'Users', path: '/control/collections/users' }], label: 'Accounts' },
+    ]);
   });
 
   it('excludes entities without visibility or read permission', () => {
     const nextPermissions = structuredClone(permissions);
+
     nextPermissions.collections.users.read = false;
-    const result = buildNavModel({
+
+    const result = buildCollectionGroups({
       config: config(),
       i18n,
       permissions: nextPermissions,
       visibleEntities: { collections: ['users'], globals: [] },
     });
+
     expect(result.groups).toEqual([]);
   });
 });

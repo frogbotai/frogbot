@@ -38,8 +38,8 @@ export default buildConfig({
 | `chat.UserMessageActions` | Replaces user message actions. |
 | `graphics.Icon`, `graphics.Logo` | Replace Admin Panel branding. |
 | `Nav` | Replaces the complete sidebar navigation. |
-| `navItems` | Replaces links above collections. |
-| `navSections` | Replaces the default collection and recents sections. |
+| `navItems` | Adds links above collections. |
+| `navSections` | Replaces the default Collections section. |
 | `providers` | Wraps the Admin Panel with custom React context providers. |
 | `views` | Replaces, modifies, or adds top-level routes. |
 
@@ -105,7 +105,7 @@ components: {
 }
 ```
 
-Setting `navItems` replaces the default New Chat link. Setting `navSections` replaces the default Collections and Recents sections.
+Navigation items are empty by default. Setting `navSections` replaces the default Collections section, so include `@frogbotai/next#CollectionsSection` to keep it. See [Admin navigation](/admin/admin-navigation) for New Chat and Recents examples.
 
 ### Chat
 

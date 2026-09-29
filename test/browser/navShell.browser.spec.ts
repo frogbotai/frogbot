@@ -61,6 +61,40 @@ test.describe('nav shell on desktop', () => {
     ).toHaveAttribute('href', '/collections/users');
   });
 
+  test('home page shows collection cards instead of chat', async ({ page }) => {
+    await signIn(page);
+
+    await expect(page.locator('#card-users .card__click')).toHaveAttribute(
+      'href',
+      '/collections/users',
+    );
+    await expect(page.locator('.fb-composer')).toHaveCount(0);
+  });
+
+  test('default sidebar shows only the Collections section, with Chats and its icon', async ({
+    page,
+  }) => {
+    await signIn(page);
+    await expandSidebar(page);
+
+    const chats = page
+      .locator('#frogbot-nav-section-collections')
+      .getByRole('link', { name: 'Chats' });
+
+    await expect(chats).toHaveAttribute('href', '/collections/chats');
+    await expect(chats.locator('svg')).toHaveCount(1);
+    await expect(shell(page).getByRole('button', { name: 'New Chat' })).toHaveCount(0);
+    await expect(page.locator('#frogbot-nav-section-recents')).toHaveCount(0);
+  });
+
+  test('chats create route opens the chat composer', async ({ page }) => {
+    await signIn(page);
+
+    await page.goto('/collections/chats/create');
+
+    await expect(page.locator('.fb-composer textarea')).toBeVisible();
+  });
+
   test('collapsed sidebar stays visible as an icon rail', async ({ page }) => {
     await signIn(page);
     await expandSidebar(page);
