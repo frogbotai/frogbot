@@ -11,7 +11,6 @@ import { FrogBotNav as FrogBotNav_0d74ee439e1043043a872b6d428a44d5 } from '@frog
 import { FrogBotIcon as FrogBotIcon_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 import { FrogBotLogo as FrogBotLogo_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 import { CollectionsSection as CollectionsSection_0490761fff9543eb3bcfbb8da78b8101 } from '@frogbotai/next';
-import { RecentsSection as RecentsSection_0490761fff9543eb3bcfbb8da78b8101 } from '@frogbotai/next';
 import { CollectionSettingsRedirect as CollectionSettingsRedirect_172b1613d7d7a5cf96731bcb4ca4ed45 } from '@frogbotai/next/views';
 import { ConnectionsView as ConnectionsView_172b1613d7d7a5cf96731bcb4ca4ed45 } from '@frogbotai/next/views';
 import { SettingsView as SettingsView_172b1613d7d7a5cf96731bcb4ca4ed45 } from '@frogbotai/next/views';
@@ -43,8 +42,6 @@ export const importMap = {
     FrogBotLogo_0d74ee439e1043043a872b6d428a44d5,
   '@frogbotai/next#CollectionsSection':
     CollectionsSection_0490761fff9543eb3bcfbb8da78b8101,
-  '@frogbotai/next#RecentsSection':
-    RecentsSection_0490761fff9543eb3bcfbb8da78b8101,
   '@frogbotai/next/views#CollectionSettingsRedirect':
     CollectionSettingsRedirect_172b1613d7d7a5cf96731bcb4ca4ed45,
   '@frogbotai/next/views#ConnectionsView':

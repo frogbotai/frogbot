@@ -65,12 +65,10 @@ export interface RootAdminComponents {
   graphics?: RootAdminGraphics;
   /** Replace the entire admin sidebar navigation. */
   Nav?: FrogBotComponent;
-  /** Sidebar links above your collections. Defaults to a single New Chat
-   *  link; setting this replaces it, so include New Chat yourself if you
-   *  still want it. */
+  /** Sidebar links above your collections. Empty by default. */
   navItems?: NavItem[];
-  /** Sidebar sections below the links. Defaults to Collections + Recents;
-   *  setting this replaces those defaults. */
+  /** Sidebar sections below the links. Defaults to Collections; setting this
+   *  replaces that default. */
   navSections?: FrogBotComponent[];
   /** Wrap the admin panel in custom context providers. */
   providers?: ProviderComponent[];

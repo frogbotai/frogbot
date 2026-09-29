@@ -1253,10 +1253,7 @@ function buildPayloadConfig(
           }
         : {}),
       Nav: admin?.components?.Nav ?? '@frogbotai/next/rsc#FrogBotNav',
-      navSections: admin?.components?.navSections ?? [
-        '@frogbotai/next#CollectionsSection',
-        '@frogbotai/next#RecentsSection',
-      ],
+      navSections: admin?.components?.navSections ?? ['@frogbotai/next#CollectionsSection'],
       graphics: {
         Icon: '@frogbotai/next/rsc#FrogBotIcon',
         Logo: '@frogbotai/next/rsc#FrogBotLogo',
@@ -1264,13 +1261,6 @@ function buildPayloadConfig(
       },
       views: {
         ...(admin?.components?.views as Record<string, unknown> | undefined),
-        ...((admin?.components?.views as Record<string, unknown> | undefined)?.dashboard
-          ? {}
-          : dashboard
-            ? {}
-            : {
-                dashboard: { Component: '@frogbotai/next/views#ChatView', path: '/' } as const,
-              }),
         settings:
           (admin?.components?.views as Record<string, unknown> | undefined)?.settings ??
           ({

@@ -1,6 +1,5 @@
 import { Account } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
-import { getCachedFrogBot } from 'frogbot';
 import type { NavPreferences, PayloadRequest, ServerProps } from 'payload';
 import { formatAdminURL, PREFERENCE_KEYS } from 'payload/shared';
 
@@ -53,9 +52,7 @@ export async function FrogBotNav(props: FrogBotNavProps) {
     beforeSidebarClose?: Parameters<typeof RenderServerComponent>[0]['Component'][];
     navSections?: Parameters<typeof RenderServerComponent>[0]['Component'][];
   };
-  const chat = getCachedFrogBot()?.config.chat;
   const navModel = buildNavModel({
-    chatsSlug: chat?.enabled ? chat.chatsSlug : undefined,
     config: payload.config,
     i18n,
     permissions,

@@ -114,7 +114,7 @@ describe('frogbot importMap generator', () => {
 
     expect(output).toContain("from '@frogbotai/next/rsc'");
     expect(output).toContain("from '@frogbotai/next/views'");
-    expect(output).toContain('"@frogbotai/next/views#ChatView"');
+    expect(output).not.toContain('"@frogbotai/next/views#ChatView"');
     expect(output).toContain('"@frogbotai/next/views#SettingsView"');
     expect(output).toContain('"@frogbotai/next/rsc#CollectionCards"');
     expect(output).toContain("from './fields/NameField.tsx'");

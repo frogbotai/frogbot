@@ -137,7 +137,7 @@ The helper requires chat persistence and a current chat on `ctx.agent.chatId`; i
 
 ## Use the default chat views
 
-When an agent is configured, the admin dashboard and chat collection create route open an empty chat with the first configured agent. Sending the first message creates the chat and updates the URL to its document route without remounting the conversation.
+When an agent is configured, the chat collection create route (`/collections/chats/create` by default) opens an empty chat with the first configured agent. Users reach it from the Chats collection in the sidebar. Sending the first message creates the chat and updates the URL to its document route without remounting the conversation.
 
 The chat collection list uses the standard collection list view, so filtering, sorting, and columns behave like any other collection. Selecting a chat opens its document view, restores up to 500 stored messages in chronological order, and continues the same conversation.
 
@@ -153,7 +153,7 @@ FrogBot only names chats whose title is empty. Later turns do not regenerate the
 
 ## Customize admin chat components
 
-Use `admin.components.chat` for chat-wide component overrides. `Chat` replaces the canonical chat surface on both the dashboard and chat document routes. `Greeting` replaces the block shown above the composer while a chat has no messages. The role-specific action slots receive the current message, pending state, and `defaultActions`.
+Use `admin.components.chat` for chat-wide component overrides. `Chat` replaces the canonical chat surface on chat document routes, and on the dashboard when you [use chat as your home page](#use-chat-as-your-home-page). `Greeting` replaces the block shown above the composer while a chat has no messages. The role-specific action slots receive the current message, pending state, and `defaultActions`.
 
 ```ts
 import { buildConfig } from 'frogbot'
@@ -226,6 +226,30 @@ export default buildConfig({
   }
 })
 ```
+
+## Use chat as your home page
+
+The Admin Panel opens on the collections dashboard by default. To open a new chat at `/` instead, set the dashboard view to FrogBot's chat view:
+
+```ts
+import { buildConfig } from 'frogbot'
+
+export default buildConfig({
+  // required options omitted
+  admin: {
+    components: {
+      views: {
+        dashboard: {
+          Component: '@frogbotai/next/views#ChatView',
+          path: '/'
+        }
+      }
+    }
+  }
+})
+```
+
+The home page then starts an empty chat with the first configured agent, and your `admin.components.chat` overrides apply there too. The chats collection create and document routes still open the chat screen. Pair this with a New Chat item or the Recents section from [Admin navigation](/admin/admin-navigation) for a chat-first sidebar.
 
 ## Customize the collections
 

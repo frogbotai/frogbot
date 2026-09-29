@@ -1,11 +1,10 @@
 import { FolderIcon } from '@frogbotai/ui/icons';
-import { iconRegistry, isIconName } from '@frogbotai/ui/icons/registry';
-import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import type { CustomComponent, ServerProps } from 'payload';
 
 import { buildCollectionGroups } from './buildNavModel.js';
 import { NavItem } from './NavItem.js';
 import { NavSection } from './NavSection.js';
+import { renderNavIcon } from './renderNavIcon.js';
 
 export type CollectionsSectionProps = ServerProps;
 
@@ -26,24 +25,14 @@ export function CollectionsSection({
     visibleEntities,
   });
 
-  const renderIcon = (icon?: CustomComponent | string) => {
-    if (typeof icon === 'string' && isIconName(icon)) {
-      const Icon = iconRegistry[icon];
-
-      return <Icon className={iconClassName} size={20} />;
-    }
-
-    if (icon && (typeof icon !== 'string' || icon.includes('#'))) {
-      return RenderServerComponent({
-        Component: icon,
-        clientProps: { className: iconClassName, size: 20 },
-        importMap: payload.importMap,
-        serverProps: { i18n, payload, permissions, visibleEntities },
-      });
-    }
-
-    return <FolderIcon className={iconClassName} size={20} />;
-  };
+  const renderIcon = (icon?: CustomComponent | string) =>
+    renderNavIcon({
+      className: iconClassName,
+      icon,
+      importMap: payload.importMap,
+      serverProps: { i18n, payload, permissions, visibleEntities },
+      size: 20,
+    }) ?? <FolderIcon className={iconClassName} size={20} />;
 
   return (
     <NavSection id="collections" title={i18n.t('general:collections')}>

@@ -8,7 +8,6 @@ import { FrogBotNav as FrogBotNav_0d74ee439e1043043a872b6d428a44d5 } from '@frog
 import { TailwindIcon as TailwindIcon_4cc4fd2da7cdd7a04fcc7e16730a23a6 } from '../../components/TailwindBrand';
 import { TailwindLogo as TailwindLogo_4cc4fd2da7cdd7a04fcc7e16730a23a6 } from '../../components/TailwindBrand';
 import { CollectionsSection as CollectionsSection_0490761fff9543eb3bcfbb8da78b8101 } from '@frogbotai/next';
-import { RecentsSection as RecentsSection_0490761fff9543eb3bcfbb8da78b8101 } from '@frogbotai/next';
 import { SettingsView as SettingsView_172b1613d7d7a5cf96731bcb4ca4ed45 } from '@frogbotai/next/views';
 import { CollectionCards as CollectionCards_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 
@@ -32,8 +31,6 @@ export const importMap = {
     TailwindLogo_4cc4fd2da7cdd7a04fcc7e16730a23a6,
   '@frogbotai/next#CollectionsSection':
     CollectionsSection_0490761fff9543eb3bcfbb8da78b8101,
-  '@frogbotai/next#RecentsSection':
-    RecentsSection_0490761fff9543eb3bcfbb8da78b8101,
   '@frogbotai/next/views#SettingsView':
     SettingsView_172b1613d7d7a5cf96731bcb4ca4ed45,
   '@frogbotai/next/rsc#CollectionCards':

@@ -5,11 +5,23 @@ description: "Order, extend, customize, or replace FrogBot's admin sidebar."
 keywords: ["admin", "navigation", "sidebar", "components"]
 ---
 
-FrogBot's default admin sidebar starts with New Chat, followed by configurable sections and a bottom rail. It supports desktop collapse, mobile navigation, active links, and saved section state without additional configuration.
+FrogBot's default admin sidebar lists your collections, followed by a bottom rail. It supports desktop collapse, mobile navigation, active links, and saved section state without additional configuration. Add navigation items and sections, such as a New Chat link or Recents, when your app needs them.
 
 ## Configure sections
 
-`admin.components.navSections` is an ordered array of component import paths. By default, FrogBot renders `CollectionsSection` followed by `RecentsSection`:
+`admin.components.navSections` is an ordered array of component import paths. By default, FrogBot renders only `CollectionsSection`:
+
+```ts
+admin: {
+  components: {
+    navSections: ['@frogbotai/next#CollectionsSection']
+  }
+}
+```
+
+Setting `navSections` replaces that default array, so include every section you want rendered. Sections appear after configured `admin.components.navItems`, in array order. Plugin navigation items follow configured items. The bottom rail renders after all sections.
+
+Add Recents by including `@frogbotai/next#RecentsSection` where you want it to appear:
 
 ```ts
 admin: {
@@ -22,15 +34,11 @@ admin: {
 }
 ```
 
-Setting `navSections` replaces that default array, so include every section you want rendered. Sections appear after New Chat and configured `admin.components.navItems`, in array order. Plugin navigation items follow configured items. The bottom rail renders after all sections.
-
-Remove Recents by omitting `@frogbotai/next#RecentsSection`. To move it, place that path at the desired position in `navSections`.
-
 `NavSection` gives each section a title, collapsible body, and scrolling content. Its collapsed state is saved for the current user under `frogbot-nav-section:{id}` and restored on reload. Give every section a stable, unique `id`.
 
 ## Recents behavior
 
-Recents is enabled by default. FrogBot server-renders up to 30 chats available to the signed-in user, ordered by latest message, then refreshes the list after chat mutations, when the window regains focus, and every 30 seconds.
+Recents appears when you add `RecentsSection` to `navSections`. FrogBot server-renders up to 30 chats available to the signed-in user, ordered by latest message, then refreshes the list after chat mutations, when the window regains focus, and every 30 seconds.
 
 Chats are grouped under Today, Yesterday, Previous 7 days, Previous 30 days, and Older. Empty groups are hidden. The current chat remains active for its nested admin routes, and View all opens the configured chats collection list.
 
@@ -67,7 +75,7 @@ When the sidebar is collapsed, section headings and labels are hidden and each i
 
 ## Add a navigation item
 
-`admin.components.navItems` holds the links above your collections. By default it is a single New Chat link pointing at the create route of the resolved chats collection. Each item requires a `label` and a full `path`. Set `icon` to a built-in kebab-case icon name or a component import path.
+`admin.components.navItems` holds the links above your collections. It is empty by default. Each item requires a `label` and a full `path`. Set `icon` to a built-in kebab-case icon name or a component import path.
 
 ```ts
 admin: {
@@ -75,7 +83,7 @@ admin: {
     navItems: [
       {
         label: 'Operations',
-        path: '/admin/operations',
+        path: '/operations',
         icon: './src/components/OperationsIcon#OperationsIcon'
       }
     ]
@@ -83,20 +91,20 @@ admin: {
 }
 ```
 
-Setting `navItems` replaces the default array, so the configuration above removes New Chat. Include it yourself to keep it, in whatever position you want:
+To give users a one-click way to start a chat, add a New Chat item that points at the chats collection's create page:
 
 ```ts
 admin: {
   components: {
     navItems: [
-      { label: 'New Chat', path: '/admin/collections/chats/create', icon: 'pencil-edit' },
-      { label: 'Operations', path: '/admin/operations' }
+      { label: 'New Chat', path: '/collections/chats/create', icon: 'pencil-edit' },
+      { label: 'Operations', path: '/operations' }
     ]
   }
 }
 ```
 
-Use your own admin route and chats collection slug in that path when either is customized. Set `navItems: []` to render no links above your collections.
+Paths include the admin route, which is `/` by default. Use your own admin route and chats collection slug in that path when either is customized.
 
 Component icons receive `size` and `className` props and are added to the generated import map.
 
@@ -253,4 +261,4 @@ admin: {
 }
 ```
 
-A custom `Nav` fully owns navigation rendering. It does not receive FrogBot's default sidebar styles, default New Chat link, configured items or sections, bottom rail, or shell slots automatically.
+A custom `Nav` fully owns navigation rendering. It does not receive FrogBot's default sidebar styles, configured items or sections, bottom rail, or shell slots automatically.
