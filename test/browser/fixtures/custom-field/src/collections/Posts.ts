@@ -2,7 +2,10 @@ import type { CollectionConfig } from 'frogbot';
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
-  admin: { useAsTitle: 'title' },
+  admin: {
+    components: { edit: { beforeDocumentControls: ['/components/ThemeProbe#ThemeProbe'] } },
+    useAsTitle: 'title',
+  },
   fields: [
     { name: 'title', type: 'text', required: true },
     {
@@ -18,5 +21,6 @@ export const Posts: CollectionConfig = {
         condition: (data) => Boolean(data.title),
       },
     },
+    { name: 'relatedPost', type: 'relationship', relationTo: 'posts' },
   ],
 };

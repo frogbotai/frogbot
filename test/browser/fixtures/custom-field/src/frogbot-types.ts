@@ -160,6 +160,7 @@ export interface Post {
   title: string;
   color?: string | null;
   note?: string | null;
+  relatedPost?: (number | null) | Post;
   updatedAt: string;
   createdAt: string;
 }
@@ -291,6 +292,7 @@ export interface PostsSelect {
   title?: boolean;
   color?: boolean;
   note?: boolean;
+  relatedPost?: boolean;
   updatedAt?: boolean;
   createdAt?: boolean;
 }

@@ -15,7 +15,7 @@
   background: var(--theme-brand-500);
 }
 .fb-switch--square {
-  border-radius: var(--radius-md);
+  border-radius: var(--fb-radius-md);
 }
 .fb-switch--sm {
   width: 2rem;

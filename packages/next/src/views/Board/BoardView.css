@@ -1,5 +1,5 @@
-.collection-view-shell__view > .fb-theme,
 .collection-board {
+  color: var(--theme-base-900);
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;

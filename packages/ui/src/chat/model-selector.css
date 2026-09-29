@@ -6,12 +6,12 @@
   gap: 0.25rem;
   padding: 0.375rem 0.5rem;
   color: var(--theme-base-600);
-  font-size: var(--text-sm);
-  line-height: var(--text-sm--line-height);
+  font-size: var(--fb-text-sm);
+  line-height: var(--fb-text-sm--line-height);
   white-space: nowrap;
   background: transparent;
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--fb-radius-lg);
   cursor: pointer;
   outline: none;
   transition: background-color 150ms;
@@ -50,7 +50,7 @@
   padding: 0.5rem;
   background-color: var(--theme-base-250);
   border-color: var(--theme-base-300);
-  border-radius: var(--radius-lg);
+  border-radius: var(--fb-radius-lg);
 }
 
 .fb-model-selector__model,
@@ -63,12 +63,12 @@
   gap: 0.5rem;
   padding: 0.625rem 0.75rem;
   color: var(--theme-base-900);
-  font-size: var(--text-sm);
-  line-height: var(--text-sm--line-height);
+  font-size: var(--fb-text-sm);
+  line-height: var(--fb-text-sm--line-height);
   text-align: left;
   background: transparent;
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--fb-radius-lg);
   cursor: pointer;
   outline: none;
 }
@@ -124,9 +124,9 @@
 .fb-model-selector__caption,
 .fb-model-selector__group-label {
   color: var(--theme-base-600);
-  font-size: var(--text-xs);
+  font-size: var(--fb-text-xs);
   font-weight: 500;
-  line-height: var(--text-xs--line-height);
+  line-height: var(--fb-text-xs--line-height);
 }
 
 .fb-model-selector__list {

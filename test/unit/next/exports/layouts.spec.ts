@@ -37,6 +37,20 @@ describe('@frogbotai/next layouts', () => {
     await expect(element.props.config).resolves.toBe(payloadConfig);
   });
 
+  it('RootLayout marks the html element as a FrogBot UI page and keeps html props', () => {
+    const { config } = makeConfig();
+
+    const element = RootLayout({
+      config,
+      htmlProps: { className: 'app' },
+      importMap: {},
+      serverFunction: vi.fn(),
+      children: null,
+    });
+
+    expect(element.props.htmlProps).toEqual({ className: 'app', 'data-fb-ui-page': '' });
+  });
+
   it('handleServerFunctions forwards args with the unwrapped payload config promise', async () => {
     const { config, payloadConfig } = makeConfig();
 

@@ -84,15 +84,15 @@
 }
 
 .fb-sheet__title {
-  font-size: var(--text-lg);
-  line-height: var(--text-lg--line-height);
+  font-size: var(--fb-text-lg);
+  line-height: var(--fb-text-lg--line-height);
   font-weight: 600;
 }
 
 .fb-sheet__description {
   color: var(--theme-base-750);
-  font-size: var(--text-sm);
-  line-height: var(--text-sm--line-height);
+  font-size: var(--fb-text-sm);
+  line-height: var(--fb-text-sm--line-height);
 }
 
 @media (min-width: 40rem) {

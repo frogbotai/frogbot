@@ -11,13 +11,13 @@
   overflow: hidden;
   padding: 0.75rem 1.25rem 1rem;
   border: 1px solid var(--theme-base-500);
-  border-radius: calc(var(--radius-xl) + 0.25rem);
+  border-radius: calc(var(--fb-radius-xl) + 0.25rem);
   border-top-right-radius: 0;
   background: transparent;
   color: inherit;
   font-family: var(--font-payload);
-  font-size: var(--text-base);
-  line-height: var(--text-base--line-height);
+  font-size: var(--fb-text-base);
+  line-height: var(--fb-text-base--line-height);
   outline: none;
 }
 

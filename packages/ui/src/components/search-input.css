@@ -19,7 +19,7 @@
   flex-grow: 1;
   color: inherit;
   font: inherit;
-  font-size: var(--text-sm);
+  font-size: var(--fb-text-sm);
   background: transparent;
   border: 0;
   outline: none;
@@ -33,5 +33,5 @@
   justify-content: center;
   background: transparent;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--fb-radius-sm);
 }

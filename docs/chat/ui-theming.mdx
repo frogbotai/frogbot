@@ -26,6 +26,12 @@ Change the `theme` or `brand` prop at runtime to apply tenant-specific values wi
 
 Place `ThemeScript` before themed content during server rendering. It reads the stored `light`, `dark`, or `system` preference before hydration to avoid a mode flash. Pass the same `storageKey` to `ThemeScript` and `ThemeProvider` when using a custom key.
 
+## Admin panel and application pages
+
+In the FrogBot admin panel, FrogBot UI components and theme tokens work in every custom component, including views, fields, document controls, drawers, menus, and dialogs, with no wrapper. They follow the admin's light and dark setting and update as soon as a user switches theme.
+
+Use `ThemeProvider` on your application's own pages outside the admin panel. Inside the admin, add one only when a section needs its own mode or tokens; it overrides the admin theme for its children.
+
 ## Choose neutral color tokens
 
 Use `--theme-base-*` for neutral component colors that should invert between light and dark modes. Use `--color-base-*` only when a color must remain fixed, such as a dark overlay or fixed-contrast text on a brand surface.

@@ -1,7 +1,6 @@
 'use client';
 
 import { Board, BoardCard } from '@frogbotai/ui';
-import { ThemeProvider } from '@frogbotai/ui/theme';
 import { getTranslation } from '@payloadcms/translations';
 import {
   DefaultCell,
@@ -11,7 +10,6 @@ import {
   useDocumentDrawer,
   useListQuery,
   useTableColumns,
-  useTheme,
   useTranslation,
 } from '@payloadcms/ui';
 import { formatDocTitle } from '@payloadcms/ui/shared';
@@ -117,7 +115,6 @@ export function BoardViewClient(props: BoardViewClientProps) {
   const { query } = useListQuery();
   const isManual = query.sort === props.orderField;
   const { config, getEntityConfig } = useConfig();
-  const { theme } = useTheme();
   const { columns: columnState } = useTableColumns();
   const collectionConfig = getEntityConfig({
     collectionSlug: props.collectionSlug,
@@ -235,50 +232,48 @@ export function BoardViewClient(props: BoardViewClientProps) {
 
   return (
     <RelationshipProvider>
-      <ThemeProvider mode={theme}>
-        <div className="collection-board">
-          <Board
-            allowReorder={isManual}
-            columns={props.columns}
-            getId={(row) => String(row.id)}
-            groupBy={(row) => {
-              const value = toCellData(getPath(row, props.groupBy));
-              return value === null || value === undefined ? null : getBoardColumnKey(value);
-            }}
-            hasMore={hasMore}
-            renderColumnHeader={
-              ColumnHeader
-                ? (column, count) => (
-                    <ColumnHeader
-                      column={{
-                        ...column,
-                        value: props.columns.find(({ key }) => key === column.key)?.value,
-                      }}
-                      count={count}
-                    />
-                  )
-                : undefined
-            }
-            onMove={move}
-            onReachEnd={(key) => void fetchColumn(key, (pages[key] ?? 1) + 1)}
-            renderCard={(row) =>
-              Card ? (
-                <Card disabled={!props.canUpdate} row={row} />
-              ) : (
-                <BoardDocumentCard
-                  cardColumns={cardColumns}
-                  collectionConfig={collectionConfig}
-                  collectionSlug={props.collectionSlug}
-                  cover={props.cover}
-                  disabled={!props.canUpdate}
-                  row={row}
-                />
-              )
-            }
-            rows={rows}
-          />
-        </div>
-      </ThemeProvider>
+      <div className="collection-board">
+        <Board
+          allowReorder={isManual}
+          columns={props.columns}
+          getId={(row) => String(row.id)}
+          groupBy={(row) => {
+            const value = toCellData(getPath(row, props.groupBy));
+            return value === null || value === undefined ? null : getBoardColumnKey(value);
+          }}
+          hasMore={hasMore}
+          renderColumnHeader={
+            ColumnHeader
+              ? (column, count) => (
+                  <ColumnHeader
+                    column={{
+                      ...column,
+                      value: props.columns.find(({ key }) => key === column.key)?.value,
+                    }}
+                    count={count}
+                  />
+                )
+              : undefined
+          }
+          onMove={move}
+          onReachEnd={(key) => void fetchColumn(key, (pages[key] ?? 1) + 1)}
+          renderCard={(row) =>
+            Card ? (
+              <Card disabled={!props.canUpdate} row={row} />
+            ) : (
+              <BoardDocumentCard
+                cardColumns={cardColumns}
+                collectionConfig={collectionConfig}
+                collectionSlug={props.collectionSlug}
+                cover={props.cover}
+                disabled={!props.canUpdate}
+                row={row}
+              />
+            )
+          }
+          rows={rows}
+        />
+      </div>
     </RelationshipProvider>
   );
 }

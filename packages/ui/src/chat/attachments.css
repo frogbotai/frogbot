@@ -63,7 +63,7 @@
   height: 7.5rem;
   aspect-ratio: 16 / 9;
   border: 1px solid var(--theme-base-50);
-  border-radius: var(--radius-md);
+  border-radius: var(--fb-radius-md);
   background-color: var(--theme-base-50);
 }
 
@@ -74,7 +74,7 @@
 .fb-attachments__image {
   width: 100%;
   height: 100%;
-  border-radius: var(--radius-md);
+  border-radius: var(--fb-radius-md);
   object-fit: cover;
 }
 
@@ -86,8 +86,8 @@
 .fb-attachments__filename {
   max-width: 6rem;
   overflow: hidden;
-  font-size: var(--text-xs);
-  line-height: var(--text-xs--line-height);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-text-xs--line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -146,10 +146,10 @@
   margin-bottom: 0.5rem;
   padding: 0.5rem;
   border: 1px solid var(--theme-base-150);
-  border-radius: var(--radius-lg);
+  border-radius: var(--fb-radius-lg);
   color: var(--theme-text);
-  font-size: var(--text-xs);
-  line-height: var(--text-xs--line-height);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-text-xs--line-height);
   background-color: var(--theme-base-200);
 }
 

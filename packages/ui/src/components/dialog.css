@@ -16,7 +16,7 @@
   padding: 1.5rem;
   background: var(--theme-base-0);
   border: 1px solid var(--theme-base-150);
-  border-radius: var(--radius-xl);
+  border-radius: var(--fb-radius-xl);
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%);
   transform: translate(-50%, -50%);
 }
@@ -76,7 +76,7 @@
 }
 
 .fb-dialog__title {
-  font-size: var(--text-lg);
+  font-size: var(--fb-text-lg);
   line-height: 1;
   font-weight: 600;
   letter-spacing: -0.025em;
@@ -84,8 +84,8 @@
 
 .fb-dialog__description {
   color: var(--theme-base-750);
-  font-size: var(--text-sm);
-  line-height: var(--text-sm--line-height);
+  font-size: var(--fb-text-sm);
+  line-height: var(--fb-text-sm--line-height);
 }
 
 @media (min-width: 40rem) {

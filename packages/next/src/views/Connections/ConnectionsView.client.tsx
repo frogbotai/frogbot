@@ -24,8 +24,6 @@ import {
   LoadingIcon,
   MoreHorizontalIcon,
 } from '@frogbotai/ui/icons';
-import { ThemeProvider } from '@frogbotai/ui/theme';
-import { useTheme } from '@payloadcms/ui';
 import { useId, useRef, useState } from 'react';
 
 import { ConnectionFields } from './ConnectionFields.js';
@@ -359,7 +357,7 @@ function ConnectionRow({
   );
 }
 
-function ConnectionsViewInner({
+export function ConnectionsViewClient({
   apiPath,
   returnTo,
   pieces,
@@ -501,14 +499,5 @@ function ConnectionsViewInner({
         }}
       />
     </div>
-  );
-}
-
-export function ConnectionsViewClient(props: ConnectionsViewClientProps) {
-  const { theme } = useTheme();
-  return (
-    <ThemeProvider mode={theme}>
-      <ConnectionsViewInner {...props} />
-    </ThemeProvider>
   );
 }

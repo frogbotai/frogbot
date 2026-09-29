@@ -17,16 +17,16 @@
 
 .fb-channel-notice__title {
   margin: 0;
-  font-size: var(--text-sm);
+  font-size: var(--fb-text-sm);
   font-weight: 500;
-  line-height: var(--text-sm--line-height);
+  line-height: var(--fb-text-sm--line-height);
 }
 
 .fb-channel-notice__description {
   margin: 0;
   color: var(--theme-base-600);
-  font-size: var(--text-xs);
-  line-height: var(--text-xs--line-height);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-text-xs--line-height);
 }
 
 .fb-channel-notice__icon {

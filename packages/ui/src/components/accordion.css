@@ -2,7 +2,7 @@
   overflow: hidden;
   background: var(--theme-base-200);
   border: 1px solid var(--theme-base-300);
-  border-radius: var(--radius-xl);
+  border-radius: var(--fb-radius-xl);
 }
 .fb-accordion__header {
   display: flex;
@@ -15,7 +15,7 @@
   align-items: center;
   justify-content: space-between;
   color: inherit;
-  font-size: var(--text-sm);
+  font-size: var(--fb-text-sm);
   font-weight: 500;
   text-align: left;
   background: transparent;
@@ -33,5 +33,5 @@
 .fb-accordion__content {
   padding: 0 0.75rem 0.75rem;
   overflow: hidden;
-  font-size: var(--text-sm);
+  font-size: var(--fb-text-sm);
 }

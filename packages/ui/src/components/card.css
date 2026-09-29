@@ -2,7 +2,7 @@
   color: var(--theme-base-900);
   background-color: var(--theme-base-0);
   border: 1px solid var(--theme-base-150);
-  border-radius: var(--radius-lg);
+  border-radius: var(--fb-radius-lg);
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
 }
 
@@ -20,8 +20,8 @@
 
 .fb-card__description {
   color: var(--theme-base-750);
-  font-size: var(--text-sm);
-  line-height: var(--text-sm--line-height);
+  font-size: var(--fb-text-sm);
+  line-height: var(--fb-text-sm--line-height);
 }
 
 .fb-card__content {

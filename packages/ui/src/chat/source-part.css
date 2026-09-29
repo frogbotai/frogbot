@@ -1,7 +1,7 @@
 .fb-source-part--url {
   color: var(--theme-base-850);
-  font-size: var(--text-sm);
-  line-height: var(--text-sm--line-height);
+  font-size: var(--fb-text-sm);
+  line-height: var(--fb-text-sm--line-height);
   text-decoration-line: underline;
   text-underline-offset: 2px;
 }
@@ -12,6 +12,6 @@
   border-radius: 9999px;
   background-color: var(--theme-base-50);
   color: var(--theme-base-750);
-  font-size: var(--text-xs);
-  line-height: var(--text-xs--line-height);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-text-xs--line-height);
 }

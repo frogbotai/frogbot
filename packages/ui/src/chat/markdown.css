@@ -118,7 +118,7 @@
   overflow-y: hidden;
   margin-block: 1rem;
   border: 1px solid var(--theme-base-300);
-  border-radius: var(--radius-md);
+  border-radius: var(--fb-radius-md);
 }
 
 .fb-markdown__table {

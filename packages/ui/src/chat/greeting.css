@@ -39,7 +39,7 @@
 .fb-greeting__title {
   margin: 1.25rem 0 0;
   color: var(--theme-base-900);
-  font-size: var(--text-lg);
-  line-height: var(--text-lg--line-height);
+  font-size: var(--fb-text-lg);
+  line-height: var(--fb-text-lg--line-height);
   font-weight: 600;
 }

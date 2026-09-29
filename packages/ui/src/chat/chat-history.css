@@ -7,7 +7,7 @@
 .fb-chat-history__item {
   display: flex;
   align-items: center;
-  border-radius: var(--radius-lg);
+  border-radius: var(--fb-radius-lg);
   transition: background 200ms ease-out;
 }
 

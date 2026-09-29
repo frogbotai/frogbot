@@ -20,7 +20,6 @@ vi.mock('@payloadcms/ui', () => ({
     </a>
   ),
   useConfig: () => ({ config: { routes: { api: '/api' } } }),
-  useTheme: () => ({ theme: 'light' }),
 }));
 
 vi.mock('frogbot', () => ({
@@ -101,6 +100,16 @@ describe('RecentsSection', () => {
       '/control/collections/conversations',
     );
     expect(screen.getAllByRole('button', { name: 'Chat actions' })).toHaveLength(2);
+  });
+
+  it('renders without a FrogBot theme wrapper', async () => {
+    find.mockResolvedValueOnce({ docs: [{ id: 1, title: 'Latest chat' }] });
+
+    const { container } = render(await RecentsSection(props()));
+
+    expect(screen.getByRole('link', { name: 'Latest chat' })).not.toBeNull();
+    expect(container.querySelector('.fb-theme')).toBeNull();
+    expect(document.documentElement.dataset.fbTheme).toBeUndefined();
   });
 
   it('renders the empty state without querying when unauthenticated', async () => {

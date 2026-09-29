@@ -1,14 +1,14 @@
 .fb-artifact {
   padding: 0.75rem;
   border: 1px solid var(--theme-base-150);
-  border-radius: var(--radius-lg);
+  border-radius: var(--fb-radius-lg);
 }
 
 .fb-artifact__content {
   margin-top: 0.5rem;
   overflow-x: auto;
-  font-size: var(--text-xs);
-  line-height: var(--text-xs--line-height);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-text-xs--line-height);
   white-space: pre-wrap;
 }
 

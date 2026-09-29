@@ -7,12 +7,12 @@
   margin: 0;
   color: var(--theme-base-900);
   font: inherit;
-  font-size: var(--text-sm);
+  font-size: var(--fb-text-sm);
   caret-color: var(--theme-base-900);
   resize: vertical;
   background: var(--theme-base-200);
   border: 1px solid var(--theme-base-300);
-  border-radius: var(--radius-lg);
+  border-radius: var(--fb-radius-lg);
 }
 .fb-textarea:hover {
   border-color: var(--theme-base-400);

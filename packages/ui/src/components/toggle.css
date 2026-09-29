@@ -5,11 +5,11 @@
   align-items: center;
   justify-content: center;
   color: var(--theme-base-600);
-  font-size: var(--text-sm);
+  font-size: var(--fb-text-sm);
   font-weight: 500;
   background: transparent;
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--fb-radius-lg);
 }
 .fb-toggle:hover,
 .fb-toggle[data-state="on"] {

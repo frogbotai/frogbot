@@ -21,6 +21,6 @@
 }
 .fb-separator-text__label {
   margin: 0 0.5rem;
-  font-size: var(--text-sm);
+  font-size: var(--fb-text-sm);
   white-space: nowrap;
 }

@@ -1,6 +1,6 @@
 .fb-flag-part {
   border: 1px solid var(--theme-base-150);
-  border-radius: var(--radius-lg);
+  border-radius: var(--fb-radius-lg);
 }
 
 .fb-flag-part--paste,
@@ -11,8 +11,8 @@
   padding: 0.5rem;
   color: var(--theme-base-900);
   background-color: var(--theme-base-200);
-  font-size: var(--text-xs);
-  line-height: var(--text-xs--line-height);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-text-xs--line-height);
 }
 
 .fb-flag-part--paste {
@@ -68,18 +68,18 @@
 .fb-flag-part__favicon {
   width: 1.25rem;
   height: 1.25rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--fb-radius-sm);
 }
 
 .fb-flag-part__url {
   color: var(--theme-base-600);
-  font-size: var(--text-xs);
-  line-height: var(--text-xs--line-height);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-text-xs--line-height);
 }
 
 .fb-flag-part__content {
   margin-top: 0.5rem;
   white-space: pre-wrap;
-  font-size: var(--text-sm);
-  line-height: var(--text-sm--line-height);
+  font-size: var(--fb-text-sm);
+  line-height: var(--fb-text-sm--line-height);
 }

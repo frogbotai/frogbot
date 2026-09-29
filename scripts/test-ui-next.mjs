@@ -41,6 +41,11 @@ try {
   assert.match(css, /\.fb-button/);
   assert.match(css, /var\(--theme-base-/);
   assert.match(css, /data-fb-theme/);
+  assert.match(css, /data-fb-ui-page/);
+  assert.doesNotMatch(
+    css,
+    /--(text-(xs|sm|base|lg|xl|[2-5]xl)(--line-height)?|radius(-(sm|md|lg|xl))?|color-red-(500|600|700))\b/,
+  );
   assert.match(css, /body:has\(\.frogbot-nav-shell\) \.app-header__mobile-nav-toggler/);
   assert.match(css, /\.frogbot-mobile-nav-toggle/);
   assert.match(css, /\.frogbot-nav-backdrop/);
