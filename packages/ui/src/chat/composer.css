@@ -17,6 +17,7 @@
 }
 
 .fb-composer__gradient-container {
+  --fb-composer-blue: #78b6fc;
   position: relative;
   isolation: isolate;
   display: block;
@@ -36,10 +37,10 @@
     transparent 0deg,
     transparent 150deg,
     var(--color-green-350) 180deg,
-    var(--color-blue-350) 210deg,
+    var(--fb-composer-blue) 210deg,
     #f598a2 270deg,
     var(--color-purple-350) 300deg,
-    var(--color-blue-350) 330deg,
+    var(--fb-composer-blue) 330deg,
     transparent 360deg,
     var(--color-green-350) 5deg,
     transparent 15deg,
@@ -75,8 +76,8 @@
   outline: 0;
   background-color: var(--theme-base-150);
   font-family: var(--font-payload);
-  font-size: var(--text-base);
-  line-height: var(--text-base--line-height);
+  font-size: var(--fb-text-base);
+  line-height: var(--fb-text-base--line-height);
   transition: all 300ms;
 }
 

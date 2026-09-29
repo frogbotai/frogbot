@@ -38,7 +38,6 @@ vi.mock('@payloadcms/ui', () => ({
     setPreference: mocks.setPreference,
   }),
   useRouteTransition: () => ({ startRouteTransition: mocks.startRouteTransition }),
-  useTheme: () => ({ theme: 'dark' }),
 }));
 
 vi.mock('next/navigation.js', () => ({
@@ -64,6 +63,7 @@ vi.mock('@frogbotai/ui/chat', async () => {
 });
 
 const { ChatViewClient } = await import('../../../../packages/next/src/exports/ChatView.client.js');
+const { MessagePart } = await import('../../../../packages/ui/src/chat/message-part.js');
 
 function agentEntry(slug: string, overrides: Partial<ManifestEntry> = {}): ManifestEntry {
   return {
@@ -128,6 +128,24 @@ describe('ChatViewClient', () => {
     mocks.setPreference.mockClear();
     mocks.startRouteTransition.mockClear();
     mocks.getPreference.mockReset().mockResolvedValue(null);
+  });
+
+  it('renders chat code blocks without a FrogBot theme wrapper', async () => {
+    useManifest(agentEntry('general'));
+
+    const { container } = renderChatView({
+      ChatComponent: () => (
+        <MessagePart
+          role="user"
+          part={{ type: 'text', text: '```js\nconst x = 1\n```', state: 'done' }}
+        />
+      ),
+    });
+
+    expect(await screen.findByText('const x = 1')).toBeTruthy();
+    expect(container.querySelector('.fb-code-block--user')).not.toBeNull();
+    expect(container.querySelector('.fb-theme')).toBeNull();
+    expect(document.documentElement.dataset.fbTheme).toBeUndefined();
   });
 
   it('replaces the create route once without changing the mounted chat', async () => {

@@ -19,6 +19,8 @@ Import the compiled stylesheet once in your application root. Consumers do not n
 import '@frogbotai/ui/styles.css'
 ```
 
+The FrogBot admin panel already loads this stylesheet through `@frogbotai/next/css`, so you only import it for pages outside the admin.
+
 The package supports React 19 and can be bundled by Next.js or Vite. Its internal UI dependencies are installed with the package; applications do not install or import them directly. It does not require environment-variable shims or platform SDKs.
 
 <Warning>

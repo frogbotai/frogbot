@@ -4,7 +4,7 @@
   padding: 0.25rem;
   color: var(--theme-base-750);
   background: var(--theme-base-150);
-  border-radius: var(--radius-md);
+  border-radius: var(--fb-radius-md);
 }
 .fb-tabs__list--outline {
   padding: 0;
@@ -12,11 +12,11 @@
 }
 .fb-tabs__trigger {
   padding: 0.375rem 0.75rem;
-  font-size: var(--text-sm);
+  font-size: var(--fb-text-sm);
   font-weight: 500;
   background: transparent;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--fb-radius-sm);
 }
 .fb-tabs__trigger[data-state="active"] {
   color: var(--theme-base-900);

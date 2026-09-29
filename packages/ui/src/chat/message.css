@@ -26,7 +26,7 @@
 
 .fb-message__content--user {
   padding: 0.75rem 1.25rem 1rem;
-  border-radius: calc(var(--radius-xl) + 0.25rem);
+  border-radius: calc(var(--fb-radius-xl) + 0.25rem);
   border-top-right-radius: 0;
   color: var(--theme-base-900);
   background-color: var(--theme-base-200);

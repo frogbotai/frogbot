@@ -11,7 +11,6 @@ import {
 } from '../../../../packages/next/src/views/Connections/schema.js';
 import type { ConnectionPiece } from '../../../../packages/next/src/views/Connections/types.js';
 
-vi.mock('@payloadcms/ui', () => ({ useTheme: () => ({ theme: 'dark' }) }));
 vi.mock('frogbot', () => ({ getCachedFrogBot: vi.fn() }));
 
 const pieces: ConnectionPiece[] = [
@@ -105,6 +104,14 @@ describe('linked accounts', () => {
       }
     },
   );
+
+  it('renders without a FrogBot theme wrapper', () => {
+    const { container } = render(<ConnectionsViewClient {...props} />);
+
+    expect(container.querySelector('.frogbot-connections')).not.toBeNull();
+    expect(container.querySelector('.fb-theme')).toBeNull();
+    expect(document.documentElement.dataset.fbTheme).toBeUndefined();
+  });
 
   it('searches account metadata and disconnects through the configured prefix', async () => {
     fetchMock

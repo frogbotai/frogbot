@@ -7,7 +7,6 @@
 @import "./views/Connections/index.css";
 
 :root {
-  --payload-font-body: var(--font-body);
   --payload-base-0: var(--color-base-0);
   --payload-base-50: var(--color-base-50);
   --payload-base-100: var(--color-base-100);
@@ -32,6 +31,7 @@
 }
 
 .frogbot-chat-view {
+  color: var(--theme-base-900);
   height: calc(100dvh - var(--app-header-height));
 }
 
@@ -59,13 +59,8 @@
   --color-base-1000: var(--payload-base-1000);
 }
 
-.frogbot-chat-view > [data-fb-ui] {
+.frogbot-chat-view > * {
   height: 100%;
-}
-
-.frogbot-nav [data-fb-ui] {
-  --font-body: var(--payload-font-body);
-  display: contents;
 }
 
 .template-default:has(.frogbot-nav-shell) {

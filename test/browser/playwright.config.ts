@@ -216,7 +216,7 @@ export default defineConfig({
     },
     {
       name: 'custom-field',
-      testMatch: 'customField.browser.spec.ts',
+      testMatch: ['customField.browser.spec.ts', 'adminTheme.browser.spec.ts'],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${customFieldPort}`,

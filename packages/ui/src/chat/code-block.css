@@ -1,12 +1,12 @@
 .fb-code-block {
   overflow-x: auto;
   padding: 1rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--fb-radius-lg);
   background-color: var(--theme-base-50);
-  font-size: var(--text-sm);
-  line-height: var(--text-sm--line-height);
+  font-size: var(--fb-text-sm);
+  line-height: var(--fb-text-sm--line-height);
 }
 
-.fb-code-block--dark-user {
-  background-color: var(--theme-base-750);
+.fb-code-block--user {
+  background-color: var(--fb-code-block-user-background);
 }

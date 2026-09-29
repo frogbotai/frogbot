@@ -58,7 +58,7 @@
   flex-direction: column;
   padding: 1rem 0;
   border: 1px solid var(--theme-base-300);
-  border-radius: var(--radius-lg);
+  border-radius: var(--fb-radius-lg);
   background-color: var(--theme-base-250);
   box-shadow:
     0 10px 15px -3px rgb(0 0 0 / 10%),
@@ -112,7 +112,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--fb-radius-lg);
   text-align: left;
   transition:
     color 150ms,

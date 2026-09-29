@@ -1,6 +1,6 @@
 .fb-skeleton {
   animation: fb-skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  border-radius: var(--radius-md);
+  border-radius: var(--fb-radius-md);
   background-color: var(--theme-base-50);
 }
 

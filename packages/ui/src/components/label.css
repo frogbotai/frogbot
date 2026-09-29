@@ -1,5 +1,5 @@
 .fb-label {
-  font-size: var(--text-sm);
+  font-size: var(--fb-text-sm);
   line-height: 1;
   font-weight: 700;
 }

@@ -1,7 +1,5 @@
 import type { HTMLAttributes } from 'react';
 
-import { useTheme } from '../theme/provider.js';
-
 export interface CodeBlockProps extends HTMLAttributes<HTMLPreElement> {
   code: string;
   language?: string;
@@ -15,12 +13,7 @@ export function CodeBlock({
   role = 'assistant',
   ...props
 }: CodeBlockProps) {
-  const { resolvedMode } = useTheme();
-  const classes = [
-    'fb-code-block',
-    resolvedMode === 'dark' && role === 'user' ? 'fb-code-block--dark-user' : '',
-    className,
-  ]
+  const classes = ['fb-code-block', role === 'user' ? 'fb-code-block--user' : '', className]
     .filter(Boolean)
     .join(' ');
 

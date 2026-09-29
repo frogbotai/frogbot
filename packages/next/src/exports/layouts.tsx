@@ -16,8 +16,12 @@ type RootLayoutProps = Omit<ComponentProps<typeof PayloadRootLayout>, 'config'> 
   readonly config: FrogBotConfigArg;
 };
 
-export function RootLayout({ config, ...rest }: RootLayoutProps) {
-  return <PayloadRootLayout {...rest} config={getPayloadConfig(config)} />;
+export function RootLayout({ config, htmlProps, ...rest }: RootLayoutProps) {
+  const pageHtmlProps = { ...htmlProps, 'data-fb-ui-page': '' };
+
+  return (
+    <PayloadRootLayout {...rest} config={getPayloadConfig(config)} htmlProps={pageHtmlProps} />
+  );
 }
 
 type HandleServerFunctionsArgs = Omit<

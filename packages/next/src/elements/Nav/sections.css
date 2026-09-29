@@ -154,6 +154,7 @@
 }
 
 .frogbot-recents-section__groups {
+  color: var(--theme-base-900);
   gap: 4px;
 }
 

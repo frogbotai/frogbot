@@ -1,6 +1,7 @@
 import { DefaultListView as DefaultListView_172b1613d7d7a5cf96731bcb4ca4ed45 } from '@frogbotai/next/views';
 import { ColorField as ColorField_b786b405fcd9412302ce8d29e6c441af } from '../../components/ColorField';
 import { OwnerNote as OwnerNote_29347ead89d170393c0abfd48123a474 } from '../../components/OwnerNote';
+import { ThemeProbe as ThemeProbe_c2e8c6c315f6348c3c4b5b282e48f48f } from '../../components/ThemeProbe';
 import { FolderTableCell as FolderTableCell_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 import { FolderField as FolderField_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 import { FolderTypeField as FolderTypeField_e1fc65845c25c823b271918436e716b9 } from '@frogbotai/next/client';
@@ -21,6 +22,7 @@ export const importMap = {
   '@frogbotai/next/views#DefaultListView': DefaultListView_172b1613d7d7a5cf96731bcb4ca4ed45,
   '/components/ColorField#ColorField': ColorField_b786b405fcd9412302ce8d29e6c441af,
   '/components/OwnerNote#OwnerNote': OwnerNote_29347ead89d170393c0abfd48123a474,
+  '/components/ThemeProbe#ThemeProbe': ThemeProbe_c2e8c6c315f6348c3c4b5b282e48f48f,
   '@frogbotai/next/rsc#FolderTableCell': FolderTableCell_0d74ee439e1043043a872b6d428a44d5,
   '@frogbotai/next/rsc#FolderField': FolderField_0d74ee439e1043043a872b6d428a44d5,
   '@frogbotai/next/client#FolderTypeField': FolderTypeField_e1fc65845c25c823b271918436e716b9,

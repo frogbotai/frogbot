@@ -1,7 +1,6 @@
 'use client';
 
 import { Calendar, getVisibleRange } from '@frogbotai/ui';
-import { ThemeProvider } from '@frogbotai/ui/theme';
 import { getTranslation } from '@payloadcms/translations';
 import {
   DefaultCell,
@@ -11,7 +10,6 @@ import {
   useDocumentDrawer,
   useListQuery,
   useTableColumns,
-  useTheme,
   useTranslation,
 } from '@payloadcms/ui';
 import { formatDocTitle } from '@payloadcms/ui/shared';
@@ -144,7 +142,6 @@ export function CalendarViewClient({
   start: string;
 }) {
   const { config, getEntityConfig } = useConfig();
-  const { theme } = useTheme();
   const { query } = useListQuery();
   const { columns } = useTableColumns();
   const pathname = usePathname();
@@ -244,64 +241,60 @@ export function CalendarViewClient({
 
   return (
     <RelationshipProvider>
-      <ThemeProvider mode={theme}>
-        <div className="collection-calendar">
-          {truncated ? (
-            <div className="collection-calendar__notice">
-              Showing the first 1000 events in this range.
-            </div>
-          ) : null}
-          <Calendar
-            canEdit={() => canUpdate}
-            date={date}
-            events={rows}
-            mode={mode}
-            modes={modes}
-            onCreate={
-              canCreate
-                ? (value) => {
-                    setCreateRange(value);
-                    createDrawer.openDrawer();
-                  }
-                : undefined
-            }
-            onMove={({ end: nextEnd, event, start: nextStart }) =>
-              request(event, nextStart, nextEnd)
-            }
-            onNavigate={(value) => navigate('date', value)}
-            onResize={({ end: nextEnd, event, start: nextStart }) =>
-              request(event, nextStart, nextEnd)
-            }
-            onSetMode={(value) => navigate('mode', value)}
-            renderEvent={(row) => (
-              <CalendarDocumentEvent
-                Event={Event}
-                cardColumns={cardColumns}
-                collectionConfig={collectionConfig}
-                collectionSlug={collectionSlug}
-                onSave={(saved) =>
-                  setRows((current) =>
-                    current.map((item) => (item.id === saved.id ? normalizeRow(saved) : item)),
-                  )
+      <div className="collection-calendar">
+        {truncated ? (
+          <div className="collection-calendar__notice">
+            Showing the first 1000 events in this range.
+          </div>
+        ) : null}
+        <Calendar
+          canEdit={() => canUpdate}
+          date={date}
+          events={rows}
+          mode={mode}
+          modes={modes}
+          onCreate={
+            canCreate
+              ? (value) => {
+                  setCreateRange(value);
+                  createDrawer.openDrawer();
                 }
-                row={row}
-              />
-            )}
-            snap={snap}
-          />
-          <CreateDrawer
-            initialData={
-              createRange
-                ? mergePaths(
-                    setPath(start, createRange.start),
-                    ...(end ? [setPath(end, createRange.end)] : []),
-                  )
-                : undefined
-            }
-            onSave={({ doc }) => setRows((current) => [...current, normalizeRow(doc)])}
-          />
-        </div>
-      </ThemeProvider>
+              : undefined
+          }
+          onMove={({ end: nextEnd, event, start: nextStart }) => request(event, nextStart, nextEnd)}
+          onNavigate={(value) => navigate('date', value)}
+          onResize={({ end: nextEnd, event, start: nextStart }) =>
+            request(event, nextStart, nextEnd)
+          }
+          onSetMode={(value) => navigate('mode', value)}
+          renderEvent={(row) => (
+            <CalendarDocumentEvent
+              Event={Event}
+              cardColumns={cardColumns}
+              collectionConfig={collectionConfig}
+              collectionSlug={collectionSlug}
+              onSave={(saved) =>
+                setRows((current) =>
+                  current.map((item) => (item.id === saved.id ? normalizeRow(saved) : item)),
+                )
+              }
+              row={row}
+            />
+          )}
+          snap={snap}
+        />
+        <CreateDrawer
+          initialData={
+            createRange
+              ? mergePaths(
+                  setPath(start, createRange.start),
+                  ...(end ? [setPath(end, createRange.end)] : []),
+                )
+              : undefined
+          }
+          onSave={({ doc }) => setRows((current) => [...current, normalizeRow(doc)])}
+        />
+      </div>
     </RelationshipProvider>
   );
 }

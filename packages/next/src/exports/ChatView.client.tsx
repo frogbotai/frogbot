@@ -16,8 +16,7 @@ import {
   updateChatAgent,
   useChatProvider,
 } from '@frogbotai/ui/chat';
-import { ThemeProvider } from '@frogbotai/ui/theme';
-import { usePreferences, useRouteTransition, useTheme } from '@payloadcms/ui';
+import { usePreferences, useRouteTransition } from '@payloadcms/ui';
 import type { UIMessage } from 'frogbot';
 import { useRouter } from 'next/navigation.js';
 import { type ComponentType, type ReactNode, useEffect, useRef, useState } from 'react';
@@ -75,7 +74,6 @@ export function ChatViewClient({
   toolRenderersByAgent = {},
   userName,
 }: ChatViewClientProps) {
-  const { theme } = useTheme();
   const router = useRouter();
   const { startRouteTransition } = useRouteTransition();
   const [selectedAgent, setSelectedAgent] = useState(agent);
@@ -100,30 +98,28 @@ export function ChatViewClient({
 
   return (
     <div className="frogbot-chat-view">
-      <ThemeProvider mode={theme}>
-        <ChatProvider adapter={adapter} toolRenderers={toolRenderersByAgent[selectedAgent]}>
-          <ChatViewInner
-            agent={agent}
-            {...(chatId === undefined ? {} : { chatId })}
-            {...(initialChat === undefined ? {} : { initialChat })}
-            initialMessages={initialMessages}
-            initialSelection={initialSelection}
-            onChatIdChange={onChatIdChange}
-            ChatComponent={ChatComponent}
-            GreetingComponent={GreetingComponent}
-            greetingProps={greetingProps}
-            logo={logo}
-            selectedAgent={selectedAgent}
-            setSelectedAgent={setSelectedAgent}
-            userName={userName}
-            UserMessageActions={UserMessageActions}
-            AssistantMessageActions={AssistantMessageActions}
-            assistantMessageActionsProps={assistantMessageActionsProps}
-            chatComponentProps={chatComponentProps}
-            userMessageActionsProps={userMessageActionsProps}
-          />
-        </ChatProvider>
-      </ThemeProvider>
+      <ChatProvider adapter={adapter} toolRenderers={toolRenderersByAgent[selectedAgent]}>
+        <ChatViewInner
+          agent={agent}
+          {...(chatId === undefined ? {} : { chatId })}
+          {...(initialChat === undefined ? {} : { initialChat })}
+          initialMessages={initialMessages}
+          initialSelection={initialSelection}
+          onChatIdChange={onChatIdChange}
+          ChatComponent={ChatComponent}
+          GreetingComponent={GreetingComponent}
+          greetingProps={greetingProps}
+          logo={logo}
+          selectedAgent={selectedAgent}
+          setSelectedAgent={setSelectedAgent}
+          userName={userName}
+          UserMessageActions={UserMessageActions}
+          AssistantMessageActions={AssistantMessageActions}
+          assistantMessageActionsProps={assistantMessageActionsProps}
+          chatComponentProps={chatComponentProps}
+          userMessageActionsProps={userMessageActionsProps}
+        />
+      </ChatProvider>
     </div>
   );
 }

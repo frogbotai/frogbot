@@ -1,4 +1,5 @@
 .frogbot-connections {
+  color: var(--theme-base-900);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -72,8 +73,8 @@
   font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;
-  background: color-mix(in srgb, var(--color-red-500) 10%, transparent);
-  color: var(--color-red-500);
+  background: color-mix(in srgb, var(--fb-color-red-500) 10%, transparent);
+  color: var(--fb-color-red-500);
 }
 
 .frogbot-connections__status--active {
@@ -222,11 +223,11 @@
   flex-wrap: wrap;
   gap: 12px;
   margin: 0;
-  color: var(--color-red-500);
+  color: var(--fb-color-red-500);
 }
 
 .frogbot-connections__disconnect {
-  color: var(--color-red-500);
+  color: var(--fb-color-red-500);
 }
 
 .frogbot-connections__spinner {

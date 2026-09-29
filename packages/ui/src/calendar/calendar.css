@@ -133,6 +133,12 @@
   user-select: none;
   z-index: 2;
 }
+.collection-calendar {
+  color: var(--theme-base-900);
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
 .collection-calendar__notice {
   background: var(--theme-base-100);
   border: 1px solid var(--theme-base-200);

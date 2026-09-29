@@ -6,7 +6,7 @@
   color: var(--theme-base-900);
   background: var(--theme-base-0);
   border: 1px solid var(--theme-base-300);
-  border-radius: var(--radius-lg);
+  border-radius: var(--fb-radius-lg);
 }
 .fb-alert--warning {
   color: var(--warning-foreground);
@@ -30,5 +30,5 @@
   letter-spacing: -0.025em;
 }
 .fb-alert__description {
-  font-size: var(--text-sm);
+  font-size: var(--fb-text-sm);
 }

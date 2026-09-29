@@ -6,8 +6,7 @@ import {
   createCookieSDK,
   useChats,
 } from '@frogbotai/ui/chat';
-import { ThemeProvider } from '@frogbotai/ui/theme';
-import { Link, useConfig, useTheme } from '@payloadcms/ui';
+import { Link, useConfig } from '@payloadcms/ui';
 import { usePathname, useRouter } from 'next/navigation.js';
 import { useMemo } from 'react';
 
@@ -67,7 +66,6 @@ export function RecentsSectionClient({
   recents,
 }: RecentsSectionClientProps) {
   const { config } = useConfig();
-  const { theme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
   const sdk = useMemo(() => createCookieSDK(config.routes.api), [config.routes.api]);
@@ -89,45 +87,43 @@ export function RecentsSectionClient({
   const buckets = bucketRecents(docs);
 
   return (
-    <ThemeProvider mode={theme}>
-      <div className="frogbot-recents-section__groups">
-        {docs.length === 0 && <p className="frogbot-recents-section__empty">No recent chats</p>}
-        {buckets.map((bucket) => (
-          <section className="frogbot-recents-section__group" key={bucket.label}>
-            <h3 className="frogbot-recents-section__group-label">{bucket.label}</h3>
-            <div className="frogbot-recents-section__items">
-              {bucket.docs.map((recent) => {
-                const path = `${collectionPath}/${encodeURIComponent(String(recent.id))}`;
-                return (
-                  <ChatHistoryActions
-                    chat={recent}
-                    chatsSlug={chatsSlug}
-                    key={recent.id}
-                    messagesSlug={messagesSlug}
-                    onDeleted={() => {
-                      if (pathname === path || pathname.startsWith(`${path}/`)) {
-                        router.push(collectionPath);
-                      }
-                    }}
-                    sdk={sdk}
-                  >
-                    <div className="frogbot-recents-section__item">
-                      <NavItem
-                        active={pathname === path || pathname.startsWith(`${path}/`)}
-                        label={recent.title || 'Untitled'}
-                        path={path}
-                      />
-                    </div>
-                  </ChatHistoryActions>
-                );
-              })}
-            </div>
-          </section>
-        ))}
-        <Link className="frogbot-recents-section__view-all" href={collectionPath}>
-          View all
-        </Link>
-      </div>
-    </ThemeProvider>
+    <div className="frogbot-recents-section__groups">
+      {docs.length === 0 && <p className="frogbot-recents-section__empty">No recent chats</p>}
+      {buckets.map((bucket) => (
+        <section className="frogbot-recents-section__group" key={bucket.label}>
+          <h3 className="frogbot-recents-section__group-label">{bucket.label}</h3>
+          <div className="frogbot-recents-section__items">
+            {bucket.docs.map((recent) => {
+              const path = `${collectionPath}/${encodeURIComponent(String(recent.id))}`;
+              return (
+                <ChatHistoryActions
+                  chat={recent}
+                  chatsSlug={chatsSlug}
+                  key={recent.id}
+                  messagesSlug={messagesSlug}
+                  onDeleted={() => {
+                    if (pathname === path || pathname.startsWith(`${path}/`)) {
+                      router.push(collectionPath);
+                    }
+                  }}
+                  sdk={sdk}
+                >
+                  <div className="frogbot-recents-section__item">
+                    <NavItem
+                      active={pathname === path || pathname.startsWith(`${path}/`)}
+                      label={recent.title || 'Untitled'}
+                      path={path}
+                    />
+                  </div>
+                </ChatHistoryActions>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+      <Link className="frogbot-recents-section__view-all" href={collectionPath}>
+        View all
+      </Link>
+    </div>
   );
 }

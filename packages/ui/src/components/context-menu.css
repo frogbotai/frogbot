@@ -6,7 +6,7 @@
   color: var(--theme-base-900);
   background: var(--theme-base-150);
   border: 1px solid var(--theme-base-300);
-  border-radius: var(--radius-xl);
+  border-radius: var(--fb-radius-xl);
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%);
 }
 .fb-context-menu__item {
@@ -15,8 +15,8 @@
   padding: 0.375rem 0.5rem;
   align-items: center;
   gap: 0.5rem;
-  font-size: var(--text-sm);
-  border-radius: var(--radius-sm);
+  font-size: var(--fb-text-sm);
+  border-radius: var(--fb-radius-sm);
   outline: none;
   user-select: none;
 }
@@ -64,7 +64,7 @@
 }
 .fb-context-menu__label {
   padding: 0.375rem 0.5rem;
-  font-size: var(--text-sm);
+  font-size: var(--fb-text-sm);
   font-weight: 600;
 }
 .fb-context-menu__separator {
@@ -75,6 +75,6 @@
 .fb-context-menu__shortcut {
   margin-left: auto;
   color: var(--theme-base-600);
-  font-size: var(--text-xs);
+  font-size: var(--fb-text-xs);
   letter-spacing: 0.1em;
 }

@@ -9,7 +9,7 @@
   color: var(--theme-base-100);
   background: transparent;
   border: 1px solid var(--theme-base-850);
-  border-radius: var(--radius-sm);
+  border-radius: var(--fb-radius-sm);
 }
 .fb-checkbox--primary[data-state="checked"],
 .fb-checkbox--primary[data-state="indeterminate"] {

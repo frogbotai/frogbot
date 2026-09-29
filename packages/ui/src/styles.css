@@ -76,25 +76,56 @@ html {
 }
 
 [data-fb-ui] {
+  --font-body:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-base-0: rgb(249, 250, 251);
+  --color-base-50: rgb(246, 247, 249);
+  --color-base-100: rgb(243, 244, 246);
+  --color-base-150: rgb(235, 236, 240);
+  --color-base-200: rgb(226, 229, 233);
+  --color-base-250: rgb(217, 221, 226);
+  --color-base-300: rgb(209, 213, 220);
+  --color-base-350: rgb(181, 187, 197);
+  --color-base-400: rgb(153, 161, 175);
+  --color-base-450: rgb(126, 136, 154);
+  --color-base-500: rgb(106, 114, 130);
+  --color-base-550: rgb(90, 100, 114);
+  --color-base-600: rgb(74, 85, 101);
+  --color-base-650: rgb(63, 73, 90);
+  --color-base-700: rgb(54, 65, 83);
+  --color-base-750: rgb(44, 53, 68);
+  --color-base-800: rgb(30, 41, 57);
+  --color-base-850: rgb(22, 31, 49);
+  --color-base-900: rgb(16, 24, 40);
+  --color-base-950: rgb(3, 7, 18);
+  --color-base-1000: rgb(1, 3, 10);
+  --color-blue-350: #78b6fc;
+  font-family: var(--font-body);
+  color: var(--theme-base-900);
+}
+
+:where(html[data-fb-ui-page]),
+html[data-fb-ui-page][data-theme="light"] [data-fb-ui][data-theme="system"],
+[data-fb-ui] {
   --font-payload: var(--font-body);
-  --text-xs: 0.75rem;
-  --text-xs--line-height: 1rem;
-  --text-sm: 0.875rem;
-  --text-sm--line-height: 1.5rem;
-  --text-base: 1rem;
-  --text-base--line-height: 1.75rem;
-  --text-lg: 1.125rem;
-  --text-lg--line-height: 1.625rem;
-  --text-xl: 1.25rem;
-  --text-xl--line-height: 1.625rem;
-  --text-2xl: 1.5rem;
-  --text-2xl--line-height: 2rem;
-  --text-3xl: 2rem;
-  --text-3xl--line-height: 2.5rem;
-  --text-4xl: 2.25rem;
-  --text-4xl--line-height: 2.75rem;
-  --text-5xl: 3rem;
-  --text-5xl--line-height: 3rem;
+  --fb-text-xs: 0.75rem;
+  --fb-text-xs--line-height: 1rem;
+  --fb-text-sm: 0.875rem;
+  --fb-text-sm--line-height: 1.5rem;
+  --fb-text-base: 1rem;
+  --fb-text-base--line-height: 1.75rem;
+  --fb-text-lg: 1.125rem;
+  --fb-text-lg--line-height: 1.625rem;
+  --fb-text-xl: 1.25rem;
+  --fb-text-xl--line-height: 1.625rem;
+  --fb-text-2xl: 1.5rem;
+  --fb-text-2xl--line-height: 2rem;
+  --fb-text-3xl: 2rem;
+  --fb-text-3xl--line-height: 2.5rem;
+  --fb-text-4xl: 2.25rem;
+  --fb-text-4xl--line-height: 2.75rem;
+  --fb-text-5xl: 3rem;
+  --fb-text-5xl--line-height: 3rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: hsl(var(--card));
@@ -126,29 +157,6 @@ html {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-body:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --color-base-0: rgb(249, 250, 251);
-  --color-base-50: rgb(246, 247, 249);
-  --color-base-100: rgb(243, 244, 246);
-  --color-base-150: rgb(235, 236, 240);
-  --color-base-200: rgb(226, 229, 233);
-  --color-base-250: rgb(217, 221, 226);
-  --color-base-300: rgb(209, 213, 220);
-  --color-base-350: rgb(181, 187, 197);
-  --color-base-400: rgb(153, 161, 175);
-  --color-base-450: rgb(126, 136, 154);
-  --color-base-500: rgb(106, 114, 130);
-  --color-base-550: rgb(90, 100, 114);
-  --color-base-600: rgb(74, 85, 101);
-  --color-base-650: rgb(63, 73, 90);
-  --color-base-700: rgb(54, 65, 83);
-  --color-base-750: rgb(44, 53, 68);
-  --color-base-800: rgb(30, 41, 57);
-  --color-base-850: rgb(22, 31, 49);
-  --color-base-900: rgb(16, 24, 40);
-  --color-base-950: rgb(3, 7, 18);
-  --color-base-1000: rgb(1, 3, 10);
   --color-brand-100: #d1f0db;
   --color-brand-200: #a0ddb4;
   --color-brand-300: #67c285;
@@ -158,11 +166,10 @@ html {
   --color-brand-700: #0e5523;
   --color-brand-800: #083d19;
   --color-brand-900: #042710;
-  --color-red-500: #e74860;
-  --color-red-600: #d32b4d;
-  --color-red-700: #b21e3f;
+  --fb-color-red-500: #e74860;
+  --fb-color-red-600: #d32b4d;
+  --fb-color-red-700: #b21e3f;
   --color-green-350: #66eb96;
-  --color-blue-350: #78b6fc;
   --color-purple-350: #cb9afe;
   --color-orange-350: #f6a360;
   --theme-base-0: var(--color-base-0);
@@ -195,9 +202,9 @@ html {
   --theme-brand-700: var(--color-brand-700);
   --theme-brand-800: var(--color-brand-800);
   --theme-brand-900: var(--color-brand-900);
-  --theme-red-500: var(--color-red-500);
-  --theme-red-600: var(--color-red-600);
-  --theme-red-700: var(--color-red-700);
+  --theme-red-500: var(--fb-color-red-500);
+  --theme-red-600: var(--fb-color-red-600);
+  --theme-red-700: var(--fb-color-red-700);
   --theme-green-350: var(--color-green-350);
   --theme-orange-350: var(--color-orange-350);
   --background: var(--color-base-0);
@@ -214,7 +221,7 @@ html {
   --muted-foreground: var(--color-base-750);
   --accent: var(--color-base-100);
   --accent-foreground: var(--color-base-800);
-  --destructive: var(--color-red-500);
+  --destructive: var(--fb-color-red-500);
   --destructive-foreground: 210 40% 98%;
   --success: var(--theme-green-350);
   --success-foreground: var(--color-base-900);
@@ -224,11 +231,11 @@ html {
   --border-hover: var(--color-base-400);
   --input: var(--color-base-250);
   --ring: 240 5.9% 10%;
-  --radius: 0.5rem;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --fb-radius: 0.5rem;
+  --fb-radius-sm: calc(var(--fb-radius) - 4px);
+  --fb-radius-md: calc(var(--fb-radius) - 2px);
+  --fb-radius-lg: var(--fb-radius);
+  --fb-radius-xl: calc(var(--fb-radius) + 4px);
   --sidebar: var(--color-base-50);
   --sidebar-foreground: 240 5.3% 26.1%;
   --sidebar-primary: 240 5.9% 10%;
@@ -237,8 +244,7 @@ html {
   --sidebar-accent-foreground: 240 5.9% 10%;
   --sidebar-border: 220 13% 91%;
   --sidebar-ring: 217.2 91.2% 59.8%;
-  font-family: var(--font-body);
-  color: var(--theme-base-900);
+  --fb-code-block-user-background: var(--theme-base-50);
 }
 
 .gradient-wrapper {
@@ -300,6 +306,8 @@ html {
   }
 }
 
+:where(html[data-fb-ui-page][data-theme="dark"]),
+html[data-fb-ui-page][data-theme="dark"] [data-fb-ui][data-theme="system"],
 [data-fb-theme="dark"] [data-fb-ui][data-theme="system"],
 [data-fb-ui].dark,
 [data-fb-ui][data-theme="dark"] {
@@ -332,9 +340,9 @@ html {
   --theme-brand-700: var(--color-brand-300);
   --theme-brand-800: var(--color-brand-200);
   --theme-brand-900: var(--color-brand-100);
-  --theme-red-500: var(--color-red-500);
-  --theme-red-600: var(--color-red-600);
-  --theme-red-700: var(--color-red-700);
+  --theme-red-500: var(--fb-color-red-500);
+  --theme-red-600: var(--fb-color-red-600);
+  --theme-red-700: var(--fb-color-red-700);
   --theme-green-350: #149443;
   --theme-orange-350: #cc4814;
   --background: var(--color-base-900);
@@ -351,7 +359,7 @@ html {
   --muted-foreground: var(--color-base-150);
   --accent: var(--color-base-800);
   --accent-foreground: var(--color-base-100);
-  --destructive: var(--color-red-500);
+  --destructive: var(--fb-color-red-500);
   --border: var(--color-base-750);
   --border-hover: var(--color-base-450);
   --input: var(--color-base-600);
@@ -364,9 +372,17 @@ html {
   --sidebar-accent-foreground: 240 4.8% 95.9%;
   --sidebar-border: 240 3.7% 15.9%;
   --sidebar-ring: 217.2 91.2% 59.8%;
+  --fb-code-block-user-background: var(--color-base-250);
+}
+
+html[data-fb-ui-page][data-theme="dark"] [data-fb-ui][data-theme="system"],
+[data-fb-theme="dark"] [data-fb-ui][data-theme="system"],
+[data-fb-ui].dark,
+[data-fb-ui][data-theme="dark"] {
   color-scheme: dark;
 }
 
+html[data-fb-ui-page][data-theme="light"] [data-fb-ui][data-theme="system"],
 [data-fb-theme="light"] [data-fb-ui][data-theme="system"] {
   color-scheme: light;
 }
@@ -419,6 +435,7 @@ html {
     --ring: 210 90% 60%;
     --sidebar: var(--color-base-850);
     --sidebar-accent: var(--color-base-800);
+    --fb-code-block-user-background: var(--color-base-250);
     color-scheme: dark;
   }
 }
