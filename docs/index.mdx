@@ -4,22 +4,36 @@ sidebarTitle: "What is FrogBot?"
 description: "FrogBot is an open-source AI agent framework you configure in one TypeScript file, then deploy anywhere or run as a Docker image."
 ---
 
+import StarterPrompt from '/snippets/starter-prompt.mdx';
+
 **Define your AI agents, tools, and entire data layer in one typed `frogbot.config.ts` — FrogBot boots the production agent backend for all of it.** No routing code, no glue, no SaaS.
 
 That one file gives you a hosted UI, agent runtime, chat, skills, flows, integrations, model routing, file storage, authentication, REST and GraphQL APIs, and a job system — all in one MIT open-source TypeScript codebase you own and deploy anywhere.
 
+## Start here
+
+Paste this prompt into Codex, Claude Code, Cursor, or another coding agent, and it sets up FrogBot for you:
+
+<StarterPrompt />
+
 <CardGroup cols={2}>
+  <Card title="Step-by-step setup" icon="list-check" href="/getting-started/setup">
+    Go from nothing installed to your first chat, one plain-language step at a time.
+  </Card>
+  <Card title="Start with a coding agent" icon="robot" href="/getting-started/coding-agent">
+    What the prompt asks your agent to do, and what it will ask you.
+  </Card>
+  <Card title="Installation" icon="download" href="/getting-started/installation">
+    Create a project with `npx create-frogbot-app@latest` and choose its database and AI provider.
+  </Card>
   <Card title="Concepts" icon="lightbulb" href="/getting-started/concepts">
     The high-level building blocks: config, models, pieces, skills, agents, flows, plugins, and content directories.
   </Card>
-  <Card title="Installation" icon="download" href="/getting-started/installation">
-    Spin up a project with `npx create-frogbot-app` or run the Docker image.
-  </Card>
-  <Card title="Configuration" icon="settings" href="/configuration/overview">
+  <Card title="Configuration" icon="gear" href="/configuration/overview">
     The `frogbot.config.ts` file that controls every part of the framework.
   </Card>
-  <Card title="Database" icon="database" href="/database/overview">
-    Bring your own database. MongoDB and Postgres adapters are first-class, with shared core collections.
+  <Card title="Deployment" icon="rocket" href="/deployment/overview">
+    Run your app in production with Docker or Fly.io.
   </Card>
 </CardGroup>
 

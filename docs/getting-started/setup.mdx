@@ -1,0 +1,120 @@
+---
+title: "Set up FrogBot step by step"
+sidebarTitle: "Step-by-step setup"
+description: "Go from nothing installed to chatting with your own FrogBot agent. No programming experience needed."
+---
+
+This guide takes you from nothing installed to your first chat with your own FrogBot agent, running on your computer. It takes about 15 minutes. You type a few commands; each step says what you should see.
+
+Would you rather have a coding agent such as Codex or Claude Code do this for you? Use [Start with a coding agent](/getting-started/coding-agent) instead.
+
+<Steps>
+  <Step title="Install Node.js">
+    FrogBot runs on Node.js 22 or newer. Download the installer from [nodejs.org](https://nodejs.org/en/download) and run it.
+
+    **You should see:** the installer finishes without errors. You check the version in step 2.
+  </Step>
+  <Step title="Open a terminal">
+    A terminal is a window where you type commands.
+
+    - **macOS:** open **Terminal** from Applications → Utilities, or search for it with Spotlight (Cmd+Space).
+    - **Windows:** search for **Command Prompt** in the Start menu and open it.
+
+    Type this command and press Enter:
+
+    ```bash
+    node --version
+    ```
+
+    **You should see:** a version number that starts with `v22` or higher, such as `v22.12.0`. If the command is not found or the number is lower, install Node.js again and open a new terminal window.
+  </Step>
+  <Step title="Create the app">
+    In the terminal, run:
+
+    ```bash
+    npx create-frogbot-app@latest my-frogbot
+    ```
+
+    If it asks to install `create-frogbot-app`, type `y` and press Enter. It then asks a few questions. Press Enter to accept the default for each one. When it asks for `OPENAI_API_KEY`, paste your key if you already have one, or leave it blank and add it in step 5.
+
+    **You should see:** `Created my-frogbot.` followed by the commands to start the app. If you left the key blank, it first prints `Set OPENAI_API_KEY in my-frogbot/.env. The app won't start without it.` Your app is in a new folder named `my-frogbot` in the folder where you ran the command (your home folder, if you just opened the terminal).
+  </Step>
+  <Step title="Get an AI key">
+    Your agent needs an AI provider to answer. The default is OpenAI. Sign in at [platform.openai.com/api-keys](https://platform.openai.com/api-keys), select **Create new secret key**, and copy the key. OpenAI charges for usage, so you may need to add a payment method first.
+
+    **You should see:** a long key that starts with `sk-`. Keep it somewhere safe; OpenAI shows it only once.
+
+    To use Anthropic or Google instead, see [Installation](/getting-started/installation).
+  </Step>
+  <Step title="Add the key to your app">
+    Skip this step if you pasted your key in step 3. Otherwise, add the key before you start the app; without it, the app does not open.
+
+    Open the `my-frogbot` folder and find the file named `.env`:
+
+    - **macOS:** Finder hides files whose names start with a dot. Open the folder in Finder and press Cmd+Shift+. (period) to show them. Then Control-click `.env` and choose **Open With → TextEdit**.
+    - **Windows:** open the folder in File Explorer, right-click `.env`, and choose **Open with → Notepad**.
+
+    Find the line `OPENAI_API_KEY=`, paste your key directly after the `=` with no spaces, and save the file.
+
+    **You should see:** a line like `OPENAI_API_KEY=sk-...` with your full key. The `.env` file stays on your computer and is not added to Git.
+  </Step>
+  <Step title="Start the app">
+    In the terminal, run:
+
+    ```bash
+    cd my-frogbot
+    npm run dev
+    ```
+
+    **You should see:** a few lines that include the address `http://localhost:3000` and end with `Ready`. Leave this terminal window open while you use the app. To stop the app later, press Ctrl+C in that window (on Windows, type `Y` and press Enter if it asks to terminate the batch job).
+  </Step>
+  <Step title="Create your admin account">
+    Open [http://localhost:3000](http://localhost:3000) in your web browser. The first page load can take a minute while the app prepares.
+
+    **You should see:** a **Welcome** page that says "To begin, create your first user." Enter your email address, type the same password in **New Password** and **Confirm Password**, and select **Create**. You can leave the other fields as they are. The account is stored only in your app on your computer.
+
+    After you create it, you see your dashboard: a card for each collection, such as Users and Chats, grouped under headings such as Collections and Chat.
+  </Step>
+  <Step title="Send your first message">
+    In the sidebar, under **Chat**, select **Chats**, then select **Create New**. If the sidebar is closed, select the FrogBot logo at the top left to open it.
+
+    A new chat opens with a greeting and a message box at the bottom. Type a message, such as "Hello!", and press Enter.
+
+    **You should see:** your agent replies in the chat.
+  </Step>
+</Steps>
+
+You now have a working FrogBot app. To change what your agent does, edit `src/frogbot.config.ts` in the `my-frogbot` folder; [Concepts](/getting-started/concepts) explains the building blocks.
+
+## If something goes wrong
+
+<AccordionGroup>
+  <Accordion title="The page shows an error that says OPENAI_API_KEY must be a non-empty string">
+    The key is missing. The browser and the terminal both show `Invalid gateway config: providers.openai.apiKey or OPENAI_API_KEY must be a non-empty string`. Add it to `.env` as shown in step 5, press Ctrl+C in the terminal, and run `npm run dev` again.
+  </Accordion>
+  <Accordion title="The chat does not reply">
+    Your message appears, but no reply comes, and the terminal shows an error from OpenAI, such as `Incorrect API key provided`. Usually the key is wrong or incomplete. Open `.env` in the `my-frogbot` folder and check that the `OPENAI_API_KEY=` line has your full key after the `=`, with no spaces or quotes. Save the file, press Ctrl+C in the terminal, run `npm run dev` again, and send a new message.
+
+    If you created a new key, make sure your OpenAI account has billing set up.
+  </Accordion>
+  <Accordion title="I added my key, but it still does not work">
+    A key that is already set in your terminal takes priority over the one in `.env`. Close the terminal, open a new one, and start the app again. If that does not help, the variable is set in your terminal's startup settings. Remove it there, or put the same key in both places.
+  </Accordion>
+  <Accordion title="node --version is not found, or shows a number below 22">
+    Install Node.js 22 or newer from [nodejs.org](https://nodejs.org/en/download), then close the terminal and open a new one before you try again.
+  </Accordion>
+  <Accordion title='Directory "my-frogbot" already exists'>
+    A folder with that name is already there, often from an earlier try. Choose another name, such as `npx create-frogbot-app@latest my-frogbot-2`, and use that name in the steps that follow. You can also delete the old folder if you do not need it.
+  </Accordion>
+  <Accordion title="Invalid project name, or Provide the project name once">
+    Project names use only lowercase letters, numbers, dots, dashes, and underscores, and start with a letter or number. For example, `my-frogbot` works, but `My-FrogBot` does not. A name with a space, such as `my frogbot`, shows `Provide the project name once`; use a dash instead of the space.
+  </Accordion>
+  <Accordion title="Windows: running scripts is disabled on this system">
+    PowerShell blocks the `npx` and `npm` commands on many Windows computers. Open **Command Prompt** instead, as shown in step 2, and run the same command there.
+  </Accordion>
+  <Accordion title="The address is not http://localhost:3000">
+    If another program is already using port 3000, the app starts on the next free port and prints it, such as `http://localhost:3001`. Open the address shown in the terminal.
+  </Accordion>
+</AccordionGroup>
+
+Still stuck? Ask in the [FrogBot Discord](https://discord.com/invite/JBZF7syAnU), or see [Installation](/getting-started/installation) for every option.

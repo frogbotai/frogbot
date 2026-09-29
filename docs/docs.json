@@ -28,17 +28,18 @@
         "tab": "General",
         "groups": [
           {
+            "group": "Start here",
+            "pages": [
+              "index",
+              "getting-started/setup",
+              "getting-started/coding-agent",
+              "getting-started/installation",
+              "getting-started/concepts"
+            ]
+          },
+          {
             "group": "Basics",
             "pages": [
-              {
-                "group": "Getting started",
-                "expanded": false,
-                "pages": [
-                  "index",
-                  "getting-started/concepts",
-                  "getting-started/installation"
-                ]
-              },
               {
                 "group": "Configuration",
                 "expanded": false,

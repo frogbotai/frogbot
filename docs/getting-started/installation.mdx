@@ -4,36 +4,38 @@ sidebarTitle: "Installation"
 description: "Create and run a FrogBot app with create-frogbot-app."
 ---
 
+New to this? Follow the [step-by-step setup](/getting-started/setup), or let a [coding agent](/getting-started/coding-agent) do it for you.
+
 ## Create an app
 
 Scaffold a new FrogBot project with everything wired up:
 
 ```bash
-npx create-frogbot-app my-agent-platform
+npx create-frogbot-app@latest my-agent-platform
 ```
 
-The setup asks you to choose a database, an AI provider, and any coding agents that should receive the FrogBot skill. The blank template is selected automatically while it is the only available template. Your current package manager is detected; dependency installation and Git initialization are enabled by default.
+The setup asks you to choose a database, an AI provider, the provider's API key, and any coding agents that should receive the FrogBot skill. The blank template is selected automatically while it is the only available template. Your current package manager is detected; dependency installation and Git initialization are enabled by default, so the project is ready to run when the command finishes. Pass `--no-install` to skip installing dependencies.
 
 See [Coding agents](/skills/coding-agents) for skill installation options, agent selection flags, and project paths.
 
 For a non-interactive setup with the defaults, use `--yes`:
 
 ```bash
-npx create-frogbot-app my-agent-platform --yes
+npx create-frogbot-app@latest my-agent-platform --yes
 ```
 
-The defaults create a Next.js app using SQLite and the free Zen AI provider. You can select another database with `--db sqlite`, `--db postgres`, or `--db mongodb`. Run `npx create-frogbot-app --help` to see the matching flags for every setup choice.
+The defaults create a Next.js app using SQLite and OpenAI, which needs an `OPENAI_API_KEY`. Choose another provider with `--ai anthropic`, `--ai google`, `--ai bedrock`, or `--ai zen`, or use `--ai none` for an app without agents. Pass the key with `--api-key`; if it is already set in your shell, the scaffolder uses it. Select another database with `--db sqlite`, `--db postgres`, or `--db mongodb`. Run `npx create-frogbot-app@latest --help` to see the matching flags for every setup choice.
 
 ## Run the app
 
-`create-frogbot-app` writes a `.env` file with a generated `FROGBOT_SECRET` and the connection string for your selected database. Add any requested provider credentials before starting the app.
+`create-frogbot-app` writes a `.env` file with a generated `FROGBOT_SECRET`, the connection string for your selected database, and your provider key if you entered one. Otherwise, add the key to `.env` (for example `OPENAI_API_KEY=...`). With OpenAI, Anthropic, or Google, add it before starting the app; the app does not start without it. Bedrock and Zen apps start without a key, but chat needs one.
 
 ```bash
 cd my-agent-platform
 npm run dev
 ```
 
-Use the equivalent dev command if you selected pnpm, yarn, or bun. Then open [http://localhost:3000](http://localhost:3000). To change app behavior, edit `src/frogbot.config.ts`; see [Configuration](/configuration/overview) for the full schema.
+Use the equivalent dev command if you selected pnpm, yarn, or bun. Then open [http://localhost:3000](http://localhost:3000). On the first visit, you create the first admin user. The dashboard then shows a card for each collection; open **Chat → Chats** in the sidebar and select **Create New** to talk to your agent. To change app behavior, edit `src/frogbot.config.ts`; see [Configuration](/configuration/overview) for the full schema.
 
 ## Software requirements
 
