@@ -45,7 +45,7 @@ Help me set up FrogBot, an open-source AI agent app, on this computer. I am not 
 
 1. Check that Node.js 22 or newer is installed by running node --version. If it is missing or older, give me the link https://nodejs.org/en/download, wait until I say it is installed, then check again.
 2. Ask me which AI key I have: OpenAI (the default), Anthropic, or Google. If I have none, send me to https://platform.openai.com/api-keys to create an OpenAI key, and wait.
-3. Create the app in my home folder, or in a folder I name, with this command:
+3. Create the app in the current folder, or in a folder I name. If the current folder is already another project (it has a package.json), ask me where to put it instead and suggest my Documents folder. Use this command:
 npx create-frogbot-app@latest my-frogbot --yes --agents YOUR_AGENT
 Replace YOUR_AGENT with the value for the tool you are: codex for Codex, claude for Claude Code, cursor for Cursor, opencode for opencode, copilot for GitHub Copilot, or gemini for Gemini CLI. For an Anthropic key add --ai anthropic; for a Google key add --ai google. This command also installs the FrogBot skill into the project. If a my-frogbot folder already exists there, ask me for another name and use it instead of my-frogbot from here on.
 4. Go into the my-frogbot folder and read the FrogBot skill before changing anything. AGENTS.md tells you where it is (CLAUDE.md for Claude Code, GEMINI.md for Gemini CLI, .github/copilot-instructions.md for GitHub Copilot). If the skill is missing, run npx skills add frogbotai/frogbot --skill frogbot --yes in that folder.
