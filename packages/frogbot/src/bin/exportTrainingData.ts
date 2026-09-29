@@ -4,6 +4,7 @@ import { Writable } from 'node:stream';
 import { loadConfig } from '../config/load.js';
 import { FrogBot } from '../frogbot.js';
 import type { Where } from '../types/payload.js';
+import { formatCliError } from './formatCliError.js';
 
 type ParsedArgs = {
   where?: Where;
@@ -59,8 +60,7 @@ export async function exportTrainingData(args: string[]): Promise<void> {
 
     if (output) console.log(`[frogbot] training data written to ${output}`);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`[frogbot] ${message}`);
+    console.error(formatCliError(err));
     process.exitCode = 1;
   } finally {
     await frogbot?.destroy();

@@ -1,4 +1,5 @@
 import { loadConfig } from '../config/load.js';
+import { formatCliError } from './formatCliError.js';
 import { generateImportMap } from './generateImportMap/index.js';
 import { runNext } from './runNext.js';
 
@@ -16,8 +17,7 @@ export async function start(args: string[] = []) {
       }
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(`[frogbot] could not check import map: ${message}\n`);
+    process.stderr.write(`${formatCliError(error, 'could not check import map')}\n`);
   }
   runNext('start', args);
 }

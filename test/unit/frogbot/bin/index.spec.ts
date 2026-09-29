@@ -122,7 +122,23 @@ describe('frogbot bin', () => {
     );
   });
 
-  it.todo('logs `[frogbot] error:` and exits 1 when the dispatched command rejects');
+  it('logs one `[frogbot]` prefix and exits 1 when the dispatched command rejects', async () => {
+    process.argv = ['node', 'frogbot', 'pieces:port'];
+
+    mocks.piecesPort.mockRejectedValueOnce(
+      new Error('[frogbot] usage: frogbot pieces:port <slug>'),
+    );
+
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`exit:${code}`);
+    });
+
+    await expect(bin()).rejects.toThrow('exit:1');
+
+    expect(error).toHaveBeenCalledWith('[frogbot] usage: frogbot pieces:port <slug>');
+  });
 
   it('forwards worker flags unchanged', async () => {
     const args = ['--cron', '*/5 * * * * *', '--limit', '0', '--handle-schedules'];

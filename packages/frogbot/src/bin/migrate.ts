@@ -1,4 +1,5 @@
 import { loadConfig } from '../config/load.js';
+import { formatCliError } from './formatCliError.js';
 
 const COMMANDS = [
   'migrate',
@@ -158,8 +159,7 @@ export async function migrate(args: string[]): Promise<void> {
         break;
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`[frogbot] ${command} failed: ${message}`);
+    console.error(formatCliError(err, `${command} failed`));
     process.exit(1);
   }
 

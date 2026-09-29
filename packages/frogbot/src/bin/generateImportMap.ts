@@ -1,4 +1,5 @@
 import { loadConfig } from '../config/load.js';
+import { formatCliError } from './formatCliError.js';
 import { generateImportMap as generate } from './generateImportMap/index.js';
 
 export async function generateImportMap(): Promise<void> {
@@ -15,8 +16,7 @@ export async function generateImportMap(): Promise<void> {
       console.log(`[frogbot] import map unchanged at ${result.outputPath}`);
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`[frogbot] ${message}`);
+    console.error(formatCliError(err));
     process.exit(1);
   }
 }

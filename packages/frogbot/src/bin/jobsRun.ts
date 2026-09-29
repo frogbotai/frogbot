@@ -3,6 +3,7 @@ import type { Payload, PayloadRequest } from 'payload';
 
 import { loadConfig } from '../config/load.js';
 import type { FrogBot } from '../frogbot.js';
+import { formatCliError } from './formatCliError.js';
 import type { JobsRunOptions } from './jobsRunOptions.js';
 import { jobsRunUsage, parseJobsRunOptions } from './jobsRunOptions.js';
 
@@ -12,7 +13,7 @@ export async function jobsRun(args: string[]): Promise<void> {
   try {
     options = parseJobsRunOptions(args);
   } catch (error) {
-    console.error(`FrogBot jobs:run: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(formatCliError(error, 'jobs:run'));
     console.error(jobsRunUsage);
 
     process.exit(2);
@@ -50,9 +51,7 @@ export async function jobsRun(args: string[]): Promise<void> {
   const fail = (error: unknown) => {
     exitCode = 1;
 
-    console.error(
-      `FrogBot jobs:run failed: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    console.error(formatCliError(error, 'jobs:run failed'));
 
     stop();
   };

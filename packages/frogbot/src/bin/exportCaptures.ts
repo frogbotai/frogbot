@@ -7,6 +7,7 @@ import { FrogBot } from '../frogbot.js';
 import type { Where } from '../types/payload.js';
 import { type ExportCapturesArgs, parseExportCapturesArgs } from './exportCapturesArgs.js';
 import { writeCaptureLine } from './exportCapturesStream.js';
+import { formatCliError } from './formatCliError.js';
 
 const gunzipAsync = promisify(gunzip);
 
@@ -64,8 +65,7 @@ export async function exportCaptures(args: string[]): Promise<void> {
       );
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`[frogbot] ${message}`);
+    console.error(formatCliError(err));
     process.exitCode = 1;
   } finally {
     await frogbot?.destroy();
