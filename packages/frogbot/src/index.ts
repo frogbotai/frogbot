@@ -61,7 +61,7 @@ export type {
   RootAdminGraphics,
   RootAdminMetaConfig,
 } from './admin/types.js';
-export type { AdminViews, FrogBotComponent, ProviderComponent } from './admin/types.js';
+export type { AdminIcon, AdminViews, FrogBotComponent, ProviderComponent } from './admin/types.js';
 export type { SettingsEntry } from './admin/types.js';
 export type {
   BoardView,

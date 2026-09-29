@@ -78,6 +78,40 @@ test('renders the registered Reports view with the issued req.frogbot', async ({
   await expect(page.getByRole('button', { name: 'Reports' })).toBeVisible();
 });
 
+test('renders built-in and component nav item icons', async ({ page }) => {
+  const response = await page.goto('/');
+
+  expect(response?.status()).toBe(200);
+  await expect(
+    page.getByRole('button', { name: 'Reports' }).locator('svg.lucide-home-icon'),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'All posts' }).getByTestId('nav-component-icon'),
+  ).toBeVisible();
+});
+
+test('renders the documented New Chat nav item with its built-in icon', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(
+    page.getByRole('button', { name: 'New Chat' }).locator('svg.lucide-pencil-edit'),
+  ).toBeVisible();
+});
+
+test('renders built-in and component object settings icons', async ({ page }) => {
+  await page.goto('/settings/robot');
+
+  const settingsNav = page.locator('.frogbot-settings-nav');
+
+  await expect(page.getByTestId('robot-settings')).toBeVisible();
+  await expect(
+    settingsNav.getByRole('link', { name: 'Robot' }).locator('svg.lucide-robot-icon'),
+  ).toBeVisible();
+  await expect(
+    settingsNav.getByRole('link', { name: 'Usage' }).getByTestId('nav-component-icon'),
+  ).toBeVisible();
+});
+
 test('renders typed default widgets with req.frogbot through the modular dashboard', async ({
   page,
 }) => {

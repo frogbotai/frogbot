@@ -1,6 +1,8 @@
 import type { Block, Field, SanitizedConfig } from 'payload';
 import { genImportMapIterateFields } from 'payload';
 
+import { isIconComponent } from '../../admin/icons.js';
+import type { NavItem, SettingsEntry } from '../../admin/types.js';
 import type { AddToImportMap, Imports, InternalImportMap } from './index.js';
 import { iterateCollections } from './iterateCollections.js';
 import { iterateGlobals } from './iterateGlobals.js';
@@ -177,14 +179,17 @@ export function iterateConfig({
     afterBottomRail?: string[];
     beforeBottomRail?: string[];
     beforeSidebarClose?: string[];
-    navItems?: { icon?: string }[];
+    navItems?: NavItem[];
     navSections?: string[];
   };
   addToImportMap(shellComponents.afterBottomRail);
   addToImportMap(shellComponents.beforeBottomRail);
   addToImportMap(shellComponents.beforeSidebarClose);
 
-  for (const item of shellComponents.navItems ?? []) addToImportMap(item.icon);
+  for (const item of shellComponents.navItems ?? []) {
+    if (isIconComponent(item.icon)) addToImportMap(item.icon);
+  }
+
   addToImportMap(shellComponents.navSections);
   const chatComponents = shellComponents as typeof shellComponents & {
     chat?: {
@@ -205,12 +210,13 @@ export function iterateConfig({
 
   const settings = (
     config.admin as typeof config.admin & {
-      settings?: { Component: string; icon?: string }[];
+      settings?: SettingsEntry[];
     }
   ).settings;
   for (const entry of settings ?? []) {
     addToImportMap(entry.Component);
-    addToImportMap(entry.icon);
+
+    if (isIconComponent(entry.icon)) addToImportMap(entry.icon);
   }
 
   addToImportMap(config.admin?.components?.actions);

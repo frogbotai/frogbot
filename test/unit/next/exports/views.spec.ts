@@ -1,3 +1,4 @@
+import { RobotIcon, SettingIcon } from '@frogbotai/ui/icons';
 import type { FrogBotSanitizedConfig } from 'frogbot';
 import { type ComponentProps, createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -330,7 +331,7 @@ describe('@frogbotai/next views', () => {
               {
                 access,
                 Component: 'UsagePage',
-                icon: 'UsageIcon',
+                icon: './UsageIcon#UsageIcon',
                 label: 'Usage',
                 path: 'workspace/usage',
               },
@@ -351,10 +352,86 @@ describe('@frogbotai/next views', () => {
     expect(html).toContain('>Usage<');
     expect(html).toContain('data-icon="usage"');
     expect(mocks.RenderServerComponent).toHaveBeenCalledWith({
-      Component: 'UsageIcon',
+      Component: './UsageIcon#UsageIcon',
+      clientProps: { size: 18 },
       importMap: props.importMap,
       serverProps: props,
     });
+  });
+
+  it('SettingsView renders a built-in settings icon from the icon registry', async () => {
+    mocks.RenderServerComponent.mockClear();
+
+    const element = await SettingsView({
+      importMap: {},
+      initPageResult: {
+        req: { user: { id: 'user-1' } },
+        visibleEntities: { collections: [], globals: [] },
+      },
+      payload: {
+        config: {
+          admin: {
+            routes: { account: '/account' },
+            settings: [{ Component: 'RobotPage', icon: 'robot', label: 'Robot', path: 'robot' }],
+          },
+          collections: [],
+          routes: { admin: '/admin' },
+        },
+      },
+      routeSegments: ['settings', 'robot'],
+    } as never);
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toContain(renderToStaticMarkup(createElement(RobotIcon, { size: 18 })));
+    expect(mocks.RenderServerComponent).not.toHaveBeenCalledWith(
+      expect.objectContaining({ Component: 'robot' }),
+    );
+  });
+
+  it('SettingsView renders component object icons and falls back for empty icons', async () => {
+    mocks.RenderServerComponent.mockClear();
+
+    const icon = { exportName: 'UsageIcon', path: './UsageIcon' };
+    const props = {
+      importMap: {},
+      initPageResult: {
+        req: { user: { id: 'user-1' } },
+        visibleEntities: { collections: [], globals: [] },
+      },
+      payload: {
+        config: {
+          admin: {
+            routes: { account: '/account' },
+            settings: [
+              { Component: 'UsagePage', icon, label: 'Usage', path: 'usage' },
+              { Component: 'EmptyPage', icon: '', label: 'Empty', path: 'empty' },
+            ],
+          },
+          collections: [],
+          routes: { admin: '/admin' },
+        },
+      },
+      routeSegments: ['settings', 'usage'],
+    } as never;
+
+    mocks.RenderServerComponent.mockImplementation((({ Component }: { Component: unknown }) =>
+      Component === icon ? createElement('svg', { 'data-icon': 'object' }) : null) as never);
+
+    const html = renderToStaticMarkup(await SettingsView(props));
+
+    mocks.RenderServerComponent.mockImplementation(() => 'rendered-setting');
+
+    expect(html).toContain('data-icon="object"');
+    expect(mocks.RenderServerComponent).toHaveBeenCalledWith({
+      Component: icon,
+      clientProps: { size: 18 },
+      importMap: {},
+      serverProps: props,
+    });
+    expect(mocks.RenderServerComponent).not.toHaveBeenCalledWith(
+      expect.objectContaining({ Component: '' }),
+    );
+    expect(html).toContain(renderToStaticMarkup(createElement(SettingIcon, { size: 18 })));
   });
 
   it.each([

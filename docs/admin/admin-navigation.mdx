@@ -44,7 +44,7 @@ Chats are grouped under Today, Yesterday, Previous 7 days, Previous 30 days, and
 
 ## Collection icons and placement
 
-Set `admin.icon` on a collection to a built-in kebab-case icon name or a component import path. `IconName` provides autocomplete for every built-in name, including `robot`, `bubble-chat`, `file`, `link-square`, `ai-search`, and `people`.
+Set `admin.icon` on a collection to a built-in kebab-case icon name or a component import path. Your editor autocompletes every built-in name, including `robot`, `bubble-chat`, `file`, `link-square`, `ai-search`, and `people`.
 
 ```ts
 import type { CollectionConfig } from 'frogbot'
@@ -69,13 +69,15 @@ admin: {
 }
 ```
 
+A plain string without `#` must be a built-in icon name. An unknown name, such as a typo, stops startup with `[frogbot] Unknown admin icon '<name>'` followed by the valid names. A component path always names its export after `#`; write `'./src/components/ProjectsIcon#default'` for a default export. Navigation item and settings icons follow the same rules.
+
 Within `CollectionsSection`, top-level collections retain collection configuration order. Named groups follow in first-seen order, with their collections in configuration order.
 
 When the sidebar is collapsed, section headings and labels are hidden and each item displays its label in a tooltip. Section state and named-group state persist for the current user.
 
 ## Add a navigation item
 
-`admin.components.navItems` holds the links above your collections. It is empty by default. Each item requires a `label` and a full `path`. Set `icon` to a built-in kebab-case icon name or a component import path.
+`admin.components.navItems` holds the links above your collections. It is empty by default. Each item requires a `label` and a full `path`. Set `icon` to a built-in kebab-case icon name or a component import path, following the [icon rules](#collection-icons-and-placement).
 
 ```ts
 admin: {
@@ -175,7 +177,7 @@ admin: {
 }
 ```
 
-Component paths in `navSections`, navigation icons, and admin component slots use `FrogBotComponent`. This type accepts either an import-map path string or a component definition and is exported from `frogbot` for reusable configuration types.
+Component paths in `navSections` and admin component slots use `FrogBotComponent`. This type accepts either an import-map path string or a component definition. Collection, navigation item, and settings icons use `AdminIcon`, which also accepts built-in names; its `IconName` member lists them. Both types are exported from `frogbot` for reusable configuration types.
 
 Chat-wide component slots are grouped under `admin.components.chat`. Use `Chat` to replace the canonical conversation surface, or `UserMessageActions` and `AssistantMessageActions` to customize only role-specific controls. See [Chat persistence](/chat/overview#customize-admin-chat-components).
 
@@ -199,7 +201,7 @@ export default buildConfig({
 })
 ```
 
-`icon` and `access` are optional. Without `access`, FrogBot allows any authenticated user. The access function runs before FrogBot shows the card or renders the page. Component and icon references are added to the generated import map.
+`icon` and `access` are optional. Set `icon` to a built-in icon name, such as `'robot'`, or a component import path, following the [icon rules](#collection-icons-and-placement). Without `access`, FrogBot allows any authenticated user. The access function runs before FrogBot shows the card or renders the page. The page component and component icons are added to the generated import map.
 
 Plugins append entries after existing settings so they compose in plugin order:
 

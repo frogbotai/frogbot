@@ -10,8 +10,7 @@
 
 import type { RequestContext, SanitizedCollectionConfig, TypeWithID } from 'payload';
 
-import type { IconName } from '../../admin/icons.js';
-import type { FrogBotComponent } from '../../admin/types.js';
+import type { AdminIcon } from '../../admin/types.js';
 import type { CollectionView, DocumentTabConfig } from '../../admin/views/types.js';
 import type { AuthConfig } from '../../auth/types.js';
 import type { LivePreviewConfig } from '../../config/types.js';
@@ -62,7 +61,7 @@ export type CollectionAdminConfig = Omit<
 > & {
   components?: CollectionAdminComponents;
   group?: PayloadAdmin['group'] | null;
-  icon?: FrogBotComponent | IconName;
+  icon?: AdminIcon;
   livePreview?: LivePreviewConfig;
   views?: CollectionView[];
 };

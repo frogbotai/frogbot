@@ -119,7 +119,6 @@ describe('rewriteComponentPaths', () => {
         },
       },
       collections: [{ admin: { icon: '@payloadcms/next/rsc#CollectionIcon' }, fields: [] }],
-      globals: [{ admin: { icon: '@payloadcms/next/rsc#GlobalIcon' }, fields: [] }],
     } as unknown as SanitizedConfig;
 
     rewriteComponentPaths(config);
@@ -140,9 +139,6 @@ describe('rewriteComponentPaths', () => {
     ]);
     expect((config.collections[0]?.admin as never as { icon: string }).icon).toBe(
       '@frogbotai/next/rsc#CollectionIcon',
-    );
-    expect((config.globals[0]?.admin as never as { icon: string }).icon).toBe(
-      '@frogbotai/next/rsc#GlobalIcon',
     );
   });
 

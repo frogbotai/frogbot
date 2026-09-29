@@ -5,6 +5,7 @@ import { formatAdminURL, PREFERENCE_KEYS } from 'payload/shared';
 
 import { buildNavModel } from './buildNavModel.js';
 import { FrogBotNavClient } from './index.client.js';
+import { renderNavIcon } from './renderNavIcon.js';
 
 async function getNavPreferences(req?: PayloadRequest): Promise<NavPreferences | null> {
   if (!req?.user?.collection) return null;
@@ -84,15 +85,13 @@ export async function FrogBotNav(props: FrogBotNavProps) {
     });
   const configuredItems = navModel.items.map((item) => ({
     ...item,
-    icon:
-      item.icon && (typeof item.icon !== 'string' || item.icon.includes('#'))
-        ? RenderServerComponent({
-            Component: item.icon,
-            clientProps: { className: 'frogbot-admin-sidebar__icon', size: 24 },
-            importMap: payload.importMap,
-            serverProps,
-          })
-        : item.icon,
+    icon: renderNavIcon({
+      className: 'frogbot-admin-sidebar__icon',
+      icon: item.icon,
+      importMap: payload.importMap,
+      serverProps,
+      size: 24,
+    }),
   }));
   const beforeNavLinks = admin.components.beforeNavLinks?.map((component, index) =>
     render(component, `before-nav-${index}`),

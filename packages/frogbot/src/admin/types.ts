@@ -11,6 +11,7 @@ import type { CustomComponent } from 'payload';
 import type { Access } from '../collections/config/types.js';
 import type { RootLivePreviewConfig } from '../config/types.js';
 import type { PayloadConfig } from '../types/payload.js';
+import type { IconName } from './icons.js';
 import type { DashboardConfig } from './views/types.js';
 
 type DeepClone<T> = T extends object ? { [K in keyof T]: DeepClone<T[K]> } : T;
@@ -31,7 +32,7 @@ export interface RootAdminGraphics {
 
 export interface NavItem {
   /** Icon shown next to the label in the sidebar. */
-  icon?: FrogBotComponent;
+  icon?: AdminIcon;
   /** Text shown in the sidebar. */
   label: string;
   /** Full path the link navigates to, e.g. `/admin/operations`. */
@@ -121,6 +122,12 @@ export interface RootAdminConfig {
 export type FrogBotComponent<TProps extends object = Record<string, unknown>> =
   CustomComponent<TProps>;
 
+/**
+ * Icon for a collection, navigation item, or settings page: a built-in icon
+ * name (`'robot'`) or a component (`'./src/components/Icon#Icon'`).
+ */
+export type AdminIcon = Exclude<FrogBotComponent, string> | (string & {}) | IconName;
+
 /** Payload's root `admin.components` block. Source for the slot value types
  *  Payload does not export under a usable name. */
 type PayloadAdminComponents = NonNullable<NonNullable<PayloadConfig['admin']>['components']>;
@@ -141,7 +148,7 @@ export type SettingsEntry = {
   /** Component rendered for this page. */
   Component: FrogBotComponent;
   /** Icon shown next to the label. */
-  icon?: FrogBotComponent;
+  icon?: AdminIcon;
   /** Who can see and open this page. */
   access?: Access;
 };

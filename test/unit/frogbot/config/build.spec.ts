@@ -201,6 +201,20 @@ describe('frogbot buildConfig', () => {
         'billing/invoices',
       ]);
     });
+
+    it('rejects an unknown icon name on a plugin-appended settings entry', async () => {
+      const plugin: Plugin = (config) => ({
+        ...config,
+        settings: [
+          ...(config.settings ?? []),
+          { icon: 'robto', label: 'Usage', path: 'usage', Component: './settings/Usage#Page' },
+        ],
+      });
+
+      await expect(buildConfig(makeConfig({ plugins: [plugin] }))).rejects.toThrowError(
+        "[frogbot] Unknown admin icon 'robto'. Valid:",
+      );
+    });
   });
 
   describe('sanitization passthrough', () => {

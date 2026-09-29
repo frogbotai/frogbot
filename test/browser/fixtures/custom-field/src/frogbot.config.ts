@@ -42,12 +42,30 @@ const config: FrogBotConfig = {
       ],
     },
     components: {
-      navItems: [{ label: 'Reports', path: '/reports' }],
+      navItems: [
+        { label: 'New Chat', path: '/collections/chats/create', icon: 'pencil-edit' },
+        { label: 'Reports', path: '/reports', icon: 'home' },
+        { label: 'All posts', path: '/collections/posts', icon: '/components/NavIcon#NavIcon' },
+      ],
       views: {
         reports: { Component: '/components/ReportsView#ReportsView', path: '/reports' },
       },
     },
   },
+  settings: [
+    {
+      label: 'Robot',
+      path: 'robot',
+      Component: '/components/SettingsPage#SettingsPage',
+      icon: 'robot',
+    },
+    {
+      label: 'Usage',
+      path: 'usage',
+      Component: '/components/SettingsPage#SettingsPage',
+      icon: { path: '/components/NavIcon', exportName: 'NavIcon' },
+    },
+  ],
 };
 
 export default buildConfig(config);

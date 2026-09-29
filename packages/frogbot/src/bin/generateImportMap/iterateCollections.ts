@@ -1,6 +1,7 @@
 import type { PayloadComponent, SanitizedCollectionConfig, SanitizedConfig } from 'payload';
 import { genImportMapIterateFields } from 'payload';
 
+import { isIconComponent } from '../../admin/icons.js';
 import type { AddToImportMap, Imports, InternalImportMap } from './index.js';
 
 export function iterateCollections({
@@ -20,7 +21,7 @@ export function iterateCollections({
 }) {
   for (const collection of collections) {
     const icon = (collection.admin as typeof collection.admin & { icon?: PayloadComponent })?.icon;
-    if (typeof icon !== 'string' || icon.includes('#')) addToImportMap(icon);
+    if (isIconComponent(icon)) addToImportMap(icon);
     const collectionViews = (
       collection.custom?.frogbot as
         | {
