@@ -75,6 +75,11 @@
     "mode": "chat"
   },
   {
+    "id": "anthropic/claude-sonnet-5-5",
+    "provider": "anthropic",
+    "mode": "chat"
+  },
+  {
     "id": "bedrock/amazon.nova-lite-v1:0",
     "provider": "bedrock",
     "mode": "chat"
@@ -371,6 +376,11 @@
   },
   {
     "id": "bedrock/global.anthropic.claude-sonnet-5",
+    "provider": "bedrock",
+    "mode": "chat"
+  },
+  {
+    "id": "bedrock/global.anthropic.claude-sonnet-5-5",
     "provider": "bedrock",
     "mode": "chat"
   },
@@ -1710,11 +1720,6 @@
     "mode": "chat"
   },
   {
-    "id": "mistral/magistral-small",
-    "provider": "mistral",
-    "mode": "chat"
-  },
-  {
     "id": "mistral/ministral-3b-latest",
     "provider": "mistral",
     "mode": "chat"
@@ -2255,6 +2260,11 @@
     "mode": "chat"
   },
   {
+    "id": "openrouter/anthropic/claude-sonnet-5.5",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
     "id": "openrouter/arcee-ai/trinity-large-thinking",
     "provider": "openrouter",
     "mode": "chat"
@@ -2356,11 +2366,6 @@
   },
   {
     "id": "openrouter/deepseek/deepseek-r1-0528",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/deepseek/deepseek-r1-distill-llama-70b",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -2561,11 +2566,6 @@
   },
   {
     "id": "openrouter/inclusionai/ling-3.0-flash-fin",
-    "provider": "openrouter",
-    "mode": "chat"
-  },
-  {
-    "id": "openrouter/inclusionai/ling-3.0-flash-fin:free",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -2866,6 +2866,16 @@
   },
   {
     "id": "openrouter/morph/morph-v3-large",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/nex-agi/nex-n2.5-mini",
+    "provider": "openrouter",
+    "mode": "chat"
+  },
+  {
+    "id": "openrouter/nex-agi/nex-n2.5-pro",
     "provider": "openrouter",
     "mode": "chat"
   },
@@ -3950,16 +3960,6 @@
     "mode": "chat"
   },
   {
-    "id": "togetherai/moonshotai/Kimi-K2.6",
-    "provider": "togetherai",
-    "mode": "chat"
-  },
-  {
-    "id": "togetherai/moonshotai/Kimi-K2.7-Code",
-    "provider": "togetherai",
-    "mode": "chat"
-  },
-  {
     "id": "togetherai/moonshotai/Kimi-K3",
     "provider": "togetherai",
     "mode": "chat"
@@ -4301,6 +4301,11 @@
   },
   {
     "id": "vercel/anthropic/claude-sonnet-5",
+    "provider": "vercel",
+    "mode": "chat"
+  },
+  {
+    "id": "vercel/anthropic/claude-sonnet-5.5",
     "provider": "vercel",
     "mode": "chat"
   },

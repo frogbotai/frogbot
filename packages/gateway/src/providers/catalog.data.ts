@@ -546,6 +546,41 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['anthropic'],
   }),
+  model('anthropic/claude-sonnet-5-5', {
+    name: 'Claude Sonnet 5.5',
+    created: '2026-09-28',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['anthropic'],
+  }),
   model('bedrock/amazon.nova-lite-v1:0', {
     name: 'Nova Lite',
     created: '2024-12-03',
@@ -2622,6 +2657,40 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
         {
           type: 'toggle',
         },
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['bedrock'],
+  }),
+  model('bedrock/global.anthropic.claude-sonnet-5-5', {
+    name: 'Claude Sonnet 5.5 (Global)',
+    created: '2026-09-28',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
         {
           type: 'effort',
           values: ['low', 'medium', 'high', 'xhigh', 'max'],
@@ -8017,7 +8086,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.14,
       output: 0.28,
-      cache_read: 0.0027,
+      cache_read: 0.0028,
     },
     providers: ['deepinfra'],
   }),
@@ -10435,6 +10504,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -10444,6 +10514,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.3,
       output: 0.9,
+      cache_read: 0.03,
     },
     providers: ['mistral'],
   }),
@@ -10468,30 +10539,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 2,
       output: 5,
-    },
-    providers: ['mistral'],
-  }),
-  model('mistral/magistral-small', {
-    name: 'Magistral Small',
-    created: '2025-03-17',
-    knowledge: '2025-06',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      streaming: true,
-    },
-    context: {
-      input: 128000,
-      output: 128000,
-    },
-    cost: {
-      input: 0.5,
-      output: 1.5,
     },
     providers: ['mistral'],
   }),
@@ -10597,6 +10644,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       vision: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -10606,6 +10654,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.5,
       output: 1.5,
+      cache_read: 0.05,
     },
     providers: ['mistral'],
   }),
@@ -10621,6 +10670,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     capabilities: {
       toolCalling: true,
       vision: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -10630,6 +10680,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.5,
       output: 1.5,
+      cache_read: 0.05,
     },
     providers: ['mistral'],
   }),
@@ -10700,6 +10751,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
         },
       ],
       vision: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -10709,6 +10761,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 1.5,
       output: 7.5,
+      cache_read: 0.15,
     },
     providers: ['mistral'],
   }),
@@ -10731,6 +10784,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
         },
       ],
       vision: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -10740,6 +10794,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 1.5,
       output: 7.5,
+      cache_read: 0.15,
     },
     providers: ['mistral'],
   }),
@@ -10809,6 +10864,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
         },
       ],
       vision: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -10818,6 +10874,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.15,
       output: 0.6,
+      cache_read: 0.015,
     },
     providers: ['mistral'],
   }),
@@ -10840,6 +10897,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
         },
       ],
       vision: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -10849,6 +10907,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.15,
       output: 0.6,
+      cache_read: 0.015,
     },
     providers: ['mistral'],
   }),
@@ -12423,9 +12482,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       reasoning: true,
       reasoningOptions: [
         {
-          type: 'toggle',
-        },
-        {
           type: 'effort',
           values: ['low', 'medium', 'high', 'xhigh', 'max'],
         },
@@ -12473,12 +12529,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 384000,
+      output: 943718,
     },
     cost: {
-      input: 0.035,
-      output: 0.29,
-      cache_read: 0.001,
+      input: 0.02,
+      output: 0.6,
+      cache_read: 0.02,
     },
     providers: ['openrouter'],
   }),
@@ -12513,7 +12569,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.22592,
       output: 1.9584,
-      cache_read: 0.08832,
+      cache_read: 0.07488,
     },
     providers: ['openrouter'],
   }),
@@ -12546,9 +12602,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.021,
-      output: 0.32,
-      cache_read: 0.016,
+      input: 0.012,
+      output: 0.4,
+      cache_read: 0.01,
     },
     providers: ['openrouter'],
   }),
@@ -12652,8 +12708,8 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 1,
-      output: 9,
+      input: 0.6795,
+      output: 8.7934,
       cache_read: 0.3,
     },
     providers: ['openrouter'],
@@ -12858,9 +12914,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 450000,
     },
     cost: {
-      input: 1.6,
-      output: 4.8,
-      cache_read: 0.4,
+      input: 2,
+      output: 6,
+      cache_read: 0.5,
     },
     providers: ['openrouter'],
   }),
@@ -12888,11 +12944,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1310720,
-      output: 128000,
+      output: 943718,
     },
     cost: {
-      input: 0.045,
-      output: 0.14,
+      input: 0.02,
+      output: 0.3,
       cache_read: 0.01,
     },
     providers: ['openrouter'],
@@ -12923,9 +12979,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.1785,
-      output: 2.805,
-      cache_read: 0.146625,
+      input: 0.2,
+      output: 3.4,
+      cache_read: 0.15,
     },
     providers: ['openrouter'],
   }),
@@ -13740,6 +13796,41 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openrouter'],
   }),
+  model('openrouter/anthropic/claude-sonnet-5.5', {
+    name: 'Claude Sonnet 5.5',
+    created: '2026-09-28',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['openrouter'],
+  }),
   model('openrouter/arcee-ai/trinity-large-thinking', {
     name: 'Trinity Large Thinking',
     created: '2026-04-01',
@@ -14321,34 +14412,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openrouter'],
   }),
-  model('openrouter/deepseek/deepseek-r1-distill-llama-70b', {
-    name: 'R1 Distill Llama 70B',
-    created: '2025-01-23',
-    knowledge: '2024-07-31',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'toggle',
-        },
-      ],
-      streaming: true,
-    },
-    context: {
-      input: 8192,
-      output: 7372,
-    },
-    cost: {
-      input: 0.8,
-      output: 0.8,
-    },
-    providers: ['openrouter'],
-  }),
   model('openrouter/deepseek/deepseek-v3.1-terminus', {
     name: 'DeepSeek V3.1 Terminus',
     created: '2025-09-22',
@@ -14372,10 +14435,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 163840,
-      output: 32768,
+      output: 65536,
     },
     cost: {
-      input: 0.27,
+      input: 0.3,
       output: 1,
       cache_read: 0.135,
     },
@@ -14431,15 +14494,17 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
           type: 'toggle',
         },
       ],
+      promptCaching: true,
       streaming: true,
     },
     context: {
       input: 163840,
-      output: 65536,
+      output: 147456,
     },
     cost: {
-      input: 0.27,
-      output: 0.41,
+      input: 0.1344,
+      output: 0.2016,
+      cache_read: 0.0672,
     },
     providers: ['openrouter'],
   }),
@@ -14473,9 +14538,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 131072,
     },
     cost: {
-      input: 0.0854,
-      output: 0.1708,
-      cache_read: 0.01708,
+      input: 0.14,
+      output: 0.28,
+      cache_read: 0.028,
     },
     providers: ['openrouter'],
   }),
@@ -14509,9 +14574,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.021,
+      input: 0.018,
       output: 0.32,
-      cache_read: 0.016,
+      cache_read: 0.018,
     },
     providers: ['openrouter'],
   }),
@@ -14542,12 +14607,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 943717,
+      output: 262144,
     },
     cost: {
-      input: 0.44,
-      output: 1.32,
-      cache_read: 0.014,
+      input: 0.2156,
+      output: 0.6468,
+      cache_read: 0.00686,
     },
     providers: ['openrouter'],
   }),
@@ -14581,9 +14646,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 384000,
     },
     cost: {
-      input: 0.948126,
-      output: 1.896252,
-      cache_read: 0.079011,
+      input: 0.95526,
+      output: 1.91052,
+      cache_read: 0.079605,
     },
     providers: ['openrouter'],
   }),
@@ -14616,9 +14681,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 943718,
     },
     cost: {
-      input: 0.3995,
+      input: 0.4,
       output: 4.2,
-      cache_read: 0.399,
+      cache_read: 0.32,
     },
     providers: ['openrouter'],
   }),
@@ -14650,12 +14715,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 384000,
+      output: 943718,
     },
     cost: {
-      input: 0.035,
-      output: 0.29,
-      cache_read: 0.001,
+      input: 0.3,
+      output: 1.2,
+      cache_read: 0.006,
     },
     providers: ['openrouter'],
   }),
@@ -15348,9 +15413,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 235929,
     },
     cost: {
-      input: 0.09,
-      output: 0.3,
-      cache_read: 0.05,
+      input: 0.0765,
+      output: 0.255,
+      cache_read: 0.0425,
     },
     providers: ['openrouter'],
   }),
@@ -15642,34 +15707,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.06,
       output: 0.18,
       cache_read: 0.012,
-    },
-    providers: ['openrouter'],
-  }),
-  model('openrouter/inclusionai/ling-3.0-flash-fin:free', {
-    name: 'Ling 3.0 Flash Fin (free)',
-    created: '2026-08-27',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'toggle',
-        },
-      ],
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 32768,
-    },
-    cost: {
-      input: 0,
-      output: 0,
     },
     providers: ['openrouter'],
   }),
@@ -16488,12 +16525,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 204800,
-      output: 131072,
+      output: 176947,
     },
     cost: {
-      input: 0.3,
-      output: 1.2,
-      cache_read: 0.06,
+      input: 0.21,
+      output: 0.84,
+      cache_read: 0.042,
     },
     providers: ['openrouter'],
   }),
@@ -17277,6 +17314,71 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['openrouter'],
   }),
+  model('openrouter/nex-agi/nex-n2.5-mini', {
+    name: 'Nex-N2.5-Mini',
+    created: '2026-09-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.025,
+      output: 0.1,
+      cache_read: 0.0025,
+    },
+    providers: ['openrouter'],
+  }),
+  model('openrouter/nex-agi/nex-n2.5-pro', {
+    name: 'Nex-N2.5-Pro',
+    created: '2026-09-08',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      structuredOutput: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['none', 'medium', 'high'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 262144,
+      output: 235929,
+    },
+    cost: {
+      input: 0.075,
+      output: 0.25,
+      cache_read: 0.015,
+    },
+    providers: ['openrouter'],
+  }),
   model('openrouter/nousresearch/hermes-3-llama-3.1-405b', {
     name: 'Hermes 3 405B Instruct',
     created: '2024-08-16',
@@ -17637,12 +17739,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1000000,
-      output: 131072,
+      output: 32768,
     },
     cost: {
-      input: 0.08,
-      output: 0.2,
-      cache_read: 0.04,
+      input: 0.06,
+      output: 0.16,
+      cache_read: 0.03,
     },
     providers: ['openrouter'],
   }),
@@ -18826,10 +18928,10 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 128000,
     },
     cost: {
-      input: 2,
-      output: 10,
-      cache_read: 0.2,
-      cache_write: 2.5,
+      input: 4,
+      output: 20,
+      cache_read: 0.4,
+      cache_write: 5,
     },
     providers: ['openrouter'],
   }),
@@ -19186,6 +19288,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
           values: ['low', 'medium', 'high'],
         },
       ],
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -19195,6 +19298,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.018,
       output: 0.09,
+      cache_read: 0.009,
     },
     providers: ['openrouter'],
   }),
@@ -19835,6 +19939,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
         },
       ],
       vision: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -19844,6 +19949,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.075,
       output: 0.5,
+      cache_read: 0.0375,
     },
     providers: ['openrouter'],
   }),
@@ -20124,11 +20230,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 131072,
-      output: 16384,
+      output: 8192,
     },
     cost: {
-      input: 0.12,
-      output: 0.5,
+      input: 0.13,
+      output: 0.52,
     },
     providers: ['openrouter'],
   }),
@@ -20148,11 +20254,11 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 262144,
-      output: 235929,
+      output: 32000,
     },
     cost: {
-      input: 0.1,
-      output: 0.3,
+      input: 0.04815,
+      output: 0.19305,
     },
     providers: ['openrouter'],
   }),
@@ -21212,12 +21318,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1000000,
-      output: 131072,
+      output: 235929,
     },
     cost: {
-      input: 0.42,
-      output: 3,
-      cache_read: 0.085,
+      input: 0.0449,
+      output: 4.4,
+      cache_read: 0.0359,
     },
     providers: ['openrouter'],
   }),
@@ -22520,9 +22626,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 450000,
     },
     cost: {
-      input: 1.6,
-      output: 4.8,
-      cache_read: 0.4,
+      input: 2,
+      output: 6,
+      cache_read: 0.5,
     },
     providers: ['openrouter'],
   }),
@@ -22868,7 +22974,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.3,
       output: 0.9,
-      cache_read: 0.055,
+      cache_read: 0.05,
     },
     providers: ['openrouter'],
   }),
@@ -23020,9 +23126,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 131072,
     },
     cost: {
-      input: 0.9646,
-      output: 3.0316,
-      cache_read: 0.17914,
+      input: 1.4,
+      output: 4.4,
+      cache_read: 0.26,
     },
     providers: ['openrouter'],
   }),
@@ -23052,12 +23158,12 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     context: {
       input: 1048576,
-      output: 131072,
+      output: 943718,
     },
     cost: {
-      input: 0.6496,
-      output: 2.0416,
-      cache_read: 0.12064,
+      input: 0.3249,
+      output: 4.4,
+      cache_read: 0.2599,
     },
     providers: ['openrouter'],
   }),
@@ -23654,65 +23760,6 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       input: 0.3,
       output: 1.2,
       cache_read: 0.06,
-    },
-    providers: ['togetherai'],
-  }),
-  model('togetherai/moonshotai/Kimi-K2.6', {
-    name: 'Kimi K2.6',
-    created: '2026-04-21',
-    knowledge: '2025-01',
-    modalities: {
-      input: ['text', 'image', 'video'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      reasoningOptions: [
-        {
-          type: 'toggle',
-        },
-      ],
-      vision: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 131000,
-    },
-    cost: {
-      input: 1.2,
-      output: 4.5,
-      cache_read: 0.2,
-    },
-    providers: ['togetherai'],
-  }),
-  model('togetherai/moonshotai/Kimi-K2.7-Code', {
-    name: 'Kimi K2.7 Code',
-    created: '2026-06-14',
-    modalities: {
-      input: ['text'],
-      output: ['text'],
-    },
-    operations: ['chat.completions'],
-    capabilities: {
-      toolCalling: true,
-      structuredOutput: true,
-      reasoning: true,
-      promptCaching: true,
-      streaming: true,
-    },
-    context: {
-      input: 262144,
-      output: 131072,
-    },
-    cost: {
-      input: 0.95,
-      output: 4,
-      cache_read: 0.19,
     },
     providers: ['togetherai'],
   }),
@@ -25933,6 +25980,40 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     },
     providers: ['vercel'],
   }),
+  model('vercel/anthropic/claude-sonnet-5.5', {
+    name: 'Claude Sonnet 5.5',
+    created: '2026-09-28',
+    knowledge: '2026-06',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    operations: ['chat.completions'],
+    capabilities: {
+      toolCalling: true,
+      reasoning: true,
+      reasoningOptions: [
+        {
+          type: 'effort',
+          values: ['low', 'medium', 'high', 'xhigh', 'max'],
+        },
+      ],
+      vision: true,
+      promptCaching: true,
+      streaming: true,
+    },
+    context: {
+      input: 1000000,
+      output: 128000,
+    },
+    cost: {
+      input: 2,
+      output: 10,
+      cache_read: 0.2,
+      cache_write: 2.5,
+    },
+    providers: ['vercel'],
+  }),
   model('vercel/arcee-ai/trinity-large-thinking', {
     name: 'Trinity Large Thinking',
     created: '2026-04-01',
@@ -27855,6 +27936,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     operations: ['chat.completions'],
     capabilities: {
       toolCalling: true,
+      promptCaching: true,
       streaming: true,
     },
     context: {
@@ -27864,6 +27946,7 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
     cost: {
       input: 0.3,
       output: 0.9,
+      cache_read: 0.03,
     },
     providers: ['vercel'],
   }),
@@ -30981,9 +31064,9 @@ export const DEFAULT_MODEL_CATALOG: ModelCatalog = defineModelCatalog(
       output: 500000,
     },
     cost: {
-      input: 1.2,
-      output: 3.6,
-      cache_read: 0.3,
+      input: 2,
+      output: 6,
+      cache_read: 0.5,
     },
     providers: ['vercel'],
   }),
