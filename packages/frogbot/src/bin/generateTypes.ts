@@ -1,5 +1,6 @@
 import { loadConfig, resolveConfigDir } from '../config/load.js';
 import { writeGeneratedTypes } from '../typegen/index.js';
+import { formatCliError } from './formatCliError.js';
 
 export async function generateTypes(): Promise<void> {
   const cwd = process.cwd();
@@ -17,8 +18,7 @@ export async function generateTypes(): Promise<void> {
       console.log(`[frogbot] types unchanged at ${outputPath}`);
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`[frogbot] ${message}`);
+    console.error(formatCliError(err));
     process.exit(1);
   }
 }

@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished } from 'vitest';
 
 const execFileAsync = promisify(execFile);
 const binURL = pathToFileURL(
@@ -19,7 +19,26 @@ describe('frogbot generate:importmap', () => {
   it.todo('generates the import map from the sanitized payload config');
   it.todo('logs `[frogbot] import map written to <path>` when the file changed');
   it.todo('logs `[frogbot] import map unchanged at <path>` when identical');
-  it.todo('exits non-zero on any failure with a `[frogbot]` prefixed message');
+
+  it('exits non-zero with a single `[frogbot]` prefix when config loading fails', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'frogbot-importmap-error-'));
+
+    onTestFinished(() => rm(dir, { recursive: true, force: true }));
+
+    await writeFile(join(dir, 'frogbot.config.mjs'), 'export default {};\n');
+
+    const script = `process.argv = ['node', 'frogbot', 'generate:importmap']; const { bin } = await import(${JSON.stringify(binURL)}); await bin();`;
+    const result = execFileAsync(
+      process.execPath,
+      ['--import', tsxLoader, '--input-type=module', '--eval', script],
+      { cwd: dir },
+    );
+
+    await expect(result).rejects.toMatchObject({
+      code: 1,
+      stderr: expect.stringMatching(/^\[frogbot\] (?!\[frogbot\]).*default export/),
+    });
+  });
 
   it('loads production env files before importing the config', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'frogbot-importmap-env-'));

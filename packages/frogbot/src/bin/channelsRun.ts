@@ -3,6 +3,7 @@ import type { Payload } from 'payload';
 import { getChannelHost } from '../channels/host.js';
 import { loadConfig } from '../config/load.js';
 import type { FrogBot } from '../frogbot.js';
+import { formatCliError } from './formatCliError.js';
 
 export async function channelsRun(): Promise<void> {
   let payload: Payload | undefined;
@@ -32,7 +33,7 @@ export async function channelsRun(): Promise<void> {
     const host = getChannelHost(frogbot);
 
     if (!host?.hasGatewayAdapters()) {
-      console.log('FrogBot channels:run: no gateway channel adapters configured.');
+      console.log('[frogbot] channels:run: no gateway channel adapters configured.');
     } else {
       while (!controller.signal.aborted) {
         const ran = await host.runGatewayListener({
@@ -59,9 +60,7 @@ export async function channelsRun(): Promise<void> {
   } catch (error) {
     exitCode = 1;
 
-    console.error(
-      `FrogBot channels:run failed: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    console.error(formatCliError(error, 'channels:run failed'));
   } finally {
     try {
       if (frogbot) await frogbot.destroy();
@@ -69,9 +68,7 @@ export async function channelsRun(): Promise<void> {
     } catch (error) {
       exitCode = 1;
 
-      console.error(
-        `FrogBot channels:run failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      console.error(formatCliError(error, 'channels:run failed'));
     }
 
     process.off('SIGINT', stop);

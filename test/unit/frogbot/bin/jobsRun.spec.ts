@@ -351,7 +351,7 @@ describe('jobs:run lifecycle', () => {
       await vi.advanceTimersByTimeAsync(1000);
 
       expect(await worker).toEqual(new Error('exit:1'));
-      expect(error).toHaveBeenCalledWith(`FrogBot jobs:run failed: ${method} failure`);
+      expect(error).toHaveBeenCalledWith(`[frogbot] jobs:run failed: ${method} failure`);
       expect(mocks.payload.destroy).toHaveBeenCalledOnce();
 
       if (method === 'handleSchedules') expect(mocks.payload.jobs.run).not.toHaveBeenCalled();
@@ -372,7 +372,7 @@ describe('jobs:run lifecycle', () => {
       worker = jobsRun([]).catch((error: unknown) => error);
 
       expect(await worker).toEqual(new Error('exit:1'));
-      expect(error).toHaveBeenCalledWith(`FrogBot jobs:run failed: ${phase} failure`);
+      expect(error).toHaveBeenCalledWith(`[frogbot] jobs:run failed: ${phase} failure`);
       expect(mocks.payload.destroy).toHaveBeenCalledTimes(phase === 'config' ? 0 : 1);
       expect(mocks.payload.jobs.run).not.toHaveBeenCalled();
     },
@@ -473,7 +473,7 @@ describe('jobs:run lifecycle', () => {
 
     expect(await worker).toEqual(new Error('exit:1'));
     expect(mocks.payload.destroy).toHaveBeenCalledOnce();
-    expect(error).toHaveBeenCalledWith('FrogBot jobs:run failed: cleanup failure');
+    expect(error).toHaveBeenCalledWith('[frogbot] jobs:run failed: cleanup failure');
   });
 
   it.each([['--help'], ['--limit=-1'], ['--cron=invalid']])(
