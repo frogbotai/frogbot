@@ -111,7 +111,7 @@ function defaultSectionProps() {
         collections: [
           { admin: {}, labels: { plural: 'Posts', singular: 'Post' }, slug: 'posts' },
           {
-            admin: { group: 'Chat', icon: 'bubble-chat' },
+            admin: { icon: 'bubble-chat' },
             labels: { plural: 'Chats', singular: 'Chat' },
             slug: 'chats',
           },

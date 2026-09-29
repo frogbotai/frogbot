@@ -51,7 +51,7 @@ Replace YOUR_AGENT with the value for the tool you are: codex for Codex, claude 
 4. Go into the my-frogbot folder and read the FrogBot skill before changing anything. AGENTS.md tells you where it is (CLAUDE.md for Claude Code, GEMINI.md for Gemini CLI, .github/copilot-instructions.md for GitHub Copilot). If the skill is missing, run npx skills add frogbotai/frogbot --skill frogbot --yes in that folder.
 5. The app needs my AI provider key in the .env file in my-frogbot (OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_GENERATIVE_AI_API_KEY). Ask me how I want to set it up.
 6. Start the app by running npm run dev in my-frogbot and keep it running. If you cannot keep it running, tell me exactly how to run it myself in a terminal.
-7. When it is ready, tell me to open http://localhost:3000 and create my admin account. Then I open Chat, then Chats, in the sidebar and create a new chat to send my first message.
+7. When it is ready, tell me to open http://localhost:3000 and create my admin account. Then I open Chats in the sidebar and create a new chat to send my first message.
 
 If anything fails, explain the error in plain words and fix it. For FrogBot questions, use the skill first, then https://docs.frogbot.ai/llms.txt.
 ```
@@ -83,7 +83,7 @@ Start the app:
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and create your admin account. The dashboard lists your collections; open **Chat → Chats** in the sidebar and select **Create New** to talk to an agent.
+Open [http://localhost:3000](http://localhost:3000) and create your admin account. The dashboard lists your collections; open **Chats** in the sidebar and select **Create New** to talk to an agent.
 
 That gives you a `users` auth collection, SQLite storage, and two agents (`general` and `assistant`) — no Docker, no external database. New to all this? The [step-by-step setup](https://docs.frogbot.ai/getting-started/setup) explains each step. To call agents from your own code, see the [REST API](https://docs.frogbot.ai/rest-api/overview).
 

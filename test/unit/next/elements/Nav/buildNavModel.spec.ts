@@ -103,7 +103,7 @@ describe('buildNavModel', () => {
 });
 
 describe('buildCollectionGroups', () => {
-  it('builds translated entity groups in config order', () => {
+  it('separates ungrouped collections from translated developer groups', () => {
     const result = buildCollectionGroups({
       config: config(),
       i18n,
@@ -111,8 +111,8 @@ describe('buildCollectionGroups', () => {
       visibleEntities: { collections: ['posts', 'users', 'hidden', 'projects'], globals: [] },
     });
 
+    expect(result.items).toEqual([{ label: 'Posts', path: '/control/collections/posts' }]);
     expect(result.groups).toEqual([
-      { items: [{ label: 'Posts', path: '/control/collections/posts' }], label: 'Collections' },
       { items: [{ label: 'Users', path: '/control/collections/users' }], label: 'Accounts' },
     ]);
   });
@@ -129,6 +129,7 @@ describe('buildCollectionGroups', () => {
       visibleEntities: { collections: ['users'], globals: [] },
     });
 
+    expect(result.items).toEqual([]);
     expect(result.groups).toEqual([]);
   });
 });

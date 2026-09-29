@@ -4,6 +4,7 @@ export const Posts: CollectionConfig = {
   slug: 'posts',
   admin: {
     components: { edit: { beforeDocumentControls: ['/components/ThemeProbe#ThemeProbe'] } },
+    group: 'Content',
     useAsTitle: 'title',
   },
   fields: [

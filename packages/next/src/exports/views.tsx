@@ -16,7 +16,7 @@ import { getTranslation } from '@payloadcms/translations';
 import { Card } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import type { EntityToGroup } from '@payloadcms/ui/shared';
-import { EntityType, groupNavItems } from '@payloadcms/ui/shared';
+import { EntityType } from '@payloadcms/ui/shared';
 import type { AdminIcon } from 'frogbot';
 import { getCachedFrogBot, messagesToUIMessages } from 'frogbot';
 import { getPayloadConfig } from 'frogbot/internal';
@@ -28,6 +28,7 @@ import type { ComponentProps, ComponentType } from 'react';
 
 import frogbotFavicon from '../assets/frogbot-favicon.png';
 import frogbotOGImage from '../assets/frogbot-og.jpg';
+import { splitNavGroups } from '../elements/Nav/buildNavModel.js';
 import { renderNavIcon } from '../elements/Nav/renderNavIcon.js';
 import { SettingsNav } from '../elements/SettingsNav/index.js';
 export { BoardView } from '../views/Board/index.js';
@@ -299,39 +300,50 @@ export async function SettingsView(props: SettingsViewProps) {
   ];
   const collectionGroups =
     routePath === 'collections'
-      ? groupNavItems(
-          payload.config.collections
+      ? splitNavGroups({
+          entities: payload.config.collections
             .filter(({ slug }) => initPageResult.visibleEntities.collections.includes(slug))
             .map((entity) => ({ entity, type: EntityType.collection }) satisfies EntityToGroup),
-          initPageResult.permissions,
-          req.i18n,
-        )
-      : [];
+          i18n: req.i18n,
+          permissions: initPageResult.permissions,
+        })
+      : { groups: [], ungrouped: [] };
+
+  const renderCollectionList = (entities: typeof collectionGroups.ungrouped) => (
+    <ul className="frogbot-settings__collection-list">
+      {entities.map(({ label, slug }) => {
+        const title = getTranslation(label, req.i18n);
+
+        return (
+          <li key={slug}>
+            <Card
+              buttonAriaLabel={req.i18n.t('general:showAllLabel', { label: title })}
+              href={formatAdminURL({
+                adminRoute: payload.config.routes.admin,
+                path: `/collections/${slug}`,
+              })}
+              id={`card-${slug}`}
+              title={title}
+              titleAs="h3"
+            />
+          </li>
+        );
+      })}
+    </ul>
+  );
+
   const content =
     routePath === 'collections' ? (
       <div className="frogbot-settings__collections">
-        {collectionGroups.map((group) => (
+        {collectionGroups.ungrouped.length > 0 ? (
+          <section className="frogbot-settings__collection-group">
+            {renderCollectionList(collectionGroups.ungrouped)}
+          </section>
+        ) : null}
+        {collectionGroups.groups.map((group) => (
           <section className="frogbot-settings__collection-group" key={group.label}>
             <h2>{group.label}</h2>
-            <ul className="frogbot-settings__collection-list">
-              {group.entities.map(({ label, slug }) => {
-                const title = getTranslation(label, req.i18n);
-                return (
-                  <li key={slug}>
-                    <Card
-                      buttonAriaLabel={req.i18n.t('general:showAllLabel', { label: title })}
-                      href={formatAdminURL({
-                        adminRoute: payload.config.routes.admin,
-                        path: `/collections/${slug}`,
-                      })}
-                      id={`card-${slug}`}
-                      title={title}
-                      titleAs="h3"
-                    />
-                  </li>
-                );
-              })}
-            </ul>
+            {renderCollectionList(group.entities)}
           </section>
         ))}
       </div>

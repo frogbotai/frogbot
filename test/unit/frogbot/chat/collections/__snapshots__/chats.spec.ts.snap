@@ -9,7 +9,6 @@ exports[`defaultChatsCollection > produces the base config shape 1`] = `
     "update": [Function],
   },
   "admin": {
-    "group": "Chat",
     "icon": "bubble-chat",
     "useAsTitle": "title",
     "views": [

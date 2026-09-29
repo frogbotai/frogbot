@@ -121,9 +121,9 @@ describe('defaultMessagesCollection', () => {
     });
   });
 
-  it('enables soft delete and the Chat admin group', () => {
+  it('enables soft delete and lists messages ungrouped in the admin', () => {
     expect(collection.trash).toBe(true);
-    expect(collection.admin).toMatchObject({ group: 'Chat' });
+    expect(collection.admin).not.toHaveProperty('group');
   });
 
   it('blocks direct writes to the usage group', async () => {

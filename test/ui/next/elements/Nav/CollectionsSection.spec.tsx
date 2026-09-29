@@ -57,6 +57,7 @@ function props(): ServerProps {
           { admin: { group: 'Content' }, labels: { plural: 'Pages' }, slug: 'pages' },
           { admin: { group: 'Content' }, labels: { plural: 'Drafts' }, slug: 'drafts' },
           { admin: { group: false }, labels: { plural: 'Hidden' }, slug: 'hidden' },
+          { admin: {}, labels: { plural: 'Files' }, slug: 'files' },
           { admin: { group: 'Content' }, labels: { plural: 'Secret' }, slug: 'secret' },
         ],
         globals: [],
@@ -68,6 +69,7 @@ function props(): ServerProps {
       collections: {
         chats: { read: true },
         drafts: { read: false },
+        files: { read: true },
         hidden: { read: true },
         pages: { read: true },
         posts: { read: true },
@@ -76,7 +78,7 @@ function props(): ServerProps {
       globals: {},
     },
     visibleEntities: {
-      collections: ['posts', 'chats', 'pages', 'drafts', 'hidden'],
+      collections: ['posts', 'chats', 'pages', 'drafts', 'hidden', 'files'],
       globals: [],
     },
   } as unknown as ServerProps;
@@ -98,6 +100,19 @@ describe('CollectionsSection', () => {
     expect(screen.queryByText('Drafts')).toBeNull();
     expect(screen.queryByText('Hidden')).toBeNull();
     expect(screen.queryByText('Secret')).toBeNull();
+  });
+
+  it('lists ungrouped entities directly under the section without a group label', () => {
+    const { container } = render(<CollectionsSection {...props()} />);
+
+    const labels = [...container.querySelectorAll('.frogbot-collections-section__group-label')];
+    const files = screen.getByRole('link', { name: 'Files' });
+
+    expect(labels.map((label) => label.textContent)).toEqual(['Content']);
+    expect(files.closest('.frogbot-collections-section__group')).toBeNull();
+    expect(
+      files.compareDocumentPosition(labels[0]!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('renders a built-in icon name from the icon registry', () => {
