@@ -3,7 +3,7 @@ import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { AirtableClient } from '../client.js';
-import { defineAirtableAction } from '../definitions.js';
+import { defineAction } from '../define.js';
 import {
   attachmentOptions,
   baseOptions,
@@ -33,17 +33,13 @@ function removeEmpty(fields: Record<string, unknown>) {
   );
 }
 
-export const createRecord = defineAirtableAction({
+export const createRecord = defineAction({
   slug: 'createRecord',
   description: 'Create a record in a table.',
   input: recordInput,
   output: recordSchema,
   options: recordsOptions,
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof recordInput>, object, AirtableClient>) {
+  async run({ client, input, req }) {
     return client.request({
       method: 'POST',
       path: `/${input.baseId}/${input.tableId}`,
@@ -60,7 +56,7 @@ const findRecordsInput = z.object({
   viewId: z.string().optional().meta({ label: 'View' }),
 });
 
-export const findRecords = defineAirtableAction({
+export const findRecords = defineAction({
   slug: 'findRecords',
   description: 'Find records containing a value in a selected field.',
   input: findRecordsInput,
@@ -70,11 +66,7 @@ export const findRecords = defineAirtableAction({
     searchField: fieldOptions,
     viewId: viewOptions,
   },
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof findRecordsInput>, object, AirtableClient>) {
+  async run({ client, input, req }) {
     const page = await client.request({
       path: `/${input.baseId}/${input.tableId}`,
       query: {
@@ -117,39 +109,35 @@ async function patchRecord({
   return recordSchema.parse(record);
 }
 
-export const updateRecord = defineAirtableAction({
+export const updateRecord = defineAction({
   slug: 'updateRecord',
   description: 'Update non-empty fields in a record.',
   input: mutateRecordInput,
   output: recordSchema,
   options: recordsOptions,
-  async run(args: PieceRunArgs<z.output<typeof mutateRecordInput>, object, AirtableClient>) {
+  async run(args) {
     return patchRecord({ ...args, clean: false });
   },
 });
 
-export const cleanRecord = defineAirtableAction({
+export const cleanRecord = defineAction({
   slug: 'cleanRecord',
   description: 'Update a record and clear fields with empty values.',
   input: mutateRecordInput,
   output: recordSchema,
   options: recordsOptions,
-  async run(args: PieceRunArgs<z.output<typeof mutateRecordInput>, object, AirtableClient>) {
+  async run(args) {
     return patchRecord({ ...args, clean: true });
   },
 });
 
-export const deleteRecord = defineAirtableAction({
+export const deleteRecord = defineAction({
   slug: 'deleteRecord',
   description: 'Delete a record from a table.',
   input: identifiedRecordInput,
   output: z.object({ id: z.string(), deleted: z.boolean() }).passthrough(),
   options: recordsOptions,
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof identifiedRecordInput>, object, AirtableClient>) {
+  async run({ client, input, req }) {
     return client.request({
       method: 'DELETE',
       path: `/${input.baseId}/${input.tableId}/${input.recordId}`,
@@ -160,17 +148,13 @@ export const deleteRecord = defineAirtableAction({
 
 const getRecordInput = identifiedRecordInput;
 
-export const getRecord = defineAirtableAction({
+export const getRecord = defineAction({
   slug: 'getRecord',
   description: 'Get one record by ID.',
   input: getRecordInput,
   output: recordSchema,
   options: recordsOptions,
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof getRecordInput>, object, AirtableClient>) {
+  async run({ client, input, req }) {
     return client.request({
       path: `/${input.baseId}/${input.tableId}/${input.recordId}`,
       signal: req.signal ?? undefined,
@@ -183,17 +167,13 @@ const commentInput = identifiedRecordInput.extend({
   parentCommentId: z.string().optional().meta({ label: 'Parent comment ID' }),
 });
 
-export const addRecordComment = defineAirtableAction({
+export const addRecordComment = defineAction({
   slug: 'addRecordComment',
   description: 'Add a comment or threaded reply to a record.',
   input: commentInput,
   output: commentSchema,
   options: recordsOptions,
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof commentInput>, object, AirtableClient>) {
+  async run({ client, input, req }) {
     return client.request({
       method: 'POST',
       path: `/${input.baseId}/${input.tableId}/${input.recordId}/comments`,
@@ -261,7 +241,7 @@ async function loadFile(req: FrogBotRequest, fileId: string | number) {
   };
 }
 
-export const uploadAttachment = defineAirtableAction({
+export const uploadAttachment = defineAction({
   slug: 'uploadAttachment',
   description: 'Upload a FrogBot file to an attachment field.',
   input: uploadInput,
@@ -270,11 +250,7 @@ export const uploadAttachment = defineAirtableAction({
     ...recordsOptions,
     attachmentFieldId: attachmentOptions,
   },
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof uploadInput>, object, AirtableClient>) {
+  async run({ client, input, req }) {
     const file = await loadFile(req, input.fileId);
 
     return client.request({

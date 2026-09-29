@@ -2,7 +2,8 @@ import type { FrogBotRequest } from 'frogbot';
 import type { PieceOption } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import { type DriveRunArgs, type GoogleDriveClient, requestOptions } from '../client.js';
+import { type GoogleDriveClient, requestOptions } from '../client.js';
+import { defineAction } from '../define.js';
 import { downloadDriveFile } from '../files.js';
 import {
   type DriveFile,
@@ -91,14 +92,14 @@ const listFilesOutput = z.object({
 });
 export type ListFilesInput = z.input<typeof listFilesInput>;
 export type ListFilesOutput = z.output<typeof listFilesOutput>;
-export const listFiles = {
-  slug: 'listFiles' as const,
+export const listFiles = defineAction({
+  slug: 'listFiles',
   description:
     'List a Drive folder recursively to the requested depth, optionally downloading files into FrogBot.',
   input: listFilesInput,
   output: listFilesOutput,
   idempotent: false,
-  async run({ client, input, req }: DriveRunArgs<typeof listFilesInput>): Promise<ListFilesOutput> {
+  async run({ client, input, req }): Promise<ListFilesOutput> {
     const result: ListFilesOutput = { files: [], incompleteSearch: false };
     const pending = [{ folderId: input.folderId, level: 1 }];
     const visited = new Set<string>();
@@ -150,7 +151,7 @@ export const listFiles = {
     }
     return result;
   },
-};
+});
 
 const searchFilesInput = z.object({
   query: z.string(),
@@ -161,15 +162,15 @@ const searchFilesInput = z.object({
   ...sharedDrive,
 });
 export type SearchFilesInput = z.input<typeof searchFilesInput>;
-export const searchFiles = {
-  slug: 'searchFiles' as const,
+export const searchFiles = defineAction({
+  slug: 'searchFiles',
   description:
     'Search all pages of Google Drive files or folders by name, full text, or MIME type.',
   input: searchFilesInput,
   output: z.array(fileOutput),
   idempotent: true,
   options: { parentFolderId: folderOptions },
-  async run({ client, input, req }: DriveRunArgs<typeof searchFilesInput>): Promise<DriveFile[]> {
+  async run({ client, input, req }): Promise<DriveFile[]> {
     const query = [`${input.queryTerm} ${input.operator} ${queryLiteral(input.query)}`];
     if (input.parentFolderId) query.push(`${queryLiteral(input.parentFolderId)} in parents`);
     if (input.type !== 'all') {
@@ -184,4 +185,4 @@ export const searchFiles = {
       })
     ).files;
   },
-};
+});

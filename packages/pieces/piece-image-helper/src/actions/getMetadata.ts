@@ -1,12 +1,12 @@
 import ExifReader from 'exifreader';
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
+import { defineAction } from '../define.js';
 import { imageFile, loadImage } from '../files.js';
 
 const inputSchema = z.object({ image: imageFile.meta({ label: 'Image' }) });
 
-export const getMetadata = {
+export const getMetadata = defineAction({
   slug: 'getMetadata',
   label: 'Get image metadata',
   description: 'Read metadata embedded in an image.',
@@ -18,9 +18,9 @@ export const getMetadata = {
       description: z.string().optional(),
     }),
   ),
-  async run({ input, req }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input, req }) {
     const image = await loadImage(req, input.image);
 
     return ExifReader.load(image.data);
   },
-};
+});

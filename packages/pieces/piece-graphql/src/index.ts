@@ -1,7 +1,8 @@
-import { definePiece, type PieceRunArgs } from 'frogbot/pieces';
+import { definePiece } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { GraphqlRequestError, sendGraphqlRequest } from './client.js';
+import { defineAction } from './define.js';
 
 const scalar = z.union([z.string(), z.number(), z.boolean()]);
 const endpoint = z.url().refine((value) => {
@@ -53,13 +54,13 @@ const output = z.object({
   body: z.union([graphqlBody, z.string(), z.undefined()]),
 });
 
-const sendRequest = {
+const sendRequest = defineAction({
   slug: 'sendRequest',
   label: 'Send GraphQL request',
   description: 'Send a query or mutation to a GraphQL endpoint.',
   input: inputSchema,
   output,
-  async run({ input }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input }) {
     const url = new URL(input.url);
 
     for (const [name, value] of Object.entries(input.queryParams)) {
@@ -87,7 +88,7 @@ const sendRequest = {
       : undefined;
 
     try {
-      return await sendGraphqlRequest({
+      return (await sendGraphqlRequest({
         method: input.method,
         url,
         headers: {
@@ -97,11 +98,13 @@ const sendRequest = {
         body,
         timeout: input.timeout,
         proxy: input.useProxy ? input.proxySettings : undefined,
-      });
+      })) as z.output<typeof output>;
     } catch (error) {
       if (!input.failsafe) throw error;
 
-      if (error instanceof GraphqlRequestError && error.response) return error.response;
+      if (error instanceof GraphqlRequestError && error.response) {
+        return error.response as z.output<typeof output>;
+      }
 
       return {
         status: 0,
@@ -112,7 +115,7 @@ const sendRequest = {
       };
     }
   },
-};
+});
 
 export const graphqlActions = ['sendRequest'] as const;
 

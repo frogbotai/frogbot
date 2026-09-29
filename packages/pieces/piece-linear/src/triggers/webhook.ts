@@ -1,10 +1,8 @@
 import { createHash } from 'node:crypto';
 
-import { type PieceWebhookTrigger } from 'frogbot/pieces';
 import type { z } from 'zod';
 
-import type { Linear } from '../client.js';
-import type { LinearOptions } from '../config.js';
+import { defineWebhookTrigger } from '../define.js';
 
 type Delivery = {
   action?: string;
@@ -18,20 +16,20 @@ type Delivery = {
   updatedFrom?: { statusId?: string };
 };
 
-export function webhookTrigger<TInput extends z.ZodType>({
+export function webhookTrigger<const TSlug extends string, TInput extends z.ZodType>({
   slug,
   action,
   resourceType,
   input,
   matches,
 }: {
-  slug: string;
+  slug: TSlug;
   action: string;
   resourceType: 'Comment' | 'Issue' | 'Project';
   input: TInput;
   matches?: (delivery: Delivery, input: z.output<TInput>) => boolean;
-}): PieceWebhookTrigger<TInput, undefined, LinearOptions, Linear, { webhookId: string }> {
-  return {
+}) {
+  return defineWebhookTrigger({
     slug,
     description: `Trigger when a Linear ${resourceType.toLowerCase()} is ${action}d.`,
     type: 'webhook',
@@ -79,5 +77,5 @@ export function webhookTrigger<TInput extends z.ZodType>({
           ]
         : [];
     },
-  };
+  });
 }

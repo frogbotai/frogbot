@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-import { type DropboxRunArgs, requestSignal } from '../client.js';
+import { requestSignal } from '../client.js';
+import { defineAction } from '../define.js';
 import { metadata } from '../schemas.js';
 
 const listInput = z.object({
@@ -20,13 +21,13 @@ const listOutput = z.object({
   cursor: z.string().min(1),
 });
 
-export const listFolder = {
+export const listFolder = defineAction({
   slug: 'listFolder',
   description: 'List all contents of a Dropbox folder, following pagination.',
   input: listInput,
   output: listOutput,
   idempotent: true,
-  async run({ client, input, req }: DropboxRunArgs<typeof listInput>) {
+  async run({ client, input, req }) {
     const first = await client.rpc(
       'files/list_folder',
       { path: input.path, recursive: input.recursive, limit: input.limit },
@@ -52,7 +53,7 @@ export const listFolder = {
 
     return { entries, cursor };
   },
-};
+});
 
 const searchInput = z.object({
   query: z.string().min(3),
@@ -82,13 +83,13 @@ const searchOutput = z
   })
   .catchall(z.json());
 
-export const searchFiles = {
+export const searchFiles = defineAction({
   slug: 'searchFiles',
   description: 'Search Dropbox files and folders.',
   input: searchInput,
   output: searchOutput,
   idempotent: true,
-  async run({ client, input, req }: DropboxRunArgs<typeof searchInput>) {
+  async run({ client, input, req }) {
     return client.rpc(
       'files/search_v2',
       {
@@ -108,4 +109,4 @@ export const searchFiles = {
       requestSignal(req),
     );
   },
-};
+});

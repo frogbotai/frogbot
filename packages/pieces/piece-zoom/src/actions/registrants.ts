@@ -1,7 +1,6 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { ZoomClient } from '../client.js';
+import { defineAction } from '../define.js';
 
 const createRegistrantInput = z.object({
   meeting_id: z.string().min(1),
@@ -55,20 +54,16 @@ const registrant = z.object({
   participant_pin_code: z.number(),
 });
 
-export const createMeetingRegistrant = {
+export const createMeetingRegistrant = defineAction({
   slug: 'createMeetingRegistrant',
   label: 'Create meeting registrant',
   description: 'Register an attendee for a Zoom meeting.',
   input: createRegistrantInput,
   output: registrant,
-  async run({
-    input,
-    client,
-    req,
-  }: PieceRunArgs<z.output<typeof createRegistrantInput>, object, ZoomClient>) {
+  async run({ input, client, req }) {
     const { meeting_id, custom_questions, ...body } = input;
 
-    return client({
+    const response = await client({
       method: 'POST',
       path: `/meetings/${encodeURIComponent(meeting_id)}/registrants`,
       body: {
@@ -84,5 +79,7 @@ export const createMeetingRegistrant = {
       },
       signal: req.signal ?? undefined,
     });
+
+    return response as z.output<typeof registrant>;
   },
-};
+});

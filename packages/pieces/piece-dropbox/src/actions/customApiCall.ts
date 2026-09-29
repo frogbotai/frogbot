@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-import { type DropboxRunArgs, requestSignal } from '../client.js';
+import { requestSignal } from '../client.js';
+import { defineAction } from '../define.js';
 import { fileReference, loadFile, responseBytes, saveFile } from '../files.js';
 import { savedFile } from '../schemas.js';
 
@@ -76,13 +77,13 @@ function dropboxUrl(path: string): URL {
   return url;
 }
 
-export const customApiCall = {
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Call a Dropbox RPC API endpoint. Redirects and credential overrides are denied.',
   input: inputSchema,
   output: outputSchema,
   idempotent: false,
-  async run({ client, input, req }: DropboxRunArgs<typeof inputSchema>) {
+  async run({ client, input, req }) {
     const url = dropboxUrl(input.path);
 
     for (const [name, value] of Object.entries(input.query)) {
@@ -141,4 +142,4 @@ export const customApiCall = {
 
     return outputSchema.parse({ ...response, body: responseBody });
   },
-};
+});

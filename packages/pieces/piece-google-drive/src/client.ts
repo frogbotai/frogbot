@@ -1,5 +1,4 @@
 import type { FrogBotRequest } from 'frogbot';
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { type drive_v3, google } from 'googleapis';
 import { z } from 'zod';
 
@@ -10,11 +9,6 @@ export const googleDriveAuth = z.object({
 
 export type GoogleDriveAuth = z.output<typeof googleDriveAuth>;
 export type GoogleDriveClient = drive_v3.Drive;
-export type DriveRunArgs<T extends z.ZodType> = PieceRunArgs<
-  z.output<T>,
-  object,
-  GoogleDriveClient
->;
 
 export function createGoogleDriveClient({ auth }: { auth: unknown }): GoogleDriveClient {
   const credential = googleDriveAuth.parse(auth);

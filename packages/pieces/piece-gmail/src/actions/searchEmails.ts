@@ -1,7 +1,6 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { Gmail } from '../client.js';
+import { defineAction } from '../define.js';
 import { emailOutput, getOriginal, saveAttachments, searchQuery } from '../mail.js';
 
 const inputSchema = z.object({
@@ -14,13 +13,13 @@ const inputSchema = z.object({
   includeSpamTrash: z.boolean().default(false),
 });
 
-export const searchEmails = {
+export const searchEmails = defineAction({
   slug: 'searchEmails',
   description: 'Search emails using Gmail search syntax and common filters.',
   input: inputSchema,
   output: z.array(emailOutput),
   idempotent: true,
-  async run({ client, input, req }: PieceRunArgs<z.output<typeof inputSchema>, object, Gmail>) {
+  async run({ client, input, req }) {
     const list = await client.users.messages.list({
       userId: 'me',
       q: searchQuery(input),
@@ -34,4 +33,4 @@ export const searchEmails = {
       ),
     );
   },
-};
+});

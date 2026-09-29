@@ -1,7 +1,7 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { correctedFormat, formatSchema, parseDate, timeZoneSchema } from '../date.js';
+import { defineAction } from '../define.js';
 
 const input = z.object({
   inputDate: z.string().meta({ label: 'Input Date' }),
@@ -11,14 +11,14 @@ const input = z.object({
   outputTimeZone: timeZoneSchema.meta({ label: 'To Time Zone' }),
 });
 
-export const formatDate = {
+export const formatDate = defineAction({
   slug: 'formatDate',
   label: 'Format Date',
   description: 'Convert a date from one format and time zone to another.',
   input,
   output: z.object({ result: z.string() }),
   idempotent: true,
-  async run({ input: value }: PieceRunArgs<z.output<typeof input>, object, undefined>) {
+  async run({ input: value }) {
     const parsed = parseDate(value.inputDate, value.inputFormat);
     const result = parsed
       .tz(value.inputTimeZone, true)
@@ -27,4 +27,4 @@ export const formatDate = {
 
     return { result };
   },
-};
+});

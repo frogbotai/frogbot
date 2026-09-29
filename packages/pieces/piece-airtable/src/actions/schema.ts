@@ -1,8 +1,6 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { AirtableClient } from '../client.js';
-import { defineAirtableAction } from '../definitions.js';
+import { defineAction } from '../define.js';
 import { baseOptions, tableOptions } from '../options.js';
 import { baseSchema, fieldSchema, tableSchema } from '../schemas.js';
 
@@ -19,16 +17,12 @@ const createBaseInput = z.object({
   tables: z.tuple([tableConfig], tableConfig).meta({ label: 'Tables' }),
 });
 
-export const createBase = defineAirtableAction({
+export const createBase = defineAction({
   slug: 'createBase',
   description: 'Create a base with its initial table structure.',
   input: createBaseInput,
   output: z.object({ id: z.string(), tables: z.array(tableSchema) }).passthrough(),
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof createBaseInput>, object, AirtableClient>) {
+  async run({ client, input, req }) {
     return client.request({
       method: 'POST',
       path: '/meta/bases',
@@ -45,17 +39,13 @@ const createTableInput = z.object({
   fields: z.tuple([fieldConfig], fieldConfig).meta({ label: 'Fields' }),
 });
 
-export const createTable = defineAirtableAction({
+export const createTable = defineAction({
   slug: 'createTable',
   description: 'Create a table in an existing base.',
   input: createTableInput,
   output: tableSchema,
   options: { baseId: baseOptions },
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof createTableInput>, object, AirtableClient>) {
+  async run({ client, input, req }) {
     const { baseId, ...body } = input;
 
     return client.request({
@@ -71,16 +61,12 @@ const findBasesInput = z.object({
   name: z.string().min(1).meta({ label: 'Base name or keyword' }),
 });
 
-export const findBases = defineAirtableAction({
+export const findBases = defineAction({
   slug: 'findBases',
   description: 'Find bases whose names contain a keyword.',
   input: findBasesInput,
   output: z.array(baseSchema),
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof findBasesInput>, object, AirtableClient>) {
+  async run({ client, input, req }) {
     const bases = await client.listAll<z.output<typeof baseSchema>>({
       path: '/meta/bases',
       key: 'bases',
@@ -94,17 +80,13 @@ export const findBases = defineAirtableAction({
 
 const baseInput = z.object({ baseId: z.string().min(1).meta({ label: 'Base' }) });
 
-export const getBaseSchema = defineAirtableAction({
+export const getBaseSchema = defineAction({
   slug: 'getBaseSchema',
   description: 'Get all tables and fields in a base.',
   input: baseInput,
   output: z.array(tableSchema),
   options: { baseId: baseOptions },
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof baseInput>, object, AirtableClient>) {
+  async run({ client, input, req }) {
     return client.listAll({
       path: `/meta/bases/${input.baseId}/tables`,
       key: 'tables',
@@ -115,17 +97,13 @@ export const getBaseSchema = defineAirtableAction({
 
 const getTableInput = baseInput.extend({ tableId: z.string().min(1).meta({ label: 'Table' }) });
 
-export const getTable = defineAirtableAction({
+export const getTable = defineAction({
   slug: 'getTable',
   description: 'Get one table and its schema by ID.',
   input: getTableInput,
   output: tableSchema,
   options: { baseId: baseOptions, tableId: tableOptions },
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof getTableInput>, object, AirtableClient>) {
+  async run({ client, input, req }) {
     const tables = await client.listAll<z.output<typeof tableSchema>>({
       path: `/meta/bases/${input.baseId}/tables`,
       key: 'tables',
@@ -143,17 +121,13 @@ const findTableInput = baseInput.extend({
   name: z.string().min(1).meta({ label: 'Table name' }),
 });
 
-export const findTable = defineAirtableAction({
+export const findTable = defineAction({
   slug: 'findTable',
   description: 'Find a table by its exact name.',
   input: findTableInput,
   output: tableSchema.nullable(),
   options: { baseId: baseOptions },
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof findTableInput>, object, AirtableClient>) {
+  async run({ client, input, req }) {
     const tables = await client.listAll<z.output<typeof tableSchema>>({
       path: `/meta/bases/${input.baseId}/tables`,
       key: 'tables',

@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto';
 
-import type { PieceAppTrigger, PieceJSON } from 'frogbot/pieces';
+import type { PieceJSON } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { TelegramBotClient } from '../client.js';
+import { defineAppTrigger } from '../define.js';
 
 const updateTypes = z.enum([
   'message',
@@ -32,7 +32,7 @@ const jsonValue: z.ZodType<PieceJSON> = z.lazy(() =>
 );
 const update = z.object({ update_id: z.number().optional() }).catchall(jsonValue);
 
-export const newUpdate: PieceAppTrigger<typeof input, typeof update, object, TelegramBotClient> = {
+export const newUpdate = defineAppTrigger({
   slug: 'newUpdate',
   description: 'Trigger when the bot receives a selected Telegram update.',
   type: 'app',
@@ -57,4 +57,4 @@ export const newUpdate: PieceAppTrigger<typeof input, typeof update, object, Tel
 
     return [{ dedupeKey, data: delivery }];
   },
-};
+});

@@ -1,4 +1,4 @@
-import { definePiece, type PieceRunArgs } from 'frogbot/pieces';
+import { definePiece } from 'frogbot/pieces';
 import { JSDOM, VirtualConsole } from 'jsdom';
 import Showdown from 'showdown';
 import slugify from 'slugify';
@@ -6,7 +6,7 @@ import { stripHtml as removeHtml } from 'string-strip-html';
 import TurndownService from 'turndown';
 import { z } from 'zod';
 
-type RunArgs<T extends z.ZodType> = PieceRunArgs<z.output<T>, object, undefined>;
+import { defineAction } from './define.js';
 
 const textOutput = z.string();
 
@@ -18,16 +18,16 @@ const concatTextInput = z.object({
   }),
 });
 
-const concatText = {
+const concatText = defineAction({
   slug: 'concatText',
   label: 'Concatenate Text',
   description: 'Concatenate two or more texts.',
   input: concatTextInput,
   output: textOutput,
-  async run({ input }: RunArgs<typeof concatTextInput>) {
+  async run({ input }) {
     return input.texts.join(input.separator ?? '');
   },
-};
+});
 
 const replaceTextInput = z.object({
   text: z.string().meta({ label: 'Text' }),
@@ -41,52 +41,52 @@ const replaceTextInput = z.object({
   replaceOnlyFirst: z.boolean().default(false).meta({ label: 'Replace Only First Match' }),
 });
 
-const replaceText = {
+const replaceText = defineAction({
   slug: 'replaceText',
   label: 'Replace Text',
   description: 'Replace matches of a word, character, phrase, or regular expression.',
   input: replaceTextInput,
   output: textOutput,
-  async run({ input }: RunArgs<typeof replaceTextInput>) {
+  async run({ input }) {
     const expression = new RegExp(input.searchValue, input.replaceOnlyFirst ? undefined : 'g');
 
     return input.text.replace(expression, input.replaceValue ?? '');
   },
-};
+});
 
 const splitTextInput = z.object({
   text: z.string().meta({ label: 'Text' }),
   delimiter: z.string().meta({ label: 'Delimiter' }),
 });
 
-const splitText = {
+const splitText = defineAction({
   slug: 'splitText',
   label: 'Split Text',
   description: 'Split text by a delimiter.',
   input: splitTextInput,
   output: z.array(z.string()),
-  async run({ input }: RunArgs<typeof splitTextInput>) {
+  async run({ input }) {
     return input.text.split(input.delimiter);
   },
-};
+});
 
 const findTextInput = z.object({
   text: z.string().meta({ label: 'Text' }),
   expression: z.string().meta({ label: 'Expression', description: 'Regex or text to search for.' }),
 });
 
-const findText = {
+const findText = defineAction({
   slug: 'findText',
   label: 'Find Text',
   description: 'Find a substring using text or a regular expression.',
   input: findTextInput,
   output: z.array(z.string()).nullable(),
-  async run({ input }: RunArgs<typeof findTextInput>) {
+  async run({ input }) {
     const match = input.text.match(new RegExp(input.expression));
 
     return match ? Array.from(match) : null;
   },
-};
+});
 
 const markdownFlavor = z.enum(['vanilla', 'original', 'github']);
 const markdownToHtmlInput = z.object({
@@ -105,13 +105,13 @@ const markdownToHtmlInput = z.object({
   openLinksInNewWindow: z.boolean().default(false).meta({ label: 'Open Links in New Window' }),
 });
 
-const convertMarkdownToHtml = {
+const convertMarkdownToHtml = defineAction({
   slug: 'convertMarkdownToHtml',
   label: 'Convert Markdown to HTML',
   description: 'Convert Markdown to HTML.',
   input: markdownToHtmlInput,
   output: textOutput,
-  async run({ input }: RunArgs<typeof markdownToHtmlInput>) {
+  async run({ input }) {
     const converter = new Showdown.Converter({
       headerLevelStart: input.headerLevelStart,
       omitExtraWLInCodeBlocks: true,
@@ -125,48 +125,48 @@ const convertMarkdownToHtml = {
 
     return converter.makeHtml(input.markdown);
   },
-};
+});
 
 const htmlInput = z.object({ html: z.string().meta({ label: 'HTML Content' }) });
 
-const convertHtmlToMarkdown = {
+const convertHtmlToMarkdown = defineAction({
   slug: 'convertHtmlToMarkdown',
   label: 'Convert HTML to Markdown',
   description: 'Convert HTML to Markdown.',
   input: htmlInput,
   output: textOutput,
-  async run({ input }: RunArgs<typeof htmlInput>) {
+  async run({ input }) {
     const service = new TurndownService();
 
     service.remove('script');
 
     return service.turndown(input.html);
   },
-};
+});
 
-const stripHtml = {
+const stripHtml = defineAction({
   slug: 'stripHtml',
   label: 'Strip HTML',
   description: 'Remove HTML tags and return plain text.',
   input: htmlInput,
   output: textOutput,
-  async run({ input }: RunArgs<typeof htmlInput>) {
+  async run({ input }) {
     return removeHtml(input.html).result;
   },
-};
+});
 
 const textInput = z.object({ text: z.string().meta({ label: 'Text' }) });
 
-const slugifyText = {
+const slugifyText = defineAction({
   slug: 'slugifyText',
   label: 'Slugify Text',
   description: 'Convert text to a URL-friendly slug.',
   input: textInput,
   output: textOutput,
-  async run({ input }: RunArgs<typeof textInput>) {
+  async run({ input }) {
     return slugify(input.text);
   },
-};
+});
 
 const defaultValueInput = z.object({
   value: z
@@ -176,31 +176,31 @@ const defaultValueInput = z.object({
   defaultValue: z.string().meta({ label: 'Default Value' }),
 });
 
-const useDefaultValue = {
+const useDefaultValue = defineAction({
   slug: 'useDefaultValue',
   label: 'Use Default Value',
   description: 'Return a default value when the input is empty.',
   input: defaultValueInput,
   output: z.union([z.string(), z.array(z.unknown())]),
-  async run({ input }: RunArgs<typeof defaultValueInput>) {
+  async run({ input }) {
     if (input.value === undefined || input.value === '' || input.value.length === 0) {
       return input.defaultValue;
     }
 
     return input.value;
   },
-};
+});
 
 const tableRow = z.record(z.string(), z.unknown());
 const createTextTableInput = z.object({ data: z.array(tableRow).meta({ label: 'List' }) });
 
-const createTextTable = {
+const createTextTable = defineAction({
   slug: 'createTextTable',
   label: 'Create Text Table',
   description: 'Convert a list of objects to an ASCII text table.',
   input: createTextTableInput,
   output: textOutput,
-  async run({ input }: RunArgs<typeof createTextTableInput>) {
+  async run({ input }) {
     if (input.data.length === 0) return '';
 
     const keys = Array.from(new Set(input.data.flatMap((row) => Object.keys(row))));
@@ -217,7 +217,7 @@ const createTextTable = {
 
     return [separator, header, separator, ...rows, separator].join('\n');
   },
-};
+});
 
 const extractionTarget = z.enum(['title', 'links', 'images', 'headings', 'paragraphs', 'custom']);
 const extractionType = z.enum(['textContent', 'innerHtml', 'outerHtml', 'attribute']);
@@ -230,13 +230,13 @@ const extractFromHtmlInput = z.object({
   returnMultiple: z.boolean().default(false).meta({ label: 'Return Multiple Elements' }),
 });
 
-const extractFromHtml = {
+const extractFromHtml = defineAction({
   slug: 'extractFromHtml',
   label: 'Extract from HTML',
   description: 'Extract specific elements or data from an HTML document.',
   input: extractFromHtmlInput,
   output: z.union([z.string(), z.array(z.string()), z.null()]),
-  async run({ input }: RunArgs<typeof extractFromHtmlInput>) {
+  async run({ input }) {
     const selectors = {
       title: 'title',
       links: 'a[href]',
@@ -289,7 +289,7 @@ const extractFromHtml = {
       dom.window.close();
     }
   },
-};
+});
 
 export const createTextHelper = definePiece({
   slug: 'text-helper',

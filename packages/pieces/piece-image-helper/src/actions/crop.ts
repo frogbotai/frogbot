@@ -1,7 +1,7 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import Jimp from 'jimp';
 import { z } from 'zod';
 
+import { defineAction } from '../define.js';
 import { imageFile, loadImage, savedImage, saveImage } from '../files.js';
 
 const inputSchema = z.object({
@@ -13,13 +13,13 @@ const inputSchema = z.object({
   resultFileName: z.string().min(1).optional(),
 });
 
-export const crop = {
+export const crop = defineAction({
   slug: 'crop',
   label: 'Crop image',
   description: 'Crop a rectangular region from an image.',
   input: inputSchema,
   output: savedImage,
-  async run({ input, req }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input, req }) {
     const source = await loadImage(req, input.image);
     const image = await Jimp.read(source.data);
 
@@ -34,4 +34,4 @@ export const crop = {
       mimeType: image.getMIME(),
     });
   },
-};
+});

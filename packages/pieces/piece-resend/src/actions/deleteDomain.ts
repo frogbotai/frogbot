@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-import type { ResendAction } from './types.js';
+import { defineAction } from '../define.js';
 
 const input = z.object({ domain_id: z.string() }).passthrough();
 
-export const deleteDomain = {
+export const deleteDomain = defineAction({
   slug: 'deleteDomain',
   description: 'Delete a domain',
   idempotent: false,
@@ -12,4 +12,4 @@ export const deleteDomain = {
   async run({ input, client }) {
     return client.request({ method: 'DELETE', path: `/domains/${input.domain_id}` });
   },
-} satisfies ResendAction;
+});

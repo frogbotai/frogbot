@@ -1,7 +1,6 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { PosthogClient } from '../client.js';
+import { defineAction } from '../define.js';
 
 const scalar = z.union([z.string(), z.number(), z.boolean()]);
 const forbiddenHeaders = new Set([
@@ -27,16 +26,18 @@ const inputSchema = z.object({
   body: z.json().optional(),
 });
 
-export const customApiCall = {
+const output = z.object({
+  status: z.number().int(),
+  headers: z.record(z.string(), z.string()),
+  body: z.json(),
+});
+
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Make an authenticated call to the PostHog API.',
   input: inputSchema,
-  output: z.object({
-    status: z.number().int(),
-    headers: z.record(z.string(), z.string()),
-    body: z.json(),
-  }),
-  async run({ input, client }: PieceRunArgs<z.output<typeof inputSchema>, object, PosthogClient>) {
-    return client.request(input);
+  output,
+  async run({ input, client }) {
+    return (await client.request(input)) as z.output<typeof output>;
   },
-};
+});

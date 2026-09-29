@@ -1,7 +1,7 @@
-import type { PieceActionDefinition } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import { githubApiUrl, type GithubClient, githubForbiddenHeaders } from './client.js';
+import { githubApiUrl, githubForbiddenHeaders } from './client.js';
+import { defineAction } from './define.js';
 import { assignees, branches, issues, labels, milestones, repositoryOptions } from './options.js';
 import {
   branchOutput,
@@ -17,17 +17,11 @@ import {
   repositoryInput,
 } from './schemas.js';
 
-function action<TInput extends z.ZodType, TOutput extends z.ZodType>(
-  definition: PieceActionDefinition<TInput, TOutput, object, GithubClient>,
-) {
-  return definition;
-}
-
 const issueNumber = z.coerce.number().int().positive();
 const repository = { repository: repositoryInput };
 const issueOptions = { ...repositoryOptions, issueNumber: issues };
 
-export const createIssue = action({
+export const createIssue = defineAction({
   slug: 'createIssue',
   description: 'Create an issue in a GitHub repository.',
   input: z.object({
@@ -56,7 +50,7 @@ export const createIssue = action({
     ),
 });
 
-export const getIssue = action({
+export const getIssue = defineAction({
   slug: 'getIssue',
   description: 'Get an issue by number.',
   input: z.object({ ...repository, issueNumber }),
@@ -70,7 +64,7 @@ export const getIssue = action({
     ),
 });
 
-export const createIssueComment = action({
+export const createIssueComment = defineAction({
   slug: 'createIssueComment',
   description: 'Create a comment on an issue or pull request.',
   input: z.object({ ...repository, issueNumber, comment: z.string().min(1) }),
@@ -88,7 +82,7 @@ export const createIssueComment = action({
     ),
 });
 
-export const lockIssue = action({
+export const lockIssue = defineAction({
   slug: 'lockIssue',
   description: 'Lock an issue or pull request conversation.',
   input: z.object({
@@ -110,7 +104,7 @@ export const lockIssue = action({
     ),
 });
 
-export const unlockIssue = action({
+export const unlockIssue = defineAction({
   slug: 'unlockIssue',
   description: 'Unlock an issue or pull request conversation.',
   input: z.object({ ...repository, issueNumber }),
@@ -125,7 +119,7 @@ export const unlockIssue = action({
     ),
 });
 
-export const rawGraphqlQuery = action({
+export const rawGraphqlQuery = defineAction({
   slug: 'rawGraphqlQuery',
   description: 'Perform an authenticated query against the GitHub GraphQL API.',
   input: z.object({
@@ -138,7 +132,7 @@ export const rawGraphqlQuery = action({
     client.request('/graphql', graphqlOutput, { method: 'POST', body: input }),
 });
 
-export const createPullRequestReviewComment = action({
+export const createPullRequestReviewComment = defineAction({
   slug: 'createPullRequestReviewComment',
   description: 'Create an inline review comment on a pull request.',
   input: z.object({
@@ -168,7 +162,7 @@ export const createPullRequestReviewComment = action({
     ),
 });
 
-export const createCommitComment = action({
+export const createCommitComment = defineAction({
   slug: 'createCommitComment',
   description: 'Create a comment on a commit.',
   input: z.object({
@@ -192,7 +186,7 @@ export const createCommitComment = action({
     ),
 });
 
-export const createDiscussionComment = action({
+export const createDiscussionComment = defineAction({
   slug: 'createDiscussionComment',
   description: 'Create a comment on a GitHub discussion.',
   input: z.object({ ...repository, discussionNumber: issueNumber, body: z.string().min(1) }),
@@ -237,7 +231,7 @@ export const createDiscussionComment = action({
   },
 });
 
-export const addIssueLabels = action({
+export const addIssueLabels = defineAction({
   slug: 'addIssueLabels',
   description: 'Add labels to an issue.',
   input: z.object({ ...repository, issueNumber, labels: z.array(z.string()).min(1) }),
@@ -255,7 +249,7 @@ export const addIssueLabels = action({
     ),
 });
 
-export const createBranch = action({
+export const createBranch = defineAction({
   slug: 'createBranch',
   description: 'Create a branch from an existing branch.',
   input: z.object({
@@ -283,7 +277,7 @@ export const createBranch = action({
   },
 });
 
-export const deleteBranch = action({
+export const deleteBranch = defineAction({
   slug: 'deleteBranch',
   description: 'Delete a repository branch.',
   input: z.object({ ...repository, branch: z.string().min(1) }),
@@ -310,7 +304,7 @@ const updateIssueInput = z.object({
   assignees: z.array(z.string()).optional(),
 });
 
-export const updateIssue = action({
+export const updateIssue = defineAction({
   slug: 'updateIssue',
   description: 'Update an issue.',
   input: updateIssueInput,
@@ -336,7 +330,7 @@ export const updateIssue = action({
     ),
 });
 
-export const findBranch = action({
+export const findBranch = defineAction({
   slug: 'findBranch',
   description: 'Find a branch by its exact name.',
   input: z.object({ ...repository, branch: z.string().min(1) }),
@@ -361,7 +355,7 @@ export const findBranch = action({
   },
 });
 
-export const findIssue = action({
+export const findIssue = defineAction({
   slug: 'findIssue',
   description: 'Find an issue by title.',
   input: z.object({
@@ -389,7 +383,7 @@ export const findIssue = action({
   },
 });
 
-export const findUser = action({
+export const findUser = defineAction({
   slug: 'findUser',
   description: 'Find a GitHub user by login.',
   input: z.object({ username: z.string().min(1) }),
@@ -413,7 +407,7 @@ export const findUser = action({
   },
 });
 
-export const createGist = action({
+export const createGist = defineAction({
   slug: 'createGist',
   description: 'Create a GitHub gist.',
   input: z.object({
@@ -462,7 +456,7 @@ const customInput = z.object({
   body: z.json().optional(),
 });
 
-export const customApiCall = action({
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Make an authenticated call to the GitHub REST API. Redirects are rejected.',
   input: customInput,

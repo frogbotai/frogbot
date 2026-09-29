@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-import { type DropboxRunArgs, requestSignal } from '../client.js';
+import { requestSignal } from '../client.js';
+import { defineAction } from '../define.js';
 import { fileReference, loadFile, responseBytes, saveFile } from '../files.js';
 import { metadata, metadataResult, savedFile } from '../schemas.js';
 
@@ -18,14 +19,14 @@ const uploadOptions = {
 };
 const uploadResult = metadata;
 
-function transfer(slug: 'copyFile' | 'copyFolder' | 'moveFile' | 'moveFolder', operation: string) {
-  return {
+function transfer<const TSlug extends string>(slug: TSlug, operation: string) {
+  return defineAction({
     slug,
     description: `${operation === 'copy_v2' ? 'Copy' : 'Move'} a Dropbox ${slug.endsWith('File') ? 'file' : 'folder'}.`,
     input: transferInput,
     output: metadataResult,
     idempotent: false,
-    async run({ client, input, req }: DropboxRunArgs<typeof transferInput>) {
+    async run({ client, input, req }) {
       return client.rpc(
         `files/${operation}`,
         {
@@ -38,17 +39,17 @@ function transfer(slug: 'copyFile' | 'copyFolder' | 'moveFile' | 'moveFolder', o
         requestSignal(req),
       );
     },
-  };
+  });
 }
 
-function remove(slug: 'deleteFile' | 'deleteFolder') {
-  return {
+function remove<const TSlug extends string>(slug: TSlug) {
+  return defineAction({
     slug,
     description: `Delete a Dropbox ${slug.endsWith('File') ? 'file' : 'folder'}.`,
     input: pathInput,
     output: metadataResult,
     idempotent: false,
-    async run({ client, input, req }: DropboxRunArgs<typeof pathInput>) {
+    async run({ client, input, req }) {
       return client.rpc(
         'files/delete_v2',
         { path: input.path },
@@ -56,7 +57,7 @@ function remove(slug: 'deleteFile' | 'deleteFolder') {
         requestSignal(req),
       );
     },
-  };
+  });
 }
 
 export const copyFile = transfer('copyFile', 'copy_v2');
@@ -71,16 +72,16 @@ const createFolderInput = z.object({
   autorename: z.boolean().default(false),
 });
 
-export const createFolder = {
+export const createFolder = defineAction({
   slug: 'createFolder',
   description: 'Create an empty Dropbox folder.',
   input: createFolderInput,
   output: metadataResult,
   idempotent: false,
-  async run({ client, input, req }: DropboxRunArgs<typeof createFolderInput>) {
+  async run({ client, input, req }) {
     return client.rpc('files/create_folder_v2', input, metadataResult, requestSignal(req));
   },
-};
+});
 
 const createTextFileInput = z.object({
   path: z.string().min(1),
@@ -88,13 +89,13 @@ const createTextFileInput = z.object({
   ...uploadOptions,
 });
 
-export const createTextFile = {
+export const createTextFile = defineAction({
   slug: 'createTextFile',
   description: 'Create a Dropbox file from text.',
   input: createTextFileInput,
   output: uploadResult,
   idempotent: false,
-  async run({ client, input, req }: DropboxRunArgs<typeof createTextFileInput>) {
+  async run({ client, input, req }) {
     return client.content({
       path: 'files/upload',
       args: {
@@ -109,7 +110,7 @@ export const createTextFile = {
       signal: requestSignal(req),
     });
   },
-};
+});
 
 const uploadFileInput = z.object({
   path: z.string().min(1),
@@ -117,13 +118,13 @@ const uploadFileInput = z.object({
   ...uploadOptions,
 });
 
-export const uploadFile = {
+export const uploadFile = defineAction({
   slug: 'uploadFile',
   description: 'Upload a FrogBot file to Dropbox.',
   input: uploadFileInput,
   output: uploadResult,
   idempotent: false,
-  async run({ client, input, req }: DropboxRunArgs<typeof uploadFileInput>) {
+  async run({ client, input, req }) {
     const body = await loadFile({ req, file: input.file });
 
     return client.content({
@@ -140,15 +141,15 @@ export const uploadFile = {
       signal: requestSignal(req),
     });
   },
-};
+});
 
-export const downloadFile = {
+export const downloadFile = defineAction({
   slug: 'downloadFile',
   description: 'Download a Dropbox file into FrogBot files.',
   input: pathInput,
   output: z.object({ file: savedFile }),
   idempotent: true,
-  async run({ client, input, req }: DropboxRunArgs<typeof pathInput>) {
+  async run({ client, input, req }) {
     const response = await client.request('https://content.dropboxapi.com/2/files/download', {
       headers: {
         'content-type': 'application/octet-stream',
@@ -166,7 +167,7 @@ export const downloadFile = {
 
     return { file };
   },
-};
+});
 
 const temporaryLink = z
   .object({
@@ -175,13 +176,13 @@ const temporaryLink = z
   })
   .catchall(z.json());
 
-export const getTemporaryLink = {
+export const getTemporaryLink = defineAction({
   slug: 'getTemporaryLink',
   description: 'Get a temporary download link for a Dropbox file.',
   input: pathInput,
   output: temporaryLink,
   idempotent: true,
-  async run({ client, input, req }: DropboxRunArgs<typeof pathInput>) {
+  async run({ client, input, req }) {
     return client.rpc(
       'files/get_temporary_link',
       { path: input.path },
@@ -189,4 +190,4 @@ export const getTemporaryLink = {
       requestSignal(req),
     );
   },
-};
+});

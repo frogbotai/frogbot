@@ -6,6 +6,7 @@ vi.mock('../../../../packages/frogbot/src/getFrogBot.js', () => ({
 }));
 
 import {
+  createPieceHelpers,
   definePiece,
   pieceActionTool,
   pieceInstanceTools,
@@ -315,5 +316,58 @@ describe('definePiece', () => {
       slug: 'required',
       piece: 'required',
     });
+  });
+});
+
+describe('createPieceHelpers', () => {
+  it('returns each definition unchanged', () => {
+    const { defineAction, defineAppTrigger, definePollingTrigger, defineWebhookTrigger } =
+      createPieceHelpers();
+
+    const action = {
+      slug: 'echo',
+      description: 'Echo',
+      input: z.object({ text: z.string() }),
+      async run({ input }: { input: { text: string } }) {
+        return input.text;
+      },
+    };
+    const appTrigger = {
+      slug: 'received',
+      description: 'Received',
+      type: 'app' as const,
+      event: 'received',
+      input: z.object({}),
+      async run() {
+        return [];
+      },
+    };
+    const pollingTrigger = {
+      slug: 'polled',
+      description: 'Polled',
+      type: 'polling' as const,
+      input: z.object({}),
+      async run() {
+        return { events: [] };
+      },
+    };
+    const webhookTrigger = {
+      slug: 'hooked',
+      description: 'Hooked',
+      type: 'webhook' as const,
+      input: z.object({}),
+      async onEnable() {
+        return null;
+      },
+      async onDisable() {},
+      async run() {
+        return [];
+      },
+    };
+
+    expect(defineAction(action)).toBe(action);
+    expect(defineAppTrigger(appTrigger)).toBe(appTrigger);
+    expect(definePollingTrigger(pollingTrigger)).toBe(pollingTrigger);
+    expect(defineWebhookTrigger(webhookTrigger)).toBe(webhookTrigger);
   });
 });

@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-import type { ResendAction } from './types.js';
+import { defineAction } from '../define.js';
 
 const input = z.object({ domain_id: z.string() }).passthrough();
 
-export const verifyDomain = {
+export const verifyDomain = defineAction({
   slug: 'verifyDomain',
   description: 'Verify a domain',
   idempotent: false,
@@ -12,4 +12,4 @@ export const verifyDomain = {
   async run({ input, client }) {
     return client.request({ method: 'POST', path: `/domains/${input.domain_id}/verify` });
   },
-} satisfies ResendAction;
+});

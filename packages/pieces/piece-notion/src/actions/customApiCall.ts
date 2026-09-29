@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-import { defineNotionAction } from '../definitions.js';
+import { defineAction } from '../define.js';
 
 const json = z.json();
 
-export const customApiCall = defineNotionAction({
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Call a Notion API endpoint with the configured credential.',
   input: z.object({

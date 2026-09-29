@@ -3,6 +3,8 @@ import type { PieceActionDefinition, PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { FrontClient, FrontResponse } from './client.js';
+import type { FrontOptions } from './config.js';
+import { defineAction } from './define.js';
 
 const objectOutput = z.record(z.string(), z.unknown());
 const listOutput = z.array(objectOutput);
@@ -26,12 +28,6 @@ type ActionInput = Record<string, unknown>;
 type MessageInput = ActionInput & {
   attachments?: z.output<typeof fileReference>[];
 };
-
-function action<TInput extends z.ZodType, TOutput extends z.ZodType>(
-  definition: PieceActionDefinition<TInput, TOutput, object, FrontClient>,
-) {
-  return definition;
-}
 
 function compact(input: ActionInput, omitted: string[] = []) {
   return Object.fromEntries(
@@ -186,7 +182,7 @@ const messageFields = {
   attachments: z.array(fileReference).optional(),
 };
 
-export const addComment = action({
+export const addComment = defineAction({
   slug: 'addComment',
   description: 'Add an internal comment to a conversation.',
   input: z.object({ conversationId: id('Conversation'), authorId: id('Author'), body: z.string() }),
@@ -200,7 +196,7 @@ export const addComment = action({
     }),
 });
 
-export const addContactHandle = action({
+export const addContactHandle = defineAction({
   slug: 'addContactHandle',
   description: 'Add a handle to a contact.',
   input: z.object({ contactId: id('Contact'), source: handleSource, handle: z.string().min(1) }),
@@ -216,8 +212,8 @@ export const addContactHandle = action({
   },
 });
 
-function conversationCollectionAction(
-  slug: string,
+function conversationCollectionAction<const TSlug extends string>(
+  slug: TSlug,
   resource: 'links' | 'tags',
   method: 'POST' | 'DELETE',
 ) {
@@ -229,7 +225,7 @@ function conversationCollectionAction(
         : 'tagIds';
   const input = z.object({ conversationId: id('Conversation'), [key]: z.array(z.string()).min(1) });
 
-  return action({
+  return defineAction({
     slug,
     description: `${method === 'POST' ? 'Add' : 'Remove'} conversation ${resource}.`,
     input,
@@ -276,7 +272,7 @@ export const removeConversationTags = conversationCollectionAction(
   'DELETE',
 );
 
-export const assignConversation = action({
+export const assignConversation = defineAction({
   slug: 'assignConversation',
   description: 'Assign or unassign a conversation.',
   input: z.object({ conversationId: id('Conversation'), assigneeId: id('Assignee').optional() }),
@@ -293,7 +289,7 @@ export const assignConversation = action({
   },
 });
 
-export const createAccount = action({
+export const createAccount = defineAction({
   slug: 'createAccount',
   description: 'Create a company account.',
   input: z.object({
@@ -313,7 +309,7 @@ export const createAccount = action({
     }),
 });
 
-export const createContact = action({
+export const createContact = defineAction({
   slug: 'createContact',
   description: 'Create a contact.',
   input: z.object({
@@ -338,7 +334,7 @@ export const createContact = action({
     }),
 });
 
-export const createDraft = action({
+export const createDraft = defineAction({
   slug: 'createDraft',
   description: 'Create a draft for a new conversation.',
   input: z.object({
@@ -365,7 +361,7 @@ export const createDraft = action({
     }),
 });
 
-export const createDraftReply = action({
+export const createDraftReply = defineAction({
   slug: 'createDraftReply',
   description: 'Create a draft reply to a conversation.',
   input: z.object({
@@ -394,7 +390,7 @@ export const createDraftReply = action({
     }),
 });
 
-export const createLink = action({
+export const createLink = defineAction({
   slug: 'createLink',
   description: 'Create an external link.',
   input: z.object({
@@ -412,7 +408,7 @@ export const createLink = action({
     }),
 });
 
-export const listAccounts = action({
+export const listAccounts = defineAction({
   slug: 'listAccounts',
   description: 'List accounts with optional filters.',
   input: z.object({
@@ -442,7 +438,7 @@ export const listAccounts = action({
   },
 });
 
-export const searchContacts = action({
+export const searchContacts = defineAction({
   slug: 'searchContacts',
   description: 'Search contacts.',
   input: z.object({
@@ -461,7 +457,7 @@ export const searchContacts = action({
     ),
 });
 
-export const searchConversations = action({
+export const searchConversations = defineAction({
   slug: 'searchConversations',
   description: 'Search conversations.',
   input: z.object({
@@ -478,7 +474,7 @@ export const searchConversations = action({
     ),
 });
 
-export const removeContactHandle = action({
+export const removeContactHandle = defineAction({
   slug: 'removeContactHandle',
   description: 'Remove a handle from a contact.',
   input: z.object({
@@ -500,7 +496,7 @@ export const removeContactHandle = action({
   },
 });
 
-export const sendMessage = action({
+export const sendMessage = defineAction({
   slug: 'sendMessage',
   description: 'Send a message that starts a conversation.',
   input: z.object({
@@ -520,7 +516,7 @@ export const sendMessage = action({
     }),
 });
 
-export const sendReply = action({
+export const sendReply = defineAction({
   slug: 'sendReply',
   description: 'Send a reply to a conversation.',
   input: z.object({
@@ -540,14 +536,14 @@ export const sendReply = action({
     }),
 });
 
-function updateAction<TInput extends z.ZodObject>(
-  slug: string,
+function updateAction<const TSlug extends string, TInput extends z.ZodObject>(
+  slug: TSlug,
   resource: 'accounts' | 'contacts' | 'conversations' | 'links',
   schema: TInput,
   idKey: keyof z.output<TInput> & string,
-  options: PieceActionDefinition<TInput, typeof objectOutput, object, FrontClient>['options'],
+  options: PieceActionDefinition<TInput, typeof objectOutput, FrontOptions, FrontClient>['options'],
 ) {
-  return action({
+  return defineAction({
     slug,
     description: `Update a Front ${resource.slice(0, -1)}.`,
     input: schema,

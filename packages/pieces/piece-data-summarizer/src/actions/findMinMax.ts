@@ -1,6 +1,6 @@
-import { type PieceActionDefinition, type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
+import { defineAction } from '../define.js';
 import { parseNumbers } from '../numbers.js';
 
 const inputSchema = z.object({
@@ -9,15 +9,15 @@ const inputSchema = z.object({
 
 const outputSchema = z.object({ min: z.number(), max: z.number() });
 
-export const findMinMax = {
+export const findMinMax = defineAction({
   slug: 'findMinMax',
   label: 'Find Minimum and Maximum',
   description: 'Find the smallest and greatest values in a list.',
   input: inputSchema,
   output: outputSchema,
-  async run({ input }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input }) {
     const values = parseNumbers(input.values);
 
     return { min: Math.min(...values), max: Math.max(...values) };
   },
-} satisfies PieceActionDefinition<typeof inputSchema, typeof outputSchema, object, undefined>;
+});

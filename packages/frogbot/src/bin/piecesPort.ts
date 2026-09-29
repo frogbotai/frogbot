@@ -41,11 +41,8 @@ async function findPackageRoot(path: string, name: string): Promise<string> {
   throw new Error(`[frogbot] Could not locate source for ${name}`);
 }
 
-function factoryName(slug: string): string {
-  return `create${slug
-    .split('-')
-    .map((part) => `${part[0]!.toUpperCase()}${part.slice(1)}`)
-    .join('')}`;
+function words(slug: string): string[] {
+  return slug.split('-').map((part) => `${part[0]!.toUpperCase()}${part.slice(1)}`);
 }
 
 export async function piecesPort(args: string[], root = process.cwd()): Promise<void> {
@@ -89,7 +86,8 @@ export async function piecesPort(args: string[], root = process.cwd()): Promise<
   const source = await findPackageRoot(entry, dependency);
   const rootPackage = await readPackage(resolve(root, 'package.json'));
   const version = rootPackage.version ?? '0.0.0';
-  const create = factoryName(slug);
+  const label = words(slug).join(' ');
+  const create = `create${words(slug).join('')}`;
 
   const packageJson = {
     name: `@frogbotai/piece-${slug}`,
@@ -106,6 +104,7 @@ export async function piecesPort(args: string[], root = process.cwd()): Promise<
     files: ['dist'],
     sideEffects: false,
     scripts: { build: 'tsc -p tsconfig.json', clean: 'rm -rf dist', typecheck: 'tsc --noEmit' },
+    dependencies: { zod: '^4.3.6' },
     peerDependencies: { frogbot: 'workspace:*' },
     devDependencies: { frogbot: 'workspace:*', typescript: '5.6.2' },
     publishConfig: {
@@ -149,8 +148,12 @@ export async function piecesPort(args: string[], root = process.cwd()): Promise<
     await writeFile(join(piece, 'package.json'), `${JSON.stringify(packageJson, null, 2)}\n`);
     await writeFile(join(piece, 'tsconfig.json'), `${JSON.stringify(tsconfig, null, 2)}\n`);
     await writeFile(
+      join(piece, 'src', 'define.ts'),
+      `import { createPieceHelpers } from 'frogbot/pieces';\n\nexport const { defineAction } = createPieceHelpers();\n`,
+    );
+    await writeFile(
       join(piece, 'src', 'index.ts'),
-      `export function ${create}() {\n  throw new Error('Piece port is not implemented');\n}\n`,
+      `import { definePiece } from 'frogbot/pieces';\nimport { z } from 'zod';\n\nimport { defineAction } from './define.js';\n\nconst example = defineAction({\n  slug: 'example',\n  description: 'Replace with the first ported action.',\n  input: z.object({}),\n  output: z.object({}),\n  async run() {\n    return {};\n  },\n});\n\nexport const ${create} = definePiece({\n  slug: '${slug}',\n  label: '${label}',\n  actions: [example],\n});\n`,
     );
     await writeFile(
       join(piece, 'README.md'),

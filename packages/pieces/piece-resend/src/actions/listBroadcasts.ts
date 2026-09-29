@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-import type { ResendAction } from './types.js';
+import { defineAction } from '../define.js';
 
-export const listBroadcasts = {
+export const listBroadcasts = defineAction({
   slug: 'listBroadcasts',
   description: 'List broadcasts',
   idempotent: true,
@@ -26,4 +26,4 @@ export const listBroadcasts = {
       sent_at: broadcast.sent_at ?? '',
     }));
   },
-} satisfies ResendAction;
+});

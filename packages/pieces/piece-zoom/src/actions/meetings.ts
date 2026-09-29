@@ -1,7 +1,6 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { ZoomClient } from '../client.js';
+import { defineAction } from '../define.js';
 
 const audio = z.enum(['both', 'telephony', 'voip', 'thirdParty']);
 const autoRecording = z.enum(['local', 'cloud', 'none']);
@@ -58,17 +57,13 @@ const createMeetingInput = z.object({
   join_url: z.string().optional(),
 });
 
-export const createMeeting = {
+export const createMeeting = defineAction({
   slug: 'createMeeting',
   label: 'Create meeting',
   description: 'Create a new Zoom meeting.',
   input: createMeetingInput,
   output: meeting,
-  async run({
-    input,
-    client,
-    req,
-  }: PieceRunArgs<z.output<typeof createMeetingInput>, object, ZoomClient>) {
+  async run({ input, client, req }) {
     const { auto_recording, audio: selectedAudio, ...fields } = input;
     const settings = {
       allow_multiple_devices: true,
@@ -91,7 +86,7 @@ export const createMeeting = {
       ...(auto_recording ? { auto_recording } : {}),
     };
 
-    return client({
+    const response = await client({
       method: 'POST',
       path: '/users/me/meetings',
       body: {
@@ -106,8 +101,10 @@ export const createMeeting = {
       },
       signal: req.signal ?? undefined,
     });
+
+    return response as z.output<typeof meeting>;
   },
-};
+});
 
 const meetingId = z.string().min(1);
 const getMeetingInput = z.object({
@@ -116,7 +113,7 @@ const getMeetingInput = z.object({
   show_previous_occurrences: z.boolean().default(false),
 });
 
-export const getMeeting = {
+export const getMeeting = defineAction({
   slug: 'getMeeting',
   label: 'Get meeting',
   description: 'Retrieve an existing Zoom meeting.',
@@ -124,7 +121,7 @@ export const getMeeting = {
   input: getMeetingInput,
   output: meeting,
   options: {
-    async meeting_id({ client }: { client: ZoomClient }) {
+    async meeting_id({ client }) {
       const options: { label: string; value: string }[] = [];
       let nextPageToken = '';
 
@@ -151,15 +148,11 @@ export const getMeeting = {
         nextPageToken = page.next_page_token;
       } while (nextPageToken);
 
-      return { options };
+      return options;
     },
   },
-  async run({
-    input,
-    client,
-    req,
-  }: PieceRunArgs<z.output<typeof getMeetingInput>, object, ZoomClient>) {
-    return client({
+  async run({ input, client, req }) {
+    const response = await client({
       path: `/meetings/${encodeURIComponent(input.meeting_id)}`,
       query: {
         occurrence_id: input.occurrence_id,
@@ -167,8 +160,10 @@ export const getMeeting = {
       },
       signal: req.signal ?? undefined,
     });
+
+    return response as z.output<typeof meeting>;
   },
-};
+});
 
 const updateMeetingInput = z.object({
   meeting_id: meetingId,
@@ -195,7 +190,7 @@ const updateMeetingOutput = z.object({
   message: z.literal('Meeting updated successfully'),
 });
 
-export const updateMeeting = {
+export const updateMeeting = defineAction({
   slug: 'updateMeeting',
   label: 'Update meeting',
   description: 'Update an existing Zoom meeting.',
@@ -203,11 +198,7 @@ export const updateMeeting = {
   input: updateMeetingInput,
   output: updateMeetingOutput,
   options: getMeeting.options,
-  async run({
-    input,
-    client,
-    req,
-  }: PieceRunArgs<z.output<typeof updateMeetingInput>, object, ZoomClient>) {
+  async run({ input, client, req }) {
     const {
       meeting_id,
       auto_recording,
@@ -244,4 +235,4 @@ export const updateMeeting = {
 
     return updateMeetingOutput.parse({ success: true, message: 'Meeting updated successfully' });
   },
-};
+});

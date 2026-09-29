@@ -1,15 +1,9 @@
 import type { FrogBotRequest } from 'frogbot';
-import type { PieceActionDefinition } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { Monday } from './client.js';
 import { formatColumnValue, type MondayColumnValue, parseColumnValue } from './columns.js';
-
-function action<TInput extends z.ZodType, TOutput extends z.ZodType>(
-  definition: PieceActionDefinition<TInput, TOutput, Record<string, never>, Monday>,
-) {
-  return definition;
-}
+import { defineAction } from './define.js';
 
 const id = z.string().min(1);
 const workspaceId = id.meta({ label: 'Workspace' });
@@ -160,7 +154,7 @@ function parseItem(item: { id: string; name: string; column_values: MondayColumn
   return result;
 }
 
-export const createColumn = action({
+export const createColumn = defineAction({
   slug: 'createColumn',
   description: 'Create a column on a board.',
   input: z.object({ workspaceId, boardId, title: z.string().min(1), type: z.string().min(1) }),
@@ -178,7 +172,7 @@ export const createColumn = action({
   },
 });
 
-export const createGroup = action({
+export const createGroup = defineAction({
   slug: 'createGroup',
   description: 'Create a group on a board.',
   input: z.object({ workspaceId, boardId, name: z.string().min(1) }),
@@ -196,7 +190,7 @@ export const createGroup = action({
   },
 });
 
-export const createItem = action({
+export const createItem = defineAction({
   slug: 'createItem',
   description: 'Create an item on a board.',
   input: z.object({
@@ -222,7 +216,7 @@ export const createItem = action({
   },
 });
 
-export const createUpdate = action({
+export const createUpdate = defineAction({
   slug: 'createUpdate',
   description: 'Create an update on an item.',
   input: z.object({ itemId, body: z.string().min(1) }),
@@ -239,7 +233,7 @@ export const createUpdate = action({
   },
 });
 
-export const listBoardItems = action({
+export const listBoardItems = defineAction({
   slug: 'listBoardItems',
   description: 'List a board’s items and column values.',
   input: z.object({ workspaceId, boardId, columnIds: z.array(id).optional() }),
@@ -264,7 +258,7 @@ export const listBoardItems = action({
   },
 });
 
-export const getItemColumnValues = action({
+export const getItemColumnValues = defineAction({
   slug: 'getItemColumnValues',
   description: 'Get one item’s column values.',
   input: z.object({ workspaceId, boardId, itemId, columnIds: z.array(id).optional() }),
@@ -292,7 +286,7 @@ export const getItemColumnValues = action({
   },
 });
 
-export const updateItemColumnValues = action({
+export const updateItemColumnValues = defineAction({
   slug: 'updateItemColumnValues',
   description: 'Update multiple column values on an item.',
   input: z.object({ workspaceId, boardId, itemId, columnValues }),
@@ -311,7 +305,7 @@ export const updateItemColumnValues = action({
   },
 });
 
-export const updateItemName = action({
+export const updateItemName = defineAction({
   slug: 'updateItemName',
   description: 'Update an item’s name.',
   input: z.object({ workspaceId, boardId, itemId, name: z.string().min(1) }),
@@ -329,7 +323,7 @@ export const updateItemName = action({
   },
 });
 
-export const uploadFileToColumn = action({
+export const uploadFileToColumn = defineAction({
   slug: 'uploadFileToColumn',
   description: 'Upload a base64-encoded file to an item’s file column.',
   input: z.object({

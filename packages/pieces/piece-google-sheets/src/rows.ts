@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { parse } from 'csv-parse/sync';
 import { z } from 'zod';
 
+import { defineAction } from './define.js';
 import {
   batch,
   batchOutput,
@@ -39,28 +40,31 @@ async function appendValues(args: SheetsArgs<z.output<typeof writeInput>>) {
     },
     requestOptions(args.req),
   );
-  return { row: updatedRow(data.updates?.updatedRange), updates: data.updates ?? {} };
+  return {
+    row: updatedRow(data.updates?.updatedRange),
+    updates: updateOutput.parse(data.updates ?? {}),
+  };
 }
 
-export const appendRow = {
-  slug: 'appendRow' as const,
+export const appendRow = defineAction({
+  slug: 'appendRow',
   description: 'Append a row using ordered values or column-letter keys.',
   input: writeInput,
   output: writeOutput,
   idempotent: false,
   run: appendValues,
-};
+});
 
 const insertInput = writeInput.extend({
   afterRow: z.number().int().nonnegative().max(9_999_999).default(1),
 });
-export const insertRow = {
-  slug: 'insertRow' as const,
+export const insertRow = defineAction({
+  slug: 'insertRow',
   description: 'Insert a row after a specified row, defaulting to just below the header.',
   input: insertInput,
   output: writeOutput,
   idempotent: false,
-  async run(args: SheetsArgs<z.output<typeof insertInput>>) {
+  async run(args) {
     const sheet = await worksheet(args);
     const row = args.input.afterRow + 1;
     await batch(args, [
@@ -85,18 +89,18 @@ export const insertRow = {
       },
       requestOptions(args.req),
     );
-    return { row, updates: data };
+    return { row, updates: updateOutput.parse(data) };
   },
-};
+});
 
 const updateInput = writeInput.extend({ row: rowNumber });
-export const updateRow = {
-  slug: 'updateRow' as const,
+export const updateRow = defineAction({
+  slug: 'updateRow',
   description: 'Update a row; empty and null values leave existing cells unchanged.',
   input: updateInput,
   output: writeOutput,
   idempotent: true,
-  async run(args: SheetsArgs<z.output<typeof updateInput>>) {
+  async run(args) {
     const sheet = await worksheet(args);
     const { data } = await args.client.sheets.spreadsheets.values.update(
       {
@@ -107,9 +111,9 @@ export const updateRow = {
       },
       requestOptions(args.req),
     );
-    return { row: args.input.row, updates: data };
+    return { row: args.input.row, updates: updateOutput.parse(data) };
   },
-};
+});
 
 const updatesInput = sheetInput.extend({
   rows: z.array(z.object({ row: rowNumber.optional(), values: rowValues })),
@@ -123,35 +127,35 @@ const updatesOutput = z
     responses: z.array(updateOutput).nullish(),
   })
   .passthrough();
-export const updateRows = {
-  slug: 'updateRows' as const,
+export const updateRows = defineAction({
+  slug: 'updateRows',
   description:
     'Batch-update rows, skipping entries without a row number and leaving empty cells unchanged.',
   input: updatesInput,
   output: updatesOutput,
   idempotent: true,
-  async run(args: SheetsArgs<z.output<typeof updatesInput>>) {
+  async run(args) {
     const rows = args.input.rows.filter((row) => row.row != null);
     if (!rows.length) return { totalUpdatedRows: 0, totalUpdatedCells: 0, responses: [] };
     const sheet = await worksheet(args);
-    return (
-      await args.client.sheets.spreadsheets.values.batchUpdate(
-        {
-          spreadsheetId: args.input.spreadsheetId,
-          requestBody: {
-            valueInputOption: args.input.valueInputOption,
-            data: rows.map((row) => ({
-              range: sheetRange(sheet.title!, `${row.row}:${row.row}`),
-              majorDimension: 'ROWS',
-              values: [cells(row.values, true)],
-            })),
-          },
+    const { data } = await args.client.sheets.spreadsheets.values.batchUpdate(
+      {
+        spreadsheetId: args.input.spreadsheetId,
+        requestBody: {
+          valueInputOption: args.input.valueInputOption,
+          data: rows.map((row) => ({
+            range: sheetRange(sheet.title!, `${row.row}:${row.row}`),
+            majorDimension: 'ROWS',
+            values: [cells(row.values, true)],
+          })),
         },
-        requestOptions(args.req),
-      )
-    ).data;
+      },
+      requestOptions(args.req),
+    );
+
+    return updatesOutput.parse(data);
   },
-};
+});
 
 const appendRowsInput = sheetInput.extend({
   data: z.discriminatedUnion('format', [
@@ -167,8 +171,8 @@ const appendRowsInput = sheetInput.extend({
     .optional(),
   valueInputOption,
 });
-export const appendRows = {
-  slug: 'appendRows' as const,
+export const appendRows = defineAction({
+  slug: 'appendRows',
   description:
     'Append CSV, JSON, or column-keyed rows; optionally overwrite data or exclude keys already in the worksheet.',
   input: appendRowsInput,
@@ -178,7 +182,7 @@ export const appendRows = {
     clearedRanges: z.array(z.string()).optional(),
   }),
   idempotent: false,
-  async run(args: SheetsArgs<z.output<typeof appendRowsInput>>) {
+  async run(args) {
     const { input, client, req } = args;
     const sheet = await worksheet(args);
     const headerRange = sheetRange(sheet.title!, `${input.headerRow}:${input.headerRow}`);
@@ -225,24 +229,26 @@ export const appendRows = {
     if (input.overwrite) {
       const start = input.headerRow + 1;
       const updates = rows.length
-        ? (
-            await client.sheets.spreadsheets.values.batchUpdate(
-              {
-                spreadsheetId: input.spreadsheetId,
-                requestBody: {
-                  valueInputOption: input.valueInputOption,
-                  data: [
-                    {
-                      range: sheetRange(sheet.title!, `A${start}`),
-                      majorDimension: 'ROWS',
-                      values: rows,
-                    },
-                  ],
+        ? updatesOutput.parse(
+            (
+              await client.sheets.spreadsheets.values.batchUpdate(
+                {
+                  spreadsheetId: input.spreadsheetId,
+                  requestBody: {
+                    valueInputOption: input.valueInputOption,
+                    data: [
+                      {
+                        range: sheetRange(sheet.title!, `A${start}`),
+                        majorDimension: 'ROWS',
+                        values: rows,
+                      },
+                    ],
+                  },
                 },
-              },
-              requestOptions(req),
-            )
-          ).data
+                requestOptions(req),
+              )
+            ).data,
+          )
         : { totalUpdatedRows: 0 };
       const end = sheet.gridProperties?.rowCount ?? start + rows.length;
       const clearedRanges =
@@ -300,31 +306,33 @@ export const appendRows = {
       requestOptions(req),
     );
 
-    return { insertedRows: rows.length, updates: data.updates ?? {} };
+    return { insertedRows: rows.length, updates: updateOutput.parse(data.updates ?? {}) };
   },
-};
+});
 
 const deleteInput = sheetInput.extend({ row: rowNumber });
-export const deleteRow = {
-  slug: 'deleteRow' as const,
+export const deleteRow = defineAction({
+  slug: 'deleteRow',
   description: 'Delete a row and shift following rows upward.',
   input: deleteInput,
   output: batchOutput,
   idempotent: false,
-  run: (args: SheetsArgs<z.output<typeof deleteInput>>) =>
-    batch(args, [
-      {
-        deleteDimension: {
-          range: {
-            sheetId: args.input.sheetId,
-            dimension: 'ROWS',
-            startIndex: args.input.row - 1,
-            endIndex: args.input.row,
+  run: async (args) =>
+    batchOutput.parse(
+      await batch(args, [
+        {
+          deleteDimension: {
+            range: {
+              sheetId: args.input.sheetId,
+              dimension: 'ROWS',
+              startIndex: args.input.row - 1,
+              endIndex: args.input.row,
+            },
           },
         },
-      },
-    ]),
-};
+      ]),
+    ),
+});
 const rowSelection = z.discriminatedUnion('mode', [
   z
     .object({ mode: z.literal('range'), startRow: rowNumber, endRow: rowNumber.optional() })
@@ -335,8 +343,8 @@ const rowSelection = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('list'), rows: z.array(rowNumber).min(1) }),
 ]);
 const deleteRowsInput = sheetInput.extend({ selection: rowSelection });
-export const deleteRows = {
-  slug: 'deleteRows' as const,
+export const deleteRows = defineAction({
+  slug: 'deleteRows',
   description: 'Delete a row range or distinct row numbers in descending order.',
   input: deleteRowsInput,
   output: z.object({
@@ -344,7 +352,7 @@ export const deleteRows = {
     result: batchOutput,
   }),
   idempotent: false,
-  async run(args: SheetsArgs<z.output<typeof deleteRowsInput>>) {
+  async run(args) {
     const selection = args.input.selection;
     const ranges =
       selection.mode === 'range'
@@ -354,22 +362,24 @@ export const deleteRows = {
             .map((row) => ({ startRow: row, endRow: row }));
     return {
       deletedRanges: ranges,
-      result: await batch(
-        args,
-        ranges.map(({ startRow, endRow }) => ({
-          deleteDimension: {
-            range: {
-              sheetId: args.input.sheetId,
-              dimension: 'ROWS',
-              startIndex: startRow - 1,
-              endIndex: endRow,
+      result: batchOutput.parse(
+        await batch(
+          args,
+          ranges.map(({ startRow, endRow }) => ({
+            deleteDimension: {
+              range: {
+                sheetId: args.input.sheetId,
+                dimension: 'ROWS',
+                startIndex: startRow - 1,
+                endIndex: endRow,
+              },
             },
-          },
-        })),
+          })),
+        ),
       ),
     };
   },
-};
+});
 
 const searchInput = readInput.extend({
   column: z
@@ -416,24 +426,24 @@ async function searchRows(args: SheetsArgs<z.output<typeof searchInput>>) {
       })[0]!,
   );
 }
-export const findRows = {
-  slug: 'findRows' as const,
+export const findRows = defineAction({
+  slug: 'findRows',
   description:
     'Find rows by exact case-sensitive equality or case-insensitive substring, preserving physical row numbers.',
   input: searchInput,
   output: z.array(rowOutput),
   idempotent: true,
   run: searchRows,
-};
+});
 
 const findOrCreateInput = searchInput.extend({ values: rowValues, valueInputOption });
-export const findOrCreateRow = {
-  slug: 'findOrCreateRow' as const,
+export const findOrCreateRow = defineAction({
+  slug: 'findOrCreateRow',
   description: 'Return the first matching row, or append supplied values when no row matches.',
   input: findOrCreateInput,
   output: rowOutput.extend({ found: z.boolean(), created: z.boolean() }),
   idempotent: false,
-  async run(args: SheetsArgs<z.output<typeof findOrCreateInput>>) {
+  async run(args) {
     const [found] = await searchRows({ ...args, input: { ...args.input, limit: 1 } });
     if (found) return { ...found, found: true, created: false };
     const result = await appendValues(args);
@@ -460,11 +470,11 @@ export const findOrCreateRow = {
       created: true,
     };
   },
-};
+});
 
 const getRowInput = readInput.extend({ row: rowNumber });
-export const getRow = {
-  slug: 'getRow' as const,
+export const getRow = defineAction({
+  slug: 'getRow',
   description:
     'Read one physical row, returning found=false when it is beyond the populated range.',
   input: getRowInput,
@@ -473,35 +483,34 @@ export const getRow = {
     z.object({ found: z.literal(false), row: z.null() }),
   ]),
   idempotent: true,
-  async run(args: SheetsArgs<z.output<typeof getRowInput>>) {
+  async run(args) {
     const [row] = await readRows(args, args.input.row, args.input.row);
     return row ? { found: true as const, ...row } : { found: false as const, row: null };
   },
-};
+});
 const getRowsInput = readInput.extend({ skipHeaders: z.boolean().default(false) });
-export const getRows = {
-  slug: 'getRows' as const,
+export const getRows = defineAction({
+  slug: 'getRows',
   description: 'Read all populated rows, optionally skipping the header and preceding rows.',
   input: getRowsInput,
   output: z.array(rowOutput),
   idempotent: true,
-  run: (args: SheetsArgs<z.output<typeof getRowsInput>>) =>
-    readRows(args, args.input.skipHeaders ? args.input.headerRow + 1 : 1),
-};
+  run: (args) => readRows(args, args.input.skipHeaders ? args.input.headerRow + 1 : 1),
+});
 
 const nextInput = readInput.extend({
   startRow: rowNumber.default(1),
   batchSize: rowNumber.default(1),
   memoryKey: z.string().min(1).default('row_number'),
 });
-export const getNextRows = {
-  slug: 'getNextRows' as const,
+export const getNextRows = defineAction({
+  slug: 'getNextRows',
   description:
     'Read and persist the next batch under an owner-, instance-, and worksheet-scoped memory key.',
   input: nextInput,
   output: z.array(rowOutput),
   idempotent: false,
-  async run(args: SheetsArgs<z.output<typeof nextInput>>) {
+  async run(args) {
     const { req, input } = args;
     requestOptions(req);
     const owner = req.user ? [req.user.collection, req.user.id] : ['developer'];
@@ -550,4 +559,4 @@ export const getNextRows = {
       return rows;
     });
   },
-};
+});

@@ -1,5 +1,6 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
+
+import { defineAction } from '../define.js';
 
 const inputSchema = z.object({ url: z.string(), returnArrays: z.boolean().default(false) });
 const output = z.object({
@@ -10,13 +11,13 @@ const output = z.object({
   hash: z.string(),
 });
 
-export const parseUrl = {
+export const parseUrl = defineAction({
   slug: 'parseUrl',
   label: 'Parse URL',
   description: 'Extract the domain, path, and query parameters from a URL.',
   input: inputSchema,
   output,
-  async run({ input }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input }) {
     try {
       const url = new URL(input.url);
       const queryParameters: Record<string, string | string[] | null> = {};
@@ -38,4 +39,4 @@ export const parseUrl = {
       );
     }
   },
-};
+});

@@ -1,14 +1,14 @@
-import { type PieceActionDefinition, type PieceRunArgs } from 'frogbot/pieces';
+import type { PieceActionDefinition } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { type DiscordClient, discordObject, discordResponse } from './client.js';
-import { channelId, guildId, roleId } from './config.js';
+import { channelId, type DiscordOptions, guildId, roleId } from './config.js';
+import { defineAction } from './define.js';
 import { discordAttachment, loadDiscordAttachment } from './files.js';
 import { channelOptions, guildOptions, roleOptions } from './options.js';
 
-type Run<T> = PieceRunArgs<T, object, DiscordClient>;
 type ActionOptions<TSchema extends z.ZodType> = NonNullable<
-  PieceActionDefinition<TSchema, typeof success, object, DiscordClient>['options']
+  PieceActionDefinition<TSchema, typeof success, DiscordOptions, DiscordClient>['options']
 >;
 
 const success = z.object({ success: z.boolean() });
@@ -18,7 +18,7 @@ const optionsOutput = z.array(z.object({ label: z.string(), value: z.string() })
 const memberInput = z.object({ guildId, userId: z.string().min(1) });
 const memberRoleInput = memberInput.extend({ roleId });
 
-function statusAction<TSchema extends z.ZodType>({
+function statusAction<const TSlug extends string, TSchema extends z.ZodType>({
   slug,
   description,
   input,
@@ -27,7 +27,7 @@ function statusAction<TSchema extends z.ZodType>({
   options,
   idempotent = true,
 }: {
-  slug: string;
+  slug: TSlug;
   description: string;
   input: TSchema;
   method: string;
@@ -35,19 +35,19 @@ function statusAction<TSchema extends z.ZodType>({
   options: ActionOptions<TSchema>;
   idempotent?: boolean;
 }) {
-  return {
+  return defineAction({
     slug,
     description,
     input,
     output: success,
     idempotent,
     options,
-    async run({ client, input: value }: Run<z.output<TSchema>>) {
+    async run({ client, input: value }) {
       await client.request({ method, path: path(value) });
 
       return { success: true };
     },
-  } satisfies PieceActionDefinition<TSchema, typeof success, object, DiscordClient>;
+  });
 }
 
 const sendMessageInput = z
@@ -60,14 +60,14 @@ const sendMessageInput = z
     message: 'A message or attachment is required.',
   });
 
-export const sendMessage = {
+export const sendMessage = defineAction({
   slug: 'sendMessage',
   description: 'Send a bot-authored message and optional file attachments to a channel.',
   input: sendMessageInput,
   output: discordObject,
   idempotent: false,
   options: { channelId: channelOptions },
-  async run({ client, input, req }: Run<z.output<typeof sendMessageInput>>) {
+  async run({ client, input, req }) {
     const form = new FormData();
 
     if (input.message !== undefined) form.set('content', input.message);
@@ -92,12 +92,7 @@ export const sendMessage = {
 
     return discordObject.parse(response.body);
   },
-} satisfies PieceActionDefinition<
-  typeof sendMessageInput,
-  typeof discordObject,
-  object,
-  DiscordClient
->;
+});
 
 const requestApprovalInput = z.object({
   channelId,
@@ -106,14 +101,14 @@ const requestApprovalInput = z.object({
   buttonLabel: z.string().min(1).default('Review request'),
 });
 
-export const requestApproval = {
+export const requestApproval = defineAction({
   slug: 'requestApproval',
   description: 'Send a message with a link to a workflow-provided approval page.',
   input: requestApprovalInput,
   output: discordObject,
   idempotent: false,
   options: { channelId: channelOptions },
-  async run({ client, input }: Run<z.output<typeof requestApprovalInput>>) {
+  async run({ client, input }) {
     const response = await client.request({
       method: 'POST',
       path: `/channels/${encodeURIComponent(input.channelId)}/messages`,
@@ -130,12 +125,7 @@ export const requestApproval = {
 
     return discordObject.parse(response.body);
   },
-} satisfies PieceActionDefinition<
-  typeof requestApprovalInput,
-  typeof discordObject,
-  object,
-  DiscordClient
->;
+});
 
 const webhookInput = z.object({
   webhookUrl: z.url().refine(
@@ -160,13 +150,13 @@ const webhookInput = z.object({
   tts: z.boolean().default(false),
 });
 
-export const sendWebhookMessage = {
+export const sendWebhookMessage = defineAction({
   slug: 'sendWebhookMessage',
   description: 'Send a message through a Discord incoming webhook.',
   input: webhookInput,
   output: success,
   idempotent: false,
-  async run({ client, input }: Run<z.output<typeof webhookInput>>) {
+  async run({ client, input }) {
     await client.request({
       method: 'POST',
       path: input.webhookUrl,
@@ -182,7 +172,7 @@ export const sendWebhookMessage = {
 
     return { success: true };
   },
-} satisfies PieceActionDefinition<typeof webhookInput, typeof success, object, DiscordClient>;
+});
 
 export const addRoleToMember = statusAction({
   slug: 'addRoleToMember',
@@ -220,14 +210,14 @@ const listMembersInput = z.object({
   limit: z.number().int().min(1).max(1000).default(1000),
 });
 
-export const listMembers = {
+export const listMembers = defineAction({
   slug: 'listMembers',
   description: 'List guild members as user choices.',
   input: listMembersInput,
   output: optionsOutput,
   idempotent: true,
   options: { guildId: guildOptions },
-  async run({ client, input }: Run<z.output<typeof listMembersInput>>) {
+  async run({ client, input }) {
     const members: unknown[] = [];
     let after: string | undefined;
 
@@ -261,23 +251,18 @@ export const listMembers = {
       return [{ label: user.username, value: user.id }];
     });
   },
-} satisfies PieceActionDefinition<
-  typeof listMembersInput,
-  typeof optionsOutput,
-  object,
-  DiscordClient
->;
+});
 
 const renameChannelInput = z.object({ channelId, name: z.string().min(1) });
 
-export const renameChannel = {
+export const renameChannel = defineAction({
   slug: 'renameChannel',
   description: 'Rename a Discord channel.',
   input: renameChannelInput,
   output: discordObject,
   idempotent: true,
   options: { channelId: channelOptions },
-  async run({ client, input }: Run<z.output<typeof renameChannelInput>>) {
+  async run({ client, input }) {
     const response = await client.request({
       method: 'PATCH',
       path: `/channels/${encodeURIComponent(input.channelId)}`,
@@ -286,12 +271,7 @@ export const renameChannel = {
 
     return discordObject.parse(response.body);
   },
-} satisfies PieceActionDefinition<
-  typeof renameChannelInput,
-  typeof discordObject,
-  object,
-  DiscordClient
->;
+});
 
 const createChannelInput = z.object({
   guildId,
@@ -299,14 +279,14 @@ const createChannelInput = z.object({
   topic: z.string().optional(),
 });
 
-export const createChannel = {
+export const createChannel = defineAction({
   slug: 'createChannel',
   description: 'Create a channel in a guild.',
   input: createChannelInput,
   output: createdChannel,
   idempotent: false,
   options: { guildId: guildOptions },
-  async run({ client, input }: Run<z.output<typeof createChannelInput>>) {
+  async run({ client, input }) {
     const response = await client.request({
       method: 'POST',
       path: `/guilds/${encodeURIComponent(input.guildId)}/channels`,
@@ -316,23 +296,18 @@ export const createChannel = {
 
     return { success: true, channel };
   },
-} satisfies PieceActionDefinition<
-  typeof createChannelInput,
-  typeof createdChannel,
-  object,
-  DiscordClient
->;
+});
 
 const deleteChannelInput = z.object({ channelId });
 
-export const deleteChannel = {
+export const deleteChannel = defineAction({
   slug: 'deleteChannel',
   description: 'Permanently delete a Discord channel.',
   input: deleteChannelInput,
   output: discordObject,
   idempotent: true,
   options: { channelId: channelOptions },
-  async run({ client, input }: Run<z.output<typeof deleteChannelInput>>) {
+  async run({ client, input }) {
     const response = await client.request({
       method: 'DELETE',
       path: `/channels/${encodeURIComponent(input.channelId)}`,
@@ -340,24 +315,19 @@ export const deleteChannel = {
 
     return discordObject.parse(response.body);
   },
-} satisfies PieceActionDefinition<
-  typeof deleteChannelInput,
-  typeof discordObject,
-  object,
-  DiscordClient
->;
+});
 
 const findChannelInput = z.object({ guildId, name: z.string().min(1) });
 const findChannelOutput = z.object({ success: z.boolean(), channelId: z.string().optional() });
 
-export const findChannel = {
+export const findChannel = defineAction({
   slug: 'findChannel',
   description: 'Find a guild channel by exact name.',
   input: findChannelInput,
   output: findChannelOutput,
   idempotent: true,
   options: { guildId: guildOptions },
-  async run({ client, input }: Run<z.output<typeof findChannelInput>>) {
+  async run({ client, input }) {
     const response = await client.request({
       path: `/guilds/${encodeURIComponent(input.guildId)}/channels`,
     });
@@ -372,24 +342,23 @@ export const findChannel = {
 
     return { success: id !== undefined, channelId: id };
   },
-} satisfies PieceActionDefinition<
-  typeof findChannelInput,
-  typeof findChannelOutput,
-  object,
-  DiscordClient
->;
+});
 
 const moderationInput = memberInput.extend({ reason: z.string().optional() });
 
-function moderationAction(method: string, slug: string, resource: 'bans') {
-  return {
+function moderationAction<const TSlug extends string>(
+  method: string,
+  slug: TSlug,
+  resource: 'bans',
+) {
+  return defineAction({
     slug,
     description: `${method === 'PUT' ? 'Ban' : 'Unban'} a guild member.`,
     input: moderationInput,
     output: success,
     idempotent: true,
     options: { guildId: guildOptions },
-    async run({ client, input }: Run<z.output<typeof moderationInput>>) {
+    async run({ client, input }) {
       await client.request({
         method,
         path: `/guilds/${encodeURIComponent(input.guildId)}/${resource}/${encodeURIComponent(input.userId)}`,
@@ -398,7 +367,7 @@ function moderationAction(method: string, slug: string, resource: 'bans') {
 
       return { success: true };
     },
-  } satisfies PieceActionDefinition<typeof moderationInput, typeof success, object, DiscordClient>;
+  });
 }
 
 export const unbanMember = moderationAction('DELETE', 'unbanMember', 'bans');
@@ -413,14 +382,14 @@ const createRoleInput = z.object({
   reason: z.string().optional(),
 });
 
-export const createRole = {
+export const createRole = defineAction({
   slug: 'createRole',
   description: 'Create a role in a guild.',
   input: createRoleInput,
   output: createdRole,
   idempotent: false,
   options: { guildId: guildOptions },
-  async run({ client, input }: Run<z.output<typeof createRoleInput>>) {
+  async run({ client, input }) {
     const response = await client.request({
       method: 'POST',
       path: `/guilds/${encodeURIComponent(input.guildId)}/roles`,
@@ -436,23 +405,18 @@ export const createRole = {
 
     return { success: true, role };
   },
-} satisfies PieceActionDefinition<
-  typeof createRoleInput,
-  typeof createdRole,
-  object,
-  DiscordClient
->;
+});
 
 const deleteRoleInput = z.object({ guildId, roleId, reason: z.string().optional() });
 
-export const deleteRole = {
+export const deleteRole = defineAction({
   slug: 'deleteRole',
   description: 'Delete a role from a guild.',
   input: deleteRoleInput,
   output: success,
   idempotent: true,
   options: { guildId: guildOptions, roleId: roleOptions },
-  async run({ client, input }: Run<z.output<typeof deleteRoleInput>>) {
+  async run({ client, input }) {
     await client.request({
       method: 'DELETE',
       path: `/guilds/${encodeURIComponent(input.guildId)}/roles/${encodeURIComponent(input.roleId)}`,
@@ -461,7 +425,7 @@ export const deleteRole = {
 
     return { success: true };
   },
-} satisfies PieceActionDefinition<typeof deleteRoleInput, typeof success, object, DiscordClient>;
+});
 
 const customApiInput = z.object({
   path: z.string().regex(/^\/(?!\/)/, 'Path must be relative to the Discord API.'),
@@ -471,13 +435,13 @@ const customApiInput = z.object({
   body: z.unknown().optional(),
 });
 
-export const sendApiRequest = {
+export const sendApiRequest = defineAction({
   slug: 'sendApiRequest',
   description: 'Send an authenticated request to a relative Discord API path.',
   input: customApiInput,
   output: discordResponse,
   idempotent: false,
-  async run({ client, input }: Run<z.output<typeof customApiInput>>) {
+  async run({ client, input }) {
     const url = new URL(`https://discord.com${input.path}`);
 
     for (const [key, value] of Object.entries(input.queryParams)) {
@@ -491,9 +455,4 @@ export const sendApiRequest = {
       body: input.body as Record<string, unknown> | undefined,
     });
   },
-} satisfies PieceActionDefinition<
-  typeof customApiInput,
-  typeof discordResponse,
-  object,
-  DiscordClient
->;
+});

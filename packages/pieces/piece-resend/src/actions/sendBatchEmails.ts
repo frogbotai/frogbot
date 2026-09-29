@@ -1,8 +1,8 @@
 import type { PieceJSON } from 'frogbot/pieces';
 import { z } from 'zod';
 
+import { defineAction } from '../define.js';
 import { emailBody } from '../format.js';
-import type { ResendAction } from './types.js';
 
 const input = z.object({
   emails: z.array(
@@ -20,7 +20,7 @@ const input = z.object({
   idempotency_key: z.string().optional(),
 });
 
-export const sendBatchEmails = {
+export const sendBatchEmails = defineAction({
   slug: 'sendBatchEmails',
   description: 'Send up to 100 emails',
   idempotent: false,
@@ -34,4 +34,4 @@ export const sendBatchEmails = {
     });
     return (result as { data?: PieceJSON[] })?.data ?? [];
   },
-} satisfies ResendAction;
+});

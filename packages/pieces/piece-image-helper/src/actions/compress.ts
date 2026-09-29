@@ -1,7 +1,7 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import Jimp from 'jimp';
 import { z } from 'zod';
 
+import { defineAction } from '../define.js';
 import { imageFile, loadImage, savedImage, saveImage } from '../files.js';
 
 const inputSchema = z.object({
@@ -11,13 +11,13 @@ const inputSchema = z.object({
   resultFileName: z.string().min(1).optional(),
 });
 
-export const compress = {
+export const compress = defineAction({
   slug: 'compress',
   label: 'Compress image',
   description: 'Compress an image with the selected quality.',
   input: inputSchema,
   output: savedImage,
-  async run({ input, req }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input, req }) {
     const source = await loadImage(req, input.image);
     const image = await Jimp.read(source.data);
     const mimeType = input.format === 'jpg' ? Jimp.MIME_JPEG : Jimp.MIME_PNG;
@@ -33,4 +33,4 @@ export const compress = {
       mimeType,
     });
   },
-};
+});

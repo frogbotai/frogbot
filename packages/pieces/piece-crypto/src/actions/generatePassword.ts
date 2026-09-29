@@ -1,7 +1,8 @@
 import { randomInt } from 'node:crypto';
 
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
+
+import { defineAction } from '../define.js';
 
 const alphanumeric = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const symbols = '!@#$%^&*()_+~`|}{[]:;?><,./-=';
@@ -13,13 +14,13 @@ const inputSchema = z.object({
     .meta({ label: 'Character Set' }),
 });
 
-export const generatePassword = {
+export const generatePassword = defineAction({
   slug: 'generatePassword',
   label: 'Generate Password',
   description: 'Generate a cryptographically secure random password.',
   input: inputSchema,
   output: z.string().max(256),
-  async run({ input }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input }) {
     const characters =
       input.characterSet === 'alphanumeric' ? alphanumeric : alphanumeric + symbols;
     let password = '';
@@ -30,4 +31,4 @@ export const generatePassword = {
 
     return password;
   },
-};
+});

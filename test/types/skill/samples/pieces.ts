@@ -8,6 +8,8 @@ import type {
 import { definePiece } from 'frogbot/pieces';
 import { z } from 'zod';
 
+import { defineAction } from './pieces-define.js';
+
 export const google = createGoogle({
   oauth: {
     clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -16,26 +18,27 @@ export const google = createGoogle({
 });
 
 const auth = z.object({ token: z.string().min(1) });
-const lookupInput = z.object({ id: z.string() });
+
+const lookup = defineAction({
+  slug: 'lookup',
+  description: 'Look up an item',
+  input: z.object({ id: z.string() }),
+  output: z.object({ id: z.string() }),
+  async run({ client, input }) {
+    const response = await fetch(`https://api.example.com/items/${input.id}`, {
+      headers: { authorization: `Bearer ${client.token}` },
+    });
+
+    return response.json();
+  },
+});
 
 export const createExample = definePiece({
   slug: 'example',
   label: 'Example',
   auth,
   client: ({ auth: credential }) => ({ token: auth.parse(credential).token }),
-  actions: [
-    {
-      slug: 'lookup',
-      description: 'Look up an item',
-      input: lookupInput,
-      output: z.object({ id: z.string() }),
-      async run({ input }) {
-        const data = lookupInput.parse(input);
-
-        return { id: data.id };
-      },
-    },
-  ],
+  actions: [lookup],
 });
 
 const piece = createExample({});

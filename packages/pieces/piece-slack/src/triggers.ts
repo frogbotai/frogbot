@@ -1,12 +1,11 @@
 import { createHash } from 'node:crypto';
 
-import type { PieceAppTrigger, PieceRunArgs } from 'frogbot/pieces';
+import type { FrogBotRequest } from 'frogbot';
 import { z } from 'zod';
 
 import { type SlackClient, slackValue } from './client.js';
+import { defineAppTrigger } from './define.js';
 import { slackEvent, slackWorkspace } from './webhook.js';
-
-type Args<T> = PieceRunArgs<T, { signingSecret?: string }, SlackClient>;
 
 const emptyInput = z.object({});
 const messageFilters = {
@@ -20,13 +19,7 @@ const channel = z.string().min(1).meta({ label: 'Channel ID' });
 const user = z.string().min(1).meta({ label: 'User ID' });
 const eventOutput = slackValue;
 
-function appTrigger<TInput extends z.ZodType>(
-  trigger: PieceAppTrigger<TInput, typeof eventOutput, { signingSecret?: string }, SlackClient>,
-) {
-  return trigger;
-}
-
-async function event(args: Args<unknown>) {
+async function event(args: { client: SlackClient; req: FrogBotRequest }) {
   const deliveredWorkspace = slackWorkspace(args.req);
 
   if (!deliveredWorkspace || deliveredWorkspace !== (await args.client.workspaceId())) {
@@ -78,14 +71,14 @@ function command(text: unknown, userId: string, commands: string[]) {
 
 const anyMessageInput = z.object(messageFilters);
 
-export const messageCreated = appTrigger({
+export const messageCreated = defineAppTrigger({
   slug: 'messageCreated',
   description: 'Trigger for a message in any public or private channel.',
   type: 'app',
   event: 'message',
   input: anyMessageInput,
   output: eventOutput,
-  async run(args: Args<z.output<typeof anyMessageInput>>) {
+  async run(args) {
     const value = await event(args);
 
     if (!value || !['channel', 'group'].includes(String(field(value, 'channel_type')))) return [];
@@ -97,14 +90,14 @@ export const messageCreated = appTrigger({
 
 const channelMessageInput = anyMessageInput.extend({ channel });
 
-export const channelMessageCreated = appTrigger({
+export const channelMessageCreated = defineAppTrigger({
   slug: 'channelMessageCreated',
   description: 'Trigger for a message in one selected channel.',
   type: 'app',
   event: 'message',
   input: channelMessageInput,
   output: eventOutput,
-  async run(args: Args<z.output<typeof channelMessageInput>>) {
+  async run(args) {
     const value = await event(args);
 
     if (!value || !['channel', 'group'].includes(String(field(value, 'channel_type')))) return [];
@@ -117,14 +110,14 @@ export const channelMessageCreated = appTrigger({
 
 const directMessageInput = z.object(selfFilters);
 
-export const directMessageCreated = appTrigger({
+export const directMessageCreated = defineAppTrigger({
   slug: 'directMessageCreated',
   description: 'Trigger for a new direct message.',
   type: 'app',
   event: 'message',
   input: directMessageInput,
   output: eventOutput,
-  async run(args: Args<z.output<typeof directMessageInput>>) {
+  async run(args) {
     const value = await event(args);
 
     if (!value || field(value, 'channel_type') !== 'im') return [];
@@ -145,14 +138,14 @@ const mentionInput = z.object({
   removeMention: z.boolean().default(false),
 });
 
-export const channelMentionCreated = appTrigger({
+export const channelMentionCreated = defineAppTrigger({
   slug: 'channelMentionCreated',
   description: 'Trigger when selected users or user groups are mentioned in a channel.',
   type: 'app',
   event: 'message',
   input: mentionInput,
   output: eventOutput,
-  async run(args: Args<z.output<typeof mentionInput>>) {
+  async run(args) {
     const value = await event(args);
 
     if (!value || !['channel', 'group'].includes(String(field(value, 'channel_type')))) return [];
@@ -189,15 +182,19 @@ const reactionInput = z.object({
   channels: z.array(z.string()).default([]).meta({ label: 'Channel IDs' }),
 });
 
-function reactionTrigger(slug: string, eventName: string, description: string) {
-  return appTrigger({
+function reactionTrigger<const TSlug extends string>(
+  slug: TSlug,
+  eventName: string,
+  description: string,
+) {
+  return defineAppTrigger({
     slug,
     description,
     type: 'app',
     event: eventName,
     input: reactionInput,
     output: eventOutput,
-    async run(args: Args<z.output<typeof reactionInput>>) {
+    async run(args) {
       const value = await event(args);
 
       if (!value) return [];
@@ -232,14 +229,14 @@ export const reactionRemoved = reactionTrigger(
   'Trigger when a reaction is removed.',
 );
 
-export const channelCreated = appTrigger({
+export const channelCreated = defineAppTrigger({
   slug: 'channelCreated',
   description: 'Trigger when a Slack channel is created.',
   type: 'app',
   event: 'channel_created',
   input: emptyInput,
   output: eventOutput,
-  async run(args: Args<object>) {
+  async run(args) {
     return emit(await event(args));
   },
 });
@@ -251,14 +248,14 @@ const commandInput = z.object({
   ignoreBots: z.boolean().default(true),
 });
 
-export const channelCommandCreated = appTrigger({
+export const channelCommandCreated = defineAppTrigger({
   slug: 'channelCommandCreated',
   description: 'Trigger for a configured bot command in a channel.',
   type: 'app',
   event: 'message',
   input: commandInput,
   output: eventOutput,
-  async run(args: Args<z.output<typeof commandInput>>) {
+  async run(args) {
     const value = await event(args);
 
     if (!value || !['channel', 'group'].includes(String(field(value, 'channel_type')))) return [];
@@ -278,14 +275,14 @@ export const channelCommandCreated = appTrigger({
 
 const directMentionInput = z.object({ user, ...selfFilters });
 
-export const directMentionCreated = appTrigger({
+export const directMentionCreated = defineAppTrigger({
   slug: 'directMentionCreated',
   description: 'Trigger when a selected user is mentioned in a direct message.',
   type: 'app',
   event: 'message',
   input: directMentionInput,
   output: eventOutput,
-  async run(args: Args<z.output<typeof directMentionInput>>) {
+  async run(args) {
     const value = await event(args);
 
     if (!value || field(value, 'channel_type') !== 'im') return [];
@@ -302,14 +299,14 @@ const directCommandInput = commandInput
   .omit({ channels: true })
   .extend({ ignoreSelfMessages: z.boolean().default(false) });
 
-export const directCommandCreated = appTrigger({
+export const directCommandCreated = defineAppTrigger({
   slug: 'directCommandCreated',
   description: 'Trigger for a configured bot command in a direct message.',
   type: 'app',
   event: 'message',
   input: directCommandInput,
   output: eventOutput,
-  async run(args: Args<z.output<typeof directCommandInput>>) {
+  async run(args) {
     const value = await event(args);
 
     if (!value || field(value, 'channel_type') !== 'im') return [];
@@ -324,14 +321,14 @@ export const directCommandCreated = appTrigger({
   },
 });
 
-export const userJoined = appTrigger({
+export const userJoined = defineAppTrigger({
   slug: 'userJoined',
   description: 'Trigger when a new user joins the workspace.',
   type: 'app',
   event: 'team_join',
   input: emptyInput,
   output: eventOutput,
-  async run(args: Args<object>) {
+  async run(args) {
     const value = await event(args);
 
     if (!value || field(value, 'type') !== 'team_join') return [];
@@ -342,14 +339,14 @@ export const userJoined = appTrigger({
   },
 });
 
-export const messageSaved = appTrigger({
+export const messageSaved = defineAppTrigger({
   slug: 'messageSaved',
   description: 'Trigger when the connected user saves a message.',
   type: 'app',
   event: 'star_added',
   input: emptyInput,
   output: eventOutput,
-  async run(args: Args<object>) {
+  async run(args) {
     const value = await event(args);
 
     if (!value || field(value, 'type') !== 'star_added') return [];
@@ -360,14 +357,14 @@ export const messageSaved = appTrigger({
   },
 });
 
-export const customEmojiAdded = appTrigger({
+export const customEmojiAdded = defineAppTrigger({
   slug: 'customEmojiAdded',
   description: 'Trigger when a custom emoji is added to the workspace.',
   type: 'app',
   event: 'emoji_changed',
   input: emptyInput,
   output: eventOutput,
-  async run(args: Args<object>) {
+  async run(args) {
     const value = await event(args);
 
     if (!value || field(value, 'type') !== 'emoji_changed' || field(value, 'subtype') !== 'add') {
@@ -382,14 +379,14 @@ const modalInput = z.object({
   interactionType: z.enum(['view_submission', 'view_closed']).default('view_submission'),
 });
 
-export const modalInteraction = appTrigger({
+export const modalInteraction = defineAppTrigger({
   slug: 'modalInteraction',
   description: 'Trigger when a Slack modal is submitted or closed.',
   type: 'app',
   event: 'modal_interaction',
   input: modalInput,
   output: eventOutput,
-  async run(args: Args<z.output<typeof modalInput>>) {
+  async run(args) {
     const value = await event(args);
 
     if (!value || field(value, 'type') !== args.input.interactionType) return [];

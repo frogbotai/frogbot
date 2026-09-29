@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-import { type DriveRunArgs, requestOptions } from '../client.js';
+import { requestOptions } from '../client.js';
+import { defineAction } from '../define.js';
 import { contentBytes, fileReference, loadFile, saveFile } from '../files.js';
 import { savedFileOutput } from '../schemas.js';
 
@@ -68,18 +69,14 @@ function driveUrl(path: string): URL {
   return url;
 }
 
-export const customApiCall = {
-  slug: 'customApiCall' as const,
+export const customApiCall = defineAction({
+  slug: 'customApiCall',
   description:
     'Call the Google Drive API with JSON, raw, or multipart data. Redirects are denied; binary responses become FrogBot files.',
   input: inputSchema,
   output: outputSchema,
   idempotent: false,
-  async run({
-    client,
-    input,
-    req,
-  }: DriveRunArgs<typeof inputSchema>): Promise<CustomApiCallOutput> {
+  async run({ client, input, req }): Promise<CustomApiCallOutput> {
     const url = driveUrl(input.path);
     const headers = new Headers(input.headers);
     for (const name of ['authorization', 'proxy-authorization', 'cookie', 'host']) {
@@ -145,4 +142,4 @@ export const customApiCall = {
       body,
     });
   },
-};
+});

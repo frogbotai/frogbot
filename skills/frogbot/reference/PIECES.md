@@ -30,35 +30,50 @@ Pass a request when credentials may come from the signed-in user's connection. S
 
 ## Author a piece
 
+Create the piece's typed helpers once, in `src/define.ts`:
+
+```ts
+import { createPieceHelpers } from 'frogbot/pieces';
+
+export type ExampleClient = { token: string };
+
+export const { defineAction } = createPieceHelpers<ExampleClient>();
+```
+
+Wrap each action in `defineAction`, then pass it to `definePiece` in `src/index.ts`:
+
 ```ts
 import { definePiece } from 'frogbot/pieces';
 import { z } from 'zod';
 
+import { defineAction } from './define.js';
+
 const auth = z.object({ token: z.string().min(1) });
-const lookupInput = z.object({ id: z.string() });
+
+const lookup = defineAction({
+  slug: 'lookup',
+  description: 'Look up an item',
+  input: z.object({ id: z.string() }),
+  output: z.object({ id: z.string() }),
+  async run({ client, input }) {
+    const response = await fetch(`https://api.example.com/items/${input.id}`, {
+      headers: { authorization: `Bearer ${client.token}` },
+    });
+
+    return response.json();
+  },
+});
 
 export const createExample = definePiece({
   slug: 'example',
   label: 'Example',
   auth,
   client: ({ auth: credential }) => ({ token: auth.parse(credential).token }),
-  actions: [
-    {
-      slug: 'lookup',
-      description: 'Look up an item',
-      input: lookupInput,
-      output: z.object({ id: z.string() }),
-      async run({ input }) {
-        const data = lookupInput.parse(input);
-
-        return { id: data.id };
-      },
-    },
-  ],
+  actions: [lookup],
 });
 ```
 
-Inline definition callbacks receive `unknown` values in the current authoring types. Parse them with the declared schemas before reading properties.
+`defineAction` types `run` and `options` callbacks with the piece's client and the parsed input, and keeps the slug literal so `piece.lookup` accepts only its own input. Pass the options type second when the piece has an `options` schema, for example `createPieceHelpers<ExampleClient, ExampleOptions>()`. Wrap triggers in `defineAppTrigger`, `definePollingTrigger`, or `defineWebhookTrigger` from the same call; a webhook trigger's `state` is inferred from `onEnable`. Callbacks written directly in `definePiece`, such as `client`, still receive `unknown` values; parse them with the declared schemas.
 
 | Capability         | Definition field                                       |
 | ------------------ | ------------------------------------------------------ |

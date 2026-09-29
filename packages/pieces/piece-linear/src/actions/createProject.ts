@@ -1,8 +1,7 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { Linear } from '../client.js';
 import { teamId } from '../config.js';
+import { defineAction } from '../define.js';
 import { teams } from './options.js';
 
 const inputSchema = z.object({
@@ -17,14 +16,14 @@ const inputSchema = z.object({
 });
 const output = z.object({ success: z.boolean(), lastSyncId: z.number().optional() }).passthrough();
 
-export const createProject = {
+export const createProject = defineAction({
   slug: 'createProject',
   description: 'Create a project in a Linear team.',
   input: inputSchema,
   output,
   idempotent: false,
   options: { teamId: teams },
-  async run({ client, input }: PieceRunArgs<z.output<typeof inputSchema>, object, Linear>) {
+  async run({ client, input }) {
     const { teamId, ...fields } = input;
     const response = await client.createProject({ teamIds: [teamId], ...fields });
     return {
@@ -33,4 +32,4 @@ export const createProject = {
       project: { id: response.projectId },
     };
   },
-};
+});

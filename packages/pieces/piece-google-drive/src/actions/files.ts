@@ -2,7 +2,8 @@ import { Readable } from 'node:stream';
 
 import { z } from 'zod';
 
-import { type DriveRunArgs, requestOptions } from '../client.js';
+import { requestOptions } from '../client.js';
+import { defineAction } from '../define.js';
 import { contentBytes, downloadDriveFile, fileReference, loadFile } from '../files.js';
 import {
   destination,
@@ -19,14 +20,14 @@ import { folderOptions } from './list.js';
 
 const createFolderInput = z.object({ name: id, ...destination });
 export type CreateFolderInput = z.input<typeof createFolderInput>;
-export const createFolder = {
-  slug: 'createFolder' as const,
+export const createFolder = defineAction({
+  slug: 'createFolder',
   description: 'Create a folder in Google Drive.',
   input: createFolderInput,
   output: fileOutput,
   idempotent: false,
   options: { parentFolderId: folderOptions },
-  async run({ client, input, req }: DriveRunArgs<typeof createFolderInput>): Promise<DriveFile> {
+  async run({ client, input, req }): Promise<DriveFile> {
     return fileOutput.parse(
       (
         await client.files.create(
@@ -44,7 +45,7 @@ export const createFolder = {
       ).data,
     );
   },
-};
+});
 
 const createFileInput = z.object({
   name: id,
@@ -53,14 +54,14 @@ const createFileInput = z.object({
   ...destination,
 });
 export type CreateFileInput = z.input<typeof createFileInput>;
-export const createFile = {
-  slug: 'createFile' as const,
+export const createFile = defineAction({
+  slug: 'createFile',
   description: 'Create a text, CSV, or XML file in Google Drive.',
   input: createFileInput,
   output: fileOutput,
   idempotent: false,
   options: { parentFolderId: folderOptions },
-  async run({ client, input, req }: DriveRunArgs<typeof createFileInput>): Promise<DriveFile> {
+  async run({ client, input, req }): Promise<DriveFile> {
     return fileOutput.parse(
       (
         await client.files.create(
@@ -79,18 +80,18 @@ export const createFile = {
       ).data,
     );
   },
-};
+});
 
 const uploadFileInput = z.object({ file: fileReference, ...destination });
 export type UploadFileInput = z.input<typeof uploadFileInput>;
-export const uploadFile = {
-  slug: 'uploadFile' as const,
+export const uploadFile = defineAction({
+  slug: 'uploadFile',
   description: 'Upload an accessible FrogBot file to Google Drive.',
   input: uploadFileInput,
   output: fileOutput,
   idempotent: false,
   options: { parentFolderId: folderOptions },
-  async run({ client, input, req }: DriveRunArgs<typeof uploadFileInput>): Promise<DriveFile> {
+  async run({ client, input, req }): Promise<DriveFile> {
     const file = await loadFile({ req, file: input.file });
     return fileOutput.parse(
       (
@@ -109,30 +110,30 @@ export const uploadFile = {
       ).data,
     );
   },
-};
+});
 
 const downloadFileInput = fileInput.extend({ name: id.optional() });
 export type DownloadFileInput = z.input<typeof downloadFileInput>;
-export const downloadFile = {
-  slug: 'downloadFile' as const,
+export const downloadFile = defineAction({
+  slug: 'downloadFile',
   description:
     'Download a Drive file into FrogBot files, exporting Google documents to Office formats.',
   input: downloadFileInput,
   output: savedFileOutput,
   idempotent: false,
-  async run({ client, input, req }: DriveRunArgs<typeof downloadFileInput>): Promise<SavedFile> {
+  async run({ client, input, req }): Promise<SavedFile> {
     return downloadDriveFile({ client, req, ...input });
   },
-};
+});
 
 export type GetFileInput = z.input<typeof fileInput>;
-export const getFile = {
-  slug: 'getFile' as const,
+export const getFile = defineAction({
+  slug: 'getFile',
   description: 'Get metadata for a Google Drive file or folder.',
   input: fileInput,
   output: fileOutput,
   idempotent: true,
-  async run({ client, input, req }: DriveRunArgs<typeof fileInput>): Promise<DriveFile> {
+  async run({ client, input, req }): Promise<DriveFile> {
     return fileOutput.parse(
       (
         await client.files.get(
@@ -146,7 +147,7 @@ export const getFile = {
       ).data,
     );
   },
-};
+});
 
 const copyFileInput = fileInput.extend({
   name: id,
@@ -156,14 +157,14 @@ const copyFileInput = fileInput.extend({
     .optional(),
 });
 export type CopyFileInput = z.input<typeof copyFileInput>;
-export const copyFile = {
-  slug: 'copyFile' as const,
+export const copyFile = defineAction({
+  slug: 'copyFile',
   description:
     'Copy a Drive file into a folder, optionally converting to a Google document or spreadsheet.',
   input: copyFileInput,
   output: fileOutput,
   idempotent: false,
-  async run({ client, input, req }: DriveRunArgs<typeof copyFileInput>): Promise<DriveFile> {
+  async run({ client, input, req }): Promise<DriveFile> {
     return fileOutput.parse(
       (
         await client.files.copy(
@@ -178,17 +179,17 @@ export const copyFile = {
       ).data,
     );
   },
-};
+});
 
 const exportPdfInput = z.object({ fileId: id, folderId: id, name: id, ...sharedDrive });
 export type ExportPdfInput = z.input<typeof exportPdfInput>;
-export const exportPdf = {
-  slug: 'exportPdf' as const,
+export const exportPdf = defineAction({
+  slug: 'exportPdf',
   description: 'Export a Google document to PDF and save it in a Drive folder.',
   input: exportPdfInput,
   output: fileOutput,
   idempotent: false,
-  async run({ client, input, req }: DriveRunArgs<typeof exportPdfInput>): Promise<DriveFile> {
+  async run({ client, input, req }): Promise<DriveFile> {
     const response = await client.files.export(
       {
         fileId: input.fileId,
@@ -217,18 +218,18 @@ export const exportPdf = {
       ).data,
     );
   },
-};
+});
 
 const moveFileInput = fileInput.extend({ folderId: id });
 export type MoveFileInput = z.input<typeof moveFileInput>;
-export const moveFile = {
-  slug: 'moveFile' as const,
+export const moveFile = defineAction({
+  slug: 'moveFile',
   description: 'Move a Drive file to a folder, removing its other parents.',
   input: moveFileInput,
   output: fileOutput,
   idempotent: true,
   options: { folderId: folderOptions },
-  async run({ client, input, req }: DriveRunArgs<typeof moveFileInput>): Promise<DriveFile> {
+  async run({ client, input, req }): Promise<DriveFile> {
     const file = (
       await client.files.get(
         {
@@ -257,16 +258,16 @@ export const moveFile = {
       ).data,
     );
   },
-};
+});
 
 export type DeleteFileInput = z.input<typeof fileInput>;
-export const deleteFile = {
-  slug: 'deleteFile' as const,
+export const deleteFile = defineAction({
+  slug: 'deleteFile',
   description: 'Permanently delete a Google Drive file or folder.',
   input: fileInput,
   output: z.object({ deleted: z.literal(true) }),
   idempotent: false,
-  async run({ client, input, req }: DriveRunArgs<typeof fileInput>): Promise<{ deleted: true }> {
+  async run({ client, input, req }): Promise<{ deleted: true }> {
     await client.files.delete(
       {
         fileId: input.fileId,
@@ -276,16 +277,16 @@ export const deleteFile = {
     );
     return { deleted: true };
   },
-};
+});
 
 export type TrashFileInput = z.input<typeof fileInput>;
-export const trashFile = {
-  slug: 'trashFile' as const,
+export const trashFile = defineAction({
+  slug: 'trashFile',
   description: 'Move a Google Drive file or folder to the trash.',
   input: fileInput,
   output: fileOutput,
   idempotent: true,
-  async run({ client, input, req }: DriveRunArgs<typeof fileInput>): Promise<DriveFile> {
+  async run({ client, input, req }): Promise<DriveFile> {
     return fileOutput.parse(
       (
         await client.files.update(
@@ -300,4 +301,4 @@ export const trashFile = {
       ).data,
     );
   },
-};
+});

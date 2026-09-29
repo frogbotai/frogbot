@@ -1,7 +1,8 @@
-import type { PieceActionDefinition, PieceRunArgs } from 'frogbot/pieces';
+import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { TelegramBotClient } from '../client.js';
+import { defineAction } from '../define.js';
 import { loadTelegramFile, telegramFile } from '../files.js';
 
 const jsonValue: z.ZodType<unknown> = z.lazy(() =>
@@ -46,13 +47,13 @@ function telegramValue(value: unknown): unknown {
   return value;
 }
 
-function action<TInput extends z.ZodType<Input>>(
-  slug: string,
+function telegramAction<const TSlug extends string, TInput extends z.ZodType<Input>>(
+  slug: TSlug,
   description: string,
   method: string,
   input: TInput,
-): PieceActionDefinition<TInput, typeof response, object, TelegramBotClient> {
-  return {
+) {
+  return defineAction({
     slug,
     description,
     input,
@@ -61,7 +62,7 @@ function action<TInput extends z.ZodType<Input>>(
     async run({ client, input }) {
       return response.parse(await client.call(method, telegramValue(input)));
     },
-  };
+  });
 }
 
 async function callWithFile(
@@ -105,103 +106,92 @@ const replyOptions = {
   replyMarkup,
 };
 
-const sendTextMessageInput = z.object({
-  chatId,
-  message: z.string(),
-  parseMode,
-  disableWebPagePreview: z.boolean().default(false),
-  ...replyOptions,
+export const sendTextMessage = defineAction({
+  slug: 'sendTextMessage',
+  description: 'Send a text message through a Telegram bot.',
+  input: z.object({
+    chatId,
+    message: z.string(),
+    parseMode,
+    disableWebPagePreview: z.boolean().default(false),
+    ...replyOptions,
+  }),
+  output: response,
+  idempotent: false,
+  async run({ client, input }) {
+    const { message, ...options } = input;
+    const body = { ...options, text: message };
+
+    return response.parse(await client.call('sendMessage', telegramValue(body)));
+  },
 });
 
-export const sendTextMessage = action(
-  'sendTextMessage',
-  'Send a text message through a Telegram bot.',
-  'sendMessage',
-  sendTextMessageInput,
-);
-sendTextMessage.run = async ({
-  client,
-  input,
-}: PieceRunArgs<z.output<typeof sendTextMessageInput>, object, TelegramBotClient>) => {
-  const { message, ...options } = input;
-  const body = { ...options, text: message };
-
-  return response.parse(await client.call('sendMessage', telegramValue(body)));
-};
-
-export const sendMedia = {
-  ...action(
-    'sendMedia',
-    'Send a photo, video, sticker, or animation.',
-    'sendPhoto',
-    z.object({
-      chatId,
-      mediaType: z.enum(['photo', 'video', 'sticker', 'animation']),
-      media: mediaSource,
-      message: z.string().optional(),
-      parseMode,
-      ...replyOptions,
-    }),
-  ),
-  async run({ client, input, req }: PieceRunArgs<Input, object, TelegramBotClient>) {
-    const mediaType = z.enum(['photo', 'video', 'sticker', 'animation']).parse(input.mediaType);
+export const sendMedia = defineAction({
+  slug: 'sendMedia',
+  description: 'Send a photo, video, sticker, or animation.',
+  input: z.object({
+    chatId,
+    mediaType: z.enum(['photo', 'video', 'sticker', 'animation']),
+    media: mediaSource,
+    message: z.string().optional(),
+    parseMode,
+    ...replyOptions,
+  }),
+  output: response,
+  idempotent: false,
+  async run({ client, input, req }) {
+    const { mediaType, media, message, ...options } = input;
     const method = {
       photo: 'sendPhoto',
       video: 'sendVideo',
       sticker: 'sendSticker',
       animation: 'sendAnimation',
     }[mediaType];
-    const body = { ...input, [mediaType]: input.media, caption: input.message };
-
-    delete body.mediaType;
-    delete body.media;
-    delete body.message;
+    const body = { ...options, [mediaType]: media, caption: message };
 
     return callWithFile(client, req, method, body, mediaType);
   },
-};
+});
 
-export const sendDocument = {
-  ...action(
-    'sendDocument',
-    'Send a document to a Telegram chat.',
-    'sendDocument',
-    z.object({
-      chatId,
-      document: mediaSource,
-      caption: z.string().optional(),
-      parseMode,
-      ...replyOptions,
-    }),
-  ),
-  async run({ client, input, req }: PieceRunArgs<Input, object, TelegramBotClient>) {
+export const sendDocument = defineAction({
+  slug: 'sendDocument',
+  description: 'Send a document to a Telegram chat.',
+  input: z.object({
+    chatId,
+    document: mediaSource,
+    caption: z.string().optional(),
+    parseMode,
+    ...replyOptions,
+  }),
+  output: response,
+  idempotent: false,
+  async run({ client, input, req }) {
     return callWithFile(client, req, 'sendDocument', input, 'document');
   },
-};
+});
 
-export const sendAudio = {
-  ...action(
-    'sendAudio',
-    'Send an audio file to a Telegram chat.',
-    'sendAudio',
-    z.object({
-      chatId,
-      audio: mediaSource,
-      caption: z.string().optional(),
-      parseMode,
-      duration: z.number().int().nonnegative().optional(),
-      performer: z.string().optional(),
-      title: z.string().optional(),
-      thumbnail: z.string().optional(),
-      ...replyOptions,
-    }),
-  ),
-  async run({ client, input, req }: PieceRunArgs<Input, object, TelegramBotClient>) {
+export const sendAudio = defineAction({
+  slug: 'sendAudio',
+  description: 'Send an audio file to a Telegram chat.',
+  input: z.object({
+    chatId,
+    audio: mediaSource,
+    caption: z.string().optional(),
+    parseMode,
+    duration: z.number().int().nonnegative().optional(),
+    performer: z.string().optional(),
+    title: z.string().optional(),
+    thumbnail: z.string().optional(),
+    ...replyOptions,
+  }),
+  output: response,
+  idempotent: false,
+  async run({ client, input, req }) {
     return callWithFile(client, req, 'sendAudio', input, 'audio');
   },
-};
+});
 
-export const sendLocation = action(
+export const sendLocation = telegramAction(
   'sendLocation',
   'Send a geographic location to a Telegram chat.',
   'sendLocation',
@@ -224,14 +214,14 @@ const mediaGroupItem = z.object({
   parseMode: z.enum(['MarkdownV2', 'HTML']).optional(),
 });
 
-export const sendMediaGroup = action(
+export const sendMediaGroup = telegramAction(
   'sendMediaGroup',
   'Send an album of two to ten media items.',
   'sendMediaGroup',
   z.object({ chatId, media: z.array(mediaGroupItem).min(2).max(10), ...messageOptions }),
 );
 
-export const sendPoll = action(
+export const sendPoll = telegramAction(
   'sendPoll',
   'Send a native Telegram poll.',
   'sendPoll',
@@ -252,7 +242,7 @@ export const sendPoll = action(
   }),
 );
 
-export const sendChatAction = action(
+export const sendChatAction = telegramAction(
   'sendChatAction',
   'Show a temporary bot activity status in a chat.',
   'sendChatAction',
@@ -275,7 +265,7 @@ export const sendChatAction = action(
   }),
 );
 
-export const editMessageText = action(
+export const editMessageText = telegramAction(
   'editMessageText',
   'Edit a previously sent message.',
   'editMessageText',
@@ -297,42 +287,42 @@ export const editMessageText = action(
     ),
 );
 
-export const deleteMessage = action(
+export const deleteMessage = telegramAction(
   'deleteMessage',
   'Delete a message.',
   'deleteMessage',
   z.object({ chatId, messageId }),
 );
 
-export const forwardMessage = action(
+export const forwardMessage = telegramAction(
   'forwardMessage',
   'Forward a message to another chat.',
   'forwardMessage',
   z.object({ chatId, fromChatId: chatId, messageId, ...messageOptions }),
 );
 
-export const pinMessage = action(
+export const pinMessage = telegramAction(
   'pinMessage',
   'Pin a message in a chat.',
   'pinChatMessage',
   z.object({ chatId, messageId, disableNotification: z.boolean().default(false) }),
 );
 
-export const unpinMessage = action(
+export const unpinMessage = telegramAction(
   'unpinMessage',
   'Unpin a message or the most recently pinned message.',
   'unpinChatMessage',
   z.object({ chatId, messageId: messageId.optional() }),
 );
 
-export const getChat = action(
+export const getChat = telegramAction(
   'getChat',
   'Get current information about a chat.',
   'getChat',
   z.object({ chatId }),
 );
 
-export const getChatMember = action(
+export const getChatMember = telegramAction(
   'getChatMember',
   'Get information about a member of a chat.',
   'getChatMember',
@@ -352,16 +342,13 @@ const getFileOutput = z.object({
   fileContentBase64: z.string().optional(),
 });
 
-export const getFile = {
+export const getFile = defineAction({
   slug: 'getFile',
   description: 'Get file metadata and optionally download its content.',
   input: z.object({ fileId: z.string().min(1), download: z.boolean().default(false) }),
   output: getFileOutput,
   idempotent: true,
-  async run({
-    client,
-    input,
-  }: PieceRunArgs<{ fileId: string; download: boolean }, object, TelegramBotClient>) {
+  async run({ client, input }) {
     const telegramResponse = await client.call('getFile', { file_id: input.fileId });
     const fileInfo = getFileOutput.shape.fileInfo.parse(telegramResponse.result);
     const fileUrl = fileInfo.file_path ? client.fileUrl(fileInfo.file_path) : undefined;
@@ -372,9 +359,9 @@ export const getFile = {
 
     return { fileInfo, fileUrl, fileContentBase64 };
   },
-};
+});
 
-export const createInviteLink = action(
+export const createInviteLink = telegramAction(
   'createInviteLink',
   'Create an additional invite link for a chat.',
   'createChatInviteLink',
@@ -387,7 +374,7 @@ export const createInviteLink = action(
   }),
 );
 
-export const answerCallbackQuery = action(
+export const answerCallbackQuery = telegramAction(
   'answerCallbackQuery',
   'Answer an inline keyboard callback query.',
   'answerCallbackQuery',
@@ -411,16 +398,13 @@ const customInput = z.object({
   body: jsonValue.optional(),
 });
 
-export const customApiCall = {
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Call a Telegram Bot API endpoint directly.',
   input: customInput,
   output: customOutput,
   idempotent: false,
-  async run({
-    client,
-    input,
-  }: PieceRunArgs<z.output<typeof customInput>, object, TelegramBotClient>) {
+  async run({ client, input }) {
     return client.request(input.endpoint, input);
   },
-};
+});

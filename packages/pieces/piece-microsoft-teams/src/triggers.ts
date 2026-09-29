@@ -1,16 +1,20 @@
-import type { PieceAppTrigger, PiecePollingTrigger, PieceRunArgs } from 'frogbot/pieces';
+import type { PieceJSON } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { MicrosoftTeamsClient } from './client.js';
 import { signal } from './client.js';
 import { identifier } from './config.js';
-import { channels, chats, teams } from './options.js';
+import { defineAppTrigger, definePollingTrigger } from './define.js';
 import { channel, chat, message } from './schemas.js';
 
-type Cursor = { since: string } | { since: string; deltaLink: string };
-type Poll<T extends z.ZodType> = PieceRunArgs<z.output<T>, object, MicrosoftTeamsClient> & {
-  cursor?: Cursor;
-};
+const cursorSchema = z.object({ since: z.string(), deltaLink: z.string().optional() });
+
+type Cursor = z.output<typeof cursorSchema>;
+
+function readCursor(cursor: PieceJSON | undefined): Cursor | undefined {
+  const parsed = cursorSchema.safeParse(cursor);
+
+  return parsed.success ? parsed.data : undefined;
+}
 
 function newest(values: { createdDateTime?: string | null }[], fallback: string) {
   return values.reduce((latest, value) => {
@@ -28,27 +32,18 @@ function after<T extends { createdDateTime?: string | null }>(values: T[], since
   );
 }
 
-function cursorDeltaLink(cursor?: Cursor) {
-  return cursor && 'deltaLink' in cursor ? cursor.deltaLink : undefined;
-}
-
 const newChannelInput = z.object({ teamId: identifier });
 
-export const channelCreated: PiecePollingTrigger<
-  typeof newChannelInput,
-  typeof channel,
-  object,
-  MicrosoftTeamsClient,
-  Cursor
-> & { options: { teamId: typeof teams } } = {
+export const channelCreated = definePollingTrigger({
   slug: 'channelCreated',
   description: 'Emit channels created in a selected team.',
   type: 'polling',
   schedule: '*/5 * * * *',
   input: newChannelInput,
   output: channel,
-  options: { teamId: teams },
-  async run({ client, input, cursor, req }: Poll<typeof newChannelInput>) {
+  async run({ client, input, cursor: stored, req }) {
+    const cursor = readCursor(stored);
+
     const query: Record<string, string | number> = {};
 
     if (cursor) query['$filter'] = `createdDateTime gt ${cursor.since}`;
@@ -66,27 +61,22 @@ export const channelCreated: PiecePollingTrigger<
 
     return { events, cursor: { since } };
   },
-};
+});
 
 const newChannelMessageInput = z.object({ teamId: identifier, channelId: identifier });
 
-export const channelMessageCreated: PiecePollingTrigger<
-  typeof newChannelMessageInput,
-  typeof message,
-  object,
-  MicrosoftTeamsClient,
-  Cursor
-> & { options: { teamId: typeof teams; channelId: typeof channels } } = {
+export const channelMessageCreated = definePollingTrigger({
   slug: 'channelMessageCreated',
   description: 'Emit messages posted in a selected channel.',
   type: 'polling',
   schedule: '*/5 * * * *',
   input: newChannelMessageInput,
   output: message,
-  options: { teamId: teams, channelId: channels },
-  async run({ client, input, cursor, req }: Poll<typeof newChannelMessageInput>) {
+  async run({ client, input, cursor: stored, req }) {
+    const cursor = readCursor(stored);
+
     const root = `/v1.0/teams/${encodeURIComponent(input.teamId)}/channels/${encodeURIComponent(input.channelId)}/messages`;
-    const requestPath = cursorDeltaLink(cursor) ?? (cursor ? `${root}/delta` : root);
+    const requestPath = cursor?.deltaLink ?? (cursor ? `${root}/delta` : root);
     const result = await client.page(
       requestPath,
       message,
@@ -111,28 +101,24 @@ export const channelMessageCreated: PiecePollingTrigger<
 
     const events = after(values, cursor?.since);
     const since = newest(values, cursor?.since ?? new Date(0).toISOString());
-    const nextCursor = deltaLink ? { since, deltaLink } : { since };
+    const nextCursor: PieceJSON = deltaLink ? { since, deltaLink } : { since };
 
     return { events, cursor: nextCursor };
   },
-};
+});
 
 const noInput = z.object({});
 
-export const chatCreated: PiecePollingTrigger<
-  typeof noInput,
-  typeof chat,
-  object,
-  MicrosoftTeamsClient,
-  Cursor
-> = {
+export const chatCreated = definePollingTrigger({
   slug: 'chatCreated',
   description: 'Emit chats created for the authenticated user.',
   type: 'polling',
   schedule: '*/5 * * * *',
   input: noInput,
   output: chat,
-  async run({ client, cursor, req }: Poll<typeof noInput>) {
+  async run({ client, cursor: stored, req }) {
+    const cursor = readCursor(stored);
+
     const query: Record<string, string | number> = {};
 
     if (cursor) query['$filter'] = `createdDateTime gt ${cursor.since}`;
@@ -144,27 +130,22 @@ export const chatCreated: PiecePollingTrigger<
 
     return { events, cursor: { since } };
   },
-};
+});
 
 const newChatMessageInput = z.object({ chatId: identifier });
 
-export const chatMessageCreated: PiecePollingTrigger<
-  typeof newChatMessageInput,
-  typeof message,
-  object,
-  MicrosoftTeamsClient,
-  Cursor
-> & { options: { chatId: typeof chats } } = {
+export const chatMessageCreated = definePollingTrigger({
   slug: 'chatMessageCreated',
   description: 'Emit messages received in a selected chat.',
   type: 'polling',
   schedule: '*/5 * * * *',
   input: newChatMessageInput,
   output: message,
-  options: { chatId: chats },
-  async run({ client, input, cursor, req }: Poll<typeof newChatMessageInput>) {
+  async run({ client, input, cursor: stored, req }) {
+    const cursor = readCursor(stored);
+
     const root = `/v1.0/chats/${encodeURIComponent(input.chatId)}/messages`;
-    const requestPath = cursorDeltaLink(cursor) ?? (cursor ? `${root}/delta` : root);
+    const requestPath = cursor?.deltaLink ?? (cursor ? `${root}/delta` : root);
     const result = await client.page(
       requestPath,
       message,
@@ -189,16 +170,16 @@ export const chatMessageCreated: PiecePollingTrigger<
 
     const events = after(values, cursor?.since);
     const since = newest(values, cursor?.since ?? new Date(0).toISOString());
-    const nextCursor = deltaLink ? { since, deltaLink } : { since };
+    const nextCursor: PieceJSON = deltaLink ? { since, deltaLink } : { since };
 
     return { events, cursor: nextCursor };
   },
-};
+});
 
 const activity = z.record(z.string(), z.unknown());
 
-function activityTrigger(slug: string, description: string): PieceAppTrigger {
-  return {
+function activityTrigger<const TSlug extends string>(slug: TSlug, description: string) {
+  return defineAppTrigger({
     slug,
     description,
     type: 'app',
@@ -213,7 +194,7 @@ function activityTrigger(slug: string, description: string): PieceAppTrigger {
 
       return [{ data: parsed, dedupeKey }];
     },
-  };
+  });
 }
 
 export const messageReceived = activityTrigger(

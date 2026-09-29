@@ -1,7 +1,7 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import { type GoogleCalendar, requestOptions } from '../client.js';
+import { requestOptions } from '../client.js';
+import { defineAction } from '../define.js';
 
 const baseUrl = 'https://www.googleapis.com/calendar/v3';
 const scalar = z.union([z.string(), z.number(), z.boolean()]);
@@ -108,22 +108,20 @@ const inputSchema = z
     }
   });
 
-export const customApiCall = {
+const output = z.object({
+  status: z.number().int(),
+  headers: z.record(z.string(), z.string()),
+  body: z.union([z.json(), z.object({ base64: z.string(), contentType: z.string() })]),
+});
+
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description:
     'Call the authenticated Google Calendar v3 API. Supports JSON, raw text, multipart text and base64 files, and base64 binary responses. Redirects are rejected.',
   input: inputSchema,
-  output: z.object({
-    status: z.number().int(),
-    headers: z.record(z.string(), z.string()),
-    body: z.union([z.json(), z.object({ base64: z.string(), contentType: z.string() })]),
-  }),
+  output,
   idempotent: false,
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof inputSchema>, object, GoogleCalendar>) {
+  async run({ client, input, req }) {
     const transport = client.context._options.auth;
     if (!transport || typeof transport === 'string' || !('request' in transport)) {
       throw new Error('Google Calendar client is missing authenticated transport.');
@@ -176,7 +174,7 @@ export const customApiCall = {
             base64: Buffer.from(response.data as ArrayBuffer).toString('base64'),
             contentType: response.headers.get('content-type') ?? 'application/octet-stream',
           }
-        : (response.data ?? null),
+        : ((response.data ?? null) as z.output<typeof output>['body']),
     };
   },
-};
+});

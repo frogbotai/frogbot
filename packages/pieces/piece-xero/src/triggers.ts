@@ -1,10 +1,10 @@
 import { createHash } from 'node:crypto';
 
-import type { PieceAppTrigger, PiecePollingTrigger } from 'frogbot/pieces';
+import type { PieceJSON } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { XeroClient } from './client.js';
 import { xeroRecord } from './client.js';
+import { defineAppTrigger, definePollingTrigger } from './define.js';
 
 const date = z
   .string()
@@ -71,7 +71,7 @@ function where(input: PollInput, typeField = 'Type') {
   return filters.join(' AND ');
 }
 
-function pollingTrigger({
+function pollingTrigger<const TSlug extends string>({
   slug,
   label,
   path,
@@ -83,7 +83,7 @@ function pollingTrigger({
   fixedWhere,
   include,
 }: {
-  slug: string;
+  slug: TSlug;
   label: string;
   path: string;
   responseKey: string;
@@ -93,8 +93,8 @@ function pollingTrigger({
   select?: (record: z.output<typeof xeroRecord>, cursor: PollCursor) => boolean;
   fixedWhere?: string;
   include?: (record: z.output<typeof xeroRecord>) => boolean;
-}): PiecePollingTrigger<typeof pollInput, typeof xeroRecord, object, XeroClient, PollCursor> {
-  return {
+}) {
+  return definePollingTrigger({
     slug,
     label,
     description: `${label} in Xero.`,
@@ -155,18 +155,17 @@ function pollingTrigger({
         }
       }
 
-      return {
-        events: records,
-        cursor: {
-          modifiedAfter: exhausted ? windowStarted : current.modifiedAfter,
-          windowStarted: exhausted ? undefined : windowStarted,
-          nextPage: exhausted ? 1 : nextPage,
-          seenIds: [...seen].slice(-5000),
-          values: current.values,
-        },
+      const next: PollCursor = {
+        modifiedAfter: exhausted ? windowStarted : current.modifiedAfter,
+        windowStarted: exhausted ? undefined : windowStarted,
+        nextPage: exhausted ? 1 : nextPage,
+        seenIds: [...seen].slice(-5000),
+        values: current.values,
       };
+
+      return { events: records, cursor: next as PieceJSON };
     },
-  };
+  });
 }
 
 const webhookEvent = z.object({
@@ -187,18 +186,18 @@ const webhookInput = z.object({
   fetchFullRecord: z.boolean().default(false),
 });
 
-function webhookTrigger({
+function webhookTrigger<const TSlug extends string>({
   slug,
   label,
   category,
   eventTypes,
 }: {
-  slug: string;
+  slug: TSlug;
   label: string;
   category: 'CONTACT' | 'INVOICE';
   eventTypes: Array<'CREATE' | 'UPDATE'>;
-}): PieceAppTrigger<typeof webhookInput, typeof xeroRecord, object, XeroClient> {
-  return {
+}) {
+  return defineAppTrigger({
     slug,
     label,
     description: `${label} from a vendor-managed Xero webhook.`,
@@ -250,7 +249,7 @@ function webhookTrigger({
 
       return output;
     },
-  };
+  });
 }
 
 export const xeroTriggers = [

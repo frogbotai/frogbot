@@ -2,6 +2,7 @@ import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { Gmail } from '../client.js';
+import { defineAction } from '../define.js';
 import {
   createRawMessage,
   findHeader,
@@ -43,27 +44,27 @@ async function replyMessage({
       extraHeaders: [`In-Reply-To: ${messageId}`, `References: ${messageId}`],
     }),
   };
-  return draft
+  const sent = draft
     ? ((await client.users.drafts.create({ userId: 'me', requestBody: { message } })).data
         .message ?? {})
     : (await client.users.messages.send({ userId: 'me', requestBody: message })).data;
+
+  return sent as z.output<typeof messageOutput>;
 }
 
-export const replyToEmail = {
+export const replyToEmail = defineAction({
   slug: 'replyToEmail',
   description: 'Reply to an existing email.',
   input: inputSchema,
   output: messageOutput,
   idempotent: false,
-  run: (args: PieceRunArgs<z.output<typeof inputSchema>, object, Gmail>) =>
-    replyMessage({ ...args, draft: false }),
-};
-export const createDraftReply = {
+  run: (args) => replyMessage({ ...args, draft: false }),
+});
+export const createDraftReply = defineAction({
   slug: 'createDraftReply',
   description: 'Create a draft reply to an existing email.',
   input: inputSchema,
   output: messageOutput,
   idempotent: false,
-  run: (args: PieceRunArgs<z.output<typeof inputSchema>, object, Gmail>) =>
-    replyMessage({ ...args, draft: true }),
-};
+  run: (args) => replyMessage({ ...args, draft: true }),
+});

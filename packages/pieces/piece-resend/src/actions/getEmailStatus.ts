@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-import type { ResendAction } from './types.js';
+import { defineAction } from '../define.js';
 
 const input = z.object({ email_id: z.string() }).passthrough();
 
-export const getEmailStatus = {
+export const getEmailStatus = defineAction({
   slug: 'getEmailStatus',
   description: 'Get an email delivery status',
   idempotent: true,
@@ -12,4 +12,4 @@ export const getEmailStatus = {
   async run({ input, client }) {
     return client.request({ path: `/emails/${input.email_id}` });
   },
-} satisfies ResendAction;
+});

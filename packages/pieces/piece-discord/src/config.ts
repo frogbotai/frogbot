@@ -27,3 +27,5 @@ export const discordOptions = z.object({
 export const guildId = z.string().min(1).meta({ label: 'Guild' });
 export const channelId = z.string().min(1).meta({ label: 'Channel' });
 export const roleId = z.string().min(1).meta({ label: 'Role' });
+
+export type DiscordOptions = z.output<typeof discordOptions>;

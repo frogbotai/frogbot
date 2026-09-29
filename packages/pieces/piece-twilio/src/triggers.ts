@@ -1,12 +1,14 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { TwilioClient } from './client.js';
+import { definePollingTrigger } from './define.js';
 
 const output = z.looseObject({ sid: z.string(), date_created: z.string() });
 const emptyInput = z.object({});
-type Cursor = { date: number; sid: string };
-type Args = PieceRunArgs<Record<string, never>, object, TwilioClient> & { cursor?: Cursor };
+const cursorSchema = z.object({ date: z.number(), sid: z.string() });
+
+type Cursor = z.output<typeof cursorSchema>;
+type Resource = z.output<typeof output>;
 
 function compare(item: Record<string, unknown>, cursor: Cursor) {
   const date = new Date(String(item.date_created)).getTime();
@@ -26,13 +28,13 @@ async function listAll({
   key: string;
   query?: Record<string, unknown>;
 }) {
-  const items: Record<string, unknown>[] = [];
+  const items: Resource[] = [];
   let next: string | null = path;
 
   while (next) {
     const body = (await client.request({ path: next, query })) as Record<string, unknown>;
 
-    if (Array.isArray(body[key])) items.push(...(body[key] as Record<string, unknown>[]));
+    if (Array.isArray(body[key])) items.push(...(body[key] as Resource[]));
 
     next = typeof body.next_page_uri === 'string' ? body.next_page_uri : null;
     query = undefined;
@@ -41,27 +43,29 @@ async function listAll({
   return items;
 }
 
-function pollingTrigger({
+function pollingTrigger<const TSlug extends string>({
   slug,
   description,
   resource,
   key,
   completed,
 }: {
-  slug: string;
+  slug: TSlug;
   description: string;
   resource: string;
   key: string;
   completed?: boolean;
 }) {
-  return {
+  return definePollingTrigger({
     slug,
     description,
-    type: 'polling' as const,
+    type: 'polling',
     schedule: '*/5 * * * *',
     input: emptyInput,
     output,
-    async run({ client, cursor }: Args) {
+    async run({ client, cursor }) {
+      const previous = cursorSchema.safeParse(cursor).data;
+
       const items = await listAll({
         client,
         path: `/2010-04-01/Accounts/${client.accountSid}/${resource}.json`,
@@ -82,25 +86,26 @@ function pollingTrigger({
       const newest = sorted.at(-1);
       const nextCursor = newest
         ? { date: new Date(String(newest.date_created)).getTime(), sid: String(newest.sid) }
-        : cursor;
+        : previous;
 
       return {
-        events: cursor ? sorted.filter((item) => compare(item, cursor) > 0) : [],
+        events: previous ? sorted.filter((item) => compare(item, previous) > 0) : [],
         cursor: nextCursor,
       };
     },
-  };
+  });
 }
 
-export const incomingSms = {
-  ...pollingTrigger({
-    slug: 'incomingSms',
-    description: 'Emit newly received inbound SMS messages',
-    resource: 'Messages',
-    key: 'messages',
-  }),
+export const incomingSms = definePollingTrigger({
+  slug: 'incomingSms',
+  description: 'Emit newly received inbound SMS messages',
+  type: 'polling',
+  schedule: '*/5 * * * *',
   input: z.object({ phoneNumber: z.string().min(1) }),
-  async run({ client, input, cursor }: Args & { input: { phoneNumber: string } }) {
+  output,
+  async run({ client, input, cursor }) {
+    const previous = cursorSchema.safeParse(cursor).data;
+
     const items = await listAll({
       client,
       path: `/2010-04-01/Accounts/${client.accountSid}/Messages.json`,
@@ -122,13 +127,13 @@ export const incomingSms = {
     const newest = messages.at(-1);
 
     return {
-      events: cursor ? messages.filter((message) => compare(message, cursor) > 0) : [],
+      events: previous ? messages.filter((message) => compare(message, previous) > 0) : [],
       cursor: newest
         ? { date: new Date(String(newest.date_created)).getTime(), sid: String(newest.sid) }
-        : cursor,
+        : previous,
     };
   },
-};
+});
 
 export const phoneNumberAdded = pollingTrigger({
   slug: 'phoneNumberAdded',

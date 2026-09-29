@@ -1,6 +1,7 @@
 import type { sheets_v4 } from 'googleapis';
 import { z } from 'zod';
 
+import { defineAction } from './define.js';
 import {
   batch,
   batchOutput,
@@ -29,29 +30,31 @@ const spreadsheetOutput = z
     modifiedTime: z.string().nullish(),
   })
   .passthrough();
-export const createSpreadsheet = {
-  slug: 'createSpreadsheet' as const,
+export const createSpreadsheet = defineAction({
+  slug: 'createSpreadsheet',
   description: 'Create a spreadsheet, optionally in a Drive folder.',
   input: createSpreadsheetInput,
   output: spreadsheetOutput,
   idempotent: false,
-  async run({ client, req, input }: SheetsArgs<z.output<typeof createSpreadsheetInput>>) {
-    return (
-      await client.drive.files.create(
-        {
-          supportsAllDrives: true,
-          fields: 'id,name,webViewLink',
-          requestBody: {
-            name: input.title,
-            mimeType: 'application/vnd.google-apps.spreadsheet',
-            parents: input.folderId ? [input.folderId] : undefined,
+  async run({ client, req, input }) {
+    return spreadsheetOutput.parse(
+      (
+        await client.drive.files.create(
+          {
+            supportsAllDrives: true,
+            fields: 'id,name,webViewLink',
+            requestBody: {
+              name: input.title,
+              mimeType: 'application/vnd.google-apps.spreadsheet',
+              parents: input.folderId ? [input.folderId] : undefined,
+            },
           },
-        },
-        requestOptions(req),
-      )
-    ).data;
+          requestOptions(req),
+        )
+      ).data,
+    );
   },
-};
+});
 
 const createInput = z.object({
   spreadsheetId: z.string().min(1),
@@ -77,21 +80,21 @@ async function addWorksheet(args: SheetsArgs<z.output<typeof createInput>>) {
   }
   return worksheetOutput.parse(properties);
 }
-export const createWorksheet = {
-  slug: 'createWorksheet' as const,
+export const createWorksheet = defineAction({
+  slug: 'createWorksheet',
   description: 'Create a worksheet with optional headers.',
   input: createInput,
   output: worksheetOutput,
   idempotent: false,
   run: addWorksheet,
-};
-export const findOrCreateWorksheet = {
-  slug: 'findOrCreateWorksheet' as const,
+});
+export const findOrCreateWorksheet = defineAction({
+  slug: 'findOrCreateWorksheet',
   description: 'Find a worksheet by exact title, or create it with optional headers.',
   input: createInput,
   output: z.object({ found: z.boolean(), created: z.boolean(), worksheet: worksheetOutput }),
   idempotent: false,
-  async run(args: SheetsArgs<z.output<typeof createInput>>) {
+  async run(args) {
     const { data } = await args.client.sheets.spreadsheets.get(
       { spreadsheetId: args.input.spreadsheetId, fields: 'sheets.properties' },
       requestOptions(args.req),
@@ -103,7 +106,7 @@ export const findOrCreateWorksheet = {
       ? { found: true, created: false, worksheet: worksheetOutput.parse(found) }
       : { found: false, created: true, worksheet: await addWorksheet(args) };
   },
-};
+});
 
 const clearSheetInput = sheetInput.extend({
   preserveHeaders: z.boolean().default(false),
@@ -113,13 +116,13 @@ const clearOutput = z.object({
   spreadsheetId: z.string().nullish(),
   clearedRange: z.string().nullish(),
 });
-export const clearWorksheet = {
-  slug: 'clearWorksheet' as const,
+export const clearWorksheet = defineAction({
+  slug: 'clearWorksheet',
   description: 'Clear worksheet values while retaining formatting and, optionally, headers.',
   input: clearSheetInput,
   output: clearOutput,
   idempotent: true,
-  async run(args: SheetsArgs<z.output<typeof clearSheetInput>>) {
+  async run(args) {
     const sheet = await worksheet(args);
     const start = args.input.preserveHeaders ? args.input.headerRow + 1 : 1;
     if (sheet.gridProperties?.rowCount != null && start > sheet.gridProperties.rowCount) {
@@ -135,20 +138,20 @@ export const clearWorksheet = {
       )
     ).data;
   },
-};
+});
 const rangeInput = sheetInput
   .extend({ startRow: rowNumber, endRow: rowNumber.optional() })
   .refine(
     (input) => input.endRow == null || input.endRow >= input.startRow,
     'End row must not precede start row.',
   );
-export const clearRows = {
-  slug: 'clearRows' as const,
+export const clearRows = defineAction({
+  slug: 'clearRows',
   description: 'Clear values in a row range without deleting rows or formatting.',
   input: rangeInput,
   output: clearOutput,
   idempotent: true,
-  async run(args: SheetsArgs<z.output<typeof rangeInput>>) {
+  async run(args) {
     const sheet = await worksheet(args);
     return (
       await args.client.sheets.spreadsheets.values.clear(
@@ -163,33 +166,35 @@ export const clearRows = {
       )
     ).data;
   },
-};
-export const deleteWorksheet = {
-  slug: 'deleteWorksheet' as const,
+});
+export const deleteWorksheet = defineAction({
+  slug: 'deleteWorksheet',
   description: 'Delete a worksheet and its contents.',
   input: sheetInput,
   output: batchOutput,
   idempotent: true,
-  run: (args: SheetsArgs<z.output<typeof sheetInput>>) =>
-    batch(args, [{ deleteSheet: { sheetId: args.input.sheetId } }]),
-};
+  run: async (args) =>
+    batchOutput.parse(await batch(args, [{ deleteSheet: { sheetId: args.input.sheetId } }])),
+});
 const renameInput = sheetInput.extend({ title: z.string().min(1) });
-export const renameWorksheet = {
-  slug: 'renameWorksheet' as const,
+export const renameWorksheet = defineAction({
+  slug: 'renameWorksheet',
   description: 'Rename a worksheet by its stable ID.',
   input: renameInput,
   output: batchOutput,
   idempotent: true,
-  run: (args: SheetsArgs<z.output<typeof renameInput>>) =>
-    batch(args, [
-      {
-        updateSheetProperties: {
-          properties: { sheetId: args.input.sheetId, title: args.input.title },
-          fields: 'title',
+  run: async (args) =>
+    batchOutput.parse(
+      await batch(args, [
+        {
+          updateSheetProperties: {
+            properties: { sheetId: args.input.sheetId, title: args.input.title },
+            fields: 'title',
+          },
         },
-      },
-    ]),
-};
+      ]),
+    ),
+});
 
 const color = z.string().regex(/^#?(?:[a-fA-F0-9]{3}|[a-fA-F0-9]{6})$/);
 const formatInput = rangeInput
@@ -216,14 +221,14 @@ function rgb(hex: string) {
     blue: parseInt(full.slice(4, 6), 16) / 255,
   };
 }
-export const formatRows = {
-  slug: 'formatRows' as const,
+export const formatRows = defineAction({
+  slug: 'formatRows',
   description:
     'Apply selected row formatting using HEX colors, leaving unspecified formatting untouched.',
   input: formatInput,
   output: batchOutput,
   idempotent: true,
-  run(args: SheetsArgs<z.output<typeof formatInput>>) {
+  async run(args) {
     const { input } = args;
     const format: sheets_v4.Schema$CellFormat = {};
     const fields: string[] = [];
@@ -247,21 +252,23 @@ export const formatRows = {
     }
 
     if (Object.keys(text).length) format.textFormat = text;
-    return batch(args, [
-      {
-        repeatCell: {
-          range: {
-            sheetId: input.sheetId,
-            startRowIndex: input.startRow - 1,
-            endRowIndex: input.endRow ?? input.startRow,
+    return batchOutput.parse(
+      await batch(args, [
+        {
+          repeatCell: {
+            range: {
+              sheetId: input.sheetId,
+              startRowIndex: input.startRow - 1,
+              endRowIndex: input.endRow ?? input.startRow,
+            },
+            cell: { userEnteredFormat: format },
+            fields: fields.join(','),
           },
-          cell: { userEnteredFormat: format },
-          fields: fields.join(','),
         },
-      },
-    ]);
+      ]),
+    );
   },
-};
+});
 
 const readRangeInput = sheetInput.extend({
   range: z
@@ -275,8 +282,8 @@ const readRangeInput = sheetInput.extend({
     .enum(['FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA'])
     .default('FORMATTED_VALUE'),
 });
-export const readRange = {
-  slug: 'readRange' as const,
+export const readRange = defineAction({
+  slug: 'readRange',
   description: 'Read a worksheet-local A1 range, with row/column orientation and value rendering.',
   input: readRangeInput,
   output: z.object({
@@ -285,7 +292,7 @@ export const readRange = {
     values: z.array(z.array(z.union([z.string(), z.number(), z.boolean(), z.null()]))),
   }),
   idempotent: true,
-  async run(args: SheetsArgs<z.output<typeof readRangeInput>>) {
+  async run(args) {
     const sheet = await worksheet(args);
     const range = sheetRange(sheet.title!, args.input.range);
     const { data } = await args.client.sheets.spreadsheets.values.get(
@@ -303,20 +310,20 @@ export const readRange = {
       values: data.values ?? [],
     };
   },
-};
+});
 
 const findSpreadsheetInput = z.object({
   name: z.string().min(1),
   exactMatch: z.boolean().default(false),
   includeSharedDrives: z.boolean().default(false),
 });
-export const findSpreadsheets = {
-  slug: 'findSpreadsheets' as const,
+export const findSpreadsheets = defineAction({
+  slug: 'findSpreadsheets',
   description: 'Find spreadsheets by exact or partial name across all result pages.',
   input: findSpreadsheetInput,
   output: z.object({ found: z.boolean(), spreadsheets: z.array(spreadsheetOutput) }),
   idempotent: true,
-  async run({ client, input, req }: SheetsArgs<z.output<typeof findSpreadsheetInput>>) {
+  async run({ client, input, req }) {
     const spreadsheets = [];
     let pageToken: string | undefined;
     const seen = new Set<string>();
@@ -334,7 +341,7 @@ export const findSpreadsheets = {
         },
         requestOptions(req),
       );
-      spreadsheets.push(...(data.files ?? []));
+      spreadsheets.push(...z.array(spreadsheetOutput).parse(data.files ?? []));
       pageToken = data.nextPageToken ?? undefined;
       if (pageToken && seen.has(pageToken)) {
         throw new Error('Google Drive returned a repeated pagination token.');
@@ -343,19 +350,19 @@ export const findSpreadsheets = {
     } while (pageToken);
     return { found: spreadsheets.length > 0, spreadsheets };
   },
-};
+});
 const findWorksheetInput = z.object({
   spreadsheetId: z.string().min(1),
   title: z.string(),
   exactMatch: z.boolean().default(false),
 });
-export const findWorksheets = {
-  slug: 'findWorksheets' as const,
+export const findWorksheets = defineAction({
+  slug: 'findWorksheets',
   description: 'Find worksheet properties by exact or partial title.',
   input: findWorksheetInput,
   output: z.object({ found: z.boolean(), worksheets: z.array(worksheetOutput) }),
   idempotent: true,
-  async run({ client, req, input }: SheetsArgs<z.output<typeof findWorksheetInput>>) {
+  async run({ client, req, input }) {
     const { data } = await client.sheets.spreadsheets.get(
       { spreadsheetId: input.spreadsheetId, fields: 'sheets.properties' },
       requestOptions(req),
@@ -368,42 +375,44 @@ export const findWorksheets = {
         ? [sheet.properties]
         : [],
     );
-    return { found: worksheets.length > 0, worksheets };
+    return { found: worksheets.length > 0, worksheets: z.array(worksheetOutput).parse(worksheets) };
   },
-};
+});
 const copyInput = sheetInput.extend({ destinationSpreadsheetId: z.string().min(1) });
-export const copyWorksheet = {
-  slug: 'copyWorksheet' as const,
+export const copyWorksheet = defineAction({
+  slug: 'copyWorksheet',
   description: 'Copy worksheet values and formatting into a destination spreadsheet.',
   input: copyInput,
   output: worksheetOutput,
   idempotent: false,
-  async run({ client, req, input }: SheetsArgs<z.output<typeof copyInput>>) {
-    return (
-      await client.sheets.spreadsheets.sheets.copyTo(
-        {
-          spreadsheetId: input.spreadsheetId,
-          sheetId: input.sheetId,
-          requestBody: { destinationSpreadsheetId: input.destinationSpreadsheetId },
-        },
-        requestOptions(req),
-      )
-    ).data;
+  async run({ client, req, input }) {
+    return worksheetOutput.parse(
+      (
+        await client.sheets.spreadsheets.sheets.copyTo(
+          {
+            spreadsheetId: input.spreadsheetId,
+            sheetId: input.sheetId,
+            requestBody: { destinationSpreadsheetId: input.destinationSpreadsheetId },
+          },
+          requestOptions(req),
+        )
+      ).data,
+    );
   },
-};
+});
 const columnInput = sheetInput.extend({
   name: z.string().min(1),
   index: z.number().int().max(18278).optional(),
   headerRow: rowNumber.default(1),
 });
-export const createColumn = {
-  slug: 'createColumn' as const,
+export const createColumn = defineAction({
+  slug: 'createColumn',
   description:
     'Insert a column at a 1-based index, or after the last header when omitted or nonpositive.',
   input: columnInput,
   output: z.object({ column: z.string(), index: rowNumber, updates: updateOutput }),
   idempotent: false,
-  async run(args: SheetsArgs<z.output<typeof columnInput>>) {
+  async run(args) {
     const sheet = await worksheet(args);
     const index =
       args.input.index && args.input.index > 0
@@ -446,6 +455,6 @@ export const createColumn = {
       requestOptions(args.req),
     );
 
-    return { column, index: index + 1, updates: data };
+    return { column, index: index + 1, updates: updateOutput.parse(data) };
   },
-};
+});

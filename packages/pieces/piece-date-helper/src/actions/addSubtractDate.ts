@@ -1,8 +1,8 @@
 import type { ManipulateType } from 'dayjs';
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import { correctedFormat, dayjs, formatSchema, parseDate, parseTime } from '../date.js';
+import { defineAction } from '../define.js';
 
 const input = z.object({
   inputDate: z.string().meta({ label: 'Input Date' }),
@@ -20,14 +20,14 @@ const input = z.object({
 
 const expressionPattern = /([+-])\s*(\d+)\s*(years?|months?|days?|hours?|minutes?|seconds?)/gi;
 
-export const addSubtractDate = {
+export const addSubtractDate = defineAction({
   slug: 'addSubtractDate',
   label: 'Add or Subtract Time',
   description: 'Add or subtract date and time units from a date.',
   input,
   output: z.object({ result: z.string() }),
   idempotent: true,
-  async run({ input: value }: PieceRunArgs<z.output<typeof input>, object, undefined>) {
+  async run({ input: value }) {
     let result = value.timeZone
       ? dayjs.tz(value.inputDate, correctedFormat(value.inputDateFormat), value.timeZone)
       : parseDate(value.inputDate, value.inputDateFormat);
@@ -78,4 +78,4 @@ export const addSubtractDate = {
 
     return { result: result.format(correctedFormat(value.outputFormat)) };
   },
-};
+});

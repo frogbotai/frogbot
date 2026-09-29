@@ -8,6 +8,7 @@ import {
   pieceCapabilities,
   type PieceDefinition,
   type PieceFactory,
+  type PieceHelpers,
   type PieceInstance,
 } from './types.js';
 
@@ -41,6 +42,28 @@ type InstanceMetadata = {
   options: unknown;
   auth: unknown;
 };
+type LiteralSlugEntries<TEntries, TMessage extends string> = {
+  [TKey in keyof TEntries]: TEntries[TKey] extends { slug: infer TSlug }
+    ? string extends TSlug
+      ? { slug: TMessage }
+      : TEntries[TKey]
+    : TEntries[TKey];
+};
+type LiteralSlugs<T extends PieceDefinition> = PieceDefinition extends T
+  ? unknown
+  : {
+      actions: LiteralSlugEntries<
+        T['actions'],
+        'Action slug must be a string literal. Wrap the action in defineAction().'
+      >;
+    } & (T extends { triggers: infer TTriggers }
+      ? {
+          triggers: LiteralSlugEntries<
+            TTriggers,
+            'Trigger slug must be a string literal. Wrap the trigger in defineAppTrigger(), definePollingTrigger(), or defineWebhookTrigger().'
+          >;
+        }
+      : unknown);
 
 export function isPieceAction(value: unknown): value is PieceAction {
   return typeof value === 'function' && actionMetadata in value;
@@ -105,7 +128,23 @@ export function pieceInstanceRuntime(instance: PieceInstance): {
   };
 }
 
-export function definePiece<const T extends PieceDefinition>(definition: T): PieceFactory<T> {
+export function createPieceHelpers<
+  TClient = undefined,
+  TOptions = Record<string, never>,
+>(): PieceHelpers<TClient, TOptions> {
+  const define = <T>(definition: T) => definition;
+
+  return {
+    defineAction: define,
+    defineAppTrigger: define,
+    definePollingTrigger: define,
+    defineWebhookTrigger: define,
+  };
+}
+
+export function definePiece<const T extends PieceDefinition>(
+  definition: T & LiteralSlugs<T>,
+): PieceFactory<T> {
   if (
     !definition.slug.trim() ||
     definition.slug !== definition.slug.trim() ||

@@ -1,6 +1,6 @@
-import { type PieceActionDefinition, type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
+import { defineAction } from '../define.js';
 import { parseNumbers } from '../numbers.js';
 
 const inputSchema = z.object({
@@ -9,16 +9,16 @@ const inputSchema = z.object({
 
 const outputSchema = z.object({ average: z.number() });
 
-export const calculateAverage = {
+export const calculateAverage = defineAction({
   slug: 'calculateAverage',
   label: 'Calculate Average',
   description: 'Calculate the average of a list of values.',
   input: inputSchema,
   output: outputSchema,
-  async run({ input }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input }) {
     const values = parseNumbers(input.values);
     const sum = values.reduce((total, value) => total + value, 0);
 
     return { average: sum / values.length };
   },
-} satisfies PieceActionDefinition<typeof inputSchema, typeof outputSchema, object, undefined>;
+});

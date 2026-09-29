@@ -1,7 +1,7 @@
-import type { PiecePollingTrigger } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { FrontClient } from './client.js';
+import { definePollingTrigger } from './define.js';
 
 const eventOutput = z.record(z.string(), z.unknown());
 const conversationId = z.string().min(1).meta({ label: 'Conversation' });
@@ -15,12 +15,6 @@ const conversationRecord = z.object({
   status: z.unknown(),
   updated_at: z.union([z.string(), z.number()]),
 });
-
-function pollingTrigger<TInput extends z.ZodType>(
-  definition: PiecePollingTrigger<TInput, typeof eventOutput, object, FrontClient, number>,
-) {
-  return definition;
-}
 
 async function eventPages(client: FrontClient, path: string) {
   const events: unknown[] = [];
@@ -44,32 +38,34 @@ async function eventPages(client: FrontClient, path: string) {
   return events;
 }
 
-function eventsTrigger<TInput extends z.ZodObject>({
+function eventsTrigger<const TSlug extends string, TInput extends z.ZodObject>({
   slug,
   type,
   input,
   limit = 15,
   conversation,
 }: {
-  slug: string;
+  slug: TSlug;
   type: string;
   input: TInput;
   limit?: number;
   conversation?: boolean;
 }) {
-  return pollingTrigger({
+  return definePollingTrigger({
     slug,
     description: `Emit new Front ${type} events.`,
-    type: 'polling' as const,
+    type: 'polling',
     schedule: '*/5 * * * *',
     input,
     output: eventOutput,
     async run({ client, input, cursor }) {
+      const since = typeof cursor === 'number' ? cursor : 0;
+
       const params = new URLSearchParams({ 'q[types]': type, limit: String(limit) });
       if (input.inboxId) params.set('q[inboxes]', String(input.inboxId));
 
       const results = await eventPages(client, `/events?${params}`);
-      let nextCursor = cursor ?? 0;
+      let nextCursor = since;
 
       const events = results.filter((event): event is Record<string, unknown> => {
         const parsed = eventRecord.safeParse(event);
@@ -83,7 +79,7 @@ function eventsTrigger<TInput extends z.ZodObject>({
 
         if (matches && Number.isFinite(emittedAt)) nextCursor = Math.max(nextCursor, emittedAt);
 
-        return matches && emittedAt > (cursor ?? 0);
+        return matches && emittedAt > since;
       });
 
       return { events, cursor: nextCursor };
@@ -115,10 +111,10 @@ export const conversationTagAdded = eventsTrigger({
   conversation: true,
 });
 
-export const conversationStatusChanged = pollingTrigger({
+export const conversationStatusChanged = definePollingTrigger({
   slug: 'conversationStatusChanged',
   description: 'Emit when a conversation reaches a selected status.',
-  type: 'polling' as const,
+  type: 'polling',
   schedule: '*/5 * * * *',
   input: z.object({
     conversationId,
@@ -126,16 +122,16 @@ export const conversationStatusChanged = pollingTrigger({
   }),
   output: eventOutput,
   async run({ client, input, cursor }) {
+    const since = typeof cursor === 'number' ? cursor : 0;
+
     const conversation = await client.request('GET', `/conversations/${input.conversationId}`);
     const parsed = conversationRecord.safeParse(conversation);
     const updatedAt = parsed.success
       ? Math.floor(Number(parsed.data.updated_at) * 1000)
       : Number.NaN;
-    const nextCursor = Number.isFinite(updatedAt)
-      ? Math.max(cursor ?? 0, updatedAt)
-      : (cursor ?? 0);
+    const nextCursor = Number.isFinite(updatedAt) ? Math.max(since, updatedAt) : since;
     const events =
-      parsed.success && parsed.data.status === input.status && updatedAt > (cursor ?? 0)
+      parsed.success && parsed.data.status === input.status && updatedAt > since
         ? [conversation]
         : [];
 

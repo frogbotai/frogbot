@@ -1,3 +1,4 @@
+import { createResend, type resendActions } from '@frogbotai/piece-resend';
 import type { FrogBotConfig, FrogBotRequest } from 'frogbot';
 import type {
   ChannelPieceInstance,
@@ -9,14 +10,21 @@ import type {
 } from 'frogbot/pieces';
 import { expectTypeOf } from 'vitest';
 
-import type { resendActions } from './index.js';
-import { createResend } from './index.js';
-import type { ResendTypes } from './piece-types.js';
-
 declare const req: FrogBotRequest;
 
 type ResendFactoryOptions = NonNullable<Parameters<typeof createResend>[0]>;
-type SendInput = ResendTypes['actions']['send']['input'];
+type SendInput = {
+  to: string[];
+  from_name: string;
+  from: string;
+  bcc?: string[] | undefined;
+  cc?: string[] | undefined;
+  reply_to?: string | undefined;
+  subject: string;
+  content_type: 'html' | 'text';
+  content: string;
+  scheduled_at?: string | undefined;
+};
 
 const input = {
   to: ['user@example.com'],
@@ -29,25 +37,28 @@ const input = {
 
 const resend = createResend({ auth: { apiKey: 'key' } });
 const emailConfig: Pick<FrogBotConfig, 'email'> = { email: resend };
+
 void emailConfig;
 
 expectTypeOf(resend).toMatchTypeOf<EmailPieceInstance>();
 expectTypeOf<Exclude<keyof typeof resend, keyof PieceInstance>>().toEqualTypeOf<
-  keyof ResendTypes['actions']
+  (typeof resendActions)[number]
 >();
-expectTypeOf<(typeof resendActions)[number]>().toEqualTypeOf<keyof ResendTypes['actions']>();
 expectTypeOf<Parameters<typeof resend.send>[0]['input']>().toEqualTypeOf<SendInput>();
 expectTypeOf<Parameters<typeof resend.send>[0]['req']>().toEqualTypeOf<
   FrogBotRequest | undefined
 >();
-expectTypeOf<Parameters<typeof resend.createDomain>[0]['input']>().toEqualTypeOf<
-  ResendTypes['actions']['createDomain']['input']
+expectTypeOf<Parameters<typeof resend.createDomain>[0]['input']>().toEqualTypeOf<{
+  name: string;
+  region?: 'us-east-1' | 'eu-west-1' | 'ap-northeast-1' | 'sa-east-1' | undefined;
+}>();
+expectTypeOf<
+  Parameters<typeof resend.getEmailStatus>[0]['input']['email_id']
+>().toEqualTypeOf<string>();
+expectTypeOf<ResendFactoryOptions['auth']>().toEqualTypeOf<{ apiKey: string } | undefined>();
+expectTypeOf<ResendFactoryOptions['from']>().toEqualTypeOf<
+  { address: string; name?: string | undefined } | undefined
 >();
-expectTypeOf<Parameters<typeof resend.getEmailStatus>[0]['input']>().toEqualTypeOf<
-  ResendTypes['actions']['getEmailStatus']['input']
->();
-expectTypeOf<ResendFactoryOptions['auth']>().toEqualTypeOf<ResendTypes['auth'] | undefined>();
-expectTypeOf<ResendFactoryOptions['from']>().toEqualTypeOf<ResendTypes['options']['from']>();
 expectTypeOf<ResendFactoryOptions['oauth']>().toEqualTypeOf<undefined>();
 
 resend.send({ input });
@@ -59,7 +70,11 @@ expectTypeOf(resend.sendBatchEmails({ input: { emails: [] } })).toEqualTypeOf<
   Promise<PieceJSON[]>
 >();
 
+// @ts-expect-error send does not accept createDomain input
+resend.send({ input: { name: 'example.com', region: 'us-east-1' } });
+
 const connected = createResend();
+
 createResend({});
 createResend({ from: { address: 'sender@example.com' } });
 createResend({
@@ -84,6 +99,7 @@ expectTypeOf<
 >().not.toMatchTypeOf<SendInput>();
 
 const connection: ConnectionEntry<typeof connected> = { piece: connected, secret: true };
+
 expectTypeOf(connection.piece).toEqualTypeOf<typeof connected>();
 expectTypeOf<{ piece: typeof connected; oauth: true }>().not.toMatchTypeOf<
   ConnectionEntry<typeof connected>

@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-import type { ResendAction } from './types.js';
+import { defineAction } from '../define.js';
 
-export const listEmails = {
+export const listEmails = defineAction({
   slug: 'listEmails',
   description: 'List sent emails',
   idempotent: true,
@@ -23,4 +23,4 @@ export const listEmails = {
       reply_to: Array.isArray(message.reply_to) ? message.reply_to.join(', ') : '',
     }));
   },
-} satisfies ResendAction;
+});

@@ -1,10 +1,9 @@
 import { createHash } from 'node:crypto';
 
-import type { PieceWebhookTrigger } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { Monday } from './client.js';
 import { type MondayColumnValue, parseColumnValue } from './columns.js';
+import { defineWebhookTrigger } from './define.js';
 
 const boardId = z.string().min(1).meta({ label: 'Board ID' });
 const columnId = z.string().min(1).meta({ label: 'Column ID' });
@@ -19,24 +18,18 @@ function dedupe(data: unknown) {
   return createHash('sha256').update(JSON.stringify(data)).digest('hex');
 }
 
-function webhookTrigger<TInput extends z.ZodObject>({
+function webhookTrigger<const TSlug extends string, TInput extends z.ZodObject>({
   slug,
   event,
   input,
   enrich = false,
 }: {
-  slug: string;
+  slug: TSlug;
   event: string;
   input: TInput;
   enrich?: boolean;
-}): PieceWebhookTrigger<
-  TInput,
-  typeof triggerOutput,
-  Record<string, never>,
-  Monday,
-  { webhookId: string }
-> {
-  return {
+}) {
+  return defineWebhookTrigger({
     slug,
     description:
       slug === 'itemCreated'
@@ -97,7 +90,7 @@ function webhookTrigger<TInput extends z.ZodObject>({
 
       return [{ dedupeKey: dedupe(enriched), data: enriched }];
     },
-  };
+  });
 }
 
 export const itemCreated = webhookTrigger({

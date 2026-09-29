@@ -1,7 +1,6 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { Gmail } from '../client.js';
+import { defineAction } from '../define.js';
 import { emailOutput, saveAttachments } from '../mail.js';
 
 const inputSchema = z.object({
@@ -9,16 +8,18 @@ const inputSchema = z.object({
   format: z.enum(['minimal', 'full', 'raw', 'metadata']).default('full'),
 });
 
-export const getEmail = {
+export const getEmail = defineAction({
   slug: 'getEmail',
   description: 'Get an email by ID.',
   input: inputSchema,
   output: emailOutput,
   idempotent: true,
-  async run({ client, input, req }: PieceRunArgs<z.output<typeof inputSchema>, object, Gmail>) {
+  async run({ client, input, req }) {
     const message = (
       await client.users.messages.get({ userId: 'me', id: input.messageId, format: input.format })
     ).data;
-    return input.format === 'full' ? saveAttachments(client, req, message) : message;
+    const email = input.format === 'full' ? await saveAttachments(client, req, message) : message;
+
+    return email as z.output<typeof emailOutput>;
   },
-};
+});

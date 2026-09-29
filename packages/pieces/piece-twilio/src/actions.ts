@@ -1,7 +1,7 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { TwilioClient } from './client.js';
+import { defineAction } from './define.js';
 
 const resource = z.looseObject({ sid: z.string() });
 const phoneNumber = z.string().min(1);
@@ -26,8 +26,6 @@ const customApiCallInput = z.object({
   body: z.record(z.string(), z.unknown()).optional(),
 });
 
-type Args<T> = PieceRunArgs<T, object, TwilioClient>;
-
 async function phoneNumberOptions({ client }: { client: TwilioClient }) {
   const numbers: { friendly_name: string; phone_number: string }[] = [];
   let path: string | null = `/2010-04-01/Accounts/${client.accountSid}/IncomingPhoneNumbers.json`;
@@ -50,45 +48,45 @@ async function phoneNumberOptions({ client }: { client: TwilioClient }) {
   }));
 }
 
-export const sendSms = {
+export const sendSms = defineAction({
   slug: 'sendSms',
   description: 'Send an SMS message',
   idempotent: false,
   input: z.object({ from: phoneNumber, to: phoneNumber, body: z.string().min(1) }),
   output: resource,
   options: { from: phoneNumberOptions },
-  async run({ input, client }: Args<{ from: string; to: string; body: string }>) {
+  async run({ input, client }) {
     return client.request({
       method: 'POST',
       path: `/2010-04-01/Accounts/${client.accountSid}/Messages.json`,
       body: { From: input.from, To: input.to, Body: input.body },
     });
   },
-};
+});
 
-export const lookupPhoneNumber = {
+export const lookupPhoneNumber = defineAction({
   slug: 'lookupPhoneNumber',
   description: 'Look up carrier and line-type information for a phone number',
   idempotent: true,
   input: z.object({ phoneNumber }),
   output: z.looseObject({ phone_number: z.string() }),
-  async run({ input, client }: Args<{ phoneNumber: string }>) {
+  async run({ input, client }) {
     return client.request({
       service: 'lookup',
       path: `/v2/PhoneNumbers/${encodeURIComponent(input.phoneNumber)}`,
       query: { Fields: 'line_type_intelligence' },
     });
   },
-};
+});
 
-export const makeCall = {
+export const makeCall = defineAction({
   slug: 'makeCall',
   description: 'Call a number and speak a message',
   idempotent: false,
   input: makeCallInput,
   output: resource,
   options: { from: phoneNumberOptions },
-  async run({ input, client }: Args<z.output<typeof makeCallInput>>) {
+  async run({ input, client }) {
     const attributes = [
       input.voice ? ` voice="${input.voice}"` : '',
       input.language ? ` language="${input.language}"` : '',
@@ -112,22 +110,22 @@ export const makeCall = {
       },
     });
   },
-};
+});
 
-export const getMessage = {
+export const getMessage = defineAction({
   slug: 'getMessage',
   description: 'Get a message by SID',
   idempotent: true,
   input: z.object({ messageSid: z.string().min(1) }),
   output: resource,
-  async run({ input, client }: Args<{ messageSid: string }>) {
+  async run({ input, client }) {
     return client.request({
       path: `/2010-04-01/Accounts/${client.accountSid}/Messages/${encodeURIComponent(input.messageSid)}.json`,
     });
   },
-};
+});
 
-export const downloadRecording = {
+export const downloadRecording = defineAction({
   slug: 'downloadRecording',
   description: 'Download a call recording',
   idempotent: true,
@@ -138,7 +136,7 @@ export const downloadRecording = {
     mimeType: z.string(),
     url: z.string().optional(),
   }),
-  async run({ input, client, req }: Args<z.output<typeof downloadRecordingInput>>) {
+  async run({ input, client, req }) {
     const data = await client.request({
       path: `/2010-04-01/Accounts/${client.accountSid}/Recordings/${encodeURIComponent(input.recordingSid)}.${input.format}`,
       query: { RequestedChannels: input.channels },
@@ -162,14 +160,14 @@ export const downloadRecording = {
 
     return { id: doc.id, name, mimeType, url: typeof doc.url === 'string' ? doc.url : undefined };
   },
-};
+});
 
-export const customApiCall = {
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Make a custom Twilio REST API call',
   input: customApiCallInput,
   output: z.unknown(),
-  async run({ input, client }: Args<z.output<typeof customApiCallInput>>) {
+  async run({ input, client }) {
     return client.request(input);
   },
-};
+});

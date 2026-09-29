@@ -26,4 +26,6 @@ export const githubOptions = z.object({
   botUserId: z.coerce.number().int().positive().optional().meta({ label: 'Bot user ID' }),
 });
 
+export type GithubOptions = z.output<typeof githubOptions>;
+
 export const githubScopes = ['admin:repo_hook', 'admin:org', 'repo', 'gist', 'user:email'];

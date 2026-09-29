@@ -1,9 +1,8 @@
 import { createHash } from 'node:crypto';
 
-import { type PieceRunArgs, type PieceWebhookTrigger } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { Trello } from './client.js';
+import { definePollingTrigger, defineWebhookTrigger } from './define.js';
 import { cardOutput } from './schemas.js';
 
 type Delivery = {
@@ -15,32 +14,20 @@ type Delivery = {
   };
 };
 
-type WebhookState = {
-  webhookId: string;
-  webhookUrl: string;
-  owned: boolean;
-};
-
-function webhookTrigger({
+function webhookTrigger<const TSlug extends string, TInput extends z.ZodObject>({
   slug,
   description,
   input,
   model,
   matches,
 }: {
-  slug: string;
+  slug: TSlug;
   description: string;
-  input: z.ZodObject;
-  model: (input: Record<string, unknown>) => string;
-  matches: (delivery: Delivery, input: Record<string, unknown>) => string | undefined;
-}): PieceWebhookTrigger<
-  z.ZodObject,
-  typeof cardOutput,
-  Record<string, never>,
-  Trello,
-  WebhookState
-> {
-  return {
+  input: TInput;
+  model: (input: z.output<TInput>) => string;
+  matches: (delivery: Delivery, input: z.output<TInput>) => string | undefined;
+}) {
+  return defineWebhookTrigger({
     slug,
     description,
     type: 'webhook',
@@ -82,7 +69,7 @@ function webhookTrigger({
         },
       ];
     },
-  };
+  });
 }
 
 const boardListInput = z.object({
@@ -130,20 +117,16 @@ const deadlineInput = z.object({
   timeBeforeDue: z.number().min(0).default(24),
 });
 
-export const cardDeadline = {
+export const cardDeadline = definePollingTrigger({
   slug: 'cardDeadline',
   description: 'Emit cards approaching their due date.',
-  type: 'polling' as const,
+  type: 'polling',
   schedule: '*/5 * * * *',
   input: deadlineInput,
   output: cardOutput,
-  async run({
-    client,
-    input,
-    cursor,
-  }: PieceRunArgs<z.output<typeof deadlineInput>, Record<string, never>, Trello> & {
-    cursor?: number;
-  }) {
+  async run({ client, input, cursor }) {
+    const since = typeof cursor === 'number' ? cursor : 0;
+
     const path = input.listId ? `lists/${input.listId}/cards` : `boards/${input.boardId}/cards`;
     const cards = await client.listAll<z.output<typeof cardOutput>>(path);
     const now = Date.now();
@@ -151,13 +134,10 @@ export const cardDeadline = {
     const events = cards.filter((card) => {
       const due = card.due ? Date.parse(card.due) : Number.NaN;
 
-      return !card.dueComplete && due > now && due < now + range && due > (cursor ?? 0);
+      return !card.dueComplete && due > now && due < now + range && due > since;
     });
-    const latest = events.reduce(
-      (value, card) => Math.max(value, Date.parse(card.due!)),
-      cursor ?? 0,
-    );
+    const latest = events.reduce((value, card) => Math.max(value, Date.parse(card.due!)), since);
 
     return { events, cursor: latest };
   },
-};
+});

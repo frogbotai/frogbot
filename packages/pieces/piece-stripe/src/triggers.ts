@@ -1,9 +1,9 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-import type { PieceWebhookTrigger } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { StripeClient, StripeResponse } from './client.js';
+import type { StripeResponse } from './client.js';
+import { defineWebhookTrigger } from './define.js';
 
 const optionalId = z.string().min(1).optional();
 const noFilters = z.object({});
@@ -30,7 +30,6 @@ const subscriptionFilter = z.object({
   customerId: optionalId,
 });
 
-type StripeWebhookState = { webhookId: string; endpointSecret: string };
 const stripeEvent = z.object({
   id: z.string().min(1),
   type: z.string(),
@@ -71,26 +70,20 @@ function verifySignature(body: string, header: string | null, secret: string): v
   if (!valid) throw new Error('Stripe webhook signature is invalid.');
 }
 
-function webhookTrigger<TInput extends z.ZodType>({
+function webhookTrigger<const TSlug extends string, TInput extends z.ZodType>({
   slug,
   event,
   description,
   input,
   matches,
 }: {
-  slug: string;
+  slug: TSlug;
   event: string;
   description: string;
   input: TInput;
   matches?: (object: StripeResponse, input: z.output<TInput>) => boolean;
-}): PieceWebhookTrigger<
-  TInput,
-  undefined,
-  Record<string, never>,
-  StripeClient,
-  StripeWebhookState
-> {
-  return {
+}) {
+  return defineWebhookTrigger({
     slug,
     description,
     type: 'webhook',
@@ -127,7 +120,7 @@ function webhookTrigger<TInput extends z.ZodType>({
         },
       ];
     },
-  };
+  });
 }
 
 export const stripeTriggerDefinitions = [

@@ -1,9 +1,9 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import convertHeic from 'heic-convert';
 import Jimp from 'jimp';
 import sharp from 'sharp';
 import { z } from 'zod';
 
+import { defineAction } from '../define.js';
 import { imageFile, loadImage, savedImage, saveImage } from '../files.js';
 
 const inputSchema = z.object({
@@ -26,13 +26,13 @@ const formats: Record<RasterFormat, { extension: string; mimeType: string }> = {
   BMP: { extension: 'bmp', mimeType: Jimp.MIME_BMP },
 };
 
-export const convertFormat = {
+export const convertFormat = defineAction({
   slug: 'convertFormat',
   label: 'Convert image format',
   description: 'Convert an image to JPEG, PNG, TIFF, BMP, or AVIF.',
   input: inputSchema,
   output,
-  async run({ input, req }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input, req }) {
     const source = await loadImage(req, input.image);
     const sourceData = ['image/heic', 'image/heif'].includes(source.mimeType)
       ? Buffer.from(await convertHeic({ buffer: source.data, format: 'PNG' }))
@@ -64,4 +64,4 @@ export const convertFormat = {
 
     return { file, sourceMimeType: source.mimeType };
   },
-};
+});

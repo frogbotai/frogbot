@@ -1,15 +1,13 @@
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { degrees, PageSizes, PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { extractText, getDocumentProxy } from 'unpdf';
 import { z } from 'zod';
 
+import { defineAction } from './define.js';
 import { fileId, loadFile, savedFile, saveFile } from './files.js';
 
 const pdfOutput = savedFile;
 const pdfFile = fileId.meta({ label: 'PDF file' });
 const imageFile = fileId.meta({ label: 'PNG or JPEG image' });
-
-type RunArgs<T extends z.ZodType> = PieceRunArgs<z.output<T>, object, undefined>;
 
 function message(error: unknown) {
   return error instanceof Error ? error.message : String(error);
@@ -68,13 +66,13 @@ function coordinates(
 
 const createPdfFromTextInput = z.object({ text: z.string().meta({ label: 'Text' }) });
 
-export const createPdfFromText = {
+export const createPdfFromText = defineAction({
   slug: 'createPdfFromText',
   label: 'Create PDF from text',
   description: 'Create an A4 PDF document from text.',
   input: createPdfFromTextInput,
   output: pdfOutput,
-  async run({ input, req }: RunArgs<typeof createPdfFromTextInput>) {
+  async run({ input, req }) {
     try {
       const document = await PDFDocument.create();
       const font = await document.embedFont(StandardFonts.Helvetica);
@@ -128,17 +126,17 @@ export const createPdfFromText = {
       throw new Error(`Failed to convert text to PDF: ${message(error)}`);
     }
   },
-};
+});
 
 const createPdfFromImageInput = z.object({ image: imageFile });
 
-export const createPdfFromImage = {
+export const createPdfFromImage = defineAction({
   slug: 'createPdfFromImage',
   label: 'Create PDF from image',
   description: 'Create an A4 PDF from a PNG or JPEG image.',
   input: createPdfFromImageInput,
   output: pdfOutput,
-  async run({ input, req }: RunArgs<typeof createPdfFromImageInput>) {
+  async run({ input, req }) {
     try {
       const image = await loadFile(req, input.image);
       const document = await PDFDocument.create();
@@ -171,20 +169,20 @@ export const createPdfFromImage = {
       throw new Error(`Failed to convert image to PDF: ${message(error)}`);
     }
   },
-};
+});
 
 const mergePdfFilesInput = z.object({
   files: z.array(pdfFile).min(2).meta({ label: 'PDF files' }),
   outputFileName: z.string().default('merged-document').meta({ label: 'Output file name' }),
 });
 
-export const mergePdfFiles = {
+export const mergePdfFiles = defineAction({
   slug: 'mergePdfFiles',
   label: 'Merge PDF files',
   description: 'Merge two or more PDF documents in order.',
   input: mergePdfFilesInput,
   output: pdfOutput,
-  async run({ input, req }: RunArgs<typeof mergePdfFilesInput>) {
+  async run({ input, req }) {
     try {
       const merged = await PDFDocument.create();
 
@@ -206,34 +204,34 @@ export const mergePdfFiles = {
       throw new Error(`Failed to merge PDFs: ${message(error)}`);
     }
   },
-};
+});
 
 const extractPdfTextInput = z.object({ file: pdfFile });
 
-export const extractPdfText = {
+export const extractPdfText = defineAction({
   slug: 'extractPdfText',
   label: 'Extract PDF text',
   description: 'Extract text from all pages of a PDF.',
   input: extractPdfTextInput,
   output: z.string(),
-  async run({ input, req }: RunArgs<typeof extractPdfTextInput>) {
+  async run({ input, req }) {
     const file = await loadFile(req, input.file);
     const document = await getDocumentProxy(new Uint8Array(file.data));
     const result = await extractText(document, { mergePages: true });
 
     return result.text;
   },
-};
+});
 
 const countPdfPagesInput = z.object({ file: pdfFile });
 
-export const countPdfPages = {
+export const countPdfPages = defineAction({
   slug: 'countPdfPages',
   label: 'Count PDF pages',
   description: 'Count the pages in a PDF document.',
   input: countPdfPagesInput,
   output: z.number().int().nonnegative(),
-  async run({ input, req }: RunArgs<typeof countPdfPagesInput>) {
+  async run({ input, req }) {
     try {
       const file = await loadFile(req, input.file);
       const document = await PDFDocument.load(file.data);
@@ -243,20 +241,20 @@ export const countPdfPages = {
       throw new Error(`Failed to get page count: ${message(error)}`);
     }
   },
-};
+});
 
 const extractPdfPagesInput = z.object({
   file: pdfFile,
   pageRanges: z.array(z.object({ startPage: z.number().int(), endPage: z.number().int() })).min(1),
 });
 
-export const extractPdfPages = {
+export const extractPdfPages = defineAction({
   slug: 'extractPdfPages',
   label: 'Extract PDF pages',
   description: 'Extract or rearrange inclusive page ranges.',
   input: extractPdfPagesInput,
   output: pdfOutput,
-  async run({ input, req }: RunArgs<typeof extractPdfPagesInput>) {
+  async run({ input, req }) {
     try {
       const file = await loadFile(req, input.file);
       const source = await PDFDocument.load(file.data);
@@ -278,7 +276,7 @@ export const extractPdfPages = {
       throw new Error(`Failed to extract pages: ${message(error)}`);
     }
   },
-};
+});
 
 const textItem = z.object({
   text: z.string(),
@@ -293,13 +291,13 @@ const textItem = z.object({
 
 const stampPdfTextInput = z.object({ file: pdfFile, items: z.array(textItem).min(1) });
 
-export const stampPdfText = {
+export const stampPdfText = defineAction({
   slug: 'stampPdfText',
   label: 'Stamp text on PDF',
   description: 'Place text at exact distances from the visual top-left corner.',
   input: stampPdfTextInput,
   output: pdfOutput,
-  async run({ input, req }: RunArgs<typeof stampPdfTextInput>) {
+  async run({ input, req }) {
     try {
       const file = await loadFile(req, input.file);
       const document = await PDFDocument.load(file.data);
@@ -350,7 +348,7 @@ export const stampPdfText = {
       throw new Error(`Failed to add text to PDF: ${message(error)}`);
     }
   },
-};
+});
 
 const imageItem = z.object({
   image: imageFile,
@@ -363,13 +361,13 @@ const imageItem = z.object({
 
 const stampPdfImagesInput = z.object({ file: pdfFile, items: z.array(imageItem).min(1) });
 
-export const stampPdfImages = {
+export const stampPdfImages = defineAction({
   slug: 'stampPdfImages',
   label: 'Stamp images on PDF',
   description: 'Place PNG or JPEG images at exact distances from the visual top-left corner.',
   input: stampPdfImagesInput,
   output: pdfOutput,
-  async run({ input, req }: RunArgs<typeof stampPdfImagesInput>) {
+  async run({ input, req }) {
     try {
       const file = await loadFile(req, input.file);
       const document = await PDFDocument.load(file.data);
@@ -427,4 +425,4 @@ export const stampPdfImages = {
       throw new Error(`Failed to add image to PDF: ${message(error)}`);
     }
   },
-};
+});

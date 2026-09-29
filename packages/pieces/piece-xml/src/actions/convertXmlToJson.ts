@@ -1,6 +1,7 @@
 import { XMLParser } from 'fast-xml-parser';
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
+
+import { defineAction } from '../define.js';
 
 const inputSchema = z.object({
   xml: z.string().meta({ label: 'XML', description: 'The XML string to convert' }),
@@ -11,13 +12,13 @@ const inputSchema = z.object({
   }),
 });
 
-export const convertXmlToJson = {
+export const convertXmlToJson = defineAction({
   slug: 'convertXmlToJson',
   label: 'Convert XML to JSON',
   description: 'Convert XML to JSON.',
   input: inputSchema,
   output: z.json().meta({ label: 'JSON' }),
-  async run({ input }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input }) {
     const parser = new XMLParser({
       ignoreAttributes: input.ignoreAttributes ?? false,
       ignoreDeclaration: true,
@@ -25,4 +26,4 @@ export const convertXmlToJson = {
 
     return parser.parse(input.xml);
   },
-};
+});

@@ -2,7 +2,7 @@ import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
 import type { AirtableClient } from '../client.js';
-import { defineAirtablePollingTrigger } from '../definitions.js';
+import { definePollingTrigger } from '../define.js';
 import { recordSchema } from '../schemas.js';
 
 const newRecordInput = z.object({
@@ -27,23 +27,20 @@ async function listRecords({
   });
 }
 
-export const newRecord = defineAirtablePollingTrigger({
+export const newRecord = definePollingTrigger({
   slug: 'newRecord',
   description: 'Emit records created since the previous poll.',
-  type: 'polling' as const,
+  type: 'polling',
   schedule: '*/5 * * * *',
   input: newRecordInput,
   output: recordSchema,
   sample: { id: 'recExample', fields: { Name: 'Example' } },
-  async run(
-    args: PieceRunArgs<z.output<typeof newRecordInput>, object, AirtableClient> & {
-      cursor?: number;
-    },
-  ) {
+  async run({ cursor, ...args }) {
+    const since = typeof cursor === 'number' ? cursor : undefined;
     const now = Date.now();
     const records = await listRecords(args);
     const events = records.filter(({ createdTime }) => {
-      return !args.cursor || (createdTime !== undefined && Date.parse(createdTime) > args.cursor);
+      return !since || (createdTime !== undefined && Date.parse(createdTime) > since);
     });
 
     return { events, cursor: now };
@@ -54,24 +51,17 @@ const updatedRecordInput = newRecordInput.extend({
   modifiedTimeField: z.string().min(1).meta({ label: 'Last modified time field name' }),
 });
 
-export const newOrUpdatedRecord = defineAirtablePollingTrigger({
+export const newOrUpdatedRecord = definePollingTrigger({
   slug: 'newOrUpdatedRecord',
   description: 'Emit records created or updated since the previous poll.',
-  type: 'polling' as const,
+  type: 'polling',
   schedule: '*/5 * * * *',
   input: updatedRecordInput,
   output: recordSchema,
   sample: { id: 'recExample', fields: { Name: 'Example' } },
-  async run({
-    client,
-    input,
-    cursor,
-    req,
-  }: PieceRunArgs<z.output<typeof updatedRecordInput>, object, AirtableClient> & {
-    cursor?: number;
-  }) {
+  async run({ client, input, cursor, req }) {
     const now = Date.now();
-    const since = new Date(cursor ?? now - 86_400_000).toISOString();
+    const since = new Date(typeof cursor === 'number' ? cursor : now - 86_400_000).toISOString();
     const records = await listRecords({
       client,
       input,

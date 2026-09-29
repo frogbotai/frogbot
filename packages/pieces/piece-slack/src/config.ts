@@ -10,6 +10,8 @@ export const slackOptions = z.object({
   signingSecret: z.string().min(1).optional().meta({ label: 'Signing secret', secret: true }),
 });
 
+export type SlackOptions = z.output<typeof slackOptions>;
+
 export const slackScopes = [
   'channels:history',
   'channels:join',

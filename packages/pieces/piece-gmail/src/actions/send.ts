@@ -1,7 +1,6 @@
-import { type PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { Gmail } from '../client.js';
+import { defineAction } from '../define.js';
 import { createRawMessage, messageBody, messageOutput, recipients } from '../mail.js';
 
 const inputSchema = z.object({
@@ -15,13 +14,13 @@ const inputSchema = z.object({
   draft: z.boolean().default(false),
 });
 
-export const send = {
+export const send = defineAction({
   slug: 'send',
   description: 'Send an email or save it as a draft.',
   input: inputSchema,
   output: messageOutput,
   idempotent: false,
-  async run({ client, input, req }: PieceRunArgs<z.output<typeof inputSchema>, object, Gmail>) {
+  async run({ client, input, req }) {
     let threadId: string | undefined;
     const extraHeaders: string[] = [];
     if (input.inReplyTo) {
@@ -31,9 +30,11 @@ export const send = {
           .data.messages?.[0]?.threadId ?? undefined;
     }
     const message = { threadId, raw: await createRawMessage({ input, req, extraHeaders }) };
-    return input.draft
+    const sent = input.draft
       ? ((await client.users.drafts.create({ userId: 'me', requestBody: { message } })).data
           .message ?? {})
       : (await client.users.messages.send({ userId: 'me', requestBody: message })).data;
+
+    return sent as z.output<typeof messageOutput>;
   },
-};
+});

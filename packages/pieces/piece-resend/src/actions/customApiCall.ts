@@ -1,7 +1,7 @@
 import type { PieceJSON } from 'frogbot/pieces';
 import { z } from 'zod';
 
-import type { ResendAction } from './types.js';
+import { defineAction } from '../define.js';
 
 const input = z.object({
   method: z.string(),
@@ -16,7 +16,7 @@ const input = z.object({
   followRedirects: z.boolean().optional(),
 });
 
-export const customApiCall = {
+export const customApiCall = defineAction({
   slug: 'customApiCall',
   description: 'Make a custom Resend API call',
   input,
@@ -91,4 +91,4 @@ export const customApiCall = {
     }
     return { ...response, body: url };
   },
-} satisfies ResendAction;
+});

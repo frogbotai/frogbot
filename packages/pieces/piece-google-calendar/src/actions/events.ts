@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
-import type { PieceRunArgs } from 'frogbot/pieces';
 import type { calendar_v3 } from 'googleapis';
 import { z } from 'zod';
 
-import { type GoogleCalendar, requestOptions } from '../client.js';
+import { requestOptions } from '../client.js';
 import {
   calendarId,
   dateTime,
@@ -14,6 +13,7 @@ import {
   sendUpdates,
   validRange,
 } from '../config.js';
+import { defineAction } from '../define.js';
 import { calendars, colors } from './options.js';
 
 function eventBody(input: z.output<typeof eventFields>): calendar_v3.Schema$Event {
@@ -54,7 +54,7 @@ const createInput = eventFields
     message: 'End date must be after start date.',
     path: ['endDateTime'],
   });
-export const createEvent = {
+export const createEvent = defineAction({
   slug: 'createEvent',
   description:
     'Create an event with attendees, guest permissions, notifications, and an optional Google Meet conference. Duration defaults to 30 minutes.',
@@ -62,11 +62,7 @@ export const createEvent = {
   output: eventOutput,
   idempotent: false,
   options: { calendarId: calendars('writer'), colorId: colors },
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof createInput>, object, GoogleCalendar>) {
+  async run({ client, input, req }) {
     const body = eventBody(input);
     body.end ??= {
       dateTime: new Date(Date.parse(input.startDateTime) + 30 * 60_000).toISOString(),
@@ -81,9 +77,9 @@ export const createEvent = {
         },
         requestOptions(req),
       )
-    ).data;
+    ).data as z.output<typeof eventOutput>;
   },
-};
+});
 
 const updateInput = eventReference
   .extend(eventFields.shape)
@@ -91,7 +87,7 @@ const updateInput = eventReference
     message: 'End date must be after start date.',
     path: ['endDateTime'],
   });
-export const updateEvent = {
+export const updateEvent = defineAction({
   slug: 'updateEvent',
   description:
     'Update only supplied event fields, preserving omitted fields. An empty attendees array clears guests.',
@@ -99,11 +95,7 @@ export const updateEvent = {
   output: eventOutput,
   idempotent: false,
   options: { calendarId: calendars('writer'), colorId: colors },
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof updateInput>, object, GoogleCalendar>) {
+  async run({ client, input, req }) {
     const reference = { calendarId: input.calendarId, eventId: input.eventId };
     const { data: existing } = await client.events.get(reference, requestOptions(req));
     const body = eventBody(input);
@@ -130,15 +122,15 @@ export const updateEvent = {
           headers: existing.etag ? { 'If-Match': existing.etag } : undefined,
         },
       )
-    ).data;
+    ).data as z.output<typeof eventOutput>;
   },
-};
+});
 
 const attendeesInput = eventReference.extend({
   attendees: z.array(z.email()).min(1),
   sendUpdates: sendUpdates.optional(),
 });
-export const addAttendees = {
+export const addAttendees = defineAction({
   slug: 'addAttendees',
   description:
     'Append attendees to an event while retaining existing attendees and their RSVP details.',
@@ -146,11 +138,7 @@ export const addAttendees = {
   output: eventOutput,
   idempotent: false,
   options: { calendarId: calendars('writer') },
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof attendeesInput>, object, GoogleCalendar>) {
+  async run({ client, input, req }) {
     const reference = { calendarId: input.calendarId, eventId: input.eventId };
     const { data: existing } = await client.events.get(reference, requestOptions(req));
     return (
@@ -170,16 +158,16 @@ export const addAttendees = {
           headers: existing.etag ? { 'If-Match': existing.etag } : undefined,
         },
       )
-    ).data;
+    ).data as z.output<typeof eventOutput>;
   },
-};
+});
 
 const quickInput = z.object({
   calendarId,
   text: z.string().trim().min(1),
   sendUpdates: sendUpdates.default('none'),
 });
-export const createQuickEvent = {
+export const createQuickEvent = defineAction({
   slug: 'createQuickEvent',
   description:
     'Create an event from a natural-language description using Google Calendar quick add.',
@@ -187,29 +175,23 @@ export const createQuickEvent = {
   output: eventOutput,
   idempotent: false,
   options: { calendarId: calendars('writer') },
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof quickInput>, object, GoogleCalendar>) {
-    return (await client.events.quickAdd(input, requestOptions(req))).data;
+  async run({ client, input, req }) {
+    const { data } = await client.events.quickAdd(input, requestOptions(req));
+
+    return data as z.output<typeof eventOutput>;
   },
-};
+});
 
 const deleteInput = eventReference.extend({ sendUpdates: sendUpdates.optional() });
-export const deleteEvent = {
+export const deleteEvent = defineAction({
   slug: 'deleteEvent',
   description: 'Delete an event, optionally notifying guests.',
   input: deleteInput,
   output: z.object({ deleted: z.literal(true) }),
   idempotent: true,
   options: { calendarId: calendars('writer') },
-  async run({
-    client,
-    input,
-    req,
-  }: PieceRunArgs<z.output<typeof deleteInput>, object, GoogleCalendar>) {
+  async run({ client, input, req }) {
     await client.events.delete(input, requestOptions(req));
     return { deleted: true as const };
   },
-};
+});

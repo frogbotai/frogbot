@@ -1,7 +1,8 @@
 import { createHmac } from 'node:crypto';
 
-import type { PieceRunArgs } from 'frogbot/pieces';
 import { z } from 'zod';
+
+import { defineAction } from '../define.js';
 
 const inputSchema = z.object({
   secretKey: z.string().meta({ label: 'Secret Key', secret: true }),
@@ -11,15 +12,15 @@ const inputSchema = z.object({
   outputEncoding: z.enum(['hex', 'base64']).default('hex').meta({ label: 'Output Encoding' }),
 });
 
-export const generateHmac = {
+export const generateHmac = defineAction({
   slug: 'generateHmac',
   label: 'Generate HMAC',
   description: 'Generate a keyed hash-based message authentication code.',
   input: inputSchema,
   output: z.string().min(1),
-  async run({ input }: PieceRunArgs<z.output<typeof inputSchema>, object, undefined>) {
+  async run({ input }) {
     const key = Buffer.from(input.secretKey, input.secretKeyEncoding);
 
     return createHmac(input.method, key).update(input.text).digest(input.outputEncoding);
   },
-};
+});
