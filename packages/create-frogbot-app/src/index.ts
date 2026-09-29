@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import * as p from '@clack/prompts';
 
-import { applyAI, providerKeyEnv } from './lib/ai.js';
+import { applyAI, missingKeyWarning } from './lib/ai.js';
 import { HELP, parseArgs } from './lib/args.js';
 import { applyDatabase } from './lib/db.js';
 import { writeEnv } from './lib/env.js';
@@ -156,15 +156,9 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     }
   }
 
-  const keyEnv = providerKeyEnv(plan.ai);
+  const keyWarning = missingKeyWarning(plan);
 
-  if (keyEnv && !plan.apiKey) {
-    p.log.warn(
-      plan.ai === 'bedrock'
-        ? `Set ${keyEnv} (or AWS_PROFILE) in ${plan.projectName}/.env before chatting.`
-        : `Set ${keyEnv} in ${plan.projectName}/.env before chatting — the assistant needs it.`,
-    );
-  }
+  if (keyWarning) p.log.warn(keyWarning);
 
   const providerDocs =
     plan.ai === 'none'
