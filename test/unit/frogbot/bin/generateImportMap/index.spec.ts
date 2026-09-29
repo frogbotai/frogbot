@@ -131,6 +131,92 @@ describe('frogbot importMap generator', () => {
     expect(output).not.toContain("import('payload')");
   });
 
+  it('imports component icons and skips built-in icon names', async () => {
+    const dir = await makeDir('frogbot-importmap-icons-');
+    const config = sanitize({
+      secret: 'test-secret',
+      db: { defaultIDType: 'number' } as never,
+      admin: {
+        components: {
+          navItems: [
+            { icon: 'home', label: 'Home', path: '/home' },
+            { icon: './components/HomeIcon.tsx#HomeIcon', label: 'Custom', path: '/custom' },
+          ],
+        },
+      },
+      collections: [
+        { slug: 'users', auth: true, fields: [] },
+        { slug: 'notes', admin: { icon: 'bubble-chat' }, fields: [] },
+      ],
+      settings: [
+        { icon: 'robot', label: 'Robot', path: 'robot', Component: './settings/Robot.tsx#Robot' },
+        {
+          icon: './settings/UsageIcon.tsx#UsageIcon',
+          label: 'Usage',
+          path: 'usage',
+          Component: './settings/Usage.tsx#Usage',
+        },
+      ],
+    });
+    const payloadConfig = await config._internal.payloadConfig;
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+
+    const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
+
+    expect(output).toContain("from './components/HomeIcon.tsx'");
+    expect(output).toContain("from './settings/UsageIcon.tsx'");
+    expect(output).not.toContain("from 'home'");
+    expect(output).not.toContain("from 'robot'");
+    expect(output).not.toContain("from 'bubble-chat'");
+  });
+
+  it('imports component object icons and skips empty icons', async () => {
+    const dir = await makeDir('frogbot-importmap-icon-objects-');
+    const config = sanitize({
+      secret: 'test-secret',
+      db: { defaultIDType: 'number' } as never,
+      admin: {
+        components: {
+          navItems: [
+            {
+              icon: { path: './components/NavIcon.tsx', exportName: 'NavIcon' },
+              label: 'A',
+              path: '/a',
+            },
+            { icon: '', label: 'B', path: '/b' },
+          ],
+        },
+      },
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+      settings: [
+        {
+          icon: { path: './settings/UsageIcon.tsx', exportName: 'UsageIcon' },
+          label: 'Usage',
+          path: 'usage',
+          Component: './settings/Usage.tsx#Usage',
+        },
+        { icon: '', label: 'Empty', path: 'empty', Component: './settings/Empty.tsx#Empty' },
+      ],
+    });
+    const payloadConfig = await config._internal.payloadConfig;
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+
+    const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
+
+    expect(output).toMatch(/import \{ NavIcon as \w+ \} from '\.\/components\/NavIcon\.tsx'/);
+    expect(output).toMatch(/import \{ UsageIcon as \w+ \} from '\.\/settings\/UsageIcon\.tsx'/);
+    expect(output).toContain('"./components/NavIcon.tsx#NavIcon":');
+    expect(output).toContain('"./settings/UsageIcon.tsx#UsageIcon":');
+    expect(output).not.toContain("from ''");
+    expect(output).not.toContain('"":');
+  });
+
   it('rewrites lexical components supplied by editor import-map callbacks', async () => {
     const dir = await makeDir('frogbot-importmap-lexical-');
     const payloadConfig = await makePayloadConfig({

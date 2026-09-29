@@ -17,6 +17,7 @@ import { Card } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
 import type { EntityToGroup } from '@payloadcms/ui/shared';
 import { EntityType, groupNavItems } from '@payloadcms/ui/shared';
+import type { AdminIcon } from 'frogbot';
 import { getCachedFrogBot, messagesToUIMessages } from 'frogbot';
 import { getPayloadConfig } from 'frogbot/internal';
 import { redirect } from 'next/navigation';
@@ -27,6 +28,7 @@ import type { ComponentProps, ComponentType } from 'react';
 
 import frogbotFavicon from '../assets/frogbot-favicon.png';
 import frogbotOGImage from '../assets/frogbot-og.jpg';
+import { renderNavIcon } from '../elements/Nav/renderNavIcon.js';
 import { SettingsNav } from '../elements/SettingsNav/index.js';
 export { BoardView } from '../views/Board/index.js';
 export { CalendarView } from '../views/Calendar/index.js';
@@ -267,7 +269,7 @@ export async function SettingsView(props: SettingsViewProps) {
       settings?: Array<{
         access?: (args: { req: typeof req }) => boolean | Promise<boolean>;
         Component: Parameters<typeof RenderServerComponent>[0]['Component'];
-        icon?: Parameters<typeof RenderServerComponent>[0]['Component'];
+        icon?: AdminIcon;
         label: string;
         path: string;
       }>;
@@ -288,13 +290,7 @@ export async function SettingsView(props: SettingsViewProps) {
   const entries = [
     { icon: <TileIcon size={18} />, label: 'Collections', path: 'collections' },
     ...accessibleSettings.map(({ entry }) => ({
-      icon: entry.icon ? (
-        RenderServerComponent({
-          Component: entry.icon,
-          importMap,
-          serverProps: props,
-        })
-      ) : (
+      icon: renderNavIcon({ icon: entry.icon, importMap, serverProps: props, size: 18 }) ?? (
         <SettingIcon size={18} />
       ),
       label: entry.label,

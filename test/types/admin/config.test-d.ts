@@ -1,9 +1,13 @@
 import type {
+  AdminIcon,
   CollectionConfig,
   DashboardConfig,
   DocumentTabConfig,
   Field,
   FrogBotRequest,
+  IconName,
+  NavItem,
+  SettingsEntry,
   Widget,
 } from 'frogbot';
 import { expectTypeOf } from 'vitest';
@@ -99,3 +103,13 @@ expectTypeOf<{
 }>().toExtend<EditViews>();
 expectTypeOf(dashboard).toMatchTypeOf<DashboardConfig>();
 expectTypeOf(collection).toMatchTypeOf<CollectionConfig>();
+expectTypeOf<'home'>().toExtend<AdminIcon>();
+expectTypeOf<'./Icon#Icon'>().toExtend<AdminIcon>();
+expectTypeOf<{ exportName: 'Icon'; path: './Icon' }>().toExtend<AdminIcon>();
+expectTypeOf<AdminIcon>().not.toEqualTypeOf<string>();
+expectTypeOf<Extract<AdminIcon, IconName>>().toEqualTypeOf<IconName>();
+expectTypeOf<NavItem['icon']>().toEqualTypeOf<AdminIcon | undefined>();
+expectTypeOf<SettingsEntry['icon']>().toEqualTypeOf<AdminIcon | undefined>();
+expectTypeOf<NonNullable<CollectionConfig['admin']>['icon']>().toEqualTypeOf<
+  AdminIcon | undefined
+>();

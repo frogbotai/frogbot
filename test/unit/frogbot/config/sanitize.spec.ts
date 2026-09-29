@@ -297,6 +297,82 @@ describe('frogbot sanitize', () => {
     ).toThrowError("[frogbot] Unknown admin icon 'unknown'. Valid:");
   });
 
+  it('rejects unknown built-in nav item icons', () => {
+    const config = makeConfig({
+      admin: {
+        components: { navItems: [{ icon: 'hmoe' as never, label: 'Home', path: '/home' }] },
+      },
+    });
+
+    expect(() => sanitize(config)).toThrowError("[frogbot] Unknown admin icon 'hmoe'. Valid:");
+  });
+
+  it('rejects unknown built-in settings icons', () => {
+    const config = makeConfig({
+      settings: [
+        { icon: 'Robot' as never, label: 'Usage', path: 'usage', Component: './Usage#Page' },
+      ],
+    });
+
+    expect(() => sanitize(config)).toThrowError("[frogbot] Unknown admin icon 'Robot'. Valid:");
+  });
+
+  it('accepts built-in names and component icons on nav items and settings', () => {
+    const config = makeConfig({
+      admin: {
+        components: {
+          navItems: [
+            { icon: 'home', label: 'Home', path: '/home' },
+            { icon: './components/HomeIcon.tsx#HomeIcon', label: 'Custom', path: '/custom' },
+            { icon: { path: './Icon.tsx', exportName: 'Icon' }, label: 'Object', path: '/object' },
+          ],
+        },
+      },
+      settings: [
+        { icon: 'robot', label: 'Robot', path: 'robot', Component: './Robot#Page' },
+        { icon: './UsageIcon#UsageIcon', label: 'Usage', path: 'usage', Component: './Usage#Page' },
+      ],
+    });
+
+    expect(() => sanitize(config)).not.toThrow();
+  });
+
+  it.each([
+    ['a wrong-case name', 'Home'],
+    ['a default-export path without #', './Icon.tsx'],
+  ])('rejects %s as a nav item icon', (_, icon) => {
+    const config = makeConfig({
+      admin: { components: { navItems: [{ icon, label: 'Home', path: '/home' }] } },
+    });
+
+    expect(() => sanitize(config)).toThrowError(`[frogbot] Unknown admin icon '${icon}'. Valid:`);
+  });
+
+  it('accepts a default-export component path and empty icons', () => {
+    const config = makeConfig({
+      admin: {
+        components: {
+          navItems: [
+            { icon: './Icon.tsx#default', label: 'Default', path: '/default' },
+            { icon: '', label: 'Empty', path: '/empty' },
+          ],
+        },
+      },
+      collections: [{ slug: 'users', auth: true, fields: [], admin: { icon: '' } }],
+      settings: [
+        { icon: '', label: 'Empty', path: 'empty', Component: './Empty#Page' },
+        {
+          icon: { path: './UsageIcon', exportName: 'UsageIcon' },
+          label: 'Usage',
+          path: 'usage',
+          Component: './Usage#Page',
+        },
+      ],
+    });
+
+    expect(() => sanitize(config)).not.toThrow();
+  });
+
   it('throws `[frogbot] `globals` is not a FrogBot concept` when `globals` is present', () => {
     const config = makeConfig() as unknown as Record<string, unknown>;
     config.globals = [{ slug: 'site', fields: [] }];

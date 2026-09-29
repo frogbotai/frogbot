@@ -7,7 +7,9 @@ import { FolderTypeField as FolderTypeField_e1fc65845c25c823b271918436e716b9 } f
 import { FrogBotNav as FrogBotNav_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 import { FrogBotIcon as FrogBotIcon_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
 import { FrogBotLogo as FrogBotLogo_0d74ee439e1043043a872b6d428a44d5 } from '@frogbotai/next/rsc';
+import { NavIcon as NavIcon_d38ce5861418a866c5e50eccb6baeb7e } from '../../components/NavIcon';
 import { CollectionsSection as CollectionsSection_0490761fff9543eb3bcfbb8da78b8101 } from '@frogbotai/next';
+import { SettingsPage as SettingsPage_ba309117302c9217970fd9af30d64dcd } from '../../components/SettingsPage';
 import { ReportsView as ReportsView_f38cfc1b9ecf3645fff5adb5910da58e } from '../../components/ReportsView';
 import { SettingsView as SettingsView_172b1613d7d7a5cf96731bcb4ca4ed45 } from '@frogbotai/next/views';
 import { WelcomeWidgetComponent as WelcomeWidgetComponent_bb2a7e54c240f3eb02c3c70619393e60 } from '../../components/DashboardWidgets';
@@ -25,7 +27,9 @@ export const importMap = {
   '@frogbotai/next/rsc#FrogBotNav': FrogBotNav_0d74ee439e1043043a872b6d428a44d5,
   '@frogbotai/next/rsc#FrogBotIcon': FrogBotIcon_0d74ee439e1043043a872b6d428a44d5,
   '@frogbotai/next/rsc#FrogBotLogo': FrogBotLogo_0d74ee439e1043043a872b6d428a44d5,
+  '/components/NavIcon#NavIcon': NavIcon_d38ce5861418a866c5e50eccb6baeb7e,
   '@frogbotai/next#CollectionsSection': CollectionsSection_0490761fff9543eb3bcfbb8da78b8101,
+  '/components/SettingsPage#SettingsPage': SettingsPage_ba309117302c9217970fd9af30d64dcd,
   '/components/ReportsView#ReportsView': ReportsView_f38cfc1b9ecf3645fff5adb5910da58e,
   '@frogbotai/next/views#SettingsView': SettingsView_172b1613d7d7a5cf96731bcb4ca4ed45,
   '/components/DashboardWidgets#WelcomeWidgetComponent':

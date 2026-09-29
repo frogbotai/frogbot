@@ -253,18 +253,5 @@ export function rewriteComponentPaths(config: SanitizedConfig): SanitizedConfig 
     rewriteBlock(block, visited);
   }
 
-  if (config.globals) {
-    for (const global of config.globals) {
-      const globalAdmin = global.admin as typeof global.admin & { icon?: PayloadComponent };
-      if (globalAdmin?.icon) globalAdmin.icon = rewriteComponent(globalAdmin.icon);
-      if (global.admin?.components) {
-        global.admin.components = rewriteComponents(
-          global.admin.components,
-        ) as typeof global.admin.components;
-      }
-      if (global.fields) rewriteFields(global.fields, visited);
-    }
-  }
-
   return config;
 }

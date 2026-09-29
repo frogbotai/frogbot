@@ -1,6 +1,8 @@
+import { HomeIcon } from '@frogbotai/ui/icons';
 import { render, screen } from '@testing-library/react';
 import type { PayloadRequest, ServerProps } from 'payload';
 import type { ReactNode } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CollectionsSection } from '../../../../../packages/next/src/elements/Nav/CollectionsSection';
@@ -30,9 +32,38 @@ vi.mock('../../../../../packages/next/src/elements/Nav/index.client', () => ({
 
 const sectionPath = './NavSection#VisibleEntitiesSection';
 const collectionsSectionPath = '@frogbotai/next#CollectionsSection';
+const navIconPath = './NavIcon#NavIcon';
 
 function VisibleEntitiesSection({ visibleEntities }: ServerProps) {
   return <p>{visibleEntities?.collections.join(', ')}</p>;
+}
+
+function NavIcon({ className, size }: { className?: string; size?: number }) {
+  return <svg className={className} data-size={size} data-testid="nav-icon" />;
+}
+
+function navItemProps(
+  navItems: { icon?: string | { exportName: string; path: string }; label: string; path: string }[],
+) {
+  const base = props();
+
+  return {
+    ...base,
+    payload: {
+      ...base.payload,
+      config: {
+        ...base.payload.config,
+        admin: { ...base.payload.config.admin, components: { navItems } },
+      },
+      importMap: { [navIconPath]: NavIcon },
+    },
+  } as unknown as { req: PayloadRequest } & ServerProps;
+}
+
+function renderedItemIcon(index: number) {
+  const items = navClient.mock.calls[0]?.[0].items as { icon?: ReactNode }[] | undefined;
+
+  return <>{items?.[index]?.icon}</>;
 }
 
 function props() {
@@ -110,6 +141,42 @@ describe('FrogBotNav', () => {
     render(await FrogBotNav(props()));
 
     expect(navClient.mock.calls[0]?.[0].items).toEqual([]);
+  });
+
+  it('renders a built-in nav item icon from the icon registry', async () => {
+    render(await FrogBotNav(navItemProps([{ icon: 'home', label: 'Home', path: '/home' }])));
+
+    expect(renderToStaticMarkup(renderedItemIcon(0))).toBe(
+      renderToStaticMarkup(<HomeIcon className="frogbot-admin-sidebar__icon" size={24} />),
+    );
+  });
+
+  it('renders a component nav item icon through the import map', async () => {
+    render(await FrogBotNav(navItemProps([{ icon: navIconPath, label: 'Custom', path: '/c' }])));
+
+    const { getByTestId } = render(renderedItemIcon(0));
+
+    expect(getByTestId('nav-icon').getAttribute('class')).toBe('frogbot-admin-sidebar__icon');
+    expect(getByTestId('nav-icon').dataset.size).toBe('24');
+  });
+
+  it('renders a component object nav item icon through the import map', async () => {
+    const icon = { exportName: 'NavIcon', path: './NavIcon' };
+
+    render(await FrogBotNav(navItemProps([{ icon, label: 'Object', path: '/o' }])));
+
+    const { getByTestId } = render(renderedItemIcon(0));
+
+    expect(getByTestId('nav-icon').getAttribute('class')).toBe('frogbot-admin-sidebar__icon');
+  });
+
+  it('leaves an empty nav item icon to the sidebar fallback', async () => {
+    render(await FrogBotNav(navItemProps([{ icon: '', label: 'Empty', path: '/e' }])));
+
+    const items = navClient.mock.calls[0]?.[0].items as { icon?: ReactNode }[] | undefined;
+
+    expect(items?.[0]).toMatchObject({ label: 'Empty' });
+    expect(items?.[0]?.icon).toBeUndefined();
   });
 
   it('renders the default Collections section with links and icons', async () => {

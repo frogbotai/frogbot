@@ -21,7 +21,7 @@ import type {
 } from 'payload';
 import { buildConfig as payloadBuildConfig, MissingEditorProp } from 'payload';
 
-import { iconNames } from '../admin/icons.js';
+import { validateAdminIcon } from '../admin/icons.js';
 import type { SettingsEntry } from '../admin/types.js';
 import type { CollectionView } from '../admin/views/types.js';
 import { buildAgentEndpoints } from '../agents/endpoints.js';
@@ -1040,6 +1040,9 @@ function sanitizeSettings(settings: SettingsEntry[] | undefined): SettingsEntry[
       throw new Error(`[frogbot] Duplicate settings path '${path}'.`);
     }
     paths.add(path);
+
+    validateAdminIcon(entry.icon);
+
     return entry;
   });
 }
@@ -1341,10 +1344,11 @@ export function sanitize(
 
   for (const collection of config.collections) {
     validateSignIn(collection);
-    const icon = collection.admin?.icon;
-    if (typeof icon === 'string' && !icon.includes('#') && !iconNames.includes(icon as never)) {
-      throw new Error(`[frogbot] Unknown admin icon '${icon}'. Valid: ${iconNames.join(', ')}`);
-    }
+    validateAdminIcon(collection.admin?.icon);
+  }
+
+  for (const item of config.admin?.components?.navItems ?? []) {
+    validateAdminIcon(item.icon);
   }
 
   validateInternalPathReservations(config);

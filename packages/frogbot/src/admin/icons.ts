@@ -125,3 +125,12 @@ const toIconName = (value: string) =>
     .toLowerCase() as IconName;
 
 export const iconNames = adminIconExports.map(toIconName).sort();
+
+export const isIconComponent = (icon: unknown): boolean =>
+  typeof icon !== 'string' || icon.includes('#');
+
+export function validateAdminIcon(icon: unknown): void {
+  if (!icon || isIconComponent(icon) || iconNames.includes(icon as IconName)) return;
+
+  throw new Error(`[frogbot] Unknown admin icon '${icon}'. Valid: ${iconNames.join(', ')}`);
+}
