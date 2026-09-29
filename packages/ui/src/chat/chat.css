@@ -47,6 +47,10 @@
   flex: 1 1 0%;
 }
 
+.fb-chat__error {
+  margin-bottom: 0.5rem;
+}
+
 .fb-chat__queued {
   display: flex;
   flex-direction: column;

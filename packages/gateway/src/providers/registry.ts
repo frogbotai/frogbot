@@ -128,6 +128,15 @@ export const providers = {
 export type ProviderName = keyof typeof providers;
 export const PROVIDER_NAMES = Object.keys(providers) as ProviderName[];
 
+export function providerKeyEnvVar(provider: string): string | undefined {
+  if (!Object.hasOwn(providers, provider)) return undefined;
+
+  const definition: { envVars: readonly string[]; requiredKeys?: readonly string[] } =
+    providers[provider as ProviderName];
+
+  return definition.requiredKeys?.length ? definition.envVars[0] : undefined;
+}
+
 export type GatewayLanguageModel = LanguageModelV4 | LanguageModelV3;
 export type GatewayEmbeddingModel = EmbeddingModelV4 | EmbeddingModelV3;
 export type GatewaySpeechModel = SpeechModelV4 | SpeechModelV3;

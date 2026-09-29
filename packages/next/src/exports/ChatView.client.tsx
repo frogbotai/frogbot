@@ -16,7 +16,7 @@ import {
   updateChatAgent,
   useChatProvider,
 } from '@frogbotai/ui/chat';
-import { usePreferences, useRouteTransition } from '@payloadcms/ui';
+import { toast, usePreferences, useRouteTransition } from '@payloadcms/ui';
 import type { UIMessage } from 'frogbot';
 import { useRouter } from 'next/navigation.js';
 import { type ComponentType, type ReactNode, useEffect, useRef, useState } from 'react';
@@ -302,6 +302,8 @@ function ChatViewInner({
       {...(initialChat === undefined ? {} : { initialChat })}
       initialMessages={initialMessages}
       logo={logo}
+      errorContent={false}
+      onError={(error) => toast.error(error.message)}
       onChatIdChange={onChatIdChange}
       composerStartSlot={controls}
       userMessageActions={UserActions}

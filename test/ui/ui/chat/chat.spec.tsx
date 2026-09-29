@@ -1,5 +1,6 @@
 import { createFrogBotSDK } from '@frogbotai/sdk';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { APICallError } from 'ai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
@@ -10,6 +11,7 @@ const state = vi.hoisted(() => ({
   stop: vi.fn(),
   setMessages: vi.fn(),
   addToolOutput: vi.fn(),
+  clearError: vi.fn(),
   options: undefined as import('@ai-sdk/react').UseChatOptions | undefined,
   refresh: vi.fn(),
   adapter: {
@@ -48,6 +50,7 @@ vi.mock('../../../../packages/ui/src/chat/provider', () => ({
 }));
 vi.mock('../../../../packages/ui/src/chat/use-chat', () => ({
   useChatMessages: () => state.history,
+  loadChatMessages: async () => ({ messages: [], queued: [] }),
 }));
 vi.mock('../../../../packages/ui/src/chat/use-chats', () => ({
   emitChatMutation: vi.fn(),
@@ -446,4 +449,60 @@ describe('Chat', () => {
     expect(state.stop).toHaveBeenCalledOnce();
     expect(screen.getByText('Aborted')).toBeTruthy();
   });
+
+  it('reports a failed turn through onError with a displayable message', () => {
+    const onError = vi.fn();
+
+    render(<Chat {...props} onError={onError} />);
+    act(() => state.options?.onError?.(new Error('The AI provider rejected the API key.')));
+
+    expect(onError).toHaveBeenCalledOnce();
+    expect(onError.mock.calls[0][0].message).toBe('The AI provider rejected the API key.');
+  });
+
+  it('reports the server message of a rejected turn request', async () => {
+    const onError = vi.fn();
+
+    render(<Chat {...props} onError={onError} />);
+    act(() => state.options?.onError?.(turnRequestError('selection-unavailable')));
+
+    await waitFor(() => expect(onError).toHaveBeenCalledOnce());
+    expect(onError.mock.calls[0][0].message).toBe('The selected model is unavailable.');
+  });
+
+  it('does not report turn conflicts that recover silently', async () => {
+    const onError = vi.fn();
+
+    render(<Chat {...props} onError={onError} />);
+    act(() => state.options?.onError?.(turnRequestError('already-settled')));
+
+    await waitFor(() => expect(state.clearError).toHaveBeenCalledOnce());
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it('renders a default inline error without errorContent', () => {
+    state.error = turnRequestError('selection-unavailable');
+
+    render(<Chat agent="support" />);
+
+    expect(screen.getByRole('alert').textContent).toBe('The selected model is unavailable.');
+  });
+
+  it('renders no inline error when errorContent is false', () => {
+    state.error = new Error('Stream failed');
+
+    render(<Chat agent="support" errorContent={false} />);
+
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
 });
+
+function turnRequestError(code: string) {
+  return new APICallError({
+    message: 'Request failed',
+    url: '/api/agents/support',
+    requestBodyValues: undefined,
+    statusCode: 409,
+    responseBody: JSON.stringify({ error: 'The selected model is unavailable.', code }),
+  });
+}

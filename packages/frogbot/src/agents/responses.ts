@@ -1,3 +1,6 @@
+import { isGatewayError } from '@frogbotai/gateway/errors';
+
+import { aiErrorMessage } from '../ai/errorMessage.js';
 import { TurnError } from '../chat/turn/errors.js';
 import { listPendingCalls } from '../chat/turn/settle.js';
 import type { TurnStream } from '../chat/turn/streamTurn.js';
@@ -36,6 +39,15 @@ export async function agentResult({
 }
 
 export function errorResponse(error: unknown): Response {
+  const aiError = aiErrorMessage({ error });
+
+  if (aiError) {
+    return Response.json(
+      { error: aiError },
+      { status: isGatewayError(error) ? getErrorStatus(error) : 502 },
+    );
+  }
+
   const code = error instanceof TurnError ? error.code : undefined;
 
   return Response.json(

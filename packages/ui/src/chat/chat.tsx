@@ -24,13 +24,23 @@ import { branchChat, deleteChat, dismissToolCall, renameChat } from './mutations
 import { type ChatManifest, useChatProvider } from './provider.js';
 import { type ToolActions, ToolActionsContext } from './tool-actions.js';
 import type { ToolPartValue } from './tool-registry.js';
-import { FrogBotChatTransport, prepareChatRequest, turnErrorCode } from './transport.js';
+import {
+  FrogBotChatTransport,
+  prepareChatRequest,
+  toChatError,
+  turnErrorCode,
+} from './transport.js';
 import { loadChatMessages, loadTurnState, useChatMessages } from './use-chat.js';
 import type { ChatDocument } from './use-chats.js';
 import { emitChatMutation, useChatDocument, useChats } from './use-chats.js';
 
 const TURN_SYNC_ATTEMPTS = 120;
 const TURN_SYNC_INTERVAL = 1_000;
+const SILENT_TURN_ERRORS = new Set<TurnErrorCode>([
+  'already-settled',
+  'not-awaiting',
+  'channel-chat',
+]);
 
 type ChatActions = {
   rename: (title: string) => Promise<void>;
@@ -72,7 +82,8 @@ export type ChatProps = {
   submitContent?: ReactNode;
   stopContent?: ReactNode;
   fallbackTitle?: string;
-  errorContent?: (error: Error) => ReactNode;
+  errorContent?: ((error: Error) => ReactNode) | false;
+  onError?: (error: Error) => void;
   abortedContent?: ReactNode;
   warningContent?: ReactNode;
   renderSidebar?: (context: ChatSidebarContext) => ReactNode;
@@ -81,6 +92,12 @@ export type ChatProps = {
   assistantMessageActions?: ComponentType<MessageActionsSlotProps> | false;
   panel?: ReactNode;
 };
+
+function isSilentTurnError(error: Error) {
+  const code = turnErrorCode(error);
+
+  return code !== undefined && SILENT_TURN_ERRORS.has(code);
+}
 
 function messageText(message: UIMessage) {
   return message.parts
@@ -96,7 +113,7 @@ export function Chat(props: ChatProps) {
   const provider = useChatProvider();
   if (!provider) throw new Error('Chat requires ChatProvider');
   if (provider.loading) return props.loadingContent;
-  if (provider.error) return props.errorContent?.(provider.error);
+  if (provider.error) return props.errorContent ? props.errorContent(provider.error) : null;
   if (!provider.manifest || !provider.manifest.chat.enabled) return props.disabledContent;
   return (
     <ChatInner
@@ -143,6 +160,7 @@ function ChatInner({
   assistantMessageActions: AssistantMessageActions,
   model,
   onChatIdChange,
+  onError,
   panel,
   reasoning,
   renderMessage,
@@ -253,6 +271,8 @@ function ChatInner({
       const code = turnErrorCode(error);
 
       if (code) void recoverTurn(code);
+
+      if (!isSilentTurnError(error)) onError?.(toChatError(error));
     },
   });
 
@@ -274,6 +294,13 @@ function ChatInner({
     });
   }
 
+  function failAction(error: unknown, fallback: string) {
+    const actionError = toChatError(error instanceof Error ? error : new Error(fallback));
+
+    setActionError(actionError);
+    onError?.(actionError);
+  }
+
   async function reloadMessages() {
     const next = await loadChatMessages({ sdk, messagesSlug, chatId: request.current.chatId });
 
@@ -290,14 +317,12 @@ function ChatInner({
     try {
       await reloadMessages();
     } catch (error) {
-      setActionError(error instanceof Error ? error : new Error('Failed to reload chat'));
+      failAction(error, 'Failed to reload chat');
 
       return;
     }
 
-    if (code === 'already-settled' || code === 'not-awaiting' || code === 'channel-chat') {
-      chat.clearError();
-    }
+    if (code && SILENT_TURN_ERRORS.has(code)) chat.clearError();
   }
 
   async function syncTurn() {
@@ -329,7 +354,7 @@ function ChatInner({
       }
     } catch (error) {
       if (!controller.signal.aborted) {
-        setActionError(error instanceof Error ? error : new Error('Failed to reload chat'));
+        failAction(error, 'Failed to reload chat');
       }
     }
   }
@@ -487,12 +512,18 @@ function ChatInner({
       chats.refresh();
       selectChat(nextChatId);
     } catch (error) {
-      setActionError(error instanceof Error ? error : new Error('Failed to branch chat'));
+      failAction(error, 'Failed to branch chat');
     } finally {
       setBranching(false);
     }
   };
-  const error = actionError ?? history.error ?? activeChat.error ?? chats.error ?? chat.error;
+  const turnError = chat.error && !isSilentTurnError(chat.error) ? chat.error : undefined;
+  const error =
+    actionError ??
+    history.error ??
+    activeChat.error ??
+    chats.error ??
+    (turnError && toChatError(turnError));
   const pending = chat.status === 'submitted' || chat.status === 'streaming';
   const lastMessage = chat.messages.at(-1);
   const pendingToolCallIds = useMemo(
@@ -528,7 +559,7 @@ function ChatInner({
         return;
       }
 
-      setActionError(error instanceof Error ? error : new Error('Failed to dismiss'));
+      failAction(error, 'Failed to dismiss');
     }
   };
   const toolActions: ToolActions = {

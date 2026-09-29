@@ -38,6 +38,22 @@ Chat renders no sidebar by default because the FrogBot admin navigation already 
 />
 ```
 
+## Errors
+
+When a reply or a chat action fails, `Chat` shows the error above the composer. Provider failures read as actionable messages, such as `The AI provider rejected the API key. Check OPENAI_API_KEY in .env.` for a rejected key, and never include the provider's raw response. The full error is still logged on the server.
+
+Pass `onError` to handle failures yourself, and `errorContent` to replace the inline error, or `false` to hide it. The FrogBot admin uses both to show failures as toasts:
+
+```tsx
+<Chat
+  agent="support"
+  errorContent={false}
+  onError={(error) => notify(error.message)}
+/>
+```
+
+Stopping a reply is not an error, and conflicts that `Chat` resolves by reloading the conversation are not reported.
+
 ## Chat row actions
 
 Admin recents include Rename and Delete actions. Hover a row to reveal its menu button, or right-click the row to open the same keyboard-accessible menu. Rename opens with the current title selected and requests one AI title suggestion; selecting the suggestion fills the input without saving it. Delete always asks for confirmation and removes the chat with its messages.
