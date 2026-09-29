@@ -15,12 +15,14 @@
   &nbsp;
   <a href="https://discord.com/invite/JBZF7syAnU"><img alt="Discord" src="https://img.shields.io/badge/Discord-join%20chat-5865F2?logo=discord&logoColor=white&style=flat-square" /></a>
   &nbsp;
-  <img alt="Node" src="https://img.shields.io/badge/node-%E2%89%A520-brightgreen?style=flat-square" />
+  <img alt="Node" src="https://img.shields.io/badge/node-%E2%89%A522-brightgreen?style=flat-square" />
 </p>
 
 <hr/>
 
 <h4 align="center">
+  <a href="#start-with-a-coding-agent"><strong>Start with a coding agent</strong></a>
+  &nbsp;·&nbsp;
   <a href="https://docs.frogbot.ai"><strong>Explore the Docs</strong></a>
   &nbsp;·&nbsp;
   <a href="https://discord.com/invite/JBZF7syAnU"><strong>Join the Discord</strong></a>
@@ -34,6 +36,26 @@
 
 It ships with a full data layer (collections, auth, access control, hooks) and its own embeddable, fully MIT open-source [AI gateway](./packages/gateway).
 
+## Start with a coding agent
+
+Paste this prompt into Codex, Claude Code, Cursor, or another coding agent, and it sets up FrogBot for you. The agent may ask for permission to run commands or use the internet; allow it so the setup can finish. Prefer to do it yourself? Follow the [step-by-step setup](https://docs.frogbot.ai/getting-started/setup).
+
+```text
+Help me set up FrogBot, an open-source AI agent app, on this computer. I am not a programmer. Do the work yourself, explain each step in one short sentence, and stop to ask me when you need something from me.
+
+1. Check that Node.js 22 or newer is installed by running node --version. If it is missing or older, give me the link https://nodejs.org/en/download, wait until I say it is installed, then check again.
+2. Ask me which AI key I have: OpenAI (the default), Anthropic, or Google. If I have none, send me to https://platform.openai.com/api-keys to create an OpenAI key, and wait.
+3. Create the app in my home folder, or in a folder I name, with this command:
+npx create-frogbot-app@latest my-frogbot --yes --agents YOUR_AGENT
+Replace YOUR_AGENT with the value for the tool you are: codex for Codex, claude for Claude Code, cursor for Cursor, opencode for opencode, copilot for GitHub Copilot, or gemini for Gemini CLI. For an Anthropic key add --ai anthropic; for a Google key add --ai google. This command also installs the FrogBot skill into the project. If a my-frogbot folder already exists there, ask me for another name and use it instead of my-frogbot from here on.
+4. Go into the my-frogbot folder and read the FrogBot skill before changing anything. AGENTS.md tells you where it is (CLAUDE.md for Claude Code, GEMINI.md for Gemini CLI, .github/copilot-instructions.md for GitHub Copilot). If the skill is missing, run npx skills add frogbotai/frogbot --skill frogbot --yes in that folder.
+5. The app needs my AI provider key in the .env file in my-frogbot (OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_GENERATIVE_AI_API_KEY). Ask me how I want to set it up.
+6. Start the app by running npm run dev in my-frogbot and keep it running. If you cannot keep it running, tell me exactly how to run it myself in a terminal.
+7. When it is ready, tell me to open http://localhost:3000 and create my admin account. Then I open Chat, then Chats, in the sidebar and create a new chat to send my first message.
+
+If anything fails, explain the error in plain words and fix it. For FrogBot questions, use the skill first, then https://docs.frogbot.ai/llms.txt.
+```
+
 ## Why FrogBot
 
 - **One config file** — agents, tools, collections, providers, storage, and email all live in `frogbot.config.ts`
@@ -46,22 +68,24 @@ It ships with a full data layer (collections, auth, access control, hooks) and i
 
 ## Quickstart
 
-Scaffold a project and talk to a real agent in under a minute:
+You need Node.js 22 or newer and an [OpenAI API key](https://platform.openai.com/api-keys). Create a project:
 
 ```bash
-npx create-frogbot-app my-agent
+npx create-frogbot-app@latest my-agent
 cd my-agent
-npm install
+```
+
+The scaffolder installs dependencies, sets up Git, and writes a `.env` with a generated `FROGBOT_SECRET`. The starter agents run on OpenAI, so they need `OPENAI_API_KEY`: paste your key when the scaffolder asks, or add it to `.env` before you start the app. Pass `--ai anthropic` or `--ai google` to use another provider.
+
+Start the app:
+
+```bash
 npm run dev
 ```
 
-That gives you a `users` auth collection, SQLite storage, and one agent — no Docker, no external database. The scaffolder writes a `.env` with a generated `FROGBOT_SECRET`, so the default agent answers immediately. Then talk to it:
+Open [http://localhost:3000](http://localhost:3000) and create your admin account. The dashboard lists your collections; open **Chat → Chats** in the sidebar and select **Create New** to talk to an agent.
 
-```bash
-curl -s http://localhost:3000/api/agents/assistant \
-  -H 'content-type: application/json' \
-  -d '{"prompt":"Hello!"}'
-```
+That gives you a `users` auth collection, SQLite storage, and two agents (`general` and `assistant`) — no Docker, no external database. New to all this? The [step-by-step setup](https://docs.frogbot.ai/getting-started/setup) explains each step. To call agents from your own code, see the [REST API](https://docs.frogbot.ai/rest-api/overview).
 
 ## How it works
 
@@ -197,7 +221,7 @@ pnpm docker:start <profile> up -d
 pnpm test:int:sqlite   # or test:int:pg / test:int:mongo
 ```
 
-Requires Node ≥ 20 and [pnpm](https://pnpm.io).
+Requires Node ≥ 22 and [pnpm](https://pnpm.io).
 
 ## Contributing
 

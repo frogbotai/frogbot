@@ -1,0 +1,65 @@
+---
+title: "Start with a coding agent"
+sidebarTitle: "Start with a coding agent"
+description: "Paste one prompt into Codex, Claude Code, Cursor, or another coding agent, and it creates, configures, and starts a FrogBot app for you."
+---
+
+import StarterPrompt from '/snippets/starter-prompt.mdx';
+
+A coding agent can do the whole setup for you: check your computer, create the app with the FrogBot skill, and start it. You answer its questions and approve what it wants to run. Open your coding agent in your home folder (the prompt creates the app there unless you name another folder), then paste this prompt:
+
+<StarterPrompt />
+
+## What the agent does
+
+1. Checks that Node.js 22 or newer is installed, and sends you to the download page if it is not.
+2. Asks which AI provider key you have: OpenAI, Anthropic, or Google. If you have none, it sends you to create an OpenAI key.
+3. Creates the app in a `my-frogbot` folder with `create-frogbot-app`, which also installs the FrogBot skill for that agent. If the folder already exists, it asks you for another name.
+4. Reads the FrogBot skill, so it knows how FrogBot apps work before it changes anything.
+5. Asks how you want to add your AI key. The key goes in the `.env` file inside the app folder, which the app's `.gitignore` keeps out of Git.
+6. Starts the app with `npm run dev`. If it cannot keep the app running, it tells you how to start it yourself.
+7. Tells you to open [http://localhost:3000](http://localhost:3000) and create your admin account. You then open **Chat → Chats** in the sidebar and select **Create New** to send your first message.
+
+## What your agent will ask you
+
+Most coding agents ask before they run a command, use the internet, or keep a program running. Expect requests to:
+
+- Run `node --version`, `npx create-frogbot-app@latest`, and `npm run dev`.
+- Download packages from the internet while the app is created.
+- Keep the development server running in the background.
+
+Allow them so the setup can finish. The agent also stops to ask which AI key you have and how you want to add it.
+
+## Which agent value to use
+
+The prompt tells the agent to pick its own value for `--agents`. This table shows what each one installs:
+
+| Coding agent | `--agents` value | Skill directory | Instruction file |
+| --- | --- | --- | --- |
+| Codex | `codex` | `.agents/skills/frogbot/` | `AGENTS.md` |
+| Claude Code | `claude` | `.claude/skills/frogbot/` | `CLAUDE.md` |
+| Cursor | `cursor` | `.agents/skills/frogbot/` | `AGENTS.md` |
+| opencode | `opencode` | `.agents/skills/frogbot/` | `AGENTS.md` |
+| GitHub Copilot | `copilot` | `.agents/skills/frogbot/` | `.github/copilot-instructions.md` |
+| Gemini CLI | `gemini` | `.agents/skills/frogbot/` | `GEMINI.md` |
+
+If the skill is missing, the prompt tells the agent to install it from GitHub with `npx skills add frogbotai/frogbot --skill frogbot --yes`. See [Coding agents](/skills/coding-agents) for every way to install the skill.
+
+## Documentation for agents
+
+Point your agent at the documentation index to find the right page for a FrogBot question:
+
+```text
+https://docs.frogbot.ai/llms.txt
+```
+
+## Prefer to do it yourself?
+
+<CardGroup cols={2}>
+  <Card title="Step-by-step setup" icon="list-check" href="/getting-started/setup">
+    The same path, one plain-language step at a time.
+  </Card>
+  <Card title="Installation" icon="download" href="/getting-started/installation">
+    Every option for creating a project.
+  </Card>
+</CardGroup>
