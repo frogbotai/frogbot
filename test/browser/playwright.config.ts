@@ -180,6 +180,7 @@ export default defineConfig({
         'question.browser.spec.ts',
         'reasoningSelector.browser.spec.ts',
         'channelChat.browser.spec.ts',
+        'chatErrors.browser.spec.ts',
       ],
       use: {
         ...devices['Desktop Chrome'],

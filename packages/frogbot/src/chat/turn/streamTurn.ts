@@ -8,10 +8,12 @@ import {
 } from 'ai';
 
 import type { AgentInstance, AgentSelection, AgentStreamResult } from '../../agents/types.js';
+import { aiErrorMessage } from '../../ai/errorMessage.js';
 import { resolveModel } from '../../ai/resolve.js';
 import { isClientTool } from '../../tools/types.js';
 import type { FrogBotRequest } from '../../types/request.js';
 import { createMessageUsage, persistAssistantMessage } from '../messagePersistence.js';
+import { TurnError } from './errors.js';
 import {
   findMessage,
   hasPendingParts,
@@ -39,6 +41,9 @@ export type TurnStream = {
   uiMessageStream: ReadableStream<UIMessageChunk>;
   persistence: Promise<void>;
 };
+
+const TURN_ERROR_MESSAGE =
+  'Something went wrong generating a reply. Check the terminal for details.';
 
 export function allClientTools(agent: AgentInstance): ClientToolsOption {
   return {
@@ -91,28 +96,32 @@ export async function streamTurn({
     throw error;
   }
 
-  const source = onError
-    ? result.stream.pipeThrough(
-        new TransformStream({
-          transform: (part, controller) => {
-            if (part.type === 'error') {
-              controller.error(part.error);
+  const source = result.stream.pipeThrough(
+    new TransformStream({
+      transform: (part, controller) => {
+        if (part.type === 'error') {
+          controller.error(part.error);
 
-              return;
-            }
+          return;
+        }
 
-            controller.enqueue(part);
-          },
-        }),
-      )
-    : result.stream;
+        controller.enqueue(part);
+      },
+    }),
+  );
 
   let awaiting = false;
+
+  const errorText =
+    onError ??
+    ((error: unknown) =>
+      aiErrorMessage({ error, model: mainModel, config: req.frogbot.config.ai }) ??
+      (error instanceof TurnError ? error.message : TURN_ERROR_MESSAGE));
 
   const stream = createUIMessageStream({
     originalMessages: uiMessages,
     generateId: () => messageId,
-    onError,
+    onError: errorText,
     execute: ({ writer }) => {
       writer.merge(
         toUIMessageStream({

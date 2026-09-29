@@ -30,9 +30,11 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   setPreference: vi.fn(),
   startRouteTransition: vi.fn((transition: () => void) => transition()),
+  toastError: vi.fn(),
 }));
 
 vi.mock('@payloadcms/ui', () => ({
+  toast: { error: mocks.toastError },
   usePreferences: () => ({
     getPreference: mocks.getPreference,
     setPreference: mocks.setPreference,
@@ -127,6 +129,7 @@ describe('ChatViewClient', () => {
     mocks.push.mockClear();
     mocks.setPreference.mockClear();
     mocks.startRouteTransition.mockClear();
+    mocks.toastError.mockClear();
     mocks.getPreference.mockReset().mockResolvedValue(null);
   });
 
@@ -172,6 +175,23 @@ describe('ChatViewClient', () => {
     expect(mocks.provider.mock.calls.at(-1)?.[0].toolRenderers).toBe(general);
     fireEvent.click(await screen.findByText('Sales'));
     await waitFor(() => expect(mocks.provider.mock.calls.at(-1)?.[0].toolRenderers).toBe(sales));
+  });
+
+  it('shows failed turns as an admin toast instead of an inline error', async () => {
+    useManifest(agentEntry('general'));
+
+    renderChatView();
+    await waitFor(() => expect(mocks.chat).toHaveBeenCalled());
+
+    const props = mocks.chat.mock.calls.at(-1)?.[0] as {
+      errorContent?: unknown;
+      onError: (error: Error) => void;
+    };
+
+    props.onError(new Error('The AI provider rejected the API key.'));
+
+    expect(props.errorContent).toBe(false);
+    expect(mocks.toastError).toHaveBeenCalledWith('The AI provider rejected the API key.');
   });
 
   it('shows the model selector for a single-model agent with reasoning levels', async () => {

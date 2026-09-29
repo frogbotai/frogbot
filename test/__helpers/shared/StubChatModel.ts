@@ -10,6 +10,7 @@ export type StubChatResponse = {
   text?: string;
   toolCalls?: StubToolCall[];
   hold?: Promise<void>;
+  error?: { status: number; body: unknown };
 };
 
 export type StubChatRequest = {
@@ -56,8 +57,9 @@ function listen(server: Server, port: number): Promise<void> {
 /**
  * OpenAI-compatible chat completions stub. Each request that offers tools
  * consumes the next scripted response (text by default), is recorded, and
- * can hold its reply until a test releases it. Requests without tools, such
- * as chat title generation, receive a plain text reply and are not recorded.
+ * can hold its reply until a test releases it or fail with a scripted HTTP
+ * error. Requests without tools, such as chat title generation, receive a
+ * plain text reply and are not recorded.
  */
 export async function startStubChatModel(port: number): Promise<StubChatModel> {
   const requests: StubChatRequest[] = [];
@@ -78,6 +80,13 @@ export async function startStubChatModel(port: number): Promise<StubChatModel> {
     const response = (agentRequest ? responses.shift() : undefined) ?? { text: 'Done.' };
 
     await response.hold;
+
+    if (response.error) {
+      res.writeHead(response.error.status, { 'content-type': 'application/json' });
+      res.end(JSON.stringify(response.error.body));
+
+      return;
+    }
 
     const calls = response.toolCalls ?? [];
     const finishReason = calls.length > 0 ? 'tool_calls' : 'stop';
