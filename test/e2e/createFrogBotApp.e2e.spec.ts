@@ -381,24 +381,27 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app CLI', () => {
     });
 
     expect(result.status, result.output).toBe(0);
-    expect(result.output).not.toContain('Install failed');
+    expect(result.output).not.toContain('install failed');
     expect(fs.existsSync(path.join(root, appName, 'package.json'))).toBe(true);
   });
 
-  it('keeps a completed scaffold when dependency installation fails', () => {
+  it('stops before git and keeps the scaffold when dependency installation fails', () => {
     const fakeBin = path.join(root, 'fake-bin');
     const appName = 'install-failure';
 
     fs.mkdirSync(fakeBin);
 
-    const result = run(process.execPath, [cli, appName, '--yes', '--no-git', '--use-npm'], {
+    const result = run(process.execPath, [cli, appName, '--yes', '--use-npm'], {
       cwd: root,
       env: { PATH: fakeBin },
     });
 
-    expect(result.status, result.output).toBe(0);
-    expect(result.output).toContain('Install failed');
+    expect(result.status, result.output).toBe(1);
+    expect(result.output).toContain(
+      '[create-frogbot-app] error: npm install failed. Git was not initialized.',
+    );
     expect(fs.existsSync(path.join(root, appName, 'package.json'))).toBe(true);
+    expect(fs.existsSync(path.join(root, appName, '.git'))).toBe(false);
   });
 
   it('warns without writing pointers when the bundled skill is absent', () => {

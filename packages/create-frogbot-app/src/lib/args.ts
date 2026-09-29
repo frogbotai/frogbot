@@ -1,5 +1,7 @@
 import { parseArgs as parseNodeArgs } from 'node:util';
 
+import { CliError } from './errors.js';
+
 export interface CliArgs {
   agents?: string;
   ai?: string;
@@ -35,40 +37,53 @@ Options:
   -h, --help                  Show help
 `;
 
+const OPTIONS = {
+  agents: { type: 'string' },
+  ai: { type: 'string' },
+  'api-key': { type: 'string' },
+  db: { type: 'string', short: 'd' },
+  help: { type: 'boolean', short: 'h', default: false },
+  name: { type: 'string', short: 'n' },
+  'no-agents': { type: 'boolean', default: false },
+  'no-deps': { type: 'boolean', default: false },
+  'no-git': { type: 'boolean', default: false },
+  'no-install': { type: 'boolean', default: false },
+  template: { type: 'string', short: 't' },
+  'use-bun': { type: 'boolean', default: false },
+  'use-npm': { type: 'boolean', default: false },
+  'use-pnpm': { type: 'boolean', default: false },
+  'use-yarn': { type: 'boolean', default: false },
+  yes: { type: 'boolean', short: 'y', default: false },
+} as const;
+
+function parseArgv(argv: string[]) {
+  try {
+    return parseNodeArgs({ args: argv, allowPositionals: true, strict: true, options: OPTIONS });
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+
+    if (code?.startsWith('ERR_PARSE_ARGS_')) {
+      const [reason] = (error as Error).message.split('. ');
+
+      throw new CliError(`${reason}. Run create-frogbot-app --help to see all options.`);
+    }
+
+    throw error;
+  }
+}
+
 export function parseArgs(argv: string[]): CliArgs {
-  const { positionals, values } = parseNodeArgs({
-    args: argv,
-    allowPositionals: true,
-    strict: true,
-    options: {
-      agents: { type: 'string' },
-      ai: { type: 'string' },
-      'api-key': { type: 'string' },
-      db: { type: 'string', short: 'd' },
-      help: { type: 'boolean', short: 'h', default: false },
-      name: { type: 'string', short: 'n' },
-      'no-agents': { type: 'boolean', default: false },
-      'no-deps': { type: 'boolean', default: false },
-      'no-git': { type: 'boolean', default: false },
-      'no-install': { type: 'boolean', default: false },
-      template: { type: 'string', short: 't' },
-      'use-bun': { type: 'boolean', default: false },
-      'use-npm': { type: 'boolean', default: false },
-      'use-pnpm': { type: 'boolean', default: false },
-      'use-yarn': { type: 'boolean', default: false },
-      yes: { type: 'boolean', short: 'y', default: false },
-    },
-  });
+  const { positionals, values } = parseArgv(argv);
 
   if (positionals.length > 1 || (values.name && positionals[0])) {
-    throw new Error('Provide the project name once, either positionally or with --name.');
+    throw new CliError('Provide the project name once, either positionally or with --name.');
   }
 
   const managers = (['bun', 'npm', 'pnpm', 'yarn'] as const).filter(
     (name) => values[`use-${name}`],
   );
 
-  if (managers.length > 1) throw new Error('Choose only one package manager.');
+  if (managers.length > 1) throw new CliError('Choose only one package manager.');
 
   return {
     agents: values['no-agents'] ? '' : values.agents,
