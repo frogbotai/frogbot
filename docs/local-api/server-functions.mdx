@@ -340,17 +340,28 @@ Using server functions helps prevent direct exposure of Local API operations to 
 - **Avoid passing sensitive data**: Do not return sensitive information such as user data, passwords, etc.
 - **Use authentication & authorization**: Check user roles before performing actions.
 
-Example of restricting access based on user role:
+This example reads the user from the request and lets the collection's access rules decide whether they can delete the post. Never accept the user as an argument, because a server function can be called with any arguments; read the user from the request.
 
 ```ts
-import { UnauthorizedError } from 'frogbot'
+'use server'
 
-export async function deletePost(postId, user) {
-  if (!user || user.role !== 'admin') {
-    throw new UnauthorizedError()
+import { headers as getHeaders } from 'next/headers'
+import config from '@frogbot-config'
+import { getFrogBot } from 'frogbot'
+
+export async function deletePost(postId: string) {
+  const frogbot = await getFrogBot({ config })
+  const { user } = await frogbot.auth({ headers: await getHeaders() })
+
+  if (!user) {
+    return { error: 'Not signed in' }
   }
 
-  const frogbot = await getFrogBot({ config })
-  return await frogbot.delete({ collection: 'posts', id: postId })
+  return await frogbot.delete({
+    collection: 'posts',
+    id: postId,
+    overrideAccess: false,
+    user,
+  })
 }
 ```
