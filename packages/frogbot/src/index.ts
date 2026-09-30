@@ -298,6 +298,7 @@ export type {
   GeneratedTypes,
   RoleSlug,
   TypedCollection,
+  TypeWithID,
   UntypedFrogBotTypes,
 } from './types/generated.js';
 export type { FrogBotRequest } from './types/request.js';
@@ -329,7 +330,14 @@ export type {
   SendEmailOptions,
   UploadConfig,
 } from 'payload';
-export type { SelectType, Sort, Where } from 'payload';
+export type {
+  ApplyDisableErrors,
+  JsonObject,
+  SelectType,
+  Sort,
+  TransformDataWithSelect,
+  Where,
+} from 'payload';
 
 // ---------------------------------------------------------------------------
 // Hook, access, endpoint, and field types (owned by frogbot)

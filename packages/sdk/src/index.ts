@@ -1,3 +1,87 @@
+import type { ApplyDisableErrors, PaginatedDocs, SelectType, TypeWithVersion } from 'frogbot';
+
+import { forgotPassword, type ForgotPasswordOptions } from './auth/forgotPassword.js';
+import { login, type LoginOptions, type LoginResult } from './auth/login.js';
+import { me, type MeOptions, type MeResult } from './auth/me.js';
+import { type RefreshOptions, type RefreshResult, refreshToken } from './auth/refreshToken.js';
+import {
+  resetPassword,
+  type ResetPasswordOptions,
+  type ResetPasswordResult,
+} from './auth/resetPassword.js';
+import { verifyEmail, type VerifyEmailOptions } from './auth/verifyEmail.js';
+import { count, type CountOptions } from './collections/count.js';
+import { create, type CreateOptions } from './collections/create.js';
+import {
+  type DeleteByIDOptions,
+  type DeleteManyOptions,
+  deleteOperation,
+  type DeleteOptions,
+} from './collections/delete.js';
+import { find, type FindOptions } from './collections/find.js';
+import { findByID, type FindByIDOptions } from './collections/findByID.js';
+import { findVersionByID, type FindVersionByIDOptions } from './collections/findVersionByID.js';
+import { findVersions, type FindVersionsOptions } from './collections/findVersions.js';
+import { restoreVersion, type RestoreVersionByIDOptions } from './collections/restoreVersion.js';
+import {
+  update,
+  type UpdateByIDOptions,
+  type UpdateManyOptions,
+  type UpdateOptions,
+} from './collections/update.js';
+import { search, type SearchOptions, type SearchResult } from './search.js';
+import type {
+  AuthCollectionSlug,
+  BulkOperationResult,
+  CollectionSlug,
+  DataFromCollectionSlug,
+  DefaultTypes,
+  FrogBotSDKSend,
+  FrogBotTypesShape,
+  SelectFromCollectionSlug,
+  TransformCollectionWithSelect,
+} from './types.js';
+import { buildSearchParams } from './utilities/buildSearchParams.js';
+
+export type { ForgotPasswordOptions } from './auth/forgotPassword.js';
+export type { LoginOptions, LoginResult } from './auth/login.js';
+export type { MeOptions, MeResult } from './auth/me.js';
+export type { RefreshOptions, RefreshResult } from './auth/refreshToken.js';
+export type { ResetPasswordOptions, ResetPasswordResult } from './auth/resetPassword.js';
+export type { VerifyEmailOptions } from './auth/verifyEmail.js';
+export type { CountOptions } from './collections/count.js';
+export type { CreateOptions } from './collections/create.js';
+export type {
+  DeleteBaseOptions,
+  DeleteByIDOptions,
+  DeleteManyOptions,
+  DeleteOptions,
+} from './collections/delete.js';
+export type { FindOptions } from './collections/find.js';
+export type { FindByIDOptions } from './collections/findByID.js';
+export type { FindVersionByIDOptions } from './collections/findVersionByID.js';
+export type { FindVersionsOptions } from './collections/findVersions.js';
+export type { RestoreVersionByIDOptions } from './collections/restoreVersion.js';
+export type {
+  UpdateBaseOptions,
+  UpdateByIDOptions,
+  UpdateManyOptions,
+  UpdateOptions,
+} from './collections/update.js';
+export type { SearchHit, SearchOptions, SearchResult } from './search.js';
+export type {
+  AuthCollectionSlug,
+  BulkOperationResult,
+  CollectionSlug,
+  DataFromCollectionSlug,
+  DefaultTypes,
+  FrogBotTypesShape,
+  SelectFromCollectionSlug,
+  TransformCollectionWithSelect,
+  UntypedFrogBotSDKTypes,
+  UploadCollectionSlug,
+  WhereFromCollectionSlug,
+} from './types.js';
 export type { AgentManifest, AgentManifestEntry } from 'frogbot';
 
 export type FrogBotSDKConfig = {
@@ -71,7 +155,7 @@ export class FrogBotSDKError extends Error {
   }
 }
 
-export class FrogBotSDK {
+export class FrogBotSDK<T extends FrogBotTypesShape = DefaultTypes> {
   readonly baseURL: string;
   readonly fetch: typeof fetch;
   readonly headers: Headers;
@@ -152,10 +236,171 @@ export class FrogBotSDK {
     const result = (await response.json()) as FrogBotUploadResponse;
     return result.doc;
   }
+
+  count<TSlug extends CollectionSlug<T>>(
+    options: CountOptions<T, TSlug>,
+    init?: RequestInit,
+  ): Promise<{ totalDocs: number }> {
+    return count(this.#send, options, init);
+  }
+
+  create<TSlug extends CollectionSlug<T>, TSelect extends SelectType>(
+    options: CreateOptions<T, TSlug, TSelect>,
+    init?: RequestInit,
+  ): Promise<TransformCollectionWithSelect<T, TSlug, TSelect>> {
+    return create(this.#send, options, init);
+  }
+
+  delete<TSlug extends CollectionSlug<T>, TSelect extends SelectFromCollectionSlug<T, TSlug>>(
+    options: DeleteManyOptions<T, TSlug, TSelect>,
+    init?: RequestInit,
+  ): Promise<BulkOperationResult<T, TSlug, TSelect>>;
+
+  delete<TSlug extends CollectionSlug<T>, TSelect extends SelectFromCollectionSlug<T, TSlug>>(
+    options: DeleteByIDOptions<T, TSlug, TSelect>,
+    init?: RequestInit,
+  ): Promise<TransformCollectionWithSelect<T, TSlug, TSelect>>;
+
+  delete<TSlug extends CollectionSlug<T>, TSelect extends SelectFromCollectionSlug<T, TSlug>>(
+    options: DeleteOptions<T, TSlug, TSelect>,
+    init?: RequestInit,
+  ): Promise<
+    BulkOperationResult<T, TSlug, TSelect> | TransformCollectionWithSelect<T, TSlug, TSelect>
+  > {
+    return deleteOperation(this.#send, options, init);
+  }
+
+  find<TSlug extends CollectionSlug<T>, TSelect extends SelectFromCollectionSlug<T, TSlug>>(
+    options: FindOptions<T, TSlug, TSelect>,
+    init?: RequestInit,
+  ): Promise<PaginatedDocs<TransformCollectionWithSelect<T, TSlug, TSelect>>> {
+    return find(this.#send, options, init);
+  }
+
+  findByID<
+    TSlug extends CollectionSlug<T>,
+    TDisableErrors extends boolean,
+    TSelect extends SelectFromCollectionSlug<T, TSlug>,
+  >(
+    options: FindByIDOptions<T, TSlug, TDisableErrors, TSelect>,
+    init?: RequestInit,
+  ): Promise<ApplyDisableErrors<TransformCollectionWithSelect<T, TSlug, TSelect>, TDisableErrors>> {
+    return findByID(this.#send, options, init);
+  }
+
+  findVersionByID<TSlug extends CollectionSlug<T>, TDisableErrors extends boolean>(
+    options: FindVersionByIDOptions<T, TSlug, TDisableErrors>,
+    init?: RequestInit,
+  ): Promise<
+    ApplyDisableErrors<TypeWithVersion<DataFromCollectionSlug<T, TSlug>>, TDisableErrors>
+  > {
+    return findVersionByID(this.#send, options, init);
+  }
+
+  findVersions<TSlug extends CollectionSlug<T>>(
+    options: FindVersionsOptions<T, TSlug>,
+    init?: RequestInit,
+  ): Promise<PaginatedDocs<TypeWithVersion<DataFromCollectionSlug<T, TSlug>>>> {
+    return findVersions(this.#send, options, init);
+  }
+
+  forgotPassword<TSlug extends AuthCollectionSlug<T>>(
+    options: ForgotPasswordOptions<T, TSlug>,
+    init?: RequestInit,
+  ): Promise<{ message: string }> {
+    return forgotPassword(this.#send, options, init);
+  }
+
+  login<TSlug extends AuthCollectionSlug<T>>(
+    options: LoginOptions<T, TSlug>,
+    init?: RequestInit,
+  ): Promise<LoginResult<T, TSlug>> {
+    return login(this.#send, options, init);
+  }
+
+  me<TSlug extends AuthCollectionSlug<T>>(
+    options: MeOptions<T, TSlug>,
+    init?: RequestInit,
+  ): Promise<MeResult<T, TSlug>> {
+    return me(this.#send, options, init);
+  }
+
+  refreshToken<TSlug extends AuthCollectionSlug<T>>(
+    options: RefreshOptions<T, TSlug>,
+    init?: RequestInit,
+  ): Promise<RefreshResult<T, TSlug>> {
+    return refreshToken(this.#send, options, init);
+  }
+
+  resetPassword<TSlug extends AuthCollectionSlug<T>>(
+    options: ResetPasswordOptions<T, TSlug>,
+    init?: RequestInit,
+  ): Promise<ResetPasswordResult<T, TSlug>> {
+    return resetPassword(this.#send, options, init);
+  }
+
+  restoreVersion<TSlug extends CollectionSlug<T>>(
+    options: RestoreVersionByIDOptions<T, TSlug>,
+    init?: RequestInit,
+  ): Promise<DataFromCollectionSlug<T, TSlug>> {
+    return restoreVersion(this.#send, options, init);
+  }
+
+  search<TSlug extends CollectionSlug<T>>(
+    collection: TSlug,
+    options: SearchOptions<T, TSlug>,
+    init?: RequestInit,
+  ): Promise<SearchResult<T, TSlug>> {
+    return search(this.#send, collection, options, init);
+  }
+
+  update<TSlug extends CollectionSlug<T>, TSelect extends SelectFromCollectionSlug<T, TSlug>>(
+    options: UpdateManyOptions<T, TSlug, TSelect>,
+    init?: RequestInit,
+  ): Promise<BulkOperationResult<T, TSlug, TSelect>>;
+
+  update<TSlug extends CollectionSlug<T>, TSelect extends SelectFromCollectionSlug<T, TSlug>>(
+    options: UpdateByIDOptions<T, TSlug, TSelect>,
+    init?: RequestInit,
+  ): Promise<TransformCollectionWithSelect<T, TSlug, TSelect>>;
+
+  update<TSlug extends CollectionSlug<T>, TSelect extends SelectFromCollectionSlug<T, TSlug>>(
+    options: UpdateOptions<T, TSlug, TSelect>,
+    init?: RequestInit,
+  ): Promise<
+    BulkOperationResult<T, TSlug, TSelect> | TransformCollectionWithSelect<T, TSlug, TSelect>
+  > {
+    return update(this.#send, options, init);
+  }
+
+  verifyEmail<TSlug extends AuthCollectionSlug<T>>(
+    options: VerifyEmailOptions<T, TSlug>,
+    init?: RequestInit,
+  ): Promise<{ message: string }> {
+    return verifyEmail(this.#send, options, init);
+  }
+
+  #send: FrogBotSDKSend = ({ args = {}, file, init, json, method, path }) => {
+    const requestInit: FrogBotRequestInit = { method, ...init };
+
+    if (json && file) {
+      const body = new FormData();
+
+      body.append('file', file);
+      body.append('_payload', JSON.stringify(json));
+      requestInit.body = body;
+    } else if (json) {
+      requestInit.json = json;
+    }
+
+    return this.request(`${path}${buildSearchParams(args)}`, requestInit);
+  };
 }
 
-export function createFrogBotSDK(config: FrogBotSDKConfig): FrogBotSDK {
-  return new FrogBotSDK(config);
+export function createFrogBotSDK<T extends FrogBotTypesShape = DefaultTypes>(
+  config: FrogBotSDKConfig,
+): FrogBotSDK<T> {
+  return new FrogBotSDK<T>(config);
 }
 
 export default FrogBotSDK;
