@@ -13,6 +13,11 @@ export default buildConfig({
   collections: [Users, Pages],
   typescript: { autoGenerate: false },
   admin: {
+    components: {
+      afterAccountMenu: ['/components/AccountMenuProbes#AfterAccount'],
+      beforeAccountMenu: ['/components/AccountMenuProbes#BeforeAccount'],
+      logout: { Button: '/components/AccountMenuProbes#LogoutProbe' },
+    },
     livePreview: {
       url: ({ data, req }) => (req.frogbot ? `${serverURL}/pages/${data.slug}` : null),
       collections: [pagesSlug],

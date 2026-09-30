@@ -251,6 +251,45 @@ admin: {
 }
 ```
 
+## Customize the account menu
+
+Select Account in the bottom rail to open the account menu. Its items appear in this order:
+
+1. Your name and email, which open the account page
+2. `admin.components.beforeAccountMenu`
+3. Settings
+4. `admin.components.afterAccountMenu`
+5. `admin.components.settingsMenu`
+6. Log out, or `admin.components.logout.Button` when set
+
+```ts
+admin: {
+  components: {
+    beforeAccountMenu: ['./src/components/WorkspaceSwitcher#WorkspaceSwitcher'],
+    afterAccountMenu: ['./src/components/SupportLink#SupportLink'],
+    logout: { Button: './src/components/LogoutButton#LogoutButton' }
+  }
+}
+```
+
+Replace Log out when users sign out somewhere else, such as an external identity app:
+
+```tsx
+import type { RootComponentServerProps } from 'frogbot'
+
+export function LogoutButton({ user }: RootComponentServerProps) {
+  const returnTo = encodeURIComponent('https://app.example.com')
+
+  return (
+    <a href={`https://identity.example.com/sign-out?returnTo=${returnTo}`} role="menuitem">
+      Sign out {user?.email}
+    </a>
+  )
+}
+```
+
+Account menu components receive the request as `req`. Use `req?.frogbot` to reach FrogBot. See [Component props](/custom-components/root-components#component-props) for the full list.
+
 ## Replace the sidebar
 
 Set `admin.components.Nav` to replace the default sidebar. Your component receives the standard admin server props, including the current user, permissions, and visible collections.

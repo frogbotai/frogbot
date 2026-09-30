@@ -8,9 +8,37 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CollectionsSection } from '../../../../../packages/next/src/elements/Nav/CollectionsSection';
 import { FrogBotNav } from '../../../../../packages/next/src/elements/Nav/index';
 
+type NavClientProps = {
+  afterAccountMenu?: ReactNode;
+  beforeAccountMenu?: ReactNode;
+  items?: unknown[];
+  logout?: ReactNode;
+  sections?: ReactNode;
+};
+
 const navClient = vi.hoisted(() =>
-  vi.fn(({ sections }: { items?: unknown[]; sections?: ReactNode }) => <nav>{sections}</nav>),
+  vi.fn(({ afterAccountMenu, beforeAccountMenu, logout, sections }: NavClientProps) => (
+    <nav>
+      {sections}
+      {beforeAccountMenu}
+      {afterAccountMenu}
+      {logout}
+    </nav>
+  )),
 );
+
+const renderLog = vi.hoisted(() => [] as string[]);
+
+const attachRegisteredFrogBot = vi.hoisted(() =>
+  vi.fn((req: { frogbot?: unknown }) => {
+    renderLog.push('attach');
+    req.frogbot = { marker: 'frogbot' };
+
+    return req;
+  }),
+);
+
+vi.mock('frogbot/internal', () => ({ attachRegisteredFrogBot }));
 
 vi.mock('@payloadcms/ui', () => ({
   Account: () => <span />,
@@ -33,6 +61,49 @@ vi.mock('../../../../../packages/next/src/elements/Nav/index.client', () => ({
 const sectionPath = './NavSection#VisibleEntitiesSection';
 const collectionsSectionPath = '@frogbotai/next#CollectionsSection';
 const navIconPath = './NavIcon#NavIcon';
+
+const beforeAccountPath = './AccountMenu#BeforeAccount';
+const afterAccountPath = './AccountMenu#AfterAccount';
+const settingsMenuPath = './AccountMenu#SettingsItem';
+const logoutPath = './AccountMenu#LogoutProbe';
+
+function accountMenuProbe(name: string) {
+  return function AccountMenuProbe({ req }: { req?: { frogbot?: unknown } }) {
+    renderLog.push(name);
+
+    return <span data-testid={`probe-${name}`}>{req?.frogbot ? 'attached' : 'missing'}</span>;
+  };
+}
+
+function accountMenuProps({ withReq = true } = {}) {
+  const base = props();
+
+  return {
+    ...base,
+    payload: {
+      ...base.payload,
+      config: {
+        ...base.payload.config,
+        admin: {
+          ...base.payload.config.admin,
+          components: {
+            afterAccountMenu: [afterAccountPath],
+            beforeAccountMenu: [beforeAccountPath],
+            logout: { Button: logoutPath },
+            settingsMenu: [settingsMenuPath],
+          },
+        },
+      },
+      importMap: {
+        [afterAccountPath]: accountMenuProbe('after-account'),
+        [beforeAccountPath]: accountMenuProbe('before-account'),
+        [logoutPath]: accountMenuProbe('logout'),
+        [settingsMenuPath]: accountMenuProbe('settings-menu'),
+      },
+    },
+    req: withReq ? base.req : undefined,
+  } as unknown as { req?: PayloadRequest } & ServerProps;
+}
 
 function VisibleEntitiesSection({ visibleEntities }: ServerProps) {
   return <p>{visibleEntities?.collections.join(', ')}</p>;
@@ -129,6 +200,69 @@ function defaultSectionProps() {
 describe('FrogBotNav', () => {
   beforeEach(() => {
     navClient.mockClear();
+    attachRegisteredFrogBot.mockClear();
+    renderLog.length = 0;
+  });
+
+  it('attaches req.frogbot before rendering account-menu slots', async () => {
+    const navProps = accountMenuProps();
+
+    render(await FrogBotNav(navProps));
+
+    expect(screen.getByTestId('probe-before-account').textContent).toBe('attached');
+    expect(screen.getByTestId('probe-after-account').textContent).toBe('attached');
+    expect(screen.getByTestId('probe-logout').textContent).toBe('attached');
+    expect(attachRegisteredFrogBot).toHaveBeenCalledExactlyOnceWith(navProps.req);
+    expect(renderLog[0]).toBe('attach');
+  });
+
+  it('skips the attach when no req is passed', async () => {
+    render(await FrogBotNav(accountMenuProps({ withReq: false })));
+
+    expect(attachRegisteredFrogBot).not.toHaveBeenCalled();
+    expect(screen.getByTestId('probe-before-account').textContent).toBe('missing');
+    expect(screen.getByTestId('probe-after-account').textContent).toBe('missing');
+    expect(screen.getByTestId('probe-logout').textContent).toBe('missing');
+  });
+
+  it('renders beforeAccountMenu, afterAccountMenu, and settingsMenu in order', async () => {
+    render(await FrogBotNav(accountMenuProps()));
+
+    const { afterAccountMenu, beforeAccountMenu } = navClient.mock.calls[0]![0];
+    const before = render(<>{beforeAccountMenu}</>).container;
+    const after = render(<>{afterAccountMenu}</>).container;
+
+    expect(
+      [...before.querySelectorAll('[data-testid]')].map((node) => node.getAttribute('data-testid')),
+    ).toEqual(['probe-before-account']);
+    expect(
+      [...after.querySelectorAll('[data-testid]')].map((node) => node.getAttribute('data-testid')),
+    ).toEqual(['probe-after-account', 'probe-settings-menu']);
+  });
+
+  it('renders only the configured account-menu list when the other is empty', async () => {
+    const base = accountMenuProps();
+    const navProps = {
+      ...base,
+      payload: {
+        ...base.payload,
+        config: {
+          ...base.payload.config,
+          admin: {
+            ...base.payload.config.admin,
+            components: { afterAccountMenu: [afterAccountPath], beforeAccountMenu: [] },
+          },
+        },
+      },
+    } as typeof base;
+
+    render(await FrogBotNav(navProps));
+
+    const { afterAccountMenu, beforeAccountMenu, logout } = navClient.mock.calls[0]![0];
+
+    expect(render(<>{beforeAccountMenu}</>).container.innerHTML).toBe('');
+    expect(render(<>{afterAccountMenu}</>).container.textContent).toBe('attached');
+    expect(logout).toBeUndefined();
   });
 
   it('passes visible entities to configured navigation sections', async () => {

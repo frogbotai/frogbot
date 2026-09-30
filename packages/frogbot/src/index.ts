@@ -417,6 +417,7 @@ export type {
   PublishButtonServerProps,
   PublishButtonServerPropsOnly,
   RenderDocumentVersionsProperties,
+  RootComponentServerProps,
   SaveButtonClientProps,
   SaveButtonServerProps,
   SaveButtonServerPropsOnly,

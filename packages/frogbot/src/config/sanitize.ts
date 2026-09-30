@@ -43,7 +43,7 @@ import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../ai/types.js';
 import { resolveUsageCollection } from '../ai/usage/collection.js';
 import { coordinateAuthEndpoints } from '../auth/endpoints.js';
 import { executeAuthStrategy } from '../auth/executeAuthStrategy.js';
-import { attachSessionPayload, unwrapSessionPayload } from '../auth/operation.js';
+import { unwrapSessionPayload } from '../auth/operation.js';
 import { buildSignInEndpoints } from '../auth/signIn/endpoints.js';
 import { validateSignIn, validateSignInFields } from '../auth/signIn/validate.js';
 import type { AuthStrategy } from '../auth/types.js';
@@ -108,6 +108,7 @@ import { buildIngressRegistry, requiresAdapterVerification } from '../triggers/r
 import { AGENT_TRIGGER_TASK_SLUG, resolveTriggerTasks } from '../triggers/task.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { resolveFilesCollection } from '../uploads/resolveCollections.js';
+import { attachFrogBotInstance } from './attachFrogBot.js';
 import {
   buildBoardOrderField,
   buildBoardOrderHook,
@@ -139,21 +140,6 @@ const noopEmailAdapter: PayloadEmailAdapter<void> = ({ payload }) => ({
 type AttachFrogBot = (req: PayloadRequest) => Promise<FrogBotRequest>;
 
 type ResolveFrogBot = (payload: Payload) => Promise<FrogBot>;
-
-function attachFrogBotInstance(req: PayloadRequest, frogbot: FrogBot): FrogBotRequest {
-  req.payload = unwrapSessionPayload(req.payload);
-  (req as PayloadRequest & { frogbot: FrogBot }).frogbot = frogbot;
-
-  Object.defineProperty(req, Symbol.for('@frogbotai/request-runtime'), {
-    configurable: true,
-    enumerable: true,
-    value: req.payload,
-  });
-
-  attachSessionPayload(req);
-
-  return req as unknown as FrogBotRequest;
-}
 
 function wrapAuthStrategies({
   collection,

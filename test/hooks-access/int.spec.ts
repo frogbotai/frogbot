@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { createLocalReq, getAccessResults } from 'payload';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
@@ -69,6 +70,22 @@ describe('hooks-access', () => {
     const response = await booted.restClient.get(`/api/${reqAccessSlug}`);
 
     expect(response.status).toBe(200);
+  });
+
+  it('admin page permission setup attaches req.frogbot', async () => {
+    const created = await booted.frogbot.create({
+      collection: usersSlug,
+      data: { email: testUserEmail, password: testUserPassword, name: 'Test User' } as any,
+      overrideAccess: true,
+    });
+    const user = await booted.payload.findByID({ collection: usersSlug, id: created.id });
+    const req = await createLocalReq({ user: { ...user, collection: usersSlug } }, booted.payload);
+
+    expect(req).not.toHaveProperty('frogbot');
+
+    await getAccessResults({ req });
+
+    expect((req as unknown as { frogbot: unknown }).frogbot).toBe(booted.frogbot);
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
