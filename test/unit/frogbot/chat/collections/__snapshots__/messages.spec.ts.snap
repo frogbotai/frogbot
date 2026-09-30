@@ -10,7 +10,7 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
   },
   "admin": {
     "hidden": true,
-    "icon": "bubble-chat",
+    "icon": "message-square-text",
     "views": [
       {
         "defaultFields": [

@@ -72,6 +72,7 @@ const iconNames = [
   'MagicWandIcon',
   'MastercardIcon',
   'McpIcon',
+  'MessageSquareTextIcon',
   'RefreshIcon',
   'MicIcon',
   'MinusIcon',
@@ -139,6 +140,22 @@ describe('firmware icons', () => {
 
     const invalid = render(createElement(icons['InvalidStepIcon' as keyof typeof icons]));
     expect(invalid.container.querySelector('svg')).not.toBeNull();
+  });
+
+  it('draws bubble-chat as a closed bubble without a status dot', () => {
+    const { container } = render(createElement(icons.BubbleChatIcon));
+    const svg = container.querySelector('svg');
+    const paints = [...container.querySelectorAll('[fill], [stroke]')].flatMap((element) => [
+      element.getAttribute('fill'),
+      element.getAttribute('stroke'),
+    ]);
+
+    expect(
+      paints.filter((paint) => paint !== null && paint !== 'none' && paint !== 'currentColor'),
+    ).toEqual([]);
+    expect(container.querySelector('circle')).toBeNull();
+    expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+    expect(container.querySelector('path')?.getAttribute('d')).toMatch(/Z$/);
   });
 
   it('supports factory defaults and icon prop overrides', () => {

@@ -108,6 +108,7 @@ expectTypeOf<'./Icon#Icon'>().toExtend<AdminIcon>();
 expectTypeOf<{ exportName: 'Icon'; path: './Icon' }>().toExtend<AdminIcon>();
 expectTypeOf<AdminIcon>().not.toEqualTypeOf<string>();
 expectTypeOf<Extract<AdminIcon, IconName>>().toEqualTypeOf<IconName>();
+expectTypeOf<'message-square-text'>().toExtend<IconName>();
 expectTypeOf<NavItem['icon']>().toEqualTypeOf<AdminIcon | undefined>();
 expectTypeOf<SettingsEntry['icon']>().toEqualTypeOf<AdminIcon | undefined>();
 expectTypeOf<NonNullable<CollectionConfig['admin']>['icon']>().toEqualTypeOf<

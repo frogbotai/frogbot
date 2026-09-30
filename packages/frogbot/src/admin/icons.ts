@@ -58,6 +58,7 @@ export const adminIconExports = [
   'MagicWandIcon',
   'MastercardIcon',
   'McpIcon',
+  'MessageSquareTextIcon',
   'MenuIcon',
   'MicIcon',
   'MicrosoftIcon',
