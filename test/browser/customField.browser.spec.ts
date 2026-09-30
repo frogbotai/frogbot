@@ -105,6 +105,7 @@ test('lists ungrouped collections directly under one Collections heading', async
   await expect(shell.getByText('Collections', { exact: true })).toHaveCount(1);
   await expect(collections.locator('.frogbot-nav-section__scroll > .frogbot-nav-item')).toHaveText([
     'Users',
+    'API Keys',
     'Files',
   ]);
   await expect(collections.locator('.frogbot-collections-section__group-label')).toHaveText([
@@ -124,7 +125,41 @@ test('lists ungrouped collection cards directly under the Collections settings p
 
   await expect(page.locator('.frogbot-settings-template__header')).toHaveText('Collections');
   await expect(content.getByRole('heading', { level: 2 })).toHaveText(['Content']);
-  await expect(content.getByRole('heading', { level: 3 })).toHaveText(['Users', 'Files', 'Posts']);
+  await expect(content.getByRole('heading', { level: 3 })).toHaveText([
+    'Users',
+    'API Keys',
+    'Files',
+    'Posts',
+  ]);
+});
+
+test('renders the API Keys collection with the key icon directly under Collections', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  const shell = page.locator('.frogbot-nav-shell');
+
+  if ((await shell.getAttribute('data-nav-state')) === 'desktop-nav-closed') {
+    await page.click('button[aria-label="Open sidebar"]');
+  }
+
+  const apiKeys = page
+    .locator('#frogbot-nav-section-collections .frogbot-nav-section__scroll > .frogbot-nav-item')
+    .filter({ hasText: 'API Keys' });
+
+  await expect(apiKeys.locator('svg.lucide-key-round-icon')).toBeVisible();
+  await expect(apiKeys.locator('svg.lucide-folder-icon')).toHaveCount(0);
+});
+
+test('adds no API Keys entry to the Settings nav', async ({ page }) => {
+  await page.goto('/settings/robot');
+
+  const settingsNav = page.locator('.frogbot-settings-nav');
+
+  await expect(settingsNav.getByRole('link', { name: 'Robot' })).toBeVisible();
+  await expect(settingsNav.getByRole('link', { name: 'API Keys' })).toHaveCount(0);
 });
 
 test('renders the documented New Chat nav item with its built-in icon', async ({ page }) => {

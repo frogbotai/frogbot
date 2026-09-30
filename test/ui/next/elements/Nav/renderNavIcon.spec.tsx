@@ -1,4 +1,4 @@
-import { BubbleChatIcon } from '@frogbotai/ui/icons';
+import { BubbleChatIcon, KeyRoundIcon } from '@frogbotai/ui/icons';
 import { render } from '@testing-library/react';
 import type { ImportMap } from 'payload';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -20,6 +20,14 @@ describe('renderNavIcon', () => {
 
     expect(renderToStaticMarkup(<>{icon}</>)).toBe(
       renderToStaticMarkup(<BubbleChatIcon className="nav-icon" size={20} />),
+    );
+  });
+
+  it('renders the key-round icon name from the icon registry', () => {
+    const icon = renderNavIcon({ ...args, icon: 'key-round' });
+
+    expect(renderToStaticMarkup(<>{icon}</>)).toBe(
+      renderToStaticMarkup(<KeyRoundIcon className="nav-icon" size={20} />),
     );
   });
 

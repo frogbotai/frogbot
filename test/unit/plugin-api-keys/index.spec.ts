@@ -1,6 +1,7 @@
 import type { FrogBotConfig, Plugin } from 'frogbot';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import { apiKeysPlugin } from '../../../packages/plugins/plugin-api-keys/src/index.js';
 
 describe('apiKeysPlugin', () => {
@@ -15,16 +16,7 @@ describe('apiKeysPlugin', () => {
     const result = await plugin(config);
     expect(result.collections.map((collection) => collection.slug)).toEqual(['users', 'api-keys']);
     expect(result.collections[0]?.auth).toMatchObject({ strategies: [{ name: 'api-key' }] });
-    expect(result.settings).toEqual([
-      expect.objectContaining({
-        label: 'API Keys',
-        path: 'api-keys',
-        Component: {
-          path: '@frogbotai/next/views#CollectionSettingsRedirect',
-          serverProps: { collectionSlug: 'api-keys' },
-        },
-      }),
-    ]);
+    expect(result.settings).toBeUndefined();
     expect(result.collections.at(-1)?.admin?.views).toEqual([
       expect.objectContaining({
         type: 'list',
@@ -33,7 +25,7 @@ describe('apiKeysPlugin', () => {
     ]);
   });
 
-  it('uses the configured collection route and appends its settings entry', async () => {
+  it('leaves existing settings unchanged with a custom collection slug', async () => {
     const existing = { label: 'Usage', path: 'usage', Component: '@app/Usage' };
     const result = await apiKeysPlugin({ collectionSlug: 'credentials' })({
       secret: 'test',
@@ -42,14 +34,11 @@ describe('apiKeysPlugin', () => {
       collections: [{ slug: 'users', auth: true, fields: [] }],
     } as FrogBotConfig);
 
-    expect(result.settings).toEqual([
-      existing,
-      expect.objectContaining({
-        label: 'API Keys',
-        path: 'api-keys',
-        Component: expect.objectContaining({ serverProps: { collectionSlug: 'credentials' } }),
-      }),
-    ]);
+    expect(result.settings).toEqual([existing]);
+    expect(result.collections.at(-1)).toMatchObject({
+      slug: 'credentials',
+      admin: { icon: 'key-round' },
+    });
   });
 
   it('appends to existing authentication strategies', async () => {
@@ -139,5 +128,18 @@ describe('apiKeysPlugin', () => {
     await result.ai?.hooks?.beforeOperation?.at(-1)?.({ req, context } as never);
     expect(context).toEqual({ usageFields: { apiKey: 'key-1' } });
     expect(result.ai?.hooks?.beforeUpstream).toBeUndefined();
+  });
+
+  it('rejects an unknown collection icon override at startup', async () => {
+    const config = {
+      secret: 'test',
+      db: { defaultIDType: 'number' } as never,
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+      plugins: [apiKeysPlugin({ collection: { admin: { icon: 'key-rund' as never } } })],
+    } as FrogBotConfig;
+
+    await expect(buildConfig(config)).rejects.toThrowError(
+      "[frogbot] Unknown admin icon 'key-rund'. Valid:",
+    );
   });
 });

@@ -82,18 +82,6 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
     });
     return {
       ...config,
-      settings: [
-        ...(config.settings ?? []),
-        {
-          label: 'API Keys',
-          path: 'api-keys',
-          Component: {
-            path: '@frogbotai/next/views#CollectionSettingsRedirect',
-            serverProps: { collectionSlug },
-          },
-          access: collection.access?.read,
-        },
-      ],
       collections: [
         ...collections,
         ...(existing ? [] : [collection]),

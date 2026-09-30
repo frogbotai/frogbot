@@ -48,6 +48,7 @@ export const adminIconExports = [
   'InfoCircleIcon',
   'InstagramIcon',
   'InvalidStepIcon',
+  'KeyRoundIcon',
   'LinkedInIcon',
   'LinkSquareIcon',
   'ListIcon',

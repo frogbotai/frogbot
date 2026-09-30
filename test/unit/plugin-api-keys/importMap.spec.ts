@@ -56,7 +56,7 @@ describe('api keys import map', () => {
 
     expect(output).toContain("from '@frogbotai/plugin-api-keys/client'");
     expect(output).toContain('"@frogbotai/plugin-api-keys/client#ApiKeysManager"');
-    expect(output).toContain('"@frogbotai/next/views#CollectionSettingsRedirect"');
+    expect(output).not.toContain('CollectionSettingsRedirect');
     expect(ApiKeysManager).toBeTypeOf('function');
   });
 });

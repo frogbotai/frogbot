@@ -219,7 +219,7 @@ return {
 }
 ```
 
-The usage reports, OAuth, and API keys plugins follow this convention. Their cards appear only when the corresponding plugin is installed. OAuth links to the existing Connections collection, while API Keys links to its existing collection list and key-creation modal; the settings registry does not duplicate those interfaces. Both links follow custom admin routes and custom collection slugs.
+The usage reports plugin follows this convention; its Usage entry appears only when the plugin is installed.
 
 Registry entries add pages within FrogBot's default Settings shell; they do not override its core routes. To replace the entire Settings surface, configure a custom root view:
 
