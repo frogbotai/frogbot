@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 const nextRoot = path.resolve('templates/blank/.next');
+const standaloneCopy = fs.realpathSync(
+  fs.mkdtempSync(path.join(os.tmpdir(), 'frogbot-standalone-')),
+);
 const registryRouteRoot = path.resolve(
   'templates/blank/src/app/(frogbot)/icon-registry-resolution',
 );
@@ -24,7 +28,10 @@ export default function IconRegistryResolutionPage() {
 );
 
 try {
-  execFileSync('pnpm', ['--filter', 'blank...', 'build'], { stdio: 'inherit' });
+  execFileSync('pnpm', ['--filter', 'blank...', 'build'], {
+    env: { ...process.env, NEXT_OUTPUT: 'standalone' },
+    stdio: 'inherit',
+  });
 
   const rootPage = path.join(nextRoot, 'server/app/(frogbot)/[[...segments]]/page.js');
   const registryPage = path.join(nextRoot, 'server/app/(frogbot)/icon-registry-resolution/page.js');
@@ -69,7 +76,38 @@ try {
   }
 
   console.log('[test-ui-next] Next rendered the UI package with its compiled stylesheet.');
+
+  fs.cpSync(path.join(nextRoot, 'standalone'), standaloneCopy, {
+    recursive: true,
+    verbatimSymlinks: true,
+  });
+
+  const libsqlLoad = spawnSync(
+    process.execPath,
+    [
+      '-e',
+      `require('libsql');
+console.log(JSON.stringify(Object.keys(require.cache).filter((file) => file.endsWith('.node'))));`,
+    ],
+    { cwd: path.join(standaloneCopy, 'templates/blank'), encoding: 'utf8' },
+  );
+
+  assert.equal(libsqlLoad.status, 0, `Standalone output cannot load libsql:\n${libsqlLoad.stderr}`);
+
+  const nativeFiles = JSON.parse(libsqlLoad.stdout);
+
+  assert.ok(nativeFiles.length > 0, 'Standalone output loaded libsql without a native binary');
+
+  for (const file of nativeFiles) {
+    assert.ok(
+      file.startsWith(standaloneCopy),
+      `libsql loaded ${file} from outside the standalone output`,
+    );
+  }
+
+  console.log('[test-ui-next] Standalone output loaded the libsql native binary.');
 } finally {
+  fs.rmSync(standaloneCopy, { recursive: true, force: true });
   fs.rmSync(nextRoot, { recursive: true, force: true });
   fs.rmSync(registryRouteRoot, { recursive: true, force: true });
   fs.writeFileSync(importMap, originalImportMap);

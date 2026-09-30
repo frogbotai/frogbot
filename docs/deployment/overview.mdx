@@ -89,7 +89,7 @@ Recent pnpm versions refuse packages published within the last 24 hours as a sup
 
 ### `Cannot find module 'libsql'` (or `sharp`, `pino`, `drizzle-kit`, `json-schema-to-typescript`)
 
-Only applies to non-standalone deploys (bare VPS running `pnpm start`): the compiled routes `require()` a package that FrogBot externalizes from the webpack bundle, but it is not linked at your project root. Add it to `dependencies` in `package.json` and rebuild — the template already includes all of them. Standalone Docker images are unaffected; Next's file tracing bundles these automatically.
+Only applies to non-standalone deploys (bare VPS running `pnpm start`): the compiled routes `require()` a package that FrogBot externalizes from the webpack bundle, but it is not linked at your project root. Add it to `dependencies` in `package.json` and rebuild — the template already includes all of them. Standalone Docker images are unaffected: the build includes these packages, and libsql's native binary for the platform the image is built on. Build the image with the template `Dockerfile` so dependencies install inside Linux. `node_modules` copied in from macOS or Windows has no Linux binary, and the server fails with `Cannot find module '@libsql/linux-…'`.
 
 ### `Installing TypeScript...` or `Can't resolve '@frogbot-config'` at start
 
