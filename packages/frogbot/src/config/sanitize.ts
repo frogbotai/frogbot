@@ -1339,6 +1339,10 @@ function buildPayloadConfig(
         : {}),
       Nav: admin?.components?.Nav ?? '@frogbotai/next/rsc#FrogBotNav',
       navSections: admin?.components?.navSections ?? ['@frogbotai/next#CollectionsSection'],
+      providers: [
+        ...((admin?.components?.providers as unknown[] | undefined) ?? []),
+        '@frogbotai/next/client#StepNavReset',
+      ],
       graphics: {
         Icon: '@frogbotai/next/rsc#FrogBotIcon',
         Logo: '@frogbotai/next/rsc#FrogBotLogo',

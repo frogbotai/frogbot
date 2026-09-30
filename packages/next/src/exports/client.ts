@@ -23,5 +23,6 @@ export {
   SignInButtonsClient,
   type SignInButtonsClientProps,
 } from '../elements/SignInButtons/index.client.js';
+export { StepNavReset, type StepNavResetProps } from '../elements/StepNavReset/index.client.js';
 export { ViewSwitcher, type ViewSwitcherProps } from '../elements/ViewSwitcher/index.client.js';
 export * from '@payloadcms/next/client';

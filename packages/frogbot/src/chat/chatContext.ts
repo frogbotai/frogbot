@@ -7,6 +7,7 @@ import type { FrogBotRequest } from '../types/request.js';
 import type { ChannelChatAccess } from './channelAccess.js';
 import type { ChatDocument } from './findChat.js';
 import { findWritableChat } from './findChat.js';
+import { placeholderChatTitle } from './title.js';
 import { actorFromRequest } from './turn/actor.js';
 import { TurnError } from './turn/errors.js';
 import {
@@ -73,10 +74,14 @@ export async function resolveChatContext({
     throw Object.assign(new Error('Only user messages can be submitted'), { status: 400 });
   }
 
-  const resolvedChatId =
+  const chat =
     chatId === undefined
-      ? await createChat({ req, agentSlug })
-      : (await findWritableChat({ req, agentSlug, chatId, channelAccess })).id;
+      ? undefined
+      : await findWritableChat({ req, agentSlug, chatId, channelAccess });
+
+  const resolvedChatId = chat
+    ? chat.id
+    : await createChat({ req, agentSlug, messages: newMessages });
 
   const claim = await claimTurn({ req, chatId: resolvedChatId, from: 'idle' });
 
@@ -95,6 +100,10 @@ export async function resolveChatContext({
 
     const uiMessages = await loadChatHistory({ req, chatId: resolvedChatId, tools });
 
+    if (chat && !chat.title?.trim()) {
+      await savePlaceholderTitle({ req, chatId: resolvedChatId, history: uiMessages });
+    }
+
     return { status: 'ready', chatId: resolvedChatId, uiMessages, claim, selection };
   } catch (error) {
     await releaseTurn({ req, claim, state: 'idle' });
@@ -106,21 +115,57 @@ export async function resolveChatContext({
 async function createChat({
   req,
   agentSlug,
+  messages,
 }: {
   req: FrogBotRequest;
   agentSlug: string;
+  messages: UIMessage[];
 }): Promise<DocID> {
+  const title = placeholderChatTitle(messages);
+
   const chat = await req.frogbot.create({
     collection: messagesConfig(req).chatsSlug,
     data: {
       user: req.user?.id ?? null,
       agent: agentSlug,
+      ...(title ? { title } : {}),
     },
     req,
     overrideAccess: true,
   });
 
   return chat.id;
+}
+
+async function savePlaceholderTitle({
+  req,
+  chatId,
+  history,
+}: {
+  req: FrogBotRequest;
+  chatId: DocID;
+  history: UIMessage[];
+}): Promise<void> {
+  if (history.some((message) => message.role === 'assistant')) return;
+
+  const title = placeholderChatTitle(history);
+
+  if (!title) return;
+
+  try {
+    await req.frogbot.update({
+      collection: messagesConfig(req).chatsSlug,
+      id: chatId,
+      data: { title },
+      req,
+      overrideAccess: true,
+    });
+  } catch (error) {
+    req.frogbot.logger.error(
+      { err: error, chatId },
+      '[frogbot] Failed to save placeholder chat title',
+    );
+  }
 }
 
 async function persistIncoming({

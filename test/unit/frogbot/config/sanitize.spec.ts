@@ -1154,6 +1154,38 @@ describe('frogbot sanitize', () => {
     ).toEqual([]);
   });
 
+  it('adds the step-nav reset provider when no providers are configured', async () => {
+    const result = sanitize(makeConfig());
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.components.providers).toEqual([
+      '@frogbotai/next/client#StepNavReset',
+    ]);
+  });
+
+  it('appends the step-nav reset provider after configured providers in order', async () => {
+    const providers = ['./providers/Theme#Theme', './providers/Analytics#Analytics'];
+    const result = sanitize(makeConfig({ admin: { components: { providers } } } as never));
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.components.providers).toEqual([
+      ...providers,
+      '@frogbotai/next/client#StepNavReset',
+    ]);
+  });
+
+  it('keeps the step-nav reset provider when the admin Nav is replaced', async () => {
+    const result = sanitize(
+      makeConfig({ admin: { components: { Nav: './components/Nav#Nav' } } } as never),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+
+    expect(payloadConfig.admin.components.Nav).toBe('./components/Nav#Nav');
+    expect(payloadConfig.admin.components.providers).toContain(
+      '@frogbotai/next/client#StepNavReset',
+    );
+  });
+
   it('defaults to the collections dashboard and the resolved chat collection views', async () => {
     const { buildConfig } = await vi.importActual<typeof import('payload')>('payload');
 

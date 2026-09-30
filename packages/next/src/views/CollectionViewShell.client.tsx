@@ -2,15 +2,18 @@
 
 import './CollectionViewShell.css';
 
+import { getTranslation } from '@payloadcms/translations';
 import {
   ListHeader,
   ListQueryProvider,
   TableColumnsProvider,
   useConfig,
+  useStepNav,
   useTranslation,
 } from '@payloadcms/ui';
+import { usePathname } from 'next/navigation.js';
 import type { Column, ListQuery } from 'payload';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 import { ViewControls } from './controls/ViewControls.client.js';
 
@@ -53,8 +56,15 @@ export function CollectionViewShellClient({
 }: CollectionViewShellClientProps) {
   const { i18n } = useTranslation();
   const { getEntityConfig } = useConfig();
+  const { setStepNav } = useStepNav();
+  const pathname = usePathname();
   const collectionConfig = getEntityConfig({ collectionSlug });
+  const pluralLabel = getTranslation(collectionConfig.labels.plural, i18n);
   const bulkUploadCompatibility = { openBulkUpload: () => undefined };
+
+  useEffect(() => {
+    setStepNav([{ label: pluralLabel }]);
+  }, [pathname, pluralLabel, setStepNav]);
 
   const shell = (
     <div className={`collection-view-shell collection-view-shell--${collectionConfig.slug}`}>

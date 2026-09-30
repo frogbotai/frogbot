@@ -5,7 +5,7 @@ import { commitTransaction, initTransaction, killTransaction, NotFound } from 'p
 import type { DocID } from '../collections/config/types.js';
 import type { FrogBotRequest } from '../types/request.js';
 import { MESSAGE_USAGE_CONTEXT_KEY } from './collections/messages.js';
-import { firstUserText } from './firstUserText.js';
+import { placeholderChatTitle } from './title.js';
 import { repairInterruptedParts } from './turn/messages.js';
 
 export type BranchChatProps = {
@@ -107,7 +107,7 @@ export async function branchChat({
   );
   if (selectedIndex === -1) throw new NotFound(req.t);
   const messages = sourceMessages.docs.slice(0, selectedIndex + 1);
-  const sourceTitle = source.title?.trim() || firstUserText(messages, 48) || 'New chat';
+  const sourceTitle = source.title?.trim() || placeholderChatTitle(messages) || 'New chat';
 
   const transactionReq = req as unknown as TransactionReq;
   const ownsTransaction = await initTransaction(transactionReq);

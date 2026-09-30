@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { UIMessage } from 'frogbot';
 import { persistAssistantMessage, releaseTurn, resolveChatContext } from 'frogbot/test';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { generateChatTitle } from '../../packages/frogbot/src/chat/title.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
@@ -27,6 +27,10 @@ describe('chat persistence: chat context', () => {
       data: { email: 'owner@frogbot.local', password: 'frogbot-int-password' },
       overrideAccess: true,
     })) as { id: number | string };
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   afterAll(async () => {
@@ -55,6 +59,35 @@ describe('chat persistence: chat context', () => {
       booted.frogbot.count({ collection: messagesSlug, overrideAccess: true }),
     ]);
     return collection === chatsSlug ? chats.totalDocs : messages.totalDocs;
+  }
+
+  async function chatTitle(id: number | string) {
+    const chat = (await booted.frogbot.findByID({
+      collection: chatsSlug,
+      id,
+      depth: 0,
+      overrideAccess: true,
+    })) as { title?: string | null };
+
+    return chat.title;
+  }
+
+  function assistantReply(id: string): UIMessage {
+    return {
+      id,
+      role: 'assistant',
+      parts: [{ type: 'text', text: 'They call to attract mates.' }],
+    };
+  }
+
+  async function nameChat({ chatId, history }: { chatId: number | string; history: UIMessage[] }) {
+    await generateChatTitle({
+      req: await makeOwnerReq(),
+      chatId,
+      history,
+      mainModel: 'test/gpt-4.1-mini',
+      assistantMessage: assistantReply(`${chatId}-reply`),
+    });
   }
 
   it('creates a chat, persists the user message, and returns it as history', async () => {
@@ -365,6 +398,215 @@ describe('chat persistence: chat context', () => {
     })) as { title?: string | null };
     expect(renamed.title).toBe('My Frog Notes');
     req.frogbot.generateText = originalGenerateText;
+  });
+
+  it('saves the first user message as the title of a new chat before any reply', async () => {
+    const { chatId } = await startTurn({
+      req: await makeOwnerReq(),
+      agentSlug,
+      incoming: [userMessage('  Why do frogs sing at night?  ', 'placeholder-new')],
+      tools: {},
+    });
+
+    expect(await chatTitle(chatId!)).toBe('Why do frogs sing at night?');
+  });
+
+  it('cuts a long first message to a 48-character title ending in an ellipsis', async () => {
+    const text = 'How do frogs survive the winter under the ice of frozen ponds?';
+
+    const { chatId } = await startTurn({
+      req: await makeOwnerReq(),
+      agentSlug,
+      incoming: [userMessage(text, 'placeholder-long')],
+      tools: {},
+    });
+
+    const title = await chatTitle(chatId!);
+
+    expect(title).toBe('How do frogs survive the winter under the ice o…');
+    expect(title).toHaveLength(48);
+  });
+
+  it('creates an untitled chat when the first message has no text', async () => {
+    const image = { type: 'file', mediaType: 'image/png', url: 'https://files.test/frog.png' };
+
+    const { chatId } = await startTurn({
+      req: await makeOwnerReq(),
+      agentSlug,
+      incoming: [{ id: 'placeholder-image', role: 'user', parts: [image] } as UIMessage],
+      tools: {},
+    });
+
+    expect(await chatTitle(chatId!)).toBeFalsy();
+  });
+
+  it('replaces the placeholder with the generated title', async () => {
+    vi.spyOn(booted.frogbot, 'generateText').mockResolvedValue({ text: 'Singing Frogs' } as never);
+
+    const first = await startTurn({
+      req: await makeOwnerReq(),
+      agentSlug,
+      incoming: [userMessage('Why do frogs sing at night?', 'placeholder-generated')],
+      tools: {},
+    });
+
+    await nameChat({ chatId: first.chatId!, history: first.uiMessages });
+
+    expect(await chatTitle(first.chatId!)).toBe('Singing Frogs');
+  });
+
+  it('keeps the placeholder when title generation fails', async () => {
+    vi.spyOn(booted.frogbot, 'generateText').mockRejectedValue(new Error('upstream failed'));
+
+    const first = await startTurn({
+      req: await makeOwnerReq(),
+      agentSlug,
+      incoming: [userMessage('Why do frogs sing at night?', 'placeholder-failed')],
+      tools: {},
+    });
+
+    await nameChat({ chatId: first.chatId!, history: first.uiMessages });
+
+    expect(await chatTitle(first.chatId!)).toBe('Why do frogs sing at night?');
+  });
+
+  it('keeps a rename made before title generation starts', async () => {
+    vi.spyOn(booted.frogbot, 'generateText').mockResolvedValue({ text: 'Singing Frogs' } as never);
+
+    const first = await startTurn({
+      req: await makeOwnerReq(),
+      agentSlug,
+      incoming: [userMessage('Why do frogs sing at night?', 'placeholder-renamed')],
+      tools: {},
+    });
+
+    await booted.frogbot.update({
+      collection: chatsSlug,
+      id: first.chatId!,
+      data: { title: 'My Frog Notes' },
+      overrideAccess: true,
+    });
+
+    await nameChat({ chatId: first.chatId!, history: first.uiMessages });
+
+    expect(await chatTitle(first.chatId!)).toBe('My Frog Notes');
+  });
+
+  it('keeps a rename made while the title is being generated', async () => {
+    const first = await startTurn({
+      req: await makeOwnerReq(),
+      agentSlug,
+      incoming: [userMessage('Why do frogs sing at night?', 'placeholder-racing')],
+      tools: {},
+    });
+
+    vi.spyOn(booted.frogbot, 'generateText').mockImplementation(async () => {
+      await booted.frogbot.update({
+        collection: chatsSlug,
+        id: first.chatId!,
+        data: { title: 'My Frog Notes' },
+        overrideAccess: true,
+      });
+
+      return { text: 'Singing Frogs' } as never;
+    });
+
+    await nameChat({ chatId: first.chatId!, history: first.uiMessages });
+
+    expect(await chatTitle(first.chatId!)).toBe('My Frog Notes');
+  });
+
+  it('replaces a rename that exactly matches the placeholder text', async () => {
+    vi.spyOn(booted.frogbot, 'generateText').mockResolvedValue({ text: 'Singing Frogs' } as never);
+
+    const first = await startTurn({
+      req: await makeOwnerReq(),
+      agentSlug,
+      incoming: [userMessage('Why do frogs sing at night?', 'placeholder-same-rename')],
+      tools: {},
+    });
+
+    await booted.frogbot.update({
+      collection: chatsSlug,
+      id: first.chatId!,
+      data: { title: 'Why do frogs sing at night?' },
+      overrideAccess: true,
+    });
+
+    await nameChat({ chatId: first.chatId!, history: first.uiMessages });
+
+    expect(await chatTitle(first.chatId!)).toBe('Singing Frogs');
+  });
+
+  it('keeps the old placeholder when the first message is edited after generation failed', async () => {
+    const generateText = vi
+      .spyOn(booted.frogbot, 'generateText')
+      .mockRejectedValue(new Error('upstream failed'));
+
+    const first = await startTurn({
+      req: await makeOwnerReq(),
+      agentSlug,
+      incoming: [userMessage('Original question', 'placeholder-edit')],
+      tools: {},
+    });
+
+    await nameChat({ chatId: first.chatId!, history: first.uiMessages });
+
+    await persistAssistantMessage({
+      req: await makeOwnerReq(),
+      chatId: first.chatId!,
+      message: assistantReply('placeholder-edit-reply'),
+    });
+
+    const edited = await startTurn({
+      req: await makeOwnerReq(),
+      agentSlug,
+      chatId: first.chatId,
+      incoming: [userMessage('Corrected question', 'placeholder-edit')],
+      tools: {},
+    });
+
+    generateText.mockResolvedValue({ text: 'Singing Frogs' } as never);
+
+    await nameChat({ chatId: first.chatId!, history: edited.uiMessages });
+
+    expect(await chatTitle(first.chatId!)).toBe('Original question');
+  });
+
+  it('saves the placeholder on the first turn of an existing untitled chat', async () => {
+    const chat = (await booted.frogbot.create({
+      collection: chatsSlug,
+      data: { user: owner.id, agent: agentSlug },
+      overrideAccess: true,
+    })) as { id: number | string };
+
+    await startTurn({
+      req: await makeOwnerReq(),
+      agentSlug,
+      chatId: chat.id,
+      incoming: [userMessage('Why do frogs sing at night?', 'placeholder-existing')],
+      tools: {},
+    });
+
+    expect(await chatTitle(chat.id)).toBe('Why do frogs sing at night?');
+  });
+
+  it('leaves the title of an existing titled chat untouched', async () => {
+    const chat = (await booted.frogbot.create({
+      collection: chatsSlug,
+      data: { user: owner.id, agent: agentSlug, title: 'Slack thread' },
+      overrideAccess: true,
+    })) as { id: number | string };
+
+    await startTurn({
+      req: await makeOwnerReq(),
+      agentSlug,
+      chatId: chat.id,
+      incoming: [userMessage('Why do frogs sing at night?', 'placeholder-titled')],
+      tools: {},
+    });
+
+    expect(await chatTitle(chat.id)).toBe('Slack thread');
   });
 
   it('rejects forged assistant messages without writing', async () => {

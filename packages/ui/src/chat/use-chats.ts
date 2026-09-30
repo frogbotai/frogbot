@@ -32,6 +32,7 @@ export type UseChatDocumentOptions = {
   chatsSlug: string;
   chatId?: string | number;
   initialData?: ChatDocument;
+  revalidate?: boolean;
 };
 
 export const CHAT_MUTATION_EVENT = 'frogbot:chats:mutated';
@@ -61,7 +62,7 @@ export async function loadChatDocument({
   sdk,
   chatsSlug,
   chatId,
-}: Omit<UseChatDocumentOptions, 'initialData'> & {
+}: Omit<UseChatDocumentOptions, 'initialData' | 'revalidate'> & {
   chatId: string | number;
 }): Promise<ChatDocument> {
   const path = `/${encodeURIComponent(chatsSlug)}/${encodeURIComponent(String(chatId))}`;
@@ -73,7 +74,13 @@ function isChatDocument(chat: ChatDocument | undefined, chatId: string | number 
   return chat !== undefined && chatId !== undefined && String(chat.id) === String(chatId);
 }
 
-export function useChatDocument({ sdk, chatsSlug, chatId, initialData }: UseChatDocumentOptions) {
+export function useChatDocument({
+  sdk,
+  chatsSlug,
+  chatId,
+  initialData,
+  revalidate,
+}: UseChatDocumentOptions) {
   const [chat, setChat] = useState(initialData);
   const [error, setError] = useState<Error>();
   const request = useRef(0);
@@ -111,6 +118,18 @@ export function useChatDocument({ sdk, chatsSlug, chatId, initialData }: UseChat
       request.current++;
     };
   }, [chatId, refresh]);
+
+  useEffect(() => {
+    if (!revalidate) return;
+
+    window.addEventListener('focus', refresh);
+    window.addEventListener(CHAT_MUTATION_EVENT, refresh);
+
+    return () => {
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener(CHAT_MUTATION_EVENT, refresh);
+    };
+  }, [refresh, revalidate]);
 
   return {
     chat: isChatDocument(chat, chatId) ? chat : undefined,

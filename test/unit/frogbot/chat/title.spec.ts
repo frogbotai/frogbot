@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   generateChatTitle,
+  placeholderChatTitle,
   suggestChatTitle,
   suggestChatTitleForChat,
 } from '../../../../packages/frogbot/src/chat/title.js';
@@ -125,7 +126,7 @@ describe('chat titles', () => {
     expect(findByID).not.toHaveBeenCalled();
   });
 
-  it('never overwrites an existing title', async () => {
+  it('keeps a title that differs from the placeholder', async () => {
     const { req, generateText, update } = makeReq({ title: 'My title' });
 
     await generateChatTitle({
@@ -140,9 +141,8 @@ describe('chat titles', () => {
     expect(update).not.toHaveBeenCalled();
   });
 
-  it('falls back to the first user text when generation fails', async () => {
-    const { req, generateText, update } = makeReq();
-    generateText.mockRejectedValue(new Error('upstream failed'));
+  it('replaces a title equal to the placeholder', async () => {
+    const { req, update } = makeReq({ title: 'Explain why frogs sing at night' });
 
     await generateChatTitle({
       req,
@@ -153,26 +153,97 @@ describe('chat titles', () => {
     });
 
     expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { title: 'Explain why frogs sing at night' } }),
+      expect.objectContaining({ data: { title: 'Why Frogs Sing at Night' } }),
     );
   });
 
-  it('caps fallback text without adding an ellipsis', async () => {
-    const { req, generateText, update } = makeReq();
-    generateText.mockRejectedValue(new Error('upstream failed'));
-    const text = 'a'.repeat(120);
+  it('keeps a rename made while the title is being generated', async () => {
+    const { req, findByID, update } = makeReq({ title: 'Explain why frogs sing at night' });
+
+    findByID
+      .mockResolvedValueOnce({ id: 'chat-1', title: 'Explain why frogs sing at night' })
+      .mockResolvedValueOnce({ id: 'chat-1', title: 'Frog notes' });
 
     await generateChatTitle({
       req,
       chatId: 'chat-1',
-      history: [{ ...userMessage, parts: [{ type: 'text', text }] }],
+      history: [userMessage],
+      mainModel: 'internal/chat',
+      assistantMessage,
+    });
+
+    expect(findByID).toHaveBeenCalledTimes(2);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('replaces a user title that happens to equal the placeholder text', async () => {
+    const { req, findByID, update } = makeReq();
+
+    findByID
+      .mockResolvedValueOnce({ id: 'chat-1', title: null })
+      .mockResolvedValueOnce({ id: 'chat-1', title: 'Explain why frogs sing at night' });
+
+    await generateChatTitle({
+      req,
+      chatId: 'chat-1',
+      history: [userMessage],
       mainModel: 'internal/chat',
       assistantMessage,
     });
 
     expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { title: 'a'.repeat(100) } }),
+      expect.objectContaining({ data: { title: 'Why Frogs Sing at Night' } }),
     );
+  });
+
+  it('keeps an earlier placeholder after the first message is edited', async () => {
+    const { req, generateText, update } = makeReq({ title: 'Why do toads croak?' });
+
+    await generateChatTitle({
+      req,
+      chatId: 'chat-1',
+      history: [userMessage],
+      mainModel: 'internal/chat',
+      assistantMessage,
+    });
+
+    expect(generateText).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('keeps the placeholder when generation fails', async () => {
+    const { req, generateText, update, error } = makeReq({
+      title: 'Explain why frogs sing at night',
+    });
+
+    generateText.mockRejectedValue(new Error('upstream failed'));
+
+    await generateChatTitle({
+      req,
+      chatId: 'chat-1',
+      history: [userMessage],
+      mainModel: 'internal/chat',
+      assistantMessage,
+    });
+
+    expect(error).toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('writes no fallback title for an untitled chat when generation fails', async () => {
+    const { req, generateText, update } = makeReq();
+
+    generateText.mockRejectedValue(new Error('upstream failed'));
+
+    await generateChatTitle({
+      req,
+      chatId: 'chat-1',
+      history: [{ ...userMessage, parts: [{ type: 'text', text: 'a'.repeat(120) }] }],
+      mainModel: 'internal/chat',
+      assistantMessage,
+    });
+
+    expect(update).not.toHaveBeenCalled();
   });
 
   it('logs and never throws persistence failures', async () => {
@@ -189,5 +260,41 @@ describe('chat titles', () => {
       }),
     ).resolves.toBeUndefined();
     expect(error).toHaveBeenCalled();
+  });
+
+  it('uses a short first message as the placeholder', () => {
+    expect(placeholderChatTitle([userMessage])).toBe('Explain why frogs sing at night');
+  });
+
+  it('cuts a long first message to 48 characters ending in an ellipsis', () => {
+    const text = 'How do frogs survive winter under the ice of frozen ponds?';
+
+    const placeholder = placeholderChatTitle([{ role: 'user', parts: [{ type: 'text', text }] }]);
+
+    expect(placeholder).toBe('How do frogs survive winter under the ice of fr…');
+    expect(placeholder).toHaveLength(48);
+  });
+
+  it('never splits an emoji at the placeholder cut point', () => {
+    const text = `${'a'.repeat(46)}🐸 sings`;
+
+    const placeholder = placeholderChatTitle([{ role: 'user', parts: [{ type: 'text', text }] }]);
+
+    expect(placeholder).toBe(`${'a'.repeat(46)}…`);
+  });
+
+  it('keeps an emoji that fits before the placeholder cut point', () => {
+    const text = `${'a'.repeat(45)}🐸 sings`;
+
+    const placeholder = placeholderChatTitle([{ role: 'user', parts: [{ type: 'text', text }] }]);
+
+    expect(placeholder).toBe(`${'a'.repeat(45)}🐸…`);
+    expect(placeholder).toHaveLength(48);
+  });
+
+  it('has no placeholder for an image-only first message', () => {
+    const image = { type: 'file', mediaType: 'image/png', url: 'https://files.test/frog.png' };
+
+    expect(placeholderChatTitle([{ role: 'user', parts: [image] }])).toBeUndefined();
   });
 });

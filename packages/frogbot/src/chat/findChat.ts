@@ -12,6 +12,7 @@ export type ChatDocument = {
   id: DocID;
   user?: { id: DocID } | DocID | null;
   agent?: string | null;
+  title?: string | null;
   channel?: string | null;
   channelKey?: string | null;
   channelThread?: ChannelThreadReference | null;

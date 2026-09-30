@@ -6,6 +6,7 @@ import type {
   GreetingProps,
   MessageActionsSlotProps,
   ToolRenderer,
+  UseChatDocumentOptions,
 } from '@frogbotai/ui/chat';
 import {
   AgentSelector,
@@ -14,12 +15,21 @@ import {
   cookieFetch,
   ModelSelector,
   updateChatAgent,
+  useChatDocument,
   useChatProvider,
 } from '@frogbotai/ui/chat';
-import { toast, usePreferences, useRouteTransition } from '@payloadcms/ui';
+import { getTranslation } from '@payloadcms/translations';
+import {
+  toast,
+  useConfig,
+  usePreferences,
+  useRouteTransition,
+  useStepNav,
+  useTranslation,
+} from '@payloadcms/ui';
 import type { UIMessage } from 'frogbot';
-import { useRouter } from 'next/navigation.js';
-import { type ComponentType, type ReactNode, useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation.js';
+import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
 
 const adapter = { fetch: cookieFetch() };
 const chatPicksPreference = 'frogbot-chat-picks';
@@ -75,31 +85,68 @@ export function ChatViewClient({
   userName,
 }: ChatViewClientProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { startRouteTransition } = useRouteTransition();
   const [selectedAgent, setSelectedAgent] = useState(agent);
-  const replaced = useRef(false);
+  const [labelChatId, setLabelChatId] = useState(chatId);
+  const [routeChatId, setRouteChatId] = useState(chatId);
+  const [threadPath, setThreadPath] = useState<string>();
+  const [viewedPathname, setViewedPathname] = useState(pathname);
+  const [session, setSession] = useState(0);
+
+  if (routeChatId !== chatId) {
+    setRouteChatId(chatId);
+    setLabelChatId(chatId);
+  }
+
+  if (viewedPathname !== pathname) {
+    setViewedPathname(pathname);
+
+    if (viewedPathname === threadPath) {
+      setThreadPath(undefined);
+      setLabelChatId(undefined);
+      setSession(session + 1);
+    }
+  }
+
+  const chatPath = (id: string | number) => `${documentPath}/${encodeURIComponent(String(id))}`;
+  const routedPath = chatId === undefined ? threadPath : chatPath(chatId);
+
+  const staleThread =
+    chatId === undefined &&
+    pathname !== threadPath &&
+    pathname !== `${documentPath}/create` &&
+    pathname.startsWith(`${documentPath}/`);
+
+  useEffect(() => {
+    if (staleThread) startRouteTransition(() => router.refresh());
+  }, [router, staleThread, startRouteTransition]);
 
   const onChatIdChange = (nextChatId: string | number | undefined) => {
+    setLabelChatId(nextChatId);
+
     if (nextChatId === undefined) return;
 
-    const path = `${documentPath}/${encodeURIComponent(String(nextChatId))}`;
+    const path = chatPath(nextChatId);
 
-    if (chatId !== undefined) {
-      if (String(nextChatId) !== String(chatId)) startRouteTransition(() => router.push(path));
+    if (path === routedPath) return;
+
+    if (routedPath === undefined) {
+      setThreadPath(path);
+      window.history.replaceState(null, '', path);
 
       return;
     }
 
-    if (replaced.current) return;
-
-    replaced.current = true;
-    window.history.replaceState(window.history.state, '', path);
+    startRouteTransition(() => router.push(path));
   };
 
   return (
     <div className="frogbot-chat-view">
       <ChatProvider adapter={adapter} toolRenderers={toolRenderersByAgent[selectedAgent]}>
+        <ChatStepNav chatId={labelChatId} documentPath={documentPath} initialChat={initialChat} />
         <ChatViewInner
+          key={session}
           agent={agent}
           {...(chatId === undefined ? {} : { chatId })}
           {...(initialChat === undefined ? {} : { initialChat })}
@@ -122,6 +169,76 @@ export function ChatViewClient({
       </ChatProvider>
     </div>
   );
+}
+
+type ChatStepNavProps = {
+  chatId: string | number | undefined;
+  documentPath: string;
+  initialChat: ChatDocument | undefined;
+};
+
+function ChatStepNav({ chatId, documentPath, initialChat }: ChatStepNavProps) {
+  const provider = useChatProvider();
+  const { setStepNav } = useStepNav();
+  const sdk = provider?.sdk;
+  const chatsSlug = provider?.manifest?.chat.enabled ? provider.manifest.chat.chatsSlug : undefined;
+  const threadOpen = sdk !== undefined && chatsSlug !== undefined && chatId !== undefined;
+
+  useEffect(() => {
+    if (!threadOpen) setStepNav([]);
+  }, [setStepNav, threadOpen]);
+
+  if (!threadOpen) return null;
+
+  return (
+    <ChatStepNavInner
+      chatId={chatId}
+      chatsSlug={chatsSlug}
+      documentPath={documentPath}
+      initialChat={initialChat}
+      sdk={sdk}
+    />
+  );
+}
+
+function ChatStepNavInner({
+  chatId,
+  chatsSlug,
+  documentPath,
+  initialChat,
+  sdk,
+}: ChatStepNavProps & {
+  chatId: string | number;
+  chatsSlug: string;
+  sdk: UseChatDocumentOptions['sdk'];
+}) {
+  const pathname = usePathname();
+  const { i18n } = useTranslation();
+  const { getEntityConfig } = useConfig();
+  const { setStepNav } = useStepNav();
+  const chatsLabel = getTranslation(
+    getEntityConfig({ collectionSlug: chatsSlug }).labels.plural,
+    i18n,
+  );
+
+  const { chat } = useChatDocument({
+    sdk,
+    chatsSlug,
+    chatId,
+    initialData: initialChat,
+    revalidate: true,
+  });
+
+  const loaded = chat !== undefined;
+  const title = chat?.title || 'Untitled';
+
+  useEffect(() => {
+    const chats = { label: chatsLabel, url: documentPath };
+
+    setStepNav(loaded ? [chats, { label: title }] : [chats]);
+  }, [chatsLabel, documentPath, loaded, pathname, setStepNav, title]);
+
+  return null;
 }
 
 function ChatViewInner({

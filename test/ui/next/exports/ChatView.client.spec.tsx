@@ -1,7 +1,7 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type ReactNode, useEffect } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type ManifestEntry = {
   slug: string;
@@ -24,30 +24,43 @@ const opusLevels = [
 
 const mocks = vi.hoisted(() => ({
   chat: vi.fn(({ composerStartSlot }: { composerStartSlot?: ReactNode }) => composerStartSlot),
+  getEntityConfig: vi.fn(() => ({ labels: { plural: { en: 'Chats', de: 'Unterhaltungen' } } })),
   getPreference: vi.fn(),
+  mountChat: vi.fn(),
   manifest: { defaultAgent: 'general', agents: [] as unknown[] },
+  pathname: '/admin/collections/conversations/create',
   provider: vi.fn(),
   push: vi.fn(),
+  refresh: vi.fn(),
+  request: vi.fn(),
   setPreference: vi.fn(),
+  setStepNav: vi.fn(),
   startRouteTransition: vi.fn((transition: () => void) => transition()),
   toastError: vi.fn(),
 }));
 
 vi.mock('@payloadcms/ui', () => ({
   toast: { error: mocks.toastError },
+  useConfig: () => ({ getEntityConfig: mocks.getEntityConfig }),
   usePreferences: () => ({
     getPreference: mocks.getPreference,
     setPreference: mocks.setPreference,
   }),
   useRouteTransition: () => ({ startRouteTransition: mocks.startRouteTransition }),
+  useStepNav: () => ({ setStepNav: mocks.setStepNav }),
+  useTranslation: () => ({ i18n: { language: 'en' } }),
 }));
 
 vi.mock('next/navigation.js', () => ({
-  useRouter: () => ({ push: mocks.push }),
+  usePathname: () => mocks.pathname,
+  useRouter: () => ({ push: mocks.push, refresh: mocks.refresh }),
 }));
 
 vi.mock('@frogbotai/ui/chat', async () => {
   const { ModelSelector } = await import('../../../../packages/ui/src/chat/model-selector.js');
+  const { useChatDocument } = await import('../../../../packages/ui/src/chat/use-chats.js');
+  const sdk = { request: mocks.request };
+  const manifest = { chat: { enabled: true, chatsSlug: 'conversations' } };
 
   return {
     AgentSelector: ({ onAgentChange }: { onAgentChange: (agent: string) => void }) => (
@@ -60,12 +73,17 @@ vi.mock('@frogbotai/ui/chat', async () => {
     },
     cookieFetch: () => vi.fn(),
     ModelSelector,
-    useChatProvider: () => ({ agentManifest: mocks.manifest, loading: false }),
+    useChatDocument,
+    useChatProvider: () => ({ agentManifest: mocks.manifest, loading: false, manifest, sdk }),
   };
 });
 
 const { ChatViewClient } = await import('../../../../packages/next/src/exports/ChatView.client.js');
 const { MessagePart } = await import('../../../../packages/ui/src/chat/message-part.js');
+const { CHAT_MUTATION_EVENT } = await import('../../../../packages/ui/src/chat/use-chats.js');
+
+const chatsCrumb = { label: 'Chats', url: '/admin/collections/conversations' };
+const createPath = '/admin/collections/conversations/create';
 
 function agentEntry(slug: string, overrides: Partial<ManifestEntry> = {}): ManifestEntry {
   return {
@@ -88,19 +106,52 @@ function useManifest(...agents: ManifestEntry[]) {
   mocks.manifest = { defaultAgent: agents[0].slug, agents };
 }
 
+function MountedChat(props: { composerStartSlot?: ReactNode }) {
+  useEffect(() => {
+    mocks.mountChat();
+  }, []);
+
+  return mocks.chat(props);
+}
+
 function renderChatView(props: Partial<Parameters<typeof ChatViewClient>[0]> = {}) {
-  return render(
+  const view = () => (
     <ChatViewClient
       agent="general"
       documentPath="/admin/collections/conversations"
       initialMessages={[]}
       {...props}
-    />,
+    />
   );
+
+  const rendered = render(view());
+
+  const moveTo = (pathname: string) => {
+    mocks.pathname = pathname;
+    rendered.rerender(view());
+  };
+
+  return { ...rendered, moveTo };
 }
 
 function lastChatProps() {
   return mocks.chat.mock.calls.at(-1)?.[0] as { model?: string; reasoning?: string };
+}
+
+function lastStepNav() {
+  return mocks.setStepNav.mock.calls.at(-1)?.[0];
+}
+
+function reportChatId(chatId: string | undefined) {
+  const props = mocks.chat.mock.calls.at(-1)![0] as unknown as {
+    onChatIdChange: (id: string | undefined) => void;
+  };
+
+  act(() => props.onChatIdChange(chatId));
+}
+
+function serveChat(chat: { id: string; title?: string }) {
+  mocks.request.mockImplementation(async () => Response.json({ agent: 'general', ...chat }));
 }
 
 async function trigger() {
@@ -125,12 +176,21 @@ describe('ChatViewClient', () => {
     }));
 
     mocks.chat.mockClear();
+    mocks.mountChat.mockClear();
     mocks.provider.mockClear();
+    mocks.pathname = createPath;
     mocks.push.mockClear();
+    mocks.refresh.mockClear();
+    mocks.request.mockReset();
     mocks.setPreference.mockClear();
+    mocks.setStepNav.mockClear();
     mocks.startRouteTransition.mockClear();
     mocks.toastError.mockClear();
     mocks.getPreference.mockReset().mockResolvedValue(null);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('renders chat code blocks without a FrogBot theme wrapper', async () => {
@@ -151,29 +211,111 @@ describe('ChatViewClient', () => {
     expect(document.documentElement.dataset.fbTheme).toBeUndefined();
   });
 
-  it('replaces the create route once without changing the mounted chat', async () => {
-    useManifest(agentEntry('general'), agentEntry('sales'));
-
+  it('moves the URL to the first reported chat through the history Next syncs', async () => {
     const replaceState = vi.spyOn(window.history, 'replaceState');
-    const general = [{ kind: 'lookup', render: () => null }];
-    const sales = [{ kind: 'lookup', render: () => null }];
-    renderChatView({ toolRenderersByAgent: { general, sales } });
-    await waitFor(() => expect(mocks.chat).toHaveBeenCalledOnce());
-    const props = mocks.chat.mock.calls[0][0];
 
-    expect(props).not.toHaveProperty('chatId');
-    props.onChatIdChange('chat/1');
-    props.onChatIdChange('chat-2');
+    useManifest(agentEntry('general'));
+    renderChatView();
+
+    await waitFor(() => expect(mocks.chat).toHaveBeenCalled());
+
+    expect(lastChatProps()).not.toHaveProperty('chatId');
+
+    reportChatId('chat/1');
+    reportChatId('chat/1');
 
     expect(replaceState).toHaveBeenCalledOnce();
     expect(replaceState).toHaveBeenCalledWith(
-      window.history.state,
+      null,
       '',
       '/admin/collections/conversations/chat%2F1',
     );
-    expect(mocks.chat).toHaveBeenCalledOnce();
-    expect(mocks.provider.mock.calls.at(-1)?.[0].toolRenderers).toBe(general);
+    expect(mocks.startRouteTransition).not.toHaveBeenCalled();
+    expect(mocks.push).not.toHaveBeenCalled();
+    expect(mocks.refresh).not.toHaveBeenCalled();
+  });
+
+  it('navigates to a different chat reported after the new chat moved to its thread', async () => {
+    const replaceState = vi.spyOn(window.history, 'replaceState');
+
+    useManifest(agentEntry('general'));
+    renderChatView();
+
+    await waitFor(() => expect(mocks.chat).toHaveBeenCalled());
+
+    reportChatId('chat-1');
+    reportChatId('chat-2');
+
+    expect(replaceState).toHaveBeenCalledOnce();
+    expect(mocks.startRouteTransition).toHaveBeenCalledOnce();
+    expect(mocks.push).toHaveBeenCalledWith('/admin/collections/conversations/chat-2');
+  });
+
+  it('starts an empty chat when the route leaves the thread a new chat moved to', async () => {
+    useManifest(agentEntry('general'));
+    serveChat({ id: 'chat-2', title: 'Plan the launch' });
+
+    const { moveTo } = renderChatView({ ChatComponent: MountedChat });
+
+    await waitFor(() => expect(mocks.mountChat).toHaveBeenCalledOnce());
+
+    reportChatId('chat-2');
+    moveTo('/admin/collections/conversations/chat-2');
+
+    await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Plan the launch' }]));
+
+    expect(mocks.mountChat).toHaveBeenCalledOnce();
+
+    moveTo(createPath);
+
+    await waitFor(() => expect(mocks.mountChat).toHaveBeenCalledTimes(2));
+
+    expect(lastChatProps()).not.toHaveProperty('chatId');
+    expect(lastStepNav()).toEqual([]);
+    expect(mocks.refresh).not.toHaveBeenCalled();
+  });
+
+  it('labels the thread again after the route syncs to it', async () => {
+    useManifest(agentEntry('general'));
+    serveChat({ id: 'chat-2', title: 'Plan the launch' });
+
+    const { moveTo } = renderChatView();
+
+    await waitFor(() => expect(mocks.chat).toHaveBeenCalled());
+
+    reportChatId('chat-2');
+
+    await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Plan the launch' }]));
+
+    mocks.setStepNav.mockClear();
+    moveTo('/admin/collections/conversations/chat-2');
+
+    await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Plan the launch' }]));
+  });
+
+  it('refreshes a thread URL that history restores without its chat', async () => {
+    useManifest(agentEntry('general'));
+    mocks.pathname = '/admin/collections/conversations/chat-9';
+
+    renderChatView();
+
+    await waitFor(() => expect(mocks.refresh).toHaveBeenCalledOnce());
+
+    expect(mocks.startRouteTransition).toHaveBeenCalledOnce();
+  });
+
+  it('passes the tool renderers of the selected agent to the chat provider', async () => {
+    useManifest(agentEntry('general'), agentEntry('sales'));
+
+    const general = [{ kind: 'lookup', render: () => null }];
+    const sales = [{ kind: 'lookup', render: () => null }];
+
+    renderChatView({ toolRenderersByAgent: { general, sales } });
+
+    await waitFor(() => expect(mocks.provider.mock.calls.at(-1)?.[0].toolRenderers).toBe(general));
+
     fireEvent.click(await screen.findByText('Sales'));
+
     await waitFor(() => expect(mocks.provider.mock.calls.at(-1)?.[0].toolRenderers).toBe(sales));
   });
 
@@ -404,11 +546,9 @@ describe('ChatViewClient', () => {
   });
 
   it('navigates to another chat opened from an existing chat', async () => {
-    useManifest(agentEntry('general'));
-
     const replaceState = vi.spyOn(window.history, 'replaceState');
 
-    replaceState.mockClear();
+    useManifest(agentEntry('general'));
 
     const initialChat = { id: 'chat-1', agent: 'general', channel: 'slack', channelLabel: 'Slack' };
 
@@ -431,5 +571,146 @@ describe('ChatViewClient', () => {
     expect(mocks.startRouteTransition).toHaveBeenCalledOnce();
     expect(mocks.push).toHaveBeenCalledWith('/admin/collections/conversations/chat%2F2');
     expect(replaceState).not.toHaveBeenCalled();
+  });
+
+  it('shows only the logo on the chat home', async () => {
+    useManifest(agentEntry('general'));
+
+    renderChatView();
+
+    await waitFor(() => expect(mocks.chat).toHaveBeenCalled());
+
+    expect(lastStepNav()).toEqual([]);
+  });
+
+  it('labels an existing thread with the chats link and its title', async () => {
+    useManifest(agentEntry('general'));
+
+    renderChatView({
+      chatId: 'chat-1',
+      initialChat: { id: 'chat-1', agent: 'general', title: 'Quarterly plan' },
+    });
+
+    await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Quarterly plan' }]));
+
+    expect(mocks.getEntityConfig).toHaveBeenCalledWith({ collectionSlug: 'conversations' });
+    expect(mocks.request).not.toHaveBeenCalled();
+  });
+
+  it('labels a thread without a title as Untitled', async () => {
+    useManifest(agentEntry('general'));
+
+    renderChatView({ chatId: 'chat-1', initialChat: { id: 'chat-1', agent: 'general' } });
+
+    await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Untitled' }]));
+  });
+
+  it('labels a new chat once its id replaces the create route', async () => {
+    const replaceState = vi.spyOn(window.history, 'replaceState');
+
+    useManifest(agentEntry('general'));
+    serveChat({ id: 'chat-2', title: 'Plan the launch' });
+    renderChatView();
+
+    await waitFor(() => expect(mocks.chat).toHaveBeenCalled());
+
+    reportChatId('chat-2');
+
+    await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Plan the launch' }]));
+
+    expect(replaceState).toHaveBeenCalledWith(null, '', '/admin/collections/conversations/chat-2');
+    expect(mocks.request).toHaveBeenCalledWith('/conversations/chat-2?depth=0', undefined);
+  });
+
+  it('returns to the logo only when a new chat starts after a thread', async () => {
+    useManifest(agentEntry('general'));
+    serveChat({ id: 'chat-2', title: 'Plan the launch' });
+    renderChatView();
+
+    await waitFor(() => expect(mocks.chat).toHaveBeenCalled());
+
+    reportChatId('chat-2');
+
+    await waitFor(() => expect(lastStepNav()).toHaveLength(2));
+
+    reportChatId(undefined);
+
+    await waitFor(() => expect(lastStepNav()).toEqual([]));
+  });
+
+  it('labels the routed thread after the route moves to another chat', async () => {
+    useManifest(agentEntry('general'));
+
+    const { rerender } = renderChatView({
+      chatId: 'chat-1',
+      initialChat: { id: 'chat-1', agent: 'general', title: 'Quarterly plan' },
+    });
+
+    await waitFor(() => expect(mocks.chat).toHaveBeenCalled());
+
+    reportChatId(undefined);
+
+    await waitFor(() => expect(lastStepNav()).toEqual([]));
+
+    rerender(
+      <ChatViewClient
+        agent="general"
+        chatId="chat-3"
+        documentPath="/admin/collections/conversations"
+        initialChat={{ id: 'chat-3', agent: 'general', title: 'Hiring plan' }}
+        initialMessages={[]}
+      />,
+    );
+
+    await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Hiring plan' }]));
+  });
+
+  it('updates the thread title when a chat mutation is announced', async () => {
+    useManifest(agentEntry('general'));
+    serveChat({ id: 'chat-1', title: 'Generated title' });
+
+    renderChatView({
+      chatId: 'chat-1',
+      initialChat: { id: 'chat-1', agent: 'general', title: 'Plan the launch' },
+    });
+
+    await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Plan the launch' }]));
+
+    act(() => {
+      window.dispatchEvent(new Event(CHAT_MUTATION_EVENT));
+    });
+
+    await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Generated title' }]));
+  });
+
+  it('labels the thread when a custom chat component replaces the default chat', async () => {
+    const CustomChat = vi.fn(() => null);
+
+    useManifest(agentEntry('general'));
+
+    renderChatView({
+      ChatComponent: CustomChat,
+      chatId: 'chat-1',
+      initialChat: { id: 'chat-1', agent: 'general', title: 'Quarterly plan' },
+    });
+
+    await waitFor(() => expect(CustomChat).toHaveBeenCalled());
+
+    expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Quarterly plan' }]);
+    expect(mocks.chat).not.toHaveBeenCalled();
+  });
+
+  it('labels the thread before chat preferences load', async () => {
+    useManifest(agentEntry('general'));
+    mocks.getPreference.mockReturnValue(new Promise(() => {}));
+
+    renderChatView({
+      chatId: 'chat-1',
+      initialChat: { id: 'chat-1', agent: 'general', title: 'Quarterly plan' },
+    });
+
+    await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Quarterly plan' }]));
+
+    expect(mocks.chat).not.toHaveBeenCalled();
   });
 });
