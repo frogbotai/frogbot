@@ -1,10 +1,18 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
 import { createMessage, deleteMessage, type SavedMessage } from './__helpers/messages';
-import { collectionNavIcon, expandSidebar } from './__helpers/sidebar';
+import {
+  collectionNavIcon,
+  navStates,
+  recordNavStates,
+  setNavPreference,
+  waitForNavPreferenceSave,
+  waitForNavSettled,
+} from './__helpers/sidebar';
 import { signIn } from './__helpers/signIn';
 
 const desktop = { width: 1440, height: 900 };
+const laptop = { width: 1280, height: 800 };
 const mobile = { width: 390, height: 844 };
 const expandedRem = 17;
 const collapsedWidth = 60;
@@ -43,12 +51,20 @@ const drawnBounds = (icon: Locator) =>
     return { centreX: (left + right) / 2, centreY: (top + bottom) / 2, width: right - left };
   });
 
+const loadWithSidebarOpen = async (page: Page) => {
+  await setNavPreference(page, true);
+  await page.reload();
+  await waitForNavSettled(page);
+
+  await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+};
+
 test.describe('nav shell on desktop', () => {
   test.use({ viewport: desktop });
 
   test('expanded sidebar shares the grid with full-width content', async ({ page }) => {
     await signIn(page);
-    await expandSidebar(page);
+    await loadWithSidebarOpen(page);
 
     const sidebarWidth = await expandedWidth(page);
     await expect(shell(page)).toHaveCSS('opacity', '1');
@@ -60,7 +76,7 @@ test.describe('nav shell on desktop', () => {
 
   test('collections section links to the configured collections', async ({ page }) => {
     await signIn(page);
-    await expandSidebar(page);
+    await loadWithSidebarOpen(page);
 
     await expect(
       page.locator('#frogbot-nav-section-collections').getByRole('link', { name: 'Users' }),
@@ -91,7 +107,7 @@ test.describe('nav shell on desktop', () => {
     page,
   }) => {
     await signIn(page);
-    await expandSidebar(page);
+    await loadWithSidebarOpen(page);
 
     const collections = page.locator('#frogbot-nav-section-collections');
     const chats = collections.getByRole('link', { name: 'Chats' });
@@ -106,7 +122,7 @@ test.describe('nav shell on desktop', () => {
 
   test('default sidebar has no Messages link', async ({ page }) => {
     await signIn(page);
-    await expandSidebar(page);
+    await loadWithSidebarOpen(page);
 
     const collections = page.locator('#frogbot-nav-section-collections');
 
@@ -174,7 +190,7 @@ test.describe('nav shell on desktop', () => {
 
   test('collapsed sidebar stays visible as an icon rail', async ({ page }) => {
     await signIn(page);
-    await expandSidebar(page);
+    await loadWithSidebarOpen(page);
 
     await page.click('button[aria-label="Close sidebar"]');
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
@@ -193,7 +209,7 @@ test.describe('nav shell on desktop', () => {
 
   test('sidebar shows Chats as a centred bubble without a dot', async ({ page }) => {
     await signIn(page);
-    await expandSidebar(page);
+    await loadWithSidebarOpen(page);
 
     const icon = collectionNavIcon(page, 'chats');
 
@@ -208,8 +224,365 @@ test.describe('nav shell on desktop', () => {
   });
 });
 
+test.describe('nav shell keeps the saved desktop state', () => {
+  let hydrationErrors: string[];
+
+  test.beforeEach(async ({ page }) => {
+    hydrationErrors = [];
+
+    page.on('console', (message) => {
+      if (/Hydration failed|did not match/.test(message.text())) {
+        hydrationErrors.push(message.text());
+      }
+    });
+
+    await signIn(page);
+    await setNavPreference(page, true);
+    await recordNavStates(page);
+  });
+
+  test.afterEach(async ({ page }) => {
+    await setNavPreference(page, true);
+
+    expect(hydrationErrors).toEqual([]);
+  });
+
+  for (const width of [768, 1024, 1280, 1440, 1600]) {
+    test(`sidebar loads open at ${width}px when saved open`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+
+      await page.goto('/collections/users');
+      await waitForNavSettled(page);
+
+      await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+      expect(await navStates(page)).not.toContain('desktop-nav-closed');
+      await expect(page.locator('.template-default')).toHaveClass(/template-default--nav-open/);
+    });
+  }
+
+  test('sidebar reloads collapsed and then open at 1280px', async ({ page }) => {
+    await page.setViewportSize(laptop);
+    await page.goto('/');
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+
+    const collapseSaved = waitForNavPreferenceSave(page);
+
+    await page.click('button[aria-label="Close sidebar"]');
+    await collapseSaved;
+    await page.reload();
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
+
+    const openSaved = waitForNavPreferenceSave(page);
+
+    await page.click('button[aria-label="Open sidebar"]');
+    await openSaved;
+    await page.reload();
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+  });
+
+  test('sidebar stays open when resized from 1600px to 1280px and 1024px', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 800 });
+    await page.goto('/collections/users');
+    await waitForNavSettled(page);
+
+    await page.setViewportSize(laptop);
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+
+    await page.setViewportSize({ width: 1024, height: 800 });
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+    expect(await navStates(page)).not.toContain('desktop-nav-closed');
+  });
+
+  test('sidebar stays collapsed when resized from 1280px to 1600px', async ({ page }) => {
+    await page.setViewportSize(laptop);
+    await page.goto('/collections/users');
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+
+    const collapseSaved = waitForNavPreferenceSave(page);
+
+    await page.click('button[aria-label="Close sidebar"]');
+    await collapseSaved;
+    await page.setViewportSize({ width: 1600, height: 800 });
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
+  });
+
+  test('sidebar keeps its state across in-app navigation at 768px', async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 800 });
+    await page.goto('/');
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+
+    await page
+      .locator('#frogbot-nav-section-collections')
+      .getByRole('link', { name: 'Users' })
+      .click();
+    await page.waitForURL((url) => url.pathname === '/collections/users');
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+    expect(await navStates(page)).not.toContain('desktop-nav-closed');
+  });
+
+  test('sidebar toggled just before navigating keeps the new state', async ({ page }) => {
+    await page.setViewportSize(laptop);
+    await page.goto('/');
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+
+    await page.click('button[aria-label="Close sidebar"]');
+    await page.click('#card-users .card__click');
+    await page.waitForURL((url) => url.pathname === '/collections/users');
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
+
+    await page.click('button[aria-label="Open sidebar"]');
+    await page.goBack();
+    await page.waitForURL((url) => url.pathname === '/');
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+  });
+});
+
+test.describe('nav shell across breakpoints and fast toggles', () => {
+  let savedValues: unknown[];
+
+  test.beforeEach(async ({ page }) => {
+    savedValues = [];
+
+    await signIn(page);
+    await setNavPreference(page, true);
+    await recordNavStates(page);
+
+    page.on('request', (request) => {
+      if (
+        request.method() === 'POST' &&
+        new URL(request.url()).pathname === '/api/payload-preferences/nav'
+      ) {
+        savedValues.push(request.postDataJSON().value);
+      }
+    });
+  });
+
+  test.afterEach(async ({ page }) => {
+    await setNavPreference(page, true);
+  });
+
+  test('sidebar starts open at 1280px when no preference is saved', async ({ page }) => {
+    const deleted = await page.request.delete('/api/payload-preferences/nav');
+
+    expect(deleted.ok()).toBe(true);
+
+    await page.setViewportSize(laptop);
+    await page.goto('/collections/users');
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+    expect(await navStates(page)).not.toContain('desktop-nav-closed');
+    await expect(page.locator('.template-default')).toHaveClass(/template-default--nav-open/);
+  });
+
+  test('collapsed sidebar reloads without the Payload nav-open class at 1280px', async ({
+    page,
+  }) => {
+    await setNavPreference(page, false);
+    await page.setViewportSize(laptop);
+
+    await page.goto('/collections/users');
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
+    await expect(page.locator('.template-default')).not.toHaveClass(/template-default--nav-open/);
+    expect(await navStates(page)).not.toContain('desktop-nav-open');
+  });
+
+  test('open drawer resized to desktop shows the desktop choice without a backdrop', async ({
+    page,
+  }) => {
+    await setNavPreference(page, false);
+    await page.setViewportSize(mobile);
+    await page.goto('/');
+    await waitForNavSettled(page);
+    await page.click('button[aria-label="Open navigation"]');
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-open');
+
+    await page.setViewportSize(laptop);
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
+    await expect(backdrop(page)).toHaveCount(0);
+    await expect(page.locator('.template-default')).not.toHaveClass(/template-default--nav-open/);
+
+    await page.setViewportSize(mobile);
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
+    await expect(backdrop(page)).toHaveCount(0);
+    expect(savedValues).toEqual([]);
+  });
+
+  test('drawer closes after navigating from it without saving the preference', async ({ page }) => {
+    await page.setViewportSize(mobile);
+    await page.goto('/');
+    await waitForNavSettled(page);
+    await page.click('button[aria-label="Open navigation"]');
+
+    await page
+      .locator('#frogbot-nav-section-collections')
+      .getByRole('link', { name: 'Users' })
+      .click();
+    await page.waitForURL((url) => url.pathname === '/collections/users');
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
+    await expect(backdrop(page)).toHaveCount(0);
+
+    await page.setViewportSize(laptop);
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+    expect(savedValues).toEqual([]);
+  });
+
+  test.fixme(
+    'desktop collapse survives going back on mobile and resizing to desktop',
+    {
+      annotation: {
+        type: 'issue',
+        description:
+          'Ticket 183 Stage 6: Back on mobile remounts the sidebar with the router-cached initialOpen from before the desktop toggle, so the stale value wins after resizing to desktop. Also on main; awaiting owner decision.',
+      },
+    },
+    async ({ page }) => {
+      await page.setViewportSize(laptop);
+      await page.goto('/');
+      await waitForNavSettled(page);
+      await page.locator('#card-users .card__click').click();
+      await page.waitForURL((url) => url.pathname === '/collections/users');
+      await waitForNavSettled(page);
+
+      const collapseSaved = waitForNavPreferenceSave(page);
+
+      await page.click('button[aria-label="Close sidebar"]');
+      await collapseSaved;
+      await page.setViewportSize(mobile);
+      await waitForNavSettled(page);
+      await page.goBack();
+      await page.waitForURL((url) => url.pathname === '/');
+      await waitForNavSettled(page);
+      await page.setViewportSize(laptop);
+      await waitForNavSettled(page);
+
+      await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
+    },
+  );
+
+  test('rapid desktop toggles save and reload the last state', async ({ page }) => {
+    await page.setViewportSize(laptop);
+    await page.goto('/');
+    await waitForNavSettled(page);
+
+    await page.click('button[aria-label="Close sidebar"]');
+    await page.click('button[aria-label="Open sidebar"]');
+    await page.click('button[aria-label="Close sidebar"]');
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
+    await expect
+      .poll(
+        async () => (await (await page.request.get('/api/payload-preferences/nav')).json()).value,
+      )
+      .toEqual({ open: false });
+
+    await page.reload();
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-closed');
+    expect(savedValues.at(-1)).toEqual({ open: false });
+  });
+});
+
 test.describe('nav shell on mobile', () => {
   test.use({ viewport: mobile });
+
+  test.afterEach(async ({ page }) => {
+    await setNavPreference(page, true);
+  });
+
+  test.fixme(
+    'drawer is never shown open on first load',
+    {
+      annotation: {
+        type: 'issue',
+        description:
+          'Pre-existing on main: the hydrated shell renders mobile-nav-open for one commit on phone first load before the mobile close effect runs; reported separately from ticket 183.',
+      },
+    },
+    async ({ page }) => {
+      await signIn(page);
+      await setNavPreference(page, true);
+      await recordNavStates(page);
+
+      await page.goto('/');
+      await waitForNavSettled(page);
+
+      await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
+      expect(await navStates(page)).not.toContain('mobile-nav-open');
+    },
+  );
+
+  test('closing the drawer keeps the saved desktop preference', async ({ page }) => {
+    const savedValues: unknown[] = [];
+
+    await signIn(page);
+    await setNavPreference(page, true);
+
+    page.on('request', (request) => {
+      if (
+        request.method() === 'POST' &&
+        new URL(request.url()).pathname === '/api/payload-preferences/nav'
+      ) {
+        savedValues.push(request.postDataJSON().value);
+      }
+    });
+
+    await page.goto('/');
+    await waitForNavSettled(page);
+    await page.click('button[aria-label="Open navigation"]');
+    await page.click('button[aria-label="Close sidebar"]');
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'mobile-nav-closed');
+
+    savedValues.push('resized');
+    await page.setViewportSize(laptop);
+    await waitForNavSettled(page);
+
+    await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+
+    const collapseSaved = waitForNavPreferenceSave(page);
+
+    await page.click('button[aria-label="Close sidebar"]');
+    await collapseSaved;
+
+    expect(savedValues).toEqual(['resized', { open: false }]);
+  });
 
   test('closed drawer leaves the content full width', async ({ page }) => {
     await signIn(page);
