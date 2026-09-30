@@ -1,0 +1,68 @@
+{
+  "name": "@frogbotai/plugin-seo",
+  "version": "0.28.0",
+  "description": "SEO fields and metadata generation for FrogBot.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/plugins/plugin-seo"
+  },
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./fields": {
+      "import": "./dist/fields.js",
+      "types": "./dist/fields.d.ts",
+      "default": "./dist/fields.js"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p ../../../test/types/plugin-seo/tsconfig.json"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@payloadcms/plugin-seo": "3.90.1"
+  },
+  "peerDependencies": {
+    "frogbot": "workspace:*",
+    "payload": "3.90.1",
+    "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
+    "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1"
+  },
+  "devDependencies": {
+    "frogbot": "workspace:*",
+    "payload": "3.90.1",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "typescript": "5.6.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

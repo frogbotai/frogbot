@@ -51,7 +51,7 @@ describe('Payload plugin adapters', () => {
     expect(config.admin?.components?.providers).toEqual(
       expect.arrayContaining([
         appProvider,
-        '@payloadcms/plugin-import-export/rsc#ImportExportProvider',
+        '@frogbotai/plugin-import-export/rsc#ImportExportProvider',
       ]),
     );
     expect(config.jobs?.tasks).toEqual(expect.arrayContaining([appTask]));

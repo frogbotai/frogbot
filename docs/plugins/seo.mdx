@@ -1,0 +1,120 @@
+---
+title: "SEO"
+description: "Add meta titles, descriptions, images, and a search preview to FrogBot collections."
+---
+
+The SEO plugin adds a `meta` group to the collections you list. The group holds a meta title, description, and image, a search result preview, and a completeness overview. Each field can offer an "Auto-generate" button backed by a function you provide.
+
+## Install
+
+```bash
+pnpm add @frogbotai/plugin-seo
+```
+
+## Configure
+
+```ts
+import { seoPlugin } from '@frogbotai/plugin-seo'
+
+plugins: [
+  seoPlugin({
+    collections: ['posts'],
+    uploadsCollection: 'media',
+    generateTitle: ({ doc }) => `${doc.title ?? 'Untitled'} | Acme`,
+    generateDescription: ({ doc }) => doc.excerpt ?? '',
+    generateURL: ({ doc }) => `https://acme.com/posts/${doc.slug}`,
+  }),
+]
+```
+
+| Option                | Description                                                                                          |
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
+| `collections`         | Collection slugs that get SEO fields and may call the generate functions.                            |
+| `uploadsCollection`   | Upload collection for the meta image. Without it, no image field is added.                           |
+| `tabbedUI`            | Uses a tabbed layout, with the `meta` group inside an "SEO" tab.                                      |
+| `interfaceName`       | Names the generated type for the `meta` group.                                                       |
+| `fields`              | Receives `{ defaultFields }` and returns the fields to use in the `meta` group.                      |
+| `generateTitle`       | Returns the meta title.                                                                              |
+| `generateDescription` | Returns the meta description.                                                                        |
+| `generateURL`         | Returns the page URL shown in the search preview.                                                    |
+| `generateImage`       | Returns the meta image, as an upload ID or `{ id }`.                                                 |
+
+An "Auto-generate" button appears only on fields whose generate function you provide.
+
+## Generate functions
+
+Every generate function receives the same arguments:
+
+- `collectionSlug`: the listed collection the request came from.
+- `doc`: the document's current form values, typed from your generated types. Every property is optional, because the document may not be saved yet.
+- `req`: the FrogBot request, with `req.frogbot` and `req.user`.
+- `id` and `locale` when they apply.
+
+Checking `collectionSlug` narrows `doc` to that collection's type:
+
+```ts
+seoPlugin({
+  collections: ['posts', 'pages'],
+  generateTitle: ({ collectionSlug, doc }) => {
+    if (collectionSlug === 'posts') return `${doc.title ?? 'Untitled'} | Acme blog`
+
+    return `${doc.title ?? 'Untitled'} | Acme`
+  },
+})
+```
+
+Generation requires a signed-in user with admin access. For a new document, the user must be allowed to create it; for a saved one, to read it. A collection that isn't listed in `collections` can't use the generate functions. When a request is rejected, the "Auto-generate" button clears the field instead of filling it, so check the user's access if a field empties.
+
+## Place the fields yourself
+
+To put the SEO fields in your own layout, such as a "Search" tab, build them with the factories from `@frogbotai/plugin-seo/fields` and still list the collection in `collections`. The plugin finds the factory fields and adds nothing to that collection, so it has exactly one `meta` group, and "Auto-generate" still works.
+
+```ts
+import {
+  MetaDescriptionField,
+  MetaImageField,
+  MetaTitleField,
+  OverviewField,
+  PreviewField,
+} from '@frogbotai/plugin-seo/fields'
+import type { CollectionConfig } from 'frogbot'
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  fields: [
+    {
+      type: 'tabs',
+      tabs: [
+        { label: 'Content', fields: [{ name: 'title', type: 'text' }] },
+        {
+          name: 'meta',
+          label: 'Search',
+          fields: [
+            OverviewField({}),
+            MetaTitleField({ hasGenerateFn: true }),
+            MetaDescriptionField({ hasGenerateFn: true }),
+            MetaImageField({ relationTo: 'media' }),
+            PreviewField({ hasGenerateFn: true }),
+          ],
+        },
+      ],
+    },
+  ],
+}
+```
+
+```ts
+plugins: [seoPlugin({ collections: ['posts', 'pages'], generateTitle })]
+```
+
+Here `posts` gets the automatic `meta` group and `pages` keeps its own layout. Pass `hasGenerateFn: true` to a field whose generate function you provide, to show its "Auto-generate" button; on `PreviewField` it uses `generateURL`.
+
+The factories return FrogBot fields, so they need no casts, and `overrides` accepts FrogBot hooks, access, and validation.
+
+How the plugin detects placed fields:
+
+- It looks through the collection's fields, including tabs, groups, rows, and collapsibles. Fields inside blocks and arrays don't count.
+- One factory field is enough. The plugin doesn't add the ones you left out.
+- Fields you write by hand, and factory fields whose `overrides` replace the admin component, aren't detected. That collection still gets the automatic group.
+
+Name the tab or group `meta`, as above, so the fields are stored at `meta.title`, `meta.description`, and `meta.image`, where the overview and preview look for them. Under another name, pass `titlePath`, `descriptionPath`, and `imagePath` to `OverviewField`, and `titlePath` and `descriptionPath` to `PreviewField`.

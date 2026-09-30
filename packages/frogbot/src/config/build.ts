@@ -11,6 +11,8 @@ import type { FrogBotConfig } from './types.js';
 
 export type { FrogBotSanitizedConfig };
 
+const GLOBALS_ERROR = '[frogbot] `globals` is not a FrogBot concept. Use collections instead.';
+
 function validate(config: FrogBotConfig): void {
   if (!config.secret || typeof config.secret !== 'string') {
     throw new Error('[frogbot] `secret` is required and must be a string.');
@@ -22,8 +24,20 @@ function validate(config: FrogBotConfig): void {
     throw new Error('[frogbot] `collections` is required and must be an array.');
   }
   if ((config as unknown as Record<string, unknown>).globals !== undefined) {
-    throw new Error('[frogbot] `globals` is not a FrogBot concept. Use collections instead.');
+    throw new Error(GLOBALS_ERROR);
   }
+}
+
+function stripPluginGlobals(config: FrogBotConfig): FrogBotConfig {
+  if (!('globals' in config)) return config;
+
+  const { globals, ...rest } = config as FrogBotConfig & { globals: unknown };
+
+  if (globals !== undefined && !(Array.isArray(globals) && globals.length === 0)) {
+    throw new Error(GLOBALS_ERROR);
+  }
+
+  return rest;
 }
 
 async function runPlugins(config: FrogBotConfig): Promise<FrogBotConfig> {
@@ -75,12 +89,13 @@ function validatePluginMarkers(config: FrogBotConfig): FrogBotConfig {
  * Pipeline:
  *   1. Validate required fields (`secret`, `db`, `collections`), reject
  *      `globals`.
- *   2. Run plugins serially in array order.
+ *   2. Run plugins serially in array order, then strip the empty
+ *      `globals` list some plugins return (a non-empty one is rejected).
  *   3. Sanitize — inject the `req.frogbot` bootstrap hook, wrap
  *      endpoints, produce FrogBotSanitizedConfig.
  */
 export async function buildConfig(config: FrogBotConfig): Promise<FrogBotSanitizedConfig> {
   validate(config);
-  const transformed = validatePluginMarkers(await runPlugins(config));
+  const transformed = validatePluginMarkers(stripPluginGlobals(await runPlugins(config)));
   return sanitize(transformed);
 }

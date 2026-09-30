@@ -4,6 +4,7 @@
     "noEmit": true
   },
   "include": [
+    "globals.test-d.ts",
     "select.test-d.ts",
     "user.test-d.ts",
     "hooks.test-d.ts",

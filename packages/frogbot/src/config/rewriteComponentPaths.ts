@@ -13,6 +13,12 @@ type SettingsComponents = {
   icon?: PayloadComponent;
 };
 
+const pluginComponentSpecifiers: Record<string, string> = {
+  '@payloadcms/plugin-import-export/rsc': '@frogbotai/plugin-import-export/rsc',
+  '@payloadcms/plugin-search/client': '@frogbotai/plugin-search/client',
+  '@payloadcms/plugin-seo/client': '@frogbotai/plugin-seo/client',
+};
+
 function rewritePath(path: string, exportName?: string): string {
   if (
     path === '@payloadcms/richtext-lexical' ||
@@ -34,9 +40,15 @@ function rewritePath(path: string, exportName?: string): string {
   if (path.startsWith('@payloadcms/next/rsc#') || path.startsWith('@payloadcms/next/client#')) {
     return path.replace('@payloadcms/next/', '@frogbotai/next/');
   }
+
   if (path.startsWith('@payloadcms/storage-')) {
     return path.replace('@payloadcms/', '@frogbotai/');
   }
+
+  if (Object.hasOwn(pluginComponentSpecifiers, specifier)) {
+    return pluginComponentSpecifiers[specifier] + path.slice(specifier.length);
+  }
+
   return path;
 }
 
