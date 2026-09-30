@@ -20,9 +20,9 @@ The above properties each receive a function that is defined with the following 
 
 This is FrogBot's GraphQL dependency. You should not install your own copy of GraphQL as a dependency due to underlying restrictions based on how GraphQL works. Instead, you can use the FrogBot-provided copy via this argument.
 
-**`frogbot`**
+**`context`**
 
-This is a copy of the currently running FrogBot instance, which provides you with existing GraphQL types for all of your Collections, among other things.
+An object with the GraphQL types FrogBot generated for your config. For example, `context.collections.posts.graphQL.type` is the type of a `posts` document.
 
 ## Return value
 
@@ -30,40 +30,40 @@ Both `graphQL.queries` and `graphQL.mutations` functions should return an object
 
 ## Example
 
-`frogbot.config.js`:
-
 ```ts
-import { buildConfig } from 'frogbot'
-import myCustomQueryResolver from './graphQL/resolvers/myCustomQueryResolver'
+import type { FrogBotConfig } from 'frogbot'
 
-export default buildConfig({
-  graphQL: {
-    queries: (GraphQL, frogbot) => {
-      return {
-        MyCustomQuery: {
-          type: new GraphQL.GraphQLObjectType({
-            name: 'MyCustomQuery',
-            fields: {
-              text: {
-                type: GraphQL.GraphQLString,
-              },
-              someNumberField: {
-                type: GraphQL.GraphQLFloat,
-              },
+export const graphQL: FrogBotConfig['graphQL'] = {
+  queries: (GraphQL) => {
+    return {
+      MyCustomQuery: {
+        type: new GraphQL.GraphQLObjectType({
+          name: 'MyCustomQuery',
+          fields: {
+            text: {
+              type: GraphQL.GraphQLString,
             },
-          }),
-          args: {
-            argNameHere: {
-              type: new GraphQL.GraphQLNonNull(GraphQLString),
+            someNumberField: {
+              type: GraphQL.GraphQLFloat,
             },
           },
-          resolve: myCustomQueryResolver,
+        }),
+        args: {
+          argNameHere: {
+            type: new GraphQL.GraphQLNonNull(GraphQL.GraphQLString),
+          },
         },
-      }
-    },
+        resolve: (_obj: unknown, args: { argNameHere: string }) => ({
+          text: args.argNameHere,
+          someNumberField: args.argNameHere.length,
+        }),
+      },
+    }
   },
-})
+}
 ```
+
+Pass `graphQL` to `buildConfig` in your FrogBot config.
 
 ## Resolver function
 
@@ -74,7 +74,22 @@ Your function will receive four arguments you can make use of:
 Example
 
 ```ts
-;async (obj, args, context, info) => {}
+import type { GraphQL } from '@frogbotai/graphql/types'
+import type { FrogBotRequest } from 'frogbot'
+
+export const resolver = async (
+  obj: unknown,
+  args: Record<string, unknown>,
+  context: { req: FrogBotRequest },
+  info: GraphQL.GraphQLResolveInfo,
+) => {
+  const { totalDocs } = await context.req.frogbot.count({
+    collection: 'users',
+    req: context.req,
+  })
+
+  return totalDocs
+}
 ```
 
 **`obj`**
@@ -87,7 +102,7 @@ The available arguments from your query or mutation will be available to you her
 
 **`context`**
 
-An object containing the `req` and `res` objects that will provide you with the `frogbot`, `user` instances and more, like any other FrogBot API handler.
+An object containing the incoming request as `req`, the same `FrogBotRequest` a custom endpoint receives. Use `req.frogbot` to call the [Local API](/local-api/overview) and `req.user` to read the signed-in user. Pass `req` to Local API calls so they run in the same request and see the same user.
 
 **`info`**
 
@@ -113,7 +128,7 @@ import { GraphQL } from '@frogbotai/graphql/types'
 
 <Warning>
   For queries, mutations and handlers make sure you use the `GraphQL` and
-  `frogbot` instances provided via arguments.
+  `context` values provided via arguments.
 </Warning>
 
 **`buildPaginatedListType`**
@@ -125,33 +140,44 @@ Example
 
 ```ts
 import { buildPaginatedListType } from '@frogbotai/graphql/types'
+import type { FrogBotConfig, FrogBotRequest } from 'frogbot'
 
-export const getMyPosts = (GraphQL, frogbot) => {
-  return {
-    args: {},
-    resolve: Resolver,
-    // The name of your new type has to be unique
-    type: buildPaginatedListType(
-      'AuthorPosts',
-      frogbot.collections['posts'].graphQL?.type,
-    ),
-  }
+export const graphQL: FrogBotConfig['graphQL'] = {
+  queries: (GraphQL, context) => ({
+    RecentUsers: {
+      args: {},
+      resolve: (_obj: unknown, _args: unknown, { req }: { req: FrogBotRequest }) =>
+        req.frogbot.find({
+          collection: 'users',
+          depth: 0,
+          limit: 10,
+          overrideAccess: false,
+          req,
+          sort: '-createdAt',
+        }),
+      type: buildPaginatedListType('RecentUsers', context.collections['users'].graphQL!.type),
+    },
+  }),
 }
 ```
 
-**`frogbot.collections.slug.graphQL`**
+The name of your new type has to be unique.
+
+**`context.collections[slug].graphQL`**
 
 If you want to extend more of the provided API then the `graphQL` object on your collection slug will contain additional types to help you re-use code for types, mutations and queries.
 
 ```ts
-graphQL?: {
-  type: GraphQLObjectType
-  paginatedType: GraphQLObjectType
-  JWT: GraphQLObjectType
-  versionType: GraphQLObjectType
-  whereInputType: GraphQLInputObjectType
-  mutationInputType: GraphQLNonNull<any>
-  updateMutationInputType: GraphQLNonNull<any>
+import type { GraphQL } from '@frogbotai/graphql/types'
+
+export type CollectionGraphQLTypes = {
+  type: GraphQL.GraphQLObjectType
+  paginatedType: GraphQL.GraphQLObjectType
+  JWT: GraphQL.GraphQLObjectType
+  versionType: GraphQL.GraphQLObjectType
+  whereInputType: GraphQL.GraphQLInputObjectType
+  mutationInputType: GraphQL.GraphQLNonNull<GraphQL.GraphQLInputObjectType>
+  updateMutationInputType: GraphQL.GraphQLNonNull<GraphQL.GraphQLInputObjectType>
 }
 ```
 

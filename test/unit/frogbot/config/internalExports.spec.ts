@@ -63,6 +63,23 @@ describe('frogbot internal exports', () => {
     expect(JSON.parse(stdout)).toEqual({ marker: 'packed' });
   });
 
+  it('resolves the CLI helpers from a packed consumer', async () => {
+    const script = [
+      "import { formatCliError, loadConfig } from 'frogbot/internal';",
+      "console.log(JSON.stringify([typeof loadConfig, formatCliError(new Error('[frogbot] boom'))]));",
+    ].join('\n');
+
+    const { stdout } = await execFileAsync(
+      process.execPath,
+      ['--input-type=module', '--eval', script],
+      {
+        cwd: consumerDirectory,
+      },
+    );
+
+    expect(JSON.parse(stdout)).toEqual(['function', '[frogbot] boom']);
+  });
+
   it('rejects a root import of the internal helper from a packed consumer', async () => {
     const script = "import { getPayloadConfig } from 'frogbot'; console.log(getPayloadConfig);";
 

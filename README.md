@@ -191,6 +191,12 @@ This monorepo publishes the following packages:
 | [`@frogbotai/live-preview-react`](./packages/live-preview-react) | React live preview SDK  |
 | [`@frogbotai/live-preview-vue`](./packages/live-preview-vue)     | Vue live preview SDK    |
 
+**GraphQL**
+
+| Package                                    | Description                                       |
+| ------------------------------------------ | ------------------------------------------------- |
+| [`@frogbotai/graphql`](./packages/graphql) | GraphQL helper types and the schema generator CLI |
+
 **Email pieces & KV adapters**
 
 | Package                                                     | Description        |

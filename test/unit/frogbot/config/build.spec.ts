@@ -6,7 +6,9 @@ import type { Plugin } from '../../../../packages/frogbot/src/plugin.js';
 
 vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof import('payload')>()),
-  buildConfig: vi.fn((config: unknown) => Promise.resolve(config)),
+  buildConfig: vi.fn((config: Record<string, unknown>) =>
+    Promise.resolve({ globals: [], ...config }),
+  ),
   handleEndpoints: vi.fn(),
 }));
 

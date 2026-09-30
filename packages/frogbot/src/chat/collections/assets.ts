@@ -64,6 +64,7 @@ export function defaultChatAssetsCollection({
     slug: CHAT_ASSETS_SLUG,
     upload: true,
     admin: { hidden: true },
+    graphQL: false,
     access: {
       create: ({ req }) => Boolean(req.user),
       read,

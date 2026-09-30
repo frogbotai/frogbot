@@ -1,0 +1,80 @@
+{
+  "name": "@frogbotai/graphql",
+  "version": "0.28.0",
+  "description": "GraphQL schema tools, helper types, and the frogbot-graphql CLI for FrogBot.",
+  "license": "MIT",
+  "author": "Colby Gilbert",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogbotai/frogbot.git",
+    "directory": "packages/graphql"
+  },
+  "homepage": "https://github.com/frogbotai/frogbot#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "frogbot-graphql": "./bin.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/exports/types.d.ts",
+      "import": "./dist/exports/types.js",
+      "default": "./dist/exports/types.js"
+    },
+    "./utilities": {
+      "types": "./dist/exports/utilities.d.ts",
+      "import": "./dist/exports/utilities.js",
+      "default": "./dist/exports/utilities.js"
+    }
+  },
+  "files": [
+    "dist",
+    "bin.js"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.json && chmod +x bin.js",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@payloadcms/graphql": "3.90.1",
+    "tsx": "^4.19.2"
+  },
+  "peerDependencies": {
+    "frogbot": "workspace:*",
+    "graphql": "^16.8.1"
+  },
+  "devDependencies": {
+    "frogbot": "workspace:*",
+    "graphql": "^16.8.1",
+    "payload": "3.90.1",
+    "typescript": "5.6.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./types": {
+        "types": "./dist/exports/types.d.ts",
+        "import": "./dist/exports/types.js",
+        "default": "./dist/exports/types.js"
+      },
+      "./utilities": {
+        "types": "./dist/exports/utilities.d.ts",
+        "import": "./dist/exports/utilities.js",
+        "default": "./dist/exports/utilities.js"
+      }
+    }
+  }
+}

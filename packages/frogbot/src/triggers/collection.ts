@@ -6,6 +6,7 @@ export function defaultTriggerSubscriptionsCollection(): CollectionConfig {
   return {
     slug: TRIGGER_SUBSCRIPTIONS_SLUG,
     admin: { hidden: true },
+    graphQL: false,
     access: { create: () => false, read: () => false, update: () => false, delete: () => false },
     fields: [
       { name: 'agent', type: 'text', required: true },

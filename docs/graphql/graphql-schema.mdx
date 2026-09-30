@@ -21,23 +21,44 @@ Run the following command to generate the schema:
 pnpm frogbot-graphql generate:schema
 ```
 
+The command finds your FrogBot config the same way `frogbot generate:types` does and writes `schema.graphql` to the directory you run it in. The schema contains a type for each of your collections, plus FrogBot's public built-in collections and search queries. FrogBot's internal collections aren't included.
+
+To write the file somewhere else, set `graphQL.schemaOutputFile` in your FrogBot config. A relative path is resolved from the directory you run the command in:
+
+```ts
+import type { FrogBotConfig } from 'frogbot'
+
+export const graphQL: FrogBotConfig['graphQL'] = {
+  schemaOutputFile: './graphql/schema.graphql',
+}
+```
+
+Pass `graphQL` to `buildConfig` in your FrogBot config.
+
 ## Custom Field Schemas
 
 For `array`, `block`, `group` and named `tab` fields, you can generate top level reusable interfaces. The following group field config:
 
 ```ts
-{
-  type: 'group',
-  name: 'meta',
-  interfaceName: 'SharedMeta',
+import type { CollectionConfig } from 'frogbot'
+
+export const Collection1: CollectionConfig = {
+  slug: 'collection1',
   fields: [
     {
-      name: 'title',
-      type: 'text',
-    },
-    {
-      name: 'description',
-      type: 'text',
+      type: 'group',
+      name: 'meta',
+      interfaceName: 'SharedMeta',
+      fields: [
+        {
+          name: 'title',
+          type: 'text',
+        },
+        {
+          name: 'description',
+          type: 'text',
+        },
+      ],
     },
   ],
 }
@@ -59,24 +80,22 @@ type Collection1 {
 }
 ```
 
-The above example outputs all your definitions to a file relative from your FrogBot config as `./graphql/schema.graphql`. By default, the file will be output to your current working directory as `schema.graphql`.
-
 ### Adding an npm script
 
 <Warning>
   FrogBot needs to be able to find your config to generate your GraphQL schema.
 </Warning>
 
-FrogBot will automatically try and locate your config, but might not always be able to find it. For example, if you are working in a `/src` directory or similar, you need to tell FrogBot where to find your config manually by using an environment variable.
+FrogBot looks for `frogbot.config.{ts,js,mjs}` in the current directory, its `src` folder, and each parent directory. If your config lives somewhere else, tell FrogBot where to find it with the `FROGBOT_CONFIG_PATH` environment variable.
 
-If this applies to you, create an npm script to make generating types easier:
+If this applies to you, create an npm script to make generating the schema easier:
 
 ```jsonc
 // package.json
 
 {
   "scripts": {
-    "generate:graphQLSchema": "cross-env PAYLOAD_CONFIG_PATH=src/frogbot.config.ts frogbot-graphql generate:schema"
+    "generate:graphQLSchema": "cross-env FROGBOT_CONFIG_PATH=config/frogbot.config.ts frogbot-graphql generate:schema"
   }
 }
 ```

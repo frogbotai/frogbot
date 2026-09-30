@@ -606,6 +606,28 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
+  packages/graphql:
+    dependencies:
+      '@payloadcms/graphql':
+        specifier: 3.90.1
+        version: 3.90.1(graphql@16.14.2)(payload@3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2))(typescript@5.6.2)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.1
+    devDependencies:
+      frogbot:
+        specifier: workspace:*
+        version: link:../frogbot
+      graphql:
+        specifier: ^16.8.1
+        version: 16.14.2
+      payload:
+        specifier: 3.90.1
+        version: 3.90.1(bufferutil@4.1.0)(graphql@16.14.2)(typescript@5.6.2)
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+
   packages/kv-redis:
     dependencies:
       '@payloadcms/kv-redis':
@@ -1924,6 +1946,9 @@ importers:
       '@frogbotai/gateway':
         specifier: workspace:*
         version: link:../packages/gateway
+      '@frogbotai/graphql':
+        specifier: workspace:*
+        version: link:../packages/graphql
       '@frogbotai/kv-redis':
         specifier: workspace:*
         version: link:../packages/kv-redis
