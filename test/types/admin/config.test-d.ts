@@ -7,6 +7,7 @@ import type {
   FrogBotRequest,
   IconName,
   NavItem,
+  RootAdminConfig,
   SettingsEntry,
   Widget,
 } from 'frogbot';
@@ -114,3 +115,21 @@ expectTypeOf<SettingsEntry['icon']>().toEqualTypeOf<AdminIcon | undefined>();
 expectTypeOf<NonNullable<CollectionConfig['admin']>['icon']>().toEqualTypeOf<
   AdminIcon | undefined
 >();
+
+const accountMenuAdmin = {
+  components: {
+    afterAccountMenu: ['@/components/SupportLink'],
+    beforeAccountMenu: ['@/components/WorkspaceSwitcher'],
+    logout: { Button: '@/components/Auth/LogoutButton' },
+    settingsMenu: ['@/components/SettingsLink'],
+  },
+} satisfies RootAdminConfig;
+
+expectTypeOf(accountMenuAdmin).toMatchTypeOf<RootAdminConfig>();
+
+export const misspelledAccountMenuAdmin: RootAdminConfig = {
+  components: {
+    // @ts-expect-error Unknown root admin component slots are rejected.
+    afterAccountMenus: ['@/components/SupportLink'],
+  },
+};

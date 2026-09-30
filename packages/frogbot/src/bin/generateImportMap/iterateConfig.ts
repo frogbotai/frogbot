@@ -2,7 +2,7 @@ import type { Block, Field, SanitizedConfig } from 'payload';
 import { genImportMapIterateFields } from 'payload';
 
 import { isIconComponent } from '../../admin/icons.js';
-import type { NavItem, SettingsEntry } from '../../admin/types.js';
+import type { RootAdminComponents, SettingsEntry } from '../../admin/types.js';
 import type { AddToImportMap, Imports, InternalImportMap } from './index.js';
 import { iterateCollections } from './iterateCollections.js';
 import { iterateGlobals } from './iterateGlobals.js';
@@ -175,13 +175,12 @@ export function iterateConfig({
   addToImportMap(config.admin?.components?.settingsMenu);
   addToImportMap(config.admin?.components?.graphics?.Icon);
   addToImportMap(config.admin?.components?.graphics?.Logo);
-  const shellComponents = config.admin?.components as typeof config.admin.components & {
-    afterBottomRail?: string[];
-    beforeBottomRail?: string[];
-    beforeSidebarClose?: string[];
-    navItems?: NavItem[];
-    navSections?: string[];
-  };
+
+  const shellComponents = config.admin?.components as typeof config.admin.components &
+    RootAdminComponents;
+
+  addToImportMap(shellComponents.afterAccountMenu);
+  addToImportMap(shellComponents.beforeAccountMenu);
   addToImportMap(shellComponents.afterBottomRail);
   addToImportMap(shellComponents.beforeBottomRail);
   addToImportMap(shellComponents.beforeSidebarClose);

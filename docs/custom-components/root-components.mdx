@@ -32,6 +32,9 @@ export default buildConfig({
 | `beforeNavLinks`, `afterNavLinks` | Components around sidebar links and sections. |
 | `beforeBottomRail`, `afterBottomRail` | Components around Account and Settings in the sidebar rail. |
 | `beforeSidebarClose` | Components to the left of the sidebar collapse button. |
+| `beforeAccountMenu`, `afterAccountMenu` | Items above and below Settings in the account menu. |
+| `settingsMenu` | Items after `afterAccountMenu` in the account menu. |
+| `logout.Button` | Replaces the account menu's Log out item. |
 | `chat.Chat` | Replaces the chat surface. |
 | `chat.Greeting` | Replaces the empty-chat greeting. |
 | `chat.AssistantMessageActions` | Replaces assistant message actions. |
@@ -83,6 +86,20 @@ components: {
   afterBottomRail: ['/components/Version#Version'],
 }
 ```
+
+### Account menu
+
+Add items to the account menu or replace its Log out item:
+
+```ts
+components: {
+  beforeAccountMenu: ['/components/WorkspaceSwitcher#WorkspaceSwitcher'],
+  afterAccountMenu: ['/components/SupportLink#SupportLink'],
+  logout: { Button: '/components/LogoutButton#LogoutButton' },
+}
+```
+
+See [Customize the account menu](/admin/admin-navigation#customize-the-account-menu) for the item order and a sign-out example.
 
 ### Nav
 
@@ -141,3 +158,22 @@ export function BrandLogo() {
   return <img src="/brand/logo.svg" alt="Acme" />
 }
 ```
+
+## Component props
+
+Type server components in these slots with `RootComponentServerProps`:
+
+```tsx
+import type { RootComponentServerProps } from 'frogbot'
+
+export function SupportLink({ req, user }: RootComponentServerProps) {
+  const agents = Object.keys(req?.frogbot.agents ?? {})
+
+  return <a href="/support">Support ({user?.email}, {agents.length} agents)</a>
+}
+```
+
+The props include `i18n`, `locale`, `params`, `permissions`, `searchParams`, `user`, and `visibleEntities`. `req` is optional:
+
+- Sidebar, account menu, top bar, and custom `Nav` components receive `req`. Use `req?.frogbot` to reach FrogBot.
+- Login page components (`beforeLogin`, `afterLogin`, and `graphics.Logo`) don't receive `req`. Use `getCachedFrogBot()` from `frogbot` instead.

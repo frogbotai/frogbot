@@ -8,6 +8,7 @@ import type {
   FrogBotRequest,
   ListViewServerProps,
   RootAdminConfig,
+  RootComponentServerProps,
   SaveButtonServerProps,
   TextFieldClientComponent,
   TextFieldServerComponent,
@@ -85,3 +86,29 @@ const dashboard = {
 const admin = { dashboard } satisfies RootAdminConfig;
 
 expectTypeOf(admin.dashboard).toMatchTypeOf<DashboardConfig>();
+
+expectTypeOf<RootComponentServerProps>().toHaveProperty('i18n');
+expectTypeOf<RootComponentServerProps>().toHaveProperty('locale');
+expectTypeOf<RootComponentServerProps>().toHaveProperty('params');
+expectTypeOf<RootComponentServerProps>().toHaveProperty('permissions');
+expectTypeOf<RootComponentServerProps>().toHaveProperty('searchParams');
+expectTypeOf<RootComponentServerProps>().toHaveProperty('user');
+expectTypeOf<RootComponentServerProps>().toHaveProperty('visibleEntities');
+expectTypeOf<RootComponentServerProps['req']>().toEqualTypeOf<FrogBotRequest | undefined>();
+expectTypeOf<RootComponentServerProps>().not.toHaveProperty('payload');
+expectTypeOf<RootComponentServerProps>().not.toHaveProperty('frogbot');
+
+declare const rootProps: RootComponentServerProps;
+
+export const rootFrogBot = rootProps.req?.frogbot;
+
+expectTypeOf(rootFrogBot).toEqualTypeOf<FrogBotRequest['frogbot'] | undefined>();
+
+// @ts-expect-error Root component props do not expose the underlying runtime.
+export const rootPayload = rootProps.payload;
+
+// @ts-expect-error Root component requests expose req.frogbot instead.
+export const rootRequestPayload = rootProps.req?.payload;
+
+// @ts-expect-error Root components reach FrogBot through req.frogbot.
+export const rootPropsFrogBot = rootProps.frogbot;

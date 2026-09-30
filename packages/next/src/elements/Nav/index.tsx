@@ -1,5 +1,7 @@
 import { Account } from '@payloadcms/ui';
 import { RenderServerComponent } from '@payloadcms/ui/elements/RenderServerComponent';
+import type { RootAdminComponents } from 'frogbot';
+import { attachRegisteredFrogBot } from 'frogbot/internal';
 import type { NavPreferences, PayloadRequest, ServerProps } from 'payload';
 import { formatAdminURL, PREFERENCE_KEYS } from 'payload/shared';
 
@@ -42,17 +44,13 @@ export async function FrogBotNav(props: FrogBotNavProps) {
     viewType,
     visibleEntities,
   } = props;
+
   if (!payload?.config || !permissions || !visibleEntities) return null;
 
+  if (req) attachRegisteredFrogBot(req);
+
   const { admin, routes } = payload.config;
-  const shellComponents = admin.components as typeof admin.components & {
-    afterAccountMenu?: Parameters<typeof RenderServerComponent>[0]['Component'][];
-    afterBottomRail?: Parameters<typeof RenderServerComponent>[0]['Component'][];
-    beforeAccountMenu?: Parameters<typeof RenderServerComponent>[0]['Component'][];
-    beforeBottomRail?: Parameters<typeof RenderServerComponent>[0]['Component'][];
-    beforeSidebarClose?: Parameters<typeof RenderServerComponent>[0]['Component'][];
-    navSections?: Parameters<typeof RenderServerComponent>[0]['Component'][];
-  };
+  const shellComponents = admin.components as typeof admin.components & RootAdminComponents;
   const navModel = buildNavModel({
     config: payload.config,
     i18n,

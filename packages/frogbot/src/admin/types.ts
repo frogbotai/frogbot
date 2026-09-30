@@ -42,8 +42,12 @@ export interface NavItem {
 export interface RootAdminComponents {
   /** Add components to the top right of the admin panel. */
   actions?: FrogBotComponent[];
+  /** Add items to the account menu, below Settings. */
+  afterAccountMenu?: FrogBotComponent[];
   /** Add components after the login form's email and password fields. */
   afterLogin?: FrogBotComponent[];
+  /** Add items to the account menu, above Settings. */
+  beforeAccountMenu?: FrogBotComponent[];
   /** Add components before the login form's email and password fields. */
   beforeLogin?: FrogBotComponent[];
   /** Add components to the sidebar below the nav links and nav sections. */
@@ -64,6 +68,8 @@ export interface RootAdminComponents {
   };
   /** Component slots for admin branding. */
   graphics?: RootAdminGraphics;
+  /** Replace the account menu's Log out item. */
+  logout?: { Button?: FrogBotComponent };
   /** Replace the entire admin sidebar navigation. */
   Nav?: FrogBotComponent;
   /** Sidebar links above your collections. Empty by default. */
@@ -73,6 +79,8 @@ export interface RootAdminComponents {
   navSections?: FrogBotComponent[];
   /** Wrap the admin panel in custom context providers. */
   providers?: ProviderComponent[];
+  /** Add items to the account menu, after `afterAccountMenu`. */
+  settingsMenu?: FrogBotComponent[];
   /** Replace, modify, or add top-level admin routes. */
   views?: AdminViews;
 }

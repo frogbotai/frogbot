@@ -10,7 +10,6 @@ import { generateImportMap } from '../../../../../packages/frogbot/src/bin/gener
 import { resolveImportMapFilePath } from '../../../../../packages/frogbot/src/bin/generateImportMap/utilities/resolveImportMapFilePath.js';
 import { buildConfig } from '../../../../../packages/frogbot/src/config/build.js';
 import { sanitize } from '../../../../../packages/frogbot/src/config/sanitize.js';
-import type { FrogBotConfig } from '../../../../../packages/frogbot/src/config/types.js';
 
 const dirs: string[] = [];
 
@@ -49,7 +48,9 @@ async function makePayloadConfig({
       components: {
         ...(includeNavIcons
           ? {
+              afterAccountMenu: ['./components/AfterAccount.tsx#AfterAccount'],
               afterBottomRail: ['./components/AfterBottom.tsx#AfterBottom'],
+              beforeAccountMenu: ['./components/BeforeAccount.tsx#BeforeAccount'],
               beforeBottomRail: ['./components/BeforeBottom.tsx#BeforeBottom'],
               beforeSidebarClose: ['./components/BeforeClose.tsx#BeforeClose'],
               navItems: [{ icon: './components/HomeIcon.tsx#HomeIcon', label: 'Home', path: '/' }],
@@ -71,7 +72,7 @@ async function makePayloadConfig({
           },
         ]
       : undefined,
-  } as FrogBotConfig);
+  });
 
   return config._internal.payloadConfig;
 }
@@ -124,11 +125,47 @@ describe('frogbot importMap generator', () => {
     expect(output).toContain("from './components/AfterBottom.tsx'");
     expect(output).toContain("from './components/BeforeBottom.tsx'");
     expect(output).toContain("from './components/BeforeClose.tsx'");
+    expect(output).toContain("from './components/AfterAccount.tsx'");
+    expect(output).toContain("from './components/BeforeAccount.tsx'");
+    expect(output).toContain('"/components/LogoutButton.tsx#default"');
     expect(output).toContain("from 'my-ui/client'");
     expect(output).toContain("from './settings/Usage.tsx'");
     expect(output).toContain("from './settings/UsageIcon.tsx'");
     expect(output).not.toContain('@payloadcms');
     expect(output).not.toContain("import('payload')");
+  });
+
+  it('imports object-form account-menu components when the other list is empty', async () => {
+    const dir = await makeDir('frogbot-importmap-account-menu-');
+    const config = sanitize({
+      secret: 'test-secret',
+      db: { defaultIDType: 'number' } as never,
+      admin: {
+        components: {
+          afterAccountMenu: [
+            {
+              exportName: 'SupportLink',
+              path: './components/SupportLink.tsx',
+              serverProps: { href: '/support' },
+            },
+          ],
+          beforeAccountMenu: [],
+        },
+      },
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+    });
+    const payloadConfig = await config._internal.payloadConfig;
+    payloadConfig.admin.importMap.baseDir = dir;
+    payloadConfig.admin.importMap.importMapFile = join(dir, 'importMap.js');
+
+    await generateImportMap(payloadConfig);
+
+    const output = await readFile(join(dir, 'importMap.js'), 'utf-8');
+
+    expect(output).toMatch(
+      /import \{ SupportLink as \w+ \} from '\.\/components\/SupportLink\.tsx'/,
+    );
+    expect(output).toContain('"./components/SupportLink.tsx#SupportLink":');
   });
 
   it('imports component icons and skips built-in icon names', async () => {

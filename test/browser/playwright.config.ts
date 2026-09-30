@@ -267,7 +267,7 @@ export default defineConfig({
     },
     {
       name: 'live-preview',
-      testMatch: 'livePreview.browser.spec.ts',
+      testMatch: ['accountMenu.browser.spec.ts', 'livePreview.browser.spec.ts'],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${livePreviewPort}`,

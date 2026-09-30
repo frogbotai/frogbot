@@ -134,6 +134,10 @@ export type DocumentTabConfig = Omit<Payload.DocumentTabConfig, 'condition'> & {
   readonly condition?: DocumentTabCondition;
 };
 
+export type RootComponentServerProps = WithoutPayload<Payload.ServerProps> & {
+  readonly req?: FrogBotRequest;
+};
+
 export type ListViewServerPropsOnly = WithoutPayload<Payload.ListViewServerPropsOnly>;
 export type ListViewServerProps = Payload.ListViewClientProps & ListViewServerPropsOnly;
 
