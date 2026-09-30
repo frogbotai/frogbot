@@ -7,8 +7,12 @@ export const authTypeConfig: FrogBotConfig = {
   collections: [
     {
       slug: 'users',
-      auth: true,
-      fields: [{ name: 'nickname', type: 'text' }],
+      auth: { disableLocalStrategy: true },
+      fields: [
+        { name: 'nickname', type: 'text' },
+        { name: 'email', type: 'text' },
+        { name: 'code', type: 'text' },
+      ],
     },
     {
       slug: 'admins',

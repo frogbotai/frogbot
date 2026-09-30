@@ -11,10 +11,13 @@
 
 import { Cron } from 'croner';
 import type {
+  AuthStrategy as PayloadAuthStrategy,
+  AuthStrategyResult as PayloadAuthStrategyResult,
   CollectionConfig as PayloadCollectionConfig,
   Config as PayloadConfig,
   Endpoint as PayloadEndpoint,
   LivePreviewConfig as PayloadLivePreviewConfig,
+  Payload,
   PayloadEmailAdapter,
   PayloadHandler,
   PayloadRequest,
@@ -39,9 +42,11 @@ import { isProviderName } from '../ai/providerNames.js';
 import type { AIConfig, RouterConfig, SanitizedAIConfig } from '../ai/types.js';
 import { resolveUsageCollection } from '../ai/usage/collection.js';
 import { coordinateAuthEndpoints } from '../auth/endpoints.js';
+import { executeAuthStrategy } from '../auth/executeAuthStrategy.js';
 import { attachSessionPayload, unwrapSessionPayload } from '../auth/operation.js';
 import { buildSignInEndpoints } from '../auth/signIn/endpoints.js';
 import { validateSignIn, validateSignInFields } from '../auth/signIn/validate.js';
+import type { AuthStrategy } from '../auth/types.js';
 import { buildChannelGatewayEndpoints } from '../channels/endpoints.js';
 import {
   CHANNEL_QUESTION_UPDATE_TASK_SLUG,
@@ -63,7 +68,7 @@ import { sanitizeVectorFields } from '../fields/config/sanitizeVector.js';
 import type { FrogBot } from '../frogbot.js';
 import { initFrogBotFromPayload } from '../frogbot.js';
 import { seedFrogBotCache } from '../getFrogBot.js';
-import { ensureFrogBotInstance } from '../instanceRegistry.js';
+import { ensureFrogBotInstance, getFrogBotInstance } from '../instanceRegistry.js';
 import { resolveJobsConfig } from '../jobs/config.js';
 import { buildResumeEndpoints } from '../jobs/endpoints/resume.js';
 import { withJobsRuntime } from '../jobs/runtime.js';
@@ -132,6 +137,55 @@ const noopEmailAdapter: PayloadEmailAdapter<void> = ({ payload }) => ({
 });
 
 type AttachFrogBot = (req: PayloadRequest) => Promise<FrogBotRequest>;
+
+type ResolveFrogBot = (payload: Payload) => Promise<FrogBot>;
+
+function attachFrogBotInstance(req: PayloadRequest, frogbot: FrogBot): FrogBotRequest {
+  req.payload = unwrapSessionPayload(req.payload);
+  (req as PayloadRequest & { frogbot: FrogBot }).frogbot = frogbot;
+
+  Object.defineProperty(req, Symbol.for('@frogbotai/request-runtime'), {
+    configurable: true,
+    enumerable: true,
+    value: req.payload,
+  });
+
+  attachSessionPayload(req);
+
+  return req as unknown as FrogBotRequest;
+}
+
+function wrapAuthStrategies({
+  collection,
+  strategies,
+  resolveFrogBot,
+}: {
+  collection: string;
+  strategies: AuthStrategy[];
+  resolveFrogBot: ResolveFrogBot;
+}): PayloadAuthStrategy[] {
+  return strategies.map((strategy) => ({
+    name: strategy.name,
+    authenticate: async ({ payload, canSetHeaders, headers, isGraphQL, req, strategyName }) => {
+      const frogbot = await resolveFrogBot(unwrapSessionPayload(payload));
+
+      seedFrogBotCache(frogbot, frogbot.config);
+
+      const frogbotReq = req ? attachFrogBotInstance(req, frogbot) : undefined;
+
+      return executeAuthStrategy({
+        collection,
+        strategy,
+        canSetHeaders,
+        frogbot,
+        headers,
+        isGraphQL,
+        req: frogbotReq,
+        strategyName,
+      }) as Promise<PayloadAuthStrategyResult>;
+    },
+  }));
+}
 
 async function bootstrapBeforeOperation(
   args: { req: PayloadRequest },
@@ -240,7 +294,15 @@ function wrapCollectionAccess(
 function sanitizeCollection(
   c: CollectionConfig,
   attachFrogBot: AttachFrogBot,
-  { mapVectorField, search }: { mapVectorField?: MapVectorField; search?: SearchIndexDescriptors },
+  {
+    mapVectorField,
+    search,
+    resolveFrogBot,
+  }: {
+    mapVectorField?: MapVectorField;
+    search?: SearchIndexDescriptors;
+    resolveFrogBot: ResolveFrogBot;
+  },
 ): PayloadCollectionConfig {
   const signIn = validateSignIn(c);
   let collectionViews: CollectionView[] = [];
@@ -301,10 +363,18 @@ function sanitizeCollection(
 
   // Capture auth state into `custom.frogbot`.
   const auth = c.auth !== undefined && c.auth !== false;
+
   if (typeof c.auth === 'object') {
-    const { signIn: _signIn, ...collectionAuth } = c.auth;
-    out.auth = collectionAuth;
+    const { signIn: _signIn, strategies, ...collectionAuth } = c.auth;
+
+    out.auth = {
+      ...collectionAuth,
+      ...(strategies
+        ? { strategies: wrapAuthStrategies({ collection: c.slug, strategies, resolveFrogBot }) }
+        : {}),
+    };
   }
+
   const existingCustom = (c.custom ?? {}) as Record<string, unknown>;
   const {
     auth: _auth,
@@ -1056,6 +1126,7 @@ function buildPayloadConfig(
   onInit: NonNullable<PayloadConfig['onInit']>,
   internalEndpoints: Endpoint[] = [],
   attachFrogBot: AttachFrogBot,
+  resolveFrogBot: ResolveFrogBot,
   searchCollections: SearchCollection[] = [],
 ): PayloadConfig {
   const frogbotKeys = new Set([
@@ -1081,6 +1152,7 @@ function buildPayloadConfig(
       attachFrogBot,
       {
         mapVectorField,
+        resolveFrogBot,
         search: searchCollections.find(({ slug }) => slug === collection.slug)?.search,
       },
     ),
@@ -1095,7 +1167,7 @@ function buildPayloadConfig(
           fields: [{ name: 'name', type: 'text' }],
         },
         attachFrogBot,
-        { mapVectorField },
+        { mapVectorField, resolveFrogBot },
       ),
     );
   }
@@ -1364,26 +1436,39 @@ export function sanitize(
   validateInternalPathReservations(config);
   const settings = sanitizeSettings(config.settings);
   const sanitizedConfigRef: { current?: FrogBotSanitizedConfig } = {};
-  const attachFrogBot: AttachFrogBot = async (req) => {
-    req.payload = unwrapSessionPayload(req.payload);
+
+  const resolveFrogBot: ResolveFrogBot = async (payload) => {
+    const registered = getFrogBotInstance(payload);
+
+    if (registered) return registered;
+
     const sanitizedConfig = sanitizedConfigRef.current;
+
     if (!sanitizedConfig) {
       throw new Error('[frogbot] Payload initialized before config sanitization completed.');
     }
+
+    return ensureFrogBotInstance(payload, () => initFrogBotFromPayload(payload, sanitizedConfig));
+  };
+
+  const attachFrogBot: AttachFrogBot = async (req) => {
+    req.payload = unwrapSessionPayload(req.payload);
+
+    const sanitizedConfig = sanitizedConfigRef.current;
+
+    if (!sanitizedConfig) {
+      throw new Error('[frogbot] Payload initialized before config sanitization completed.');
+    }
+
     const frogbot = await ensureFrogBotInstance(
       req.payload,
       () => initFrogBotFromPayload(req.payload, sanitizedConfig),
       sanitizedConfig,
     );
+
     seedFrogBotCache(frogbot, sanitizedConfig);
-    (req as PayloadRequest & { frogbot: FrogBot }).frogbot = frogbot;
-    Object.defineProperty(req, Symbol.for('@frogbotai/request-runtime'), {
-      configurable: true,
-      enumerable: true,
-      value: req.payload,
-    });
-    attachSessionPayload(req);
-    return req as unknown as FrogBotRequest;
+
+    return attachFrogBotInstance(req, frogbot);
   };
 
   // Sanitize AI config if present.
@@ -1616,6 +1701,7 @@ export function sanitize(
       ...(hasChannelAdapters ? buildChannelGatewayEndpoints() : []),
     ],
     attachFrogBot,
+    resolveFrogBot,
     searchCollections,
   );
   payloadConfig.db = withSearchRuntime({

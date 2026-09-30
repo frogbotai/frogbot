@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
+import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
+import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instanceRegistry.js';
 import type { Plugin } from '../../../../packages/frogbot/src/plugin.js';
 
 vi.mock('payload', async (importOriginal) => ({
@@ -14,6 +16,7 @@ vi.mock('payload', async (importOriginal) => ({
 
 vi.mock('../../../../packages/frogbot/src/getFrogBot.js', () => ({
   getCachedFrogBot: vi.fn(() => null),
+  seedFrogBotCache: vi.fn(),
 }));
 
 const { buildConfig } = await import('../../../../packages/frogbot/src/config/build.js');
@@ -298,15 +301,28 @@ describe('frogbot buildConfig', () => {
       expect(users.auth).toBeTruthy();
     });
 
-    it('preserves custom authentication strategies', async () => {
-      const strategy = { name: 'custom', authenticate: () => ({ user: null }) };
+    it('adapts custom authentication strategies with FrogBot', async () => {
+      const authenticate = vi.fn(() => ({ user: null }));
+      const strategy = { name: 'custom', authenticate };
       const config = makeConfig({
         collections: [{ slug: 'users', auth: { strategies: [strategy] }, fields: [] }],
       });
+
       const result = await buildConfig(config);
       const payloadConfig = await result._internal.payloadConfig;
-      const users = (payloadConfig as any).collections.find((c: any) => c.slug === 'users');
-      expect(users.auth.strategies).toEqual([strategy]);
+      const users = payloadConfig.collections.find((collection) => collection.slug === 'users')!;
+      const adapted = users.auth.strategies[0]!;
+      const payload = {};
+      const frogbot = { config: result } as FrogBot;
+
+      registerFrogBotInstance(payload, frogbot);
+
+      await adapted.authenticate({ headers: new Headers(), payload: payload as never });
+
+      expect(adapted.name).toBe(strategy.name);
+      expect(adapted.authenticate).not.toBe(authenticate);
+      expect(authenticate).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ frogbot }));
+      expect(strategy.authenticate).toBe(authenticate);
     });
 
     it('does not mutate the caller\u2019s input config object', async () => {

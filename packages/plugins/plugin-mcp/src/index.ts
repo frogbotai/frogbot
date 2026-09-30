@@ -9,13 +9,19 @@ export type McpPluginOptions = Omit<MCPPluginConfig, 'experimental' | 'overrideA
 
 export function mcpPlugin(pluginOptions: McpPluginOptions = {}): Plugin {
   validateMcpCapabilities(pluginOptions);
+
   return async (config) => {
     const apiKeyStrategy = config.collections
       .flatMap((collection) => {
         const auth = typeof collection.auth === 'object' ? collection.auth : undefined;
-        return auth?.strategies ?? [];
+
+        return (auth?.strategies ?? []).map((strategy) => ({
+          collection: collection.slug,
+          strategy,
+        }));
       })
-      .find(isApiKeyStrategy);
+      .find(({ strategy }) => isApiKeyStrategy(strategy));
+
     if (!apiKeyStrategy) {
       throw new Error('[plugin-mcp] apiKeysPlugin must be configured before mcpPlugin.');
     }
@@ -25,11 +31,13 @@ export function mcpPlugin(pluginOptions: McpPluginOptions = {}): Plugin {
       overrideAuth: _overrideAuth,
       ...options
     } = pluginOptions as MCPPluginConfig;
+
     return (await payloadMcpPlugin({
       ...options,
       overrideAuth: (req) =>
         resolveMcpAccess({
-          authenticate: apiKeyStrategy.authenticate,
+          collection: apiKeyStrategy.collection,
+          strategy: apiKeyStrategy.strategy,
           pluginOptions: options,
           req,
         }),

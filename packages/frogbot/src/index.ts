@@ -134,7 +134,13 @@ export type {
   StreamTextOpts,
   TranscribeOpts,
 } from './ai/types.js';
-export type { AuthConfig } from './auth/types.js';
+export type {
+  AuthConfig,
+  AuthStrategy,
+  AuthStrategyFunction,
+  AuthStrategyFunctionArgs,
+  AuthStrategyResult,
+} from './auth/types.js';
 export type {
   AuthArgs,
   AuthResult,

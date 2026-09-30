@@ -1,0 +1,253 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { getApiKeyPrefix, hashApiKeyToken } from '@frogbotai/plugin-api-keys';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
+import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
+import { clearAndSeed } from '../__helpers/shared/clearAndSeed/index.js';
+import {
+  actorToolName,
+  apiKeyHeader,
+  apiKeysSlug,
+  apiKeyToken,
+  customActorCredentials,
+  customStrategyHeader,
+  customStrategyName,
+  mcpEndpoint,
+  strategyFailureMessage,
+  testCredentials,
+  unknownApiKeyToken,
+  usersSlug,
+} from './config.js';
+
+const dirname = path.dirname(fileURLToPath(import.meta.url));
+
+type MeBody = {
+  user: { id: string | number; email: string; _strategy: string } | null;
+};
+
+type ToolsListBody = {
+  jsonrpc: '2.0';
+  id: number;
+  result: { tools: Array<{ name: string }> };
+};
+
+type ToolCallBody = {
+  jsonrpc: '2.0';
+  id: number;
+  result: { content: Array<{ type: 'text'; text: string }>; isError?: boolean };
+};
+
+function parseMcpResponse<T>(body: T | string): T {
+  const json =
+    typeof body === 'string'
+      ? (body
+          .split('\n')
+          .find((line) => line.startsWith('data: '))
+          ?.slice(6) ?? body)
+      : JSON.stringify(body);
+
+  return JSON.parse(json) as T;
+}
+
+function responseHeaders(headers: Headers) {
+  const comparable = new Headers(headers);
+
+  comparable.delete('date');
+
+  return Object.fromEntries(comparable);
+}
+
+describe('MCP plugin integration', () => {
+  let booted: BootedFrogBot;
+  let ownerId: string | number;
+  let customActorId: string | number;
+  let apiKeyId: string | number;
+
+  beforeAll(async () => {
+    booted = await bootFrogBot(dirname);
+  });
+
+  afterAll(async () => {
+    await booted.shutdown();
+  });
+
+  beforeEach(async () => {
+    await clearAndSeed(booted.frogbot, 'empty');
+
+    const owner = await booted.frogbot.create({
+      collection: usersSlug,
+      data: testCredentials,
+      overrideAccess: true,
+    });
+
+    const customActor = await booted.frogbot.create({
+      collection: usersSlug,
+      data: customActorCredentials,
+      overrideAccess: true,
+    });
+
+    const apiKey = await booted.frogbot.create({
+      collection: apiKeysSlug,
+      data: {
+        name: 'MCP integration',
+        owner: owner.id,
+        prefix: getApiKeyPrefix(apiKeyToken),
+        tokenHash: hashApiKeyToken(apiKeyToken),
+      },
+      overrideAccess: true,
+    });
+
+    ownerId = owner.id;
+    customActorId = customActor.id;
+    apiKeyId = apiKey.id;
+  });
+
+  afterEach(async () => {
+    vi.restoreAllMocks();
+
+    await clearAndSeed(booted.frogbot, 'empty');
+  });
+
+  function listTools(token: string, headers: Record<string, string> = {}) {
+    return booted.restClient.post<ToolsListBody | string>(
+      mcpEndpoint,
+      { jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} },
+      {
+        headers: {
+          accept: 'application/json, text/event-stream',
+          Authorization: `Bearer ${token}`,
+          ...headers,
+        },
+      },
+    );
+  }
+
+  it('POST /api/mcp lists configured tools with a persisted API key', async () => {
+    const response = await listTools(apiKeyToken);
+
+    expect(response.status).toBe(200);
+
+    const body = parseMcpResponse<ToolsListBody>(response.body);
+
+    expect(body).toMatchObject({ jsonrpc: '2.0', id: 1 });
+    expect(body.result.tools.map(({ name }) => name)).toEqual(['findPosts', actorToolName]);
+  });
+
+  it('POST /api/mcp uses the API-key actor when an earlier custom strategy authenticates the engine request', async () => {
+    const headers = {
+      [apiKeyHeader]: apiKeyToken,
+      [customStrategyHeader]: customActorCredentials.email,
+    };
+
+    const me = await booted.restClient.get<MeBody>(`/api/${usersSlug}/me`, { headers });
+
+    expect(me.status).toBe(200);
+    expect(me.body.user).toMatchObject({
+      id: customActorId,
+      email: customActorCredentials.email,
+      _strategy: customStrategyName,
+    });
+    expect(customActorId).not.toBe(ownerId);
+
+    const tools = await listTools(apiKeyToken, headers);
+
+    expect(tools.status).toBe(200);
+    expect(
+      parseMcpResponse<ToolsListBody>(tools.body).result.tools.map(({ name }) => name),
+    ).toEqual(['findPosts', actorToolName]);
+
+    const response = await booted.restClient.post<ToolCallBody | string>(
+      mcpEndpoint,
+      {
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: { name: actorToolName, arguments: {} },
+      },
+      { headers: { ...headers, accept: 'application/json, text/event-stream' } },
+    );
+
+    expect(response.status).toBe(200);
+
+    const body = parseMcpResponse<ToolCallBody>(response.body);
+
+    expect(body).toMatchObject({ jsonrpc: '2.0', id: 2 });
+    expect(body.result.isError).not.toBe(true);
+    expect(body.result.content).toEqual([
+      {
+        type: 'text',
+        text: JSON.stringify({
+          id: ownerId,
+          email: testCredentials.email,
+          collection: usersSlug,
+          strategy: 'api-key',
+          apiKeyId,
+        }),
+      },
+    ]);
+  });
+
+  it('POST /api/mcp rejects an invalid key despite an earlier authenticated custom actor', async () => {
+    const headers = {
+      [apiKeyHeader]: unknownApiKeyToken,
+      [customStrategyHeader]: customActorCredentials.email,
+    };
+
+    const me = await booted.restClient.get<MeBody>(`/api/${usersSlug}/me`, { headers });
+
+    expect(me.status).toBe(200);
+    expect(me.body.user).toMatchObject({
+      id: customActorId,
+      email: customActorCredentials.email,
+      _strategy: customStrategyName,
+    });
+
+    const unauthorized = await listTools(unknownApiKeyToken);
+    const response = await listTools(unknownApiKeyToken, headers);
+
+    expect(unauthorized.status).toBe(401);
+    expect(response.status).toBe(unauthorized.status);
+    expect(response.body).toEqual(unauthorized.body);
+    expect(responseHeaders(response.headers)).toEqual(responseHeaders(unauthorized.headers));
+  });
+
+  it('POST /api/mcp rejects an unknown API key', async () => {
+    const response = await listTools(unknownApiKeyToken);
+
+    expect(response.status).toBe(401);
+  });
+
+  it('POST /api/mcp logs strategy failures without changing the normal unauthorized response', async () => {
+    const unauthorized = await listTools(unknownApiKeyToken);
+    const failure = new Error(strategyFailureMessage);
+    const find = booted.frogbot.find.bind(booted.frogbot);
+    const findSpy = vi
+      .spyOn(booted.frogbot, 'find')
+      .mockImplementation((options) =>
+        options.collection === apiKeysSlug ? Promise.reject(failure) : find(options),
+      );
+    const errorLog = vi.spyOn(booted.frogbot.logger, 'error');
+
+    const response = await listTools(apiKeyToken);
+
+    const keyQueries = findSpy.mock.calls.filter(([options]) => options.collection === apiKeysSlug);
+    const strategyErrors = errorLog.mock.calls.filter(
+      ([, message]) => message === `[frogbot] auth strategy 'api-key' on '${usersSlug}' failed`,
+    );
+
+    expect(unauthorized.status).toBe(401);
+    expect(response.status).toBe(unauthorized.status);
+    expect(response.body).toEqual(unauthorized.body);
+    expect(responseHeaders(response.headers)).toEqual(responseHeaders(unauthorized.headers));
+    expect(JSON.stringify(response.body)).not.toContain(strategyFailureMessage);
+    expect(JSON.stringify(responseHeaders(response.headers))).not.toContain(strategyFailureMessage);
+    expect(keyQueries.length).toBeGreaterThan(0);
+    expect(strategyErrors).toHaveLength(keyQueries.length);
+    expect(strategyErrors.map(([details]) => details)).toEqual(
+      keyQueries.map(() => ({ err: failure })),
+    );
+  });
+});
