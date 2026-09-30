@@ -177,6 +177,21 @@ Field `access.create`, `access.read`, and `access.update` callbacks receive `Fie
 | `req`          | `FrogBotRequest`          | Request with the authenticated `req.user` and `req.frogbot`. |
 | `siblingData?` | `Partial<TSiblingData>`   | Data adjacent to the field.                                  |
 
+## Default values and filter options
+
+Function `defaultValue` and `filterOptions` values (relationship, upload, select, and blocks) also receive `req` as a `FrogBotRequest`. `req.frogbot` is attached wherever they run, including when the admin panel builds a form outside any operation. Static values are used as they are. Select `filterOptions` must return the option array synchronously:
+
+```ts
+import type { Field } from 'frogbot';
+
+export const reviewer: Field = {
+  name: 'reviewer',
+  type: 'relationship',
+  relationTo: 'users',
+  filterOptions: ({ req }) => ({ id: { not_equals: req.user?.id } }),
+};
+```
+
 ## Conditional fields
 
 `admin.condition` receives top-level form data, sibling data, and a context containing `user`. It does not receive a `FrogBotRequest`. Use top-level data for a document-wide switch and sibling data for a nested group's switch:

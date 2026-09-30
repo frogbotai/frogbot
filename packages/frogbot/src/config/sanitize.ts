@@ -65,6 +65,7 @@ import type { MapVectorField } from '../database/types.js';
 import type { Endpoint } from '../endpoints/types.js';
 import { assertRichTextEditor } from '../fields/config/assertRichTextEditor.js';
 import { sanitizeVectorFields } from '../fields/config/sanitizeVector.js';
+import { wrapFieldRequestFunctions } from '../fields/config/wrapRequestFunctions.js';
 import type { FrogBot } from '../frogbot.js';
 import { initFrogBotFromPayload } from '../frogbot.js';
 import { seedFrogBotCache } from '../getFrogBot.js';
@@ -119,7 +120,7 @@ import { hideBuiltInGraphQL } from './hideBuiltInGraphQL.js';
 import { rewriteComponentPaths } from './rewriteComponentPaths.js';
 import type { FrogBotSanitizedConfig, SanitizedCollectionMeta } from './sanitized.js';
 import { resolveSourceDir } from './sourceDir.js';
-import type { FrogBotConfig, LivePreviewConfig, OnInit } from './types.js';
+import type { FrogBotConfig, GeneratePreviewURL, LivePreviewConfig, OnInit } from './types.js';
 import type { ValidationMode } from './validationContext.js';
 import { getValidationMode } from './validationContext.js';
 import { wrapGraphQLExtension } from './wrapGraphQLExtension.js';
@@ -222,6 +223,13 @@ function wrapLivePreview(
   };
 }
 
+type PayloadPreview = NonNullable<NonNullable<PayloadCollectionConfig['admin']>['preview']>;
+
+function wrapPreview(preview: GeneratePreviewURL, attachFrogBot: AttachFrogBot): PayloadPreview {
+  return async (doc, options) =>
+    preview(doc, { ...options, req: await attachFrogBot(options.req) });
+}
+
 function wrapEndpoints(
   endpoints: Endpoint[] | false | undefined,
   attachFrogBot: AttachFrogBot,
@@ -305,16 +313,22 @@ function sanitizeCollection(
     admin.livePreview = wrapLivePreview(c.admin?.livePreview, attachFrogBot);
   }
 
+  if (admin && typeof c.admin?.preview === 'function') {
+    admin.preview = wrapPreview(c.admin.preview, attachFrogBot);
+  }
+
   const views = admin?.components?.views;
   const orderFieldNames = getBoardOrderFieldNames(c);
   const existingHooks = (c.hooks ?? {}) as Record<string, unknown[]>;
   const out: Record<string, unknown> = {
     ...(c as unknown as Record<string, unknown>),
-    fields: sanitizeVectorFields({
-      collection: c.slug,
-      fields: [...c.fields, ...orderFieldNames.map(buildBoardOrderField)],
-      mapVectorField,
-    }),
+    fields: wrapFieldRequestFunctions(
+      sanitizeVectorFields({
+        collection: c.slug,
+        fields: [...c.fields, ...orderFieldNames.map(buildBoardOrderField)],
+        mapVectorField,
+      }),
+    ),
     ...(admin ? { admin } : {}),
     ...(orderFieldNames.length
       ? {
@@ -1197,11 +1211,13 @@ function buildPayloadConfig(
       ? {
           blocks: config.blocks.map((block) => ({
             ...block,
-            fields: sanitizeVectorFields({
-              block: block.slug,
-              fields: block.fields,
-              mapVectorField,
-            }),
+            fields: wrapFieldRequestFunctions(
+              sanitizeVectorFields({
+                block: block.slug,
+                fields: block.fields,
+                mapVectorField,
+              }),
+            ),
           })),
         }
       : {}),

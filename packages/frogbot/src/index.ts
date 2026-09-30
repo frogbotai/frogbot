@@ -190,6 +190,7 @@ export type {
 export type {
   AfterErrorHook,
   FrogBotConfig,
+  GeneratePreviewURL,
   LivePreviewConfig,
   LivePreviewURLArgs,
   LivePreviewURLType,

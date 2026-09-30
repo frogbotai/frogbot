@@ -521,6 +521,413 @@ describe('frogbot sanitize', () => {
     await expect(pending).rejects.toBe(error);
   });
 
+  describe('admin.preview', () => {
+    async function sanitizePreview(admin: NonNullable<CollectionConfig['admin']>) {
+      const result = sanitize(
+        makeConfig({
+          collections: [
+            { slug: 'users', auth: true, fields: [] },
+            { slug: 'pages', fields: [], admin },
+          ],
+        }),
+      );
+
+      const payloadConfig = await result._internal.payloadConfig;
+      const payload = makePayload(payloadConfig);
+      const frogbot = { agents: {} };
+
+      registerFrogBotInstance(payload, frogbot as unknown as FrogBot);
+
+      const pages = payloadConfig.collections.find(({ slug }) => slug === 'pages')!;
+
+      return {
+        frogbot,
+        payload,
+        preview: pages.admin.preview as unknown,
+      };
+    }
+
+    it('attaches req.frogbot before calling a collection admin.preview', async () => {
+      const preview = vi.fn((_doc, { req }) => (req.frogbot ? '/preview' : null));
+      const sanitized = await sanitizePreview({ preview });
+      const req = { payload: sanitized.payload };
+
+      expect(req).not.toHaveProperty('frogbot');
+
+      const resolved = await (sanitized.preview as (...args: unknown[]) => Promise<unknown>)(
+        { id: 'page-1' },
+        { locale: 'en', req, token: 'jwt' },
+      );
+
+      expect(resolved).toBe('/preview');
+      expect(preview).toHaveBeenCalledExactlyOnceWith(
+        { id: 'page-1' },
+        {
+          locale: 'en',
+          req: expect.objectContaining({ frogbot: sanitized.frogbot }),
+          token: 'jwt',
+        },
+      );
+    });
+
+    it('leaves a missing admin.preview missing', async () => {
+      const sanitized = await sanitizePreview({});
+
+      expect(sanitized.preview).toBeUndefined();
+    });
+
+    it('leaves a non-function admin.preview untouched', async () => {
+      const sanitized = await sanitizePreview({ preview: '/static' as never });
+
+      expect(sanitized.preview).toBe('/static');
+    });
+
+    it('propagates an admin.preview rejection to the caller', async () => {
+      const error = new Error('preview failed');
+      const sanitized = await sanitizePreview({ preview: () => Promise.reject(error) });
+
+      const pending = (sanitized.preview as (...args: unknown[]) => Promise<unknown>)(
+        {},
+        { locale: 'en', req: { payload: sanitized.payload }, token: null },
+      );
+
+      await expect(pending).rejects.toBe(error);
+    });
+  });
+
+  describe('field request functions', () => {
+    type RuntimeField = Record<string, any>;
+
+    type RecordedArgs = { req: { frogbot?: unknown } };
+
+    const recordFrogBot = () => vi.fn((args: RecordedArgs) => Boolean(args.req.frogbot));
+
+    async function sanitizeFields(
+      fields: CollectionConfig['fields'],
+      overrides?: Partial<FrogBotConfig>,
+    ) {
+      const result = sanitize(
+        makeConfig({
+          collections: [
+            { slug: 'users', auth: true, fields: [] },
+            { slug: 'pages', fields },
+          ],
+          ...overrides,
+        }),
+      );
+
+      const payloadConfig = await result._internal.payloadConfig;
+      const payload = makePayload(payloadConfig);
+      const frogbot = { agents: {} };
+
+      registerFrogBotInstance(payload, frogbot as unknown as FrogBot);
+
+      const pages = payloadConfig.collections.find(({ slug }) => slug === 'pages')!;
+
+      return {
+        blocks: (payloadConfig.blocks ?? []) as RuntimeField[],
+        fields: pages.fields as RuntimeField[],
+        frogbot,
+        payload,
+        req: { payload } as Record<string, unknown>,
+      };
+    }
+
+    function findField(fields: RuntimeField[], name: string): RuntimeField {
+      return fields.find((field) => field.name === name)!;
+    }
+
+    it('gives a defaultValue function req.frogbot on a bare request', async () => {
+      const defaultValue = recordFrogBot();
+      const sanitized = await sanitizeFields([
+        { name: 'status', type: 'text', defaultValue: defaultValue as never },
+      ]);
+
+      expect(sanitized.req).not.toHaveProperty('frogbot');
+
+      const value = await findField(sanitized.fields, 'status').defaultValue({
+        locale: 'en',
+        req: sanitized.req,
+        user: null,
+      });
+
+      expect(value).toBe(true);
+      expect(defaultValue).toHaveBeenCalledExactlyOnceWith({
+        locale: 'en',
+        req: expect.objectContaining({ frogbot: sanitized.frogbot }),
+        user: null,
+      });
+    });
+
+    it('gives relationship, upload, select and blocks filterOptions req.frogbot', async () => {
+      const relationship = recordFrogBot();
+      const upload = recordFrogBot();
+      const select = vi.fn((args: RecordedArgs & { options: string[] }) =>
+        args.req.frogbot ? args.options : [],
+      );
+      const blocks = vi.fn((args: RecordedArgs) => (args.req.frogbot ? ['hero'] : []));
+
+      const sanitized = await sanitizeFields([
+        {
+          name: 'owner',
+          type: 'relationship',
+          relationTo: 'users',
+          filterOptions: relationship as never,
+        },
+        { name: 'image', type: 'upload', relationTo: 'users', filterOptions: upload as never },
+        { name: 'color', type: 'select', options: ['red'], filterOptions: select as never },
+        { name: 'layout', type: 'blocks', blocks: [], filterOptions: blocks as never },
+      ]);
+
+      expect(sanitized.req).not.toHaveProperty('frogbot');
+
+      const results = await Promise.all(
+        ['owner', 'image', 'color', 'layout'].map((name) =>
+          findField(sanitized.fields, name).filterOptions({
+            options: ['red'],
+            req: sanitized.req,
+          }),
+        ),
+      );
+
+      expect(results).toEqual([true, true, ['red'], ['hero']]);
+    });
+
+    it('gives a validate function req.frogbot and forwards the value and options', async () => {
+      const validate = vi.fn((_value: unknown, options: RecordedArgs) =>
+        options.req.frogbot ? true : 'missing',
+      );
+      const sanitized = await sanitizeFields([
+        { name: 'title', type: 'text', validate: validate as never },
+      ]);
+
+      expect(sanitized.req).not.toHaveProperty('frogbot');
+
+      const result = await findField(sanitized.fields, 'title').validate('Hello', {
+        operation: 'create',
+        req: sanitized.req,
+      });
+
+      expect(result).toBe(true);
+      expect(validate).toHaveBeenCalledExactlyOnceWith('Hello', {
+        operation: 'create',
+        req: expect.objectContaining({ frogbot: sanitized.frogbot }),
+      });
+    });
+
+    it('gives field access functions req.frogbot', async () => {
+      const create = recordFrogBot();
+      const read = recordFrogBot();
+      const update = recordFrogBot();
+      const sanitized = await sanitizeFields([
+        {
+          name: 'secret',
+          type: 'text',
+          access: { create: create as never, read: read as never, update: update as never },
+        },
+      ]);
+
+      expect(sanitized.req).not.toHaveProperty('frogbot');
+
+      const { access } = findField(sanitized.fields, 'secret');
+      const results = [access.create, access.read, access.update].map((fn) =>
+        fn({ req: sanitized.req }),
+      );
+
+      expect(results).toEqual([true, true, true]);
+    });
+
+    it('keeps a sync select filterOptions and field access.read sync', async () => {
+      const sanitized = await sanitizeFields([
+        {
+          name: 'color',
+          type: 'select',
+          options: ['red'],
+          access: { read: (() => true) as never },
+          filterOptions: (({ options }: { options: string[] }) => options) as never,
+        },
+      ]);
+
+      const color = findField(sanitized.fields, 'color');
+      const options = color.filterOptions({ options: ['red'], req: sanitized.req });
+      const allowed = color.access.read({ req: sanitized.req });
+
+      expect(options).toEqual(['red']);
+      expect(allowed).toBe(true);
+    });
+
+    it('wraps field functions nested in array, group, tabs, blocks and blockReferences', async () => {
+      const defaultValue = recordFrogBot();
+      const leaf = () => ({
+        name: 'leaf',
+        type: 'text' as const,
+        defaultValue: defaultValue as never,
+      });
+
+      const sanitized = await sanitizeFields([
+        { name: 'items', type: 'array', fields: [leaf()] },
+        { name: 'meta', type: 'group', fields: [leaf()] },
+        {
+          type: 'tabs',
+          tabs: [
+            {
+              label: 'Content',
+              fields: [
+                {
+                  name: 'sections',
+                  type: 'array',
+                  fields: [
+                    {
+                      name: 'layout',
+                      type: 'blocks',
+                      blocks: [{ slug: 'deep', fields: [leaf()] }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'references',
+          type: 'blocks',
+          blocks: [],
+          blockReferences: ['hero', { slug: 'inline', fields: [leaf()] }],
+        },
+      ]);
+
+      const [items, meta, tabs, references] = sanitized.fields;
+      const leaves = [
+        items.fields[0],
+        meta.fields[0],
+        tabs.tabs[0].fields[0].fields[0].blocks[0].fields[0],
+        references.blockReferences[1].fields[0],
+      ];
+
+      const results = await Promise.all(
+        leaves.map((field) => field.defaultValue({ req: { payload: sanitized.payload } })),
+      );
+
+      expect(results).toEqual([true, true, true, true]);
+      expect(references.blockReferences[0]).toBe('hero');
+    });
+
+    it('wraps field functions in root blocks', async () => {
+      const defaultValue = recordFrogBot();
+      const sanitized = await sanitizeFields([], {
+        blocks: [
+          {
+            slug: 'hero',
+            fields: [{ name: 'title', type: 'text', defaultValue: defaultValue as never }],
+          },
+        ],
+      });
+
+      const value = await sanitized.blocks[0].fields[0].defaultValue({ req: sanitized.req });
+
+      expect(value).toBe(true);
+    });
+
+    it('keeps static defaultValue, Where filterOptions and block slug arrays by identity', async () => {
+      const settings = { theme: 'dark' };
+      const where = { role: { equals: 'admin' } };
+      const slugs = ['hero'];
+      const sanitized = await sanitizeFields([
+        { name: 'settings', type: 'json', defaultValue: settings },
+        { name: 'owner', type: 'relationship', relationTo: 'users', filterOptions: where },
+        { name: 'layout', type: 'blocks', blocks: [], filterOptions: slugs },
+        { name: 'status', type: 'text', defaultValue: 'draft' },
+      ]);
+
+      expect(findField(sanitized.fields, 'settings').defaultValue).toBe(settings);
+      expect(findField(sanitized.fields, 'owner').filterOptions).toBe(where);
+      expect(findField(sanitized.fields, 'layout').filterOptions).toBe(slugs);
+      expect(findField(sanitized.fields, 'status').defaultValue).toBe('draft');
+    });
+
+    it('calls through unchanged when the request has no payload', async () => {
+      const defaultValue = vi.fn((args: { req: unknown }) => args.req);
+      const sanitized = await sanitizeFields([
+        { name: 'status', type: 'text', defaultValue: defaultValue as never },
+      ]);
+      const req = {};
+
+      const value = await findField(sanitized.fields, 'status').defaultValue({ req });
+
+      expect(value).toBe(req);
+      expect(req).not.toHaveProperty('frogbot');
+    });
+
+    it('throws a [frogbot] error when no instance is registered and none is attached', async () => {
+      const sanitized = await sanitizeFields([
+        { name: 'status', type: 'text', defaultValue: (() => 'draft') as never },
+      ]);
+      const status = findField(sanitized.fields, 'status');
+
+      expect(() => status.defaultValue({ req: { payload: {} } })).toThrow('[frogbot]');
+    });
+
+    it('keeps an attached req.frogbot when no instance is registered', async () => {
+      const defaultValue = vi.fn((args: RecordedArgs) => args.req.frogbot);
+      const sanitized = await sanitizeFields([
+        { name: 'status', type: 'text', defaultValue: defaultValue as never },
+      ]);
+      const attached = { agents: {} };
+      const req = { frogbot: attached, payload: {} };
+
+      const value = await findField(sanitized.fields, 'status').defaultValue({ req });
+
+      expect(value).toBe(attached);
+      expect(defaultValue.mock.calls[0][0].req).toBe(req);
+    });
+
+    it('does not stack wrappers when sanitized fields are sanitized again', async () => {
+      const defaultValue = recordFrogBot();
+      const first = await sanitizeFields([
+        { name: 'status', type: 'text', defaultValue: defaultValue as never },
+      ]);
+      const wrapped = findField(first.fields, 'status').defaultValue;
+
+      const second = await sanitizeFields(first.fields as CollectionConfig['fields']);
+
+      expect(findField(second.fields, 'status').defaultValue).toBe(wrapped);
+    });
+
+    it('gives field functions the current instance after a config refresh swaps it', async () => {
+      const defaultValue = vi.fn((args: RecordedArgs) => args.req.frogbot);
+      const fields: CollectionConfig['fields'] = [
+        { name: 'status', type: 'text', defaultValue: defaultValue as never },
+      ];
+      const first = await sanitizeFields(fields);
+      const staleReq = { payload: first.payload } as Record<string, unknown>;
+
+      expect(findField(first.fields, 'status').defaultValue({ req: staleReq })).toBe(first.frogbot);
+
+      const refreshed = sanitize(
+        makeConfig({
+          collections: [
+            { slug: 'users', auth: true, fields: [] },
+            { slug: 'pages', fields },
+          ],
+        }),
+      );
+      const refreshedPages = (await refreshed._internal.payloadConfig).collections.find(
+        ({ slug }) => slug === 'pages',
+      )!;
+      const current = { agents: {} } as unknown as FrogBot;
+
+      registerFrogBotInstance(first.payload, current, refreshed);
+
+      const oldWrapper = findField(first.fields, 'status').defaultValue;
+      const newWrapper = findField(refreshedPages.fields as RuntimeField[], 'status').defaultValue;
+
+      expect(oldWrapper({ req: staleReq })).toBe(current);
+      expect(newWrapper({ req: { payload: first.payload } })).toBe(current);
+      expect(staleReq.frogbot).toBe(current);
+      expect(getCachedFrogBot()).toBe(current);
+    });
+  });
+
   it('returns a FrogBotSanitizedConfig with collections metadata', () => {
     const config = makeConfig({
       collections: [

@@ -60,7 +60,7 @@ Options may be strings or `{ label, value }` objects.
 
 ### Filter options
 
-`filterOptions` controls both which options appear in the admin panel and which values can be saved.
+`filterOptions` controls both which options appear in the admin panel and which values can be saved. It receives `data`, `options`, `siblingData`, and `req`, the current `FrogBotRequest` with `req.frogbot`, and must return the options synchronously.
 
 Common uses include restricting options by user role and changing available options based on another field.
 

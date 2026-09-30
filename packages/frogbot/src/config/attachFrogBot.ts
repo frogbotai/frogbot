@@ -2,7 +2,8 @@ import type { PayloadRequest } from 'payload';
 
 import { attachSessionPayload, unwrapSessionPayload } from '../auth/operation.js';
 import type { FrogBot } from '../frogbot.js';
-import { getFrogBotInstance } from '../instanceRegistry.js';
+import { seedFrogBotCache } from '../getFrogBot.js';
+import { getFrogBotInstanceEntry } from '../instanceRegistry.js';
 import type { FrogBotRequest } from '../types/request.js';
 
 export function attachFrogBotInstance(req: PayloadRequest, frogbot: FrogBot): FrogBotRequest {
@@ -21,13 +22,18 @@ export function attachFrogBotInstance(req: PayloadRequest, frogbot: FrogBot): Fr
 }
 
 export function attachRegisteredFrogBot(req: PayloadRequest): FrogBotRequest {
-  req.payload = unwrapSessionPayload(req.payload);
+  const attached = (req as PayloadRequest & { frogbot?: FrogBot }).frogbot;
+  const entry = getFrogBotInstanceEntry(unwrapSessionPayload(req.payload));
 
-  const frogbot = getFrogBotInstance(req.payload);
+  if (!entry) {
+    if (attached) return req as unknown as FrogBotRequest;
 
-  if (!frogbot) {
     throw new Error('[frogbot] No FrogBot instance is registered for this request.');
   }
 
-  return attachFrogBotInstance(req, frogbot);
+  seedFrogBotCache(entry.frogbot, entry.config);
+
+  if (attached === entry.frogbot) return req as unknown as FrogBotRequest;
+
+  return attachFrogBotInstance(req, entry.frogbot);
 }

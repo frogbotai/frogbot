@@ -80,6 +80,24 @@ describe('frogbot internal exports', () => {
     expect(JSON.parse(stdout)).toEqual(['function', '[frogbot] boom']);
   });
 
+  it('resolves the request attach helpers from a packed consumer', async () => {
+    const script = [
+      "import { attachRegisteredFrogBot, wrapFieldRequestFunctions } from 'frogbot/internal';",
+      "const [field] = wrapFieldRequestFunctions([{ name: 'title', type: 'text', defaultValue: () => 'x' }]);",
+      'console.log(JSON.stringify([typeof attachRegisteredFrogBot, field.defaultValue({})]));',
+    ].join('\n');
+
+    const { stdout } = await execFileAsync(
+      process.execPath,
+      ['--input-type=module', '--eval', script],
+      {
+        cwd: consumerDirectory,
+      },
+    );
+
+    expect(JSON.parse(stdout)).toEqual(['function', 'x']);
+  });
+
   it('rejects a root import of the internal helper from a packed consumer', async () => {
     const script = "import { getPayloadConfig } from 'frogbot'; console.log(getPayloadConfig);";
 
