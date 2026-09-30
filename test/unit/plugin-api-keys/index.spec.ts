@@ -94,7 +94,10 @@ describe('apiKeysPlugin', () => {
     const hooks = result.ai?.hooks?.beforeOperation ?? [];
     const context: Record<string, unknown> = {};
 
-    await hooks.at(-1)?.({ req: { user: { apiKeyId: 'key-9' } }, context } as never);
+    await hooks.at(-1)?.({
+      req: { user: { _strategy: 'api-key', apiKeyId: 'key-9' } },
+      context,
+    } as never);
 
     expect(hooks[0]).toBe(existingHook);
     expect(context.usageFields).toEqual({ apiKey: 'key-9' });
@@ -142,11 +145,59 @@ describe('apiKeysPlugin', () => {
       ai: { providers: { openai: { apiKey: 'test' } } },
     } as FrogBotConfig;
     const result = await apiKeysPlugin()(config);
-    const req = { user: { id: 'user-1', apiKeyId: 'key-1' } };
+    const req = { user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1' } };
     const context = {};
     await result.ai?.hooks?.beforeOperation?.at(-1)?.({ req, context } as never);
     expect(context).toEqual({ usageFields: { apiKey: 'key-1' } });
     expect(result.ai?.hooks?.beforeUpstream).toBeUndefined();
+  });
+
+  it('attributes a numeric API key id unchanged', async () => {
+    const config = {
+      secret: 'test',
+      db: {},
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+      ai: { providers: { openai: { apiKey: 'test' } } },
+    } as FrogBotConfig;
+    const result = await apiKeysPlugin()(config);
+    const req = { user: { id: 1, _strategy: 'api-key', apiKeyId: 3 } };
+    const context: Record<string, unknown> = {};
+
+    await result.ai?.hooks?.beforeOperation?.at(-1)?.({ req, context } as never);
+
+    expect(context.usageFields).toStrictEqual({ apiKey: 3 });
+  });
+
+  it('does not attribute an apiKeyId on a session login', async () => {
+    const config = {
+      secret: 'test',
+      db: {},
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+      ai: { providers: { openai: { apiKey: 'test' } } },
+    } as FrogBotConfig;
+    const result = await apiKeysPlugin()(config);
+    const req = { user: { id: 1, _strategy: 'local-jwt', apiKeyId: 3 } };
+    const context = {};
+
+    await result.ai?.hooks?.beforeOperation?.at(-1)?.({ req, context } as never);
+
+    expect(context).toEqual({});
+  });
+
+  it.each([null, {}])('does not attribute an API key id of %j', async (apiKeyId) => {
+    const config = {
+      secret: 'test',
+      db: {},
+      collections: [{ slug: 'users', auth: true, fields: [] }],
+      ai: { providers: { openai: { apiKey: 'test' } } },
+    } as FrogBotConfig;
+    const result = await apiKeysPlugin()(config);
+    const req = { user: { id: 1, _strategy: 'api-key', apiKeyId } };
+    const context = {};
+
+    await result.ai?.hooks?.beforeOperation?.at(-1)?.({ req, context } as never);
+
+    expect(context).toEqual({});
   });
 
   it('rejects an unknown collection icon override at startup', async () => {

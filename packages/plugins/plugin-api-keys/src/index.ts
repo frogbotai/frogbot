@@ -1,7 +1,7 @@
 import { type CollectionConfig, type FrogBotRequest, type Plugin } from 'frogbot';
 
 import { createApiKeysCollection } from './collection.js';
-import { apiKeyMeHook, createApiKeyStrategy } from './strategy.js';
+import { apiKeyMeHook, apiKeyStrategyName, createApiKeyStrategy } from './strategy.js';
 
 export type {
   MintApiKeyOptions,
@@ -97,9 +97,16 @@ export function apiKeysPlugin(options: ApiKeysPluginOptions = {}): Plugin {
             beforeOperation: [
               ...(config.ai.hooks?.beforeOperation ?? []),
               ({ req, context }) => {
-                if (req?.user && 'apiKeyId' in req.user && typeof req.user.apiKeyId === 'string') {
-                  context.usageFields = { apiKey: req.user.apiKeyId };
-                }
+                const user = req?.user as
+                  { _strategy?: string; apiKeyId?: unknown } | null | undefined;
+
+                const apiKeyId =
+                  user?._strategy === apiKeyStrategyName &&
+                  (typeof user.apiKeyId === 'string' || typeof user.apiKeyId === 'number')
+                    ? user.apiKeyId
+                    : undefined;
+
+                if (apiKeyId !== undefined) context.usageFields = { apiKey: apiKeyId };
               },
             ],
           },

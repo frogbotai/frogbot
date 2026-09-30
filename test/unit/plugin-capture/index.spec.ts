@@ -88,7 +88,7 @@ describe('capture hooks', () => {
     const create = vi.fn(async () => ({}));
     const logger = { error: vi.fn() };
     const req = {
-      user: { id: 'user-1', apiKeyId: 'key-1', capture: true },
+      user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1', capture: true },
       frogbot: {
         create,
         logger,
@@ -157,7 +157,7 @@ describe('capture hooks', () => {
     });
     const logger = { error: vi.fn() };
     const req = {
-      user: { id: 'user-1', apiKeyId: 'key-1', capture: true },
+      user: { id: 'user-1', _strategy: 'api-key', apiKeyId: 'key-1', capture: true },
       frogbot: { create: vi.fn(), logger },
     };
     const hooks = createCaptureHooks({
@@ -195,6 +195,64 @@ describe('capture hooks', () => {
     });
     expect(put).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ['stores a numeric API key id as text', 'api-key', '3'],
+    ['stores no API key for a session login carrying apiKeyId', 'local-jwt', undefined],
+  ])('%s', async (_name, strategy, apiKey) => {
+    const blobs = new Map<string, Uint8Array>();
+    const storage: CaptureStorage = {
+      put: vi.fn(async (key, bytes) => void blobs.set(key, bytes)),
+      get: vi.fn(async (key) => blobs.get(key)!),
+      delete: vi.fn(async () => undefined),
+      async *list() {},
+    };
+    const create = vi.fn(async (_args: { data: Record<string, unknown> }) => ({}));
+    const req = {
+      user: { id: 'user-1', _strategy: strategy, apiKeyId: 3, capture: true },
+      frogbot: { create, logger: { error: vi.fn() } },
+    };
+    const hooks = createCaptureHooks({
+      enabled: true,
+      sampleRate: 1,
+      maxBodyBytes: 10_000,
+      collectionSlug: 'captures',
+      storage,
+    });
+    const base = {
+      requestId: 'request-key',
+      operation: 'responses' as const,
+      startedAt: Date.now(),
+      context: {} as Record<string, unknown>,
+      otel: {},
+      req,
+      user: req.user,
+    };
+
+    await hooks.beforeOperation?.[0]?.({ ...base, phase: 'beforeOperation' });
+    await hooks.beforeUpstream?.[0]?.({
+      ...base,
+      phase: 'beforeUpstream',
+      model: 'gpt-5',
+      provider: 'openai',
+      messages: [{ role: 'user', content: 'hello' }],
+      headers: new Headers(),
+      providerOptions: {},
+    });
+    await hooks.afterUpstream?.[0]?.({
+      ...base,
+      phase: 'afterUpstream',
+      model: 'gpt-5',
+      provider: 'openai',
+      response: { text: 'hi' },
+    });
+    await vi.waitFor(() => expect(create).toHaveBeenCalledOnce());
+
+    const [record] = await Promise.all([...blobs.values()].map(decodeCapture));
+
+    expect(create.mock.calls[0]?.[0].data.apiKey).toBe(apiKey);
+    expect(record?.apiKey).toBe(apiKey);
   });
 
   it.each([

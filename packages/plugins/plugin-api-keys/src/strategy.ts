@@ -2,7 +2,7 @@ import type { AuthStrategy, CollectionMeHook } from 'frogbot';
 
 import { extractApiKeyToken, hashApiKeyToken } from './server/token.js';
 
-const apiKeyStrategyName = 'api-key';
+export const apiKeyStrategyName = 'api-key';
 
 const apiKeyStrategies = new WeakSet<AuthStrategy>();
 

@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { GRAPHQL_POST } from '@frogbotai/next/routes';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
@@ -173,7 +173,7 @@ describe('API keys plugin integration', () => {
       '/api/accounts/login',
       credentials,
     );
-    const mint = await booted.restClient.post<{ token: string }>(
+    const mint = await booted.restClient.post<{ id: number | string; token: string }>(
       '/api/credentials/mint',
       { name: 'Policy' },
       { headers: { Authorization: `JWT ${login.body.token}` } },
@@ -186,13 +186,43 @@ describe('API keys plugin integration', () => {
       );
 
     expect((await request('test/blocked')).status).toBe(403);
-    expect((await request('test/allowed')).status).toBe(200);
+
+    const allowed = await request('test/allowed');
+
+    expect(allowed.status).toBe(200);
+
     const spent = await booted.frogbot.findByID({
       collection: 'accounts',
       id: owner.id,
       overrideAccess: true,
     });
+
     expect(spent.spendThisPeriodUSD).toBe(3);
+
+    const requestId = allowed.headers.get('x-request-id')!;
+
+    const row = await vi.waitFor(async () => {
+      const logs = await booted.frogbot.find({
+        collection: 'usage-logs' as never,
+        where: { requestId: { equals: requestId } },
+        depth: 0,
+        overrideAccess: true,
+      });
+
+      expect(logs.docs).toHaveLength(1);
+
+      return logs.docs[0] as Record<string, unknown>;
+    });
+
+    expect(row.apiKey).toBe(mint.body.id);
+
+    const key = (await booted.frogbot.findByID({
+      collection: 'credentials',
+      id: mint.body.id,
+      overrideAccess: true,
+    })) as Record<string, unknown>;
+
+    expect(key.totalCostUSD).toBe(3);
 
     await booted.frogbot.update({
       collection: 'accounts',

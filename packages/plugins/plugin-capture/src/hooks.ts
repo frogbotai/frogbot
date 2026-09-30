@@ -45,10 +45,17 @@ async function persist(
   if (!state?.enabled || !state.request || !state.captureId || !args.req) return;
   const requestedAt = new Date(args.startedAt).toISOString();
   const completedAt = new Date().toISOString();
-  const apiKey =
-    args.req.user && typeof (args.req.user as Record<string, unknown>).apiKeyId === 'string'
-      ? String((args.req.user as Record<string, unknown>).apiKeyId)
+
+  const user = args.req.user as { _strategy?: string; apiKeyId?: unknown } | null | undefined;
+
+  const apiKeyId =
+    user?._strategy === 'api-key' &&
+    (typeof user.apiKeyId === 'string' || typeof user.apiKeyId === 'number')
+      ? user.apiKeyId
       : undefined;
+
+  const apiKey = apiKeyId !== undefined ? String(apiKeyId) : undefined;
+
   const capture: CaptureRecord = {
     captureId: state.captureId,
     requestId: args.requestId,
