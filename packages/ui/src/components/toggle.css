@@ -10,6 +10,7 @@
   background: transparent;
   border: 0;
   border-radius: var(--fb-radius-lg);
+  text-decoration: none;
 }
 .fb-toggle:hover,
 .fb-toggle[data-state="on"] {

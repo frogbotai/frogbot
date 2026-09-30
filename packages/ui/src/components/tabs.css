@@ -17,6 +17,8 @@
   background: transparent;
   border: 0;
   border-radius: var(--fb-radius-sm);
+  color: inherit;
+  text-decoration: none;
 }
 .fb-tabs__trigger[data-state="active"] {
   color: var(--theme-base-900);

@@ -18,6 +18,7 @@
   font-size: var(--fb-text-sm);
   font-weight: 500;
   text-align: left;
+  text-decoration: none;
   background: transparent;
   border: 0;
 }

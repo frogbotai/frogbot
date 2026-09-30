@@ -1,6 +1,6 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { apiKeysPlugin } from '@frogbotai/plugin-api-keys';
-import { buildConfig, type FrogBotConfig } from 'frogbot';
+import { buildConfig, type FrogBotConfig, type RootAdminComponents } from 'frogbot';
 
 import { Posts } from './collections/Posts';
 import { Users } from './collections/Users';
@@ -44,6 +44,8 @@ const config: FrogBotConfig = {
       ],
     },
     components: {
+      beforeLogin: ['/components/LinkProbe#LoginLinkProbe'],
+      logout: { Button: '/components/LinkProbe#LogoutLinkProbe' },
       navItems: [
         { label: 'New Chat', path: '/collections/chats/create', icon: 'pencil-edit' },
         { label: 'Reports', path: '/reports', icon: 'home' },
@@ -52,7 +54,7 @@ const config: FrogBotConfig = {
       views: {
         reports: { Component: '/components/ReportsView#ReportsView', path: '/reports' },
       },
-    },
+    } as RootAdminComponents,
   },
   settings: [
     {
