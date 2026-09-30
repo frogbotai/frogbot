@@ -138,7 +138,22 @@ describe('resolveChatCollections', () => {
 
     expect(messages?.admin).toEqual({
       hidden: false,
-      icon: 'bubble-chat',
+      icon: 'message-square-text',
+      views: [{ type: 'list', defaultFields: ['chat', 'role', 'createdAt'] }],
+    });
+  });
+
+  it('admin.icon: send replaces the message icon while preserving the unhide override and list columns', () => {
+    const config = make([
+      { slug: 'messages', message: true, admin: { hidden: false, icon: 'send' }, fields: [] },
+    ]);
+
+    const result = resolveChatCollections(config);
+    const messages = result.collections.find((collection) => collection.slug === 'messages');
+
+    expect(messages?.admin).toEqual({
+      hidden: false,
+      icon: 'send',
       views: [{ type: 'list', defaultFields: ['chat', 'role', 'createdAt'] }],
     });
   });

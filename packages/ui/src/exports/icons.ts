@@ -61,6 +61,7 @@ export { default as LogoutRightIcon } from '../icons/icons/LogoutRightIcon.js';
 export { default as MagicWandIcon } from '../icons/icons/MagicWandIcon.js';
 export { default as MastercardIcon } from '../icons/icons/MastercardIcon.js';
 export { default as McpIcon } from '../icons/icons/McpIcon.js';
+export { default as MessageSquareTextIcon } from '../icons/icons/MessageSquareTextIcon.js';
 export { default as MicIcon } from '../icons/icons/MicIcon.js';
 export { default as MicrosoftIcon } from '../icons/icons/MicrosoftIcon.js';
 export { default as MinusIcon } from '../icons/icons/MinusIcon.js';

@@ -101,7 +101,7 @@ export function defaultMessagesCollection({
     disableDuplicate: true,
     admin: {
       hidden: true,
-      icon: 'bubble-chat',
+      icon: 'message-square-text',
       views: [{ type: 'list', defaultFields: ['chat', 'role', 'createdAt'] }],
     },
     access: {

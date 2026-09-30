@@ -297,6 +297,18 @@ describe('frogbot sanitize', () => {
     ).toThrowError("[frogbot] Unknown admin icon 'unknown'. Valid:");
   });
 
+  it.each(['message-square', 'MessageSquareText'])(
+    'rejects the near-miss collection icon %s with the valid names list',
+    (icon) => {
+      const config = makeConfig({
+        collections: [{ slug: 'users', auth: true, fields: [], admin: { icon: icon as never } }],
+      });
+
+      expect(() => sanitize(config)).toThrowError(`[frogbot] Unknown admin icon '${icon}'. Valid:`);
+      expect(() => sanitize(config)).toThrowError(/Valid:.*message-square-text/);
+    },
+  );
+
   it('rejects unknown built-in nav item icons', () => {
     const config = makeConfig({
       admin: {
@@ -322,6 +334,8 @@ describe('frogbot sanitize', () => {
       collections: [
         { slug: 'users', auth: true, fields: [] },
         { slug: 'api-keys', fields: [], admin: { icon: 'key-round' } },
+        { slug: 'notes', fields: [], admin: { icon: 'message-square-text' } },
+        { slug: 'support-tickets', fields: [], admin: { icon: 'bubble-chat' } },
       ],
       admin: {
         components: {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { defaultChatsCollection } from '../../../../../packages/frogbot/src/chat/collections/chats.js';
 import { defaultMessagesCollection } from '../../../../../packages/frogbot/src/chat/collections/messages.js';
 import type { FieldAccess } from '../../../../../packages/frogbot/src/collections/config/types.js';
 import type { FrogBotRequest } from '../../../../../packages/frogbot/src/types/request.js';
@@ -127,7 +128,14 @@ describe('defaultMessagesCollection', () => {
   });
 
   it('hides the collection from the admin by default', () => {
-    expect(collection.admin).toMatchObject({ hidden: true, icon: 'bubble-chat' });
+    expect(collection.admin).toMatchObject({ hidden: true });
+  });
+
+  it('uses a message icon that differs from the Chats icon', () => {
+    const chats = defaultChatsCollection({ slug: 'chats', userSlug: 'users' });
+
+    expect(collection.admin?.icon).toBe('message-square-text');
+    expect(collection.admin?.icon).not.toBe(chats.admin?.icon);
   });
 
   it('blocks direct writes to the usage group', async () => {

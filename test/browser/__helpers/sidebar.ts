@@ -8,3 +8,6 @@ export async function expandSidebar(page: Page) {
     await expect(shell).toHaveAttribute('data-nav-state', 'desktop-nav-open');
   }
 }
+
+export const collectionNavIcon = (page: Page, slug: string) =>
+  page.locator(`#frogbot-nav-section-collections a[href="/collections/${slug}"] svg`);

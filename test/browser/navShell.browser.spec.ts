@@ -1,7 +1,7 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Locator, type Page, test } from '@playwright/test';
 
 import { createMessage, deleteMessage, type SavedMessage } from './__helpers/messages';
-import { expandSidebar } from './__helpers/sidebar';
+import { collectionNavIcon, expandSidebar } from './__helpers/sidebar';
 import { signIn } from './__helpers/signIn';
 
 const desktop = { width: 1440, height: 900 };
@@ -31,6 +31,17 @@ const noHorizontalOverflow = async (page: Page) => {
   }));
   expect(scrollWidth).toBe(innerWidth);
 };
+
+const drawnBounds = (icon: Locator) =>
+  icon.evaluate((svg) => {
+    const boxes = [...svg.children].map((child) => (child as SVGGraphicsElement).getBBox());
+    const left = Math.min(...boxes.map((box) => box.x));
+    const top = Math.min(...boxes.map((box) => box.y));
+    const right = Math.max(...boxes.map((box) => box.x + box.width));
+    const bottom = Math.max(...boxes.map((box) => box.y + box.height));
+
+    return { centreX: (left + right) / 2, centreY: (top + bottom) / 2, width: right - left };
+  });
 
 test.describe('nav shell on desktop', () => {
   test.use({ viewport: desktop });
@@ -172,10 +183,28 @@ test.describe('nav shell on desktop', () => {
     await expect.poll(() => contentWidth(page)).toBe(desktop.width - collapsedWidth);
     await expect(page.locator('.frogbot-admin-sidebar__logo')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Account' })).toBeVisible();
+    await expect(page.locator('#frogbot-nav-section-collections')).toHaveCount(0);
+    await expect(collectionNavIcon(page, 'chats')).toHaveCount(0);
     await noHorizontalOverflow(page);
 
     await page.click('button[aria-label="Open sidebar"]');
     await expect(shell(page)).toHaveAttribute('data-nav-state', 'desktop-nav-open');
+  });
+
+  test('sidebar shows Chats as a centred bubble without a dot', async ({ page }) => {
+    await signIn(page);
+    await expandSidebar(page);
+
+    const icon = collectionNavIcon(page, 'chats');
+
+    await expect(icon).toHaveClass(/\blucide-bubble-chat-icon\b/);
+    await expect(icon.locator('circle')).toHaveCount(0);
+
+    const bounds = await drawnBounds(icon);
+
+    expect(Math.abs(bounds.centreX - 12)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(bounds.centreY - 12)).toBeLessThanOrEqual(0.5);
+    expect(bounds.width).toBeGreaterThanOrEqual(18);
   });
 });
 
