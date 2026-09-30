@@ -17,7 +17,7 @@ import { kvAtomic } from '../../../../packages/frogbot/src/kv/types.js';
 
 vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof PayloadModule>()),
-  buildConfig: vi.fn((config: unknown) => Promise.resolve(config)),
+  buildConfig: vi.fn((config: object) => Promise.resolve({ globals: [], ...config })),
 }));
 
 vi.mock(

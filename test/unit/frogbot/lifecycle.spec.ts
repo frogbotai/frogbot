@@ -26,7 +26,7 @@ const payloadState = vi.hoisted(() => ({
 
 vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof import('payload')>()),
-  buildConfig: vi.fn((config: unknown) => Promise.resolve(config)),
+  buildConfig: vi.fn((config: object) => Promise.resolve({ globals: [], ...config })),
   createLocalReq: vi.fn(),
   getPayload: vi.fn(
     ({ config }: { config: Promise<{ onInit?: (payload: unknown) => Promise<void> }> }) => {

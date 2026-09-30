@@ -9,7 +9,7 @@ import { registerFrogBotInstance } from '../../../../packages/frogbot/src/instan
 
 vi.mock('payload', async (importOriginal) => ({
   ...(await importOriginal<typeof PayloadModule>()),
-  buildConfig: vi.fn((config: unknown) => Promise.resolve(config)),
+  buildConfig: vi.fn((config: object) => Promise.resolve({ globals: [], ...config })),
 }));
 
 function config(overrides: Partial<FrogBotConfig> = {}): FrogBotConfig {
