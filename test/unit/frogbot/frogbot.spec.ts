@@ -225,7 +225,12 @@ describe('FrogBot class', () => {
       const secondAccess = vi.fn(() => false);
       const firstConfig = withAI(makeConfig());
       firstConfig.agents = [
-        { slug: 'assistant', model: 'openai/gpt-4o', instructions: 'first', access: firstAccess },
+        {
+          slug: 'assistant',
+          model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
+          instructions: 'first',
+          access: firstAccess,
+        },
       ];
       const onInit = vi.fn();
       const frogbot = await new FrogBot().init({ config: firstConfig, onInit });
@@ -242,7 +247,12 @@ describe('FrogBot class', () => {
       ];
       const secondConfig = withAI(makeConfig());
       secondConfig.agents = [
-        { slug: 'assistant', model: 'openai/gpt-4o', instructions: 'second', access: secondAccess },
+        {
+          slug: 'assistant',
+          model: { default: 'openai/gpt-4o', options: ['openai/gpt-4o'] },
+          instructions: 'second',
+          access: secondAccess,
+        },
       ];
 
       await expect(new FrogBot().init({ config: secondConfig, onInit })).resolves.toBe(frogbot);

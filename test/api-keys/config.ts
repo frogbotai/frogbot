@@ -40,8 +40,7 @@ export default await buildTestConfig({
   agents: [
     {
       slug: agentSlug,
-      model: 'test/blocked',
-      allowModels: ['test/allowed'],
+      model: { default: 'test/blocked', options: ['test/allowed'] },
       instructions: 'Reply with exactly: ok',
       access: () => true,
     },

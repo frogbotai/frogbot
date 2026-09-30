@@ -1,8 +1,9 @@
 import { buildConfig as payloadBuildConfig, meOperation, MissingEditorProp } from 'payload';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { general } from '../../../../packages/frogbot/src/agents/presets/general.js';
+import { catalog } from '../../../../packages/frogbot/src/ai/catalog.js';
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
 import { buildConfig } from '../../../../packages/frogbot/src/config/build.js';
 import { compileCollectionViews } from '../../../../packages/frogbot/src/config/collectionViews.js';
@@ -1358,7 +1359,7 @@ describe('frogbot sanitize', () => {
     const result = sanitize(
       makeConfig({
         ai: { providers: { openai: true } },
-        agents: [{ slug: 'support', model: 'openai/test', instructions: 'Help' }],
+        agents: [{ slug: 'support', model: 'openai/gpt-5.4-mini', instructions: 'Help' }],
       }),
     );
     const payloadConfig = await result._internal.payloadConfig;
@@ -1942,7 +1943,7 @@ describe('frogbot sanitize', () => {
     const ai = { providers: { openai: { apiKey: 'sk-test' } } };
     const agent = {
       slug: 'support',
-      model: 'openai/test',
+      model: 'openai/gpt-5.4-mini',
       instructions: 'Help the user',
     };
     const makeTool = (slug: string, overrides: Record<string, unknown> = {}) => ({
@@ -1966,51 +1967,552 @@ describe('frogbot sanitize', () => {
       },
     });
 
-    it('preserves an agent model when configured', () => {
+    it('normalizes a string model to the default and only option', () => {
       const result = sanitize(makeConfig({ ai, agents: [agent] } as never));
 
-      expect(result.agents?.[0]?.model).toBe('openai/test');
+      expect(result.agents?.[0]?.model).toEqual({
+        default: 'openai/gpt-5.4-mini',
+        options: ['openai/gpt-5.4-mini'],
+      });
     });
 
-    it('preserves allowed agent models', () => {
-      const result = sanitize(
-        makeConfig({ ai, agents: [{ ...agent, allowModels: ['openai/other'] }] } as never),
-      );
+    it.each([
+      { model: agent.model, allowModels: ['openai/gpt-4o'], options: "['openai/gpt-4o']" },
+      { model: agent.model, allowModels: [], options: '[]' },
+      { model: { default: agent.model, options: '*' }, allowModels: [], options: '[]' },
+    ])(
+      'rejects removed allowModels with the agent replacement ($options)',
+      ({ model, allowModels, options }) => {
+        const config = makeConfig({ ai, agents: [{ ...agent, model, allowModels }] } as never);
 
-      expect(result.agents?.[0]?.allowModels).toEqual(['openai/other']);
-    });
-
-    it('rejects an allowed model without a configured provider', () => {
-      expect(() =>
-        sanitize(
-          makeConfig({ ai, agents: [{ ...agent, allowModels: ['anthropic/test'] }] } as never),
-        ),
-      ).toThrow(
-        "[frogbot] Agent 'support' allowModels model 'anthropic/test' does not resolve to a configured provider.",
-      );
-    });
+        expect(() => sanitize(config)).toThrow(
+          `[frogbot] Agent 'support' uses \`allowModels\`, which was removed. Use \`model: { default: 'openai/gpt-5.4-mini', options: ${options} }\`.`,
+        );
+      },
+    );
 
     it('uses ai.defaultModel when the agent model is omitted', () => {
       const result = sanitize(
         makeConfig({
-          ai: { ...ai, defaultModel: 'openai/default' },
+          ai: { ...ai, defaultModel: 'openai/gpt-4o' },
           agents: [{ slug: 'support', instructions: 'Help the user' }],
         } as never),
       );
 
-      expect(result.agents?.[0]?.model).toBe('openai/default');
+      expect(result.agents?.[0]?.model).toEqual({
+        default: 'openai/gpt-4o',
+        options: ['openai/gpt-4o'],
+      });
+    });
+
+    it.each(['runtime', 'codegen'] as const)(
+      'rejects removed allowModels with the AI default in %s mode',
+      (mode) => {
+        const config = makeConfig({
+          ai: { ...ai, defaultModel: agent.model },
+          agents: [{ slug: agent.slug, instructions: agent.instructions, allowModels: [] }],
+        } as never);
+
+        expect(() => sanitize(config, { mode })).toThrow(
+          "[frogbot] Agent 'support' uses `allowModels`, which was removed. Use `model: { default: 'openai/gpt-5.4-mini', options: [] }`.",
+        );
+      },
+    );
+
+    it('puts the explicit default first and deduplicates array options', () => {
+      const config = makeConfig({
+        ai,
+        agents: [
+          {
+            ...agent,
+            model: {
+              default: agent.model,
+              options: ['openai/gpt-4o', 'openai/gpt-4o-mini', agent.model, 'openai/gpt-4o'],
+            },
+          },
+        ],
+      } as never);
+
+      const result = sanitize(config);
+
+      expect(result.agents?.[0]?.model).toEqual({
+        default: agent.model,
+        options: [agent.model, 'openai/gpt-4o', 'openai/gpt-4o-mini'],
+      });
+    });
+
+    it('uses ai.defaultModel for an object without a default', () => {
+      const config = makeConfig({
+        ai: { ...ai, defaultModel: agent.model },
+        agents: [{ ...agent, model: { options: ['openai/gpt-4o'] } }],
+      } as never);
+
+      const result = sanitize(config);
+
+      expect(result.agents?.[0]?.model).toEqual({
+        default: agent.model,
+        options: [agent.model, 'openai/gpt-4o'],
+      });
+    });
+
+    it('does not choose the first option when no default is configured', () => {
+      const config = makeConfig({
+        ai,
+        agents: [{ ...agent, model: { options: ['openai/gpt-4o'] } }],
+      } as never);
+
+      expect(() => sanitize(config)).toThrow(
+        "[frogbot] Agent 'support' requires a `model` or `ai.defaultModel`.",
+      );
+    });
+
+    it('accepts an empty options array as the default only', () => {
+      const config = makeConfig({
+        ai,
+        agents: [{ ...agent, model: { default: agent.model, options: [] } }],
+      } as never);
+
+      const result = sanitize(config);
+
+      expect(result.agents?.[0]?.model.options).toEqual([agent.model]);
+    });
+
+    it.each(['all', {}, undefined])('rejects invalid model options %j', (options) => {
+      const config = makeConfig({
+        ai,
+        agents: [{ ...agent, model: { default: agent.model, options } }],
+      } as never);
+
+      expect(() => sanitize(config)).toThrow(
+        "[frogbot] Agent 'support' model.options must be `'*'` or an array.",
+      );
+    });
+
+    it('expands wildcard options to only the configured Bedrock chat allowlist', () => {
+      const defaultModel = 'bedrock/zai.glm-4.7-flash';
+
+      const config = makeConfig({
+        ai: {
+          providers: {
+            bedrock: {
+              region: 'us-east-1',
+              models: ['zai.glm-4.7-flash', 'amazon.nova-lite-v1:0'],
+            },
+            openai: undefined,
+          },
+        },
+        agents: [{ ...agent, model: { default: defaultModel, options: '*' } }],
+      } as never);
+
+      const result = sanitize(config);
+
+      expect(result.agents?.[0]?.model.options).toEqual([
+        defaultModel,
+        'bedrock/amazon.nova-lite-v1:0',
+      ]);
+    });
+
+    it('expands a key-only OpenRouter provider to its whole chat catalog', () => {
+      const chatIds = catalog
+        .filter(({ provider, mode }) => provider === 'openrouter' && mode === 'chat')
+        .map(({ id }) => id)
+        .sort();
+
+      const config = makeConfig({
+        ai: { providers: { openrouter: { apiKey: 'test' } } },
+        agents: [{ ...agent, model: { default: chatIds[0], options: '*' } }],
+      } as never);
+
+      const result = sanitize(config);
+
+      expect(result.agents?.[0]?.model.options).toEqual(chatIds);
+      expect(chatIds.length).toBeGreaterThan(300);
+    });
+
+    it('filters custom non-chat models and routers but keeps chat aliases distinct', () => {
+      const config = makeConfig({
+        ai: {
+          providers: {
+            internal: {
+              type: 'openai-compatible',
+              baseUrl: 'https://models.test',
+              models: [
+                { id: 'chat', mode: 'chat' },
+                { id: 'embed', mode: 'embedding' },
+                { id: 'image', mode: 'image_generation' },
+              ],
+            },
+          },
+          routers: {
+            fast: { model: 'internal/chat' },
+            embeddings: { model: 'internal/embed' },
+            unknown: { model: 'internal/missing' },
+          },
+        },
+        agents: [{ ...agent, model: { default: 'internal/chat', options: '*' } }],
+      });
+
+      const result = sanitize(config);
+
+      expect(result.agents?.[0]?.model.options).toEqual(['internal/chat', 'fast']);
+    });
+
+    it('keeps a built-in router and its target as distinct wildcard choices', () => {
+      const config = makeConfig({
+        ai: {
+          providers: { openai: { apiKey: 'test', models: ['gpt-5.4-mini'] } },
+          routers: { fast: { model: agent.model } },
+        },
+        agents: [{ ...agent, model: { default: 'fast', options: '*' } }],
+      });
+
+      const result = sanitize(config);
+
+      expect(result.agents?.[0]?.model).toEqual({
+        default: 'fast',
+        options: ['fast', agent.model],
+      });
+    });
+
+    it('deduplicates array IDs without merging a router with its target', () => {
+      const config = makeConfig({
+        ai: { ...ai, routers: { fast: { model: agent.model } } },
+        agents: [
+          {
+            ...agent,
+            model: {
+              default: agent.model,
+              options: ['fast', agent.model, 'fast', 'openai/gpt-4o'],
+            },
+          },
+        ],
+      });
+
+      const result = sanitize(config);
+
+      expect(result.agents?.[0]?.model.options).toEqual([agent.model, 'fast', 'openai/gpt-4o']);
+    });
+
+    it('expands wildcard options to the exact union of configured provider chat catalogs', () => {
+      const chatIds = catalog
+        .filter(({ provider, mode }) => ['google', 'vercel'].includes(provider) && mode === 'chat')
+        .map(({ id }) => id)
+        .sort();
+
+      const config = makeConfig({
+        ai: {
+          providers: {
+            google: true,
+            vercel: { apiKey: 'test' },
+            openai: { apiKey: 'test', models: [] },
+            anthropic: undefined,
+          },
+          defaultModel: 'google/gemini-3.5-flash',
+        },
+        agents: [general()],
+      });
+
+      const result = sanitize(config);
+
+      expect(result.agents?.[0]?.model.options).toEqual([
+        'google/gemini-3.5-flash',
+        ...chatIds.filter((id) => id !== 'google/gemini-3.5-flash'),
+      ]);
+    });
+
+    it('filters non-chat entries from a built-in provider model list', () => {
+      const config = makeConfig({
+        ai: {
+          providers: {
+            openai: {
+              apiKey: 'test',
+              models: ['gpt-5.4-mini', 'text-embedding-3-small', 'gpt-image-1.5'],
+            },
+          },
+        },
+        agents: [{ ...agent, model: { default: agent.model, options: '*' } }],
+      });
+
+      const result = sanitize(config);
+
+      expect(result.agents?.[0]?.model.options).toEqual([agent.model]);
+    });
+
+    it('keeps non-chat models and unknown routers in policy field choices', async () => {
+      const config = makeConfig({
+        ai: {
+          providers: {
+            openai: { apiKey: 'test', models: ['gpt-5.4-mini', 'text-embedding-3-small'] },
+          },
+          routers: {
+            fast: { model: agent.model },
+            unknown: { model: 'openai/missing' },
+          },
+        },
+        agents: [{ ...agent, model: { default: agent.model, options: '*' } }],
+      });
+
+      const result = sanitize(config);
+      const payloadConfig = await result._internal.payloadConfig;
+      const users = payloadConfig.collections?.find(({ slug }) => slug === 'users');
+
+      expect(users?.fields).toContainEqual(
+        expect.objectContaining({
+          name: 'models',
+          options: ['fast', agent.model, 'openai/text-embedding-3-small', 'unknown'],
+        }),
+      );
+    });
+
+    it.each([
+      'embedding',
+      'image_generation',
+      'audio_speech',
+      'audio_transcription',
+      'rerank',
+      'evaluate',
+      'video_generation',
+    ] as const)('excludes custom %s models and their routers from wildcard options', (mode) => {
+      const config = makeConfig({
+        ai: {
+          providers: {
+            internal: {
+              type: 'openai-compatible',
+              baseUrl: 'https://models.test',
+              models: [
+                { id: 'chat', mode: 'chat' },
+                { id: 'other', mode },
+              ],
+            },
+          },
+          routers: { other: { model: 'internal/other' } },
+        },
+        agents: [{ ...agent, model: { default: 'internal/chat', options: '*' } }],
+      });
+
+      const result = sanitize(config);
+
+      expect(result.agents?.[0]?.model.options).toEqual(['internal/chat']);
+    });
+
+    it('rejects a non-chat AI default inherited by the general preset', () => {
+      const config = makeConfig({
+        ai: { ...ai, defaultModel: 'openai/text-embedding-3-small' },
+        agents: [general()],
+      });
+
+      expect(() => sanitize(config, { mode: 'runtime' })).toThrow(
+        "[frogbot] Agent 'general' model.default 'openai/text-embedding-3-small' is not chat-capable.",
+      );
+    });
+
+    it('prefers the explicit agent default over the AI default', () => {
+      const config = makeConfig({
+        ai: { ...ai, defaultModel: 'openai/gpt-4o' },
+        agents: [{ ...agent, model: { default: agent.model, options: [] } }],
+      });
+
+      const result = sanitize(config);
+
+      expect(result.agents?.[0]?.model).toEqual({ default: agent.model, options: [agent.model] });
+    });
+
+    describe('wildcard model validation during codegen', () => {
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      it.each([
+        ['openai/unknown', 'not configured'],
+        ['openai/text-embedding-3-small', 'not chat-capable'],
+      ] as const)('warns and preserves the inherited %s default', (defaultModel, reason) => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const chatIds = catalog
+          .filter(({ provider, mode }) => provider === 'openai' && mode === 'chat')
+          .map(({ id }) => id)
+          .sort();
+
+        const config = makeConfig({
+          ai: { ...ai, defaultModel },
+          agents: [general()],
+        });
+
+        const result = sanitize(config, { mode: 'codegen' });
+
+        expect(result.agents?.[0]?.model).toEqual({
+          default: defaultModel,
+          options: [defaultModel, ...chatIds],
+        });
+        expect(warn).toHaveBeenCalledWith(
+          `[frogbot] Agent 'general' model.default '${defaultModel}' is ${reason}.`,
+        );
+      });
+
+      it('rejects malformed wildcard alternatives during codegen', () => {
+        const config = makeConfig({
+          ai,
+          agents: [{ ...agent, model: { default: agent.model, options: 'all' } }],
+        } as never);
+
+        expect(() => sanitize(config, { mode: 'codegen' })).toThrow(
+          "[frogbot] Agent 'support' model.options must be `'*'` or an array.",
+        );
+      });
+    });
+
+    it('rejects an explicit router whose target is not chat-capable', () => {
+      const config = makeConfig({
+        ai: { ...ai, routers: { embeddings: { model: 'openai/text-embedding-3-small' } } },
+        agents: [{ ...agent, model: { default: agent.model, options: ['embeddings'] } }],
+      });
+
+      expect(() => sanitize(config)).toThrow(
+        "[frogbot] Agent 'support' model.options 'embeddings' is not chat-capable.",
+      );
+    });
+
+    it.each(['', 42, null])('rejects invalid explicit model IDs %j', (model) => {
+      const config = makeConfig({
+        ai,
+        agents: [{ ...agent, model: { default: agent.model, options: [model] } }],
+      } as never);
+
+      expect(() => sanitize(config)).toThrow(
+        "[frogbot] Agent 'support' model.options must contain model IDs.",
+      );
+    });
+
+    it.each([
+      { model: 'openai/text-embedding-3-small', field: 'model' },
+      { model: { default: 'openai/text-embedding-3-small', options: '*' }, field: 'model.default' },
+      {
+        model: { default: agent.model, options: ['openai/text-embedding-3-small'] },
+        field: 'model.options',
+      },
+    ])('rejects a non-chat model in $field', ({ model, field }) => {
+      const config = makeConfig({ ai, agents: [{ ...agent, model }] } as never);
+
+      expect(() => sanitize(config)).toThrow(
+        `[frogbot] Agent 'support' ${field} 'openai/text-embedding-3-small' is not chat-capable.`,
+      );
+    });
+
+    it.each([
+      { model: 'openai/unknown', field: 'model', id: 'openai/unknown' },
+      {
+        model: { default: 'openai/unknown', options: '*' },
+        field: 'model.default',
+        id: 'openai/unknown',
+      },
+      {
+        model: { default: agent.model, options: ['openai/unknown'] },
+        field: 'model.options',
+        id: 'openai/unknown',
+      },
+      {
+        model: { default: agent.model, options: ['anthropic/claude-sonnet-4-6'] },
+        field: 'model.options',
+        id: 'anthropic/claude-sonnet-4-6',
+      },
+    ])('rejects an unconfigured model in $field ($id)', ({ model, field, id }) => {
+      const config = makeConfig({ ai, agents: [{ ...agent, model }] } as never);
+
+      expect(() => sanitize(config)).toThrow(
+        `[frogbot] Agent 'support' ${field} '${id}' is not configured.`,
+      );
+    });
+
+    it.each([
+      { model: 'openai/gpt-4o', field: 'model' },
+      { model: { default: 'openai/gpt-4o', options: '*' }, field: 'model.default' },
+      { model: { default: agent.model, options: ['openai/gpt-4o'] }, field: 'model.options' },
+    ])('rejects a catalog model outside the provider list in $field', ({ model, field }) => {
+      const config = makeConfig({
+        ai: { providers: { openai: { apiKey: 'test', models: ['gpt-5.4-mini'] } } },
+        agents: [{ ...agent, model }],
+      } as never);
+
+      expect(() => sanitize(config)).toThrow(
+        `[frogbot] Agent 'support' ${field} 'openai/gpt-4o' is not configured.`,
+      );
+    });
+
+    it('warns about unknown and non-chat explicit models during codegen', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      const config = makeConfig({
+        ai,
+        agents: [
+          {
+            ...agent,
+            model: { default: 'openai/unknown', options: ['openai/text-embedding-3-small'] },
+          },
+        ],
+      } as never);
+
+      const result = sanitize(config, { mode: 'codegen' });
+
+      expect(result.agents?.[0]?.model.options).toEqual([
+        'openai/unknown',
+        'openai/text-embedding-3-small',
+      ]);
+      expect(warn).toHaveBeenCalledWith(
+        "[frogbot] Agent 'support' model.default 'openai/unknown' is not configured.",
+      );
+      expect(warn).toHaveBeenCalledWith(
+        "[frogbot] Agent 'support' model.options 'openai/text-embedding-3-small' is not chat-capable.",
+      );
+
+      warn.mockRestore();
+    });
+
+    it('starts the Google general preset with Gemini chat models and no embeddings', () => {
+      const config = makeConfig({
+        ai: { providers: { google: true }, defaultModel: 'google/gemini-3.5-flash' },
+        agents: [general()],
+      });
+
+      const result = sanitize(config);
+
+      expect(result.agents?.[0]?.model.default).toBe('google/gemini-3.5-flash');
+      expect(result.agents?.[0]?.model.options).toContain('google/gemini-2.5-pro');
+      expect(result.agents?.[0]?.model.options).not.toContain('google/gemini-embedding-001');
+      expect(result.agents?.[0]?.model.options).not.toContain('google/gemini-embedding-2');
+      expect(result.agents?.[0]?.model.options).not.toContain('google/gemini-3.5-transcribe');
+    });
+
+    it('narrows the general preset to an overridden string model', () => {
+      const config = makeConfig({ ai, agents: [general({ model: 'openai/gpt-5.4-mini' })] });
+
+      const result = sanitize(config);
+
+      expect(result.agents?.[0]?.model).toEqual({ default: agent.model, options: [agent.model] });
     });
 
     it('sanitizes and registers the general preset using ai.defaultModel', async () => {
       const result = sanitize(
         makeConfig({
-          ai: { ...ai, defaultModel: 'openai/default' },
+          ai: { ...ai, defaultModel: 'openai/gpt-4o' },
           agents: [general()],
         } as never),
       );
+
       const payloadConfig = await result._internal.payloadConfig;
 
-      expect(result.agents?.[0]).toMatchObject({ slug: 'general', model: 'openai/default' });
+      expect(result.agents?.[0]).toMatchObject({
+        slug: 'general',
+        model: { default: 'openai/gpt-4o' },
+      });
+      expect(result.agents?.[0]?.model.options).toEqual([
+        'openai/gpt-4o',
+        ...catalog
+          .filter(
+            ({ provider, mode, id }) =>
+              provider === 'openai' && mode === 'chat' && id !== 'openai/gpt-4o',
+          )
+          .map(({ id }) => id)
+          .sort(),
+      ]);
       expect((payloadConfig as any).endpoints.map((endpoint: any) => endpoint.path)).toContain(
         '/agents/:slug',
       );
@@ -2702,9 +3204,7 @@ describe('frogbot sanitize', () => {
             agents: [agent],
           }),
         ),
-      ).toThrow(
-        "[frogbot] Agent 'support' model 'openai/test' does not resolve to a configured provider.",
-      );
+      ).toThrow("[frogbot] Agent 'support' model 'openai/gpt-5.4-mini' is not configured.");
     });
 
     it('rejects model mismatches at runtime', () => {
@@ -2715,9 +3215,7 @@ describe('frogbot sanitize', () => {
             agents: [agent],
           }),
         ),
-      ).toThrow(
-        "[frogbot] Agent 'support' model 'openai/test' does not resolve to a configured provider. Configured providers: anthropic. Update the agent model or configure its provider under `ai.providers`.",
-      );
+      ).toThrow("[frogbot] Agent 'support' model 'openai/gpt-5.4-mini' is not configured.");
     });
 
     it('warns with model mismatch details during codegen', () => {
@@ -2733,7 +3231,7 @@ describe('frogbot sanitize', () => {
         ),
       ).not.toThrow();
       expect(warn).toHaveBeenCalledWith(
-        "[frogbot] Agent 'support' model 'openai/test' does not resolve to a configured provider. Configured providers: anthropic. Update the agent model or configure its provider under `ai.providers`.",
+        "[frogbot] Agent 'support' model 'openai/gpt-5.4-mini' is not configured.",
       );
 
       warn.mockRestore();
@@ -2831,7 +3329,9 @@ describe('frogbot sanitize', () => {
 
   describe('chat', () => {
     const ai = { providers: { openai: { apiKey: 'sk-test' } } };
-    const agents = [{ slug: 'support', model: 'openai/test', instructions: 'Help the user' }];
+    const agents = [
+      { slug: 'support', model: 'openai/gpt-5.4-mini', instructions: 'Help the user' },
+    ];
 
     it('is disabled when neither markers nor agents are configured', () => {
       const result = sanitize(makeConfig());

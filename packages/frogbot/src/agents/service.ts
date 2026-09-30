@@ -199,8 +199,8 @@ export function assertAgentSelection({
   return { model: resolveModel(model, config), variant };
 }
 
-function agentModels(agent: AgentInstance): AgentModelId[] {
-  return [...new Set([agent.config.model, ...(agent.config.allowModels ?? [])])];
+function agentModels(agent: AgentInstance): readonly AgentModelId[] {
+  return agent.config.model.options;
 }
 
 export function userAgentModels({
@@ -224,7 +224,7 @@ export function userDefaultModel({
 }): AgentModelId | undefined {
   const models = userAgentModels({ agent, user });
 
-  return models.includes(agent.config.model) ? agent.config.model : models[0];
+  return models.includes(agent.config.model.default) ? agent.config.model.default : models[0];
 }
 
 function agentReasoning({

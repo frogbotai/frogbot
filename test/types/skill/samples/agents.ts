@@ -8,6 +8,10 @@ import { domainConfig } from './domain-context.js';
 
 export const assistant: AgentConfig = {
   slug: 'assistant',
+  model: {
+    default: 'zen/big-pickle',
+    options: ['zen/big-pickle'],
+  },
   instructions: 'You are a concise and friendly assistant.',
 };
 

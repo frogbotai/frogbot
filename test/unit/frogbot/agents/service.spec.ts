@@ -9,8 +9,14 @@ import {
   getAgentManifest,
   listAgents,
 } from '../../../../packages/frogbot/src/agents/service.js';
-import type { AgentInstance } from '../../../../packages/frogbot/src/agents/types.js';
+import type {
+  AgentConfig,
+  AgentInstance,
+  AgentModelId,
+} from '../../../../packages/frogbot/src/agents/types.js';
 import type { SanitizedAIConfig } from '../../../../packages/frogbot/src/ai/types.js';
+import { sanitize as sanitizeConfig } from '../../../../packages/frogbot/src/config/sanitize.js';
+import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import {
   definePiece,
   pieceInstanceTools,
@@ -40,21 +46,20 @@ function makeAgent({
   slug = 'support',
   model = 'openai/test',
   access,
-  allowModels,
+  options = [],
 }: {
   slug?: string;
-  model?: AgentInstance['config']['model'];
+  model?: AgentModelId;
   access?: AgentInstance['config']['access'];
-  allowModels?: AgentInstance['config']['allowModels'];
+  options?: AgentInstance['config']['model']['options'];
 } = {}): AgentInstance {
   return {
     slug,
     config: {
       slug,
-      model,
+      model: { default: model, options: [...new Set([model, ...options])] },
       instructions: 'Help',
       access,
-      allowModels,
       tools: [],
     },
     aiAgent: { tools: {} } as unknown as AgentInstance['aiAgent'],
@@ -65,10 +70,12 @@ function makeAgent({
 
 function makeRequest({
   agents,
+  ai = config,
   authorizations,
   user = { id: 'user-1' },
 }: {
   agents: Record<string, AgentInstance>;
+  ai?: SanitizedAIConfig;
   authorizations?: ReturnType<typeof vi.fn>;
   user?: { id: string; modelAccess?: 'all' | 'selected'; models?: string[] } | null;
 }): FrogBotRequest {
@@ -76,13 +83,220 @@ function makeRequest({
     user,
     frogbot: {
       agents,
-      config: { ai: config },
+      config: { ai },
       connections: authorizations ? { authorizations } : undefined,
     },
   } as unknown as FrogBotRequest;
 }
 
+async function sanitizeAgent(
+  model: AgentConfig['model'],
+  routers: SanitizedAIConfig['routers'] = {},
+) {
+  const sanitized = sanitizeConfig({
+    secret: 'test-secret',
+    db: {} as FrogBotConfig['db'],
+    collections: [{ slug: 'users', auth: true, fields: [] }],
+    ai: {
+      providers: {
+        local: {
+          type: 'openai-compatible',
+          baseUrl: 'http://localhost:11434/v1',
+          models: [
+            {
+              id: 'thinker',
+              mode: 'chat',
+              reasoningOptions: [{ type: 'effort', values: ['low', 'high'] }],
+            },
+            { id: 'plain', mode: 'chat' },
+            { id: 'writer', mode: 'chat' },
+            { id: 'embedding', mode: 'embedding' },
+          ],
+        },
+      },
+      routers,
+    },
+    agents: [{ slug: 'support', instructions: 'Help', model }],
+  });
+
+  await sanitized._internal.payloadConfig;
+
+  const agent = makeAgent();
+
+  agent.config = sanitized.agents![0]!;
+
+  return { agent, config: sanitized.ai! };
+}
+
 describe('agent service', () => {
+  it.each([
+    [
+      'wildcard',
+      { default: 'fast', options: '*' },
+      ['fast', 'local/plain', 'local/thinker', 'local/writer'],
+    ],
+    [
+      'array',
+      { default: 'fast', options: ['local/thinker', 'fast', 'local/thinker'] },
+      ['fast', 'local/thinker'],
+    ],
+  ] as const)(
+    'preserves router and target manifest choices for sanitized %s options',
+    async (_, model, expected) => {
+      const { agent, config: ai } = await sanitizeAgent(model, {
+        fast: { model: 'local/thinker' },
+      });
+      const req = makeRequest({ agents: { support: agent }, ai });
+
+      const manifest = await getAgentManifest({ req });
+
+      expect(manifest.agents[0]!.models).toEqual(expected);
+      expect(manifest.agents[0]!.defaultModel).toBe('fast');
+
+      expected.forEach((id) => {
+        expect(
+          assertAgentSelection({ agent, config: ai, selection: { model: id }, user: req.user }),
+        ).toEqual({ model: id === 'fast' ? 'local/thinker' : id });
+      });
+    },
+  );
+
+  it('advertises selectable reasoning variants for a sanitized router and its target', async () => {
+    const { agent, config: ai } = await sanitizeAgent(
+      { default: 'fast', options: '*' },
+      { fast: { model: 'local/thinker' } },
+    );
+    const req = makeRequest({ agents: { support: agent }, ai });
+
+    const manifest = await getAgentManifest({ req });
+
+    expect(manifest.agents[0]!.reasoning).toEqual({
+      fast: [
+        { key: 'low', label: 'Low' },
+        { key: 'high', label: 'High' },
+      ],
+      'local/thinker': [
+        { key: 'low', label: 'Low' },
+        { key: 'high', label: 'High' },
+      ],
+    });
+
+    Object.entries(manifest.agents[0]!.reasoning!).forEach(([model, variants]) => {
+      variants.forEach(({ key }) => {
+        expect(
+          assertAgentSelection({
+            agent,
+            config: ai,
+            selection: { model, reasoning: key },
+            user: req.user,
+          }),
+        ).toMatchObject({ model: 'local/thinker', variant: { key } });
+      });
+    });
+  });
+
+  it('resolves a sanitized router default when no model is selected', async () => {
+    const { agent, config: ai } = await sanitizeAgent(
+      { default: 'fast', options: ['local/thinker'] },
+      { fast: { model: 'local/thinker' } },
+    );
+
+    const selection = assertAgentSelection({ agent, config: ai, selection: {}, user: null });
+
+    expect(selection).toEqual({ model: 'local/thinker' });
+  });
+
+  it('filters an expanded wildcard by the user selected model access', async () => {
+    const { agent, config: ai } = await sanitizeAgent({ default: 'local/thinker', options: '*' });
+    const req = makeRequest({
+      agents: { support: agent },
+      ai,
+      user: { id: 'user-1', modelAccess: 'selected', models: ['local/writer', 'local/plain'] },
+    });
+
+    const manifest = await getAgentManifest({ req });
+    const selection = assertAgentSelection({ agent, config: ai, selection: {}, user: req.user });
+
+    expect(agent.config.model.options).toEqual(['local/thinker', 'local/plain', 'local/writer']);
+    expect(manifest.agents[0]!.models).toEqual(['local/plain', 'local/writer']);
+    expect(manifest.agents[0]!.defaultModel).toBe('local/plain');
+    expect(selection).toEqual({ model: 'local/plain' });
+    expect(() =>
+      assertAgentSelection({
+        agent,
+        config: ai,
+        selection: { model: 'local/thinker' },
+        user: req.user,
+      }),
+    ).toThrow(expect.objectContaining({ status: 403 }));
+  });
+
+  it.each([
+    [
+      'wildcard',
+      { default: 'local/thinker', options: '*' },
+      ['local/thinker', 'local/plain', 'local/writer'],
+    ],
+    [
+      'array',
+      { default: 'local/thinker', options: ['local/plain', 'local/thinker', 'local/plain'] },
+      ['local/thinker', 'local/plain'],
+    ],
+  ] as const)(
+    'accepts exactly the manifest models for sanitized %s options',
+    async (_, model, expected) => {
+      const { agent, config: ai } = await sanitizeAgent(model);
+      const req = makeRequest({ agents: { support: agent }, ai });
+      const candidates = [
+        'local/thinker',
+        'local/plain',
+        'local/writer',
+        'local/embedding',
+        'openai/gpt-4o',
+      ];
+
+      const manifest = await getAgentManifest({ req });
+      const offered = manifest.agents[0]!.models;
+      const rejected = candidates.filter((candidate) => !offered.includes(candidate));
+
+      expect(offered).toEqual(expected);
+      expect(offered).toEqual(agent.config.model.options);
+
+      offered.forEach((id) => {
+        expect(
+          assertAgentSelection({ agent, config: ai, selection: { model: id }, user: req.user }),
+        ).toEqual({ model: id });
+      });
+
+      rejected.forEach((id) => {
+        expect(() =>
+          assertAgentSelection({ agent, config: ai, selection: { model: id }, user: req.user }),
+        ).toThrow(expect.objectContaining({ status: 403 }));
+      });
+    },
+  );
+
+  it('offers only a sanitized string model and rejects another configured chat model', async () => {
+    const { agent, config: ai } = await sanitizeAgent('local/thinker');
+    const req = makeRequest({ agents: { support: agent }, ai });
+
+    const manifest = await getAgentManifest({ req });
+
+    expect(manifest.agents[0]!.models).toEqual(['local/thinker']);
+    expect(manifest.agents[0]!.defaultModel).toBe('local/thinker');
+    expect(assertAgentSelection({ agent, config: ai, selection: {}, user: req.user })).toEqual({
+      model: 'local/thinker',
+    });
+    expect(() =>
+      assertAgentSelection({
+        agent,
+        config: ai,
+        selection: { model: 'local/plain' },
+        user: req.user,
+      }),
+    ).toThrow(expect.objectContaining({ status: 403 }));
+  });
+
   it('lists only accessible agents and treats access errors as denied', async () => {
     const req = makeRequest({
       agents: {
@@ -110,7 +324,7 @@ describe('agent service', () => {
   it('builds a permission-filtered agent manifest', async () => {
     const req = makeRequest({
       agents: {
-        support: makeAgent({ allowModels: ['openai/other', 'openai/test'] }),
+        support: makeAgent({ options: ['openai/other', 'openai/test'] }),
         denied: makeAgent({ slug: 'denied', access: () => false }),
       },
     });
@@ -132,7 +346,7 @@ describe('agent service', () => {
   it('filters manifest models in agent order rather than allowlist order', async () => {
     const req = makeRequest({
       agents: {
-        support: makeAgent({ allowModels: ['openai/other', 'my-local/plain'] }),
+        support: makeAgent({ options: ['openai/other', 'my-local/plain'] }),
       },
       user: { id: 'user-1', modelAccess: 'selected', models: ['my-local/plain', 'openai/test'] },
     });
@@ -146,7 +360,7 @@ describe('agent service', () => {
   it('falls back to the first allowed model when the default is blocked', async () => {
     const req = makeRequest({
       agents: {
-        support: makeAgent({ allowModels: ['openai/other', 'my-local/plain'] }),
+        support: makeAgent({ options: ['openai/other', 'my-local/plain'] }),
       },
       user: { id: 'user-1', modelAccess: 'selected', models: ['my-local/plain', 'openai/other'] },
     });
@@ -167,7 +381,7 @@ describe('agent service', () => {
 
   it('drops reasoning for blocked models', async () => {
     const req = makeRequest({
-      agents: { support: makeAgent({ allowModels: ['smart', 'my-local/thinker'] }) },
+      agents: { support: makeAgent({ options: ['smart', 'my-local/thinker'] }) },
       user: { id: 'user-1', modelAccess: 'selected', models: ['my-local/thinker'] },
     });
 
@@ -182,7 +396,7 @@ describe('agent service', () => {
     null,
   ])('preserves the unrestricted manifest for user %o', async (user) => {
     const req = makeRequest({
-      agents: { support: makeAgent({ allowModels: ['openai/other'], access: () => true }) },
+      agents: { support: makeAgent({ options: ['openai/other'], access: () => true }) },
       user,
     });
 
@@ -199,7 +413,7 @@ describe('agent service', () => {
 
   it('applies legacy model lists without a modelAccess field', async () => {
     const req = makeRequest({
-      agents: { support: makeAgent({ allowModels: ['openai/other'] }) },
+      agents: { support: makeAgent({ options: ['openai/other'] }) },
       user: { id: 'user-1', models: ['openai/other'] },
     });
 
@@ -209,7 +423,7 @@ describe('agent service', () => {
   });
 
   it('accepts an offered model allowed for the user', () => {
-    const agent = makeAgent({ allowModels: ['openai/other'] });
+    const agent = makeAgent({ options: ['openai/other'] });
     const user = makeRequest({ agents: {}, user: { id: 'user-1', models: ['openai/other'] } }).user;
 
     expect(
@@ -218,7 +432,7 @@ describe('agent service', () => {
   });
 
   it('rejects an offered but user-blocked model before checking reasoning', () => {
-    const agent = makeAgent({ allowModels: ['my-local/thinker'] });
+    const agent = makeAgent({ options: ['my-local/thinker'] });
     const user = makeRequest({ agents: {}, user: { id: 'user-1', models: ['openai/test'] } }).user;
 
     expect(() =>
@@ -254,7 +468,7 @@ describe('agent service', () => {
   });
 
   it('resolves the user fallback and its reasoning when no model is named', () => {
-    const agent = makeAgent({ allowModels: ['my-local/thinker'] });
+    const agent = makeAgent({ options: ['my-local/thinker'] });
     const user = makeRequest({
       agents: {},
       user: { id: 'user-1', models: ['my-local/thinker'] },
@@ -284,7 +498,7 @@ describe('agent service', () => {
     ['smart', 'openai/gpt-5'],
     ['openai/gpt-5', 'smart'],
   ] as const)('does not unlock %s by allowlisting %s', (model, allowed) => {
-    const agent = makeAgent({ allowModels: ['smart', 'openai/gpt-5'] });
+    const agent = makeAgent({ options: ['smart', 'openai/gpt-5'] });
     const user = makeRequest({ agents: {}, user: { id: 'user-1', models: [allowed] } }).user;
 
     expect(() => assertAgentSelection({ agent, config, selection: { model }, user })).toThrow(
@@ -329,7 +543,7 @@ describe('agent service', () => {
   it('advertises the reasoning options of routers and custom models, leaving out the rest', async () => {
     const req = makeRequest({
       agents: {
-        support: makeAgent({ allowModels: ['smart', 'my-local/thinker', 'my-local/plain'] }),
+        support: makeAgent({ options: ['smart', 'my-local/thinker', 'my-local/plain'] }),
       },
     });
 
@@ -354,7 +568,7 @@ describe('agent service', () => {
   });
 
   it.each(['openai/test', 'openai/other'] as const)('resolves the allowed model %s', (model) => {
-    const agent = makeAgent({ allowModels: ['openai/other'] });
+    const agent = makeAgent({ options: ['openai/other'] });
 
     expect(assertAgentSelection({ agent, config, selection: { model }, user: null })).toEqual({
       model,
@@ -362,7 +576,7 @@ describe('agent service', () => {
   });
 
   it('resolves a router to its model and the model reasoning variant', () => {
-    const agent = makeAgent({ allowModels: ['smart', 'openai/gpt-5'] });
+    const agent = makeAgent({ options: ['smart', 'openai/gpt-5'] });
 
     const router = assertAgentSelection({
       agent,
@@ -386,7 +600,7 @@ describe('agent service', () => {
   });
 
   it('sends a custom model variant under the camel-cased provider key', () => {
-    const agent = makeAgent({ allowModels: ['my-local/thinker'] });
+    const agent = makeAgent({ options: ['my-local/thinker'] });
 
     expect(
       assertAgentSelection({
@@ -406,7 +620,7 @@ describe('agent service', () => {
   });
 
   it('checks a reasoning option against the agent default model when no model is selected', () => {
-    const agent = makeAgent({ model: 'my-local/thinker', allowModels: ['openai/gpt-5'] });
+    const agent = makeAgent({ model: 'my-local/thinker', options: ['openai/gpt-5'] });
 
     expect(() =>
       assertAgentSelection({ agent, config, selection: { reasoning: 'medium' }, user: null }),
@@ -419,7 +633,7 @@ describe('agent service', () => {
   });
 
   it('rejects a reasoning option for a model without reasoning options with 400', () => {
-    const agent = makeAgent({ allowModels: ['my-local/plain'] });
+    const agent = makeAgent({ options: ['my-local/plain'] });
 
     expect(() =>
       assertAgentSelection({
@@ -436,8 +650,8 @@ describe('agent service', () => {
     );
   });
 
-  it('rejects a model outside the agent allowlist with 403 before checking reasoning', () => {
-    const agent = makeAgent({ allowModels: ['openai/other'] });
+  it('rejects a model outside the agent options with 403 before checking reasoning', () => {
+    const agent = makeAgent({ options: ['openai/other'] });
 
     expect(() =>
       assertAgentSelection({
@@ -481,7 +695,7 @@ describe('agent service', () => {
   });
 
   it('allows agent use when only a fallback model is usable', async () => {
-    const agent = makeAgent({ allowModels: ['openai/other'] });
+    const agent = makeAgent({ options: ['openai/other'] });
     const req = makeRequest({
       agents: { support: agent },
       user: { id: 'user-1', modelAccess: 'selected', models: ['openai/other'] },

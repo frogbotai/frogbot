@@ -69,7 +69,7 @@ export function createAgentInstance(
 
   const baseAgent = new ToolLoopAgent<AgentCallOptions, typeof tools, Record<string, unknown>>({
     id: agentConfig.slug,
-    model: gateway.chatModel(resolveModel(agentConfig.model, config)),
+    model: gateway.chatModel(resolveModel(agentConfig.model.default, config)),
     instructions: agentConfig.instructions,
     tools,
     stopWhen: agentConfig.stopWhen,

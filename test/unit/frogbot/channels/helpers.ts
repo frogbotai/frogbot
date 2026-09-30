@@ -207,7 +207,11 @@ export function channelFixture({
     agents: {
       support: {
         slug: 'support',
-        config: { channels: [piece], access, model: 'openai/test' },
+        config: {
+          channels: [piece],
+          access,
+          model: { default: 'openai/test', options: ['openai/test'] },
+        },
         aiAgent: { tools: {} },
         streamMessage,
       },

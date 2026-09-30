@@ -220,7 +220,12 @@ describe('Linear webhook lifecycle', () => {
       collections: [{ slug: 'users', auth: true, fields: [] }],
       ai: { providers: { openai: { apiKey: 'sk-test' } } },
       agents: [
-        { slug: 'ops', instructions: 'Handle events', model: 'openai/test', triggers: [mounted] },
+        {
+          slug: 'ops',
+          instructions: 'Handle events',
+          model: 'openai/gpt-5.4-mini',
+          triggers: [mounted],
+        },
       ],
     });
     await config._internal.payloadConfig;

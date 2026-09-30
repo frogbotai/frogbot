@@ -13,7 +13,7 @@ function makeAgent(
     slug,
     config: {
       slug,
-      model: 'openai/test',
+      model: { default: 'openai/test', options: ['openai/test'] },
       instructions: 'Help',
       access,
       profile,
@@ -146,5 +146,23 @@ describe('manifest endpoint', () => {
     expect(await response.json()).toMatchObject({
       ai: { transcribe: { model: 'groq/whisper-large-v3' } },
     });
+  });
+
+  it('reports the dedicated transcription model for a Google-only app', async () => {
+    const req = makeRequest({ providers: { google: true } });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(await response.json()).toMatchObject({
+      ai: { transcribe: { model: 'google/gemini-3.5-transcribe' } },
+    });
+  });
+
+  it.each(['bedrock', 'openrouter'])('disables voice input for a %s-only app', async (provider) => {
+    const req = makeRequest({ providers: { [provider]: true } });
+
+    const response = await buildManifestEndpoint().handler(req);
+
+    expect(await response.json()).toMatchObject({ ai: { transcribe: false } });
   });
 });

@@ -471,7 +471,10 @@ describe('ChannelHost conversation loop', () => {
   it('runs an identified user with one usable model without selecting a model', async () => {
     const fixture = channelFixture();
 
-    Object.assign(fixture.frogbot.agents.support.config, { allowModels: ['openai/other'] });
+    Object.assign(fixture.frogbot.agents.support.config, {
+      model: { default: 'openai/test', options: ['openai/test', 'openai/other'] },
+    });
+
     fixture.identity.mockResolvedValueOnce({
       id: 'user-1',
       collection: 'users',

@@ -84,6 +84,7 @@ export type {
   AgentManifest,
   AgentManifestEntry,
   AgentModelId,
+  AgentModelOptions,
   AgentPieceTrigger,
   AgentProfile,
   AgentReasoningOption,

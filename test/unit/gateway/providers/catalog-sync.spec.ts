@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import catalog from '../../../../packages/frogbot/src/ai/catalog.json';
 import { DEFAULT_MODEL_CATALOG } from '../../../../packages/gateway/src/providers/catalog.data.js';
@@ -18,6 +18,351 @@ const model = {
   modalities: { input: ['text'], output: ['text'] },
   limit: { context: 128_000, output: 16_384 },
 };
+
+describe('catalog sync corrections and modes', () => {
+  const id = `openai/${model.id}`;
+  const source = { openai: { models: { [model.id]: model } } };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('shallowly merges corrections and recomputes the mode', () => {
+    const correction = {
+      id,
+      name: 'Reviewed embedding',
+      modalities: { input: ['text'], output: ['embedding'] },
+      operations: ['embeddings'],
+      capabilities: { reasoning: true },
+    };
+
+    const { catalog, gateway } = buildCatalogs({
+      overlays: { openai: { correct: [correction] } },
+      source,
+    });
+
+    expect(catalog).toEqual([{ id, provider: 'openai', mode: 'embedding' }]);
+    expect(gateway[0]).toEqual({
+      ...correction,
+      context: { input: 128_000, output: 16_384 },
+      providers: ['openai'],
+    });
+    expect(gateway[0]).not.toHaveProperty('mode');
+  });
+
+  it('defaults all overlay lists to empty', () => {
+    const { catalog } = buildCatalogs({ overlays: { openai: {} }, source });
+
+    expect(catalog).toEqual([{ id, provider: 'openai', mode: 'chat' }]);
+  });
+
+  it.each([
+    ['removed', {}],
+    ['renamed', { renamed: { ...model, id: 'renamed' } }],
+    ['deprecated', { [model.id]: { ...model, status: 'deprecated' } }],
+  ])('rejects a correction for a %s model', (_reason, models) => {
+    const sync = () =>
+      buildCatalogs({
+        overlays: { openai: { correct: [{ id, name: 'Reviewed' }] } },
+        source: { openai: { models } },
+      });
+
+    expect(sync).toThrow(
+      `Model catalog correction '${id}' for provider 'openai' is missing from the synced output`,
+    );
+  });
+
+  it.each([
+    ['unpriced', model],
+    [
+      'non-text',
+      {
+        ...model,
+        cost: { input: 1, output: 1 },
+        modalities: { input: ['text'], output: ['image'] },
+      },
+    ],
+  ])('rejects a correction for a filtered %s aggregator model', (_reason, entry) => {
+    const filteredId = `vercel/${model.id}`;
+    const sync = () =>
+      buildCatalogs({
+        overlays: { vercel: { correct: [{ id: filteredId }] } },
+        source: { vercel: { models: { [model.id]: entry } } },
+      });
+
+    expect(sync).toThrow(
+      `Model catalog correction '${filteredId}' for provider 'vercel' is missing from the synced output`,
+    );
+  });
+
+  it('rejects a mismatched correction provider prefix', () => {
+    const sync = () =>
+      buildCatalogs({
+        overlays: { google: { correct: [{ id }] } },
+        source,
+      });
+
+    expect(sync).toThrow(
+      `Model catalog correction '${id}' for provider 'google' has a mismatched provider prefix`,
+    );
+  });
+
+  it.each(['openai-other/model', 'openai', '', undefined])(
+    'rejects the malformed correction ID %s',
+    (correctionId) => {
+      const sync = () =>
+        buildCatalogs({
+          overlays: { openai: { correct: [{ id: correctionId }] } },
+          source,
+        });
+
+      expect(sync).toThrow(
+        `Model catalog correction '${correctionId}' for provider 'openai' has a mismatched provider prefix`,
+      );
+    },
+  );
+
+  it('corrects nested aggregator IDs without changing their provider', () => {
+    const nestedId = 'vercel/openai/reviewed';
+
+    const { catalog, gateway } = buildCatalogs({
+      overlays: { vercel: { correct: [{ id: nestedId, name: 'Reviewed' }] } },
+      source: {
+        vercel: {
+          models: {
+            'openai/reviewed': {
+              ...model,
+              id: 'openai/reviewed',
+              cost: { input: 0, output: 0 },
+            },
+          },
+        },
+      },
+    });
+
+    expect(catalog).toEqual([{ id: nestedId, provider: 'vercel', mode: 'chat' }]);
+    expect(gateway[0]).toMatchObject({
+      id: nestedId,
+      name: 'Reviewed',
+      providers: ['vercel'],
+      cost: { input: 0, output: 0 },
+    });
+  });
+
+  it.each([
+    ['add', { add: [{ id }] }],
+    ['exclude', { exclude: [model.id] }],
+  ])('rejects a correction also listed in %s', (_list, conflict) => {
+    const sync = () =>
+      buildCatalogs({
+        overlays: { openai: { ...conflict, correct: [{ id }] } },
+        source,
+      });
+
+    expect(sync).toThrow(
+      `Model catalog correction '${id}' for provider 'openai' is also listed in add or exclude`,
+    );
+  });
+
+  it.each(['mode', 'family', 'unknown'])('rejects the forbidden correction field %s', (field) => {
+    const sync = () =>
+      buildCatalogs({
+        overlays: { openai: { correct: [{ id, [field]: 'chat' }] } },
+        source,
+      });
+
+    expect(sync).toThrow(
+      `Model catalog correction '${id}' for provider 'openai' sets forbidden field '${field}'`,
+    );
+  });
+
+  it('rejects an exclude missing from the source', () => {
+    const sync = () => buildCatalogs({ overlays: { openai: { exclude: ['missing'] } }, source });
+
+    expect(sync).toThrow(
+      "Model catalog exclude 'openai/missing' for provider 'openai' is missing from the source",
+    );
+  });
+
+  it('allows an exclude still present in deprecated source models', () => {
+    const { catalog } = buildCatalogs({
+      overlays: { openai: { exclude: [model.id] } },
+      source: { openai: { models: { [model.id]: { ...model, status: 'deprecated' } } } },
+    });
+
+    expect(catalog).toEqual([]);
+  });
+
+  it('applies additions after excluding the same source ID', () => {
+    const replacement = {
+      id,
+      name: 'Replacement embedding',
+      modalities: { input: ['text'], output: ['embedding'] },
+      operations: ['embeddings'],
+      capabilities: {},
+      context: { input: 8192, output: 1024 },
+      providers: ['openai'],
+    };
+
+    const { catalog, gateway } = buildCatalogs({
+      overlays: { openai: { exclude: [model.id], add: [replacement] } },
+      source,
+    });
+
+    expect(gateway).toEqual([replacement]);
+    expect(catalog).toEqual([{ id, provider: 'openai', mode: 'embedding' }]);
+  });
+
+  it.each([
+    ['text and audio input', ['text', 'audio'], 'chat'],
+    ['audio-only input', ['audio'], 'audio_transcription'],
+  ])('classifies %s with text output', (_label, input, mode) => {
+    const { catalog } = buildCatalogs({
+      overlays: {},
+      source: {
+        openai: { models: { [model.id]: { ...model, modalities: { input, output: ['text'] } } } },
+      },
+    });
+
+    expect(catalog).toEqual([{ id, provider: 'openai', mode }]);
+  });
+
+  it.each([
+    [['text', 'embedding'], ['embeddings'], 'embedding'],
+    [['text', 'image'], ['images.generations'], 'image_generation'],
+    [['text', 'video'], ['video.generations'], 'video_generation'],
+    [['text', 'audio'], ['audio.speech'], 'audio_speech'],
+    [['text'], ['evaluate'], 'evaluate'],
+    [['text'], ['rerank'], 'rerank'],
+  ])('preserves mode precedence for %s output over chat', (output, operations, mode) => {
+    const { catalog } = buildCatalogs({
+      overlays: {
+        openai: {
+          correct: [
+            {
+              id,
+              modalities: { input: ['text', 'audio'], output },
+              operations,
+            },
+          ],
+        },
+      },
+      source,
+    });
+
+    expect(catalog).toEqual([{ id, provider: 'openai', mode }]);
+  });
+
+  it.each([
+    ['ID', { ...model, id: 'text-embedding-test' }],
+    ['family', { ...model, family: 'EMBEDDING' }],
+  ])('warns about an uncorrected chat entry with embed in its %s', (_field, entry) => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const { catalog, gateway } = buildCatalogs({
+      overlays: {},
+      source: { openai: { models: { [entry.id]: entry } } },
+    });
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(`openai/${entry.id}`));
+    expect(catalog[0]?.mode).toBe('chat');
+    expect(gateway[0]?.modalities).toEqual(model.modalities);
+    expect(gateway[0]?.operations).toEqual(['chat.completions']);
+  });
+
+  it('does not warn about a reviewed correction even when it stays chat', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const { catalog } = buildCatalogs({
+      overlays: { openai: { correct: [{ id, name: 'Reviewed chat' }] } },
+      source: { openai: { models: { [model.id]: { ...model, family: 'embed' } } } },
+    });
+
+    expect(catalog[0]?.mode).toBe('chat');
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('does not warn about an uncorrected embedding entry', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const { catalog } = buildCatalogs({
+      overlays: {},
+      source: {
+        openai: {
+          models: {
+            [model.id]: {
+              ...model,
+              family: 'embed',
+              modalities: { input: ['text'], output: ['embedding'] },
+            },
+          },
+        },
+      },
+    });
+
+    expect(catalog[0]?.mode).toBe('embedding');
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'google/gemini-embedding-001',
+    'google/gemini-embedding-2',
+    'mistral/mistral-embed',
+    'openai/text-embedding-3-large',
+    'openai/text-embedding-3-small',
+    'openai/text-embedding-ada-002',
+  ])('publishes the reviewed embedding correction for %s', (modelId) => {
+    const entry = DEFAULT_MODEL_CATALOG.get(modelId);
+
+    expect(entry?.modalities.output).toEqual(['embedding']);
+    expect(entry?.operations).toEqual(['embeddings']);
+    expect(catalog.find(({ id: catalogId }) => catalogId === modelId)?.mode).toBe('embedding');
+  });
+
+  it('preserves multimodal input for Gemini Embedding 2 in the committed catalog', () => {
+    const entry = DEFAULT_MODEL_CATALOG.get('google/gemini-embedding-2');
+
+    expect(entry?.modalities.input).toEqual(['text', 'image', 'audio', 'video']);
+  });
+
+  it('publishes the Gemini chat mode and dedicated transcription entry', () => {
+    const transcribe = DEFAULT_MODEL_CATALOG.get('google/gemini-3.5-transcribe');
+
+    expect(catalog).toContainEqual({
+      id: 'google/gemini-3.5-flash',
+      provider: 'google',
+      mode: 'chat',
+    });
+    expect(catalog).toContainEqual({
+      id: 'google/gemini-3.5-transcribe',
+      provider: 'google',
+      mode: 'audio_transcription',
+    });
+    expect(transcribe?.modalities).toEqual({ input: ['audio'], output: ['text'] });
+    expect(transcribe?.operations).toEqual(['audio.transcriptions']);
+  });
+
+  it('publishes chat mode for every committed text-and-audio input model with text-only output', () => {
+    const entries = [...DEFAULT_MODEL_CATALOG.values()].filter(
+      ({ modalities }) =>
+        modalities.input.includes('text') &&
+        modalities.input.includes('audio') &&
+        modalities.output.length === 1 &&
+        modalities.output[0] === 'text',
+    );
+
+    expect(entries.length).toBeGreaterThan(1);
+
+    for (const entry of entries) {
+      expect(catalog.find(({ id: catalogId }) => catalogId === entry.id)).toEqual({
+        id: entry.id,
+        provider: entry.id.slice(0, entry.id.indexOf('/')),
+        mode: 'chat',
+      });
+    }
+  });
+});
 
 describe('catalog sync reasoning options', () => {
   const reasoningModel = (reasoning_options: unknown) => ({

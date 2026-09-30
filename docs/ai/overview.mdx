@@ -94,6 +94,8 @@ ai: {
 
 Invoke that model as `internal/legal-summary-v2`. Built-in provider entries accept an optional `models` allowlist to restrict their catalog IDs; this is different from a custom provider's required model definitions.
 
+A provider's `models` list decides what the app can use, while an [agent's `model.options`](/agents/overview#define-one) decides what users can pick for that agent.
+
 `reasoningOptions` lists the reasoning levels the endpoint accepts. Custom providers support `effort` options: the chat selector offers `Default`, `Low`, and `High` for this model, and a selected level is sent as `reasoning_effort`. `Default` sends nothing. Omit `reasoningOptions` for models without reasoning levels. Built-in providers take their levels from the model catalog.
 
 ---

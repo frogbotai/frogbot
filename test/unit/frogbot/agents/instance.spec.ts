@@ -291,7 +291,12 @@ describe('agent hook lifecycle', () => {
       execute: vi.fn(),
     };
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help', tools: [tool] },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+        tools: [tool],
+      },
       makeDeps(config, req),
     );
 
@@ -329,7 +334,11 @@ describe('agent hook lifecycle', () => {
     const config = makeConfig(hooks);
     const req = { user: { id: 'user-1' } } as FrogBotRequest;
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+      },
       makeDeps(config, req),
     );
 
@@ -359,7 +368,11 @@ describe('agent hook lifecycle', () => {
     const config = makeConfig(hooks);
     const req = { user: { id: 'user-1' } } as FrogBotRequest;
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+      },
       makeDeps(config, req),
     );
     const controller = new AbortController();
@@ -391,8 +404,7 @@ describe('agent generate turns', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: 'openai/test',
-        allowModels: ['openai/allowed'],
+        model: { default: 'openai/test', options: ['openai/test', 'openai/allowed'] },
         instructions: 'Help',
       },
       deps as never,
@@ -420,8 +432,7 @@ describe('agent generate turns', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: 'openai/test',
-        allowModels: ['openai/allowed'],
+        model: { default: 'openai/test', options: ['openai/test', 'openai/allowed'] },
         instructions: 'Help',
       },
       makeDeps(makeConfig(emptyHooks()), req),
@@ -447,6 +458,37 @@ describe('agent generate turns', () => {
     expect(turn.releaseTurn).toHaveBeenCalledWith({ req, claim, state: 'idle' });
   });
 
+  it('rejects a stored model removed from the agent options before generating', async () => {
+    const req = makeReq();
+    const agent = createAgentInstance(
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+      },
+      makeDeps(makeConfig(emptyHooks()), req),
+    );
+
+    turn.resolveChatContext.mockResolvedValue({
+      status: 'ready',
+      chatId: 'chat-1',
+      uiMessages: history,
+      claim,
+      selection: { model: 'openai/allowed' },
+    });
+
+    await expect(agent.generate({ prompt: 'Hello', req })).rejects.toMatchObject({
+      code: 'selection-unavailable',
+      status: 409,
+      message: "Model 'openai/allowed' is not allowed for agent 'support'",
+    });
+
+    expect(agentState.generateCall).toBeUndefined();
+    expect(turn.persistAssistantMessage).not.toHaveBeenCalled();
+    expect(turn.stop).toHaveBeenCalledOnce();
+    expect(turn.releaseTurn).toHaveBeenCalledWith({ req, claim, state: 'idle' });
+  });
+
   it('runs on the user fallback and records it as the main model', async () => {
     const req = makeReq({ id: 'user-1', modelAccess: 'selected', models: ['openai/allowed'] });
     const deps = makeDeps(makeConfig(emptyHooks()), req) as unknown as {
@@ -455,8 +497,7 @@ describe('agent generate turns', () => {
     const agent = createAgentInstance(
       {
         slug: 'support',
-        model: 'openai/test',
-        allowModels: ['openai/allowed'],
+        model: { default: 'openai/test', options: ['openai/test', 'openai/allowed'] },
         instructions: 'Help',
       },
       deps as never,
@@ -485,7 +526,11 @@ describe('agent generate turns', () => {
       frogbot: { create: ReturnType<typeof vi.fn> };
     };
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+      },
       deps as never,
     );
 
@@ -522,7 +567,11 @@ describe('agent generate turns', () => {
   it('releases the turn and promotes the next queued message after persisting', async () => {
     const req = makeReq();
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+      },
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
@@ -542,7 +591,11 @@ describe('agent generate turns', () => {
 
     const req = makeReq();
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+      },
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
@@ -556,7 +609,11 @@ describe('agent generate turns', () => {
 
     const req = makeReq();
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+      },
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
@@ -573,7 +630,11 @@ describe('agent generate turns', () => {
 
     const req = makeReq();
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+      },
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
@@ -588,7 +649,12 @@ describe('agent generate turns', () => {
     const access = vi.fn(() => false);
     const req = makeReq(null);
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help', access },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+        access,
+      },
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
@@ -601,7 +667,12 @@ describe('agent generate turns', () => {
   it('checks agent access before resolving the chat when overrideAccess is false', async () => {
     const req = makeReq();
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help', access: () => false },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+        access: () => false,
+      },
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
@@ -616,7 +687,12 @@ describe('agent client tool gate', () => {
   it('withholds client tools from callers that cannot render them', async () => {
     const req = makeReq();
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help', tools: [lookup, question] },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+        tools: [lookup, question],
+      },
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
@@ -628,7 +704,12 @@ describe('agent client tool gate', () => {
   it('activates client tools for the kinds the caller renders', async () => {
     const req = makeReq();
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help', tools: [lookup, question] },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+        tools: [lookup, question],
+      },
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
@@ -643,7 +724,12 @@ describe('agent client tool gate', () => {
   it('leaves tool selection alone for agents without client tools', async () => {
     const req = makeReq();
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help', tools: [lookup] },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+        tools: [lookup],
+      },
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
@@ -656,7 +742,12 @@ describe('agent client tool gate', () => {
   it('skips server tools called in the same step as a client tool', async () => {
     const req = makeReq();
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help', tools: [lookup, question] },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+        tools: [lookup, question],
+      },
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
@@ -706,7 +797,11 @@ describe('agent steer messages', () => {
 
     const req = makeReq();
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+      },
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
@@ -731,7 +826,11 @@ describe('agent steer messages', () => {
   it('keeps the messages unchanged when no steer message is waiting', async () => {
     const req = makeReq();
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+      },
       makeDeps(makeConfig(emptyHooks()), req),
     );
 
@@ -747,7 +846,11 @@ describe('agent steer messages', () => {
   it('does not steer runs without a chat', async () => {
     const req = makeReq();
     const agent = createAgentInstance(
-      { slug: 'support', model: 'openai/test', instructions: 'Help' },
+      {
+        slug: 'support',
+        model: { default: 'openai/test', options: ['openai/test'] },
+        instructions: 'Help',
+      },
       makeDeps(makeConfig(emptyHooks()), req),
     );
 

@@ -166,7 +166,7 @@ function setup({
   doStream = async () => ({ stream: modelStream(response()) }),
   doGenerate,
   model: agentModel = 'openai/test' as AgentModelId,
-  allowModels,
+  options = [],
   tools,
 }: {
   access?: AgentAccess;
@@ -175,7 +175,7 @@ function setup({
   doStream?: MockLanguageModelV4['doStream'];
   doGenerate?: MockLanguageModelV4['doGenerate'];
   model?: AgentModelId;
-  allowModels?: AgentModelId[];
+  options?: readonly AgentModelId[];
   tools?: AnyTool[];
 } = {}) {
   const calls: Array<{
@@ -285,7 +285,13 @@ function setup({
   } as unknown as FrogBotRequest;
 
   const agent = createAgentInstance(
-    { slug: 'support', instructions: 'Help', model: agentModel, allowModels, access, tools },
+    {
+      slug: 'support',
+      instructions: 'Help',
+      model: { default: agentModel, options: [...new Set([agentModel, ...options])] },
+      access,
+      tools,
+    },
     {
       gateway: {
         chatModel,
@@ -822,7 +828,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
   it('rejects a model blocked for the turn user before any model call', async () => {
     const { agent, calls, finish, req } = setup({
       model: 'local/thinker',
-      allowModels: ['local/writer'],
+      options: ['local/writer'],
       user: { id: 'user-1', modelAccess: 'selected', models: ['local/writer'] },
     });
 
@@ -844,7 +850,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
   it('stops at the next step when a steer model is blocked for the turn author', async () => {
     const { agent, calls, req } = setup({
       model: 'local/thinker',
-      allowModels: ['local/writer'],
+      options: ['local/writer'],
       user: { id: 'user-1', modelAccess: 'selected', models: ['local/thinker'] },
       tools: [lookup],
       doStream: toolLoopStream(),
@@ -862,11 +868,8 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
       options: { req, chatId: 'chat-1' },
     });
 
-    const errors: unknown[] = [];
-
-    for await (const part of result.fullStream) {
-      if (part.type === 'error') errors.push(part.error);
-    }
+    const parts = await Array.fromAsync(result.fullStream);
+    const errors = parts.filter((part) => part.type === 'error').map((part) => part.error);
 
     expect(errors).toEqual([
       expect.objectContaining({
@@ -880,7 +883,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
   it('runs and persists the user fallback when the turn names no model', async () => {
     const { agent, calls, messages, req } = setup({
       model: 'local/thinker',
-      allowModels: ['local/writer'],
+      options: ['local/writer'],
       user: { id: 'user-1', modelAccess: 'selected', models: ['local/writer'] },
     });
 
@@ -897,7 +900,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
   it('runs and persists the agent default when the turn has no user', async () => {
     const { agent, calls, chat, messages, req } = setup({
       model: 'local/thinker',
-      allowModels: ['local/writer'],
+      options: ['local/writer'],
       user: null,
     });
 
@@ -945,7 +948,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
 
   it('sends the selected model and variant on every step of a generated tool loop', async () => {
     const { agent, calls, req } = setup({
-      allowModels: ['local/writer'],
+      options: ['local/writer'],
       tools: [lookup],
       doGenerate: toolLoopGenerate(),
     });
@@ -981,7 +984,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
   it('switches to a steer message model and variant from the next step', async () => {
     const { agent, calls, req } = setup({
       model: 'local/thinker',
-      allowModels: ['local/writer'],
+      options: ['local/writer'],
       tools: [lookup],
       doStream: toolLoopStream(),
     });
@@ -1033,39 +1036,42 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
     ]);
   });
 
-  it('stops before the next model call when a steer message selection is unavailable', async () => {
-    const { agent, calls, req } = setup({
-      model: 'local/thinker',
-      tools: [lookup],
-      doStream: toolLoopStream(),
-    });
+  it.each([
+    [{ reasoning: 'max' }, "Reasoning option 'max' is not available for model 'local/thinker'"],
+    [{ model: 'local/writer' }, "Model 'local/writer' is not allowed for agent 'support'"],
+  ] as const)(
+    'stops before the next model call when steer selection %o is unavailable',
+    async (selection, message) => {
+      const { agent, calls, req } = setup({
+        model: 'local/thinker',
+        tools: [lookup],
+        doStream: toolLoopStream(),
+      });
 
-    turn.promoteSteerMessages.mockResolvedValueOnce([]).mockResolvedValueOnce([
-      {
-        message: { id: 'steer-1', role: 'user', parts: [{ type: 'text', text: 'Harder' }] },
-        selection: { reasoning: 'max' },
-      },
-    ]);
+      turn.promoteSteerMessages.mockResolvedValueOnce([]).mockResolvedValueOnce([
+        {
+          message: { id: 'steer-1', role: 'user', parts: [{ type: 'text', text: 'Harder' }] },
+          selection,
+        },
+      ]);
 
-    const result = await agent.aiAgent.stream({
-      prompt: 'Find it',
-      options: { req, chatId: 'chat-1' },
-    });
+      const result = await agent.aiAgent.stream({
+        prompt: 'Find it',
+        options: { req, chatId: 'chat-1' },
+      });
 
-    const errors: unknown[] = [];
+      const parts = await Array.fromAsync(result.fullStream);
+      const errors = parts.filter((part) => part.type === 'error').map((part) => part.error);
 
-    for await (const part of result.fullStream) {
-      if (part.type === 'error') errors.push(part.error);
-    }
-
-    expect(errors).toEqual([
-      expect.objectContaining({
-        code: 'selection-unavailable',
-        message: "Reasoning option 'max' is not available for model 'local/thinker'",
-      }),
-    ]);
-    expect(calls).toHaveLength(1);
-  });
+      expect(errors).toEqual([
+        expect.objectContaining({
+          code: 'selection-unavailable',
+          message,
+        }),
+      ]);
+      expect(calls).toHaveLength(1);
+    },
+  );
 
   it('rejects an unavailable selection before any model call', async () => {
     const { agent, calls, finish, req } = setup({ model: 'local/thinker' });
@@ -1088,7 +1094,7 @@ describe('agent model and reasoning selection with the installed AI SDK', () => 
   it('logs usage against the model that ran each step', async () => {
     const { agent, frogbot, req } = setup({
       model: 'local/thinker',
-      allowModels: ['local/writer'],
+      options: ['local/writer'],
       tools: [lookup],
       doStream: toolLoopStream(),
     });

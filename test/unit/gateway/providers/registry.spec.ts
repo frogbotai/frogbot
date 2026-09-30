@@ -193,6 +193,47 @@ describe('resolveProvider', () => {
     ).toThrow(ModelUnsupportedOperationError);
   });
 
+  it.each([
+    'google/gemini-embedding-001',
+    'google/gemini-embedding-2',
+    'mistral/mistral-embed',
+    'openai/text-embedding-3-small',
+    'openai/text-embedding-3-large',
+    'openai/text-embedding-ada-002',
+  ])('resolves embeddings for corrected catalog model %s', (modelId) => {
+    const providerName = modelId.slice(0, modelId.indexOf('/'));
+
+    const result = resolveProvider({
+      modelId,
+      operation: 'embeddings',
+      providers: { [providerName]: mockProvider } as ProviderRegistry,
+      models: DEFAULT_MODEL_CATALOG,
+    });
+
+    expect(result.modelName).toBe(modelId.slice(providerName.length + 1));
+    expect(result.instance).toBe(mockProvider);
+  });
+
+  it.each([
+    'google/gemini-embedding-001',
+    'google/gemini-embedding-2',
+    'mistral/mistral-embed',
+    'openai/text-embedding-3-small',
+    'openai/text-embedding-3-large',
+    'openai/text-embedding-ada-002',
+  ])('rejects chat for corrected catalog embedding model %s', (modelId) => {
+    const providerName = modelId.slice(0, modelId.indexOf('/'));
+
+    expect(() =>
+      resolveProvider({
+        modelId,
+        operation: 'chat.completions',
+        providers: { [providerName]: mockProvider } as ProviderRegistry,
+        models: DEFAULT_MODEL_CATALOG,
+      }),
+    ).toThrow(ModelUnsupportedOperationError);
+  });
+
   it('rejects models not in the catalog when no allowlist is configured', () => {
     const catalog = defineModelCatalog();
     expect(() =>

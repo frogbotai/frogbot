@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
+import { catalog } from '../../../../packages/frogbot/src/ai/catalog.js';
 import {
   buildGeneratedTypesFooter,
   stripInternalCollections,
@@ -366,6 +367,22 @@ describe('frogbot generate:types', () => {
 
       expect(output).toContain("'openai/gpt-4o'");
       expect(output).not.toContain('anthropic/claude-sonnet-4-5');
+    });
+
+    it('emits the complete Google model union after catalog mode corrections', async () => {
+      const expected = catalog
+        .filter(({ provider }) => provider === 'google')
+        .map(({ id }) => id)
+        .sort();
+
+      const output = await generateModelTypes({ providers: { google: true } });
+      const union = output.match(/models:\s*([\s\S]*?);/)?.[1] ?? '';
+      const models = [...union.matchAll(/'([^']+)'/g)].map((match) => match[1]);
+
+      expect(models).toEqual(expected);
+      expect(models).toContain('google/gemini-3.5-transcribe');
+      expect(models).toContain('google/gemini-embedding-001');
+      expect(models).toContain('google/gemini-embedding-2');
     });
 
     it('wraps model unions that exceed the print width', async () => {

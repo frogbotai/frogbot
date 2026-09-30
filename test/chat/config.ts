@@ -1,4 +1,5 @@
 import type { CollectionConfig, Tool } from 'frogbot';
+import { general } from 'frogbot/agents';
 import { question, todoTools } from 'frogbot/tools';
 import { z } from 'zod';
 
@@ -49,9 +50,15 @@ const Chats: CollectionConfig = {
   fields: [{ name: 'sharedWith', type: 'relationship', relationTo: usersSlug, hasMany: true }],
 };
 
+const generalAgent = general({ tools: [...todoTools] });
+
+export const generalAgentSlug = generalAgent.slug;
+export const wildcardAgentSlug = 'wildcard';
+
 export default await buildTestConfig({
   collections: [Users, Chats],
   ai: {
+    defaultModel: 'test/gpt-4.1-mini',
     providers: {
       test: {
         type: 'openai-compatible',
@@ -79,11 +86,18 @@ export default await buildTestConfig({
     },
     {
       slug: questionAgentSlug,
-      model: 'test/gpt-4.1-mini',
-      allowModels: ['test/thinker', 'test/writer'],
+      model: { default: 'test/gpt-4.1-mini', options: ['test/thinker', 'test/writer'] },
       instructions: 'Ask before acting.',
       access: () => true,
       tools: [question, lookup],
     },
+    {
+      slug: wildcardAgentSlug,
+      model: { default: 'test/gpt-4.1-mini', options: '*' },
+      instructions: 'Help the user.',
+      access: () => true,
+      tools: [...todoTools],
+    },
+    generalAgent,
   ],
 });

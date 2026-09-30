@@ -51,6 +51,61 @@
       "meta.llama3-3-70b-instruct-v1:0"
     ]
   },
+  "google": {
+    "correct": [
+      {
+        "id": "google/gemini-embedding-001",
+        "modalities": { "input": ["text"], "output": ["embedding"] },
+        "operations": ["embeddings"]
+      },
+      {
+        "id": "google/gemini-embedding-2",
+        "modalities": { "input": ["text", "image", "audio", "video"], "output": ["embedding"] },
+        "operations": ["embeddings"]
+      }
+    ],
+    "add": [
+      {
+        "id": "google/gemini-3.5-transcribe",
+        "name": "Gemini 3.5 Transcribe",
+        "created": "2026-08-26",
+        "modalities": { "input": ["audio"], "output": ["text"] },
+        "operations": ["audio.transcriptions"],
+        "capabilities": { "streaming": true },
+        "context": { "input": 0, "output": 0 },
+        "cost": { "input": 2, "output": 12 },
+        "providers": ["google"]
+      }
+    ]
+  },
+  "mistral": {
+    "correct": [
+      {
+        "id": "mistral/mistral-embed",
+        "modalities": { "input": ["text"], "output": ["embedding"] },
+        "operations": ["embeddings"]
+      }
+    ]
+  },
+  "openai": {
+    "correct": [
+      {
+        "id": "openai/text-embedding-3-small",
+        "modalities": { "input": ["text"], "output": ["embedding"] },
+        "operations": ["embeddings"]
+      },
+      {
+        "id": "openai/text-embedding-3-large",
+        "modalities": { "input": ["text"], "output": ["embedding"] },
+        "operations": ["embeddings"]
+      },
+      {
+        "id": "openai/text-embedding-ada-002",
+        "modalities": { "input": ["text"], "output": ["embedding"] },
+        "operations": ["embeddings"]
+      }
+    ]
+  },
   "typesafe-ai": {
     "add": [
       {
