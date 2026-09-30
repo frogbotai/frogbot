@@ -1,11 +1,11 @@
-import type { AfterChangeHook, CollectionConfig } from 'frogbot';
+import type { CollectionAfterChangeHook, CollectionConfig } from 'frogbot';
 
 export function withNotesAfterChange({
   collection,
   notesAfterChange,
 }: {
   collection: CollectionConfig;
-  notesAfterChange: AfterChangeHook;
+  notesAfterChange: CollectionAfterChangeHook;
 }): CollectionConfig {
   return {
     ...collection,

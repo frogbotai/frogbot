@@ -1,4 +1,9 @@
-import type { AfterChangeHook, AfterDeleteHook, CollectionConfig, DateField } from 'frogbot';
+import type {
+  CollectionAfterChangeHook,
+  CollectionAfterDeleteHook,
+  CollectionConfig,
+  DateField,
+} from 'frogbot';
 import { revalidatePath } from 'next/cache';
 
 import type { Post } from './core-context.js';
@@ -35,7 +40,7 @@ export const Posts: CollectionConfig = {
   ],
 };
 
-export const preserveDocument: AfterChangeHook<Post> = ({ doc }) => {
+export const preserveDocument: CollectionAfterChangeHook<Post> = ({ doc }) => {
   return doc;
 };
 
@@ -133,7 +138,7 @@ export type RevalidatedPage = {
   _status?: 'draft' | 'published' | null;
 };
 
-export const revalidatePage: AfterChangeHook<RevalidatedPage> = ({
+export const revalidatePage: CollectionAfterChangeHook<RevalidatedPage> = ({
   doc,
   previousDoc,
   req: { frogbot, context },
@@ -161,7 +166,10 @@ export const revalidatePage: AfterChangeHook<RevalidatedPage> = ({
   return doc;
 };
 
-export const revalidateDelete: AfterDeleteHook<RevalidatedPage> = ({ doc, req: { context } }) => {
+export const revalidateDelete: CollectionAfterDeleteHook<RevalidatedPage> = ({
+  doc,
+  req: { context },
+}) => {
   if (context.disableRevalidate) return doc;
 
   if (doc.slug) {

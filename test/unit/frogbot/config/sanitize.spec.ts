@@ -1,9 +1,10 @@
-import { buildConfig as payloadBuildConfig, MissingEditorProp } from 'payload';
+import { buildConfig as payloadBuildConfig, meOperation, MissingEditorProp } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { general } from '../../../../packages/frogbot/src/agents/presets/general.js';
 import type { CollectionConfig } from '../../../../packages/frogbot/src/collections/config/types.js';
+import { buildConfig } from '../../../../packages/frogbot/src/config/build.js';
 import { compileCollectionViews } from '../../../../packages/frogbot/src/config/collectionViews.js';
 import type { FrogBotConfig } from '../../../../packages/frogbot/src/config/types.js';
 import type { FrogBot } from '../../../../packages/frogbot/src/frogbot.js';
@@ -760,6 +761,169 @@ describe('frogbot sanitize', () => {
     const hooks = users.hooks?.beforeOperation ?? [];
     expect(hooks.length).toBe(2);
     expect(hooks[1]).toBe(existingHook);
+  });
+
+  it('prepends the FrogBot setup hook to afterMe, afterLogout, and afterError when declared', async () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    const result = sanitize(
+      makeConfig({
+        collections: [
+          {
+            slug: 'users',
+            auth: true,
+            fields: [],
+            hooks: {
+              afterMe: [first, second],
+              afterLogout: [first, second],
+              afterError: [first, second],
+            },
+          },
+        ],
+      }),
+    );
+
+    const payloadConfig = await result._internal.payloadConfig;
+    const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
+    const payload = makePayload(payloadConfig);
+    const frogbot = { agents: {} };
+
+    registerFrogBotInstance(payload, frogbot as unknown as FrogBot);
+
+    for (const phase of ['afterMe', 'afterLogout', 'afterError'] as const) {
+      const hooks = users.hooks[phase]!;
+      const req = { payload };
+
+      const setupResult = await hooks[0]!({ req } as never);
+
+      expect(hooks).toHaveLength(3);
+      expect(hooks[1]).toBe(first);
+      expect(hooks[2]).toBe(second);
+      expect(req).toHaveProperty('frogbot', frogbot);
+      expect(setupResult).toBeUndefined();
+    }
+
+    expect(first).not.toHaveBeenCalled();
+    expect(second).not.toHaveBeenCalled();
+  });
+
+  it('leaves afterMe, afterLogout, and afterError unset when no hooks are declared', async () => {
+    const result = sanitize(makeConfig());
+    const payloadConfig = await result._internal.payloadConfig;
+    const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
+
+    expect(users.hooks.afterMe).toBeUndefined();
+    expect(users.hooks.afterLogout).toBeUndefined();
+    expect(users.hooks.afterError).toBeUndefined();
+  });
+
+  it('sets up an afterMe hook appended by a plugin before the hook runs', async () => {
+    const afterMe = vi.fn(({ req, response }) => {
+      expect(req.frogbot).toBe(frogbot);
+
+      return response;
+    });
+    const result = await buildConfig(
+      makeConfig({
+        plugins: [
+          (config) => ({
+            ...config,
+            collections: config.collections.map((collection) => ({
+              ...collection,
+              hooks: {
+                ...collection.hooks,
+                afterMe: [...(collection.hooks?.afterMe ?? []), afterMe],
+              },
+            })),
+          }),
+        ],
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
+    const payload = makePayload(payloadConfig);
+    const frogbot = { agents: {} };
+
+    registerFrogBotInstance(payload, frogbot as unknown as FrogBot);
+
+    const response = await meOperation({
+      collection: { config: users },
+      req: { payload, user: null, context: {} },
+    } as never);
+
+    expect(users.hooks.afterMe).toHaveLength(2);
+    expect(users.hooks.afterMe![1]).toBe(afterMe);
+    expect(afterMe).toHaveBeenCalledOnce();
+    expect(response).toEqual({ user: null });
+  });
+
+  it('reproduces missing FrogBot in anonymous afterMe when only the setup hook is removed', async () => {
+    const observed: unknown[] = [];
+    const result = sanitize(
+      makeConfig({
+        collections: [
+          {
+            slug: 'users',
+            auth: true,
+            fields: [],
+            hooks: {
+              afterMe: [({ req }) => void observed.push(req.frogbot)],
+            },
+          },
+        ],
+      }),
+    );
+    const payloadConfig = await result._internal.payloadConfig;
+    const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
+    const payload = makePayload(payloadConfig);
+    const frogbot = { agents: {} };
+
+    registerFrogBotInstance(payload, frogbot as unknown as FrogBot);
+
+    const withoutSetup = {
+      ...users,
+      hooks: { ...users.hooks, afterMe: users.hooks.afterMe!.slice(1) },
+    };
+
+    const before = await meOperation({
+      collection: { config: withoutSetup },
+      req: { payload, user: null, context: {} },
+    } as never);
+    const after = await meOperation({
+      collection: { config: users },
+      req: { payload, user: null, context: {} },
+    } as never);
+
+    expect(before).toEqual({ user: null });
+    expect(after).toEqual(before);
+    expect(observed).toEqual([undefined, frogbot]);
+  });
+
+  it('leaves empty afterMe, afterLogout, and afterError arrays unchanged', async () => {
+    const hooks = { afterMe: [], afterLogout: [], afterError: [] };
+    const result = sanitize(
+      makeConfig({ collections: [{ slug: 'users', auth: true, fields: [], hooks }] }),
+    );
+
+    const payloadConfig = await result._internal.payloadConfig;
+    const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
+
+    expect(users.hooks.afterMe).toBe(hooks.afterMe);
+    expect(users.hooks.afterLogout).toBe(hooks.afterLogout);
+    expect(users.hooks.afterError).toBe(hooks.afterError);
+  });
+
+  it('the setup hook skips a request without payload', async () => {
+    const onInit = vi.fn();
+    const result = sanitize(makeConfig({ onInit }));
+    const payloadConfig = await result._internal.payloadConfig;
+    const users = payloadConfig.collections.find(({ slug }) => slug === 'users')!;
+    const req = {};
+
+    await expect(users.hooks.beforeOperation[0]!({ req } as never)).resolves.toBeUndefined();
+
+    expect(req).not.toHaveProperty('frogbot');
+    expect(onInit).not.toHaveBeenCalled();
   });
 
   it('attaches req.frogbot before a collection access function runs', async () => {

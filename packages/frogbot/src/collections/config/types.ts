@@ -9,9 +9,27 @@
 // type name or import path.
 
 import type {
+  AccessArgs as PayloadAccessArgs,
+  CollectionAfterChangeHook as PayloadCollectionAfterChangeHook,
+  CollectionAfterDeleteHook as PayloadCollectionAfterDeleteHook,
+  CollectionAfterErrorHook as PayloadCollectionAfterErrorHook,
+  CollectionAfterForgotPasswordHook as PayloadCollectionAfterForgotPasswordHook,
+  CollectionAfterLoginHook as PayloadCollectionAfterLoginHook,
+  CollectionAfterLogoutHook as PayloadCollectionAfterLogoutHook,
+  CollectionAfterMeHook as PayloadCollectionAfterMeHook,
+  CollectionAfterOperationHook as PayloadCollectionAfterOperationHook,
+  CollectionAfterReadHook as PayloadCollectionAfterReadHook,
+  CollectionAfterRefreshHook as PayloadCollectionAfterRefreshHook,
+  CollectionBeforeChangeHook as PayloadCollectionBeforeChangeHook,
+  CollectionBeforeDeleteHook as PayloadCollectionBeforeDeleteHook,
+  CollectionBeforeLoginHook as PayloadCollectionBeforeLoginHook,
+  CollectionBeforeOperationHook as PayloadCollectionBeforeOperationHook,
+  CollectionBeforeReadHook as PayloadCollectionBeforeReadHook,
+  CollectionBeforeValidateHook as PayloadCollectionBeforeValidateHook,
+  CollectionMeHook as PayloadCollectionMeHook,
+  CollectionRefreshHook as PayloadCollectionRefreshHook,
+  CollectionSlug as PayloadCollectionSlug,
   FieldAccessArgs as PayloadFieldAccessArgs,
-  RequestContext,
-  SanitizedCollectionConfig,
   TypeWithID,
 } from 'payload';
 
@@ -135,23 +153,18 @@ export type Collection = {
 
 export type AccessResult = boolean | Where;
 
-export type AccessArgs<TData = any> = {
-  data?: TData;
-  id?: number | string;
-  isReadingStaticFile?: boolean;
-  req: FrogBotRequest;
-};
+export type AccessArgs<TData = any> = FrogBotArgs<PayloadAccessArgs<TData>>;
 
 export type Access<TData = any> = (args: AccessArgs<TData>) => AccessResult | Promise<AccessResult>;
 
+type PayloadCollectionAccess = NonNullable<PayloadCollectionConfig['access']>;
+
+type PayloadAdminAccess = NonNullable<PayloadCollectionAccess['admin']>;
+
 export type CollectionAccess = {
-  admin?: (args: { req: FrogBotRequest }) => boolean | Promise<boolean>;
-  create?: Access;
-  delete?: Access;
-  read?: Access;
-  readVersions?: Access;
-  unlock?: Access;
-  update?: Access;
+  [K in keyof PayloadCollectionAccess]?: K extends 'admin'
+    ? (args: FrogBotArgs<Parameters<PayloadAdminAccess>[0]>) => ReturnType<PayloadAdminAccess>
+    : Access;
 };
 
 // ── Field-level access ────────────────────────────────────────────────
@@ -170,124 +183,112 @@ export type FieldAccess<TData extends TypeWithID = any, TSiblingData = any> = (
 // `PayloadRequest`. Users write hooks against these types; at runtime,
 // sanitize() wraps them so Payload sees PayloadRequest-compatible functions.
 
-type CreateOrUpdateOperation = 'create' | 'update';
+type SwapReq<T> = T extends unknown
+  ? 'req' extends keyof T
+    ? undefined extends T['req']
+      ? Omit<T, 'req'> & { req?: FrogBotRequest }
+      : FrogBotArgs<T>
+    : T
+  : never;
 
-export type BeforeValidateHook<T extends TypeWithID = any> = (args: {
-  collection: SanitizedCollectionConfig;
-  context: RequestContext;
-  data?: Partial<T>;
-  operation: CreateOrUpdateOperation;
-  originalDoc?: T;
-  req: FrogBotRequest;
-}) => any;
+type SwapOperationArgs<T> = T extends { args: infer A }
+  ? Omit<SwapReq<T>, 'args'> & { args: SwapReq<A> }
+  : never;
 
-export type BeforeChangeHook<T extends TypeWithID = any> = (args: {
-  collection: SanitizedCollectionConfig;
-  context: RequestContext;
-  data: Partial<T>;
-  operation: CreateOrUpdateOperation;
-  originalDoc?: T;
-  req: FrogBotRequest;
-}) => any;
+export type CollectionBeforeOperationHook<TSlug extends PayloadCollectionSlug = string> = (
+  args: SwapOperationArgs<Parameters<PayloadCollectionBeforeOperationHook<TSlug>>[0]>,
+) =>
+  | SwapReq<Exclude<Awaited<ReturnType<PayloadCollectionBeforeOperationHook<TSlug>>>, void>>
+  | void
+  | Promise<SwapReq<
+      Exclude<Awaited<ReturnType<PayloadCollectionBeforeOperationHook<TSlug>>>, void>
+    > | void>;
 
-export type AfterChangeHook<T extends TypeWithID = any> = (args: {
-  collection: SanitizedCollectionConfig;
-  context: RequestContext;
-  data: Partial<T>;
-  doc: T;
-  operation: CreateOrUpdateOperation;
-  overrideAccess?: boolean;
-  previousDoc: T;
-  req: FrogBotRequest;
-}) => any;
+export type CollectionBeforeValidateHook<T extends TypeWithID = any> = (
+  args: FrogBotArgs<Parameters<PayloadCollectionBeforeValidateHook<T>>[0]>,
+) => ReturnType<PayloadCollectionBeforeValidateHook<T>>;
 
-export type BeforeReadHook<T extends TypeWithID = any> = (args: {
-  collection: SanitizedCollectionConfig;
-  context: RequestContext;
-  doc: T;
-  overrideAccess?: boolean;
-  query: { [key: string]: any };
-  req: FrogBotRequest;
-}) => any;
+export type CollectionBeforeChangeHook<T extends TypeWithID = any> = (
+  args: FrogBotArgs<Parameters<PayloadCollectionBeforeChangeHook<T>>[0]>,
+) => ReturnType<PayloadCollectionBeforeChangeHook<T>>;
 
-export type AfterReadHook<T extends TypeWithID = any> = (args: {
-  collection: SanitizedCollectionConfig;
-  context: RequestContext;
-  doc: T;
-  findMany?: boolean;
-  overrideAccess?: boolean;
-  query?: { [key: string]: any };
-  req: FrogBotRequest;
-}) => any;
+export type CollectionAfterChangeHook<T extends TypeWithID = any> = (
+  args: FrogBotArgs<Parameters<PayloadCollectionAfterChangeHook<T>>[0]>,
+) => ReturnType<PayloadCollectionAfterChangeHook<T>>;
 
-export type BeforeDeleteHook = (args: {
-  collection: SanitizedCollectionConfig;
-  context: RequestContext;
-  id: number | string;
-  req: FrogBotRequest;
-}) => any;
+export type CollectionBeforeReadHook<T extends TypeWithID = any> = (
+  args: FrogBotArgs<Parameters<PayloadCollectionBeforeReadHook<T>>[0]>,
+) => ReturnType<PayloadCollectionBeforeReadHook<T>>;
 
-export type AfterDeleteHook<T extends TypeWithID = any> = (args: {
-  collection: SanitizedCollectionConfig;
-  context: RequestContext;
-  doc: T;
-  id: number | string;
-  req: FrogBotRequest;
-}) => any;
+export type CollectionAfterReadHook<T extends TypeWithID = any> = (
+  args: FrogBotArgs<Parameters<PayloadCollectionAfterReadHook<T>>[0]>,
+) => ReturnType<PayloadCollectionAfterReadHook<T>>;
 
-// ── Auth hooks ────────────────────────────────────────────────────────
+export type CollectionBeforeDeleteHook = (
+  args: FrogBotArgs<Parameters<PayloadCollectionBeforeDeleteHook>[0]>,
+) => ReturnType<PayloadCollectionBeforeDeleteHook>;
 
-export type BeforeLoginHook<T extends TypeWithID = any> = (args: {
-  collection: SanitizedCollectionConfig;
-  context: RequestContext;
-  req: FrogBotRequest;
-  user: T;
-}) => any;
+export type CollectionAfterDeleteHook<T extends TypeWithID = any> = (
+  args: FrogBotArgs<Parameters<PayloadCollectionAfterDeleteHook<T>>[0]>,
+) => ReturnType<PayloadCollectionAfterDeleteHook<T>>;
 
-export type AfterLoginHook<T extends TypeWithID = any> = (args: {
-  collection: SanitizedCollectionConfig;
-  context: RequestContext;
-  req: FrogBotRequest;
-  token: string;
-  user: T;
-}) => any;
+export type CollectionAfterOperationHook<TSlug extends PayloadCollectionSlug = string> = (
+  args: SwapOperationArgs<Parameters<PayloadCollectionAfterOperationHook<TSlug>>[0]>,
+) => ReturnType<PayloadCollectionAfterOperationHook<TSlug>>;
 
-export type AfterLogoutHook<_T extends TypeWithID = any> = (args: {
-  collection: SanitizedCollectionConfig;
-  context: RequestContext;
-  req: FrogBotRequest;
-}) => any;
+export type CollectionBeforeLoginHook<T extends TypeWithID = any> = (
+  args: FrogBotArgs<Parameters<PayloadCollectionBeforeLoginHook<T>>[0]>,
+) => ReturnType<PayloadCollectionBeforeLoginHook<T>>;
 
-export type AfterForgotPasswordHook = (args: {
-  args: unknown;
-  collection: SanitizedCollectionConfig;
-  context: RequestContext;
-}) => any;
+export type CollectionAfterLoginHook<T extends TypeWithID = any> = (
+  args: FrogBotArgs<Parameters<PayloadCollectionAfterLoginHook<T>>[0]>,
+) => ReturnType<PayloadCollectionAfterLoginHook<T>>;
 
-export type RefreshHook<T extends TypeWithID = any> = (args: {
-  exp: number;
-  req: FrogBotRequest;
-  token: string;
-  user: T;
-}) => any;
+export type CollectionAfterLogoutHook<T extends TypeWithID = any> = (
+  args: FrogBotArgs<Parameters<PayloadCollectionAfterLogoutHook<T>>[0]>,
+) => ReturnType<PayloadCollectionAfterLogoutHook<T>>;
 
-export type MeHook<T extends TypeWithID = any> = (args: { req: FrogBotRequest; user: T }) => any;
+export type CollectionAfterMeHook<T extends TypeWithID = any> = (
+  args: FrogBotArgs<Parameters<PayloadCollectionAfterMeHook<T>>[0]>,
+) => ReturnType<PayloadCollectionAfterMeHook<T>>;
+
+export type CollectionRefreshHook<T extends TypeWithID = any> = (
+  args: SwapOperationArgs<Parameters<PayloadCollectionRefreshHook<T>>[0]>,
+) => ReturnType<PayloadCollectionRefreshHook<T>>;
+
+export type CollectionMeHook<T extends TypeWithID = any> = (
+  args: SwapOperationArgs<Parameters<PayloadCollectionMeHook<T>>[0]>,
+) => ReturnType<PayloadCollectionMeHook<T>>;
+
+export type CollectionAfterRefreshHook<T extends TypeWithID = any> = (
+  args: FrogBotArgs<Parameters<PayloadCollectionAfterRefreshHook<T>>[0]>,
+) => ReturnType<PayloadCollectionAfterRefreshHook<T>>;
+
+export type CollectionAfterErrorHook = (
+  args: FrogBotArgs<Parameters<PayloadCollectionAfterErrorHook>[0]>,
+) => ReturnType<PayloadCollectionAfterErrorHook>;
+
+export type CollectionAfterForgotPasswordHook = PayloadCollectionAfterForgotPasswordHook;
 
 export type CollectionHooks<T extends TypeWithID = any> = {
-  afterChange?: AfterChangeHook<T>[];
-  afterDelete?: AfterDeleteHook<T>[];
-  afterRead?: AfterReadHook<T>[];
-  beforeChange?: BeforeChangeHook<T>[];
-  beforeDelete?: BeforeDeleteHook[];
-  beforeRead?: BeforeReadHook<T>[];
-  beforeValidate?: BeforeValidateHook<T>[];
-  // Auth hooks (only relevant for auth-enabled collections)
-  afterLogin?: AfterLoginHook<T>[];
-  beforeLogin?: BeforeLoginHook<T>[];
-  afterLogout?: AfterLogoutHook<T>[];
-  afterForgotPassword?: AfterForgotPasswordHook[];
-  refresh?: RefreshHook<T>[];
-  me?: MeHook<T>[];
+  afterChange?: CollectionAfterChangeHook<T>[];
+  afterDelete?: CollectionAfterDeleteHook<T>[];
+  afterError?: CollectionAfterErrorHook[];
+  afterForgotPassword?: CollectionAfterForgotPasswordHook[];
+  afterLogin?: CollectionAfterLoginHook<T>[];
+  afterLogout?: CollectionAfterLogoutHook<T>[];
+  afterMe?: CollectionAfterMeHook<T>[];
+  afterOperation?: CollectionAfterOperationHook[];
+  afterRead?: CollectionAfterReadHook<T>[];
+  afterRefresh?: CollectionAfterRefreshHook<T>[];
+  beforeChange?: CollectionBeforeChangeHook<T>[];
+  beforeDelete?: CollectionBeforeDeleteHook[];
+  beforeLogin?: CollectionBeforeLoginHook<T>[];
+  beforeOperation?: CollectionBeforeOperationHook[];
+  beforeRead?: CollectionBeforeReadHook<T>[];
+  beforeValidate?: CollectionBeforeValidateHook<T>[];
+  me?: CollectionMeHook<T>[];
+  refresh?: CollectionRefreshHook<T>[];
 };
 
 /** Identifier accepted by ID-keyed operations. Mongo collections key by

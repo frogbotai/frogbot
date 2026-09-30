@@ -111,11 +111,11 @@ export const Posts: CollectionConfig = {
 ### Hook
 
 ```ts
-import type { BeforeChangeHook } from 'frogbot';
+import type { CollectionBeforeChangeHook } from 'frogbot';
 
 import type { Post } from '@/frogbot-types';
 
-export const setPublishedAt: BeforeChangeHook<Post> = ({ data, operation }) => {
+export const setPublishedAt: CollectionBeforeChangeHook<Post> = ({ data, operation }) => {
   if (operation !== 'update' || data.status !== 'published') return data;
 
   return {

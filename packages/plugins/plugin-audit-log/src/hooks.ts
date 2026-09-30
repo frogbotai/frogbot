@@ -1,4 +1,4 @@
-import type { AfterChangeHook, AfterDeleteHook } from 'frogbot';
+import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'frogbot';
 
 import { computeChanges } from './diff.js';
 import type { AuditHookOptions, AuditOperation } from './types.js';
@@ -7,6 +7,7 @@ type Document = Record<string, unknown> & { id: number | string };
 
 function requestMetadata(headers: Headers, trustProxy: boolean) {
   const forwarded = trustProxy ? headers.get('x-forwarded-for')?.split(',')[0]?.trim() : undefined;
+
   return {
     ip: forwarded || (trustProxy ? headers.get('x-real-ip') : undefined) || undefined,
     userAgent: headers.get('user-agent') || undefined,
@@ -18,14 +19,16 @@ function writeAudit(
   operation: AuditOperation,
   doc: Document,
   previousDoc: Document | undefined,
-  req: Parameters<AfterChangeHook<Document>>[0]['req'],
+  req: Parameters<CollectionAfterChangeHook<Document>>[0]['req'],
 ) {
   const user = req.user as
     (typeof req.user & { _strategy?: string; apiKeyId?: number | string }) | null;
+
   const snapshot =
     options.snapshot === 'always' || (options.snapshot === 'delete' && operation === 'delete')
       ? doc
       : undefined;
+
   void req.frogbot
     .create({
       collection: options.auditSlug as never,
@@ -51,17 +54,24 @@ function writeAudit(
     );
 }
 
-export function createAfterChangeHook(options: AuditHookOptions): AfterChangeHook<Document> {
+export function createAfterChangeHook(
+  options: AuditHookOptions,
+): CollectionAfterChangeHook<Document> {
   return ({ doc, operation, previousDoc, req }) => {
     if (!options.operations.has(operation)) return doc;
+
     writeAudit(options, operation, doc, operation === 'create' ? undefined : previousDoc, req);
+
     return doc;
   };
 }
 
-export function createAfterDeleteHook(options: AuditHookOptions): AfterDeleteHook<Document> {
+export function createAfterDeleteHook(
+  options: AuditHookOptions,
+): CollectionAfterDeleteHook<Document> {
   return ({ doc, req }) => {
     writeAudit(options, 'delete', doc, undefined, req);
+
     return doc;
   };
 }

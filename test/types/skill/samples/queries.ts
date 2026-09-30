@@ -1,4 +1,10 @@
-import type { AfterChangeHook, FrogBotInstance, FrogBotRequest, SelectType, Where } from 'frogbot';
+import type {
+  CollectionAfterChangeHook,
+  FrogBotInstance,
+  FrogBotRequest,
+  SelectType,
+  Where,
+} from 'frogbot';
 import { buildConfig, getFrogBot } from 'frogbot';
 
 import { createCoreConfig, type Post } from './core-context.js';
@@ -97,7 +103,7 @@ export async function accessControl({
   return posts;
 }
 
-export const createAuditEvent: AfterChangeHook<Post> = async ({ doc, req }) => {
+export const createAuditEvent: CollectionAfterChangeHook<Post> = async ({ doc, req }) => {
   await req.frogbot.create({
     collection: 'audit-events',
     data: { action: 'post-created', document: doc.id },

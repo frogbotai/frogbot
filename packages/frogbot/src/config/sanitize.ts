@@ -187,10 +187,12 @@ function wrapAuthStrategies({
   }));
 }
 
-async function bootstrapBeforeOperation(
+async function bootstrapFrogBot(
   args: { req: PayloadRequest },
   attachFrogBot: AttachFrogBot,
 ): Promise<void> {
+  if (!args.req.payload) return;
+
   await attachFrogBot(args.req);
 }
 
@@ -405,7 +407,9 @@ function sanitizeCollection(
 
   // Inject `req.frogbot` bootstrap as the first `beforeOperation`.
   const existingBeforeOp = (existingHooks.beforeOperation as unknown[] | undefined) ?? [];
-  out.hooks = {
+  const setupFrogBot = (args: { req: PayloadRequest }) => bootstrapFrogBot(args, attachFrogBot);
+
+  const hooks: Record<string, unknown[]> = {
     ...existingHooks,
     ...(orderFieldNames.length
       ? {
@@ -415,11 +419,18 @@ function sanitizeCollection(
           ],
         }
       : {}),
-    beforeOperation: [
-      (args: { req: PayloadRequest }) => bootstrapBeforeOperation(args, attachFrogBot),
-      ...existingBeforeOp,
-    ],
+    beforeOperation: [setupFrogBot, ...existingBeforeOp],
   };
+
+  for (const phase of ['afterMe', 'afterLogout', 'afterError']) {
+    const existing = existingHooks[phase];
+
+    if (existing?.length) {
+      hooks[phase] = [setupFrogBot, ...existing];
+    }
+  }
+
+  out.hooks = hooks;
 
   // Wrap per-collection custom endpoints.
   const searchEndpoints = search ? buildSearchEndpoints({ collection: c.slug }) : [];

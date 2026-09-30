@@ -3,5 +3,12 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["select.test-d.ts", "user.test-d.ts"]
+  "include": [
+    "select.test-d.ts",
+    "user.test-d.ts",
+    "hooks.test-d.ts",
+    "access.test-d.ts",
+    "endpoints.test-d.ts",
+    "parity.test-d.ts"
+  ]
 }

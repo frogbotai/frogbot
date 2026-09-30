@@ -59,19 +59,42 @@ On updates, `data` contains changed values and can omit the ID and unchanged fie
 
 ## Typed hooks
 
-FrogBot exports concise hook type names.
+FrogBot exports collection hook types with the `Collection` prefix.
 
 ```ts
-import type { AfterChangeHook } from 'frogbot';
+import type { CollectionAfterChangeHook } from 'frogbot';
 
 import type { Post } from '@/frogbot-types';
 
-export const preserveDocument: AfterChangeHook<Post> = ({ doc }) => {
+export const preserveDocument: CollectionAfterChangeHook<Post> = ({ doc }) => {
   return doc;
 };
 ```
 
-Other collection hook types include `BeforeValidateHook`, `BeforeChangeHook`, `BeforeReadHook`, `AfterReadHook`, `BeforeDeleteHook`, `AfterDeleteHook`, `BeforeLoginHook`, `AfterLoginHook`, `AfterLogoutHook`, `AfterForgotPasswordHook`, `RefreshHook`, and `MeHook`.
+All 18 collection hook types are:
+
+- `CollectionBeforeOperationHook`
+- `CollectionAfterOperationHook`
+- `CollectionBeforeValidateHook`
+- `CollectionBeforeChangeHook`
+- `CollectionAfterChangeHook`
+- `CollectionBeforeReadHook`
+- `CollectionAfterReadHook`
+- `CollectionBeforeDeleteHook`
+- `CollectionAfterDeleteHook`
+- `CollectionBeforeLoginHook`
+- `CollectionAfterLoginHook`
+- `CollectionAfterLogoutHook`
+- `CollectionAfterForgotPasswordHook`
+- `CollectionMeHook`
+- `CollectionAfterMeHook`
+- `CollectionRefreshHook`
+- `CollectionAfterRefreshHook`
+- `CollectionAfterErrorHook`
+
+`CollectionMeHook` and `CollectionRefreshHook` receive `{ args, user }`; access the request through `args.req`. `CollectionAfterForgotPasswordHook` has no `req` argument.
+
+The root configuration's `AfterErrorHook` is separate from `CollectionAfterErrorHook`.
 
 ## Field hooks
 
@@ -258,7 +281,11 @@ export const Users: CollectionConfig = {
 Register change and delete hooks on a versioned collection. Revalidate the current published route, plus the previous route when a page is unpublished or its slug changes. This example maps the `home` slug to `/`.
 
 ```ts
-import type { AfterChangeHook, AfterDeleteHook, CollectionConfig } from 'frogbot';
+import type {
+  CollectionAfterChangeHook,
+  CollectionAfterDeleteHook,
+  CollectionConfig,
+} from 'frogbot';
 import { revalidatePath } from 'next/cache';
 
 export type RevalidatedPage = {
@@ -267,7 +294,7 @@ export type RevalidatedPage = {
   _status?: 'draft' | 'published' | null;
 };
 
-export const revalidatePage: AfterChangeHook<RevalidatedPage> = ({
+export const revalidatePage: CollectionAfterChangeHook<RevalidatedPage> = ({
   doc,
   previousDoc,
   req: { frogbot, context },
@@ -295,7 +322,10 @@ export const revalidatePage: AfterChangeHook<RevalidatedPage> = ({
   return doc;
 };
 
-export const revalidateDelete: AfterDeleteHook<RevalidatedPage> = ({ doc, req: { context } }) => {
+export const revalidateDelete: CollectionAfterDeleteHook<RevalidatedPage> = ({
+  doc,
+  req: { context },
+}) => {
   if (context.disableRevalidate) return doc;
 
   if (doc.slug) {

@@ -9,7 +9,14 @@ import { clearAndSeed } from '../__helpers/shared/clearAndSeed';
 import {
   accessBooleanSlug,
   accessWhereSlug,
+  afterErrorStatusHeader,
+  afterMeResponse,
+  afterMeResponseHeader,
   afterOpSlug,
+  type AuthHookLogEntry,
+  authRequestIdentityHeader,
+  type AuthRequestIdentityLogEntry,
+  beforeOperationTitleHeader,
   contextFlowSlug,
   fieldAccessSlug,
   hookOrderSlug,
@@ -23,9 +30,17 @@ import {
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
+type HookFindResponse = {
+  docs: { id: string | number }[];
+  totalDocs: number;
+};
+
 let booted: BootedFrogBot;
 let clearHookLog: () => void;
 let getHookLog: () => string[];
+let clearAuthHookLog: () => void;
+let getAuthHookLog: () => AuthHookLogEntry[];
+let getAuthRequestIdentityLog: () => AuthRequestIdentityLogEntry[];
 
 describe('hooks-access', () => {
   beforeAll(async () => {
@@ -35,6 +50,9 @@ describe('hooks-access', () => {
     const configMod = await import('./config.js');
     clearHookLog = configMod.clearHookLog;
     getHookLog = () => configMod.hookLog;
+    clearAuthHookLog = configMod.clearAuthHookLog;
+    getAuthHookLog = () => configMod.authHookLog;
+    getAuthRequestIdentityLog = () => configMod.authRequestIdentityLog;
   });
 
   afterAll(async () => {
@@ -44,6 +62,7 @@ describe('hooks-access', () => {
   beforeEach(async () => {
     await clearAndSeed(booted.frogbot, 'empty');
     clearHookLog();
+    clearAuthHookLog();
   });
 
   it('attaches req.frogbot before REST collection access runs', async () => {
@@ -57,6 +76,34 @@ describe('hooks-access', () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   describe('hook lifecycle ordering', () => {
+    it('find uses the changed where returned by beforeOperation only for the scoped request', async () => {
+      const original = await booted.frogbot.create({
+        collection: hookOrderSlug,
+        data: { title: 'original' },
+      });
+      const redirected = await booted.frogbot.create({
+        collection: hookOrderSlug,
+        data: { title: 'redirected' },
+      });
+      const endpoint = `/api/${hookOrderSlug}?where[title][equals]=original`;
+
+      const baseline = await booted.restClient.get<HookFindResponse>(endpoint);
+      const scoped = await booted.restClient.get<HookFindResponse>(endpoint, {
+        headers: { [beforeOperationTitleHeader]: 'redirected' },
+      });
+      const unscoped = await booted.restClient.get<HookFindResponse>(endpoint);
+
+      expect(baseline.status).toBe(200);
+      expect(baseline.body.totalDocs).toBe(1);
+      expect(baseline.body.docs.map(({ id }) => id)).toEqual([original.id]);
+      expect(scoped.status).toBe(200);
+      expect(scoped.body.totalDocs).toBe(1);
+      expect(scoped.body.docs.map(({ id }) => id)).toEqual([redirected.id]);
+      expect(unscoped.status).toBe(200);
+      expect(unscoped.body.totalDocs).toBe(1);
+      expect(unscoped.body.docs.map(({ id }) => id)).toEqual([original.id]);
+    });
+
     it('create fires: beforeValidate -> beforeChange -> afterChange', async () => {
       await booted.frogbot.create({
         collection: hookOrderSlug,
@@ -631,6 +678,92 @@ describe('hooks-access', () => {
         overrideAccess: true,
       });
     }
+
+    it('anonymous GET /api/users/me runs afterMe with req.frogbot', async () => {
+      const response = await booted.restClient.get(`/api/${usersSlug}/me`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ user: null, message: 'Account' });
+      expect(getAuthHookLog()).toEqual([{ phase: 'afterMe', frogbot: 'function' }]);
+    });
+
+    it('anonymous POST /api/users/logout runs the collection afterError with req.frogbot', async () => {
+      const response = await booted.restClient.post(`/api/${usersSlug}/logout`);
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ errors: [{ message: 'No User' }] });
+      expect(getAuthHookLog()).toEqual([{ phase: 'afterError', frogbot: 'function' }]);
+    });
+
+    it('collection afterError overrides the anonymous logout status without losing the original error', async () => {
+      const response = await booted.restClient.post(`/api/${usersSlug}/logout`, undefined, {
+        headers: { [afterErrorStatusHeader]: 'true' },
+      });
+
+      expect(response.status).toBe(418);
+      expect(response.body).toEqual({ errors: [{ message: 'No User' }] });
+      expect(getAuthHookLog()).toEqual([{ phase: 'afterError', frogbot: 'function' }]);
+    });
+
+    it('authenticated /me preserves the FrogBot and unwrapped Payload instances across both setup hooks', async () => {
+      await createVerifiedUser();
+
+      const login = await booted.restClient.post<{ token: string }>(`/api/${usersSlug}/login`, {
+        email: testUserEmail,
+        password: testUserPassword,
+      });
+
+      const response = await booted.restClient.get<{ user: { email: string } }>(
+        `/api/${usersSlug}/me`,
+        {
+          headers: {
+            Authorization: `JWT ${login.body.token}`,
+            [authRequestIdentityHeader]: 'true',
+          },
+        },
+      );
+
+      expect(login.status).toBe(200);
+      expect(response.status).toBe(200);
+      expect(response.body.user.email).toBe(testUserEmail);
+      expect(getAuthHookLog()).toEqual([{ phase: 'afterMe', frogbot: 'function' }]);
+      expect(getAuthRequestIdentityLog()).toHaveLength(1);
+
+      const [entry] = getAuthRequestIdentityLog();
+
+      expect(entry.beforeOperation).toBeDefined();
+      expect(entry.beforeOperation?.frogbot).toBe(booted.frogbot);
+      expect(entry.afterMe.frogbot).toBe(entry.beforeOperation?.frogbot);
+      expect(entry.beforeOperation?.payload).toBe(booted.payload);
+      expect(entry.afterMe.payload).toBe(entry.beforeOperation?.payload);
+      expect(entry.afterMe.payload).not.toHaveProperty('frogbot');
+    });
+
+    it('authenticated POST /api/users/logout runs afterLogout with req.frogbot', async () => {
+      await createVerifiedUser();
+
+      const login = await booted.restClient.post<{ token: string }>(`/api/${usersSlug}/login`, {
+        email: testUserEmail,
+        password: testUserPassword,
+      });
+
+      const response = await booted.restClient.post(`/api/${usersSlug}/logout`, undefined, {
+        headers: { Authorization: `JWT ${login.body.token}` },
+      });
+
+      expect(login.status).toBe(200);
+      expect(response.status).toBe(200);
+      expect(getAuthHookLog()).toEqual([{ phase: 'afterLogout', frogbot: 'function' }]);
+    });
+
+    it('afterMe can still replace the /me response', async () => {
+      const response = await booted.restClient.get(`/api/${usersSlug}/me`, {
+        headers: { [afterMeResponseHeader]: 'true' },
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ ...afterMeResponse, message: 'Account' });
+    });
 
     it('login returns a token', async () => {
       await createVerifiedUser();

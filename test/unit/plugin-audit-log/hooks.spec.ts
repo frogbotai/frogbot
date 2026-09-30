@@ -1,4 +1,4 @@
-import type { AfterChangeHook, FrogBotRequest } from 'frogbot';
+import type { CollectionAfterChangeHook, FrogBotRequest } from 'frogbot';
 import { describe, expect, it, vi } from 'vitest';
 
 import { auditLogPlugin } from '../../../packages/plugins/plugin-audit-log/src/index.js';
@@ -11,8 +11,9 @@ async function hook(options: Parameters<typeof auditLogPlugin>[0] = {}) {
       { slug: 'posts', fields: [] },
     ],
   } as never);
+
   return result.collections.find((item) => item.slug === 'posts')?.hooks
-    ?.afterChange?.[0] as AfterChangeHook;
+    ?.afterChange?.[0] as CollectionAfterChangeHook;
 }
 
 function request(user: Record<string, unknown> | null = null) {
