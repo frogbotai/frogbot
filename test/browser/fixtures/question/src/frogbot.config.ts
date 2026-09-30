@@ -19,7 +19,10 @@ export default buildConfig({
   db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || 'file:./frogbot.db' } }),
   typescript: { autoGenerate: false },
   admin: { importMap: { autoGenerate: false } },
-  collections: [{ slug: usersSlug, auth: true, fields: [] }],
+  collections: [
+    { slug: usersSlug, auth: true, fields: [] },
+    { slug: messagesSlug, message: true, admin: { hidden: false }, fields: [] },
+  ],
   pieces: [
     definePiece({ slug: 'slack', label: 'Slack', actions: [] })({
       slug: channelChat.channelThread.account,

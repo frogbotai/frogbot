@@ -553,6 +553,48 @@ describe('chat writes: a chat is written only from its home', () => {
     });
   });
 
+  describe('REST message reads while Messages is hidden in the admin', () => {
+    it('registers the default messages collection as hidden in the admin', () => {
+      const collection = booted.payload.config.collections.find(
+        ({ slug }) => slug === messagesSlug,
+      );
+
+      expect(collection?.admin?.hidden).toBe(true);
+    });
+
+    it('GET /api/messages returns the caller’s messages while Messages is hidden in the admin', async () => {
+      const chat = await createWebChat(owner);
+
+      await request('POST', `/${messagesSlug}`, restMessage(chat, 'rest-read'), owner.headers);
+
+      const response = await request(
+        'GET',
+        `/${messagesSlug}?where[chat][equals]=${chat.id}`,
+        undefined,
+        owner.headers,
+      );
+
+      expect(response.status).toBe(200);
+      expect((response.body.docs as StoredMessage[]).map(({ id }) => id)).toEqual(['rest-read']);
+    });
+
+    it('GET /api/messages returns no messages from another user’s chat', async () => {
+      const chat = await createWebChat(owner);
+
+      await request('POST', `/${messagesSlug}`, restMessage(chat, 'rest-private'), owner.headers);
+
+      const response = await request(
+        'GET',
+        `/${messagesSlug}?where[chat][equals]=${chat.id}`,
+        undefined,
+        stranger.headers,
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.body.docs).toEqual([]);
+    });
+  });
+
   describe('REST chat writes', () => {
     it('PATCH /api/chats/:id keeps channel fields read-only while other fields stay editable', async () => {
       const threadId = nextThreadId();

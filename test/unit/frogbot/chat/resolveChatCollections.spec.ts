@@ -121,6 +121,28 @@ describe('resolveChatCollections', () => {
     expect(chat).toMatchObject({ relationTo: 'conversations' });
   });
 
+  it('an adopted message: true collection inherits the hidden admin default', () => {
+    const result = resolveChatCollections(make([{ slug: 'turns', message: true, fields: [] }]));
+
+    const turns = result.collections.find((c) => c.slug === 'turns');
+
+    expect(turns?.admin?.hidden).toBe(true);
+  });
+
+  it('admin.hidden: false on the message collection unhides it and keeps the default icon and list columns', () => {
+    const result = resolveChatCollections(
+      make([{ slug: 'messages', message: true, admin: { hidden: false }, fields: [] }]),
+    );
+
+    const messages = result.collections.find((c) => c.slug === 'messages');
+
+    expect(messages?.admin).toEqual({
+      hidden: false,
+      icon: 'bubble-chat',
+      views: [{ type: 'list', defaultFields: ['chat', 'role', 'createdAt'] }],
+    });
+  });
+
   it('wires the chats user relation to the derived user collection', () => {
     const result = resolveChatCollections(make([{ slug: 'members', auth: true, fields: [] }]));
     const chats = result.collections.find((c) => c.slug === 'chats');

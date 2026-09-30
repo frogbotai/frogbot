@@ -126,6 +126,10 @@ describe('defaultMessagesCollection', () => {
     expect(collection.admin).not.toHaveProperty('group');
   });
 
+  it('hides the collection from the admin by default', () => {
+    expect(collection.admin).toMatchObject({ hidden: true, icon: 'bubble-chat' });
+  });
+
   it('blocks direct writes to the usage group', async () => {
     const usage = collection.fields.find((f) => 'name' in f && f.name === 'usage') as {
       access?: { create?: FieldAccess; update?: FieldAccess };

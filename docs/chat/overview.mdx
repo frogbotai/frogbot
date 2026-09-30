@@ -20,7 +20,7 @@ FrogBot injects both collections when agents are configured and no collection cl
 | `chats` | `title`, `user`, `agent`, `lastMessageAt`, and for a chat started in a channel, `channel`, `externalId`, `channelKey`, and `channelThread` |
 | `messages` | Text `id`, `chat`, `role`, `parts`, `metadata`, `usage`, `status`, `delivery`, `model`, `reasoning`, `author`, `settlements`, `version` |
 
-Chat and message collections use soft deletion and appear under **Collections** in the admin panel. Access is owner-scoped through the chat's `user` relationship, and a channel chat is written only from its channel. See [who can write a chat](#who-can-write-a-chat).
+Chat and message collections use soft deletion. Chats appear under **Collections** in the admin panel, and Messages is hidden from the admin by default (see [show messages in the admin](#show-messages-in-the-admin)). Access is owner-scoped through the chat's `user` relationship, and a channel chat is written only from its channel. See [who can write a chat](#who-can-write-a-chat).
 
 Messages store the AI SDK `UIMessage.parts` array. Tool calls, tool results, reasoning, and custom data parts therefore remain available on later turns instead of being flattened into text.
 
@@ -286,6 +286,25 @@ Your field definitions win when they are compatible with the base schema. FrogBo
 - `messages.status`, `messages.delivery`, `messages.model`, `messages.reasoning`, `messages.author`, `messages.settlements`, and `messages.version`
 
 Mark at most one collection for each role. If an unmarked collection already uses the default `chats` or `messages` slug, sanitization asks you to mark or rename it rather than adopting it implicitly.
+
+### Show messages in the admin
+
+Messages is hidden from the admin panel by default, like FrogBot's other internal collections. The sidebar and dashboard have no Messages entry, and the admin list and document URLs show a not-found page. The chat view, REST, GraphQL, and the Local API are unaffected.
+
+To browse raw message rows, for example while debugging a reply, adopt the collection and set `admin.hidden: false`:
+
+```ts
+import type { CollectionConfig } from 'frogbot'
+
+export const Messages: CollectionConfig = {
+  slug: 'messages',
+  message: true,
+  admin: { hidden: false },
+  fields: []
+}
+```
+
+Messages then appears directly under **Collections** with its default icon and list columns. An adopted message collection inherits the hidden default too, so the `Turns` example above stays out of the admin unless it also sets `admin: { hidden: false }`.
 
 ## Continue a chat
 

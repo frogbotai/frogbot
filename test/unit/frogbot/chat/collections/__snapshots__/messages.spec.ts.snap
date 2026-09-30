@@ -9,6 +9,7 @@ exports[`defaultMessagesCollection > produces the base config shape 1`] = `
     "update": [Function],
   },
   "admin": {
+    "hidden": true,
     "icon": "bubble-chat",
     "views": [
       {
