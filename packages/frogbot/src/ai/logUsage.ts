@@ -1,6 +1,6 @@
 import type { AfterOperationHook } from '@frogbotai/gateway';
-import { calculateModelCostUSD } from '@frogbotai/gateway';
 
+import { calculateUsageCostUSD } from './cost.js';
 import type { AIOperationContext } from './hooks.js';
 import { USAGE_LOGS_SLUG } from './usage/collection.js';
 
@@ -11,7 +11,13 @@ export const logUsage: AfterOperationHook = (args) => {
   if (!req) return;
 
   const usage = args.usage;
-  const costUSD = usage ? calculateModelCostUSD(args.model, usage) : 0;
+  const costUSD = usage
+    ? calculateUsageCostUSD({
+        model: args.model,
+        providers: req.frogbot.config?.ai?.providers,
+        usage,
+      })
+    : 0;
 
   void req.frogbot
     .createRequest({ user: req.user, context: req.context })

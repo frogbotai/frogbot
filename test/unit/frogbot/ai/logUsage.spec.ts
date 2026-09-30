@@ -1,8 +1,20 @@
+import type * as Gateway from '@frogbotai/gateway';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@frogbotai/gateway', () => ({ calculateModelCostUSD: () => 0.001 }));
+vi.mock('@frogbotai/gateway', async (importOriginal) => ({
+  ...(await importOriginal<typeof Gateway>()),
+  calculateModelCostUSD: () => 0.001,
+}));
 
 import { logUsage } from '../../../../packages/frogbot/src/ai/logUsage.js';
+
+const providers = {
+  custom: {
+    type: 'openai-compatible',
+    baseUrl: 'http://127.0.0.1/v1',
+    models: [{ id: 'priced', mode: 'chat', cost: { input: 1, output: 2 } }],
+  },
+};
 
 function makeReq({
   create = vi.fn().mockResolvedValue({}),
@@ -18,7 +30,7 @@ function makeReq({
   const req = {
     user,
     context: { source: 'test' },
-    frogbot: { create: vi.fn(), createRequest, logger: { error } },
+    frogbot: { config: { ai: { providers } }, create: vi.fn(), createRequest, logger: { error } },
   };
 
   return { req, usageReq, create, createRequest, error };
@@ -125,6 +137,40 @@ describe('logUsage', () => {
     await vi.waitFor(() => expect(create).toHaveBeenCalledOnce());
 
     expect(create.mock.calls[0]?.[0].data).not.toHaveProperty('apiKey');
+  });
+
+  it('prices a custom model with its configured cost', async () => {
+    const { req, create } = makeReq();
+
+    logUsage({
+      requestId: 'req-7',
+      operation: 'chat.completions',
+      startedAt: 1,
+      context: { req },
+      model: 'custom/priced',
+      usage: { inputTokens: 1_000_000, outputTokens: 1_000_000, totalTokens: 2_000_000 },
+    } as never);
+
+    await vi.waitFor(() => expect(create).toHaveBeenCalledOnce());
+
+    expect(create.mock.calls[0]?.[0].data.costUSD).toBe(3);
+  });
+
+  it('prices other models from the built-in price list', async () => {
+    const { req, create } = makeReq();
+
+    logUsage({
+      requestId: 'req-8',
+      operation: 'chat.completions',
+      startedAt: 1,
+      context: { req },
+      model: 'openai/gpt-4o',
+      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+    } as never);
+
+    await vi.waitFor(() => expect(create).toHaveBeenCalledOnce());
+
+    expect(create.mock.calls[0]?.[0].data.costUSD).toBe(0.001);
   });
 
   it('logs a failed write without surfacing it to the operation', async () => {

@@ -1,8 +1,9 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
+import { logUsage } from '../../packages/frogbot/src/ai/logUsage.js';
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot';
 
@@ -105,5 +106,38 @@ describe('usage logs', () => {
       where: { requestId: { equals: 'internal-write' } },
     });
     expect(result.totalDocs).toBe(1);
+  });
+
+  describe('cost', () => {
+    afterEach(async () => {
+      await defaultBooted.frogbot.delete({
+        collection: 'usage-logs' as never,
+        where: { requestId: { equals: 'priced-write' } },
+        overrideAccess: true,
+      });
+    });
+
+    it('prices a custom model with its configured cost', async () => {
+      logUsage({
+        requestId: 'priced-write',
+        model: 'zen/priced',
+        operation: 'chat.completions',
+        startedAt: Date.now(),
+        context: { req: { frogbot: defaultBooted.frogbot } },
+        usage: { inputTokens: 1_000_000, outputTokens: 1_000_000, totalTokens: 2_000_000 },
+      } as never);
+
+      await expect
+        .poll(async () => {
+          const result = await defaultBooted.frogbot.find({
+            collection: 'usage-logs' as never,
+            overrideAccess: true,
+            where: { requestId: { equals: 'priced-write' } },
+          });
+
+          return (result.docs[0] as { costUSD?: number } | undefined)?.costUSD;
+        })
+        .toBe(3);
+    });
   });
 });

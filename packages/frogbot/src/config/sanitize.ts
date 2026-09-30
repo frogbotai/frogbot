@@ -1501,7 +1501,7 @@ export function sanitize(
     const authCollection = resolveUserSlug(config);
     const policyHooks = createPolicyHooks({
       authCollection,
-      providers: sanitizedAI.providers as Record<string, unknown>,
+      providers: sanitizedAI.providers,
     });
     sanitizedAI = {
       ...sanitizedAI,
