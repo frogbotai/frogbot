@@ -21,6 +21,7 @@
   color: var(--theme-base-850);
   font-size: var(--fb-text-sm);
   line-height: var(--fb-text-sm--line-height);
+  text-decoration: none;
 }
 
 .fb-file-part--download:hover {
