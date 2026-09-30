@@ -1,5 +1,6 @@
 'use client';
 import * as Primitive from '@radix-ui/react-context-menu';
+import { Slottable } from '@radix-ui/react-slot';
 import type { ComponentProps } from 'react';
 
 import CheckIcon from '../icons/icons/CheckIcon.js';
@@ -60,7 +61,7 @@ export function ContextMenuSubTrigger({
       className={`fb-context-menu__item${inset ? ' fb-context-menu__item--inset' : ''}${className ? ` ${className}` : ''}`}
       {...props}
     >
-      {children}
+      <Slottable>{children}</Slottable>
       <ChevronRightIcon className="fb-context-menu__icon" />
     </Primitive.SubTrigger>
   );

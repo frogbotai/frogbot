@@ -1,10 +1,16 @@
 'use client';
 
 import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
   Button,
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
   ContextMenuTrigger,
   DropdownMenu,
   DropdownMenuContent,
@@ -77,6 +83,18 @@ export default function LinkCheckPage() {
             </a>
           </Toggle>
         </div>
+        <Accordion type="multiple">
+          <AccordionItem value="button">
+            <AccordionTrigger data-testid="accordion-button">Section</AccordionTrigger>
+          </AccordionItem>
+          <AccordionItem value="link">
+            <AccordionTrigger asChild>
+              <a data-testid="accordion-link" href="/section">
+                Section
+              </a>
+            </AccordionTrigger>
+          </AccordionItem>
+        </Accordion>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button data-testid="menu-trigger" type="button" variant="outline">
@@ -105,6 +123,22 @@ export default function LinkCheckPage() {
                 Open
               </a>
             </ContextMenuItem>
+            <ContextMenuSub>
+              <ContextMenuSubTrigger data-testid="context-sub-div">Share</ContextMenuSubTrigger>
+              <ContextMenuSubContent>
+                <ContextMenuItem>Email</ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+            <ContextMenuSub>
+              <ContextMenuSubTrigger asChild>
+                <a data-testid="context-sub-link" href="/move">
+                  Move
+                </a>
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent>
+                <ContextMenuItem>Archive</ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
           </ContextMenuContent>
         </ContextMenu>
         <div data-testid="file-part">

@@ -310,6 +310,7 @@ const anchorTestIds = [
   'tab-active-link',
   'toggle-link',
   'toggle-on-link',
+  'accordion-link',
 ];
 
 function resolveColor(container: Locator, value: string) {
@@ -419,6 +420,11 @@ test.describe('asChild links', () => {
 
       expect((await readLinkStyle(contextLink)).textDecorationLine).toBe('none');
       expect((await hoverAndRead(page, contextLink)).textDecorationLine).toBe('none');
+
+      const contextSubLink = page.getByTestId('context-sub-link');
+
+      expect((await readLinkStyle(contextSubLink)).textDecorationLine).toBe('none');
+      expect((await hoverAndRead(page, contextSubLink)).textDecorationLine).toBe('none');
     });
 
     test('a focused asChild anchor has no underline', async ({ page }) => {
@@ -442,6 +448,7 @@ test.describe('asChild links', () => {
         'tab-active',
         'toggle',
         'toggle-on',
+        'accordion',
       ]) {
         const button = await readLinkStyle(page.getByTestId(`${name}-button`));
         const link = await readLinkStyle(page.getByTestId(`${name}-link`));
@@ -476,6 +483,11 @@ test.describe('asChild links', () => {
 
       expect(contextLink.color).toBe(contextDiv.color);
       expect(contextLink.color).toBe(await readParentColor(page.getByTestId('context-link')));
+
+      const contextSubDiv = await readLinkStyle(page.getByTestId('context-sub-div'));
+      const contextSubLink = await readLinkStyle(page.getByTestId('context-sub-link'));
+
+      expect(contextSubLink.color).toBe(contextSubDiv.color);
     });
 
     test('asChild menu links match their div neighbours when highlighted', async ({ page }) => {
@@ -497,6 +509,13 @@ test.describe('asChild links', () => {
       expect(contextLink.color).toBe(contextDiv.color);
       expect(contextLink.backgroundColor).toBe(contextDiv.backgroundColor);
       expect(contextLink.textDecorationLine).toBe('none');
+
+      const contextSubDiv = await hoverAndRead(page, page.getByTestId('context-sub-div'));
+      const contextSubLink = await hoverAndRead(page, page.getByTestId('context-sub-link'));
+
+      expect(contextSubLink.color).toBe(contextSubDiv.color);
+      expect(contextSubLink.backgroundColor).toBe(contextSubDiv.backgroundColor);
+      expect(contextSubLink.textDecorationLine).toBe('none');
     });
 
     test('Button variant="link" underlines on hover only, as a button and as a link', async ({

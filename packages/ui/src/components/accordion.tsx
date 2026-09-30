@@ -1,5 +1,6 @@
 'use client';
 import * as Primitive from '@radix-ui/react-accordion';
+import { Slottable } from '@radix-ui/react-slot';
 import type { ComponentProps } from 'react';
 
 import ChevronDownIcon from '../icons/icons/ChevronDownIcon.js';
@@ -23,7 +24,7 @@ export function AccordionTrigger({
         className={`fb-accordion__trigger${className ? ` ${className}` : ''}`}
         {...props}
       >
-        {children}
+        <Slottable>{children}</Slottable>
         <ChevronDownIcon className="fb-accordion__icon" />
       </Primitive.Trigger>
     </Primitive.Header>

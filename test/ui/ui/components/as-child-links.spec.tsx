@@ -3,10 +3,15 @@ import { expect, it } from 'vitest';
 
 import { FilePart } from '../../../../packages/ui/src/chat/file-part';
 import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
   Button,
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSub,
+  ContextMenuSubTrigger,
   ContextMenuTrigger,
   DropdownMenu,
   DropdownMenuContent,
@@ -81,6 +86,53 @@ it('ContextMenuItem asChild puts its class on the anchor', async () => {
 
   expect(await screen.findByRole('menu')).toBeTruthy();
   expectAnchor({ className: 'fb-context-menu__item', name: 'Item', role: 'menuitem' });
+});
+
+it('AccordionTrigger asChild puts its class, state, and chevron on the anchor', () => {
+  render(
+    <Accordion type="single" collapsible>
+      <AccordionItem value="one">
+        <AccordionTrigger asChild>
+          <a href="/section">Section</a>
+        </AccordionTrigger>
+      </AccordionItem>
+    </Accordion>,
+  );
+
+  const link = screen.getByRole('link', { name: 'Section' });
+
+  expectAnchor({ className: 'fb-accordion__trigger', name: 'Section' });
+  expect(link.getAttribute('data-state')).toBe('closed');
+  expect(link.getAttribute('aria-expanded')).toBe('false');
+  expect(link.querySelector('.fb-accordion__icon')).not.toBeNull();
+});
+
+it('ContextMenuSubTrigger asChild puts its class, state, and chevron on the anchor', async () => {
+  render(
+    <ContextMenu>
+      <ContextMenuTrigger>Target</ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuSub>
+          <ContextMenuSubTrigger asChild inset>
+            <a href="/more">More</a>
+          </ContextMenuSubTrigger>
+        </ContextMenuSub>
+      </ContextMenuContent>
+    </ContextMenu>,
+  );
+
+  fireEvent.contextMenu(screen.getByText('Target'));
+
+  const link = await screen.findByRole('menuitem', { name: 'More' });
+
+  expectAnchor({
+    className: 'fb-context-menu__item fb-context-menu__item--inset',
+    name: 'More',
+    role: 'menuitem',
+  });
+  expect(link.getAttribute('data-state')).toBe('closed');
+  expect(link.getAttribute('aria-haspopup')).toBe('menu');
+  expect(link.querySelector('.fb-context-menu__icon')).not.toBeNull();
 });
 
 it('TabsTrigger and Toggle asChild put their class on the anchor', () => {
