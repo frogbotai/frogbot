@@ -420,77 +420,24 @@ export default buildConfig({
 })
 ```
 
-## Custom Storage Adapters
+## Shared storage options
 
-If you need to create a custom storage adapter, you can use the [`@frogbotai/plugin-cloud-storage`](https://www.npmjs.com/package/@frogbotai/plugin-cloud-storage) package. This package is used internally by the storage adapters mentioned above.
+Use the shipped `@frogbotai/storage-*` packages listed above. Their shared options configure storage across multiple FrogBot collections; check each adapter's options for service-specific settings. A `*` denotes that the property is required.
 
-### Installation#custom-installation
-
-`pnpm add @frogbotai/plugin-cloud-storage`
-
-### Usage#custom-usage
-
-Reference any of the existing storage adapters for guidance on how this should be structured. Create an adapter following the `GeneratedAdapter` interface. Then, pass the adapter to the `cloudStorage` plugin.
-
-```ts
-export interface GeneratedAdapter {
-  /**
-   * Additional fields to be injected into the base
-   * collection and image sizes
-   */
-  fields?: Field[]
-  /**
-   * Generates the public URL for a file
-   */
-  generateURL?: GenerateURL
-  handleDelete: HandleDelete
-  handleUpload: HandleUpload
-  name: string
-  onInit?: () => void
-  staticHandler: StaticHandler
-}
-```
-
-```ts
-import { buildConfig } from 'frogbot'
-import { cloudStoragePlugin } from '@frogbotai/plugin-cloud-storage'
-
-export default buildConfig({
-  plugins: [
-    // cloudStoragePlugin is a low-level building block — place it in plugins, not storage.
-    // The built-in adapter packages (s3Storage, gcsStorage, etc.) wrap this internally
-    // and are used via storage instead.
-    cloudStoragePlugin({
-      collections: {
-        'my-collection-slug': {
-          adapter: theAdapterToUse, // see docs for the adapter you want to use
-        },
-      },
-    }),
-  ],
-  // The rest of your config goes here
-})
-```
-
-## Plugin options
-
-This plugin is configurable to work across many different FrogBot collections. A `*` denotes that the property is required.
-
-| Option               | Type                                | Description                                                                                                                                                                                                   |
-| -------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `alwaysInsertFields` | `boolean`                           | When enabled, fields (like the prefix field) will always be inserted into the collection schema regardless of whether the plugin is enabled. This will be enabled by default in FrogBot v4. Default: `false`. |
-| `collections` \*     | `Record<string, CollectionOptions>` | Object with keys set to the slug of collections you want to enable the plugin for, and values set to collection-specific options.                                                                             |
-| `enabled`            | `boolean`                           | To conditionally enable/disable plugin. Default: `true`.                                                                                                                                                      |
+| Option               | Type                                        | Description                                                                                                       |
+| -------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `alwaysInsertFields` | `boolean`                                   | With S3 or Vercel Blob, insert fields even when storage is disabled. Other adapters skip field insertion when disabled. Default: `false`. |
+| `collections` \*     | `Record<string, true \| CollectionOptions>` | Object with collection slugs as keys and `true` or collection-specific options as values.                         |
+| `enabled`            | `boolean`                                   | Conditionally enable or disable the storage adapter. Default: `true`.                                             |
 
 ## Collection-specific options
 
-| Option                        | Type                                                                                                              | Description                                                                                                                                                                                                   |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `adapter` \*                  | [Adapter](https://github.com/frogbot/frogbot/blob/main/packages/plugin-cloud-storage/src/types.ts#L49)         | Pass in the adapter that you'd like to use for this collection. You can also set this field to `null` for local development if you'd like to bypass cloud storage in certain scenarios and use local storage. |
-| `disableLocalStorage`         | `boolean`                                                                                                         | Choose to disable local storage on this collection. Defaults to `true`.                                                                                                                                       |
-| `disablePayloadAccessControl` | `true`                                                                                                            | Set to `true` to disable FrogBot's Access Control. [More](#frogbot-access-control)                                                                                                                            |
-| `generateFileURL`             | [GenerateFileURL](https://github.com/frogbot/frogbot/blob/main/packages/plugin-cloud-storage/src/types.ts#L67) | Override the generated file URL with one that you create.                                                                                                                                                     |
-| `prefix`                      | `string`                                                                                                          | Set to `media/images` to upload files inside `media/images` folder in the bucket.                                                                                                                             |
+| Option                        | Type              | Description                                                                        |
+| ----------------------------- | ----------------- | ---------------------------------------------------------------------------------- |
+| `disableLocalStorage`         | `boolean`         | Choose to disable local storage on this collection. Defaults to `true`.            |
+| `disablePayloadAccessControl` | `true`            | Set to `true` to disable FrogBot's Access Control. [More](#frogbot-access-control) |
+| `generateFileURL`             | `GenerateFileURL` | Override the generated file URL with one that you create.                          |
+| `prefix`                      | `string`          | Set to `media/images` to upload files inside that folder in the bucket. Uploadthing does not support prefixes. |
 
 ## Prefix Composition
 
@@ -536,23 +483,30 @@ storage: [
 
 FrogBot ships with [Access Control](../access-control/overview) that runs _even on statically served files_. The same `read` Access Control property on your `upload`-enabled collections is used, and it allows you to restrict who can request your uploaded files.
 
-To preserve this feature, by default, this plugin _keeps all file URLs exactly the same_. Your file URLs won't be updated to point directly to your cloud storage source, as in that case, FrogBot's Access control will be completely bypassed and you would need public readability on your cloud-hosted files.
+To preserve this feature, by default, storage adapters _keep all file URLs exactly the same_. Your file URLs won't be updated to point directly to your cloud storage source, as in that case, FrogBot's Access control will be completely bypassed and you would need public readability on your cloud-hosted files.
 
-Instead, all uploads will still be reached from the default `/collectionSlug/staticURL/filename` path. This plugin will "pass through" all files that are hosted on your third-party cloud service—with the added benefit of keeping your existing Access Control in place.
+Instead, all uploads will still be reached from the default `/collectionSlug/staticURL/filename` path. Storage adapters will "pass through" all files that are hosted on your third-party cloud service—with the added benefit of keeping your existing Access Control in place.
 
-If this does not apply to you (your upload collection has `read: () => true` or similar) you can disable this functionality by setting `disablePayloadAccessControl` to `true`. When this setting is in place, this plugin will update your file URLs to point directly to your cloud host. For a concrete example, see [Using with Cloudflare R2 (via S3 API)](#s3-r2).
+If this does not apply to you (your upload collection has `read: () => true` or similar) you can disable this functionality by setting `disablePayloadAccessControl` to `true`. When this setting is in place, the adapter will update your file URLs to point directly to your cloud host. For a concrete example, see [Using with Cloudflare R2 (via S3 API)](#s3-r2).
 
 ## Conditionally Enabling/Disabling
 
-The proper way to conditionally enable/disable this plugin is to use the `enabled` property.
+Use the adapter's `enabled` property to conditionally enable or disable cloud storage. When disabled, local uploads remain available unless the collection disables local storage.
 
 ```ts
-cloudStoragePlugin({
-  enabled: process.env.MY_CONDITION === 'true',
-  collections: {
-    'my-collection-slug': {
-      adapter: theAdapterToUse, // see docs for the adapter you want to use
-    },
-  },
-}),
+import { s3Storage } from '@frogbotai/storage-s3'
+import { buildConfig } from 'frogbot'
+import { Media } from './collections/Media'
+
+export default buildConfig({
+  collections: [Media],
+  storage: [
+    s3Storage({
+      enabled: Boolean(process.env.S3_BUCKET),
+      collections: { media: true },
+      bucket: process.env.S3_BUCKET ?? '',
+      config: { region: process.env.S3_REGION },
+    }),
+  ],
+})
 ```

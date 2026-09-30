@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => ({
   }),
   migrate: vi.fn(async (args: string[]) => mocks.calls.push(`migrate:${args.join(',')}`)),
   piecesPort: vi.fn(async () => mocks.calls.push(`piecesPort:${process.env.FROGBOT_TEST_KEY}`)),
+  runScript: vi.fn(async () => mocks.calls.push(`runScript:${process.env.FROGBOT_TEST_KEY}`)),
   start: vi.fn(() => mocks.calls.push(`start:${process.env.FROGBOT_TEST_KEY}`)),
 }));
 
@@ -56,6 +57,7 @@ vi.mock('../../../../packages/frogbot/src/bin/piecesPort.js', () => ({
   piecesPort: mocks.piecesPort,
 }));
 vi.mock('../../../../packages/frogbot/src/bin/start.js', () => ({ start: mocks.start }));
+vi.mock('../../../../packages/frogbot/src/bin/run.js', () => ({ runScript: mocks.runScript }));
 
 import { bin } from '../../../../packages/frogbot/src/bin/index.js';
 
@@ -81,6 +83,7 @@ describe('frogbot bin', () => {
   it.each([
     ['start', 'start'],
     ['DEV', 'dev'],
+    ['run', 'runScript'],
     ['generate:types', 'generateTypes'],
     ['generate:piece-types', 'generatePieceTypes'],
     ['generate:importmap', 'generateImportMap'],
@@ -118,7 +121,7 @@ describe('frogbot bin', () => {
 
     expect(mocks.calls).toEqual(['loadEnv']);
     expect(error).toHaveBeenCalledWith(
-      '[frogbot] usage: frogbot <start|dev|generate:types|generate:piece-types|generate:importmap|pieces:port|export:training-data|export:captures|jobs:run|channels:run|migrate|migrate:create|migrate:status|migrate:down|migrate:refresh|migrate:reset|migrate:fresh>',
+      '[frogbot] usage: frogbot <start|dev|run|generate:types|generate:piece-types|pieces:port|generate:importmap|export:training-data|export:captures|jobs:run|channels:run|migrate|migrate:create|migrate:down|migrate:fresh|migrate:refresh|migrate:reset|migrate:status>',
     );
   });
 
@@ -148,5 +151,16 @@ describe('frogbot bin', () => {
     await bin();
 
     expect(mocks.jobsRun).toHaveBeenLastCalledWith(args);
+  });
+
+  it('loads env before forwarding script arguments unchanged', async () => {
+    const args = ['src/seed.ts', '--count', '5', '--help'];
+
+    process.argv = ['node', 'frogbot', 'run', ...args];
+
+    await bin();
+
+    expect(mocks.calls).toEqual(['loadEnv', 'runScript:loaded']);
+    expect(mocks.runScript).toHaveBeenLastCalledWith(args);
   });
 });

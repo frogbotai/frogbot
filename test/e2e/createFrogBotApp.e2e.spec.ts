@@ -239,6 +239,56 @@ describe.skipIf(!RUN_E2E)('create-frogbot-app generated applications', () => {
     120000,
   );
 
+  it('frogbot run executes the documented seed in a generated sqlite-none app', () => {
+    const directory = appDirectories.get('sqlite-none')!;
+    const page = fs.readFileSync(
+      path.join(repoRoot, 'docs', 'local-api', 'outside-nextjs.mdx'),
+      'utf8',
+    );
+
+    const seed = page.match(/```ts\n([\s\S]*?)\n```/)?.[1];
+
+    expect(seed).toBeDefined();
+
+    fs.writeFileSync(path.join(directory, 'src', 'seed.ts'), `${seed}\n`);
+    fs.writeFileSync(
+      path.join(directory, '.env.local'),
+      'DATABASE_URL=file:./run-e2e.db\nFROGBOT_SECRET=frogbot-run-e2e-secret\n',
+    );
+
+    const result = run('pnpm', ['exec', 'frogbot', 'run', 'src/seed.ts'], {
+      cwd: directory,
+      env: { DATABASE_URL: undefined, FROGBOT_SECRET: undefined },
+    });
+
+    expect(result.status, result.output).toBe(0);
+    expect(result.output).toContain('Created user: dev@frogbot.com');
+    expect(fs.existsSync(path.join(directory, 'run-e2e.db'))).toBe(true);
+  }, 120000);
+
+  it('frogbot run resolves the documented Drizzle imports in a generated sqlite-none app', () => {
+    const directory = appDirectories.get('sqlite-none')!;
+
+    fs.writeFileSync(
+      path.join(directory, 'src', 'drizzle-imports.ts'),
+      [
+        "import { sqliteTable } from 'drizzle-orm/sqlite-core'",
+        "import { eq } from '@frogbotai/db-sqlite/drizzle'",
+        '',
+        'console.log(JSON.stringify([typeof sqliteTable, typeof eq]))',
+        '',
+      ].join('\n'),
+    );
+
+    const result = run('pnpm', ['exec', 'frogbot', 'run', 'src/drizzle-imports.ts'], {
+      cwd: directory,
+      env: { DATABASE_URL: undefined, FROGBOT_SECRET: undefined },
+    });
+
+    expect(result.status, result.output).toBe(0);
+    expect(result.output).toContain('["function","function"]');
+  }, 120000);
+
   it.skipIf(!postgresAvailable)(
     'loads the Postgres config and generates types',
     () => {

@@ -172,7 +172,7 @@
               { "group": "Versions", "expanded": false, "pages": ["versions/overview", "versions/drafts", "versions/autosave"]},
               { "group": "Email", "expanded": false, "pages": ["email/overview"]},
               { "group": "Trash", "expanded": false, "pages": ["trash/overview"]},
-              { "group": "TypeScript", "expanded": false, "pages": ["typescript/overview", "typescript/generating-types", "typescript/ts-plugin"]},
+              { "group": "TypeScript", "expanded": false, "pages": ["typescript/overview", "typescript/generating-types"]},
               { "group": "Troubleshooting", "expanded": false, "pages": ["troubleshooting/troubleshooting"]},
               { "group": "Custom Components", "expanded": false, "pages": ["custom-components/overview", "custom-components/root-components", "custom-components/custom-providers", "custom-components/custom-views", "custom-components/dashboard", "custom-components/document-views", "custom-components/edit-view", "custom-components/list-view"]},
               { "group": "Rich Text", "expanded": false, "pages": ["rich-text/overview", "rich-text/official-features", "rich-text/converters", "rich-text/converting-jsx", "rich-text/converting-html", "rich-text/converting-markdown", "rich-text/converting-plaintext", "rich-text/blocks", "rich-text/custom-features", "rich-text/rendering-on-demand", "rich-text/views"]},

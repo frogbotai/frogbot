@@ -148,7 +148,6 @@ Hybrid search takes up to the [resolved candidate count](/search/overview#candid
 | `versionsSuffix`                 | A string appended to the end of table names for storing versions. Defaults to '\_v'.                                                                                                                                    |
 | `beforeSchemaInit`               | Drizzle schema hook. Runs before the schema is built. [More Details](#beforeschemainit)                                                                                                                                 |
 | `afterSchemaInit`                | Drizzle schema hook. Runs after the schema is built. [More Details](#afterschemainit)                                                                                                                                   |
-| `generateSchemaOutputFile`       | Override generated schema from `frogbot generate:db-schema` file path. Defaults to `{CWD}/src/frogbot-generated.schema.ts`                                                                                              |
 | `allowIDOnCreate`                | Set to `true` to use the `id` passed in data on the create API operations without using a custom ID field.                                                                                                              |
 | `readReplicas`                   | An array of DB read replicas connection strings, can be used to offload read-heavy traffic.                                                                                                                             |
 | `readReplicasAfterWriteInterval` | How long (ms) after a write to keep routing reads to the primary instead of a replica. Prevents stale reads caused by replication lag. Only relevant when `readReplicas` is set. Default `2000`. Set to `0` to disable. |
@@ -158,27 +157,26 @@ Hybrid search takes up to the [resolved candidate count](/search/overview#candid
 
 After FrogBot is initialized, this adapter will expose the full power of Drizzle to you for use if you need it.
 
-To ensure type-safety, you need to generate Drizzle schema first with:
-
-```sh
-npx frogbot generate:db-schema
-```
-
-Then, you can access Drizzle as follows:
+You can query the adapter's runtime tables directly. These queries are untyped:
 
 ```ts
-import { posts } from './frogbot-generated-schema'
 // To avoid installing Drizzle, you can import everything that drizzle has from our re-export path.
 import { eq, sql, and } from '@frogbotai/db-postgres/drizzle'
 
+const postsTable = frogbot.db.tables.posts
+
 // Drizzle's Querying API: https://orm.drizzle.team/docs/rqb
 const posts = await frogbot.db.drizzle.query.posts.findMany()
-// Drizzle's Select API https://orm.drizzle.team/docs/select
+
+// Drizzle's Select API: https://orm.drizzle.team/docs/select
 const result = await frogbot.db.drizzle
   .select()
-  .from(posts)
+  .from(postsTable)
   .where(
-    and(eq(posts.id, 50), sql`lower(${posts.title}) = 'example post title'`),
+    and(
+      eq(postsTable.id, 50),
+      sql`lower(${postsTable.title}) = 'example post title'`,
+    ),
   )
 ```
 
@@ -208,17 +206,15 @@ For more information about migrations, [click here](/database/migrations#when-to
 
 ## Drizzle schema hooks
 
+Apps created with `create-frogbot-app` already depend on `drizzle-orm` at the adapter's version; in other apps, install the same version used by your database adapter.
+
 ### beforeSchemaInit
 
 Runs before the schema is built. You can use this hook to extend your database structure with tables that won't be managed by FrogBot.
 
 ```ts
 import { postgresAdapter } from '@frogbotai/db-postgres'
-import {
-  integer,
-  pgTable,
-  serial,
-} from '@frogbotai/db-postgres/drizzle/pg-core'
+import { pgTable, serial } from 'drizzle-orm/pg-core'
 
 postgresAdapter({
   beforeSchemaInit: [
@@ -302,7 +298,7 @@ The following example adds the `extra_integer_column` column and a composite ind
 
 ```ts
 import { postgresAdapter } from '@frogbotai/db-postgres'
-import { index, integer } from '@frogbotai/db-postgres/drizzle/pg-core'
+import { index, integer } from 'drizzle-orm/pg-core'
 import { buildConfig } from 'frogbot'
 
 export default buildConfig({
@@ -343,10 +339,9 @@ export default buildConfig({
 })
 ```
 
-### Note for generated schema:
+### Adding tables through rawTables
 
-Columns and tables, added in schema hooks won't be added to the generated via `frogbot generate:db-schema` Drizzle schema.
-If you want them to be there, you either have to edit this file manually or mutate the internal FrogBot "raw" SQL schema in the `beforeSchemaInit`:
+You can also add tables, columns, and indexes to the adapter's raw SQL schema through `adapter.rawTables` in `beforeSchemaInit`. The raw schema supports fewer features than Drizzle's table builders.
 
 ```ts
 import { postgresAdapter } from '@frogbotai/db-postgres'
@@ -366,14 +361,14 @@ postgresAdapter({
         },
       }
 
-      // Add a new column to generated by FrogBot table:
+      // Add a new column to a table generated by FrogBot
       adapter.rawTables.posts.columns.customColumn = {
         name: 'custom_column',
-        // Note that FrogBot SQL doesn't support everything that Drizzle does.
         type: 'integer',
         notNull: true,
       }
-      // Add a new index to generated by FrogBot table:
+
+      // Add a new index to a table generated by FrogBot
       adapter.rawTables.posts.indexes.customColumnIdx = {
         name: 'custom_column_idx',
         unique: true,
