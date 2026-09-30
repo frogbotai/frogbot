@@ -47,37 +47,59 @@ function canonicalJSON(value: PieceJSON): string {
   return JSON.stringify(value);
 }
 
-export class Connections {
-  private storePromise?: Promise<ConnectionStore>;
-  private readonly identitySecret = randomBytes(32);
-  private readonly credentialKeys = new Map<
-    string,
-    { rowID: string; fingerprint: string; key: object }
-  >();
+type ConnectionsState = {
+  config: SanitizedConnectionsConfig;
+  credentialKeys: Map<string, { rowID: string; fingerprint: string; key: object }>;
+  frogbot: FrogBot;
+  identitySecret: Buffer;
+  storePromise?: Promise<ConnectionStore>;
+};
 
-  constructor(
-    private readonly frogbot: FrogBot,
-    private readonly config: SanitizedConnectionsConfig,
-  ) {}
+const states = new WeakMap<Connections, ConnectionsState>();
 
-  get store(): Promise<ConnectionStore> {
-    return (this.storePromise ??= getPayloadConfig(this.frogbot.config).then(
-      ({ admin }) =>
-        new ConnectionStore({ frogbot: this.frogbot, config: this.config, userSlug: admin.user }),
-    ));
+export function connectionsState(connections: Connections): ConnectionsState {
+  const state = states.get(connections);
+
+  if (!state) throw new Error('Connections is not initialized');
+
+  return state;
+}
+
+async function requestOwner(
+  frogbot: FrogBot,
+  req: FrogBotRequest,
+): Promise<ConnectionOwner | undefined> {
+  const { admin } = await getPayloadConfig(frogbot.config);
+  const user = req.user;
+
+  if (
+    user?.collection === admin.user &&
+    ((typeof user.id === 'string' && user.id.trim().length > 0) ||
+      (typeof user.id === 'number' && Number.isSafeInteger(user.id)))
+  ) {
+    return { id: user.id, collection: user.collection };
   }
 
-  private async owner(req: FrogBotRequest): Promise<ConnectionOwner | undefined> {
-    const { admin } = await getPayloadConfig(this.frogbot.config);
-    const user = req.user;
-    if (
-      user?.collection === admin.user &&
-      ((typeof user.id === 'string' && user.id.trim().length > 0) ||
-        (typeof user.id === 'number' && Number.isSafeInteger(user.id)))
-    ) {
-      return { id: user.id, collection: user.collection };
-    }
-    return undefined;
+  return undefined;
+}
+
+export class Connections {
+  constructor(frogbot: FrogBot, config: SanitizedConnectionsConfig) {
+    states.set(this, {
+      config,
+      credentialKeys: new Map(),
+      frogbot,
+      identitySecret: randomBytes(32),
+    });
+  }
+
+  get store(): Promise<ConnectionStore> {
+    const state = connectionsState(this);
+
+    return (state.storePromise ??= getPayloadConfig(state.frogbot.config).then(
+      ({ admin }) =>
+        new ConnectionStore({ frogbot: state.frogbot, config: state.config, userSlug: admin.user }),
+    ));
   }
 
   async resolve(args: ConnectionResolveArgs): Promise<unknown> {
@@ -89,18 +111,19 @@ export class Connections {
     req,
     scopes,
   }: ConnectionResolveArgs): Promise<{ auth: unknown; key: object }> {
+    const { config, credentialKeys, frogbot, identitySecret } = connectionsState(this);
     const runtime = pieceInstanceRuntime(piece);
     const slug = piece.piece;
     if (!runtime.definition.auth) return { auth: undefined, key: piece };
 
-    const owner = await this.owner(req);
+    const owner = await requestOwner(frogbot, req);
     const id = owner ? JSON.stringify([owner.collection, String(owner.id), slug]) : undefined;
     const fail = (code: ConnectionError['code'], message: string): never => {
-      if (id) this.credentialKeys.delete(id);
+      if (id) credentialKeys.delete(id);
       throw new ConnectionError(`Connection for '${slug}' ${message}.`, code, undefined, slug);
     };
 
-    const entry = Object.hasOwn(this.config.entries, slug) ? this.config.entries[slug] : undefined;
+    const entry = Object.hasOwn(config.entries, slug) ? config.entries[slug] : undefined;
     let row;
     try {
       row = owner && entry ? await (await this.store).get({ owner, piece: slug }) : undefined;
@@ -109,7 +132,7 @@ export class Connections {
     }
 
     if (!row) {
-      if (id) this.credentialKeys.delete(id);
+      if (id) credentialKeys.delete(id);
       if (runtime.auth !== undefined) return { auth: runtime.auth, key: piece };
       return fail('missing', 'is not linked');
     }
@@ -173,26 +196,27 @@ export class Connections {
       return fail('error', 'has invalid credentials');
     }
 
-    const fingerprint = createHmac('sha256', this.identitySecret)
+    const fingerprint = createHmac('sha256', identitySecret)
       .update(row.method)
       .update(canonicalJSON(row.credential))
       .digest('hex');
-    let identity = this.credentialKeys.get(id!);
+    let identity = credentialKeys.get(id!);
     if (!identity || identity.rowID !== String(row.id) || identity.fingerprint !== fingerprint) {
       identity = { rowID: String(row.id), fingerprint, key: {} };
     }
 
-    this.credentialKeys.delete(id!);
-    this.credentialKeys.set(id!, identity);
-    if (this.credentialKeys.size > 512) {
-      this.credentialKeys.delete(this.credentialKeys.keys().next().value!);
+    credentialKeys.delete(id!);
+    credentialKeys.set(id!, identity);
+    if (credentialKeys.size > 512) {
+      credentialKeys.delete(credentialKeys.keys().next().value!);
     }
 
     return { auth, key: identity.key };
   }
 
   async list({ req }: { req: FrogBotRequest }) {
-    const owner = await this.owner(req);
+    const { credentialKeys, frogbot } = connectionsState(this);
+    const owner = await requestOwner(frogbot, req);
     if (!owner) throw new Error('Connections require an owner from the admin user collection.');
     const rows = await (await this.store).list({ owner });
     const prefix = `${JSON.stringify([owner.collection, String(owner.id)]).slice(0, -1)},`;
@@ -202,23 +226,24 @@ export class Connections {
         String(row.id),
       ]),
     );
-    for (const [id, identity] of this.credentialKeys) {
+    for (const [id, identity] of credentialKeys) {
       if (id.startsWith(prefix) && current.get(id) !== identity.rowID) {
-        this.credentialKeys.delete(id);
+        credentialKeys.delete(id);
       }
     }
     return rows;
   }
 
   async delete({ req, id }: { req: FrogBotRequest; id: number | string }): Promise<boolean> {
-    const owner = await this.owner(req);
+    const { credentialKeys, frogbot } = connectionsState(this);
+    const owner = await requestOwner(frogbot, req);
     if (!owner) throw new Error('Connections require an owner from the admin user collection.');
     const store = await this.store;
     const row = (await this.list({ req })).find((row) => String(row.id) === String(id));
     if (!row) return false;
     const deleted = await store.delete({ owner, piece: row.piece, id });
     if (deleted) {
-      this.credentialKeys.delete(JSON.stringify([owner.collection, String(owner.id), row.piece]));
+      credentialKeys.delete(JSON.stringify([owner.collection, String(owner.id), row.piece]));
     }
     return deleted;
   }
@@ -230,11 +255,12 @@ export class Connections {
     pieces: readonly PieceInstance[];
     req: FrogBotRequest;
   }): Promise<AuthorizationRequirement[]> {
+    const { config, frogbot } = connectionsState(this);
     const requirements = new Map<string, AuthorizationRequirement>();
-    const { routes } = await getPayloadConfig(this.frogbot.config);
+    const { routes } = await getPayloadConfig(frogbot.config);
     for (const piece of new Set(pieces)) {
-      const entry = Object.hasOwn(this.config.entries, piece.piece)
-        ? this.config.entries[piece.piece]
+      const entry = Object.hasOwn(config.entries, piece.piece)
+        ? config.entries[piece.piece]
         : undefined;
       if (!entry) continue;
       try {

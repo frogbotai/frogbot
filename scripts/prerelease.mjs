@@ -1,9 +1,9 @@
 // `pnpm bump <major|minor|patch> [--from <step>] [--list]`
 //
-// Runs the release gate (install, sync, format, build, dist imports, services,
-// tests) and only then rewrites versions with scripts/bump.mjs. Each step is
-// named so a failure can be resumed with `--from <step>` instead of redoing
-// everything.
+// Runs the release gate (install, single frogbot install, sync, format, build,
+// dist imports, services, tests) and only then rewrites versions with
+// scripts/bump.mjs. Each step is named so a failure can be resumed with
+// `--from <step>` instead of redoing everything.
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -13,6 +13,7 @@ export const BUMPS = ['major', 'minor', 'patch'];
 
 export const STEPS = [
   { name: 'install', run: ['pnpm', 'install', '--frozen-lockfile'] },
+  { name: 'check-single-frogbot', run: ['pnpm', 'check:single-frogbot'] },
   { name: 'sync-catalog', run: ['pnpm', 'sync:catalog'] },
   { name: 'lint', run: ['pnpm', 'lint:fix'] },
   { name: 'format', run: ['pnpm', 'prettier:write'] },

@@ -35,6 +35,22 @@ describe('release scripts', () => {
     expect(bump.at(-1)).toBe('node scripts/bump.mjs minor');
   });
 
+  it('bump checks for a single frogbot install before building', async () => {
+    const { STEPS } = (await import('../../../scripts/prerelease.mjs')) as {
+      STEPS: { name: string; run: string[] | ((bump: string) => string[]) }[];
+    };
+    const bump = STEPS.map((step) =>
+      (typeof step.run === 'function' ? step.run('minor') : step.run).join(' '),
+    );
+
+    const install = bump.indexOf('pnpm install --frozen-lockfile');
+    const check = bump.indexOf('pnpm check:single-frogbot');
+
+    expect(install).toBeGreaterThanOrEqual(0);
+    expect(check).toBe(install + 1);
+    expect(check).toBeLessThan(bump.indexOf('pnpm build'));
+  });
+
   it.each(['release', 'release:resume'])(
     '%s builds, checks dist imports, then publishes without rerunning the tests bump already ran',
     (script) => {
@@ -52,6 +68,10 @@ describe('release scripts', () => {
 
   it('check:dist-imports runs the exact-case import check', () => {
     expect(scripts['check:dist-imports']).toBe('node scripts/check-dist-imports.mjs');
+  });
+
+  it('check:single-frogbot runs the manifest check', () => {
+    expect(scripts['check:single-frogbot']).toBe('node scripts/check-single-frogbot.mjs');
   });
 
   it('every publishable package removes dist before building', () => {

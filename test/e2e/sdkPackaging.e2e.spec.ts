@@ -108,6 +108,14 @@ describe.skipIf(!RUN_E2E)('@frogbotai/sdk packaging', () => {
     );
   }, 240000);
 
+  it('frontend install has no next', () => {
+    const modules = path.join(frontend, 'node_modules');
+    const store = fs.readdirSync(path.join(modules, '.pnpm'));
+
+    expect(fs.existsSync(path.join(modules, 'next'))).toBe(false);
+    expect(store.filter((entry) => entry.startsWith('next@'))).toEqual([]);
+  });
+
   it('frontend type-checks with automatic and explicit typing', () => {
     const result = run(
       path.join(frontend, 'node_modules', '.bin', 'tsc'),

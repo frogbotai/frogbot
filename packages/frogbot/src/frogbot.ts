@@ -70,11 +70,7 @@ import type {
 import { resolveConfigDir } from './config/resolveConfigPath.js';
 import type { FrogBotSanitizedConfig } from './config/sanitized.js';
 import { Connections } from './connections/api.js';
-import {
-  ensureFrogBotInstance,
-  refreshFrogBotConfig,
-  registerFrogBotInstance,
-} from './instanceRegistry.js';
+import { ensureFrogBotInstance, registerFrogBotInstance } from './instanceRegistry.js';
 import type { Jobs } from './jobs/types.js';
 import { createKV } from './kv/index.js';
 import type { KV } from './kv/types.js';
@@ -123,21 +119,37 @@ type FrogBotCustom = {
   auth?: boolean;
 };
 
-const initFromPayload = Symbol();
+type PayloadInitOptions = Pick<InitOptions, 'disableOnInit' | 'onInit' | 'startChannelGateway'>;
+
+type FrogBotState = {
+  kv: KV;
+  local: FrogBotLocalAPI;
+  payload: Payload;
+};
+
+const states = new WeakMap<FrogBot, FrogBotState>();
+
+function state(frogbot: FrogBot): FrogBotState {
+  const current = states.get(frogbot);
+
+  if (!current) throw new Error('FrogBot is not initialized');
+
+  return current;
+}
+
+export function getFrogBotPayload(frogbot: FrogBot): Payload {
+  return state(frogbot).payload;
+}
 
 export function initFrogBotFromPayload(
   payload: Payload,
   config: FrogBotSanitizedConfig,
-  options: Pick<InitOptions, 'disableOnInit' | 'onInit' | 'startChannelGateway'> = {},
+  options: PayloadInitOptions = {},
 ): Promise<FrogBot> {
-  return new FrogBot()[initFromPayload](payload, config, options);
+  return initialize(new FrogBot(), payload, config, options);
 }
 
 export class FrogBot {
-  private payload!: Payload;
-  private local!: FrogBotLocalAPI;
-  private keyValue!: KV;
-
   config!: FrogBotSanitizedConfig;
   collections!: Record<string, Collection>;
   logger!: Logger;
@@ -151,18 +163,20 @@ export class FrogBot {
   connections!: Connections;
   triggers!: TriggerSubscriptions;
 
-  get db() {
-    return this.payload.db;
-  }
-  get kv() {
-    return this.keyValue;
-  }
-  get email() {
-    return this.payload.email;
+  get db(): Payload['db'] {
+    return state(this).payload.db;
   }
 
-  get jobs() {
-    return this.payload.jobs as Jobs;
+  get kv(): KV {
+    return state(this).kv;
+  }
+
+  get email(): Payload['email'] {
+    return state(this).payload.email;
+  }
+
+  get jobs(): Jobs {
+    return state(this).payload.jobs as Jobs;
   }
 
   // ── Lifecycle ───────────────────────────────────────────────────────────
@@ -175,117 +189,20 @@ export class FrogBot {
       disableDBConnect: options.disableDBConnect,
       disableOnInit: true,
     });
-    return ensureFrogBotInstance(
-      payload,
-      () => this[initFromPayload](payload, config, options),
-      config,
-    );
-  }
 
-  async [initFromPayload](
-    payload: Payload,
-    config: FrogBotSanitizedConfig,
-    options: Pick<InitOptions, 'disableOnInit' | 'onInit' | 'startChannelGateway'> = {},
-  ): Promise<FrogBot> {
-    this.config = config;
-    this.payload = payload;
-    this.keyValue = createKV({ adapter: payload.kv });
-    this.local = createFrogBotLocalAPI(this.payload);
-    registerFrogBotInstance(this.payload, this, config);
-
-    this.secret = this.payload.secret;
-    this.logger = this.payload.logger;
-    if (this.config._internal.noEmail && process.env.NEXT_PHASE !== 'phase-production-build') {
-      this.logger.warn(
-        '[frogbot] No email adapter provided. Emails will be logged but not sent. ' +
-          'Pass an `email` adapter to enable delivery.',
-      );
-    }
-    await this[refreshFrogBotConfig](config);
-
-    await initializeChannelHost(this, options.startChannelGateway !== false);
-
-    if (this.config.ai) {
-      await this.registerAITelemetry(this.config.ai);
-    }
-
-    if (
-      process.env.NODE_ENV !== 'production' &&
-      this.config.typescript?.autoGenerate !== false &&
-      !options.disableOnInit
-    ) {
-      const configDir = resolveConfigDir(process.cwd());
-      if (configDir) {
-        void writeGeneratedTypes(this.config, configDir).catch((err: unknown) => {
-          this.logger.warn(
-            `[frogbot] type generation failed: ${err instanceof Error ? err.message : String(err)}`,
-          );
-        });
-      }
-    }
-
-    if (process.env.NODE_ENV !== 'production' && !options.disableOnInit) {
-      void generateImportMap(this.payload.config, { ignoreResolveError: true }).catch(
-        (err: unknown) => {
-          this.logger.warn(
-            `[frogbot] import map generation failed: ${err instanceof Error ? err.message : String(err)}`,
-          );
-        },
-      );
-    }
-
-    // Run onInit callbacks.
-    if (!options.disableOnInit) {
-      void this.triggers.reconcile().catch((error: unknown) => {
-        this.logger.warn(
-          `[frogbot] Trigger reconciliation failed: ${error instanceof Error ? error.message : String(error)}`,
-        );
-      });
-      if (options.onInit) {
-        await options.onInit(this);
-      }
-      if (this.config.onInit) {
-        await this.config.onInit(this);
-      }
-    }
-
-    return this;
-  }
-
-  async [refreshFrogBotConfig](config: FrogBotSanitizedConfig): Promise<void> {
-    this.config = config;
-    this.connections = new Connections(this, config.connections);
-    this.triggers ??= new TriggerSubscriptions(this);
-    this.gateway = config.ai ? createAIGateway(config.ai, this.logger) : undefined;
-    this.agents = {};
-    if (config.agents?.length && config.ai) {
-      const agentDeps = {
-        gateway: this.assertAIConfigured(),
-        config: config.ai,
-        frogbot: this,
-      };
-      for (const agentConfig of config.agents) {
-        this.agents[agentConfig.slug] = createAgentInstance(agentConfig, agentDeps);
-      }
-    }
-    this.collections = {};
-    for (const collection of this.payload.config.collections) {
-      if (!collection.slug.startsWith('payload-')) {
-        this.collections[collection.slug] = this.toCollection(collection);
-      }
-    }
+    return ensureFrogBotInstance(payload, () => initialize(this, payload, config, options), config);
   }
 
   async destroy(): Promise<void> {
     await shutdownChannelHost(this);
-    await this.payload.destroy();
+    await state(this).payload.destroy();
   }
 
   // ── HTTP (framework-agnostic) ──────────────────────────────────────────
 
   async handleRequest(request: Request): Promise<Response> {
     return handleEndpoints({
-      config: this.payload.config,
+      config: state(this).payload.config,
       request,
     });
   }
@@ -293,12 +210,15 @@ export class FrogBot {
   async createRequest(req?: Partial<FrogBotRequest>): Promise<FrogBotRequest> {
     if (req?.frogbot) return req as FrogBotRequest;
     type LocalRequest = NonNullable<Parameters<typeof createLocalReq>[0]['req']>;
-    const localReq = await createLocalReq({ req: (req ?? {}) as LocalRequest }, this.payload);
+    const localReq = await createLocalReq(
+      { req: (req ?? {}) as LocalRequest },
+      state(this).payload,
+    );
     return Object.assign(localReq, { frogbot: this });
   }
 
   async queue(args: { task: string; queue: string; input: unknown }): Promise<void> {
-    await this.payload.jobs.queue(args as never);
+    await state(this).payload.jobs.queue(args as never);
   }
 
   // ── CRUD ────────────────────────────────────────────────────────────────
@@ -306,15 +226,15 @@ export class FrogBot {
   async find<T extends CollectionSlug>(
     args: FindArgs<T>,
   ): Promise<PaginatedDocs<TypedCollection<T>>> {
-    return this.local.find(args);
+    return state(this).local.find(args);
   }
 
   async findByID<T extends CollectionSlug>(args: FindByIDArgs<T>): Promise<TypedCollection<T>> {
-    return this.local.findByID(args);
+    return state(this).local.findByID(args);
   }
 
   async create<T extends CollectionSlug>(args: CreateArgs<T>): Promise<TypedCollection<T>> {
-    return this.local.create(args);
+    return state(this).local.create(args);
   }
 
   async update<T extends CollectionSlug>(args: UpdateByIDArgs<T>): Promise<TypedCollection<T>>;
@@ -322,8 +242,8 @@ export class FrogBot {
     args: UpdateManyArgs<T>,
   ): Promise<BulkResult<TypedCollection<T>>>;
   async update<T extends CollectionSlug>(args: UpdateArgs<T>) {
-    if ('id' in args) return this.local.update(args);
-    return this.local.update(args);
+    if ('id' in args) return state(this).local.update(args);
+    return state(this).local.update(args);
   }
 
   async delete<T extends CollectionSlug>(args: DeleteByIDArgs<T>): Promise<TypedCollection<T>>;
@@ -331,22 +251,22 @@ export class FrogBot {
     args: DeleteManyArgs<T>,
   ): Promise<BulkResult<TypedCollection<T>>>;
   async delete<T extends CollectionSlug>(args: DeleteByIDArgs<T> | DeleteManyArgs<T>) {
-    if ('id' in args) return this.local.delete(args);
-    return this.local.delete(args);
+    if ('id' in args) return state(this).local.delete(args);
+    return state(this).local.delete(args);
   }
 
   async count<T extends CollectionSlug>(args: CountArgs<T>): Promise<{ totalDocs: number }> {
-    return this.local.count(args);
+    return state(this).local.count(args);
   }
 
   async duplicate<T extends CollectionSlug>(args: DuplicateArgs<T>): Promise<TypedCollection<T>> {
-    return this.local.duplicate(args);
+    return state(this).local.duplicate(args);
   }
 
   async findDistinct<T extends CollectionSlug>(
     args: FindDistinctArgs<T>,
   ): Promise<PaginatedDistinctDocs<Record<string, unknown>>> {
-    return this.local.findDistinct(args);
+    return state(this).local.findDistinct(args);
   }
 
   // ── Versions ────────────────────────────────────────────────────────────
@@ -354,55 +274,55 @@ export class FrogBot {
   async findVersions<T extends CollectionSlug>(
     args: FindVersionsArgs<T>,
   ): Promise<PaginatedDocs<TypeWithVersion<TypedCollection<T>>>> {
-    return this.local.findVersions(args);
+    return state(this).local.findVersions(args);
   }
 
   async findVersionByID<T extends CollectionSlug>(
     args: FindVersionByIDArgs<T>,
   ): Promise<TypeWithVersion<TypedCollection<T>>> {
-    return this.local.findVersionByID(args);
+    return state(this).local.findVersionByID(args);
   }
 
   async countVersions<T extends CollectionSlug>(
     args: CountVersionsArgs<T>,
   ): Promise<{ totalDocs: number }> {
-    return this.local.countVersions(args);
+    return state(this).local.countVersions(args);
   }
 
   async restoreVersion<T extends CollectionSlug>(
     args: RestoreVersionArgs<T>,
   ): Promise<TypedCollection<T>> {
-    return this.local.restoreVersion(args);
+    return state(this).local.restoreVersion(args);
   }
 
   // ── Auth ────────────────────────────────────────────────────────────────
 
   async auth(args: AuthArgs): Promise<AuthResult> {
-    return this.local.auth(args);
+    return state(this).local.auth(args);
   }
 
   async login<T extends CollectionSlug>(args: LoginArgs<T>): Promise<LoginResult<T>> {
-    if (!coordinatesSessions(this.payload.collections[args.collection]?.config)) {
-      return this.local.login(args);
+    if (!coordinatesSessions(state(this).payload.collections[args.collection]?.config)) {
+      return state(this).local.login(args);
     }
     const req = await this.createRequest(args.req);
     return withAuthOperation({
       req,
       collectionSlug: args.collection,
       operation: 'login',
-      fn: () => this.local.login({ ...args, req }),
+      fn: () => state(this).local.login({ ...args, req }),
     });
   }
 
   async forgotPassword<T extends CollectionSlug>(args: ForgotPasswordArgs<T>): Promise<string> {
-    return this.local.forgotPassword(args);
+    return state(this).local.forgotPassword(args);
   }
 
   async resetPassword<T extends CollectionSlug>(
     args: ResetPasswordArgs<T>,
   ): Promise<ResetPasswordResult> {
-    if (!coordinatesSessions(this.payload.collections[args.collection]?.config)) {
-      return this.local.resetPassword(args);
+    if (!coordinatesSessions(state(this).payload.collections[args.collection]?.config)) {
+      return state(this).local.resetPassword(args);
     }
     const req = await this.createRequest(args.req);
     return withAuthOperation({
@@ -411,7 +331,7 @@ export class FrogBot {
       operation: 'resetPassword',
       fn: async () => {
         const payloadReq = req as unknown as PayloadRequest;
-        const collection = this.payload.collections[args.collection]!;
+        const collection = state(this).payload.collections[args.collection]!;
         const result = await resetPasswordOperation({
           collection,
           data: args.data,
@@ -425,125 +345,221 @@ export class FrogBot {
   }
 
   async verifyEmail<T extends CollectionSlug>(args: VerifyEmailArgs<T>): Promise<boolean> {
-    return this.local.verifyEmail(args);
+    return state(this).local.verifyEmail(args);
   }
 
   async unlock<T extends CollectionSlug>(args: UnlockArgs<T>): Promise<boolean> {
-    return this.local.unlock(args);
+    return state(this).local.unlock(args);
   }
 
   // ── Utilities ───────────────────────────────────────────────────────────
 
   encrypt(text: string): string {
-    return this.payload.encrypt(text);
+    return state(this).payload.encrypt(text);
   }
   decrypt(text: string): string {
-    return this.payload.decrypt(text);
+    return state(this).payload.decrypt(text);
   }
   getAdminURL(): string {
-    return this.payload.getAdminURL();
+    return state(this).payload.getAdminURL();
   }
   getAPIURL(): string {
-    return this.payload.getAPIURL();
+    return state(this).payload.getAPIURL();
   }
 
   // ── AI ──────────────────────────────────────────────────────────────────
 
   generateText = (opts: GenerateTextOpts): ReturnType<typeof generateTextOperation> =>
-    generateTextOperation(this.aiDeps(), opts);
+    generateTextOperation(aiDeps(this), opts);
 
   streamText = (opts: StreamTextOpts): ReturnType<typeof streamTextOperation> =>
-    streamTextOperation(this.aiDeps(), opts);
+    streamTextOperation(aiDeps(this), opts);
 
-  embed = (opts: EmbedOpts) => embedOperation(this.aiDeps(), opts);
+  embed = (opts: EmbedOpts) => embedOperation(aiDeps(this), opts);
 
-  embedMany = (opts: EmbedManyOpts) => embedManyOperation(this.aiDeps(), opts);
+  embedMany = (opts: EmbedManyOpts) => embedManyOperation(aiDeps(this), opts);
 
-  generateImage = (opts: GenerateImageOpts) => generateImageOperation(this.aiDeps(), opts);
+  generateImage = (opts: GenerateImageOpts) => generateImageOperation(aiDeps(this), opts);
 
-  generateSpeech = (opts: GenerateSpeechOpts) => generateSpeechOperation(this.aiDeps(), opts);
+  generateSpeech = (opts: GenerateSpeechOpts) => generateSpeechOperation(aiDeps(this), opts);
 
-  transcribe = (opts: TranscribeOpts) => transcribeOperation(this.aiDeps(), opts);
+  transcribe = (opts: TranscribeOpts) => transcribeOperation(aiDeps(this), opts);
 
-  generateVideo = (opts: GenerateVideoOpts) => generateVideoOperation(this.aiDeps(), opts);
+  generateVideo = (opts: GenerateVideoOpts) => generateVideoOperation(aiDeps(this), opts);
 
-  rerank = (opts: RerankOpts) => rerankOperation(this.aiDeps(), opts);
+  rerank = (opts: RerankOpts) => rerankOperation(aiDeps(this), opts);
 
   search = <T extends CollectionSlug>(options: SearchOptions<T>): Promise<SearchResult<T>> =>
-    searchOperation(this, this.payload, options);
+    searchOperation(this, state(this).payload, options);
 
   evaluate = <const QUESTIONS extends Record<string, EvaluationQuestion>>(
     opts: EvaluateOpts<QUESTIONS>,
-  ): Promise<EvaluateResult<QUESTIONS>> => evaluateOperation(this.aiDeps(), opts);
+  ): Promise<EvaluateResult<QUESTIONS>> => evaluateOperation(aiDeps(this), opts);
 
   // ── Training data ───────────────────────────────────────────────────────
 
   exportTrainingData(options: ReadTrainingDataOptions = {}): ReadableStream<Uint8Array> {
     return encodeTrainingData(readTrainingData(this, options));
   }
+}
 
-  // ── Private ─────────────────────────────────────────────────────────────
+async function initialize(
+  frogbot: FrogBot,
+  payload: Payload,
+  config: FrogBotSanitizedConfig,
+  options: PayloadInitOptions,
+): Promise<FrogBot> {
+  frogbot.config = config;
+  states.set(frogbot, {
+    kv: createKV({ adapter: payload.kv }),
+    local: createFrogBotLocalAPI(payload),
+    payload,
+  });
+  registerFrogBotInstance(payload, frogbot, config, (next) => refresh(frogbot, next));
 
-  /** @internal — throws if AI is not configured, otherwise returns the gateway. */
-  private assertAIConfigured(): Gateway {
-    if (!this.gateway || !this.config.ai) {
-      throw new Error('AI is not configured. Add an `ai` block to your FrogBot config.');
-    }
-    return this.gateway;
-  }
+  frogbot.secret = payload.secret;
+  frogbot.logger = payload.logger;
 
-  /** @internal — builds the deps object for AI operations. */
-  private aiDeps() {
-    const gateway = this.assertAIConfigured();
-    return {
-      gateway,
-      config: this.config.ai!,
-      frogbot: this,
-      logger: this.logger,
-    };
-  }
-
-  /**
-   * @internal — auto-register `@ai-sdk/otel` with FrogBot-specific span
-   * enrichment. Silently no-ops when `@ai-sdk/otel` is not installed or
-   * when telemetry is disabled in config.
-   */
-  private async registerAITelemetry(ai: SanitizedAIConfig): Promise<void> {
-    if (!ai.telemetry.enabled) return;
-
-    let otelModule: typeof import('@ai-sdk/otel') | undefined; // eslint-disable-line @typescript-eslint/consistent-type-imports
-    try {
-      otelModule = await import('@ai-sdk/otel');
-    } catch {
-      // Optional peer dep not installed — telemetry silently disabled.
-      return;
-    }
-
-    const { registerTelemetry } = await import('ai');
-    const { OpenTelemetry } = otelModule;
-
-    const deploymentId = ai._internal.deploymentId;
-    const userEnrichSpan = ai.telemetry.enrichSpan;
-
-    registerTelemetry(
-      new OpenTelemetry({
-        enrichSpan: (args) => ({
-          'frogbot.deployment': deploymentId,
-          ...(userEnrichSpan?.(args) ?? {}),
-        }),
-      }),
+  if (frogbot.config._internal.noEmail && process.env.NEXT_PHASE !== 'phase-production-build') {
+    frogbot.logger.warn(
+      '[frogbot] No email adapter provided. Emails will be logged but not sent. ' +
+        'Pass an `email` adapter to enable delivery.',
     );
   }
 
-  private toCollection(c: { slug: string; custom?: unknown }): Collection {
-    const custom = (c.custom as { frogbot?: FrogBotCustom } | undefined) ?? {};
-    const fb = custom.frogbot ?? {};
-    const search = this.config.collections.find(({ slug }) => slug === c.slug)?.search;
+  await refresh(frogbot, config);
 
-    return {
-      slug: c.slug,
-      auth: fb.auth ?? false,
-      ...(search ? { search } : {}),
-    };
+  await initializeChannelHost(frogbot, options.startChannelGateway !== false);
+
+  if (frogbot.config.ai) {
+    await registerAITelemetry(frogbot.config.ai);
   }
+
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    frogbot.config.typescript?.autoGenerate !== false &&
+    !options.disableOnInit
+  ) {
+    const configDir = resolveConfigDir(process.cwd());
+
+    if (configDir) {
+      void writeGeneratedTypes(frogbot.config, configDir).catch((err: unknown) => {
+        frogbot.logger.warn(
+          `[frogbot] type generation failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      });
+    }
+  }
+
+  if (process.env.NODE_ENV !== 'production' && !options.disableOnInit) {
+    void generateImportMap(payload.config, { ignoreResolveError: true }).catch((err: unknown) => {
+      frogbot.logger.warn(
+        `[frogbot] import map generation failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    });
+  }
+
+  if (!options.disableOnInit) {
+    void frogbot.triggers.reconcile().catch((error: unknown) => {
+      frogbot.logger.warn(
+        `[frogbot] Trigger reconciliation failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    });
+
+    if (options.onInit) {
+      await options.onInit(frogbot);
+    }
+
+    if (frogbot.config.onInit) {
+      await frogbot.config.onInit(frogbot);
+    }
+  }
+
+  return frogbot;
+}
+
+async function refresh(frogbot: FrogBot, config: FrogBotSanitizedConfig): Promise<void> {
+  frogbot.config = config;
+  frogbot.connections = new Connections(frogbot, config.connections);
+  frogbot.triggers ??= new TriggerSubscriptions(frogbot);
+  frogbot.gateway = config.ai ? createAIGateway(config.ai, frogbot.logger) : undefined;
+  frogbot.agents = {};
+
+  if (config.agents?.length && config.ai) {
+    const agentDeps = {
+      gateway: assertAIConfigured(frogbot),
+      config: config.ai,
+      frogbot,
+    };
+
+    for (const agentConfig of config.agents) {
+      frogbot.agents[agentConfig.slug] = createAgentInstance(agentConfig, agentDeps);
+    }
+  }
+
+  frogbot.collections = {};
+
+  for (const collection of state(frogbot).payload.config.collections) {
+    if (!collection.slug.startsWith('payload-')) {
+      frogbot.collections[collection.slug] = toCollection(frogbot, collection);
+    }
+  }
+}
+
+function assertAIConfigured(frogbot: FrogBot): Gateway {
+  if (!frogbot.gateway || !frogbot.config.ai) {
+    throw new Error('AI is not configured. Add an `ai` block to your FrogBot config.');
+  }
+
+  return frogbot.gateway;
+}
+
+function aiDeps(frogbot: FrogBot) {
+  const gateway = assertAIConfigured(frogbot);
+
+  return {
+    gateway,
+    config: frogbot.config.ai!,
+    frogbot,
+    logger: frogbot.logger,
+  };
+}
+
+async function registerAITelemetry(ai: SanitizedAIConfig): Promise<void> {
+  if (!ai.telemetry.enabled) return;
+
+  let otelModule: typeof import('@ai-sdk/otel') | undefined; // eslint-disable-line @typescript-eslint/consistent-type-imports
+  try {
+    otelModule = await import('@ai-sdk/otel');
+  } catch {
+    // Optional peer dep not installed — telemetry silently disabled.
+    return;
+  }
+
+  const { registerTelemetry } = await import('ai');
+  const { OpenTelemetry } = otelModule;
+
+  const deploymentId = ai._internal.deploymentId;
+  const userEnrichSpan = ai.telemetry.enrichSpan;
+
+  registerTelemetry(
+    new OpenTelemetry({
+      enrichSpan: (args) => ({
+        'frogbot.deployment': deploymentId,
+        ...(userEnrichSpan?.(args) ?? {}),
+      }),
+    }),
+  );
+}
+
+function toCollection(frogbot: FrogBot, c: { slug: string; custom?: unknown }): Collection {
+  const custom = (c.custom as { frogbot?: FrogBotCustom } | undefined) ?? {};
+  const fb = custom.frogbot ?? {};
+  const search = frogbot.config.collections.find(({ slug }) => slug === c.slug)?.search;
+
+  return {
+    slug: c.slug,
+    auth: fb.auth ?? false,
+    ...(search ? { search } : {}),
+  };
 }

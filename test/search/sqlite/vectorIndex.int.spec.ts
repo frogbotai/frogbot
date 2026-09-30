@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import type { SQLiteAdapter } from '@frogbotai/db-sqlite';
 import { sql } from '@frogbotai/db-sqlite';
 import type { FrogBotInstance } from 'frogbot';
-import { FrogBot } from 'frogbot/test';
+import { FrogBot, getFrogBotPayload } from 'frogbot/test';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { clearAndSeed } from '../../__helpers/shared/clearAndSeed/index.js';
@@ -38,7 +38,7 @@ describe('SQLite approximate vector search', () => {
       config: await buildSearchConfig({ url: `file:${indexedPath}` }),
     });
 
-    db = (frogbot as unknown as { payload: { db: SQLiteAdapter } }).payload.db;
+    db = getFrogBotPayload(frogbot).db as SQLiteAdapter;
   });
 
   afterAll(async () => {

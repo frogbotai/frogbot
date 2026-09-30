@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import type { SQLiteAdapter } from '@frogbotai/db-sqlite';
 import { sql } from '@frogbotai/db-sqlite';
 import type { FrogBotInstance } from 'frogbot';
-import { FrogBot } from 'frogbot/test';
+import { FrogBot, getFrogBotPayload } from 'frogbot/test';
 import type { Payload } from 'payload';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -68,7 +68,7 @@ describe('SQLite search migrations', () => {
       config: await buildSearchConfig({ migrationDir, push: false, url: `file:${databasePath}` }),
     });
 
-    payload = (frogbot as unknown as { payload: Payload }).payload;
+    payload = getFrogBotPayload(frogbot);
     db = payload.db as unknown as SQLiteAdapter;
   });
 

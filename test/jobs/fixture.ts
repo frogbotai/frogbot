@@ -6,7 +6,7 @@ import { join } from 'node:path';
 
 import { buildConfig, type FrogBotConfig } from 'frogbot';
 import { getJobLeaseContext } from 'frogbot/jobs';
-import { FrogBot } from 'frogbot/test';
+import { FrogBot, getFrogBotPayload } from 'frogbot/test';
 import { BasePayload, type Payload, type PayloadRequest } from 'payload';
 
 import { initFrogBotFromPayload } from '../../packages/frogbot/dist/frogbot.js';
@@ -342,7 +342,7 @@ export async function bootJobsFixture({
 
     frogbot = await new FrogBot().init({ config, disableOnInit: true });
 
-    const payload = (frogbot as unknown as { payload: Payload }).payload;
+    const payload = getFrogBotPayload(frogbot);
 
     if (adapterName === 'mongodb') {
       const models = (

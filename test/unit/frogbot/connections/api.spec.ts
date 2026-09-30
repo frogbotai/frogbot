@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { Connections } from '../../../../packages/frogbot/src/connections/api.js';
+import { Connections, connectionsState } from '../../../../packages/frogbot/src/connections/api.js';
 import { createCredentialEncryption } from '../../../../packages/frogbot/src/connections/encryption.js';
 import type { ConnectionRow } from '../../../../packages/frogbot/src/connections/store.js';
 import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece.js';
@@ -226,13 +226,13 @@ describe('connections API', () => {
     const first = await resolve('owner-0');
     const second = await resolve('owner-1');
     for (let i = 2; i < 512; i++) await resolve(`owner-${i}`);
-    expect(api).toHaveProperty('credentialKeys.size', 512);
+    expect(connectionsState(api).credentialKeys.size).toBe(512);
     expect(await resolve('owner-0')).toBe(first);
     await resolve('owner-512');
-    expect(api).toHaveProperty('credentialKeys.size', 512);
+    expect(connectionsState(api).credentialKeys.size).toBe(512);
     expect(await resolve('owner-0')).toBe(first);
     expect(await resolve('owner-1')).not.toBe(second);
-    expect(api).toHaveProperty('credentialKeys.size', 512);
+    expect(connectionsState(api).credentialKeys.size).toBe(512);
   });
 
   it('drops a disappeared owner/piece identity before factory fallback', async () => {
@@ -240,7 +240,7 @@ describe('connections API', () => {
     const first = await piece.client({ req });
     find.mockResolvedValueOnce({ docs: [] });
     expect(await piece.client({ req })).toEqual({ auth: { token: 'factory' } });
-    expect(api).toHaveProperty('credentialKeys.size', 0);
+    expect(connectionsState(api).credentialKeys.size).toBe(0);
     expect(await piece.client({ req })).not.toBe(first);
   });
 
@@ -249,10 +249,10 @@ describe('connections API', () => {
     const first = await piece.client({ req });
     stored!.id = 'replacement';
     expect(await piece.client({ req })).not.toBe(first);
-    expect(api).toHaveProperty('credentialKeys.size', 1);
+    expect(connectionsState(api).credentialKeys.size).toBe(1);
     stored!.id = 'connection';
     expect(await piece.client({ req })).not.toBe(first);
-    expect(api).toHaveProperty('credentialKeys.size', 1);
+    expect(connectionsState(api).credentialKeys.size).toBe(1);
   });
 
   it('prunes disappeared rows on listing without dropping other owners', async () => {
@@ -262,7 +262,7 @@ describe('connections API', () => {
     const other = await piece.client({ req: otherReq });
     find.mockResolvedValueOnce({ docs: [] });
     expect(await api.list({ req })).toEqual([]);
-    expect(api).toHaveProperty('credentialKeys.size', 1);
+    expect(connectionsState(api).credentialKeys.size).toBe(1);
     expect(await piece.client({ req: otherReq })).toBe(other);
     expect(await piece.client({ req })).not.toBe(first);
   });
@@ -272,7 +272,7 @@ describe('connections API', () => {
     const first = await piece.client({ req });
     vi.spyOn(await api.store, 'delete').mockResolvedValue(true);
     expect(await api.delete({ req, id: 'connection' })).toBe(true);
-    expect(api).toHaveProperty('credentialKeys.size', 0);
+    expect(connectionsState(api).credentialKeys.size).toBe(0);
     expect(await piece.client({ req })).not.toBe(first);
   });
 

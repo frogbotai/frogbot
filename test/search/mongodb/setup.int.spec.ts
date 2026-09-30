@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { buildConfig } from '../../../packages/frogbot/src/config/build.js';
 import type { FrogBotConfig } from '../../../packages/frogbot/src/config/types.js';
-import { FrogBot } from '../../../packages/frogbot/src/frogbot.js';
+import { FrogBot, getFrogBotPayload } from '../../../packages/frogbot/src/frogbot.js';
 import { openAccess } from '../../__helpers/shared/buildTestConfig.js';
 
 const collection = 'search-setup-documents';
@@ -69,7 +69,7 @@ describe.skipIf(process.env.FROGBOT_DATABASE !== 'mongodb')('MongoDB search setu
   it('stores vectors without search infrastructure', async () => {
     frogbot = await new FrogBot().init({ config: await buildSetupConfig() });
 
-    const { connection } = (frogbot as unknown as { payload: { db: MongooseAdapter } }).payload.db;
+    const { connection } = getFrogBotPayload(frogbot).db as MongooseAdapter;
 
     await Promise.all(Object.values(connection.models).map((model) => model.init()));
 

@@ -4,7 +4,6 @@ import type { FrogBotSanitizedConfig } from '../../../packages/frogbot/src/confi
 import type { FrogBot } from '../../../packages/frogbot/src/frogbot.js';
 import {
   ensureFrogBotInstance,
-  refreshFrogBotConfig,
   registerFrogBotInstance,
 } from '../../../packages/frogbot/src/instanceRegistry.js';
 
@@ -59,12 +58,11 @@ describe('ensureFrogBotInstance', () => {
     const pending = new Promise<void>((done) => {
       resolve = done;
     });
-    const frogbot = {
-      [refreshFrogBotConfig]: vi.fn(() => Promise.resolve()),
-    } as unknown as FrogBot;
+    const frogbot = {} as FrogBot;
+    const refresh = vi.fn(() => Promise.resolve());
     const init = vi.fn(async () => {
       await pending;
-      registerFrogBotInstance(payload, frogbot, firstConfig);
+      registerFrogBotInstance(payload, frogbot, firstConfig, refresh);
       return frogbot;
     });
 
@@ -75,6 +73,27 @@ describe('ensureFrogBotInstance', () => {
     await expect(first).resolves.toBe(frogbot);
     await expect(second).resolves.toBe(frogbot);
     expect(init).toHaveBeenCalledOnce();
-    expect(frogbot[refreshFrogBotConfig]).toHaveBeenCalledWith(secondConfig);
+    expect(refresh).toHaveBeenCalledWith(secondConfig);
+  });
+
+  it('refreshes a registered instance through its entry when the instance is not from this module', async () => {
+    const payload = {};
+    const firstConfig = {} as FrogBotSanitizedConfig;
+    const secondConfig = {} as FrogBotSanitizedConfig;
+    const frogbot = {} as FrogBot;
+    const refresh = vi.fn(() => Promise.resolve());
+    const init = vi.fn();
+    registerFrogBotInstance(payload, frogbot, firstConfig, refresh);
+    vi.resetModules();
+    const copy = await import('../../../packages/frogbot/src/instanceRegistry.js');
+
+    const refreshed = await copy.ensureFrogBotInstance(payload, init, secondConfig);
+    const reused = await copy.ensureFrogBotInstance(payload, init, secondConfig);
+
+    expect(copy.ensureFrogBotInstance).not.toBe(ensureFrogBotInstance);
+    expect(refreshed).toBe(frogbot);
+    expect(reused).toBe(frogbot);
+    expect(refresh).toHaveBeenCalledExactlyOnceWith(secondConfig);
+    expect(init).not.toHaveBeenCalled();
   });
 });

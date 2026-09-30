@@ -106,7 +106,7 @@ Use an ESM package with declarations and explicit export maps. A plugin without 
 
 The `types`, `import`, and `default` conditions all point to built files. Put `types` first in each conditional entry so TypeScript resolves declarations before a runtime condition. Do not expose source files or undeclared deep imports. This manifest is for a first-party workspace; pnpm rewrites `workspace:*` on packing. An independently maintained plugin uses its own package name and supported FrogBot version ranges.
 
-List a package as a peer dependency when the consuming app must provide the runtime instance. Add the same package to `devDependencies` when this workspace needs it to build or test. Omit React and `@frogbotai/ui` entirely from a server-only plugin.
+List a package as a peer dependency when the consuming app must provide the runtime instance. Add the same package to `devDependencies` when this workspace needs it to build or test. Never list `frogbot` under `dependencies`: that installs a second copy of `frogbot`, whose types don't match the app's. Omit React and `@frogbotai/ui` entirely from a server-only plugin.
 
 If the package has no CSS, omit `sideEffects` and the copy command. If it has several asset types, extend the build command only for assets that actually exist.
 

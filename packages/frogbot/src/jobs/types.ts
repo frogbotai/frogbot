@@ -94,17 +94,15 @@ type JobTaskStatus = {
   >;
 };
 
-type JobQueueResult<T extends JobSlug> = T extends JobWorkflowSlug
-  ? Omit<Awaited<ReturnType<Payload['jobs']['queue']>>, 'input' | 'taskStatus'> & {
-      input: TypedJobs['workflows'][T]['input'];
-      taskStatus: JobTaskStatus;
-    }
-  : T extends JobTaskSlug
-    ? Omit<Awaited<ReturnType<Payload['jobs']['queue']>>, 'input' | 'taskStatus'> & {
-        input: TypedJobs['tasks'][T]['input'];
-        taskStatus: JobTaskStatus;
-      }
-    : never;
+type JobQueueResult<T extends JobSlug> = Omit<
+  Awaited<ReturnType<Payload['jobs']['queue']>>,
+  'input' | 'taskStatus'
+> & {
+  input:
+    | TypedJobs['tasks'][T & JobTaskSlug]['input']
+    | TypedJobs['workflows'][T & JobWorkflowSlug]['input'];
+  taskStatus: JobTaskStatus;
+};
 
 export type Jobs = {
   [K in Exclude<keyof Payload['jobs'], 'queue'>]: (

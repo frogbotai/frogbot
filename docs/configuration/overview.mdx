@@ -93,6 +93,8 @@ export default buildConfig({
 })
 ```
 
+`admin.meta` takes the page metadata type from `next`, so apps that install `next` get its full autocomplete. In a package without `next`, `admin.meta` is untyped when `skipLibCheck` is `true`, and TypeScript reports `Cannot find module 'next'` when it is `false`.
+
 `agents` is an array of `AgentConfig` objects, not a directory path. FrogBot v0 does not scan `AGENT.md` files or upsert them into a collection.
 
 Configuring an agent also enables chat persistence. FrogBot injects owner-scoped `chats` and `messages` collections unless you adopt those roles with `chat: true` and `message: true`. See [Chat persistence](/chat/overview).

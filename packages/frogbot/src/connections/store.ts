@@ -51,50 +51,86 @@ function metadata(row: ConnectionRow): ConnectionMetadata {
   };
 }
 
-export class ConnectionStore {
-  private readonly frogbot: Pick<FrogBot, 'find' | 'create' | 'update' | 'delete' | 'kv'>;
-  private readonly config: SanitizedConnectionsConfig;
-  private readonly userSlug: string;
+type ConnectionStoreFrogBot = Pick<FrogBot, 'find' | 'create' | 'update' | 'delete' | 'kv'>;
 
+type ConnectionStoreState = {
+  config: SanitizedConnectionsConfig;
+  frogbot: ConnectionStoreFrogBot;
+  userSlug: string;
+};
+
+const states = new WeakMap<ConnectionStore, ConnectionStoreState>();
+
+function storeState(store: ConnectionStore): ConnectionStoreState {
+  const state = states.get(store);
+
+  if (!state) throw new Error('ConnectionStore is not initialized');
+
+  return state;
+}
+
+function assertOwner({ userSlug }: ConnectionStoreState, owner: ConnectionOwner) {
+  if (
+    !owner ||
+    owner.collection !== userSlug ||
+    !(
+      (typeof owner.id === 'string' && owner.id.trim().length > 0) ||
+      (typeof owner.id === 'number' && Number.isSafeInteger(owner.id))
+    )
+  ) {
+    throw new Error('Connections require an owner from the admin user collection.');
+  }
+}
+
+function assertKey(state: ConnectionStoreState, { owner, piece }: ConnectionStoreKey) {
+  const { config } = state;
+
+  assertOwner(state, owner);
+
+  if (!config.enabled || !config.slug || !Object.hasOwn(config.entries, piece)) {
+    throw new Error(`Connection piece '${piece}' is not configured.`);
+  }
+}
+
+async function findRow(
+  { config, frogbot }: ConnectionStoreState,
+  { owner, piece }: ConnectionStoreKey,
+): Promise<ConnectionRow | undefined> {
+  const result = await frogbot.find({
+    collection: config.slug as never,
+    where: { and: [{ owner: { equals: owner.id } }, { piece: { equals: piece } }] },
+    depth: 0,
+    limit: 1,
+    overrideAccess: true,
+    showHiddenFields: true,
+  });
+
+  return result.docs[0] as unknown as ConnectionRow | undefined;
+}
+
+export class ConnectionStore {
   constructor({
     frogbot,
     config,
     userSlug,
   }: {
-    frogbot: Pick<FrogBot, 'find' | 'create' | 'update' | 'delete' | 'kv'>;
+    frogbot: ConnectionStoreFrogBot;
     config: SanitizedConnectionsConfig;
     userSlug: string;
   }) {
-    this.frogbot = frogbot;
-    this.config = config;
-    this.userSlug = userSlug;
-  }
-
-  private assertOwner(owner: ConnectionOwner) {
-    if (
-      !owner ||
-      owner.collection !== this.userSlug ||
-      !(
-        (typeof owner.id === 'string' && owner.id.trim().length > 0) ||
-        (typeof owner.id === 'number' && Number.isSafeInteger(owner.id))
-      )
-    ) {
-      throw new Error('Connections require an owner from the admin user collection.');
-    }
-  }
-
-  private assertKey({ owner, piece }: ConnectionStoreKey) {
-    this.assertOwner(owner);
-    if (!this.config.enabled || !this.config.slug || !Object.hasOwn(this.config.entries, piece)) {
-      throw new Error(`Connection piece '${piece}' is not configured.`);
-    }
+    states.set(this, { config, frogbot, userSlug });
   }
 
   async list({ owner }: { owner: ConnectionOwner }): Promise<ConnectionMetadata[]> {
-    this.assertOwner(owner);
-    if (!this.config.enabled || !this.config.slug) return [];
-    const result = await this.frogbot.find({
-      collection: this.config.slug as never,
+    const state = storeState(this);
+    const { config, frogbot } = state;
+
+    assertOwner(state, owner);
+
+    if (!config.enabled || !config.slug) return [];
+
+    const result = await frogbot.find({
+      collection: config.slug as never,
       where: { owner: { equals: owner.id } },
       depth: 0,
       pagination: false,
@@ -103,24 +139,17 @@ export class ConnectionStore {
     return (result.docs as unknown as ConnectionRow[]).map(metadata);
   }
 
-  private async findRow({ owner, piece }: ConnectionStoreKey): Promise<ConnectionRow | undefined> {
-    const result = await this.frogbot.find({
-      collection: this.config.slug as never,
-      where: { and: [{ owner: { equals: owner.id } }, { piece: { equals: piece } }] },
-      depth: 0,
-      limit: 1,
-      overrideAccess: true,
-      showHiddenFields: true,
-    });
-    return result.docs[0] as unknown as ConnectionRow | undefined;
-  }
-
   async get(key: ConnectionStoreKey): Promise<ConnectionStoredValue | undefined> {
-    this.assertKey(key);
-    const row = await this.findRow(key);
+    const state = storeState(this);
+
+    assertKey(state, key);
+
+    const row = await findRow(state, key);
+
     if (!row) return;
+
     try {
-      const credential = JSON.parse(await this.config.encryption.decrypt(row.credential));
+      const credential = JSON.parse(await state.config.encryption.decrypt(row.credential));
       return { ...metadata(row), credential };
     } catch {
       throw new CredentialCryptoError();
@@ -140,11 +169,15 @@ export class ConnectionStore {
     piece,
     fn,
   }: ConnectionStoreKey & { fn: (locked: ConnectionStoreLock) => Promise<T> }): Promise<T> {
-    this.assertKey({ owner, piece });
-    const key = { owner: { ...owner }, piece };
-    const lockKey = `connections:${JSON.stringify([this.config.slug, owner.collection, String(owner.id), piece])}`;
+    const state = storeState(this);
+    const { config, frogbot } = state;
 
-    return this.frogbot.kv.lock(lockKey, 30_000, async ({ signal }) => {
+    assertKey(state, { owner, piece });
+
+    const key = { owner: { ...owner }, piece };
+    const lockKey = `connections:${JSON.stringify([config.slug, owner.collection, String(owner.id), piece])}`;
+
+    return frogbot.kv.lock(lockKey, 30_000, async ({ signal }) => {
       let open = true;
       const check = () => {
         signal.throwIfAborted();
@@ -165,16 +198,16 @@ export class ConnectionStore {
 
             if (
               !['oauth', 'secret'].includes(data.method) ||
-              !this.config.entries[piece]![data.method]
+              !config.entries[piece]![data.method]
             ) {
               throw new Error(`Connection method '${data.method}' is not enabled for '${piece}'.`);
             }
 
             const serialized = JSON.stringify(data.credential);
             if (serialized === undefined) throw new Error('Connection credential must be JSON.');
-            const credential = await this.config.encryption.encrypt(serialized);
+            const credential = await config.encryption.encrypt(serialized);
             check();
-            const row = await this.findRow(key);
+            const row = await findRow(state, key);
             check();
 
             const write = {
@@ -188,27 +221,27 @@ export class ConnectionStore {
               status: data.status ?? 'active',
             };
             const options = {
-              collection: this.config.slug as never,
+              collection: config.slug as never,
               data: write,
               depth: 0,
               overrideAccess: true,
             };
 
             const saved = row
-              ? await this.frogbot.update({ ...options, id: row.id })
-              : await this.frogbot.create(options);
+              ? await frogbot.update({ ...options, id: row.id })
+              : await frogbot.create(options);
             check();
 
             return metadata(saved as unknown as ConnectionRow);
           },
           delete: async ({ id } = {}) => {
             check();
-            const row = await this.findRow(key);
+            const row = await findRow(state, key);
             check();
             if (!row || (id !== undefined && String(id) !== String(row.id))) return false;
 
-            await this.frogbot.delete({
-              collection: this.config.slug as never,
+            await frogbot.delete({
+              collection: config.slug as never,
               id: row.id,
               overrideAccess: true,
             });

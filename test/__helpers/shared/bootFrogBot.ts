@@ -3,7 +3,7 @@ import { serve } from '@hono/node-server';
 import type { FrogBotInstance } from 'frogbot';
 import { createGatewayHandler } from 'frogbot';
 import type { FrogBotSanitizedConfig } from 'frogbot/test';
-import { FrogBot } from 'frogbot/test';
+import { FrogBot, getFrogBotPayload } from 'frogbot/test';
 import { Hono } from 'hono';
 import path from 'path';
 import type { Payload } from 'payload';
@@ -59,7 +59,7 @@ export async function bootFrogBot(
   const config = await mod.default;
 
   const frogbot: FrogBotInstance = await new FrogBot().init({ config });
-  const payload = (frogbot as unknown as { payload: Payload }).payload;
+  const payload = getFrogBotPayload(frogbot);
   if (payload.db.name === 'mongoose') {
     const db = payload.db as MongooseAdapter;
     await Promise.all(Object.values(db.connection.models).map((model) => model.init()));

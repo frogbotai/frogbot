@@ -44,6 +44,18 @@ Use the equivalent dev command if you selected pnpm, yarn, or bun. Then open [ht
 - SQLite, PostgreSQL, or MongoDB — see [Database](/database/overview)
 - Optional: an object store (S3, GCS, Azure, R2, Vercel Blob, or Uploadthing) — see [Configuration](/configuration/overview#storage)
 
+## Monorepos
+
+Keep one copy of `frogbot` in a workspace. Each copy has its own types, so a block, field, or collection exported from a shared package fails to typecheck in an app that resolves a different copy. Check which copies are installed:
+
+```bash
+pnpm why frogbot
+```
+
+A shared package lists `frogbot` under `peerDependencies`, plus `devDependencies` so it can build and run its own tests. Never list it under `dependencies`, which installs a separate copy for that package.
+
+Use the same `frogbot` version in every package. If `pnpm why frogbot` still shows more than one copy, run `pnpm dedupe`. An optional peer that only some packages install, such as `@ai-sdk/otel`, can also split `frogbot` into two copies; install it in every package that installs `frogbot`, or in none of them.
+
 ## Next steps
 
 <CardGroup cols={2}>
