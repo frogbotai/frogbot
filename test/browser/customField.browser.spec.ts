@@ -191,6 +191,9 @@ test('renders typed default widgets with req.frogbot through the modular dashboa
 
   await expect(page.getByTestId('welcome-widget')).toContainText('Default dashboard');
   await expect(page.getByTestId('activity-widget')).toContainText('Recent activity');
+  await expect(page.locator('.app-header__step-nav .step-nav__last button')).toBeVisible();
+  await expect(page).toHaveTitle('Dashboard - FrogBot');
+  await expect(page.locator('head title[data-frogbot-tab-title]')).toHaveCount(0);
   await expect
     .poll(async () => Number(await page.getByTestId('welcome-widget-collections').textContent()))
     .toBeGreaterThanOrEqual(2);
@@ -230,4 +233,40 @@ test('edits, persists, and resets the modular dashboard layout', async ({ page }
   await page.reload();
 
   await expect(page.getByTestId('welcome-widget')).toContainText('Default dashboard');
+});
+
+test('the phone dashboard breadcrumb dropdown keeps its options clickable', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto('/');
+  await expect(page.locator('.frogbot-nav-shell')).toHaveAttribute(
+    'data-nav-state',
+    'mobile-nav-closed',
+  );
+
+  const stepNav = page.locator('.app-header__step-nav-wrapper');
+
+  await stepNav.locator('button').click();
+
+  const edit = stepNav.getByText('Edit Dashboard', { exact: true });
+
+  await expect(edit).toBeVisible();
+  await expect
+    .poll(() =>
+      edit.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+
+        return element.contains(hit);
+      }),
+    )
+    .toBe(true);
+
+  await edit.click();
+
+  await expect(stepNav.locator('.dashboard-breadcrumb-dropdown__editing')).toBeVisible();
+  await expect(page).toHaveTitle('Dashboard - FrogBot');
+
+  await stepNav.getByRole('button', { name: 'Cancel', exact: true }).click();
+
+  await expect(stepNav.locator('.dashboard-breadcrumb-select')).toBeVisible();
 });

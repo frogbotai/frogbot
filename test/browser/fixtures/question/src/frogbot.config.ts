@@ -8,6 +8,7 @@ import {
   channelQuestion,
   chatPicksPreference,
   chatsSlug,
+  insightsPath,
   messagesSlug,
   modelPort,
   reportsPath,
@@ -27,9 +28,11 @@ export default buildConfig({
       navItems: [
         { label: 'New Chat', path: `/collections/${chatsSlug}/create`, icon: 'pencil-edit' },
         { label: 'Reports', path: reportsPath, icon: 'home' },
+        { label: 'Insights', path: insightsPath, icon: 'home' },
       ],
       navSections: ['@frogbotai/next#CollectionsSection', '@frogbotai/next#RecentsSection'],
       views: {
+        insights: { Component: '/components/InsightsView#InsightsView', path: insightsPath },
         reports: { Component: '/components/ReportsView#ReportsView', path: reportsPath },
       },
     },

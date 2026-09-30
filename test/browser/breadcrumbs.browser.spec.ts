@@ -5,6 +5,7 @@ import { signIn } from './__helpers/signIn';
 import {
   agentSlug,
   chatsSlug,
+  insightsPath,
   modelPort,
   reportsPath,
   robotSettings,
@@ -12,7 +13,12 @@ import {
   usersSlug,
 } from './fixtures/question/shared';
 
-type MarkedWindow = Window & { breadcrumbsMarker?: string; breadcrumbsLabels?: string[] };
+type MarkedWindow = Window & {
+  breadcrumbsMarker?: string;
+  breadcrumbsLabels?: string[];
+  breadcrumbsTitles?: string[];
+  breadcrumbsTitleObserver?: MutationObserver;
+};
 
 const threadTitle = 'Refund policy question';
 const firstMessage = 'Summarize the quarterly refund requests from enterprise customers';
@@ -85,6 +91,10 @@ async function expectLabel(page: Page, ...segments: string[]) {
   await expect(stepNav(page)).toHaveText(segments.length > 0 ? `/${segments.join('/')}` : '');
 }
 
+async function expectTabTitle(page: Page, text: string) {
+  await expect.soft(page).toHaveTitle(`${text} - FrogBot`);
+}
+
 async function createChat(page: Page, title: string) {
   const response = await page.request.post(`/api/${chatsSlug}`, {
     data: { title, agent: agentSlug },
@@ -133,6 +143,39 @@ async function recordLabels(page: Page) {
 
 async function recordedLabels(page: Page) {
   return page.evaluate(() => (window as MarkedWindow).breadcrumbsLabels ?? []);
+}
+
+async function recordTitles(page: Page) {
+  await page.evaluate(() => {
+    const marked = window as MarkedWindow;
+    const titles: string[] = [];
+
+    marked.breadcrumbsTitleObserver?.disconnect();
+
+    const record = () => {
+      const title = document.title;
+
+      if (titles.at(-1) !== title) titles.push(title);
+    };
+
+    marked.breadcrumbsTitles = titles;
+
+    record();
+
+    const observer = new MutationObserver(record);
+
+    marked.breadcrumbsTitleObserver = observer;
+
+    observer.observe(document.head, {
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
+  });
+}
+
+async function recordedTitles(page: Page) {
+  return page.evaluate(() => (window as MarkedWindow).breadcrumbsTitles ?? []);
 }
 
 async function send(page: Page, text: string) {
@@ -185,6 +228,9 @@ test('opening a chat from a collection list replaces the collection label with t
   await openFirstPage(page, `/collections/${usersSlug}`);
   await expectLabel(page, 'Users');
 
+  await expectTabTitle(page, 'Users');
+  await recordTitles(page);
+
   await recents(page).getByRole('link', { name: threadTitle, exact: true }).click();
 
   await expect(page).toHaveURL(new RegExp(`/collections/${chatsSlug}/${chatId}$`));
@@ -196,6 +242,9 @@ test('opening a chat from a collection list replaces the collection label with t
     `/collections/${chatsSlug}`,
   );
   await expectNoReload(page);
+
+  await expectTabTitle(page, threadTitle);
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Users - FrogBot');
 });
 
 test('moving through chat, Settings, and a board labels each page without a reload', async ({
@@ -206,10 +255,18 @@ test('moving through chat, Settings, and a board labels each page without a relo
   await openFirstPage(page, `/collections/${usersSlug}`);
   await expectLabel(page, 'Users');
 
+  await expectTabTitle(page, 'Users');
+
+  await recordTitles(page);
+
   await recents(page).getByRole('link', { name: threadTitle, exact: true }).click();
 
   await expect(page).toHaveURL(new RegExp(`/collections/${chatsSlug}/\\d+$`));
   await expectLabel(page, 'Chats', threadTitle);
+
+  await expectTabTitle(page, threadTitle);
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Users - FrogBot');
+  await recordTitles(page);
 
   await sidebar(page).getByRole('button', { name: 'New Chat', exact: true }).click();
 
@@ -217,45 +274,112 @@ test('moving through chat, Settings, and a board labels each page without a relo
   await expect(page.locator('.fb-composer textarea')).toBeVisible();
   await expectLabel(page);
 
+  await expectTabTitle(page, 'Creating - Chat');
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain(`${threadTitle} - FrogBot`);
+
   await page.getByRole('button', { name: 'Account' }).click();
   await page.getByRole('menuitem', { name: 'Settings' }).click();
 
   await expect(page).toHaveURL(/\/settings\/collections$/);
   await expect(stepNav(page)).toHaveCount(0);
 
+  await expectTabTitle(page, 'Payload');
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain(`${threadTitle} - FrogBot`);
+
   await settingsNav(page).getByRole('link', { name: robotSettings.label, exact: true }).click();
 
   await expect(page.getByTestId('robot-settings')).toBeVisible();
 
+  await expectTabTitle(page, 'Payload');
+
   await settingsNav(page).getByRole('link', { name: 'Collections', exact: true }).click();
 
   await expect(page).toHaveURL(/\/settings\/collections$/);
+
+  await expectTabTitle(page, 'Payload');
 
   await page.locator(`#card-${tasksSlug} .card__click`).click();
 
   await expect(page).toHaveURL(new RegExp(`/collections/${tasksSlug}(\\?|$)`));
   await expectLabel(page, 'Tasks');
 
+  await expectTabTitle(page, 'Tasks');
+
   await viewSwitcher(page).getByRole('link', { name: 'Board', exact: true }).click();
 
   await expect(page).toHaveURL(new RegExp(`/collections/${tasksSlug}/board(\\?|$)`));
   await expectLabel(page, 'Tasks');
+
+  await expectTabTitle(page, 'Tasks');
 
   await viewSwitcher(page).getByRole('link', { name: 'List', exact: true }).click();
 
   await expect(page).toHaveURL(new RegExp(`/collections/${tasksSlug}(\\?|$)`));
   await expectLabel(page, 'Tasks');
   await expectNoReload(page);
+
+  await expectTabTitle(page, 'Tasks');
 });
 
 test('a custom view that sets no label shows only the logo', async ({ page }) => {
   await openFirstPage(page, `/collections/${usersSlug}`);
   await expectLabel(page, 'Users');
+  await expectTabTitle(page, 'Users');
+  await recordTitles(page);
 
   await sidebar(page).getByRole('button', { name: 'Reports', exact: true }).click();
 
   await expect(page.getByRole('heading', { name: 'Reports' })).toBeVisible();
   await expectLabel(page);
+  await expectNoReload(page);
+
+  await expectTabTitle(page, 'Payload');
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Users - FrogBot');
+});
+
+test('a labelled custom view follows its label and clears it on an unlabelled view', async ({
+  page,
+}) => {
+  await openFirstPage(page, `/collections/${usersSlug}`);
+  await expectLabel(page, 'Users');
+  await expectTabTitle(page, 'Users');
+  await recordTitles(page);
+
+  await sidebar(page).getByRole('button', { name: 'Insights', exact: true }).click();
+
+  await expect(page).toHaveURL(new RegExp(`${insightsPath}$`));
+  await expect(page.getByRole('heading', { name: 'Insights' })).toBeVisible();
+  await expectLabel(page, 'Insights');
+  await expectTabTitle(page, 'Insights');
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Users - FrogBot');
+
+  await recordTitles(page);
+  await sidebar(page).getByRole('button', { name: 'Reports', exact: true }).click();
+
+  await expect(page).toHaveURL(new RegExp(`${reportsPath}$`));
+  await expectLabel(page);
+  await expectTabTitle(page, 'Payload');
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Insights - FrogBot');
+  await expectNoReload(page);
+});
+
+test('moving between threads follows the new label despite identical server metadata', async ({
+  page,
+}) => {
+  const firstId = await createChat(page, threadTitle);
+  const secondId = await createChat(page, secondGeneratedTitle);
+
+  await openFirstPage(page, `/collections/${chatsSlug}/${firstId}`);
+  await expectLabel(page, 'Chats', threadTitle);
+  await expectTabTitle(page, threadTitle);
+  await recordTitles(page);
+
+  await recents(page).getByRole('link', { name: secondGeneratedTitle, exact: true }).click();
+
+  await expect(page).toHaveURL(new RegExp(`/collections/${chatsSlug}/${secondId}$`));
+  await expectLabel(page, 'Chats', secondGeneratedTitle);
+  await expectTabTitle(page, secondGeneratedTitle);
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain(`${threadTitle} - FrogBot`);
   await expectNoReload(page);
 });
 
@@ -264,12 +388,24 @@ test('saving a new task labels its edit page with the task title', async ({ page
   await expectLabel(page, 'Tasks');
 
   await page.locator('.list-create-new-doc__create-new-button').click();
+
+  await expectTabTitle(page, 'Create New');
+  await recordTitles(page);
+
   await page.locator('#field-title').fill(taskTitle);
   await page.locator('#action-save').click();
 
   await expect(page).toHaveURL(new RegExp(`/collections/${tasksSlug}/\\d+$`));
   await expectLabel(page, 'Tasks', taskTitle);
   await expectNoReload(page);
+
+  await expectTabTitle(page, taskTitle);
+  await expect(page.locator('head title:not([data-frogbot-tab-title])').first()).toHaveJSProperty(
+    'textContent',
+    'Editing - Task - FrogBot',
+  );
+  await expectTabTitle(page, taskTitle);
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Create New - FrogBot');
 });
 
 test('a new chat label follows the placeholder, generated, and renamed titles', async ({
@@ -277,6 +413,8 @@ test('a new chat label follows the placeholder, generated, and renamed titles', 
 }) => {
   const reply = held();
   const title = held();
+  const chatDocument = held();
+  const chatDocumentPath = new RegExp(`/api/${chatsSlug}/\\d+\\?depth=0$`);
 
   model.respond({ text: 'Here is the summary.', hold: reply.hold });
   model.respondTitle({ text: generatedTitle, hold: title.hold });
@@ -288,17 +426,37 @@ test('a new chat label follows the placeholder, generated, and renamed titles', 
   await expect(page.locator('.fb-composer textarea')).toBeVisible();
   await expectLabel(page);
 
+  await expectTabTitle(page, 'Creating - Chat');
+  await recordTitles(page);
+
+  await page.route(chatDocumentPath, async (route) => {
+    await chatDocument.hold;
+    await route.continue().catch(() => undefined);
+  });
+
   await send(page, firstMessage);
 
   await expect(
     recents(page).getByRole('link', { name: placeholderTitle, exact: true }),
   ).toBeVisible();
 
+  const chatDocumentRequest = page.waitForRequest(chatDocumentPath);
+
   reply.release();
+  await chatDocumentRequest;
+
+  await expectLabel(page, 'Chats');
+  await expectTabTitle(page, 'Chats');
+
+  chatDocument.release();
 
   await expect(page.getByText('Here is the summary.', { exact: true })).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`/collections/${chatsSlug}/\\d+$`));
   await expectLabel(page, 'Chats', placeholderTitle);
+
+  await page.unroute(chatDocumentPath);
+
+  await expectTabTitle(page, placeholderTitle);
 
   title.release();
 
@@ -309,6 +467,8 @@ test('a new chat label follows the placeholder, generated, and renamed titles', 
   await expect(
     recents(page).getByRole('link', { name: generatedTitle, exact: true }),
   ).toBeVisible();
+
+  await expectTabTitle(page, generatedTitle);
 
   const row = recents(page).locator('.fb-chat-row-actions__row', { hasText: generatedTitle });
 
@@ -321,7 +481,40 @@ test('a new chat label follows the placeholder, generated, and renamed titles', 
   await expect(recents(page).getByRole('link', { name: renamedTitle, exact: true })).toBeVisible();
   await expectLabel(page, 'Chats', renamedTitle);
   await expectNoReload(page);
+
+  await expectTabTitle(page, renamedTitle);
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Creating - Chat - FrogBot');
+
+  await recordTitles(page);
+  await collectionsNav(page).getByRole('link', { name: 'Users', exact: true }).click();
+
+  await expectLabel(page, 'Users');
+  await expectTabTitle(page, 'Users');
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain(`${renamedTitle} - FrogBot`);
+
+  await recordTitles(page);
+  await sidebar(page).getByRole('button', { name: 'Insights', exact: true }).click();
+
+  await expectLabel(page, 'Insights');
+  await expectTabTitle(page, 'Insights');
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Users - FrogBot');
+  await expectNoReload(page);
 });
+
+for (const title of ['', ' \n\t ']) {
+  test(`a chat with the blank title ${JSON.stringify(title)} uses Untitled in the tab`, async ({
+    page,
+  }) => {
+    const chatId = await createChat(page, title);
+
+    await openFirstPage(page, `/collections/${chatsSlug}/${chatId}`);
+    await recordTitles(page);
+
+    await expectLabel(page, 'Chats', 'Untitled');
+    await expectTabTitle(page, 'Untitled');
+    expect(await recordedTitles(page)).not.toContain(' - FrogBot');
+  });
+}
 
 test('New Chat after a new thread clears the screen and sends the next message to another chat', async ({
   page,
@@ -349,11 +542,16 @@ test('New Chat after a new thread clears the screen and sends the next message t
 
   const firstPath = new URL(page.url()).pathname;
 
+  await expectTabTitle(page, placeholderTitle);
+  await recordTitles(page);
+
   await sidebar(page).getByRole('button', { name: 'New Chat', exact: true }).click();
 
   await expect(page).toHaveURL(new RegExp(`/collections/${chatsSlug}/create$`));
   await expect(page.getByText('Here is the summary.', { exact: true })).toHaveCount(0);
   await expectLabel(page);
+
+  await expectTabTitle(page, 'Creating - Chat');
 
   firstTitle.release();
 
@@ -364,6 +562,10 @@ test('New Chat after a new thread clears the screen and sends the next message t
     ).toBeVisible({ timeout: 1_000 });
   }).toPass();
   await expectLabel(page);
+
+  await expectTabTitle(page, 'Creating - Chat');
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain(`${generatedTitle} - FrogBot`);
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain(`${placeholderTitle} - FrogBot`);
 
   await send(page, secondMessage);
 
@@ -380,6 +582,8 @@ test('New Chat after a new thread clears the screen and sends the next message t
     recents(page).getByRole('link', { name: secondMessage, exact: true }),
   ).toHaveAttribute('href', new URL(page.url()).pathname);
   await expectNoReload(page);
+
+  await expectTabTitle(page, secondMessage);
 });
 
 test('Back after New Chat from a new thread shows the first conversation again', async ({
@@ -404,13 +608,21 @@ test('Back after New Chat from a new thread shows the first conversation again',
 
   const threadURL = page.url();
 
+  await expectTabTitle(page, placeholderTitle);
+  await recordTitles(page);
+
   await sidebar(page).getByRole('button', { name: 'New Chat', exact: true }).click();
 
   await expect(page).toHaveURL(new RegExp(`/collections/${chatsSlug}/create$`));
   await expect(chatView(page).getByText('Here is the summary.', { exact: true })).toHaveCount(0);
   await expectLabel(page);
 
+  await expectTabTitle(page, 'Creating - Chat');
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain(`${placeholderTitle} - FrogBot`);
+
   await recordLabels(page);
+  await recordTitles(page);
+
   await page.goBack();
 
   await expect(page).toHaveURL(threadURL);
@@ -424,6 +636,15 @@ test('Back after New Chat from a new thread shows the first conversation again',
   expect(labels.filter((label) => !shown.includes(label))).toEqual([]);
   expect(await chatCount(page)).toBe(1);
   await expectNoReload(page);
+
+  await expectTabTitle(page, placeholderTitle);
+
+  await expect(page.locator('head title:not([data-frogbot-tab-title])').first()).toHaveJSProperty(
+    'textContent',
+    'Editing - Chat - FrogBot',
+  );
+  await expectTabTitle(page, placeholderTitle);
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Creating - Chat - FrogBot');
 });
 
 test('a navigation replaced before it finishes never shows its label', async ({ page }) => {
@@ -433,6 +654,7 @@ test('a navigation replaced before it finishes never shows its label', async ({ 
   await openFirstPage(page, `/collections/${usersSlug}`);
   await expectLabel(page, 'Users');
   await recordLabels(page);
+  await recordTitles(page);
 
   const { settled } = await holdNavigation(page, tasksPath, tasks.hold);
   const tasksRequest = page.waitForRequest((request) => isNavigationTo(request.url(), tasksPath));
@@ -455,6 +677,10 @@ test('a navigation replaced before it finishes never shows its label', async ({ 
   expect(labels[0]).toBe('/Users');
   expect(labels).not.toContainEqual(expect.stringContaining('Tasks'));
   await expectNoReload(page);
+
+  await expectTabTitle(page, 'Payload');
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Tasks - FrogBot');
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Users - FrogBot');
 });
 
 test('the first conversation stays on screen after a new chat moves to its thread page', async ({
@@ -622,11 +848,19 @@ test('Back from a new thread returns to the page before the new chat and Forward
 
   const threadURL = page.url();
 
+  await expectTabTitle(page, placeholderTitle);
+  await recordTitles(page);
+
   await page.goBack();
 
   await expect(page).toHaveURL(new RegExp(`${reportsPath}$`));
   await expect(page.getByRole('heading', { name: 'Reports' })).toBeVisible();
   await expectLabel(page);
+
+  await expectTabTitle(page, 'Payload');
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain(`${placeholderTitle} - FrogBot`);
+
+  await recordTitles(page);
 
   await page.goForward();
 
@@ -634,4 +868,13 @@ test('Back from a new thread returns to the page before the new chat and Forward
   await expect(chatView(page).getByText('Here is the summary.', { exact: true })).toBeVisible();
   await expectLabel(page, 'Chats', placeholderTitle);
   await expectNoReload(page);
+
+  await expectTabTitle(page, placeholderTitle);
+
+  await expect(page.locator('head title:not([data-frogbot-tab-title])').first()).toHaveJSProperty(
+    'textContent',
+    'Editing - Chat - FrogBot',
+  );
+  await expectTabTitle(page, placeholderTitle);
+  expect.soft((await recordedTitles(page)).slice(1)).not.toContain('Payload - FrogBot');
 });

@@ -627,13 +627,16 @@ describe('ChatViewClient', () => {
     expect(mocks.request).not.toHaveBeenCalled();
   });
 
-  it('labels a thread without a title as Untitled', async () => {
-    useManifest(agentEntry('general'));
+  it.each([undefined, '', ' \n\t '])(
+    'labels a thread with the blank title %j as Untitled',
+    async (title) => {
+      useManifest(agentEntry('general'));
 
-    renderChatView({ chatId: 'chat-1', initialChat: { id: 'chat-1', agent: 'general' } });
+      renderChatView({ chatId: 'chat-1', initialChat: { id: 'chat-1', agent: 'general', title } });
 
-    await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Untitled' }]));
-  });
+      await waitFor(() => expect(lastStepNav()).toEqual([chatsCrumb, { label: 'Untitled' }]));
+    },
+  );
 
   it('labels a new chat once its id replaces the create route', async () => {
     const replaceState = vi.spyOn(window.history, 'replaceState');
