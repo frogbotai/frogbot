@@ -298,6 +298,7 @@ export type {
   GeneratedTypes,
   RoleSlug,
   TypedCollection,
+  TypedUser,
   TypeWithID,
   UntypedFrogBotTypes,
 } from './types/generated.js';

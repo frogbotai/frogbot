@@ -24,6 +24,7 @@ export interface UntypedFrogBotTypes {
   jobs: UntypedJobs;
   models: CatalogModelId;
   roles: string;
+  user: Record<string, unknown> & TypeWithID;
   widgets: {
     [slug: string]: unknown;
   };
@@ -54,3 +55,6 @@ export type RoleSlug = FrogBotTypes['roles'];
 
 /** Document shape for a given collection slug. */
 export type TypedCollection<TSlug extends CollectionSlug> = FrogBotTypes['collections'][TSlug];
+
+/** Document shape of the authenticated user, across every auth collection. */
+export type TypedUser = FrogBotTypes['user'];

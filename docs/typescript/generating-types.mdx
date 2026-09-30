@@ -258,6 +258,44 @@ Now that your types have been generated, FrogBot's Local API will now be typed. 
 
 The generated file refers to types from `frogbot`, so install `frogbot` as a dev dependency of the frontend (`pnpm add -D frogbot`) and set `skipLibCheck: true` in its `tsconfig.json`. `frogbot` is only used for types and isn't bundled. With the file in place, the [FrogBot REST API SDK](/rest-api/overview#frogbot-rest-api-sdk) is typed from it automatically.
 
+### Typing the current user
+
+Once your types are generated, `req.user` is typed as your generated user, or `null` when no one is signed in. This applies in access control, hooks, endpoints, tools, and every other place that receives `req`, with no cast. For example, if your users collection has a `role` field:
+
+```ts
+import type { Access } from 'frogbot';
+
+export const isAdmin: Access = ({ req }) => req.user?.role === 'admin';
+```
+
+With more than one auth collection, `req.user` is a union of their generated types. Check `collection` to narrow it:
+
+```ts
+if (req.user?.collection === 'admins') {
+  req.user.level; // only admins have `level`
+}
+```
+
+Use `TypedUser` to type your own helpers:
+
+```ts
+import type { TypedUser } from 'frogbot';
+
+export const hasRole = (user: TypedUser | null, role: string) => user?.role === role;
+```
+
+Outside a FrogBot request, such as in server components, route handlers, and server actions, `frogbot.auth()` returns the same type:
+
+```ts
+const { user } = await frogbot.auth({ headers: await headers() });
+```
+
+`frogbot.createRequest({ user })` expects a full user. Passing an object with only some fields, such as `{ id: 1 }`, is a type error. Pass the user returned by `frogbot.auth()` or read from the Local API instead.
+
+Before you generate types, `req.user` is an object with an `id` and unknown fields.
+
+Keep `skipLibCheck: true` in your `tsconfig.json`, as FrogBot's templates do. Prebuilt pieces ship declaration files built without your generated types, so `skipLibCheck: false` reports errors inside those files that don't affect your code.
+
 ### Adding an npm script
 
 <Warning>

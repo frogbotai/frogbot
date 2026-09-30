@@ -3,5 +3,5 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["select.test-d.ts"]
+  "include": ["select.test-d.ts", "user.test-d.ts"]
 }

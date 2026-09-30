@@ -6,7 +6,7 @@
 
 import type { ChannelContext } from '../channels/types.js';
 import type { FrogBot } from '../frogbot.js';
-import type { TypeWithID } from './generated.js';
+import type { TypedUser } from './generated.js';
 import type { PayloadRequest } from './payload.js';
 
 declare module 'payload' {
@@ -15,10 +15,7 @@ declare module 'payload' {
   }
 }
 
-export interface FrogBotRequest<TUser = Record<string, unknown> & TypeWithID> extends Omit<
-  PayloadRequest,
-  'payload' | 'user'
-> {
-  user: TUser | null;
+export interface FrogBotRequest extends Omit<PayloadRequest, 'payload' | 'user'> {
+  user: TypedUser | null;
   frogbot: FrogBot;
 }
