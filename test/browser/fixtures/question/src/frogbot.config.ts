@@ -11,6 +11,7 @@ import {
   insightsPath,
   messagesSlug,
   modelPort,
+  pickerAgentSlug,
   reportsPath,
   robotSettings,
   tasksSlug,
@@ -67,6 +68,12 @@ export default buildConfig({
   ],
   ai: {
     providers: {
+      bedrock: {
+        region: 'us-east-1',
+        accessKeyId: 'browser-access-key',
+        secretAccessKey: 'browser-secret-key',
+      },
+      openrouter: { apiKey: 'browser-openrouter-key' },
       browser: {
         type: 'openai-compatible',
         baseUrl: `http://127.0.0.1:${modelPort}/v1`,
@@ -85,10 +92,20 @@ export default buildConfig({
   agents: [
     {
       slug: agentSlug,
-      model: { default: 'browser/questioner' as AgentModelId, options: '*' },
+      profile: { name: 'Questioner agent' },
+      model: {
+        default: 'browser/questioner' as AgentModelId,
+        options: ['browser/questioner', 'browser/thinker'] as AgentModelId[],
+      },
       instructions: 'Ask before acting.',
       access: ({ req }) => Boolean(req.user),
       tools: [question],
+    },
+    {
+      slug: pickerAgentSlug,
+      model: { default: 'browser/questioner' as AgentModelId, options: '*' },
+      instructions: 'Choose a model before acting.',
+      access: ({ req }) => Boolean(req.user),
     },
   ],
   endpoints: [

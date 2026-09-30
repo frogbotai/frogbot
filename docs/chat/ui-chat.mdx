@@ -153,15 +153,19 @@ export function AgentChat() {
 
 `ModelSelector` shows the active model and reasoning level as compact text. Clicking it opens a reasoning slider for that model; clicking the model name switches to the model list, grouped by provider when there is more than one. It is fully controlled and renders nothing when `models` is empty.
 
+Each row starts with its provider's logo. Logos ship with FrogBot, so the list makes no network requests; custom and unknown providers get a generic icon. Hovering a row shows its model ID, and rows that share a name also show their IDs.
+
+A search field above the list filters by name, ID, and provider, ignoring case, spaces, and punctuation. Typing while a row has focus goes straight to the field, Down moves from the field to the first result, and Enter in the field chooses the first result. Escape clears the search first; with an empty search it closes the selector.
+
 | Prop | Type | Description |
 | --- | --- | --- |
-| `models` | `ModelSelectorModel[]` | `{ id, name, provider?, reasoning? }` for each model the user may choose. `reasoning` lists `{ key, label }` options; omit it for models without levels to hide the slider. |
+| `models` | `ModelSelectorModel[]` | `{ id, name, provider?, reasoning? }` for each model the user may choose. `provider` is the provider slug, such as `bedrock`; it groups the list and picks the row's logo. `reasoning` lists `{ key, label }` options; omit it for models without levels to hide the slider. |
 | `selectedModelId` | `string` | Active model ID. |
 | `selectedReasoning` | `string \| undefined` | Active reasoning key, or `undefined` for `Default`. |
 | `onModelChange` | `(id: string) => void` | Called with the chosen model ID. |
 | `onReasoningChange` | `(key: string \| undefined) => void` | Called with the chosen key, or `undefined` when the slider returns to `Default`. |
 
-Pass the same choice to `<Chat>` through `model` and `reasoning`; each message is sent with them. The agent manifest lists allowed models and each model's reasoning options, so a selector fed from it never offers a choice the server rejects. When the model changes, reset or restore the level yourself: a key from one model does not apply to another.
+Pass the same choice to `<Chat>` through `model` and `reasoning`; each message is sent with them. The agent manifest lists allowed models, their display names in `names`, and each model's reasoning options, so a selector fed from it never offers a choice the server rejects. `names` holds catalog names such as `Nova Micro (US)` and the `name` of custom provider models; a model FrogBot has no name for is left out, so fall back to its ID. When the model changes, reset or restore the level yourself: a key from one model does not apply to another.
 
 ```tsx
 'use client'
@@ -187,7 +191,12 @@ function SupportChat() {
       reasoning={reasoning}
       composerStartSlot={
         <ModelSelector
-          models={entry.models.map((id) => ({ id, name: id, reasoning: entry.reasoning?.[id] }))}
+          models={entry.models.map((id) => ({
+            id,
+            name: entry.names?.[id] ?? id,
+            provider: id.includes('/') ? id.split('/')[0] : undefined,
+            reasoning: entry.reasoning?.[id],
+          }))}
           selectedModelId={activeModel}
           selectedReasoning={reasoning}
           onModelChange={(id) => {

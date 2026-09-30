@@ -16,7 +16,7 @@
     "test:ui:acceptance": "pnpm check:ui-architecture && pnpm test:ui && pnpm test:ui:package && pnpm test:ui:next",
     "test:ui:next": "node scripts/test-ui-next.mjs",
     "test:browser": "playwright test --config test/browser/playwright.config.ts",
-    "test:browser:install": "playwright install chromium",
+    "test:browser:install": "playwright install chromium firefox webkit",
     "test:ui:package": "node scripts/test-ui-package.mjs",
     "test:int": "vitest run --project int",
     "test:int:mongo": "FROGBOT_DATABASE=mongodb vitest run --project int",

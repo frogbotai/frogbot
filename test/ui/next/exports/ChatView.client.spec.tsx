@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { type ReactNode, useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,6 +9,7 @@ type ManifestEntry = {
   source: 'config';
   defaultModel: string;
   models: string[];
+  names?: Partial<Record<string, string>>;
   reasoning?: Record<string, { key: string; label: string }[]>;
 };
 
@@ -358,6 +359,44 @@ describe('ChatViewClient', () => {
     await waitFor(() => expect(mocks.chat).toHaveBeenCalled());
 
     expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('passes manifest names and ID suffix fallbacks to the model selector', async () => {
+    const user = userEvent.setup();
+
+    useManifest(
+      agentEntry('general', {
+        defaultModel: 'bedrock/us.amazon.nova-micro-v1:0',
+        models: [
+          'bedrock/us.amazon.nova-micro-v1:0',
+          'bedrock/anthropic.claude-3-haiku-20240307-v1:0',
+          'my-local/plain',
+          'smart',
+        ],
+        names: { 'bedrock/us.amazon.nova-micro-v1:0': 'Nova Micro (US)' },
+      }),
+    );
+
+    renderChatView();
+
+    expect((await trigger()).textContent).toBe('Nova Micro (US)');
+
+    await user.click(await trigger());
+    await user.click(screen.getByRole('button', { name: /change model$/ }));
+
+    const list = within(screen.getByRole('dialog'));
+
+    expect(list.getByRole('button', { name: 'Nova Micro (US)', exact: true })).toBeTruthy();
+    expect(list.getByRole('button', { name: 'plain', exact: true })).toBeTruthy();
+    expect(list.getByRole('button', { name: 'smart', exact: true })).toBeTruthy();
+    expect(
+      list.getByRole('button', { name: 'anthropic.claude-3-haiku-20240307-v1:0', exact: true }),
+    ).toBeTruthy();
+    expect(
+      [...document.querySelectorAll('.fb-model-selector__option-name')].map(
+        (name) => name.textContent,
+      ),
+    ).toEqual(['Nova Micro (US)', 'anthropic.claude-3-haiku-20240307-v1:0', 'plain', 'smart']);
   });
 
   it('starts a new chat from the saved model and its remembered level', async () => {

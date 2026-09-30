@@ -6,6 +6,7 @@ export const reportsPath = '/reports';
 export const insightsPath = '/insights';
 export const robotSettings = { label: 'Robot', path: 'robot' };
 export const agentSlug = 'questioner';
+export const pickerAgentSlug = 'picker';
 export const modelPort = 3128;
 export const chatPicksPreference = 'frogbot-chat-picks';
 export const turnsSlug = 'frogbot-chat-turns';

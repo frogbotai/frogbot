@@ -7,6 +7,8 @@ import {
   ModelSelector,
   type ModelSelectorModel,
 } from '../../../../packages/ui/src/chat/model-selector';
+import { providerLogos } from '../../../../packages/ui/src/chat/provider-logos';
+import { sparkleIcon } from '../../../../packages/ui/src/icons/icons/SparkleIcon';
 
 const gpt: ModelSelectorModel = {
   id: 'openai/gpt-5',
@@ -91,7 +93,582 @@ async function openList(user: ReturnType<typeof userEvent.setup>, name: string) 
   await user.click(screen.getByRole('button', { name: `${name}, change model` }));
 }
 
+function searchBox() {
+  return screen.getByRole<HTMLInputElement>('textbox', { name: 'Search models' });
+}
+
+function row(name: string) {
+  return screen.getByRole('button', { name, exact: true });
+}
+
+function rowNames() {
+  return [...document.querySelectorAll('.fb-model-selector__option-name')].map(
+    (option) => option.textContent,
+  );
+}
+
 describe('ModelSelector', () => {
+  it('always shows a non-autofocused search field even for two models', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness choices={[gpt, mini]} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+
+    const input = screen.getByRole('textbox', { name: 'Search models' });
+
+    expect(input.getAttribute('placeholder')).toBe('Search models');
+    expect(input.getAttribute('autocomplete')).toBe('off');
+    expect(input.getAttribute('spellcheck')).toBe('false');
+    expect(input.closest('.fb-search-input')?.querySelector('.fb-search-input__icon')).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'GPT-5', exact: true }));
+  });
+
+  it.each([
+    ['opus', ['Claude Opus']],
+    ['openai/gpt-5-mini', ['GPT-5 mini']],
+    ['anthropic', ['Claude Opus']],
+  ])('filters models by name, full ID or provider for query %s', async (query, names) => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.type(screen.getByRole('textbox', { name: 'Search models' }), query);
+
+    expect(
+      [...document.querySelectorAll('.fb-model-selector__option-name')].map(
+        (row) => row.textContent,
+      ),
+    ).toEqual(names);
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Search models' }));
+  });
+
+  it('hides empty provider groups while keeping matching headings text-only', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.type(screen.getByRole('textbox', { name: 'Search models' }), 'opus');
+
+    expect(screen.queryByRole('group', { name: 'OpenAI' })).toBeNull();
+    expect(
+      screen
+        .getByRole('group', { name: 'Anthropic' })
+        .querySelectorAll('.fb-model-selector__option'),
+    ).toHaveLength(1);
+  });
+
+  it('shows an empty state and clears back to the full list with the selected model unchanged', async () => {
+    const user = userEvent.setup();
+    const onModelChange = vi.fn();
+
+    render(<Harness onModelChange={onModelChange} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.type(screen.getByRole('textbox', { name: 'Search models' }), 'unknown');
+
+    expect(document.querySelector('.fb-model-selector__empty')?.textContent).toBe(
+      'No models found',
+    );
+    expect(document.querySelectorAll('.fb-model-selector__option')).toHaveLength(0);
+    expect(screen.queryByRole('group')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Clear', exact: true }));
+
+    const selected = screen.getByRole('button', { name: 'GPT-5', current: true });
+
+    expect(selected.querySelector('.fb-model-selector__check')).toBeTruthy();
+    expect(document.querySelectorAll('.fb-model-selector__option')).toHaveLength(4);
+    expect(screen.queryByText('No models found')).toBeNull();
+    expect(onModelChange).not.toHaveBeenCalled();
+  });
+
+  it('keeps the matching current model checked without stealing search focus', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.type(screen.getByRole('textbox', { name: 'Search models' }), 'gpt-5');
+
+    expect(
+      screen
+        .getByRole('button', { name: 'GPT-5', current: true })
+        .querySelector('.fb-model-selector__check'),
+    ).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Search models' }));
+  });
+
+  it('resets the query when reopening the list after Back', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.type(screen.getByRole('textbox', { name: 'Search models' }), 'opus');
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    await openList(user, 'GPT-5');
+
+    expect((screen.getByRole('textbox', { name: 'Search models' }) as HTMLInputElement).value).toBe(
+      '',
+    );
+    expect(document.querySelectorAll('.fb-model-selector__option')).toHaveLength(4);
+  });
+
+  it('resets the query after selecting a result and reopening with that result checked', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.type(screen.getByRole('textbox', { name: 'Search models' }), 'opus');
+    await user.click(screen.getByRole('button', { name: 'Claude Opus', exact: true }));
+    await openList(user, 'Claude Opus');
+
+    expect((screen.getByRole('textbox', { name: 'Search models' }) as HTMLInputElement).value).toBe(
+      '',
+    );
+    expect(
+      screen
+        .getByRole('button', { name: 'Claude Opus', current: true })
+        .querySelector('.fb-model-selector__check'),
+    ).toBeTruthy();
+    expect(document.querySelectorAll('.fb-model-selector__option')).toHaveLength(4);
+  });
+
+  it('filters a 340-model list', async () => {
+    const user = userEvent.setup();
+    const choices = Array.from({ length: 340 }, (_, index) => ({
+      id: `openrouter/vendor/model-${index}`,
+      name: `Model ${index}`,
+      provider: 'openrouter',
+    }));
+
+    render(<Harness choices={choices} initialModel={choices[0].id} />);
+
+    await user.click(trigger());
+    await openList(user, choices[0].name);
+    await user.type(screen.getByRole('textbox', { name: 'Search models' }), 'model-339');
+
+    expect(
+      screen.getByRole('button', { name: 'Model 339', exact: true }).getAttribute('title'),
+    ).toBe(choices[339].id);
+    expect(document.querySelectorAll('.fb-model-selector__option')).toHaveLength(1);
+  });
+
+  it.each([' -- ', '(', '[', '*'])(
+    'keeps all models for punctuation-only query %s',
+    async (query) => {
+      const user = userEvent.setup();
+
+      render(<Harness />);
+
+      await user.click(trigger());
+      await openList(user, 'GPT-5');
+      await user.type(
+        screen.getByRole('textbox', { name: 'Search models' }),
+        query.replaceAll('[', '[['),
+      );
+
+      expect(document.querySelectorAll('.fb-model-selector__option')).toHaveLength(4);
+    },
+  );
+
+  it('renders a bundled provider logo before every row name and keeps headings text-only', async () => {
+    const user = userEvent.setup();
+    const bedrock = {
+      id: 'bedrock/amazon.nova-micro-v1:0',
+      name: 'Nova Micro',
+      provider: 'bedrock',
+    };
+
+    render(<Harness choices={[gpt, bedrock]} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+
+    const row = screen.getByRole('button', { name: 'Nova Micro', exact: true });
+    const logo = row.querySelector('.fb-model-selector__logo');
+
+    expect(logo?.tagName.toLowerCase()).toBe('svg');
+    expect(logo?.getAttribute('viewBox')).toBe(providerLogos.bedrock.viewBox);
+    expect(logo?.getAttribute('stroke')).toBe('none');
+    expect(logo?.getAttribute('aria-hidden')).toBe('true');
+    expect(row.firstElementChild).toBe(logo);
+    expect(row.querySelectorAll('svg')).toHaveLength(1);
+    expect(document.querySelectorAll('.fb-model-selector__logo')).toHaveLength(2);
+    expect(document.querySelector('.fb-model-selector__group-label svg')).toBeNull();
+  });
+
+  it.each([undefined, 'browser', 'toString'])(
+    'uses the fallback logo for provider %s',
+    async (provider) => {
+      const user = userEvent.setup();
+
+      render(<Harness choices={[gpt, { id: 'custom/model', name: 'Custom Model', provider }]} />);
+
+      await user.click(trigger());
+      await openList(user, 'GPT-5');
+
+      const logo = screen.getByRole('button', { name: 'Custom Model' }).querySelector('svg');
+
+      expect(logo?.getAttribute('viewBox')).toBe('0 0 20 20');
+      expect(logo?.querySelector('path')?.getAttribute('d')).toBe(sparkleIcon[0][1].d);
+      expect(logo?.getAttribute('aria-hidden')).toBe('true');
+    },
+  );
+
+  it('shows secondary IDs only for duplicate names and gives every row its full ID title', async () => {
+    const user = userEvent.setup();
+    const duplicates = [
+      { id: 'bedrock/gpt-oss-120b', name: 'GPT OSS 120B', provider: 'bedrock' },
+      { id: 'bedrock/gpt-oss-120b-1:0', name: 'GPT OSS 120B', provider: 'bedrock' },
+    ];
+
+    render(<Harness choices={[gpt, ...duplicates]} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+
+    expect(
+      screen
+        .getByRole('button', { name: 'GPT-5', exact: true })
+        .querySelector('.fb-model-selector__option-id'),
+    ).toBeNull();
+
+    duplicates.forEach(({ id, name }) => {
+      const row = screen.getByRole('button', { name: `${name} ${id}`, exact: true });
+
+      expect(row.querySelector('.fb-model-selector__option-id')?.textContent).toBe(id);
+      expect(row.getAttribute('title')).toBe(id);
+    });
+
+    expect(screen.getByRole('button', { name: 'GPT-5', exact: true }).getAttribute('title')).toBe(
+      gpt.id,
+    );
+  });
+
+  it('shows the display name rather than the ID in the trigger and model heading', async () => {
+    const user = userEvent.setup();
+    const nova = {
+      id: 'bedrock/us.amazon.nova-micro-v1:0',
+      name: 'Nova Micro (US)',
+      provider: 'bedrock',
+    };
+
+    render(<Harness choices={[nova]} initialModel={nova.id} />);
+
+    expect(trigger().textContent).toBe(nova.name);
+
+    await user.click(trigger());
+
+    expect(screen.getByRole('button', { name: `${nova.name}, change model` }).textContent).toBe(
+      nova.name,
+    );
+  });
+
+  it('moves typing from a focused row into the search field', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.keyboard('opus');
+
+    expect(document.activeElement).toBe(searchBox());
+    expect(searchBox().value).toBe('opus');
+    expect(rowNames()).toEqual(['Claude Opus']);
+  });
+
+  it('moves typing from the Back button into the search field', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+
+    screen.getByRole('button', { name: 'Back' }).focus();
+
+    await user.keyboard('4o');
+
+    expect(searchBox().value).toBe('4o');
+    expect(rowNames()).toEqual(['GPT-4o']);
+  });
+
+  it('moves Backspace from a row into the search field and deletes', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.type(searchBox(), 'gpt');
+    await user.keyboard('{ArrowDown}{Backspace}');
+
+    expect(document.activeElement).toBe(searchBox());
+    expect(searchBox().value).toBe('gp');
+  });
+
+  it('chooses the focused row with Space instead of typing it', async () => {
+    const onModelChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<Harness onModelChange={onModelChange} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.keyboard('{ArrowDown} ');
+
+    expect(onModelChange).toHaveBeenCalledWith(mini.id);
+    expect(screen.queryByRole('textbox', { name: 'Search models' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'GPT-5 mini, change model' })).toBeTruthy();
+  });
+
+  it.each(['{Control>}a{/Control}', '{Meta>}k{/Meta}', '{Alt>}o{/Alt}'])(
+    'does not redirect the modified key %s from a row',
+    async (keys) => {
+      const user = userEvent.setup();
+
+      render(<Harness />);
+
+      await user.click(trigger());
+      await openList(user, 'GPT-5');
+      await user.keyboard(keys);
+
+      expect(document.activeElement).toBe(row('GPT-5'));
+      expect(searchBox().value).toBe('');
+    },
+  );
+
+  it.each([
+    ['isComposing', { key: 'a', isComposing: true }],
+    ['Process', { key: 'Process' }],
+  ])('does not redirect %s keys during IME composition', async (_, init) => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+
+    fireEvent.keyDown(row('GPT-5'), init);
+
+    expect(document.activeElement).toBe(row('GPT-5'));
+    expect(searchBox().value).toBe('');
+  });
+
+  it('moves focus between the field and results with the arrow keys', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.click(searchBox());
+    await user.keyboard('{ArrowDown}');
+
+    expect(document.activeElement).toBe(row('GPT-5'));
+
+    await user.keyboard('{ArrowDown}{ArrowDown}');
+
+    expect(document.activeElement).toBe(row('GPT-4o'));
+
+    await user.keyboard('{ArrowDown}');
+
+    expect(document.activeElement).toBe(row('Claude Opus'));
+
+    await user.keyboard('{ArrowDown}');
+
+    expect(document.activeElement).toBe(row('Claude Opus'));
+
+    await user.keyboard('{ArrowUp}{ArrowUp}{ArrowUp}{ArrowUp}');
+
+    expect(document.activeElement).toBe(searchBox());
+  });
+
+  it('moves Down from the field to the first filtered result', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.type(searchBox(), 'mini{ArrowDown}');
+
+    expect(document.activeElement).toBe(row('GPT-5 mini'));
+  });
+
+  it('chooses the first result with Enter in the field', async () => {
+    const onModelChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<Harness onModelChange={onModelChange} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.keyboard('opus{Enter}');
+
+    expect(onModelChange).toHaveBeenCalledWith(opus.id);
+    expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: 'Claude Opus, change model' }),
+    );
+  });
+
+  it('chooses the focused result with Enter', async () => {
+    const onModelChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<Harness onModelChange={onModelChange} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
+
+    expect(onModelChange).toHaveBeenCalledWith(plain.id);
+  });
+
+  it('does nothing on Enter in the field without results', async () => {
+    const onModelChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<Harness onModelChange={onModelChange} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.keyboard('zzz{Enter}');
+
+    expect(onModelChange).not.toHaveBeenCalled();
+    expect(searchBox().value).toBe('zzz');
+  });
+
+  it('does not choose a model on Enter while composing', async () => {
+    const onModelChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<Harness onModelChange={onModelChange} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.type(searchBox(), 'opus');
+
+    fireEvent.keyDown(searchBox(), { key: 'Enter', isComposing: true });
+
+    expect(onModelChange).not.toHaveBeenCalled();
+    expect(searchBox().value).toBe('opus');
+  });
+
+  it('clears the query with Escape before closing the popover', async () => {
+    const onModelChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<Harness onModelChange={onModelChange} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.keyboard('opus{Escape}');
+
+    expect(searchBox().value).toBe('');
+    expect(document.querySelectorAll('.fb-model-selector__option')).toHaveLength(4);
+    expect(openTrigger()).toBeTruthy();
+
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('textbox', { name: 'Search models' })).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+    expect(onModelChange).not.toHaveBeenCalled();
+  });
+
+  it('clears the query with Escape while a row has focus', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.type(searchBox(), 'opus{ArrowDown}');
+
+    expect(document.activeElement).toBe(row('Claude Opus'));
+
+    await user.keyboard('{Escape}');
+
+    expect(searchBox().value).toBe('');
+    expect(openTrigger()).toBeTruthy();
+    expect(row('GPT-5').getAttribute('aria-current')).toBe('true');
+  });
+
+  it('keeps the hidden selected model checked and unchanged after Escape clears its query', async () => {
+    const onModelChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<Harness onModelChange={onModelChange} />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.keyboard('opus');
+
+    expect(screen.queryByRole('button', { name: 'GPT-5', exact: true })).toBeNull();
+
+    await user.keyboard('{Escape}');
+
+    const selected = row('GPT-5');
+
+    expect(selected.getAttribute('aria-current')).toBe('true');
+    expect(selected.querySelector('.fb-model-selector__check')).toBeTruthy();
+    expect(document.querySelectorAll('.fb-model-selector__check')).toHaveLength(1);
+    expect(onModelChange).not.toHaveBeenCalled();
+
+    await user.keyboard('{Escape}');
+
+    expect(trigger().textContent).toBe('GPT-5 · Default');
+  });
+
+  it('closes on Escape after Back even if a query was typed', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+    await user.type(searchBox(), 'opus');
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    await user.keyboard('{Escape}');
+
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('announces the result count in a polite status line', async () => {
+    const user = userEvent.setup();
+
+    render(<Harness />);
+
+    await user.click(trigger());
+    await openList(user, 'GPT-5');
+
+    const status = screen.getByRole('status');
+
+    expect(status.getAttribute('aria-live')).toBe('polite');
+    expect(status.textContent).toBe('4 models');
+
+    await user.type(searchBox(), 'opus');
+
+    expect(status.textContent).toBe('1 model');
+
+    await user.type(searchBox(), 'zzz');
+
+    expect(status.textContent).toBe('No models found');
+  });
+
   it('renders nothing without models', () => {
     const { container, rerender } = render(
       <ModelSelector

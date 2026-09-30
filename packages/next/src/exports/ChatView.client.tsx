@@ -381,7 +381,7 @@ function ChatViewInner({
 
             return {
               id,
-              name: separator === -1 ? id : id.slice(separator + 1),
+              name: entry.names?.[id] ?? (separator === -1 ? id : id.slice(separator + 1)),
               provider: separator === -1 ? undefined : id.slice(0, separator),
               reasoning: entry.reasoning?.[id],
             };
