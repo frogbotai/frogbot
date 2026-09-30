@@ -1,4 +1,3 @@
-import type * as payloadModule from 'payload';
 import type { Payload, SendEmailOptions } from 'payload';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -11,15 +10,9 @@ import { definePiece } from '../../../../packages/frogbot/src/pieces/definePiece
 import { isEmailPiece, pieceEmailAdapter } from '../../../../packages/frogbot/src/pieces/email.js';
 import type { PieceEmail } from '../../../../packages/frogbot/src/pieces/types.js';
 
-vi.mock('payload', async (importOriginal) => ({
-  ...(await importOriginal<typeof payloadModule>()),
-  createLocalReq: vi.fn(async ({ req }, payload) => ({ ...req, payload, user: null })),
-}));
-
 function runtime(payload = {} as Payload) {
   const frogbot = new FrogBot();
 
-  frogbot.payload = payload;
   frogbot.config = {
     _internal: { payloadConfig: Promise.resolve({ admin: { user: 'users' } }) },
   } as never;
@@ -30,6 +23,10 @@ function runtime(payload = {} as Payload) {
     encryption: createCredentialEncryption({ secret: 'email-test-secret' }),
   });
 
+  vi.spyOn(frogbot, 'createRequest').mockImplementation(async () =>
+    Object.assign({ payload, user: null } as never, { frogbot }),
+  );
+  vi.spyOn(frogbot, 'email', 'get').mockImplementation(() => payload.email);
   registerFrogBotInstance(payload, frogbot);
 
   return { frogbot, payload };

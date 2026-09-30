@@ -251,7 +251,7 @@ export type PieceCapabilities = {
   staticAuth: boolean;
 };
 
-export const pieceCapabilities = Symbol('pieceCapabilities');
+export const pieceCapabilities = '~capabilities';
 
 export type PieceActionTypes = { input: unknown; output: unknown };
 export type PieceTypes = {

@@ -132,6 +132,18 @@ beforeEach(async () => {
 
 describe('FrogBot class', () => {
   describe('init + collections registry', () => {
+    it('initializes a public FrogBot class instance', async () => {
+      const frogbot = await setup();
+
+      expect(frogbot).toBeInstanceOf(FrogBot);
+    });
+
+    it('rejects database access before initialization', () => {
+      const frogbot = new FrogBot();
+
+      expect(() => frogbot.db).toThrow('FrogBot is not initialized');
+    });
+
     it('builds a collections registry keyed by slug', async () => {
       const frogbot = await setup();
       expect(Object.keys(frogbot.collections)).toEqual(['posts', 'users']);

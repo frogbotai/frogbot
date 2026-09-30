@@ -50,6 +50,13 @@ const createExample = definePiece({
 });
 
 describe('definePiece', () => {
+  it('keeps capability metadata out of enumerable instance keys', () => {
+    const piece = createExample({ auth: { token: 'factory' }, prefix: 'value' });
+
+    expect(piece[pieceCapabilities]).toBeDefined();
+    expect(Object.keys(piece)).not.toContain('~capabilities');
+  });
+
   it('generates callback types without constructing a client or running actions', async () => {
     const client = vi.fn();
     const run = vi.fn();

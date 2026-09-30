@@ -59,6 +59,7 @@ Run everything from the repo root with `pnpm`. Scripts live in [package.json](pa
 | Regenerate AI model catalog types             | `pnpm generate:ai-types`, `pnpm sync:catalog`                                                                                   |
 | Release                                       | `pnpm bump <major\|minor\|patch>` (resume with `--from <step>`), `pnpm release` (owner only)                                    |
 | Check built packages before publishing        | `pnpm check:dist-imports` (every relative import and entry point matches a file name exactly, including letter case)            |
+| Check that installs resolve one `frogbot`     | `pnpm check:single-frogbot` (no package lists `frogbot` as a regular dependency, and `frogbot` has no framework peers)          |
 
 `pnpm check:docs-links` validates General navigation, internal links, and local assets. It excludes content owned by other documentation tabs.
 
@@ -168,6 +169,7 @@ const joined = getJoinedJobQuery({ query, dialect, selections, groups });
 - Don't assume libraries are available - check first
 - Don't over-engineer solutions
 - Don't keep buggy legacy code "just in case"
+- **Keep `req.frogbot` structural:** `FrogBot` and every class reachable from its public API (`Connections`, `ConnectionStore`, `TriggerSubscriptions`, piece instances) have no `private`, `protected`, `#private`, or symbol-keyed members. Any of them makes two installed copies of `frogbot` incompatible. Keep internal state in a module-level `WeakMap`; `pnpm --filter frogbot typecheck:duplicate` enforces this.
 
 ## Verification
 

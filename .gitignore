@@ -20,6 +20,7 @@ out/
 
 # Testing
 coverage
+.typetest-copy
 
 # Logs
 npm-debug.log*

@@ -6,7 +6,7 @@ import type { MongooseAdapter } from '@frogbotai/db-mongodb';
 import type { PostgresAdapter } from '@frogbotai/db-postgres';
 import { RedisKVAdapter } from '@frogbotai/kv-redis';
 import type { FrogBotConfig, FrogBotInstance } from 'frogbot';
-import { FrogBot, resetFrogBotCache } from 'frogbot/test';
+import { FrogBot, getFrogBotPayload, resetFrogBotCache } from 'frogbot/test';
 import type { Payload } from 'payload';
 
 import { buildTestConfig } from '../__helpers/shared/buildTestConfig.js';
@@ -65,7 +65,7 @@ export function createKVRuntimeHarness({ kv }: { kv?: () => FrogBotConfig['kv'] 
     process.env.PAYLOAD_DROP_DATABASE = push ? 'true' : 'false';
     try {
       const frogbot = await new FrogBot().init({ config });
-      const payload = (frogbot as unknown as { payload: KVRuntime['payload'] }).payload;
+      const payload = getFrogBotPayload(frogbot);
       const runtime: KVRuntime = {
         frogbot,
         payload,
