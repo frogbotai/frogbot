@@ -4,6 +4,8 @@ import { apiKeysPlugin } from '../../packages/plugins/plugin-api-keys/src/index.
 import { rolesPlugin } from '../../packages/plugins/plugin-roles/src/index.js';
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 
+export const agentSlug = 'api-key-policy';
+
 export const addTenant: Plugin = (config) => ({
   ...config,
   collections: config.collections.map((collection) =>
@@ -21,7 +23,7 @@ const Accounts: CollectionConfig = {
 };
 
 export default await buildTestConfig({
-  collections: [Accounts],
+  collections: [Accounts, { slug: 'chats', chat: true, fields: [] }],
   ai: {
     providers: {
       test: {
@@ -35,6 +37,15 @@ export default await buildTestConfig({
       },
     },
   },
+  agents: [
+    {
+      slug: agentSlug,
+      model: 'test/blocked',
+      allowModels: ['test/allowed'],
+      instructions: 'Reply with exactly: ok',
+      access: () => true,
+    },
+  ],
   plugins: [
     rolesPlugin(),
     apiKeysPlugin({

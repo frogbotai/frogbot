@@ -87,7 +87,7 @@ Agents use the configured AI gateway and resolve their optional `model` from the
 
 ## User model and budget policy
 
-When AI is configured, FrogBot adds policy fields to the configured admin auth collection. `modelAccess: 'all'` permits every configured target, including targets added later. `selected` requires at least one exact model ID or router slug in `models`; granting a router does not grant direct access to its underlying model.
+When AI is configured, FrogBot adds policy fields to the configured admin auth collection. `modelAccess: 'all'` permits every configured target, including targets added later. `selected` requires at least one exact model ID or router slug in `models`; granting a router does not grant direct access to its underlying model. Agent turns apply the same list: the manifest offers only allowed agent models, a request without a model uses the agent default if allowed or else the first allowed model, agents with none are hidden and return 403, and turns without a user have no per-user limit.
 
 Register this collection in `collections` with the provider above. These defaults allow only `openai/gpt-5.4-mini` and set a USD 10 budget. Same-name fields override injected policy fields. The access callbacks prevent ordinary create/update requests from changing their own model grants, budget, or spend; trusted server operations can manage policy with explicit access override.
 

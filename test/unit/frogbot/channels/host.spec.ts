@@ -440,4 +440,75 @@ describe('ChannelHost conversation loop', () => {
 
     await fixture.host.shutdown();
   });
+
+  it('silently audits an identified user with no usable model', async () => {
+    const fixture = channelFixture();
+
+    fixture.identity.mockResolvedValueOnce({
+      id: 'user-1',
+      collection: 'users',
+      modelAccess: 'selected',
+      models: ['openai/other'],
+    } as never);
+
+    await fixture.host.initialize(false);
+    await fixture.deliver();
+    await fixture.host.run(fixture.inputs[0]!);
+
+    expect(fixture.frogbot.logger.info).toHaveBeenCalledExactlyOnceWith(
+      { agent: 'support', piece: 'slack', author: 'user-1' },
+      '[frogbot] Channel message denied by model access.',
+    );
+    expect(fixture.streamMessage).not.toHaveBeenCalled();
+    expect(fixture.frogbot.find).not.toHaveBeenCalled();
+    expect(fixture.frogbot.create).not.toHaveBeenCalled();
+    expect(fixture.posted).toEqual([]);
+    expect(fixture.frogbot.logger.error).not.toHaveBeenCalled();
+
+    await fixture.host.shutdown();
+  });
+
+  it('runs an identified user with one usable model without selecting a model', async () => {
+    const fixture = channelFixture();
+
+    Object.assign(fixture.frogbot.agents.support.config, { allowModels: ['openai/other'] });
+    fixture.identity.mockResolvedValueOnce({
+      id: 'user-1',
+      collection: 'users',
+      modelAccess: 'selected',
+      models: ['openai/other'],
+    } as never);
+
+    await fixture.host.initialize(false);
+    await fixture.deliver();
+    await fixture.host.run(fixture.inputs[0]!);
+
+    expect(fixture.streamMessage).toHaveBeenCalledOnce();
+    expect(fixture.streamMessage.mock.calls[0]![0].selection).toBeUndefined();
+    expect(fixture.streamMessage.mock.calls[0]![0].req?.user).toMatchObject({
+      id: 'user-1',
+      modelAccess: 'selected',
+      models: ['openai/other'],
+    });
+    expect(fixture.posted).toEqual([{ threadId: 'channel:thread-1', text: 'Hello back' }]);
+    expect(fixture.frogbot.logger.info).not.toHaveBeenCalled();
+
+    await fixture.host.shutdown();
+  });
+
+  it('runs a null user on an open agent without selecting a model', async () => {
+    const fixture = channelFixture();
+
+    await fixture.host.initialize(false);
+    await fixture.deliver();
+    await fixture.host.run(fixture.inputs[0]!);
+
+    expect(fixture.streamMessage).toHaveBeenCalledOnce();
+    expect(fixture.streamMessage.mock.calls[0]![0].req?.user).toBeNull();
+    expect(fixture.streamMessage.mock.calls[0]![0].selection).toBeUndefined();
+    expect(fixture.posted).toEqual([{ threadId: 'channel:thread-1', text: 'Hello back' }]);
+    expect(fixture.frogbot.logger.info).not.toHaveBeenCalled();
+
+    await fixture.host.shutdown();
+  });
 });

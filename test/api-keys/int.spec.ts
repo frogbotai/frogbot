@@ -2,40 +2,81 @@ import { createServer, type Server } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { BootedFrogBot } from '../__helpers/shared/bootFrogBot.js';
 import { bootFrogBot } from '../__helpers/shared/bootFrogBot.js';
+import { agentSlug } from './config.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('API keys plugin integration', () => {
   let booted: BootedFrogBot;
   let upstream: Server;
+  const modelCalls: string[] = [];
   const credentials = {
     email: 'api-key-owner@frogbot.local',
     password: 'frogbot-test-password',
   };
 
   beforeAll(async () => {
-    upstream = createServer((_request, response) => {
-      response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(
-        JSON.stringify({
-          id: 'chatcmpl-api-key',
-          object: 'chat.completion',
-          created: 1,
-          model: 'allowed',
-          choices: [
-            { index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' },
-          ],
-          usage: {
-            prompt_tokens: 1_000_000,
-            completion_tokens: 1_000_000,
-            total_tokens: 2_000_000,
-          },
-        }),
-      );
+    upstream = createServer((request, response) => {
+      let body = '';
+
+      request.on('data', (chunk) => (body += chunk));
+
+      request.on('end', () => {
+        const { model, stream } = JSON.parse(body) as { model: string; stream?: boolean };
+        const completion = { id: 'chatcmpl-api-key', created: 1, model };
+        const usage = {
+          prompt_tokens: 1_000_000,
+          completion_tokens: 1_000_000,
+          total_tokens: 2_000_000,
+        };
+
+        modelCalls.push(model);
+
+        if (stream) {
+          response.writeHead(200, { 'content-type': 'text/event-stream' });
+          response.end(
+            [
+              {
+                ...completion,
+                object: 'chat.completion.chunk',
+                choices: [
+                  {
+                    index: 0,
+                    delta: { role: 'assistant', content: 'ok' },
+                    finish_reason: null,
+                  },
+                ],
+              },
+              {
+                ...completion,
+                object: 'chat.completion.chunk',
+                choices: [{ index: 0, delta: {}, finish_reason: 'stop' }],
+                usage,
+              },
+            ]
+              .map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`)
+              .join('') + 'data: [DONE]\n\n',
+          );
+
+          return;
+        }
+
+        response.writeHead(200, { 'content-type': 'application/json' });
+        response.end(
+          JSON.stringify({
+            ...completion,
+            object: 'chat.completion',
+            choices: [
+              { index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' },
+            ],
+            usage,
+          }),
+        );
+      });
     });
     await new Promise<void>((resolve) => upstream.listen(3988, '127.0.0.1', resolve));
     booted = await bootFrogBot(dirname);
@@ -159,5 +200,146 @@ describe('API keys plugin integration', () => {
       overrideAccess: true,
     });
     expect((await request('test/allowed')).status).toBe(403);
+  });
+
+  describe('agent model policy through API keys', () => {
+    const agentCredentials = {
+      email: 'api-key-agent-owner@frogbot.local',
+      password: 'frogbot-test-password',
+    };
+    let ownerId: number | string | undefined;
+    let headers: { 'x-service-key': string };
+
+    beforeEach(async () => {
+      ownerId = undefined;
+      modelCalls.length = 0;
+
+      const owner = await booted.frogbot.create({
+        collection: 'accounts',
+        data: {
+          ...agentCredentials,
+          modelAccess: 'selected',
+          models: ['test/allowed'],
+          spendThisPeriodUSD: 0,
+        },
+        overrideAccess: true,
+      });
+
+      ownerId = owner.id;
+
+      const login = await booted.restClient.post<{ token: string }>(
+        '/api/accounts/login',
+        agentCredentials,
+      );
+
+      if (login.status !== 200) throw new Error(`Login failed with ${login.status}.`);
+
+      const mint = await booted.restClient.post<{ token: string }>(
+        '/api/credentials/mint',
+        { name: 'Agent policy' },
+        { headers: { Authorization: `JWT ${login.body.token}` } },
+      );
+
+      if (mint.status !== 201) throw new Error(`Mint failed with ${mint.status}.`);
+
+      headers = { 'x-service-key': mint.body.token };
+    });
+
+    afterEach(async () => {
+      if (ownerId === undefined) return;
+
+      const chats = await booted.frogbot.find({
+        collection: 'chats',
+        where: { user: { equals: ownerId } },
+        pagination: false,
+        depth: 0,
+        overrideAccess: true,
+      });
+
+      for (const chat of chats.docs) {
+        await booted.frogbot.delete({
+          collection: 'messages',
+          where: { chat: { equals: chat.id } },
+          overrideAccess: true,
+        });
+
+        await booted.frogbot.delete({
+          collection: 'frogbot-chat-turns',
+          where: { id: { equals: String(chat.id) } },
+          overrideAccess: true,
+        });
+
+        await booted.frogbot.delete({
+          collection: 'chats',
+          id: chat.id,
+          overrideAccess: true,
+        });
+      }
+
+      await booted.frogbot.delete({
+        collection: 'credentials',
+        where: { owner: { equals: ownerId } },
+        overrideAccess: true,
+      });
+
+      await booted.frogbot.delete({
+        collection: 'accounts',
+        id: ownerId,
+        overrideAccess: true,
+      });
+    });
+
+    it('rejects a named model denied to the key owner before calling the model or writing chat state', async () => {
+      const response = await booted.restClient.post(
+        `/api/agents/${agentSlug}`,
+        { prompt: 'Hello', model: 'test/blocked' },
+        { headers },
+      );
+
+      expect(response.status).toBe(403);
+      expect(modelCalls).toEqual([]);
+
+      for (const collection of ['chats', 'messages', 'frogbot-chat-turns']) {
+        const records = await booted.frogbot.count({ collection, overrideAccess: true });
+
+        expect(records.totalDocs).toBe(0);
+      }
+    });
+
+    it('uses the key owner allowed model when the agent default is denied and no model is requested', async () => {
+      const chat = await booted.frogbot.create({
+        collection: 'chats',
+        data: { agent: agentSlug, user: ownerId!, title: 'API key fallback' },
+        overrideAccess: true,
+      });
+
+      const response = await booted.restClient.post<{ text: string; chatId: number | string }>(
+        `/api/agents/${agentSlug}`,
+        { prompt: 'Hello', chatId: chat.id },
+        { headers },
+      );
+
+      expect(response.status, JSON.stringify(response.body)).toBe(200);
+      expect(response.body).toMatchObject({ text: 'ok', chatId: chat.id });
+      expect(modelCalls).toEqual(['allowed']);
+
+      const messages = await booted.frogbot.find({
+        collection: 'messages',
+        where: { chat: { equals: chat.id } },
+        pagination: false,
+        depth: 0,
+        overrideAccess: true,
+      });
+
+      expect(messages.docs).toHaveLength(2);
+      expect(messages.docs.find((message) => message.role === 'assistant')).toMatchObject({
+        usage: {
+          model: 'test/allowed',
+          provider: 'test',
+          inputTokens: 1_000_000,
+          outputTokens: 1_000_000,
+        },
+      });
+    });
   });
 });
