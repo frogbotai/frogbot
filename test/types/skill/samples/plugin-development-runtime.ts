@@ -1,11 +1,11 @@
-import type { AfterChangeHook, CollectionConfig, Endpoint, Plugin } from 'frogbot';
+import type { CollectionAfterChangeHook, CollectionConfig, Endpoint, Plugin } from 'frogbot';
 
 import { createNotesCollection } from './plugin-development.js';
 import { withNotesAfterChange } from './plugin-development-hooks.js';
 
 type NotesRuntimeOptions = {
   disabled?: boolean;
-  notesAfterChange: AfterChangeHook;
+  notesAfterChange: CollectionAfterChangeHook;
   notesEndpoint: Endpoint;
 };
 

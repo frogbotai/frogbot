@@ -1,10 +1,19 @@
-import type { CollectionConfig } from 'frogbot';
+import type { CollectionConfig, FrogBotRequest } from 'frogbot';
+import type { PayloadRequest } from 'payload';
 
 import { buildTestConfig, openAccess } from '../__helpers/shared/buildTestConfig.js';
 import {
   accessBooleanSlug,
   accessWhereSlug,
+  afterErrorStatusHeader,
+  afterMeResponse,
+  afterMeResponseHeader,
   afterOpSlug,
+  type AuthHookLogEntry,
+  authRequestIdentityHeader,
+  type AuthRequestIdentityLogEntry,
+  type AuthRequestState,
+  beforeOperationTitleHeader,
   contextFlowSlug,
   fieldAccessSlug,
   hookOrderSlug,
@@ -21,12 +30,40 @@ export function clearHookLog() {
   hookLog = [];
 }
 
+export let authHookLog: AuthHookLogEntry[] = [];
+export let authRequestIdentityLog: AuthRequestIdentityLogEntry[] = [];
+let authRequestStates = new WeakMap<object, AuthRequestState>();
+
+export function clearAuthHookLog() {
+  authHookLog = [];
+  authRequestIdentityLog = [];
+  authRequestStates = new WeakMap();
+}
+
+function getAuthRequestState(req: FrogBotRequest): AuthRequestState {
+  return {
+    frogbot: req.frogbot,
+    payload: (req as unknown as PayloadRequest).payload,
+  };
+}
+
 // ── 1. hook-order ─────────────────────────────────────────────────────
 
 const HookOrder: CollectionConfig = {
   slug: hookOrderSlug,
   access: openAccess,
   hooks: {
+    beforeOperation: [
+      ({ args, operation, req }) => {
+        const title = req.headers.get(beforeOperationTitleHeader);
+
+        if (title && (operation === 'find' || operation === 'read') && !('id' in args)) {
+          args = { ...args, where: { title: { equals: title } } };
+
+          return args;
+        }
+      },
+    ],
     beforeValidate: [
       () => {
         hookLog.push('beforeValidate');
@@ -268,6 +305,16 @@ const Users: CollectionConfig = {
   },
   access: openAccess,
   hooks: {
+    beforeOperation: [
+      ({ req, operation }) => {
+        if (
+          req.headers.get(authRequestIdentityHeader) &&
+          (operation === 'read' || operation === 'findByID')
+        ) {
+          authRequestStates.set(req, getAuthRequestState(req));
+        }
+      },
+    ],
     afterLogin: [
       async ({ req, user }) => {
         await req.frogbot.update({
@@ -278,6 +325,34 @@ const Users: CollectionConfig = {
           req,
         });
         return user;
+      },
+    ],
+    afterMe: [
+      ({ req }) => {
+        authHookLog.push({ phase: 'afterMe', frogbot: typeof req.frogbot?.find });
+
+        if (req.headers.get(authRequestIdentityHeader)) {
+          authRequestIdentityLog.push({
+            beforeOperation: authRequestStates.get(req),
+            afterMe: getAuthRequestState(req),
+          });
+        }
+      },
+      ({ req }) => {
+        if (req.headers.get(afterMeResponseHeader)) return afterMeResponse;
+      },
+    ],
+    afterLogout: [
+      ({ req }) => {
+        authHookLog.push({ phase: 'afterLogout', frogbot: typeof req.frogbot?.find });
+      },
+    ],
+    afterError: [
+      ({ req }) => {
+        authHookLog.push({ phase: 'afterError', frogbot: typeof req.frogbot?.find });
+      },
+      ({ req }) => {
+        if (req.headers.get(afterErrorStatusHeader)) return { status: 418 };
       },
     ],
   },

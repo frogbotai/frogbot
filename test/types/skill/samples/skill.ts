@@ -1,9 +1,9 @@
 import { sqliteAdapter } from '@frogbotai/db-sqlite';
 import { lexicalEditor } from '@frogbotai/richtext-lexical';
 import type {
-  AfterChangeHook,
   AgentConfig,
-  BeforeChangeHook,
+  CollectionAfterChangeHook,
+  CollectionBeforeChangeHook,
   CollectionConfig,
   FrogBotConfig,
   FrogBotInstance,
@@ -59,7 +59,7 @@ export const Posts: CollectionConfig = {
   timestamps: true,
 };
 
-export const setPublishedAt: BeforeChangeHook<Post> = ({ data, operation }) => {
+export const setPublishedAt: CollectionBeforeChangeHook<Post> = ({ data, operation }) => {
   if (operation !== 'update' || data.status !== 'published') return data;
 
   return {
@@ -98,7 +98,7 @@ export async function enforceAccess({
   return posts;
 }
 
-export const auditPost: AfterChangeHook<Post> = async ({ doc, req }) => {
+export const auditPost: CollectionAfterChangeHook<Post> = async ({ doc, req }) => {
   await req.frogbot.create({
     collection: 'audit-events',
     data: {
@@ -111,7 +111,7 @@ export const auditPost: AfterChangeHook<Post> = async ({ doc, req }) => {
   return doc;
 };
 
-export const syncPost: AfterChangeHook<Post> = async ({ context, doc, req }) => {
+export const syncPost: CollectionAfterChangeHook<Post> = async ({ context, doc, req }) => {
   if (context.syncingPost) return doc;
 
   await req.frogbot.update({

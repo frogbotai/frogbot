@@ -548,14 +548,14 @@ export function notesFeaturesPlugin({ afterError, endpoint, task }: NotesFeature
 Collection hooks require the same nested composition:
 
 ```ts
-import type { AfterChangeHook, CollectionConfig } from 'frogbot';
+import type { CollectionAfterChangeHook, CollectionConfig } from 'frogbot';
 
 export function withNotesAfterChange({
   collection,
   notesAfterChange,
 }: {
   collection: CollectionConfig;
-  notesAfterChange: AfterChangeHook;
+  notesAfterChange: CollectionAfterChangeHook;
 }): CollectionConfig {
   return {
     ...collection,
@@ -609,14 +609,14 @@ Use `async` only when configuration construction itself must await work. Runtime
 When a plugin can be disabled but owns schema, preserve schema additions and disable only runtime behavior. Removing fields or collections based on a flag can make an existing database incompatible.
 
 ```ts
-import type { AfterChangeHook, CollectionConfig, Endpoint, Plugin } from 'frogbot';
+import type { CollectionAfterChangeHook, CollectionConfig, Endpoint, Plugin } from 'frogbot';
 
 import { createNotesCollection } from './collection.js';
 import { withNotesAfterChange } from './hooks.js';
 
 type NotesRuntimeOptions = {
   disabled?: boolean;
-  notesAfterChange: AfterChangeHook;
+  notesAfterChange: CollectionAfterChangeHook;
   notesEndpoint: Endpoint;
 };
 

@@ -1,7 +1,7 @@
 import type {
   Access,
   AgentAccess,
-  BeforeChangeHook,
+  CollectionBeforeChangeHook,
   Endpoint,
   FieldHook,
   FrogBotInstance,
@@ -37,7 +37,7 @@ export const canRead: Access = ({ req }) => {
   return Boolean(req.user);
 };
 
-export const stampOwner: BeforeChangeHook = ({ data, req }) => {
+export const stampOwner: CollectionBeforeChangeHook = ({ data, req }) => {
   expectTypeOf(req.user).toEqualTypeOf<SelectUser | null>();
 
   if (req.user) {
